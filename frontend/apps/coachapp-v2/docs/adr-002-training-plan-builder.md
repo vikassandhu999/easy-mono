@@ -25,7 +25,7 @@ Coaches author training plans. Clients execute workouts and log results. The coa
 
 ## Implemented data model
 
-The coach app still follows the live contract in `frontend/apps/coachapp-v2/src/api/trainingPlans.ts` and `frontend/apps/coachapp-v2/docs/api_contract.yaml`.
+The coach app still follows the live RTK Query types in `frontend/apps/coachapp-v2/src/api/trainingPlans.ts` and the backend generated OpenAPI contract.
 
 The implemented `TrainingPlan` shape is:
 
@@ -96,7 +96,7 @@ Important differences from the implemented coach-app contract:
 * `planned_sets` becomes a real table with stable IDs.
 * `scheduled_workouts` and `scheduled_workout_events` handle current and historical workout occurrences.
 
-Until that refactor lands, frontend work must continue to match the live RTK Query types and `api_contract.yaml`.
+Until that refactor lands, frontend work must continue to match the live RTK Query types and generated backend OpenAPI.
 
 ## Routed coach-app pages
 

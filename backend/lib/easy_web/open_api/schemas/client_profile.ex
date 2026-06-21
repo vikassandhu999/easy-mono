@@ -1,26 +1,38 @@
+defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
+  alias OpenApiSpex.Schema
+
+  def sections, do: ~w(general nutrition training lifestyle)
+  def field_types, do: ~w(text number boolean date select multi_select)
+  def form_purposes, do: ~w(intake weekly_check_in nutrition_update training_update custom)
+  def template_statuses, do: ~w(active archived)
+  def assignment_statuses, do: ~w(assigned in_progress completed dismissed)
+  def priorities, do: ~w(high normal)
+  def submitted_by_types, do: ~w(coach client system)
+  def section_schema, do: %Schema{type: :object, additionalProperties: true}
+
+  def section_properties,
+    do: %{general: section_schema(), nutrition: section_schema(), training: section_schema(), lifestyle: section_schema()}
+end
+
 defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfileRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-
-  @section %Schema{type: :object, additionalProperties: true}
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(
     %{
       title: "CoachingClientProfileRequest",
       type: :object,
       additionalProperties: false,
-      properties: %{
-        general: @section,
-        nutrition: @section,
-        training: @section,
-        lifestyle: @section,
-        intake_status: %Schema{
-          type: :string,
-          enum: ["assigned", "in_progress", "completed", "dismissed"]
-        },
-        intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
-      },
+      properties:
+        Map.merge(Common.section_properties(), %{
+          intake_status: %Schema{
+            type: :string,
+            enum: Common.assignment_statuses()
+          },
+          intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
+        }),
       example: %{
         "general" => %{"goal" => "strength"},
         "nutrition" => %{"protein_goal" => "120g"},
@@ -36,19 +48,17 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-
-  @sections ["general", "nutrition", "training", "lifestyle"]
-  @field_types ["text", "number", "boolean", "date", "select", "multi_select"]
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFieldRequest",
     type: :object,
     additionalProperties: false,
     properties: %{
-      section: %Schema{type: :string, enum: @sections},
+      section: %Schema{type: :string, enum: Common.sections()},
       label: %Schema{type: :string},
       key: %Schema{type: :string},
-      field_type: %Schema{type: :string, enum: @field_types},
+      field_type: %Schema{type: :string, enum: Common.field_types()},
       options: %Schema{type: :array, items: %Schema{type: :string}},
       filterable: %Schema{type: :boolean}
     },
@@ -68,19 +78,17 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-
-  @sections ["general", "nutrition", "training", "lifestyle"]
-  @field_types ["text", "number", "boolean", "date", "select", "multi_select"]
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFieldUpdateRequest",
     type: :object,
     additionalProperties: false,
     properties: %{
-      section: %Schema{type: :string, enum: @sections},
+      section: %Schema{type: :string, enum: Common.sections()},
       label: %Schema{type: :string},
       key: %Schema{type: :string},
-      field_type: %Schema{type: :string, enum: @field_types},
+      field_type: %Schema{type: :string, enum: Common.field_types()},
       options: %Schema{type: :array, items: %Schema{type: :string}},
       filterable: %Schema{type: :boolean}
     },
@@ -96,6 +104,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileField do
 
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileField",
@@ -105,12 +114,12 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileField do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
-          section: %Schema{type: :string, enum: ["general", "nutrition", "training", "lifestyle"]},
+          section: %Schema{type: :string, enum: Common.sections()},
           label: %Schema{type: :string},
           key: %Schema{type: :string},
           field_type: %Schema{
             type: :string,
-            enum: ["text", "number", "boolean", "date", "select", "multi_select"]
+            enum: Common.field_types()
           },
           options: %Schema{type: :array, items: %Schema{type: :string}},
           filterable: %Schema{type: :boolean},
@@ -154,10 +163,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-
-  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
-  @statuses ["active", "archived"]
-  @section %Schema{type: :object, additionalProperties: true}
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormTemplateRequest",
@@ -165,9 +171,9 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateRequest do
     additionalProperties: false,
     properties: %{
       name: %Schema{type: :string},
-      purpose: %Schema{type: :string, enum: @purposes},
-      sections: %Schema{type: :array, items: @section},
-      status: %Schema{type: :string, enum: @statuses}
+      purpose: %Schema{type: :string, enum: Common.form_purposes()},
+      sections: %Schema{type: :array, items: Common.section_schema()},
+      status: %Schema{type: :string, enum: Common.template_statuses()}
     },
     required: [:name, :purpose, :sections],
     example: %{
@@ -189,10 +195,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-
-  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
-  @statuses ["active", "archived"]
-  @section %Schema{type: :object, additionalProperties: true}
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormTemplateUpdateRequest",
@@ -200,9 +203,9 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateUpdateRequest do
     additionalProperties: false,
     properties: %{
       name: %Schema{type: :string},
-      purpose: %Schema{type: :string, enum: @purposes},
-      sections: %Schema{type: :array, items: @section},
-      status: %Schema{type: :string, enum: @statuses}
+      purpose: %Schema{type: :string, enum: Common.form_purposes()},
+      sections: %Schema{type: :array, items: Common.section_schema()},
+      status: %Schema{type: :string, enum: Common.template_statuses()}
     },
     example: %{
       "name" => "Updated intake",
@@ -216,10 +219,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate do
 
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
-
-  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
-  @statuses ["active", "archived"]
-  @section %Schema{type: :object, additionalProperties: true}
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormTemplate",
@@ -230,9 +230,9 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate do
         %{
           id: %Schema{type: :string, format: :uuid},
           name: %Schema{type: :string},
-          purpose: %Schema{type: :string, enum: @purposes},
-          sections: %Schema{type: :array, items: @section},
-          status: %Schema{type: :string, enum: @statuses}
+          purpose: %Schema{type: :string, enum: Common.form_purposes()},
+          sections: %Schema{type: :array, items: Common.section_schema()},
+          status: %Schema{type: :string, enum: Common.template_statuses()}
         },
         Shared.timestamps()
       ),
@@ -261,8 +261,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentAssignRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-
-  @priorities ["high", "normal"]
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormAssignmentAssignRequest",
@@ -270,7 +269,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentAssignRequest do
     additionalProperties: false,
     properties: %{
       client_id: %Schema{type: :string, format: :uuid},
-      priority: %Schema{type: :string, enum: @priorities},
+      priority: %Schema{type: :string, enum: Common.priorities()},
       due_date: %Schema{type: :string, format: :date, nullable: true}
     },
     required: [:client_id],
@@ -285,17 +284,15 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-
-  @statuses ["assigned", "in_progress", "completed", "dismissed"]
-  @priorities ["high", "normal"]
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormAssignmentUpdateRequest",
     type: :object,
     additionalProperties: false,
     properties: %{
-      priority: %Schema{type: :string, enum: @priorities},
-      status: %Schema{type: :string, enum: @statuses},
+      priority: %Schema{type: :string, enum: Common.priorities()},
+      status: %Schema{type: :string, enum: Common.assignment_statuses()},
       due_date: %Schema{type: :string, format: :date, nullable: true}
     },
     example: %{
@@ -310,10 +307,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
 
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
-
-  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
-  @statuses ["assigned", "in_progress", "completed", "dismissed"]
-  @priorities ["high", "normal"]
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormAssignment",
@@ -325,9 +319,9 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
           id: %Schema{type: :string, format: :uuid},
           client_id: %Schema{type: :string, format: :uuid},
           form_template_id: %Schema{type: :string, format: :uuid},
-          purpose: %Schema{type: :string, enum: @purposes},
-          priority: %Schema{type: :string, enum: @priorities},
-          status: %Schema{type: :string, enum: @statuses},
+          purpose: %Schema{type: :string, enum: Common.form_purposes()},
+          priority: %Schema{type: :string, enum: Common.priorities()},
+          status: %Schema{type: :string, enum: Common.assignment_statuses()},
           due_date: %Schema{type: :string, format: :date, nullable: true},
           completed_at: %Schema{type: :string, format: :"date-time", nullable: true},
           form_template: ClientProfileFormTemplate
@@ -390,6 +384,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormSubmission",
@@ -400,7 +395,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
       form_assignment_id: %Schema{type: :string, format: :uuid},
       question_snapshot: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
       answers: %Schema{type: :object, additionalProperties: true},
-      submitted_by_type: %Schema{type: :string, enum: ["coach", "client", "system"]},
+      submitted_by_type: %Schema{type: :string, enum: Common.submitted_by_types()},
       submitted_at: %Schema{type: :string, format: :"date-time"},
       inserted_at: %Schema{type: :string, format: :"date-time"}
     },
@@ -429,8 +424,7 @@ defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfile do
 
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
-
-  @section %Schema{type: :object, additionalProperties: true}
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "CoachingClientProfile",
@@ -438,20 +432,17 @@ defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfile do
     additionalProperties: false,
     properties:
       Map.merge(
-        %{
-          id: %Schema{type: :string, format: :uuid},
-          business_id: %Schema{type: :string, format: :uuid},
-          client_id: %Schema{type: :string, format: :uuid},
-          general: @section,
-          nutrition: @section,
-          training: @section,
-          lifestyle: @section,
-          intake_status: %Schema{
-            type: :string,
-            enum: ["assigned", "in_progress", "completed", "dismissed"]
+        Map.merge(
+          %{
+            id: %Schema{type: :string, format: :uuid},
+            business_id: %Schema{type: :string, format: :uuid},
+            client_id: %Schema{type: :string, format: :uuid}
           },
-          intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
-        },
+          Map.merge(Common.section_properties(), %{
+            intake_status: %Schema{type: :string, enum: Common.assignment_statuses()},
+            intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
+          })
+        ),
         Shared.timestamps()
       ),
     required: [
@@ -475,8 +466,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientCoachingProfile do
 
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
-
-  @section %Schema{type: :object, additionalProperties: true}
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
   OpenApiSpex.schema(%{
     title: "ClientCoachingProfile",
@@ -484,19 +474,16 @@ defmodule EasyWeb.OpenApi.Schemas.ClientCoachingProfile do
     additionalProperties: false,
     properties:
       Map.merge(
-        %{
-          id: %Schema{type: :string, format: :uuid},
-          client_id: %Schema{type: :string, format: :uuid},
-          general: @section,
-          nutrition: @section,
-          training: @section,
-          lifestyle: @section,
-          intake_status: %Schema{
-            type: :string,
-            enum: ["assigned", "in_progress", "completed", "dismissed"]
+        Map.merge(
+          %{
+            id: %Schema{type: :string, format: :uuid},
+            client_id: %Schema{type: :string, format: :uuid}
           },
-          intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
-        },
+          Map.merge(Common.section_properties(), %{
+            intake_status: %Schema{type: :string, enum: Common.assignment_statuses()},
+            intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
+          })
+        ),
         Shared.timestamps()
       ),
     required: [

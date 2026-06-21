@@ -16,7 +16,14 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
       add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
         null: false
 
-      add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
+      add :client_id,
+          references(:clients,
+            type: :binary_id,
+            on_delete: :delete_all,
+            with: [business_id: :business_id],
+            name: :client_profiles_client_business_id_fkey
+          ),
+          null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -27,17 +34,6 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
 
     create unique_index(:client_profiles, [:client_id])
     create index(:client_profiles, [:business_id])
-
-    execute(
-      """
-      ALTER TABLE client_profiles
-      ADD CONSTRAINT client_profiles_client_business_id_fkey
-      FOREIGN KEY (client_id, business_id)
-      REFERENCES clients(id, business_id)
-      ON DELETE CASCADE
-      """,
-      "ALTER TABLE client_profiles DROP CONSTRAINT client_profiles_client_business_id_fkey"
-    )
 
     create table(:profile_field_definitions, primary_key: false) do
       add :id, :binary_id, primary_key: true
@@ -87,10 +83,22 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
       add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
         null: false
 
-      add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
+      add :client_id,
+          references(:clients,
+            type: :binary_id,
+            on_delete: :delete_all,
+            with: [business_id: :business_id],
+            name: :profile_field_values_client_business_id_fkey
+          ),
+          null: false
 
       add :profile_field_definition_id,
-          references(:profile_field_definitions, type: :binary_id, on_delete: :delete_all),
+          references(:profile_field_definitions,
+            type: :binary_id,
+            on_delete: :delete_all,
+            with: [business_id: :business_id],
+            name: :profile_field_values_definition_business_id_fkey
+          ),
           null: false
 
       timestamps(type: :utc_datetime)
@@ -102,28 +110,6 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
 
     create unique_index(:profile_field_values, [:client_id, :profile_field_definition_id])
     create index(:profile_field_values, [:business_id, :client_id])
-
-    execute(
-      """
-      ALTER TABLE profile_field_values
-      ADD CONSTRAINT profile_field_values_client_business_id_fkey
-      FOREIGN KEY (client_id, business_id)
-      REFERENCES clients(id, business_id)
-      ON DELETE CASCADE
-      """,
-      "ALTER TABLE profile_field_values DROP CONSTRAINT profile_field_values_client_business_id_fkey"
-    )
-
-    execute(
-      """
-      ALTER TABLE profile_field_values
-      ADD CONSTRAINT profile_field_values_definition_business_id_fkey
-      FOREIGN KEY (profile_field_definition_id, business_id)
-      REFERENCES profile_field_definitions(id, business_id)
-      ON DELETE CASCADE
-      """,
-      "ALTER TABLE profile_field_values DROP CONSTRAINT profile_field_values_definition_business_id_fkey"
-    )
 
     create table(:form_templates, primary_key: false) do
       add :id, :binary_id, primary_key: true
@@ -164,10 +150,23 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
       add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
         null: false
 
-      add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
+      add :client_id,
+          references(:clients,
+            type: :binary_id,
+            on_delete: :delete_all,
+            with: [business_id: :business_id],
+            name: :form_assignments_client_business_id_fkey
+          ),
+          null: false
 
       add :form_template_id,
-          references(:form_templates, type: :binary_id, on_delete: :delete_all), null: false
+          references(:form_templates,
+            type: :binary_id,
+            on_delete: :delete_all,
+            with: [business_id: :business_id],
+            name: :form_assignments_template_business_id_fkey
+          ),
+          null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -196,28 +195,6 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
              name: :form_assignments_id_client_id_business_id_index
            )
 
-    execute(
-      """
-      ALTER TABLE form_assignments
-      ADD CONSTRAINT form_assignments_client_business_id_fkey
-      FOREIGN KEY (client_id, business_id)
-      REFERENCES clients(id, business_id)
-      ON DELETE CASCADE
-      """,
-      "ALTER TABLE form_assignments DROP CONSTRAINT form_assignments_client_business_id_fkey"
-    )
-
-    execute(
-      """
-      ALTER TABLE form_assignments
-      ADD CONSTRAINT form_assignments_template_business_id_fkey
-      FOREIGN KEY (form_template_id, business_id)
-      REFERENCES form_templates(id, business_id)
-      ON DELETE CASCADE
-      """,
-      "ALTER TABLE form_assignments DROP CONSTRAINT form_assignments_template_business_id_fkey"
-    )
-
     create table(:form_submissions, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :question_snapshot, {:array, :map}, default: [], null: false
@@ -229,10 +206,22 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
       add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
         null: false
 
-      add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
+      add :client_id,
+          references(:clients,
+            type: :binary_id,
+            on_delete: :delete_all,
+            with: [business_id: :business_id],
+            name: :form_submissions_client_business_id_fkey
+          ),
+          null: false
 
       add :form_assignment_id,
-          references(:form_assignments, type: :binary_id, on_delete: :delete_all),
+          references(:form_assignments,
+            type: :binary_id,
+            on_delete: :delete_all,
+            with: [client_id: :client_id, business_id: :business_id],
+            name: :form_submissions_assignment_client_business_id_fkey
+          ),
           null: false
 
       timestamps(type: :utc_datetime, updated_at: false)
@@ -244,27 +233,5 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
 
     create index(:form_submissions, [:business_id, :client_id])
     create index(:form_submissions, [:form_assignment_id])
-
-    execute(
-      """
-      ALTER TABLE form_submissions
-      ADD CONSTRAINT form_submissions_client_business_id_fkey
-      FOREIGN KEY (client_id, business_id)
-      REFERENCES clients(id, business_id)
-      ON DELETE CASCADE
-      """,
-      "ALTER TABLE form_submissions DROP CONSTRAINT form_submissions_client_business_id_fkey"
-    )
-
-    execute(
-      """
-      ALTER TABLE form_submissions
-      ADD CONSTRAINT form_submissions_assignment_client_business_id_fkey
-      FOREIGN KEY (form_assignment_id, client_id, business_id)
-      REFERENCES form_assignments(id, client_id, business_id)
-      ON DELETE CASCADE
-      """,
-      "ALTER TABLE form_submissions DROP CONSTRAINT form_submissions_assignment_client_business_id_fkey"
-    )
   end
 end

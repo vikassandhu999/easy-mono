@@ -248,68 +248,25 @@ defmodule Easy.Clients do
     end)
   end
 
-  defp apply_core_profile_filter(query, business_id, "general", key, values) do
-    from(c in query,
-      where:
-        fragment(
-          "EXISTS (SELECT 1 FROM client_profiles cp WHERE cp.client_id = ? AND cp.business_id = ? AND ((cp.general ->> ?) = ANY(?) OR (jsonb_typeof(cp.general -> ?) = 'array' AND jsonb_exists_any(cp.general -> ?, ?))))",
-          c.id,
-          type(^business_id, :binary_id),
-          ^key,
-          type(^values, {:array, :string}),
-          ^key,
-          ^key,
-          type(^values, {:array, :string})
-        )
-    )
-  end
+  for section <- @profile_filter_sections do
+    filter_sql =
+      "EXISTS (SELECT 1 FROM client_profiles cp WHERE cp.client_id = ? AND cp.business_id = ? AND ((cp.#{section} ->> ?) = ANY(?) OR (jsonb_typeof(cp.#{section} -> ?) = 'array' AND jsonb_exists_any(cp.#{section} -> ?, ?))))"
 
-  defp apply_core_profile_filter(query, business_id, "nutrition", key, values) do
-    from(c in query,
-      where:
-        fragment(
-          "EXISTS (SELECT 1 FROM client_profiles cp WHERE cp.client_id = ? AND cp.business_id = ? AND ((cp.nutrition ->> ?) = ANY(?) OR (jsonb_typeof(cp.nutrition -> ?) = 'array' AND jsonb_exists_any(cp.nutrition -> ?, ?))))",
-          c.id,
-          type(^business_id, :binary_id),
-          ^key,
-          type(^values, {:array, :string}),
-          ^key,
-          ^key,
-          type(^values, {:array, :string})
-        )
-    )
-  end
-
-  defp apply_core_profile_filter(query, business_id, "training", key, values) do
-    from(c in query,
-      where:
-        fragment(
-          "EXISTS (SELECT 1 FROM client_profiles cp WHERE cp.client_id = ? AND cp.business_id = ? AND ((cp.training ->> ?) = ANY(?) OR (jsonb_typeof(cp.training -> ?) = 'array' AND jsonb_exists_any(cp.training -> ?, ?))))",
-          c.id,
-          type(^business_id, :binary_id),
-          ^key,
-          type(^values, {:array, :string}),
-          ^key,
-          ^key,
-          type(^values, {:array, :string})
-        )
-    )
-  end
-
-  defp apply_core_profile_filter(query, business_id, "lifestyle", key, values) do
-    from(c in query,
-      where:
-        fragment(
-          "EXISTS (SELECT 1 FROM client_profiles cp WHERE cp.client_id = ? AND cp.business_id = ? AND ((cp.lifestyle ->> ?) = ANY(?) OR (jsonb_typeof(cp.lifestyle -> ?) = 'array' AND jsonb_exists_any(cp.lifestyle -> ?, ?))))",
-          c.id,
-          type(^business_id, :binary_id),
-          ^key,
-          type(^values, {:array, :string}),
-          ^key,
-          ^key,
-          type(^values, {:array, :string})
-        )
-    )
+    defp apply_core_profile_filter(query, business_id, unquote(section), key, values) do
+      from(c in query,
+        where:
+          fragment(
+            unquote(filter_sql),
+            c.id,
+            type(^business_id, :binary_id),
+            ^key,
+            type(^values, {:array, :string}),
+            ^key,
+            ^key,
+            type(^values, {:array, :string})
+          )
+      )
+    end
   end
 
   defp apply_custom_profile_filter(query, business_id, key, values) do

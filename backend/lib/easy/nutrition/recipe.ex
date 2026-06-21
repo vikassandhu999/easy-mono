@@ -13,19 +13,19 @@ defmodule Easy.Nutrition.Recipe do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @service_size_types [:serving_based, :weight_based]
+  @allergens ~w(dairy egg fish shellfish tree_nuts peanuts wheat soy sesame)
+  @dietary_tags ~w(vegan vegetarian halal kosher gluten_free dairy_free low_fodmap keto high_protein)
 
-  schema "recipes" do
+  schema "nutrition_recipes" do
     field :name, :string
-    field :macros, :map
-    field :source, :string
-    field :category, :string
-    field :tags, {:array, :string}
+    field :description, :string
     field :instructions, :string
-    field :image_url, :string
+    field :servings_count, :integer
     field :cooked_weight_g, :float
 
-    field :service_size_type, Ecto.Enum, values: @service_size_types, default: :serving_based
+    field :allergens, {:array, :string}, default: []
+    field :dietary_tags, {:array, :string}, default: []
+
     embeds_many :serving_sizes, Nutrition.ServingSize, on_replace: :delete
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
@@ -38,16 +38,13 @@ defmodule Easy.Nutrition.Recipe do
 
   @cast_fields [
     :name,
-    :source,
-    :category,
-    :tags,
+    :description,
     :instructions,
-    :image_url,
+    :servings_count,
     :cooked_weight_g,
-    :service_size_type
+    :allergens,
+    :dietary_tags
   ]
-
-  # Changesets
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, coach_id, attrs) do
@@ -56,6 +53,8 @@ defmodule Easy.Nutrition.Recipe do
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
     |> validate_required([:name, :creator_id, :business_id])
+    |> validate_subset(:allergens, @allergens)
+    |> validate_subset(:dietary_tags, @dietary_tags)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
     |> cast_assoc(:recipe_ingredients, with: &RecipeIngredient.changeset/2)
   end
@@ -64,11 +63,11 @@ defmodule Easy.Nutrition.Recipe do
   def update_changeset(recipe, attrs) do
     recipe
     |> cast(attrs, @cast_fields)
+    |> validate_subset(:allergens, @allergens)
+    |> validate_subset(:dietary_tags, @dietary_tags)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
     |> cast_assoc(:recipe_ingredients, with: &RecipeIngredient.changeset/2)
   end
-
-  # Queries
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do

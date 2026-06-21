@@ -12,7 +12,7 @@ defmodule Easy.Nutrition.MealItem do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "meal_items" do
+  schema "nutrition_meal_items" do
     field :weight_g, :float
     field :amount, :float
     field :unit, :string
@@ -21,24 +21,31 @@ defmodule Easy.Nutrition.MealItem do
     belongs_to :business, Orgs.Business
     belongs_to :recipe, Nutrition.Recipe
     belongs_to :food, Nutrition.Food
-    belongs_to :meal, Nutrition.Meal
+    belongs_to :meal, Nutrition.Meal, foreign_key: :nutrition_meal_id
 
     timestamps(type: :utc_datetime)
   end
 
   @cast_fields [:weight_g, :amount, :unit, :position, :recipe_id, :food_id]
 
-  # Changesets
-
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(meal_id, business_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> put_change(:meal_id, meal_id)
+    |> put_change(:nutrition_meal_id, meal_id)
     |> put_change(:business_id, business_id)
-    |> validate_required([:meal_id, :business_id])
+    |> validate_required([:nutrition_meal_id, :business_id, :weight_g])
+    |> validate_number(:weight_g, greater_than: 0)
     |> validate_food_or_recipe()
-    |> unique_constraint(:position, name: :meal_items_meal_id_position_index)
+    |> check_constraint(:weight_g,
+      name: :nutrition_meal_items_weight_positive,
+      message: "must be greater than 0"
+    )
+    |> check_constraint(:food_id,
+      name: :nutrition_meal_items_food_xor_recipe,
+      message: "exactly one of food_id or recipe_id must be set"
+    )
+    |> unique_constraint(:position, name: :nutrition_meal_items_nutrition_meal_id_position_index)
   end
 
   @update_fields [:weight_g, :amount, :unit, :position]
@@ -47,25 +54,29 @@ defmodule Easy.Nutrition.MealItem do
   def update_changeset(meal_item, attrs) do
     meal_item
     |> cast(attrs, @update_fields)
-    |> unique_constraint(:position, name: :meal_items_meal_id_position_index)
+    |> validate_number(:weight_g, greater_than: 0)
+    |> unique_constraint(:position, name: :nutrition_meal_items_nutrition_meal_id_position_index)
   end
 
   defp validate_food_or_recipe(changeset) do
     food_id = get_field(changeset, :food_id)
     recipe_id = get_field(changeset, :recipe_id)
 
-    if is_nil(food_id) and is_nil(recipe_id) do
-      add_error(changeset, :food_id, "Either food_id or recipe_id must be present")
-    else
-      changeset
+    cond do
+      is_nil(food_id) and is_nil(recipe_id) ->
+        add_error(changeset, :food_id, "either food_id or recipe_id must be present")
+
+      not is_nil(food_id) and not is_nil(recipe_id) ->
+        add_error(changeset, :recipe_id, "cannot set both food_id and recipe_id")
+
+      true ->
+        changeset
     end
   end
 
-  # Queries
-
   @spec for_meal(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_meal(query \\ __MODULE__, meal_id) do
-    from(m in query, where: m.meal_id == ^meal_id)
+    from(m in query, where: m.nutrition_meal_id == ^meal_id)
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

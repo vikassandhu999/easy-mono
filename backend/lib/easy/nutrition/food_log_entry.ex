@@ -15,7 +15,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
 
   @sources [:planned, :replacement, :unplanned]
 
-  schema "food_log_entries" do
+  schema "nutrition_food_log_entries" do
     field :food_name, :string
     field :amount, :float
     field :unit, :string
@@ -24,11 +24,12 @@ defmodule Easy.Nutrition.FoodLogEntry do
     field :protein_g, :float
     field :carbs_g, :float
     field :fat_g, :float
+    field :fiber_g, :float
     field :notes, :string
     field :source, Ecto.Enum, values: @sources, default: :planned
     field :planned_item_index, :integer
 
-    belongs_to :meal_log, MealLog
+    belongs_to :meal_log, MealLog, foreign_key: :nutrition_meal_log_id
     belongs_to :food, Food
     belongs_to :recipe, Recipe
 
@@ -47,15 +48,14 @@ defmodule Easy.Nutrition.FoodLogEntry do
     :recipe_id
   ]
 
-  # Changesets
-
   @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(meal_log_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> put_change(:meal_log_id, meal_log_id)
-    |> validate_required([:source, :meal_log_id])
+    |> put_change(:nutrition_meal_log_id, meal_log_id)
+    |> validate_required([:source, :nutrition_meal_log_id, :weight_g])
     |> validate_inclusion(:source, @sources)
+    |> validate_number(:weight_g, greater_than: 0)
     |> validate_food_or_recipe()
   end
 
@@ -63,6 +63,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
   def update_changeset(entry, attrs) do
     entry
     |> cast(attrs, [:amount, :unit, :weight_g, :notes])
+    |> validate_number(:weight_g, greater_than: 0)
   end
 
   defp validate_food_or_recipe(changeset) do
@@ -81,11 +82,9 @@ defmodule Easy.Nutrition.FoodLogEntry do
     end
   end
 
-  # Queries
-
   @spec for_meal_log(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_meal_log(query \\ __MODULE__, meal_log_id) do
-    from(e in query, where: e.meal_log_id == ^meal_log_id)
+    from(e in query, where: e.nutrition_meal_log_id == ^meal_log_id)
   end
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -97,7 +96,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
   def for_client(query \\ __MODULE__, business_id, client_id) do
     from(e in query,
       join: ml in MealLog,
-      on: e.meal_log_id == ml.id,
+      on: e.nutrition_meal_log_id == ml.id,
       where: ml.business_id == ^business_id,
       where: ml.client_id == ^client_id
     )
@@ -107,7 +106,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
   def for_business(query \\ __MODULE__, business_id) do
     from(e in query,
       join: ml in MealLog,
-      on: e.meal_log_id == ml.id,
+      on: e.nutrition_meal_log_id == ml.id,
       where: ml.business_id == ^business_id
     )
   end

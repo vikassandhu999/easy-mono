@@ -14,7 +14,7 @@ defmodule Easy.Nutrition.MealLog do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "meal_logs" do
+  schema "nutrition_meal_logs" do
     field(:date, :date)
     field(:meal_slot, :string)
     field(:planned_snapshot, :map)
@@ -24,12 +24,10 @@ defmodule Easy.Nutrition.MealLog do
     belongs_to(:client, Client)
     belongs_to(:business, Orgs.Business)
 
-    has_many(:food_log_entries, FoodLogEntry)
+    has_many(:food_log_entries, FoodLogEntry, foreign_key: :nutrition_meal_log_id)
 
     timestamps(type: :utc_datetime)
   end
-
-  # Changesets
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, attrs) do
@@ -38,13 +36,11 @@ defmodule Easy.Nutrition.MealLog do
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> validate_required([:date, :meal_slot, :business_id, :client_id])
-    |> validate_inclusion(:meal_slot, PlanItem.meal_types())
+    |> validate_inclusion(:meal_slot, PlanItem.meal_slots())
     |> unique_constraint([:client_id, :date, :meal_slot],
-      name: :meal_logs_client_id_date_meal_slot_index
+      name: :nutrition_meal_logs_client_id_date_meal_slot_index
     )
   end
-
-  # Queries
 
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_client(query \\ __MODULE__, business_id, client_id) do

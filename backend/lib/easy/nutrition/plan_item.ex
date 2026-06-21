@@ -12,7 +12,7 @@ defmodule Easy.Nutrition.PlanItem do
   @foreign_key_type :binary_id
 
   @days ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-  @meal_types [
+  @meal_slots [
     "breakfast",
     "morning_snack",
     "lunch",
@@ -21,63 +21,60 @@ defmodule Easy.Nutrition.PlanItem do
     "evening_snack"
   ]
 
-  @spec meal_types() :: [String.t()]
-  def meal_types, do: @meal_types
+  @spec meal_slots() :: [String.t()]
+  def meal_slots, do: @meal_slots
 
-  schema "plan_items" do
-    field :day, :string
-    field :meal_type, :string
+  @spec days() :: [String.t()]
+  def days, do: @days
 
-    belongs_to :creator, Orgs.Coach
+  schema "nutrition_schedule_entries" do
+    field :day_of_week, :string
+    field :meal_slot, :string
+
     belongs_to :business, Orgs.Business
-    belongs_to :meal, Easy.Nutrition.Meal
-    belongs_to :plan, Easy.Nutrition.Plan
+    belongs_to :meal, Easy.Nutrition.Meal, foreign_key: :nutrition_meal_id
+    belongs_to :plan, Easy.Nutrition.Plan, foreign_key: :nutrition_plan_id
 
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:day, :meal_type, :meal_id]
+  @cast_fields [:day_of_week, :meal_slot, :nutrition_meal_id]
 
-  # Changesets
-
-  @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(plan_id, business_id, creator_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(plan_id, business_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> put_change(:plan_id, plan_id)
+    |> put_change(:nutrition_plan_id, plan_id)
     |> put_change(:business_id, business_id)
-    |> put_change(:creator_id, creator_id)
-    |> validate_required([:day, :meal_type, :meal_id, :plan_id, :business_id, :creator_id])
-    |> validate_inclusion(:day, @days)
-    |> validate_inclusion(:meal_type, @meal_types)
-    |> unique_constraint([:plan_id, :day, :meal_type],
-      name: :plan_items_plan_id_day_meal_type_index
+    |> validate_required([:day_of_week, :meal_slot, :nutrition_meal_id, :nutrition_plan_id, :business_id])
+    |> validate_inclusion(:day_of_week, @days)
+    |> validate_inclusion(:meal_slot, @meal_slots)
+    |> unique_constraint([:nutrition_plan_id, :day_of_week, :meal_slot],
+      name: :nutrition_schedule_entries_nutrition_plan_id_day_of_week_meal_s
     )
   end
 
-  @update_fields [:day, :meal_type]
+  @update_fields [:day_of_week, :meal_slot]
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(plan_item, attrs) do
-    plan_item
+  def update_changeset(entry, attrs) do
+    entry
     |> cast(attrs, @update_fields)
-    |> validate_inclusion(:day, @days)
-    |> validate_inclusion(:meal_type, @meal_types)
-    |> unique_constraint([:plan_id, :day, :meal_type],
-      name: :plan_items_plan_id_day_meal_type_index
+    |> validate_inclusion(:day_of_week, @days)
+    |> validate_inclusion(:meal_slot, @meal_slots)
+    |> unique_constraint([:nutrition_plan_id, :day_of_week, :meal_slot],
+      name: :nutrition_schedule_entries_nutrition_plan_id_day_of_week_meal_s
     )
   end
 
-  # Queries
-
-  @spec for_meal_type(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_meal_type(query \\ __MODULE__, meal_type) do
-    from(p in query, where: p.meal_type == ^meal_type)
+  @spec for_meal_slot(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_meal_slot(query \\ __MODULE__, meal_slot) do
+    from(p in query, where: p.meal_slot == ^meal_slot)
   end
 
   @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_plan(query \\ __MODULE__, plan_id) do
-    from(p in query, where: p.plan_id == ^plan_id)
+    from(p in query, where: p.nutrition_plan_id == ^plan_id)
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -87,6 +84,6 @@ defmodule Easy.Nutrition.PlanItem do
 
   @spec for_day(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_day(query \\ __MODULE__, day) do
-    from(p in query, where: p.day == ^day)
+    from(p in query, where: p.day_of_week == ^day)
   end
 end

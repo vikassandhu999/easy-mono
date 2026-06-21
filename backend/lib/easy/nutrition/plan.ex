@@ -18,12 +18,16 @@ defmodule Easy.Nutrition.Plan do
   @spec statuses() :: [atom()]
   def statuses, do: @plan_statuses
 
-  schema "plans" do
+  schema "nutrition_plans" do
     field :name, :string
     field :description, :string
     field :tags, {:array, :string}, default: []
 
-    field :macros_goal, :map
+    field :target_calories, :float
+    field :target_protein_g, :float
+    field :target_carbs_g, :float
+    field :target_fat_g, :float
+    field :target_fiber_g, :float
 
     field :status, Ecto.Enum, values: @plan_statuses, default: :active
 
@@ -34,13 +38,25 @@ defmodule Easy.Nutrition.Plan do
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
     belongs_to :source_template, __MODULE__, foreign_key: :source_template_id
-    has_many :meals, Meal
-    has_many :plan_items, Easy.Nutrition.PlanItem
+    has_many :meals, Meal, foreign_key: :nutrition_plan_id
+    has_many :plan_items, Easy.Nutrition.PlanItem, foreign_key: :nutrition_plan_id
 
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:name, :description, :tags, :macros_goal, :status, :start_date, :end_date]
+  @cast_fields [
+    :name,
+    :description,
+    :tags,
+    :target_calories,
+    :target_protein_g,
+    :target_carbs_g,
+    :target_fat_g,
+    :target_fiber_g,
+    :status,
+    :start_date,
+    :end_date
+  ]
 
   # Changesets
 
@@ -52,6 +68,10 @@ defmodule Easy.Nutrition.Plan do
     |> put_change(:creator_id, creator_id)
     |> validate_required([:name, :business_id, :creator_id])
     |> validate_date_range()
+    |> exclusion_constraint(:start_date,
+      name: :nutrition_plans_no_overlapping_active,
+      message: "overlaps an existing active plan for this client"
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -59,6 +79,10 @@ defmodule Easy.Nutrition.Plan do
     plan
     |> cast(attrs, @cast_fields)
     |> validate_date_range()
+    |> exclusion_constraint(:start_date,
+      name: :nutrition_plans_no_overlapping_active,
+      message: "overlaps an existing active plan for this client"
+    )
   end
 
   defp validate_date_range(changeset) do

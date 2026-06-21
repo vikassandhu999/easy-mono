@@ -6,6 +6,7 @@ defmodule Easy.NutritionPlans do
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanItem
   alias Easy.Nutrition.Recipe
+  alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
@@ -122,61 +123,6 @@ defmodule Easy.NutritionPlans do
     end
   end
 
-  @spec shopping_list(String.t(), String.t()) :: {:ok, [map()]} | {:error, :not_found}
-  def shopping_list(business_id, plan_id) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
-      plan = Repo.preload(plan, meals: meals_with_items(plan.business_id))
-
-      items =
-        plan.meals
-        |> Enum.flat_map(& &1.meal_items)
-        |> Enum.reduce(%{}, fn item, acc ->
-          key = {item.food_id, item.recipe_id, item.unit}
-          entry = Map.get(acc, key, build_shopping_item(item))
-
-          Map.put(acc, key, %{
-            entry
-            | amount: add_number(entry.amount, item.amount),
-              weight_g: add_number(entry.weight_g, item.weight_g)
-          })
-        end)
-        |> Map.values()
-
-      {:ok, items}
-    end
-  end
-
-  @spec macros(String.t(), String.t()) :: {:ok, map()} | {:error, :not_found}
-  def macros(business_id, plan_id) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
-      plan =
-        Repo.preload(plan, meals: Meal |> Meal.for_business(plan.business_id) |> Meal.ordered())
-
-      totals =
-        Enum.reduce(plan.meals, %{}, fn meal, acc ->
-          merge_macros(acc, meal.macros || %{})
-        end)
-
-      {:ok, totals}
-    end
-  end
-
-  @spec copy_day_for_coach_user(
-          String.t(),
-          String.t(),
-          String.t(),
-          String.t() | nil,
-          String.t() | nil,
-          boolean()
-        ) ::
-          {:ok, [PlanItem.t()]} | {:error, any()}
-  def copy_day_for_coach_user(business_id, user_id, plan_id, source_day, target_day, clear_existing) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id),
-         {:ok, plan} <- get_plan(business_id, plan_id) do
-      copy_day(plan, source_day, target_day, coach.id, clear_existing)
-    end
-  end
-
   @spec assign_to_client_for_coach_user(String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, Plan.t()} | {:error, any()}
   def assign_to_client_for_coach_user(business_id, user_id, plan_id, client_id, attrs) do
@@ -211,13 +157,15 @@ defmodule Easy.NutritionPlans do
     end
   end
 
-  @spec create_plan_item(String.t(), String.t(), String.t(), map()) ::
+  @spec create_plan_item(String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_plan_item(plan_id, business_id, creator_id, attrs) do
+  def create_plan_item(plan_id, business_id, attrs) do
+    meal_ref = Map.get(attrs, "nutrition_meal_id") || Map.get(attrs, "meal_id")
+
     with {:ok, plan} <- get_plan(business_id, plan_id),
-         {:ok, :valid} <- ensure_meal_for_plan(plan.id, business_id, Map.get(attrs, "meal_id")) do
+         {:ok, :valid} <- ensure_meal_for_plan(plan.id, business_id, meal_ref) do
       plan.id
-      |> PlanItem.insert_changeset(business_id, creator_id, attrs)
+      |> PlanItem.insert_changeset(business_id, attrs)
       |> Repo.insert()
     end
   end
@@ -225,20 +173,22 @@ defmodule Easy.NutritionPlans do
   @spec create_plan_item_for_coach_user(String.t(), String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item_for_coach_user(business_id, user_id, plan_id, attrs) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
-      create_plan_item(plan_id, business_id, coach.id, attrs)
+    with {:ok, _coach} <- get_coach_for_user(business_id, user_id) do
+      create_plan_item(plan_id, business_id, attrs)
     end
   end
 
   @spec update_plan_item(String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan_item(business_id, plan_item_id, attrs) do
+    meal_ref = Map.get(attrs, "nutrition_meal_id") || Map.get(attrs, "meal_id")
+
     with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id),
          {:ok, :valid} <-
            ensure_meal_for_plan(
-             plan_item.plan_id,
+             plan_item.nutrition_plan_id,
              plan_item.business_id,
-             Map.get(attrs, "meal_id")
+             meal_ref
            ) do
       plan_item
       |> PlanItem.update_changeset(attrs)
@@ -287,37 +237,6 @@ defmodule Easy.NutritionPlans do
     business_id
     |> Plan.insert_changeset(creator_id, attrs)
     |> Repo.insert()
-  end
-
-  defp copy_day(plan, source_day, target_day, creator_id, clear_existing) do
-    with :ok <- validate_copy_day(source_day, target_day) do
-      Repo.transaction(fn ->
-        source_items =
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(plan.business_id)
-          |> PlanItem.for_day(source_day)
-          |> Repo.all()
-
-        if clear_existing do
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(plan.business_id)
-          |> PlanItem.for_day(target_day)
-          |> Repo.delete_all()
-        end
-
-        Enum.map(source_items, fn item ->
-          attrs = %{day: target_day, meal_type: item.meal_type, meal_id: item.meal_id}
-
-          case PlanItem.insert_changeset(plan.id, plan.business_id, creator_id, attrs)
-               |> Repo.insert() do
-            {:ok, new_item} -> new_item
-            {:error, reason} -> Repo.rollback(reason)
-          end
-        end)
-      end)
-    end
   end
 
   defp assign_to_client(plan, client_id, creator_id, attrs) do
@@ -390,7 +309,11 @@ defmodule Easy.NutritionPlans do
 
   defp meal_items_with_food_and_recipe(business_id) do
     food_query = Food.for_business_or_system(Food, business_id)
-    recipe_query = Recipe.for_business(Recipe, business_id)
+
+    recipe_query =
+      from(r in Recipe.for_business(Recipe, business_id),
+        preload: [recipe_ingredients: ^from(ri in RecipeIngredient, preload: [food: ^food_query])]
+      )
 
     MealItem
     |> MealItem.for_business(business_id)
@@ -457,7 +380,11 @@ defmodule Easy.NutritionPlans do
         name: Keyword.get(opts, :name, plan.name),
         description: plan.description,
         tags: plan.tags,
-        macros_goal: plan.macros_goal,
+        target_calories: plan.target_calories,
+        target_protein_g: plan.target_protein_g,
+        target_carbs_g: plan.target_carbs_g,
+        target_fat_g: plan.target_fat_g,
+        target_fiber_g: plan.target_fiber_g,
         status: Keyword.get(opts, :status, plan.status),
         start_date: Keyword.get(opts, :start_date),
         end_date: Keyword.get(opts, :end_date)
@@ -476,7 +403,6 @@ defmodule Easy.NutritionPlans do
                plan.plan_items,
                new_plan.id,
                new_plan.business_id,
-               creator_id,
                meal_map
              ) do
         Repo.preload(new_plan,
@@ -491,7 +417,7 @@ defmodule Easy.NutritionPlans do
 
   defp copy_meals(meals, new_plan_id, business_id, creator_id) do
     Enum.reduce_while(meals, {:ok, %{}}, fn meal, {:ok, acc} ->
-      attrs = %{name: meal.name, macros: meal.macros}
+      attrs = %{name: meal.name, notes: meal.notes, default_meal_slot: meal.default_meal_slot}
 
       case Meal.insert_changeset(new_plan_id, business_id, creator_id, attrs) |> Repo.insert() do
         {:ok, new_meal} ->
@@ -524,20 +450,20 @@ defmodule Easy.NutritionPlans do
     end)
   end
 
-  defp copy_plan_items(plan_items, new_plan_id, business_id, creator_id, meal_map) do
+  defp copy_plan_items(plan_items, new_plan_id, business_id, meal_map) do
     Enum.reduce_while(plan_items, {:ok, []}, fn plan_item, {:ok, acc} ->
-      new_meal = Map.get(meal_map, plan_item.meal_id)
+      new_meal = Map.get(meal_map, plan_item.nutrition_meal_id)
 
       if is_nil(new_meal) do
         {:halt, {:error, :meal_not_found_in_plan}}
       else
         attrs = %{
-          day: plan_item.day,
-          meal_type: plan_item.meal_type,
-          meal_id: new_meal.id
+          day_of_week: plan_item.day_of_week,
+          meal_slot: plan_item.meal_slot,
+          nutrition_meal_id: new_meal.id
         }
 
-        case PlanItem.insert_changeset(new_plan_id, business_id, creator_id, attrs)
+        case PlanItem.insert_changeset(new_plan_id, business_id, attrs)
              |> Repo.insert() do
           {:ok, new_plan_item} -> {:cont, {:ok, [new_plan_item | acc]}}
           {:error, reason} -> {:halt, {:error, reason}}
@@ -545,55 +471,6 @@ defmodule Easy.NutritionPlans do
       end
     end)
   end
-
-  defp build_shopping_item(item) do
-    {label, type} =
-      cond do
-        not is_nil(item.food) -> {item.food.name, :food}
-        not is_nil(item.recipe) -> {item.recipe.name, :recipe}
-        not is_nil(item.food_id) -> {nil, :food}
-        not is_nil(item.recipe_id) -> {nil, :recipe}
-        true -> {nil, :unknown}
-      end
-
-    %{
-      type: type,
-      name: label,
-      food_id: item.food_id,
-      recipe_id: item.recipe_id,
-      unit: item.unit,
-      amount: 0,
-      weight_g: 0
-    }
-  end
-
-  defp add_number(left, right), do: (left || 0) + (right || 0)
-
-  defp merge_macros(acc, macros) when is_map(macros) do
-    Enum.reduce(macros, acc, fn {key, value}, totals ->
-      key = to_string(key)
-
-      if is_number(value) do
-        Map.update(totals, key, value, &(&1 + value))
-      else
-        totals
-      end
-    end)
-  end
-
-  defp validate_copy_day(nil, _target_day) do
-    {:error, Easy.Error.unprocessable(%{fields: %{source_day: ["can't be blank"]}})}
-  end
-
-  defp validate_copy_day(_source_day, nil) do
-    {:error, Easy.Error.unprocessable(%{fields: %{target_day: ["can't be blank"]}})}
-  end
-
-  defp validate_copy_day(source_day, target_day) when source_day == target_day do
-    {:error, Easy.Error.unprocessable(%{fields: %{target_day: ["must differ from source_day"]}})}
-  end
-
-  defp validate_copy_day(_source_day, _target_day), do: :ok
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

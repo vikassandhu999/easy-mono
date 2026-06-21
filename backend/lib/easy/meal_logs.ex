@@ -9,6 +9,7 @@ defmodule Easy.MealLogs do
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanItem
   alias Easy.Nutrition.Recipe
+  alias Easy.Nutrition.RecipeIngredient
   alias Easy.Repo
 
   import Ecto.Changeset
@@ -259,7 +260,7 @@ defmodule Easy.MealLogs do
 
         Repo.transaction(fn ->
           Enum.flat_map(plan_items, fn plan_item ->
-            do_log_meal(business_id, client_id, date, plan_item.meal_type, plan_item.meal_id)
+            do_log_meal(business_id, client_id, date, plan_item.meal_slot, plan_item.nutrition_meal_id)
           end)
         end)
     end
@@ -415,30 +416,38 @@ defmodule Easy.MealLogs do
       food ->
         changeset
         |> put_change(:food_name, get_field(changeset, :food_name) || food.name)
-        |> put_computed_macros(food.macros || %{}, weight_g, nil)
+        |> put_macros(MacroCalc.for_food(food, weight_g))
     end
   end
 
   defp resolve_recipe(changeset, recipe_id, business_id, weight_g) do
-    case Recipe |> Recipe.for_business(business_id) |> Repo.get(recipe_id) do
+    case load_recipe_with_ingredients(business_id, recipe_id) do
       nil ->
         add_error(changeset, :recipe_id, "recipe not found")
 
       recipe ->
         changeset
         |> put_change(:food_name, get_field(changeset, :food_name) || recipe.name)
-        |> put_computed_macros(recipe.macros || %{}, weight_g, recipe.cooked_weight_g)
+        |> put_macros(MacroCalc.for_recipe(recipe, weight_g))
     end
   end
 
-  defp put_computed_macros(changeset, macros, weight_g, cooked_weight_g) do
-    computed = MacroCalc.compute_all(macros, weight_g, cooked_weight_g)
+  defp load_recipe_with_ingredients(business_id, recipe_id) do
+    food_query = Food.for_business_or_system(Food, business_id)
 
+    Recipe
+    |> Recipe.for_business(business_id)
+    |> preload(recipe_ingredients: ^from(ri in RecipeIngredient, preload: [food: ^food_query]))
+    |> Repo.get(recipe_id)
+  end
+
+  defp put_macros(changeset, macros) do
     changeset
-    |> put_change(:calories, computed.calories)
-    |> put_change(:protein_g, computed.protein_g)
-    |> put_change(:carbs_g, computed.carbs_g)
-    |> put_change(:fat_g, computed.fat_g)
+    |> put_change(:calories, macros.calories)
+    |> put_change(:protein_g, macros.protein_g)
+    |> put_change(:carbs_g, macros.carbs_g)
+    |> put_change(:fat_g, macros.fat_g)
+    |> put_change(:fiber_g, macros.fiber_g)
   end
 
   defp maybe_recompute_macros(changeset, entry, business_id, weight_g) do
@@ -451,10 +460,11 @@ defmodule Easy.MealLogs do
 
       case {entry.food, entry.recipe} do
         {%Food{} = food, _} ->
-          put_computed_macros(changeset, food.macros || %{}, weight_g, nil)
+          put_macros(changeset, MacroCalc.for_food(food, weight_g))
 
         {_, %Recipe{} = recipe} ->
-          put_computed_macros(changeset, recipe.macros || %{}, weight_g, recipe.cooked_weight_g)
+          recipe = load_recipe_with_ingredients(business_id, recipe.id)
+          put_macros(changeset, MacroCalc.for_recipe(recipe, weight_g))
 
         _ ->
           changeset
@@ -465,7 +475,7 @@ defmodule Easy.MealLogs do
   end
 
   defp recalculate_entry_meal_log(entry, business_id) do
-    case MealLog |> MealLog.for_business(business_id) |> Repo.get(entry.meal_log_id) do
+    case MealLog |> MealLog.for_business(business_id) |> Repo.get(entry.nutrition_meal_log_id) do
       nil -> {:error, :not_found}
       meal_log -> recalculate_logged_calories(meal_log)
     end
@@ -477,7 +487,7 @@ defmodule Easy.MealLogs do
       select: %{
         logged_calories:
           fragment(
-            "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
+            "(SELECT coalesce(sum(calories), 0.0) FROM nutrition_food_log_entries WHERE nutrition_meal_log_id = ?)",
             ml.id
           )
       },
@@ -485,7 +495,7 @@ defmodule Easy.MealLogs do
         set: [
           logged_calories:
             fragment(
-              "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
+              "(SELECT coalesce(sum(calories), 0.0) FROM nutrition_food_log_entries WHERE nutrition_meal_log_id = ?)",
               ml.id
             )
         ]
@@ -513,7 +523,7 @@ defmodule Easy.MealLogs do
       nil ->
         nil
 
-      %{plan_id: plan_id} = meal ->
+      %{nutrition_plan_id: plan_id} = meal ->
         plan_belongs =
           Plan
           |> Plan.for_business(business_id)
@@ -551,7 +561,7 @@ defmodule Easy.MealLogs do
       |> PlanItem.for_plan(plan.id)
       |> PlanItem.for_business(plan.business_id)
       |> PlanItem.for_day(day)
-      |> PlanItem.for_meal_type(meal_slot)
+      |> PlanItem.for_meal_slot(meal_slot)
       |> Repo.one()
 
     if is_nil(plan_item), do: nil, else: do_snapshot(plan_item)
@@ -561,7 +571,7 @@ defmodule Easy.MealLogs do
     meal =
       Meal
       |> Meal.for_business(plan_item.business_id)
-      |> Repo.get(plan_item.meal_id)
+      |> Repo.get(plan_item.nutrition_meal_id)
 
     if is_nil(meal) do
       nil
@@ -580,37 +590,32 @@ defmodule Easy.MealLogs do
         total_calories: sum_field(items, :calories),
         total_protein_g: sum_field(items, :protein_g),
         total_carbs_g: sum_field(items, :carbs_g),
-        total_fat_g: sum_field(items, :fat_g)
+        total_fat_g: sum_field(items, :fat_g),
+        total_fiber_g: sum_field(items, :fiber_g)
       }
     end
   end
 
   defp snapshot_item(%MealItem{} = item) do
-    {name, macros, cooked_weight_g} = resolve_food_or_recipe(item)
-    weight_g = item.weight_g || 0.0
-    computed = MacroCalc.compute_all(macros, weight_g, cooked_weight_g)
+    macros = MacroCalc.for_meal_item(item)
+    {name, _} = item_name(item)
 
     %{
       food_name: name,
       amount: item.amount,
       unit: item.unit,
-      weight_g: weight_g,
-      calories: computed.calories,
-      protein_g: computed.protein_g,
-      carbs_g: computed.carbs_g,
-      fat_g: computed.fat_g
+      weight_g: item.weight_g || 0.0,
+      calories: macros.calories,
+      protein_g: macros.protein_g,
+      carbs_g: macros.carbs_g,
+      fat_g: macros.fat_g,
+      fiber_g: macros.fiber_g
     }
   end
 
-  defp resolve_food_or_recipe(%MealItem{food: %Food{} = f}) do
-    {f.name, f.macros || %{}, nil}
-  end
-
-  defp resolve_food_or_recipe(%MealItem{recipe: %Recipe{} = r}) do
-    {r.name, r.macros || %{}, r.cooked_weight_g}
-  end
-
-  defp resolve_food_or_recipe(_), do: {nil, %{}, nil}
+  defp item_name(%MealItem{food: %Food{} = f}), do: {f.name, :food}
+  defp item_name(%MealItem{recipe: %Recipe{} = r}), do: {r.name, :recipe}
+  defp item_name(_), do: {nil, :unknown}
 
   defp apply_date_filters(query, date, _from, _to) when not is_nil(date) do
     MealLog.for_date(query, date)
@@ -625,7 +630,11 @@ defmodule Easy.MealLogs do
 
   defp meal_items_with_food_and_recipe(business_id) do
     food_query = Food.for_business_or_system(Food, business_id)
-    recipe_query = Recipe.for_business(Recipe, business_id)
+
+    recipe_query =
+      from(r in Recipe.for_business(Recipe, business_id),
+        preload: [recipe_ingredients: ^from(ri in RecipeIngredient, preload: [food: ^food_query])]
+      )
 
     MealItem
     |> MealItem.for_business(business_id)

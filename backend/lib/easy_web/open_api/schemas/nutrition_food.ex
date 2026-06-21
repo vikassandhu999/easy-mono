@@ -8,11 +8,13 @@ defmodule EasyWeb.OpenApi.Schemas.FoodServingSize do
     type: :object,
     additionalProperties: false,
     properties: %{
+      label: %Schema{type: :string},
+      amount: %Schema{type: :number},
       unit: %Schema{type: :string},
       weight_g: %Schema{type: :number},
-      amount: %Schema{type: :number}
+      is_default: %Schema{type: :boolean}
     },
-    required: [:unit, :weight_g, :amount]
+    required: [:label, :amount, :unit, :weight_g, :is_default]
   })
 end
 
@@ -30,10 +32,17 @@ defmodule EasyWeb.OpenApi.Schemas.FoodRequest do
       additionalProperties: false,
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
-        macros: %Schema{type: :object, additionalProperties: true},
-        source: %Schema{type: :string, nullable: true},
+        brand: %Schema{type: :string, nullable: true},
+        barcode: %Schema{type: :string, nullable: true},
+        source: %Schema{type: :string, enum: ["system", "imported", "custom"], nullable: true},
         category: %Schema{type: :string, nullable: true},
-        tags: %Schema{type: :array, items: %Schema{type: :string}},
+        calories_per_100g: %Schema{type: :number, nullable: true},
+        protein_g_per_100g: %Schema{type: :number, nullable: true},
+        carbs_g_per_100g: %Schema{type: :number, nullable: true},
+        fat_g_per_100g: %Schema{type: :number, nullable: true},
+        fiber_g_per_100g: %Schema{type: :number, nullable: true},
+        allergens: %Schema{type: :array, items: %Schema{type: :string}},
+        dietary_tags: %Schema{type: :array, items: %Schema{type: :string}},
         notes: %Schema{type: :string, nullable: true},
         image_url: %Schema{type: :string, nullable: true},
         serving_sizes: %Schema{type: :array, items: FoodServingSize}
@@ -41,12 +50,17 @@ defmodule EasyWeb.OpenApi.Schemas.FoodRequest do
       required: [:name],
       example: %{
         "name" => "Greek Yogurt",
-        "macros" => %{"calories" => 97, "protein_g" => 10, "carbs_g" => 4, "fat_g" => 5},
+        "calories_per_100g" => 97,
+        "protein_g_per_100g" => 10,
+        "carbs_g_per_100g" => 4,
+        "fat_g_per_100g" => 5,
+        "fiber_g_per_100g" => 0,
         "source" => "custom",
         "category" => "Dairy",
-        "tags" => ["high-protein"],
+        "allergens" => ["milk"],
+        "dietary_tags" => ["high-protein"],
         "notes" => "Plain, unsweetened.",
-        "serving_sizes" => [%{"unit" => "g", "weight_g" => 100, "amount" => 100}]
+        "serving_sizes" => [%{"label" => "100g", "unit" => "g", "weight_g" => 100, "amount" => 100, "is_default" => true}]
       }
     },
     struct?: false
@@ -67,17 +81,24 @@ defmodule EasyWeb.OpenApi.Schemas.FoodUpdateRequest do
       additionalProperties: false,
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
-        macros: %Schema{type: :object, additionalProperties: true},
-        source: %Schema{type: :string, nullable: true},
+        brand: %Schema{type: :string, nullable: true},
+        barcode: %Schema{type: :string, nullable: true},
+        source: %Schema{type: :string, enum: ["system", "imported", "custom"], nullable: true},
         category: %Schema{type: :string, nullable: true},
-        tags: %Schema{type: :array, items: %Schema{type: :string}},
+        calories_per_100g: %Schema{type: :number, nullable: true},
+        protein_g_per_100g: %Schema{type: :number, nullable: true},
+        carbs_g_per_100g: %Schema{type: :number, nullable: true},
+        fat_g_per_100g: %Schema{type: :number, nullable: true},
+        fiber_g_per_100g: %Schema{type: :number, nullable: true},
+        allergens: %Schema{type: :array, items: %Schema{type: :string}},
+        dietary_tags: %Schema{type: :array, items: %Schema{type: :string}},
         notes: %Schema{type: :string, nullable: true},
         image_url: %Schema{type: :string, nullable: true},
         serving_sizes: %Schema{type: :array, items: FoodServingSize}
       },
       example: %{
         "name" => "Plain Greek Yogurt",
-        "tags" => ["high-protein", "breakfast"]
+        "dietary_tags" => ["high-protein", "breakfast"]
       }
     },
     struct?: false
@@ -99,10 +120,17 @@ defmodule EasyWeb.OpenApi.Schemas.Food do
         %{
           id: %Schema{type: :string, format: :uuid},
           name: %Schema{type: :string},
-          macros: %Schema{type: :object, additionalProperties: true},
-          source: %Schema{type: :string, nullable: true},
+          brand: %Schema{type: :string, nullable: true},
+          barcode: %Schema{type: :string, nullable: true},
+          source: %Schema{type: :string, enum: ["system", "imported", "custom"], nullable: true},
           category: %Schema{type: :string, nullable: true},
-          tags: %Schema{type: :array, items: %Schema{type: :string}},
+          calories_per_100g: %Schema{type: :number, nullable: true},
+          protein_g_per_100g: %Schema{type: :number, nullable: true},
+          carbs_g_per_100g: %Schema{type: :number, nullable: true},
+          fat_g_per_100g: %Schema{type: :number, nullable: true},
+          fiber_g_per_100g: %Schema{type: :number, nullable: true},
+          allergens: %Schema{type: :array, items: %Schema{type: :string}},
+          dietary_tags: %Schema{type: :array, items: %Schema{type: :string}},
           notes: %Schema{type: :string, nullable: true},
           image_url: %Schema{type: :string, nullable: true},
           serving_sizes: %Schema{type: :array, items: FoodServingSize},
@@ -113,10 +141,8 @@ defmodule EasyWeb.OpenApi.Schemas.Food do
     required: [
       :id,
       :name,
-      :macros,
       :source,
       :category,
-      :tags,
       :notes,
       :image_url,
       :serving_sizes,

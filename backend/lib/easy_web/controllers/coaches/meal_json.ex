@@ -1,4 +1,5 @@
 defmodule EasyWeb.Coaches.MealJSON do
+  alias Easy.MacroCalc
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
 
@@ -16,10 +17,12 @@ defmodule EasyWeb.Coaches.MealJSON do
     %{
       id: meal.id,
       name: meal.name,
-      macros: meal.macros,
+      notes: meal.notes,
+      default_meal_slot: meal.default_meal_slot,
+      nutrition: MacroCalc.meal_totals(meal.meal_items),
       meal_items: meal_items_data(meal.meal_items),
       creator_id: meal.creator_id,
-      plan_id: meal.plan_id,
+      nutrition_plan_id: meal.nutrition_plan_id,
       inserted_at: meal.inserted_at,
       updated_at: meal.updated_at
     }
@@ -40,7 +43,7 @@ defmodule EasyWeb.Coaches.MealJSON do
       position: meal_item.position,
       recipe_id: meal_item.recipe_id,
       food_id: meal_item.food_id,
-      meal_id: meal_item.meal_id,
+      nutrition_meal_id: meal_item.nutrition_meal_id,
       inserted_at: meal_item.inserted_at,
       updated_at: meal_item.updated_at
     }

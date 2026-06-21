@@ -20,7 +20,7 @@ defmodule EasyWeb.Coaches.MealItemJSON do
       position: meal_item.position,
       recipe_id: meal_item.recipe_id,
       food_id: meal_item.food_id,
-      meal_id: meal_item.meal_id,
+      nutrition_meal_id: meal_item.nutrition_meal_id,
       inserted_at: meal_item.inserted_at,
       updated_at: meal_item.updated_at
     }

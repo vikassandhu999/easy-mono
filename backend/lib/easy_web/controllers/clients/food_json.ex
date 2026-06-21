@@ -15,10 +15,17 @@ defmodule EasyWeb.Clients.FoodJSON do
     %{
       id: food.id,
       name: food.name,
-      macros: food.macros,
+      brand: food.brand,
+      barcode: food.barcode,
       source: food.source,
       category: food.category,
-      tags: food.tags || [],
+      calories_per_100g: food.calories_per_100g,
+      protein_g_per_100g: food.protein_g_per_100g,
+      carbs_g_per_100g: food.carbs_g_per_100g,
+      fat_g_per_100g: food.fat_g_per_100g,
+      fiber_g_per_100g: food.fiber_g_per_100g,
+      allergens: food.allergens || [],
+      dietary_tags: food.dietary_tags || [],
       notes: food.notes,
       image_url: food.image_url,
       serving_sizes: serving_sizes_data(food.serving_sizes),
@@ -27,8 +34,16 @@ defmodule EasyWeb.Clients.FoodJSON do
     }
   end
 
-  defp serving_sizes_data(sizes) when is_list(sizes) do
-    Enum.map(sizes, fn s -> %{unit: s.unit, weight_g: s.weight_g, amount: s.amount} end)
+  defp serving_sizes_data(serving_sizes) when is_list(serving_sizes) do
+    for serving_size <- serving_sizes do
+      %{
+        label: serving_size.label,
+        amount: serving_size.amount,
+        unit: serving_size.unit,
+        weight_g: serving_size.weight_g,
+        is_default: serving_size.is_default
+      }
+    end
   end
 
   defp serving_sizes_data(_), do: []

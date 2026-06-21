@@ -117,10 +117,6 @@ defmodule EasyWeb.Router do
     get "/nutrition_plans", NutritionPlanController, :index
     post "/nutrition_plans/:id/assign", NutritionPlanController, :assign
     post "/nutrition_plans/:id/duplicate", NutritionPlanController, :duplicate
-    post "/nutrition_plans/:id/copy-day", NutritionPlanController, :copy_day
-    get "/nutrition_plans/:id/shopping-list", NutritionPlanController, :shopping_list
-    get "/nutrition_plans/:id/macros", NutritionPlanController, :macros
-
     post "/nutrition_plans/:plan_id/meals", MealController, :create
     get "/nutrition_plans/:plan_id/meals", MealController, :index
     get "/meals/:id", MealController, :show

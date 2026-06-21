@@ -14,11 +14,10 @@ defmodule EasyWeb.Coaches.PlanItemJSON do
   defp data(%PlanItem{} = plan_item) do
     %{
       id: plan_item.id,
-      day: plan_item.day,
-      meal_type: plan_item.meal_type,
-      meal_id: plan_item.meal_id,
-      plan_id: plan_item.plan_id,
-      creator_id: plan_item.creator_id,
+      day_of_week: plan_item.day_of_week,
+      meal_slot: plan_item.meal_slot,
+      nutrition_meal_id: plan_item.nutrition_meal_id,
+      nutrition_plan_id: plan_item.nutrition_plan_id,
       inserted_at: plan_item.inserted_at,
       updated_at: plan_item.updated_at
     }

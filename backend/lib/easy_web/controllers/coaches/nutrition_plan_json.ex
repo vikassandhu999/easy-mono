@@ -1,5 +1,6 @@
 defmodule EasyWeb.Coaches.NutritionPlanJSON do
   alias Easy.Clients.Client
+  alias Easy.MacroCalc
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
@@ -15,16 +16,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
     %{data: Enum.map(plans, &summary_data/1), count: count}
   end
 
-  @spec shopping_list(map()) :: map()
-  def shopping_list(%{items: items}) do
-    %{data: items}
-  end
-
-  @spec macros(map()) :: map()
-  def macros(%{macros: macros}) do
-    %{data: macros}
-  end
-
   @spec plan_items(map()) :: map()
   def plan_items(%{plan_items: plan_items}) do
     %{data: Enum.map(plan_items, &plan_item_data/1)}
@@ -36,7 +27,11 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       name: plan.name,
       description: plan.description,
       tags: plan.tags || [],
-      macros_goal: plan.macros_goal,
+      target_calories: plan.target_calories,
+      target_protein_g: plan.target_protein_g,
+      target_carbs_g: plan.target_carbs_g,
+      target_fat_g: plan.target_fat_g,
+      target_fiber_g: plan.target_fiber_g,
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,
@@ -67,10 +62,12 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
     %{
       id: meal.id,
       name: meal.name,
-      macros: meal.macros,
+      notes: meal.notes,
+      default_meal_slot: meal.default_meal_slot,
+      nutrition: MacroCalc.meal_totals(meal.meal_items),
       meal_items: meal_items_data(meal.meal_items),
       creator_id: meal.creator_id,
-      plan_id: meal.plan_id,
+      nutrition_plan_id: meal.nutrition_plan_id,
       inserted_at: meal.inserted_at,
       updated_at: meal.updated_at
     }
@@ -93,7 +90,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       position: meal_item.position,
       recipe_id: meal_item.recipe_id,
       food_id: meal_item.food_id,
-      meal_id: meal_item.meal_id,
+      nutrition_meal_id: meal_item.nutrition_meal_id,
       inserted_at: meal_item.inserted_at,
       updated_at: meal_item.updated_at
     }
@@ -110,11 +107,10 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
   defp plan_item_data(%PlanItem{} = plan_item) do
     %{
       id: plan_item.id,
-      day: plan_item.day,
-      meal_type: plan_item.meal_type,
-      meal_id: plan_item.meal_id,
-      plan_id: plan_item.plan_id,
-      creator_id: plan_item.creator_id,
+      day_of_week: plan_item.day_of_week,
+      meal_slot: plan_item.meal_slot,
+      nutrition_meal_id: plan_item.nutrition_meal_id,
+      nutrition_plan_id: plan_item.nutrition_plan_id,
       inserted_at: plan_item.inserted_at,
       updated_at: plan_item.updated_at
     }

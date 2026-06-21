@@ -11,7 +11,8 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeIngredientRequest do
       food_id: %Schema{type: :string, format: :uuid},
       unit: %Schema{type: :string, nullable: true},
       amount: %Schema{type: :number, nullable: true},
-      weight_g: %Schema{type: :number, nullable: true}
+      weight_g: %Schema{type: :number, nullable: true},
+      position: %Schema{type: :integer, minimum: 0}
     },
     required: [:food_id]
   })
@@ -32,7 +33,8 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeIngredient do
       food: %Schema{allOf: [Food], nullable: true},
       unit: %Schema{type: :string, nullable: true},
       amount: %Schema{type: :number, nullable: true},
-      weight_g: %Schema{type: :number, nullable: true}
+      weight_g: %Schema{type: :number, nullable: true},
+      position: %Schema{type: :integer, minimum: 0}
     },
     required: [:food_id, :food, :unit, :amount, :weight_g]
   })
@@ -55,22 +57,22 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeRequest do
       additionalProperties: false,
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
-        source: %Schema{type: :string, nullable: true},
-        category: %Schema{type: :string, nullable: true},
-        tags: %Schema{type: :array, items: %Schema{type: :string}},
+        description: %Schema{type: :string, nullable: true},
         instructions: %Schema{type: :string, nullable: true},
-        image_url: %Schema{type: :string, nullable: true},
+        servings_count: %Schema{type: :integer, nullable: true},
         cooked_weight_g: %Schema{type: :number, nullable: true},
-        service_size_type: %Schema{type: :string, enum: ["serving_based", "weight_based"]},
+        allergens: %Schema{type: :array, items: %Schema{type: :string}},
+        dietary_tags: %Schema{type: :array, items: %Schema{type: :string}},
         serving_sizes: %Schema{type: :array, items: FoodServingSize},
         recipe_ingredients: %Schema{type: :array, items: RecipeIngredientRequest}
       },
       required: [:name],
       example: %{
         "name" => "Turkey Rice Bowl",
-        "service_size_type" => "serving_based",
+        "description" => "A high-protein meal prep bowl.",
+        "servings_count" => 4,
         "recipe_ingredients" => [
-          %{"food_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c", "weight_g" => 150}
+          %{"food_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c", "weight_g" => 150, "position" => 0}
         ]
       }
     },
@@ -99,14 +101,23 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
         %{
           id: %Schema{type: :string, format: :uuid},
           name: %Schema{type: :string},
-          macros: %Schema{type: :object, additionalProperties: true, nullable: true},
-          source: %Schema{type: :string, nullable: true},
-          category: %Schema{type: :string, nullable: true},
-          tags: %Schema{type: :array, items: %Schema{type: :string}},
+          description: %Schema{type: :string, nullable: true},
           instructions: %Schema{type: :string, nullable: true},
-          image_url: %Schema{type: :string, nullable: true},
+          servings_count: %Schema{type: :integer, nullable: true},
           cooked_weight_g: %Schema{type: :number, nullable: true},
-          service_size_type: %Schema{type: :string, enum: ["serving_based", "weight_based"]},
+          allergens: %Schema{type: :array, items: %Schema{type: :string}},
+          dietary_tags: %Schema{type: :array, items: %Schema{type: :string}},
+          nutrition: %Schema{
+            type: :object,
+            nullable: true,
+            properties: %{
+              calories: %Schema{type: :number, nullable: true},
+              protein_g: %Schema{type: :number, nullable: true},
+              carbs_g: %Schema{type: :number, nullable: true},
+              fat_g: %Schema{type: :number, nullable: true},
+              fiber_g: %Schema{type: :number, nullable: true}
+            }
+          },
           serving_sizes: %Schema{type: :array, items: FoodServingSize},
           recipe_ingredients: %Schema{type: :array, items: RecipeIngredient},
           foods: %Schema{type: :array, items: Food},
@@ -117,14 +128,8 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
     required: [
       :id,
       :name,
-      :macros,
-      :source,
-      :category,
-      :tags,
       :instructions,
-      :image_url,
       :cooked_weight_g,
-      :service_size_type,
       :serving_sizes,
       :recipe_ingredients,
       :inserted_at,
@@ -198,7 +203,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealItem do
           position: %Schema{type: :integer, minimum: 0},
           recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
           food_id: %Schema{type: :string, format: :uuid, nullable: true},
-          meal_id: %Schema{type: :string, format: :uuid, nullable: true}
+          nutrition_meal_id: %Schema{type: :string, format: :uuid, nullable: true}
         },
         Shared.timestamps()
       ),
@@ -218,12 +223,17 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealRequest do
       additionalProperties: false,
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
-        macros: %Schema{type: :object, additionalProperties: true, nullable: true}
+        notes: %Schema{type: :string, nullable: true},
+        default_meal_slot: %Schema{
+          type: :string,
+          enum: ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "evening_snack"],
+          nullable: true
+        }
       },
       required: [:name],
       example: %{
         "name" => "Breakfast",
-        "macros" => %{"calories" => 450, "protein_g" => 35}
+        "default_meal_slot" => "breakfast"
       }
     },
     struct?: false
@@ -245,14 +255,30 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMeal do
         %{
           id: %Schema{type: :string, format: :uuid},
           name: %Schema{type: :string},
-          macros: %Schema{type: :object, additionalProperties: true, nullable: true},
+          notes: %Schema{type: :string, nullable: true},
+          default_meal_slot: %Schema{
+            type: :string,
+            enum: ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "evening_snack"],
+            nullable: true
+          },
+          nutrition: %Schema{
+            type: :object,
+            nullable: true,
+            properties: %{
+              calories: %Schema{type: :number, nullable: true},
+              protein_g: %Schema{type: :number, nullable: true},
+              carbs_g: %Schema{type: :number, nullable: true},
+              fat_g: %Schema{type: :number, nullable: true},
+              fiber_g: %Schema{type: :number, nullable: true}
+            }
+          },
           meal_items: %Schema{type: :array, items: NutritionMealItem},
           creator_id: %Schema{type: :string, format: :uuid, nullable: true},
-          plan_id: %Schema{type: :string, format: :uuid, nullable: true}
+          nutrition_plan_id: %Schema{type: :string, format: :uuid, nullable: true}
         },
         Shared.timestamps()
       ),
-    required: [:id, :name, :macros, :meal_items, :inserted_at, :updated_at]
+    required: [:id, :name, :meal_items, :inserted_at, :updated_at]
   })
 end
 
@@ -268,21 +294,21 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItemRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        day: %Schema{
+        day_of_week: %Schema{
           type: :string,
           enum: Shared.days_of_week()
         },
-        meal_type: %Schema{
+        meal_slot: %Schema{
           type: :string,
           enum: ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "evening_snack"]
         },
-        meal_id: %Schema{type: :string, format: :uuid}
+        nutrition_meal_id: %Schema{type: :string, format: :uuid}
       },
-      required: [:day, :meal_type, :meal_id],
+      required: [:day_of_week, :meal_slot, :nutrition_meal_id],
       example: %{
-        "day" => "monday",
-        "meal_type" => "breakfast",
-        "meal_id" => "1b8248bc-4499-4a0c-986f-621fc95cbd0e"
+        "day_of_week" => "monday",
+        "meal_slot" => "breakfast",
+        "nutrition_meal_id" => "1b8248bc-4499-4a0c-986f-621fc95cbd0e"
       }
     },
     struct?: false
@@ -301,11 +327,11 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItemUpdateRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        day: %Schema{
+        day_of_week: %Schema{
           type: :string,
           enum: Shared.days_of_week()
         },
-        meal_type: %Schema{
+        meal_slot: %Schema{
           type: :string,
           enum: ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "evening_snack"]
         }
@@ -329,15 +355,14 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItem do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
-          day: %Schema{type: :string},
-          meal_type: %Schema{type: :string},
-          meal_id: %Schema{type: :string, format: :uuid},
-          plan_id: %Schema{type: :string, format: :uuid, nullable: true},
-          creator_id: %Schema{type: :string, format: :uuid, nullable: true}
+          day_of_week: %Schema{type: :string},
+          meal_slot: %Schema{type: :string},
+          nutrition_meal_id: %Schema{type: :string, format: :uuid},
+          nutrition_plan_id: %Schema{type: :string, format: :uuid, nullable: true}
         },
         Shared.timestamps()
       ),
-    required: [:id, :day, :meal_type, :meal_id, :inserted_at, :updated_at]
+    required: [:id, :day_of_week, :meal_slot, :nutrition_meal_id, :inserted_at, :updated_at]
   })
 end
 
@@ -355,7 +380,11 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanRequest do
         name: %Schema{type: :string, maxLength: 255},
         description: %Schema{type: :string, nullable: true},
         tags: %Schema{type: :array, items: %Schema{type: :string}},
-        macros_goal: %Schema{type: :object, additionalProperties: true, nullable: true},
+        target_calories: %Schema{type: :number, nullable: true},
+        target_protein_g: %Schema{type: :number, nullable: true},
+        target_carbs_g: %Schema{type: :number, nullable: true},
+        target_fat_g: %Schema{type: :number, nullable: true},
+        target_fiber_g: %Schema{type: :number, nullable: true},
         status: %Schema{type: :string, enum: ["active", "archived"]},
         start_date: %Schema{type: :string, format: :date, nullable: true},
         end_date: %Schema{type: :string, format: :date, nullable: true}
@@ -363,7 +392,8 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanRequest do
       required: [:name],
       example: %{
         "name" => "Fat Loss Plan",
-        "macros_goal" => %{"calories" => 2200, "protein_g" => 180}
+        "target_calories" => 2200,
+        "target_protein_g" => 180
       }
     },
     struct?: false
@@ -392,28 +422,6 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanAssignRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionPlanCopyDayRequest do
-  require OpenApiSpex
-
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(
-    %{
-      title: "NutritionPlanCopyDayRequest",
-      type: :object,
-      additionalProperties: false,
-      properties: %{
-        source_day: %Schema{type: :string},
-        target_day: %Schema{type: :string},
-        clear_existing: %Schema{type: :boolean}
-      },
-      required: [:source_day, :target_day],
-      example: %{"source_day" => "monday", "target_day" => "tuesday", "clear_existing" => true}
-    },
-    struct?: false
-  )
-end
-
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
   require OpenApiSpex
 
@@ -436,7 +444,11 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
           name: %Schema{type: :string},
           description: %Schema{type: :string, nullable: true},
           tags: %Schema{type: :array, items: %Schema{type: :string}},
-          macros_goal: %Schema{type: :object, additionalProperties: true, nullable: true},
+          target_calories: %Schema{type: :number, nullable: true},
+          target_protein_g: %Schema{type: :number, nullable: true},
+          target_carbs_g: %Schema{type: :number, nullable: true},
+          target_fat_g: %Schema{type: :number, nullable: true},
+          target_fiber_g: %Schema{type: :number, nullable: true},
           status: %Schema{type: :string, enum: ["active", "archived"]},
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
@@ -454,7 +466,6 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
       :name,
       :description,
       :tags,
-      :macros_goal,
       :status,
       :start_date,
       :end_date,

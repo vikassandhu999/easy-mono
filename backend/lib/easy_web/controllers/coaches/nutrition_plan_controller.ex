@@ -8,14 +8,10 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    NutritionArrayResponse,
-    NutritionMapResponse,
     NutritionPlanAssignRequest,
-    NutritionPlanCopyDayRequest,
     NutritionPlanListResponse,
     NutritionPlanRequest,
-    NutritionPlanResponse,
-    NutritionPlanItemListResponse
+    NutritionPlanResponse
   }
 
   tags ["coach nutrition plans"]
@@ -118,44 +114,6 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
-  operation :copy_day,
-    summary: "Copy nutrition plan day",
-    description: "Copies scheduled meals from one day to another day.",
-    operation_id: "copyNutritionPlanDay",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
-    request_body: {"Nutrition plan copy day request", "application/json", NutritionPlanCopyDayRequest, required: true},
-    responses: [
-      ok: {"Copied plan items", "application/json", NutritionPlanItemListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :shopping_list,
-    summary: "Get nutrition plan shopping list",
-    description: "Builds the shopping list for a nutrition plan.",
-    operation_id: "getNutritionPlanShoppingList",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
-    responses: [
-      ok: {"Shopping list", "application/json", NutritionArrayResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
-  operation :macros,
-    summary: "Get nutrition plan macros",
-    description: "Calculates macro totals for a nutrition plan.",
-    operation_id: "getNutritionPlanMacros",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
-    responses: [
-      ok: {"Macros", "application/json", NutritionMapResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     claims = conn.assigns.claims
@@ -238,42 +196,6 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
-    end
-  end
-
-  @spec shopping_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def shopping_list(conn, %{"id" => plan_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, items} <- Plans.shopping_list(business_id, plan_id) do
-      render(conn, :shopping_list, items: items)
-    end
-  end
-
-  @spec macros(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def macros(conn, %{"id" => plan_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, macros} <- Plans.macros(business_id, plan_id) do
-      render(conn, :macros, macros: macros)
-    end
-  end
-
-  @spec copy_day(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def copy_day(conn, %{"id" => plan_id} = params) do
-    claims = conn.assigns.claims
-    clear_existing = parse_boolean(params, "clear_existing") != false
-
-    with {:ok, items} <-
-           Plans.copy_day_for_coach_user(
-             claims.business_id,
-             claims.user_id,
-             plan_id,
-             Map.get(params, "source_day"),
-             Map.get(params, "target_day"),
-             clear_existing
-           ) do
-      render(conn, :plan_items, plan_items: items)
     end
   end
 end

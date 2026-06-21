@@ -1,4 +1,5 @@
 defmodule EasyWeb.Coaches.RecipeJSON do
+  alias Easy.MacroCalc
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
@@ -17,14 +18,13 @@ defmodule EasyWeb.Coaches.RecipeJSON do
     %{
       id: recipe.id,
       name: recipe.name,
-      macros: recipe.macros,
-      source: recipe.source,
-      category: recipe.category,
-      tags: recipe.tags || [],
+      description: recipe.description,
       instructions: recipe.instructions,
-      image_url: recipe.image_url,
+      servings_count: recipe.servings_count,
       cooked_weight_g: recipe.cooked_weight_g,
-      service_size_type: recipe.service_size_type,
+      allergens: recipe.allergens || [],
+      dietary_tags: recipe.dietary_tags || [],
+      nutrition: MacroCalc.recipe_totals(recipe),
       serving_sizes: serving_sizes_data(recipe.serving_sizes),
       recipe_ingredients: recipe_ingredients_data(recipe.recipe_ingredients),
       foods: foods_data(recipe.foods),
@@ -37,9 +37,11 @@ defmodule EasyWeb.Coaches.RecipeJSON do
   defp serving_sizes_data(serving_sizes) when is_list(serving_sizes) do
     for serving_size <- serving_sizes do
       %{
+        label: serving_size.label,
+        amount: serving_size.amount,
         unit: serving_size.unit,
         weight_g: serving_size.weight_g,
-        amount: serving_size.amount
+        is_default: serving_size.is_default
       }
     end
   end
@@ -60,7 +62,8 @@ defmodule EasyWeb.Coaches.RecipeJSON do
       food: food_data(recipe_ingredient.food),
       unit: recipe_ingredient.unit,
       amount: recipe_ingredient.amount,
-      weight_g: recipe_ingredient.weight_g
+      weight_g: recipe_ingredient.weight_g,
+      position: recipe_ingredient.position
     }
   end
 
@@ -76,10 +79,17 @@ defmodule EasyWeb.Coaches.RecipeJSON do
     %{
       id: food.id,
       name: food.name,
-      macros: food.macros,
+      brand: food.brand,
+      barcode: food.barcode,
       source: food.source,
       category: food.category,
-      tags: food.tags || [],
+      calories_per_100g: food.calories_per_100g,
+      protein_g_per_100g: food.protein_g_per_100g,
+      carbs_g_per_100g: food.carbs_g_per_100g,
+      fat_g_per_100g: food.fat_g_per_100g,
+      fiber_g_per_100g: food.fiber_g_per_100g,
+      allergens: food.allergens || [],
+      dietary_tags: food.dietary_tags || [],
       notes: food.notes,
       image_url: food.image_url,
       serving_sizes: serving_sizes_data(food.serving_sizes),

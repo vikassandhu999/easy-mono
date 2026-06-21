@@ -72,20 +72,6 @@ defmodule Easy.Meals do
     end
   end
 
-  @spec list_meal_items(String.t(), String.t()) ::
-          {:ok, [MealItem.t()]} | {:error, :not_found}
-  def list_meal_items(business_id, meal_id) do
-    with {:ok, meal} <- get_meal(business_id, meal_id) do
-      meal_items =
-        business_id
-        |> meal_items_with_food_and_recipe()
-        |> MealItem.for_meal(meal.id)
-        |> Repo.all()
-
-      {:ok, meal_items}
-    end
-  end
-
   @spec create_meal_item(String.t(), String.t(), map()) ::
           {:ok, MealItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_meal_item(business_id, meal_id, attrs) do

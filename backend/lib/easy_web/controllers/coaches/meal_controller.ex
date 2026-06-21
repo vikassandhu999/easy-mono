@@ -12,6 +12,8 @@ defmodule EasyWeb.Coaches.MealController do
     NutritionMealResponse
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+
   tags ["coach meals"]
 
   operation :create,
@@ -83,11 +85,12 @@ defmodule EasyWeb.Coaches.MealController do
     ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, %{"plan_id" => plan_id} = params) do
+  def create(conn, _params) do
     claims = conn.assigns.claims
+    plan_id = conn.path_params["plan_id"]
 
     with {:ok, meal} <-
-           Meals.create_meal_for_coach_user(claims.business_id, claims.user_id, plan_id, params) do
+           Meals.create_meal_for_coach_user(claims.business_id, claims.user_id, plan_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, meal: meal)
@@ -104,8 +107,9 @@ defmodule EasyWeb.Coaches.MealController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => meal_id}) do
+  def update(conn, _params) do
     %{business_id: business_id} = conn.assigns.claims
+    meal_id = conn.path_params["id"]
 
     with {:ok, updated_meal} <- Meals.update_meal(business_id, meal_id, conn.body_params) do
       render(conn, :show, meal: updated_meal)

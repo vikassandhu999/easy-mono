@@ -3,7 +3,11 @@ defmodule EasyWeb.Coaches.MealControllerTest do
 
   setup do
     coach = insert(:coach)
-    conn = build_conn() |> authenticate_coach(coach)
+
+    conn =
+      build_conn()
+      |> put_req_header("content-type", "application/json")
+      |> authenticate_coach(coach)
 
     %{conn: conn, coach: coach, business: coach.business}
   end
@@ -42,12 +46,12 @@ defmodule EasyWeb.Coaches.MealControllerTest do
     end
   end
 
-  describe "GET /v1/coach/meals/:id" do
+  describe "GET /v1/coach/nutrition-meals/:id" do
     test "returns a meal by id", %{conn: conn, coach: coach, business: business} do
       plan = insert(:plan, creator: coach, business: business)
       meal = insert(:meal, creator: coach, plan: plan, business: business)
 
-      conn = get(conn, "/v1/coach/meals/#{meal.id}")
+      conn = get(conn, "/v1/coach/nutrition-meals/#{meal.id}")
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["id"] == meal.id
@@ -58,12 +62,12 @@ defmodule EasyWeb.Coaches.MealControllerTest do
       other_plan = insert(:plan, creator: other_coach, business: other_coach.business)
       meal = insert(:meal, creator: other_coach, plan: other_plan, business: other_coach.business)
 
-      conn = get(conn, "/v1/coach/meals/#{meal.id}")
+      conn = get(conn, "/v1/coach/nutrition-meals/#{meal.id}")
       assert json_response(conn, 404)
     end
   end
 
-  describe "PATCH /v1/coach/meals/:id" do
+  describe "PATCH /v1/coach/nutrition-meals/:id" do
     test "updates a meal", %{conn: conn, coach: coach, business: business} do
       plan = insert(:plan, creator: coach, business: business)
       meal = insert(:meal, creator: coach, plan: plan, business: business)
@@ -78,7 +82,7 @@ defmodule EasyWeb.Coaches.MealControllerTest do
         weight_g: 150.0
       )
 
-      conn = patch(conn, "/v1/coach/meals/#{meal.id}", %{"name" => "Updated Meal"})
+      conn = patch(conn, "/v1/coach/nutrition-meals/#{meal.id}", %{"name" => "Updated Meal"})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["name"] == "Updated Meal"
@@ -89,12 +93,12 @@ defmodule EasyWeb.Coaches.MealControllerTest do
     end
   end
 
-  describe "DELETE /v1/coach/meals/:id" do
+  describe "DELETE /v1/coach/nutrition-meals/:id" do
     test "deletes a meal", %{conn: conn, coach: coach, business: business} do
       plan = insert(:plan, creator: coach, business: business)
       meal = insert(:meal, creator: coach, plan: plan, business: business)
 
-      conn = delete(conn, "/v1/coach/meals/#{meal.id}")
+      conn = delete(conn, "/v1/coach/nutrition-meals/#{meal.id}")
       assert response(conn, 204)
     end
   end

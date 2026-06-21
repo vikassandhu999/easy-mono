@@ -95,7 +95,7 @@ defmodule EasyWeb.Router do
 
     # Client-scoped plan lists
     get "/clients/:client_id/training_plans", ClientPlanController, :training_plans
-    get "/clients/:client_id/nutrition_plans", ClientPlanController, :nutrition_plans
+    get "/clients/:client_id/nutrition-plans", ClientPlanController, :nutrition_plans
     get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
 
     post "/foods", FoodController, :create
@@ -110,23 +110,20 @@ defmodule EasyWeb.Router do
     delete "/recipes/:id", RecipeController, :delete
     get "/recipes", RecipeController, :index
 
-    post "/nutrition_plans", NutritionPlanController, :create
-    get "/nutrition_plans/:id", NutritionPlanController, :show
-    patch "/nutrition_plans/:id", NutritionPlanController, :update
-    delete "/nutrition_plans/:id", NutritionPlanController, :delete
-    get "/nutrition_plans", NutritionPlanController, :index
-    post "/nutrition_plans/:id/assign", NutritionPlanController, :assign
-    post "/nutrition_plans/:id/duplicate", NutritionPlanController, :duplicate
-    post "/nutrition_plans/:plan_id/meals", MealController, :create
-    get "/nutrition_plans/:plan_id/meals", MealController, :index
+    get "/nutrition-plans", NutritionPlanController, :index
+    post "/nutrition-plans", NutritionPlanController, :create
+    get "/nutrition-plans/:id", NutritionPlanController, :show
+    patch "/nutrition-plans/:id", NutritionPlanController, :update
+    delete "/nutrition-plans/:id", NutritionPlanController, :delete
+    post "/nutrition-plans/:id/assign", NutritionPlanController, :assign
+    post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
+    get "/nutrition-plans/:plan_id/meals", MealController, :index
+    post "/nutrition-plans/:plan_id/meals", MealController, :create
+    get "/nutrition-plans/:plan_id/schedule", ScheduleController, :show
+    put "/nutrition-plans/:plan_id/schedule/:day", ScheduleController, :update
     get "/meals/:id", MealController, :show
     patch "/meals/:id", MealController, :update
     delete "/meals/:id", MealController, :delete
-
-    post "/nutrition_plans/:plan_id/plan_items", PlanItemController, :create
-    get "/nutrition_plans/:plan_id/plan_items", PlanItemController, :index
-    patch "/plan_items/:id", PlanItemController, :update
-    delete "/plan_items/:id", PlanItemController, :delete
 
     post "/meals/:meal_id/items", MealItemController, :create
     get "/meals/:meal_id/items", MealItemController, :index

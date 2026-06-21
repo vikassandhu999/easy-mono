@@ -16,11 +16,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
     %{data: Enum.map(plans, &summary_data/1), count: count}
   end
 
-  @spec plan_items(map()) :: map()
-  def plan_items(%{plan_items: plan_items}) do
-    %{data: Enum.map(plan_items, &plan_item_data/1)}
-  end
-
   defp summary_data(%Plan{} = plan) do
     %{
       id: plan.id,
@@ -48,7 +43,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
     summary_data(plan)
     |> Map.merge(%{
       meals: meals_data(plan.meals),
-      plan_items: plan_items_data(plan.plan_items)
+      schedule_entries: schedule_entries_data(plan.plan_items)
     })
   end
 
@@ -98,25 +93,25 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
 
   defp meal_item_data(_), do: nil
 
-  defp plan_items_data(plan_items) when is_list(plan_items) do
-    Enum.map(plan_items, &plan_item_data/1)
+  defp schedule_entries_data(entries) when is_list(entries) do
+    Enum.map(entries, &schedule_entry_data/1)
   end
 
-  defp plan_items_data(_), do: []
+  defp schedule_entries_data(_), do: []
 
-  defp plan_item_data(%ScheduleEntry{} = plan_item) do
+  defp schedule_entry_data(%ScheduleEntry{} = entry) do
     %{
-      id: plan_item.id,
-      day_of_week: plan_item.day_of_week,
-      meal_slot: plan_item.meal_slot,
-      nutrition_meal_id: plan_item.nutrition_meal_id,
-      nutrition_plan_id: plan_item.nutrition_plan_id,
-      inserted_at: plan_item.inserted_at,
-      updated_at: plan_item.updated_at
+      id: entry.id,
+      day_of_week: entry.day_of_week,
+      meal_slot: entry.meal_slot,
+      nutrition_meal_id: entry.nutrition_meal_id,
+      nutrition_plan_id: entry.nutrition_plan_id,
+      inserted_at: entry.inserted_at,
+      updated_at: entry.updated_at
     }
   end
 
-  defp plan_item_data(_), do: nil
+  defp schedule_entry_data(_), do: nil
 
   defp client_data(%Client{} = client) do
     %{

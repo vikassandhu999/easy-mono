@@ -100,7 +100,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     summary_data(plan)
     |> Map.merge(%{
       meals: meals_data(plan.meals),
-      plan_items: plan_items_data(plan.plan_items)
+      schedule_entries: schedule_entries_data(plan.plan_items)
     })
   end
 
@@ -179,10 +179,10 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
 
   defp serving_sizes_data(_), do: []
 
-  defp plan_items_data(items) when is_list(items), do: Enum.map(items, &plan_item_data/1)
-  defp plan_items_data(_), do: []
+  defp schedule_entries_data(items) when is_list(items), do: Enum.map(items, &schedule_entry_data/1)
+  defp schedule_entries_data(_), do: []
 
-  defp plan_item_data(%ScheduleEntry{} = item) do
+  defp schedule_entry_data(%ScheduleEntry{} = item) do
     %{
       id: item.id,
       day_of_week: item.day_of_week,

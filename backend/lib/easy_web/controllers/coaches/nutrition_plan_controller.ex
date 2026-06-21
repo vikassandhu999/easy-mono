@@ -14,6 +14,8 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     NutritionPlanResponse
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update, :assign]
+
   tags ["coach nutrition plans"]
 
   operation :create,
@@ -115,14 +117,45 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, _params) do
     claims = conn.assigns.claims
 
     with {:ok, plan} <-
-           Plans.create_plan_for_coach_user(claims.business_id, claims.user_id, params) do
+           Plans.create_plan_for_coach_user(claims.business_id, claims.user_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: plan)
+    end
+  end
+
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update(conn, _params) do
+    %{business_id: business_id} = conn.assigns.claims
+    plan_id = conn.path_params["id"]
+
+    with {:ok, updated_plan} <- Plans.update_plan(business_id, plan_id, conn.body_params) do
+      render(conn, :show, plan: updated_plan)
+    end
+  end
+
+  @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def assign(conn, _params) do
+    claims = conn.assigns.claims
+    plan_id = conn.path_params["id"]
+    body = conn.body_params
+    client_id = body[:client_id] || body["client_id"]
+
+    with {:ok, new_plan} <-
+           Plans.assign_to_client_for_coach_user(
+             claims.business_id,
+             claims.user_id,
+             plan_id,
+             client_id,
+             body
+           ) do
+      conn
+      |> put_status(:created)
+      |> render(:show, plan: new_plan)
     end
   end
 
@@ -132,15 +165,6 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
     with {:ok, plan} <- Plans.get_plan_full(business_id, plan_id) do
       render(conn, :show, plan: plan)
-    end
-  end
-
-  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => plan_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, updated_plan} <- Plans.update_plan(business_id, plan_id, conn.body_params) do
-      render(conn, :show, plan: updated_plan)
     end
   end
 
@@ -166,24 +190,6 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, plans: plans)
-    end
-  end
-
-  @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def assign(conn, %{"id" => plan_id, "client_id" => client_id} = params) do
-    claims = conn.assigns.claims
-
-    with {:ok, new_plan} <-
-           Plans.assign_to_client_for_coach_user(
-             claims.business_id,
-             claims.user_id,
-             plan_id,
-             client_id,
-             params
-           ) do
-      conn
-      |> put_status(:created)
-      |> render(:show, plan: new_plan)
     end
   end
 

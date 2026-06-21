@@ -24,6 +24,10 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Easy.Error.unprocessable(changeset)})
   end
 
+  def call(conn, {:error, :invalid_day}) do
+    call(conn, {:error, Easy.Error.unprocessable(%{fields: %{day: ["is invalid"]}})})
+  end
+
   def call(conn, {:error, reason}) do
     Logger.error("Unhandled error in FallbackController: #{inspect(reason)}")
 

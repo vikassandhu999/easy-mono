@@ -8,7 +8,7 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
     "lib/easy_web/controllers/clients/recipe_controller.ex",
     "lib/easy_web/controllers/coaches/meal_controller.ex",
     "lib/easy_web/controllers/coaches/meal_item_controller.ex",
-    "lib/easy_web/controllers/coaches/plan_item_controller.ex",
+    "lib/easy_web/controllers/coaches/schedule_controller.ex",
     "lib/easy_web/controllers/coaches/nutrition_plan_controller.ex",
     "lib/easy_web/controllers/clients/nutrition_plan_controller.ex",
     "lib/easy_web/controllers/coaches/meal_log_controller.ex",

@@ -8,12 +8,12 @@ defmodule EasyWeb.Coaches.MealControllerTest do
     %{conn: conn, coach: coach, business: coach.business}
   end
 
-  describe "POST /v1/coach/nutrition_plans/:plan_id/meals" do
+  describe "POST /v1/coach/nutrition-plans/:plan_id/meals" do
     test "creates a meal for a plan", %{conn: conn, coach: coach, business: business} do
       plan = insert(:plan, creator: coach, business: business)
       attrs = build(:meal_attrs)
 
-      conn = post(conn, "/v1/coach/nutrition_plans/#{plan.id}/meals", attrs)
+      conn = post(conn, "/v1/coach/nutrition-plans/#{plan.id}/meals", attrs)
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["name"] == attrs["name"]
@@ -25,17 +25,17 @@ defmodule EasyWeb.Coaches.MealControllerTest do
       other_coach = insert(:coach)
       other_plan = insert(:plan, creator: other_coach, business: other_coach.business)
 
-      conn = post(conn, "/v1/coach/nutrition_plans/#{other_plan.id}/meals", build(:meal_attrs))
+      conn = post(conn, "/v1/coach/nutrition-plans/#{other_plan.id}/meals", build(:meal_attrs))
       assert json_response(conn, 404)
     end
   end
 
-  describe "GET /v1/coach/nutrition_plans/:plan_id/meals" do
+  describe "GET /v1/coach/nutrition-plans/:plan_id/meals" do
     test "lists meals for a plan", %{conn: conn, coach: coach, business: business} do
       plan = insert(:plan, creator: coach, business: business)
       insert(:meal, plan: plan, creator: coach, business: business)
 
-      conn = get(conn, "/v1/coach/nutrition_plans/#{plan.id}/meals")
+      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}/meals")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
 
       assert length(data) == 1

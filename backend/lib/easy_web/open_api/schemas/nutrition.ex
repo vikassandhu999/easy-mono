@@ -488,28 +488,6 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemResponse do
   OpenApiSpex.schema(Shared.data_response(NutritionMealItem, "NutritionMealItemResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemListResponse do
-  require OpenApiSpex
-
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{NutritionMealItem, Shared}
-
-  OpenApiSpex.schema(
-    Shared.data_response(
-      %Schema{type: :array, items: NutritionMealItem},
-      "NutritionMealItemListResponse"
-    )
-  )
-end
-
-defmodule EasyWeb.OpenApi.Schemas.NutritionScheduleEntryResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{NutritionScheduleEntry, Shared}
-
-  OpenApiSpex.schema(Shared.data_response(NutritionScheduleEntry, "NutritionScheduleEntryResponse"))
-end
-
 defmodule EasyWeb.OpenApi.Schemas.NutritionScheduleSlot do
   require OpenApiSpex
   alias OpenApiSpex.Schema
@@ -589,18 +567,4 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMapResponse do
     properties: %{data: %Schema{type: :object, additionalProperties: true}},
     required: [:data]
   })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.NutritionArrayResponse do
-  require OpenApiSpex
-
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Shared
-
-  OpenApiSpex.schema(
-    Shared.data_response(
-      %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
-      "NutritionArrayResponse"
-    )
-  )
 end

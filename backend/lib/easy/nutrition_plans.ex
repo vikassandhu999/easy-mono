@@ -175,17 +175,25 @@ defmodule Easy.NutritionPlans do
         |> ScheduleEntry.for_day(day)
         |> Repo.delete_all()
 
-        Enum.reduce(slots, %{}, fn {slot, slot_value}, acc ->
+        Enum.each(slots, fn {slot, slot_value} ->
           meal_id = slot_value["meal_id"] || slot_value[:meal_id]
 
           with {:ok, :valid} <- ensure_meal_for_plan(plan.id, business_id, meal_id),
                attrs = %{"day_of_week" => day, "meal_slot" => to_string(slot), "nutrition_meal_id" => meal_id},
-               {:ok, entry} <- plan.id |> ScheduleEntry.insert_changeset(business_id, attrs) |> Repo.insert() do
-            Map.put(acc, to_string(slot), entry)
+               {:ok, _entry} <- plan.id |> ScheduleEntry.insert_changeset(business_id, attrs) |> Repo.insert() do
+            :ok
           else
             {:error, reason} -> Repo.rollback(reason)
           end
         end)
+
+        ScheduleEntry
+        |> ScheduleEntry.for_business(business_id)
+        |> ScheduleEntry.for_plan(plan.id)
+        |> ScheduleEntry.for_day(day)
+        |> with_meal(business_id)
+        |> Repo.all()
+        |> Map.new(fn entry -> {entry.meal_slot, entry} end)
       end)
     end
   end

@@ -26,6 +26,7 @@ defmodule EasyWeb.Coaches.ScheduleControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["breakfast"]["meal_id"] == b.id
       assert data["breakfast"]["meal_slot"] == "breakfast"
+      assert data["breakfast"]["meal_name"] == b.name
       assert data["lunch"]["meal_id"] == l.id
     end
 

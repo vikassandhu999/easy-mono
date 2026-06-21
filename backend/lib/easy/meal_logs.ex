@@ -57,52 +57,6 @@ defmodule Easy.MealLogs do
     end
   end
 
-  @spec get_client_meal_log(String.t(), String.t(), String.t()) ::
-          {:ok, MealLog.t()} | {:error, :not_found}
-  def get_client_meal_log(business_id, client_id, meal_log_id) do
-    MealLog
-    |> MealLog.for_client(business_id, client_id)
-    |> MealLog.with_entries()
-    |> Repo.get(meal_log_id)
-    |> ok_or_not_found()
-  end
-
-  @spec get_client_meal_log_for_user(String.t(), String.t(), String.t()) ::
-          {:ok, MealLog.t()} | {:error, :not_found}
-  def get_client_meal_log_for_user(business_id, user_id, meal_log_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_client_meal_log(business_id, client.id, meal_log_id)
-    end
-  end
-
-  defp daily_summaries(meal_logs) do
-    meal_logs
-    |> Enum.group_by(& &1.date)
-    |> Enum.map(fn {date, day_logs} ->
-      all_entries = Enum.flat_map(day_logs, & &1.food_log_entries)
-
-      %{
-        date: date,
-        meals_logged: length(day_logs),
-        total_entries: length(all_entries),
-        planned_calories: sum_non_nil(day_logs, :planned_calories),
-        logged_calories: sum_non_nil(day_logs, :logged_calories),
-        replacements: Enum.count(all_entries, &(&1.source == :replacement)),
-        unplanned_count: Enum.count(all_entries, &(&1.source == :unplanned))
-      }
-    end)
-    |> Enum.sort_by(& &1.date, Date)
-  end
-
-  @spec summarize_client_meal_logs(String.t(), String.t(), Date.t() | nil, Date.t() | nil) ::
-          {:ok, [map()]} | {:error, :not_found}
-  def summarize_client_meal_logs(business_id, client_id, from_date, to_date) do
-    with {:ok, meal_logs} <-
-           list_meal_logs_for_client(business_id, client_id, nil, from_date, to_date) do
-      {:ok, daily_summaries(meal_logs)}
-    end
-  end
-
   @spec get_business_food_log_entry(String.t(), String.t()) ::
           {:ok, FoodLogEntry.t()} | {:error, :not_found}
   def get_business_food_log_entry(business_id, entry_id) do
@@ -199,14 +153,6 @@ defmodule Easy.MealLogs do
           Repo.rollback(reason)
       end
     end)
-  end
-
-  @spec delete_entry_for_business(String.t(), String.t()) ::
-          {:ok, FoodLogEntry.t()} | {:error, any()}
-  def delete_entry_for_business(business_id, entry_id) do
-    with {:ok, entry} <- get_business_food_log_entry(business_id, entry_id) do
-      delete_entry(entry, business_id)
-    end
   end
 
   @spec delete_entry_for_user(String.t(), String.t(), String.t()) ::
@@ -688,16 +634,6 @@ defmodule Easy.MealLogs do
     items
     |> Enum.reduce(0.0, &((Map.get(&1, field) || 0.0) + &2))
     |> Float.round(1)
-  end
-
-  defp sum_non_nil(structs, field) do
-    structs
-    |> Enum.map(&Map.get(&1, field))
-    |> Enum.reject(&is_nil/1)
-    |> case do
-      [] -> nil
-      vals -> Enum.sum(vals) |> Float.round(1)
-    end
   end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}

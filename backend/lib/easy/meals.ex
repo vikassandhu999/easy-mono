@@ -43,20 +43,24 @@ defmodule Easy.Meals do
           {:ok, Meal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_meal_for_coach_user(business_id, user_id, plan_id, attrs) do
     with {:ok, coach} <- get_coach_for_user(business_id, user_id),
-         {:ok, plan} <- get_plan(business_id, plan_id) do
-      plan.id
-      |> Meal.insert_changeset(business_id, coach.id, attrs)
-      |> Repo.insert()
+         {:ok, plan} <- get_plan(business_id, plan_id),
+         {:ok, meal} <-
+           plan.id
+           |> Meal.insert_changeset(business_id, coach.id, attrs)
+           |> Repo.insert() do
+      get_meal_with_items(business_id, meal.id)
     end
   end
 
   @spec update_meal(String.t(), String.t(), map()) ::
           {:ok, Meal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_meal(business_id, meal_id, attrs) do
-    with {:ok, meal} <- get_meal(business_id, meal_id) do
-      meal
-      |> Meal.update_changeset(attrs)
-      |> Repo.update()
+    with {:ok, meal} <- get_meal(business_id, meal_id),
+         {:ok, updated} <-
+           meal
+           |> Meal.update_changeset(attrs)
+           |> Repo.update() do
+      get_meal_with_items(business_id, updated.id)
     end
   end
 

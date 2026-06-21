@@ -14,7 +14,8 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         calories_per_100g: 389.0,
         protein_g_per_100g: 16.9,
         carbs_g_per_100g: 66.3,
-        fat_g_per_100g: 6.9
+        fat_g_per_100g: 6.9,
+        fiber_g_per_100g: 10.6
       )
 
     %{conn: conn, coach: coach, client: client, business: coach.business, food: food}
@@ -40,6 +41,8 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       assert data["food_id"] == ctx.food.id
       assert data["calories"] == 389.0
       assert data["protein_g"] == 16.9
+      # 10.6 fiber/100g x 100g / 100 = 10.6
+      assert data["fiber_g"] == 10.6
       assert data["source"] == "planned"
       assert data["planned_item_index"] == 0
       assert data["nutrition_meal_log_id"] != nil

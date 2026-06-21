@@ -7,8 +7,28 @@ defmodule EasyWeb.OpenApi.Schemas.Shared do
 
   @days_of_week ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
+  @allergens ["dairy", "egg", "fish", "shellfish", "tree_nuts", "peanuts", "wheat", "soy", "sesame"]
+
+  @dietary_tags [
+    "vegan",
+    "vegetarian",
+    "halal",
+    "kosher",
+    "gluten_free",
+    "dairy_free",
+    "low_fodmap",
+    "keto",
+    "high_protein"
+  ]
+
   @doc "Day-of-week enum values, in order."
   def days_of_week, do: @days_of_week
+
+  @doc "Allergen enum values, mirroring `Easy.Nutrition.Food`/`Recipe`."
+  def allergens, do: @allergens
+
+  @doc "Dietary-tag enum values, mirroring `Easy.Nutrition.Food`/`Recipe`."
+  def dietary_tags, do: @dietary_tags
 
   @doc ~S(A `{id, name, description}` reference object. Pass `example` to attach one.)
   def named_ref(title, example \\ nil) do

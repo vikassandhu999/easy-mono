@@ -31,7 +31,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     end
 
     test "creates a recipe with ingredients", %{conn: conn, coach: coach, business: business} do
-      food = insert(:food, creator: coach, business: business)
+      food = insert(:food, creator: coach, business: business, calories_per_100g: 100.0)
 
       attrs =
         build(:recipe_attrs)
@@ -47,6 +47,10 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       assert ingredient["amount"] == 2.0
       assert ingredient["unit"] == "cup"
       assert ingredient["weight_g"] == 480.0
+
+      # Derived nutrition must be correct on create, not silently zero.
+      # 100.0 cal/100g x 480g / 100 = 480.0
+      assert data["nutrition"]["calories"] == 480.0
     end
 
     test "returns validation error when name is missing", %{conn: conn} do
@@ -106,13 +110,19 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
 
   describe "PATCH /v1/coach/recipes/:id" do
     test "updates a recipe with valid params", %{conn: conn, coach: coach, business: business} do
+      food = insert(:food, creator: coach, business: business, calories_per_100g: 100.0)
       recipe = insert(:recipe, creator: coach, business: business)
+      insert(:recipe_ingredient, recipe: recipe, food: food, weight_g: 200.0)
 
       conn = patch(conn, "/v1/coach/recipes/#{recipe.id}", %{"name" => "Updated Recipe"})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["name"] == "Updated Recipe"
       assert data["id"] == recipe.id
+
+      # Derived nutrition must be correct on update, not silently zero.
+      # 100.0 cal/100g x 200g / 100 = 200.0
+      assert data["nutrition"]["calories"] == 200.0
     end
 
     test "returns 404 when updating recipe from another business", %{conn: conn} do

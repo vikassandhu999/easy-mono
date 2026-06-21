@@ -47,7 +47,8 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeRequest do
 
   alias EasyWeb.OpenApi.Schemas.{
     FoodServingSize,
-    RecipeIngredientRequest
+    RecipeIngredientRequest,
+    Shared
   }
 
   OpenApiSpex.schema(
@@ -61,8 +62,8 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeRequest do
         instructions: %Schema{type: :string, nullable: true},
         servings_count: %Schema{type: :integer, nullable: true},
         cooked_weight_g: %Schema{type: :number, nullable: true},
-        allergens: %Schema{type: :array, items: %Schema{type: :string}},
-        dietary_tags: %Schema{type: :array, items: %Schema{type: :string}},
+        allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
+        dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
         serving_sizes: %Schema{type: :array, items: FoodServingSize},
         recipe_ingredients: %Schema{type: :array, items: RecipeIngredientRequest}
       },
@@ -105,8 +106,8 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
           instructions: %Schema{type: :string, nullable: true},
           servings_count: %Schema{type: :integer, nullable: true},
           cooked_weight_g: %Schema{type: :number, nullable: true},
-          allergens: %Schema{type: :array, items: %Schema{type: :string}},
-          dietary_tags: %Schema{type: :array, items: %Schema{type: :string}},
+          allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
+          dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
           nutrition: %Schema{
             type: :object,
             nullable: true,

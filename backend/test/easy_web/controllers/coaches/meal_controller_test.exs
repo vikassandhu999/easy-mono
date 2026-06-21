@@ -67,11 +67,25 @@ defmodule EasyWeb.Coaches.MealControllerTest do
     test "updates a meal", %{conn: conn, coach: coach, business: business} do
       plan = insert(:plan, creator: coach, business: business)
       meal = insert(:meal, creator: coach, plan: plan, business: business)
+      food = insert(:food, creator: coach, business: business, calories_per_100g: 100.0)
+
+      insert(:meal_item,
+        meal: meal,
+        business: business,
+        food: food,
+        amount: 1.0,
+        unit: "g",
+        weight_g: 150.0
+      )
 
       conn = patch(conn, "/v1/coach/meals/#{meal.id}", %{"name" => "Updated Meal"})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["name"] == "Updated Meal"
+
+      # Derived nutrition must be correct on update, not silently zero.
+      # 100.0 cal/100g x 150g / 100 = 150.0
+      assert data["nutrition"]["calories"] == 150.0
     end
   end
 

@@ -46,10 +46,13 @@ defmodule Easy.Recipes do
   @spec create_recipe(String.t(), String.t(), map()) ::
           {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
   def create_recipe(business_id, coach_id, attrs) do
-    business_id
-    |> Recipe.insert_changeset(coach_id, attrs)
-    |> validate_ingredient_foods(business_id)
-    |> Repo.insert()
+    with {:ok, recipe} <-
+           business_id
+           |> Recipe.insert_changeset(coach_id, attrs)
+           |> validate_ingredient_foods(business_id)
+           |> Repo.insert() do
+      get_recipe(business_id, recipe.id)
+    end
   end
 
   @spec create_recipe_for_coach_user(String.t(), String.t(), map()) ::
@@ -63,11 +66,13 @@ defmodule Easy.Recipes do
   @spec update_recipe(String.t(), String.t(), map()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_recipe(business_id, recipe_id, attrs) do
-    with {:ok, recipe} <- get_recipe(business_id, recipe_id) do
-      recipe
-      |> Recipe.update_changeset(attrs)
-      |> validate_ingredient_foods(recipe.business_id)
-      |> Repo.update()
+    with {:ok, recipe} <- get_recipe(business_id, recipe_id),
+         {:ok, updated} <-
+           recipe
+           |> Recipe.update_changeset(attrs)
+           |> validate_ingredient_foods(recipe.business_id)
+           |> Repo.update() do
+      get_recipe(business_id, updated.id)
     end
   end
 

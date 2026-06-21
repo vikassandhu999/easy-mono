@@ -24,6 +24,8 @@ V1 uses three fixed page templates:
 
 The coach edits the page through a guided form. There is no page builder, block editor, section drag/drop, or custom layout control in V1.
 
+Visual reference: `assets/coach-landing-funnel/01-template-and-section-board.html`.
+
 ## Retired storefront scope
 
 The existing storefront product direction is discarded.

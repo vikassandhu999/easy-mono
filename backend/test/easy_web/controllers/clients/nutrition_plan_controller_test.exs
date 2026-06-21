@@ -9,7 +9,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
     %{conn: conn, coach: coach, client: client, business: coach.business}
   end
 
-  describe "GET /v1/client/nutrition_plans" do
+  describe "GET /v1/client/nutrition-plans" do
     test "lists only personal plans assigned to the client", ctx do
       insert(:plan,
         creator: ctx.coach,
@@ -30,7 +30,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         client_id: other_client.id
       )
 
-      conn = get(ctx.conn, "/v1/client/nutrition_plans")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
       assert hd(data)["id"] != nil
@@ -40,7 +40,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
     end
 
     test "returns empty list when no plans assigned", ctx do
-      conn = get(ctx.conn, "/v1/client/nutrition_plans")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
 
@@ -59,18 +59,18 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         status: :archived
       )
 
-      conn = get(ctx.conn, "/v1/client/nutrition_plans", %{"status" => "active"})
+      conn = get(ctx.conn, "/v1/client/nutrition-plans", %{"status" => "active"})
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
     end
 
     test "returns 403 without auth" do
-      conn = build_conn() |> get("/v1/client/nutrition_plans")
+      conn = build_conn() |> get("/v1/client/nutrition-plans")
       assert json_response(conn, 403)
     end
   end
 
-  describe "GET /v1/client/nutrition_plans/:id" do
+  describe "GET /v1/client/nutrition-plans/:id" do
     test "returns plan with meals and schedule_entries", ctx do
       plan =
         insert(:plan,
@@ -94,7 +94,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         business: ctx.business
       )
 
-      conn = get(ctx.conn, "/v1/client/nutrition_plans/#{plan.id}")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert length(data["meals"]) == 1
@@ -118,19 +118,19 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
           client_id: other_client.id
         )
 
-      conn = get(ctx.conn, "/v1/client/nutrition_plans/#{plan.id}")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/#{plan.id}")
       assert json_response(conn, 404)
     end
 
     test "returns 404 for template plan", ctx do
       plan = insert(:plan, creator: ctx.coach, business: ctx.business)
 
-      conn = get(ctx.conn, "/v1/client/nutrition_plans/#{plan.id}")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/#{plan.id}")
       assert json_response(conn, 404)
     end
   end
 
-  describe "GET /v1/client/nutrition_plans/today" do
+  describe "GET /v1/client/nutrition-plans/today" do
     test "returns today's meals from active plan", ctx do
       plan =
         insert(:plan,
@@ -165,7 +165,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         meal_slot: "breakfast"
       )
 
-      conn = get(ctx.conn, "/v1/client/nutrition_plans/today")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/today")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["date"] == Date.to_iso8601(today)
       assert data["day"] == day
@@ -191,7 +191,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         status: :archived
       )
 
-      conn = get(ctx.conn, "/v1/client/nutrition_plans/today")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/today")
       assert json_response(conn, 404)
     end
 
@@ -204,7 +204,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       )
 
       # No plan_items for today's day
-      conn = get(ctx.conn, "/v1/client/nutrition_plans/today")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/today")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["meals"] == []
     end
@@ -230,7 +230,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       )
 
       # Query for a known Monday
-      conn = get(ctx.conn, "/v1/client/nutrition_plans/today", %{"date" => "2026-03-30"})
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/today", %{"date" => "2026-03-30"})
       assert %{"data" => data} = json_response(conn, 200)
       assert data["date"] == "2026-03-30"
       assert data["day"] == "monday"
@@ -248,7 +248,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         end_date: ~D[2025-12-31]
       )
 
-      conn = get(ctx.conn, "/v1/client/nutrition_plans/today")
+      conn = get(ctx.conn, "/v1/client/nutrition-plans/today")
       assert json_response(conn, 404)
     end
   end

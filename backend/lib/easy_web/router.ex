@@ -235,9 +235,9 @@ defmodule EasyWeb.Router do
     delete "/performed_sets/:id", PerformedSetController, :delete
 
     # Nutrition plans (read-only)
-    get "/nutrition_plans", NutritionPlanController, :index
-    get "/nutrition_plans/today", NutritionPlanController, :today
-    get "/nutrition_plans/:id", NutritionPlanController, :show
+    get "/nutrition-plans", NutritionPlanController, :index
+    get "/nutrition-plans/today", NutritionPlanController, :today
+    get "/nutrition-plans/:id", NutritionPlanController, :show
 
     # Foods (read-only)
     get "/nutrition-foods", FoodController, :index

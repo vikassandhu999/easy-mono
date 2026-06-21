@@ -7,11 +7,6 @@ defmodule EasyWeb.Coaches.MealLogJSON do
     %{data: Enum.map(meal_logs, &data/1)}
   end
 
-  @spec summary(map()) :: map()
-  def summary(%{summaries: summaries}) do
-    %{data: summaries}
-  end
-
   defp data(%MealLog{} = ml) do
     %{
       id: ml.id,

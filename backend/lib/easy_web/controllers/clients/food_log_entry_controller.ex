@@ -12,6 +12,9 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     FoodLogEntryResponse
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true]
+       when action in [:create, :update, :log_meal, :log_day]
+
   tags ["client food log entries"]
 
   operation :create,
@@ -72,10 +75,10 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, _params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, entry} <- MealLogs.log_entry_for_user(business_id, user_id, params) do
+    with {:ok, entry} <- MealLogs.log_entry_for_user(business_id, user_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, food_log_entry: entry)
@@ -83,8 +86,9 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
+  def update(conn, _params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+    id = conn.path_params["id"]
 
     with {:ok, updated} <-
            MealLogs.update_entry_for_user(business_id, user_id, id, conn.body_params) do
@@ -102,11 +106,18 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
   end
 
   @spec log_meal(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def log_meal(conn, %{"date" => date_str, "meal_slot" => meal_slot, "meal_id" => meal_id}) do
+  def log_meal(conn, _params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+    body = conn.body_params
 
     with {:ok, entries} <-
-           MealLogs.log_meal_for_user(business_id, user_id, date_str, meal_slot, meal_id) do
+           MealLogs.log_meal_for_user(
+             business_id,
+             user_id,
+             to_string_date(body[:date] || body["date"]),
+             body[:meal_slot] || body["meal_slot"],
+             body[:meal_id] || body["meal_id"]
+           ) do
       conn
       |> put_status(:created)
       |> render(:bulk, food_log_entries: entries)
@@ -114,13 +125,24 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
   end
 
   @spec log_day(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def log_day(conn, %{"date" => date_str, "plan_id" => plan_id}) do
+  def log_day(conn, _params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+    body = conn.body_params
 
-    with {:ok, entries} <- MealLogs.log_day_for_user(business_id, user_id, date_str, plan_id) do
+    with {:ok, entries} <-
+           MealLogs.log_day_for_user(
+             business_id,
+             user_id,
+             to_string_date(body[:date] || body["date"]),
+             body[:plan_id] || body["plan_id"]
+           ) do
       conn
       |> put_status(:created)
       |> render(:bulk, food_log_entries: entries)
     end
   end
+
+  defp to_string_date(%Date{} = d), do: Date.to_iso8601(d)
+  defp to_string_date(s) when is_binary(s), do: s
+  defp to_string_date(nil), do: nil
 end

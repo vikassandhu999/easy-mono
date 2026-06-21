@@ -10,13 +10,18 @@ defmodule EasyWeb.OpenApi.Schemas.FoodLogEntryRequest do
       additionalProperties: false,
       properties: %{
         date: %Schema{type: :string, format: :date},
-        meal_slot: %Schema{type: :string},
+        meal_slot: %Schema{type: :string, nullable: true},
         food_id: %Schema{type: :string, format: :uuid, nullable: true},
         recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+        meal_id: %Schema{type: :string, format: :uuid, nullable: true},
+        plan_id: %Schema{type: :string, format: :uuid, nullable: true},
+        food_name: %Schema{type: :string, nullable: true},
         amount: %Schema{type: :number, nullable: true},
         unit: %Schema{type: :string, nullable: true},
         weight_g: %Schema{type: :number, nullable: true},
-        notes: %Schema{type: :string, nullable: true}
+        notes: %Schema{type: :string, nullable: true},
+        source: %Schema{type: :string, nullable: true},
+        planned_item_index: %Schema{type: :integer, nullable: true}
       },
       example: %{
         "date" => "2026-05-31",

@@ -13,7 +13,6 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
     "lib/easy_web/controllers/clients/nutrition_plan_controller.ex",
     "lib/easy_web/controllers/coaches/meal_log_controller.ex",
     "lib/easy_web/controllers/clients/meal_log_controller.ex",
-    "lib/easy_web/controllers/coaches/food_log_entry_controller.ex",
     "lib/easy_web/controllers/clients/food_log_entry_controller.ex"
   ]
 

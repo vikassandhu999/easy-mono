@@ -4,7 +4,11 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
   setup do
     coach = insert(:coach)
     client = insert(:client, creator: coach, business: coach.business)
-    conn = build_conn() |> authenticate_client(client)
+
+    conn =
+      build_conn()
+      |> authenticate_client(client)
+      |> put_req_header("content-type", "application/json")
 
     food =
       insert(:food,
@@ -21,7 +25,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
     %{conn: conn, coach: coach, client: client, business: coach.business, food: food}
   end
 
-  describe "POST /v1/client/food_log_entries" do
+  describe "POST /v1/client/nutrition-food-log-entries" do
     test "creates entry with computed macros and creates MealLog", ctx do
       attrs = %{
         "date" => "2026-03-25",
@@ -35,7 +39,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "planned_item_index" => 0
       }
 
-      conn = post(ctx.conn, "/v1/client/food_log_entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
       assert %{"data" => data} = json_response(conn, 201)
       assert data["food_name"] == "Oats"
       assert data["food_id"] == ctx.food.id
@@ -59,7 +63,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "source" => "unplanned"
       }
 
-      conn = post(ctx.conn, "/v1/client/food_log_entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
       assert %{"data" => data} = json_response(conn, 201)
       assert data["food_name"] == "Oats"
       # 389 * 50 / 100 = 194.5
@@ -93,7 +97,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "planned_item_index" => 0
       }
 
-      conn = post(ctx.conn, "/v1/client/food_log_entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
       assert %{"data" => data} = json_response(conn, 201)
       assert data["food_name"] == "Dal Tadka"
       # 800 / 500 * 250 = 400
@@ -112,7 +116,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "source" => "planned"
       }
 
-      conn = post(ctx.conn, "/v1/client/food_log_entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
       assert json_response(conn, 422)
     end
 
@@ -127,7 +131,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "source" => "unplanned"
       }
 
-      conn = post(ctx.conn, "/v1/client/food_log_entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
       assert json_response(conn, 422)
     end
 
@@ -146,7 +150,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "source" => "planned"
       }
 
-      conn = post(ctx.conn, "/v1/client/food_log_entries", attrs)
+      conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
       assert json_response(conn, 422)
     end
 
@@ -174,7 +178,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       conn1 =
         post(
           ctx.conn,
-          "/v1/client/food_log_entries",
+          "/v1/client/nutrition-food-log-entries",
           Map.merge(base_attrs, %{
             "food_id" => ctx.food.id,
             "food_name" => "Oats",
@@ -187,7 +191,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       conn2 =
         post(
           ctx.conn,
-          "/v1/client/food_log_entries",
+          "/v1/client/nutrition-food-log-entries",
           Map.merge(base_attrs, %{
             "food_id" => food2.id,
             "food_name" => "Milk",
@@ -201,12 +205,12 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
     end
 
     test "returns 403 without auth" do
-      conn = build_conn() |> post("/v1/client/food_log_entries", %{})
+      conn = build_conn() |> post("/v1/client/nutrition-food-log-entries", %{})
       assert json_response(conn, 403)
     end
   end
 
-  describe "PATCH /v1/client/food_log_entries/:id" do
+  describe "PATCH /v1/client/nutrition-food-log-entries/:id" do
     test "updates amount and recomputes macros", ctx do
       meal_log = insert(:meal_log, client: ctx.client, business: ctx.business)
 
@@ -223,7 +227,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         )
 
       conn =
-        patch(ctx.conn, "/v1/client/food_log_entries/#{entry.id}", %{
+        patch(ctx.conn, "/v1/client/nutrition-food-log-entries/#{entry.id}", %{
           "amount" => 50.0,
           "weight_g" => 50.0
         })
@@ -247,7 +251,11 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
           calories: 389.0
         )
 
-      conn = patch(ctx.conn, "/v1/client/food_log_entries/#{entry.id}", %{"notes" => "ate more"})
+      conn =
+        patch(ctx.conn, "/v1/client/nutrition-food-log-entries/#{entry.id}", %{
+          "notes" => "ate more"
+        })
+
       assert %{"data" => data} = json_response(conn, 200)
       assert data["notes"] == "ate more"
       assert data["calories"] == 389.0
@@ -258,17 +266,19 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       meal_log = insert(:meal_log, client: other_client, business: ctx.business)
       entry = insert(:food_log_entry, meal_log: meal_log, food: ctx.food)
 
-      conn = patch(ctx.conn, "/v1/client/food_log_entries/#{entry.id}", %{"amount" => 200})
+      conn =
+        patch(ctx.conn, "/v1/client/nutrition-food-log-entries/#{entry.id}", %{"amount" => 200})
+
       assert json_response(conn, 404)
     end
   end
 
-  describe "DELETE /v1/client/food_log_entries/:id" do
+  describe "DELETE /v1/client/nutrition-food-log-entries/:id" do
     test "deletes entry and updates logged_calories", ctx do
       meal_log = insert(:meal_log, client: ctx.client, business: ctx.business)
       entry = insert(:food_log_entry, meal_log: meal_log, food: ctx.food)
 
-      conn = delete(ctx.conn, "/v1/client/food_log_entries/#{entry.id}")
+      conn = delete(ctx.conn, "/v1/client/nutrition-food-log-entries/#{entry.id}")
       assert response(conn, 204)
     end
 
@@ -277,12 +287,12 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       meal_log = insert(:meal_log, client: other_client, business: ctx.business)
       entry = insert(:food_log_entry, meal_log: meal_log, food: ctx.food)
 
-      conn = delete(ctx.conn, "/v1/client/food_log_entries/#{entry.id}")
+      conn = delete(ctx.conn, "/v1/client/nutrition-food-log-entries/#{entry.id}")
       assert json_response(conn, 404)
     end
   end
 
-  describe "POST /v1/client/food_log_entries/log_meal" do
+  describe "POST /v1/client/nutrition-food-log-entries/log-meal" do
     test "logs all items in a meal, skipping already logged", ctx do
       plan = insert(:plan, creator: ctx.coach, business: ctx.business, client_id: ctx.client.id)
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)
@@ -319,7 +329,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
 
       # First call logs both items
       conn1 =
-        post(ctx.conn, "/v1/client/food_log_entries/log_meal", %{
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-meal", %{
           "date" => "2026-03-25",
           "meal_slot" => "breakfast",
           "meal_id" => meal.id
@@ -330,7 +340,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
 
       # Second call is idempotent -- zero new entries
       conn2 =
-        post(ctx.conn, "/v1/client/food_log_entries/log_meal", %{
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-meal", %{
           "date" => "2026-03-25",
           "meal_slot" => "breakfast",
           "meal_id" => meal.id
@@ -369,14 +379,14 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         meal_slot: "breakfast"
       )
 
-      post(ctx.conn, "/v1/client/food_log_entries/log_meal", %{
+      post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-meal", %{
         "date" => "2026-03-25",
         "meal_slot" => "breakfast",
         "meal_id" => meal.id
       })
 
       # Fetch the meal log to verify snapshot
-      conn = get(ctx.conn, "/v1/client/meal_logs", %{"date" => "2026-03-25"})
+      conn = get(ctx.conn, "/v1/client/nutrition-meal-logs", %{"date" => "2026-03-25"})
       assert %{"data" => [meal_log]} = json_response(conn, 200)
       assert meal_log["meal_slot"] == "breakfast"
       # Snapshot should be present since plan+plan_item exists for Tuesday
@@ -385,7 +395,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
 
     test "returns error for non-existent meal_id", ctx do
       conn =
-        post(ctx.conn, "/v1/client/food_log_entries/log_meal", %{
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-meal", %{
           "date" => "2026-03-25",
           "meal_slot" => "breakfast",
           "meal_id" => Ecto.UUID.generate()
@@ -396,7 +406,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
 
     test "returns error for invalid date", ctx do
       conn =
-        post(ctx.conn, "/v1/client/food_log_entries/log_meal", %{
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-meal", %{
           "date" => "not-a-date",
           "meal_slot" => "breakfast",
           "meal_id" => Ecto.UUID.generate()
@@ -406,7 +416,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
     end
   end
 
-  describe "POST /v1/client/food_log_entries/log_day" do
+  describe "POST /v1/client/nutrition-food-log-entries/log-day" do
     test "logs all meals for a day from plan", ctx do
       plan = insert(:plan, creator: ctx.coach, business: ctx.business, client_id: ctx.client.id)
 
@@ -462,7 +472,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       )
 
       conn =
-        post(ctx.conn, "/v1/client/food_log_entries/log_day", %{
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-day", %{
           "date" => "2026-03-30",
           "plan_id" => plan.id
         })
@@ -479,7 +489,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       plan = insert(:plan, creator: ctx.coach, business: ctx.business, client_id: other_client.id)
 
       conn =
-        post(ctx.conn, "/v1/client/food_log_entries/log_day", %{
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-day", %{
           "date" => "2026-03-30",
           "plan_id" => plan.id
         })
@@ -489,7 +499,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
 
     test "returns 404 for non-existent plan_id", ctx do
       conn =
-        post(ctx.conn, "/v1/client/food_log_entries/log_day", %{
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-day", %{
           "date" => "2026-03-30",
           "plan_id" => Ecto.UUID.generate()
         })

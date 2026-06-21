@@ -28,6 +28,16 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Easy.Error.unprocessable(%{fields: %{day: ["is invalid"]}})})
   end
 
+  def call(conn, {:error, :read_only_source}) do
+    call(
+      conn,
+      {:error,
+       Easy.Error.unprocessable(%{
+         fields: %{source: ["system and imported foods are read-only; use the copy endpoint"]}
+       })}
+    )
+  end
+
   def call(conn, {:error, reason}) do
     Logger.error("Unhandled error in FallbackController: #{inspect(reason)}")
 

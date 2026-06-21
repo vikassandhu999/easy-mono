@@ -98,17 +98,21 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/nutrition-plans", ClientPlanController, :nutrition_plans
     get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
 
-    post "/foods", FoodController, :create
-    get "/foods/:id", FoodController, :show
-    patch "/foods/:id", FoodController, :update
-    delete "/foods/:id", FoodController, :delete
-    get "/foods", FoodController, :index
+    get "/nutrition-foods", FoodController, :index
+    post "/nutrition-foods", FoodController, :create
+    get "/nutrition-foods/:id", FoodController, :show
+    patch "/nutrition-foods/:id", FoodController, :update
+    delete "/nutrition-foods/:id", FoodController, :delete
+    get "/nutrition-foods/:id/impact", FoodController, :impact
+    post "/nutrition-foods/:id/copy", FoodController, :copy
 
-    post "/recipes", RecipeController, :create
-    get "/recipes/:id", RecipeController, :show
-    patch "/recipes/:id", RecipeController, :update
-    delete "/recipes/:id", RecipeController, :delete
-    get "/recipes", RecipeController, :index
+    get "/nutrition-recipes", RecipeController, :index
+    post "/nutrition-recipes", RecipeController, :create
+    get "/nutrition-recipes/:id", RecipeController, :show
+    patch "/nutrition-recipes/:id", RecipeController, :update
+    delete "/nutrition-recipes/:id", RecipeController, :delete
+    get "/nutrition-recipes/:id/impact", RecipeController, :impact
+    post "/nutrition-recipes/:id/copy", RecipeController, :copy
 
     get "/nutrition-plans", NutritionPlanController, :index
     post "/nutrition-plans", NutritionPlanController, :create
@@ -239,12 +243,12 @@ defmodule EasyWeb.Router do
     get "/nutrition_plans/:id", NutritionPlanController, :show
 
     # Foods (read-only)
-    get "/foods", FoodController, :index
-    get "/foods/:id", FoodController, :show
+    get "/nutrition-foods", FoodController, :index
+    get "/nutrition-foods/:id", FoodController, :show
 
     # Recipes (read-only)
-    get "/recipes", RecipeController, :index
-    get "/recipes/:id", RecipeController, :show
+    get "/nutrition-recipes", RecipeController, :index
+    get "/nutrition-recipes/:id", RecipeController, :show
 
     # Meal logs
     get "/meal_logs", MealLogController, :index

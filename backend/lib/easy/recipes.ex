@@ -2,6 +2,7 @@ defmodule Easy.Recipes do
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
+  alias Easy.Nutrition.{Meal, MealItem, Plan}
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
@@ -81,6 +82,72 @@ defmodule Easy.Recipes do
   def delete_recipe(business_id, recipe_id) do
     with {:ok, recipe} <- get_recipe_plain(business_id, recipe_id) do
       Repo.delete(recipe)
+    end
+  end
+
+  @spec get_recipe_impact(String.t(), String.t()) ::
+          {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
+  def get_recipe_impact(business_id, recipe_id) do
+    with {:ok, _recipe} <- get_recipe_plain(business_id, recipe_id) do
+      plans =
+        from(p in Plan,
+          join: m in Meal,
+          on: m.nutrition_plan_id == p.id,
+          join: mi in MealItem,
+          on: mi.nutrition_meal_id == m.id,
+          where: p.business_id == ^business_id and mi.recipe_id == ^recipe_id,
+          distinct: p.id,
+          select: %{id: p.id, name: p.name, client_id: p.client_id, status: p.status}
+        )
+        |> Repo.all()
+
+      {:ok, Easy.Foods.split_plan_impact(plans)}
+    end
+  end
+
+  @spec copy_recipe_for_coach_user(String.t(), String.t(), String.t()) ::
+          {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def copy_recipe_for_coach_user(business_id, user_id, recipe_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
+      copy_recipe(business_id, recipe_id, coach.id)
+    end
+  end
+
+  @spec copy_recipe(String.t(), String.t(), String.t()) ::
+          {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def copy_recipe(business_id, recipe_id, coach_id) do
+    with {:ok, recipe} <- get_recipe(business_id, recipe_id) do
+      attrs = %{
+        "name" => recipe.name,
+        "description" => recipe.description,
+        "instructions" => recipe.instructions,
+        "servings_count" => recipe.servings_count,
+        "cooked_weight_g" => recipe.cooked_weight_g,
+        "allergens" => recipe.allergens,
+        "dietary_tags" => recipe.dietary_tags,
+        "serving_sizes" =>
+          Enum.map(recipe.serving_sizes, fn s ->
+            %{
+              "label" => s.label,
+              "amount" => s.amount,
+              "unit" => s.unit,
+              "weight_g" => s.weight_g,
+              "is_default" => s.is_default
+            }
+          end),
+        "recipe_ingredients" =>
+          Enum.map(recipe.recipe_ingredients, fn ri ->
+            %{
+              "food_id" => ri.food_id,
+              "amount" => ri.amount,
+              "unit" => ri.unit,
+              "weight_g" => ri.weight_g,
+              "position" => ri.position
+            }
+          end)
+      }
+
+      create_recipe(business_id, coach_id, attrs)
     end
   end
 

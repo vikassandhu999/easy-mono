@@ -3,19 +3,22 @@ defmodule EasyWeb.OpenApi.Schemas.FoodServingSize do
 
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "FoodServingSize",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      label: %Schema{type: :string},
-      amount: %Schema{type: :number},
-      unit: %Schema{type: :string},
-      weight_g: %Schema{type: :number},
-      is_default: %Schema{type: :boolean}
+  OpenApiSpex.schema(
+    %{
+      title: "FoodServingSize",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        label: %Schema{type: :string},
+        amount: %Schema{type: :number},
+        unit: %Schema{type: :string},
+        weight_g: %Schema{type: :number},
+        is_default: %Schema{type: :boolean}
+      },
+      required: [:label, :amount, :unit, :weight_g, :is_default]
     },
-    required: [:label, :amount, :unit, :weight_g, :is_default]
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.FoodRequest do
@@ -166,4 +169,32 @@ defmodule EasyWeb.OpenApi.Schemas.FoodListResponse do
   alias EasyWeb.OpenApi.Schemas.{Food, Shared}
 
   OpenApiSpex.schema(Shared.list_response(Food, "FoodListResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  @plan_ref %Schema{
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string},
+      name: %Schema{type: :string},
+      client_id: %Schema{type: :string, nullable: true}
+    }
+  }
+
+  OpenApiSpex.schema(%{
+    title: "FoodImpactResponse",
+    type: :object,
+    properties: %{
+      data: %Schema{
+        type: :object,
+        properties: %{
+          templates: %Schema{type: :array, items: @plan_ref},
+          active_client_plans: %Schema{type: :array, items: @plan_ref}
+        }
+      }
+    }
+  })
 end

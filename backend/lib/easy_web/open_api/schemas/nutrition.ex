@@ -3,19 +3,22 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeIngredientRequest do
 
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "RecipeIngredientRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      food_id: %Schema{type: :string, format: :uuid},
-      unit: %Schema{type: :string, nullable: true},
-      amount: %Schema{type: :number, nullable: true},
-      weight_g: %Schema{type: :number, nullable: true},
-      position: %Schema{type: :integer, minimum: 0}
+  OpenApiSpex.schema(
+    %{
+      title: "RecipeIngredientRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        food_id: %Schema{type: :string, format: :uuid},
+        unit: %Schema{type: :string, nullable: true},
+        amount: %Schema{type: :number, nullable: true},
+        weight_g: %Schema{type: :number, nullable: true},
+        position: %Schema{type: :integer, minimum: 0}
+      },
+      required: [:food_id]
     },
-    required: [:food_id]
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.RecipeIngredient do
@@ -153,6 +156,34 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeListResponse do
   alias EasyWeb.OpenApi.Schemas.{Recipe, Shared}
 
   OpenApiSpex.schema(Shared.list_response(Recipe, "RecipeListResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.RecipeImpactResponse do
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  @plan_ref %Schema{
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string},
+      name: %Schema{type: :string},
+      client_id: %Schema{type: :string, nullable: true}
+    }
+  }
+
+  OpenApiSpex.schema(%{
+    title: "RecipeImpactResponse",
+    type: :object,
+    properties: %{
+      data: %Schema{
+        type: :object,
+        properties: %{
+          templates: %Schema{type: :array, items: @plan_ref},
+          active_client_plans: %Schema{type: :array, items: @plan_ref}
+        }
+      }
+    }
+  })
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemRequest do

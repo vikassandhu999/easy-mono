@@ -4,7 +4,17 @@ defmodule EasyWeb.Coaches.FoodController do
 
   alias Easy.Foods
   alias OpenApiSpex.Operation
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, FoodListResponse, FoodRequest, FoodResponse, FoodUpdateRequest}
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    FoodImpactResponse,
+    FoodListResponse,
+    FoodRequest,
+    FoodResponse,
+    FoodUpdateRequest
+  }
+
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
 
   tags ["coach foods"]
 
@@ -79,12 +89,32 @@ defmodule EasyWeb.Coaches.FoodController do
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
+  operation :impact,
+    summary: "Show plans/templates affected by a food",
+    operation_id: "getNutritionFoodImpact",
+    security: [%{"bearerAuth" => []}],
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [
+      ok: {"Impact", "application/json", FoodImpactResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :copy,
+    summary: "Copy a food into the coach's business",
+    operation_id: "copyNutritionFood",
+    security: [%{"bearerAuth" => []}],
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [
+      created: {"Food", "application/json", FoodResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, _params) do
     claims = conn.assigns.claims
 
     with {:ok, food} <-
-           Foods.create_food_for_coach_user(claims.business_id, claims.user_id, params) do
+           Foods.create_food_for_coach_user(claims.business_id, claims.user_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, food: food)
@@ -103,8 +133,9 @@ defmodule EasyWeb.Coaches.FoodController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => food_id}) do
+  def update(conn, _params) do
     claims = conn.assigns.claims
+    food_id = conn.path_params["id"]
 
     with {:ok, updated_food} <- Foods.update_food(claims.business_id, food_id, conn.body_params) do
       conn
@@ -135,6 +166,24 @@ defmodule EasyWeb.Coaches.FoodController do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, foods: foods)
+    end
+  end
+
+  @spec impact(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def impact(conn, %{"id" => id}) do
+    business_id = conn.assigns.claims.business_id
+
+    with {:ok, impact} <- Foods.get_food_impact(business_id, id) do
+      render(conn, :impact, impact)
+    end
+  end
+
+  @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def copy(conn, %{"id" => id}) do
+    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
+
+    with {:ok, food} <- Foods.copy_food_for_coach_user(business_id, user_id, id) do
+      conn |> put_status(:created) |> render(:show, food: food)
     end
   end
 end

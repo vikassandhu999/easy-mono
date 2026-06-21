@@ -11,6 +11,11 @@ defmodule EasyWeb.Coaches.FoodJSON do
     %{data: Enum.map(foods, &data/1), count: count}
   end
 
+  @spec impact(map()) :: map()
+  def impact(%{templates: templates, active_client_plans: active_client_plans}) do
+    %{data: %{templates: templates, active_client_plans: active_client_plans}}
+  end
+
   defp data(%Food{} = food) do
     %{
       id: food.id,

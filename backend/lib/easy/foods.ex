@@ -1,31 +1,32 @@
 defmodule Easy.Foods do
+  alias Easy.Ctx
   alias Easy.Nutrition.{Food, Meal, MealItem, Plan}
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
   import Ecto.Query
 
-  @spec get_visible_food(String.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
-  def get_visible_food(business_id, food_id) do
+  @spec get_visible_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
+  def get_visible_food(%Ctx{} = ctx, food_id) do
     Food
-    |> Food.for_business_or_system(business_id)
+    |> Food.for_business_or_system(ctx.business_id)
     |> Repo.get(food_id)
     |> ok_or_not_found()
   end
 
-  @spec get_business_food(String.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
-  def get_business_food(business_id, food_id) do
+  @spec get_business_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
+  def get_business_food(%Ctx{} = ctx, food_id) do
     Food
-    |> Food.for_business(business_id)
+    |> Food.for_business(ctx.business_id)
     |> Repo.get(food_id)
     |> ok_or_not_found()
   end
 
-  @spec list_visible_foods(String.t(), String.t() | nil, non_neg_integer(), pos_integer()) ::
+  @spec list_visible_foods(Ctx.t(), String.t() | nil, non_neg_integer(), pos_integer()) ::
           {:ok, %{count: non_neg_integer(), foods: [Food.t()]}}
-  def list_visible_foods(business_id, search, offset, limit) do
+  def list_visible_foods(%Ctx{} = ctx, search, offset, limit) do
     search = String.trim(search || "")
-    base = Food |> Food.for_business_or_system(business_id) |> Food.search(search)
+    base = Food |> Food.for_business_or_system(ctx.business_id) |> Food.search(search)
     ordered = if search == "", do: Food.newest(base), else: base
 
     {:ok,
@@ -35,26 +36,20 @@ defmodule Easy.Foods do
      }}
   end
 
-  @spec create_food(String.t(), String.t(), map()) ::
-          {:ok, Food.t()} | {:error, Ecto.Changeset.t()}
-  def create_food(business_id, coach_id, attrs) do
-    business_id
-    |> Food.insert_changeset(coach_id, attrs)
-    |> Repo.insert()
-  end
-
-  @spec create_food_for_coach_user(String.t(), String.t(), map()) ::
+  @spec create_food(Ctx.t(), map()) ::
           {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_food_for_coach_user(business_id, user_id, attrs) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
-      create_food(business_id, coach.id, attrs)
+  def create_food(%Ctx{} = ctx, attrs) do
+    with {:ok, coach} <- get_coach(ctx) do
+      ctx.business_id
+      |> Food.insert_changeset(coach.id, attrs)
+      |> Repo.insert()
     end
   end
 
-  @spec update_food(String.t(), String.t(), map()) ::
+  @spec update_food(Ctx.t(), String.t(), map()) ::
           {:ok, Food.t()} | {:error, :not_found | :read_only_source | Ecto.Changeset.t()}
-  def update_food(business_id, food_id, attrs) do
-    with {:ok, food} <- get_visible_food(business_id, food_id),
+  def update_food(%Ctx{} = ctx, food_id, attrs) do
+    with {:ok, food} <- get_visible_food(ctx, food_id),
          :ok <- ensure_editable(food) do
       food
       |> Food.update_changeset(attrs)
@@ -62,26 +57,26 @@ defmodule Easy.Foods do
     end
   end
 
-  @spec delete_food(String.t(), String.t()) ::
+  @spec delete_food(Ctx.t(), String.t()) ::
           {:ok, Food.t()} | {:error, :not_found | :read_only_source | Ecto.Changeset.t()}
-  def delete_food(business_id, food_id) do
-    with {:ok, food} <- get_visible_food(business_id, food_id),
+  def delete_food(%Ctx{} = ctx, food_id) do
+    with {:ok, food} <- get_visible_food(ctx, food_id),
          :ok <- ensure_editable(food) do
       Repo.delete(food)
     end
   end
 
-  @spec get_food_impact(String.t(), String.t()) ::
+  @spec get_food_impact(Ctx.t(), String.t()) ::
           {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
-  def get_food_impact(business_id, food_id) do
-    with {:ok, _food} <- get_visible_food(business_id, food_id) do
+  def get_food_impact(%Ctx{} = ctx, food_id) do
+    with {:ok, _food} <- get_visible_food(ctx, food_id) do
       plans =
         from(p in Plan,
           join: m in Meal,
           on: m.nutrition_plan_id == p.id,
           join: mi in MealItem,
           on: mi.nutrition_meal_id == m.id,
-          where: p.business_id == ^business_id and mi.food_id == ^food_id,
+          where: p.business_id == ^ctx.business_id and mi.food_id == ^food_id,
           distinct: p.id,
           select: %{id: p.id, name: p.name, client_id: p.client_id, status: p.status}
         )
@@ -105,18 +100,10 @@ defmodule Easy.Foods do
     }
   end
 
-  @spec copy_food_for_coach_user(String.t(), String.t(), String.t()) ::
+  @spec copy_food(Ctx.t(), String.t()) ::
           {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def copy_food_for_coach_user(business_id, user_id, food_id) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
-      copy_food(business_id, food_id, coach.id)
-    end
-  end
-
-  @spec copy_food(String.t(), String.t(), String.t()) ::
-          {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def copy_food(business_id, food_id, coach_id) do
-    with {:ok, food} <- get_visible_food(business_id, food_id) do
+  def copy_food(%Ctx{} = ctx, food_id) do
+    with {:ok, food} <- get_visible_food(ctx, food_id) do
       attrs = %{
         "name" => food.name,
         "brand" => food.brand,
@@ -135,7 +122,7 @@ defmodule Easy.Foods do
         "serving_sizes" => Enum.map(food.serving_sizes, &serving_size_attrs/1)
       }
 
-      create_food(business_id, coach_id, attrs)
+      create_food(ctx, attrs)
     end
   end
 
@@ -148,10 +135,10 @@ defmodule Easy.Foods do
 
   defp ensure_editable(_food), do: :ok
 
-  defp get_coach_for_user(business_id, user_id) do
+  defp get_coach(%Ctx{} = ctx) do
     Coach
-    |> Coach.for_business(business_id)
-    |> Coach.for_user(user_id)
+    |> Coach.for_business(ctx.business_id)
+    |> Coach.for_user(ctx.user_id)
     |> Repo.one()
     |> ok_or_not_found()
   end

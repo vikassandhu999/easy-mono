@@ -104,10 +104,7 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    claims = conn.assigns.claims
-
-    with {:ok, recipe} <-
-           Recipes.create_recipe_for_coach_user(claims.business_id, claims.user_id, conn.body_params) do
+    with {:ok, recipe} <- Recipes.create_recipe(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, recipe: recipe)
@@ -116,42 +113,35 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => recipe_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, recipe} <- Recipes.get_recipe(business_id, recipe_id) do
+    with {:ok, recipe} <- Recipes.get_recipe(conn.assigns.ctx, recipe_id) do
       render(conn, :show, recipe: recipe)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    %{business_id: business_id} = conn.assigns.claims
     recipe_id = conn.path_params["id"]
 
-    with {:ok, updated_recipe} <- Recipes.update_recipe(business_id, recipe_id, conn.body_params) do
+    with {:ok, updated_recipe} <- Recipes.update_recipe(conn.assigns.ctx, recipe_id, conn.body_params) do
       render(conn, :show, recipe: updated_recipe)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => recipe_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, _deleted} <- Recipes.delete_recipe(business_id, recipe_id) do
+    with {:ok, _deleted} <- Recipes.delete_recipe(conn.assigns.ctx, recipe_id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{business_id: business_id} = conn.assigns.claims
-
     search_term = Map.get(params, "search", "")
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 10)
 
     with {:ok, %{count: count, recipes: recipes}} <-
-           Recipes.list_recipes(business_id, search_term, offset, limit) do
+           Recipes.list_recipes(conn.assigns.ctx, search_term, offset, limit) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, recipes: recipes)
@@ -160,18 +150,14 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   @spec impact(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def impact(conn, %{"id" => id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, impact} <- Recipes.get_recipe_impact(business_id, id) do
+    with {:ok, impact} <- Recipes.get_recipe_impact(conn.assigns.ctx, id) do
       render(conn, :impact, impact)
     end
   end
 
   @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def copy(conn, %{"id" => id}) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
-
-    with {:ok, recipe} <- Recipes.copy_recipe_for_coach_user(business_id, user_id, id) do
+    with {:ok, recipe} <- Recipes.copy_recipe(conn.assigns.ctx, id) do
       conn |> put_status(:created) |> render(:show, recipe: recipe)
     end
   end

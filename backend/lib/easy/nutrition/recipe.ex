@@ -46,6 +46,10 @@ defmodule Easy.Nutrition.Recipe do
     :dietary_tags
   ]
 
+  @doc "Scalar fields copied verbatim when duplicating a recipe (single source of truth for copy)."
+  @spec scalar_fields() :: [atom()]
+  def scalar_fields, do: @cast_fields
+
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, coach_id, attrs) do
     %__MODULE__{}

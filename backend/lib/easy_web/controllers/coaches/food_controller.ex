@@ -111,10 +111,7 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    claims = conn.assigns.claims
-
-    with {:ok, food} <-
-           Foods.create_food_for_coach_user(claims.business_id, claims.user_id, conn.body_params) do
+    with {:ok, food} <- Foods.create_food(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, food: food)
@@ -123,9 +120,7 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => food_id}) do
-    claims = conn.assigns.claims
-
-    with {:ok, food} <- Foods.get_visible_food(claims.business_id, food_id) do
+    with {:ok, food} <- Foods.get_visible_food(conn.assigns.ctx, food_id) do
       conn
       |> put_status(:ok)
       |> render(:show, food: food)
@@ -134,10 +129,9 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    claims = conn.assigns.claims
     food_id = conn.path_params["id"]
 
-    with {:ok, updated_food} <- Foods.update_food(claims.business_id, food_id, conn.body_params) do
+    with {:ok, updated_food} <- Foods.update_food(conn.assigns.ctx, food_id, conn.body_params) do
       conn
       |> put_status(:ok)
       |> render(:show, food: updated_food)
@@ -146,23 +140,19 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => food_id}) do
-    claims = conn.assigns.claims
-
-    with {:ok, _deleted} <- Foods.delete_food(claims.business_id, food_id) do
+    with {:ok, _deleted} <- Foods.delete_food(conn.assigns.ctx, food_id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    claims = conn.assigns.claims
-
     search_term = Map.get(params, "search", "")
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 10)
 
     with {:ok, %{count: count, foods: foods}} <-
-           Foods.list_visible_foods(claims.business_id, search_term, offset, limit) do
+           Foods.list_visible_foods(conn.assigns.ctx, search_term, offset, limit) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, foods: foods)
@@ -171,18 +161,14 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec impact(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def impact(conn, %{"id" => id}) do
-    business_id = conn.assigns.claims.business_id
-
-    with {:ok, impact} <- Foods.get_food_impact(business_id, id) do
+    with {:ok, impact} <- Foods.get_food_impact(conn.assigns.ctx, id) do
       render(conn, :impact, impact)
     end
   end
 
   @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def copy(conn, %{"id" => id}) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
-
-    with {:ok, food} <- Foods.copy_food_for_coach_user(business_id, user_id, id) do
+    with {:ok, food} <- Foods.copy_food(conn.assigns.ctx, id) do
       conn |> put_status(:created) |> render(:show, food: food)
     end
   end

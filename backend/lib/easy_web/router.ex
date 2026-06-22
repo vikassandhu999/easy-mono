@@ -269,6 +269,12 @@ defmodule EasyWeb.Router do
     get "/weight_entries", WeightEntryController, :index
     post "/weight_entries", WeightEntryController, :create
     delete "/weight_entries/:id", WeightEntryController, :delete
+
+    # Threads
+    get "/threads", ThreadController, :index
+    post "/threads", ThreadController, :create
+    get "/threads/:id", ThreadController, :show
+    post "/threads/:thread_id/messages", ThreadMessageController, :create
   end
 
   scope "/v1/public", EasyWeb.Public do

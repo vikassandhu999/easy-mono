@@ -156,6 +156,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.18
         version: 4.1.18
+      workbox-window:
+        specifier: ^7.4.0
+        version: 7.4.0
       zod:
         specifier: ^3.23.8
         version: 3.25.76

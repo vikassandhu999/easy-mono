@@ -1,6 +1,5 @@
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse, listTags, pageTags} from '@/api/shared';
-import {replaceTrainingPlanInCache} from '@/api/trainingPlanCache';
 
 export type TrainingWeekday = 'friday' | 'monday' | 'saturday' | 'sunday' | 'thursday' | 'tuesday' | 'wednesday';
 export type TrainingWorkoutType = 'alternative' | 'primary';
@@ -207,7 +206,7 @@ export const trainingPlansApi = api.injectEndpoints({
           const {data} = await queryFulfilled;
           dispatch(
             trainingPlansApi.util.updateQueryData('getTrainingPlan', id, (draft) => {
-              replaceTrainingPlanInCache(draft, data.data);
+              draft.data = data.data;
             }),
           );
         } catch {

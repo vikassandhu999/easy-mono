@@ -5,11 +5,14 @@ import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {type ClientSummary, type ListClientsFilters, useListClientsQuery} from '@/api/clients';
 
-import ClientsBrowseList from './clients-list/clients-browse-list';
+import ClientEmptyState from './clients-list/client-empty-state';
+import ClientListItem from './clients-list/client-list-item';
+import useClientsSearch from './clients-list/use-clients-search';
 
 type FilterOption = {
   id: string;
@@ -40,6 +43,8 @@ export default function ListClients() {
   const [activeFilter, setActiveFilter] = useState<Key>('all');
 
   const deferredSearch = useDeferredValue(search);
+  const activeStatus = FILTER_OPTIONS.find((o) => o.id === activeFilter)?.filter.status;
+  const {clients, fetchNextPage, isLoading} = useClientsSearch({search: deferredSearch, status: activeStatus});
 
   const {data: summaryData} = useListClientsQuery({limit: 0});
 
@@ -95,10 +100,15 @@ export default function ListClients() {
         </Tabs>
       </Page.Toolbar>
       <Page.Content>
-        <ClientsBrowseList
-          hasFilter={!!deferredSearch || activeFilter !== 'all'}
-          search={deferredSearch}
-          status={FILTER_OPTIONS.find((o) => o.id === activeFilter)?.filter.status}
+        <BrowseListBox
+          ariaLabel="Clients"
+          className="flex-1 gap-0"
+          emptyState={<ClientEmptyState hasFilter={!!deferredSearch || activeFilter !== 'all'} />}
+          fetchNextPage={fetchNextPage}
+          isLoading={isLoading}
+          items={clients}
+          onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
+          renderItem={(client) => <ClientListItem client={client} />}
         />
       </Page.Content>
     </Page>

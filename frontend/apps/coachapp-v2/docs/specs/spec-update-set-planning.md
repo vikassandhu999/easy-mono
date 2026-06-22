@@ -122,7 +122,7 @@ Implementation reads as if it complies — `min-h-11` is set on the unit pills a
 > - `planned_sets` length `>= 1`.
 > - Soft-warning thresholds belong on the frontend; the backend stays silent on them.
 >
-> The frontend's input parsing (`parseNonNegativeNumber`, `Math.max(1, count)`) is a convenience, not a security boundary. Anything the spec forbids must be rejected by the API — otherwise mobile apps, scripted retries, and direct API users can persist invalid records.
+> Frontend input constraints are a convenience, not a security boundary. Anything the spec forbids must be rejected by the API — otherwise mobile apps, scripted retries, and direct API users can persist invalid records.
 
 **Rationale:** Currently any non-React client can persist garbage. The spec already implies these rules exist; making it explicit closes the loop.
 

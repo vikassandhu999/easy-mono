@@ -251,6 +251,102 @@ Rules:
   on a single aggregate. Both live in the context, never in a schema or
   controller.
 
+### A12. Function structure
+
+Canonical internal shape of a context function:
+
+```elixir
+def update_exercise(%Ctx{} = ctx, id, attrs) do
+  with {:ok, ex} <- get_owned_exercise(ctx, id) do   # fetch-or-fail, scoped
+    ex
+    |> Exercise.update_changeset(attrs)               # build
+    |> Repo.update()                                  # persist
+  end
+end
+```
+
+- **`with` for the happy path.** Expected errors fall through untouched and reach
+  `FallbackController`.
+- **Mutations fetch first** via a scoped `get_owned_*` inside `with`, so tenant
+  ownership is enforced before any write. Cross-tenant fetch → `:not_found`.
+- **Reads** pipe builders → `Repo` → `ok_or_not_found/1`.
+- **One public function = one verb.** No internal role branching — the three-case
+  naming (§A2) already splits actors into separate functions.
+- Results are normalized by tiny private helpers (`ok_or_not_found`,
+  `preload_*`), never inline.
+
+### A13. Authorization in the context layer
+
+Three layers, each with one job:
+
+1. **Role gate = router scope.** The `:coach_api` / `:client_api` pipelines
+   separate endpoints; this is the primary actor gate. Per "no defensive
+   handling for impossible states," contexts do **not** re-assert role on every
+   function.
+2. **Tenant + ownership = scoped queries.** `for_business` / `for_client` bake
+   scope in. A cross-tenant or wrong-owner lookup returns empty → `:not_found`,
+   **never `:forbidden`** (no existence leak).
+3. **Explicit role guard only when one function genuinely serves both actors and
+   must diverge** — rare. Then `with :ok <- assert_coach(ctx)` returning
+   `:forbidden`. Not blanket ceremony.
+
+No policy/Authz framework (YAGNI). `role` on `Ctx` earns its keep through
+stamping (e.g. thread `author_type`) and the occasional guard.
+
+### A14. Function ordering within a module
+
+```
+1. use / alias / import / @type / @attrs
+2. public READS    — list, get, get_owned        (three-case grouped)
+3. public WRITES   — create, update, delete
+4. public DOMAIN verbs — duplicate, assign, copy, …
+5. sub-resource block (if the module owns one) — same order inside
+6. private helpers — load_*, preload_*, ok_or_not_found
+```
+
+- Reads before writes; CRUD order within each.
+- Private helpers always last.
+- **No mandatory comment headers** (names over comments). The consistent order is
+  the navigation; a light `# Muscles` divider is allowed only to separate a
+  sub-resource block.
+
+### A15. Parent-entity ownership
+
+Premise: **every tenant-owned table denormalizes `business_id`**, so tenancy is
+always a direct filter, never a join.
+
+- **Create-under-parent** (no child row yet): fetch the parent scoped first, then
+  attach.
+
+  ```elixir
+  with {:ok, _plan} <- get_owned_plan(ctx, plan_id) do
+    Workout.insert_changeset(ctx.business_id, plan_id, attrs) |> Repo.insert()
+  end
+  ```
+
+  The scoped getter proves the parent is in the tenant (and, for client-owned
+  parents, that it belongs to `ctx.client_id`, since the getter uses
+  `for_client`). Then `put_change(parent_id)` + `put_change(:business_id)`.
+
+- **Read/update/delete an existing child**: scope the child query directly by
+  both tenant and parent in one query — no separate parent fetch.
+
+  ```elixir
+  Workout |> for_business(bid) |> for_plan(plan_id) |> Repo.get(id)
+  # wrong tenant OR wrong parent → nil → :not_found
+  ```
+
+- **Check the immediate parent only.** Deeper ancestry is guaranteed
+  transitively — every level denormalizes `business_id`, and each parent was
+  already scoped when fetched/created.
+- Wrong tenant or wrong parent → `:not_found`, never `:forbidden`.
+
+**OPEN (parked):** client ownership on deep nesting (e.g. `performed_set` whose
+owning `client_id` rides through `session`). Two candidates — (A) scope through
+the parent that carries `client_id`, or (B) denormalize `client_id` onto hot
+client-owned tables (sessions, sets, logs) for a direct `for_client` filter.
+Decision deferred.
+
 ---
 
 ## Part B — Divergence ledger (migration backlog)

@@ -198,4 +198,60 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       refute Map.has_key?(data, "source_template_id")
     end
   end
+
+  describe "GET /v1/client/training-plans/today" do
+    test "returns today's active plan with scheduled workout", ctx do
+      today = Date.utc_today()
+
+      plan =
+        insert(:training_plan,
+          creator: ctx.coach,
+          business: ctx.business,
+          client_id: ctx.client.id,
+          status: :active,
+          start_date: Date.add(today, -1),
+          end_date: Date.add(today, 30)
+        )
+
+      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
+      day = Easy.Utils.weekday_name(today)
+
+      _entry =
+        insert(:training_plan_item,
+          plan: plan,
+          business: ctx.business,
+          day_of_week: day,
+          workout: workout
+        )
+
+      conn = get(ctx.conn, "/v1/client/training-plans/today")
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == plan.id
+      assert data["day"] == day
+      assert data["workout"]["id"] == workout.id
+    end
+
+    test "returns 404 when no active plan", ctx do
+      conn = get(ctx.conn, "/v1/client/training-plans/today")
+      assert json_response(conn, 404)
+    end
+
+    test "accepts a date param", ctx do
+      today = Date.utc_today()
+
+      plan =
+        insert(:training_plan,
+          creator: ctx.coach,
+          business: ctx.business,
+          client_id: ctx.client.id,
+          status: :active,
+          start_date: Date.add(today, -1),
+          end_date: Date.add(today, 30)
+        )
+
+      conn = get(ctx.conn, "/v1/client/training-plans/today", %{"date" => Date.to_iso8601(today)})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == plan.id
+    end
+  end
 end

@@ -1,5 +1,12 @@
 defmodule EasyWeb.Clients.TrainingPlanJSON do
-  alias Easy.Training.{TrainingExercise, PlannedSet, ScheduleEntry, TrainingWorkout, TrainingPlan, TrainingWorkoutExercise}
+  alias Easy.Training.{
+    TrainingExercise,
+    PlannedSet,
+    ScheduleEntry,
+    TrainingWorkout,
+    TrainingPlan,
+    TrainingWorkoutExercise
+  }
 
   @spec show(map()) :: map()
   def show(%{plan: plan}) do
@@ -9,6 +16,37 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
   @spec index(map()) :: map()
   def index(%{plans: plans, count: count}) do
     %{data: Enum.map(plans, &data/1), count: count}
+  end
+
+  @spec today(map()) :: map()
+  def today(%{plan: plan, schedule_entry: schedule_entry, workout: workout, date: date, day: day}) do
+    %{
+      data: %{
+        id: plan.id,
+        name: plan.name,
+        description: plan.description,
+        status: plan.status,
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        date: date,
+        day: day,
+        workout: if(workout, do: workout_data(workout), else: nil),
+        schedule_entry: schedule_entry_data(schedule_entry),
+        inserted_at: plan.inserted_at,
+        updated_at: plan.updated_at
+      }
+    }
+  end
+
+  defp schedule_entry_data(nil), do: nil
+
+  defp schedule_entry_data(%ScheduleEntry{} = entry) do
+    %{
+      id: entry.id,
+      day_of_week: entry.day_of_week,
+      training_workout_id: entry.training_workout_id,
+      training_plan_id: entry.training_plan_id
+    }
   end
 
   defp data(%TrainingPlan{} = plan) do

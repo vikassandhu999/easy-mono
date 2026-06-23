@@ -14,6 +14,20 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   tags ["client training plans"]
 
+  operation :today,
+    summary: "Get today's training plan day",
+    description: "Returns the active training plan and today's scheduled workout for the authenticated client.",
+    operation_id: "getClientTrainingPlanToday",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :query, :string, "Date (YYYY-MM-DD), defaults to today", required: false)
+    ],
+    responses: [
+      ok: {"Today's training plan day", "application/json", ClientTrainingPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"No active plan for today", "application/json", ErrorResponse}
+    ]
+
   operation :index,
     summary: "List client training plans",
     description: "Lists training plans assigned to the authenticated client in the current business.",
@@ -49,6 +63,15 @@ defmodule EasyWeb.Clients.TrainingPlanController do
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
+
+  @spec today(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def today(conn, params) do
+    date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
+
+    with {:ok, result} <- Plans.get_my_active_plan_day(conn.assigns.ctx, date) do
+      render(conn, :today, result)
+    end
+  end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

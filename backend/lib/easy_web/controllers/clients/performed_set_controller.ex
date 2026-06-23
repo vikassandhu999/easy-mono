@@ -6,12 +6,15 @@ defmodule EasyWeb.Clients.PerformedSetController do
   alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingPerformedSetRequest, TrainingPerformedSetResponse}
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+
   tags ["client performed sets"]
 
   operation :create,
-    summary: "Create client performed set",
+    summary: "Log a performed set",
     operation_id: "createClientPerformedSet",
     security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:session_id, :path, :string, "Training session id")],
     request_body: {"Performed set request", "application/json", TrainingPerformedSetRequest, required: true},
     responses: [
       created: {"Performed set created", "application/json", TrainingPerformedSetResponse},
@@ -20,7 +23,7 @@ defmodule EasyWeb.Clients.PerformedSetController do
     ]
 
   operation :update,
-    summary: "Update client performed set",
+    summary: "Update a performed set",
     operation_id: "updateClientPerformedSet",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Performed set id")],
@@ -33,15 +36,21 @@ defmodule EasyWeb.Clients.PerformedSetController do
     ]
 
   operation :delete,
-    summary: "Delete client performed set",
+    summary: "Delete a performed set",
     operation_id: "deleteClientPerformedSet",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Performed set id")],
-    responses: [no_content: "Performed set deleted", unauthorized: {"Unauthorized", "application/json", ErrorResponse}, not_found: {"Not found", "application/json", ErrorResponse}]
+    responses: [
+      no_content: "Performed set deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, %{"workout_session_id" => session_id} = params) do
-    with {:ok, set} <- Sessions.create_my_performed_set(conn.assigns.ctx, session_id, params) do
+  def create(conn, _params) do
+    session_id = conn.path_params["session_id"]
+
+    with {:ok, set} <- Sessions.create_my_performed_set(conn.assigns.ctx, session_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, set: set)
@@ -49,7 +58,9 @@ defmodule EasyWeb.Clients.PerformedSetController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
+  def update(conn, _params) do
+    id = conn.path_params["id"]
+
     with {:ok, updated} <- Sessions.update_my_performed_set(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, set: updated)
     end

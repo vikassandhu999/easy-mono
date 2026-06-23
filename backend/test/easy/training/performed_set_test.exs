@@ -1,7 +1,7 @@
 defmodule Easy.Training.TrainingPerformedSetTest do
   use Easy.SchemaCase
 
-  alias Easy.Sessions
+  alias Easy.{Ctx, Sessions}
   alias Easy.Training.TrainingPerformedSet
 
   describe "insert_changeset/3" do
@@ -34,12 +34,12 @@ defmodule Easy.Training.TrainingPerformedSetTest do
     end
   end
 
-  describe "create_performed_set/3" do
+  describe "create_my_performed_set/3" do
     test "records a performed set for an exercise in the session" do
-      %{business: business, session: session, exercise: exercise} = session_with_element()
+      %{ctx: ctx, session: session, exercise: exercise} = session_with_element()
 
       assert {:ok, set} =
-               Sessions.create_performed_set(session.id, business.id, %{
+               Sessions.create_my_performed_set(ctx, session.id, %{
                  "exercise_id" => exercise.id,
                  "set_type" => "working",
                  "position" => 0,
@@ -51,11 +51,11 @@ defmodule Easy.Training.TrainingPerformedSetTest do
     end
 
     test "rejects an exercise that is neither owned nor system" do
-      %{business: business, session: session} = session_with_element()
+      %{ctx: ctx, session: session} = session_with_element()
       foreign_exercise = insert(:exercise, business: insert(:business))
 
       assert {:error, :not_found} =
-               Sessions.create_performed_set(session.id, business.id, %{
+               Sessions.create_my_performed_set(ctx, session.id, %{
                  "exercise_id" => foreign_exercise.id,
                  "set_type" => "working",
                  "position" => 0,
@@ -68,7 +68,7 @@ defmodule Easy.Training.TrainingPerformedSetTest do
     business = insert(:business)
     coach = insert(:coach, business: business)
     client = insert(:client, user: insert(:user), creator: coach, business: business)
-    plan = insert(:training_plan, creator: coach, business: business)
+    plan = insert(:training_plan, creator: coach, business: business, client_id: client.id)
     workout = insert(:workout, plan: plan, creator: coach, business: business)
     exercise = insert(:exercise, business: business)
 
@@ -79,9 +79,9 @@ defmodule Easy.Training.TrainingPerformedSetTest do
       position: 0
     )
 
-    {:ok, session} =
-      Sessions.create_workout_session(business.id, client.id, %{"training_workout_id" => workout.id})
+    session = insert(:workout_session, client: client, business: business, state: :active)
+    ctx = %Ctx{user_id: client.user_id, business_id: client.business_id}
 
-    %{business: business, session: session, exercise: exercise}
+    %{business: business, ctx: ctx, session: session, exercise: exercise}
   end
 end

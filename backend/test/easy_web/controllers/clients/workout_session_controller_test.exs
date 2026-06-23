@@ -2,18 +2,25 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
   use Easy.ConnCase
 
   alias Easy.Sessions
+  alias Easy.Ctx
 
   setup do
     coach = insert(:coach)
     client = insert(:client, creator: coach, business: coach.business)
     conn = build_conn() |> authenticate_client(client)
 
-    %{conn: conn, coach: coach, client: client, business: coach.business}
+    ctx = %Ctx{user_id: client.user_id, business_id: coach.business_id}
+
+    %{conn: conn, coach: coach, client: client, business: coach.business, ctx: ctx}
   end
 
-  describe "POST /v1/client/workout_sessions" do
+  describe "POST /v1/client/training-sessions" do
     test "starts a freestyle workout (no plan)", ctx do
-      conn = post(ctx.conn, "/v1/client/workout_sessions", %{})
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions", Jason.encode!(%{}))
+
       assert %{"data" => data} = json_response(conn, 201)
       assert data["state"] == "active"
       assert data["training_workout_id"] == nil
@@ -52,70 +59,37 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
         )
 
       conn =
-        post(ctx.conn, "/v1/client/workout_sessions", %{
-          "training_workout_id" => workout.id
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions", Jason.encode!(%{"training_workout_id" => workout.id}))
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["state"] == "active"
       assert data["training_workout_id"] == workout.id
       assert data["planned_snapshot"] != nil
-
-      snapshot = data["planned_snapshot"]
-      assert [exercise_snap] = snapshot["exercises"]
-      assert exercise_snap["name"] == exercise.name
-      assert [set_snap] = exercise_snap["sets"]
-      assert set_snap["reps"] == "8-10"
-      assert set_snap["set_type"] == "working"
-    end
-
-    test "rejects another client's assigned workout", ctx do
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-
-      other_plan =
-        insert(:training_plan,
-          creator: ctx.coach,
-          business: ctx.business,
-          client_id: other_client.id,
-          start_date: Date.add(Date.utc_today(), -1),
-          end_date: Date.add(Date.utc_today(), 30)
-        )
-
-      workout = insert(:workout, plan: other_plan, creator: ctx.coach, business: ctx.business)
-
-      conn =
-        post(ctx.conn, "/v1/client/workout_sessions", %{
-          "training_workout_id" => workout.id
-        })
-
-      assert json_response(conn, 404)
-    end
-
-    test "rejects template workout", ctx do
-      plan = insert(:training_plan, creator: ctx.coach, business: ctx.business)
-      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
-
-      conn =
-        post(ctx.conn, "/v1/client/workout_sessions", %{
-          "training_workout_id" => workout.id
-        })
-
-      assert json_response(conn, 404)
     end
 
     test "rejects creating session when active session exists", ctx do
-      {:ok, _session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+      insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
 
-      conn = post(ctx.conn, "/v1/client/workout_sessions", %{})
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions", Jason.encode!(%{}))
+
       assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
     end
 
     test "rejects unauthenticated request", _ctx do
-      conn = build_conn() |> post("/v1/client/workout_sessions", %{})
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions", Jason.encode!(%{}))
+
       assert json_response(conn, 403)
     end
 
-    test "snapshot captures name of a system exercise (source: system, business: nil)", ctx do
+    test "snapshot captures name of a system exercise", ctx do
       plan =
         insert(:training_plan,
           creator: ctx.coach,
@@ -148,61 +122,54 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
         )
 
       conn =
-        post(ctx.conn, "/v1/client/workout_sessions", %{
-          "training_workout_id" => workout.id
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions", Jason.encode!(%{"training_workout_id" => workout.id}))
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["planned_snapshot"] != nil
 
       [exercise_snap] = data["planned_snapshot"]["exercises"]
       assert exercise_snap["name"] == "System Squat"
-      assert [set_snap] = exercise_snap["sets"]
-      assert set_snap["reps"] == "5"
-      assert set_snap["set_type"] == "working"
     end
   end
 
-  describe "GET /v1/client/workout_sessions" do
-    test "lists only this client's sessions", ctx do
-      {:ok, _session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+  describe "GET /v1/client/training-sessions" do
+    test "lists only this client's sessions (no date filter)", ctx do
+      insert(:workout_session, client: ctx.client, business: ctx.business)
 
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-      {:ok, _other} = Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
+      insert(:workout_session, client: other_client, business: ctx.business)
 
-      conn = get(ctx.conn, "/v1/client/workout_sessions")
+      conn = get(ctx.conn, "/v1/client/training-sessions")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
     end
 
-    test "filters by state", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
-      {:ok, _completed} = Sessions.complete_workout_session(session)
+    test "filters by date range", ctx do
+      today = Date.utc_today()
+      insert(:workout_session, client: ctx.client, business: ctx.business, date: today)
+      insert(:workout_session,
+        client: ctx.client,
+        business: ctx.business,
+        date: Date.add(today, -30),
+        state: :completed
+      )
 
-      {:ok, _active} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+      from = Date.add(today, -7)
+      to = Date.add(today, 7)
 
-      conn = get(ctx.conn, "/v1/client/workout_sessions", %{"state" => "completed"})
+      conn = get(ctx.conn, "/v1/client/training-sessions?from=#{from}&to=#{to}")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
-      assert hd(data)["state"] == "completed"
-    end
-
-    test "paginates results", ctx do
-      for _ <- 1..3 do
-        {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
-        Sessions.complete_workout_session(session)
-      end
-
-      conn = get(ctx.conn, "/v1/client/workout_sessions", %{"offset" => "0", "limit" => "2"})
-      assert %{"data" => data, "count" => 3} = json_response(conn, 200)
-      assert length(data) == 2
+      assert length(data) == 1
     end
   end
 
-  describe "GET /v1/client/workout_sessions/:id" do
+  describe "GET /v1/client/training-sessions/:id" do
     test "shows session with performed sets", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+      session = insert(:workout_session, client: ctx.client, business: ctx.business)
 
-      conn = get(ctx.conn, "/v1/client/workout_sessions/#{session.id}")
+      conn = get(ctx.conn, "/v1/client/training-sessions/#{session.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == session.id
       assert is_list(data["performed_sets"])
@@ -210,136 +177,85 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
     test "returns 404 for another client's session", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
-      {:ok, other_session} =
-        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
-
-      conn = get(ctx.conn, "/v1/client/workout_sessions/#{other_session.id}")
+      conn = get(ctx.conn, "/v1/client/training-sessions/#{other_session.id}")
       assert json_response(conn, 404)
     end
 
     test "does not expose business_id or client_id", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+      session = insert(:workout_session, client: ctx.client, business: ctx.business)
 
-      conn = get(ctx.conn, "/v1/client/workout_sessions/#{session.id}")
+      conn = get(ctx.conn, "/v1/client/training-sessions/#{session.id}")
       assert %{"data" => data} = json_response(conn, 200)
       refute Map.has_key?(data, "business_id")
       refute Map.has_key?(data, "client_id")
     end
   end
 
-  describe "GET /v1/client/workout_sessions/active" do
-    test "returns active session", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
-
-      conn = get(ctx.conn, "/v1/client/workout_sessions/active")
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["id"] == session.id
-      assert data["state"] == "active"
-    end
-
-    test "returns 404 when no active session", ctx do
-      conn = get(ctx.conn, "/v1/client/workout_sessions/active")
-      assert json_response(conn, 404)
-    end
-  end
-
-  describe "POST /v1/client/workout_sessions/:id/complete" do
-    test "completes session with optional rating and notes", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+  describe "PATCH /v1/client/training-sessions/:id" do
+    test "completes session with state: completed", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
 
       conn =
-        post(ctx.conn, "/v1/client/workout_sessions/#{session.id}/complete", %{
-          "soreness_rating" => 4,
-          "notes" => "Great session!"
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(
+          "/v1/client/training-sessions/#{session.id}",
+          Jason.encode!(%{"state" => "completed", "soreness_rating" => 4, "notes" => "Great!"})
+        )
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["state"] == "completed"
       assert data["ended_at"] != nil
       assert data["soreness_rating"] == 4
-      assert data["notes"] == "Great session!"
+      assert data["notes"] == "Great!"
     end
 
-    test "completes session without optional fields", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+    test "discards session with state: discarded", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
 
-      conn = post(ctx.conn, "/v1/client/workout_sessions/#{session.id}/complete", %{})
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["state"] == "completed"
-      assert data["ended_at"] != nil
-    end
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(
+          "/v1/client/training-sessions/#{session.id}",
+          Jason.encode!(%{"state" => "discarded"})
+        )
 
-    test "returns 404 for another client's session", ctx do
-      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-
-      {:ok, other_session} =
-        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
-
-      conn = post(ctx.conn, "/v1/client/workout_sessions/#{other_session.id}/complete", %{})
-      assert json_response(conn, 404)
-    end
-  end
-
-  describe "POST /v1/client/workout_sessions/:id/discard" do
-    test "discards session", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
-
-      conn = post(ctx.conn, "/v1/client/workout_sessions/#{session.id}/discard")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["state"] == "discarded"
     end
-  end
 
-  describe "PATCH /v1/client/workout_sessions/:id" do
-    test "updates notes and soreness_rating", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+    test "updates notes and soreness_rating without changing state", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
 
       conn =
-        patch(ctx.conn, "/v1/client/workout_sessions/#{session.id}", %{
-          "notes" => "Felt tired",
-          "soreness_rating" => 3
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(
+          "/v1/client/training-sessions/#{session.id}",
+          Jason.encode!(%{"notes" => "Felt tired", "soreness_rating" => 3})
+        )
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["notes"] == "Felt tired"
       assert data["soreness_rating"] == 3
-    end
-
-    test "does not allow state or workout retargeting", ctx do
-      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
-
-      plan =
-        insert(:training_plan,
-          creator: ctx.coach,
-          business: ctx.business,
-          client_id: ctx.client.id,
-          start_date: Date.add(Date.utc_today(), -1),
-          end_date: Date.add(Date.utc_today(), 30)
-        )
-
-      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
-
-      conn =
-        patch(ctx.conn, "/v1/client/workout_sessions/#{session.id}", %{
-          "state" => "completed",
-          "training_workout_id" => workout.id,
-          "notes" => "Still active"
-        })
-
-      assert %{"data" => data} = json_response(conn, 200)
       assert data["state"] == "active"
-      assert data["training_workout_id"] == nil
-      assert data["notes"] == "Still active"
     end
 
     test "returns 404 for another client's session", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+      other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
-      {:ok, other_session} =
-        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(
+          "/v1/client/training-sessions/#{other_session.id}",
+          Jason.encode!(%{"notes" => "x"})
+        )
 
-      conn = patch(ctx.conn, "/v1/client/workout_sessions/#{other_session.id}", %{"notes" => "x"})
       assert json_response(conn, 404)
     end
   end

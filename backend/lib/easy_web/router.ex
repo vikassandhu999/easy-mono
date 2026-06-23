@@ -164,16 +164,9 @@ defmodule EasyWeb.Router do
     patch  "/training-workout-exercises/:id",          WorkoutElementController, :update
     delete "/training-workout-exercises/:id",          WorkoutElementController, :delete
 
-    get "/workout_sessions", WorkoutSessionController, :index
-    post "/workout_sessions", WorkoutSessionController, :create
-    get "/workout_sessions/:id", WorkoutSessionController, :show
-    post "/workout_sessions/:id/complete", WorkoutSessionController, :complete
-    post "/workout_sessions/:id/discard", WorkoutSessionController, :discard
-    delete "/workout_sessions/:id", WorkoutSessionController, :delete
-
-    post "/performed_sets", PerformedSetController, :create
-    patch "/performed_sets/:id", PerformedSetController, :update
-    delete "/performed_sets/:id", PerformedSetController, :delete
+    # Client-scoped training sessions (read-only)
+    get "/clients/:client_id/training-sessions",     WorkoutSessionController, :index
+    get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
 
     # Threads
     get "/threads", ThreadController, :index
@@ -217,26 +210,22 @@ defmodule EasyWeb.Router do
     post "/form-assignments/:id/submit", FormAssignmentController, :submit
 
     # Training plans (read-only)
-    get "/training-plans",      TrainingPlanController, :index
-    get "/training-plans/:id",  TrainingPlanController, :show
+    get "/training-plans",       TrainingPlanController, :index
+    get "/training-plans/today", TrainingPlanController, :today
+    get "/training-plans/:id",   TrainingPlanController, :show
 
     # Exercises (read-only)
     get "/training-exercises",      ExerciseController, :index
     get "/training-exercises/:id",  ExerciseController, :show
 
-    # Workout sessions
-    get "/workout_sessions/active", WorkoutSessionController, :active
-    get "/workout_sessions", WorkoutSessionController, :index
-    post "/workout_sessions", WorkoutSessionController, :create
-    get "/workout_sessions/:id", WorkoutSessionController, :show
-    patch "/workout_sessions/:id", WorkoutSessionController, :update
-    post "/workout_sessions/:id/complete", WorkoutSessionController, :complete
-    post "/workout_sessions/:id/discard", WorkoutSessionController, :discard
-
-    # Performed sets
-    post "/performed_sets", PerformedSetController, :create
-    patch "/performed_sets/:id", PerformedSetController, :update
-    delete "/performed_sets/:id", PerformedSetController, :delete
+    # Training sessions
+    get    "/training-sessions",                          WorkoutSessionController, :index
+    post   "/training-sessions",                          WorkoutSessionController, :create
+    get    "/training-sessions/:id",                      WorkoutSessionController, :show
+    patch  "/training-sessions/:id",                      WorkoutSessionController, :update
+    post   "/training-sessions/:session_id/performed-sets", PerformedSetController, :create
+    patch  "/training-performed-sets/:id",                PerformedSetController, :update
+    delete "/training-performed-sets/:id",                PerformedSetController, :delete
 
     # Nutrition plans (read-only)
     get "/nutrition-plans", NutritionPlanController, :index

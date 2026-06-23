@@ -23,7 +23,6 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetRequest do
         notes: %Schema{type: :string, maxLength: 5000, nullable: true},
         exercise_id: %Schema{type: :string, format: :uuid}
       },
-      required: [:position, :exercise_id],
       example: %{
         "position" => 0,
         "exercise_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
@@ -94,14 +93,12 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingSessionRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        client_id: %Schema{type: :string, format: :uuid},
-        workout_id: %Schema{type: :string, format: :uuid, nullable: true},
+        training_workout_id: %Schema{type: :string, format: :uuid, nullable: true},
         soreness_rating: %Schema{type: :integer, minimum: 1, maximum: 5, nullable: true},
         notes: %Schema{type: :string, maxLength: 5000, nullable: true}
       },
       example: %{
-        "client_id" => "0ac4b3bc-e0b6-44ea-ae7a-f48deac42912",
-        "workout_id" => "1b8248bc-4499-4a0c-986f-621fc95cbd0e"
+        "training_workout_id" => "1b8248bc-4499-4a0c-986f-621fc95cbd0e"
       }
     },
     struct?: false
@@ -119,10 +116,12 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingSessionUpdateRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        soreness_rating: %Schema{type: :integer, minimum: 1, maximum: 5, nullable: true},
-        notes: %Schema{type: :string, maxLength: 5000, nullable: true}
+        state: %Schema{type: :string, enum: ["completed", "discarded"]},
+        ended_at: %Schema{type: :string, format: :"date-time"},
+        soreness_rating: %Schema{type: :integer, minimum: 1, maximum: 5},
+        notes: %Schema{type: :string}
       },
-      example: %{"soreness_rating" => 3, "notes" => "Felt strong."}
+      example: %{"state" => "completed", "soreness_rating" => 3, "notes" => "Felt strong."}
     },
     struct?: false
   )

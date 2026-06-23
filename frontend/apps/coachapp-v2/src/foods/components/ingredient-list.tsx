@@ -74,11 +74,6 @@ function IngredientFieldsForm({
   onChange: (field: keyof IngredientItem, fieldValue: number | string) => void;
 }) {
   const form = useForm<IngredientFieldsValues>({
-    defaultValues: {
-      amount: toOptionalNumber(item.amount),
-      unit: item.unit,
-      weight_g: toOptionalNumber(item.weight_g),
-    },
     resolver: zodResolver(ingredientFieldsSchema),
     values: {
       amount: toOptionalNumber(item.amount),

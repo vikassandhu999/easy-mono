@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse, Macros, normalizeMacros, ServingSize} from '@/api/shared';
+import {ApiListResponse, ApiResponse, listTags, Macros, normalizeMacros, pageTags, ServingSize} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -40,16 +40,7 @@ export type FoodCreateRequest = {
   serving_sizes?: ServingSize[];
 };
 
-export type FoodUpdateRequest = {
-  name?: string;
-  macros?: Macros;
-  source?: string;
-  category?: string;
-  tags?: string[];
-  notes?: string;
-  image_url?: string;
-  serving_sizes?: ServingSize[];
-};
+export type FoodUpdateRequest = Partial<FoodCreateRequest>;
 
 export function foodFromApi(food: Food): Food {
   return {
@@ -89,24 +80,9 @@ export const foodsApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Food', id}],
     }),
     listFoods: build.query<ApiListResponse<Food>, ListFoodsParams | void>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/foods',
-              params,
-            }
-          : '/v1/coach/foods',
+      query: (params) => ({url: '/v1/coach/foods', params}),
       transformResponse: mapFoodListResponse,
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((food) => ({
-                type: 'Food' as const,
-                id: food.id,
-              })),
-              {type: 'Food' as const, id: 'LIST'},
-            ]
-          : [{type: 'Food' as const, id: 'LIST'}],
+      providesTags: (result) => listTags('Food', result),
     }),
     deleteFood: build.mutation<void, string>({
       query: (id) => ({
@@ -135,18 +111,7 @@ export const foodsApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((food) => ({
-                  type: 'Food' as const,
-                  id: food.id,
-                })),
-              ),
-              {type: 'Food' as const, id: 'LIST'},
-            ]
-          : [{type: 'Food' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('Food', result),
     }),
     updateFood: build.mutation<ApiResponse<Food>, {body: FoodUpdateRequest; id: string}>({
       query: ({id, body}) => ({

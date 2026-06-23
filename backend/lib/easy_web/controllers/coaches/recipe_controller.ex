@@ -4,7 +4,16 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   alias Easy.Recipes
   alias OpenApiSpex.Operation
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, RecipeListResponse, RecipeRequest, RecipeResponse}
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    RecipeImpactResponse,
+    RecipeListResponse,
+    RecipeRequest,
+    RecipeResponse
+  }
+
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
 
   tags ["coach recipes"]
 
@@ -73,12 +82,29 @@ defmodule EasyWeb.Coaches.RecipeController do
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
-  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
-    claims = conn.assigns.claims
+  operation :impact,
+    summary: "Show plans/templates affected by a recipe",
+    operation_id: "getNutritionRecipeImpact",
+    security: [%{"bearerAuth" => []}],
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [
+      ok: {"Impact", "application/json", RecipeImpactResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
-    with {:ok, recipe} <-
-           Recipes.create_recipe_for_coach_user(claims.business_id, claims.user_id, params) do
+  operation :copy,
+    summary: "Copy a recipe into the coach's business",
+    operation_id: "copyNutritionRecipe",
+    security: [%{"bearerAuth" => []}],
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [
+      created: {"Recipe", "application/json", RecipeResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def create(conn, _params) do
+    with {:ok, recipe} <- Recipes.create_recipe(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, recipe: recipe)
@@ -87,44 +113,54 @@ defmodule EasyWeb.Coaches.RecipeController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => recipe_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, recipe} <- Recipes.get_recipe(business_id, recipe_id) do
+    with {:ok, recipe} <- Recipes.get_recipe(conn.assigns.ctx, recipe_id) do
       render(conn, :show, recipe: recipe)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => recipe_id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def update(conn, _params) do
+    recipe_id = conn.path_params["id"]
 
-    with {:ok, updated_recipe} <- Recipes.update_recipe(business_id, recipe_id, conn.body_params) do
+    with {:ok, updated_recipe} <- Recipes.update_recipe(conn.assigns.ctx, recipe_id, conn.body_params) do
       render(conn, :show, recipe: updated_recipe)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => recipe_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, _deleted} <- Recipes.delete_recipe(business_id, recipe_id) do
+    with {:ok, _deleted} <- Recipes.delete_recipe(conn.assigns.ctx, recipe_id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    search_term = Map.get(params, "search", "")
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 10)
+    opts = [
+      search: Map.get(params, "search", ""),
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 20)
+    ]
 
     with {:ok, %{count: count, recipes: recipes}} <-
-           Recipes.list_recipes(business_id, search_term, offset, limit) do
+           Recipes.list_recipes(conn.assigns.ctx, opts) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, recipes: recipes)
+    end
+  end
+
+  @spec impact(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def impact(conn, %{"id" => id}) do
+    with {:ok, impact} <- Recipes.get_recipe_impact(conn.assigns.ctx, id) do
+      render(conn, :impact, impact)
+    end
+  end
+
+  @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def copy(conn, %{"id" => id}) do
+    with {:ok, recipe} <- Recipes.copy_recipe(conn.assigns.ctx, id) do
+      conn |> put_status(:created) |> render(:show, recipe: recipe)
     end
   end
 end

@@ -1,0 +1,115 @@
+<h2>Client nutrition — the Today screen</h2>
+<p class="subtitle">One continuous screen: daily macros vs target on top, meal slots below where you log what you ate. The decision is the macro hero treatment + how the day is anchored. Tap your pick.</p>
+
+<style>
+  .row{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .col{width:325px}
+  .ptitle{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .phone{border:2px solid #3a3a42;border-radius:24px;padding:9px;background:#111;cursor:pointer}
+  .phone:hover,.phone.selected{border-color:#6c8cff}
+  .scr{position:relative;background:#0c0c0e;border-radius:16px;height:600px;overflow:hidden;font-size:13px;display:flex;flex-direction:column}
+  .datenav{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid #1f1f25}
+  .datenav .d{font-weight:700}.datenav .a{color:#777}
+  .body{flex:1;overflow:hidden;padding:12px}
+  /* ring hero */
+  .ringwrap{display:flex;gap:14px;align-items:center;background:#16161b;border:1px solid #2a2a31;border-radius:14px;padding:14px;margin-bottom:12px}
+  .ring{width:84px;height:84px;border-radius:99px;background:conic-gradient(#3ad07a 0% 78%,#23232b 78% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ring .in{width:66px;height:66px;border-radius:99px;background:#0c0c0e;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .in b{font-size:17px;line-height:1}.ring .in small{font-size:8px;color:#888}
+  .macs{flex:1}
+  .mb{margin-bottom:7px}
+  .mb .t{display:flex;justify-content:space-between;font-size:10px;color:#9aa;margin-bottom:3px}
+  .mb .bar{height:5px;background:#23232b;border-radius:3px;overflow:hidden}
+  .mb .bar i{display:block;height:100%}
+  .p i{background:#6c8cff}.c i{background:#e0a14d}.f i{background:#e06c9c}
+  /* bars hero */
+  .barsHero{background:#16161b;border:1px solid #2a2a31;border-radius:14px;padding:14px;margin-bottom:12px}
+  .kcalbig{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .kcalbig b{font-size:24px}.kcalbig small{color:#888;font-size:12px}
+  /* meal slots */
+  .slot{border:1px solid #2a2a31;background:#16161b;border-radius:12px;padding:10px 12px;margin-bottom:9px}
+  .slh{display:flex;justify-content:space-between;align-items:center}
+  .sname{font-weight:600;font-size:12px}
+  .slkc{font-size:11px;color:#7f8cff}
+  .pi{display:flex;align-items:center;gap:9px;padding:5px 0;border-top:1px solid #202026;margin-top:5px;font-size:12px}
+  .ck{width:20px;height:20px;border-radius:6px;border:1.5px solid #444;flex-shrink:0}
+  .ck.on{background:#3ad07a;border-color:#3ad07a;color:#06200f;text-align:center;line-height:18px}
+  .pi .n{flex:1}.pi .amt{color:#888;font-size:11px}
+  .pi.done .n{color:#7c8}
+  .logall{font-size:10px;color:#6c8cff}
+  .add{color:#6c8cff;font-size:12px;margin-top:6px}
+  .muted{color:#777}
+  .cap{text-align:center;font-size:12px;color:#aaa;margin-top:8px}
+  .wk{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:8px 12px;border-bottom:1px solid #1f1f25}
+  .wk div{text-align:center;font-size:9px;color:#777}
+  .wk .on{color:#7f8cff;font-weight:700}
+  .dot{width:5px;height:5px;border-radius:9px;background:#3ad07a;margin:3px auto 0}
+</style>
+
+<div class="row">
+
+  <!-- A: ring hero -->
+  <div class="col">
+    <div class="ptitle">A · Calorie ring + macro bars</div>
+    <div class="phone" data-choice="ring" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="datenav"><span class="a">‹</span><span class="d">Today · Wed</span><span class="a">›</span></div>
+        <div class="body">
+          <div class="ringwrap">
+            <div class="ring"><div class="in"><b>1640</b><small>of 2100</small></div></div>
+            <div class="macs">
+              <div class="mb p"><div class="t"><span>Protein</span><span>120/180g</span></div><div class="bar"><i style="width:66%"></i></div></div>
+              <div class="mb c"><div class="t"><span>Carbs</span><span>150/200g</span></div><div class="bar"><i style="width:75%"></i></div></div>
+              <div class="mb f"><div class="t"><span>Fat</span><span>40/60g</span></div><div class="bar"><i style="width:66%"></i></div></div>
+            </div>
+          </div>
+          <div class="slot">
+            <div class="slh"><span class="sname">Breakfast</span><span class="slkc">420 · ✓ logged</span></div>
+            <div class="pi done"><span class="ck on">✓</span><span class="n">Oats &amp; Eggs</span><span class="amt">420</span></div>
+          </div>
+          <div class="slot">
+            <div class="slh"><span class="sname">Lunch</span><span class="logall">✓ log whole meal</span></div>
+            <div class="pi"><span class="ck"></span><span class="n">Chicken &amp; Rice</span><span class="amt">650</span></div>
+            <div class="pi"><span class="ck"></span><span class="n">Broccoli 100g</span><span class="amt">35</span></div>
+          </div>
+          <div class="slot"><div class="slh"><span class="sname muted">Dinner</span><span class="muted" style="font-size:11px">630 · later</span></div></div>
+          <div class="add">＋ Add food off-plan</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>A</b> · Calories as a ring (the number people watch), macros as bars beside it. Compact, scannable.</div>
+  </div>
+
+  <!-- B: bars hero + weekly -->
+  <div class="col">
+    <div class="ptitle">B · Big calories + 4 bars + week strip</div>
+    <div class="phone" data-choice="bars" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="datenav"><span class="a">‹</span><span class="d">Today · Wed</span><span class="a">›</span></div>
+        <div class="wk"><div class="on">W<div class="dot"></div></div><div>T<div class="dot"></div></div><div>F<div class="dot"></div></div><div>S</div><div>S</div><div>M</div><div>T</div></div>
+        <div class="body">
+          <div class="barsHero">
+            <div class="kcalbig"><b>1640 <small>/ 2100 kcal</small></b><span class="muted" style="font-size:12px">460 left</span></div>
+            <div class="mb p"><div class="t"><span>Protein 120/180g</span><span>66%</span></div><div class="bar"><i style="width:66%"></i></div></div>
+            <div class="mb c"><div class="t"><span>Carbs 150/200g</span><span>75%</span></div><div class="bar"><i style="width:75%"></i></div></div>
+            <div class="mb f"><div class="t"><span>Fat 40/60g</span><span>66%</span></div><div class="bar"><i style="width:66%"></i></div></div>
+          </div>
+          <div class="slot">
+            <div class="slh"><span class="sname">Breakfast</span><span class="slkc">✓ logged</span></div>
+            <div class="pi done"><span class="ck on">✓</span><span class="n">Oats &amp; Eggs</span><span class="amt">420</span></div>
+          </div>
+          <div class="slot">
+            <div class="slh"><span class="sname">Lunch</span><span class="logall">✓ log whole meal</span></div>
+            <div class="pi"><span class="ck"></span><span class="n">Chicken &amp; Rice</span><span class="amt">650</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>B</b> · Calories headline + all four as bars, week strip pinned for day-hopping. More data-forward.</div>
+  </div>
+
+</div>
+
+<div style="max-width:680px;margin:22px auto 0;background:#11210f;border:1px solid #2f7d4a;border-radius:12px;padding:14px 18px;font-size:14px">
+  <b>Both share the logging model:</b> meal slots show the day's planned items (from the plan snapshot); tap the ✓ to mark one eaten (pre-filled amount), "log whole meal" for the slot, or "Add food off-plan". Each ✓ updates the macro hero live — that's nutrition's feedback loop. <b>Lean: A</b> — the calorie ring is the glanceable number; macros support it. B is great if macros are co-equal heroes. Date nav + week strip handle history either way.
+</div>

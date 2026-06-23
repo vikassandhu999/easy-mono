@@ -1,8 +1,6 @@
 defmodule Easy.Storefront.Offer do
   use Ecto.Schema
 
-  alias Easy.Repo
-
   import Ecto.Changeset
   import Ecto.Query
 
@@ -51,8 +49,8 @@ defmodule Easy.Storefront.Offer do
 
   # Changesets
 
-  @spec insert_changeset(map(), String.t()) :: Ecto.Changeset.t()
-  def insert_changeset(attrs, business_id) do
+  @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
@@ -111,32 +109,8 @@ defmodule Easy.Storefront.Offer do
     from(o in query, where: o.status == ^:active)
   end
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__) do
+  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def by_position(query \\ __MODULE__) do
     from(o in query, order_by: [asc: o.position, asc: o.inserted_at])
   end
-
-  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def newest(query \\ __MODULE__) do
-    from(o in query, order_by: [desc: o.inserted_at])
-  end
-
-  # Actions
-
-  @spec create(map(), String.t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(attrs, business_id) do
-    attrs
-    |> insert_changeset(business_id)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(offer, attrs) do
-    offer
-    |> update_changeset(attrs)
-    |> Repo.update()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(offer), do: Repo.delete(offer)
 end

@@ -4,7 +4,7 @@ defmodule EasyWeb.Clients.ExerciseController do
 
   alias Easy.Exercises
   alias OpenApiSpex.{Operation, Schema}
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, ExerciseListResponse, ExerciseResponse}
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingExerciseListResponse, TrainingExerciseResponse}
 
   tags ["client exercises"]
 
@@ -27,7 +27,7 @@ defmodule EasyWeb.Clients.ExerciseController do
       )
     ],
     responses: [
-      ok: {"Exercises", "application/json", ExerciseListResponse},
+      ok: {"Exercises", "application/json", TrainingExerciseListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
@@ -41,20 +41,22 @@ defmodule EasyWeb.Clients.ExerciseController do
       Operation.parameter(:id, :path, :string, "Exercise id")
     ],
     responses: [
-      ok: {"Exercise", "application/json", ExerciseResponse},
+      ok: {"Exercise", "application/json", TrainingExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
-    search = Map.get(params, "search", "")
-    muscle_ids = parse_list(params, "muscle_ids")
+    opts = [
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 20),
+      search: Map.get(params, "search", ""),
+      muscle_ids: parse_list(params, "muscle_ids")
+    ]
 
     with {:ok, %{exercises: exercises, count: count}} <-
-           Exercises.list_exercises(conn.assigns.ctx, search, muscle_ids, offset, limit) do
+           Exercises.list_exercises(conn.assigns.ctx, opts) do
       render(conn, :index, exercises: exercises, count: count)
     end
   end

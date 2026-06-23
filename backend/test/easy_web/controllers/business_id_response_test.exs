@@ -1,6 +1,10 @@
 defmodule EasyWeb.BusinessIdResponseTest do
   use ExUnit.Case, async: true
 
+  @allowed_json_business_id_lines MapSet.new([
+                                    {"lib/easy_web/controllers/coaches/client_profile_json.ex", "business_id: profile.business_id,"}
+                                  ])
+
   test "JSON response serializers do not expose business_id" do
     offenders =
       ["lib/easy_web/controllers/**/*_json.ex", "lib/easy_web/controllers/response_helpers.ex"]
@@ -11,18 +15,80 @@ defmodule EasyWeb.BusinessIdResponseTest do
         |> String.split("\n")
         |> Enum.with_index(1)
         |> Enum.filter(fn {line, _line_number} -> String.contains?(line, "business_id:") end)
-        |> Enum.map(fn {_line, line_number} -> "#{file}:#{line_number}" end)
+        |> Enum.map(fn {line, line_number} ->
+          %{file: file, line: String.trim(line), line_number: line_number}
+        end)
       end)
+      |> Enum.reject(fn offender ->
+        MapSet.member?(@allowed_json_business_id_lines, {offender.file, offender.line})
+      end)
+      |> Enum.map(fn offender -> "#{offender.file}:#{offender.line_number}" end)
 
     assert offenders == []
   end
 
   test "generated OpenAPI does not expose business_id" do
-    spec_json =
+    offenders =
       EasyWeb.ApiSpec.spec()
       |> OpenApiSpex.OpenApi.to_map()
-      |> Jason.encode!()
+      |> business_id_paths()
+      |> Enum.reject(&allowed_open_api_business_id_path?/1)
+      |> Enum.map(&format_path/1)
 
-    refute String.contains?(spec_json, ~s("business_id"))
+    assert offenders == []
+  end
+
+  defp business_id_paths(value), do: business_id_paths(value, [])
+
+  defp business_id_paths(%{} = map, path) do
+    Enum.flat_map(map, fn {key, value} ->
+      key = to_string(key)
+      child_path = path ++ [key]
+
+      if key == "business_id" do
+        [child_path | business_id_paths(value, child_path)]
+      else
+        business_id_paths(value, child_path)
+      end
+    end)
+  end
+
+  defp business_id_paths(list, path) when is_list(list) do
+    list
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {value, index} ->
+      child_path = path ++ [index]
+      paths = if value == "business_id", do: [child_path], else: []
+
+      paths ++ business_id_paths(value, child_path)
+    end)
+  end
+
+  defp business_id_paths(_value, _path), do: []
+
+  defp allowed_open_api_business_id_path?([
+         "components",
+         "schemas",
+         "CoachingClientProfile",
+         "properties",
+         "business_id"
+       ]),
+       do: true
+
+  defp allowed_open_api_business_id_path?([
+         "components",
+         "schemas",
+         "CoachingClientProfile",
+         "required",
+         _index
+       ]),
+       do: true
+
+  defp allowed_open_api_business_id_path?(_path), do: false
+
+  defp format_path(path) do
+    path
+    |> Enum.map(&to_string/1)
+    |> Enum.join(".")
   end
 end

@@ -46,20 +46,15 @@ defmodule Easy.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:swoosh, "~> 1.16"},
       {:req, "~> 0.5"},
-      {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
-      {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:bcrypt_elixir, "~> 3.0"},
       {:joken, "~> 2.6"},
-      {:nimble_totp, "~> 1.0"},
-      {:ex_phone_number, "~> 0.4"},
       {:cors_plug, "~> 3.0"},
       {:resend, "~> 0.4.4"},
       {:open_api_spex, "~> 3.22"},
       {:nimble_csv, "~> 1.2"},
-      {:ex_machina, "~> 2.8", only: :test}
+      {:ex_machina, "~> 2.8", only: :test},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -75,7 +70,10 @@ defmodule Easy.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"]
+      # credo runs advisory in precommit (--mute-exit-status) so legacy debt doesn't
+      # block the gate; `mix check` is the strict, failing convention pass.
+      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "credo --mute-exit-status", "test"],
+      check: ["format --check-formatted", "compile --warnings-as-errors", "credo --strict"]
     ]
   end
 

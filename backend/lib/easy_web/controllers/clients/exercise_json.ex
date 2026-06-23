@@ -1,5 +1,5 @@
 defmodule EasyWeb.Clients.ExerciseJSON do
-  alias Easy.Training.Exercise
+  alias Easy.Training.TrainingExercise
 
   @spec show(map()) :: map()
   def show(%{exercise: exercise}) do
@@ -11,9 +11,11 @@ defmodule EasyWeb.Clients.ExerciseJSON do
     %{data: Enum.map(exercises, &data/1), count: count}
   end
 
-  defp data(%Exercise{} = exercise) do
+  defp data(%TrainingExercise{} = exercise) do
     %{
       id: exercise.id,
+      source: exercise.source,
+      tracking_type: exercise.tracking_type,
       name: exercise.name,
       description: exercise.description,
       instructions: exercise.instructions,

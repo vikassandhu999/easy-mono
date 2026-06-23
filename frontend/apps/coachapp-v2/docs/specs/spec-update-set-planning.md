@@ -1,5 +1,7 @@
 # Spec Update: Exercise Set Planning
 
+> **⚠️ Status (2026-06-20): the exercise set-planning edit flow described here has been removed from coachapp-v2.** The interactive plan builder — including `exercise-element.tsx` and the inline exercise form, along with the per-set bulk-edit and rest-picker surfaces — was deleted; the training-plan detail view is now read-only (create / list / assign / delete only, no in-app workout/exercise editing). Still in git history. This document is retained as the design of record.
+
 **Date:** 2026-04-23
 **Based on QA report:** [qa-report-set-planning.md](./qa-report-set-planning.md)
 **Targets:** [ux-spec-exercise-set-planning-2026-04-22.md](./ux-spec-exercise-set-planning-2026-04-22.md)
@@ -120,7 +122,7 @@ Implementation reads as if it complies — `min-h-11` is set on the unit pills a
 > - `planned_sets` length `>= 1`.
 > - Soft-warning thresholds belong on the frontend; the backend stays silent on them.
 >
-> The frontend's input parsing (`parseNonNegativeNumber`, `Math.max(1, count)`) is a convenience, not a security boundary. Anything the spec forbids must be rejected by the API — otherwise mobile apps, scripted retries, and direct API users can persist invalid records.
+> Frontend input constraints are a convenience, not a security boundary. Anything the spec forbids must be rejected by the API — otherwise mobile apps, scripted retries, and direct API users can persist invalid records.
 
 **Rationale:** Currently any non-React client can persist garbage. The spec already implies these rules exist; making it explicit closes the loop.
 

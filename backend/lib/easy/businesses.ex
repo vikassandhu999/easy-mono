@@ -8,7 +8,7 @@ defmodule Easy.Businesses do
           {:ok, Orgs.Business.t()} | {:error, Ecto.Changeset.t()}
   def create(user, attrs) do
     attrs
-    |> Orgs.Business.create_changeset(user)
+    |> Orgs.Business.insert_changeset(user)
     |> Repo.insert()
   end
 
@@ -21,20 +21,6 @@ defmodule Easy.Businesses do
         join: c in Orgs.Coach,
         on: c.business_id == b.id,
         where: c.user_id == ^user.id,
-        limit: 1
-      )
-    )
-  end
-
-  @spec get_one_for_coach(Identity.User.t(), String.t()) ::
-          Orgs.Business.t()
-  def get_one_for_coach(user, business_id) do
-    Easy.Repo.one(
-      from(
-        b in Orgs.Business,
-        join: c in Orgs.Coach,
-        on: c.business_id == b.id,
-        where: c.user_id == ^user.id and c.business_id == ^business_id,
         limit: 1
       )
     )

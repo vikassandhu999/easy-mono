@@ -108,13 +108,7 @@ export const clientTrainingPlansApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'TrainingPlan', id}],
     }),
     listClientTrainingPlans: build.query<ApiListResponse<ClientTrainingPlan>, ListClientTrainingPlansParams | void>({
-      query: (params) =>
-        params
-          ? {
-              params,
-              url: '/v1/client/training_plans',
-            }
-          : '/v1/client/training_plans',
+      query: (params) => ({url: '/v1/client/training_plans', params}),
       providesTags: (result) =>
         result
           ? [

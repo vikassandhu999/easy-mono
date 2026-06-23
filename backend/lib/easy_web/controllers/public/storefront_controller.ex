@@ -2,6 +2,8 @@ defmodule EasyWeb.Public.StorefrontController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create_inquiry]
+
   alias Easy.Storefront
   alias OpenApiSpex.Operation
 
@@ -43,8 +45,10 @@ defmodule EasyWeb.Public.StorefrontController do
   end
 
   @spec create_inquiry(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create_inquiry(conn, %{"slug" => slug} = params) do
-    with {:ok, client} <- Storefront.create_inquiry(slug, params) do
+  def create_inquiry(conn, _params) do
+    slug = conn.path_params["slug"]
+
+    with {:ok, client} <- Storefront.create_inquiry(slug, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:inquiry, client: client)

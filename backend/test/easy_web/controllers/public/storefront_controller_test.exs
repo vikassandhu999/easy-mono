@@ -102,7 +102,11 @@ defmodule EasyWeb.Public.StorefrontControllerTest do
     test "creates client from public inquiry", %{} do
       attrs = build(:inquiry_attrs)
 
-      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/public/coaches/test-coach/inquiries", attrs)
+
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["first_name"] == "Vikas"
@@ -110,18 +114,25 @@ defmodule EasyWeb.Public.StorefrontControllerTest do
       assert data["status"] == "pending"
     end
 
-    test "parses name into first_name and last_name", %{} do
-      attrs = build(:inquiry_attrs) |> Map.put("name", "Vikas Sandhu")
-
-      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
-      assert %{"data" => data} = json_response(conn, 201)
-      assert data["first_name"] == "Vikas"
-    end
-
     test "returns 422 for missing required fields" do
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> post("/v1/public/coaches/test-coach/inquiries", %{"first_name" => "Incomplete"})
+
+      assert json_response(conn, 422)
+    end
+
+    test "returns 422 for unknown fields (additionalProperties: false)" do
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/public/coaches/test-coach/inquiries", %{
+          "first_name" => "Vikas",
+          "email" => "vikas@example.com",
+          "phone" => "+91 98765 43210",
+          "unknown_field" => "should be rejected"
+        })
 
       assert json_response(conn, 422)
     end
@@ -134,13 +145,23 @@ defmodule EasyWeb.Public.StorefrontControllerTest do
       )
 
       attrs = build(:inquiry_attrs)
-      conn = build_conn() |> post("/v1/public/coaches/hidden-coach/inquiries", attrs)
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/public/coaches/hidden-coach/inquiries", attrs)
+
       assert json_response(conn, 404)
     end
 
     test "returns 404 for non-existent slug" do
       attrs = build(:inquiry_attrs)
-      conn = build_conn() |> post("/v1/public/coaches/ghost/inquiries", attrs)
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/public/coaches/ghost/inquiries", attrs)
+
       assert json_response(conn, 404)
     end
   end

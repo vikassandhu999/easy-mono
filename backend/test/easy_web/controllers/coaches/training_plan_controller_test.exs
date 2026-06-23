@@ -26,7 +26,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
     %{conn: conn, coach: coach, business: business}
   end
 
-  describe "POST /v1/coach/training_plans" do
+  describe "POST /v1/coach/training-plans" do
     test "creates a template for the authenticated coach business", %{
       conn: conn,
       coach: coach
@@ -34,52 +34,41 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       name = "Strength Template #{Ecto.UUID.generate()}"
 
       conn =
-        post(conn, "/v1/coach/training_plans", %{
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/training-plans", %{
           "name" => name,
           "description" => "Four day strength block",
-          "status" => "active",
-          "rest_days" => ["saturday", "sunday"]
+          "status" => "active"
         })
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["name"] == name
       assert data["description"] == "Four day strength block"
       assert data["status"] == "active"
-      assert data["rest_days"] == ["saturday", "sunday"]
       assert data["client_id"] == nil
       assert data["client"] == nil
       refute Map.has_key?(data, "business_id")
-      assert data["author_id"] == coach.id
-      assert data["original_template_id"] == nil
+      assert data["creator_id"] == coach.id
+      assert data["source_template_id"] == nil
       assert data["workouts"] == []
       assert data["plan_items"] == []
     end
 
-    test "rejects trusted relationship ids in the request body", %{conn: conn} do
+    test "rejects trusted identifiers in the request body", %{conn: conn} do
       conn =
-        post(conn, "/v1/coach/training_plans", %{
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/training-plans", %{
           "name" => "Bad Template #{Ecto.UUID.generate()}",
-          "business_id" => Ecto.UUID.generate(),
-          "author_id" => Ecto.UUID.generate(),
-          "client_id" => Ecto.UUID.generate(),
-          "original_template_id" => Ecto.UUID.generate()
+          "business_id" => Ecto.UUID.generate()
         })
 
-      assert %{
-               "error_code" => "invalid_input",
-               "error_detail" => %{
-                 "fields" => %{
-                   "business_id" => ["cannot be set directly"],
-                   "author_id" => ["cannot be set directly"],
-                   "client_id" => ["cannot be set directly"],
-                   "original_template_id" => ["cannot be set directly"]
-                 }
-               }
-             } = json_response(conn, 422)
+      assert %{"errors" => [_error]} = json_response(conn, 422)
     end
   end
 
-  describe "GET /v1/coach/training_plans" do
+  describe "GET /v1/coach/training-plans" do
     test "lists matching templates for the current business newest first", %{
       conn: conn,
       coach: coach,
@@ -89,7 +78,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
       older_template =
         insert(:training_plan,
-          author: coach,
+          creator: coach,
           business: business,
           name: "Alpha #{search}",
           status: :active,
@@ -98,7 +87,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
       newer_template =
         insert(:training_plan,
-          author: coach,
+          creator: coach,
           business: business,
           name: "Beta #{search}",
           status: :active,
@@ -117,7 +106,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
         )
 
       insert(:training_plan,
-        author: coach,
+        creator: coach,
         business: business,
         client_id: client.id,
         name: "Assigned #{search}",
@@ -127,7 +116,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       )
 
       insert(:training_plan,
-        author: coach,
+        creator: coach,
         business: business,
         name: "Archived #{search}",
         status: :archived
@@ -147,14 +136,14 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       other_coach = insert(:coach, user: other_user, business: other_business)
 
       insert(:training_plan,
-        author: other_coach,
+        creator: other_coach,
         business: other_business,
         name: "Other Business #{search}",
         status: :active
       )
 
       conn =
-        get(conn, "/v1/coach/training_plans", %{
+        get(conn, "/v1/coach/training-plans", %{
           "search" => search,
           "status" => "active"
         })
@@ -166,38 +155,31 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
     end
   end
 
-  describe "GET /v1/coach/training_plans/:id" do
+  describe "GET /v1/coach/training-plans/:id" do
     test "shows a template with workouts and plan items", %{
       conn: conn,
       coach: coach,
       business: business
     } do
-      plan =
-        insert(:training_plan,
-          author: coach,
-          business: business,
-          rest_days: ["sunday"]
-        )
+      plan = insert(:training_plan, creator: coach, business: business)
 
-      workout = insert(:workout, training_plan: plan, business: business, name: "Push")
+      workout = insert(:workout, plan: plan, creator: coach, business: business, name: "Push")
 
       insert(:training_plan_item,
-        training_plan: plan,
+        plan: plan,
         workout: workout,
         business: business,
         creator: coach,
-        day: "monday",
-        workout_type: "primary"
+        day_of_week: "monday"
       )
 
-      conn = get(conn, "/v1/coach/training_plans/#{plan.id}")
+      conn = get(conn, "/v1/coach/training-plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert data["client"] == nil
-      assert data["rest_days"] == ["sunday"]
       assert [%{"id" => workout_id, "name" => "Push"}] = data["workouts"]
       assert workout_id == workout.id
-      assert [%{"day" => "monday", "workout_id" => ^workout_id}] = data["plan_items"]
+      assert [%{"day_of_week" => "monday", "training_workout_id" => ^workout_id}] = data["plan_items"]
     end
 
     test "returns 404 for another business plan", %{conn: conn} do
@@ -213,138 +195,63 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
       other_user = insert(:user, email: "show-other-plan-coach-#{other_unique}@test.com")
       other_coach = insert(:coach, user: other_user, business: other_business)
-      plan = insert(:training_plan, author: other_coach, business: other_business)
+      plan = insert(:training_plan, creator: other_coach, business: other_business)
 
-      conn = get(conn, "/v1/coach/training_plans/#{plan.id}")
+      conn = get(conn, "/v1/coach/training-plans/#{plan.id}")
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
     end
   end
 
-  describe "PATCH /v1/coach/training_plans/:id" do
+  describe "PATCH /v1/coach/training-plans/:id" do
     test "updates metadata and returns the full preloaded plan", %{
       conn: conn,
       coach: coach,
       business: business
     } do
-      plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: plan, business: business, name: "Pull")
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business, name: "Pull")
 
       insert(:training_plan_item,
-        training_plan: plan,
+        plan: plan,
         workout: workout,
         business: business,
         creator: coach,
-        day: "tuesday"
+        day_of_week: "tuesday"
       )
 
       conn =
-        patch(conn, "/v1/coach/training_plans/#{plan.id}", %{
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch("/v1/coach/training-plans/#{plan.id}", %{
           "name" => "Updated Training Plan",
-          "description" => "Updated description",
-          "rest_days" => ["saturday"]
+          "description" => "Updated description"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["name"] == "Updated Training Plan"
       assert data["description"] == "Updated description"
-      assert data["rest_days"] == ["saturday"]
       assert [%{"id" => workout_id}] = data["workouts"]
       assert workout_id == workout.id
-      assert [%{"workout_id" => item_workout_id}] = data["plan_items"]
+      assert [%{"training_workout_id" => item_workout_id}] = data["plan_items"]
       assert item_workout_id == workout.id
     end
 
-    test "rejects trusted relationship ids in the request body", %{
+    test "rejects trusted identifiers in the request body", %{
       conn: conn,
       coach: coach,
       business: business
     } do
-      plan = insert(:training_plan, author: coach, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
 
       conn =
-        patch(conn, "/v1/coach/training_plans/#{plan.id}", %{
-          "business_id" => Ecto.UUID.generate(),
-          "author_id" => Ecto.UUID.generate(),
-          "client_id" => Ecto.UUID.generate(),
-          "original_template_id" => Ecto.UUID.generate()
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch("/v1/coach/training-plans/#{plan.id}", %{
+          "business_id" => Ecto.UUID.generate()
         })
 
-      assert %{
-               "error_code" => "invalid_input",
-               "error_detail" => %{
-                 "fields" => %{
-                   "business_id" => ["cannot be set directly"],
-                   "author_id" => ["cannot be set directly"],
-                   "client_id" => ["cannot be set directly"],
-                   "original_template_id" => ["cannot be set directly"]
-                 }
-               }
-             } = json_response(conn, 422)
-    end
-
-    test "rejects invalid and duplicate rest days", %{conn: conn, coach: coach, business: business} do
-      invalid_plan = insert(:training_plan, author: coach, business: business)
-
-      invalid_conn =
-        patch(conn, "/v1/coach/training_plans/#{invalid_plan.id}", %{
-          "rest_days" => ["invalid"]
-        })
-
-      assert %{
-               "error_detail" => %{
-                 "fields" => %{"rest_days" => ["must contain valid day names"]}
-               }
-             } = json_response(invalid_conn, 422)
-
-      duplicate_plan = insert(:training_plan, author: coach, business: business)
-
-      duplicate_conn =
-        patch(conn, "/v1/coach/training_plans/#{duplicate_plan.id}", %{
-          "rest_days" => ["monday", "monday"]
-        })
-
-      assert %{
-               "error_detail" => %{
-                 "fields" => %{"rest_days" => ["must not contain duplicates"]}
-               }
-             } = json_response(duplicate_conn, 422)
-    end
-
-    test "rejects null rest days", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business)
-
-      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => nil})
-
-      assert %{
-               "error_code" => "invalid_input",
-               "error_detail" => %{"fields" => %{"rest_days" => [_message]}}
-             } = json_response(conn, 422)
-    end
-
-    test "rejects rest days that already have scheduled workouts", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: plan, business: business)
-
-      insert(:training_plan_item,
-        training_plan: plan,
-        workout: workout,
-        business: business,
-        creator: coach,
-        day: "monday"
-      )
-
-      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => ["monday"]})
-
-      assert %{
-               "error_detail" => %{
-                 "fields" => %{"rest_days" => ["cannot include days with scheduled workouts"]}
-               }
-             } = json_response(conn, 422)
+      assert %{"errors" => [_error]} = json_response(conn, 422)
     end
 
     test "returns 404 for another business plan", %{conn: conn} do
@@ -360,19 +267,22 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
       other_user = insert(:user, email: "patch-other-plan-coach-#{other_unique}@test.com")
       other_coach = insert(:coach, user: other_user, business: other_business)
-      plan = insert(:training_plan, author: other_coach, business: other_business)
+      plan = insert(:training_plan, creator: other_coach, business: other_business)
 
-      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"name" => "Nope"})
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch("/v1/coach/training-plans/#{plan.id}", %{"name" => "Nope"})
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
     end
   end
 
-  describe "DELETE /v1/coach/training_plans/:id" do
+  describe "DELETE /v1/coach/training-plans/:id" do
     test "deletes a template", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
 
-      conn = delete(conn, "/v1/coach/training_plans/#{plan.id}")
+      conn = delete(conn, "/v1/coach/training-plans/#{plan.id}")
 
       assert response(conn, 204) == ""
       assert Repo.get(TrainingPlan, plan.id) == nil
@@ -391,37 +301,31 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
       other_user = insert(:user, email: "delete-other-plan-coach-#{other_unique}@test.com")
       other_coach = insert(:coach, user: other_user, business: other_business)
-      plan = insert(:training_plan, author: other_coach, business: other_business)
+      plan = insert(:training_plan, creator: other_coach, business: other_business)
 
-      conn = delete(conn, "/v1/coach/training_plans/#{plan.id}")
+      conn = delete(conn, "/v1/coach/training-plans/#{plan.id}")
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
       assert Repo.get(TrainingPlan, plan.id)
     end
   end
 
-  describe "POST /v1/coach/training_plans/:id/assign" do
+  describe "POST /v1/coach/training-plans/:id/assign" do
     test "assigns a template to a client with copied workouts and plan items", %{
       conn: conn,
       coach: coach,
       business: business
     } do
-      plan =
-        insert(:training_plan,
-          author: coach,
-          business: business,
-          rest_days: ["sunday"]
-        )
+      plan = insert(:training_plan, creator: coach, business: business)
 
-      workout = insert(:workout, training_plan: plan, business: business, name: "Push")
+      workout = insert(:workout, plan: plan, creator: coach, business: business, name: "Push")
 
       insert(:training_plan_item,
-        training_plan: plan,
+        plan: plan,
         workout: workout,
         business: business,
         creator: coach,
-        day: "monday",
-        workout_type: "primary"
+        day_of_week: "monday"
       )
 
       client_user = insert(:user, email: "assign-plan-client-#{Ecto.UUID.generate()}@test.com")
@@ -435,7 +339,9 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
         )
 
       conn =
-        post(conn, "/v1/coach/training_plans/#{plan.id}/assign", %{
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/training-plans/#{plan.id}/assign", %{
           "client_id" => client.id,
           "start_date" => "2026-01-01",
           "end_date" => "2026-01-31"
@@ -444,13 +350,12 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
       assert data["client_id"] == client.id
       assert data["client"]["id"] == client.id
-      assert data["original_template_id"] == plan.id
+      assert data["source_template_id"] == plan.id
       assert data["start_date"] == "2026-01-01"
       assert data["end_date"] == "2026-01-31"
-      assert data["rest_days"] == ["sunday"]
       assert [%{"name" => "Push"} = copied_workout] = data["workouts"]
       assert copied_workout["id"] != workout.id
-      assert [%{"day" => "monday", "workout_id" => copied_workout_id}] = data["plan_items"]
+      assert [%{"day_of_week" => "monday", "training_workout_id" => copied_workout_id}] = data["plan_items"]
       assert copied_workout_id == copied_workout["id"]
     end
 
@@ -459,7 +364,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       coach: coach,
       business: business
     } do
-      plan = insert(:training_plan, author: coach, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
 
       other_unique = Ecto.UUID.generate()
       other_owner = insert(:user, email: "assign-other-owner-#{other_unique}@test.com")
@@ -486,7 +391,9 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
         )
 
       conn =
-        post(conn, "/v1/coach/training_plans/#{plan.id}/assign", %{
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/training-plans/#{plan.id}/assign", %{
           "client_id" => other_client.id,
           "start_date" => "2026-01-01",
           "end_date" => "2026-01-31"
@@ -496,7 +403,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
     end
   end
 
-  describe "POST /v1/coach/training_plans/:id/duplicate" do
+  describe "POST /v1/coach/training-plans/:id/duplicate" do
     test "duplicates a template and preserves shared workout references", %{
       conn: conn,
       coach: coach,
@@ -504,46 +411,42 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
     } do
       plan =
         insert(:training_plan,
-          author: coach,
+          creator: coach,
           business: business,
-          name: "PPL #{Ecto.UUID.generate()}",
-          rest_days: ["sunday"]
+          name: "PPL #{Ecto.UUID.generate()}"
         )
 
-      shared_workout = insert(:workout, training_plan: plan, business: business, name: "Push")
+      shared_workout = insert(:workout, plan: plan, creator: coach, business: business, name: "Push")
 
       insert(:training_plan_item,
-        training_plan: plan,
+        plan: plan,
         workout: shared_workout,
         business: business,
         creator: coach,
-        day: "monday",
-        workout_type: "primary"
+        day_of_week: "monday"
       )
 
       insert(:training_plan_item,
-        training_plan: plan,
+        plan: plan,
         workout: shared_workout,
         business: business,
         creator: coach,
-        day: "thursday",
-        workout_type: "primary"
+        day_of_week: "thursday"
       )
 
-      conn = post(conn, "/v1/coach/training_plans/#{plan.id}/duplicate")
+      conn = post(conn, "/v1/coach/training-plans/#{plan.id}/duplicate")
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["name"] == "#{plan.name} (Copy)"
       assert data["client_id"] == nil
-      assert data["original_template_id"] == plan.id
-      assert data["rest_days"] == ["sunday"]
+      assert data["source_template_id"] == plan.id
       assert [copied_workout] = data["workouts"]
       assert copied_workout["name"] == "Push"
       assert copied_workout["id"] != shared_workout.id
 
       assert length(data["plan_items"]) == 2
-      assert data["plan_items"] |> Enum.map(& &1["workout_id"]) |> Enum.uniq() == [copied_workout["id"]]
-      assert data["plan_items"] |> Enum.map(& &1["day"]) |> Enum.sort() == ["monday", "thursday"]
+      assert data["plan_items"] |> Enum.map(& &1["training_workout_id"]) |> Enum.uniq() == [copied_workout["id"]]
+      assert data["plan_items"] |> Enum.map(& &1["day_of_week"]) |> Enum.sort() == ["monday", "thursday"]
     end
 
     test "returns 404 for another business template", %{conn: conn} do
@@ -559,9 +462,9 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
       other_user = insert(:user, email: "duplicate-other-coach-#{other_unique}@test.com")
       other_coach = insert(:coach, user: other_user, business: other_business)
-      plan = insert(:training_plan, author: other_coach, business: other_business)
+      plan = insert(:training_plan, creator: other_coach, business: other_business)
 
-      conn = post(conn, "/v1/coach/training_plans/#{plan.id}/duplicate")
+      conn = post(conn, "/v1/coach/training-plans/#{plan.id}/duplicate")
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
     end

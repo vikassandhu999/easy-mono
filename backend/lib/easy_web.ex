@@ -1,6 +1,4 @@
 defmodule EasyWeb do
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
-
   def router do
     quote do
       use Phoenix.Router, helpers: false
@@ -8,12 +6,6 @@ defmodule EasyWeb do
       # Import common connection and controller functions to use in pipelines
       import Plug.Conn
       import Phoenix.Controller
-    end
-  end
-
-  def channel do
-    quote do
-      use Phoenix.Channel
     end
   end
 
@@ -36,8 +28,7 @@ defmodule EasyWeb do
     quote do
       use Phoenix.VerifiedRoutes,
         endpoint: EasyWeb.Endpoint,
-        router: EasyWeb.Router,
-        statics: EasyWeb.static_paths()
+        router: EasyWeb.Router
     end
   end
 

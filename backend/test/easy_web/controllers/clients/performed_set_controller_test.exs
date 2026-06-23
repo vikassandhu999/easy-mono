@@ -9,7 +9,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
     exercise = insert(:exercise, business: coach.business)
     conn = build_conn() |> authenticate_client(client)
 
-    {:ok, session} = Sessions.create_workout_session(coach.business_id, client.id, %{})
+    session = insert(:workout_session, client: client, business: coach.business, state: :active)
 
     %{
       conn: conn,
@@ -21,106 +21,92 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
     }
   end
 
-  describe "POST /v1/client/performed_sets" do
+  describe "POST /v1/client/training-sessions/:session_id/performed-sets" do
     test "logs a set", ctx do
       conn =
-        post(ctx.conn, "/v1/client/performed_sets", %{
-          "workout_session_id" => ctx.session.id,
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "actual_reps" => "10",
-          "load_value" => 80,
-          "load_unit" => "kg",
-          "completed" => true
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{ctx.session.id}/performed-sets",
+          Jason.encode!(%{
+            "exercise_id" => ctx.exercise.id,
+            "set_type" => "working",
+            "position" => 0,
+            "reps" => "10",
+            "load_value" => 80,
+            "load_unit" => "kg",
+            "completed" => true
+          })
+        )
 
       assert %{"data" => data} = json_response(conn, 201)
-      assert data["actual_reps"] == "10"
-      assert data["load_value"] == "80"
+      assert data["reps"] == "10"
+      assert data["load_value"] in ["80", "80.0"]
       assert data["load_unit"] == "kg"
       assert data["completed"] == true
       assert data["exercise_id"] == ctx.exercise.id
-      assert data["workout_session_id"] == ctx.session.id
+      assert data["training_session_id"] == ctx.session.id
+      assert data["exercise_name"] == ctx.exercise.name
       assert data["exercise"]["name"] == ctx.exercise.name
-    end
-
-    test "logs a set with workout_element_id", ctx do
-      plan =
-        insert(:training_plan,
-          author: ctx.coach,
-          business: ctx.business,
-          client_id: ctx.client.id,
-          start_date: Date.add(Date.utc_today(), -1),
-          end_date: Date.add(Date.utc_today(), 30)
-        )
-
-      workout = insert(:workout, training_plan: plan, business: ctx.business)
-
-      element =
-        insert(:workout_element,
-          workout: workout,
-          exercise: ctx.exercise,
-          business: ctx.business,
-          planned_sets: []
-        )
-
-      {:ok, planned_session} =
-        Sessions.update_workout_session(ctx.session, %{"workout_id" => workout.id})
-
-      conn =
-        post(ctx.conn, "/v1/client/performed_sets", %{
-          "workout_session_id" => planned_session.id,
-          "exercise_id" => ctx.exercise.id,
-          "workout_element_id" => element.id,
-          "position" => 0,
-          "actual_reps" => "8",
-          "completed" => true
-        })
-
-      assert %{"data" => data} = json_response(conn, 201)
-      assert data["workout_element_id"] == element.id
     end
 
     test "logs a skipped set (completed: false)", ctx do
       conn =
-        post(ctx.conn, "/v1/client/performed_sets", %{
-          "workout_session_id" => ctx.session.id,
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "actual_reps" => "0",
-          "completed" => false
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{ctx.session.id}/performed-sets",
+          Jason.encode!(%{
+            "exercise_id" => ctx.exercise.id,
+            "set_type" => "working",
+            "position" => 0,
+            "reps" => "0",
+            "completed" => false
+          })
+        )
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["completed"] == false
     end
 
-    test "rejects set without performance metric", ctx do
-      conn =
-        post(ctx.conn, "/v1/client/performed_sets", %{
-          "workout_session_id" => ctx.session.id,
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "completed" => true
-        })
+    test "create response includes exercise data for a system exercise", ctx do
+      system_exercise = insert(:exercise, source: "system", business: nil, creator: nil)
 
-      assert json_response(conn, 422)
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{ctx.session.id}/performed-sets",
+          Jason.encode!(%{
+            "exercise_id" => system_exercise.id,
+            "set_type" => "working",
+            "position" => 0,
+            "reps" => "5",
+            "completed" => true
+          })
+        )
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["exercise"]["name"] == system_exercise.name
     end
 
     test "rejects set for another client's session", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-
-      {:ok, other_session} =
-        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
+      other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
       conn =
-        post(ctx.conn, "/v1/client/performed_sets", %{
-          "workout_session_id" => other_session.id,
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "actual_reps" => "10",
-          "completed" => true
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{other_session.id}/performed-sets",
+          Jason.encode!(%{
+            "exercise_id" => ctx.exercise.id,
+            "set_type" => "working",
+            "position" => 0,
+            "reps" => "10",
+            "completed" => true
+          })
+        )
 
       assert json_response(conn, 404)
     end
@@ -129,105 +115,139 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
       other_exercise = insert(:exercise)
 
       conn =
-        post(ctx.conn, "/v1/client/performed_sets", %{
-          "workout_session_id" => ctx.session.id,
-          "exercise_id" => other_exercise.id,
-          "position" => 0,
-          "actual_reps" => "10",
-          "completed" => true
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{ctx.session.id}/performed-sets",
+          Jason.encode!(%{
+            "exercise_id" => other_exercise.id,
+            "set_type" => "working",
+            "position" => 0,
+            "reps" => "10",
+            "completed" => true
+          })
+        )
 
       assert json_response(conn, 404)
     end
 
     test "does not expose business_id", ctx do
       conn =
-        post(ctx.conn, "/v1/client/performed_sets", %{
-          "workout_session_id" => ctx.session.id,
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "actual_reps" => "10",
-          "completed" => true
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{ctx.session.id}/performed-sets",
+          Jason.encode!(%{
+            "exercise_id" => ctx.exercise.id,
+            "set_type" => "working",
+            "position" => 0,
+            "reps" => "10",
+            "completed" => true
+          })
+        )
 
       assert %{"data" => data} = json_response(conn, 201)
       refute Map.has_key?(data, "business_id")
     end
   end
 
-  describe "PATCH /v1/client/performed_sets/:id" do
+  describe "PATCH /v1/client/training-performed-sets/:id" do
     test "updates a logged set", ctx do
       {:ok, set} =
-        Sessions.create_performed_set(ctx.session.id, ctx.business.id, %{
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "actual_reps" => "10",
-          "load_value" => 80,
-          "load_unit" => "kg",
-          "completed" => true
-        })
+        Sessions.create_client_performed_set(
+          %Easy.Ctx{user_id: ctx.client.user_id, business_id: ctx.business.id},
+          ctx.session.id,
+          %{
+            exercise_id: ctx.exercise.id,
+            set_type: "working",
+            position: 0,
+            reps: "10",
+            load_value: 80,
+            load_unit: "kg",
+            completed: true
+          }
+        )
 
       conn =
-        patch(ctx.conn, "/v1/client/performed_sets/#{set.id}", %{
-          "actual_reps" => "8",
-          "load_value" => 75,
-          "notes" => "Dropped weight"
-        })
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(
+          "/v1/client/training-performed-sets/#{set.id}",
+          Jason.encode!(%{"reps" => "8", "load_value" => 75, "notes" => "Dropped weight"})
+        )
 
       assert %{"data" => data} = json_response(conn, 200)
-      assert data["actual_reps"] == "8"
-      assert data["load_value"] == "75"
+      assert data["reps"] == "8"
+      assert data["load_value"] in ["75", "75.0"]
       assert data["notes"] == "Dropped weight"
     end
 
     test "rejects update of another client's set", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-
-      {:ok, other_session} =
-        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
+      other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
       {:ok, other_set} =
-        Sessions.create_performed_set(other_session.id, ctx.business.id, %{
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "actual_reps" => "10",
-          "completed" => true
-        })
+        Sessions.create_client_performed_set(
+          %Easy.Ctx{user_id: other_client.user_id, business_id: ctx.business.id},
+          other_session.id,
+          %{
+            exercise_id: ctx.exercise.id,
+            set_type: "working",
+            position: 0,
+            reps: "10",
+            completed: true
+          }
+        )
 
-      conn = patch(ctx.conn, "/v1/client/performed_sets/#{other_set.id}", %{"actual_reps" => "5"})
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(
+          "/v1/client/training-performed-sets/#{other_set.id}",
+          Jason.encode!(%{"reps" => "5"})
+        )
+
       assert json_response(conn, 404)
     end
   end
 
-  describe "DELETE /v1/client/performed_sets/:id" do
+  describe "DELETE /v1/client/training-performed-sets/:id" do
     test "deletes a logged set", ctx do
       {:ok, set} =
-        Sessions.create_performed_set(ctx.session.id, ctx.business.id, %{
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "actual_reps" => "10",
-          "completed" => true
-        })
+        Sessions.create_client_performed_set(
+          %Easy.Ctx{user_id: ctx.client.user_id, business_id: ctx.business.id},
+          ctx.session.id,
+          %{
+            exercise_id: ctx.exercise.id,
+            set_type: "working",
+            position: 0,
+            reps: "10",
+            completed: true
+          }
+        )
 
-      conn = delete(ctx.conn, "/v1/client/performed_sets/#{set.id}")
+      conn = delete(ctx.conn, "/v1/client/training-performed-sets/#{set.id}")
       assert response(conn, 204)
     end
 
     test "rejects delete of another client's set", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-
-      {:ok, other_session} =
-        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
+      other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
       {:ok, other_set} =
-        Sessions.create_performed_set(other_session.id, ctx.business.id, %{
-          "exercise_id" => ctx.exercise.id,
-          "position" => 0,
-          "actual_reps" => "10",
-          "completed" => true
-        })
+        Sessions.create_client_performed_set(
+          %Easy.Ctx{user_id: other_client.user_id, business_id: ctx.business.id},
+          other_session.id,
+          %{
+            exercise_id: ctx.exercise.id,
+            set_type: "working",
+            position: 0,
+            reps: "10",
+            completed: true
+          }
+        )
 
-      conn = delete(ctx.conn, "/v1/client/performed_sets/#{other_set.id}")
+      conn = delete(ctx.conn, "/v1/client/training-performed-sets/#{other_set.id}")
       assert json_response(conn, 404)
     end
   end

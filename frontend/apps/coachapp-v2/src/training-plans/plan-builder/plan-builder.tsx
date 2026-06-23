@@ -140,9 +140,6 @@ export default function TrainingPlanDetail() {
       </Page.Toolbar>
       <Page.Content className={'px-4 md:px-6 lg:px-8'}>
         <div className="min-w-0 max-w-4xl overflow-hidden">
-          {/* Weekly schedule — section header + summary are rendered inside WeeklyOverview */}
-          <section className="border-t border-divider py-4"></section>
-
           <section className="border-t border-divider py-4">
             <div className="mb-3 flex items-center justify-between">
               <div>

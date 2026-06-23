@@ -24,6 +24,14 @@ const rawBaseQuery = fetchBaseQuery({
 
 const REFRESH_THRESHOLD_MS = 60_000;
 
+const forceLogout = () => {
+  clearTokens();
+  toast.danger('Session expired. Please sign in again.');
+  if (typeof window !== 'undefined') {
+    window.location.assign('/login');
+  }
+};
+
 const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQueryError> = async (args, api, extra) => {
   const expiresAt = getTokenExpiresAt();
   const refreshToken = getRefreshToken();
@@ -56,11 +64,7 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
         'error' in refreshResult && refreshResult.error && typeof refreshResult.error.status === 'number';
 
       if (isServerError) {
-        clearTokens();
-        toast.danger('Session expired. Please sign in again.');
-        if (typeof window !== 'undefined') {
-          window.location.assign('/login');
-        }
+        forceLogout();
       }
       return refreshResult as {error: FetchBaseQueryError};
     }
@@ -71,11 +75,7 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
     const status = result.error.status;
     // BUG: this is also wrong as we can have insufficient permissions error as well.
     if (status === 401 || status === 403) {
-      clearTokens();
-      toast.danger('Session expired. Please sign in again.');
-      if (typeof window !== 'undefined') {
-        window.location.assign('/login');
-      }
+      forceLogout();
     }
   }
   return result;
@@ -95,11 +95,8 @@ export const api = createApi({
     'MealItem',
     'Muscle',
     'NutritionPlan',
-    'Offer',
     'PlanItem',
     'Recipe',
-    'StoreProfile',
-    'Testimonial',
     'TrainingPlan',
     'TrainingPlanItem',
     'Workout',

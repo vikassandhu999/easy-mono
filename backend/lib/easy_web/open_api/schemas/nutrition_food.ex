@@ -3,24 +3,29 @@ defmodule EasyWeb.OpenApi.Schemas.FoodServingSize do
 
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "FoodServingSize",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      unit: %Schema{type: :string},
-      weight_g: %Schema{type: :number},
-      amount: %Schema{type: :number}
+  OpenApiSpex.schema(
+    %{
+      title: "FoodServingSize",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        label: %Schema{type: :string},
+        amount: %Schema{type: :number},
+        unit: %Schema{type: :string},
+        weight_g: %Schema{type: :number},
+        is_default: %Schema{type: :boolean}
+      },
+      required: [:label, :amount, :unit, :weight_g, :is_default]
     },
-    required: [:unit, :weight_g, :amount]
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.FoodRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.FoodServingSize
+  alias EasyWeb.OpenApi.Schemas.{FoodServingSize, Shared}
 
   OpenApiSpex.schema(
     %{
@@ -30,10 +35,17 @@ defmodule EasyWeb.OpenApi.Schemas.FoodRequest do
       additionalProperties: false,
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
-        macros: %Schema{type: :object, additionalProperties: true},
-        source: %Schema{type: :string, nullable: true},
+        brand: %Schema{type: :string, nullable: true},
+        barcode: %Schema{type: :string, nullable: true},
+        source: %Schema{type: :string, enum: ["system", "imported", "custom"], nullable: true},
         category: %Schema{type: :string, nullable: true},
-        tags: %Schema{type: :array, items: %Schema{type: :string}},
+        calories_per_100g: %Schema{type: :number, nullable: true},
+        protein_g_per_100g: %Schema{type: :number, nullable: true},
+        carbs_g_per_100g: %Schema{type: :number, nullable: true},
+        fat_g_per_100g: %Schema{type: :number, nullable: true},
+        fiber_g_per_100g: %Schema{type: :number, nullable: true},
+        allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
+        dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
         notes: %Schema{type: :string, nullable: true},
         image_url: %Schema{type: :string, nullable: true},
         serving_sizes: %Schema{type: :array, items: FoodServingSize}
@@ -41,12 +53,17 @@ defmodule EasyWeb.OpenApi.Schemas.FoodRequest do
       required: [:name],
       example: %{
         "name" => "Greek Yogurt",
-        "macros" => %{"calories" => 97, "protein_g" => 10, "carbs_g" => 4, "fat_g" => 5},
+        "calories_per_100g" => 97,
+        "protein_g_per_100g" => 10,
+        "carbs_g_per_100g" => 4,
+        "fat_g_per_100g" => 5,
+        "fiber_g_per_100g" => 0,
         "source" => "custom",
         "category" => "Dairy",
-        "tags" => ["high-protein"],
+        "allergens" => ["dairy"],
+        "dietary_tags" => ["high_protein"],
         "notes" => "Plain, unsweetened.",
-        "serving_sizes" => [%{"unit" => "g", "weight_g" => 100, "amount" => 100}]
+        "serving_sizes" => [%{"label" => "100g", "unit" => "g", "weight_g" => 100, "amount" => 100, "is_default" => true}]
       }
     },
     struct?: false
@@ -57,7 +74,7 @@ defmodule EasyWeb.OpenApi.Schemas.FoodUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.FoodServingSize
+  alias EasyWeb.OpenApi.Schemas.{FoodServingSize, Shared}
 
   OpenApiSpex.schema(
     %{
@@ -67,17 +84,24 @@ defmodule EasyWeb.OpenApi.Schemas.FoodUpdateRequest do
       additionalProperties: false,
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
-        macros: %Schema{type: :object, additionalProperties: true},
-        source: %Schema{type: :string, nullable: true},
+        brand: %Schema{type: :string, nullable: true},
+        barcode: %Schema{type: :string, nullable: true},
+        source: %Schema{type: :string, enum: ["system", "imported", "custom"], nullable: true},
         category: %Schema{type: :string, nullable: true},
-        tags: %Schema{type: :array, items: %Schema{type: :string}},
+        calories_per_100g: %Schema{type: :number, nullable: true},
+        protein_g_per_100g: %Schema{type: :number, nullable: true},
+        carbs_g_per_100g: %Schema{type: :number, nullable: true},
+        fat_g_per_100g: %Schema{type: :number, nullable: true},
+        fiber_g_per_100g: %Schema{type: :number, nullable: true},
+        allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
+        dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
         notes: %Schema{type: :string, nullable: true},
         image_url: %Schema{type: :string, nullable: true},
         serving_sizes: %Schema{type: :array, items: FoodServingSize}
       },
       example: %{
         "name" => "Plain Greek Yogurt",
-        "tags" => ["high-protein", "breakfast"]
+        "dietary_tags" => ["high_protein"]
       }
     },
     struct?: false
@@ -88,33 +112,40 @@ defmodule EasyWeb.OpenApi.Schemas.Food do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.FoodServingSize
+  alias EasyWeb.OpenApi.Schemas.{FoodServingSize, Shared}
 
   OpenApiSpex.schema(%{
     title: "Food",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      macros: %Schema{type: :object, additionalProperties: true},
-      source: %Schema{type: :string, nullable: true},
-      category: %Schema{type: :string, nullable: true},
-      tags: %Schema{type: :array, items: %Schema{type: :string}},
-      notes: %Schema{type: :string, nullable: true},
-      image_url: %Schema{type: :string, nullable: true},
-      serving_sizes: %Schema{type: :array, items: FoodServingSize},
-      creator_id: %Schema{type: :string, format: :uuid, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          brand: %Schema{type: :string, nullable: true},
+          barcode: %Schema{type: :string, nullable: true},
+          source: %Schema{type: :string, enum: ["system", "imported", "custom"], nullable: true},
+          category: %Schema{type: :string, nullable: true},
+          calories_per_100g: %Schema{type: :number, nullable: true},
+          protein_g_per_100g: %Schema{type: :number, nullable: true},
+          carbs_g_per_100g: %Schema{type: :number, nullable: true},
+          fat_g_per_100g: %Schema{type: :number, nullable: true},
+          fiber_g_per_100g: %Schema{type: :number, nullable: true},
+          allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
+          dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
+          notes: %Schema{type: :string, nullable: true},
+          image_url: %Schema{type: :string, nullable: true},
+          serving_sizes: %Schema{type: :array, items: FoodServingSize},
+          creator_id: %Schema{type: :string, format: :uuid, nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :name,
-      :macros,
       :source,
       :category,
-      :tags,
       :notes,
       :image_url,
       :serving_sizes,
@@ -127,31 +158,43 @@ end
 defmodule EasyWeb.OpenApi.Schemas.FoodResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.Food
+  alias EasyWeb.OpenApi.Schemas.{Food, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "FoodResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: Food},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(Food, "FoodResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.FoodListResponse do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.{Food, Shared}
+
+  OpenApiSpex.schema(Shared.list_response(Food, "FoodListResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
+  require OpenApiSpex
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Food
+
+  @plan_ref %Schema{
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string},
+      name: %Schema{type: :string},
+      client_id: %Schema{type: :string, nullable: true}
+    }
+  }
 
   OpenApiSpex.schema(%{
-    title: "FoodListResponse",
+    title: "FoodImpactResponse",
     type: :object,
-    additionalProperties: false,
     properties: %{
-      data: %Schema{type: :array, items: Food},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count]
+      data: %Schema{
+        type: :object,
+        properties: %{
+          templates: %Schema{type: :array, items: @plan_ref},
+          active_client_plans: %Schema{type: :array, items: @plan_ref}
+        }
+      }
+    }
   })
 end

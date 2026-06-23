@@ -1,35 +1,40 @@
 defmodule Easy.Recipes do
+  alias Easy.Ctx
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
+  alias Easy.Nutrition.{Meal, MealItem, Plan}
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
   import Ecto.Changeset
   import Ecto.Query
 
-  @spec get_recipe(String.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
-  def get_recipe(business_id, recipe_id) do
+  @spec get_recipe(Ctx.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
+  def get_recipe(%Ctx{} = ctx, recipe_id) do
     Recipe
-    |> Recipe.for_business(business_id)
-    |> with_ingredients(business_id)
+    |> Recipe.for_business(ctx.business_id)
+    |> with_ingredients(ctx.business_id)
     |> Repo.get(recipe_id)
     |> ok_or_not_found()
   end
 
-  @spec get_recipe_plain(String.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
-  def get_recipe_plain(business_id, recipe_id) do
+  @spec get_recipe_plain(Ctx.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
+  def get_recipe_plain(%Ctx{} = ctx, recipe_id) do
     Recipe
-    |> Recipe.for_business(business_id)
+    |> Recipe.for_business(ctx.business_id)
     |> Repo.get(recipe_id)
     |> ok_or_not_found()
   end
 
-  @spec list_recipes(String.t(), String.t() | nil, non_neg_integer(), pos_integer()) ::
+  @spec list_recipes(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), recipes: [Recipe.t()]}}
-  def list_recipes(business_id, search, offset, limit) do
-    search = String.trim(search || "")
-    base = Recipe |> Recipe.for_business(business_id) |> Recipe.search(search)
+  def list_recipes(%Ctx{} = ctx, opts \\ []) do
+    search = String.trim(Keyword.get(opts, :search, "") || "")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
+
+    base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
     ordered = if search == "", do: Recipe.newest(base), else: base
 
     {:ok,
@@ -38,53 +43,99 @@ defmodule Easy.Recipes do
        recipes:
          ordered
          |> Easy.Utils.paginate(offset, limit)
-         |> with_ingredients(business_id)
+         |> with_ingredients(ctx.business_id)
          |> Repo.all()
      }}
   end
 
-  @spec create_recipe(String.t(), String.t(), map()) ::
-          {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
-  def create_recipe(business_id, coach_id, attrs) do
-    business_id
-    |> Recipe.insert_changeset(coach_id, attrs)
-    |> validate_ingredient_foods(business_id)
-    |> Repo.insert()
-  end
-
-  @spec create_recipe_for_coach_user(String.t(), String.t(), map()) ::
+  @spec create_recipe(Ctx.t(), map()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_recipe_for_coach_user(business_id, user_id, attrs) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
-      create_recipe(business_id, coach.id, attrs)
+  def create_recipe(%Ctx{} = ctx, attrs) do
+    with {:ok, coach} <- get_coach(ctx),
+         {:ok, recipe} <-
+           ctx.business_id
+           |> Recipe.insert_changeset(coach.id, attrs)
+           |> validate_ingredient_foods(ctx.business_id)
+           |> Repo.insert() do
+      get_recipe(ctx, recipe.id)
     end
   end
 
-  @spec update_recipe(Recipe.t(), map()) ::
-          {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
-  def update_recipe(%Recipe{} = recipe, attrs) do
-    recipe
-    |> Recipe.update_changeset(attrs)
-    |> validate_ingredient_foods(recipe.business_id)
-    |> Repo.update()
-  end
-
-  @spec update_recipe(String.t(), String.t(), map()) ::
+  @spec update_recipe(Ctx.t(), String.t(), map()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_recipe(business_id, recipe_id, attrs) do
-    with {:ok, recipe} <- get_recipe(business_id, recipe_id) do
-      update_recipe(recipe, attrs)
+  def update_recipe(%Ctx{} = ctx, recipe_id, attrs) do
+    with {:ok, recipe} <- get_recipe(ctx, recipe_id),
+         {:ok, updated} <-
+           recipe
+           |> Recipe.update_changeset(attrs)
+           |> validate_ingredient_foods(ctx.business_id)
+           |> Repo.update() do
+      get_recipe(ctx, updated.id)
     end
   end
 
-  @spec delete_recipe(Recipe.t()) :: {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
-  def delete_recipe(%Recipe{} = recipe), do: Repo.delete(recipe)
-
-  @spec delete_recipe(String.t(), String.t()) ::
+  @spec delete_recipe(Ctx.t(), String.t()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_recipe(business_id, recipe_id) do
-    with {:ok, recipe} <- get_recipe_plain(business_id, recipe_id) do
-      delete_recipe(recipe)
+  def delete_recipe(%Ctx{} = ctx, recipe_id) do
+    with {:ok, recipe} <- get_recipe_plain(ctx, recipe_id) do
+      Repo.delete(recipe)
+    end
+  end
+
+  @spec get_recipe_impact(Ctx.t(), String.t()) ::
+          {:ok, %{templates: [map()], active_client_plans: [map()]}} | {:error, :not_found}
+  def get_recipe_impact(%Ctx{} = ctx, recipe_id) do
+    with {:ok, _recipe} <- get_recipe_plain(ctx, recipe_id) do
+      plans =
+        from(p in Plan,
+          join: m in Meal,
+          on: m.nutrition_plan_id == p.id,
+          join: mi in MealItem,
+          on: mi.nutrition_meal_id == m.id,
+          where: p.business_id == ^ctx.business_id and mi.recipe_id == ^recipe_id,
+          distinct: p.id,
+          select: %{id: p.id, name: p.name, client_id: p.client_id, status: p.status}
+        )
+        |> Repo.all()
+
+      {:ok, Easy.Foods.split_plan_impact(plans)}
+    end
+  end
+
+  @spec copy_recipe(Ctx.t(), String.t()) ::
+          {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def copy_recipe(%Ctx{} = ctx, recipe_id) do
+    with {:ok, recipe} <- get_recipe(ctx, recipe_id) do
+      scalars =
+        recipe
+        |> Map.take(Recipe.scalar_fields())
+        |> Map.new(fn {field, value} -> {Atom.to_string(field), value} end)
+
+      attrs =
+        Map.merge(scalars, %{
+          "serving_sizes" =>
+            Enum.map(recipe.serving_sizes, fn s ->
+              %{
+                "label" => s.label,
+                "amount" => s.amount,
+                "unit" => s.unit,
+                "weight_g" => s.weight_g,
+                "is_default" => s.is_default
+              }
+            end),
+          "recipe_ingredients" =>
+            Enum.map(recipe.recipe_ingredients, fn ri ->
+              %{
+                "food_id" => ri.food_id,
+                "amount" => ri.amount,
+                "unit" => ri.unit,
+                "weight_g" => ri.weight_g,
+                "position" => ri.position
+              }
+            end)
+        })
+
+      create_recipe(ctx, attrs)
     end
   end
 
@@ -127,10 +178,10 @@ defmodule Easy.Recipes do
     from(r in query, preload: [foods: ^food_query, recipe_ingredients: ^ingredient_query])
   end
 
-  defp get_coach_for_user(business_id, user_id) do
+  defp get_coach(%Ctx{} = ctx) do
     Coach
-    |> Coach.for_business(business_id)
-    |> Coach.for_user(user_id)
+    |> Coach.for_business(ctx.business_id)
+    |> Coach.for_user(ctx.user_id)
     |> Repo.one()
     |> ok_or_not_found()
   end

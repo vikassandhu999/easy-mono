@@ -15,6 +15,8 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     TrainingPlanUpdateRequest
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update, :assign]
+
   tags ["coach training plans"]
 
   operation :index,
@@ -127,11 +129,8 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
-    claims = conn.assigns.claims
-
-    with {:ok, plan} <-
-           Plans.create_training_plan_for_coach_user(claims.business_id, claims.user_id, params) do
+  def create(conn, _params) do
+    with {:ok, plan} <- Plans.create_plan(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: plan)
@@ -139,52 +138,55 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def show(conn, _params) do
+    id = conn.path_params["id"]
 
-    with {:ok, plan} <- Plans.get_plan_full(business_id, id) do
+    with {:ok, plan} <- Plans.get_plan_full(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def update(conn, _params) do
+    id = conn.path_params["id"]
 
-    with {:ok, updated} <- Plans.update_training_plan(business_id, id, conn.body_params) do
+    with {:ok, updated} <- Plans.update_plan(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, plan: updated)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def delete(conn, _params) do
+    id = conn.path_params["id"]
 
-    with {:ok, _plan} <- Plans.delete_training_plan(business_id, id) do
+    with {:ok, _plan} <- Plans.delete_plan(conn.assigns.ctx, id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{business_id: business_id} = conn.assigns.claims
-
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 50)
     search = Map.get(params, "search", "")
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_template_plans(business_id, search, status, offset, limit) do
+           Plans.list_template_plans(conn.assigns.ctx,
+             search: search,
+             status: status,
+             offset: offset,
+             limit: limit
+           ) do
       render(conn, :index, plans: plans, count: count)
     end
   end
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def duplicate(conn, %{"id" => id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def duplicate(conn, _params) do
+    id = conn.path_params["id"]
 
-    with {:ok, duplicated} <- Plans.duplicate_training_plan(business_id, id) do
+    with {:ok, duplicated} <- Plans.duplicate_plan(conn.assigns.ctx, id) do
       conn
       |> put_status(:created)
       |> render(:show, plan: duplicated)
@@ -192,16 +194,12 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   end
 
   @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def assign(conn, %{"id" => id, "client_id" => client_id} = params) do
-    %{business_id: business_id} = conn.assigns.claims
+  def assign(conn, _params) do
+    id = conn.path_params["id"]
+    client_id = conn.body_params[:client_id]
 
     with {:ok, assigned} <-
-           Plans.assign_training_plan_to_client(
-             business_id,
-             id,
-             client_id,
-             params
-           ) do
+           Plans.assign_plan_to_client(conn.assigns.ctx, client_id, id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: assigned)

@@ -71,19 +71,22 @@ defmodule EasyWeb.OpenApi.Schemas.Business do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(%{
     title: "Business",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      handle: %Schema{type: :string},
-      about: %Schema{type: :string, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          handle: %Schema{type: :string},
+          about: %Schema{type: :string, nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [:id, :name, :handle, :about, :inserted_at, :updated_at]
   })
 end
@@ -91,15 +94,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.BusinessResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.Business
+  alias EasyWeb.OpenApi.Schemas.{Business, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "BusinessResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: Business},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(Business, "BusinessResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.CoachProfileUpdateRequest do
@@ -115,7 +112,8 @@ defmodule EasyWeb.OpenApi.Schemas.CoachProfileUpdateRequest do
       properties: %{
         first_name: %Schema{type: :string, nullable: true},
         last_name: %Schema{type: :string, nullable: true},
-        phone: %Schema{type: :string, nullable: true}
+        phone: %Schema{type: :string, nullable: true},
+        business_name: %Schema{type: :string, nullable: true}
       },
       example: %{
         "first_name" => "Alex",
@@ -170,15 +168,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.CoachProfileResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.CoachProfile
+  alias EasyWeb.OpenApi.Schemas.{CoachProfile, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "CoachProfileResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: CoachProfile},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(CoachProfile, "CoachProfileResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileUpdateRequest do
@@ -265,13 +257,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.ClientProfile
+  alias EasyWeb.OpenApi.Schemas.{ClientProfile, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "ClientProfileResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: ClientProfile},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(ClientProfile, "ClientProfileResponse"))
 end

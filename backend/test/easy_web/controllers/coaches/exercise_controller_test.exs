@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
   use Easy.ConnCase
 
   alias Easy.Repo
-  alias Easy.Training.Exercise
+  alias Easy.Training.TrainingExercise
 
   setup do
     owner = insert(:user, email: "owner-#{Ecto.UUID.generate()}@test.com")
@@ -22,7 +22,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
     %{conn: conn, coach: coach, business: business}
   end
 
-  describe "POST /v1/coach/exercises" do
+  describe "POST /v1/coach/training-exercises" do
     test "creates a business exercise with selected muscles and equipment", %{
       conn: conn,
       business: business
@@ -46,7 +46,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/v1/coach/exercises", payload)
+        |> post("/v1/coach/training-exercises", payload)
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["id"]
@@ -67,7 +67,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
              |> Enum.sort() == Enum.sort([barbell.id, cable.id])
 
       exercise =
-        Exercise
+        TrainingExercise
         |> Repo.get!(data["id"])
         |> Repo.preload([:muscles, :equipment])
 
@@ -92,7 +92,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/v1/coach/exercises", %{"description" => "missing name"})
+        |> post("/v1/coach/training-exercises", %{"description" => "missing name"})
 
       assert %{
                "errors" => [
@@ -109,7 +109,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/v1/coach/exercises", %{
+        |> post("/v1/coach/training-exercises", %{
           "name" => "Rejected #{Ecto.UUID.generate()}",
           "business_id" => Ecto.UUID.generate()
         })
@@ -118,7 +118,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
     end
   end
 
-  describe "GET /v1/coach/exercises" do
+  describe "GET /v1/coach/training-exercises" do
     test "lists current business and system exercises only", %{conn: conn, business: business} do
       search_term = "Visible #{Ecto.UUID.generate()}"
 
@@ -153,7 +153,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
           name: "#{search_term} Other Business Exercise"
         )
 
-      conn = get(conn, "/v1/coach/exercises", %{"search" => search_term})
+      conn = get(conn, "/v1/coach/training-exercises", %{"search" => search_term})
       assert %{"data" => data, "count" => 2} = json_response(conn, 200)
 
       assert data
@@ -184,7 +184,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         name: "Standing Row #{Ecto.UUID.generate()}"
       )
 
-      conn = get(conn, "/v1/coach/exercises", %{"search" => "bench"})
+      conn = get(conn, "/v1/coach/training-exercises", %{"search" => "bench"})
       assert %{"data" => data, "count" => 2} = json_response(conn, 200)
 
       assert data
@@ -193,12 +193,12 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
     end
 
     test "returns 403 without a coach token" do
-      conn = build_conn() |> get("/v1/coach/exercises")
+      conn = build_conn() |> get("/v1/coach/training-exercises")
       assert %{"error_code" => "unauthorized"} = json_response(conn, 403)
     end
   end
 
-  describe "GET /v1/coach/exercises/:id" do
+  describe "GET /v1/coach/training-exercises/:id" do
     test "shows a business exercise with muscles and equipment", %{conn: conn, business: business} do
       lat = insert(:muscle, name: "Lat #{Ecto.UUID.generate()}")
       cable = insert(:equipment, name: "Cable Machine #{Ecto.UUID.generate()}")
@@ -212,7 +212,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
           equipment: [cable]
         )
 
-      conn = get(conn, "/v1/coach/exercises/#{exercise.id}")
+      conn = get(conn, "/v1/coach/training-exercises/#{exercise.id}")
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["id"] == exercise.id
@@ -233,7 +233,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
           name: "System Deadlift #{Ecto.UUID.generate()}"
         )
 
-      conn = get(conn, "/v1/coach/exercises/#{exercise.id}")
+      conn = get(conn, "/v1/coach/training-exercises/#{exercise.id}")
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["id"] == exercise.id
@@ -255,35 +255,35 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: other_business.id,
-          name: "Private Exercise #{Ecto.UUID.generate()}"
+          name: "Private TrainingExercise #{Ecto.UUID.generate()}"
         )
 
-      conn = get(conn, "/v1/coach/exercises/#{exercise.id}")
+      conn = get(conn, "/v1/coach/training-exercises/#{exercise.id}")
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
     end
   end
 
-  describe "PATCH /v1/coach/exercises/:id" do
+  describe "PATCH /v1/coach/training-exercises/:id" do
     test "updates a business exercise without changing its business", %{conn: conn, business: business} do
       exercise =
         insert(:exercise,
           business: nil,
           business_id: business.id,
-          name: "Original Exercise #{Ecto.UUID.generate()}"
+          name: "Original TrainingExercise #{Ecto.UUID.generate()}"
         )
 
-      new_name = "Updated Exercise #{Ecto.UUID.generate()}"
+      new_name = "Updated TrainingExercise #{Ecto.UUID.generate()}"
 
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> patch("/v1/coach/exercises/#{exercise.id}", %{"name" => new_name})
+        |> patch("/v1/coach/training-exercises/#{exercise.id}", %{"name" => new_name})
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == exercise.id
       assert data["name"] == new_name
 
-      updated = Repo.get!(Exercise, exercise.id)
+      updated = Repo.get!(TrainingExercise, exercise.id)
       assert updated.name == new_name
       assert updated.business_id == business.id
     end
@@ -293,20 +293,20 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: business.id,
-          name: "Original Exercise #{Ecto.UUID.generate()}"
+          name: "Original TrainingExercise #{Ecto.UUID.generate()}"
         )
 
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> patch("/v1/coach/exercises/#{exercise.id}", %{
-          "name" => "Updated Exercise #{Ecto.UUID.generate()}",
+        |> patch("/v1/coach/training-exercises/#{exercise.id}", %{
+          "name" => "Updated TrainingExercise #{Ecto.UUID.generate()}",
           "business_id" => Ecto.UUID.generate()
         })
 
       assert %{"errors" => [_error]} = json_response(conn, 422)
 
-      updated = Repo.get!(Exercise, exercise.id)
+      updated = Repo.get!(TrainingExercise, exercise.id)
       assert updated.name == exercise.name
       assert updated.business_id == business.id
     end
@@ -322,11 +322,11 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> patch("/v1/coach/exercises/#{exercise.id}", %{"name" => "Nope"})
+        |> patch("/v1/coach/training-exercises/#{exercise.id}", %{"name" => "Nope"})
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
 
-      assert Repo.get!(Exercise, exercise.id).name == exercise.name
+      assert Repo.get!(TrainingExercise, exercise.id).name == exercise.name
     end
 
     test "returns 404 when updating another business exercise", %{conn: conn} do
@@ -344,21 +344,21 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: other_business.id,
-          name: "Other Exercise #{Ecto.UUID.generate()}"
+          name: "Other TrainingExercise #{Ecto.UUID.generate()}"
         )
 
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> patch("/v1/coach/exercises/#{exercise.id}", %{"name" => "Nope"})
+        |> patch("/v1/coach/training-exercises/#{exercise.id}", %{"name" => "Nope"})
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
 
-      assert Repo.get!(Exercise, exercise.id).name == exercise.name
+      assert Repo.get!(TrainingExercise, exercise.id).name == exercise.name
     end
   end
 
-  describe "DELETE /v1/coach/exercises/:id" do
+  describe "DELETE /v1/coach/training-exercises/:id" do
     test "deletes a business exercise", %{conn: conn, business: business} do
       exercise =
         insert(:exercise,
@@ -367,9 +367,9 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
           name: "Delete Me #{Ecto.UUID.generate()}"
         )
 
-      conn = delete(conn, "/v1/coach/exercises/#{exercise.id}")
+      conn = delete(conn, "/v1/coach/training-exercises/#{exercise.id}")
       assert response(conn, 204)
-      assert Repo.get(Exercise, exercise.id) == nil
+      assert Repo.get(TrainingExercise, exercise.id) == nil
     end
 
     test "returns 404 when deleting a system exercise", %{conn: conn} do
@@ -377,12 +377,12 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: nil,
-          name: "Keep System Exercise #{Ecto.UUID.generate()}"
+          name: "Keep System TrainingExercise #{Ecto.UUID.generate()}"
         )
 
-      conn = delete(conn, "/v1/coach/exercises/#{exercise.id}")
+      conn = delete(conn, "/v1/coach/training-exercises/#{exercise.id}")
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
-      assert Repo.get!(Exercise, exercise.id).name == exercise.name
+      assert Repo.get!(TrainingExercise, exercise.id).name == exercise.name
     end
 
     test "returns 404 when deleting another business exercise", %{conn: conn} do
@@ -403,13 +403,13 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
           name: "Other Delete #{Ecto.UUID.generate()}"
         )
 
-      conn = delete(conn, "/v1/coach/exercises/#{exercise.id}")
+      conn = delete(conn, "/v1/coach/training-exercises/#{exercise.id}")
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
-      assert Repo.get!(Exercise, exercise.id).name == exercise.name
+      assert Repo.get!(TrainingExercise, exercise.id).name == exercise.name
     end
   end
 
-  describe "POST /v1/coach/exercises/:id/duplicate" do
+  describe "POST /v1/coach/training-exercises/:id/copy" do
     test "duplicates a system exercise with the requested name", %{conn: conn, business: business} do
       hamstrings = insert(:muscle, name: "Hamstrings #{Ecto.UUID.generate()}")
       barbell = insert(:equipment, name: "Barbell #{Ecto.UUID.generate()}")
@@ -427,7 +427,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/v1/coach/exercises/#{source.id}/duplicate", %{"name" => duplicate_name})
+        |> post("/v1/coach/training-exercises/#{source.id}/copy", %{"name" => duplicate_name})
 
       assert %{"data" => data} = json_response(conn, 201)
 
@@ -435,7 +435,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       assert data["name"] == duplicate_name
 
       duplicate =
-        Exercise
+        TrainingExercise
         |> Repo.get!(data["id"])
         |> Repo.preload([:muscles, :equipment])
 
@@ -456,7 +456,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/v1/coach/exercises/#{source.id}/duplicate", %{})
+        |> post("/v1/coach/training-exercises/#{source.id}/copy", %{})
 
       assert %{
                "errors" => [
@@ -490,12 +490,12 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/v1/coach/exercises/#{source.id}/duplicate", %{"name" => "Private Copy"})
+        |> post("/v1/coach/training-exercises/#{source.id}/copy", %{"name" => "Private Copy"})
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
 
-      assert Repo.get_by(Exercise, business_id: business.id, name: "Private Copy") == nil
-      assert Repo.get!(Exercise, source.id).business_id == other_business.id
+      assert Repo.get_by(TrainingExercise, business_id: business.id, name: "Private Copy") == nil
+      assert Repo.get!(TrainingExercise, source.id).business_id == other_business.id
     end
   end
 end

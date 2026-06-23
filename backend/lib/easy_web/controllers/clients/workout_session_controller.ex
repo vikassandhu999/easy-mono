@@ -3,186 +3,103 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Sessions
-  alias Easy.Training.WorkoutSession
-  alias OpenApiSpex.{Operation, Schema}
+  alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    WorkoutSessionCompleteRequest,
-    WorkoutSessionListResponse,
-    WorkoutSessionRequest,
-    WorkoutSessionResponse
+    TrainingSessionUpdateRequest,
+    TrainingSessionListResponse,
+    TrainingSessionRequest,
+    TrainingSessionResponse
   }
 
-  tags ["client workout sessions"]
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
 
-  operation :active,
-    summary: "Get active workout session",
-    operation_id: "getActiveWorkoutSession",
-    security: [%{"bearerAuth" => []}],
-    responses: [
-      ok: {"Workout session", "application/json", WorkoutSessionResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
+  tags ["client training sessions"]
 
   operation :index,
-    summary: "List client workout sessions",
-    operation_id: "listClientWorkoutSessions",
+    summary: "List client training sessions",
+    operation_id: "listClientTrainingSessions",
     security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:offset, :query, :integer, "Number of sessions to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum sessions to return", required: false),
-      Operation.parameter(
-        :state,
-        :query,
-        %Schema{type: :string, enum: ["active", "completed", "discarded"]},
-        "Only sessions with this state",
-        required: false
-      )
+      Operation.parameter(:from, :query, :string, "Start date (YYYY-MM-DD)", required: false),
+      Operation.parameter(:to, :query, :string, "End date (YYYY-MM-DD)", required: false)
     ],
-    responses: [ok: {"Workout sessions", "application/json", WorkoutSessionListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+    responses: [
+      ok: {"Training sessions", "application/json", TrainingSessionListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
 
   operation :create,
-    summary: "Create client workout session",
-    operation_id: "createClientWorkoutSession",
+    summary: "Start a training session",
+    operation_id: "createClientTrainingSession",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Workout session request", "application/json", WorkoutSessionRequest, required: true},
+    request_body: {"Training session request", "application/json", TrainingSessionRequest, required: true},
     responses: [
-      created: {"Workout session created", "application/json", WorkoutSessionResponse},
+      created: {"Training session created", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :show,
-    summary: "Get client workout session",
-    operation_id: "getClientWorkoutSession",
+    summary: "Get a training session",
+    operation_id: "getClientTrainingSession",
     security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
+    parameters: [Operation.parameter(:id, :path, :string, "Training session id")],
     responses: [
-      ok: {"Workout session", "application/json", WorkoutSessionResponse},
+      ok: {"Training session", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
   operation :update,
-    summary: "Update client workout session",
-    operation_id: "updateClientWorkoutSession",
+    summary: "Update a training session (complete/discard/notes)",
+    operation_id: "updateClientTrainingSession",
     security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
-    request_body: {"Workout session update request", "application/json", WorkoutSessionCompleteRequest, required: true},
+    parameters: [Operation.parameter(:id, :path, :string, "Training session id")],
+    request_body: {"Training session update request", "application/json", TrainingSessionUpdateRequest, required: true},
     responses: [
-      ok: {"Workout session updated", "application/json", WorkoutSessionResponse},
+      ok: {"Training session updated", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
-  operation :complete,
-    summary: "Complete client workout session",
-    operation_id: "completeClientWorkoutSession",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
-    request_body: {"Workout session completion request", "application/json", WorkoutSessionCompleteRequest, required: true},
-    responses: [
-      ok: {"Workout session completed", "application/json", WorkoutSessionResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def index(conn, params) do
+    opts = [
+      from: Easy.Utils.safe_date(params["from"]),
+      to: Easy.Utils.safe_date(params["to"])
     ]
 
-  operation :discard,
-    summary: "Discard client workout session",
-    operation_id: "discardClientWorkoutSession",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
-    responses: [
-      ok: {"Workout session discarded", "application/json", WorkoutSessionResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
+    with {:ok, sessions} <- Sessions.list_client_sessions(conn.assigns.ctx, opts) do
+      render(conn, :index, sessions: sessions, count: length(sessions))
+    end
+  end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, session} <-
-           Sessions.create_client_workout_session_for_user(business_id, user_id, params) do
+  def create(conn, _params) do
+    with {:ok, session} <- Sessions.create_client_session(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, session: session)
     end
   end
 
-  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
-    state = parse_enum(params, "state", WorkoutSession.states())
-
-    with {:ok, %{sessions: sessions, count: count}} <-
-           Sessions.list_sessions_for_user(business_id, user_id, state, offset, limit) do
-      render(conn, :index, sessions: sessions, count: count)
-    end
-  end
-
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+  def show(conn, _params) do
+    id = conn.path_params["id"]
 
-    with {:ok, session} <-
-           Sessions.get_client_session_with_sets_for_user(business_id, user_id, id) do
+    with {:ok, session} <- Sessions.get_client_session(conn.assigns.ctx, id) do
       render(conn, :show, session: session)
-    end
-  end
-
-  @spec active(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def active(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, session} <- Sessions.get_active_client_session_for_user(business_id, user_id) do
-      render(conn, :show, session: session)
-    end
-  end
-
-  @spec complete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def complete(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, completed} <-
-           Sessions.complete_client_workout_session_for_user(
-             business_id,
-             user_id,
-             id,
-             conn.body_params
-           ) do
-      render(conn, :show, session: completed)
-    end
-  end
-
-  @spec discard(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def discard(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, discarded} <-
-           Sessions.discard_client_workout_session_for_user(business_id, user_id, id) do
-      render(conn, :show, session: discarded)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+  def update(conn, _params) do
+    id = conn.path_params["id"]
 
-    with {:ok, updated} <-
-           Sessions.update_client_workout_session_for_user(
-             business_id,
-             user_id,
-             id,
-             conn.body_params
-           ) do
+    with {:ok, updated} <- Sessions.update_client_session(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, session: updated)
     end
   end

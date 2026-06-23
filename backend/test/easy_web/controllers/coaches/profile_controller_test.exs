@@ -78,6 +78,7 @@ defmodule EasyWeb.Coaches.ProfileControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_coach(coach)
         |> patch("/v1/coach/me", %{
           "first_name" => "Rajat",
@@ -97,6 +98,7 @@ defmodule EasyWeb.Coaches.ProfileControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_coach(coach)
         |> patch("/v1/coach/me", %{
           "first_name" => "Updated",
@@ -117,6 +119,7 @@ defmodule EasyWeb.Coaches.ProfileControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_coach(coach)
         |> patch("/v1/coach/me", %{"phone" => "+91 88888 77777"})
 
@@ -132,6 +135,7 @@ defmodule EasyWeb.Coaches.ProfileControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_coach(coach)
         |> patch("/v1/coach/me", %{"first_name" => "New"})
 

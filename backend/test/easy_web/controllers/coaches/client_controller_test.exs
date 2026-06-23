@@ -3,7 +3,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
   setup do
     coach = insert(:coach)
-    conn = build_conn() |> authenticate_coach(coach)
+    conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
 
     %{conn: conn, coach: coach, business: coach.business}
   end
@@ -142,7 +142,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
     test "rejects coach inviting their own email" do
       user = insert(:user, email: "rajat@coach.com")
       coach = insert(:coach, user: user)
-      conn = build_conn() |> authenticate_coach(coach)
+      conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
 
       attrs = %{"email" => "rajat@coach.com", "first_name" => "Rajat"}
       conn = post(conn, "/v1/coach/clients/invite", attrs)
@@ -457,8 +457,8 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
         })
 
       assert %{"data" => data} = json_response(conn, 200)
-      assert data["goal_weight_value"] == "88"
       assert data["goal_weight_unit"] == "kg"
+      assert data["goal_weight_value"] == "88.0"
 
       reloaded = Easy.Repo.get!(Easy.Clients.Client, client.id)
       assert Decimal.eq?(reloaded.goal_weight_value, Decimal.new("88"))
@@ -768,6 +768,244 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
       assert client["email"] == "jane@test.com"
     end
+
+    test "filters clients by core profile field", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      matching = insert(:client, creator: coach, business: business)
+      other = insert(:client, creator: coach, business: business)
+
+      insert(:client_profile,
+        business: business,
+        client: matching,
+        nutrition: %{"goal" => "fat_loss"}
+      )
+
+      insert(:client_profile,
+        business: business,
+        client: other,
+        nutrition: %{"goal" => "maintenance"}
+      )
+
+      conn =
+        get(conn, "/v1/coach/clients", %{
+          "profile_filter" => %{"nutrition" => %{"goal" => "fat_loss"}}
+        })
+
+      assert %{"data" => [data], "count" => 1} = json_response(conn, 200)
+      assert data["id"] == matching.id
+    end
+
+    test "filters clients by filterable custom field", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      matching = insert(:client, creator: coach, business: business)
+      other = insert(:client, creator: coach, business: business)
+
+      field =
+        insert(:profile_field_definition,
+          business: business,
+          key: "meal_prep_ability",
+          filterable: true
+        )
+
+      insert(:profile_field_value,
+        business: business,
+        client: matching,
+        profile_field_definition: field,
+        value: %{"value" => "high"}
+      )
+
+      insert(:profile_field_value,
+        business: business,
+        client: other,
+        profile_field_definition: field,
+        value: %{"value" => "low"}
+      )
+
+      conn =
+        get(conn, "/v1/coach/clients", %{
+          "profile_filter" => %{"custom" => %{"meal_prep_ability" => "high"}}
+        })
+
+      assert %{"data" => [data], "count" => 1} = json_response(conn, 200)
+      assert data["id"] == matching.id
+    end
+
+    test "filters clients by any selected custom multi-select value", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      matching = insert(:client, creator: coach, business: business)
+      other = insert(:client, creator: coach, business: business)
+
+      field =
+        insert(:profile_field_definition,
+          business: business,
+          key: "diet_preferences",
+          field_type: "multi_select",
+          options: ["vegetarian", "low_sodium", "dairy_free"],
+          filterable: true
+        )
+
+      insert(:profile_field_value,
+        business: business,
+        client: matching,
+        profile_field_definition: field,
+        value: %{"value" => ["vegetarian", "low_sodium"]}
+      )
+
+      insert(:profile_field_value,
+        business: business,
+        client: other,
+        profile_field_definition: field,
+        value: %{"value" => ["dairy_free"]}
+      )
+
+      conn =
+        get(conn, "/v1/coach/clients", %{
+          "profile_filter" => %{"custom" => %{"diet_preferences" => ["low_sodium", "high_protein"]}}
+        })
+
+      assert %{"data" => [data], "count" => 1} = json_response(conn, 200)
+      assert data["id"] == matching.id
+    end
+
+    test "does not match non-filterable custom fields", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business)
+
+      field =
+        insert(:profile_field_definition,
+          business: business,
+          key: "meal_prep_ability",
+          filterable: false
+        )
+
+      insert(:profile_field_value,
+        business: business,
+        client: client,
+        profile_field_definition: field,
+        value: %{"value" => "high"}
+      )
+
+      conn =
+        get(conn, "/v1/coach/clients", %{
+          "profile_filter" => %{"custom" => %{"meal_prep_ability" => "high"}}
+        })
+
+      assert %{"data" => [], "count" => 0} = json_response(conn, 200)
+    end
+
+    test "does not match archived custom fields", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business)
+
+      field =
+        insert(:profile_field_definition,
+          business: business,
+          key: "meal_prep_ability",
+          filterable: true,
+          archived_at: DateTime.utc_now(:second)
+        )
+
+      insert(:profile_field_value,
+        business: business,
+        client: client,
+        profile_field_definition: field,
+        value: %{"value" => "high"}
+      )
+
+      conn =
+        get(conn, "/v1/coach/clients", %{
+          "profile_filter" => %{"custom" => %{"meal_prep_ability" => "high"}}
+        })
+
+      assert %{"data" => [], "count" => 0} = json_response(conn, 200)
+    end
+
+    test "does not match another business's custom profile field", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      insert(:client, creator: coach, business: business)
+      other_coach = insert(:coach)
+      other_client = insert(:client, creator: other_coach, business: other_coach.business)
+
+      insert(:profile_field_definition,
+        business: business,
+        key: "meal_prep_ability",
+        filterable: true
+      )
+
+      other_definition =
+        insert(:profile_field_definition,
+          business: other_coach.business,
+          key: "meal_prep_ability",
+          filterable: true
+        )
+
+      insert(:profile_field_value,
+        business: other_coach.business,
+        client: other_client,
+        profile_field_definition: other_definition,
+        value: %{"value" => "high"}
+      )
+
+      conn =
+        get(conn, "/v1/coach/clients", %{
+          "profile_filter" => %{"custom" => %{"meal_prep_ability" => "high"}}
+        })
+
+      assert %{"data" => [], "count" => 0} = json_response(conn, 200)
+    end
+
+    test "does not match another business's profile", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      insert(:client, creator: coach, business: business)
+      other_coach = insert(:coach)
+      other_client = insert(:client, creator: other_coach, business: other_coach.business)
+
+      insert(:client_profile,
+        business: other_coach.business,
+        client: other_client,
+        nutrition: %{"goal" => "fat_loss"}
+      )
+
+      conn =
+        get(conn, "/v1/coach/clients", %{
+          "profile_filter" => %{"nutrition" => %{"goal" => "fat_loss"}}
+        })
+
+      assert %{"data" => [], "count" => 0} = json_response(conn, 200)
+    end
+
+    test "returns 422 for invalid profile filters", %{conn: conn, coach: coach, business: business} do
+      insert(:client, creator: coach, business: business)
+
+      conn =
+        get(conn, "/v1/coach/clients", %{
+          "profile_filter" => %{"nutrition" => %{"goal" => []}}
+        })
+
+      assert %{"error_detail" => %{"fields" => %{"profile_filter" => ["is invalid"]}}} =
+               json_response(conn, 422)
+    end
   end
 
   describe "GET /v1/coach/clients - status filtering" do
@@ -882,7 +1120,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       plan =
         insert(:training_plan,
           business: business,
-          author: coach,
+          creator: coach,
           client_id: client.id,
           start_date: ~D[2026-01-01],
           end_date: ~D[2026-03-01]
@@ -902,7 +1140,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       client = insert(:client, creator: coach, business: business, status: :pending)
 
       template =
-        insert(:training_plan, business: business, author: coach, client_id: nil)
+        insert(:training_plan, business: business, creator: coach, client_id: nil)
 
       conn = delete(conn, "/v1/coach/clients/#{client.id}")
       assert response(conn, 204)

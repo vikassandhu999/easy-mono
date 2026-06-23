@@ -8,11 +8,11 @@ import type {CoachMealLog} from '@/api/mealLogs';
 import {useListCoachMealLogsQuery} from '@/api/mealLogs';
 import {
   buildMealLogComparison,
+  type ComparisonType,
   getMealSlotLabel,
   getNutritionDayTotals,
   getSkippedMealSlots,
   sortMealLogsBySlot,
-  type ComparisonType,
 } from '@/domain/client-nutrition';
 
 function StatusIcon({type}: {type: ComparisonType}) {

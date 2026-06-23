@@ -1,7 +1,7 @@
 import {api} from '@/api/base';
 import {type Food, foodFromApi} from '@/api/foods';
 import {type Recipe, recipeFromApi} from '@/api/recipes';
-import {ApiResponse, Macros} from '@/api/shared';
+import {ApiResponse, getPlanScopedId, Macros} from '@/api/shared';
 
 export type MealItem = {
   id: string;
@@ -77,7 +77,6 @@ export function mealFromApi(meal: Meal): Meal {
 }
 
 const getMealScopedId = (mealId: string) => `MEAL_${mealId}`;
-const getPlanScopedId = (planId: string) => `PLAN_${planId}`;
 
 function mapMealResponse(response: ApiResponse<Meal>): ApiResponse<Meal> {
   return {

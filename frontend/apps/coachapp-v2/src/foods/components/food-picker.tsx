@@ -2,9 +2,8 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Apple} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useDeferredValue, useMemo, useState} from 'react';
 
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
 
 type FoodPickerProps = {
@@ -23,41 +22,35 @@ export default function FoodPicker({
   excludeIds = [],
 }: FoodPickerProps) {
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const deferredSearch = useDeferredValue(searchInput);
+  const shouldQuery = deferredSearch.length >= 1;
 
-  const {data, isFetching} = useListFoodsQuery(shouldQuery ? {search: debouncedSearch, limit: 10} : undefined, {
-    skip: !shouldQuery,
-  });
+  const {data, isFetching} = useListFoodsQuery(
+    {search: deferredSearch, limit: 10},
+    {
+      skip: !shouldQuery,
+    },
+  );
 
   const foods = useMemo(() => data?.data ?? [], [data]);
-
-  // Build a lookup map so we can resolve the full Food object from a Key on selection
-  const foodMap = useMemo(() => {
-    const map = new Map<string, Food>();
-    for (const food of foods) {
-      map.set(food.id, food);
-    }
-    return map;
-  }, [foods]);
 
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
       if (key == null) {
         return;
       }
-      const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
+      const id = String(Array.isArray(key) ? (key[0] ?? '') : key);
       if (!id) {
         return;
       }
-      const food = foodMap.get(id);
+      const food = foods.find((f) => f.id === id);
       if (food) {
         onSelect(food);
         // Clear the search after selection
         setSearchInput('');
       }
     },
-    [onSelect, foodMap],
+    [onSelect, foods],
   );
 
   return (
@@ -97,7 +90,7 @@ export default function FoodPicker({
             </SearchField.Group>
           </SearchField>
           <ListBox
-            className="max-h-[280px] overflow-y-auto"
+            className="max-h-70 overflow-y-auto"
             items={foods}
             renderEmptyState={() => <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>}
           >

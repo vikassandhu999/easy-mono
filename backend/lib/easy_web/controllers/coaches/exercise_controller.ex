@@ -7,16 +7,16 @@ defmodule EasyWeb.Coaches.ExerciseController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    ExerciseCreateRequest,
-    ExerciseDuplicateRequest,
-    ExerciseListResponse,
-    ExerciseUpdateRequest,
-    ExerciseResponse
+    TrainingExerciseCreateRequest,
+    TrainingExerciseCopyRequest,
+    TrainingExerciseListResponse,
+    TrainingExerciseUpdateRequest,
+    TrainingExerciseResponse
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :duplicate]
+       when action in [:create, :update, :copy]
 
   tags ["coach exercises"]
 
@@ -39,7 +39,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
       )
     ],
     responses: [
-      ok: {"Exercises", "application/json", ExerciseListResponse},
+      ok: {"Exercises", "application/json", TrainingExerciseListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
@@ -53,7 +53,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
       Operation.parameter(:id, :path, :string, "Exercise id")
     ],
     responses: [
-      ok: {"Exercise", "application/json", ExerciseResponse},
+      ok: {"Exercise", "application/json", TrainingExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
@@ -67,9 +67,9 @@ defmodule EasyWeb.Coaches.ExerciseController do
     parameters: [
       Operation.parameter(:id, :path, :string, "Exercise id")
     ],
-    request_body: {"Exercise update request", "application/json", ExerciseUpdateRequest, required: true},
+    request_body: {"Exercise update request", "application/json", TrainingExerciseUpdateRequest, required: true},
     responses: [
-      ok: {"Exercise updated", "application/json", ExerciseResponse},
+      ok: {"Exercise updated", "application/json", TrainingExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -96,25 +96,25 @@ defmodule EasyWeb.Coaches.ExerciseController do
       "Creates an exercise in the coach library so the frontend can immediately offer it in workout builders and exercise pickers. Frontend pattern - optimistically insert into local lists, then reconcile with the 201 payload or rollback on validation failure.",
     operation_id: "createExercise",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Exercise create request", "application/json", ExerciseCreateRequest, required: true},
+    request_body: {"Exercise create request", "application/json", TrainingExerciseCreateRequest, required: true},
     responses: [
-      created: {"Exercise created", "application/json", ExerciseResponse},
+      created: {"Exercise created", "application/json", TrainingExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
-  operation :duplicate,
-    summary: "Duplicate exercise",
+  operation :copy,
+    summary: "Copy exercise",
     description:
       "Creates a named copy of a system or coach exercise in the coach library. Frontend pattern - ask the coach for the new exercise name before calling this endpoint, then append the returned copy to local exercise lists.",
-    operation_id: "duplicateExercise",
+    operation_id: "copyExercise",
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:id, :path, :string, "Exercise id")
     ],
-    request_body: {"Exercise duplicate request", "application/json", ExerciseDuplicateRequest, required: true},
+    request_body: {"Exercise copy request", "application/json", TrainingExerciseCopyRequest, required: true},
     responses: [
-      created: {"Exercise duplicated", "application/json", ExerciseResponse},
+      created: {"Exercise copied", "application/json", TrainingExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -152,8 +152,8 @@ defmodule EasyWeb.Coaches.ExerciseController do
     end
   end
 
-  @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def duplicate(conn, _params) do
+  @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def copy(conn, _params) do
     id = conn.path_params["id"]
 
     with {:ok, duplicated} <- Exercises.duplicate_exercise(conn.assigns.ctx, id, conn.body_params) do
@@ -165,12 +165,14 @@ defmodule EasyWeb.Coaches.ExerciseController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
-    search = Map.get(params, "search", "")
-    muscle_ids = parse_list(params, "muscle_ids")
+    opts = [
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 20),
+      search: Map.get(params, "search", ""),
+      muscle_ids: parse_list(params, "muscle_ids")
+    ]
 
-    with {:ok, res} <- Exercises.list_exercises(conn.assigns.ctx, search, muscle_ids, offset, limit) do
+    with {:ok, res} <- Exercises.list_exercises(conn.assigns.ctx, opts) do
       render(conn, :index, exercises: res.exercises, count: res.count)
     end
   end

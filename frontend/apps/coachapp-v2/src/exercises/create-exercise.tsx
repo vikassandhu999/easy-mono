@@ -17,8 +17,8 @@ export default function CreateExercise() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.EXERCISES);
   const [createExercise, {isLoading}] = useCreateExerciseMutation();
-  const {data: musclesData} = useListMusclesQuery();
-  const {data: equipmentData} = useListEquipmentQuery();
+  const {data: musclesData} = useListMusclesQuery({});
+  const {data: equipmentData} = useListEquipmentQuery({});
   const form = useExerciseForm();
 
   const onSubmit = async (data: ExerciseFormValues) => {

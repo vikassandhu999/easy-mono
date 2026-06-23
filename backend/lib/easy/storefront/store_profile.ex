@@ -1,8 +1,6 @@
 defmodule Easy.Storefront.StoreProfile do
   use Ecto.Schema
 
-  alias Easy.Repo
-
   import Ecto.Changeset
   import Ecto.Query
 
@@ -11,8 +9,6 @@ defmodule Easy.Storefront.StoreProfile do
 
   @type t :: %__MODULE__{}
 
-  @theme_colors ~w(orange blue green purple)
-
   schema "store_profiles" do
     field :slug, :string
     field :display_name, :string
@@ -20,7 +16,7 @@ defmodule Easy.Storefront.StoreProfile do
     field :photo_url, :string
     field :cover_image_url, :string
     field :social_links, :map, default: %{}
-    field :theme_color, :string, default: "orange"
+    field :theme_color, Ecto.Enum, values: [:orange, :blue, :green, :purple], default: :orange
     field :is_published, :boolean, default: false
     field :intake_questions, {:array, :map}, default: []
     field :headline, :string
@@ -60,7 +56,6 @@ defmodule Easy.Storefront.StoreProfile do
     |> put_change(:business_id, business_id)
     |> validate_required([:slug, :display_name, :business_id])
     |> validate_slug()
-    |> validate_inclusion(:theme_color, @theme_colors)
     |> unique_constraint(:slug)
     |> unique_constraint(:business_id)
   end
@@ -71,7 +66,6 @@ defmodule Easy.Storefront.StoreProfile do
     |> cast(attrs, @cast_fields)
     |> validate_required([:slug, :display_name])
     |> validate_slug()
-    |> validate_inclusion(:theme_color, @theme_colors)
     |> unique_constraint(:slug)
   end
 
@@ -81,7 +75,7 @@ defmodule Easy.Storefront.StoreProfile do
     |> validate_length(:slug, min: 3, max: 60)
   end
 
-  # Queries
+  # Query builders
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
@@ -96,41 +90,5 @@ defmodule Easy.Storefront.StoreProfile do
   @spec published(Ecto.Queryable.t()) :: Ecto.Query.t()
   def published(query \\ __MODULE__) do
     from(sp in query, where: sp.is_published == true)
-  end
-
-  # Actions
-
-  @spec create(map(), String.t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(attrs, business_id) do
-    attrs
-    |> insert_changeset(business_id)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(profile, attrs) do
-    profile
-    |> update_changeset(attrs)
-    |> Repo.update()
-  end
-
-  @spec slug_available?(String.t(), String.t() | nil) :: boolean()
-  def slug_available?(slug, exclude_business_id \\ nil) do
-    query = by_slug(slug)
-
-    query =
-      case exclude_business_id do
-        nil -> query
-        id -> from(sp in query, where: sp.business_id != ^id)
-      end
-
-    not Repo.exists?(query)
-  end
-
-  @spec get_for_business(String.t()) :: t() | nil
-  def get_for_business(business_id) do
-    __MODULE__
-    |> for_business(business_id)
-    |> Repo.one()
   end
 end

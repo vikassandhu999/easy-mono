@@ -14,22 +14,13 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanCreateRequest do
         description: %Schema{type: :string, maxLength: 5000, nullable: true},
         status: %Schema{type: :string, enum: ["active", "archived"], nullable: true},
         start_date: %Schema{type: :string, format: :date, nullable: true},
-        end_date: %Schema{type: :string, format: :date, nullable: true},
-        rest_days: %Schema{
-          type: :array,
-          items: %Schema{
-            type: :string,
-            enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-          },
-          uniqueItems: true
-        }
+        end_date: %Schema{type: :string, format: :date, nullable: true}
       },
       required: [:name],
       example: %{
         "name" => "Four Day Strength Template",
         "description" => "Upper/lower strength block.",
-        "status" => "active",
-        "rest_days" => ["saturday", "sunday"]
+        "status" => "active"
       }
     },
     struct?: false
@@ -52,20 +43,11 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanUpdateRequest do
         description: %Schema{type: :string, maxLength: 5000, nullable: true},
         status: %Schema{type: :string, enum: ["active", "archived"], nullable: true},
         start_date: %Schema{type: :string, format: :date, nullable: true},
-        end_date: %Schema{type: :string, format: :date, nullable: true},
-        rest_days: %Schema{
-          type: :array,
-          items: %Schema{
-            type: :string,
-            enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-          },
-          uniqueItems: true
-        }
+        end_date: %Schema{type: :string, format: :date, nullable: true}
       },
       example: %{
         "name" => "Updated Strength Template",
-        "description" => "Updated training focus.",
-        "rest_days" => ["sunday"]
+        "description" => "Updated training focus."
       }
     },
     struct?: false
@@ -142,67 +124,72 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanPlannedSet do
 
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "TrainingPlanPlannedSet",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      target_reps: %Schema{type: :string, nullable: true},
-      load_value: %Schema{type: :string, nullable: true},
-      load_unit: %Schema{
-        type: :string,
-        enum: ["kg", "lbs", "bodyweight", "percent_1rm", "rpe", "none"],
-        nullable: true
+  OpenApiSpex.schema(
+    %{
+      title: "TrainingPlanPlannedSet",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
+        reps: %Schema{type: :string, nullable: true},
+        load_value: %Schema{type: :string, nullable: true},
+        load_unit: %Schema{
+          type: :string,
+          enum: ["kg", "lbs", "bodyweight", "none"],
+          nullable: true
+        },
+        duration_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
+        distance_value: %Schema{type: :string, nullable: true},
+        distance_unit: %Schema{
+          type: :string,
+          enum: ["meters", "km", "miles", "none"],
+          nullable: true
+        },
+        rpe: %Schema{type: :number, minimum: 1, maximum: 10, nullable: true},
+        rest_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
+        notes: %Schema{type: :string, nullable: true}
       },
-      intensity_target: %Schema{type: :string, nullable: true},
-      tempo: %Schema{type: :string, nullable: true},
-      rest_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
-      duration_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
-      distance_value: %Schema{type: :string, nullable: true},
-      distance_unit: %Schema{
-        type: :string,
-        enum: ["meters", "km", "miles", "yards", "none"],
-        nullable: true
-      },
-      notes: %Schema{type: :string, nullable: true}
+      required: [
+        :set_type,
+        :reps,
+        :load_value,
+        :load_unit,
+        :duration_seconds,
+        :distance_value,
+        :distance_unit,
+        :rpe,
+        :rest_seconds,
+        :notes
+      ]
     },
-    required: [
-      :target_reps,
-      :load_value,
-      :load_unit,
-      :intensity_target,
-      :tempo,
-      :rest_seconds,
-      :duration_seconds,
-      :distance_value,
-      :distance_unit,
-      :notes
-    ]
-  })
+    struct?: false
+  )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutElement do
+defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutExercise do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{TrainingPlanExercise, TrainingPlanPlannedSet}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanExercise, TrainingPlanPlannedSet}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
-    title: "TrainingPlanWorkoutElement",
+    title: "TrainingPlanWorkoutExercise",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      position: %Schema{type: :integer, minimum: 0},
-      superset_group_id: %Schema{type: :string, nullable: true},
-      notes: %Schema{type: :string, nullable: true},
-      exercise_id: %Schema{type: :string, format: :uuid},
-      workout_id: %Schema{type: :string, format: :uuid},
-      exercise: %Schema{allOf: [TrainingPlanExercise], nullable: true},
-      planned_sets: %Schema{type: :array, items: TrainingPlanPlannedSet},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          position: %Schema{type: :integer, minimum: 0},
+          superset_group_id: %Schema{type: :string, nullable: true},
+          notes: %Schema{type: :string, nullable: true},
+          exercise_id: %Schema{type: :string, format: :uuid},
+          workout_id: %Schema{type: :string, format: :uuid},
+          exercise: %Schema{allOf: [TrainingPlanExercise], nullable: true},
+          planned_sets: %Schema{type: :array, items: TrainingPlanPlannedSet}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :position,
@@ -220,22 +207,24 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkout do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutElement
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkoutExercise}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "TrainingPlanWorkout",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      notes: %Schema{type: :string, nullable: true},
-      training_plan_id: %Schema{type: :string, format: :uuid},
-      workout_elements: %Schema{type: :array, items: TrainingPlanWorkoutElement},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          notes: %Schema{type: :string, nullable: true},
+          training_plan_id: %Schema{type: :string, format: :uuid},
+          workout_elements: %Schema{type: :array, items: TrainingPlanWorkoutExercise}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :name,
@@ -250,30 +239,31 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlanItem do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.Shared
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "TrainingPlanItem",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      day: %Schema{
-        type: :string,
-        enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-      },
-      workout_type: %Schema{type: :string, enum: ["primary", "alternative"]},
-      workout_id: %Schema{type: :string, format: :uuid},
-      training_plan_id: %Schema{type: :string, format: :uuid},
-      creator_id: %Schema{type: :string, format: :uuid},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          day_of_week: %Schema{
+            type: :string,
+            enum: Shared.days_of_week()
+          },
+          training_workout_id: %Schema{type: :string, format: :uuid},
+          training_plan_id: %Schema{type: :string, format: :uuid},
+          creator_id: %Schema{type: :string, format: :uuid}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
-      :day,
-      :workout_type,
-      :workout_id,
+      :day_of_week,
+      :training_workout_id,
       :training_plan_id,
       :inserted_at,
       :updated_at
@@ -285,6 +275,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
   require OpenApiSpex
 
   alias EasyWeb.OpenApi.Schemas.{
+    Shared,
     TrainingPlanClient,
     TrainingPlanItem,
     TrainingPlanWorkout
@@ -296,29 +287,24 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
     title: "TrainingPlan",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      description: %Schema{type: :string, nullable: true},
-      status: %Schema{type: :string, enum: ["active", "archived"]},
-      start_date: %Schema{type: :string, format: :date, nullable: true},
-      end_date: %Schema{type: :string, format: :date, nullable: true},
-      rest_days: %Schema{
-        type: :array,
-        items: %Schema{
-          type: :string,
-          enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        }
-      },
-      client_id: %Schema{type: :string, format: :uuid, nullable: true},
-      client: %Schema{allOf: [TrainingPlanClient], nullable: true},
-      author_id: %Schema{type: :string, format: :uuid},
-      original_template_id: %Schema{type: :string, format: :uuid, nullable: true},
-      workouts: %Schema{type: :array, items: TrainingPlanWorkout},
-      plan_items: %Schema{type: :array, items: TrainingPlanItem},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          description: %Schema{type: :string, nullable: true},
+          status: %Schema{type: :string, enum: ["active", "archived"]},
+          start_date: %Schema{type: :string, format: :date, nullable: true},
+          end_date: %Schema{type: :string, format: :date, nullable: true},
+          client_id: %Schema{type: :string, format: :uuid, nullable: true},
+          client: %Schema{allOf: [TrainingPlanClient], nullable: true},
+          creator_id: %Schema{type: :string, format: :uuid},
+          source_template_id: %Schema{type: :string, format: :uuid, nullable: true},
+          workouts: %Schema{type: :array, items: TrainingPlanWorkout},
+          plan_items: %Schema{type: :array, items: TrainingPlanItem}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :name,
@@ -326,11 +312,10 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
       :status,
       :start_date,
       :end_date,
-      :rest_days,
       :client_id,
       :client,
-      :author_id,
-      :original_template_id,
+      :creator_id,
+      :source_template_id,
       :workouts,
       :plan_items,
       :inserted_at,
@@ -343,11 +328,10 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlan do
       "status" => "active",
       "start_date" => nil,
       "end_date" => nil,
-      "rest_days" => ["saturday", "sunday"],
       "client_id" => nil,
       "client" => nil,
-      "author_id" => "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
-      "original_template_id" => nil,
+      "creator_id" => "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
+      "source_template_id" => nil,
       "workouts" => [],
       "plan_items" => [],
       "inserted_at" => "2026-05-30T12:00:00Z",
@@ -359,32 +343,27 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{TrainingPlanItem, TrainingPlanWorkout}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanItem, TrainingPlanWorkout}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ClientTrainingPlan",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      description: %Schema{type: :string, nullable: true},
-      status: %Schema{type: :string, enum: ["active", "archived"]},
-      start_date: %Schema{type: :string, format: :date, nullable: true},
-      end_date: %Schema{type: :string, format: :date, nullable: true},
-      rest_days: %Schema{
-        type: :array,
-        items: %Schema{
-          type: :string,
-          enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        }
-      },
-      workouts: %Schema{type: :array, items: TrainingPlanWorkout},
-      plan_items: %Schema{type: :array, items: TrainingPlanItem},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          description: %Schema{type: :string, nullable: true},
+          status: %Schema{type: :string, enum: ["active", "archived"]},
+          start_date: %Schema{type: :string, format: :date, nullable: true},
+          end_date: %Schema{type: :string, format: :date, nullable: true},
+          workouts: %Schema{type: :array, items: TrainingPlanWorkout},
+          plan_items: %Schema{type: :array, items: TrainingPlanItem}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :name,
@@ -392,7 +371,6 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       :status,
       :start_date,
       :end_date,
-      :rest_days,
       :workouts,
       :plan_items,
       :inserted_at,
@@ -405,7 +383,6 @@ defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlan do
       "status" => "active",
       "start_date" => "2026-06-01",
       "end_date" => "2026-06-28",
-      "rest_days" => ["saturday", "sunday"],
       "workouts" => [],
       "plan_items" => [],
       "inserted_at" => "2026-05-30T12:00:00Z",
@@ -417,137 +394,31 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlanListResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.TrainingPlan
-  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlan}
 
-  OpenApiSpex.schema(%{
-    title: "TrainingPlanListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: TrainingPlan},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count],
-    example: %{
-      "data" => [
-        %{
-          "id" => "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
-          "name" => "Four Day Strength Template",
-          "description" => "Upper/lower strength block.",
-          "status" => "active",
-          "start_date" => nil,
-          "end_date" => nil,
-          "rest_days" => ["saturday", "sunday"],
-          "client_id" => nil,
-          "client" => nil,
-          "author_id" => "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
-          "original_template_id" => nil,
-          "workouts" => [],
-          "plan_items" => [],
-          "inserted_at" => "2026-05-30T12:00:00Z",
-          "updated_at" => "2026-05-30T12:00:00Z"
-        }
-      ],
-      "count" => 1
-    }
-  })
+  OpenApiSpex.schema(Shared.list_response(TrainingPlan, "TrainingPlanListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlanResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.TrainingPlan
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlan}
 
-  OpenApiSpex.schema(%{
-    title: "TrainingPlanResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: TrainingPlan},
-    required: [:data],
-    example: %{
-      "data" => %{
-        "id" => "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
-        "name" => "Four Day Strength Template",
-        "description" => "Upper/lower strength block.",
-        "status" => "active",
-        "start_date" => nil,
-        "end_date" => nil,
-        "rest_days" => ["saturday", "sunday"],
-        "client_id" => nil,
-        "client" => nil,
-        "author_id" => "c8e8fe38-d9cc-4506-9514-8527a8b56d68",
-        "original_template_id" => nil,
-        "workouts" => [],
-        "plan_items" => [],
-        "inserted_at" => "2026-05-30T12:00:00Z",
-        "updated_at" => "2026-05-30T12:00:00Z"
-      }
-    }
-  })
+  OpenApiSpex.schema(Shared.data_response(TrainingPlan, "TrainingPlanResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlanListResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.ClientTrainingPlan
-  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{ClientTrainingPlan, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "ClientTrainingPlanListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: ClientTrainingPlan},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count],
-    example: %{
-      "data" => [
-        %{
-          "id" => "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
-          "name" => "Four Day Strength",
-          "description" => "Upper/lower strength block.",
-          "status" => "active",
-          "start_date" => "2026-06-01",
-          "end_date" => "2026-06-28",
-          "rest_days" => ["saturday", "sunday"],
-          "workouts" => [],
-          "plan_items" => [],
-          "inserted_at" => "2026-05-30T12:00:00Z",
-          "updated_at" => "2026-05-30T12:00:00Z"
-        }
-      ],
-      "count" => 1
-    }
-  })
+  OpenApiSpex.schema(Shared.list_response(ClientTrainingPlan, "ClientTrainingPlanListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientTrainingPlanResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.ClientTrainingPlan
+  alias EasyWeb.OpenApi.Schemas.{ClientTrainingPlan, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "ClientTrainingPlanResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: ClientTrainingPlan},
-    required: [:data],
-    example: %{
-      "data" => %{
-        "id" => "a38e6f56-f08e-4233-8f6e-96f5c05362a9",
-        "name" => "Four Day Strength",
-        "description" => "Upper/lower strength block.",
-        "status" => "active",
-        "start_date" => "2026-06-01",
-        "end_date" => "2026-06-28",
-        "rest_days" => ["saturday", "sunday"],
-        "workouts" => [],
-        "plan_items" => [],
-        "inserted_at" => "2026-05-30T12:00:00Z",
-        "updated_at" => "2026-05-30T12:00:00Z"
-      }
-    }
-  })
+  OpenApiSpex.schema(Shared.data_response(ClientTrainingPlan, "ClientTrainingPlanResponse"))
 end

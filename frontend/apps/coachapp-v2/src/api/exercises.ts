@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse} from '@/api/shared';
+import {ApiListResponse, ApiResponse, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -33,13 +33,6 @@ export type Exercise = {
   updated_at: string;
 };
 
-export type ListExercisesParams = {
-  limit?: number;
-  muscle_ids?: string[];
-  offset?: number;
-  search?: string;
-};
-
 /** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
 export type ListExercisesFilters = {
   muscle_ids?: string[];
@@ -57,16 +50,7 @@ export type ExerciseCreateRequest = {
   name: string;
 };
 
-export type ExerciseUpdateRequest = {
-  description?: string;
-  equipment_ids?: string[];
-  force?: ExerciseForce;
-  images?: string[];
-  instructions?: string;
-  mechanics?: ExerciseMechanics;
-  muscle_ids?: string[];
-  name?: string;
-};
+export type ExerciseUpdateRequest = Partial<ExerciseCreateRequest>;
 
 export const exercisesApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -81,31 +65,6 @@ export const exercisesApi = api.injectEndpoints({
     getExercise: build.query<ApiResponse<Exercise>, string>({
       query: (id) => `/v1/coach/exercises/${id}`,
       providesTags: (_, __, id) => [{type: 'Exercise', id}],
-    }),
-    listExercises: build.query<ApiListResponse<Exercise>, ListExercisesParams | void>({
-      query: (params) => {
-        if (!params) {
-          return '/v1/coach/exercises';
-        }
-
-        return {
-          url: '/v1/coach/exercises',
-          params: {
-            ...params,
-            muscle_ids: params.muscle_ids?.length ? params.muscle_ids.join(',') : undefined,
-          },
-        };
-      },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((exercise) => ({
-                type: 'Exercise' as const,
-                id: exercise.id,
-              })),
-              {type: 'Exercise' as const, id: 'LIST'},
-            ]
-          : [{type: 'Exercise' as const, id: 'LIST'}],
     }),
     exercises: build.infiniteQuery<ApiListResponse<Exercise>, ListExercisesFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
@@ -126,18 +85,7 @@ export const exercisesApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((exercise) => ({
-                  type: 'Exercise' as const,
-                  id: exercise.id,
-                })),
-              ),
-              {type: 'Exercise' as const, id: 'LIST'},
-            ]
-          : [{type: 'Exercise' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('Exercise', result),
     }),
     updateExercise: build.mutation<ApiResponse<Exercise>, {body: ExerciseUpdateRequest; id: string}>({
       query: ({body, id}) => ({
@@ -170,24 +118,12 @@ export const exercisesApi = api.injectEndpoints({
         {type: 'Exercise', id: 'LIST'},
       ],
     }),
-    listMuscles: build.query<ApiResponse<Muscle[]>, void | {search?: string}>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/muscles',
-              params,
-            }
-          : '/v1/coach/muscles',
+    listMuscles: build.query<ApiResponse<Muscle[]>, {search?: string}>({
+      query: (params) => ({url: '/v1/coach/muscles', params}),
       providesTags: [{type: 'Muscle', id: 'LIST'}],
     }),
-    listEquipment: build.query<ApiResponse<Equipment[]>, void | {search?: string}>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/equipment',
-              params,
-            }
-          : '/v1/coach/equipment',
+    listEquipment: build.query<ApiResponse<Equipment[]>, {search?: string}>({
+      query: (params) => ({url: '/v1/coach/equipment', params}),
       providesTags: [{type: 'Equipment', id: 'LIST'}],
     }),
   }),
@@ -200,7 +136,6 @@ export const {
   useExercisesInfiniteQuery,
   useGetExerciseQuery,
   useListEquipmentQuery,
-  useListExercisesQuery,
   useListMusclesQuery,
   useUpdateExerciseMutation,
 } = exercisesApi;

@@ -48,7 +48,7 @@ Use this file as the app contract. If it conflicts with older README text, trust
 - Add endpoints to the matching `src/api/{domain}.ts`; create a new file only for a new API domain.
 - Keep API response normalization in the owning `src/api/{domain}.ts` file. Keep form/request conversion beside the owning form or feature.
 - Use `.unwrap()` for mutations that need navigation or form error handling.
-- Surface API errors through existing helpers: `applyFormErrors`, `getApiErrorMessage`, or `getApiErrorCode` from `@/api/shared`.
+- Surface API errors through existing helpers: `applyFormErrors` or `getApiErrorMessage` from `@/api/shared`.
 
 ## Routing And Navigation
 

@@ -53,15 +53,15 @@ function getProteinDisplay(macros: null | Record<string, number>): string {
 export default function FoodSearchPicker({onSelect}: {onSelect: (item: PickedItem) => void}) {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
-  const shouldQuery = debouncedSearch.length >= 2;
+  const skipQuery = debouncedSearch.length < 2;
 
   const {data: foodsData, isFetching: isFetchingFoods} = useListClientFoodsQuery(
-    shouldQuery ? {limit: 10, search: debouncedSearch} : undefined,
-    {skip: !shouldQuery},
+    {limit: 10, search: debouncedSearch},
+    {skip: skipQuery},
   );
   const {data: recipesData, isFetching: isFetchingRecipes} = useListClientRecipesQuery(
-    shouldQuery ? {limit: 10, search: debouncedSearch} : undefined,
-    {skip: !shouldQuery},
+    {limit: 10, search: debouncedSearch},
+    {skip: skipQuery},
   );
 
   const isFetching = isFetchingFoods || isFetchingRecipes;
@@ -107,7 +107,7 @@ export default function FoodSearchPicker({onSelect}: {onSelect: (item: PickedIte
         </SearchField.Group>
       </SearchField>
 
-      {shouldQuery && !isFetching && items.length === 0 ? (
+      {skipQuery && !isFetching && items.length === 0 ? (
         <p className="px-2 py-3 text-center text-sm text-foreground-400">No results found.</p>
       ) : null}
 

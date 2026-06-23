@@ -1,6 +1,7 @@
 defmodule Easy.Fitness.WeightEntryTest do
   use Easy.DataCase
 
+  alias Easy.Ctx
   alias Easy.Error
   alias Easy.Fitness.WeightEntry
   alias Easy.WeightEntries
@@ -10,7 +11,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       changeset =
-        WeightEntry.insert_changeset(client.id, client.business_id, %{
+        WeightEntry.insert_changeset(client.business_id, client.id, %{
           date: ~D[2026-04-22],
           value: Decimal.new("91.40"),
           unit: :kg,
@@ -24,7 +25,7 @@ defmodule Easy.Fitness.WeightEntryTest do
 
     test "is invalid without required fields" do
       client = insert_client()
-      changeset = WeightEntry.insert_changeset(client.id, client.business_id, %{})
+      changeset = WeightEntry.insert_changeset(client.business_id, client.id, %{})
 
       refute changeset.valid?
 
@@ -39,7 +40,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       changeset =
-        WeightEntry.insert_changeset(client.id, client.business_id, %{
+        WeightEntry.insert_changeset(client.business_id, client.id, %{
           date: ~D[2026-04-22],
           value: Decimal.new("0"),
           unit: :kg,
@@ -56,7 +57,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       changeset =
-        WeightEntry.insert_changeset(client.id, client.business_id, %{
+        WeightEntry.insert_changeset(client.business_id, client.id, %{
           date: Date.add(Date.utc_today(), 2),
           value: Decimal.new("91.40"),
           unit: :kg
@@ -112,8 +113,7 @@ defmodule Easy.Fitness.WeightEntryTest do
 
       result_ids =
         WeightEntry
-        |> WeightEntry.for_business(coach.business_id)
-        |> WeightEntry.for_client(client.id)
+        |> WeightEntry.for_client(coach.business_id, client.id)
         |> WeightEntry.since(~D[2026-04-10])
         |> WeightEntry.ordered()
         |> Repo.all()
@@ -128,35 +128,37 @@ defmodule Easy.Fitness.WeightEntryTest do
     test "counts entries in the last 30 days" do
       client = insert_client()
       today = Date.utc_today()
+      ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
 
       insert_weight_entry(client: client, date: today)
       insert_weight_entry(client: client, date: Date.add(today, -10))
       insert_weight_entry(client: client, date: Date.add(today, -40))
 
       assert {:ok, %{logged_days: 2, window_days: 30}} =
-               WeightEntries.adherence(client.business_id, client.id)
+               WeightEntries.adherence(ctx, client.id)
     end
 
     test "counts an upserted date only once" do
       client = insert_client()
       today = Date.utc_today()
+      ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
 
       {:ok, _first} =
-        WeightEntries.upsert(client.id, client.business_id, %{
-          "date" => Date.to_iso8601(today),
-          "value" => "90.00",
-          "unit" => "kg"
+        WeightEntries.upsert(client.business_id, client.id, %{
+          date: Date.to_iso8601(today),
+          value: "90.00",
+          unit: "kg"
         })
 
       {:ok, _second} =
-        WeightEntries.upsert(client.id, client.business_id, %{
-          "date" => Date.to_iso8601(today),
-          "value" => "89.50",
-          "unit" => "kg"
+        WeightEntries.upsert(client.business_id, client.id, %{
+          date: Date.to_iso8601(today),
+          value: "89.50",
+          unit: "kg"
         })
 
       assert {:ok, %{logged_days: 1, window_days: 30}} =
-               WeightEntries.adherence(client.business_id, client.id)
+               WeightEntries.adherence(ctx, client.id)
     end
   end
 
@@ -178,11 +180,11 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       assert {:ok, entry} =
-               WeightEntries.upsert(client.id, client.business_id, %{
-                 "date" => "2026-04-22",
-                 "value" => "91.40",
-                 "unit" => "kg",
-                 "note" => "morning"
+               WeightEntries.upsert(client.business_id, client.id, %{
+                 date: "2026-04-22",
+                 value: "91.40",
+                 unit: "kg",
+                 note: "morning"
                })
 
       assert entry.date == ~D[2026-04-22]
@@ -203,11 +205,11 @@ defmodule Easy.Fitness.WeightEntryTest do
         )
 
       assert {:ok, updated} =
-               WeightEntries.upsert(client.id, client.business_id, %{
-                 "date" => "2026-04-22",
-                 "value" => "91.40",
-                 "unit" => "kg",
-                 "note" => "updated"
+               WeightEntries.upsert(client.business_id, client.id, %{
+                 date: "2026-04-22",
+                 value: "91.40",
+                 unit: "kg",
+                 note: "updated"
                })
 
       assert updated.id == original.id
@@ -219,10 +221,10 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       assert {:error, %Error{detail: %{fields: %{date: ["is invalid"]}}}} =
-               WeightEntries.upsert(client.id, client.business_id, %{
-                 "date" => "bad-date",
-                 "value" => 91.4,
-                 "unit" => "kg"
+               WeightEntries.upsert(client.business_id, client.id, %{
+                 date: "bad-date",
+                 value: 91.4,
+                 unit: "kg"
                })
     end
 
@@ -230,10 +232,10 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       assert {:error, %Error{detail: %{fields: %{date: ["cannot be in the future"]}}}} =
-               WeightEntries.upsert(client.id, client.business_id, %{
-                 "date" => Date.utc_today() |> Date.add(2) |> Date.to_iso8601(),
-                 "value" => 91.4,
-                 "unit" => "kg"
+               WeightEntries.upsert(client.business_id, client.id, %{
+                 date: Date.utc_today() |> Date.add(2) |> Date.to_iso8601(),
+                 value: 91.4,
+                 unit: "kg"
                })
     end
   end

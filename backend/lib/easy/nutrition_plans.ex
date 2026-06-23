@@ -1,146 +1,219 @@
 defmodule Easy.NutritionPlans do
   alias Easy.Clients.Client
-  alias Easy.Nutrition.Food
+  alias Easy.Ctx
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanItem
-  alias Easy.Nutrition.Recipe
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
   import Ecto.Changeset
   import Ecto.Query
 
-  @spec get_plan(String.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
-  def get_plan(business_id, plan_id) do
+  @spec get_plan_full(Ctx.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
+  def get_plan_full(%Ctx{} = ctx, plan_id) do
     Plan
-    |> Plan.for_business(business_id)
+    |> Plan.for_business(ctx.business_id)
+    |> Plan.include_full(ctx.business_id)
     |> Repo.get(plan_id)
     |> ok_or_not_found()
   end
 
-  @spec get_plan_full(String.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
-  def get_plan_full(business_id, plan_id) do
-    Plan
-    |> Plan.for_business(business_id)
-    |> with_full_preloads(business_id)
-    |> preload(client: ^Client.for_business(business_id))
-    |> Repo.get(plan_id)
-    |> ok_or_not_found()
-  end
-
-  @spec get_client_plan_full(String.t(), String.t(), String.t()) ::
+  @spec get_client_plan_full(Ctx.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found}
-  def get_client_plan_full(business_id, client_id, plan_id) do
-    Plan
-    |> Plan.for_business(business_id)
-    |> Plan.for_client(client_id)
-    |> with_full_preloads(business_id)
-    |> Repo.get(plan_id)
-    |> ok_or_not_found()
-  end
-
-  @spec get_client_plan_full_for_user(String.t(), String.t(), String.t()) ::
-          {:ok, Plan.t()} | {:error, :not_found}
-  def get_client_plan_full_for_user(business_id, user_id, plan_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_client_plan_full(business_id, client.id, plan_id)
+  def get_client_plan_full(%Ctx{} = ctx, plan_id) do
+    with {:ok, client} <- get_client(ctx) do
+      Plan
+      |> Plan.for_business(ctx.business_id)
+      |> Plan.for_client(ctx.business_id, client.id)
+      |> Plan.include_full(ctx.business_id)
+      |> Repo.get(plan_id)
+      |> ok_or_not_found()
     end
   end
 
-  @spec list_template_plans(String.t(), atom() | nil, non_neg_integer(), pos_integer()) ::
+  @spec list_template_plans(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}}
-  def list_template_plans(business_id, status, offset, limit) do
+  def list_template_plans(%Ctx{} = ctx, opts \\ []) do
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
+    status = Keyword.get(opts, :status)
+
     base =
       Plan
-      |> Plan.for_business(business_id)
-      |> Plan.with_status(status)
+      |> Plan.for_business(ctx.business_id)
+      |> Plan.for_status(status)
       |> Plan.templates()
 
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       plans: base |> Plan.newest() |> Easy.Utils.paginate(offset, limit) |> Repo.all()
-     }}
+    {:ok, paginated(base, offset, limit)}
   end
 
-  @spec list_client_plans(String.t(), String.t(), atom() | nil, non_neg_integer(), pos_integer()) ::
-          {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}}
-  def list_client_plans(business_id, client_id, status, offset, limit) do
-    base =
-      Plan
-      |> Plan.for_business(business_id)
-      |> Plan.for_client(client_id)
-      |> Plan.with_status(status)
-
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       plans: base |> Plan.newest() |> Easy.Utils.paginate(offset, limit) |> Repo.all()
-     }}
-  end
-
-  @spec list_client_plans_full(
-          String.t(),
-          String.t(),
-          atom() | nil,
-          non_neg_integer(),
-          pos_integer()
-        ) ::
-          {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}}
-  def list_client_plans_full(business_id, client_id, status, offset, limit) do
-    base =
-      Plan
-      |> Plan.for_business(business_id)
-      |> Plan.for_client(client_id)
-      |> Plan.with_status(status)
-
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       plans:
-         base
-         |> Plan.newest()
-         |> Easy.Utils.paginate(offset, limit)
-         |> with_full_preloads(business_id)
-         |> preload(client: ^Client.for_business(business_id))
-         |> Repo.all()
-     }}
-  end
-
-  @spec list_client_plans_for_user(
-          String.t(),
-          String.t(),
-          atom() | nil,
-          non_neg_integer(),
-          pos_integer()
-        ) ::
+  @spec list_client_plans(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}} | {:error, :not_found}
-  def list_client_plans_for_user(business_id, user_id, status, offset, limit) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      list_client_plans(business_id, client.id, status, offset, limit)
+  def list_client_plans(%Ctx{} = ctx, opts \\ []) do
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
+    status = Keyword.get(opts, :status)
+
+    with {:ok, client} <- get_client(ctx) do
+      base =
+        Plan
+        |> Plan.for_business(ctx.business_id)
+        |> Plan.for_client(ctx.business_id, client.id)
+        |> Plan.for_status(status)
+
+      {:ok, paginated(base, offset, limit)}
     end
   end
 
-  @spec list_client_plans_full_for_client(
-          String.t(),
-          String.t(),
-          atom() | nil,
-          non_neg_integer(),
-          pos_integer()
-        ) ::
+  @spec list_plans_for_client(Ctx.t(), String.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}} | {:error, :not_found}
-  def list_client_plans_full_for_client(business_id, client_id, status, offset, limit) do
-    with {:ok, _client} <- get_client(business_id, client_id) do
-      list_client_plans_full(business_id, client_id, status, offset, limit)
+  def list_plans_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
+    status = Keyword.get(opts, :status)
+
+    with {:ok, _client} <- fetch_client(ctx.business_id, client_id) do
+      base =
+        Plan
+        |> Plan.for_business(ctx.business_id)
+        |> Plan.for_client(ctx.business_id, client_id)
+        |> Plan.for_status(status)
+
+      full = fn query ->
+        Plan.include_full(query, ctx.business_id)
+      end
+
+      {:ok, paginated(base, offset, limit, full)}
     end
   end
 
-  @spec get_active_plan_day(String.t(), String.t(), Date.t()) ::
-          {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [PlanItem.t()]}}
+  @spec get_client_active_plan_day(Ctx.t(), Date.t()) ::
+          {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [ScheduleEntry.t()]}}
           | {:error, :not_found}
-  def get_active_plan_day(business_id, client_id, date) do
+  def get_client_active_plan_day(%Ctx{} = ctx, date) do
+    with {:ok, client} <- get_client(ctx) do
+      get_active_plan_day(ctx.business_id, client.id, date)
+    end
+  end
+
+  @spec create_plan(Ctx.t(), map()) ::
+          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def create_plan(%Ctx{} = ctx, attrs) do
+    with {:ok, coach} <- get_coach(ctx) do
+      create_plan_for(ctx.business_id, coach.id, attrs)
+    end
+  end
+
+  @spec update_plan(Ctx.t(), String.t(), map()) ::
+          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def update_plan(%Ctx{} = ctx, plan_id, attrs) do
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+      plan
+      |> Plan.update_changeset(attrs)
+      |> Repo.update()
+    end
+  end
+
+  @spec delete_plan(Ctx.t(), String.t()) ::
+          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def delete_plan(%Ctx{} = ctx, plan_id) do
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+      Repo.delete(plan)
+    end
+  end
+
+  @spec assign_plan_to_client(Ctx.t(), String.t(), String.t(), map()) ::
+          {:ok, Plan.t()} | {:error, any()}
+  def assign_plan_to_client(%Ctx{} = ctx, client_id, plan_id, attrs) do
+    with {:ok, coach} <- get_coach(ctx),
+         {:ok, plan} <- get_plan(ctx.business_id, plan_id),
+         {:ok, _client} <- fetch_client(ctx.business_id, client_id) do
+      assign_to_client(plan, client_id, coach.id, attrs)
+    end
+  end
+
+  @spec duplicate_plan(Ctx.t(), String.t()) ::
+          {:ok, Plan.t()} | {:error, any()}
+  def duplicate_plan(%Ctx{} = ctx, plan_id) do
+    with {:ok, coach} <- get_coach(ctx),
+         {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+      duplicate(plan, coach.id)
+    end
+  end
+
+  @spec get_schedule(Ctx.t(), String.t()) ::
+          {:ok, %{optional(String.t()) => %{optional(String.t()) => ScheduleEntry.t()}}}
+          | {:error, :not_found}
+  def get_schedule(%Ctx{} = ctx, plan_id) do
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+      grouped =
+        ScheduleEntry
+        |> ScheduleEntry.for_business(ctx.business_id)
+        |> ScheduleEntry.for_plan(plan.id)
+        |> ScheduleEntry.include_meal(ctx.business_id)
+        |> Repo.all()
+        |> Enum.group_by(&to_string(&1.day_of_week))
+        |> Map.new(fn {day, entries} ->
+          {day, Map.new(entries, fn entry -> {to_string(entry.meal_slot), entry} end)}
+        end)
+
+      {:ok, grouped}
+    end
+  end
+
+  @spec set_day_schedule(Ctx.t(), String.t(), String.t(), map()) ::
+          {:ok, %{optional(String.t()) => ScheduleEntry.t()}}
+          | {:error, :not_found | :invalid_day | Ecto.Changeset.t()}
+  def set_day_schedule(%Ctx{} = ctx, plan_id, day, slots) when is_map(slots) do
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id),
+         :ok <- validate_schedule_day(day) do
+      Repo.transaction(fn ->
+        ScheduleEntry
+        |> ScheduleEntry.for_business(ctx.business_id)
+        |> ScheduleEntry.for_plan(plan.id)
+        |> ScheduleEntry.for_day(day)
+        |> Repo.delete_all()
+
+        Enum.each(slots, fn {slot, slot_value} ->
+          meal_id = slot_value[:meal_id]
+
+          with {:ok, :valid} <- ensure_meal_for_plan(plan.id, ctx.business_id, meal_id),
+               attrs = %{"day_of_week" => day, "meal_slot" => to_string(slot), "nutrition_meal_id" => meal_id},
+               {:ok, _entry} <- ScheduleEntry.insert_changeset(ctx.business_id, plan.id, attrs) |> Repo.insert() do
+            :ok
+          else
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+
+        ScheduleEntry
+        |> ScheduleEntry.for_business(ctx.business_id)
+        |> ScheduleEntry.for_plan(plan.id)
+        |> ScheduleEntry.for_day(day)
+        |> ScheduleEntry.include_meal(ctx.business_id)
+        |> Repo.all()
+        |> Map.new(fn entry -> {to_string(entry.meal_slot), entry} end)
+      end)
+    end
+  end
+
+  defp validate_schedule_day(day) do
+    valid_days = Enum.map(ScheduleEntry.days(), &Atom.to_string/1)
+    if day in valid_days, do: :ok, else: {:error, :invalid_day}
+  end
+
+  # Private
+
+  defp get_plan(business_id, plan_id) do
+    Plan
+    |> Plan.for_business(business_id)
+    |> Repo.get(plan_id)
+    |> ok_or_not_found()
+  end
+
+  defp get_active_plan_day(business_id, client_id, date) do
     case active_plan(business_id, client_id, date) do
       nil ->
         {:error, :not_found}
@@ -149,197 +222,34 @@ defmodule Easy.NutritionPlans do
         day = Easy.Utils.weekday_name(date)
 
         plan_items =
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(business_id)
-          |> PlanItem.for_day(day)
-          |> with_meal_and_items(business_id)
+          ScheduleEntry
+          |> ScheduleEntry.for_plan(plan.id)
+          |> ScheduleEntry.for_business(business_id)
+          |> ScheduleEntry.for_day(day)
+          |> preload(meal: ^Meal.include_items(Meal, business_id))
           |> Repo.all()
 
         {:ok, %{plan: plan, plan_items: plan_items, date: date, day: day}}
     end
   end
 
-  @spec get_active_plan_day_for_user(String.t(), String.t(), Date.t()) ::
-          {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [PlanItem.t()]}}
-          | {:error, :not_found}
-  def get_active_plan_day_for_user(business_id, user_id, date) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_active_plan_day(business_id, client.id, date)
-    end
-  end
-
-  @spec create_plan(String.t(), String.t(), map()) ::
-          {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
-  def create_plan(business_id, creator_id, attrs) do
+  defp create_plan_for(business_id, creator_id, attrs) do
     business_id
     |> Plan.insert_changeset(creator_id, attrs)
     |> Repo.insert()
   end
 
-  @spec create_plan_for_coach_user(String.t(), String.t(), map()) ::
-          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_plan_for_coach_user(business_id, user_id, attrs) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
-      create_plan(business_id, coach.id, attrs)
-    end
-  end
-
-  @spec update_plan(Plan.t(), map()) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
-  def update_plan(%Plan{} = plan, attrs) do
-    plan
-    |> Plan.update_changeset(attrs)
-    |> Repo.update()
-  end
-
-  @spec update_plan(String.t(), String.t(), map()) ::
-          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_plan(business_id, plan_id, attrs) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
-      update_plan(plan, attrs)
-    end
-  end
-
-  @spec delete_plan(Plan.t()) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
-  def delete_plan(%Plan{} = plan), do: Repo.delete(plan)
-
-  @spec delete_plan(String.t(), String.t()) ::
-          {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_plan(business_id, plan_id) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
-      delete_plan(plan)
-    end
-  end
-
-  @spec shopping_list(Plan.t()) :: {:ok, [map()]}
-  def shopping_list(plan) do
-    plan = Repo.preload(plan, meals: meals_with_items(plan.business_id))
-
-    items =
-      plan.meals
-      |> Enum.flat_map(& &1.meal_items)
-      |> Enum.reduce(%{}, fn item, acc ->
-        key = {item.food_id, item.recipe_id, item.unit}
-        entry = Map.get(acc, key, build_shopping_item(item))
-
-        Map.put(acc, key, %{
-          entry
-          | amount: add_number(entry.amount, item.amount),
-            weight_g: add_number(entry.weight_g, item.weight_g)
-        })
-      end)
-      |> Map.values()
-
-    {:ok, items}
-  end
-
-  @spec shopping_list(String.t(), String.t()) :: {:ok, [map()]} | {:error, :not_found}
-  def shopping_list(business_id, plan_id) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
-      shopping_list(plan)
-    end
-  end
-
-  @spec macros(Plan.t()) :: {:ok, map()}
-  def macros(plan) do
-    plan =
-      Repo.preload(plan, meals: Meal |> Meal.for_business(plan.business_id) |> Meal.ordered())
-
-    totals =
-      Enum.reduce(plan.meals, %{}, fn meal, acc ->
-        merge_macros(acc, meal.macros || %{})
-      end)
-
-    {:ok, totals}
-  end
-
-  @spec macros(String.t(), String.t()) :: {:ok, map()} | {:error, :not_found}
-  def macros(business_id, plan_id) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
-      macros(plan)
-    end
-  end
-
-  @spec copy_day(Plan.t(), String.t(), String.t(), String.t(), boolean()) ::
-          {:ok, [PlanItem.t()]} | {:error, any()}
-  def copy_day(plan, source_day, target_day, creator_id, clear_existing) do
-    with :ok <- validate_copy_day(source_day, target_day) do
-      Repo.transaction(fn ->
-        source_items =
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(plan.business_id)
-          |> PlanItem.for_day(source_day)
-          |> Repo.all()
-
-        if clear_existing do
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(plan.business_id)
-          |> PlanItem.for_day(target_day)
-          |> Repo.delete_all()
-        end
-
-        Enum.map(source_items, fn item ->
-          attrs = %{day: target_day, meal_type: item.meal_type, meal_id: item.meal_id}
-
-          case PlanItem.insert_changeset(plan.id, plan.business_id, creator_id, attrs)
-               |> Repo.insert() do
-            {:ok, new_item} -> new_item
-            {:error, reason} -> Repo.rollback(reason)
-          end
-        end)
-      end)
-    end
-  end
-
-  @spec copy_day_for_coach_user(
-          String.t(),
-          String.t(),
-          String.t(),
-          String.t() | nil,
-          String.t() | nil,
-          boolean()
-        ) ::
-          {:ok, [PlanItem.t()]} | {:error, any()}
-  def copy_day_for_coach_user(
-        business_id,
-        user_id,
-        plan_id,
-        source_day,
-        target_day,
-        clear_existing
-      ) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id),
-         {:ok, plan} <- get_plan(business_id, plan_id) do
-      copy_day(plan, source_day, target_day, coach.id, clear_existing)
-    end
-  end
-
-  @spec assign_to_client(Plan.t(), String.t(), String.t(), map()) ::
-          {:ok, Plan.t()} | {:error, any()}
-  def assign_to_client(plan, client_id, creator_id, attrs \\ %{}) do
+  defp assign_to_client(plan, client_id, creator_id, attrs) do
     copy_plan(plan, creator_id,
       client_id: client_id,
       source_template_id: plan.id,
       status: :active,
-      start_date: Map.get(attrs, "start_date") || Map.get(attrs, :start_date),
-      end_date: Map.get(attrs, "end_date") || Map.get(attrs, :end_date)
+      start_date: Map.get(attrs, :start_date),
+      end_date: Map.get(attrs, :end_date)
     )
   end
 
-  @spec assign_to_client_for_coach_user(String.t(), String.t(), String.t(), String.t(), map()) ::
-          {:ok, Plan.t()} | {:error, any()}
-  def assign_to_client_for_coach_user(business_id, user_id, plan_id, client_id, attrs) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id),
-         {:ok, plan} <- get_plan(business_id, plan_id),
-         {:ok, _client} <- get_client(business_id, client_id) do
-      assign_to_client(plan, client_id, coach.id, attrs)
-    end
-  end
-
-  @spec duplicate(Plan.t(), String.t()) :: {:ok, Plan.t()} | {:error, any()}
-  def duplicate(plan, creator_id) do
+  defp duplicate(plan, creator_id) do
     copy_plan(plan, creator_id,
       name: "#{plan.name} (Copy)",
       client_id: nil,
@@ -348,131 +258,16 @@ defmodule Easy.NutritionPlans do
     )
   end
 
-  @spec duplicate_for_coach_user(String.t(), String.t(), String.t()) ::
-          {:ok, Plan.t()} | {:error, any()}
-  def duplicate_for_coach_user(business_id, user_id, plan_id) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id),
-         {:ok, plan} <- get_plan(business_id, plan_id) do
-      duplicate(plan, coach.id)
-    end
-  end
-
-  @spec get_plan_item(String.t(), String.t()) :: {:ok, PlanItem.t()} | {:error, :not_found}
-  def get_plan_item(business_id, plan_item_id) do
-    PlanItem
-    |> PlanItem.for_business(business_id)
-    |> Repo.get(plan_item_id)
-    |> ok_or_not_found()
-  end
-
-  @spec list_plan_items(String.t(), String.t()) ::
-          {:ok, [PlanItem.t()]} | {:error, :not_found}
-  def list_plan_items(business_id, plan_id) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
-      plan_items =
-        PlanItem
-        |> PlanItem.for_business(business_id)
-        |> PlanItem.for_plan(plan.id)
-        |> with_meal(business_id)
+  defp paginated(base, offset, limit, preload_fun \\ & &1) do
+    %{
+      count: Repo.aggregate(base, :count, :id),
+      plans:
+        base
+        |> Plan.newest()
+        |> Easy.Utils.paginate(offset, limit)
+        |> preload_fun.()
         |> Repo.all()
-
-      {:ok, plan_items}
-    end
-  end
-
-  @spec create_plan_item(String.t(), String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_plan_item(plan_id, business_id, creator_id, attrs) do
-    with {:ok, plan} <- get_plan(business_id, plan_id),
-         {:ok, :valid} <- ensure_meal_for_plan(plan.id, business_id, Map.get(attrs, "meal_id")) do
-      plan.id
-      |> PlanItem.insert_changeset(business_id, creator_id, attrs)
-      |> Repo.insert()
-    end
-  end
-
-  @spec create_plan_item_for_coach_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_plan_item_for_coach_user(business_id, user_id, plan_id, attrs) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
-      create_plan_item(plan_id, business_id, coach.id, attrs)
-    end
-  end
-
-  @spec update_plan_item(PlanItem.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_plan_item(%PlanItem{} = plan_item, attrs) do
-    with {:ok, :valid} <-
-           ensure_meal_for_plan(
-             plan_item.plan_id,
-             plan_item.business_id,
-             Map.get(attrs, "meal_id")
-           ) do
-      plan_item
-      |> PlanItem.update_changeset(attrs)
-      |> Repo.update()
-    end
-  end
-
-  @spec update_plan_item(String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_plan_item(business_id, plan_item_id, attrs) do
-    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
-      update_plan_item(plan_item, attrs)
-    end
-  end
-
-  @spec delete_plan_item(PlanItem.t()) :: {:ok, PlanItem.t()} | {:error, Ecto.Changeset.t()}
-  def delete_plan_item(%PlanItem{} = plan_item), do: Repo.delete(plan_item)
-
-  @spec delete_plan_item(String.t(), String.t()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_plan_item(business_id, plan_item_id) do
-    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
-      delete_plan_item(plan_item)
-    end
-  end
-
-  # Private
-
-  defp with_full_preloads(query, business_id) do
-    from(p in query,
-      preload: [
-        meals: ^meals_with_items(business_id),
-        plan_items: ^plan_items_with_meal(business_id)
-      ]
-    )
-  end
-
-  defp with_meal(query, business_id) do
-    from(pi in query, preload: [meal: ^Meal.for_business(Meal, business_id)])
-  end
-
-  defp with_meal_and_items(query, business_id) do
-    from(pi in query, preload: [meal: ^meals_with_items(business_id)])
-  end
-
-  defp meals_with_items(business_id) do
-    Meal
-    |> Meal.for_business(business_id)
-    |> Meal.ordered()
-    |> preload(meal_items: ^meal_items_with_food_and_recipe(business_id))
-  end
-
-  defp plan_items_with_meal(business_id) do
-    PlanItem
-    |> PlanItem.for_business(business_id)
-    |> with_meal(business_id)
-  end
-
-  defp meal_items_with_food_and_recipe(business_id) do
-    food_query = Food.for_business_or_system(Food, business_id)
-    recipe_query = Recipe.for_business(Recipe, business_id)
-
-    MealItem
-    |> MealItem.for_business(business_id)
-    |> MealItem.ordered()
-    |> preload(food: ^food_query, recipe: ^recipe_query)
+    }
   end
 
   defp active_plan(business_id, client_id, date) do
@@ -484,28 +279,28 @@ defmodule Easy.NutritionPlans do
     |> Repo.one()
   end
 
-  defp get_client(_business_id, nil), do: {:error, :not_found}
-  defp get_client(_business_id, ""), do: {:error, :not_found}
+  defp fetch_client(_business_id, nil), do: {:error, :not_found}
+  defp fetch_client(_business_id, ""), do: {:error, :not_found}
 
-  defp get_client(business_id, client_id) do
+  defp fetch_client(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  defp get_client_for_user(business_id, user_id) do
+  defp get_client(%Ctx{} = ctx) do
     Client
-    |> Client.for_business(business_id)
-    |> Client.for_user(user_id)
+    |> Client.for_business(ctx.business_id)
+    |> Client.for_user(ctx.user_id)
     |> Repo.one()
     |> ok_or_not_found()
   end
 
-  defp get_coach_for_user(business_id, user_id) do
+  defp get_coach(%Ctx{} = ctx) do
     Coach
-    |> Coach.for_business(business_id)
-    |> Coach.for_user(user_id)
+    |> Coach.for_business(ctx.business_id)
+    |> Coach.for_user(ctx.user_id)
     |> Repo.one()
     |> ok_or_not_found()
   end
@@ -524,17 +319,21 @@ defmodule Easy.NutritionPlans do
       meal_query =
         Meal
         |> Meal.for_business(plan.business_id)
-        |> Meal.ordered()
+        |> Meal.by_position()
         |> preload(meal_items: ^MealItem.for_business(MealItem, plan.business_id))
 
-      plan_item_query = PlanItem.for_business(PlanItem, plan.business_id)
+      plan_item_query = ScheduleEntry.for_business(ScheduleEntry, plan.business_id)
       plan = Repo.preload(plan, meals: meal_query, plan_items: plan_item_query)
 
       attrs = %{
         name: Keyword.get(opts, :name, plan.name),
         description: plan.description,
         tags: plan.tags,
-        macros_goal: plan.macros_goal,
+        target_calories: plan.target_calories,
+        target_protein_g: plan.target_protein_g,
+        target_carbs_g: plan.target_carbs_g,
+        target_fat_g: plan.target_fat_g,
+        target_fiber_g: plan.target_fiber_g,
         status: Keyword.get(opts, :status, plan.status),
         start_date: Keyword.get(opts, :start_date),
         end_date: Keyword.get(opts, :end_date)
@@ -549,16 +348,15 @@ defmodule Easy.NutritionPlans do
            {:ok, meal_map} <-
              copy_meals(plan.meals, new_plan.id, new_plan.business_id, creator_id),
            {:ok, _} <-
-             copy_plan_items(
+             copy_schedule_entries(
                plan.plan_items,
                new_plan.id,
                new_plan.business_id,
-               creator_id,
                meal_map
              ) do
         Repo.preload(new_plan,
-          meals: meals_with_items(new_plan.business_id),
-          plan_items: plan_items_with_meal(new_plan.business_id)
+          meals: Meal.include_items(Meal, new_plan.business_id),
+          plan_items: ScheduleEntry.include_meal(ScheduleEntry, new_plan.business_id)
         )
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -568,9 +366,9 @@ defmodule Easy.NutritionPlans do
 
   defp copy_meals(meals, new_plan_id, business_id, creator_id) do
     Enum.reduce_while(meals, {:ok, %{}}, fn meal, {:ok, acc} ->
-      attrs = %{name: meal.name, macros: meal.macros}
+      attrs = %{name: meal.name, notes: meal.notes, default_meal_slot: meal.default_meal_slot}
 
-      case Meal.insert_changeset(new_plan_id, business_id, creator_id, attrs) |> Repo.insert() do
+      case Meal.insert_changeset(business_id, creator_id, new_plan_id, attrs) |> Repo.insert() do
         {:ok, new_meal} ->
           case copy_meal_items(meal.meal_items, new_meal.id, business_id) do
             {:ok, _} -> {:cont, {:ok, Map.put(acc, meal.id, new_meal)}}
@@ -601,76 +399,27 @@ defmodule Easy.NutritionPlans do
     end)
   end
 
-  defp copy_plan_items(plan_items, new_plan_id, business_id, creator_id, meal_map) do
-    Enum.reduce_while(plan_items, {:ok, []}, fn plan_item, {:ok, acc} ->
-      new_meal = Map.get(meal_map, plan_item.meal_id)
+  defp copy_schedule_entries(entries, new_plan_id, business_id, meal_map) do
+    Enum.reduce_while(entries, {:ok, []}, fn entry, {:ok, acc} ->
+      new_meal = Map.get(meal_map, entry.nutrition_meal_id)
 
       if is_nil(new_meal) do
         {:halt, {:error, :meal_not_found_in_plan}}
       else
         attrs = %{
-          day: plan_item.day,
-          meal_type: plan_item.meal_type,
-          meal_id: new_meal.id
+          day_of_week: entry.day_of_week,
+          meal_slot: entry.meal_slot,
+          nutrition_meal_id: new_meal.id
         }
 
-        case PlanItem.insert_changeset(new_plan_id, business_id, creator_id, attrs)
+        case ScheduleEntry.insert_changeset(business_id, new_plan_id, attrs)
              |> Repo.insert() do
-          {:ok, new_plan_item} -> {:cont, {:ok, [new_plan_item | acc]}}
+          {:ok, new_entry} -> {:cont, {:ok, [new_entry | acc]}}
           {:error, reason} -> {:halt, {:error, reason}}
         end
       end
     end)
   end
-
-  defp build_shopping_item(item) do
-    {label, type} =
-      cond do
-        not is_nil(item.food) -> {item.food.name, :food}
-        not is_nil(item.recipe) -> {item.recipe.name, :recipe}
-        not is_nil(item.food_id) -> {nil, :food}
-        not is_nil(item.recipe_id) -> {nil, :recipe}
-        true -> {nil, :unknown}
-      end
-
-    %{
-      type: type,
-      name: label,
-      food_id: item.food_id,
-      recipe_id: item.recipe_id,
-      unit: item.unit,
-      amount: 0,
-      weight_g: 0
-    }
-  end
-
-  defp add_number(left, right), do: (left || 0) + (right || 0)
-
-  defp merge_macros(acc, macros) when is_map(macros) do
-    Enum.reduce(macros, acc, fn {key, value}, totals ->
-      key = to_string(key)
-
-      if is_number(value) do
-        Map.update(totals, key, value, &(&1 + value))
-      else
-        totals
-      end
-    end)
-  end
-
-  defp validate_copy_day(nil, _target_day) do
-    {:error, Easy.Error.unprocessable(%{fields: %{source_day: ["can't be blank"]}})}
-  end
-
-  defp validate_copy_day(_source_day, nil) do
-    {:error, Easy.Error.unprocessable(%{fields: %{target_day: ["can't be blank"]}})}
-  end
-
-  defp validate_copy_day(source_day, target_day) when source_day == target_day do
-    {:error, Easy.Error.unprocessable(%{fields: %{target_day: ["must differ from source_day"]}})}
-  end
-
-  defp validate_copy_day(_source_day, _target_day), do: :ok
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

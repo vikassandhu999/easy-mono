@@ -12,12 +12,12 @@ This is a full-stack monorepo. Two ecosystems, one tree:
   - Domain: `backend/lib/easy`; web layer: `backend/lib/easy_web`
   - Migrations: `backend/priv/repo`. Deploys to Fly.io.
   - Detailed BE guide: `backend/AGENTS.md`
-- **`docs/`** — shared specs, handovers, and the **FE↔BE API contract**: `docs/api_contract.yaml` (rules in `docs/api_contract_rules.md`).
+- **`docs/`** — shared specs and handovers. The **FE↔BE API contract** is the backend's OpenApiSpex schemas (`backend/lib/easy_web/open_api/`), which generate the OpenAPI document the frontend consumes.
 
 ## Working rules
 - Frontend changes: work inside `frontend/`; `@easy/*` imports resolve within the pnpm workspace.
-- Backend changes: work inside `backend/`; use `mix`.
-- When changing an API: update `docs/api_contract.yaml` AND both sides.
+- Backend changes: work inside `backend/`; use `mix`. Follow `backend/AGENTS.md` (the `elixir-conventions` skill summarizes it) and run `mix precommit` before finishing.
+- When changing an API: update the backend OpenApiSpex schema AND both sides.
 - Use the root `Justfile` (`just --list`) for common tasks.
 
 ## Common commands

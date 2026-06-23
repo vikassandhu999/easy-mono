@@ -4,11 +4,11 @@ defmodule Easy.Clients.ReadBoundaryTest do
   alias Easy.Clients
 
   @training_schemas [
-    "lib/easy/training/exercise.ex",
+    "lib/easy/training/training_exercise.ex",
     "lib/easy/training/training_plan.ex",
-    "lib/easy/training/workout.ex",
-    "lib/easy/training/workout_element.ex",
-    "lib/easy/training/workout_session.ex"
+    "lib/easy/training/training_workout.ex",
+    "lib/easy/training/training_workout_exercise.ex",
+    "lib/easy/training/training_session.ex"
   ]
 
   test "training plan assignment does not hide a client lookup" do
@@ -38,8 +38,8 @@ defmodule Easy.Clients.ReadBoundaryTest do
     other_client =
       insert(:client, business: other_business, creator: other_coach, user: insert(:user))
 
-    assert {:ok, %{id: client_id}} = Clients.get_client(business.id, client.id)
+    assert {:ok, %{id: client_id}} = Clients.get_client(%Easy.Ctx{business_id: business.id, user_id: nil}, client.id)
     assert client_id == client.id
-    assert {:error, :not_found} = Clients.get_client(business.id, other_client.id)
+    assert {:error, :not_found} = Clients.get_client(%Easy.Ctx{business_id: business.id, user_id: nil}, other_client.id)
   end
 end

@@ -23,14 +23,13 @@ defmodule Easy.Identity.OneTimeToken do
 
     belongs_to :user, User
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
-  def changeset(attrs) do
+  @spec insert_changeset(binary(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(user_id, attrs) do
     %__MODULE__{}
-    |> cast(
-      attrs,
-      [:token_type, :token_hash, :relates_to, :user_id]
-    )
+    |> cast(attrs, [:token_type, :token_hash, :relates_to])
+    |> put_change(:user_id, user_id)
   end
 end

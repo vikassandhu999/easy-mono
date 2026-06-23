@@ -1,0 +1,138 @@
+<h2>Meal creation &amp; editing</h2>
+<p class="subtitle">Meal = items (food or recipe + amount), macros roll up live. Editor reuses the coach builder's width rule; picker &amp; amount sheet reuse the keyboard-aware pattern. Three steps. Tap to confirm.</p>
+
+<style>
+  .row{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .col{width:325px}
+  .ptitle{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .phone{border:2px solid #3a3a42;border-radius:24px;padding:9px;background:#111;cursor:pointer}
+  .phone:hover,.phone.selected{border-color:#6c8cff}
+  .scr{position:relative;background:#0c0c0e;border-radius:16px;height:600px;overflow:hidden;font-size:13px;padding:12px;display:flex;flex-direction:column}
+  .plan{background:#1b1b20;border-radius:10px;padding:7px 11px;font-weight:600;margin-bottom:10px;font-size:13px}
+  .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin:6px 0 8px;display:flex;justify-content:space-between}
+  .meal{border:1px solid #2a2a31;background:#16161b;border-radius:12px;padding:10px 12px;margin-bottom:9px}
+  .meal.cur{border-color:#6c8cff;box-shadow:0 0 0 1px #6c8cff,0 0 18px rgba(108,140,255,.13)}
+  .meal.dim{opacity:.5}
+  .mh{display:flex;justify-content:space-between;align-items:center;font-weight:600;padding-bottom:6px;border-bottom:1px solid #232329}
+  .mk{font-size:11px;color:#7f8cff}
+  /* item — width discipline: single accent rule, no nested boxes */
+  .it{border-left:2px solid #6c8cff;padding:7px 0 7px 10px;margin-top:7px;display:flex;justify-content:space-between;align-items:flex-start}
+  .it .n{font-weight:600;font-size:12px}
+  .it .amt{font-size:10px;color:#888;margin-top:1px}
+  .it .mac{font-size:10px;color:#9aa;text-align:right;white-space:nowrap}
+  .it .mac b{color:#cde}
+  .add{color:#6c8cff;font-size:12px;margin-top:8px}
+  .mtot{display:flex;justify-content:space-between;align-items:center;background:#10131f;border:1px solid #2c3350;border-radius:9px;padding:8px 11px;margin-top:9px}
+  .mtot .l{font-size:10px;color:#889}.mtot .v{font-weight:700;font-size:13px}.mtot .m{font-size:10px;color:#9fb0ff}
+  /* picker */
+  .body{flex:1;overflow:hidden}
+  .behind{filter:brightness(.4)}
+  .sheet{position:absolute;left:0;right:0;border:1px solid #34343d;background:#16161b;border-radius:16px 16px 0 0;padding:12px 14px;box-shadow:0 -12px 30px rgba(0,0,0,.5)}
+  .grip{width:40px;height:4px;background:#444;border-radius:2px;margin:0 auto 9px}
+  .sttl{display:flex;justify-content:space-between;font-weight:600;margin-bottom:8px}
+  .search{background:#0c0c0e;border:1px solid #3a4170;border-radius:8px;padding:9px 10px;color:#ccc;margin-bottom:8px}
+  .toggle{display:flex;gap:6px;margin-bottom:9px}
+  .toggle span{flex:1;text-align:center;font-size:11px;padding:6px;border:1px solid #34343d;border-radius:7px;color:#999}
+  .toggle span.on{background:#1d2030;border-color:#6c8cff;color:#9fb0ff;font-weight:600}
+  .pit{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1f1f25}
+  .ck{width:20px;height:20px;border-radius:6px;border:1.5px solid #444;flex-shrink:0}
+  .ck.on{background:#6c8cff;border-color:#6c8cff;color:#06122e;text-align:center;line-height:18px}
+  .pn{flex:1;font-size:12px}.pn small{display:block;color:#888;font-size:10px}
+  .pbadge{font-size:9px;color:#9fb0ff;border:1px solid #34343d;border-radius:5px;padding:1px 5px;white-space:nowrap}
+  .dock{position:absolute;left:0;right:0;background:#12131a;border-top:1px solid #2c3350;padding:10px 14px}
+  .btn{background:#6c8cff;color:#06122e;font-weight:700;border-radius:9px;text-align:center;padding:11px;font-size:14px}
+  /* amount sheet */
+  .units{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .u{font-size:11px;border:1px solid #34343d;border-radius:7px;padding:6px 10px;color:#aaa}
+  .u.on{background:#1d2030;border-color:#6c8cff;color:#9fb0ff;font-weight:600}
+  .amtfield{display:flex;gap:10px;align-items:stretch;margin-bottom:9px}
+  .af{flex:1;border:1px solid #6c8cff;background:#10131f;border-radius:9px;padding:9px;text-align:center}
+  .af small{display:block;font-size:8px;color:#889}.af b{font-size:20px}
+  .live{background:#10131f;border:1px solid #2c3350;border-radius:9px;padding:9px 11px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:center}
+  .live .v{font-weight:700}.live .m{font-size:10px;color:#9fb0ff}
+  .kb{position:absolute;left:0;right:0;bottom:0;height:32%;background:#1a1a1f;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px}
+  .key{background:#2a2a31;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600}
+  .kbnote{position:absolute;left:0;right:0;bottom:32%;text-align:center;font-size:9px;color:#5fe08a;background:#0c0c0e;padding:2px}
+  .muted{color:#777}
+  .cap{text-align:center;font-size:12px;color:#aaa;margin-top:8px}
+</style>
+
+<div class="row">
+
+  <!-- 1: meal editor -->
+  <div class="col">
+    <div class="ptitle">1 · Meal editor — items + live macros</div>
+    <div class="phone" data-choice="editor" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="plan">Cutting Plan · 2100 kcal</div>
+        <div class="lbl"><span>Meals</span><span class="muted">collapse all</span></div>
+        <div class="meal cur">
+          <div class="mh"><span>Oats &amp; Eggs</span><span class="mk">420 kcal · ▾</span></div>
+          <div class="it"><div><div class="n">Rolled Oats</div><div class="amt">80 g</div></div><div class="mac"><b>300</b> kcal<br>10P 54C 5F</div></div>
+          <div class="it"><div><div class="n">Whole Eggs</div><div class="amt">2 · 100 g</div></div><div class="mac"><b>140</b> kcal<br>13P 1C 10F</div></div>
+          <div class="it"><div><div class="n">Blueberries</div><div class="amt">50 g</div></div><div class="mac"><b>30</b> kcal<br>0P 8C 0F</div></div>
+          <div class="add">＋ Add food or recipe</div>
+          <div class="mtot"><div><div class="l">Meal total</div><div class="v">420 kcal</div></div><div class="m">28P · 63C · 15F</div></div>
+        </div>
+        <div class="meal dim"><div class="mh"><span>Chicken &amp; Rice</span><span class="muted">650 · ▸</span></div></div>
+        <div class="meal dim"><div class="mh"><span>Salmon &amp; Veg</span><span class="muted">630 · ▸</span></div></div>
+        <div class="add">＋ Add meal</div>
+      </div>
+    </div>
+    <div class="cap"><b>1</b> · Items use the single accent rule (full width). Each shows its macro contribution; meal totals roll up live.</div>
+  </div>
+
+  <!-- 2: food/recipe picker -->
+  <div class="col">
+    <div class="ptitle">2 · Add — food or recipe picker</div>
+    <div class="phone" data-choice="picker" onclick="toggleSelect(this)">
+      <div class="scr" style="padding:0">
+        <div class="body" style="padding:12px">
+          <div class="behind"><div class="plan">Oats &amp; Eggs</div><div class="it"><div class="n">Rolled Oats</div></div></div>
+        </div>
+        <div class="sheet" style="top:5%;bottom:0">
+          <div class="grip"></div>
+          <div class="sttl"><span>Add to Oats &amp; Eggs</span><span class="muted">✕</span></div>
+          <div class="search">whey</div>
+          <div class="toggle"><span class="on">Foods</span><span>Recipes</span></div>
+          <div class="pit"><div class="ck on">✓</div><div class="pn">Whey Protein<small>per 100g · 380 kcal</small></div><span class="pbadge">80P</span></div>
+          <div class="pit"><div class="ck"></div><div class="pn">Whey Isolate<small>per 100g · 360 kcal</small></div><span class="pbadge">88P</span></div>
+          <div class="pit"><div class="ck"></div><div class="pn">Casein<small>per 100g · 360 kcal</small></div><span class="pbadge">78P</span></div>
+          <div class="dock" style="bottom:32%"><div class="btn">Add 1 food</div></div>
+        </div>
+        <div class="kbnote">▼ keyboard while searching — Add bar floats above it</div>
+        <div class="kb"><div class="key">q</div><div class="key">w</div><div class="key">e</div><div class="key">r</div><div class="key">t</div><div class="key">y</div><div class="key">a</div><div class="key">s</div><div class="key">⌫</div></div>
+      </div>
+    </div>
+    <div class="cap"><b>2</b> · Foods / Recipes toggle, search, macro badge, multi-select. Same sheet as the exercise picker. No match → "+ Create food".</div>
+  </div>
+
+  <!-- 3: amount sheet -->
+  <div class="col">
+    <div class="ptitle">3 · Amount — docked, live macros</div>
+    <div class="phone" data-choice="amount" onclick="toggleSelect(this)">
+      <div class="scr" style="padding:0">
+        <div class="body" style="padding:12px;filter:brightness(.5)">
+          <div class="plan">Oats &amp; Eggs</div>
+          <div class="it"><div class="n">Whey Protein</div><div class="amt">setting amount…</div></div>
+        </div>
+        <div class="sheet" style="bottom:32%">
+          <div class="grip"></div>
+          <div class="sttl"><span>Whey Protein</span><span class="muted">Add</span></div>
+          <div class="units"><span class="u on">grams</span><span class="u">1 scoop · 30g</span><span class="u">½ scoop · 15g</span></div>
+          <div class="amtfield"><div class="af"><small>AMOUNT</small><b>30</b></div><div class="af" style="flex:.5;border-color:#34343d;background:#0c0c0e"><small>UNIT</small><b style="font-size:14px">g</b></div></div>
+          <div class="live"><div><div class="muted" style="font-size:10px">resolves to 30g →</div><div class="v">114 kcal</div></div><div class="m">24P · 3C · 1F</div></div>
+          <div class="btn" style="padding:11px">✓ Add to meal</div>
+        </div>
+        <div class="kbnote">▼ keypad — sheet docks above it; macros update as you type</div>
+        <div class="kb"><div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key">.</div><div class="key">0</div><div class="key">⌫</div></div>
+      </div>
+    </div>
+    <div class="cap"><b>3</b> · Pick a serving size or type grams; everything resolves to weight_g. Live macro readout updates per keystroke.</div>
+  </div>
+
+</div>
+
+<div style="max-width:700px;margin:22px auto 0;background:#11210f;border:1px solid #2f7d4a;border-radius:12px;padding:14px 18px;font-size:14px">
+  <b>The parallel holds:</b> meal = workout, meal_item = the line you log, amount sheet = the set-value sheet (docked above keyboard). <b>Nutrition-only:</b> every item carries live macros, meals roll up totals, and the amount sheet shows a live macro preview as you type — <code>weight_g</code> is always the resolved calc value (serving size or grams). Foods vs Recipes is a toggle in the same picker; recipes contribute their per-serving macros as one line.
+</div>

@@ -1,11 +1,11 @@
-defmodule EasyWeb.OpenApi.Schemas.WorkoutRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "WorkoutRequest",
+      title: "TrainingWorkoutRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -22,14 +22,14 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutUpdateRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "WorkoutUpdateRequest",
+      title: "TrainingWorkoutUpdateRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -44,7 +44,7 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutUpdateRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutElementRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
@@ -52,7 +52,7 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutElementRequest do
 
   OpenApiSpex.schema(
     %{
-      title: "WorkoutElementRequest",
+      title: "TrainingWorkoutExerciseRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -62,117 +62,91 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutElementRequest do
         exercise_id: %Schema{type: :string, format: :uuid},
         planned_sets: %Schema{type: :array, minItems: 1, items: TrainingPlanPlannedSet}
       },
-      required: [:position, :exercise_id, :planned_sets],
       example: %{
         "position" => 0,
         "exercise_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-        "planned_sets" => [%{"target_reps" => "8-10", "load_unit" => "kg"}]
+        "planned_sets" => [%{"reps" => "8-10", "load_unit" => "kg"}]
       }
     },
     struct?: false
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.PlanItemRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutResponse do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkout}
+
+  OpenApiSpex.schema(Shared.data_response(TrainingPlanWorkout, "TrainingWorkoutResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutListResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkout}
+
+  OpenApiSpex.schema(Shared.list_response(TrainingPlanWorkout, "TrainingWorkoutListResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkoutExercise}
+
+  OpenApiSpex.schema(Shared.data_response(TrainingPlanWorkoutExercise, "TrainingWorkoutExerciseResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleEntry do
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "TrainingScheduleEntry",
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string},
+      day_of_week: %Schema{type: :string},
+      training_workout_id: %Schema{type: :string, nullable: true},
+      workout_name: %Schema{type: :string, nullable: true}
+    }
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainingDayScheduleRequest do
+  require OpenApiSpex
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "PlanItemRequest",
+      title: "TrainingDayScheduleRequest",
       type: :object,
       additionalProperties: false,
-      properties: %{
-        day: %Schema{
-          type: :string,
-          enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        },
-        workout_type: %Schema{type: :string, enum: ["primary", "alternative"]},
-        workout_id: %Schema{type: :string, format: :uuid}
-      },
-      required: [:day, :workout_type, :workout_id],
-      example: %{
-        "day" => "monday",
-        "workout_type" => "primary",
-        "workout_id" => "1b8248bc-4499-4a0c-986f-621fc95cbd0e"
-      }
+      properties: %{training_workout_id: %Schema{type: :string, nullable: true}}
     },
     struct?: false
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleResponse do
   require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.TrainingPlanWorkout
-
-  OpenApiSpex.schema(%{
-    title: "WorkoutResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: TrainingPlanWorkout},
-    required: [:data]
-  })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.WorkoutListResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.TrainingPlanWorkout
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.TrainingScheduleEntry
 
   OpenApiSpex.schema(%{
-    title: "WorkoutListResponse",
+    title: "TrainingScheduleResponse",
     type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: TrainingPlanWorkout},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count]
+    properties: %{data: %Schema{type: :object, additionalProperties: TrainingScheduleEntry}}
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutElementResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleDayResponse do
   require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutElement
-
-  OpenApiSpex.schema(%{
-    title: "WorkoutElementResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: TrainingPlanWorkoutElement},
-    required: [:data]
-  })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.TrainingPlanItemResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.TrainingPlanItem
-
-  OpenApiSpex.schema(%{
-    title: "TrainingPlanItemResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: TrainingPlanItem},
-    required: [:data]
-  })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.TrainingPlanItemListResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.TrainingPlanItem
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.TrainingScheduleEntry
 
   OpenApiSpex.schema(%{
-    title: "TrainingPlanItemListResponse",
+    title: "TrainingScheduleDayResponse",
     type: :object,
-    additionalProperties: false,
-    properties: %{data: %Schema{type: :array, items: TrainingPlanItem}},
-    required: [:data]
+    properties: %{data: %Schema{type: :object, nullable: true, allOf: [TrainingScheduleEntry]}}
   })
 end

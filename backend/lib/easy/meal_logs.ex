@@ -1,5 +1,6 @@
 defmodule Easy.MealLogs do
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.MacroCalc
@@ -7,289 +8,135 @@ defmodule Easy.MealLogs do
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanItem
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.Recipe
+  alias Easy.Nutrition.RecipeIngredient
   alias Easy.Repo
 
   import Ecto.Changeset
   import Ecto.Query
 
-  @spec list_meal_logs(String.t(), String.t(), Date.t() | nil, Date.t() | nil, Date.t() | nil) ::
-          {:ok, [MealLog.t()]}
-  def list_meal_logs(business_id, client_id, date, from_date, to_date) do
-    meal_logs =
-      MealLog
-      |> MealLog.for_client(business_id, client_id)
-      |> MealLog.for_date_range(date, from_date, to_date)
-      |> MealLog.ordered()
-      |> MealLog.with_entries()
-      |> Repo.all()
+  # ---------------------------------------------------------------------------
+  # Coach read fns (Case-2: Ctx-first, client_id from path)
+  # ---------------------------------------------------------------------------
 
-    {:ok, meal_logs}
-  end
-
-  @spec list_meal_logs_for_client(
-          String.t(),
-          String.t(),
-          Date.t() | nil,
-          Date.t() | nil,
-          Date.t() | nil
-        ) ::
+  # Date-bounded lists return {:ok, [items]} — no pagination needed since the
+  # query is always bounded by date / date-range (a per-day or per-week read).
+  @spec list_meal_logs_for_client(Ctx.t(), String.t(), keyword()) ::
           {:ok, [MealLog.t()]} | {:error, :not_found}
-  def list_meal_logs_for_client(business_id, client_id, date, from_date, to_date) do
-    with {:ok, _client} <- get_client(business_id, client_id) do
-      list_meal_logs(business_id, client_id, date, from_date, to_date)
+  def list_meal_logs_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
+    date = Keyword.get(opts, :date)
+    from_date = Keyword.get(opts, :from)
+    to_date = Keyword.get(opts, :to)
+
+    with {:ok, _client} <- get_client_by_id(ctx, client_id) do
+      meal_logs =
+        MealLog
+        |> MealLog.for_client(ctx.business_id, client_id)
+        |> apply_date_filters(date, from_date, to_date)
+        |> MealLog.oldest()
+        |> MealLog.include_entries()
+        |> Repo.all()
+
+      {:ok, meal_logs}
     end
   end
 
-  @spec list_meal_logs_for_user(
-          String.t(),
-          String.t(),
-          Date.t() | nil,
-          Date.t() | nil,
-          Date.t() | nil
-        ) ::
-          {:ok, [MealLog.t()]} | {:error, :not_found}
-  def list_meal_logs_for_user(business_id, user_id, date, from_date, to_date) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      list_meal_logs(business_id, client.id, date, from_date, to_date)
-    end
-  end
+  # ---------------------------------------------------------------------------
+  # Coach getter — scoped by business only (used internally / by coach paths)
+  # ---------------------------------------------------------------------------
 
-  @spec get_client_meal_log(String.t(), String.t(), String.t()) ::
-          {:ok, MealLog.t()} | {:error, :not_found}
-  def get_client_meal_log(business_id, client_id, meal_log_id) do
-    MealLog
-    |> MealLog.for_business(business_id)
-    |> MealLog.for_client(client_id)
-    |> MealLog.with_entries()
-    |> Repo.get(meal_log_id)
-    |> ok_or_not_found()
-  end
-
-  @spec get_client_meal_log_for_user(String.t(), String.t(), String.t()) ::
-          {:ok, MealLog.t()} | {:error, :not_found}
-  def get_client_meal_log_for_user(business_id, user_id, meal_log_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_client_meal_log(business_id, client.id, meal_log_id)
-    end
-  end
-
-  defp daily_summaries(meal_logs) do
-    meal_logs
-    |> Enum.group_by(& &1.date)
-    |> Enum.map(fn {date, day_logs} ->
-      all_entries = Enum.flat_map(day_logs, & &1.food_log_entries)
-
-      %{
-        date: date,
-        meals_logged: length(day_logs),
-        total_entries: length(all_entries),
-        planned_calories: sum_non_nil(day_logs, :planned_calories),
-        logged_calories: sum_non_nil(day_logs, :logged_calories),
-        replacements: Enum.count(all_entries, &(&1.source == :replacement)),
-        unplanned_count: Enum.count(all_entries, &(&1.source == :unplanned))
-      }
-    end)
-    |> Enum.sort_by(& &1.date, Date)
-  end
-
-  @spec summarize_client_meal_logs(String.t(), String.t(), Date.t() | nil, Date.t() | nil) ::
-          {:ok, [map()]} | {:error, :not_found}
-  def summarize_client_meal_logs(business_id, client_id, from_date, to_date) do
-    with {:ok, meal_logs} <-
-           list_meal_logs_for_client(business_id, client_id, nil, from_date, to_date) do
-      {:ok, daily_summaries(meal_logs)}
-    end
-  end
-
-  @spec get_business_food_log_entry(String.t(), String.t()) ::
+  @spec get_business_food_log_entry(Ctx.t(), String.t()) ::
           {:ok, FoodLogEntry.t()} | {:error, :not_found}
-  def get_business_food_log_entry(business_id, entry_id) do
+  def get_business_food_log_entry(%Ctx{} = ctx, entry_id) do
     FoodLogEntry
-    |> FoodLogEntry.for_business(business_id)
+    |> FoodLogEntry.for_business(ctx.business_id)
     |> Repo.get(entry_id)
     |> ok_or_not_found()
   end
 
-  @spec get_client_food_log_entry(String.t(), String.t(), String.t()) ::
-          {:ok, FoodLogEntry.t()} | {:error, :not_found}
-  def get_client_food_log_entry(business_id, client_id, entry_id) do
-    FoodLogEntry
-    |> FoodLogEntry.for_client(business_id, client_id)
-    |> Repo.get(entry_id)
-    |> ok_or_not_found()
-  end
+  # ---------------------------------------------------------------------------
+  # Client self fns (Case-3: Ctx-first, resolves client via private get_client/1)
+  # ---------------------------------------------------------------------------
 
-  @spec log_entry(String.t(), String.t(), map()) ::
-          {:ok, FoodLogEntry.t()} | {:error, any()}
-  def log_entry(business_id, client_id, attrs) do
-    date = parse_date(attrs)
-    meal_slot = attrs["meal_slot"] || attrs[:meal_slot]
+  @spec list_client_meal_logs(Ctx.t(), keyword()) ::
+          {:ok, [MealLog.t()]} | {:error, :not_found}
+  def list_client_meal_logs(%Ctx{} = ctx, opts \\ []) do
+    date = Keyword.get(opts, :date)
+    from_date = Keyword.get(opts, :from)
+    to_date = Keyword.get(opts, :to)
 
-    with {:ok, date} <- require_date(date) do
-      Repo.transaction(fn ->
-        snapshot = build_planned_snapshot(business_id, client_id, date, meal_slot)
+    with {:ok, client} <- get_client(ctx) do
+      meal_logs =
+        MealLog
+        |> MealLog.for_client(ctx.business_id, client.id)
+        |> apply_date_filters(date, from_date, to_date)
+        |> MealLog.oldest()
+        |> MealLog.include_entries()
+        |> Repo.all()
 
-        meal_log =
-          case find_or_create_meal_log(business_id, client_id, date, meal_slot, snapshot) do
-            {:ok, ml} -> ml
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        case create_food_log_entry(meal_log.id, business_id, attrs) do
-          {:ok, entry} ->
-            case recalculate_logged_calories(meal_log) do
-              {:ok, _meal_log} -> entry
-              {:error, reason} -> Repo.rollback(reason)
-            end
-
-          {:error, reason} ->
-            Repo.rollback(reason)
-        end
-      end)
+      {:ok, meal_logs}
     end
   end
 
-  @spec log_entry_for_user(String.t(), String.t(), map()) ::
+  @spec create_client_food_log_entry(Ctx.t(), map()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
-  def log_entry_for_user(business_id, user_id, attrs) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      log_entry(business_id, client.id, attrs)
+  def create_client_food_log_entry(%Ctx{} = ctx, attrs) do
+    with {:ok, client} <- get_client(ctx) do
+      log_entry(ctx.business_id, client.id, attrs)
     end
   end
 
-  @spec update_entry(FoodLogEntry.t(), String.t(), map()) ::
+  @spec update_client_food_log_entry(Ctx.t(), String.t(), map()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
-  def update_entry(%FoodLogEntry{} = entry, business_id, attrs) do
-    Repo.transaction(fn ->
-      case update_food_log_entry(entry, business_id, attrs) do
-        {:ok, updated} ->
-          case recalculate_entry_meal_log(updated, business_id) do
-            {:ok, _meal_log} -> updated
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
-  end
-
-  @spec update_entry_for_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, FoodLogEntry.t()} | {:error, any()}
-  def update_entry_for_user(business_id, user_id, entry_id, attrs) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, entry} <- get_client_food_log_entry(business_id, client.id, entry_id) do
-      update_entry(entry, business_id, attrs)
+  def update_client_food_log_entry(%Ctx{} = ctx, entry_id, attrs) do
+    with {:ok, client} <- get_client(ctx),
+         {:ok, entry} <- get_client_food_log_entry_scoped(ctx.business_id, client.id, entry_id) do
+      update_entry(entry, ctx.business_id, attrs)
     end
   end
 
-  @spec delete_entry(FoodLogEntry.t(), String.t()) :: {:ok, FoodLogEntry.t()} | {:error, any()}
-  def delete_entry(%FoodLogEntry{} = entry, business_id) do
-    Repo.transaction(fn ->
-      case Repo.delete(entry) do
-        {:ok, deleted} ->
-          case recalculate_entry_meal_log(deleted, business_id) do
-            {:ok, _meal_log} -> deleted
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
-  end
-
-  @spec delete_entry_for_business(String.t(), String.t()) ::
+  @spec delete_client_food_log_entry(Ctx.t(), String.t()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
-  def delete_entry_for_business(business_id, entry_id) do
-    with {:ok, entry} <- get_business_food_log_entry(business_id, entry_id) do
-      delete_entry(entry, business_id)
+  def delete_client_food_log_entry(%Ctx{} = ctx, entry_id) do
+    with {:ok, client} <- get_client(ctx),
+         {:ok, entry} <- get_client_food_log_entry_scoped(ctx.business_id, client.id, entry_id) do
+      delete_entry(entry, ctx.business_id)
     end
   end
 
-  @spec delete_entry_for_user(String.t(), String.t(), String.t()) ::
-          {:ok, FoodLogEntry.t()} | {:error, any()}
-  def delete_entry_for_user(business_id, user_id, entry_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, entry} <- get_client_food_log_entry(business_id, client.id, entry_id) do
-      delete_entry(entry, business_id)
-    end
-  end
-
-  @spec log_meal(String.t(), String.t(), Date.t(), String.t(), String.t()) ::
+  @spec log_client_meal(Ctx.t(), map()) ::
           {:ok, [FoodLogEntry.t()]} | {:error, any()}
-  def log_meal(business_id, client_id, date, meal_slot, meal_id) do
-    Repo.transaction(fn ->
-      do_log_meal(business_id, client_id, date, meal_slot, meal_id)
-    end)
-  end
+  def log_client_meal(%Ctx{} = ctx, attrs) do
+    date_str = attrs[:date]
+    meal_slot = attrs[:meal_slot]
+    meal_id = attrs[:meal_id]
 
-  @spec log_meal_for_user(String.t(), String.t(), String.t(), String.t(), String.t()) ::
-          {:ok, [FoodLogEntry.t()]} | {:error, any()}
-  def log_meal_for_user(business_id, user_id, date_str, meal_slot, meal_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, date} <- parse_required_date(date_str) do
-      log_meal(business_id, client.id, date, meal_slot, meal_id)
+    with {:ok, client} <- get_client(ctx),
+         {:ok, date} <- parse_required_date(to_string_date(date_str)) do
+      log_meal(ctx.business_id, client.id, date, meal_slot, meal_id)
     end
   end
 
-  @spec log_day(String.t(), String.t(), Date.t(), String.t()) ::
+  @spec log_client_day(Ctx.t(), map()) ::
           {:ok, [FoodLogEntry.t()]} | {:error, any()}
-  def log_day(business_id, client_id, date, plan_id) do
-    plan =
-      Plan
-      |> Plan.for_business(business_id)
-      |> Plan.for_client(client_id)
-      |> Repo.get(plan_id)
+  def log_client_day(%Ctx{} = ctx, attrs) do
+    date_str = attrs[:date]
+    plan_id = attrs[:plan_id]
 
-    case plan do
-      nil ->
-        {:error, :not_found}
-
-      _ ->
-        day = Easy.Utils.weekday_name(date)
-
-        plan_items =
-          PlanItem
-          |> PlanItem.for_plan(plan_id)
-          |> PlanItem.for_business(business_id)
-          |> PlanItem.for_day(day)
-          |> Repo.all()
-
-        Repo.transaction(fn ->
-          Enum.flat_map(plan_items, fn plan_item ->
-            do_log_meal(business_id, client_id, date, plan_item.meal_type, plan_item.meal_id)
-          end)
-        end)
+    with {:ok, client} <- get_client(ctx),
+         {:ok, date} <- parse_required_date(to_string_date(date_str)) do
+      log_day(ctx.business_id, client.id, date, plan_id)
     end
   end
 
-  @spec log_day_for_user(String.t(), String.t(), String.t(), String.t()) ::
-          {:ok, [FoodLogEntry.t()]} | {:error, any()}
-  def log_day_for_user(business_id, user_id, date_str, plan_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, date} <- parse_required_date(date_str) do
-      log_day(business_id, client.id, date, plan_id)
-    end
-  end
-
-  defp build_planned_snapshot(business_id, client_id, date, meal_slot) do
-    plan =
-      Plan
-      |> Plan.for_business(business_id)
-      |> Plan.active_for_client(client_id, date)
-      |> Plan.newest()
-      |> limit(1)
-      |> Repo.one()
-
-    if is_nil(plan), do: nil, else: snapshot_meal(plan, date, meal_slot)
-  end
+  # ---------------------------------------------------------------------------
+  # Semi-public helpers (called from tests / internal pipelines)
+  # ---------------------------------------------------------------------------
 
   @spec find_or_create_meal_log(String.t(), String.t(), Date.t(), String.t(), map() | nil) ::
           {:ok, MealLog.t()} | {:error, Ecto.Changeset.t()}
-  def find_or_create_meal_log(business_id, client_id, date, meal_slot, snapshot \\ nil) do
+  defp find_or_create_meal_log(business_id, client_id, date, meal_slot, snapshot) do
     case get_existing_meal_log(business_id, client_id, date, meal_slot) do
       %MealLog{} = existing ->
         {:ok, existing}
@@ -326,6 +173,115 @@ defmodule Easy.MealLogs do
       {1, [%{logged_calories: total}]} -> {:ok, %{meal_log | logged_calories: total}}
       {0, []} -> {:error, :not_found}
     end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Private — internal logic
+  # ---------------------------------------------------------------------------
+
+  defp log_entry(business_id, client_id, attrs) do
+    date = parse_date(attrs)
+    meal_slot = attrs[:meal_slot]
+
+    with {:ok, date} <- require_date(date) do
+      Repo.transaction(fn ->
+        snapshot = build_planned_snapshot(business_id, client_id, date, meal_slot)
+
+        meal_log =
+          case find_or_create_meal_log(business_id, client_id, date, meal_slot, snapshot) do
+            {:ok, ml} -> ml
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        case create_food_log_entry(meal_log.id, business_id, attrs) do
+          {:ok, entry} ->
+            case recalculate_logged_calories(meal_log) do
+              {:ok, _meal_log} -> entry
+              {:error, reason} -> Repo.rollback(reason)
+            end
+
+          {:error, reason} ->
+            Repo.rollback(reason)
+        end
+      end)
+    end
+  end
+
+  defp update_entry(%FoodLogEntry{} = entry, business_id, attrs) do
+    Repo.transaction(fn ->
+      case update_food_log_entry(entry, business_id, attrs) do
+        {:ok, updated} ->
+          case recalculate_entry_meal_log(updated, business_id) do
+            {:ok, _meal_log} -> updated
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp delete_entry(%FoodLogEntry{} = entry, business_id) do
+    Repo.transaction(fn ->
+      case Repo.delete(entry) do
+        {:ok, deleted} ->
+          case recalculate_entry_meal_log(deleted, business_id) do
+            {:ok, _meal_log} -> deleted
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp log_meal(business_id, client_id, date, meal_slot, meal_id) do
+    Repo.transaction(fn ->
+      do_log_meal(business_id, client_id, date, meal_slot, meal_id)
+    end)
+  end
+
+  defp log_day(business_id, client_id, date, plan_id) do
+    plan =
+      Plan
+      |> Plan.for_business(business_id)
+      |> Plan.for_client(business_id, client_id)
+      |> Repo.get(plan_id)
+
+    case plan do
+      nil ->
+        {:error, :not_found}
+
+      _ ->
+        day = Easy.Utils.weekday_name(date)
+
+        plan_items =
+          ScheduleEntry
+          |> ScheduleEntry.for_plan(plan_id)
+          |> ScheduleEntry.for_business(business_id)
+          |> ScheduleEntry.for_day(day)
+          |> Repo.all()
+
+        Repo.transaction(fn ->
+          Enum.flat_map(plan_items, fn plan_item ->
+            do_log_meal(business_id, client_id, date, plan_item.meal_slot, plan_item.nutrition_meal_id)
+          end)
+        end)
+    end
+  end
+
+  defp build_planned_snapshot(business_id, client_id, date, meal_slot) do
+    plan =
+      Plan
+      |> Plan.for_business(business_id)
+      |> Plan.active_for_client(client_id, date)
+      |> Plan.newest()
+      |> limit(1)
+      |> Repo.one()
+
+    if is_nil(plan), do: nil, else: snapshot_meal(plan, date, meal_slot)
   end
 
   defp do_log_meal(business_id, client_id, date, meal_slot, meal_id) do
@@ -416,30 +372,38 @@ defmodule Easy.MealLogs do
       food ->
         changeset
         |> put_change(:food_name, get_field(changeset, :food_name) || food.name)
-        |> put_computed_macros(food.macros || %{}, weight_g, nil)
+        |> put_macros(MacroCalc.for_food(food, weight_g))
     end
   end
 
   defp resolve_recipe(changeset, recipe_id, business_id, weight_g) do
-    case Recipe |> Recipe.for_business(business_id) |> Repo.get(recipe_id) do
+    case load_recipe_with_ingredients(business_id, recipe_id) do
       nil ->
         add_error(changeset, :recipe_id, "recipe not found")
 
       recipe ->
         changeset
         |> put_change(:food_name, get_field(changeset, :food_name) || recipe.name)
-        |> put_computed_macros(recipe.macros || %{}, weight_g, recipe.cooked_weight_g)
+        |> put_macros(MacroCalc.for_recipe(recipe, weight_g))
     end
   end
 
-  defp put_computed_macros(changeset, macros, weight_g, cooked_weight_g) do
-    computed = MacroCalc.compute_all(macros, weight_g, cooked_weight_g)
+  defp load_recipe_with_ingredients(business_id, recipe_id) do
+    food_query = Food.for_business_or_system(Food, business_id)
 
+    Recipe
+    |> Recipe.for_business(business_id)
+    |> preload(recipe_ingredients: ^from(ri in RecipeIngredient, preload: [food: ^food_query]))
+    |> Repo.get(recipe_id)
+  end
+
+  defp put_macros(changeset, macros) do
     changeset
-    |> put_change(:calories, computed.calories)
-    |> put_change(:protein_g, computed.protein_g)
-    |> put_change(:carbs_g, computed.carbs_g)
-    |> put_change(:fat_g, computed.fat_g)
+    |> put_change(:calories, macros.calories)
+    |> put_change(:protein_g, macros.protein_g)
+    |> put_change(:carbs_g, macros.carbs_g)
+    |> put_change(:fat_g, macros.fat_g)
+    |> put_change(:fiber_g, macros.fiber_g)
   end
 
   defp maybe_recompute_macros(changeset, entry, business_id, weight_g) do
@@ -452,10 +416,11 @@ defmodule Easy.MealLogs do
 
       case {entry.food, entry.recipe} do
         {%Food{} = food, _} ->
-          put_computed_macros(changeset, food.macros || %{}, weight_g, nil)
+          put_macros(changeset, MacroCalc.for_food(food, weight_g))
 
         {_, %Recipe{} = recipe} ->
-          put_computed_macros(changeset, recipe.macros || %{}, weight_g, recipe.cooked_weight_g)
+          recipe = load_recipe_with_ingredients(business_id, recipe.id)
+          put_macros(changeset, MacroCalc.for_recipe(recipe, weight_g))
 
         _ ->
           changeset
@@ -466,7 +431,7 @@ defmodule Easy.MealLogs do
   end
 
   defp recalculate_entry_meal_log(entry, business_id) do
-    case MealLog |> MealLog.for_business(business_id) |> Repo.get(entry.meal_log_id) do
+    case MealLog |> MealLog.for_business(business_id) |> Repo.get(entry.nutrition_meal_log_id) do
       nil -> {:error, :not_found}
       meal_log -> recalculate_logged_calories(meal_log)
     end
@@ -478,7 +443,7 @@ defmodule Easy.MealLogs do
       select: %{
         logged_calories:
           fragment(
-            "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
+            "(SELECT coalesce(sum(calories), 0.0) FROM nutrition_food_log_entries WHERE nutrition_meal_log_id = ?)",
             ml.id
           )
       },
@@ -486,7 +451,7 @@ defmodule Easy.MealLogs do
         set: [
           logged_calories:
             fragment(
-              "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
+              "(SELECT coalesce(sum(calories), 0.0) FROM nutrition_food_log_entries WHERE nutrition_meal_log_id = ?)",
               ml.id
             )
         ]
@@ -497,8 +462,7 @@ defmodule Easy.MealLogs do
 
   defp get_existing_meal_log(business_id, client_id, date, meal_slot) do
     MealLog
-    |> MealLog.for_business(business_id)
-    |> MealLog.for_client(client_id)
+    |> MealLog.for_client(business_id, client_id)
     |> MealLog.for_date(date)
     |> MealLog.for_meal_slot(meal_slot)
     |> Repo.one()
@@ -515,17 +479,17 @@ defmodule Easy.MealLogs do
       nil ->
         nil
 
-      %{plan_id: plan_id} = meal ->
+      %{nutrition_plan_id: plan_id} = meal ->
         plan_belongs =
           Plan
           |> Plan.for_business(business_id)
-          |> Plan.for_client(client_id)
+          |> Plan.for_client(business_id, client_id)
           |> Repo.get(plan_id)
 
         if is_nil(plan_belongs) do
           nil
         else
-          Repo.preload(meal, meal_items: meal_items_with_food_and_recipe(business_id))
+          Repo.preload(meal, meal_items: MealItem.include_food_and_recipe(MealItem, business_id))
         end
     end
   end
@@ -549,11 +513,11 @@ defmodule Easy.MealLogs do
     day = Easy.Utils.weekday_name(date)
 
     plan_item =
-      PlanItem
-      |> PlanItem.for_plan(plan.id)
-      |> PlanItem.for_business(plan.business_id)
-      |> PlanItem.for_day(day)
-      |> PlanItem.for_meal_type(meal_slot)
+      ScheduleEntry
+      |> ScheduleEntry.for_plan(plan.id)
+      |> ScheduleEntry.for_business(plan.business_id)
+      |> ScheduleEntry.for_day(day)
+      |> ScheduleEntry.for_meal_slot(meal_slot)
       |> Repo.one()
 
     if is_nil(plan_item), do: nil, else: do_snapshot(plan_item)
@@ -563,13 +527,13 @@ defmodule Easy.MealLogs do
     meal =
       Meal
       |> Meal.for_business(plan_item.business_id)
-      |> Repo.get(plan_item.meal_id)
+      |> Repo.get(plan_item.nutrition_meal_id)
 
     if is_nil(meal) do
       nil
     else
       meal =
-        Repo.preload(meal, meal_items: meal_items_with_food_and_recipe(plan_item.business_id))
+        Repo.preload(meal, meal_items: MealItem.include_food_and_recipe(MealItem, plan_item.business_id))
 
       items =
         meal.meal_items
@@ -582,37 +546,32 @@ defmodule Easy.MealLogs do
         total_calories: sum_field(items, :calories),
         total_protein_g: sum_field(items, :protein_g),
         total_carbs_g: sum_field(items, :carbs_g),
-        total_fat_g: sum_field(items, :fat_g)
+        total_fat_g: sum_field(items, :fat_g),
+        total_fiber_g: sum_field(items, :fiber_g)
       }
     end
   end
 
   defp snapshot_item(%MealItem{} = item) do
-    {name, macros, cooked_weight_g} = resolve_food_or_recipe(item)
-    weight_g = item.weight_g || 0.0
-    computed = MacroCalc.compute_all(macros, weight_g, cooked_weight_g)
+    macros = MacroCalc.for_meal_item(item)
+    {name, _} = item_name(item)
 
     %{
       food_name: name,
       amount: item.amount,
       unit: item.unit,
-      weight_g: weight_g,
-      calories: computed.calories,
-      protein_g: computed.protein_g,
-      carbs_g: computed.carbs_g,
-      fat_g: computed.fat_g
+      weight_g: item.weight_g || 0.0,
+      calories: macros.calories,
+      protein_g: macros.protein_g,
+      carbs_g: macros.carbs_g,
+      fat_g: macros.fat_g,
+      fiber_g: macros.fiber_g
     }
   end
 
-  defp resolve_food_or_recipe(%MealItem{food: %Food{} = f}) do
-    {f.name, f.macros || %{}, nil}
-  end
-
-  defp resolve_food_or_recipe(%MealItem{recipe: %Recipe{} = r}) do
-    {r.name, r.macros || %{}, r.cooked_weight_g}
-  end
-
-  defp resolve_food_or_recipe(_), do: {nil, %{}, nil}
+  defp item_name(%MealItem{food: %Food{} = f}), do: {f.name, :food}
+  defp item_name(%MealItem{recipe: %Recipe{} = r}), do: {r.name, :recipe}
+  defp item_name(_), do: {nil, :unknown}
 
   defp apply_date_filters(query, date, _from, _to) when not is_nil(date) do
     MealLog.for_date(query, date)
@@ -625,28 +584,28 @@ defmodule Easy.MealLogs do
 
   defp apply_date_filters(query, _date, _from_date, _to_date), do: query
 
-  defp meal_items_with_food_and_recipe(business_id) do
-    food_query = Food.for_business_or_system(Food, business_id)
-    recipe_query = Recipe.for_business(Recipe, business_id)
-
-    MealItem
-    |> MealItem.for_business(business_id)
-    |> MealItem.ordered()
-    |> preload(food: ^food_query, recipe: ^recipe_query)
+  # Resolves the client record for the authenticated user (client self path).
+  defp get_client(%Ctx{} = ctx) do
+    Client
+    |> Client.for_business(ctx.business_id)
+    |> Client.for_user(ctx.user_id)
+    |> Repo.one()
+    |> ok_or_not_found()
   end
 
-  defp get_client(business_id, client_id) do
+  # Resolves a client by explicit id, scoped to the business (coach path / Case-2).
+  defp get_client_by_id(%Ctx{} = ctx, client_id) do
     Client
-    |> Client.for_business(business_id)
+    |> Client.for_business(ctx.business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  defp get_client_for_user(business_id, user_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Client.for_user(user_id)
-    |> Repo.one()
+  # Entry getter scoped to a specific client (used internally after resolving client).
+  defp get_client_food_log_entry_scoped(business_id, client_id, entry_id) do
+    FoodLogEntry
+    |> FoodLogEntry.for_client(business_id, client_id)
+    |> Repo.get(entry_id)
     |> ok_or_not_found()
   end
 
@@ -677,20 +636,14 @@ defmodule Easy.MealLogs do
   defp require_date(nil),
     do: {:error, Easy.Error.unprocessable(%{fields: %{date: ["is invalid"]}})}
 
+  defp to_string_date(%Date{} = d), do: Date.to_iso8601(d)
+  defp to_string_date(s) when is_binary(s), do: s
+  defp to_string_date(nil), do: nil
+
   defp sum_field(items, field) do
     items
     |> Enum.reduce(0.0, &((Map.get(&1, field) || 0.0) + &2))
     |> Float.round(1)
-  end
-
-  defp sum_non_nil(structs, field) do
-    structs
-    |> Enum.map(&Map.get(&1, field))
-    |> Enum.reject(&is_nil/1)
-    |> case do
-      [] -> nil
-      vals -> Enum.sum(vals) |> Float.round(1)
-    end
   end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}

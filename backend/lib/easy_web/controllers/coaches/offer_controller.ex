@@ -2,10 +2,13 @@ defmodule EasyWeb.Coaches.OfferController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Repo
-  alias Easy.Storefront.Offer
+  alias Easy.Offers
   alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, OfferListResponse, OfferRequest, OfferResponse}
+
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true]
+       when action in [:create, :update]
 
   tags ["coach offers"]
 
@@ -63,28 +66,19 @@ defmodule EasyWeb.Coaches.OfferController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{business_id: business_id} = conn.assigns.claims
+    opts = [
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 50)
+    ]
 
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
-
-    base = Offer |> Offer.for_business(business_id)
-    count = Repo.aggregate(base, :count, :id)
-
-    offers =
-      base
-      |> Offer.ordered()
-      |> Easy.Utils.paginate(offset, limit)
-      |> Repo.all()
-
-    render(conn, :index, offers: offers, count: count)
+    with {:ok, res} <- Offers.list_offers(conn.assigns.ctx, opts) do
+      render(conn, :index, offers: res.offers, count: res.count)
+    end
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, offer} <- Offer.create(params, business_id) do
+  def create(conn, _params) do
+    with {:ok, offer} <- Offers.create_offer(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, offer: offer)
@@ -92,42 +86,29 @@ defmodule EasyWeb.Coaches.OfferController do
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def show(conn, _params) do
+    id = conn.path_params["id"]
 
-    case Offer |> Offer.for_business(business_id) |> Repo.get(id) do
-      nil -> {:error, :not_found}
-      offer -> render(conn, :show, offer: offer)
+    with {:ok, offer} <- Offers.get_offer(conn.assigns.ctx, id) do
+      render(conn, :show, offer: offer)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def update(conn, _params) do
+    id = conn.path_params["id"]
 
-    case Offer |> Offer.for_business(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      offer ->
-        with {:ok, updated} <- Offer.update(offer, conn.body_params) do
-          render(conn, :show, offer: updated)
-        end
+    with {:ok, updated} <- Offers.update_offer(conn.assigns.ctx, id, conn.body_params) do
+      render(conn, :show, offer: updated)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def delete(conn, _params) do
+    id = conn.path_params["id"]
 
-    case Offer |> Offer.for_business(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      offer ->
-        with {:ok, _deleted} <- Offer.delete(offer) do
-          send_resp(conn, :no_content, "")
-        end
+    with {:ok, _deleted} <- Offers.delete_offer(conn.assigns.ctx, id) do
+      send_resp(conn, :no_content, "")
     end
   end
 end

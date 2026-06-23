@@ -76,100 +76,108 @@ defmodule EasyWeb.Router do
     delete "/clients/:id", ClientController, :delete
     get "/clients", ClientController, :index
 
+    get "/clients/:client_id/profile", ClientProfileController, :show
+    patch "/clients/:client_id/profile", ClientProfileController, :update
+
+    get "/profile-fields", ProfileFieldController, :index
+    post "/profile-fields", ProfileFieldController, :create
+    patch "/profile-fields/:id", ProfileFieldController, :update
+    delete "/profile-fields/:id", ProfileFieldController, :delete
+
+    get "/form-templates", FormTemplateController, :index
+    post "/form-templates", FormTemplateController, :create
+    get "/form-templates/:id", FormTemplateController, :show
+    patch "/form-templates/:id", FormTemplateController, :update
+    delete "/form-templates/:id", FormTemplateController, :delete
+    post "/form-templates/:id/assign", FormTemplateController, :assign
+    get "/clients/:client_id/form-assignments", FormAssignmentController, :index
+    patch "/form-assignments/:id", FormAssignmentController, :update
+
     # Client-scoped plan lists
-    get "/clients/:client_id/training_plans", ClientPlanController, :training_plans
-    get "/clients/:client_id/nutrition_plans", ClientPlanController, :nutrition_plans
+    get "/clients/:client_id/training-plans", ClientPlanController, :training_plans
+    get "/clients/:client_id/nutrition-plans", ClientPlanController, :nutrition_plans
     get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
 
-    post "/foods", FoodController, :create
-    get "/foods/:id", FoodController, :show
-    patch "/foods/:id", FoodController, :update
-    delete "/foods/:id", FoodController, :delete
-    get "/foods", FoodController, :index
+    get "/nutrition-foods", FoodController, :index
+    post "/nutrition-foods", FoodController, :create
+    get "/nutrition-foods/:id", FoodController, :show
+    patch "/nutrition-foods/:id", FoodController, :update
+    delete "/nutrition-foods/:id", FoodController, :delete
+    get "/nutrition-foods/:id/impact", FoodController, :impact
+    post "/nutrition-foods/:id/copy", FoodController, :copy
 
-    post "/recipes", RecipeController, :create
-    get "/recipes/:id", RecipeController, :show
-    patch "/recipes/:id", RecipeController, :update
-    delete "/recipes/:id", RecipeController, :delete
-    get "/recipes", RecipeController, :index
+    get "/nutrition-recipes", RecipeController, :index
+    post "/nutrition-recipes", RecipeController, :create
+    get "/nutrition-recipes/:id", RecipeController, :show
+    patch "/nutrition-recipes/:id", RecipeController, :update
+    delete "/nutrition-recipes/:id", RecipeController, :delete
+    get "/nutrition-recipes/:id/impact", RecipeController, :impact
+    post "/nutrition-recipes/:id/copy", RecipeController, :copy
 
-    post "/nutrition_plans", NutritionPlanController, :create
-    get "/nutrition_plans/:id", NutritionPlanController, :show
-    patch "/nutrition_plans/:id", NutritionPlanController, :update
-    delete "/nutrition_plans/:id", NutritionPlanController, :delete
-    get "/nutrition_plans", NutritionPlanController, :index
-    post "/nutrition_plans/:id/assign", NutritionPlanController, :assign
-    post "/nutrition_plans/:id/duplicate", NutritionPlanController, :duplicate
-    post "/nutrition_plans/:id/copy-day", NutritionPlanController, :copy_day
-    get "/nutrition_plans/:id/shopping-list", NutritionPlanController, :shopping_list
-    get "/nutrition_plans/:id/macros", NutritionPlanController, :macros
+    get "/nutrition-plans", NutritionPlanController, :index
+    post "/nutrition-plans", NutritionPlanController, :create
+    get "/nutrition-plans/:id", NutritionPlanController, :show
+    patch "/nutrition-plans/:id", NutritionPlanController, :update
+    delete "/nutrition-plans/:id", NutritionPlanController, :delete
+    post "/nutrition-plans/:id/assign", NutritionPlanController, :assign
+    post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
+    get "/nutrition-plans/:plan_id/meals", MealController, :index
+    post "/nutrition-plans/:plan_id/meals", MealController, :create
+    get "/nutrition-plans/:plan_id/schedule", ScheduleController, :show
+    put "/nutrition-plans/:plan_id/schedule/:day", ScheduleController, :update
+    get "/nutrition-meals/:id", MealController, :show
+    patch "/nutrition-meals/:id", MealController, :update
+    delete "/nutrition-meals/:id", MealController, :delete
 
-    post "/nutrition_plans/:plan_id/meals", MealController, :create
-    get "/nutrition_plans/:plan_id/meals", MealController, :index
-    get "/meals/:id", MealController, :show
-    patch "/meals/:id", MealController, :update
-    delete "/meals/:id", MealController, :delete
+    post "/nutrition-meals/:meal_id/items", MealItemController, :create
+    patch "/nutrition-meal-items/:id", MealItemController, :update
+    delete "/nutrition-meal-items/:id", MealItemController, :delete
 
-    post "/nutrition_plans/:plan_id/plan_items", PlanItemController, :create
-    get "/nutrition_plans/:plan_id/plan_items", PlanItemController, :index
-    patch "/plan_items/:id", PlanItemController, :update
-    delete "/plan_items/:id", PlanItemController, :delete
+    get "/training-exercises", ExerciseController, :index
+    post "/training-exercises", ExerciseController, :create
+    get "/training-exercises/:id", ExerciseController, :show
+    patch "/training-exercises/:id", ExerciseController, :update
+    delete "/training-exercises/:id", ExerciseController, :delete
+    post "/training-exercises/:id/copy", ExerciseController, :copy
 
-    post "/meals/:meal_id/items", MealItemController, :create
-    get "/meals/:meal_id/items", MealItemController, :index
-    patch "/meal_items/:id", MealItemController, :update
-    delete "/meal_items/:id", MealItemController, :delete
+    get "/training-muscles", MuscleController, :index
+    get "/training-equipment", EquipmentController, :index
 
-    get "/exercises", ExerciseController, :index
-    post "/exercises", ExerciseController, :create
-    get "/exercises/:id", ExerciseController, :show
-    patch "/exercises/:id", ExerciseController, :update
-    delete "/exercises/:id", ExerciseController, :delete
-    post "/exercises/:id/duplicate", ExerciseController, :duplicate
+    get "/training-plans", TrainingPlanController, :index
+    post "/training-plans", TrainingPlanController, :create
+    get "/training-plans/:id", TrainingPlanController, :show
+    patch "/training-plans/:id", TrainingPlanController, :update
+    delete "/training-plans/:id", TrainingPlanController, :delete
+    post "/training-plans/:id/assign", TrainingPlanController, :assign
+    post "/training-plans/:id/duplicate", TrainingPlanController, :duplicate
 
-    get "/muscles", MuscleController, :index
-    get "/equipment", EquipmentController, :index
+    get "/training-plans/:plan_id/training-workouts", WorkoutController, :index
+    post "/training-plans/:plan_id/training-workouts", WorkoutController, :create
+    get "/training-workouts/:id", WorkoutController, :show
+    patch "/training-workouts/:id", WorkoutController, :update
+    delete "/training-workouts/:id", WorkoutController, :delete
 
-    get "/training_plans", TrainingPlanController, :index
-    post "/training_plans", TrainingPlanController, :create
-    get "/training_plans/:id", TrainingPlanController, :show
-    patch "/training_plans/:id", TrainingPlanController, :update
-    delete "/training_plans/:id", TrainingPlanController, :delete
-    post "/training_plans/:id/assign", TrainingPlanController, :assign
-    post "/training_plans/:id/duplicate", TrainingPlanController, :duplicate
+    get "/training-plans/:plan_id/schedule", TrainingScheduleController, :show
+    put "/training-plans/:plan_id/schedule/:day", TrainingScheduleController, :update
 
-    get "/training_plans/:plan_id/workouts", WorkoutController, :index
-    post "/training_plans/:plan_id/workouts", WorkoutController, :create
-    get "/workouts/:id", WorkoutController, :show
-    patch "/workouts/:id", WorkoutController, :update
-    delete "/workouts/:id", WorkoutController, :delete
-    post "/workouts/:id/duplicate", WorkoutController, :duplicate
+    post "/training-workouts/:workout_id/exercises", WorkoutElementController, :create
+    patch "/training-workout-exercises/:id", WorkoutElementController, :update
+    delete "/training-workout-exercises/:id", WorkoutElementController, :delete
 
-    post "/training_plans/:plan_id/training_plan_items", TrainingPlanItemController, :create
-    get "/training_plans/:plan_id/training_plan_items", TrainingPlanItemController, :index
-    patch "/training_plan_items/:id", TrainingPlanItemController, :update
-    delete "/training_plan_items/:id", TrainingPlanItemController, :delete
+    # Client-scoped training sessions (read-only)
+    get "/clients/:client_id/training-sessions", WorkoutSessionController, :index
+    get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
 
-    post "/workout_elements", WorkoutElementController, :create
-    get "/workout_elements/:id", WorkoutElementController, :show
-    patch "/workout_elements/:id", WorkoutElementController, :update
-    delete "/workout_elements/:id", WorkoutElementController, :delete
+    # Threads
+    get "/threads", ThreadController, :index
+    get "/threads/:id", ThreadController, :show
+    patch "/threads/:id", ThreadController, :update
+    post "/threads/:thread_id/messages", ThreadMessageController, :create
+    get "/clients/:client_id/threads", ThreadController, :client_threads
+    post "/clients/:client_id/threads", ThreadController, :create
 
-    get "/workout_sessions", WorkoutSessionController, :index
-    post "/workout_sessions", WorkoutSessionController, :create
-    get "/workout_sessions/:id", WorkoutSessionController, :show
-    post "/workout_sessions/:id/complete", WorkoutSessionController, :complete
-    post "/workout_sessions/:id/discard", WorkoutSessionController, :discard
-    delete "/workout_sessions/:id", WorkoutSessionController, :delete
-
-    post "/performed_sets", PerformedSetController, :create
-    patch "/performed_sets/:id", PerformedSetController, :update
-    delete "/performed_sets/:id", PerformedSetController, :delete
-
-    # Meal logs (view client nutrition data)
-    get "/meal_logs", MealLogController, :index
-    get "/meal_logs/summary", MealLogController, :summary
-    delete "/food_log_entries/:id", FoodLogEntryController, :delete
+    # Meal logs (view client nutrition data — read-only)
+    get "/clients/:client_id/nutrition-meal-logs", MealLogController, :index
 
     # Storefront
     get "/storefront/profile", StoreProfileController, :show
@@ -194,57 +202,64 @@ defmodule EasyWeb.Router do
 
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
+    get "/profile", ClientProfileController, :show
+    patch "/profile", ClientProfileController, :update
+
+    get "/form-assignments", FormAssignmentController, :index
+    get "/form-assignments/:id", FormAssignmentController, :show
+    post "/form-assignments/:id/submit", FormAssignmentController, :submit
 
     # Training plans (read-only)
-    get "/training_plans", TrainingPlanController, :index
-    get "/training_plans/:id", TrainingPlanController, :show
+    get "/training-plans", TrainingPlanController, :index
+    get "/training-plans/today", TrainingPlanController, :today
+    get "/training-plans/:id", TrainingPlanController, :show
 
     # Exercises (read-only)
-    get "/exercises", ExerciseController, :index
-    get "/exercises/:id", ExerciseController, :show
+    get "/training-exercises", ExerciseController, :index
+    get "/training-exercises/:id", ExerciseController, :show
 
-    # Workout sessions
-    get "/workout_sessions/active", WorkoutSessionController, :active
-    get "/workout_sessions", WorkoutSessionController, :index
-    post "/workout_sessions", WorkoutSessionController, :create
-    get "/workout_sessions/:id", WorkoutSessionController, :show
-    patch "/workout_sessions/:id", WorkoutSessionController, :update
-    post "/workout_sessions/:id/complete", WorkoutSessionController, :complete
-    post "/workout_sessions/:id/discard", WorkoutSessionController, :discard
-
-    # Performed sets
-    post "/performed_sets", PerformedSetController, :create
-    patch "/performed_sets/:id", PerformedSetController, :update
-    delete "/performed_sets/:id", PerformedSetController, :delete
+    # Training sessions
+    get "/training-sessions", WorkoutSessionController, :index
+    post "/training-sessions", WorkoutSessionController, :create
+    get "/training-sessions/:id", WorkoutSessionController, :show
+    patch "/training-sessions/:id", WorkoutSessionController, :update
+    post "/training-sessions/:session_id/performed-sets", PerformedSetController, :create
+    patch "/training-performed-sets/:id", PerformedSetController, :update
+    delete "/training-performed-sets/:id", PerformedSetController, :delete
 
     # Nutrition plans (read-only)
-    get "/nutrition_plans", NutritionPlanController, :index
-    get "/nutrition_plans/today", NutritionPlanController, :today
-    get "/nutrition_plans/:id", NutritionPlanController, :show
+    get "/nutrition-plans", NutritionPlanController, :index
+    get "/nutrition-plans/today", NutritionPlanController, :today
+    get "/nutrition-plans/:id", NutritionPlanController, :show
 
     # Foods (read-only)
-    get "/foods", FoodController, :index
-    get "/foods/:id", FoodController, :show
+    get "/nutrition-foods", FoodController, :index
+    get "/nutrition-foods/:id", FoodController, :show
 
     # Recipes (read-only)
-    get "/recipes", RecipeController, :index
-    get "/recipes/:id", RecipeController, :show
+    get "/nutrition-recipes", RecipeController, :index
+    get "/nutrition-recipes/:id", RecipeController, :show
 
     # Meal logs
-    get "/meal_logs", MealLogController, :index
-    get "/meal_logs/:id", MealLogController, :show
+    get "/nutrition-meal-logs", MealLogController, :index
 
     # Food log entries
-    post "/food_log_entries", FoodLogEntryController, :create
-    post "/food_log_entries/log_meal", FoodLogEntryController, :log_meal
-    post "/food_log_entries/log_day", FoodLogEntryController, :log_day
-    patch "/food_log_entries/:id", FoodLogEntryController, :update
-    delete "/food_log_entries/:id", FoodLogEntryController, :delete
+    post "/nutrition-food-log-entries", FoodLogEntryController, :create
+    post "/nutrition-food-log-entries/log-meal", FoodLogEntryController, :log_meal
+    post "/nutrition-food-log-entries/log-day", FoodLogEntryController, :log_day
+    patch "/nutrition-food-log-entries/:id", FoodLogEntryController, :update
+    delete "/nutrition-food-log-entries/:id", FoodLogEntryController, :delete
 
     # Weight entries
     get "/weight_entries", WeightEntryController, :index
     post "/weight_entries", WeightEntryController, :create
     delete "/weight_entries/:id", WeightEntryController, :delete
+
+    # Threads
+    get "/threads", ThreadController, :index
+    post "/threads", ThreadController, :create
+    get "/threads/:id", ThreadController, :show
+    post "/threads/:thread_id/messages", ThreadMessageController, :create
   end
 
   scope "/v1/public", EasyWeb.Public do

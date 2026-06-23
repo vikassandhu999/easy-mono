@@ -4,7 +4,17 @@ defmodule EasyWeb.Coaches.FoodController do
 
   alias Easy.Foods
   alias OpenApiSpex.Operation
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, FoodListResponse, FoodRequest, FoodResponse, FoodUpdateRequest}
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    FoodImpactResponse,
+    FoodListResponse,
+    FoodRequest,
+    FoodResponse,
+    FoodUpdateRequest
+  }
+
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
 
   tags ["coach foods"]
 
@@ -79,12 +89,29 @@ defmodule EasyWeb.Coaches.FoodController do
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
-  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
-    claims = conn.assigns.claims
+  operation :impact,
+    summary: "Show plans/templates affected by a food",
+    operation_id: "getNutritionFoodImpact",
+    security: [%{"bearerAuth" => []}],
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [
+      ok: {"Impact", "application/json", FoodImpactResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
-    with {:ok, food} <-
-           Foods.create_food_for_coach_user(claims.business_id, claims.user_id, params) do
+  operation :copy,
+    summary: "Copy a food into the coach's business",
+    operation_id: "copyNutritionFood",
+    security: [%{"bearerAuth" => []}],
+    parameters: [id: [in: :path, type: :string, required: true]],
+    responses: [
+      created: {"Food", "application/json", FoodResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def create(conn, _params) do
+    with {:ok, food} <- Foods.create_food(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, food: food)
@@ -93,9 +120,7 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => food_id}) do
-    claims = conn.assigns.claims
-
-    with {:ok, food} <- Foods.get_visible_food(claims.business_id, food_id) do
+    with {:ok, food} <- Foods.get_visible_food(conn.assigns.ctx, food_id) do
       conn
       |> put_status(:ok)
       |> render(:show, food: food)
@@ -103,10 +128,10 @@ defmodule EasyWeb.Coaches.FoodController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => food_id}) do
-    claims = conn.assigns.claims
+  def update(conn, _params) do
+    food_id = conn.path_params["id"]
 
-    with {:ok, updated_food} <- Foods.update_food(claims.business_id, food_id, conn.body_params) do
+    with {:ok, updated_food} <- Foods.update_food(conn.assigns.ctx, food_id, conn.body_params) do
       conn
       |> put_status(:ok)
       |> render(:show, food: updated_food)
@@ -115,26 +140,38 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => food_id}) do
-    claims = conn.assigns.claims
-
-    with {:ok, _deleted} <- Foods.delete_food(claims.business_id, food_id) do
+    with {:ok, _deleted} <- Foods.delete_food(conn.assigns.ctx, food_id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    claims = conn.assigns.claims
-
-    search_term = Map.get(params, "search", "")
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 10)
+    opts = [
+      search: Map.get(params, "search", ""),
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 20)
+    ]
 
     with {:ok, %{count: count, foods: foods}} <-
-           Foods.list_visible_foods(claims.business_id, search_term, offset, limit) do
+           Foods.list_visible_foods(conn.assigns.ctx, opts) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, foods: foods)
+    end
+  end
+
+  @spec impact(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def impact(conn, %{"id" => id}) do
+    with {:ok, impact} <- Foods.get_food_impact(conn.assigns.ctx, id) do
+      render(conn, :impact, impact)
+    end
+  end
+
+  @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def copy(conn, %{"id" => id}) do
+    with {:ok, food} <- Foods.copy_food(conn.assigns.ctx, id) do
+      conn |> put_status(:created) |> render(:show, food: food)
     end
   end
 end

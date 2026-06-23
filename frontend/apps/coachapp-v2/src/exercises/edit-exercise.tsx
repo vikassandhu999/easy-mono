@@ -31,8 +31,8 @@ function EditExerciseForm({
 }) {
   const goBack = useGoBack(backPath);
   const [updateExercise, {isLoading: isUpdating}] = useUpdateExerciseMutation();
-  const {data: musclesData} = useListMusclesQuery();
-  const {data: equipmentData} = useListEquipmentQuery();
+  const {data: musclesData} = useListMusclesQuery({});
+  const {data: equipmentData} = useListEquipmentQuery({});
 
   const form = useExerciseForm({
     values: exerciseToFormValues(exercise),

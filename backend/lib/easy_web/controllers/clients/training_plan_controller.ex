@@ -14,6 +14,20 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   tags ["client training plans"]
 
+  operation :today,
+    summary: "Get today's training plan day",
+    description: "Returns the active training plan and today's scheduled workout for the authenticated client.",
+    operation_id: "getClientTrainingPlanToday",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:date, :query, :string, "Date (YYYY-MM-DD), defaults to today", required: false)
+    ],
+    responses: [
+      ok: {"Today's training plan day", "application/json", ClientTrainingPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"No active plan for today", "application/json", ErrorResponse}
+    ]
+
   operation :index,
     summary: "List client training plans",
     description: "Lists training plans assigned to the authenticated client in the current business.",
@@ -50,25 +64,36 @@ defmodule EasyWeb.Clients.TrainingPlanController do
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
+  @spec today(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def today(conn, params) do
+    date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
+
+    with {:ok, result} <- Plans.get_client_active_plan_day(conn.assigns.ctx, date) do
+      render(conn, :today, result)
+    end
+  end
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 50)
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_client_plans_for_user(business_id, user_id, status, offset, limit) do
+           Plans.list_client_plans(conn.assigns.ctx,
+             status: status,
+             offset: offset,
+             limit: limit
+           ) do
       render(conn, :index, plans: plans, count: count)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+  def show(conn, _params) do
+    id = conn.path_params["id"]
 
-    with {:ok, plan} <- Plans.get_client_plan_full_for_user(business_id, user_id, id) do
+    with {:ok, plan} <- Plans.get_client_plan_full(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
     end
   end

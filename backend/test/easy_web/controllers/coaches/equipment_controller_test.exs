@@ -23,7 +23,7 @@ defmodule EasyWeb.Coaches.EquipmentControllerTest do
     %{conn: conn}
   end
 
-  describe "GET /v1/coach/equipment" do
+  describe "GET /v1/coach/training-equipment" do
     test "lists matching equipment alphabetically with the public response shape", %{conn: conn} do
       search = "equipment-list-#{Ecto.UUID.generate()}"
 
@@ -32,7 +32,7 @@ defmodule EasyWeb.Coaches.EquipmentControllerTest do
       insert(:equipment, name: "Mmm Cable #{search}", description: nil)
       insert(:equipment, name: "Outside Equipment #{Ecto.UUID.generate()}", description: "Not returned")
 
-      conn = get(conn, "/v1/coach/equipment", %{"search" => search})
+      conn = get(conn, "/v1/coach/training-equipment", %{"search" => search})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert Enum.map(data, & &1["name"]) == [
@@ -57,7 +57,7 @@ defmodule EasyWeb.Coaches.EquipmentControllerTest do
       insert(:equipment, name: "Cable Tower #{search}", description: "Returned")
       insert(:equipment, name: "Incline Bench #{Ecto.UUID.generate()}", description: "Ignored")
 
-      conn = get(conn, "/v1/coach/equipment", %{"search" => "  #{String.upcase(search)}  "})
+      conn = get(conn, "/v1/coach/training-equipment", %{"search" => "  #{String.upcase(search)}  "})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert [%{"name" => name, "description" => description}] = data
@@ -66,7 +66,7 @@ defmodule EasyWeb.Coaches.EquipmentControllerTest do
     end
 
     test "returns 403 without auth token" do
-      conn = build_conn() |> get("/v1/coach/equipment")
+      conn = build_conn() |> get("/v1/coach/training-equipment")
       assert json_response(conn, 403)
     end
   end

@@ -1,40 +1,38 @@
-import {Button, useOverlayState} from '@heroui/react';
+import {Button} from '@heroui/react';
 import {UserPlus} from 'lucide-react';
-import {useBlocker} from 'react-router-dom';
+import {useState} from 'react';
 
-import {TrainingPlan} from '@/api/trainingPlans';
-import {ClientSingleSelectPicker} from '@/clients/client-pickers';
+import ClientPicker from '@/@components/client-picker';
+import type {TrainingPlan} from '@/api/trainingPlans';
 
 export type Props = {
   plan: TrainingPlan;
 };
 
 export function PlanAddToClient({plan}: Props) {
-  const pickerState = useOverlayState();
-
-  useBlocker(() => {
-    return pickerState.isOpen;
-  });
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   return (
-    <>
+    <div className="relative">
       <Button
         aria-label={`Add ${plan.name} to client`}
-        isDisabled={pickerState.isOpen}
-        onPress={() => pickerState.open()}
+        onPress={() => setIsPickerOpen((open) => !open)}
         size={'sm'}
         variant="secondary"
       >
         <UserPlus size={18} />
         Add to client
       </Button>
-      <ClientSingleSelectPicker
-        heading="Choose client"
-        onSelect={() => {
-          pickerState.close();
-        }}
-        state={pickerState}
-      />
-    </>
+      {isPickerOpen ? (
+        <div className="absolute right-0 top-full z-30 mt-2 w-72 rounded-lg border border-divider bg-content1 p-3 shadow-lg">
+          <ClientPicker
+            autoFocus
+            excludeIds={plan.client_id ? [plan.client_id] : undefined}
+            onSelect={() => setIsPickerOpen(false)}
+            placeholder="Search clients"
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }

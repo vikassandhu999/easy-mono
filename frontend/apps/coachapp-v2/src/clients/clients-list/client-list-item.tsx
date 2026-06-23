@@ -5,19 +5,11 @@ import {MessageCircle} from 'lucide-react';
 
 import type {Client, ClientStatus} from '@/api/clients';
 
-const getStatusConfig = (status: ClientStatus) => {
-  switch (status) {
-    case 'active':
-      return {color: 'success' as const, label: 'Active'};
-    case 'archived':
-      return {color: 'default' as const, label: 'Archived'};
-    case 'inactive':
-      return {color: 'default' as const, label: 'Inactive'};
-    case 'pending':
-      return {color: 'default' as const, label: 'Pending'};
-    default:
-      return {color: 'default' as const, label: ''};
-  }
+const STATUS_CONFIG: Record<ClientStatus, {color: 'default' | 'success'; label: string}> = {
+  active: {color: 'success', label: 'Active'},
+  archived: {color: 'default', label: 'Archived'},
+  inactive: {color: 'default', label: 'Inactive'},
+  pending: {color: 'default', label: 'Pending'},
 };
 
 export default function ClientListItem({
@@ -42,7 +34,7 @@ export default function ClientListItem({
     subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
   }
 
-  const status = getStatusConfig(client.status);
+  const status = STATUS_CONFIG[client.status];
   const whatsapp = client.phone?.replace(/\D/g, '');
 
   return (

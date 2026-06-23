@@ -23,7 +23,7 @@ defmodule EasyWeb.Coaches.MuscleControllerTest do
     %{conn: conn}
   end
 
-  describe "GET /v1/coach/muscles" do
+  describe "GET /v1/coach/training-muscles" do
     test "lists matching muscles alphabetically with the public response shape", %{conn: conn} do
       search = "muscle-list-#{Ecto.UUID.generate()}"
 
@@ -32,7 +32,7 @@ defmodule EasyWeb.Coaches.MuscleControllerTest do
       insert(:muscle, name: "Mmm Delts #{search}", description: nil)
       insert(:muscle, name: "Outside Muscle #{Ecto.UUID.generate()}", description: "Not returned")
 
-      conn = get(conn, "/v1/coach/muscles", %{"search" => search})
+      conn = get(conn, "/v1/coach/training-muscles", %{"search" => search})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert Enum.map(data, & &1["name"]) == [
@@ -57,7 +57,7 @@ defmodule EasyWeb.Coaches.MuscleControllerTest do
       insert(:muscle, name: "Anterior Deltoid #{search}", description: "Returned")
       insert(:muscle, name: "Posterior Chain #{Ecto.UUID.generate()}", description: "Ignored")
 
-      conn = get(conn, "/v1/coach/muscles", %{"search" => "  #{String.upcase(search)}  "})
+      conn = get(conn, "/v1/coach/training-muscles", %{"search" => "  #{String.upcase(search)}  "})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert [%{"name" => name, "description" => description}] = data
@@ -66,7 +66,7 @@ defmodule EasyWeb.Coaches.MuscleControllerTest do
     end
 
     test "returns 403 without auth token" do
-      conn = build_conn() |> get("/v1/coach/muscles")
+      conn = build_conn() |> get("/v1/coach/training-muscles")
       assert json_response(conn, 403)
     end
   end

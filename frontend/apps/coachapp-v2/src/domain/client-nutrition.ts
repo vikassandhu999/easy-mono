@@ -1,4 +1,4 @@
-import {getCurrentWeekRange, getDateForWeekdayIndex, isFutureDate, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
+import {isFutureDate, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
 
 import type {CoachMealLog, DailyNutritionSummary, FoodLogEntry, PlannedSnapshotItem} from '@/api/mealLogs';
 import type {Macros} from '@/api/shared';
@@ -82,7 +82,10 @@ export function buildRecentNutritionDaySubtitle(summary: DailyNutritionSummary):
   return parts.join(' · ');
 }
 
-export function buildMealLogComparison(mealLog: CoachMealLog): {comparison: ComparisonItem[]; unplanned: FoodLogEntry[]} {
+export function buildMealLogComparison(mealLog: CoachMealLog): {
+  comparison: ComparisonItem[];
+  unplanned: FoodLogEntry[];
+} {
   const entries = mealLog.food_log_entries;
   const planned = mealLog.planned_snapshot?.items ?? [];
 

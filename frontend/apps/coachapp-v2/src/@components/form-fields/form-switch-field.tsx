@@ -25,15 +25,13 @@ export function FormSwitchField<T extends FieldValues>({
           onBlur={field.onBlur}
           onChange={field.onChange}
         >
-          <Switch.Control>
-            <Switch.Thumb />
-          </Switch.Control>
           <Switch.Content>
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground">{label}</span>
-              {description ? <Description>{description}</Description> : null}
-            </div>
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+            {label}
           </Switch.Content>
+          {description ? <Description>{description}</Description> : null}
         </Switch>
       )}
     />

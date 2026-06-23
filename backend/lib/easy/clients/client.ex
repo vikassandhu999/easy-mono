@@ -34,7 +34,7 @@ defmodule Easy.Clients.Client do
     belongs_to :business, Orgs.Business
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @invite_cast_fields [:email, :first_name, :last_name, :phone, :notes]
@@ -45,7 +45,8 @@ defmodule Easy.Clients.Client do
     :email,
     :notes,
     :goal_weight_value,
-    :goal_weight_unit
+    :goal_weight_unit,
+    :status
   ]
   @self_update_cast_fields [:first_name, :last_name, :phone]
   @inquiry_cast_fields [:email, :first_name, :last_name, :phone]
@@ -82,7 +83,7 @@ defmodule Easy.Clients.Client do
     |> normalize_goal_weight(attrs)
     |> validate_goal_weight_paired()
     |> validate_number(:goal_weight_value, greater_than: 0, less_than: 1000)
-    |> validate_status_transition(client.status, attrs)
+    |> validate_status_transition(client.status)
     |> unique_constraint(:email, name: :clients_business_id_email_index)
   end
 
@@ -128,49 +129,32 @@ defmodule Easy.Clients.Client do
     end
   end
 
-  defp validate_status_transition(changeset, _current, attrs)
-       when not is_map_key(attrs, "status") and not is_map_key(attrs, :status),
-       do: changeset
-
-  defp validate_status_transition(changeset, current, attrs) do
-    new_status_raw = attrs["status"] || attrs[:status]
-
-    case parse_status(new_status_raw) do
-      {:ok, ^current} ->
+  defp validate_status_transition(changeset, current) do
+    case get_change(changeset, :status) do
+      nil ->
         changeset
 
-      {:ok, :pending} ->
+      ^current ->
+        changeset
+
+      :pending ->
         add_error(changeset, :status, "cannot return to pending")
 
-      {:ok, _} when current == :pending ->
+      _ when current == :pending ->
         add_error(
           changeset,
           :status,
           "pending clients can only become active by accepting the invitation"
         )
 
-      {:ok, status} ->
-        if status in Map.get(@allowed_status_transitions, current, []) do
-          put_change(changeset, :status, status)
+      new_status ->
+        if new_status in Map.get(@allowed_status_transitions, current, []) do
+          changeset
         else
           add_error(changeset, :status, "invalid status transition")
         end
-
-      :error ->
-        add_error(changeset, :status, "is invalid")
     end
   end
-
-  defp parse_status(status) when status in @statuses, do: {:ok, status}
-
-  defp parse_status(status) when is_binary(status) do
-    case Enum.find(@statuses, fn s -> Atom.to_string(s) == status end) do
-      nil -> :error
-      s -> {:ok, s}
-    end
-  end
-
-  defp parse_status(_), do: :error
 
   @spec self_update_changeset(t(), map()) :: Ecto.Changeset.t()
   def self_update_changeset(client, attrs) do
@@ -251,12 +235,16 @@ defmodule Easy.Clients.Client do
     )
   end
 
-  @spec with_status(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
-  def with_status(query \\ __MODULE__, status)
-  def with_status(query, nil), do: query
-  def with_status(query, ""), do: query
+  @spec for_status(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
+  def for_status(query \\ __MODULE__, status)
+  def for_status(query, nil), do: query
+  def for_status(query, ""), do: query
 
-  def with_status(query, status) when is_binary(status) do
+  def for_status(query, status) when is_binary(status) do
+    from(c in query, where: c.status == ^status)
+  end
+
+  def for_status(query, status) when is_atom(status) do
     from(c in query, where: c.status == ^status)
   end
 
@@ -265,8 +253,8 @@ defmodule Easy.Clients.Client do
     from(c in query, order_by: [desc: c.inserted_at, desc: c.id])
   end
 
-  @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_preloads(query \\ __MODULE__) do
+  @spec include_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_preloads(query \\ __MODULE__, _business_id) do
     from(c in query, preload: [:user, :business, :creator])
   end
 

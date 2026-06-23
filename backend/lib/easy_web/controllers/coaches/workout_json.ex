@@ -1,5 +1,5 @@
 defmodule EasyWeb.Coaches.WorkoutJSON do
-  alias Easy.Training.{Exercise, PlannedSet, Workout, WorkoutElement}
+  alias Easy.Training.{TrainingExercise, PlannedSet, TrainingWorkout, TrainingWorkoutExercise}
 
   @spec show(map()) :: map()
   def show(%{workout: workout}) do
@@ -11,7 +11,7 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
     %{data: Enum.map(workouts, &data/1), count: count}
   end
 
-  defp data(%Workout{} = workout) do
+  defp data(%TrainingWorkout{} = workout) do
     %{
       id: workout.id,
       name: workout.name,
@@ -26,14 +26,14 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
   defp elements_data(elements) when is_list(elements), do: Enum.map(elements, &element_data/1)
   defp elements_data(_), do: []
 
-  defp element_data(%WorkoutElement{} = element) do
+  defp element_data(%TrainingWorkoutExercise{} = element) do
     %{
       id: element.id,
       position: element.position,
       superset_group_id: element.superset_group_id,
       notes: element.notes,
       exercise_id: element.exercise_id,
-      workout_id: element.workout_id,
+      training_workout_id: element.training_workout_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.planned_sets),
       inserted_at: element.inserted_at,
@@ -41,7 +41,7 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
     }
   end
 
-  defp exercise_data(%Exercise{} = exercise) do
+  defp exercise_data(%TrainingExercise{} = exercise) do
     %{id: exercise.id, name: exercise.name, mechanics: exercise.mechanics, force: exercise.force}
   end
 
@@ -52,15 +52,15 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
 
   defp planned_set_data(%PlannedSet{} = set) do
     %{
-      target_reps: set.target_reps,
+      set_type: set.set_type,
+      reps: set.reps,
       load_value: set.load_value,
       load_unit: set.load_unit,
-      intensity_target: set.intensity_target,
-      tempo: set.tempo,
-      rest_seconds: set.rest_seconds,
       duration_seconds: set.duration_seconds,
       distance_value: set.distance_value,
       distance_unit: set.distance_unit,
+      rpe: set.rpe,
+      rest_seconds: set.rest_seconds,
       notes: set.notes
     }
   end

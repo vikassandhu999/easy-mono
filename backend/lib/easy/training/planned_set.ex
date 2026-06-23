@@ -1,172 +1,63 @@
 defmodule Easy.Training.PlannedSet do
   use Ecto.Schema
-
   import Ecto.Changeset
 
   @type t() :: %__MODULE__{}
 
+  @set_types [:working, :warmup, :dropset]
+  @load_units [:kg, :lbs, :bodyweight, :none]
+  @distance_units [:meters, :km, :miles, :none]
+
   @primary_key false
   embedded_schema do
-    field :target_reps, :string
+    field :set_type, Ecto.Enum, values: @set_types, default: :working
+    field :reps, :string
     field :load_value, :decimal
-
-    field :load_unit, Ecto.Enum,
-      values: [:kg, :lbs, :bodyweight, :percent_1rm, :rpe, :none],
-      default: :none
-
-    field :intensity_target, :string
-    field :tempo, :string
-    field :rest_seconds, :integer
+    field :load_unit, Ecto.Enum, values: @load_units
     field :duration_seconds, :integer
     field :distance_value, :decimal
-    field :distance_unit, Ecto.Enum, values: [:meters, :km, :miles, :yards, :none], default: :none
-
+    field :distance_unit, Ecto.Enum, values: @distance_units
+    field :rpe, :decimal
+    field :rest_seconds, :integer
     field :notes, :string
   end
 
-  @cast_fields [
-    :target_reps,
-    :load_value,
-    :load_unit,
-    :intensity_target,
-    :tempo,
-    :rest_seconds,
-    :duration_seconds,
-    :distance_value,
-    :distance_unit,
-    :notes
-  ]
-
-  @spec to_attrs(t()) :: map()
-  def to_attrs(%__MODULE__{} = set) do
-    Map.take(set, [
-      :target_reps,
-      :load_value,
-      :load_unit,
-      :intensity_target,
-      :tempo,
-      :rest_seconds,
-      :duration_seconds,
-      :distance_value,
-      :distance_unit,
-      :notes
-    ])
-  end
-
-  @spec to_snapshot(t()) :: map()
-  def to_snapshot(%__MODULE__{} = set) do
-    %{
-      "target_reps" => set.target_reps,
-      "load_value" => set.load_value && Decimal.to_string(set.load_value),
-      "load_unit" => set.load_unit && Atom.to_string(set.load_unit),
-      "rest_seconds" => set.rest_seconds,
-      "duration_seconds" => set.duration_seconds,
-      "distance_value" => set.distance_value && Decimal.to_string(set.distance_value),
-      "distance_unit" => set.distance_unit && Atom.to_string(set.distance_unit),
-      "intensity_target" => set.intensity_target,
-      "tempo" => set.tempo,
-      "notes" => set.notes
-    }
-  end
+  @fields [:set_type, :reps, :load_value, :load_unit, :duration_seconds, :distance_value, :distance_unit, :rpe, :rest_seconds, :notes]
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(planned_set, attrs) do
     planned_set
-    |> cast(attrs, @cast_fields)
-    |> validate_length(:notes, max: 5000)
-    |> validate_number(:rest_seconds, greater_than_or_equal_to: 0)
-    |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)
-    |> validate_number(:load_value, greater_than: 0)
-    |> validate_has_target()
-    |> validate_target_reps_format()
-    |> validate_load_unit()
-    |> validate_distance_unit()
+    |> cast(attrs, @fields)
+    |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
   end
 
-  defp validate_has_target(changeset) do
-    reps = get_field(changeset, :target_reps)
-    duration = get_field(changeset, :duration_seconds)
-    distance = get_field(changeset, :distance_value)
-
-    if blank?(reps) and is_nil(duration) and is_nil(distance) do
-      add_error(
-        changeset,
-        :target_reps,
-        "must have at least one target: reps, duration, or distance"
-      )
-    else
-      changeset
-    end
+  @spec to_attrs(t()) :: map()
+  def to_attrs(%__MODULE__{} = s) do
+    %{
+      "set_type" => s.set_type,
+      "reps" => s.reps,
+      "load_value" => s.load_value,
+      "load_unit" => s.load_unit,
+      "duration_seconds" => s.duration_seconds,
+      "distance_value" => s.distance_value,
+      "distance_unit" => s.distance_unit,
+      "rpe" => s.rpe,
+      "rest_seconds" => s.rest_seconds,
+      "notes" => s.notes
+    }
   end
 
-  defp blank?(nil), do: true
-  defp blank?(""), do: true
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(_), do: false
-
-  defp validate_load_unit(changeset) do
-    load = get_field(changeset, :load_value)
-    unit = get_field(changeset, :load_unit)
-
-    if load && (!unit || unit == :none) do
-      add_error(changeset, :load_unit, "required when load_value is set")
-    else
-      changeset
-    end
-  end
-
-  defp validate_distance_unit(changeset) do
-    distance = get_field(changeset, :distance_value)
-    unit = get_field(changeset, :distance_unit)
-
-    if distance && (!unit || unit == :none) do
-      add_error(changeset, :distance_unit, "required when distance_value is set")
-    else
-      changeset
-    end
-  end
-
-  defp validate_target_reps_format(changeset) do
-    case get_field(changeset, :target_reps) do
-      nil -> changeset
-      "" -> changeset
-      text -> validate_reps_text(changeset, text)
-    end
-  end
-
-  defp validate_reps_text(changeset, text) do
-    if valid_format?(text) && valid_semantics?(text) do
-      changeset
-    else
-      add_error(
-        changeset,
-        :target_reps,
-        "invalid format. Use: '10', '8-12', '10,8,6', '30s', '5km', 'AMRAP', 'Max', 'Failure'"
-      )
-    end
-  end
-
-  defp valid_format?(text) do
-    Regex.match?(
-      ~r/^(\d+(-\d+)?|\d+(,\d+)+|\d+(\.\d+)?(s|sec|m|min|h|hr|km|mi|yd)?|AMRAP|Max|Failure)$/i,
-      text
-    )
-  end
-
-  defp valid_semantics?(text) do
-    cond do
-      Regex.match?(~r/^\d+$/, text) ->
-        String.to_integer(text) > 0
-
-      Regex.match?(~r/^\d+-\d+$/, text) ->
-        [low, high] = text |> String.split("-") |> Enum.map(&String.to_integer/1)
-        low > 0 and high > 0 and low < high
-
-      Regex.match?(~r/^\d+(,\d+)+$/, text) ->
-        text |> String.split(",") |> Enum.all?(fn part -> String.to_integer(part) > 0 end)
-
-      true ->
-        true
-    end
+  @spec to_snapshot(t()) :: map()
+  def to_snapshot(%__MODULE__{} = s) do
+    %{
+      "set_type" => s.set_type,
+      "reps" => s.reps,
+      "load_value" => s.load_value,
+      "load_unit" => s.load_unit,
+      "duration_seconds" => s.duration_seconds,
+      "distance_value" => s.distance_value,
+      "distance_unit" => s.distance_unit,
+      "rpe" => s.rpe
+    }
   end
 end

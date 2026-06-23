@@ -2,8 +2,12 @@ defmodule EasyWeb.Coaches.StoreProfileController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Storefront.StoreProfile
+  alias Easy.Storefront
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, SlugCheckRequest, SlugCheckResponse, StoreProfileRequest, StoreProfileResponse}
+
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true]
+       when action in [:update, :check_slug]
 
   tags ["coach storefront profile"]
 
@@ -38,41 +42,31 @@ defmodule EasyWeb.Coaches.StoreProfileController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    case StoreProfile.get_for_business(business_id) do
-      nil -> render(conn, :show, profile: nil)
-      profile -> render(conn, :show, profile: profile)
+    case Storefront.get_store_profile(conn.assigns.ctx) do
+      {:ok, profile} -> render(conn, :show, profile: profile)
+      {:error, :not_found} -> render(conn, :show, profile: nil)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, params) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    case StoreProfile.get_for_business(business_id) do
-      nil ->
-        with {:ok, profile} <- StoreProfile.create(params, business_id) do
+  def update(conn, _params) do
+    with {:ok, profile, status} <- Storefront.upsert_store_profile(conn.assigns.ctx, conn.body_params) do
+      case status do
+        :created ->
           conn
           |> put_status(:created)
           |> render(:show, profile: profile)
-        end
 
-      profile ->
-        with {:ok, updated} <- StoreProfile.update(profile, params) do
-          render(conn, :show, profile: updated)
-        end
+        :updated ->
+          render(conn, :show, profile: profile)
+      end
     end
   end
 
-  @spec check_slug(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, Easy.Error.t()}
-  def check_slug(conn, %{"slug" => slug}) do
-    %{business_id: business_id} = conn.assigns.claims
-    available = StoreProfile.slug_available?(slug, business_id)
+  @spec check_slug(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def check_slug(conn, _params) do
+    slug = conn.body_params[:slug]
+    available = Storefront.check_slug_available(conn.assigns.ctx, slug)
     json(conn, %{available: available})
-  end
-
-  def check_slug(_conn, _params) do
-    {:error, Easy.Error.unprocessable("slug is required")}
   end
 end

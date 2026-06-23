@@ -12,7 +12,10 @@ defmodule EasyWeb.Clients.WeightEntryControllerTest do
         goal_weight_unit: :kg
       )
 
-    conn = build_conn() |> authenticate_client(client)
+    conn =
+      build_conn()
+      |> put_req_header("content-type", "application/json")
+      |> authenticate_client(client)
 
     %{conn: conn, coach: coach, client: client, business: coach.business}
   end

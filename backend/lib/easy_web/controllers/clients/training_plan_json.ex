@@ -1,5 +1,12 @@
 defmodule EasyWeb.Clients.TrainingPlanJSON do
-  alias Easy.Training.{Exercise, PlannedSet, PlanItem, Workout, TrainingPlan, WorkoutElement}
+  alias Easy.Training.{
+    TrainingExercise,
+    PlannedSet,
+    ScheduleEntry,
+    TrainingWorkout,
+    TrainingPlan,
+    TrainingWorkoutExercise
+  }
 
   @spec show(map()) :: map()
   def show(%{plan: plan}) do
@@ -11,6 +18,37 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
     %{data: Enum.map(plans, &data/1), count: count}
   end
 
+  @spec today(map()) :: map()
+  def today(%{plan: plan, schedule_entry: schedule_entry, workout: workout, date: date, day: day}) do
+    %{
+      data: %{
+        id: plan.id,
+        name: plan.name,
+        description: plan.description,
+        status: plan.status,
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        date: date,
+        day: day,
+        workout: if(workout, do: workout_data(workout), else: nil),
+        schedule_entry: schedule_entry_data(schedule_entry),
+        inserted_at: plan.inserted_at,
+        updated_at: plan.updated_at
+      }
+    }
+  end
+
+  defp schedule_entry_data(nil), do: nil
+
+  defp schedule_entry_data(%ScheduleEntry{} = entry) do
+    %{
+      id: entry.id,
+      day_of_week: entry.day_of_week,
+      training_workout_id: entry.training_workout_id,
+      training_plan_id: entry.training_plan_id
+    }
+  end
+
   defp data(%TrainingPlan{} = plan) do
     %{
       id: plan.id,
@@ -19,7 +57,6 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,
-      rest_days: plan.rest_days,
       workouts: workouts_data(plan.workouts),
       plan_items: plan_items_data(plan.plan_items),
       inserted_at: plan.inserted_at,
@@ -30,7 +67,7 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
   defp workouts_data(workouts) when is_list(workouts), do: Enum.map(workouts, &workout_data/1)
   defp workouts_data(_), do: []
 
-  defp workout_data(%Workout{} = workout) do
+  defp workout_data(%TrainingWorkout{} = workout) do
     %{
       id: workout.id,
       name: workout.name,
@@ -44,12 +81,11 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
   defp plan_items_data(items) when is_list(items), do: Enum.map(items, &plan_item_data/1)
   defp plan_items_data(_), do: []
 
-  defp plan_item_data(%PlanItem{} = item) do
+  defp plan_item_data(%ScheduleEntry{} = item) do
     %{
       id: item.id,
-      day: item.day,
-      workout_type: item.workout_type,
-      workout_id: item.workout_id,
+      day_of_week: item.day_of_week,
+      training_workout_id: item.training_workout_id,
       training_plan_id: item.training_plan_id,
       inserted_at: item.inserted_at,
       updated_at: item.updated_at
@@ -59,7 +95,7 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
   defp elements_data(elements) when is_list(elements), do: Enum.map(elements, &element_data/1)
   defp elements_data(_), do: []
 
-  defp element_data(%WorkoutElement{} = element) do
+  defp element_data(%TrainingWorkoutExercise{} = element) do
     %{
       id: element.id,
       position: element.position,
@@ -73,7 +109,7 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
     }
   end
 
-  defp exercise_data(%Exercise{} = exercise) do
+  defp exercise_data(%TrainingExercise{} = exercise) do
     %{
       id: exercise.id,
       name: exercise.name,
@@ -90,15 +126,15 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
 
   defp planned_set_data(%PlannedSet{} = set) do
     %{
-      target_reps: set.target_reps,
+      set_type: set.set_type,
+      reps: set.reps,
       load_value: set.load_value,
       load_unit: set.load_unit,
-      intensity_target: set.intensity_target,
-      tempo: set.tempo,
-      rest_seconds: set.rest_seconds,
       duration_seconds: set.duration_seconds,
       distance_value: set.distance_value,
       distance_unit: set.distance_unit,
+      rpe: set.rpe,
+      rest_seconds: set.rest_seconds,
       notes: set.notes
     }
   end

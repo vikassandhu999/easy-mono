@@ -4,7 +4,7 @@ defmodule EasyWeb.Coaches.MuscleController do
 
   alias Easy.Exercises
   alias OpenApiSpex.Operation
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, MuscleListResponse}
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingMuscleListResponse}
 
   tags ["coach muscles"]
 
@@ -17,7 +17,7 @@ defmodule EasyWeb.Coaches.MuscleController do
       Operation.parameter(:search, :query, :string, "Case-insensitive muscle name search", required: false)
     ],
     responses: [
-      ok: {"Muscles", "application/json", MuscleListResponse},
+      ok: {"Muscles", "application/json", TrainingMuscleListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 

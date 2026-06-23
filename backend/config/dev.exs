@@ -13,8 +13,6 @@ config :easy, Easy.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-# config :joken, default_signer: "secret"
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -50,10 +48,6 @@ config :easy, Easy.Mailer,
 
 # Authentication and JWT configuration for development
 config :easy, :jwt_secret, "dev-secret-key-minimum-32-characters-long-for-hs256"
-
-config :easy, Easy.Accounts.Token, secret_key: "dev-secret-key-minimum-32-characters-long-for-hs256"
-
-config :joken, default_signer: "dev-secret-key-minimum-32-characters-long-for-hs256"
 
 # CORS configuration for development - allow all origins
 config :cors_plug,

@@ -1,9 +1,10 @@
 defmodule EasyWeb.Clients.NutritionPlanJSON do
+  alias Easy.MacroCalc
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanItem
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.Recipe
 
   @spec show(map()) :: map()
@@ -21,8 +22,8 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     meals =
       Enum.map(plan_items, fn pi ->
         %{
-          meal_slot: pi.meal_type,
-          meal_id: pi.meal_id,
+          meal_slot: pi.meal_slot,
+          meal_id: pi.nutrition_meal_id,
           meal_name: if(Ecto.assoc_loaded?(pi.meal), do: pi.meal.name, else: nil),
           items: today_meal_items(pi)
         }
@@ -38,18 +39,30 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     }
   end
 
-  defp today_meal_items(%PlanItem{meal: %Meal{meal_items: items}}) when is_list(items) do
+  defp today_meal_items(%ScheduleEntry{meal: %Meal{meal_items: items}}) when is_list(items) do
     Enum.map(items, &today_item_data/1)
   end
 
   defp today_meal_items(_), do: []
 
   defp today_item_data(%MealItem{} = item) do
-    {food_name, macros} =
+    {food_name, nutrition} =
       case {item.food, item.recipe} do
-        {%Food{} = f, _} -> {f.name, f.macros}
-        {_, %Recipe{} = r} -> {r.name, r.macros}
-        _ -> {nil, nil}
+        {%Food{} = f, _} ->
+          {f.name,
+           %{
+             calories_per_100g: f.calories_per_100g,
+             protein_g_per_100g: f.protein_g_per_100g,
+             carbs_g_per_100g: f.carbs_g_per_100g,
+             fat_g_per_100g: f.fat_g_per_100g,
+             fiber_g_per_100g: f.fiber_g_per_100g
+           }}
+
+        {_, %Recipe{} = r} ->
+          {r.name, MacroCalc.recipe_totals(r)}
+
+        _ ->
+          {nil, nil}
       end
 
     %{
@@ -60,7 +73,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
       amount: item.amount,
       unit: item.unit,
       weight_g: item.weight_g,
-      macros: macros
+      nutrition: nutrition
     }
   end
 
@@ -70,7 +83,11 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
       name: plan.name,
       description: plan.description,
       tags: plan.tags || [],
-      macros_goal: plan.macros_goal,
+      target_calories: plan.target_calories,
+      target_protein_g: plan.target_protein_g,
+      target_carbs_g: plan.target_carbs_g,
+      target_fat_g: plan.target_fat_g,
+      target_fiber_g: plan.target_fiber_g,
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,
@@ -83,7 +100,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     summary_data(plan)
     |> Map.merge(%{
       meals: meals_data(plan.meals),
-      plan_items: plan_items_data(plan.plan_items)
+      schedule_entries: schedule_entries_data(plan.plan_items)
     })
   end
 
@@ -94,7 +111,9 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     %{
       id: meal.id,
       name: meal.name,
-      macros: meal.macros,
+      notes: meal.notes,
+      default_meal_slot: meal.default_meal_slot,
+      nutrition: MacroCalc.meal_totals(meal.meal_items),
       meal_items: meal_items_data(meal.meal_items),
       inserted_at: meal.inserted_at,
       updated_at: meal.updated_at
@@ -124,7 +143,11 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     %{
       id: food.id,
       name: food.name,
-      macros: food.macros,
+      calories_per_100g: food.calories_per_100g,
+      protein_g_per_100g: food.protein_g_per_100g,
+      carbs_g_per_100g: food.carbs_g_per_100g,
+      fat_g_per_100g: food.fat_g_per_100g,
+      fiber_g_per_100g: food.fiber_g_per_100g,
       serving_sizes: serving_sizes_data(food.serving_sizes)
     }
   end
@@ -135,7 +158,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     %{
       id: recipe.id,
       name: recipe.name,
-      macros: recipe.macros,
+      nutrition: MacroCalc.recipe_totals(recipe),
       serving_sizes: serving_sizes_data(recipe.serving_sizes)
     }
   end
@@ -143,20 +166,28 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
   defp recipe_data(_), do: nil
 
   defp serving_sizes_data(sizes) when is_list(sizes) do
-    Enum.map(sizes, fn s -> %{unit: s.unit, weight_g: s.weight_g, amount: s.amount} end)
+    for s <- sizes do
+      %{
+        label: s.label,
+        amount: s.amount,
+        unit: s.unit,
+        weight_g: s.weight_g,
+        is_default: s.is_default
+      }
+    end
   end
 
   defp serving_sizes_data(_), do: []
 
-  defp plan_items_data(items) when is_list(items), do: Enum.map(items, &plan_item_data/1)
-  defp plan_items_data(_), do: []
+  defp schedule_entries_data(items) when is_list(items), do: Enum.map(items, &schedule_entry_data/1)
+  defp schedule_entries_data(_), do: []
 
-  defp plan_item_data(%PlanItem{} = item) do
+  defp schedule_entry_data(%ScheduleEntry{} = item) do
     %{
       id: item.id,
-      day: item.day,
-      meal_type: item.meal_type,
-      meal_id: item.meal_id,
+      day_of_week: item.day_of_week,
+      meal_slot: item.meal_slot,
+      nutrition_meal_id: item.nutrition_meal_id,
       inserted_at: item.inserted_at,
       updated_at: item.updated_at
     }

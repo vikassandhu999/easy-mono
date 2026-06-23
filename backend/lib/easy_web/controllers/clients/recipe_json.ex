@@ -1,4 +1,5 @@
 defmodule EasyWeb.Clients.RecipeJSON do
+  alias Easy.MacroCalc
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
@@ -17,14 +18,13 @@ defmodule EasyWeb.Clients.RecipeJSON do
     %{
       id: recipe.id,
       name: recipe.name,
-      macros: recipe.macros,
-      source: recipe.source,
-      category: recipe.category,
-      tags: recipe.tags || [],
+      description: recipe.description,
       instructions: recipe.instructions,
-      image_url: recipe.image_url,
+      servings_count: recipe.servings_count,
       cooked_weight_g: recipe.cooked_weight_g,
-      service_size_type: recipe.service_size_type,
+      allergens: recipe.allergens || [],
+      dietary_tags: recipe.dietary_tags || [],
+      nutrition: MacroCalc.recipe_totals(recipe),
       serving_sizes: serving_sizes_data(recipe.serving_sizes),
       recipe_ingredients: recipe_ingredients_data(recipe.recipe_ingredients),
       inserted_at: recipe.inserted_at,
@@ -32,8 +32,16 @@ defmodule EasyWeb.Clients.RecipeJSON do
     }
   end
 
-  defp serving_sizes_data(sizes) when is_list(sizes) do
-    Enum.map(sizes, fn s -> %{unit: s.unit, weight_g: s.weight_g, amount: s.amount} end)
+  defp serving_sizes_data(serving_sizes) when is_list(serving_sizes) do
+    for serving_size <- serving_sizes do
+      %{
+        label: serving_size.label,
+        amount: serving_size.amount,
+        unit: serving_size.unit,
+        weight_g: serving_size.weight_g,
+        is_default: serving_size.is_default
+      }
+    end
   end
 
   defp serving_sizes_data(_), do: []
@@ -50,7 +58,8 @@ defmodule EasyWeb.Clients.RecipeJSON do
       food: food_data(ri.food),
       unit: ri.unit,
       amount: ri.amount,
-      weight_g: ri.weight_g
+      weight_g: ri.weight_g,
+      position: ri.position
     }
   end
 
@@ -58,7 +67,11 @@ defmodule EasyWeb.Clients.RecipeJSON do
     %{
       id: food.id,
       name: food.name,
-      macros: food.macros
+      calories_per_100g: food.calories_per_100g,
+      protein_g_per_100g: food.protein_g_per_100g,
+      carbs_g_per_100g: food.carbs_g_per_100g,
+      fat_g_per_100g: food.fat_g_per_100g,
+      fiber_g_per_100g: food.fiber_g_per_100g
     }
   end
 

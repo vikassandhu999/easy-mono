@@ -36,13 +36,7 @@ export const clientFoodsApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Food', id}],
     }),
     listClientFoods: build.query<ApiListResponse<ClientFood>, ListClientFoodsParams | void>({
-      query: (params) =>
-        params
-          ? {
-              params,
-              url: '/v1/client/foods',
-            }
-          : '/v1/client/foods',
+      query: (params) => ({url: '/v1/client/foods', params}),
       providesTags: (result) =>
         result
           ? [

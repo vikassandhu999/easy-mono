@@ -1,0 +1,106 @@
+<h2>Nutrition history — past days</h2>
+<p class="subtitle">The Today screen is date-navigable, so history = a past date + a weekly adherence overview. Left: week glance. Right: a past day opened. Tap to confirm.</p>
+
+<style>
+  .row{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .col{width:330px}
+  .ptitle{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .phone{border:2px solid #3a3a42;border-radius:24px;padding:9px;background:#111;cursor:pointer}
+  .phone:hover,.phone.selected{border-color:#6c8cff}
+  .scr{background:#0c0c0e;border-radius:16px;height:580px;overflow:hidden;font-size:13px;display:flex;flex-direction:column}
+  .datenav{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #1f1f25}
+  .d{font-weight:700}.a{color:#777}
+  .body{flex:1;overflow:hidden;padding:12px}
+  /* weekly */
+  .wkstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px}
+  .wd{text-align:center}
+  .wd .lab{font-size:9px;color:#777;margin-bottom:4px}
+  .wd .ring{width:30px;height:30px;border-radius:99px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+  .on{background:conic-gradient(#3ad07a 0% 96%,#23232b 0);color:#5fe08a}
+  .under{background:conic-gradient(#e0a14d 0% 70%,#23232b 0);color:#e0a14d}
+  .over{background:conic-gradient(#e0524d 0% 100%,#23232b 0);color:#e08a86}
+  .none{background:#23232b;color:#555}
+  .today{outline:2px solid #6c8cff;border-radius:99px}
+  .legend{display:flex;gap:12px;font-size:10px;color:#888;margin-bottom:12px;justify-content:center}
+  .legend i{font-style:normal}
+  .dl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#888;margin:6px 0 8px}
+  .drow{display:flex;justify-content:space-between;align-items:center;background:#16161b;border:1px solid #2a2a31;border-radius:11px;padding:10px 12px;margin-bottom:8px}
+  .drow .dn{font-weight:600;font-size:12px}.drow .ds{font-size:11px;color:#9aa}
+  .pill{font-size:9px;border-radius:999px;padding:2px 8px}
+  .pon{color:#5fe08a;border:1px solid #2f7d4a}.pun{color:#e0a14d;border:1px solid #7d5a2f}
+  /* past day */
+  .hero{display:flex;gap:12px;align-items:center;background:#16161b;border:1px solid #2a2a31;border-radius:13px;padding:11px;margin-bottom:11px}
+  .ring2{width:60px;height:60px;border-radius:99px;background:conic-gradient(#3ad07a 0% 96%,#23232b 0);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ring2 .in{width:46px;height:46px;border-radius:99px;background:#0c0c0e;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring2 .in b{font-size:12px}.ring2 .in small{font-size:7px;color:#888}
+  .macsm{flex:1;font-size:10px;color:#9aa}.macsm span{display:inline-block;margin-right:8px}
+  .slot{border:1px solid #2a2a31;background:#16161b;border-radius:12px;padding:9px 12px;margin-bottom:8px}
+  .slh{display:flex;justify-content:space-between;font-weight:600;font-size:12px}
+  .pi{display:flex;align-items:center;gap:9px;padding:5px 0;border-top:1px solid #202026;margin-top:5px;font-size:12px;color:#7c8}
+  .ck{width:18px;height:18px;border-radius:5px;background:#3ad07a;color:#06200f;text-align:center;line-height:17px;flex-shrink:0;font-size:11px}
+  .pi .n{flex:1}.pi .amt{color:#888;font-size:11px}
+  .badge{font-size:8px;border-radius:4px;padding:1px 5px}
+  .brep{color:#9fb0ff;border:1px solid #34506e}.bun{color:#e0a14d;border:1px solid #7d5a2f}
+  .muted{color:#777}
+  .cap{text-align:center;font-size:12px;color:#aaa;margin-top:8px}
+</style>
+
+<div class="row">
+
+  <div class="col">
+    <div class="ptitle">Week overview</div>
+    <div class="phone" data-choice="week" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="datenav"><span class="a">‹</span><span class="d">This week</span><span class="a">›</span></div>
+        <div class="body">
+          <div class="wkstrip">
+            <div class="wd"><div class="lab">M</div><div class="ring on">98%</div></div>
+            <div class="wd"><div class="lab">T</div><div class="ring on">102</div></div>
+            <div class="wd"><div class="lab">W</div><div class="ring under">70%</div></div>
+            <div class="wd"><div class="lab">T</div><div class="ring over">118</div></div>
+            <div class="wd"><div class="lab">F</div><div class="ring on">95%</div></div>
+            <div class="wd"><div class="lab">S</div><div class="ring today none">·</div></div>
+            <div class="wd"><div class="lab">S</div><div class="ring none">·</div></div>
+          </div>
+          <div class="legend"><i style="color:#5fe08a">● on target</i><i style="color:#e0a14d">● under</i><i style="color:#e0524d">● over</i><i style="color:#555">● no log</i></div>
+          <div class="dl">Recent days</div>
+          <div class="drow"><div><div class="dn">Fri · Jun 13</div><div class="ds">1990 / 2100 kcal · 175P</div></div><span class="pill pon">on target</span></div>
+          <div class="drow"><div><div class="dn">Thu · Jun 12</div><div class="ds">2480 / 2100 kcal · 160P</div></div><span class="pill pun">over</span></div>
+          <div class="drow"><div><div class="dn">Wed · Jun 11</div><div class="ds">1480 / 2100 kcal · 120P</div></div><span class="pill pun">under</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">7-day adherence rings (on/under/over/no-log) + recent-days list. Tap a day → opens it.</div>
+  </div>
+
+  <div class="col">
+    <div class="ptitle">A past day opened</div>
+    <div class="phone" data-choice="day" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="datenav"><span class="a">‹</span><span class="d">Fri · Jun 13</span><span class="a">›</span></div>
+        <div class="body">
+          <div class="hero"><div class="ring2"><div class="in"><b>1990</b><small>/2100</small></div></div><div class="macsm"><span>P 175/180</span><span>C 190/200</span><span>F 55/60</span><br><span style="color:#5fe08a">on target ✓</span></div></div>
+          <div class="slot">
+            <div class="slh"><span>Breakfast</span><span class="muted">420</span></div>
+            <div class="pi"><span class="ck">✓</span><span class="n">Oats &amp; Eggs</span><span class="amt">420</span></div>
+          </div>
+          <div class="slot">
+            <div class="slh"><span>Lunch</span><span class="muted">680</span></div>
+            <div class="pi"><span class="ck">✓</span><span class="n">Chicken &amp; Rice</span><span class="amt">650</span></div>
+            <div class="pi"><span class="ck">✓</span><span class="n">Apple</span><span class="badge bun">off-plan</span><span class="amt">30</span></div>
+          </div>
+          <div class="slot">
+            <div class="slh"><span>Dinner</span><span class="muted">560</span></div>
+            <div class="pi"><span class="ck">✓</span><span class="n">Beef Stir-fry</span><span class="badge brep">replaced</span><span class="amt">560</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">Same Today layout, past date. Final macros vs target; replaced / off-plan badged. Still editable (forgot to log yesterday).</div>
+  </div>
+
+</div>
+
+<div style="max-width:700px;margin:22px auto 0;background:#11210f;border:1px solid #2f7d4a;border-radius:12px;padding:14px 18px;font-size:14px">
+  <b>History reuses Today.</b> A past date renders the same screen from <code>GET /meal-logs?date=</code>; the week overview reads <code>?from=&to=</code> and colours each day on consumed-vs-target. Past days stay editable (log a forgotten meal); future dates are read-only. The coach sees the same day via their read-only endpoint. No separate history data model.
+</div>

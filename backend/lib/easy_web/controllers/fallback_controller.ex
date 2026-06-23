@@ -24,6 +24,20 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Easy.Error.unprocessable(changeset)})
   end
 
+  def call(conn, {:error, :invalid_day}) do
+    call(conn, {:error, Easy.Error.unprocessable(%{fields: %{day: ["is invalid"]}})})
+  end
+
+  def call(conn, {:error, :read_only_source}) do
+    call(
+      conn,
+      {:error,
+       Easy.Error.unprocessable(%{
+         fields: %{source: ["system and imported foods are read-only; use the copy endpoint"]}
+       })}
+    )
+  end
+
   def call(conn, {:error, reason}) do
     Logger.error("Unhandled error in FallbackController: #{inspect(reason)}")
 
@@ -44,14 +58,6 @@ defmodule EasyWeb.FallbackController do
         conn,
         message \\ "You must be authenticated to access this resource."
       ) do
-    call(conn, {:error, Easy.Error.unauthorized(message)})
-  end
-
-  def not_found_response(conn, message \\ "The requested resource was not found.") do
-    call(conn, {:error, Easy.Error.not_found(message)})
-  end
-
-  def forbidden_response(conn, message \\ "You do not have permission to perform this action.") do
     call(conn, {:error, Easy.Error.unauthorized(message)})
   end
 end

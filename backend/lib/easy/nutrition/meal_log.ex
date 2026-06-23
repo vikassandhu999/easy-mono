@@ -3,7 +3,6 @@ defmodule Easy.Nutrition.MealLog do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.FoodLogEntry
-  alias Easy.Nutrition.PlanItem
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -14,9 +13,9 @@ defmodule Easy.Nutrition.MealLog do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "meal_logs" do
+  schema "nutrition_meal_logs" do
     field(:date, :date)
-    field(:meal_slot, :string)
+    field(:meal_slot, Ecto.Enum, values: [:breakfast, :morning_snack, :lunch, :afternoon_snack, :dinner, :evening_snack])
     field(:planned_snapshot, :map)
     field(:planned_calories, :float)
     field(:logged_calories, :float, default: 0.0)
@@ -24,12 +23,10 @@ defmodule Easy.Nutrition.MealLog do
     belongs_to(:client, Client)
     belongs_to(:business, Orgs.Business)
 
-    has_many(:food_log_entries, FoodLogEntry)
+    has_many(:food_log_entries, FoodLogEntry, foreign_key: :nutrition_meal_log_id)
 
     timestamps(type: :utc_datetime)
   end
-
-  # Changesets
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, attrs) do
@@ -38,13 +35,10 @@ defmodule Easy.Nutrition.MealLog do
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> validate_required([:date, :meal_slot, :business_id, :client_id])
-    |> validate_inclusion(:meal_slot, PlanItem.meal_types())
     |> unique_constraint([:client_id, :date, :meal_slot],
-      name: :meal_logs_client_id_date_meal_slot_index
+      name: :nutrition_meal_logs_client_id_date_meal_slot_index
     )
   end
-
-  # Queries
 
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_client(query \\ __MODULE__, business_id, client_id) do
@@ -66,21 +60,29 @@ defmodule Easy.Nutrition.MealLog do
     from(ml in query, where: ml.date >= ^from_date and ml.date <= ^to_date)
   end
 
-  @spec for_meal_slot(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_meal_slot(query \\ __MODULE__, meal_slot) do
-    from(ml in query, where: ml.meal_slot == ^meal_slot)
+  @valid_meal_slots ~w(breakfast morning_snack lunch afternoon_snack dinner evening_snack)
+
+  @spec for_meal_slot(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
+  def for_meal_slot(query \\ __MODULE__, meal_slot)
+  def for_meal_slot(query, nil), do: query
+
+  def for_meal_slot(query, meal_slot) when is_binary(meal_slot) do
+    if meal_slot in @valid_meal_slots do
+      from(ml in query, where: ml.meal_slot == ^meal_slot)
+    else
+      from(ml in query, where: false)
+    end
   end
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__) do
+  def for_meal_slot(query, meal_slot), do: from(ml in query, where: ml.meal_slot == ^meal_slot)
+
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__) do
     from(ml in query, order_by: [asc: ml.date, asc: ml.meal_slot])
   end
 
-  @spec with_entries(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_entries(query \\ __MODULE__) do
-    entry_query =
-      from(e in FoodLogEntry, order_by: [asc: e.planned_item_index, asc: e.inserted_at])
-
-    from(ml in query, preload: [food_log_entries: ^entry_query])
+  @spec include_entries(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_entries(query \\ __MODULE__) do
+    from(ml in query, preload: [food_log_entries: ^FoodLogEntry.by_position()])
   end
 end

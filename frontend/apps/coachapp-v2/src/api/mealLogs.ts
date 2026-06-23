@@ -1,4 +1,5 @@
 import {api} from '@/api/base';
+import {listTags} from '@/api/shared';
 
 export type PlannedSnapshotItem = {
   amount: number;
@@ -93,16 +94,7 @@ export const coachMealLogsApi = api.injectEndpoints({
         params,
         url: '/v1/coach/meal_logs',
       }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((log) => ({
-                type: 'MealLog' as const,
-                id: log.id,
-              })),
-              {type: 'MealLog' as const, id: 'LIST'},
-            ]
-          : [{type: 'MealLog' as const, id: 'LIST'}],
+      providesTags: (result) => listTags('MealLog', result),
     }),
   }),
 });

@@ -31,7 +31,7 @@ defmodule Easy.Fitness.WeightEntry do
   # Changesets
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(client_id, business_id, attrs) do
+  def insert_changeset(business_id, client_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:client_id, client_id)
@@ -63,9 +63,9 @@ defmodule Easy.Fitness.WeightEntry do
     from(e in query, where: e.business_id == ^business_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(e in query, where: e.client_id == ^client_id)
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(e in query, where: e.business_id == ^business_id and e.client_id == ^client_id)
   end
 
   @spec on_date(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
@@ -76,11 +76,6 @@ defmodule Easy.Fitness.WeightEntry do
   @spec since(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
   def since(query \\ __MODULE__, date) do
     from(e in query, where: e.date >= ^date)
-  end
-
-  @spec between(Ecto.Queryable.t(), Date.t(), Date.t()) :: Ecto.Query.t()
-  def between(query \\ __MODULE__, from_date, to_date) do
-    from(e in query, where: e.date >= ^from_date and e.date <= ^to_date)
   end
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()

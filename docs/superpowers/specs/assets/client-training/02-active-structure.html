@@ -1,0 +1,118 @@
+<h2>Active workout — overall structure</h2>
+<p class="subtitle">In the gym: one hand, resting between sets, glancing down. Push Day, 12:34 elapsed, mid-session. Three structures. Tap your pick — set-row detail and rest timer come next.</p>
+
+<style>
+  .row{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .col{width:320px}
+  .ptitle{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .phone{border:2px solid #3a3a42;border-radius:24px;padding:9px;background:#111;cursor:pointer;transition:border-color .15s}
+  .phone.selected,.phone:hover{border-color:#6c8cff}
+  .scr{position:relative;background:#0c0c0e;border-radius:16px;height:580px;overflow:hidden;font-size:13px;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1f1f25}
+  .top .nm{font-weight:700}
+  .clk{color:#7f8cff;font-size:12px;font-weight:600}
+  .fin{font-size:11px;color:#5fe08a;border:1px solid #2f7d4a;border-radius:7px;padding:4px 9px}
+  .body{flex:1;overflow:hidden;padding:12px}
+  .exc{border:1px solid #2a2a31;background:#16161b;border-radius:12px;padding:10px 12px;margin-bottom:10px}
+  .exh{display:flex;justify-content:space-between;align-items:center}
+  .exn{font-weight:600}
+  .exs{font-size:11px;color:#888}
+  .prog{font-size:11px;color:#5fe08a}
+  .strow{display:grid;grid-template-columns:30px 1fr 56px 56px 30px;gap:6px;align-items:center;font-size:12px;padding:5px 0;border-top:1px solid #202026}
+  .strow .sn{color:#888}
+  .strow .tg{color:#777;font-size:11px}
+  .cell{background:#0c0c0e;border:1px solid #34343d;border-radius:6px;padding:5px 0;text-align:center}
+  .cell.f{border-color:#3a4170}
+  .ck{width:24px;height:24px;border-radius:6px;border:1.5px solid #444;text-align:center;line-height:22px}
+  .ck.on{background:#3ad07a;border-color:#3ad07a;color:#06200f}
+  .done .cell{opacity:.5}
+  .add{color:#6c8cff;font-size:12px;margin-top:6px}
+  .muted{color:#777}
+  .dimcard{opacity:.55}
+  /* focus mode */
+  .dots{display:flex;gap:5px;justify-content:center;padding:10px 0}
+  .pd{width:7px;height:7px;border-radius:9px;background:#333}.pd.on{background:#7f8cff}.pd.done{background:#3ad07a}
+  .bigname{text-align:center;font-size:18px;font-weight:700;margin:6px 0 2px}
+  .bigsub{text-align:center;color:#888;font-size:12px;margin-bottom:14px}
+  .nextbar{position:absolute;left:9px;right:9px;bottom:9px;background:#6c8cff;color:#06122e;font-weight:700;border-radius:12px;text-align:center;padding:14px}
+  .cap{text-align:center;font-size:12px;color:#aaa;margin-top:8px}
+</style>
+
+<div class="row">
+
+  <!-- A: continuous list -->
+  <div class="col">
+    <div class="ptitle">A · Continuous list (Hevy/Strong)</div>
+    <div class="phone" data-choice="list" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="top"><div><div class="nm">Push Day</div></div><div class="clk">⏱ 12:34</div><div class="fin">Finish</div></div>
+        <div class="body">
+          <div class="exc done">
+            <div class="exh"><span class="exn">Bench Press</span><span class="prog">3/3 ✓</span></div>
+            <div class="strow"><span class="sn">1</span><span class="tg">100×8</span><span class="cell">100</span><span class="cell">8</span><span class="ck on">✓</span></div>
+            <div class="strow"><span class="sn">2</span><span class="tg">100×8</span><span class="cell">100</span><span class="cell">8</span><span class="ck on">✓</span></div>
+          </div>
+          <div class="exc">
+            <div class="exh"><span class="exn">Incline DB Press</span><span class="exs">1/3</span></div>
+            <div class="strow"><span class="sn">1</span><span class="tg">30×10</span><span class="cell">30</span><span class="cell">10</span><span class="ck on">✓</span></div>
+            <div class="strow"><span class="sn">2</span><span class="tg">30×10</span><span class="cell f">30</span><span class="cell f">—</span><span class="ck">○</span></div>
+            <div class="add">+ set</div>
+          </div>
+          <div class="exc"><div class="exh"><span class="exn">Cable Fly</span><span class="exs">0/3</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>A</b> · Every exercise's sets visible, scroll as you go. Jump anywhere, supersets adjacent.</div>
+  </div>
+
+  <!-- B: accordion -->
+  <div class="col">
+    <div class="ptitle">B · Accordion (one open)</div>
+    <div class="phone" data-choice="accordion" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="top"><div><div class="nm">Push Day</div></div><div class="clk">⏱ 12:34</div><div class="fin">Finish</div></div>
+        <div class="body">
+          <div class="exc dimcard"><div class="exh"><span class="exn">Bench Press</span><span class="prog">3/3 ✓</span></div></div>
+          <div class="exc">
+            <div class="exh"><span class="exn">Incline DB Press ▾</span><span class="exs">1/3</span></div>
+            <div class="strow"><span class="sn">1</span><span class="tg">30×10</span><span class="cell">30</span><span class="cell">10</span><span class="ck on">✓</span></div>
+            <div class="strow"><span class="sn">2</span><span class="tg">30×10</span><span class="cell f">30</span><span class="cell f">—</span><span class="ck">○</span></div>
+            <div class="strow"><span class="sn">3</span><span class="tg">30×10</span><span class="cell">30</span><span class="cell">—</span><span class="ck">○</span></div>
+            <div class="add">+ set</div>
+          </div>
+          <div class="exc dimcard"><div class="exh"><span class="exn">Cable Fly ▸</span><span class="exs">0/3</span></div></div>
+          <div class="exc dimcard"><div class="exh"><span class="exn">Lateral Raise ▸</span><span class="exs">0/3</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>B</b> · One exercise expanded; others collapsed. Tidy, but a tap to move on.</div>
+  </div>
+
+  <!-- C: focus -->
+  <div class="col">
+    <div class="ptitle">C · One-exercise focus</div>
+    <div class="phone" data-choice="focus" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="top"><div class="nm">Push Day</div><div class="clk">⏱ 12:34</div><div class="fin">Finish</div></div>
+        <div class="dots"><span class="pd done"></span><span class="pd on"></span><span class="pd"></span><span class="pd"></span><span class="pd"></span></div>
+        <div class="body" style="padding-top:0">
+          <div class="bigname">Incline DB Press</div>
+          <div class="bigsub">Exercise 2 of 5 · target 3×10 @ 30kg</div>
+          <div class="exc">
+            <div class="strow"><span class="sn">1</span><span class="tg">30×10</span><span class="cell">30</span><span class="cell">10</span><span class="ck on">✓</span></div>
+            <div class="strow"><span class="sn">2</span><span class="tg">30×10</span><span class="cell f">30</span><span class="cell f">—</span><span class="ck">○</span></div>
+            <div class="strow"><span class="sn">3</span><span class="tg">30×10</span><span class="cell">30</span><span class="cell">—</span><span class="ck">○</span></div>
+            <div class="add">+ set</div>
+          </div>
+        </div>
+        <div class="nextbar">Next exercise →</div>
+      </div>
+    </div>
+    <div class="cap"><b>C</b> · One exercise full-screen, Next to advance. Zero distraction, weak overview.</div>
+  </div>
+
+</div>
+
+<div style="max-width:660px;margin:22px auto 0;background:#11210f;border:1px solid #2f7d4a;border-radius:12px;padding:14px 18px;font-size:14px">
+  <b>Lean: A · continuous list.</b> It's what Strong/Hevy converged on for a reason — you see the whole session, scroll naturally as you finish exercises, jump to any one, and supersets sit adjacent. B adds a tap per exercise; C hides the overview and makes supersets/jumping awkward. The set rows are pre-filled with the planned target so you mostly just tap ✓.
+</div>

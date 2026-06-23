@@ -35,13 +35,7 @@ export const clientRecipesApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Recipe', id}],
     }),
     listClientRecipes: build.query<ApiListResponse<ClientRecipe>, ListClientRecipesParams | void>({
-      query: (params) =>
-        params
-          ? {
-              params,
-              url: '/v1/client/recipes',
-            }
-          : '/v1/client/recipes',
+      query: (params) => ({url: '/v1/client/recipes', params}),
       providesTags: (result) =>
         result
           ? [

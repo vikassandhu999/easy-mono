@@ -7,10 +7,11 @@ defmodule EasyWeb.Coaches.MealItemController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    NutritionMealItemListResponse,
     NutritionMealItemRequest,
     NutritionMealItemResponse
   }
+
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
 
   tags ["coach meal items"]
 
@@ -26,18 +27,6 @@ defmodule EasyWeb.Coaches.MealItemController do
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :index,
-    summary: "List meal items",
-    description: "Lists food and recipe items in a meal.",
-    operation_id: "listMealItems",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:meal_id, :path, :string, "Meal id")],
-    responses: [
-      ok: {"Meal items", "application/json", NutritionMealItemListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
   operation :update,
@@ -67,10 +56,10 @@ defmodule EasyWeb.Coaches.MealItemController do
     ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, %{"meal_id" => meal_id} = params) do
-    %{business_id: business_id} = conn.assigns.claims
+  def create(conn, _params) do
+    meal_id = conn.path_params["meal_id"]
 
-    with {:ok, meal_item} <- Meals.create_meal_item(business_id, meal_id, params) do
+    with {:ok, meal_item} <- Meals.create_meal_item(conn.assigns.ctx, meal_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, meal_item: meal_item)
@@ -78,32 +67,19 @@ defmodule EasyWeb.Coaches.MealItemController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => meal_item_id}) do
-    %{business_id: business_id} = conn.assigns.claims
+  def update(conn, _params) do
+    meal_item_id = conn.path_params["id"]
 
     with {:ok, updated_meal_item} <-
-           Meals.update_meal_item(business_id, meal_item_id, conn.body_params) do
+           Meals.update_meal_item(conn.assigns.ctx, meal_item_id, conn.body_params) do
       render(conn, :show, meal_item: updated_meal_item)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => meal_item_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, _deleted} <- Meals.delete_meal_item(business_id, meal_item_id) do
+    with {:ok, _deleted} <- Meals.delete_meal_item(conn.assigns.ctx, meal_item_id) do
       send_resp(conn, :no_content, "")
-    end
-  end
-
-  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, %{"meal_id" => meal_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, meal_items} <- Meals.list_meal_items(business_id, meal_id) do
-      conn
-      |> put_status(:ok)
-      |> render(:index, meal_items: meal_items)
     end
   end
 end

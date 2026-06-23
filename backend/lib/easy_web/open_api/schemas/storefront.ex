@@ -34,30 +34,33 @@ defmodule EasyWeb.OpenApi.Schemas.StoreProfile do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(%{
     title: "StoreProfile",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      slug: %Schema{type: :string},
-      display_name: %Schema{type: :string},
-      bio: %Schema{type: :string, nullable: true},
-      photo_url: %Schema{type: :string, nullable: true},
-      cover_image_url: %Schema{type: :string, nullable: true},
-      social_links: %Schema{type: :object, additionalProperties: true},
-      theme_color: %Schema{type: :string, nullable: true},
-      is_published: %Schema{type: :boolean},
-      intake_questions: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
-      headline: %Schema{type: :string, nullable: true},
-      trust_stats: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
-      faq_items: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
-      whatsapp_cta_enabled: %Schema{type: :boolean},
-      whatsapp_cta_message: %Schema{type: :string, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    }
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          slug: %Schema{type: :string},
+          display_name: %Schema{type: :string},
+          bio: %Schema{type: :string, nullable: true},
+          photo_url: %Schema{type: :string, nullable: true},
+          cover_image_url: %Schema{type: :string, nullable: true},
+          social_links: %Schema{type: :object, additionalProperties: true},
+          theme_color: %Schema{type: :string, nullable: true},
+          is_published: %Schema{type: :boolean},
+          intake_questions: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
+          headline: %Schema{type: :string, nullable: true},
+          trust_stats: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
+          faq_items: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
+          whatsapp_cta_enabled: %Schema{type: :boolean},
+          whatsapp_cta_message: %Schema{type: :string, nullable: true}
+        },
+        Shared.timestamps()
+      )
   })
 end
 
@@ -81,13 +84,16 @@ defmodule EasyWeb.OpenApi.Schemas.SlugCheckRequest do
 
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "SlugCheckRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{slug: %Schema{type: :string}},
-    required: [:slug]
-  })
+  OpenApiSpex.schema(
+    %{
+      title: "SlugCheckRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{slug: %Schema{type: :string}},
+      required: [:slug]
+    },
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.SlugCheckResponse do
@@ -120,7 +126,7 @@ defmodule EasyWeb.OpenApi.Schemas.OfferRequest do
         description: %Schema{type: :string, nullable: true},
         type: %Schema{type: :string},
         duration_text: %Schema{type: :string, nullable: true},
-        price: %Schema{type: :number, nullable: true},
+        price: %Schema{type: :integer, nullable: true},
         currency: %Schema{type: :string, nullable: true},
         price_display: %Schema{type: :string, nullable: true},
         features: %Schema{type: :array, items: %Schema{type: :string}},
@@ -140,38 +146,41 @@ defmodule EasyWeb.OpenApi.Schemas.Offer do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(%{
     title: "Offer",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      slug: %Schema{type: :string},
-      description: %Schema{type: :string, nullable: true},
-      type: %Schema{type: :string},
-      duration_text: %Schema{type: :string, nullable: true},
-      price: %Schema{type: :number, nullable: true},
-      currency: %Schema{type: :string, nullable: true},
-      price_display: %Schema{type: :string, nullable: true},
-      features: %Schema{type: :array, items: %Schema{type: :string}},
-      is_featured: %Schema{type: :boolean},
-      status: %Schema{type: :string},
-      position: %Schema{type: :integer},
-      cta_text: %Schema{type: :string, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    }
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          slug: %Schema{type: :string},
+          description: %Schema{type: :string, nullable: true},
+          type: %Schema{type: :string},
+          duration_text: %Schema{type: :string, nullable: true},
+          price: %Schema{type: :number, nullable: true},
+          currency: %Schema{type: :string, nullable: true},
+          price_display: %Schema{type: :string, nullable: true},
+          features: %Schema{type: :array, items: %Schema{type: :string}},
+          is_featured: %Schema{type: :boolean},
+          status: %Schema{type: :string},
+          position: %Schema{type: :integer},
+          cta_text: %Schema{type: :string, nullable: true}
+        },
+        Shared.timestamps()
+      )
   })
 end
 
 defmodule EasyWeb.OpenApi.Schemas.OfferResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.Offer
+  alias EasyWeb.OpenApi.Schemas.{Offer, Shared}
 
-  OpenApiSpex.schema(%{title: "OfferResponse", type: :object, additionalProperties: false, properties: %{data: Offer}, required: [:data]})
+  OpenApiSpex.schema(Shared.data_response(Offer, "OfferResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.OfferListResponse do
@@ -256,9 +265,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TestimonialResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.Testimonial
+  alias EasyWeb.OpenApi.Schemas.{Testimonial, Shared}
 
-  OpenApiSpex.schema(%{title: "TestimonialResponse", type: :object, additionalProperties: false, properties: %{data: Testimonial}, required: [:data]})
+  OpenApiSpex.schema(Shared.data_response(Testimonial, "TestimonialResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.TestimonialListResponse do

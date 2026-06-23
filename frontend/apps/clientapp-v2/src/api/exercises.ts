@@ -57,13 +57,7 @@ export const clientExercisesApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Exercise', id}],
     }),
     listClientExercises: build.query<ApiListResponse<ClientExercise>, ListClientExercisesParams | void>({
-      query: (params) =>
-        params
-          ? {
-              params,
-              url: '/v1/client/exercises',
-            }
-          : '/v1/client/exercises',
+      query: (params) => ({url: '/v1/client/exercises', params}),
       providesTags: (result) =>
         result
           ? [

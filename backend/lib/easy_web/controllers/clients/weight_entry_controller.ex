@@ -6,6 +6,8 @@ defmodule EasyWeb.Clients.WeightEntryController do
   alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, WeightEntryListResponse, WeightEntryRequest, WeightEntryResponse}
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create]
+
   tags ["client weight entries"]
 
   operation :index,
@@ -35,19 +37,15 @@ defmodule EasyWeb.Clients.WeightEntryController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
     with {:ok, %{client: client, entries: entries}} <-
-           WeightEntries.list_entries_for_user(business_id, user_id, Map.get(params, "since")) do
+           WeightEntries.list_client_weight_entries(conn.assigns.ctx, since: params["since"]) do
       render(conn, :index, entries: entries, client: client)
     end
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, entry} <- WeightEntries.upsert_for_user(business_id, user_id, conn.body_params) do
+    with {:ok, entry} <- WeightEntries.upsert_client_weight_entry(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, weight_entry: entry)
@@ -55,10 +53,10 @@ defmodule EasyWeb.Clients.WeightEntryController do
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+  def delete(conn, _params) do
+    entry_id = conn.path_params["id"]
 
-    with {:ok, _deleted} <- WeightEntries.delete_for_user(business_id, user_id, id) do
+    with {:ok, _deleted} <- WeightEntries.delete_client_weight_entry(conn.assigns.ctx, entry_id) do
       send_resp(conn, :no_content, "")
     end
   end

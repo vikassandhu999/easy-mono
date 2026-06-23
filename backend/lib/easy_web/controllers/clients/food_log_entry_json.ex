@@ -22,12 +22,13 @@ defmodule EasyWeb.Clients.FoodLogEntryJSON do
       protein_g: e.protein_g,
       carbs_g: e.carbs_g,
       fat_g: e.fat_g,
+      fiber_g: e.fiber_g,
       notes: e.notes,
       source: e.source,
       planned_item_index: e.planned_item_index,
       food_id: e.food_id,
       recipe_id: e.recipe_id,
-      meal_log_id: e.meal_log_id,
+      nutrition_meal_log_id: e.nutrition_meal_log_id,
       inserted_at: e.inserted_at,
       updated_at: e.updated_at
     }

@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coach landing funnel visuals</title>
+    <style>
+      :root {
+        --ink: #17201b;
+        --muted: #65746b;
+        --line: #d9e1dc;
+        --paper: #fbfaf7;
+        --panel: #ffffff;
+        --green: #1d6b4f;
+        --green-soft: #e7f2eb;
+        --coral: #cf5c45;
+        --coral-soft: #fae8e2;
+        --blue: #315c8f;
+        --blue-soft: #e6eef7;
+        --gold: #b27a20;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.45;
+      }
+
+      .wrap {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      h1, h2, h3, p { margin: 0; }
+
+      h1 { font-size: 34px; line-height: 1.1; letter-spacing: 0; }
+      h2 { margin-top: 40px; font-size: 24px; letter-spacing: 0; }
+      h3 { font-size: 16px; letter-spacing: 0; }
+
+      .lede {
+        margin-top: 10px;
+        max-width: 780px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .rulebar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        padding: 7px 11px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .board-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--panel);
+        overflow: hidden;
+        box-shadow: 0 14px 30px rgba(23, 32, 27, 0.07);
+      }
+
+      .card-head {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .card-head p {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .mini-page {
+        min-height: 620px;
+        background: #f5f3ee;
+        font-size: 12px;
+      }
+
+      .mini-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        font-weight: 800;
+        color: var(--ink);
+      }
+
+      .mini-button,
+      .ghost-button {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .mini-button {
+        background: var(--green);
+        color: white;
+      }
+
+      .ghost-button {
+        border: 1px solid var(--line);
+        color: var(--ink);
+        background: #fff;
+      }
+
+      .hero {
+        padding: 18px;
+      }
+
+      .hero.split {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 14px;
+        align-items: stretch;
+      }
+
+      .eyebrow {
+        color: var(--green);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .hero h4 {
+        margin: 6px 0 0;
+        font-size: 24px;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .hero p {
+        margin-top: 8px;
+        color: var(--muted);
+      }
+
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .photo {
+        min-height: 170px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0)),
+          #dfe5df;
+        display: flex;
+        align-items: end;
+        padding: 12px;
+        color: #324137;
+        font-weight: 750;
+      }
+
+      .section {
+        padding: 16px 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .section.alt { background: #fff; }
+      .section.soft-green { background: var(--green-soft); }
+      .section.soft-coral { background: var(--coral-soft); }
+      .section.soft-blue { background: var(--blue-soft); }
+
+      .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .section-title span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .proof-row,
+      .program-row,
+      .steps-row {
+        display: grid;
+        gap: 8px;
+      }
+
+      .proof-row { grid-template-columns: repeat(3, 1fr); }
+      .program-row { grid-template-columns: repeat(3, 1fr); }
+      .steps-row { grid-template-columns: repeat(3, 1fr); }
+
+      .metric,
+      .program,
+      .step,
+      .question,
+      .answer-card {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        padding: 10px;
+      }
+
+      .metric b,
+      .program b,
+      .step b {
+        display: block;
+        font-size: 14px;
+      }
+
+      .metric span,
+      .program span,
+      .step span,
+      .answer-card span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .program.selected {
+        border-color: var(--green);
+        box-shadow: inset 0 0 0 1px var(--green);
+      }
+
+      .fit-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .fit-item {
+        border-left: 4px solid var(--coral);
+        border-radius: 8px;
+        background: #fff;
+        padding: 9px 10px;
+        font-size: 12px;
+      }
+
+      .bio-row {
+        display: grid;
+        grid-template-columns: 100px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: #dfe5df;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+
+      .field {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 8px 9px;
+        min-height: 42px;
+        color: var(--muted);
+      }
+
+      .field.wide { grid-column: 1 / -1; min-height: 72px; }
+
+      .success-box {
+        border: 1px solid #bad6c6;
+        border-radius: 12px;
+        background: #f4fbf6;
+        padding: 12px;
+      }
+
+      .whatsapp-box {
+        margin-top: 8px;
+        border: 1px solid #9bc5ac;
+        border-radius: 10px;
+        background: #fff;
+        padding: 10px;
+      }
+
+      .section-board {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .section-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        padding: 16px;
+        box-shadow: 0 10px 22px rgba(23, 32, 27, 0.05);
+      }
+
+      .section-card > p {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .preview {
+        margin-top: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #f7f5f0;
+      }
+
+      .preview .section { border-top: 0; }
+
+      .notes {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .note {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        padding: 13px;
+      }
+
+      .note b {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .note p {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 980px) {
+        .grid3,
+        .section-board,
+        .notes { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 560px) {
+        .hero.split,
+        .proof-row,
+        .program-row,
+        .steps-row,
+        .form-grid,
+        .bio-row { grid-template-columns: 1fr; }
+
+        h1 { font-size: 28px; }
+        .wrap { padding-inline: 14px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>Coach landing funnel visuals</h1>
+      <p class="lede">
+        One visual board for V1 templates and reusable sections. The page sells
+        Programs, captures applications as Prospects, and nudges WhatsApp only
+        after the Prospect is saved.
+      </p>
+
+      <div class="rulebar">
+        <span class="pill">One published page in V1</span>
+        <span class="pill">Up to 3 Programs</span>
+        <span class="pill">Up to 5 questions</span>
+        <span class="pill">One shared apply form</span>
+        <span class="pill">No scheduler</span>
+        <span class="pill">No page builder</span>
+      </div>
+
+      <h2>Template directions</h2>
+      <div class="grid3">
+        <article class="board-card">
+          <div class="card-head">
+            <h3>Proof-first</h3>
+            <p>For coaches with strong results, client wins, or visible social proof.</p>
+          </div>
+          <div class="mini-page">
+            <div class="mini-nav">
+              <span class="brand">Kavya Strength</span>
+              <span class="mini-button">Apply</span>
+            </div>
+            <section class="hero split">
+              <div>
+                <div class="eyebrow">Online coaching for busy lifters</div>
+                <h4>Build strength without guessing what to do next.</h4>
+                <p>Personal coaching for people who train hard but need structure, feedback, and accountability.</p>
+                <div class="cta-row">
+                  <span class="mini-button">Apply for coaching</span>
+                  <span class="ghost-button">See programs</span>
+                </div>
+              </div>
+              <div class="photo">Coach photo or training image</div>
+            </section>
+            <section class="section soft-green">
+              <div class="section-title">
+                <h3>Proof band</h3>
+                <span>high on page</span>
+              </div>
+              <div class="proof-row">
+                <div class="metric"><b>220+</b><span>clients coached</span></div>
+                <div class="metric"><b>8 yrs</b><span>coaching experience</span></div>
+                <div class="metric"><b>4.9/5</b><span>average feedback</span></div>
+              </div>
+            </section>
+            <section class="section alt">
+              <div class="section-title">
+                <h3>Programs</h3>
+                <span>visitor chooses interest</span>
+              </div>
+              <div class="program-row">
+                <div class="program selected"><b>Fat loss</b><span>For busy professionals</span></div>
+                <div class="program"><b>Strength</b><span>For gym regulars</span></div>
+                <div class="program"><b>Nutrition</b><span>For consistency</span></div>
+              </div>
+            </section>
+            <section class="section">
+              <div class="section-title">
+                <h3>Apply</h3>
+                <span>same form</span>
+              </div>
+              <div class="form-grid">
+                <div class="field">Name</div>
+                <div class="field">Phone or email</div>
+                <div class="field wide">Main goal</div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="board-card">
+          <div class="card-head">
+            <h3>Problem-fit</h3>
+            <p>For a specific audience or goal where the visitor needs to self-qualify.</p>
+          </div>
+          <div class="mini-page">
+            <div class="mini-nav">
+              <span class="brand">Fit After 35</span>
+              <span class="mini-button">Apply</span>
+            </div>
+            <section class="hero">
+              <div class="eyebrow">For men and women restarting fitness after 35</div>
+              <h4>Lose weight and rebuild routine without extreme dieting.</h4>
+              <p>A coaching page that quickly tells the visitor whether this is built for them.</p>
+              <div class="cta-row">
+                <span class="mini-button">Check fit and apply</span>
+              </div>
+            </section>
+            <section class="section soft-coral">
+              <div class="section-title">
+                <h3>This is for you if</h3>
+                <span>qualify early</span>
+              </div>
+              <div class="fit-list">
+                <div class="fit-item">You have tried plans but cannot stay consistent.</div>
+                <div class="fit-item">You want realistic food and training, not a challenge.</div>
+                <div class="fit-item">You want a coach to review progress every week.</div>
+              </div>
+            </section>
+            <section class="section alt">
+              <div class="section-title">
+                <h3>Programs</h3>
+                <span>still capped at 3</span>
+              </div>
+              <div class="program-row">
+                <div class="program selected"><b>Fat loss</b><span>12-week focus</span></div>
+                <div class="program"><b>Habit reset</b><span>Routine first</span></div>
+                <div class="program"><b>Nutrition</b><span>Food coaching</span></div>
+              </div>
+            </section>
+            <section class="section">
+              <div class="section-title">
+                <h3>Apply</h3>
+                <span>fit questions matter</span>
+              </div>
+              <div class="form-grid">
+                <div class="field">Name</div>
+                <div class="field">Phone or email</div>
+                <div class="field wide">Biggest challenge</div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="board-card">
+          <div class="card-head">
+            <h3>Coach-story</h3>
+            <p>For coaches whose audience buys because of trust, personality, or philosophy.</p>
+          </div>
+          <div class="mini-page">
+            <div class="mini-nav">
+              <span class="brand">Arjun Coaching</span>
+              <span class="mini-button">Apply</span>
+            </div>
+            <section class="hero split">
+              <div>
+                <div class="eyebrow">Personal coaching, not a generic plan</div>
+                <h4>I help you train and eat around your actual life.</h4>
+                <p>Lead with coach voice and values, then show the visitor how to apply.</p>
+                <div class="cta-row">
+                  <span class="mini-button">Apply to work with me</span>
+                </div>
+              </div>
+              <div class="photo">Coach portrait</div>
+            </section>
+            <section class="section soft-blue">
+              <div class="bio-row">
+                <div class="avatar"></div>
+                <div>
+                  <h3>Coach intro</h3>
+                  <p>Short story, coaching philosophy, who gets the best results with this coach.</p>
+                </div>
+              </div>
+            </section>
+            <section class="section alt">
+              <div class="section-title">
+                <h3>Programs</h3>
+                <span>framed as ways to start</span>
+              </div>
+              <div class="program-row">
+                <div class="program selected"><b>Starter</b><span>Build routine</span></div>
+                <div class="program"><b>Transformation</b><span>Higher support</span></div>
+                <div class="program"><b>Nutrition</b><span>Food only</span></div>
+              </div>
+            </section>
+            <section class="section">
+              <div class="section-title">
+                <h3>Apply</h3>
+                <span>coach reviews every prospect</span>
+              </div>
+              <div class="form-grid">
+                <div class="field">Name</div>
+                <div class="field">Phone or email</div>
+                <div class="field wide">Why do you want coaching?</div>
+              </div>
+            </section>
+          </div>
+        </article>
+      </div>
+
+      <h2>Reusable section anatomy</h2>
+      <div class="section-board">
+        <article class="section-card">
+          <h3>1. Hero</h3>
+          <p>First screen: who this is for, outcome, coach visual, primary apply action.</p>
+          <div class="preview">
+            <section class="hero split">
+              <div>
+                <div class="eyebrow">For busy professionals</div>
+                <h4>Get leaner with coaching that fits your week.</h4>
+                <p>Short proof-backed promise. No generic slogan. One obvious action.</p>
+                <div class="cta-row">
+                  <span class="mini-button">Apply now</span>
+                  <span class="ghost-button">View programs</span>
+                </div>
+              </div>
+              <div class="photo">Coach image</div>
+            </section>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <h3>2. Programs</h3>
+          <p>Up to three sales options on the same page. Selection feeds the apply form.</p>
+          <div class="preview">
+            <section class="section alt">
+              <div class="program-row">
+                <div class="program selected">
+                  <b>Fat loss coaching</b>
+                  <span>For people who need structure and weekly review.</span>
+                </div>
+                <div class="program">
+                  <b>Muscle gain</b>
+                  <span>For lifters who want progressive training support.</span>
+                </div>
+                <div class="program">
+                  <b>Nutrition reset</b>
+                  <span>For clients who need food habits before hard training.</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <h3>3. Proof points</h3>
+          <p>Lightweight credibility without reviving testimonial CRUD.</p>
+          <div class="preview">
+            <section class="section soft-green">
+              <div class="proof-row">
+                <div class="metric"><b>6 years</b><span>coaching clients online</span></div>
+                <div class="metric"><b>180+</b><span>people coached</span></div>
+                <div class="metric"><b>Weekly</b><span>check-ins and adjustments</span></div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <h3>4. Fit section</h3>
+          <p>Problem-fit template uses this early. Others can use it as supporting copy.</p>
+          <div class="preview">
+            <section class="section soft-coral">
+              <div class="fit-list">
+                <div class="fit-item">You want coaching, not another PDF plan.</div>
+                <div class="fit-item">You can commit to check-ins and honest tracking.</div>
+                <div class="fit-item">You want personal adjustments when life gets messy.</div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <h3>5. Coach intro</h3>
+          <p>Trust section for coach voice, background, and who they work best with.</p>
+          <div class="preview">
+            <section class="section soft-blue">
+              <div class="bio-row">
+                <div class="avatar"></div>
+                <div>
+                  <h3>Meet your coach</h3>
+                  <p>I coach busy people who want practical training and nutrition that can survive real work weeks.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <h3>6. Apply form</h3>
+          <p>One form for the page. Program selection is stored on the Prospect.</p>
+          <div class="preview">
+            <section class="section alt">
+              <div class="section-title">
+                <h3>Apply for coaching</h3>
+                <span>Fat loss selected</span>
+              </div>
+              <div class="form-grid">
+                <div class="field">Name</div>
+                <div class="field">Phone</div>
+                <div class="field">Email</div>
+                <div class="field">Instagram or profile link</div>
+                <div class="field wide">What is your main goal?</div>
+                <div class="field wide">What has stopped you before?</div>
+              </div>
+              <div class="cta-row">
+                <span class="mini-button">Submit application</span>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <h3>7. Success and WhatsApp</h3>
+          <p>Prospect is saved first. WhatsApp is optional and only appears when configured.</p>
+          <div class="preview">
+            <section class="section">
+              <div class="success-box">
+                <h3>Application received</h3>
+                <p>Your coach will review this and get back to you.</p>
+                <div class="whatsapp-box">
+                  <b>Recommended next step</b>
+                  <span>Send your application summary on WhatsApp so the coach can reply faster.</span>
+                  <div class="cta-row">
+                    <span class="mini-button">Send on WhatsApp</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="section-card">
+          <h3>8. Prospect review</h3>
+          <p>Coach-side destination after submission. This is where sales becomes enrollment.</p>
+          <div class="preview">
+            <section class="section alt">
+              <div class="answer-card">
+                <b>Priya Sharma</b>
+                <span>Interested in: Fat loss coaching</span>
+                <span>Status: New prospect</span>
+              </div>
+              <div class="answer-card">
+                <b>Main goal</b>
+                <span>Lose 8 kg and build a consistent gym routine.</span>
+              </div>
+              <div class="answer-card">
+                <b>Actions</b>
+                <span>Mark reviewing, mark lost, or enroll as client.</span>
+              </div>
+            </section>
+          </div>
+        </article>
+      </div>
+
+      <h2>Open decisions to review</h2>
+      <div class="notes">
+        <div class="note">
+          <b>Section order</b>
+          <p>Proof-first moves proof up. Problem-fit moves fit up. Coach-story moves bio up.</p>
+        </div>
+        <div class="note">
+          <b>Proof input</b>
+          <p>Use simple proof points in V1. No testimonial manager.</p>
+        </div>
+        <div class="note">
+          <b>Programs</b>
+          <p>Programs are copy-only sales options. They do not map to delivery templates.</p>
+        </div>
+        <div class="note">
+          <b>Apply form</b>
+          <p>One page-level form. Program-specific questions stay out of V1.</p>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

@@ -6,7 +6,7 @@ export function getWorkoutSessionTitle(session: WorkoutSession): string {
   return session.planned_snapshot ? session.planned_snapshot.workout_name : 'Freestyle workout';
 }
 
-export function getWorkoutSessionExerciseCount(session: WorkoutSession): number {
+function getWorkoutSessionExerciseCount(session: WorkoutSession): number {
   const exerciseIds = new Set<string>();
   for (const set of session.performed_sets) {
     exerciseIds.add(set.exercise_id);
@@ -14,7 +14,7 @@ export function getWorkoutSessionExerciseCount(session: WorkoutSession): number 
   return exerciseIds.size;
 }
 
-export function getWorkoutSessionReplacedCount(session: WorkoutSession): number {
+function getWorkoutSessionReplacedCount(session: WorkoutSession): number {
   if (!session.planned_snapshot) {
     return 0;
   }
@@ -38,7 +38,7 @@ export function getWorkoutSessionReplacedCount(session: WorkoutSession): number 
   return replacedElements.size;
 }
 
-export function getWorkoutSessionPlannedExerciseCount(session: WorkoutSession): null | number {
+function getWorkoutSessionPlannedExerciseCount(session: WorkoutSession): null | number {
   return session.planned_snapshot ? session.planned_snapshot.elements.length : null;
 }
 

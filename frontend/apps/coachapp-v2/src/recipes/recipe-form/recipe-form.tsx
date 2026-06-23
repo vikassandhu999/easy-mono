@@ -70,18 +70,14 @@ function toOptionalMacros(values: RecipeFormValues): RecipeCreateRequest['macros
   return Object.keys(macros).length > 0 ? macros : undefined;
 }
 
-function recipeIngredientToDraft(ingredient: RecipeIngredient): IngredientItem {
-  return {
+export function recipeIngredientsToDrafts(ingredients: RecipeIngredient[]): IngredientItem[] {
+  return ingredients.map((ingredient) => ({
     food: ingredient.food,
     food_id: ingredient.food_id,
     amount: ingredient.amount ?? '',
     unit: ingredient.unit ?? '',
     weight_g: ingredient.weight_g ?? '',
-  };
-}
-
-export function recipeIngredientsToDrafts(ingredients: RecipeIngredient[]): IngredientItem[] {
-  return ingredients.map(recipeIngredientToDraft);
+  }));
 }
 
 function recipeIngredientDraftToApi(item: IngredientItem): RecipeIngredientInput {
@@ -192,26 +188,6 @@ const MACRO_FIELDS: NumberFieldConfig[] = [
   {label: 'Fiber, grams (optional)', name: 'fiber_g', step: 0.1},
   {label: 'Sugar, grams (optional)', name: 'sugar_g', step: 0.1},
 ];
-
-function RecipeNumberField({
-  fieldConfig,
-  form,
-}: {
-  fieldConfig: NumberFieldConfig;
-  form: ReturnType<typeof useRecipeForm>;
-}) {
-  return (
-    <FormNumberField
-      control={form.control}
-      description={fieldConfig.description}
-      fullWidth
-      label={fieldConfig.label}
-      minValue={0}
-      name={fieldConfig.name}
-      step={fieldConfig.step}
-    />
-  );
-}
 
 export default function RecipeForm({
   form,
@@ -332,13 +308,13 @@ export default function RecipeForm({
         <Description>Enter values for 100 g, or calculate them from ingredient weights</Description>
 
         <Fieldset.Group>
-          <RecipeNumberField
-            fieldConfig={{
-              description: 'Use the final cooked weight for more accurate per-100 g nutrition',
-              label: 'Cooked weight, grams (optional)',
-              name: 'cooked_weight_g',
-            }}
-            form={form}
+          <FormNumberField
+            control={control}
+            description="Use the final cooked weight for more accurate per-100 g nutrition"
+            fullWidth
+            label="Cooked weight, grams (optional)"
+            minValue={0}
+            name="cooked_weight_g"
           />
 
           <Fieldset.Actions>
@@ -355,10 +331,15 @@ export default function RecipeForm({
 
           <Fieldset.Group>
             {MACRO_FIELDS.map((fieldConfig) => (
-              <RecipeNumberField
-                fieldConfig={fieldConfig}
-                form={form}
+              <FormNumberField
+                control={control}
+                description={fieldConfig.description}
+                fullWidth
                 key={fieldConfig.name}
+                label={fieldConfig.label}
+                minValue={0}
+                name={fieldConfig.name}
+                step={fieldConfig.step}
               />
             ))}
           </Fieldset.Group>

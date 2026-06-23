@@ -1,5 +1,7 @@
 # UX Spec: Weekly Schedule
 
+> **⚠️ Status (2026-06-20): The weekly-schedule editing UI described here has been removed from coachapp-v2.** It was implemented by the now-deleted `weekly-overview` component (and the interactive plan builder it belonged to); the training-plan detail view is now read-only, with no in-app workout/exercise editing. Removed as dead code — still in git history. This document is retained as the design of record.
+
 **Date:** 2026-04-23
 **Scope:** The Weekly Schedule section on the training plan builder. The seven-row list that shows which workout runs on which day.
 **Principle:** Seven identical rows. Anchored by day name. Actions out of sight until needed.

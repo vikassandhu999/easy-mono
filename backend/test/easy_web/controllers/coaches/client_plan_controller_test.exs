@@ -9,10 +9,10 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
     %{conn: conn, coach: coach, client: client, business: coach.business}
   end
 
-  describe "GET /v1/coach/clients/:client_id/training_plans" do
+  describe "GET /v1/coach/clients/:client_id/training-plans" do
     test "lists only this client's training plans", ctx do
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         start_date: ~D[2026-01-01],
@@ -20,20 +20,20 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       )
 
       # Template — should NOT appear
-      insert(:training_plan, author: ctx.coach, business: ctx.business)
+      insert(:training_plan, creator: ctx.coach, business: ctx.business)
 
       # Other client's plan — should NOT appear
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
 
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: other_client.id,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-01-31]
       )
 
-      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training-plans")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
       assert hd(data)["client_id"] == ctx.client.id
@@ -41,13 +41,13 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
     end
 
     test "returns empty list when client has no plans", ctx do
-      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training-plans")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
 
     test "filters by status", ctx do
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         status: :active,
@@ -56,7 +56,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       )
 
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         status: :archived,
@@ -65,7 +65,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       )
 
       conn =
-        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training_plans", %{
+        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training-plans", %{
           "status" => "active"
         })
 
@@ -77,17 +77,17 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       other_coach = insert(:coach)
       other_client = insert(:client, creator: other_coach, business: other_coach.business)
 
-      conn = get(ctx.conn, "/v1/coach/clients/#{other_client.id}/training_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{other_client.id}/training-plans")
       assert json_response(conn, 404)
     end
 
     test "returns 404 for non-existent client", ctx do
-      conn = get(ctx.conn, "/v1/coach/clients/#{Ecto.UUID.generate()}/training_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{Ecto.UUID.generate()}/training-plans")
       assert json_response(conn, 404)
     end
   end
 
-  describe "GET /v1/coach/clients/:client_id/nutrition_plans" do
+  describe "GET /v1/coach/clients/:client_id/nutrition-plans" do
     test "lists only this client's nutrition plans", ctx do
       insert(:plan,
         creator: ctx.coach,
@@ -108,7 +108,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
         client_id: other_client.id
       )
 
-      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-plans")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
       assert hd(data)["client_id"] == ctx.client.id
@@ -116,7 +116,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
     end
 
     test "returns empty list when client has no plans", ctx do
-      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-plans")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
 
@@ -136,7 +136,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       )
 
       conn =
-        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition_plans", %{
+        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/nutrition-plans", %{
           "status" => "active"
         })
 
@@ -148,12 +148,12 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       other_coach = insert(:coach)
       other_client = insert(:client, creator: other_coach, business: other_coach.business)
 
-      conn = get(ctx.conn, "/v1/coach/clients/#{other_client.id}/nutrition_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{other_client.id}/nutrition-plans")
       assert json_response(conn, 404)
     end
 
     test "returns 404 for non-existent client", ctx do
-      conn = get(ctx.conn, "/v1/coach/clients/#{Ecto.UUID.generate()}/nutrition_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{Ecto.UUID.generate()}/nutrition-plans")
       assert json_response(conn, 404)
     end
   end

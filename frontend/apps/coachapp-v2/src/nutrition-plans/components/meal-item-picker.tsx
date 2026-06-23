@@ -1,14 +1,51 @@
 import type {Key} from '@heroui/react';
-
 import {Autocomplete, Button, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
+import type {LucideIcon} from 'lucide-react';
 import {Apple, ChefHat} from 'lucide-react';
-import {useState} from 'react';
+import {useDeferredValue, useState} from 'react';
 
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
 import {type Recipe, useListRecipesQuery} from '@/api/recipes';
 
 type PickerTab = 'food' | 'recipe';
+
+function renderItem(item: Food | Recipe, Icon: LucideIcon) {
+  const cal = item.macros.calories_per_100g;
+  const pro = item.macros.protein_g;
+  return (
+    <ListBox.Item
+      id={item.id}
+      key={item.id}
+      textValue={item.name}
+    >
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
+        {item.image_url ? (
+          <img
+            alt={item.name}
+            className="size-7 rounded-md object-cover"
+            src={item.image_url}
+          />
+        ) : (
+          <Icon
+            className="text-foreground-400"
+            size={14}
+          />
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center justify-between gap-2">
+          <Label>{item.name}</Label>
+          {cal != null && cal > 0 && <span className="shrink-0 text-xs text-foreground-400">{cal} Cal</span>}
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          {item.category && <Description>{item.category}</Description>}
+          {pro != null && pro > 0 && <span className="shrink-0 text-xs text-foreground-400">{pro}g P</span>}
+        </div>
+      </div>
+      <ListBox.ItemIndicator />
+    </ListBox.Item>
+  );
+}
 
 type MealItemPickerProps = {
   onSelectFood: (food: Food) => void;
@@ -25,18 +62,18 @@ export default function MealItemPicker({
 }: MealItemPickerProps) {
   const [activeTab, setActiveTab] = useState<PickerTab>('food');
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const deferredSearch = useDeferredValue(searchInput);
+  const skipQuery = deferredSearch.length >= 1;
 
   const {data: foodData, isFetching: isFetchingFoods} = useListFoodsQuery(
-    shouldQuery && activeTab === 'food' ? {search: debouncedSearch, limit: 10} : undefined,
-    {skip: !shouldQuery || activeTab !== 'food'},
+    {search: deferredSearch, limit: 10},
+    {skip: skipQuery || activeTab !== 'food'},
   );
   const foods = foodData?.data ?? [];
 
   const {data: recipeData, isFetching: isFetchingRecipes} = useListRecipesQuery(
-    shouldQuery && activeTab === 'recipe' ? {search: debouncedSearch, limit: 10} : undefined,
-    {skip: !shouldQuery || activeTab !== 'recipe'},
+    {search: deferredSearch, limit: 10},
+    {skip: skipQuery || activeTab !== 'recipe'},
   );
   const recipes = recipeData?.data ?? [];
 
@@ -135,103 +172,23 @@ export default function MealItemPicker({
 
             {activeTab === 'food' ? (
               <ListBox
-                className="max-h-[280px] overflow-y-auto"
+                className="max-h-70 overflow-y-auto"
                 items={foods}
                 renderEmptyState={() => (
-                  <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>
+                  <EmptyState>{skipQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>
                 )}
               >
-                {(food: Food) => {
-                  const cal = food.macros.calories_per_100g;
-                  const pro = food.macros.protein_g;
-                  return (
-                    <ListBox.Item
-                      id={food.id}
-                      key={food.id}
-                      textValue={food.name}
-                    >
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
-                        {food.image_url ? (
-                          <img
-                            alt={food.name}
-                            className="size-7 rounded-md object-cover"
-                            src={food.image_url}
-                          />
-                        ) : (
-                          <Apple
-                            className="text-foreground-400"
-                            size={14}
-                          />
-                        )}
-                      </div>
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <div className="flex items-center justify-between gap-2">
-                          <Label>{food.name}</Label>
-                          {cal != null && cal > 0 && (
-                            <span className="shrink-0 text-xs text-foreground-400">{cal} Cal</span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          {food.category && <Description>{food.category}</Description>}
-                          {pro != null && pro > 0 && (
-                            <span className="shrink-0 text-xs text-foreground-400">{pro}g P</span>
-                          )}
-                        </div>
-                      </div>
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  );
-                }}
+                {(food: Food) => renderItem(food, Apple)}
               </ListBox>
             ) : (
               <ListBox
-                className="max-h-[280px] overflow-y-auto"
+                className="max-h-70 overflow-y-auto"
                 items={recipes}
                 renderEmptyState={() => (
-                  <EmptyState>{shouldQuery ? 'No recipes found' : 'Type to search recipes'}</EmptyState>
+                  <EmptyState>{skipQuery ? 'No recipes found' : 'Type to search recipes'}</EmptyState>
                 )}
               >
-                {(recipe: Recipe) => {
-                  const cal = recipe.macros.calories_per_100g;
-                  const pro = recipe.macros.protein_g;
-                  return (
-                    <ListBox.Item
-                      id={recipe.id}
-                      key={recipe.id}
-                      textValue={recipe.name}
-                    >
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
-                        {recipe.image_url ? (
-                          <img
-                            alt={recipe.name}
-                            className="size-7 rounded-md object-cover"
-                            src={recipe.image_url}
-                          />
-                        ) : (
-                          <ChefHat
-                            className="text-foreground-400"
-                            size={14}
-                          />
-                        )}
-                      </div>
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <div className="flex items-center justify-between gap-2">
-                          <Label>{recipe.name}</Label>
-                          {cal != null && cal > 0 && (
-                            <span className="shrink-0 text-xs text-foreground-400">{cal} Cal</span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          {recipe.category && <Description>{recipe.category}</Description>}
-                          {pro != null && pro > 0 && (
-                            <span className="shrink-0 text-xs text-foreground-400">{pro}g P</span>
-                          )}
-                        </div>
-                      </div>
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  );
-                }}
+                {(recipe: Recipe) => renderItem(recipe, ChefHat)}
               </ListBox>
             )}
           </Autocomplete.Filter>

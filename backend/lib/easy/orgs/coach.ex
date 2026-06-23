@@ -49,19 +49,19 @@ defmodule Easy.Orgs.Coach do
     from(c in query, where: c.user_id == ^user_id)
   end
 
-  @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_preloads(query \\ __MODULE__) do
+  @spec include_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_preloads(query \\ __MODULE__, _business_id) do
     from(c in query, preload: [:user, :business])
   end
 
   # Actions
 
-  @spec get_for_user(String.t(), String.t()) :: {:ok, t()} | {:error, Easy.Error.t()}
-  def get_for_user(business_id, user_id) do
+  @spec fetch(String.t(), String.t()) :: {:ok, t()} | {:error, Easy.Error.t()}
+  def fetch(business_id, user_id) do
     case __MODULE__
          |> for_business(business_id)
          |> for_user(user_id)
-         |> with_preloads()
+         |> include_preloads(business_id)
          |> Repo.one() do
       nil -> {:error, Easy.Error.not_found("Coach not found")}
       coach -> {:ok, coach}
@@ -70,8 +70,8 @@ defmodule Easy.Orgs.Coach do
 
   @spec update_profile(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update_profile(%__MODULE__{} = coach, params) do
-    coach_attrs = Map.take(params, ["first_name", "last_name", "phone"])
-    business_name = params["business_name"]
+    coach_attrs = Map.take(params, [:first_name, :last_name, :phone])
+    business_name = params[:business_name]
 
     Repo.transaction(fn ->
       updated_coach =

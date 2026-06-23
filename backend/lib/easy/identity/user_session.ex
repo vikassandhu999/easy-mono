@@ -25,11 +25,11 @@ defmodule Easy.Identity.UserSession do
 
     belongs_to :user, Easy.Identity.User
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
-  @spec new_session(map()) :: Ecto.Changeset.t()
-  def new_session(attrs) do
+  @spec new_session(binary(), binary() | nil, map()) :: Ecto.Changeset.t()
+  def new_session(user_id, business_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, [
       :ip,
@@ -38,17 +38,19 @@ defmodule Easy.Identity.UserSession do
       :revoked_at,
       :refresh_token,
       :refreshed_at,
-      :user_id,
-      :business_id,
       :role
     ])
+    |> put_change(:user_id, user_id)
+    |> put_change(:business_id, business_id)
     |> validate_required([:refresh_token, :expires_at, :user_id, :role])
     |> unique_constraint(:refresh_token)
   end
 
-  def refresh_changeset(%__MODULE__{} = session, attrs) do
+  @spec refresh_changeset(t(), binary() | nil, map()) :: Ecto.Changeset.t()
+  def refresh_changeset(%__MODULE__{} = session, business_id, attrs) do
     session
-    |> cast(attrs, [:ip, :user_agent, :refreshed_at, :business_id, :role])
+    |> cast(attrs, [:ip, :user_agent, :refreshed_at, :role])
+    |> put_change(:business_id, business_id)
     |> put_change(:refreshed_at, DateTime.utc_now(:second))
   end
 

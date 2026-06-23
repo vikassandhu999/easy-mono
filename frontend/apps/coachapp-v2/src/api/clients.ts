@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {ApiResponse} from '@/api/shared';
+import {ApiResponse, listTags, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 50;
 
@@ -71,16 +71,9 @@ export type ClientUpdateRequest = {
  * that link is permanent.
  */
 export function allowedStatusesFor(current: ClientStatus): AllowedUpdateStatus[] {
-  switch (current) {
-    case 'pending':
-      return [];
-    case 'active':
-      return ['active', 'inactive', 'archived'];
-    case 'inactive':
-      return ['active', 'inactive', 'archived'];
-    case 'archived':
-      return ['active', 'inactive', 'archived'];
-  }
+  // pending only exits via accept-invite or revoke; every other status can move
+  // freely among active/inactive/archived.
+  return current === 'pending' ? [] : ['active', 'inactive', 'archived'];
 }
 
 export type ClientSummary = {
@@ -123,23 +116,8 @@ export const clientsApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Client', id}],
     }),
     listClients: build.query<ClientListResponse, ListClientsParams | void>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/clients',
-              params,
-            }
-          : '/v1/coach/clients',
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((client) => ({
-                type: 'Client' as const,
-                id: client.id,
-              })),
-              {type: 'Client' as const, id: 'LIST'},
-            ]
-          : [{type: 'Client' as const, id: 'LIST'}],
+      query: (params) => ({url: '/v1/coach/clients', params}),
+      providesTags: (result) => listTags('Client', result),
     }),
     clients: build.infiniteQuery<ClientListResponse, ListClientsFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
@@ -158,18 +136,7 @@ export const clientsApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((client) => ({
-                  type: 'Client' as const,
-                  id: client.id,
-                })),
-              ),
-              {type: 'Client' as const, id: 'LIST'},
-            ]
-          : [{type: 'Client' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('Client', result),
     }),
     resendClientInvite: build.mutation<ApiResponse<Client>, string>({
       query: (id) => ({

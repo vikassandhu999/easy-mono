@@ -162,7 +162,7 @@ defmodule Easy.Workouts do
   end
 
   defp preload_element({:ok, %TrainingWorkoutExercise{} = element}) do
-    {:ok, Repo.preload(element, exercise: TrainingExercise.for_business(element.business_id))}
+    {:ok, Repo.preload(element, exercise: TrainingExercise.owned_or_system(element.business_id))}
   end
 
   defp preload_element(error), do: error

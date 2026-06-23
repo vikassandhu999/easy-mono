@@ -163,6 +163,36 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
     end
+
+    test "from-only filter returns sessions on/after from date", ctx do
+      today = Date.utc_today()
+      recent = Date.add(today, -5)
+      old = Date.add(today, -40)
+
+      insert(:workout_session, client: ctx.client, business: ctx.business, date: recent, state: :completed)
+      insert(:workout_session, client: ctx.client, business: ctx.business, date: old, state: :completed)
+
+      from = Date.add(today, -10)
+      conn = get(ctx.conn, "/v1/client/training-sessions?from=#{from}")
+      assert %{"data" => data, "count" => count} = json_response(conn, 200)
+      assert count == 1
+      assert length(data) == 1
+    end
+
+    test "to-only filter returns sessions on/before to date", ctx do
+      today = Date.utc_today()
+      recent = Date.add(today, -5)
+      old = Date.add(today, -40)
+
+      insert(:workout_session, client: ctx.client, business: ctx.business, date: recent, state: :completed)
+      insert(:workout_session, client: ctx.client, business: ctx.business, date: old, state: :completed)
+
+      to = Date.add(today, -20)
+      conn = get(ctx.conn, "/v1/client/training-sessions?to=#{to}")
+      assert %{"data" => data, "count" => count} = json_response(conn, 200)
+      assert count == 1
+      assert length(data) == 1
+    end
   end
 
   describe "GET /v1/client/training-sessions/:id" do

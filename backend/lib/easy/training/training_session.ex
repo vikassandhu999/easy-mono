@@ -128,4 +128,14 @@ defmodule Easy.Training.TrainingSession do
       where: s.date <= ^end_date
     )
   end
+
+  @spec for_date_from(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
+  def for_date_from(query \\ __MODULE__, start_date) do
+    from(s in query, where: s.date >= ^start_date)
+  end
+
+  @spec for_date_to(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
+  def for_date_to(query \\ __MODULE__, end_date) do
+    from(s in query, where: s.date <= ^end_date)
+  end
 end

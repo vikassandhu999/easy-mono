@@ -233,8 +233,9 @@ defmodule Easy.Sessions do
     |> ok_or_not_found()
   end
 
-  defp maybe_for_date_range(query, nil, _to), do: query
-  defp maybe_for_date_range(query, _from, nil), do: query
+  defp maybe_for_date_range(query, nil, nil), do: query
+  defp maybe_for_date_range(query, from, nil), do: TrainingSession.for_date_from(query, from)
+  defp maybe_for_date_range(query, nil, to), do: TrainingSession.for_date_to(query, to)
   defp maybe_for_date_range(query, from, to), do: TrainingSession.for_date_range(query, from, to)
 
   defp validate_client_workout_accessible(%{valid?: false} = changeset, _business_id, _client_id),
@@ -411,7 +412,7 @@ defmodule Easy.Sessions do
   defp preload_session(error), do: error
 
   defp preload_set({:ok, %TrainingPerformedSet{} = set}) do
-    {:ok, Repo.preload(set, exercise: TrainingExercise.for_business(set.business_id))}
+    {:ok, Repo.preload(set, exercise: TrainingExercise.owned_or_system(set.business_id))}
   end
 
   defp preload_set(error), do: error

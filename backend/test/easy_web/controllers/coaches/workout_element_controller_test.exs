@@ -49,6 +49,7 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["exercise_id"] == system_exercise.id
+      assert data["exercise"]["name"] == system_exercise.name
     end
 
     test "returns 404 when exercise belongs to another business", %{

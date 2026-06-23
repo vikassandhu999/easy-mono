@@ -12,7 +12,7 @@ defmodule Easy.TrainingPlans do
   import Ecto.Query
 
   @spec get_plan(String.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
-  def get_plan(business_id, plan_id) do
+  defp get_plan(business_id, plan_id) do
     TrainingPlan
     |> TrainingPlan.for_business(business_id)
     |> Repo.get(plan_id)
@@ -43,7 +43,7 @@ defmodule Easy.TrainingPlans do
 
   @spec get_active_plan_day_for_client(String.t(), String.t(), Date.t()) ::
           {:ok, map()} | {:error, :not_found}
-  def get_active_plan_day_for_client(business_id, client_id, date) do
+  defp get_active_plan_day_for_client(business_id, client_id, date) do
     plan =
       TrainingPlan
       |> TrainingPlan.for_business(business_id)
@@ -74,7 +74,7 @@ defmodule Easy.TrainingPlans do
 
   @spec get_client_plan_full(String.t(), String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found}
-  def get_client_plan_full(business_id, client_id, plan_id) do
+  defp get_client_plan_full(business_id, client_id, plan_id) do
     TrainingPlan
     |> TrainingPlan.for_business(business_id)
     |> TrainingPlan.for_client(client_id)

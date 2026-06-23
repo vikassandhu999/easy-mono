@@ -69,6 +69,27 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
       assert data["completed"] == false
     end
 
+    test "create response includes exercise data for a system exercise", ctx do
+      system_exercise = insert(:exercise, source: "system", business: nil, creator: nil)
+
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{ctx.session.id}/performed-sets",
+          Jason.encode!(%{
+            "exercise_id" => system_exercise.id,
+            "set_type" => "working",
+            "position" => 0,
+            "reps" => "5",
+            "completed" => true
+          })
+        )
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["exercise"]["name"] == system_exercise.name
+    end
+
     test "rejects set for another client's session", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
       other_session = insert(:workout_session, client: other_client, business: ctx.business)

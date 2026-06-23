@@ -157,6 +157,8 @@ Rules:
 - **Domain composites are sugar over primitives** — `active_for_client` is built
   by composing `for_client`/`active`/date filters internally, never by
   duplicating `where` logic.
+- **Builder `@spec` is uniform:** queryable in, query out —
+  `@spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()`.
 
 ### A7. Identities, trust, and changesets
 
@@ -201,6 +203,54 @@ Rules:
   **flagged debt** — migrated only with coordinated frontend + OpenAPI changes,
   not churned for cosmetics.
 
+### A9. List functions, filters, and pagination
+
+- **One trailing `opts` keyword list**, never a long positional tail. List
+  functions are `list_x(ctx, opts \\ [])`. Replaces
+  `list_exercises(ctx, search, muscle_ids, offset, limit)`.
+
+  ```elixir
+  list_plans(ctx, status: :active, search: "press", offset: 0, limit: 20)
+  ```
+
+- **Standard pagination keys** are `:offset` and `:limit`, read off `opts` at the
+  context boundary. Defaults `offset: 0`, `limit: 20`, **clamped to `max 100`**
+  in the context before hitting `Easy.Utils.paginate/3`. Offset/limit, not
+  cursors (frontend pages by offset; cursors are YAGNI).
+- **Filter keys are domain-specific** (`:status`, `:search`, `:muscle_ids`) and
+  map one-to-one onto `for_*` builders, each no-op on `nil`. The context pipes
+  them unconditionally.
+- **count + list is two explicit queries** over the same filtered base — count
+  the base, then paginate the base — returned as
+  `{:ok, %{count: n, <resource_plural>: items}}` (`%{count, plans}`,
+  `%{count, exercises}`). No shared abstraction; the two-query shape is written
+  out in each list function.
+- **Search** is trimmed once at the context boundary (`String.trim/1`); the
+  builder receives a clean term, no-ops on `""`, and uses `ilike(col, "%term%")`
+  (case-insensitivity is `ilike`'s job — no manual `downcase`).
+
+### A10. Attrs and error reasons
+
+- **`attrs` is always string-keyed.** Public write endpoints run
+  `CastAndValidate`, so the body reaches the context with string keys. Contexts
+  and changesets treat `attrs` as string-keyed; the
+  `Map.get("x") || Map.get(:x)` dual-key pattern is deleted. Tests pass
+  string-keyed attrs.
+- **Error reasons are bare atoms or a changeset**, not tagged tuples. Canonical
+  set: `:not_found`, `:unauthorized`, `:forbidden`, `:conflict`, domain-specific
+  atoms (`:read_only_source`, …), and `Ecto.Changeset.t()` for validation
+  failures. `FallbackController` is the **single place** that maps these to
+  `Easy.Error` + HTTP status — contexts never build HTTP-shaped errors.
+
+### A11. Transactions
+
+- **`Ecto.Multi` for multi-step writes** — composable, inspectable, each step
+  named. Use it whenever a workflow writes more than one row or mixes a write
+  with a dependent read.
+- **Bare `Repo.transaction(fn -> ... end)` only for trivial** read-modify-write
+  on a single aggregate. Both live in the context, never in a schema or
+  controller.
+
 ---
 
 ## Part B — Divergence ledger (migration backlog)
@@ -244,6 +294,14 @@ Rename targets (examples): `create_training_plan_for_coach_user` →
 | Scope-or-system → one name | `exercise.ex:88` (`owned_or_system`) vs `nutrition/food.ex` (`for_business_or_system`) — pick `for_business_or_system` |
 | Identity filters carry `business_id` | audit `for_client`/`for_coach` builders that take only the id |
 | Preloads in schema, not context | `nutrition_plans.ex` hand-rolled preload `from`s (`with_full_preloads`, `with_meal_and_items`, …) → schema `include_*` builders |
+
+### Lists, attrs, transactions (§A9–A11)
+
+| Rule | Fix targets |
+|---|---|
+| Positional list tail → `opts` keyword | `exercises.ex` (`list_exercises/5`), `clients.ex` (`list_clients/6`), and every other multi-arg `list_*` |
+| Delete dual-key `Map.get("x") \|\| Map.get(:x)` | `exercises.ex:80-81,116-117`, others doing string/atom attr probing |
+| Clamp `limit` (default 20, max 100) at context | all paginated `list_*` |
 
 ### Web layer
 

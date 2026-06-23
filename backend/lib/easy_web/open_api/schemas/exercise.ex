@@ -111,6 +111,8 @@ defmodule EasyWeb.OpenApi.Schemas.Exercise do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
+          source: %Schema{type: :string, nullable: true},
+          tracking_type: %Schema{type: :string, nullable: true},
           name: %Schema{type: :string},
           description: %Schema{type: :string, nullable: true},
           instructions: %Schema{type: :string, nullable: true},
@@ -124,6 +126,8 @@ defmodule EasyWeb.OpenApi.Schemas.Exercise do
       ),
     required: [
       :id,
+      :source,
+      :tracking_type,
       :name,
       :description,
       :instructions,

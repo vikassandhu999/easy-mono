@@ -33,7 +33,7 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
       superset_group_id: element.superset_group_id,
       notes: element.notes,
       exercise_id: element.exercise_id,
-      workout_id: element.workout_id,
+      training_workout_id: element.training_workout_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.planned_sets),
       inserted_at: element.inserted_at,
@@ -52,15 +52,15 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
 
   defp planned_set_data(%PlannedSet{} = set) do
     %{
-      target_reps: set.target_reps,
+      set_type: set.set_type,
+      reps: set.reps,
       load_value: set.load_value,
       load_unit: set.load_unit,
-      intensity_target: set.intensity_target,
-      tempo: set.tempo,
-      rest_seconds: set.rest_seconds,
       duration_seconds: set.duration_seconds,
       distance_value: set.distance_value,
       distance_unit: set.distance_unit,
+      rpe: set.rpe,
+      rest_seconds: set.rest_seconds,
       notes: set.notes
     }
   end

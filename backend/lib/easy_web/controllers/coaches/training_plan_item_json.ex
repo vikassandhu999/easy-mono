@@ -14,9 +14,8 @@ defmodule EasyWeb.Coaches.TrainingPlanItemJSON do
   defp data(%PlanItem{} = plan_item) do
     %{
       id: plan_item.id,
-      day: plan_item.day,
-      workout_type: plan_item.workout_type,
-      workout_id: plan_item.workout_id,
+      day_of_week: plan_item.day_of_week,
+      training_workout_id: plan_item.training_workout_id,
       training_plan_id: plan_item.training_plan_id,
       creator_id: plan_item.creator_id,
       inserted_at: plan_item.inserted_at,

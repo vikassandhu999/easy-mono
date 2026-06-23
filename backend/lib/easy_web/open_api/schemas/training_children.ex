@@ -66,7 +66,7 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutElementRequest do
       example: %{
         "position" => 0,
         "exercise_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-        "planned_sets" => [%{"target_reps" => "8-10", "load_unit" => "kg"}]
+        "planned_sets" => [%{"reps" => "8-10", "load_unit" => "kg"}]
       }
     },
     struct?: false
@@ -85,18 +85,16 @@ defmodule EasyWeb.OpenApi.Schemas.PlanItemRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        day: %Schema{
+        day_of_week: %Schema{
           type: :string,
           enum: Shared.days_of_week()
         },
-        workout_type: %Schema{type: :string, enum: ["primary", "alternative"]},
-        workout_id: %Schema{type: :string, format: :uuid}
+        training_workout_id: %Schema{type: :string, format: :uuid}
       },
-      required: [:day, :workout_type, :workout_id],
+      required: [:day_of_week, :training_workout_id],
       example: %{
-        "day" => "monday",
-        "workout_type" => "primary",
-        "workout_id" => "1b8248bc-4499-4a0c-986f-621fc95cbd0e"
+        "day_of_week" => "monday",
+        "training_workout_id" => "1b8248bc-4499-4a0c-986f-621fc95cbd0e"
       }
     },
     struct?: false

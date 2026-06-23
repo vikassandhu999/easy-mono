@@ -20,11 +20,10 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,
-      rest_days: plan.rest_days,
       client_id: plan.client_id,
       client: client_data(plan.client),
-      author_id: plan.author_id,
-      original_template_id: plan.original_template_id,
+      creator_id: plan.creator_id,
+      source_template_id: plan.source_template_id,
       workouts: workouts_data(plan.workouts),
       plan_items: plan_items_data(plan.plan_items),
       inserted_at: plan.inserted_at,
@@ -53,9 +52,8 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
   defp plan_item_data(%PlanItem{} = item) do
     %{
       id: item.id,
-      day: item.day,
-      workout_type: item.workout_type,
-      workout_id: item.workout_id,
+      day_of_week: item.day_of_week,
+      training_workout_id: item.training_workout_id,
       training_plan_id: item.training_plan_id,
       creator_id: item.creator_id,
       inserted_at: item.inserted_at,
@@ -73,7 +71,7 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       superset_group_id: element.superset_group_id,
       notes: element.notes,
       exercise_id: element.exercise_id,
-      workout_id: element.workout_id,
+      training_workout_id: element.training_workout_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.planned_sets),
       inserted_at: element.inserted_at,
@@ -92,15 +90,15 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
 
   defp planned_set_data(%PlannedSet{} = set) do
     %{
-      target_reps: set.target_reps,
+      set_type: set.set_type,
+      reps: set.reps,
       load_value: set.load_value,
       load_unit: set.load_unit,
-      intensity_target: set.intensity_target,
-      tempo: set.tempo,
-      rest_seconds: set.rest_seconds,
       duration_seconds: set.duration_seconds,
       distance_value: set.distance_value,
       distance_unit: set.distance_unit,
+      rpe: set.rpe,
+      rest_seconds: set.rest_seconds,
       notes: set.notes
     }
   end

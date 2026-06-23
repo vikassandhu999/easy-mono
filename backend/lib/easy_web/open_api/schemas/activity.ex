@@ -9,27 +9,25 @@ defmodule EasyWeb.OpenApi.Schemas.PerformedSetRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
+        exercise_name: %Schema{type: :string, nullable: true},
+        set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
         position: %Schema{type: :integer, minimum: 0},
-        actual_reps: %Schema{type: :string, nullable: true},
+        reps: %Schema{type: :string, nullable: true},
         load_value: %Schema{type: :number, nullable: true},
-        load_unit: %Schema{type: :string, enum: ["kg", "lbs", "bodyweight", "percent_1rm", "rpe", "none"]},
-        intensity_felt: %Schema{type: :string, nullable: true},
+        load_unit: %Schema{type: :string, enum: ["kg", "lbs", "bodyweight", "none"], nullable: true},
         rpe: %Schema{type: :number, minimum: 1, maximum: 10, nullable: true},
-        rir: %Schema{type: :integer, minimum: 0, nullable: true},
         duration_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
         distance_value: %Schema{type: :number, nullable: true},
-        distance_unit: %Schema{type: :string, enum: ["meters", "km", "miles", "yards", "none"]},
-        tempo_actual: %Schema{type: :string, nullable: true},
+        distance_unit: %Schema{type: :string, enum: ["meters", "km", "miles", "none"], nullable: true},
         completed: %Schema{type: :boolean},
         notes: %Schema{type: :string, maxLength: 5000, nullable: true},
-        exercise_id: %Schema{type: :string, format: :uuid},
-        workout_element_id: %Schema{type: :string, format: :uuid, nullable: true}
+        exercise_id: %Schema{type: :string, format: :uuid}
       },
       required: [:position, :exercise_id],
       example: %{
         "position" => 0,
         "exercise_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-        "actual_reps" => "10",
+        "reps" => "10",
         "load_value" => 80,
         "load_unit" => "kg",
         "completed" => true
@@ -53,22 +51,20 @@ defmodule EasyWeb.OpenApi.Schemas.PerformedSet do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
+          exercise_name: %Schema{type: :string, nullable: true},
+          set_type: %Schema{type: :string, nullable: true},
           position: %Schema{type: :integer},
-          actual_reps: %Schema{type: :string, nullable: true},
+          reps: %Schema{type: :string, nullable: true},
           load_value: %Schema{type: :number, nullable: true},
           load_unit: %Schema{type: :string, nullable: true},
-          intensity_felt: %Schema{type: :string, nullable: true},
           rpe: %Schema{type: :number, nullable: true},
-          rir: %Schema{type: :integer, nullable: true},
           duration_seconds: %Schema{type: :integer, nullable: true},
           distance_value: %Schema{type: :number, nullable: true},
           distance_unit: %Schema{type: :string, nullable: true},
-          tempo_actual: %Schema{type: :string, nullable: true},
           completed: %Schema{type: :boolean},
           notes: %Schema{type: :string, nullable: true},
           exercise_id: %Schema{type: :string, format: :uuid},
-          workout_element_id: %Schema{type: :string, format: :uuid, nullable: true},
-          workout_session_id: %Schema{type: :string, format: :uuid, nullable: true},
+          training_session_id: %Schema{type: :string, format: :uuid, nullable: true},
           exercise: %Schema{allOf: [TrainingPlanExercise], nullable: true}
         },
         Shared.timestamps()
@@ -76,7 +72,7 @@ defmodule EasyWeb.OpenApi.Schemas.PerformedSet do
     required: [
       :id,
       :position,
-      :actual_reps,
+      :reps,
       :load_value,
       :load_unit,
       :completed,
@@ -146,13 +142,15 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutSession do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
+          date: %Schema{type: :string, format: :date, nullable: true},
           started_at: %Schema{type: :string, format: :"date-time"},
           ended_at: %Schema{type: :string, format: :"date-time", nullable: true},
           state: %Schema{type: :string, enum: ["active", "completed", "discarded"]},
           soreness_rating: %Schema{type: :integer, nullable: true},
           notes: %Schema{type: :string, nullable: true},
           client_id: %Schema{type: :string, format: :uuid, nullable: true},
-          workout_id: %Schema{type: :string, format: :uuid, nullable: true},
+          training_workout_id: %Schema{type: :string, format: :uuid, nullable: true},
+          training_schedule_entry_id: %Schema{type: :string, format: :uuid, nullable: true},
           planned_snapshot: %Schema{type: :object, additionalProperties: true, nullable: true},
           performed_sets: %Schema{type: :array, items: PerformedSet}
         },

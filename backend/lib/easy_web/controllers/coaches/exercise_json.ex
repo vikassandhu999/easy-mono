@@ -14,6 +14,8 @@ defmodule EasyWeb.Coaches.ExerciseJSON do
   defp data(%Exercise{} = exercise) do
     %{
       id: exercise.id,
+      source: exercise.source,
+      tracking_type: exercise.tracking_type,
       name: exercise.name,
       description: exercise.description,
       instructions: exercise.instructions,

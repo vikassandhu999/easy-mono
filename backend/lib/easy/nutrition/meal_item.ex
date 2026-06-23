@@ -2,6 +2,9 @@ defmodule Easy.Nutrition.MealItem do
   use Ecto.Schema
 
   alias Easy.Nutrition
+  alias Easy.Nutrition.Food
+  alias Easy.Nutrition.Recipe
+  alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -84,8 +87,30 @@ defmodule Easy.Nutrition.MealItem do
     from(m in query, where: m.business_id == ^business_id)
   end
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__) do
+  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def by_position(query \\ __MODULE__) do
     from(m in query, order_by: [asc: m.position, asc: m.inserted_at])
+  end
+
+  @spec include_food_and_recipe(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_food_and_recipe(query \\ __MODULE__, business_id) do
+    food_query = Food.for_business_or_system(Food, business_id)
+
+    recipe_query =
+      from(r in Recipe.for_business(Recipe, business_id),
+        preload: [recipe_ingredients: ^from(ri in RecipeIngredient, preload: [food: ^food_query])]
+      )
+
+    include_food_and_recipe(query, business_id, food_query, recipe_query)
+  end
+
+  @spec include_food_and_recipe(Ecto.Queryable.t(), String.t(), Ecto.Query.t(), Ecto.Query.t()) ::
+          Ecto.Query.t()
+  def include_food_and_recipe(query, business_id, food_query, recipe_query) do
+    from(m in query,
+      where: m.business_id == ^business_id,
+      order_by: [asc: m.position, asc: m.inserted_at],
+      preload: [food: ^food_query, recipe: ^recipe_query]
+    )
   end
 end

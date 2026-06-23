@@ -25,15 +25,19 @@ defmodule EasyWeb.Coaches.MealLogController do
     ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, %{"client_id" => client_id} = params) do
-    %{business_id: business_id} = conn.assigns.claims
+  def index(conn, params) do
+    client_id = conn.path_params["client_id"]
 
     date = Easy.Utils.safe_date(params["date"])
     from_date = Easy.Utils.safe_date(params["from"])
     to_date = Easy.Utils.safe_date(params["to"])
 
     with {:ok, meal_logs} <-
-           MealLogs.list_meal_logs_for_client(business_id, client_id, date, from_date, to_date) do
+           MealLogs.list_meal_logs_for_client(conn.assigns.ctx, client_id,
+             date: date,
+             from: from_date,
+             to: to_date
+           ) do
       render(conn, :index, meal_logs: meal_logs)
     end
   end

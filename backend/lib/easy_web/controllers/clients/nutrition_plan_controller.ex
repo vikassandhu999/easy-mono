@@ -66,35 +66,29 @@ defmodule EasyWeb.Clients.NutritionPlanController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
     offset = parse_integer(params, "offset", 0)
     lim = parse_integer(params, "limit", 50)
     status = parse_enum(params, "status", Plan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_client_plans_for_user(business_id, user_id, status, offset, lim) do
+           Plans.list_client_plans(conn.assigns.ctx, status: status, offset: offset, limit: lim) do
       render(conn, :index, plans: plans, count: count)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, plan} <- Plans.get_client_plan_full_for_user(business_id, user_id, id) do
+    with {:ok, plan} <- Plans.get_client_plan_full(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
     end
   end
 
   @spec today(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def today(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
     date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
 
     with {:ok, %{plan: plan, plan_items: plan_items, day: day}} <-
-           Plans.get_active_plan_day_for_user(business_id, user_id, date) do
+           Plans.get_client_active_plan_day(conn.assigns.ctx, date) do
       render(conn, :today, plan: plan, plan_items: plan_items, date: date, day: day)
     end
   end

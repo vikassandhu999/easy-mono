@@ -77,9 +77,7 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, entry} <- MealLogs.log_entry_for_user(business_id, user_id, conn.body_params) do
+    with {:ok, entry} <- MealLogs.create_client_food_log_entry(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, food_log_entry: entry)
@@ -88,37 +86,26 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-    id = conn.path_params["id"]
+    entry_id = conn.path_params["id"]
 
     with {:ok, updated} <-
-           MealLogs.update_entry_for_user(business_id, user_id, id, conn.body_params) do
+           MealLogs.update_client_food_log_entry(conn.assigns.ctx, entry_id, conn.body_params) do
       render(conn, :show, food_log_entry: updated)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+  def delete(conn, _params) do
+    entry_id = conn.path_params["id"]
 
-    with {:ok, _} <- MealLogs.delete_entry_for_user(business_id, user_id, id) do
+    with {:ok, _} <- MealLogs.delete_client_food_log_entry(conn.assigns.ctx, entry_id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec log_meal(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def log_meal(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-    body = conn.body_params
-
-    with {:ok, entries} <-
-           MealLogs.log_meal_for_user(
-             business_id,
-             user_id,
-             to_string_date(body[:date] || body["date"]),
-             body[:meal_slot] || body["meal_slot"],
-             body[:meal_id] || body["meal_id"]
-           ) do
+    with {:ok, entries} <- MealLogs.log_client_meal(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:bulk, food_log_entries: entries)
@@ -127,23 +114,10 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
   @spec log_day(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def log_day(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-    body = conn.body_params
-
-    with {:ok, entries} <-
-           MealLogs.log_day_for_user(
-             business_id,
-             user_id,
-             to_string_date(body[:date] || body["date"]),
-             body[:plan_id] || body["plan_id"]
-           ) do
+    with {:ok, entries} <- MealLogs.log_client_day(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:bulk, food_log_entries: entries)
     end
   end
-
-  defp to_string_date(%Date{} = d), do: Date.to_iso8601(d)
-  defp to_string_date(s) when is_binary(s), do: s
-  defp to_string_date(nil), do: nil
 end

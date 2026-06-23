@@ -44,20 +44,17 @@ defmodule EasyWeb.Coaches.ScheduleController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"plan_id" => plan_id}) do
-    business_id = conn.assigns.claims.business_id
-
-    with {:ok, schedule} <- NutritionPlans.get_schedule(business_id, plan_id) do
+    with {:ok, schedule} <- NutritionPlans.get_schedule(conn.assigns.ctx, plan_id) do
       render(conn, :show, schedule: schedule)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    business_id = conn.assigns.claims.business_id
     %{"plan_id" => plan_id, "day" => day} = conn.path_params
     slots = Map.drop(conn.body_params, [:plan_id, :day, "plan_id", "day"])
 
-    with {:ok, entries} <- NutritionPlans.set_day_schedule(business_id, plan_id, day, slots) do
+    with {:ok, entries} <- NutritionPlans.set_day_schedule(conn.assigns.ctx, plan_id, day, slots) do
       render(conn, :day, entries: entries)
     end
   end

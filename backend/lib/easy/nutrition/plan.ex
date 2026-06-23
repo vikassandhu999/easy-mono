@@ -3,6 +3,7 @@ defmodule Easy.Nutrition.Plan do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.Meal
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -106,16 +107,16 @@ defmodule Easy.Nutrition.Plan do
     from(p in query, where: p.business_id == ^business_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(p in query, where: p.client_id == ^client_id)
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(p in query, where: p.business_id == ^business_id and p.client_id == ^client_id)
   end
 
-  @spec with_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
-  def with_status(query \\ __MODULE__, status)
-  def with_status(query, nil), do: query
+  @spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  def for_status(query \\ __MODULE__, status)
+  def for_status(query, nil), do: query
 
-  def with_status(query, status) do
+  def for_status(query, status) do
     from(p in query, where: p.status == ^status)
   end
 
@@ -136,6 +137,17 @@ defmodule Easy.Nutrition.Plan do
       where: p.status == :active,
       where: is_nil(p.start_date) or p.start_date <= ^date,
       where: is_nil(p.end_date) or p.end_date >= ^date
+    )
+  end
+
+  @spec include_full(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_full(query \\ __MODULE__, business_id) do
+    from(p in query,
+      preload: [
+        meals: ^Meal.include_items(Meal, business_id),
+        plan_items: ^ScheduleEntry.include_meal(ScheduleEntry, business_id),
+        client: ^Client.for_business(business_id)
+      ]
     )
   end
 end

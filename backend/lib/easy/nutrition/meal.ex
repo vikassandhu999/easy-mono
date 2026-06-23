@@ -1,6 +1,10 @@
 defmodule Easy.Nutrition.Meal do
   use Ecto.Schema
 
+  alias Easy.Nutrition.Food
+  alias Easy.Nutrition.MealItem
+  alias Easy.Nutrition.Recipe
+  alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -11,19 +15,12 @@ defmodule Easy.Nutrition.Meal do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @meal_slots [
-    "breakfast",
-    "morning_snack",
-    "lunch",
-    "afternoon_snack",
-    "dinner",
-    "evening_snack"
-  ]
+  @meal_slots [:breakfast, :morning_snack, :lunch, :afternoon_snack, :dinner, :evening_snack]
 
   schema "nutrition_meals" do
     field :name, :string
     field :notes, :string
-    field :default_meal_slot, :string
+    field :default_meal_slot, Ecto.Enum, values: @meal_slots
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
@@ -36,21 +33,19 @@ defmodule Easy.Nutrition.Meal do
   @cast_fields [:name, :notes, :default_meal_slot]
 
   @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(plan_id, business_id, creator_id, attrs) do
+  def insert_changeset(business_id, creator_id, plan_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> put_change(:nutrition_plan_id, plan_id)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
+    |> put_change(:nutrition_plan_id, plan_id)
     |> validate_required([:name, :nutrition_plan_id, :business_id, :creator_id])
-    |> validate_inclusion(:default_meal_slot, @meal_slots)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(meal, attrs) do
     meal
     |> cast(attrs, @cast_fields)
-    |> validate_inclusion(:default_meal_slot, @meal_slots)
   end
 
   @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -63,8 +58,24 @@ defmodule Easy.Nutrition.Meal do
     from(m in query, where: m.business_id == ^business_id)
   end
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__) do
+  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def by_position(query \\ __MODULE__) do
     from(m in query, order_by: [asc: m.inserted_at])
+  end
+
+  @spec include_items(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_items(query \\ __MODULE__, business_id) do
+    food_query = Food.for_business_or_system(Food, business_id)
+
+    recipe_query =
+      from(r in Recipe.for_business(Recipe, business_id),
+        preload: [recipe_ingredients: ^from(ri in RecipeIngredient, preload: [food: ^food_query])]
+      )
+
+    from(m in query,
+      where: m.business_id == ^business_id,
+      order_by: [asc: m.inserted_at],
+      preload: [meal_items: ^MealItem.include_food_and_recipe(MealItem, business_id, food_query, recipe_query)]
+    )
   end
 end

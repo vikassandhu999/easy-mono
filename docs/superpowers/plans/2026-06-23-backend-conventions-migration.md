@@ -148,3 +148,49 @@ Covers the spec's "do-first" bucket: the OneTimeToken security cast (§A7, the o
 - [ ] **Step 4:** Update tests for renamed fns + list shape. If `attention`/other callers reference `create_thread_as_coach` (the memory notes attention would), grep + update: `grep -rn "_as_coach\|_as_client\|_for_user\|list_client_threads(" lib test`.
 - [ ] **Step 5:** Verify: `grep -rn "_as_coach\|_as_client\|threads_for_user\|stringify_keys" lib/easy/threads.ex lib/easy_web/controllers/*thread*` → empty. `mix precommit` green.
 - [ ] **Step 6:** Commit: `git commit -m "refactor(threads): three-case naming + opts-based list_threads; drop stringify_keys"`
+
+---
+
+## Slice 2 — nutrition (authored at slice boundary)
+
+Three contexts (`nutrition_plans`, `meals`, `meal_logs`) are still raw-`business_id`-first. This slice makes them Ctx-first + three-case + opts-lists, fixes their schemas (arg-order, `Ecto.Enum`, builder taxonomy, `for_client`+`business_id`), extracts hand-rolled preloads to schema `include_*` builders, and migrates their controllers (claims→ctx, CastAndValidate, **ids from path** per the locked §A10). Reference shape: `lib/easy/foods.ex`/`recipes.ex` + the completed threads slice.
+
+Order: Task 6 (schemas) first; then `meals` (Task 7) before `nutrition_plans` (Task 8, whose copy/assign calls meals); `meal_logs` (Task 9) last.
+
+### Task 6: nutrition schema layer + preload extraction
+
+**Files:** `lib/easy/nutrition/{plan,meal,meal_item,meal_log,schedule_entry,food,food_log_entry}.ex`; extract preload builders currently in `lib/easy/nutrition_plans.ex`/`meals.ex`/`meal_logs.ex` into schema `include_*` builders + update those builder CALL-SITES only (NOT public-fn renames — Tasks 7–9). Tests + JSON for enum fields.
+
+**Changes (audit):**
+- **Changeset arg-order (§A7, business_id first):** `meal.insert_changeset(plan_id, business_id, creator_id, attrs)`→`(business_id, creator_id, plan_id, attrs)`; `schedule_entry.insert_changeset(plan_id, business_id, attrs)`→`(business_id, plan_id, attrs)`. Update callers.
+- **Ecto.Enum (string-backed, no migration):** `meal.default_meal_slot`; `schedule_entry.{day_of_week, meal_slot}`; `meal_log.meal_slot`. Drop redundant `validate_inclusion`; safe string→atom for filter inputs (reuse `Utils.safe_to_atom`).
+- **Builders (§A6):** `plan.with_status`→`for_status`; `plan.for_client(client_id)`→`for_client(business_id, client_id)`; `meal_log.with_entries`→`include_entries(business_id)` (food_log_entry IS business-scoped → scope nested by business_id); `meal_item.ordered`→`by_position`; `food_log_entry.ordered`→`by_position`; `meal_log.ordered`→`oldest`; any `food.ex with_*`→`for_*`/`include_*`.
+- **Preload extraction (§A6):** move hand-rolled context preloads into schema `include_*` builders (each takes `business_id`, scopes nested children): `Plan.include_full/2`, `Meal.include_items/2`, `MealItem.include_food_and_recipe/2`, `ScheduleEntry.include_meal/2` (names illustrative). Replace inline `from(...preload:...)`/`Repo.preload(...)` in the 3 contexts with these.
+
+- [ ] Step 1: arg-order in meal + schedule_entry; grep+update callers. Step 2: Ecto.Enum conversions + safe filter atoms. Step 3: builder renames + call-sites. Step 4: extract preloads → schema `include_*`. Step 5: tests + JSON; verify `grep -rn "with_status\|with_entries\|\bordered\b\|with_full_preloads\|with_meal\b\|meals_with_items\|plan_items_with_meal\|meal_items_with_food_and_recipe" lib/easy/nutrition* lib/easy/nutrition_plans.ex lib/easy/meals.ex lib/easy/meal_logs.ex` → empty; `mix precommit` green. Step 6: commit `refactor(nutrition): schema arg-order, Ecto.Enum, for_/include_ builders, preload extraction`.
+
+### Task 7: meals context Ctx-first + three-case + controllers
+
+**Files:** `lib/easy/meals.ex`; `coaches/{meal,meal_item,schedule}_controller.ex`; tests.
+
+**Shape:** all 8 fns `%Ctx{}`-first; `create_meal_for_coach_user(business_id, user_id, plan_id, attrs)`→`create_meal(ctx, plan_id, attrs)` (plan_id from PATH; coach via private `get_coach(ctx)`); the rest Ctx-first; `list_meals(business_id, plan_id, offset, limit)`→`list_meals(ctx, plan_id, opts \\ [])` (path plan_id; clamp; `{:ok, %{count, meals}}`). Controllers: `conn.assigns.ctx`; ids (`plan_id`/`meal_id`/`meal_item_id`) from `conn.path_params`; CastAndValidate on writes; body→changeset (no dual-key/stringify).
+
+- [ ] Convert meals.ex; update 3 controllers; tests; `grep -rn "_for_coach_user\|_for_user" lib/easy/meals.ex` → empty; `mix precommit` green; commit `refactor(nutrition): Ctx-first meals + three-case + path ids`.
+
+### Task 8: nutrition_plans context Ctx-first + three-case + controllers
+
+**Files:** `lib/easy/nutrition_plans.ex`; `coaches/nutrition_plan_controller.ex`, `clients/nutrition_plan_controller.ex`, `coaches/client_plan_controller.ex` (nutrition list), `coaches/schedule_controller.ex` (if it calls nutrition_plans); tests.
+
+**Rename map (§A2):** `create_plan_for_coach_user`→`create_plan(ctx, attrs)`; `assign_to_client_for_coach_user`→`assign_plan_to_client(ctx, client_id, plan_id, attrs)` (client_id+plan_id from path); `duplicate_for_coach_user`→`duplicate_plan(ctx, plan_id)`; `get_client_plan_full_for_user`→`get_client_plan_full(ctx, plan_id)` (Case-3); `list_client_plans_for_user`→`list_client_plans(ctx, opts)` (Case-3); `list_client_plans_full_for_client`→`list_plans_for_client(ctx, client_id, opts)` (Case-2); `get_active_plan_day_for_user`→`get_client_active_plan_day(ctx, date)` (date from query/path); `list_template_plans(ctx, opts)`; `get_plan_full`/`update_plan`/`delete_plan` Ctx-first; `get_schedule`/`set_day_schedule` Ctx-first (day from path; slots/body via changeset — fix the `Map.get("start_date") || Map.get(:start_date)` in assign). All lists → opts + clamp + `{:ok, %{count, plans}}`. `creator_id` via `get_coach(ctx)`.
+
+- [ ] Convert context; update controllers (ctx, path ids, CastAndValidate); tests; `grep -rn "_for_coach_user\|_for_user\|_full_for_client\|Map.get(attrs, \"start_date\")" lib/easy/nutrition_plans.ex` → empty; `mix precommit` green; commit `refactor(nutrition): Ctx-first nutrition_plans + three-case + path ids`.
+
+### Task 9: meal_logs context Ctx-first + three-case + controllers
+
+**Files:** `lib/easy/meal_logs.ex`; `coaches/meal_log_controller.ex`, `clients/meal_log_controller.ex`, `clients/food_log_entry_controller.ex`; tests.
+
+**Rename map (§A2):** drop all 7 `_for_user` → Case-3 `verb_client_noun`: `list_meal_logs_for_user`→`list_client_meal_logs(ctx, opts)`; `log_entry_for_user`→`create_client_food_log_entry(ctx, attrs)`; `update_entry_for_user`→`update_client_food_log_entry(ctx, entry_id, attrs)` (entry_id path); `delete_entry_for_user`→`delete_client_food_log_entry(ctx, entry_id)`; `log_meal_for_user`→`log_client_meal(ctx, attrs)`; `log_day_for_user`→`log_client_day(ctx, attrs)`. Coach: `list_meal_logs`/`list_meal_logs_for_client`→`list_meal_logs_for_client(ctx, client_id, opts)` (Case-2, client_id path). Remove dual-key `attrs["meal_slot"] || attrs[:meal_slot]` (body→changeset or explicit arg). Lists → opts (date/from/to keys) + clamp. Controllers: ctx, ids/dates from path/query, CastAndValidate, no dual-key.
+
+- [ ] Convert context + controllers + tests; `grep -rn "_for_user\|meal_slot\"\] || attrs\[:meal_slot" lib/easy/meal_logs.ex` → empty; `mix precommit` green; commit `refactor(nutrition): Ctx-first meal_logs + three-case + path ids`.
+
+*Slice 2 gate: compile, full suite, `grep -rn "_for_user\|_for_coach_user" lib/easy/{nutrition_plans,meals,meal_logs}.ex` empty, no dual-key probes, no hand-rolled context preloads in those contexts.*

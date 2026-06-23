@@ -86,8 +86,8 @@ defmodule Easy.Nutrition.FoodLogEntry do
     from(e in query, where: e.nutrition_meal_log_id == ^meal_log_id)
   end
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__) do
+  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def by_position(query \\ __MODULE__) do
     from(e in query, order_by: [asc: e.planned_item_index, asc: e.inserted_at])
   end
 

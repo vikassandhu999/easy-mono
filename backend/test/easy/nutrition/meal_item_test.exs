@@ -36,10 +36,12 @@ defmodule Easy.Nutrition.MealItemTest do
       food = insert(:food, business: coach.business, creator: coach)
       insert(:meal_item, meal: meal, business: meal.business, food: food, position: 0)
 
+      ctx = Easy.Ctx.new(meal.business_id, coach.user_id)
+
       assert {:ok, meal_item} =
-               Meals.create_meal_item(meal.business_id, meal.id, %{
-                 "food_id" => food.id,
-                 "weight_g" => 100.0
+               Meals.create_meal_item(ctx, meal.id, %{
+                 food_id: food.id,
+                 weight_g: 100.0
                })
 
       assert meal_item.position == 1
@@ -52,11 +54,13 @@ defmodule Easy.Nutrition.MealItemTest do
       food = insert(:food, business: coach.business, creator: coach)
       insert(:meal_item, meal: meal, business: meal.business, food: food, position: 1)
 
+      ctx = Easy.Ctx.new(meal.business_id, coach.user_id)
+
       assert {:ok, meal_item} =
-               Meals.create_meal_item(meal.business_id, meal.id, %{
-                 "food_id" => food.id,
-                 "weight_g" => 100.0,
-                 "position" => 0
+               Meals.create_meal_item(ctx, meal.id, %{
+                 food_id: food.id,
+                 weight_g: 100.0,
+                 position: 0
                })
 
       assert meal_item.position == 0

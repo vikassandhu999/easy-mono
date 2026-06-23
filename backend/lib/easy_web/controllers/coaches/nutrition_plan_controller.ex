@@ -118,10 +118,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    claims = conn.assigns.claims
-
-    with {:ok, plan} <-
-           Plans.create_plan_for_coach_user(claims.business_id, claims.user_id, conn.body_params) do
+    with {:ok, plan} <- Plans.create_plan(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: plan)
@@ -130,29 +127,20 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    %{business_id: business_id} = conn.assigns.claims
     plan_id = conn.path_params["id"]
 
-    with {:ok, updated_plan} <- Plans.update_plan(business_id, plan_id, conn.body_params) do
+    with {:ok, updated_plan} <- Plans.update_plan(conn.assigns.ctx, plan_id, conn.body_params) do
       render(conn, :show, plan: updated_plan)
     end
   end
 
   @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def assign(conn, _params) do
-    claims = conn.assigns.claims
     plan_id = conn.path_params["id"]
-    body = conn.body_params
-    client_id = body[:client_id] || body["client_id"]
+    client_id = conn.body_params[:client_id]
 
     with {:ok, new_plan} <-
-           Plans.assign_to_client_for_coach_user(
-             claims.business_id,
-             claims.user_id,
-             plan_id,
-             client_id,
-             body
-           ) do
+           Plans.assign_plan_to_client(conn.assigns.ctx, client_id, plan_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
@@ -161,32 +149,26 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => plan_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, plan} <- Plans.get_plan_full(business_id, plan_id) do
+    with {:ok, plan} <- Plans.get_plan_full(conn.assigns.ctx, plan_id) do
       render(conn, :show, plan: plan)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => plan_id}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with {:ok, _deleted} <- Plans.delete_plan(business_id, plan_id) do
+    with {:ok, _deleted} <- Plans.delete_plan(conn.assigns.ctx, plan_id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{business_id: business_id} = conn.assigns.claims
-
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 10)
     status = parse_enum(params, "status", Plan.statuses())
 
     with {:ok, %{count: count, plans: plans}} <-
-           Plans.list_template_plans(business_id, status, offset, limit) do
+           Plans.list_template_plans(conn.assigns.ctx, status: status, offset: offset, limit: limit) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, plans: plans)
@@ -195,10 +177,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def duplicate(conn, %{"id" => plan_id}) do
-    claims = conn.assigns.claims
-
-    with {:ok, new_plan} <-
-           Plans.duplicate_for_coach_user(claims.business_id, claims.user_id, plan_id) do
+    with {:ok, new_plan} <- Plans.duplicate_plan(conn.assigns.ctx, plan_id) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)

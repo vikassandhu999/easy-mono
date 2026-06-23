@@ -21,14 +21,12 @@ defmodule EasyWeb.Clients.MealLogController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
     date = Easy.Utils.safe_date(params["date"])
     from_date = Easy.Utils.safe_date(params["from"])
     to_date = Easy.Utils.safe_date(params["to"])
 
     with {:ok, meal_logs} <-
-           MealLogs.list_meal_logs_for_user(business_id, user_id, date, from_date, to_date) do
+           MealLogs.list_client_meal_logs(conn.assigns.ctx, date: date, from: from_date, to: to_date) do
       render(conn, :index, meal_logs: meal_logs)
     end
   end

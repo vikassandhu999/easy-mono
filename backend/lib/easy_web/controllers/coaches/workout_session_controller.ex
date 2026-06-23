@@ -3,22 +3,22 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Sessions
-  alias Easy.Training.WorkoutSession
+  alias Easy.Training.TrainingSession
   alias OpenApiSpex.{Operation, Schema}
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    WorkoutSessionCompleteRequest,
-    WorkoutSessionListResponse,
-    WorkoutSessionRequest,
-    WorkoutSessionResponse
+    TrainingSessionUpdateRequest,
+    TrainingSessionListResponse,
+    TrainingSessionRequest,
+    TrainingSessionResponse
   }
 
   tags ["coach workout sessions"]
 
   operation :index,
     summary: "List workout sessions",
-    operation_id: "listWorkoutSessions",
+    operation_id: "listTrainingSessions",
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of sessions to skip", required: false),
@@ -32,38 +32,38 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
         required: false
       )
     ],
-    responses: [ok: {"Workout sessions", "application/json", WorkoutSessionListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+    responses: [ok: {"Workout sessions", "application/json", TrainingSessionListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
 
   operation :create,
     summary: "Create workout session",
-    operation_id: "createWorkoutSession",
+    operation_id: "createTrainingSession",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Workout session request", "application/json", WorkoutSessionRequest, required: true},
+    request_body: {"Workout session request", "application/json", TrainingSessionRequest, required: true},
     responses: [
-      created: {"Workout session created", "application/json", WorkoutSessionResponse},
+      created: {"Workout session created", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
   operation :show,
     summary: "Get workout session",
-    operation_id: "getWorkoutSession",
+    operation_id: "getTrainingSession",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
     responses: [
-      ok: {"Workout session", "application/json", WorkoutSessionResponse},
+      ok: {"Workout session", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
   operation :complete,
     summary: "Complete workout session",
-    operation_id: "completeWorkoutSession",
+    operation_id: "completeTrainingSession",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
-    request_body: {"Workout session completion request", "application/json", WorkoutSessionCompleteRequest, required: true},
+    request_body: {"Workout session completion request", "application/json", TrainingSessionUpdateRequest, required: true},
     responses: [
-      ok: {"Workout session completed", "application/json", WorkoutSessionResponse},
+      ok: {"Workout session completed", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -71,18 +71,18 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
 
   operation :discard,
     summary: "Discard workout session",
-    operation_id: "discardWorkoutSession",
+    operation_id: "discardTrainingSession",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
     responses: [
-      ok: {"Workout session discarded", "application/json", WorkoutSessionResponse},
+      ok: {"Workout session discarded", "application/json", TrainingSessionResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
   operation :delete,
     summary: "Delete workout session",
-    operation_id: "deleteWorkoutSession",
+    operation_id: "deleteTrainingSession",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
     responses: [
@@ -118,7 +118,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 50)
     client_id = Map.get(params, "client_id")
-    state = parse_enum(params, "state", WorkoutSession.states())
+    state = parse_enum(params, "state", TrainingSession.states())
 
     with {:ok, %{sessions: sessions, count: count}} <-
            Sessions.list_sessions(business_id, client_id, state, offset, limit) do

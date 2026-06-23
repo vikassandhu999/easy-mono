@@ -1,9 +1,9 @@
-defmodule Easy.Training.PerformedSet do
+defmodule Easy.Training.TrainingPerformedSet do
   use Ecto.Schema
 
   alias Easy.Orgs
   alias Easy.Training.TrainingExercise
-  alias Easy.Training.WorkoutSession
+  alias Easy.Training.TrainingSession
 
   import Ecto.Changeset
   import Ecto.Query
@@ -31,7 +31,7 @@ defmodule Easy.Training.PerformedSet do
     field :completed, :boolean, default: false
     field :notes, :string
 
-    belongs_to :session, WorkoutSession, foreign_key: :training_session_id
+    belongs_to :session, TrainingSession, foreign_key: :training_session_id
     belongs_to :exercise, TrainingExercise
     belongs_to :business, Orgs.Business
 

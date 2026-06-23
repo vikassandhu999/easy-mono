@@ -1,12 +1,12 @@
 defmodule EasyWeb.Coaches.PerformedSetJSON do
-  alias Easy.Training.{TrainingExercise, PerformedSet}
+  alias Easy.Training.{TrainingExercise, TrainingPerformedSet}
 
-  @spec show(%{set: PerformedSet.t()}) :: map()
+  @spec show(%{set: TrainingPerformedSet.t()}) :: map()
   def show(%{set: set}) do
     %{data: data(set)}
   end
 
-  defp data(%PerformedSet{} = set) do
+  defp data(%TrainingPerformedSet{} = set) do
     %{
       id: set.id,
       exercise_name: set.exercise_name,

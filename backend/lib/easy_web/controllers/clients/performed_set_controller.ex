@@ -4,7 +4,7 @@ defmodule EasyWeb.Clients.PerformedSetController do
 
   alias Easy.Sessions
   alias OpenApiSpex.Operation
-  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, PerformedSetRequest, PerformedSetResponse}
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingPerformedSetRequest, TrainingPerformedSetResponse}
 
   tags ["client performed sets"]
 
@@ -12,9 +12,9 @@ defmodule EasyWeb.Clients.PerformedSetController do
     summary: "Create client performed set",
     operation_id: "createClientPerformedSet",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Performed set request", "application/json", PerformedSetRequest, required: true},
+    request_body: {"Performed set request", "application/json", TrainingPerformedSetRequest, required: true},
     responses: [
-      created: {"Performed set created", "application/json", PerformedSetResponse},
+      created: {"Performed set created", "application/json", TrainingPerformedSetResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
@@ -24,9 +24,9 @@ defmodule EasyWeb.Clients.PerformedSetController do
     operation_id: "updateClientPerformedSet",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Performed set id")],
-    request_body: {"Performed set request", "application/json", PerformedSetRequest, required: true},
+    request_body: {"Performed set request", "application/json", TrainingPerformedSetRequest, required: true},
     responses: [
-      ok: {"Performed set updated", "application/json", PerformedSetResponse},
+      ok: {"Performed set updated", "application/json", TrainingPerformedSetResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}

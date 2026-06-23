@@ -8,7 +8,7 @@ defmodule Easy.Clients.ReadBoundaryTest do
     "lib/easy/training/training_plan.ex",
     "lib/easy/training/training_workout.ex",
     "lib/easy/training/training_workout_exercise.ex",
-    "lib/easy/training/workout_session.ex"
+    "lib/easy/training/training_session.ex"
   ]
 
   test "training plan assignment does not hide a client lookup" do

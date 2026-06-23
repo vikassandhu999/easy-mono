@@ -32,7 +32,7 @@ defmodule Easy.Factory do
   alias Easy.Training.TrainingWorkout, as: Workout
   alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingWorkoutExercise, as: WorkoutElement
-  alias Easy.Training.WorkoutSession
+  alias Easy.Training.TrainingSession
   alias Easy.Threads.Thread
   alias Easy.Threads.ThreadMessage
 
@@ -530,7 +530,7 @@ defmodule Easy.Factory do
     creator = build(:coach, business: business)
     client = build(:client, business: business, creator: creator)
 
-    %WorkoutSession{
+    %TrainingSession{
       date: Date.utc_today(),
       started_at: DateTime.utc_now() |> DateTime.truncate(:second),
       state: :active,

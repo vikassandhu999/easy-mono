@@ -1,11 +1,11 @@
-defmodule EasyWeb.OpenApi.Schemas.PerformedSetRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "PerformedSetRequest",
+      title: "TrainingPerformedSetRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -37,14 +37,14 @@ defmodule EasyWeb.OpenApi.Schemas.PerformedSetRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.PerformedSet do
+defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSet do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanExercise}
 
   OpenApiSpex.schema(%{
-    title: "PerformedSet",
+    title: "TrainingPerformedSet",
     type: :object,
     additionalProperties: false,
     properties:
@@ -83,14 +83,14 @@ defmodule EasyWeb.OpenApi.Schemas.PerformedSet do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutSessionRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingSessionRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "WorkoutSessionRequest",
+      title: "TrainingSessionRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -108,14 +108,14 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutSessionRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutSessionCompleteRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingSessionUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "WorkoutSessionCompleteRequest",
+      title: "TrainingSessionUpdateRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -128,14 +128,14 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutSessionCompleteRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutSession do
+defmodule EasyWeb.OpenApi.Schemas.TrainingSession do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{PerformedSet, Shared}
+  alias EasyWeb.OpenApi.Schemas.{TrainingPerformedSet, Shared}
 
   OpenApiSpex.schema(%{
-    title: "WorkoutSession",
+    title: "TrainingSession",
     type: :object,
     additionalProperties: false,
     properties:
@@ -152,7 +152,7 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutSession do
           training_workout_id: %Schema{type: :string, format: :uuid, nullable: true},
           training_schedule_entry_id: %Schema{type: :string, format: :uuid, nullable: true},
           planned_snapshot: %Schema{type: :object, additionalProperties: true, nullable: true},
-          performed_sets: %Schema{type: :array, items: PerformedSet}
+          performed_sets: %Schema{type: :array, items: TrainingPerformedSet}
         },
         Shared.timestamps()
       ),
@@ -160,26 +160,26 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutSession do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutSessionResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingSessionResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{Shared, WorkoutSession}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingSession}
 
-  OpenApiSpex.schema(Shared.data_response(WorkoutSession, "WorkoutSessionResponse"))
+  OpenApiSpex.schema(Shared.data_response(TrainingSession, "TrainingSessionResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutSessionListResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingSessionListResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{Shared, WorkoutSession}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingSession}
 
-  OpenApiSpex.schema(Shared.list_response(WorkoutSession, "WorkoutSessionListResponse"))
+  OpenApiSpex.schema(Shared.list_response(TrainingSession, "TrainingSessionListResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.PerformedSetResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{PerformedSet, Shared}
+  alias EasyWeb.OpenApi.Schemas.{TrainingPerformedSet, Shared}
 
-  OpenApiSpex.schema(Shared.data_response(PerformedSet, "PerformedSetResponse"))
+  OpenApiSpex.schema(Shared.data_response(TrainingPerformedSet, "TrainingPerformedSetResponse"))
 end

@@ -1,9 +1,9 @@
-defmodule Easy.Training.WorkoutSession do
+defmodule Easy.Training.TrainingSession do
   use Ecto.Schema
 
   alias Easy.Clients
   alias Easy.Orgs
-  alias Easy.Training.{TrainingWorkout, PerformedSet, ScheduleEntry}
+  alias Easy.Training.{TrainingWorkout, TrainingPerformedSet, ScheduleEntry}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -31,7 +31,7 @@ defmodule Easy.Training.WorkoutSession do
     belongs_to :business, Orgs.Business
     belongs_to :workout, TrainingWorkout, foreign_key: :training_workout_id
     belongs_to :schedule_entry, ScheduleEntry, foreign_key: :training_schedule_entry_id
-    has_many :performed_sets, PerformedSet, foreign_key: :training_session_id
+    has_many :performed_sets, TrainingPerformedSet, foreign_key: :training_session_id
 
     timestamps(type: :utc_datetime)
   end
@@ -118,7 +118,7 @@ defmodule Easy.Training.WorkoutSession do
 
   @spec with_sets(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_sets(query \\ __MODULE__) do
-    from(s in query, preload: [performed_sets: ^PerformedSet.ordered()])
+    from(s in query, preload: [performed_sets: ^TrainingPerformedSet.ordered()])
   end
 
   @spec for_date_range(Ecto.Queryable.t(), Date.t(), Date.t()) :: Ecto.Query.t()

@@ -1,15 +1,15 @@
-defmodule Easy.Training.PerformedSetTest do
+defmodule Easy.Training.TrainingPerformedSetTest do
   use Easy.SchemaCase
 
   alias Easy.Sessions
-  alias Easy.Training.PerformedSet
+  alias Easy.Training.TrainingPerformedSet
 
   describe "insert_changeset/3" do
     test "is valid with the required set fields" do
       business = insert(:business)
 
       changeset =
-        PerformedSet.insert_changeset(Ecto.UUID.generate(), business.id, %{
+        TrainingPerformedSet.insert_changeset(Ecto.UUID.generate(), business.id, %{
           "exercise_name" => "Bench Press",
           "set_type" => "working",
           "position" => 0,
@@ -23,7 +23,7 @@ defmodule Easy.Training.PerformedSetTest do
       business = insert(:business)
 
       changeset =
-        PerformedSet.insert_changeset(Ecto.UUID.generate(), business.id, %{
+        TrainingPerformedSet.insert_changeset(Ecto.UUID.generate(), business.id, %{
           "set_type" => nil,
           "position" => nil
         })

@@ -14,59 +14,71 @@ defmodule Easy.Training.Exercise do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "exercises" do
+  @sources ~w(system imported custom)
+  @tracking_types ~w(weight_reps bodyweight_reps weighted_bodyweight assisted_bodyweight
+                     reps_only duration weight_duration distance_duration weight_distance)
+  @mechanics ~w(compound isolation isometric)
+  @forces ~w(push pull static)
+
+  schema "training_exercises" do
+    field :source, :string, default: "custom"
+    field :tracking_type, :string, default: "weight_reps"
     field :name, :string
     field :description, :string
     field :instructions, :string
-    field :mechanics, Ecto.Enum, values: [:compound, :isolation, :isometric]
-    field :force, Ecto.Enum, values: [:push, :pull, :static]
+    field :mechanics, :string
+    field :force, :string
     field :images, {:array, :string}, default: []
     field :import_id, :string
 
+    belongs_to :creator, Easy.Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
 
-    many_to_many :muscles, Muscle, join_through: "exercise_muscles", on_replace: :delete
-    many_to_many :equipment, Equipment, join_through: "exercise_equipment", on_replace: :delete
+    many_to_many :muscles, Muscle,
+      join_through: "training_exercise_muscles", on_replace: :delete
 
-    timestamps(type: :utc_datetime_usec)
+    many_to_many :equipment, Equipment,
+      join_through: "training_exercise_equipment", on_replace: :delete
+
+    timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:name, :description, :instructions, :mechanics, :force, :images]
+  @cast_fields [:source, :tracking_type, :name, :description, :instructions, :mechanics, :force, :images, :import_id]
 
-  @spec create_changset(Ecto.UUID.t(), map(), [Muscle.t()] | nil, [Equipment.t()] | nil) :: Changeset.t()
-  def create_changset(business_id, attrs, muscles, equipment) do
+  @spec insert_changeset(String.t(), String.t() | nil, map(), [Muscle.t()] | nil, [Equipment.t()] | nil) :: Changeset.t()
+  def insert_changeset(business_id, coach_id, attrs, muscles \\ nil, equipment \\ nil) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
+    |> put_change(:creator_id, coach_id)
     |> validate_required([:name])
-    |> validate_length(:name, max: 255)
-    |> validate_length(:description, max: 5000)
-    |> validate_length(:instructions, max: 10000)
-    |> maybe_put_muscles(muscles)
-    |> maybe_put_equipment(equipment)
-    |> unique_constraint([:name, :business_id], name: :exercises_name_business_id_index)
-    |> foreign_key_constraint(:business_id)
+    |> validate_enums()
+    |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
+    |> maybe_put_assoc(:muscles, muscles)
+    |> maybe_put_assoc(:equipment, equipment)
   end
 
   @spec update_changeset(t(), map(), [Muscle.t()] | nil, [Equipment.t()] | nil) :: Ecto.Changeset.t()
-  def update_changeset(exercise, attrs, muscles, equipment) do
+  def update_changeset(exercise, attrs, muscles \\ nil, equipment \\ nil) do
     exercise
     |> cast(attrs, @cast_fields)
-    |> validate_length(:name, max: 255)
-    |> validate_length(:description, max: 5000)
-    |> validate_length(:instructions, max: 10000)
-    |> maybe_put_muscles(muscles)
-    |> maybe_put_equipment(equipment)
-    |> unique_constraint([:name, :business_id], name: :exercises_name_business_id_index)
+    |> validate_required([:name])
+    |> validate_enums()
+    |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
+    |> maybe_put_assoc(:muscles, muscles)
+    |> maybe_put_assoc(:equipment, equipment)
   end
 
-  @spec maybe_put_muscles(Changeset.t(), [Muscle.t()] | nil) :: Changeset.t()
-  defp maybe_put_muscles(exercise, nil), do: exercise
-  defp maybe_put_muscles(exercise, muscles), do: put_assoc(exercise, :muscles, muscles)
+  defp validate_enums(cs) do
+    cs
+    |> validate_inclusion(:source, @sources)
+    |> validate_inclusion(:tracking_type, @tracking_types)
+    |> validate_inclusion(:mechanics, @mechanics)
+    |> validate_inclusion(:force, @forces)
+  end
 
-  @spec maybe_put_equipment(Changeset.t(), [Equipment.t()] | nil) :: Changeset.t()
-  defp maybe_put_equipment(exercise, nil), do: exercise
-  defp maybe_put_equipment(exercise, equipment), do: put_assoc(exercise, :equipment, equipment)
+  defp maybe_put_assoc(cs, _key, nil), do: cs
+  defp maybe_put_assoc(cs, key, records), do: put_assoc(cs, key, records)
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
@@ -91,7 +103,7 @@ defmodule Easy.Training.Exercise do
 
   def for_muscle_ids(query, muscle_ids) do
     exercise_ids =
-      from(em in "exercise_muscles", where: em.muscle_id in ^muscle_ids, select: em.exercise_id)
+      from(em in "training_exercise_muscles", where: em.muscle_id in ^muscle_ids, select: em.exercise_id)
 
     from(e in query, where: e.id in subquery(exercise_ids))
   end

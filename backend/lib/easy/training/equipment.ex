@@ -9,7 +9,7 @@ defmodule Easy.Training.Equipment do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "equipment" do
+  schema "training_equipment" do
     field :name, :string
     field :description, :string
 

@@ -189,29 +189,6 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec get_plan_item(String.t(), String.t()) :: {:ok, ScheduleEntry.t()} | {:error, :not_found}
-  def get_plan_item(business_id, plan_item_id) do
-    ScheduleEntry
-    |> ScheduleEntry.for_business(business_id)
-    |> Repo.get(plan_item_id)
-    |> ok_or_not_found()
-  end
-
-  @spec list_plan_items(String.t(), String.t()) ::
-          {:ok, [ScheduleEntry.t()]} | {:error, :not_found}
-  def list_plan_items(business_id, plan_id) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
-      plan_items =
-        ScheduleEntry
-        |> ScheduleEntry.for_business(business_id)
-        |> ScheduleEntry.for_plan(plan.id)
-        |> ScheduleEntry.with_workout(business_id)
-        |> Repo.all()
-
-      {:ok, plan_items}
-    end
-  end
-
   @spec create_training_plan(Ctx.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_training_plan(%Ctx{} = ctx, attrs) do
@@ -277,43 +254,52 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec create_plan_item(String.t(), String.t(), String.t(), map()) ::
-          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_plan_item(training_plan_id, business_id, creator_id, attrs) do
-    with {:ok, plan} <- get_plan(business_id, training_plan_id),
-         :ok <- ensure_workout_for_plan(plan.id, business_id, Map.get(attrs, "training_workout_id")) do
-      plan.id
-      |> ScheduleEntry.insert_changeset(business_id, creator_id, attrs)
-      |> Repo.insert()
+  @spec get_schedule(Ctx.t(), String.t()) ::
+          {:ok, %{optional(String.t()) => ScheduleEntry.t()}} | {:error, :not_found}
+  def get_schedule(%Ctx{} = ctx, plan_id) do
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+      schedule =
+        ScheduleEntry
+        |> ScheduleEntry.for_business(ctx.business_id)
+        |> ScheduleEntry.for_plan(plan.id)
+        |> ScheduleEntry.with_workout(ctx.business_id)
+        |> Repo.all()
+        |> Map.new(fn entry -> {entry.day_of_week, entry} end)
+
+      {:ok, schedule}
     end
   end
 
-  @spec create_plan_item_for_coach_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_plan_item_for_coach_user(business_id, user_id, training_plan_id, attrs) do
-    ctx = Ctx.new(business_id, user_id)
+  @spec set_day_schedule(Ctx.t(), String.t(), String.t(), map()) ::
+          {:ok, ScheduleEntry.t() | nil} | {:error, :not_found | :invalid_day | Ecto.Changeset.t()}
+  def set_day_schedule(%Ctx{} = ctx, plan_id, day, attrs) when is_map(attrs) do
+    with {:ok, coach} <- get_coach(ctx),
+         {:ok, plan} <- get_plan(ctx.business_id, plan_id),
+         :ok <- validate_schedule_day(day) do
+      workout_id = attrs["training_workout_id"] || attrs[:training_workout_id]
 
-    with {:ok, coach} <- get_coach(ctx) do
-      create_plan_item(training_plan_id, business_id, coach.id, attrs)
-    end
-  end
+      Repo.transaction(fn ->
+        ScheduleEntry
+        |> ScheduleEntry.for_business(ctx.business_id)
+        |> ScheduleEntry.for_plan(plan.id)
+        |> ScheduleEntry.for_day(day)
+        |> Repo.delete_all()
 
-  @spec update_plan_item(String.t(), String.t(), map()) ::
-          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_plan_item(business_id, plan_item_id, attrs) do
-    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
-      plan_item
-      |> ScheduleEntry.update_changeset(attrs)
-      |> validate_workout_belongs_to_plan()
-      |> Repo.update()
-    end
-  end
-
-  @spec delete_plan_item(String.t(), String.t()) ::
-          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_plan_item(business_id, plan_item_id) do
-    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
-      Repo.delete(plan_item)
+        if workout_id do
+          with :ok <- ensure_workout_for_plan(plan.id, ctx.business_id, workout_id),
+               entry_attrs = %{"day_of_week" => day, "training_workout_id" => workout_id},
+               {:ok, entry} <-
+                 plan.id
+                 |> ScheduleEntry.insert_changeset(ctx.business_id, coach.id, entry_attrs)
+                 |> Repo.insert() do
+            Repo.preload(entry, workout: TrainingWorkout |> TrainingWorkout.for_business(ctx.business_id))
+          else
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        else
+          nil
+        end
+      end)
     end
   end
 
@@ -350,19 +336,8 @@ defmodule Easy.TrainingPlans do
     if workout_for_plan?(plan_id, business_id, workout_id), do: :ok, else: {:error, :not_found}
   end
 
-  defp validate_workout_belongs_to_plan(%{valid?: false} = changeset), do: changeset
-
-  defp validate_workout_belongs_to_plan(changeset) do
-    workout_id = get_field(changeset, :training_workout_id)
-    plan_id = get_field(changeset, :training_plan_id)
-    business_id = get_field(changeset, :business_id)
-
-    if workout_id && plan_id && business_id &&
-         not workout_for_plan?(plan_id, business_id, workout_id) do
-      add_error(changeset, :training_workout_id, "must belong to the training plan")
-    else
-      changeset
-    end
+  defp validate_schedule_day(day) do
+    if day in ScheduleEntry.days(), do: :ok, else: {:error, :invalid_day}
   end
 
   defp workout_for_plan?(plan_id, business_id, workout_id) do

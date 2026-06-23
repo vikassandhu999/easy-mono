@@ -1,6 +1,7 @@
 defmodule Easy.Training.PlanItemTest do
   use Easy.SchemaCase
 
+  alias Easy.Ctx
   alias Easy.TrainingPlans, as: Plans
   alias Easy.Training.ScheduleEntry, as: PlanItem
 
@@ -36,56 +37,52 @@ defmodule Easy.Training.PlanItemTest do
     end
   end
 
-  describe "Plans.create_plan_item/4" do
+  describe "Plans.set_day_schedule/4" do
     test "returns not found when workout is outside the plan" do
-      business = insert(:business)
-      coach = insert(:coach, business: business)
-      plan = insert(:training_plan, creator: coach, business: business)
-      other_plan = insert(:training_plan, creator: coach, business: business)
-      workout = insert(:workout, plan: other_plan, creator: coach, business: business)
+      coach = insert(:coach)
+      plan = insert(:training_plan, creator: coach, business: coach.business)
+      other_plan = insert(:training_plan, creator: coach, business: coach.business)
+      workout = insert(:workout, plan: other_plan, creator: coach, business: coach.business)
+      ctx = Ctx.new(coach.business_id, coach.user_id)
 
       assert {:error, :not_found} =
-               Plans.create_plan_item(plan.id, business.id, coach.id, %{
-                 "day_of_week" => "monday",
+               Plans.set_day_schedule(ctx, plan.id, "monday", %{
                  "training_workout_id" => workout.id
                })
     end
 
     test "schedules a workout on a day for the plan" do
-      business = insert(:business)
-      coach = insert(:coach, business: business)
-      plan = insert(:training_plan, creator: coach, business: business)
-      workout = insert(:workout, plan: plan, creator: coach, business: business)
+      coach = insert(:coach)
+      plan = insert(:training_plan, creator: coach, business: coach.business)
+      workout = insert(:workout, plan: plan, creator: coach, business: coach.business)
+      ctx = Ctx.new(coach.business_id, coach.user_id)
 
       assert {:ok, item} =
-               Plans.create_plan_item(plan.id, business.id, coach.id, %{
-                 "day_of_week" => "monday",
+               Plans.set_day_schedule(ctx, plan.id, "monday", %{
                  "training_workout_id" => workout.id
                })
 
       assert item.day_of_week == "monday"
     end
 
-    test "rejects a second workout on the same day for the plan" do
-      business = insert(:business)
-      coach = insert(:coach, business: business)
-      plan = insert(:training_plan, creator: coach, business: business)
-      workout = insert(:workout, plan: plan, creator: coach, business: business)
-      other_workout = insert(:workout, plan: plan, creator: coach, business: business)
+    test "replaces a second workout on the same day (desired-state semantics)" do
+      coach = insert(:coach)
+      plan = insert(:training_plan, creator: coach, business: coach.business)
+      workout_a = insert(:workout, plan: plan, creator: coach, business: coach.business)
+      workout_b = insert(:workout, plan: plan, creator: coach, business: coach.business)
+      ctx = Ctx.new(coach.business_id, coach.user_id)
 
       assert {:ok, _item} =
-               Plans.create_plan_item(plan.id, business.id, coach.id, %{
-                 "day_of_week" => "monday",
-                 "training_workout_id" => workout.id
+               Plans.set_day_schedule(ctx, plan.id, "monday", %{
+                 "training_workout_id" => workout_a.id
                })
 
-      assert {:error, changeset} =
-               Plans.create_plan_item(plan.id, business.id, coach.id, %{
-                 "day_of_week" => "monday",
-                 "training_workout_id" => other_workout.id
+      assert {:ok, item} =
+               Plans.set_day_schedule(ctx, plan.id, "monday", %{
+                 "training_workout_id" => workout_b.id
                })
 
-      refute changeset.valid?
+      assert item.training_workout_id == workout_b.id
     end
   end
 end

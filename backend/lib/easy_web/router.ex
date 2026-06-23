@@ -157,10 +157,8 @@ defmodule EasyWeb.Router do
     patch  "/training-workouts/:id",    WorkoutController, :update
     delete "/training-workouts/:id",    WorkoutController, :delete
 
-    post "/training_plans/:plan_id/training_plan_items", TrainingPlanItemController, :create
-    get  "/training_plans/:plan_id/training_plan_items", TrainingPlanItemController, :index
-    patch  "/training_plan_items/:id", TrainingPlanItemController, :update
-    delete "/training_plan_items/:id", TrainingPlanItemController, :delete
+    get "/training-plans/:plan_id/schedule",      TrainingScheduleController, :show
+    put "/training-plans/:plan_id/schedule/:day", TrainingScheduleController, :update
 
     post   "/training-workouts/:workout_id/exercises", WorkoutElementController, :create
     patch  "/training-workout-exercises/:id",          WorkoutElementController, :update

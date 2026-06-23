@@ -5,7 +5,7 @@ defmodule EasyWeb.TrainingControllerBoundaryTest do
     "lib/easy_web/controllers/coaches/training_plan_controller.ex",
     "lib/easy_web/controllers/clients/training_plan_controller.ex",
     "lib/easy_web/controllers/coaches/client_plan_controller.ex",
-    "lib/easy_web/controllers/coaches/training_plan_item_controller.ex",
+    "lib/easy_web/controllers/coaches/training_schedule_controller.ex",
     "lib/easy_web/controllers/coaches/workout_controller.ex",
     "lib/easy_web/controllers/coaches/workout_element_controller.ex",
     "lib/easy_web/controllers/coaches/workout_session_controller.ex",
@@ -21,7 +21,7 @@ defmodule EasyWeb.TrainingControllerBoundaryTest do
   @pure_training_controllers [
     "lib/easy_web/controllers/coaches/training_plan_controller.ex",
     "lib/easy_web/controllers/clients/training_plan_controller.ex",
-    "lib/easy_web/controllers/coaches/training_plan_item_controller.ex",
+    "lib/easy_web/controllers/coaches/training_schedule_controller.ex",
     "lib/easy_web/controllers/coaches/workout_controller.ex",
     "lib/easy_web/controllers/coaches/workout_element_controller.ex",
     "lib/easy_web/controllers/coaches/workout_session_controller.ex",

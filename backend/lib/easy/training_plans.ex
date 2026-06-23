@@ -1,5 +1,6 @@
 defmodule Easy.TrainingPlans do
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Orgs.Coach
   alias Easy.Repo
   alias Easy.Training.ScheduleEntry
@@ -18,9 +19,11 @@ defmodule Easy.TrainingPlans do
     |> ok_or_not_found()
   end
 
-  @spec get_plan_full(String.t(), String.t()) ::
+  @spec get_plan_full(Ctx.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found}
-  def get_plan_full(business_id, plan_id) do
+  def get_plan_full(%Ctx{} = ctx, plan_id) do
+    business_id = ctx.business_id
+
     TrainingPlan
     |> TrainingPlan.for_business(business_id)
     |> TrainingPlan.with_workouts(business_id)
@@ -30,11 +33,11 @@ defmodule Easy.TrainingPlans do
     |> ok_or_not_found()
   end
 
-  @spec get_active_plan_day_for_user(String.t(), String.t(), Date.t()) ::
+  @spec get_my_active_plan_day(Ctx.t(), Date.t()) ::
           {:ok, map()} | {:error, :not_found}
-  def get_active_plan_day_for_user(business_id, user_id, date) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_active_plan_day_for_client(business_id, client.id, date)
+  def get_my_active_plan_day(%Ctx{} = ctx, date) do
+    with {:ok, client} <- get_client(ctx) do
+      get_active_plan_day_for_client(ctx.business_id, client.id, date)
     end
   end
 
@@ -82,14 +85,15 @@ defmodule Easy.TrainingPlans do
   end
 
   @spec list_template_plans(
-          String.t(),
+          Ctx.t(),
           String.t() | nil,
           atom() | nil,
           non_neg_integer(),
           pos_integer()
         ) ::
           {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}}
-  def list_template_plans(business_id, search, status, offset, limit) do
+  def list_template_plans(%Ctx{} = ctx, search, status, offset, limit) do
+    business_id = ctx.business_id
     search = String.trim(search || "")
 
     base =
@@ -113,59 +117,75 @@ defmodule Easy.TrainingPlans do
   end
 
   @spec list_client_plans(
-          String.t(),
-          String.t(),
-          atom() | nil,
-          non_neg_integer(),
-          pos_integer()
-        ) ::
-          {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}}
-  def list_client_plans(business_id, client_id, status, offset, limit) do
-    base =
-      TrainingPlan
-      |> TrainingPlan.for_business(business_id)
-      |> TrainingPlan.for_client(client_id)
-      |> TrainingPlan.with_status(status)
-
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       plans:
-         base
-         |> TrainingPlan.newest()
-         |> Easy.Utils.paginate(offset, limit)
-         |> TrainingPlan.with_workouts(business_id)
-         |> TrainingPlan.with_plan_items(business_id)
-         |> preload(client: ^Client.for_business(business_id))
-         |> Repo.all()
-     }}
-  end
-
-  @spec list_client_plans_for_user(
-          String.t(),
+          Ctx.t(),
           String.t(),
           atom() | nil,
           non_neg_integer(),
           pos_integer()
         ) ::
           {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}} | {:error, :not_found}
-  def list_client_plans_for_user(business_id, user_id, status, offset, limit) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      list_client_plans(business_id, client.id, status, offset, limit)
+  def list_client_plans(%Ctx{} = ctx, client_id, status, offset, limit) do
+    business_id = ctx.business_id
+
+    with {:ok, _client} <- fetch_client(business_id, client_id) do
+      base =
+        TrainingPlan
+        |> TrainingPlan.for_business(business_id)
+        |> TrainingPlan.for_client(client_id)
+        |> TrainingPlan.with_status(status)
+
+      {:ok,
+       %{
+         count: Repo.aggregate(base, :count, :id),
+         plans:
+           base
+           |> TrainingPlan.newest()
+           |> Easy.Utils.paginate(offset, limit)
+           |> TrainingPlan.with_workouts(business_id)
+           |> TrainingPlan.with_plan_items(business_id)
+           |> preload(client: ^Client.for_business(business_id))
+           |> Repo.all()
+       }}
     end
   end
 
-  @spec list_client_plans_for_client(
-          String.t(),
-          String.t(),
+  @spec list_my_plans(
+          Ctx.t(),
           atom() | nil,
           non_neg_integer(),
           pos_integer()
         ) ::
           {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}} | {:error, :not_found}
-  def list_client_plans_for_client(business_id, client_id, status, offset, limit) do
-    with {:ok, _client} <- get_client(business_id, client_id) do
-      list_client_plans(business_id, client_id, status, offset, limit)
+  def list_my_plans(%Ctx{} = ctx, status, offset, limit) do
+    with {:ok, client} <- get_client(ctx) do
+      business_id = ctx.business_id
+
+      base =
+        TrainingPlan
+        |> TrainingPlan.for_business(business_id)
+        |> TrainingPlan.for_client(client.id)
+        |> TrainingPlan.with_status(status)
+
+      {:ok,
+       %{
+         count: Repo.aggregate(base, :count, :id),
+         plans:
+           base
+           |> TrainingPlan.newest()
+           |> Easy.Utils.paginate(offset, limit)
+           |> TrainingPlan.with_workouts(business_id)
+           |> TrainingPlan.with_plan_items(business_id)
+           |> preload(client: ^Client.for_business(business_id))
+           |> Repo.all()
+       }}
+    end
+  end
+
+  @spec get_my_plan_full(Ctx.t(), String.t()) ::
+          {:ok, TrainingPlan.t()} | {:error, :not_found}
+  def get_my_plan_full(%Ctx{} = ctx, plan_id) do
+    with {:ok, client} <- get_client(ctx) do
+      get_client_plan_full(ctx.business_id, client.id, plan_id)
     end
   end
 
@@ -175,14 +195,6 @@ defmodule Easy.TrainingPlans do
     |> ScheduleEntry.for_business(business_id)
     |> Repo.get(plan_item_id)
     |> ok_or_not_found()
-  end
-
-  @spec get_client_plan_full_for_user(String.t(), String.t(), String.t()) ::
-          {:ok, TrainingPlan.t()} | {:error, :not_found}
-  def get_client_plan_full_for_user(business_id, user_id, plan_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_client_plan_full(business_id, client.id, plan_id)
-    end
   end
 
   @spec list_plan_items(String.t(), String.t()) ::
@@ -200,27 +212,21 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec create_training_plan(String.t(), String.t(), map()) ::
-          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
-  def create_training_plan(business_id, creator_id, attrs) do
-    business_id
-    |> TrainingPlan.create_changeset(creator_id, attrs)
-    |> Repo.insert()
-    |> preload_plan()
-  end
-
-  @spec create_training_plan_for_coach_user(String.t(), String.t(), map()) ::
+  @spec create_training_plan(Ctx.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_training_plan_for_coach_user(business_id, user_id, attrs) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
-      create_training_plan(business_id, coach.id, attrs)
+  def create_training_plan(%Ctx{} = ctx, attrs) do
+    with {:ok, coach} <- get_coach(ctx) do
+      ctx.business_id
+      |> TrainingPlan.create_changeset(coach.id, attrs)
+      |> Repo.insert()
+      |> preload_plan()
     end
   end
 
-  @spec update_training_plan(String.t(), String.t(), map()) ::
+  @spec update_training_plan(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_training_plan(business_id, plan_id, attrs) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
+  def update_training_plan(%Ctx{} = ctx, plan_id, attrs) do
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
       plan
       |> TrainingPlan.update_changeset(attrs)
       |> Repo.update()
@@ -228,59 +234,45 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec delete_training_plan(String.t(), String.t()) ::
+  @spec delete_training_plan(Ctx.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_training_plan(business_id, plan_id) do
-    with {:ok, plan} <- get_plan(business_id, plan_id) do
+  def delete_training_plan(%Ctx{} = ctx, plan_id) do
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
       Repo.delete(plan)
     end
   end
 
-  @spec duplicate_training_plan(String.t(), String.t()) ::
+  @spec duplicate_training_plan(Ctx.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def duplicate_training_plan(business_id, plan_id) do
-    with {:ok, plan} <- get_plan_full(business_id, plan_id) do
+  def duplicate_training_plan(%Ctx{} = ctx, plan_id) do
+    with {:ok, coach} <- get_coach(ctx),
+         {:ok, plan} <- get_plan_full(ctx, plan_id) do
       attrs = %{
         name: generate_copy_name(plan.name, plan.business_id),
         description: plan.description
       }
 
-      clone_plan(plan, attrs, source_template_id: plan.id)
+      clone_plan(plan, attrs, creator_id: coach.id, source_template_id: plan.id)
     end
   end
 
-  @spec assign_training_plan_to_client(
-          TrainingPlan.t() | String.t(),
-          String.t() | nil,
-          Date.t() | String.t() | map() | nil,
-          Date.t() | String.t() | map() | nil
-        ) ::
+  @spec assign_training_plan_to_client(Ctx.t(), String.t(), String.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t() | :not_found}
-  def assign_training_plan_to_client(%TrainingPlan{}, nil, _start_date, _end_date),
-    do: {:error, :not_found}
+  def assign_training_plan_to_client(%Ctx{} = ctx, plan_id, client_id, attrs) do
+    with {:ok, coach} <- get_coach(ctx),
+         {:ok, plan} <- get_plan_full(ctx, plan_id),
+         {:ok, _client} <- fetch_client(ctx.business_id, client_id) do
+      clone_attrs = %{
+        name: plan.name,
+        description: plan.description,
+        start_date: Map.get(attrs, "start_date"),
+        end_date: Map.get(attrs, "end_date")
+      }
 
-  def assign_training_plan_to_client(%TrainingPlan{}, "", _start_date, _end_date),
-    do: {:error, :not_found}
-
-  def assign_training_plan_to_client(%TrainingPlan{} = plan, client_id, start_date, end_date) do
-    attrs = %{
-      name: plan.name,
-      description: plan.description,
-      start_date: start_date,
-      end_date: end_date
-    }
-
-    clone_plan(plan, attrs, client_id: client_id, source_template_id: plan.id)
-  end
-
-  def assign_training_plan_to_client(business_id, plan_id, client_id, attrs) do
-    with {:ok, plan} <- get_plan_full(business_id, plan_id),
-         {:ok, _client} <- get_client(business_id, client_id) do
-      assign_training_plan_to_client(
-        plan,
-        client_id,
-        Map.get(attrs, "start_date"),
-        Map.get(attrs, "end_date")
+      clone_plan(plan, clone_attrs,
+        creator_id: coach.id,
+        client_id: client_id,
+        source_template_id: plan.id
       )
     end
   end
@@ -299,7 +291,9 @@ defmodule Easy.TrainingPlans do
   @spec create_plan_item_for_coach_user(String.t(), String.t(), String.t(), map()) ::
           {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item_for_coach_user(business_id, user_id, training_plan_id, attrs) do
-    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
+    ctx = Ctx.new(business_id, user_id)
+
+    with {:ok, coach} <- get_coach(ctx) do
       create_plan_item(training_plan_id, business_id, coach.id, attrs)
     end
   end
@@ -323,28 +317,28 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  defp get_client(_business_id, nil), do: {:error, :not_found}
-  defp get_client(_business_id, ""), do: {:error, :not_found}
+  defp fetch_client(_business_id, nil), do: {:error, :not_found}
+  defp fetch_client(_business_id, ""), do: {:error, :not_found}
 
-  defp get_client(business_id, client_id) do
+  defp fetch_client(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  defp get_client_for_user(business_id, user_id) do
+  defp get_client(%Ctx{} = ctx) do
     Client
-    |> Client.for_business(business_id)
-    |> Client.for_user(user_id)
+    |> Client.for_business(ctx.business_id)
+    |> Client.for_user(ctx.user_id)
     |> Repo.one()
     |> ok_or_not_found()
   end
 
-  defp get_coach_for_user(business_id, user_id) do
+  defp get_coach(%Ctx{} = ctx) do
     Coach
-    |> Coach.for_business(business_id)
-    |> Coach.for_user(user_id)
+    |> Coach.for_business(ctx.business_id)
+    |> Coach.for_user(ctx.user_id)
     |> Repo.one()
     |> ok_or_not_found()
   end
@@ -380,6 +374,8 @@ defmodule Easy.TrainingPlans do
   end
 
   defp clone_plan(plan, attrs, relationship_changes) do
+    creator_id = Keyword.get(relationship_changes, :creator_id, plan.creator_id)
+
     plan =
       Repo.preload(plan,
         workouts:
@@ -390,9 +386,11 @@ defmodule Easy.TrainingPlans do
       )
 
     Repo.transaction(fn ->
+      relationship_changes_without_creator = Keyword.delete(relationship_changes, :creator_id)
+
       changeset =
-        TrainingPlan.create_changeset(plan.business_id, plan.creator_id, attrs)
-        |> put_relationship_changes(relationship_changes)
+        TrainingPlan.create_changeset(plan.business_id, creator_id, attrs)
+        |> put_relationship_changes(relationship_changes_without_creator)
 
       case Repo.insert(changeset) do
         {:ok, new_plan} ->

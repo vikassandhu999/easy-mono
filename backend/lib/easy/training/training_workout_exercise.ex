@@ -1,7 +1,7 @@
-defmodule Easy.Training.WorkoutElement do
+defmodule Easy.Training.TrainingWorkoutExercise do
   use Ecto.Schema
   alias Easy.Orgs
-  alias Easy.Training.{TrainingExercise, PlannedSet, Workout}
+  alias Easy.Training.{TrainingExercise, PlannedSet, TrainingWorkout}
   import Ecto.Changeset
   import Ecto.Query
 
@@ -17,7 +17,7 @@ defmodule Easy.Training.WorkoutElement do
     embeds_many :planned_sets, PlannedSet, on_replace: :delete
 
     belongs_to :business, Orgs.Business
-    belongs_to :workout, Workout, foreign_key: :training_workout_id
+    belongs_to :workout, TrainingWorkout, foreign_key: :training_workout_id
     belongs_to :exercise, TrainingExercise
 
     timestamps(type: :utc_datetime)

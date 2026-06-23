@@ -7,8 +7,8 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    WorkoutElementRequest,
-    WorkoutElementResponse
+    TrainingWorkoutExerciseRequest,
+    TrainingWorkoutExerciseResponse
   }
 
   tags ["coach workout elements"]
@@ -18,9 +18,9 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
     description: "Creates a workout element with planned sets.",
     operation_id: "createWorkoutElement",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Workout element request", "application/json", WorkoutElementRequest, required: true},
+    request_body: {"Workout element request", "application/json", TrainingWorkoutExerciseRequest, required: true},
     responses: [
-      created: {"Workout element created", "application/json", WorkoutElementResponse},
+      created: {"Workout element created", "application/json", TrainingWorkoutExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -35,7 +35,7 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
       Operation.parameter(:id, :path, :string, "Workout element id")
     ],
     responses: [
-      ok: {"Workout element", "application/json", WorkoutElementResponse},
+      ok: {"Workout element", "application/json", TrainingWorkoutExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
@@ -48,9 +48,9 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
     parameters: [
       Operation.parameter(:id, :path, :string, "Workout element id")
     ],
-    request_body: {"Workout element request", "application/json", WorkoutElementRequest, required: true},
+    request_body: {"Workout element request", "application/json", TrainingWorkoutExerciseRequest, required: true},
     responses: [
-      ok: {"Workout element updated", "application/json", WorkoutElementResponse},
+      ok: {"Workout element updated", "application/json", TrainingWorkoutExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}

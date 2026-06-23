@@ -3,7 +3,7 @@ defmodule Easy.Training.WorkoutSession do
 
   alias Easy.Clients
   alias Easy.Orgs
-  alias Easy.Training.{Workout, PerformedSet, PlanItem}
+  alias Easy.Training.{TrainingWorkout, PerformedSet, ScheduleEntry}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -29,8 +29,8 @@ defmodule Easy.Training.WorkoutSession do
 
     belongs_to :client, Clients.Client
     belongs_to :business, Orgs.Business
-    belongs_to :workout, Workout, foreign_key: :training_workout_id
-    belongs_to :schedule_entry, PlanItem, foreign_key: :training_schedule_entry_id
+    belongs_to :workout, TrainingWorkout, foreign_key: :training_workout_id
+    belongs_to :schedule_entry, ScheduleEntry, foreign_key: :training_schedule_entry_id
     has_many :performed_sets, PerformedSet, foreign_key: :training_session_id
 
     timestamps(type: :utc_datetime)

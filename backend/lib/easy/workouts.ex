@@ -2,109 +2,109 @@ defmodule Easy.Workouts do
   alias Easy.Repo
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingPlan
-  alias Easy.Training.Workout
-  alias Easy.Training.WorkoutElement
+  alias Easy.Training.TrainingWorkout
+  alias Easy.Training.TrainingWorkoutExercise
 
-  @spec get_workout(String.t(), String.t()) :: {:ok, Workout.t()} | {:error, :not_found}
+  @spec get_workout(String.t(), String.t()) :: {:ok, TrainingWorkout.t()} | {:error, :not_found}
   def get_workout(business_id, workout_id) do
-    Workout
-    |> Workout.for_business(business_id)
+    TrainingWorkout
+    |> TrainingWorkout.for_business(business_id)
     |> Repo.get(workout_id)
     |> ok_or_not_found()
   end
 
   @spec get_workout_for_plan(String.t(), String.t(), String.t()) ::
-          {:ok, Workout.t()} | {:error, :not_found}
+          {:ok, TrainingWorkout.t()} | {:error, :not_found}
   def get_workout_for_plan(business_id, plan_id, workout_id) do
-    Workout
-    |> Workout.for_business(business_id)
-    |> Workout.for_plan(plan_id)
+    TrainingWorkout
+    |> TrainingWorkout.for_business(business_id)
+    |> TrainingWorkout.for_plan(plan_id)
     |> Repo.get(workout_id)
     |> ok_or_not_found()
   end
 
   @spec get_workout_with_elements(String.t(), String.t()) ::
-          {:ok, Workout.t()} | {:error, :not_found}
+          {:ok, TrainingWorkout.t()} | {:error, :not_found}
   def get_workout_with_elements(business_id, workout_id) do
-    Workout
-    |> Workout.for_business(business_id)
-    |> Workout.with_elements(business_id)
+    TrainingWorkout
+    |> TrainingWorkout.for_business(business_id)
+    |> TrainingWorkout.with_elements(business_id)
     |> Repo.get(workout_id)
     |> ok_or_not_found()
   end
 
   @spec list_workouts(String.t(), String.t(), non_neg_integer(), pos_integer()) ::
-          {:ok, %{count: non_neg_integer(), workouts: [Workout.t()]}} | {:error, :not_found}
+          {:ok, %{count: non_neg_integer(), workouts: [TrainingWorkout.t()]}} | {:error, :not_found}
   def list_workouts(business_id, plan_id, offset, limit) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
-      base = Workout |> Workout.for_business(business_id) |> Workout.for_plan(plan.id)
+      base = TrainingWorkout |> TrainingWorkout.for_business(business_id) |> TrainingWorkout.for_plan(plan.id)
 
       {:ok,
        %{
          count: Repo.aggregate(base, :count, :id),
          workouts:
            base
-           |> Workout.ordered()
+           |> TrainingWorkout.ordered()
            |> Easy.Utils.paginate(offset, limit)
-           |> Workout.with_elements(business_id)
+           |> TrainingWorkout.with_elements(business_id)
            |> Repo.all()
        }}
     end
   end
 
   @spec get_workout_element(String.t(), String.t()) ::
-          {:ok, WorkoutElement.t()} | {:error, :not_found}
+          {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found}
   def get_workout_element(business_id, element_id) do
-    WorkoutElement
-    |> WorkoutElement.for_business(business_id)
+    TrainingWorkoutExercise
+    |> TrainingWorkoutExercise.for_business(business_id)
     |> Repo.get(element_id)
     |> ok_or_not_found()
   end
 
   @spec get_workout_element_with_exercise(String.t(), String.t()) ::
-          {:ok, WorkoutElement.t()} | {:error, :not_found}
+          {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found}
   def get_workout_element_with_exercise(business_id, element_id) do
-    WorkoutElement
-    |> WorkoutElement.for_business(business_id)
-    |> WorkoutElement.with_exercise(business_id)
+    TrainingWorkoutExercise
+    |> TrainingWorkoutExercise.for_business(business_id)
+    |> TrainingWorkoutExercise.with_exercise(business_id)
     |> Repo.get(element_id)
     |> ok_or_not_found()
   end
 
   @spec create_workout(String.t(), String.t(), map()) ::
-          {:ok, Workout.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, TrainingWorkout.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_workout(training_plan_id, business_id, attrs) do
     with {:ok, plan} <- get_plan(business_id, training_plan_id) do
       plan.id
-      |> Workout.insert_changeset(business_id, nil, attrs)
+      |> TrainingWorkout.insert_changeset(business_id, nil, attrs)
       |> Repo.insert()
     end
   end
 
   @spec update_workout(String.t(), String.t(), map()) ::
-          {:ok, Workout.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, TrainingWorkout.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_workout(business_id, workout_id, attrs) do
     with {:ok, workout} <- get_workout(business_id, workout_id) do
       workout
-      |> Workout.update_changeset(attrs)
+      |> TrainingWorkout.update_changeset(attrs)
       |> Repo.update()
     end
   end
 
   @spec delete_workout(String.t(), String.t()) ::
-          {:ok, Workout.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, TrainingWorkout.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_workout(business_id, workout_id) do
     with {:ok, workout} <- get_workout(business_id, workout_id) do
       Repo.delete(workout)
     end
   end
 
-  @spec duplicate_workout(Workout.t()) :: {:ok, Workout.t()} | {:error, Ecto.Changeset.t()}
-  def duplicate_workout(%Workout{} = workout) do
+  @spec duplicate_workout(TrainingWorkout.t()) :: {:ok, TrainingWorkout.t()} | {:error, Ecto.Changeset.t()}
+  def duplicate_workout(%TrainingWorkout{} = workout) do
     element_query =
-      WorkoutElement
-      |> WorkoutElement.for_business(workout.business_id)
-      |> WorkoutElement.ordered()
+      TrainingWorkoutExercise
+      |> TrainingWorkoutExercise.for_business(workout.business_id)
+      |> TrainingWorkoutExercise.ordered()
 
     Repo.transaction(fn ->
       workout = Repo.preload(workout, workout_elements: element_query)
@@ -112,7 +112,7 @@ defmodule Easy.Workouts do
       case copy_workout_into(workout, workout.training_plan_id) do
         {:ok, new_workout} ->
           Repo.preload(new_workout,
-            workout_elements: WorkoutElement.with_exercise(element_query, workout.business_id)
+            workout_elements: TrainingWorkoutExercise.with_exercise(element_query, workout.business_id)
           )
 
         {:error, reason} ->
@@ -122,7 +122,7 @@ defmodule Easy.Workouts do
   end
 
   @spec duplicate_workout(String.t(), String.t()) ::
-          {:ok, Workout.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, TrainingWorkout.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def duplicate_workout(business_id, workout_id) do
     with {:ok, workout} <- get_workout(business_id, workout_id) do
       duplicate_workout(workout)
@@ -130,12 +130,12 @@ defmodule Easy.Workouts do
   end
 
   @spec create_workout_element(String.t(), String.t(), map()) ::
-          {:ok, WorkoutElement.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_workout_element(workout_id, business_id, attrs) do
     with {:ok, workout} <- get_workout(business_id, workout_id),
          {:ok, changeset} <-
            workout.id
-           |> WorkoutElement.insert_changeset(business_id, attrs)
+           |> TrainingWorkoutExercise.insert_changeset(business_id, attrs)
            |> validate_exercise_in_business() do
       changeset
       |> Repo.insert()
@@ -144,12 +144,12 @@ defmodule Easy.Workouts do
   end
 
   @spec update_workout_element(String.t(), String.t(), map()) ::
-          {:ok, WorkoutElement.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_workout_element(business_id, element_id, attrs) do
     with {:ok, element} <- get_workout_element_with_exercise(business_id, element_id),
          {:ok, changeset} <-
            element
-           |> WorkoutElement.update_changeset(attrs)
+           |> TrainingWorkoutExercise.update_changeset(attrs)
            |> validate_exercise_in_business() do
       changeset
       |> Repo.update()
@@ -158,7 +158,7 @@ defmodule Easy.Workouts do
   end
 
   @spec delete_workout_element(String.t(), String.t()) ::
-          {:ok, WorkoutElement.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_workout_element(business_id, element_id) do
     with {:ok, element} <- get_workout_element(business_id, element_id) do
       Repo.delete(element)
@@ -195,7 +195,7 @@ defmodule Easy.Workouts do
 
     with {:ok, new_workout} <-
            dest_plan_id
-           |> Workout.insert_changeset(workout.business_id, nil, attrs)
+           |> TrainingWorkout.insert_changeset(workout.business_id, nil, attrs)
            |> Repo.insert(),
          :ok <- copy_elements(workout.workout_elements, new_workout.id, workout.business_id) do
       {:ok, new_workout}
@@ -206,7 +206,7 @@ defmodule Easy.Workouts do
     Enum.reduce_while(elements, :ok, fn element, :ok ->
       result =
         new_workout_id
-        |> WorkoutElement.insert_changeset(business_id, WorkoutElement.copy_attrs(element))
+        |> TrainingWorkoutExercise.insert_changeset(business_id, TrainingWorkoutExercise.copy_attrs(element))
         |> Repo.insert()
 
       case result do
@@ -216,7 +216,7 @@ defmodule Easy.Workouts do
     end)
   end
 
-  defp preload_element({:ok, %WorkoutElement{} = element}) do
+  defp preload_element({:ok, %TrainingWorkoutExercise{} = element}) do
     {:ok, Repo.preload(element, exercise: TrainingExercise.for_business(element.business_id))}
   end
 

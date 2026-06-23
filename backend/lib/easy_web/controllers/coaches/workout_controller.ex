@@ -7,10 +7,10 @@ defmodule EasyWeb.Coaches.WorkoutController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    WorkoutListResponse,
-    WorkoutRequest,
-    WorkoutResponse,
-    WorkoutUpdateRequest
+    TrainingWorkoutListResponse,
+    TrainingWorkoutRequest,
+    TrainingWorkoutResponse,
+    TrainingWorkoutUpdateRequest
   }
 
   tags ["coach workouts"]
@@ -26,7 +26,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
       Operation.parameter(:limit, :query, :integer, "Maximum workouts to return", required: false)
     ],
     responses: [
-      ok: {"Workouts", "application/json", WorkoutListResponse},
+      ok: {"Workouts", "application/json", TrainingWorkoutListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
@@ -39,9 +39,9 @@ defmodule EasyWeb.Coaches.WorkoutController do
     parameters: [
       Operation.parameter(:plan_id, :path, :string, "Training plan id")
     ],
-    request_body: {"Workout create request", "application/json", WorkoutRequest, required: true},
+    request_body: {"Workout create request", "application/json", TrainingWorkoutRequest, required: true},
     responses: [
-      created: {"Workout created", "application/json", WorkoutResponse},
+      created: {"Workout created", "application/json", TrainingWorkoutResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -56,7 +56,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
       Operation.parameter(:id, :path, :string, "Workout id")
     ],
     responses: [
-      ok: {"Workout", "application/json", WorkoutResponse},
+      ok: {"Workout", "application/json", TrainingWorkoutResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
@@ -69,9 +69,9 @@ defmodule EasyWeb.Coaches.WorkoutController do
     parameters: [
       Operation.parameter(:id, :path, :string, "Workout id")
     ],
-    request_body: {"Workout update request", "application/json", WorkoutUpdateRequest, required: true},
+    request_body: {"Workout update request", "application/json", TrainingWorkoutUpdateRequest, required: true},
     responses: [
-      ok: {"Workout updated", "application/json", WorkoutResponse},
+      ok: {"Workout updated", "application/json", TrainingWorkoutResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -100,7 +100,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
       Operation.parameter(:id, :path, :string, "Workout id")
     ],
     responses: [
-      created: {"Workout duplicated", "application/json", WorkoutResponse},
+      created: {"Workout duplicated", "application/json", TrainingWorkoutResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}

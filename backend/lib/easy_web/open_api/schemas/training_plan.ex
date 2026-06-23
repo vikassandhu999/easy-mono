@@ -163,14 +163,14 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanPlannedSet do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutElement do
+defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutExercise do
   require OpenApiSpex
 
   alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanExercise, TrainingPlanPlannedSet}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
-    title: "TrainingPlanWorkoutElement",
+    title: "TrainingPlanWorkoutExercise",
     type: :object,
     additionalProperties: false,
     properties:
@@ -204,7 +204,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkout do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkoutElement}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkoutExercise}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -218,7 +218,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkout do
           name: %Schema{type: :string},
           notes: %Schema{type: :string, nullable: true},
           training_plan_id: %Schema{type: :string, format: :uuid},
-          workout_elements: %Schema{type: :array, items: TrainingPlanWorkoutElement}
+          workout_elements: %Schema{type: :array, items: TrainingPlanWorkoutExercise}
         },
         Shared.timestamps()
       ),

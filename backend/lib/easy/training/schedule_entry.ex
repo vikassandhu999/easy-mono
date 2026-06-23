@@ -1,4 +1,4 @@
-defmodule Easy.Training.PlanItem do
+defmodule Easy.Training.ScheduleEntry do
   use Ecto.Schema
   alias Easy.Orgs
   import Ecto.Changeset
@@ -19,7 +19,7 @@ defmodule Easy.Training.PlanItem do
     belongs_to :business, Orgs.Business
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :plan, Easy.Training.TrainingPlan, foreign_key: :training_plan_id
-    belongs_to :workout, Easy.Training.Workout, foreign_key: :training_workout_id
+    belongs_to :workout, Easy.Training.TrainingWorkout, foreign_key: :training_workout_id
 
     timestamps(type: :utc_datetime)
   end
@@ -61,9 +61,9 @@ defmodule Easy.Training.PlanItem do
   @spec with_workout(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def with_workout(query, business_id) do
     workout_query =
-      Easy.Training.Workout
-      |> Easy.Training.Workout.for_business(business_id)
-      |> Easy.Training.Workout.with_elements(business_id)
+      Easy.Training.TrainingWorkout
+      |> Easy.Training.TrainingWorkout.for_business(business_id)
+      |> Easy.Training.TrainingWorkout.with_elements(business_id)
 
     from(p in query, preload: [workout: ^workout_query])
   end

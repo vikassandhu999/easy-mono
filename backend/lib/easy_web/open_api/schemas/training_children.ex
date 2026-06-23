@@ -1,11 +1,11 @@
-defmodule EasyWeb.OpenApi.Schemas.WorkoutRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "WorkoutRequest",
+      title: "TrainingWorkoutRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -22,14 +22,14 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutUpdateRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "WorkoutUpdateRequest",
+      title: "TrainingWorkoutUpdateRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -44,7 +44,7 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutUpdateRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutElementRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
@@ -52,7 +52,7 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutElementRequest do
 
   OpenApiSpex.schema(
     %{
-      title: "WorkoutElementRequest",
+      title: "TrainingWorkoutExerciseRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
@@ -101,28 +101,28 @@ defmodule EasyWeb.OpenApi.Schemas.PlanItemRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutResponse do
   require OpenApiSpex
 
   alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkout}
 
-  OpenApiSpex.schema(Shared.data_response(TrainingPlanWorkout, "WorkoutResponse"))
+  OpenApiSpex.schema(Shared.data_response(TrainingPlanWorkout, "TrainingWorkoutResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutListResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutListResponse do
   require OpenApiSpex
 
   alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkout}
 
-  OpenApiSpex.schema(Shared.list_response(TrainingPlanWorkout, "WorkoutListResponse"))
+  OpenApiSpex.schema(Shared.list_response(TrainingPlanWorkout, "TrainingWorkoutListResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.WorkoutElementResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkoutElement}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanWorkoutExercise}
 
-  OpenApiSpex.schema(Shared.data_response(TrainingPlanWorkoutElement, "WorkoutElementResponse"))
+  OpenApiSpex.schema(Shared.data_response(TrainingPlanWorkoutExercise, "TrainingWorkoutExerciseResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlanItemResponse do

@@ -2,7 +2,7 @@ defmodule Easy.Training.PlanItemTest do
   use Easy.SchemaCase
 
   alias Easy.TrainingPlans, as: Plans
-  alias Easy.Training.PlanItem
+  alias Easy.Training.ScheduleEntry, as: PlanItem
 
   describe "insert_changeset/4" do
     test "does not check workout membership against the database" do

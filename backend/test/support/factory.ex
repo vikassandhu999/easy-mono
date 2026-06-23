@@ -28,10 +28,10 @@ defmodule Easy.Factory do
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingMuscle
-  alias Easy.Training.PlanItem, as: TrainingPlanItem
-  alias Easy.Training.Workout
+  alias Easy.Training.ScheduleEntry, as: TrainingPlanItem
+  alias Easy.Training.TrainingWorkout, as: Workout
   alias Easy.Training.TrainingPlan
-  alias Easy.Training.WorkoutElement
+  alias Easy.Training.TrainingWorkoutExercise, as: WorkoutElement
   alias Easy.Training.WorkoutSession
   alias Easy.Threads.Thread
   alias Easy.Threads.ThreadMessage

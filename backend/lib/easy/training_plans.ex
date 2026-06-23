@@ -2,10 +2,10 @@ defmodule Easy.TrainingPlans do
   alias Easy.Clients.Client
   alias Easy.Orgs.Coach
   alias Easy.Repo
-  alias Easy.Training.PlanItem
+  alias Easy.Training.ScheduleEntry
   alias Easy.Training.TrainingPlan
-  alias Easy.Training.Workout
-  alias Easy.Training.WorkoutElement
+  alias Easy.Training.TrainingWorkout
+  alias Easy.Training.TrainingWorkoutExercise
 
   import Ecto.Changeset
   import Ecto.Query
@@ -55,11 +55,11 @@ defmodule Easy.TrainingPlans do
         day = Easy.Utils.weekday_name(date)
 
         schedule_entry =
-          PlanItem
-          |> PlanItem.for_business(business_id)
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_day(day)
-          |> PlanItem.with_workout(business_id)
+          ScheduleEntry
+          |> ScheduleEntry.for_business(business_id)
+          |> ScheduleEntry.for_plan(plan.id)
+          |> ScheduleEntry.for_day(day)
+          |> ScheduleEntry.with_workout(business_id)
           |> Repo.one()
 
         workout = schedule_entry && schedule_entry.workout
@@ -169,10 +169,10 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec get_plan_item(String.t(), String.t()) :: {:ok, PlanItem.t()} | {:error, :not_found}
+  @spec get_plan_item(String.t(), String.t()) :: {:ok, ScheduleEntry.t()} | {:error, :not_found}
   def get_plan_item(business_id, plan_item_id) do
-    PlanItem
-    |> PlanItem.for_business(business_id)
+    ScheduleEntry
+    |> ScheduleEntry.for_business(business_id)
     |> Repo.get(plan_item_id)
     |> ok_or_not_found()
   end
@@ -186,14 +186,14 @@ defmodule Easy.TrainingPlans do
   end
 
   @spec list_plan_items(String.t(), String.t()) ::
-          {:ok, [PlanItem.t()]} | {:error, :not_found}
+          {:ok, [ScheduleEntry.t()]} | {:error, :not_found}
   def list_plan_items(business_id, plan_id) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
       plan_items =
-        PlanItem
-        |> PlanItem.for_business(business_id)
-        |> PlanItem.for_plan(plan.id)
-        |> PlanItem.with_workout(business_id)
+        ScheduleEntry
+        |> ScheduleEntry.for_business(business_id)
+        |> ScheduleEntry.for_plan(plan.id)
+        |> ScheduleEntry.with_workout(business_id)
         |> Repo.all()
 
       {:ok, plan_items}
@@ -286,18 +286,18 @@ defmodule Easy.TrainingPlans do
   end
 
   @spec create_plan_item(String.t(), String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item(training_plan_id, business_id, creator_id, attrs) do
     with {:ok, plan} <- get_plan(business_id, training_plan_id),
          :ok <- ensure_workout_for_plan(plan.id, business_id, Map.get(attrs, "training_workout_id")) do
       plan.id
-      |> PlanItem.insert_changeset(business_id, creator_id, attrs)
+      |> ScheduleEntry.insert_changeset(business_id, creator_id, attrs)
       |> Repo.insert()
     end
   end
 
   @spec create_plan_item_for_coach_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item_for_coach_user(business_id, user_id, training_plan_id, attrs) do
     with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
       create_plan_item(training_plan_id, business_id, coach.id, attrs)
@@ -305,18 +305,18 @@ defmodule Easy.TrainingPlans do
   end
 
   @spec update_plan_item(String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan_item(business_id, plan_item_id, attrs) do
     with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
       plan_item
-      |> PlanItem.update_changeset(attrs)
+      |> ScheduleEntry.update_changeset(attrs)
       |> validate_workout_belongs_to_plan()
       |> Repo.update()
     end
   end
 
   @spec delete_plan_item(String.t(), String.t()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan_item(business_id, plan_item_id) do
     with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
       Repo.delete(plan_item)
@@ -372,9 +372,9 @@ defmodule Easy.TrainingPlans do
   end
 
   defp workout_for_plan?(plan_id, business_id, workout_id) do
-    Workout
-    |> Workout.for_business(business_id)
-    |> Workout.for_plan(plan_id)
+    TrainingWorkout
+    |> TrainingWorkout.for_business(business_id)
+    |> TrainingWorkout.for_plan(plan_id)
     |> where([w], w.id == ^workout_id)
     |> Repo.exists?()
   end
@@ -383,10 +383,10 @@ defmodule Easy.TrainingPlans do
     plan =
       Repo.preload(plan,
         workouts:
-          Workout
-          |> Workout.for_business(plan.business_id)
-          |> Workout.with_elements(plan.business_id),
-        plan_items: PlanItem |> PlanItem.for_business(plan.business_id)
+          TrainingWorkout
+          |> TrainingWorkout.for_business(plan.business_id)
+          |> TrainingWorkout.with_elements(plan.business_id),
+        plan_items: ScheduleEntry |> ScheduleEntry.for_business(plan.business_id)
       )
 
     Repo.transaction(fn ->
@@ -429,7 +429,7 @@ defmodule Easy.TrainingPlans do
 
     with {:ok, new_workout} <-
            dest_plan_id
-           |> Workout.insert_changeset(workout.business_id, nil, attrs)
+           |> TrainingWorkout.insert_changeset(workout.business_id, nil, attrs)
            |> Repo.insert(),
          :ok <-
            copy_workout_elements(workout.workout_elements, new_workout.id, workout.business_id) do
@@ -441,7 +441,7 @@ defmodule Easy.TrainingPlans do
     Enum.reduce_while(elements, :ok, fn element, :ok ->
       result =
         new_workout_id
-        |> WorkoutElement.insert_changeset(business_id, WorkoutElement.copy_attrs(element))
+        |> TrainingWorkoutExercise.insert_changeset(business_id, TrainingWorkoutExercise.copy_attrs(element))
         |> Repo.insert()
 
       case result do
@@ -463,7 +463,7 @@ defmodule Easy.TrainingPlans do
 
       result =
         new_plan.id
-        |> PlanItem.insert_changeset(new_plan.business_id, item.creator_id, attrs)
+        |> ScheduleEntry.insert_changeset(new_plan.business_id, item.creator_id, attrs)
         |> Repo.insert()
 
       case result do
@@ -508,8 +508,8 @@ defmodule Easy.TrainingPlans do
     business_id = plan.business_id
 
     Repo.preload(plan,
-      workouts: Workout |> Workout.for_business(business_id) |> Workout.with_elements(business_id),
-      plan_items: PlanItem |> PlanItem.for_business(business_id),
+      workouts: TrainingWorkout |> TrainingWorkout.for_business(business_id) |> TrainingWorkout.with_elements(business_id),
+      plan_items: ScheduleEntry |> ScheduleEntry.for_business(business_id),
       client: Client.for_business(business_id)
     )
   end

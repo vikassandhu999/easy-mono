@@ -4,8 +4,8 @@ defmodule Easy.Sessions do
   alias Easy.Training.TrainingExercise
   alias Easy.Training.PerformedSet
   alias Easy.Training.TrainingPlan
-  alias Easy.Training.Workout
-  alias Easy.Training.WorkoutElement
+  alias Easy.Training.TrainingWorkout
+  alias Easy.Training.TrainingWorkoutExercise
   alias Easy.Training.WorkoutSession
 
   import Ecto.Changeset
@@ -449,7 +449,7 @@ defmodule Easy.Sessions do
   defp ensure_optional_workout(_business_id, ""), do: :ok
 
   defp ensure_optional_workout(business_id, workout_id) do
-    case Workout |> Workout.for_business(business_id) |> Repo.get(workout_id) do
+    case TrainingWorkout |> TrainingWorkout.for_business(business_id) |> Repo.get(workout_id) do
       nil -> {:error, :not_found}
       _workout -> :ok
     end
@@ -467,8 +467,8 @@ defmodule Easy.Sessions do
         today = Date.utc_today()
 
         exists? =
-          Workout
-          |> Workout.for_business(business_id)
+          TrainingWorkout
+          |> TrainingWorkout.for_business(business_id)
           |> join(:inner, [w], t in TrainingPlan,
             on:
               t.id == w.training_plan_id and t.business_id == ^business_id and
@@ -500,13 +500,13 @@ defmodule Easy.Sessions do
 
   defp build_snapshot(business_id, workout_id) do
     element_query =
-      WorkoutElement
-      |> WorkoutElement.for_business(business_id)
-      |> WorkoutElement.ordered()
-      |> WorkoutElement.with_exercise(business_id)
+      TrainingWorkoutExercise
+      |> TrainingWorkoutExercise.for_business(business_id)
+      |> TrainingWorkoutExercise.ordered()
+      |> TrainingWorkoutExercise.with_exercise(business_id)
 
-    Workout
-    |> Workout.for_business(business_id)
+    TrainingWorkout
+    |> TrainingWorkout.for_business(business_id)
     |> Repo.get(workout_id)
     |> case do
       nil ->

@@ -52,7 +52,7 @@ defmodule EasyWeb.OpenApi.Schemas.PerformedSet do
         %{
           id: %Schema{type: :string, format: :uuid},
           exercise_name: %Schema{type: :string, nullable: true},
-          set_type: %Schema{type: :string, nullable: true},
+          set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
           position: %Schema{type: :integer},
           reps: %Schema{type: :string, nullable: true},
           load_value: %Schema{type: :number, nullable: true},

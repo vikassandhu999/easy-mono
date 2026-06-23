@@ -36,19 +36,6 @@ defmodule Easy.Training.WorkoutElement do
     }
   end
 
-  @spec to_snapshot(t()) :: map()
-  def to_snapshot(%__MODULE__{} = element) do
-    %{
-      "element_id" => element.id,
-      "position" => element.position,
-      "superset_group_id" => element.superset_group_id,
-      "notes" => element.notes,
-      "exercise_id" => element.exercise_id,
-      "exercise_name" => element.exercise.name,
-      "planned_sets" => Enum.map(element.planned_sets, &PlannedSet.to_snapshot/1)
-    }
-  end
-
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(workout_id, business_id, attrs) do
     %__MODULE__{}
@@ -83,7 +70,7 @@ defmodule Easy.Training.WorkoutElement do
 
   @spec with_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def with_exercise(query, business_id) do
-    exercise_query = Exercise |> Exercise.for_business(business_id)
+    exercise_query = Exercise |> Exercise.owned_or_system(business_id)
     from(e in query, preload: [exercise: ^exercise_query])
   end
 end

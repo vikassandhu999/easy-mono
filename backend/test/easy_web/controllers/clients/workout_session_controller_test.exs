@@ -114,6 +114,53 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       conn = build_conn() |> post("/v1/client/workout_sessions", %{})
       assert json_response(conn, 403)
     end
+
+    test "snapshot captures name of a system exercise (source: system, business: nil)", ctx do
+      plan =
+        insert(:training_plan,
+          creator: ctx.coach,
+          business: ctx.business,
+          client_id: ctx.client.id,
+          start_date: Date.add(Date.utc_today(), -1),
+          end_date: Date.add(Date.utc_today(), 30)
+        )
+
+      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
+
+      system_exercise =
+        insert(:exercise, source: "system", business: nil, name: "System Squat")
+
+      _element =
+        insert(:workout_element,
+          workout: workout,
+          exercise: system_exercise,
+          business: ctx.business,
+          planned_sets: [
+            %{
+              set_type: "working",
+              reps: "5",
+              load_value: 100,
+              load_unit: "kg",
+              rpe: 9,
+              rest_seconds: 180
+            }
+          ]
+        )
+
+      conn =
+        post(ctx.conn, "/v1/client/workout_sessions", %{
+          "training_workout_id" => workout.id
+        })
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["planned_snapshot"] != nil
+
+      [exercise_snap] = data["planned_snapshot"]["exercises"]
+      assert exercise_snap["name"] == "System Squat"
+      assert [set_snap] = exercise_snap["sets"]
+      assert set_snap["reps"] == "5"
+      assert set_snap["set_type"] == "working"
+    end
   end
 
   describe "GET /v1/client/workout_sessions" do

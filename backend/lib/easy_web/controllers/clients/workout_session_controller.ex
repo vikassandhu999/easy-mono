@@ -67,17 +67,19 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    from = Easy.Utils.safe_date(params["from"])
-    to = Easy.Utils.safe_date(params["to"])
+    opts = [
+      from: Easy.Utils.safe_date(params["from"]),
+      to: Easy.Utils.safe_date(params["to"])
+    ]
 
-    with {:ok, sessions} <- Sessions.list_my_sessions(conn.assigns.ctx, from, to) do
+    with {:ok, sessions} <- Sessions.list_client_sessions(conn.assigns.ctx, opts) do
       render(conn, :index, sessions: sessions, count: length(sessions))
     end
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, session} <- Sessions.create_my_session(conn.assigns.ctx, conn.body_params) do
+    with {:ok, session} <- Sessions.create_client_session(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, session: session)
@@ -85,8 +87,10 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => id}) do
-    with {:ok, session} <- Sessions.get_my_session_with_sets(conn.assigns.ctx, id) do
+  def show(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, session} <- Sessions.get_client_session(conn.assigns.ctx, id) do
       render(conn, :show, session: session)
     end
   end
@@ -95,7 +99,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   def update(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, updated} <- Sessions.update_my_session(conn.assigns.ctx, id, conn.body_params) do
+    with {:ok, updated} <- Sessions.update_client_session(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, session: updated)
     end
   end

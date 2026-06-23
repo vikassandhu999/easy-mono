@@ -28,10 +28,13 @@ defmodule Easy.Exercises do
     |> ok_or_not_found()
   end
 
-  @spec list_exercises(Ctx.t(), String.t() | nil, [String.t()] | nil, integer(), integer()) ::
+  @spec list_exercises(Ctx.t(), keyword()) ::
           {:ok, %{count: integer(), exercises: [TrainingExercise.t()]}}
-  def list_exercises(%Ctx{} = ctx, search, muscle_ids, offset, limit) do
-    search = String.trim(search || "")
+  def list_exercises(%Ctx{} = ctx, opts \\ []) do
+    search = String.trim(Keyword.get(opts, :search, "") || "")
+    muscle_ids = Keyword.get(opts, :muscle_ids)
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
 
     base =
       TrainingExercise
@@ -77,8 +80,8 @@ defmodule Easy.Exercises do
 
   @spec create_exercise(Ctx.t(), map()) :: {:ok, TrainingExercise.t()} | {:error, Ecto.Changeset.t()}
   def create_exercise(%Ctx{} = ctx, attrs) do
-    muscle_ids = Map.get(attrs, "muscle_ids") || Map.get(attrs, :muscle_ids) || []
-    equipment_ids = Map.get(attrs, "equipment_ids") || Map.get(attrs, :equipment_ids) || []
+    muscle_ids = attrs[:muscle_ids] || []
+    equipment_ids = attrs[:equipment_ids] || []
 
     muscles = load_muscles(muscle_ids)
     equipment = load_equipment(equipment_ids)
@@ -113,8 +116,8 @@ defmodule Easy.Exercises do
   @spec update_exercise(Ctx.t(), String.t(), map()) :: exercise_response()
   def update_exercise(%Ctx{} = ctx, exercise_id, attrs) do
     with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id) do
-      muscle_ids = Map.get(attrs, "muscle_ids") || Map.get(attrs, :muscle_ids)
-      equipment_ids = Map.get(attrs, "equipment_ids") || Map.get(attrs, :equipment_ids)
+      muscle_ids = attrs[:muscle_ids]
+      equipment_ids = attrs[:equipment_ids]
 
       muscles = load_muscles(muscle_ids)
       equipment = load_equipment(equipment_ids)
@@ -137,7 +140,7 @@ defmodule Easy.Exercises do
   def duplicate_exercise(%Ctx{} = ctx, exercise_id, attrs) do
     with {:ok, exercise} <- get_exercise(ctx, exercise_id) do
       attrs = %{
-        name: Map.get(attrs, "name") || Map.get(attrs, :name),
+        name: attrs[:name],
         description: exercise.description,
         instructions: exercise.instructions,
         mechanics: exercise.mechanics,

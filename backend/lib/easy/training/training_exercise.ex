@@ -14,20 +14,19 @@ defmodule Easy.Training.TrainingExercise do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @sources ~w(system imported custom)
-  @tracking_types ~w(weight_reps bodyweight_reps weighted_bodyweight assisted_bodyweight
-                     reps_only duration weight_duration distance_duration weight_distance)
-  @mechanics ~w(compound isolation isometric)
-  @forces ~w(push pull static)
+  @sources [:system, :imported, :custom]
+  @tracking_types [:weight_reps, :bodyweight_reps, :weighted_bodyweight, :assisted_bodyweight, :reps_only, :duration, :weight_duration, :distance_duration, :weight_distance]
+  @mechanics [:compound, :isolation, :isometric]
+  @forces [:push, :pull, :static]
 
   schema "training_exercises" do
-    field :source, :string, default: "custom"
-    field :tracking_type, :string, default: "weight_reps"
+    field :source, Ecto.Enum, values: @sources, default: :custom
+    field :tracking_type, Ecto.Enum, values: @tracking_types, default: :weight_reps
     field :name, :string
     field :description, :string
     field :instructions, :string
-    field :mechanics, :string
-    field :force, :string
+    field :mechanics, Ecto.Enum, values: @mechanics
+    field :force, Ecto.Enum, values: @forces
     field :images, {:array, :string}, default: []
     field :import_id, :string
 
@@ -56,7 +55,6 @@ defmodule Easy.Training.TrainingExercise do
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
     |> validate_required([:name])
-    |> validate_enums()
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
     |> maybe_put_assoc(:muscles, muscles)
     |> maybe_put_assoc(:equipment, equipment)
@@ -67,18 +65,9 @@ defmodule Easy.Training.TrainingExercise do
     exercise
     |> cast(attrs, @cast_fields)
     |> validate_required([:name])
-    |> validate_enums()
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
     |> maybe_put_assoc(:muscles, muscles)
     |> maybe_put_assoc(:equipment, equipment)
-  end
-
-  defp validate_enums(cs) do
-    cs
-    |> validate_inclusion(:source, @sources)
-    |> validate_inclusion(:tracking_type, @tracking_types)
-    |> validate_inclusion(:mechanics, @mechanics)
-    |> validate_inclusion(:force, @forces)
   end
 
   defp maybe_put_assoc(cs, _key, nil), do: cs

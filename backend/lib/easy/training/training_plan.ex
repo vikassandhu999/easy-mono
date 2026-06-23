@@ -114,20 +114,20 @@ defmodule Easy.Training.TrainingPlan do
     from(t in query, where: t.business_id == ^business_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id)
-  def for_client(query, nil), do: query
-  def for_client(query, client_id), do: from(t in query, where: t.client_id == ^client_id)
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id)
+  def for_client(query, _business_id, nil), do: query
+  def for_client(query, business_id, client_id), do: from(t in query, where: t.business_id == ^business_id and t.client_id == ^client_id)
 
   @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
   def templates(query \\ __MODULE__) do
     from(t in query, where: is_nil(t.client_id))
   end
 
-  @spec with_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
-  def with_status(query \\ __MODULE__, status)
-  def with_status(query, nil), do: query
-  def with_status(query, status), do: from(t in query, where: t.status == ^status)
+  @spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  def for_status(query \\ __MODULE__, status)
+  def for_status(query, nil), do: query
+  def for_status(query, status), do: from(t in query, where: t.status == ^status)
 
   @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
   def for_search(query \\ __MODULE__, term)
@@ -150,19 +150,19 @@ defmodule Easy.Training.TrainingPlan do
     )
   end
 
-  @spec with_workouts(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def with_workouts(query, business_id) do
+  @spec include_workouts(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_workouts(query, business_id) do
     workout_query =
       TrainingWorkout
       |> TrainingWorkout.for_business(business_id)
       |> TrainingWorkout.ordered()
-      |> TrainingWorkout.with_elements(business_id)
+      |> TrainingWorkout.include_exercises(business_id)
 
     from(t in query, preload: [workouts: ^workout_query])
   end
 
-  @spec with_plan_items(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def with_plan_items(query, business_id) do
+  @spec include_schedule_entries(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_schedule_entries(query, business_id) do
     item_query = ScheduleEntry |> ScheduleEntry.for_business(business_id)
     from(t in query, preload: [plan_items: ^item_query])
   end

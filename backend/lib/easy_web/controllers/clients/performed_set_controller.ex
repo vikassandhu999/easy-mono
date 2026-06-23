@@ -50,7 +50,7 @@ defmodule EasyWeb.Clients.PerformedSetController do
   def create(conn, _params) do
     session_id = conn.path_params["session_id"]
 
-    with {:ok, set} <- Sessions.create_my_performed_set(conn.assigns.ctx, session_id, conn.body_params) do
+    with {:ok, set} <- Sessions.create_client_performed_set(conn.assigns.ctx, session_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, set: set)
@@ -61,14 +61,16 @@ defmodule EasyWeb.Clients.PerformedSetController do
   def update(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, updated} <- Sessions.update_my_performed_set(conn.assigns.ctx, id, conn.body_params) do
+    with {:ok, updated} <- Sessions.update_client_performed_set(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, set: updated)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
-    with {:ok, _set} <- Sessions.delete_my_performed_set(conn.assigns.ctx, id) do
+  def delete(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, _set} <- Sessions.delete_client_performed_set(conn.assigns.ctx, id) do
       send_resp(conn, :no_content, "")
     end
   end

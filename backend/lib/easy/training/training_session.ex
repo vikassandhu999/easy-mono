@@ -97,15 +97,15 @@ defmodule Easy.Training.TrainingSession do
     from(s in query, where: s.business_id == ^business_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(s in query, where: s.client_id == ^client_id)
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(s in query, where: s.business_id == ^business_id and s.client_id == ^client_id)
   end
 
-  @spec with_state(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
-  def with_state(query \\ __MODULE__, state)
-  def with_state(query, nil), do: query
-  def with_state(query, state), do: from(s in query, where: s.state == ^state)
+  @spec for_state(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  def for_state(query \\ __MODULE__, state)
+  def for_state(query, nil), do: query
+  def for_state(query, state), do: from(s in query, where: s.state == ^state)
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
@@ -117,9 +117,15 @@ defmodule Easy.Training.TrainingSession do
     from(s in query, where: s.state == :active)
   end
 
-  @spec with_sets(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_sets(query \\ __MODULE__) do
-    from(s in query, preload: [performed_sets: ^TrainingPerformedSet.ordered()])
+  @spec include_sets(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_sets(query \\ __MODULE__, business_id) do
+    set_query =
+      TrainingPerformedSet
+      |> TrainingPerformedSet.for_business(business_id)
+      |> TrainingPerformedSet.ordered()
+      |> TrainingPerformedSet.include_exercise(business_id)
+
+    from(s in query, preload: [performed_sets: ^set_query])
   end
 
   @spec for_date_range(Ecto.Queryable.t(), Date.t(), Date.t()) :: Ecto.Query.t()

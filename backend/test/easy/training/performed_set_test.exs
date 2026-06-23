@@ -34,16 +34,16 @@ defmodule Easy.Training.TrainingPerformedSetTest do
     end
   end
 
-  describe "create_my_performed_set/3" do
+  describe "create_client_performed_set/3" do
     test "records a performed set for an exercise in the session" do
       %{ctx: ctx, session: session, exercise: exercise} = session_with_element()
 
       assert {:ok, set} =
-               Sessions.create_my_performed_set(ctx, session.id, %{
-                 "exercise_id" => exercise.id,
-                 "set_type" => "working",
-                 "position" => 0,
-                 "reps" => "10"
+               Sessions.create_client_performed_set(ctx, session.id, %{
+                 exercise_id: exercise.id,
+                 set_type: "working",
+                 position: 0,
+                 reps: "10"
                })
 
       assert set.reps == "10"
@@ -55,11 +55,11 @@ defmodule Easy.Training.TrainingPerformedSetTest do
       foreign_exercise = insert(:exercise, business: insert(:business))
 
       assert {:error, :not_found} =
-               Sessions.create_my_performed_set(ctx, session.id, %{
-                 "exercise_id" => foreign_exercise.id,
-                 "set_type" => "working",
-                 "position" => 0,
-                 "reps" => "10"
+               Sessions.create_client_performed_set(ctx, session.id, %{
+                 exercise_id: foreign_exercise.id,
+                 set_type: "working",
+                 position: 0,
+                 reps: "10"
                })
     end
   end

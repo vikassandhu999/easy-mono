@@ -194,3 +194,52 @@ Order: Task 6 (schemas) first; then `meals` (Task 7) before `nutrition_plans` (T
 - [ ] Convert context + controllers + tests; `grep -rn "_for_user\|meal_slot\"\] || attrs\[:meal_slot" lib/easy/meal_logs.ex` → empty; `mix precommit` green; commit `refactor(nutrition): Ctx-first meal_logs + three-case + path ids`.
 
 *Slice 2 gate: compile, full suite, `grep -rn "_for_user\|_for_coach_user" lib/easy/{nutrition_plans,meals,meal_logs}.ex` empty, no dual-key probes, no hand-rolled context preloads in those contexts.*
+
+---
+
+## Slice 3 — training (finish) (authored at slice boundary)
+
+Training contexts (`training_plans`, `workouts`, `sessions`, `exercises`) are already Ctx-first (from training Plan 2) but still carry: `_my_` infix names (must be `verb_client_noun`), Case-2/3 confusion, positional list tails, `with_*` builders, `:string`+`validate_inclusion` enums, changeset arg-order (parent-id before business_id), residual dual-key probes, hand-rolled context preloads, and `stringify_keys`/`Map.drop` in schedule/assign controllers. Reference shapes: the just-finished nutrition slice + `lib/easy/foods.ex`.
+
+Order: Task 10 (schemas) first; then 11 (training_plans) before 13 (sessions); 12 (workouts+exercises) independent.
+
+### Task 10: training schema layer + preload extraction
+
+**Files:** `lib/easy/training/{training_exercise,training_performed_set,planned_set,schedule_entry,training_plan,training_workout,training_workout_exercise,training_session}.ex`; extract hand-rolled preloads from `training_plans.ex` (`preload_plan!`) + `sessions.ex` into schema `include_*` builders + update builder CALL-SITES (NOT public-fn renames — Tasks 11-13). Tests + JSON for enum fields.
+
+**Changes (audit):**
+- **Ecto.Enum (string-backed, no migration):** `training_exercise.{source,tracking_type,mechanics,force}`; `training_performed_set.{set_type,load_unit,distance_unit}`; `planned_set.{set_type,load_unit,distance_unit}`; `schedule_entry.day_of_week`. Drop redundant `validate_inclusion`; safe string→atom (`Utils.safe_to_atom`) for filter inputs; changeset `cast` handles body coercion. JSON renders atoms as strings — verify.
+- **Changeset arg-order (§A7, business_id first):** `training_workout.insert_changeset(plan_id, business_id, creator_id, attrs)`→`(business_id, creator_id, plan_id, attrs)`; `schedule_entry.insert_changeset(plan_id, business_id, creator_id, attrs)`→`(business_id, creator_id, plan_id, attrs)`; `training_workout_exercise.insert_changeset(workout_id, business_id, attrs)`→`(business_id, workout_id, attrs)`. Update callers.
+- **Builders (§A6):** `training_plan.with_status`→`for_status`, `with_workouts`→`include_workouts(business_id)`, `with_plan_items`→`include_schedule_entries(business_id)`; `training_workout.with_elements`→`include_exercises(business_id)`; `training_session.with_state`→`for_state`, `with_sets`→`include_sets(business_id)`; `training_performed_set.with_exercise`→`include_exercise(business_id)`; `training_workout_exercise.with_exercise`→`include_exercise(business_id)`; `schedule_entry.with_workout`→`include_workout(business_id)`. `for_client` add `business_id`: `training_session.for_client`, `training_plan.for_client`. Update all call-sites.
+- **Preload extraction (§A6):** move `training_plans.ex preload_plan!` inline preloads + `sessions.ex` inline `Repo.preload` into schema `include_*` builders (each takes business_id, scopes nested children incl. `for_business_or_system` for exercises). Replace inline with builder calls.
+
+- [ ] Steps: (1) Ecto.Enum conversions + safe filter atoms. (2) arg-order + callers. (3) builder renames + call-sites. (4) extract preloads → schema include_*. (5) tests + JSON; verify `grep -rn "with_status\|with_workouts\|with_plan_items\|with_elements\|with_state\|with_sets\|with_exercise\|with_workout\b\|preload_plan!" lib/easy/training* lib/easy/training_plans.ex lib/easy/sessions.ex lib/easy/workouts.ex` → empty; `grep -rn "validate_inclusion" lib/easy/training` → empty (those fields). `mix precommit` green. (6) commit `refactor(training): schema Ecto.Enum, arg-order, for_/include_ builders, preload extraction`.
+
+### Task 11: training_plans context + controllers
+
+**Files:** `lib/easy/training_plans.ex`; `coaches/training_plan_controller.ex`, `clients/training_plan_controller.ex`, `coaches/client_plan_controller.ex` (training list), `coaches/training_schedule_controller.ex` (if it calls training_plans — schedule get/set); tests.
+
+**Rename map (§A2):** `list_my_plans`→`list_client_plans(ctx, opts)` (Case-3); `get_my_plan_full`→`get_client_plan_full(ctx, plan_id)`; `get_my_active_plan_day`→`get_client_active_plan_day(ctx, date)`; coach `list_client_plans(ctx, client_id, ...)`→`list_plans_for_client(ctx, client_id, opts)` (Case-2). `list_template_plans(ctx, opts)`. All list fns → opts (clamp 100, two-query `{:ok, %{count, plans}}`). Remove dual-key `attrs["training_workout_id"] || attrs[:training_workout_id]` in `set_day_schedule` → atom-only. Drop `stringify_keys/1` in `coaches/training_plan_controller.ex` assign (body is atom-keyed; pass through / read once). ids (plan_id/client_id/day) from path. Use Task-10 `include_*` builders.
+
+- [ ] Convert context + controllers (ctx, path ids, CastAndValidate, no stringify/dual-key) + tests; `grep -rn "list_my_plans\|get_my_plan_full\|get_my_active_plan_day\|stringify_keys\|training_workout_id\"\] ||" lib/easy/training_plans.ex lib/easy_web/controllers/*training_plan*` → empty; `mix precommit` green; commit `refactor(training): three-case naming + opts + path ids (training_plans)`.
+
+### Task 12: workouts + exercises contexts + controllers
+
+**Files:** `lib/easy/workouts.ex`, `lib/easy/exercises.ex`; `coaches/{workout,workout_element,exercise}_controller.ex`, `clients/exercise_controller.ex`, `coaches/{muscle,equipment}_controller.ex`; tests.
+
+**Changes (audit):**
+- `workouts.list_workouts(ctx, plan_id, offset, limit)`→`list_workouts(ctx, plan_id, opts \\ [])` (clamp, `{:ok, %{count, workouts}}`); plan_id from path.
+- `exercises.list_exercises(ctx, search, muscle_ids, offset, limit)`→`list_exercises(ctx, opts \\ [])` (opts: `:search`, `:muscle_ids`, `:offset`, `:limit`; clamp; `{:ok, %{count, exercises}}`). Remove the 3 dual-key probes (`create_exercise`/`update_exercise` `muscle_ids`/`equipment_ids`; `duplicate_exercise` `name`) → atom-only reads (body atom-keyed; `muscle_ids`/`equipment_ids` are body arrays → read `attrs[:muscle_ids]` once). 
+- Controllers: ctx (already), CastAndValidate (exercise controller has it; add to workout/workout_element if missing — they were added in training Plan 2, verify), path ids, no dual-key.
+
+- [ ] Convert both contexts + controllers + tests; `grep -rn "Map.get(.*) || Map.get\|\] || Map.get" lib/easy/exercises.ex lib/easy/workouts.ex` → empty; `list_exercises`/`list_workouts` are opts-based; `mix precommit` green; commit `refactor(training): opts lists + drop dual-key (workouts, exercises)`.
+
+### Task 13: sessions context + controllers
+
+**Files:** `lib/easy/sessions.ex`; `coaches/workout_session_controller.ex`, `clients/workout_session_controller.ex`, `clients/performed_set_controller.ex`, `coaches/performed_set_controller.ex` (if still present); tests.
+
+**Rename map (§A2):** the `_my_` infix (7 fns) → `verb_client_noun`: `list_my_sessions`→`list_client_sessions(ctx, opts)`; `get_my_session_with_sets`→`get_client_session_with_sets(ctx, id)`; `create_my_session`→`create_client_session(ctx, attrs)`; `update_my_session`→`update_client_session(ctx, id, attrs)`; `create_my_performed_set`→`create_client_performed_set(ctx, session_id, attrs)`; `update_my_performed_set`→`update_client_performed_set(ctx, set_id, attrs)`; `delete_my_performed_set`→`delete_client_performed_set(ctx, set_id)`. Coach: `list_sessions(ctx, client_id, from, to)`→`list_sessions_for_client(ctx, client_id, opts)` (Case-2); `get_client_session_with_sets(ctx, client_id, id)` (coach Case-2) — disambiguate from the client Case-3 `get_client_session_with_sets(ctx, id)` by naming the coach one `get_session_for_client(ctx, client_id, id)`. Date-range lists → opts (`:from`/`:to`) bounded → `{:ok, [sessions]}` ok. Remove dual-key probes (`attrs["state"] || attrs[:state]`, `exercise_id`) → atom-only. ids (session_id/set_id/client_id) from path. Use Task-10 `include_sets`/`include_exercise` builders.
+
+- [ ] Convert context + controllers (ctx, path ids, CastAndValidate, no dual-key) + tests; `grep -rn "list_my_sessions\|_my_session\|create_my_\|update_my_\|delete_my_\|state\"\] || attrs\[:state" lib/easy/sessions.ex` → empty; cross-client write safety preserved (set lookup scoped by client from ctx); `mix precommit` green; commit `refactor(training): three-case session naming + opts + path ids`.
+
+*Slice 3 gate: compile, full suite, `grep -rn "_my_\|with_status\|with_sets\|with_elements\|_for_user" lib/easy/training_plans.ex lib/easy/sessions.ex lib/easy/workouts.ex lib/easy/exercises.ex lib/easy/training` empty, no dual-key, no hand-rolled context preloads.*

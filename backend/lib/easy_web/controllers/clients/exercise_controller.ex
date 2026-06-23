@@ -48,13 +48,15 @@ defmodule EasyWeb.Clients.ExerciseController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
-    search = Map.get(params, "search", "")
-    muscle_ids = parse_list(params, "muscle_ids")
+    opts = [
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 20),
+      search: Map.get(params, "search", ""),
+      muscle_ids: parse_list(params, "muscle_ids")
+    ]
 
     with {:ok, %{exercises: exercises, count: count}} <-
-           Exercises.list_exercises(conn.assigns.ctx, search, muscle_ids, offset, limit) do
+           Exercises.list_exercises(conn.assigns.ctx, opts) do
       render(conn, :index, exercises: exercises, count: count)
     end
   end

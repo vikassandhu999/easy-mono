@@ -37,11 +37,11 @@ defmodule Easy.Training.TrainingWorkoutExercise do
   end
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(workout_id, business_id, attrs) do
+  def insert_changeset(business_id, workout_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> put_change(:training_workout_id, workout_id)
     |> put_change(:business_id, business_id)
+    |> put_change(:training_workout_id, workout_id)
     |> validate_required([:training_workout_id, :business_id, :exercise_id])
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
     |> unique_constraint([:training_workout_id, :position],
@@ -70,8 +70,8 @@ defmodule Easy.Training.TrainingWorkoutExercise do
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__), do: from(e in query, order_by: [asc: e.position])
 
-  @spec with_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def with_exercise(query, business_id) do
+  @spec include_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_exercise(query, business_id) do
     exercise_query = TrainingExercise |> TrainingExercise.for_business_or_system(business_id)
     from(e in query, preload: [exercise: ^exercise_query])
   end

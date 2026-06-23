@@ -75,8 +75,8 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       assert exercise.name == payload["name"]
       assert exercise.description == payload["description"]
       assert exercise.instructions == payload["instructions"]
-      assert exercise.mechanics == "isolation"
-      assert exercise.force == "pull"
+      assert exercise.mechanics == :isolation
+      assert exercise.force == :pull
       assert exercise.images == payload["images"]
 
       assert exercise.muscles

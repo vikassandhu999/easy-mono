@@ -42,18 +42,25 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, %{"client_id" => client_id} = params) do
-    from = Easy.Utils.safe_date(params["from"])
-    to = Easy.Utils.safe_date(params["to"])
+  def index(conn, params) do
+    client_id = conn.path_params["client_id"]
 
-    with {:ok, sessions} <- Sessions.list_sessions(conn.assigns.ctx, client_id, from, to) do
+    opts = [
+      from: Easy.Utils.safe_date(params["from"]),
+      to: Easy.Utils.safe_date(params["to"])
+    ]
+
+    with {:ok, sessions} <- Sessions.list_sessions_for_client(conn.assigns.ctx, client_id, opts) do
       render(conn, :index, sessions: sessions, count: length(sessions))
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"client_id" => client_id, "id" => id}) do
-    with {:ok, session} <- Sessions.get_client_session_with_sets(conn.assigns.ctx, client_id, id) do
+  def show(conn, _params) do
+    client_id = conn.path_params["client_id"]
+    id = conn.path_params["id"]
+
+    with {:ok, session} <- Sessions.get_session_for_client(conn.assigns.ctx, client_id, id) do
       render(conn, :show, session: session)
     end
   end

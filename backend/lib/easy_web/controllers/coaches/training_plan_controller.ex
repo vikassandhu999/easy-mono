@@ -130,7 +130,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, plan} <- Plans.create_training_plan(conn.assigns.ctx, conn.body_params) do
+    with {:ok, plan} <- Plans.create_plan(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: plan)
@@ -138,7 +138,9 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => id}) do
+  def show(conn, _params) do
+    id = conn.path_params["id"]
+
     with {:ok, plan} <- Plans.get_plan_full(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
     end
@@ -148,14 +150,16 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def update(conn, _params) do
     id = conn.path_params["id"]
 
-    with {:ok, updated} <- Plans.update_training_plan(conn.assigns.ctx, id, conn.body_params) do
+    with {:ok, updated} <- Plans.update_plan(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, plan: updated)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
-    with {:ok, _plan} <- Plans.delete_training_plan(conn.assigns.ctx, id) do
+  def delete(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, _plan} <- Plans.delete_plan(conn.assigns.ctx, id) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -168,14 +172,21 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_template_plans(conn.assigns.ctx, search, status, offset, limit) do
+           Plans.list_template_plans(conn.assigns.ctx,
+             search: search,
+             status: status,
+             offset: offset,
+             limit: limit
+           ) do
       render(conn, :index, plans: plans, count: count)
     end
   end
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def duplicate(conn, %{"id" => id}) do
-    with {:ok, duplicated} <- Plans.duplicate_training_plan(conn.assigns.ctx, id) do
+  def duplicate(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, duplicated} <- Plans.duplicate_plan(conn.assigns.ctx, id) do
       conn
       |> put_status(:created)
       |> render(:show, plan: duplicated)
@@ -185,21 +196,13 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def assign(conn, _params) do
     id = conn.path_params["id"]
-    attrs = conn.body_params |> stringify_keys()
-    client_id = attrs["client_id"]
+    client_id = conn.body_params[:client_id]
 
     with {:ok, assigned} <-
-           Plans.assign_training_plan_to_client(conn.assigns.ctx, id, client_id, attrs) do
+           Plans.assign_plan_to_client(conn.assigns.ctx, client_id, id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: assigned)
     end
-  end
-
-  defp stringify_keys(map) when is_map(map) do
-    Map.new(map, fn
-      {k, v} when is_atom(k) -> {Atom.to_string(k), v}
-      {k, v} -> {k, v}
-    end)
   end
 end

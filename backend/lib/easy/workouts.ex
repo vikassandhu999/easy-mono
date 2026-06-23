@@ -14,6 +14,16 @@ defmodule Easy.Workouts do
     |> ok_or_not_found()
   end
 
+  @spec get_workout_with_elements(Ctx.t(), String.t()) ::
+          {:ok, TrainingWorkout.t()} | {:error, :not_found}
+  def get_workout_with_elements(%Ctx{} = ctx, workout_id) do
+    TrainingWorkout
+    |> TrainingWorkout.for_business(ctx.business_id)
+    |> TrainingWorkout.include_exercises(ctx.business_id)
+    |> Repo.get(workout_id)
+    |> ok_or_not_found()
+  end
+
   @spec get_workout_for_plan(Ctx.t(), String.t(), String.t()) ::
           {:ok, TrainingWorkout.t()} | {:error, :not_found}
   def get_workout_for_plan(%Ctx{} = ctx, plan_id, workout_id) do
@@ -24,19 +34,12 @@ defmodule Easy.Workouts do
     |> ok_or_not_found()
   end
 
-  @spec get_workout_with_elements(Ctx.t(), String.t()) ::
-          {:ok, TrainingWorkout.t()} | {:error, :not_found}
-  def get_workout_with_elements(%Ctx{} = ctx, workout_id) do
-    TrainingWorkout
-    |> TrainingWorkout.for_business(ctx.business_id)
-    |> TrainingWorkout.with_elements(ctx.business_id)
-    |> Repo.get(workout_id)
-    |> ok_or_not_found()
-  end
-
-  @spec list_workouts(Ctx.t(), String.t(), non_neg_integer(), pos_integer()) ::
+  @spec list_workouts(Ctx.t(), String.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), workouts: [TrainingWorkout.t()]}} | {:error, :not_found}
-  def list_workouts(%Ctx{} = ctx, plan_id, offset, limit) do
+  def list_workouts(%Ctx{} = ctx, plan_id, opts \\ []) do
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
+
     with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
       base = TrainingWorkout |> TrainingWorkout.for_business(ctx.business_id) |> TrainingWorkout.for_plan(plan.id)
 
@@ -47,7 +50,7 @@ defmodule Easy.Workouts do
            base
            |> TrainingWorkout.ordered()
            |> Easy.Utils.paginate(offset, limit)
-           |> TrainingWorkout.with_elements(ctx.business_id)
+           |> TrainingWorkout.include_exercises(ctx.business_id)
            |> Repo.all()
        }}
     end
@@ -67,7 +70,7 @@ defmodule Easy.Workouts do
   def get_workout_element_with_exercise(%Ctx{} = ctx, element_id) do
     TrainingWorkoutExercise
     |> TrainingWorkoutExercise.for_business(ctx.business_id)
-    |> TrainingWorkoutExercise.with_exercise(ctx.business_id)
+    |> TrainingWorkoutExercise.include_exercise(ctx.business_id)
     |> Repo.get(element_id)
     |> ok_or_not_found()
   end
@@ -76,8 +79,7 @@ defmodule Easy.Workouts do
           {:ok, TrainingWorkout.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_workout(%Ctx{} = ctx, plan_id, attrs) do
     with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
-      plan.id
-      |> TrainingWorkout.insert_changeset(ctx.business_id, nil, attrs)
+      TrainingWorkout.insert_changeset(ctx.business_id, nil, plan.id, attrs)
       |> Repo.insert()
     end
   end
@@ -105,8 +107,7 @@ defmodule Easy.Workouts do
   def create_workout_element(%Ctx{} = ctx, workout_id, attrs) do
     with {:ok, workout} <- get_workout(ctx, workout_id),
          {:ok, changeset} <-
-           workout.id
-           |> TrainingWorkoutExercise.insert_changeset(ctx.business_id, attrs)
+           TrainingWorkoutExercise.insert_changeset(ctx.business_id, workout.id, attrs)
            |> validate_exercise_in_business() do
       changeset
       |> Repo.insert()
@@ -162,7 +163,10 @@ defmodule Easy.Workouts do
   end
 
   defp preload_element({:ok, %TrainingWorkoutExercise{} = element}) do
-    {:ok, Repo.preload(element, exercise: TrainingExercise.for_business_or_system(element.business_id))}
+    {:ok,
+     Repo.preload(element,
+       exercise: TrainingExercise.for_business_or_system(element.business_id)
+     )}
   end
 
   defp preload_element(error), do: error

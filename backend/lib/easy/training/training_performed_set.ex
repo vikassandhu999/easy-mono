@@ -13,20 +13,20 @@ defmodule Easy.Training.TrainingPerformedSet do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @set_types ~w(working warmup dropset)
-  @load_units ~w(kg lbs bodyweight none)
-  @distance_units ~w(meters km miles none)
+  @set_types [:working, :warmup, :dropset]
+  @load_units [:kg, :lbs, :bodyweight, :none]
+  @distance_units [:meters, :km, :miles, :none]
 
   schema "training_performed_sets" do
     field :exercise_name, :string
-    field :set_type, :string, default: "working"
+    field :set_type, Ecto.Enum, values: @set_types, default: :working
     field :position, :integer, default: 0
     field :reps, :string
     field :load_value, :decimal
-    field :load_unit, :string
+    field :load_unit, Ecto.Enum, values: @load_units
     field :duration_seconds, :integer
     field :distance_value, :decimal
-    field :distance_unit, :string
+    field :distance_unit, Ecto.Enum, values: @distance_units
     field :rpe, :decimal
     field :completed, :boolean, default: false
     field :notes, :string
@@ -47,9 +47,6 @@ defmodule Easy.Training.TrainingPerformedSet do
     |> put_change(:training_session_id, session_id)
     |> put_change(:business_id, business_id)
     |> validate_required([:training_session_id, :business_id, :set_type, :position])
-    |> validate_inclusion(:set_type, @set_types)
-    |> validate_inclusion(:load_unit, @load_units)
-    |> validate_inclusion(:distance_unit, @distance_units)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
     |> unique_constraint([:training_session_id, :position],
       name: :training_performed_sets_training_session_id_position_index
@@ -62,9 +59,6 @@ defmodule Easy.Training.TrainingPerformedSet do
   def update_changeset(performed_set, attrs) do
     performed_set
     |> cast(attrs, @update_fields)
-    |> validate_inclusion(:set_type, @set_types)
-    |> validate_inclusion(:load_unit, @load_units)
-    |> validate_inclusion(:distance_unit, @distance_units)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
     |> unique_constraint([:training_session_id, :position],
       name: :training_performed_sets_training_session_id_position_index
@@ -82,8 +76,8 @@ defmodule Easy.Training.TrainingPerformedSet do
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__), do: from(s in query, order_by: [asc: s.position])
 
-  @spec with_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def with_exercise(query, business_id) do
+  @spec include_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_exercise(query, business_id) do
     exercise_query = TrainingExercise |> TrainingExercise.for_business_or_system(business_id)
     from(s in query, preload: [exercise: ^exercise_query])
   end

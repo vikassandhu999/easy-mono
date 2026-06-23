@@ -20,13 +20,13 @@ defmodule Easy.Training.TrainingWorkout do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(plan_id, business_id, creator_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), String.t() | nil, map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, creator_id, plan_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:name, :notes])
-    |> put_change(:training_plan_id, plan_id)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
+    |> put_change(:training_plan_id, plan_id)
     |> validate_required([:name, :training_plan_id, :business_id])
   end
 
@@ -44,13 +44,13 @@ defmodule Easy.Training.TrainingWorkout do
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__), do: from(w in query, order_by: [asc: w.inserted_at])
 
-  @spec with_elements(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def with_elements(query, business_id) do
+  @spec include_exercises(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_exercises(query, business_id) do
     element_query =
       Easy.Training.TrainingWorkoutExercise
       |> Easy.Training.TrainingWorkoutExercise.for_business(business_id)
       |> Easy.Training.TrainingWorkoutExercise.ordered()
-      |> Easy.Training.TrainingWorkoutExercise.with_exercise(business_id)
+      |> Easy.Training.TrainingWorkoutExercise.include_exercise(business_id)
 
     from(w in query, preload: [workout_elements: ^element_query])
   end

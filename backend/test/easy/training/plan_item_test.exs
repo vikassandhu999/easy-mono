@@ -14,7 +14,7 @@ defmodule Easy.Training.PlanItemTest do
       workout = insert(:workout, plan: other_plan, creator: coach, business: business)
 
       changeset =
-        PlanItem.insert_changeset(plan.id, business.id, coach.id, %{
+        PlanItem.insert_changeset(business.id, coach.id, plan.id, %{
           "day_of_week" => "monday",
           "training_workout_id" => workout.id
         })
@@ -29,7 +29,7 @@ defmodule Easy.Training.PlanItemTest do
       workout = insert(:workout, plan: plan, creator: coach, business: business)
 
       changeset =
-        PlanItem.insert_changeset(plan.id, business.id, coach.id, %{
+        PlanItem.insert_changeset(business.id, coach.id, plan.id, %{
           "training_workout_id" => workout.id
         })
 
@@ -47,7 +47,7 @@ defmodule Easy.Training.PlanItemTest do
 
       assert {:error, :not_found} =
                Plans.set_day_schedule(ctx, plan.id, "monday", %{
-                 "training_workout_id" => workout.id
+                 training_workout_id: workout.id
                })
     end
 
@@ -59,10 +59,10 @@ defmodule Easy.Training.PlanItemTest do
 
       assert {:ok, item} =
                Plans.set_day_schedule(ctx, plan.id, "monday", %{
-                 "training_workout_id" => workout.id
+                 training_workout_id: workout.id
                })
 
-      assert item.day_of_week == "monday"
+      assert item.day_of_week == :monday
     end
 
     test "replaces a second workout on the same day (desired-state semantics)" do
@@ -74,12 +74,12 @@ defmodule Easy.Training.PlanItemTest do
 
       assert {:ok, _item} =
                Plans.set_day_schedule(ctx, plan.id, "monday", %{
-                 "training_workout_id" => workout_a.id
+                 training_workout_id: workout_a.id
                })
 
       assert {:ok, item} =
                Plans.set_day_schedule(ctx, plan.id, "monday", %{
-                 "training_workout_id" => workout_b.id
+                 training_workout_id: workout_b.id
                })
 
       assert item.training_workout_id == workout_b.id

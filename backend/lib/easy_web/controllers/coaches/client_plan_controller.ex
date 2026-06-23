@@ -69,12 +69,12 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           TrainingPlans.list_client_plans(
+           TrainingPlans.list_plans_for_client(
              conn.assigns.ctx,
              client_id,
-             status,
-             offset,
-             limit
+             status: status,
+             offset: offset,
+             limit: limit
            ) do
       conn
       |> put_view(json: TrainingPlanJSON)

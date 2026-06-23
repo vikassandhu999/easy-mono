@@ -154,17 +154,17 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
   describe "PATCH /v1/client/training-performed-sets/:id" do
     test "updates a logged set", ctx do
       {:ok, set} =
-        Sessions.create_my_performed_set(
+        Sessions.create_client_performed_set(
           %Easy.Ctx{user_id: ctx.client.user_id, business_id: ctx.business.id},
           ctx.session.id,
           %{
-            "exercise_id" => ctx.exercise.id,
-            "set_type" => "working",
-            "position" => 0,
-            "reps" => "10",
-            "load_value" => 80,
-            "load_unit" => "kg",
-            "completed" => true
+            exercise_id: ctx.exercise.id,
+            set_type: "working",
+            position: 0,
+            reps: "10",
+            load_value: 80,
+            load_unit: "kg",
+            completed: true
           }
         )
 
@@ -187,15 +187,15 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
       other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
       {:ok, other_set} =
-        Sessions.create_my_performed_set(
+        Sessions.create_client_performed_set(
           %Easy.Ctx{user_id: other_client.user_id, business_id: ctx.business.id},
           other_session.id,
           %{
-            "exercise_id" => ctx.exercise.id,
-            "set_type" => "working",
-            "position" => 0,
-            "reps" => "10",
-            "completed" => true
+            exercise_id: ctx.exercise.id,
+            set_type: "working",
+            position: 0,
+            reps: "10",
+            completed: true
           }
         )
 
@@ -214,15 +214,15 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
   describe "DELETE /v1/client/training-performed-sets/:id" do
     test "deletes a logged set", ctx do
       {:ok, set} =
-        Sessions.create_my_performed_set(
+        Sessions.create_client_performed_set(
           %Easy.Ctx{user_id: ctx.client.user_id, business_id: ctx.business.id},
           ctx.session.id,
           %{
-            "exercise_id" => ctx.exercise.id,
-            "set_type" => "working",
-            "position" => 0,
-            "reps" => "10",
-            "completed" => true
+            exercise_id: ctx.exercise.id,
+            set_type: "working",
+            position: 0,
+            reps: "10",
+            completed: true
           }
         )
 
@@ -235,15 +235,15 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
       other_session = insert(:workout_session, client: other_client, business: ctx.business)
 
       {:ok, other_set} =
-        Sessions.create_my_performed_set(
+        Sessions.create_client_performed_set(
           %Easy.Ctx{user_id: other_client.user_id, business_id: ctx.business.id},
           other_session.id,
           %{
-            "exercise_id" => ctx.exercise.id,
-            "set_type" => "working",
-            "position" => 0,
-            "reps" => "10",
-            "completed" => true
+            exercise_id: ctx.exercise.id,
+            set_type: "working",
+            position: 0,
+            reps: "10",
+            completed: true
           }
         )
 

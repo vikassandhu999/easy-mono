@@ -4,19 +4,19 @@ defmodule Easy.Training.PlannedSet do
 
   @type t() :: %__MODULE__{}
 
-  @set_types ~w(working warmup dropset)
-  @load_units ~w(kg lbs bodyweight none)
-  @distance_units ~w(meters km miles none)
+  @set_types [:working, :warmup, :dropset]
+  @load_units [:kg, :lbs, :bodyweight, :none]
+  @distance_units [:meters, :km, :miles, :none]
 
   @primary_key false
   embedded_schema do
-    field :set_type, :string, default: "working"
+    field :set_type, Ecto.Enum, values: @set_types, default: :working
     field :reps, :string
     field :load_value, :decimal
-    field :load_unit, :string
+    field :load_unit, Ecto.Enum, values: @load_units
     field :duration_seconds, :integer
     field :distance_value, :decimal
-    field :distance_unit, :string
+    field :distance_unit, Ecto.Enum, values: @distance_units
     field :rpe, :decimal
     field :rest_seconds, :integer
     field :notes, :string
@@ -28,9 +28,6 @@ defmodule Easy.Training.PlannedSet do
   def changeset(planned_set, attrs) do
     planned_set
     |> cast(attrs, @fields)
-    |> validate_inclusion(:set_type, @set_types)
-    |> validate_inclusion(:load_unit, @load_units)
-    |> validate_inclusion(:distance_unit, @distance_units)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
   end
 

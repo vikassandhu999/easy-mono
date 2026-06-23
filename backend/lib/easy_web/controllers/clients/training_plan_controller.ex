@@ -68,7 +68,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   def today(conn, params) do
     date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
 
-    with {:ok, result} <- Plans.get_my_active_plan_day(conn.assigns.ctx, date) do
+    with {:ok, result} <- Plans.get_client_active_plan_day(conn.assigns.ctx, date) do
       render(conn, :today, result)
     end
   end
@@ -80,14 +80,20 @@ defmodule EasyWeb.Clients.TrainingPlanController do
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_my_plans(conn.assigns.ctx, status, offset, limit) do
+           Plans.list_client_plans(conn.assigns.ctx,
+             status: status,
+             offset: offset,
+             limit: limit
+           ) do
       render(conn, :index, plans: plans, count: count)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => id}) do
-    with {:ok, plan} <- Plans.get_my_plan_full(conn.assigns.ctx, id) do
+  def show(conn, _params) do
+    id = conn.path_params["id"]
+
+    with {:ok, plan} <- Plans.get_client_plan_full(conn.assigns.ctx, id) do
       render(conn, :show, plan: plan)
     end
   end

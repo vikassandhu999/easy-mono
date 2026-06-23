@@ -76,7 +76,7 @@ defmodule Easy.Workouts do
   def create_workout(training_plan_id, business_id, attrs) do
     with {:ok, plan} <- get_plan(business_id, training_plan_id) do
       plan.id
-      |> Workout.insert_changeset(business_id, attrs)
+      |> Workout.insert_changeset(business_id, nil, attrs)
       |> Repo.insert()
     end
   end
@@ -182,7 +182,7 @@ defmodule Easy.Workouts do
       is_nil(business_id) || is_nil(exercise_id) ->
         {:ok, changeset}
 
-      Exercise |> Exercise.for_business(business_id) |> Repo.get(exercise_id) ->
+      Exercise |> Exercise.owned_or_system(business_id) |> Repo.get(exercise_id) ->
         {:ok, changeset}
 
       true ->
@@ -195,7 +195,7 @@ defmodule Easy.Workouts do
 
     with {:ok, new_workout} <-
            dest_plan_id
-           |> Workout.insert_changeset(workout.business_id, attrs)
+           |> Workout.insert_changeset(workout.business_id, nil, attrs)
            |> Repo.insert(),
          :ok <- copy_elements(workout.workout_elements, new_workout.id, workout.business_id) do
       {:ok, new_workout}

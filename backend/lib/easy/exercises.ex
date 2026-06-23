@@ -84,7 +84,7 @@ defmodule Easy.Exercises do
     equipment = load_equipment(equipment_ids)
 
     ctx.business_id
-    |> Exercise.create_changset(attrs, muscles, equipment)
+    |> Exercise.insert_changeset(nil, attrs, muscles, equipment)
     |> Repo.insert()
   end
 
@@ -146,7 +146,7 @@ defmodule Easy.Exercises do
       }
 
       ctx.business_id
-      |> Exercise.create_changset(attrs, exercise.muscles, exercise.equipment)
+      |> Exercise.insert_changeset(nil, attrs, exercise.muscles, exercise.equipment)
       |> Repo.insert()
       |> preload_exercise()
     end

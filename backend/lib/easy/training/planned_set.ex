@@ -35,6 +35,22 @@ defmodule Easy.Training.PlannedSet do
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
   end
 
+  @spec to_attrs(t()) :: map()
+  def to_attrs(%__MODULE__{} = s) do
+    %{
+      "set_type" => s.set_type,
+      "reps" => s.reps,
+      "load_value" => s.load_value,
+      "load_unit" => s.load_unit,
+      "duration_seconds" => s.duration_seconds,
+      "distance_value" => s.distance_value,
+      "distance_unit" => s.distance_unit,
+      "rpe" => s.rpe,
+      "rest_seconds" => s.rest_seconds,
+      "notes" => s.notes
+    }
+  end
+
   @spec to_snapshot(t()) :: map()
   def to_snapshot(%__MODULE__{} = s) do
     %{

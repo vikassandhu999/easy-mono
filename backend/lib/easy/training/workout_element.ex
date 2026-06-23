@@ -64,7 +64,7 @@ defmodule Easy.Training.WorkoutElement do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(element, attrs) do
     element
-    |> cast(attrs, [:position, :superset_group_id, :notes])
+    |> cast(attrs, [:position, :superset_group_id, :notes, :exercise_id])
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
     |> unique_constraint([:training_workout_id, :position],
       name: :training_workout_exercises_training_workout_id_position_index)

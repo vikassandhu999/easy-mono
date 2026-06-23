@@ -4,7 +4,7 @@ defmodule Easy.Clients.ReadBoundaryTest do
   alias Easy.Clients
 
   @training_schemas [
-    "lib/easy/training/exercise.ex",
+    "lib/easy/training/training_exercise.ex",
     "lib/easy/training/training_plan.ex",
     "lib/easy/training/workout.ex",
     "lib/easy/training/workout_element.ex",

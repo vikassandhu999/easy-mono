@@ -1,9 +1,9 @@
-defmodule EasyWeb.OpenApi.Schemas.Muscle do
+defmodule EasyWeb.OpenApi.Schemas.TrainingMuscle do
   require OpenApiSpex
   alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(
-    Shared.named_ref("Muscle", %{
+    Shared.named_ref("TrainingMuscle", %{
       "id" => "c04c39ff-4762-4a53-b0a3-15c8688ff9d4",
       "name" => "Quadriceps",
       "description" => "Primary knee extension muscle group."
@@ -11,20 +11,20 @@ defmodule EasyWeb.OpenApi.Schemas.Muscle do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.MuscleListResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingMuscleListResponse do
   require OpenApiSpex
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{Muscle, Shared}
+  alias EasyWeb.OpenApi.Schemas.{TrainingMuscle, Shared}
 
-  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: Muscle}, "MuscleListResponse"))
+  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: TrainingMuscle}, "TrainingMuscleListResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.Equipment do
+defmodule EasyWeb.OpenApi.Schemas.TrainingEquipment do
   require OpenApiSpex
   alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(
-    Shared.named_ref("Equipment", %{
+    Shared.named_ref("TrainingEquipment", %{
       "id" => "f6c9d143-42f5-42a4-9313-4c6483a610bb",
       "name" => "Barbell",
       "description" => "Straight Olympic barbell."
@@ -32,10 +32,10 @@ defmodule EasyWeb.OpenApi.Schemas.Equipment do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.EquipmentListResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingEquipmentListResponse do
   require OpenApiSpex
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{Equipment, Shared}
+  alias EasyWeb.OpenApi.Schemas.{TrainingEquipment, Shared}
 
-  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: Equipment}, "EquipmentListResponse"))
+  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: TrainingEquipment}, "TrainingEquipmentListResponse"))
 end

@@ -4,7 +4,7 @@ defmodule EasyWeb.Coaches.EquipmentController do
 
   alias Easy.Exercises
   alias OpenApiSpex.Operation
-  alias EasyWeb.OpenApi.Schemas.{EquipmentListResponse, ErrorResponse}
+  alias EasyWeb.OpenApi.Schemas.{TrainingEquipmentListResponse, ErrorResponse}
 
   tags ["coach equipment"]
 
@@ -17,7 +17,7 @@ defmodule EasyWeb.Coaches.EquipmentController do
       Operation.parameter(:search, :query, :string, "Case-insensitive equipment name search", required: false)
     ],
     responses: [
-      ok: {"Equipment", "application/json", EquipmentListResponse},
+      ok: {"Equipment", "application/json", TrainingEquipmentListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 

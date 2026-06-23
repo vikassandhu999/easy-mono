@@ -1,9 +1,9 @@
-defmodule Easy.Training.Exercise do
+defmodule Easy.Training.TrainingExercise do
   use Ecto.Schema
 
   alias Ecto.Changeset
-  alias Easy.Training.Equipment
-  alias Easy.Training.Muscle
+  alias Easy.Training.TrainingEquipment
+  alias Easy.Training.TrainingMuscle
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -34,18 +34,22 @@ defmodule Easy.Training.Exercise do
     belongs_to :creator, Easy.Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
 
-    many_to_many :muscles, Muscle,
-      join_through: "training_exercise_muscles", on_replace: :delete
+    many_to_many :muscles, TrainingMuscle,
+      join_through: "training_exercise_muscles",
+      join_keys: [exercise_id: :id, muscle_id: :id],
+      on_replace: :delete
 
-    many_to_many :equipment, Equipment,
-      join_through: "training_exercise_equipment", on_replace: :delete
+    many_to_many :equipment, TrainingEquipment,
+      join_through: "training_exercise_equipment",
+      join_keys: [exercise_id: :id, equipment_id: :id],
+      on_replace: :delete
 
     timestamps(type: :utc_datetime)
   end
 
   @cast_fields [:source, :tracking_type, :name, :description, :instructions, :mechanics, :force, :images, :import_id]
 
-  @spec insert_changeset(String.t(), String.t() | nil, map(), [Muscle.t()] | nil, [Equipment.t()] | nil) :: Changeset.t()
+  @spec insert_changeset(String.t(), String.t() | nil, map(), [TrainingMuscle.t()] | nil, [TrainingEquipment.t()] | nil) :: Changeset.t()
   def insert_changeset(business_id, coach_id, attrs, muscles \\ nil, equipment \\ nil) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
@@ -58,7 +62,7 @@ defmodule Easy.Training.Exercise do
     |> maybe_put_assoc(:equipment, equipment)
   end
 
-  @spec update_changeset(t(), map(), [Muscle.t()] | nil, [Equipment.t()] | nil) :: Ecto.Changeset.t()
+  @spec update_changeset(t(), map(), [TrainingMuscle.t()] | nil, [TrainingEquipment.t()] | nil) :: Ecto.Changeset.t()
   def update_changeset(exercise, attrs, muscles \\ nil, equipment \\ nil) do
     exercise
     |> cast(attrs, @cast_fields)
@@ -117,8 +121,8 @@ defmodule Easy.Training.Exercise do
   def load_muscles_and_equipment(query) do
     from(e in query,
       preload: [
-        muscles: ^from(m in Muscle, order_by: m.name),
-        equipment: ^from(eq in Equipment, order_by: eq.name)
+        muscles: ^from(m in TrainingMuscle, order_by: m.name),
+        equipment: ^from(eq in TrainingEquipment, order_by: eq.name)
       ]
     )
   end

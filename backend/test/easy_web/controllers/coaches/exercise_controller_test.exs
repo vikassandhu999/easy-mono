@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
   use Easy.ConnCase
 
   alias Easy.Repo
-  alias Easy.Training.Exercise
+  alias Easy.Training.TrainingExercise
 
   setup do
     owner = insert(:user, email: "owner-#{Ecto.UUID.generate()}@test.com")
@@ -67,7 +67,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
              |> Enum.sort() == Enum.sort([barbell.id, cable.id])
 
       exercise =
-        Exercise
+        TrainingExercise
         |> Repo.get!(data["id"])
         |> Repo.preload([:muscles, :equipment])
 
@@ -255,7 +255,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: other_business.id,
-          name: "Private Exercise #{Ecto.UUID.generate()}"
+          name: "Private TrainingExercise #{Ecto.UUID.generate()}"
         )
 
       conn = get(conn, "/v1/coach/exercises/#{exercise.id}")
@@ -269,10 +269,10 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: business.id,
-          name: "Original Exercise #{Ecto.UUID.generate()}"
+          name: "Original TrainingExercise #{Ecto.UUID.generate()}"
         )
 
-      new_name = "Updated Exercise #{Ecto.UUID.generate()}"
+      new_name = "Updated TrainingExercise #{Ecto.UUID.generate()}"
 
       conn =
         conn
@@ -283,7 +283,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       assert data["id"] == exercise.id
       assert data["name"] == new_name
 
-      updated = Repo.get!(Exercise, exercise.id)
+      updated = Repo.get!(TrainingExercise, exercise.id)
       assert updated.name == new_name
       assert updated.business_id == business.id
     end
@@ -293,20 +293,20 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: business.id,
-          name: "Original Exercise #{Ecto.UUID.generate()}"
+          name: "Original TrainingExercise #{Ecto.UUID.generate()}"
         )
 
       conn =
         conn
         |> put_req_header("content-type", "application/json")
         |> patch("/v1/coach/exercises/#{exercise.id}", %{
-          "name" => "Updated Exercise #{Ecto.UUID.generate()}",
+          "name" => "Updated TrainingExercise #{Ecto.UUID.generate()}",
           "business_id" => Ecto.UUID.generate()
         })
 
       assert %{"errors" => [_error]} = json_response(conn, 422)
 
-      updated = Repo.get!(Exercise, exercise.id)
+      updated = Repo.get!(TrainingExercise, exercise.id)
       assert updated.name == exercise.name
       assert updated.business_id == business.id
     end
@@ -326,7 +326,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
 
-      assert Repo.get!(Exercise, exercise.id).name == exercise.name
+      assert Repo.get!(TrainingExercise, exercise.id).name == exercise.name
     end
 
     test "returns 404 when updating another business exercise", %{conn: conn} do
@@ -344,7 +344,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: other_business.id,
-          name: "Other Exercise #{Ecto.UUID.generate()}"
+          name: "Other TrainingExercise #{Ecto.UUID.generate()}"
         )
 
       conn =
@@ -354,7 +354,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
 
-      assert Repo.get!(Exercise, exercise.id).name == exercise.name
+      assert Repo.get!(TrainingExercise, exercise.id).name == exercise.name
     end
   end
 
@@ -369,7 +369,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
       conn = delete(conn, "/v1/coach/exercises/#{exercise.id}")
       assert response(conn, 204)
-      assert Repo.get(Exercise, exercise.id) == nil
+      assert Repo.get(TrainingExercise, exercise.id) == nil
     end
 
     test "returns 404 when deleting a system exercise", %{conn: conn} do
@@ -377,12 +377,12 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
         insert(:exercise,
           business: nil,
           business_id: nil,
-          name: "Keep System Exercise #{Ecto.UUID.generate()}"
+          name: "Keep System TrainingExercise #{Ecto.UUID.generate()}"
         )
 
       conn = delete(conn, "/v1/coach/exercises/#{exercise.id}")
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
-      assert Repo.get!(Exercise, exercise.id).name == exercise.name
+      assert Repo.get!(TrainingExercise, exercise.id).name == exercise.name
     end
 
     test "returns 404 when deleting another business exercise", %{conn: conn} do
@@ -405,7 +405,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
       conn = delete(conn, "/v1/coach/exercises/#{exercise.id}")
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
-      assert Repo.get!(Exercise, exercise.id).name == exercise.name
+      assert Repo.get!(TrainingExercise, exercise.id).name == exercise.name
     end
   end
 
@@ -435,7 +435,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       assert data["name"] == duplicate_name
 
       duplicate =
-        Exercise
+        TrainingExercise
         |> Repo.get!(data["id"])
         |> Repo.preload([:muscles, :equipment])
 
@@ -494,8 +494,8 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
       assert %{"error_code" => "not_found"} = json_response(conn, 404)
 
-      assert Repo.get_by(Exercise, business_id: business.id, name: "Private Copy") == nil
-      assert Repo.get!(Exercise, source.id).business_id == other_business.id
+      assert Repo.get_by(TrainingExercise, business_id: business.id, name: "Private Copy") == nil
+      assert Repo.get!(TrainingExercise, source.id).business_id == other_business.id
     end
   end
 end

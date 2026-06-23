@@ -1,4 +1,4 @@
-defmodule Easy.Training.Muscle do
+defmodule Easy.Training.TrainingMuscle do
   use Ecto.Schema
 
   import Ecto.Changeset

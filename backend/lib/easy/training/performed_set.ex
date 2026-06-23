@@ -2,7 +2,7 @@ defmodule Easy.Training.PerformedSet do
   use Ecto.Schema
 
   alias Easy.Orgs
-  alias Easy.Training.Exercise
+  alias Easy.Training.TrainingExercise
   alias Easy.Training.WorkoutSession
 
   import Ecto.Changeset
@@ -32,7 +32,7 @@ defmodule Easy.Training.PerformedSet do
     field :notes, :string
 
     belongs_to :session, WorkoutSession, foreign_key: :training_session_id
-    belongs_to :exercise, Exercise
+    belongs_to :exercise, TrainingExercise
     belongs_to :business, Orgs.Business
 
     timestamps(type: :utc_datetime)
@@ -85,7 +85,7 @@ defmodule Easy.Training.PerformedSet do
 
   @spec with_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def with_exercise(query, business_id) do
-    exercise_query = Exercise |> Exercise.owned_or_system(business_id)
+    exercise_query = TrainingExercise |> TrainingExercise.owned_or_system(business_id)
     from(s in query, preload: [exercise: ^exercise_query])
   end
 end

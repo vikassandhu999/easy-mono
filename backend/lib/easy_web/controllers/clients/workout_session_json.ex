@@ -1,5 +1,5 @@
 defmodule EasyWeb.Clients.WorkoutSessionJSON do
-  alias Easy.Training.{Exercise, PerformedSet, WorkoutSession}
+  alias Easy.Training.{TrainingExercise, PerformedSet, WorkoutSession}
 
   @spec show(map()) :: map()
   def show(%{session: session}) do
@@ -54,7 +54,7 @@ defmodule EasyWeb.Clients.WorkoutSessionJSON do
     }
   end
 
-  defp exercise_data(%Exercise{} = exercise) do
+  defp exercise_data(%TrainingExercise{} = exercise) do
     %{id: exercise.id, name: exercise.name, mechanics: exercise.mechanics, force: exercise.force}
   end
 

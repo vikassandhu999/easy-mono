@@ -1,6 +1,6 @@
 defmodule Easy.Workouts do
   alias Easy.Repo
-  alias Easy.Training.Exercise
+  alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingPlan
   alias Easy.Training.Workout
   alias Easy.Training.WorkoutElement
@@ -182,7 +182,7 @@ defmodule Easy.Workouts do
       is_nil(business_id) || is_nil(exercise_id) ->
         {:ok, changeset}
 
-      Exercise |> Exercise.owned_or_system(business_id) |> Repo.get(exercise_id) ->
+      TrainingExercise |> TrainingExercise.owned_or_system(business_id) |> Repo.get(exercise_id) ->
         {:ok, changeset}
 
       true ->
@@ -217,7 +217,7 @@ defmodule Easy.Workouts do
   end
 
   defp preload_element({:ok, %WorkoutElement{} = element}) do
-    {:ok, Repo.preload(element, exercise: Exercise.for_business(element.business_id))}
+    {:ok, Repo.preload(element, exercise: TrainingExercise.for_business(element.business_id))}
   end
 
   defp preload_element(error), do: error

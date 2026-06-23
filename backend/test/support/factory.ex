@@ -25,9 +25,9 @@ defmodule Easy.Factory do
   alias Easy.Storefront.Offer
   alias Easy.Storefront.StoreProfile
   alias Easy.Storefront.Testimonial
-  alias Easy.Training.Exercise
-  alias Easy.Training.Equipment
-  alias Easy.Training.Muscle
+  alias Easy.Training.TrainingExercise
+  alias Easy.Training.TrainingEquipment
+  alias Easy.Training.TrainingMuscle
   alias Easy.Training.PlanItem, as: TrainingPlanItem
   alias Easy.Training.Workout
   alias Easy.Training.TrainingPlan
@@ -394,7 +394,7 @@ defmodule Easy.Factory do
   end
 
   def exercise_factory do
-    %Exercise{
+    %TrainingExercise{
       name: sequence(:exercise_name, &"Exercise #{&1}"),
       description: "Exercise description",
       instructions: "Exercise instructions",
@@ -408,14 +408,14 @@ defmodule Easy.Factory do
   end
 
   def muscle_factory do
-    %Muscle{
+    %TrainingMuscle{
       name: sequence(:muscle_name, &"Muscle #{&1}"),
       description: "Primary target"
     }
   end
 
   def equipment_factory do
-    %Equipment{
+    %TrainingEquipment{
       name: sequence(:equipment_name, &"Equipment #{&1}"),
       description: "Gym equipment"
     }

@@ -1,4 +1,4 @@
-defmodule Easy.Training.Equipment do
+defmodule Easy.Training.TrainingEquipment do
   use Ecto.Schema
 
   import Ecto.Changeset

@@ -1,11 +1,11 @@
-defmodule EasyWeb.OpenApi.Schemas.ExerciseCreateRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseCreateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "ExerciseCreateRequest",
+      title: "TrainingExerciseCreateRequest",
       description: "Request body for creating a coach exercise.",
       type: :object,
       additionalProperties: false,
@@ -35,14 +35,14 @@ defmodule EasyWeb.OpenApi.Schemas.ExerciseCreateRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.ExerciseDuplicateRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseCopyRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "ExerciseDuplicateRequest",
+      title: "TrainingExerciseCopyRequest",
       description: "Request body for duplicating an exercise.",
       type: :object,
       additionalProperties: false,
@@ -58,14 +58,14 @@ defmodule EasyWeb.OpenApi.Schemas.ExerciseDuplicateRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.ExerciseUpdateRequest do
+defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "ExerciseUpdateRequest",
+      title: "TrainingExerciseUpdateRequest",
       description: "Request body for updating a coach exercise.",
       type: :object,
       additionalProperties: false,
@@ -90,21 +90,21 @@ defmodule EasyWeb.OpenApi.Schemas.ExerciseUpdateRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.ExerciseRelation do
+defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseRelation do
   require OpenApiSpex
   alias EasyWeb.OpenApi.Schemas.Shared
 
-  OpenApiSpex.schema(Shared.named_ref("ExerciseRelation"))
+  OpenApiSpex.schema(Shared.named_ref("TrainingExerciseRelation"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.Exercise do
+defmodule EasyWeb.OpenApi.Schemas.TrainingExercise do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{ExerciseRelation, Shared}
+  alias EasyWeb.OpenApi.Schemas.{TrainingExerciseRelation, Shared}
 
   OpenApiSpex.schema(%{
-    title: "Exercise",
+    title: "TrainingExercise",
     type: :object,
     additionalProperties: false,
     properties:
@@ -119,8 +119,8 @@ defmodule EasyWeb.OpenApi.Schemas.Exercise do
           mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
           force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
           images: %Schema{type: :array, items: %Schema{type: :string}},
-          muscles: %Schema{type: :array, items: ExerciseRelation},
-          equipment: %Schema{type: :array, items: ExerciseRelation}
+          muscles: %Schema{type: :array, items: TrainingExerciseRelation},
+          equipment: %Schema{type: :array, items: TrainingExerciseRelation}
         },
         Shared.timestamps()
       ),
@@ -167,18 +167,18 @@ defmodule EasyWeb.OpenApi.Schemas.Exercise do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.ExerciseListResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseListResponse do
   require OpenApiSpex
-  alias EasyWeb.OpenApi.Schemas.{Exercise, Shared}
+  alias EasyWeb.OpenApi.Schemas.{TrainingExercise, Shared}
 
-  OpenApiSpex.schema(Shared.list_response(Exercise, "ExerciseListResponse"))
+  OpenApiSpex.schema(Shared.list_response(TrainingExercise, "TrainingExerciseListResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.ExerciseResponse do
+defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseResponse do
   require OpenApiSpex
-  alias EasyWeb.OpenApi.Schemas.{Exercise, Shared}
+  alias EasyWeb.OpenApi.Schemas.{TrainingExercise, Shared}
 
-  OpenApiSpex.schema(Shared.data_response(Exercise, "ExerciseResponse"))
+  OpenApiSpex.schema(Shared.data_response(TrainingExercise, "TrainingExerciseResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ErrorResponse do

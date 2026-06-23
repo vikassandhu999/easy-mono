@@ -170,11 +170,11 @@ defmodule EasyWeb.Router do
 
     # Threads
     get "/threads", ThreadController, :index
-    post "/threads", ThreadController, :create
     get "/threads/:id", ThreadController, :show
     patch "/threads/:id", ThreadController, :update
     post "/threads/:thread_id/messages", ThreadMessageController, :create
     get "/clients/:client_id/threads", ThreadController, :client_threads
+    post "/clients/:client_id/threads", ThreadController, :create
 
     # Meal logs (view client nutrition data — read-only)
     get "/clients/:client_id/nutrition-meal-logs", MealLogController, :index

@@ -59,6 +59,7 @@ defmodule EasyWeb.Coaches.ThreadController do
     summary: "Create a thread",
     operation_id: "createCoachThread",
     security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:client_id, :path, :string, "Client id")],
     request_body: {"Thread", "application/json", CoachThreadCreateRequest, required: true},
     responses: [
       created: {"Thread", "application/json", ThreadResponse},
@@ -82,16 +83,19 @@ defmodule EasyWeb.Coaches.ThreadController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    filters = Map.take(params, ["client_id", "module", "status", "priority"])
+    opts =
+      params
+      |> Map.take(["client_id", "module", "status", "priority"])
+      |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
 
-    with {:ok, threads} <- Threads.list_threads(conn.assigns.ctx, filters) do
+    with {:ok, %{threads: threads}} <- Threads.list_threads(conn.assigns.ctx, opts) do
       render(conn, :index, threads: threads)
     end
   end
 
   @spec client_threads(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def client_threads(conn, %{"client_id" => client_id}) do
-    with {:ok, threads} <- Threads.list_client_threads(conn.assigns.ctx, client_id) do
+    with {:ok, %{threads: threads}} <- Threads.list_threads_for_client(conn.assigns.ctx, client_id) do
       render(conn, :index, threads: threads)
     end
   end
@@ -105,23 +109,17 @@ defmodule EasyWeb.Coaches.ThreadController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    attrs = stringify_keys(conn.body_params)
+    client_id = conn.path_params["client_id"]
 
-    with {:ok, thread} <- Threads.create_thread_as_coach(conn.assigns.ctx, attrs) do
+    with {:ok, thread} <- Threads.create_thread_for_client(conn.assigns.ctx, client_id, conn.body_params) do
       conn |> put_status(:created) |> render(:show, thread: thread)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    attrs = stringify_keys(conn.body_params)
-
-    with {:ok, thread} <- Threads.update_thread(conn.assigns.ctx, conn.path_params["id"], attrs) do
+    with {:ok, thread} <- Threads.update_thread(conn.assigns.ctx, conn.path_params["id"], conn.body_params) do
       render(conn, :show, thread: thread)
     end
-  end
-
-  defp stringify_keys(map) when is_map(map) do
-    Map.new(map, fn {k, v} -> {to_string(k), v} end)
   end
 end

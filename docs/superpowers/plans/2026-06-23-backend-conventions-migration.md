@@ -20,7 +20,7 @@
 - **Query builders (§A6):** `for_<dim>` = filter (no-op on nil/""); `include_<assoc>` = preload (lives in schema, takes `business_id` to scope nested reads); bare predicate = named subset; `newest`/`oldest`/`by_position`/`alphabetical` = ordering. **`with_*` and `load_*` are retired.** Identity filters carry `business_id`: `for_client(business_id, client_id)`, `for_coach(business_id, coach_id)`.
 - **Closed sets (§A4):** `Ecto.Enum` (string-backed, NO DB migration), not `:string` + `validate_inclusion`. Values become atoms in Elixir — update pattern matches; JSON renders atoms as strings (verify views/tests).
 - **Lists (§A9):** one trailing `opts \\ []` (not a positional tail); `:offset`/`:limit` default 0/20 clamped to max 100; filter keys map to `for_*` builders; count+list = two explicit queries → `{:ok, %{count: n, <plural>: items}}`.
-- **attrs (§A10):** always string-keyed (CastAndValidate); delete `Map.get("x") || Map.get(:x)` dual-key probes. **Error reasons** are bare atoms or `Ecto.Changeset.t()` (or the existing `%Easy.Error{}` wrapper) — not ad-hoc tagged tuples.
+- **attrs / ids (§A10) — LOCKED 2026-06-23 (hybrid):** identity ids (`client_id`, `plan_id`, `meal_id`, `day`, `session_id`, …) come from `conn.path_params` (string) and are passed to the context as explicit positional args (§A7 trusted-id shape); the request **body** carries only editable fields → straight to the changeset. `Ecto.Changeset.cast/3` is **key-agnostic**, so changeset-bound attrs need NO normalization (note: `CastAndValidate` `struct?: false` actually yields **atom** keys — the original §A10 "string-keyed" premise was wrong). Net rule: never extract a value from the body by key in a context → **no `Map.get("x") || Map.get(:x)` probes**, no `stringify_keys`. Where a route currently carries an id in the body, **move it to the path** (small API change). **Error reasons** are bare atoms or `Ecto.Changeset.t()` (or `%Easy.Error{}`) — not ad-hoc tagged tuples.
 - **Web (§A5):** controllers read `conn.assigns.ctx` (never `conn.assigns.claims` raw ids), one context call, `with` → render, `CastAndValidate` on writes, co-located `operation`. No `Repo`/queries/workflows in controllers. `auth_controller.ex` is the §A8 exception (claims/tokens, raw json).
 - **Schemas:** no `@moduledoc`/`@doc`; `@spec` on public fns; `insert_changeset`/`update_changeset` only (no `create_changeset`, no generic top-level `changeset/2`); `timestamps(type: :utc_datetime)`; explicit `binary_id` keys.
 - **Tenant safety:** wrong tenant/owner → `:not_found`, never `:forbidden`. Scope every query by `ctx.business_id`; client-self additionally by `ctx.client_id`.
@@ -106,3 +106,45 @@
 ## Self-Review (Slice 0)
 
 Covers the spec's "do-first" bucket: the OneTimeToken security cast (§A7, the one explicit SECURITY flag) + user_session, the mechanical schema stragglers (changeset names, timestamps, @doc, @spec, lead builder — all from the audit), and the 3 unambiguous global builder renames. Each task is independently green-able and low-blast-radius. No `_my_`/naming or Ctx-first work here (that's Slices 1–6, per context). Type consistency: the renamed builders keep identical query semantics; the changeset renames update all callers in the same task.
+
+---
+
+## Slice 1 — threads (authored at slice boundary against live code)
+
+`Easy.Threads` is already Ctx-first; this slice finishes naming (three-case), query-builder taxonomy, `Ecto.Enum`, list opts, and controller call-site updates. `thread_message` stays scoped via its parent thread (no `business_id` column — §A15 parked).
+
+### Task 4: threads schema layer (builders + enums) + builder call-sites
+
+**Files:** `lib/easy/threads/thread.ex`, `lib/easy/threads/thread_message.ex`, `lib/easy/threads.ex` (builder call-sites + enum-safe filter inputs only — NOT the public-fn renames, which are Task 5), `test/easy/threads/*`, threads JSON views if they emit the enum fields.
+
+**Interfaces:**
+- Produces: `Thread.for_status/2`, `for_module/2`, `for_priority/2` (filters, no-op on nil); `Thread.include_messages/1` (preload — child `thread_message` is not business-scoped, so it does NOT take business_id; scopes via the thread); `Thread.for_client/3` (now `(query, business_id, client_id)`); `Ecto.Enum` on `Thread.{module,status,priority}` and `ThreadMessage.author_type`; `ThreadMessage.oldest/1` (was `ordered`). Enum values are atoms in Elixir.
+- Consumes: nothing new.
+
+- [ ] **Step 1:** `thread.ex`: rename filters `with_status`→`for_status`, `with_module`→`for_module`, `with_priority`→`for_priority` (each no-op on nil/""); `with_messages`→`include_messages`; `for_client(query, client_id)`→`for_client(query, business_id, client_id)`. Convert `field :module/:status/:priority, :string` (+`validate_inclusion`) → `Ecto.Enum, values: [...]` (drop the now-redundant `validate_inclusion`; keep any DB-check). NO DB migration.
+- [ ] **Step 2:** `thread_message.ex`: `author_type` → `Ecto.Enum`; rename `ordered`→`oldest`. Leave tenant scope flowing through `:thread_id` (parked — no `for_business`, no new column).
+- [ ] **Step 3:** `threads.ex`: update builder call-sites (`for_status`/`for_module`/`for_priority`, `include_messages`, `for_client(business_id, client_id)`, `oldest`). Because the enum fields are now atoms, any filter value arriving as a string (from `opts`/request) must be safely converted at the context boundary before the `for_*` builder (use `Easy.Utils`-style safe `String.to_existing_atom` guarded against invalid input → ignore/no-op). Do NOT rename public fns here (Task 5).
+- [ ] **Step 4:** Update tests + JSON views: enum fields render as strings (atoms auto-encode) — verify `business_id_response_test` + thread JSON still pass; fix any test that pattern-matched a string status to expect the atom internally / string in JSON.
+- [ ] **Step 5:** Verify: `grep -rn "with_status\|with_module\|with_priority\|with_messages\|\bordered\b" lib/easy/threads* lib/easy/threads.ex` → empty. `mix precommit` green.
+- [ ] **Step 6:** Commit: `git commit -m "refactor(threads): for_/include_ builders, Ecto.Enum, for_client+business_id"`
+
+### Task 5: threads context three-case naming + list opts + controllers
+
+**Files:** `lib/easy/threads.ex`, `lib/easy_web/controllers/coaches/thread_controller.ex` + `thread_message_controller.ex` + any `clients/thread*` controllers, their tests, threads OpenApiSpex if operation_ids encode fn names.
+
+**Interfaces (rename map):**
+- `list_client_threads(ctx, client_id)` → `list_threads_for_client(ctx, client_id)` (Case-2)
+- `list_threads_for_user(ctx)` → `list_client_threads(ctx)` (Case-3)
+- `get_thread_for_user(ctx, id)` → `get_client_thread(ctx, id)`
+- `create_thread_as_coach(ctx, attrs)` → `create_thread(ctx, attrs)`
+- `create_thread_as_client(ctx, attrs)` → `create_client_thread(ctx, attrs)`
+- `add_message_as_coach(ctx, thread_id, attrs)` → `add_message(ctx, thread_id, attrs)`
+- `add_message_as_client(ctx, thread_id, attrs)` → `add_client_message(ctx, thread_id, attrs)`
+- `list_threads(ctx, filters_map)` → `list_threads(ctx, opts \\ [])` (offset/limit default 0/20 clamp 100; filter keys → `for_*`; return `{:ok, %{count: n, threads: [...]}}`)
+
+- [ ] **Step 1:** Rename the public fns per the map. Keep the coach (Case-1/2) vs client (Case-3, resolves `ctx.client_id`) split correct.
+- [ ] **Step 2:** Convert `list_threads` to `opts`-based with two-query count+list + clamp.
+- [ ] **Step 3:** Update controllers to the renamed fns; **delete the duplicate private `stringify_keys/1`** in `thread_controller.ex` (attrs are string-keyed via CastAndValidate — pass `conn.body_params` straight through). Confirm controllers already read `conn.assigns.ctx` (they do — threads was migrated); if any `assigns.claims` remains, switch it.
+- [ ] **Step 4:** Update tests for renamed fns + list shape. If `attention`/other callers reference `create_thread_as_coach` (the memory notes attention would), grep + update: `grep -rn "_as_coach\|_as_client\|_for_user\|list_client_threads(" lib test`.
+- [ ] **Step 5:** Verify: `grep -rn "_as_coach\|_as_client\|threads_for_user\|stringify_keys" lib/easy/threads.ex lib/easy_web/controllers/*thread*` → empty. `mix precommit` green.
+- [ ] **Step 6:** Commit: `git commit -m "refactor(threads): three-case naming + opts-based list_threads; drop stringify_keys"`

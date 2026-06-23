@@ -67,7 +67,7 @@ also pipe `for_business` when you've used those.
 tagged tuple. No bang functions outside tests/migrations/seeds. List functions
 take one trailing `opts \\ []` (`:offset`/`:limit`, default 0/20, clamp max 100);
 count + list is two explicit queries returning `{:ok, %{count: n, <plural>: items}}`.
-`attrs` is always string-keyed (CastAndValidate) — no `Map.get("x") || Map.get(:x)`.
+identity ids come from `conn.path_params` (string) as explicit context args (§A7); the body carries only editable fields → `cast/3` (which is key-agnostic, so no normalization needed). No `Map.get("x") || Map.get(:x)` probes. (Note: `CastAndValidate` `struct?: false` yields *atom* keys — that's fine for `cast`; just don't extract ids from the body.)
 
 **Controllers.** Read `conn.assigns.ctx`, one context call, `with` → render,
 errors to `FallbackController`. No `Repo`, no query building, no workflows.

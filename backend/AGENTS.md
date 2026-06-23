@@ -305,7 +305,9 @@ def list_exercises(ctx, opts \\ []), do: ...
 # called as: list_exercises(ctx, search: "press", muscle_ids: [...], offset: 0, limit: 20)
 ```
 
-`attrs` passed to changesets is **always string-keyed** (from `CastAndValidate`). The `Map.get("x") || Map.get(:x)` dual-key probe is retired. Tests pass string-keyed attrs.
+**Identity ids come from the path, not the body.** Tenant/actor/parent ids (`client_id`, `plan_id`, `meal_id`, `day`, `session_id`, …) are taken from `conn.path_params` (always strings) and passed to the context as explicit positional args (the §A7 trusted-id shape). The request **body** carries only client-editable fields, which go straight to the changeset.
+
+`Ecto.Changeset.cast/3` is **key-agnostic** — it accepts string- or atom-keyed maps — so changeset-bound attrs need no key normalization regardless of what `CastAndValidate` produces (note: `CastAndValidate` with `struct?: false` yields **atom**-keyed maps, not string-keyed). Because ids come from the path and editable fields go through `cast`, the context never extracts a value out of the body by key — so the `Map.get("x") || Map.get(:x)` dual-key probe is retired entirely. If a context genuinely must read a non-changeset value from the body, normalize once at the controller and pass it explicitly; do not probe both key forms.
 
 ## Schemas
 

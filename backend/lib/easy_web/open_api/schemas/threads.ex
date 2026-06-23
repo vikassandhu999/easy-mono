@@ -116,15 +116,14 @@ defmodule EasyWeb.OpenApi.Schemas.CoachThreadCreateRequest do
       type: :object,
       additionalProperties: false,
       properties: %{
-        client_id: %Schema{type: :string, format: :uuid},
         module: %Schema{type: :string, enum: ThreadModules.modules()},
         title: %Schema{type: :string},
         subject_type: %Schema{type: :string},
         subject_ref: %Schema{type: :object, additionalProperties: true},
         priority: %Schema{type: :string, enum: ThreadModules.priorities()}
       },
-      required: [:client_id, :module],
-      example: %{"client_id" => "...", "module" => "nutrition", "title" => "Weekly check-in"}
+      required: [:module],
+      example: %{"module" => "nutrition", "title" => "Weekly check-in"}
     },
     struct?: false
   )

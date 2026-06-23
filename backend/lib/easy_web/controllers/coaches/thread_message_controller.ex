@@ -26,7 +26,7 @@ defmodule EasyWeb.Coaches.ThreadMessageController do
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
     with {:ok, message} <-
-           Threads.add_message_as_coach(conn.assigns.ctx, conn.path_params["thread_id"], conn.body_params) do
+           Threads.add_message(conn.assigns.ctx, conn.path_params["thread_id"], conn.body_params) do
       conn
       |> put_status(:created)
       |> put_view(json: EasyWeb.Coaches.ThreadJSON)

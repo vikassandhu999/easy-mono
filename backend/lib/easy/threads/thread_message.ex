@@ -9,14 +9,12 @@ defmodule Easy.Threads.ThreadMessage do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @actor_types ~w(coach client system)
-
   @type t :: %__MODULE__{}
 
   schema "thread_messages" do
     field :body, :string
     field :kind, :string, default: "message"
-    field :author_type, :string
+    field :author_type, Ecto.Enum, values: [:coach, :client, :system]
     field :author_id, :binary_id
     field :metadata, :map, default: %{}
 
@@ -31,16 +29,15 @@ defmodule Easy.Threads.ThreadMessage do
     %__MODULE__{}
     |> cast(attrs, [:body, :kind])
     |> put_change(:thread_id, thread_id)
-    |> put_change(:author_type, author.type)
+    |> put_change(:author_type, String.to_existing_atom(author.type))
     |> put_change(:author_id, author.id)
     |> validate_required([:body, :thread_id, :author_type])
-    |> validate_inclusion(:author_type, @actor_types)
   end
 
   @spec for_thread(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_thread(query \\ __MODULE__, thread_id),
     do: from(m in query, where: m.thread_id == ^thread_id)
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__), do: from(m in query, order_by: [asc: m.inserted_at])
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__), do: from(m in query, order_by: [asc: m.inserted_at])
 end

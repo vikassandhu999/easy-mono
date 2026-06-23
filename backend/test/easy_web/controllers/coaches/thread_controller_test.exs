@@ -8,9 +8,9 @@ defmodule EasyWeb.Coaches.ThreadControllerTest do
     %{conn: conn, coach: coach, client: client}
   end
 
-  describe "POST /v1/coach/threads" do
+  describe "POST /v1/coach/clients/:client_id/threads" do
     test "creates a thread for a client", %{conn: conn, client: client} do
-      conn = post(conn, "/v1/coach/threads", %{"client_id" => client.id, "module" => "nutrition", "title" => "Hi"})
+      conn = post(conn, "/v1/coach/clients/#{client.id}/threads", %{"module" => "nutrition", "title" => "Hi"})
       assert %{"data" => data} = json_response(conn, 201)
       assert data["client_id"] == client.id
       assert data["created_by_type"] == "coach"
@@ -18,22 +18,22 @@ defmodule EasyWeb.Coaches.ThreadControllerTest do
     end
 
     test "rejects an unknown module with 422", %{conn: conn, client: client} do
-      conn = post(conn, "/v1/coach/threads", %{"client_id" => client.id, "module" => "spaceship"})
+      conn = post(conn, "/v1/coach/clients/#{client.id}/threads", %{"module" => "spaceship"})
       assert json_response(conn, 422)
     end
 
     test "404s for a client in another business", %{conn: conn} do
       other_coach = insert(:coach)
       other = insert(:client, creator: other_coach, business: other_coach.business, user: insert(:user))
-      conn = post(conn, "/v1/coach/threads", %{"client_id" => other.id, "module" => "general"})
+      conn = post(conn, "/v1/coach/clients/#{other.id}/threads", %{"module" => "general"})
       assert json_response(conn, 404)
     end
   end
 
   describe "GET /v1/coach/threads" do
     test "lists and filters by status", %{conn: conn, coach: coach, client: client} do
-      open = insert(:thread, business: coach.business, client: client, created_by_id: coach.id, status: "open")
-      insert(:thread, business: coach.business, client: client, created_by_id: coach.id, status: "archived")
+      open = insert(:thread, business: coach.business, client: client, created_by_id: coach.id, status: :open)
+      insert(:thread, business: coach.business, client: client, created_by_id: coach.id, status: :archived)
 
       conn = get(conn, "/v1/coach/threads", %{"status" => "open"})
       assert %{"data" => [data]} = json_response(conn, 200)

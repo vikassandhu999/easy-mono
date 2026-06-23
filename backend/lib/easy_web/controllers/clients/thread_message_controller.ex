@@ -25,7 +25,7 @@ defmodule EasyWeb.Clients.ThreadMessageController do
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
     with {:ok, message} <-
-           Threads.add_message_as_client(
+           Threads.add_client_message(
              conn.assigns.ctx,
              conn.path_params["thread_id"],
              conn.body_params

@@ -728,12 +728,12 @@ defmodule Easy.Factory do
     client = build(:client)
 
     %Thread{
-      module: "general",
+      module: :general,
       subject_type: "general",
       subject_ref: %{},
       title: sequence(:thread_title, &"Thread #{&1}"),
-      status: "open",
-      priority: "normal",
+      status: :open,
+      priority: :normal,
       created_by_type: "coach",
       created_by_id: client.creator.id,
       business: client.business,
@@ -747,7 +747,7 @@ defmodule Easy.Factory do
     %ThreadMessage{
       body: sequence(:thread_message_body, &"Message #{&1}"),
       kind: "message",
-      author_type: "coach",
+      author_type: :coach,
       author_id: thread.created_by_id,
       metadata: %{},
       thread: thread

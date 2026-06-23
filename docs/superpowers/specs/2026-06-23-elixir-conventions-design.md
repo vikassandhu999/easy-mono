@@ -295,16 +295,24 @@ stamping (e.g. thread `author_type`) and the occasional guard.
 
 ### A14. Function ordering within a module
 
+**Governing rule: most important functions first.** A reader opening the module
+should meet its headline operations at the top, before supporting detail. The
+primary public API — the operations the module exists for — leads. CRUD order is
+only the tiebreaker between functions of equal importance.
+
 ```
 1. use / alias / import / @type / @attrs
-2. public READS    — list, get, get_owned        (three-case grouped)
-3. public WRITES   — create, update, delete
+2. PRIMARY public API — the module's headline operations, most important first
+3. supporting public functions — equal-importance ties broken by CRUD order
+                                  (list, get, create, update, delete), three-case grouped
 4. public DOMAIN verbs — duplicate, assign, copy, …
-5. sub-resource block (if the module owns one) — same order inside
+5. sub-resource block (if the module owns one) — same ordering inside
 6. private helpers — load_*, preload_*, ok_or_not_found
 ```
 
-- Reads before writes; CRUD order within each.
+- **Importance beats mechanics.** If `assign_plan_to_client` is the point of the
+  module, it goes above a routine `get_plan`, even though `get` is "earlier" CRUD.
+- Within equal importance: reads before writes, CRUD order within each.
 - Private helpers always last.
 - **No mandatory comment headers** (names over comments). The consistent order is
   the navigation; a light `# Muscles` divider is allowed only to separate a

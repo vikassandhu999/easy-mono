@@ -289,3 +289,45 @@ Order: Task 14 (schemas, incl. security) first; then 15 (clients), 16 (client_pr
 - [ ] Convert + controllers + tests; `grep -rn "_for_user\|Map.get(.*) || Map.get" lib/easy/weight_entries.ex` → empty; `mix precommit` green; commit `refactor(fitness): Ctx-first weight_entries + three-case + path ids`.
 
 *Slice 4 gate: compile, full suite, `grep -rn "_for_user\|_for_coach_user" lib/easy/{clients,client_profiles,weight_entries}.ex` empty; no dual-key; no `cast(.*:submitted_by\|:updated_by\|:user_id\|:business_id)` in client_profiles/fitness schemas (SECURITY); builder grep clean.*
+
+---
+
+## Slice 5 — storefront / offers / testimonials (authored at slice boundary)
+
+The structural slice. `offer` + `testimonial` controllers do `Repo`+query-building INLINE with NO context module (§A5 violation); their schemas also call `Repo` (§A4 violation — schemas never touch Repo). This slice EXTRACTS proper Ctx-first context modules, moves `Repo` out of schemas, and converts the controllers to `with`→FallbackController + CastAndValidate + `conn.assigns.ctx`. Plus `store_profile` `Ecto.Enum` + upsert-via-context. Reference: any migrated context (`foods.ex`) for the Ctx-first CRUD shape.
+
+Each task is a vertical (schema cleanup + new/updated context + controller). Independent — any order; do 18, 19, 20.
+
+### Task 18: Offers — extract `Easy.Offers` context
+
+**Files:** create `lib/easy/offers.ex` (or `lib/easy/storefront/offers.ex` matching the repo's context-dir convention — check where `storefront.ex` lives; put the context at `lib/easy/` top-level like other contexts); `lib/easy/storefront/offer.ex` (remove Repo, keep pure builders); `lib/easy_web/controllers/coaches/offer_controller.ex`; tests.
+
+**Changes:**
+- **Move `Repo` OUT of `storefront/offer.ex`** (audit flagged `Repo` at ~122/128/136). The schema keeps ONLY pure query builders (`for_business/2`, `by_position` [rename from `ordered`], etc.) + changesets. NO `Repo`.
+- **Create `Easy.Offers` context (Ctx-first):** `list_offers(ctx, opts \\ [])` (clamp, `{:ok, %{count, offers}}` or bare list if small/ordered — judgment), `get_offer(ctx, id)`, `create_offer(ctx, attrs)`, `update_offer(ctx, id, attrs)`, `delete_offer(ctx, id)`. All scope by `ctx.business_id`. This is where `Repo` lives now.
+- **`offer_controller.ex`:** remove `alias Easy.Repo` + all `Repo.*`; each action = `with {:ok, x} <- Offers.fn(ctx, ...)` → render; expected errors → FallbackController (no `case Repo.get`); `conn.assigns.ctx`; CastAndValidate on create/update/delete writes; ids from path.
+- If offers are PUBLIC-readable (storefront display) via an unauthenticated path, keep that read in `Easy.Storefront` (slug-based, no ctx) — only the COACH CRUD moves to `Easy.Offers`.
+
+- [ ] Steps: create context; strip Repo from schema (+`ordered`→`by_position`); rewrite controller (with/Fallback/ctx/CastAndValidate); tests; verify `grep -rn "Repo\." lib/easy/storefront/offer.ex lib/easy_web/controllers/coaches/offer_controller.ex` → empty, `grep -rn "case .*Repo\|\bordered\b" lib/easy_web/controllers/coaches/offer_controller.ex lib/easy/storefront/offer.ex` → empty; `mix precommit` green. Commit `refactor(storefront): extract Easy.Offers context; offer controller with/Fallback/ctx`.
+
+### Task 19: Testimonials — extract `Easy.Testimonials` context
+
+**Files:** create `lib/easy/testimonials.ex`; `lib/easy/storefront/testimonial.ex` (remove Repo — audit flagged ~168/174/182; keep pure builders + `by_position`); `lib/easy_web/controllers/coaches/testimonial_controller.ex`; tests.
+
+**Changes:** same shape as Task 18 — `Easy.Testimonials` Ctx-first CRUD (`list_testimonials(ctx, opts)`, `get/create/update/delete_testimonial`), Repo OUT of schema, controller `with`→Fallback + ctx + CastAndValidate + path ids + no Repo.
+
+- [ ] Steps mirror Task 18; verify `grep -rn "Repo\." lib/easy/storefront/testimonial.ex lib/easy_web/controllers/coaches/testimonial_controller.ex` → empty; `mix precommit` green. Commit `refactor(storefront): extract Easy.Testimonials context; testimonial controller with/Fallback/ctx`.
+
+### Task 20: store_profile + public storefront
+
+**Files:** `lib/easy/storefront/store_profile.ex` (Ecto.Enum `theme_color`; remove Repo — audit ~107/114/118/130; pure builders); `lib/easy/storefront.ex` (own the store_profile upsert + the public reads); `lib/easy_web/controllers/coaches/store_profile_controller.ex`; `lib/easy_web/controllers/public/storefront_controller.ex` (verify — inquiry already Ctx from Slice 4); tests.
+
+**Changes:**
+- `store_profile.ex`: `theme_color` `:string`+validate_inclusion → `Ecto.Enum`; move `Repo` out (pure builders + changeset).
+- `Easy.Storefront`: add/keep Ctx-first `get_store_profile(ctx)` + `upsert_store_profile(ctx, attrs)` (owns Repo); public slug-based reads stay unauthenticated (documented exception, no ctx — like `create_inquiry`).
+- `store_profile_controller.ex`: `show`/`update` → `with`→Fallback (drop the `case` upsert branching into `upsert_store_profile(ctx, attrs)`); `conn.assigns.ctx`; CastAndValidate on update; no Repo.
+- `public/storefront_controller.ex`: verify it uses `Easy.Storefront` public reads, no Repo, `create_inquiry` already Ctx (Slice 4) + CastAndValidate on `create_inquiry`.
+
+- [ ] Steps: enum + Repo-out of store_profile schema; storefront context upsert; controllers with/ctx/CastAndValidate; tests; verify `grep -rn "Repo\." lib/easy/storefront/store_profile.ex` → empty, `grep -rn "validate_inclusion" lib/easy/storefront/store_profile.ex` → empty; `mix precommit` green. Commit `refactor(storefront): store_profile Ecto.Enum + Repo-out + context upsert; controllers with/ctx`.
+
+*Slice 5 gate: compile, full suite, `grep -rn "Repo\." lib/easy/storefront` → empty (no Repo in storefront schemas), `grep -rn "alias Easy.Repo\|Repo\." lib/easy_web/controllers/coaches/{offer,testimonial,store_profile}_controller.ex` → empty, `grep -rn "case .*Repo" lib/easy_web/controllers` (offer/testimonial) → empty; new `Easy.Offers`/`Easy.Testimonials` contexts exist + Ctx-first.*

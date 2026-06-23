@@ -3,7 +3,7 @@ defmodule EasyWeb.Coaches.TestimonialControllerTest do
 
   setup do
     coach = insert(:coach)
-    conn = build_conn() |> authenticate_coach(coach)
+    conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
 
     %{conn: conn, coach: coach, business: coach.business}
   end

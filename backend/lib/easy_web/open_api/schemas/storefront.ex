@@ -90,7 +90,7 @@ defmodule EasyWeb.OpenApi.Schemas.SlugCheckRequest do
     additionalProperties: false,
     properties: %{slug: %Schema{type: :string}},
     required: [:slug]
-  })
+  }, struct?: false)
 end
 
 defmodule EasyWeb.OpenApi.Schemas.SlugCheckResponse do
@@ -123,7 +123,7 @@ defmodule EasyWeb.OpenApi.Schemas.OfferRequest do
         description: %Schema{type: :string, nullable: true},
         type: %Schema{type: :string},
         duration_text: %Schema{type: :string, nullable: true},
-        price: %Schema{type: :number, nullable: true},
+        price: %Schema{type: :integer, nullable: true},
         currency: %Schema{type: :string, nullable: true},
         price_display: %Schema{type: :string, nullable: true},
         features: %Schema{type: :array, items: %Schema{type: :string}},

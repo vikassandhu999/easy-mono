@@ -12,7 +12,11 @@ defmodule EasyWeb.Coaches.OfferControllerTest do
     test "creates offer", %{conn: conn} do
       attrs = build(:offer_attrs)
 
-      conn = post(conn, "/v1/coach/offers", attrs)
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/offers", attrs)
+
       assert %{"data" => data} = json_response(conn, 201)
       assert data["name"] == attrs["name"]
       assert data["price"] == attrs["price"]
@@ -23,13 +27,21 @@ defmodule EasyWeb.Coaches.OfferControllerTest do
     test "auto-generates slug from name", %{conn: conn} do
       attrs = build(:offer_attrs, %{"name" => "Fat Loss Program"})
 
-      conn = post(conn, "/v1/coach/offers", attrs)
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/offers", attrs)
+
       assert %{"data" => data} = json_response(conn, 201)
       assert data["slug"] == "fat-loss-program"
     end
 
     test "returns 422 for missing name", %{conn: conn} do
-      conn = post(conn, "/v1/coach/offers", %{"description" => "no name"})
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/offers", %{"description" => "no name"})
+
       assert json_response(conn, 422)
     end
   end
@@ -85,7 +97,11 @@ defmodule EasyWeb.Coaches.OfferControllerTest do
     test "updates offer", %{conn: conn, business: business} do
       offer = insert(:offer, business: business)
 
-      conn = patch(conn, "/v1/coach/offers/#{offer.id}", %{"name" => "Updated Offer"})
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch("/v1/coach/offers/#{offer.id}", %{"name" => "Updated Offer"})
+
       assert %{"data" => data} = json_response(conn, 200)
       assert data["name"] == "Updated Offer"
       assert data["slug"] == "updated-offer"
@@ -95,7 +111,11 @@ defmodule EasyWeb.Coaches.OfferControllerTest do
       other = insert(:business)
       offer = insert(:offer, business: other)
 
-      conn = patch(conn, "/v1/coach/offers/#{offer.id}", %{"name" => "Nope"})
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch("/v1/coach/offers/#{offer.id}", %{"name" => "Nope"})
+
       assert json_response(conn, 404)
     end
   end

@@ -5,6 +5,38 @@ defmodule Easy.Storefront do
   alias Easy.Repo
   alias Easy.Storefront.{Offer, StoreProfile, Testimonial}
 
+  @spec get_store_profile(Ctx.t()) :: {:ok, StoreProfile.t()} | {:error, :not_found}
+  def get_store_profile(%Ctx{} = ctx) do
+    StoreProfile
+    |> StoreProfile.for_business(ctx.business_id)
+    |> Repo.one()
+    |> ok_or_not_found()
+  end
+
+  @spec upsert_store_profile(Ctx.t(), map()) ::
+          {:ok, StoreProfile.t(), :created | :updated} | {:error, Ecto.Changeset.t()}
+  def upsert_store_profile(%Ctx{} = ctx, attrs) do
+    case StoreProfile |> StoreProfile.for_business(ctx.business_id) |> Repo.one() do
+      nil ->
+        attrs
+        |> StoreProfile.insert_changeset(ctx.business_id)
+        |> Repo.insert()
+        |> case do
+          {:ok, profile} -> {:ok, profile, :created}
+          {:error, cs} -> {:error, cs}
+        end
+
+      profile ->
+        profile
+        |> StoreProfile.update_changeset(attrs)
+        |> Repo.update()
+        |> case do
+          {:ok, updated} -> {:ok, updated, :updated}
+          {:error, cs} -> {:error, cs}
+        end
+    end
+  end
+
   @spec get_public_profile(String.t()) ::
           {:ok, %{profile: StoreProfile.t(), offers: [Offer.t()], testimonials: [Testimonial.t()]}}
           | {:error, :not_found}
@@ -19,6 +51,7 @@ defmodule Easy.Storefront do
     end
   end
 
+  # Documented exception: public inquiry — no ctx, uses slug to resolve business
   @spec create_inquiry(String.t(), map()) ::
           {:ok, Client.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_inquiry(slug, params) do
@@ -38,7 +71,7 @@ defmodule Easy.Storefront do
     Offer
     |> Offer.for_business(business_id)
     |> Offer.active()
-    |> Offer.ordered()
+    |> Offer.by_position()
     |> Repo.all()
   end
 
@@ -46,9 +79,21 @@ defmodule Easy.Storefront do
     Testimonial
     |> Testimonial.for_business(business_id)
     |> Testimonial.active()
-    |> Testimonial.ordered()
+    |> Testimonial.by_position()
     |> Repo.all()
   end
+
+  @spec check_slug_available(Ctx.t(), String.t()) :: boolean()
+  def check_slug_available(%Ctx{} = ctx, slug) do
+    import Ecto.Query
+
+    query = StoreProfile |> StoreProfile.by_slug(slug)
+    query = from(sp in query, where: sp.business_id != ^ctx.business_id)
+    not Repo.exists?(query)
+  end
+
+  defp ok_or_not_found(nil), do: {:error, :not_found}
+  defp ok_or_not_found(record), do: {:ok, record}
 
   defp inquiry_params(%{"name" => name} = params) when is_binary(name) do
     {first_name, last_name} =

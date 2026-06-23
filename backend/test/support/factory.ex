@@ -557,7 +557,7 @@ defmodule Easy.Factory do
         "instagram" => "https://instagram.com/coach",
         "youtube" => "https://youtube.com/@coach"
       },
-      theme_color: "orange",
+      theme_color: :orange,
       is_published: false,
       intake_questions: [
         %{

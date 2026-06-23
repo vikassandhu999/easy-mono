@@ -34,7 +34,7 @@ defmodule Easy.Clients.Client do
     belongs_to :business, Orgs.Business
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @invite_cast_fields [:email, :first_name, :last_name, :phone, :notes]

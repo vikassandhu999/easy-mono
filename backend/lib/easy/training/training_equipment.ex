@@ -13,13 +13,13 @@ defmodule Easy.Training.TrainingEquipment do
     field :name, :string
     field :description, :string
 
-    timestamps(type: :utc_datetime_usec)
+    timestamps(type: :utc_datetime)
   end
 
   @cast_fields [:name, :description]
 
-  @spec create_changeset(map()) :: Ecto.Changeset.t()
-  def create_changeset(attrs) do
+  @spec insert_changeset(map()) :: Ecto.Changeset.t()
+  def insert_changeset(attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> validate_required([:name])

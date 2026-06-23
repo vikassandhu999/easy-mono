@@ -46,7 +46,6 @@ defmodule Easy.Nutrition.Recipe do
     :dietary_tags
   ]
 
-  @doc "Scalar fields copied verbatim when duplicating a recipe (single source of truth for copy)."
   @spec scalar_fields() :: [atom()]
   def scalar_fields, do: @cast_fields
 

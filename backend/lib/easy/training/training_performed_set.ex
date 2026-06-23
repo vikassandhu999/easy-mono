@@ -84,7 +84,7 @@ defmodule Easy.Training.TrainingPerformedSet do
 
   @spec with_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def with_exercise(query, business_id) do
-    exercise_query = TrainingExercise |> TrainingExercise.owned_or_system(business_id)
+    exercise_query = TrainingExercise |> TrainingExercise.for_business_or_system(business_id)
     from(s in query, preload: [exercise: ^exercise_query])
   end
 end

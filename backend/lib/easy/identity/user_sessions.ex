@@ -8,13 +8,17 @@ defmodule Easy.Identity.UserSessions do
 
   @spec create_session!(User.t(), map()) :: UserSession.t()
   def create_session!(user, attrs) do
-    attrs
-    |> Map.merge(%{
-      expires_at: DateTime.add(DateTime.utc_now(), @refresh_token_expiration, :second),
-      refresh_token: generate_refresh_token(),
-      user_id: user.id
-    })
-    |> UserSession.new_session()
+    business_id = Map.get(attrs, :business_id) || Map.get(attrs, "business_id")
+
+    session_attrs =
+      attrs
+      |> Map.drop([:business_id, "business_id"])
+      |> Map.merge(%{
+        expires_at: DateTime.add(DateTime.utc_now(), @refresh_token_expiration, :second),
+        refresh_token: generate_refresh_token()
+      })
+
+    UserSession.new_session(user.id, business_id, session_attrs)
     |> Repo.insert!()
   end
 
@@ -26,10 +30,10 @@ defmodule Easy.Identity.UserSessions do
     end
   end
 
-  @spec refresh_session!(UserSession.t(), map()) :: UserSession.t()
-  def refresh_session!(%UserSession{} = session, attrs) do
+  @spec refresh_session!(UserSession.t(), binary() | nil, map()) :: UserSession.t()
+  def refresh_session!(%UserSession{} = session, business_id, attrs) do
     session
-    |> UserSession.refresh_changeset(attrs)
+    |> UserSession.refresh_changeset(business_id, attrs)
     |> Repo.update!()
   end
 

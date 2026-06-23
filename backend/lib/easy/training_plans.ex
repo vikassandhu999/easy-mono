@@ -193,7 +193,7 @@ defmodule Easy.TrainingPlans do
   def create_training_plan(%Ctx{} = ctx, attrs) do
     with {:ok, coach} <- get_coach(ctx) do
       ctx.business_id
-      |> TrainingPlan.create_changeset(coach.id, attrs)
+      |> TrainingPlan.insert_changeset(coach.id, attrs)
       |> Repo.insert()
       |> preload_plan()
     end
@@ -360,7 +360,7 @@ defmodule Easy.TrainingPlans do
       relationship_changes_without_creator = Keyword.delete(relationship_changes, :creator_id)
 
       changeset =
-        TrainingPlan.create_changeset(plan.business_id, creator_id, attrs)
+        TrainingPlan.insert_changeset(plan.business_id, creator_id, attrs)
         |> put_relationship_changes(relationship_changes_without_creator)
 
       case Repo.insert(changeset) do

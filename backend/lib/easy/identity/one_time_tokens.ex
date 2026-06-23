@@ -11,10 +11,9 @@ defmodule Easy.Identity.OneTimeTokens do
     %{
       token_type: token_type,
       token_hash: generate_token_hash(user.email <> otp),
-      relates_to: user.email,
-      user_id: user.id
+      relates_to: user.email
     }
-    |> Identity.OneTimeToken.changeset()
+    |> then(&Identity.OneTimeToken.insert_changeset(user.id, &1))
     |> Repo.insert()
   end
 
@@ -71,7 +70,7 @@ defmodule Easy.Identity.OneTimeTokens do
       token_hash: invitation_acceptance_hash(otp, email, invitation_token),
       relates_to: email
     }
-    |> Identity.OneTimeToken.changeset()
+    |> then(&Identity.OneTimeToken.insert_changeset(nil, &1))
     |> Repo.insert()
   end
 

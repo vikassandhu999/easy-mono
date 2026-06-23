@@ -57,10 +57,6 @@ defmodule Easy.ClientProfiles.ClientProfile do
     |> check_constraint(:intake_status, name: :client_profiles_intake_status_check)
   end
 
-  @doc """
-  Client self-service update: structured sections only. Deliberately omits intake_status and
-  intake_completed_at so a client cannot drive the coach-owned intake workflow state.
-  """
   @spec update_sections_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_sections_changeset(profile, attrs) do
     profile

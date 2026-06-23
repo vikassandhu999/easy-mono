@@ -36,16 +36,18 @@ defmodule Easy.Identity.SessionFactory do
     role = opts[:role] || session.role
 
     with {:ok, attrs_with_role} <- validate_role(role || :guest, user) do
+      business_id = attrs_with_role[:business_id]
+
       attrs =
         Map.merge(
           %{
             ip: opts[:ip] || "",
             user_agent: opts[:user_agent] || ""
           },
-          attrs_with_role
+          Map.drop(attrs_with_role, [:business_id])
         )
 
-      {:ok, UserSessions.refresh_session!(session, attrs)}
+      {:ok, UserSessions.refresh_session!(session, business_id, attrs)}
     end
   end
 

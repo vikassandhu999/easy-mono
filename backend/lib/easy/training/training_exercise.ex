@@ -89,8 +89,8 @@ defmodule Easy.Training.TrainingExercise do
     from(e in query, where: e.business_id == ^business_id)
   end
 
-  @spec owned_or_system(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def owned_or_system(query \\ __MODULE__, business_id) do
+  @spec for_business_or_system(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business_or_system(query \\ __MODULE__, business_id) do
     from(e in query, where: e.business_id == ^business_id or is_nil(e.business_id))
   end
 
@@ -112,13 +112,13 @@ defmodule Easy.Training.TrainingExercise do
     from(e in query, where: e.id in subquery(exercise_ids))
   end
 
-  @spec newest_first(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def newest_first(query \\ __MODULE__) do
+  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def newest(query \\ __MODULE__) do
     from(e in query, order_by: [desc: e.inserted_at, desc: e.id])
   end
 
-  @spec load_muscles_and_equipment(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def load_muscles_and_equipment(query) do
+  @spec include_muscles_and_equipment(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_muscles_and_equipment(query) do
     from(e in query,
       preload: [
         muscles: ^from(m in TrainingMuscle, order_by: m.name),

@@ -54,7 +54,6 @@ defmodule Easy.Nutrition.FoodLogEntry do
     |> cast(attrs, @cast_fields)
     |> put_change(:nutrition_meal_log_id, meal_log_id)
     |> validate_required([:source, :nutrition_meal_log_id, :weight_g])
-    |> validate_inclusion(:source, @sources)
     |> validate_number(:weight_g, greater_than: 0)
     |> validate_food_or_recipe()
   end

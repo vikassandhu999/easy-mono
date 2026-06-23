@@ -3,13 +3,13 @@ defmodule Easy.Training.TrainingPlanTest do
 
   alias Easy.Training.TrainingPlan
 
-  describe "create_changeset/3" do
+  describe "insert_changeset/3" do
     test "sets trusted business and creator ids from arguments" do
       business_id = Ecto.UUID.generate()
       creator_id = Ecto.UUID.generate()
 
       changeset =
-        TrainingPlan.create_changeset(business_id, creator_id, %{
+        TrainingPlan.insert_changeset(business_id, creator_id, %{
           "name" => "Strength Template",
           "description" => "Four day split",
           "status" => "active"
@@ -26,7 +26,7 @@ defmodule Easy.Training.TrainingPlanTest do
       creator_id = Ecto.UUID.generate()
 
       changeset =
-        TrainingPlan.create_changeset(business_id, creator_id, %{
+        TrainingPlan.insert_changeset(business_id, creator_id, %{
           "name" => "Strength Template",
           "business_id" => Ecto.UUID.generate(),
           "creator_id" => Ecto.UUID.generate(),
@@ -41,7 +41,7 @@ defmodule Easy.Training.TrainingPlanTest do
     end
 
     test "requires a name" do
-      changeset = TrainingPlan.create_changeset(Ecto.UUID.generate(), Ecto.UUID.generate(), %{})
+      changeset = TrainingPlan.insert_changeset(Ecto.UUID.generate(), Ecto.UUID.generate(), %{})
 
       assert %{name: ["can't be blank"]} = errors_on(changeset)
     end

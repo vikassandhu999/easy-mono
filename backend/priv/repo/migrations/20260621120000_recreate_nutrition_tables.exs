@@ -94,7 +94,9 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
 
     create constraint(
              :nutrition_recipe_ingredients,
-             :nutrition_recipe_ingredients_weight_positive, check: "weight_g > 0")
+             :nutrition_recipe_ingredients_weight_positive,
+             check: "weight_g > 0"
+           )
 
     # --- nutrition_plans ---
     create table(:nutrition_plans, primary_key: false) do

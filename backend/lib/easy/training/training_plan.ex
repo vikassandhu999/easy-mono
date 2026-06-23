@@ -37,8 +37,8 @@ defmodule Easy.Training.TrainingPlan do
     timestamps(type: :utc_datetime)
   end
 
-  @spec create_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def create_changeset(business_id, creator_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, creator_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)

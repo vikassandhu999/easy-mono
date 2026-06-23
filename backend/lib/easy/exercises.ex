@@ -13,8 +13,8 @@ defmodule Easy.Exercises do
   @spec get_exercise(Ctx.t() | String.t(), String.t()) :: exercise_response()
   def get_exercise(%Ctx{} = ctx, exercise_id) do
     TrainingExercise
-    |> TrainingExercise.owned_or_system(ctx.business_id)
-    |> TrainingExercise.load_muscles_and_equipment()
+    |> TrainingExercise.for_business_or_system(ctx.business_id)
+    |> TrainingExercise.include_muscles_and_equipment()
     |> Repo.get(exercise_id)
     |> ok_or_not_found()
   end
@@ -23,7 +23,7 @@ defmodule Easy.Exercises do
   def get_owned_exercise(%Ctx{} = ctx, exercise_id) do
     TrainingExercise
     |> TrainingExercise.for_business(ctx.business_id)
-    |> TrainingExercise.load_muscles_and_equipment()
+    |> TrainingExercise.include_muscles_and_equipment()
     |> Repo.get(exercise_id)
     |> ok_or_not_found()
   end
@@ -35,15 +35,15 @@ defmodule Easy.Exercises do
 
     base =
       TrainingExercise
-      |> TrainingExercise.owned_or_system(ctx.business_id)
+      |> TrainingExercise.for_business_or_system(ctx.business_id)
       |> TrainingExercise.for_search(search)
       |> TrainingExercise.for_muscle_ids(muscle_ids)
 
     exercises =
       base
-      |> TrainingExercise.newest_first()
+      |> TrainingExercise.newest()
       |> Utils.paginate(offset, limit)
-      |> TrainingExercise.load_muscles_and_equipment()
+      |> TrainingExercise.include_muscles_and_equipment()
       |> Repo.all()
 
     {:ok,
@@ -155,7 +155,7 @@ defmodule Easy.Exercises do
   @spec create_muscle(map()) :: {:ok, TrainingMuscle.t()} | {:error, Ecto.Changeset.t()}
   def create_muscle(attrs) do
     attrs
-    |> TrainingMuscle.create_changeset()
+    |> TrainingMuscle.insert_changeset()
     |> Repo.insert()
   end
 
@@ -172,7 +172,7 @@ defmodule Easy.Exercises do
   @spec create_equipment(map()) :: {:ok, TrainingEquipment.t()} | {:error, Ecto.Changeset.t()}
   def create_equipment(attrs) do
     attrs
-    |> TrainingEquipment.create_changeset()
+    |> TrainingEquipment.insert_changeset()
     |> Repo.insert()
   end
 

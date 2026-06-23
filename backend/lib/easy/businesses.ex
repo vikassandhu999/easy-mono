@@ -8,7 +8,7 @@ defmodule Easy.Businesses do
           {:ok, Orgs.Business.t()} | {:error, Ecto.Changeset.t()}
   def create(user, attrs) do
     attrs
-    |> Orgs.Business.create_changeset(user)
+    |> Orgs.Business.insert_changeset(user)
     |> Repo.insert()
   end
 

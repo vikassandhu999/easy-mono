@@ -153,7 +153,7 @@ defmodule Easy.Workouts do
       is_nil(business_id) || is_nil(exercise_id) ->
         {:ok, changeset}
 
-      TrainingExercise |> TrainingExercise.owned_or_system(business_id) |> Repo.get(exercise_id) ->
+      TrainingExercise |> TrainingExercise.for_business_or_system(business_id) |> Repo.get(exercise_id) ->
         {:ok, changeset}
 
       true ->
@@ -162,7 +162,7 @@ defmodule Easy.Workouts do
   end
 
   defp preload_element({:ok, %TrainingWorkoutExercise{} = element}) do
-    {:ok, Repo.preload(element, exercise: TrainingExercise.owned_or_system(element.business_id))}
+    {:ok, Repo.preload(element, exercise: TrainingExercise.for_business_or_system(element.business_id))}
   end
 
   defp preload_element(error), do: error

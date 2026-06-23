@@ -336,7 +336,7 @@ defmodule Easy.Sessions do
         {:ok, attrs}
 
       true ->
-        case TrainingExercise |> TrainingExercise.owned_or_system(business_id) |> Repo.get(exercise_id) do
+        case TrainingExercise |> TrainingExercise.for_business_or_system(business_id) |> Repo.get(exercise_id) do
           nil -> {:error, :not_found}
           exercise -> {:ok, Map.put(attrs, exercise_name_key(attrs), exercise.name)}
         end
@@ -365,7 +365,7 @@ defmodule Easy.Sessions do
       is_nil(business_id) || is_nil(exercise_id) ->
         {:ok, changeset}
 
-      TrainingExercise |> TrainingExercise.owned_or_system(business_id) |> Repo.get(exercise_id) ->
+      TrainingExercise |> TrainingExercise.for_business_or_system(business_id) |> Repo.get(exercise_id) ->
         {:ok, changeset}
 
       true ->
@@ -412,7 +412,7 @@ defmodule Easy.Sessions do
   defp preload_session(error), do: error
 
   defp preload_set({:ok, %TrainingPerformedSet{} = set}) do
-    {:ok, Repo.preload(set, exercise: TrainingExercise.owned_or_system(set.business_id))}
+    {:ok, Repo.preload(set, exercise: TrainingExercise.for_business_or_system(set.business_id))}
   end
 
   defp preload_set(error), do: error

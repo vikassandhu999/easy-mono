@@ -114,12 +114,15 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingDayScheduleRequest do
   require OpenApiSpex
   alias OpenApiSpex.Schema
-  OpenApiSpex.schema(%{
-    title: "TrainingDayScheduleRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{training_workout_id: %Schema{type: :string, nullable: true}}
-  })
+  OpenApiSpex.schema(
+    %{
+      title: "TrainingDayScheduleRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{training_workout_id: %Schema{type: :string, nullable: true}}
+    },
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleResponse do

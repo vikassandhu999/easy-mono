@@ -46,17 +46,10 @@ defmodule EasyWeb.Coaches.TrainingScheduleController do
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
     %{"plan_id" => plan_id, "day" => day} = conn.path_params
-    attrs = conn.body_params |> Map.from_struct() |> stringify_keys()
+    attrs = Map.drop(conn.body_params, [:plan_id, :day, "plan_id", "day"])
 
     with {:ok, entry} <- TrainingPlans.set_day_schedule(conn.assigns.ctx, plan_id, day, attrs) do
       render(conn, :day, entry: entry)
     end
-  end
-
-  defp stringify_keys(map) when is_map(map) do
-    Map.new(map, fn
-      {k, v} when is_atom(k) -> {Atom.to_string(k), v}
-      {k, v} -> {k, v}
-    end)
   end
 end

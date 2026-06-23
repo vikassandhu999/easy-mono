@@ -329,9 +329,6 @@ defmodule Easy.TrainingPlans do
     |> ok_or_not_found()
   end
 
-  defp ensure_workout_for_plan(_plan_id, _business_id, nil), do: :ok
-  defp ensure_workout_for_plan(_plan_id, _business_id, ""), do: :ok
-
   defp ensure_workout_for_plan(plan_id, business_id, workout_id) do
     if workout_for_plan?(plan_id, business_id, workout_id), do: :ok, else: {:error, :not_found}
   end

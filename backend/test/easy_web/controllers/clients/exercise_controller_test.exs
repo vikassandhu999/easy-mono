@@ -35,14 +35,14 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
     %{conn: conn, coach: coach, client: client, business: business}
   end
 
-  describe "GET /v1/client/exercises" do
+  describe "GET /v1/client/training-exercises" do
     test "lists business + system exercises", ctx do
       search = "client-list-#{Ecto.UUID.generate()}"
       biz_exercise = insert(:exercise, business: ctx.business, name: "Business #{search}")
       sys_exercise = insert(:exercise, business: nil, name: "System #{search}")
       other_business_exercise = insert(:exercise, name: "Other #{search}")
 
-      conn = get(ctx.conn, "/v1/client/exercises", %{"search" => search})
+      conn = get(ctx.conn, "/v1/client/training-exercises", %{"search" => search})
       assert %{"data" => data, "count" => count} = json_response(conn, 200)
       assert count == 2
       ids = Enum.map(data, & &1["id"])
@@ -57,7 +57,7 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
       insert(:exercise, business: ctx.business, name: "Barbell Bench Press #{search}")
       insert(:exercise, business: ctx.business, name: "Overhead Press")
 
-      conn = get(ctx.conn, "/v1/client/exercises", %{"search" => search})
+      conn = get(ctx.conn, "/v1/client/training-exercises", %{"search" => search})
       assert %{"data" => [data], "count" => 1} = json_response(conn, 200)
       assert data["name"] == "Barbell Bench Press #{search}"
     end
@@ -67,7 +67,7 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
       for index <- 1..5, do: insert(:exercise, business: ctx.business, name: "#{search} #{index}")
 
       conn =
-        get(ctx.conn, "/v1/client/exercises", %{
+        get(ctx.conn, "/v1/client/training-exercises", %{
           "search" => search,
           "offset" => "0",
           "limit" => "2"
@@ -81,22 +81,22 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
       search = "private-business-#{Ecto.UUID.generate()}"
       insert(:exercise, business: ctx.business, name: search)
 
-      conn = get(ctx.conn, "/v1/client/exercises", %{"search" => search})
+      conn = get(ctx.conn, "/v1/client/training-exercises", %{"search" => search})
       assert %{"data" => [data]} = json_response(conn, 200)
       refute Map.has_key?(data, "business_id")
     end
 
     test "rejects unauthenticated request", _ctx do
-      conn = build_conn() |> get("/v1/client/exercises")
+      conn = build_conn() |> get("/v1/client/training-exercises")
       assert json_response(conn, 403)
     end
   end
 
-  describe "GET /v1/client/exercises/:id" do
+  describe "GET /v1/client/training-exercises/:id" do
     test "shows exercise with muscles and equipment", ctx do
       exercise = insert(:exercise, business: ctx.business)
 
-      conn = get(ctx.conn, "/v1/client/exercises/#{exercise.id}")
+      conn = get(ctx.conn, "/v1/client/training-exercises/#{exercise.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == exercise.id
       assert data["name"] == exercise.name
@@ -108,7 +108,7 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
     test "shows system exercise", ctx do
       exercise = insert(:exercise, business: nil)
 
-      conn = get(ctx.conn, "/v1/client/exercises/#{exercise.id}")
+      conn = get(ctx.conn, "/v1/client/training-exercises/#{exercise.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == exercise.id
     end
@@ -116,7 +116,7 @@ defmodule EasyWeb.Clients.ExerciseControllerTest do
     test "returns 404 for other business exercise", ctx do
       other_exercise = insert(:exercise)
 
-      conn = get(ctx.conn, "/v1/client/exercises/#{other_exercise.id}")
+      conn = get(ctx.conn, "/v1/client/training-exercises/#{other_exercise.id}")
       assert json_response(conn, 404)
     end
   end

@@ -13,6 +13,8 @@ defmodule EasyWeb.Coaches.WorkoutController do
     TrainingWorkoutUpdateRequest
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+
   tags ["coach workouts"]
 
   operation :index,
@@ -91,24 +93,11 @@ defmodule EasyWeb.Coaches.WorkoutController do
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
-  operation :duplicate,
-    summary: "Duplicate workout",
-    description: "Copies a workout with its elements and planned sets.",
-    operation_id: "duplicateWorkout",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:id, :path, :string, "Workout id")
-    ],
-    responses: [
-      created: {"Workout duplicated", "application/json", TrainingWorkoutResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, %{"plan_id" => plan_id} = params) do
-    with {:ok, workout} <- Workouts.create_workout(conn.assigns.ctx, plan_id, params) do
+  def create(conn, _params) do
+    plan_id = conn.path_params["plan_id"]
+
+    with {:ok, workout} <- Workouts.create_workout(conn.assigns.ctx, plan_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, workout: workout)
@@ -123,7 +112,9 @@ defmodule EasyWeb.Coaches.WorkoutController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
+  def update(conn, _params) do
+    id = conn.path_params["id"]
+
     with {:ok, updated} <- Workouts.update_workout(conn.assigns.ctx, id, conn.body_params) do
       render(conn, :show, workout: updated)
     end
@@ -133,15 +124,6 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def delete(conn, %{"id" => id}) do
     with {:ok, _workout} <- Workouts.delete_workout(conn.assigns.ctx, id) do
       send_resp(conn, :no_content, "")
-    end
-  end
-
-  @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def duplicate(conn, %{"id" => id}) do
-    with {:ok, duplicated} <- Workouts.duplicate_workout(conn.assigns.ctx, id) do
-      conn
-      |> put_status(:created)
-      |> render(:show, workout: duplicated)
     end
   end
 

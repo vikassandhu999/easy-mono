@@ -100,14 +100,6 @@ defmodule Easy.Workouts do
     end
   end
 
-  @spec duplicate_workout(Ctx.t(), String.t()) ::
-          {:ok, TrainingWorkout.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def duplicate_workout(%Ctx{} = ctx, workout_id) do
-    with {:ok, workout} <- get_workout(ctx, workout_id) do
-      duplicate_workout_struct(workout)
-    end
-  end
-
   @spec create_workout_element(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_workout_element(%Ctx{} = ctx, workout_id, attrs) do
@@ -144,27 +136,6 @@ defmodule Easy.Workouts do
     end
   end
 
-  defp duplicate_workout_struct(%TrainingWorkout{} = workout) do
-    element_query =
-      TrainingWorkoutExercise
-      |> TrainingWorkoutExercise.for_business(workout.business_id)
-      |> TrainingWorkoutExercise.ordered()
-
-    Repo.transaction(fn ->
-      workout = Repo.preload(workout, workout_elements: element_query)
-
-      case copy_workout_into(workout, workout.training_plan_id) do
-        {:ok, new_workout} ->
-          Repo.preload(new_workout,
-            workout_elements: TrainingWorkoutExercise.with_exercise(element_query, workout.business_id)
-          )
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
-  end
-
   defp get_plan(business_id, plan_id) do
     TrainingPlan
     |> TrainingPlan.for_business(business_id)
@@ -188,32 +159,6 @@ defmodule Easy.Workouts do
       true ->
         {:error, :not_found}
     end
-  end
-
-  defp copy_workout_into(workout, dest_plan_id) do
-    attrs = %{name: workout.name, notes: workout.notes}
-
-    with {:ok, new_workout} <-
-           dest_plan_id
-           |> TrainingWorkout.insert_changeset(workout.business_id, nil, attrs)
-           |> Repo.insert(),
-         :ok <- copy_elements(workout.workout_elements, new_workout.id, workout.business_id) do
-      {:ok, new_workout}
-    end
-  end
-
-  defp copy_elements(elements, new_workout_id, business_id) do
-    Enum.reduce_while(elements, :ok, fn element, :ok ->
-      result =
-        new_workout_id
-        |> TrainingWorkoutExercise.insert_changeset(business_id, TrainingWorkoutExercise.copy_attrs(element))
-        |> Repo.insert()
-
-      case result do
-        {:ok, _} -> {:cont, :ok}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
   end
 
   defp preload_element({:ok, %TrainingWorkoutExercise{} = element}) do

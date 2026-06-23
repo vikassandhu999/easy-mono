@@ -62,7 +62,6 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseRequest do
         exercise_id: %Schema{type: :string, format: :uuid},
         planned_sets: %Schema{type: :array, minItems: 1, items: TrainingPlanPlannedSet}
       },
-      required: [:position, :exercise_id, :planned_sets],
       example: %{
         "position" => 0,
         "exercise_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",

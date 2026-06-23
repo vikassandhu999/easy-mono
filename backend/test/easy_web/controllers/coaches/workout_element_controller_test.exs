@@ -8,7 +8,7 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
     %{conn: conn, coach: coach, business: coach.business}
   end
 
-  describe "POST /v1/coach/workout_elements" do
+  describe "POST /v1/coach/training-workouts/:workout_id/exercises" do
     test "creates workout element", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, creator: coach, business: business)
       workout = insert(:workout, plan: plan, creator: coach, business: business)
@@ -16,10 +16,13 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
 
       attrs =
         build(:workout_element_attrs)
-        |> Map.put("workout_id", workout.id)
         |> Map.put("exercise_id", exercise.id)
 
-      conn = post(conn, "/v1/coach/workout_elements", attrs)
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/training-workouts/#{workout.id}/exercises", attrs)
+
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["training_workout_id"] == workout.id
@@ -37,10 +40,13 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
 
       attrs =
         build(:workout_element_attrs)
-        |> Map.put("workout_id", workout.id)
         |> Map.put("exercise_id", system_exercise.id)
 
-      conn = post(conn, "/v1/coach/workout_elements", attrs)
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/training-workouts/#{workout.id}/exercises", attrs)
+
       assert %{"data" => data} = json_response(conn, 201)
       assert data["exercise_id"] == system_exercise.id
     end
@@ -58,15 +64,18 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
 
       attrs =
         build(:workout_element_attrs)
-        |> Map.put("workout_id", workout.id)
         |> Map.put("exercise_id", other_exercise.id)
 
-      conn = post(conn, "/v1/coach/workout_elements", attrs)
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/training-workouts/#{workout.id}/exercises", attrs)
+
       assert json_response(conn, 404)
     end
   end
 
-  describe "PATCH /v1/coach/workout_elements/:id" do
+  describe "PATCH /v1/coach/training-workout-exercises/:id" do
     test "updates workout element", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, creator: coach, business: business)
       workout = insert(:workout, plan: plan, creator: coach, business: business)
@@ -80,7 +89,11 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
           position: 0
         )
 
-      conn = patch(conn, "/v1/coach/workout_elements/#{element.id}", %{"notes" => "Updated"})
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch("/v1/coach/training-workout-exercises/#{element.id}", %{"notes" => "Updated"})
+
       assert %{"data" => data} = json_response(conn, 200)
       assert data["notes"] == "Updated"
     end
@@ -106,7 +119,9 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
       other_exercise = insert(:exercise, business: other.business)
 
       conn =
-        patch(conn, "/v1/coach/workout_elements/#{element.id}", %{
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch("/v1/coach/training-workout-exercises/#{element.id}", %{
           "exercise_id" => other_exercise.id
         })
 

@@ -9,7 +9,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
     %{conn: conn, coach: coach, client: client, business: coach.business}
   end
 
-  describe "GET /v1/coach/clients/:client_id/training_plans" do
+  describe "GET /v1/coach/clients/:client_id/training-plans" do
     test "lists only this client's training plans", ctx do
       insert(:training_plan,
         creator: ctx.coach,
@@ -33,7 +33,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
         end_date: ~D[2026-01-31]
       )
 
-      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training-plans")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
       assert hd(data)["client_id"] == ctx.client.id
@@ -41,7 +41,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
     end
 
     test "returns empty list when client has no plans", ctx do
-      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training-plans")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
 
@@ -65,7 +65,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       )
 
       conn =
-        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training_plans", %{
+        get(ctx.conn, "/v1/coach/clients/#{ctx.client.id}/training-plans", %{
           "status" => "active"
         })
 
@@ -77,12 +77,12 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       other_coach = insert(:coach)
       other_client = insert(:client, creator: other_coach, business: other_coach.business)
 
-      conn = get(ctx.conn, "/v1/coach/clients/#{other_client.id}/training_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{other_client.id}/training-plans")
       assert json_response(conn, 404)
     end
 
     test "returns 404 for non-existent client", ctx do
-      conn = get(ctx.conn, "/v1/coach/clients/#{Ecto.UUID.generate()}/training_plans")
+      conn = get(ctx.conn, "/v1/coach/clients/#{Ecto.UUID.generate()}/training-plans")
       assert json_response(conn, 404)
     end
   end

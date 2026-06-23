@@ -16,7 +16,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :duplicate]
+       when action in [:create, :update, :copy]
 
   tags ["coach exercises"]
 
@@ -103,18 +103,18 @@ defmodule EasyWeb.Coaches.ExerciseController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
-  operation :duplicate,
-    summary: "Duplicate exercise",
+  operation :copy,
+    summary: "Copy exercise",
     description:
       "Creates a named copy of a system or coach exercise in the coach library. Frontend pattern - ask the coach for the new exercise name before calling this endpoint, then append the returned copy to local exercise lists.",
-    operation_id: "duplicateExercise",
+    operation_id: "copyExercise",
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:id, :path, :string, "Exercise id")
     ],
-    request_body: {"Exercise duplicate request", "application/json", TrainingExerciseCopyRequest, required: true},
+    request_body: {"Exercise copy request", "application/json", TrainingExerciseCopyRequest, required: true},
     responses: [
-      created: {"Exercise duplicated", "application/json", TrainingExerciseResponse},
+      created: {"Exercise copied", "application/json", TrainingExerciseResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -152,8 +152,8 @@ defmodule EasyWeb.Coaches.ExerciseController do
     end
   end
 
-  @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def duplicate(conn, _params) do
+  @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def copy(conn, _params) do
     id = conn.path_params["id"]
 
     with {:ok, duplicated} <- Exercises.duplicate_exercise(conn.assigns.ctx, id, conn.body_params) do

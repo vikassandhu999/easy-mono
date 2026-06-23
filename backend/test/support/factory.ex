@@ -516,10 +516,14 @@ defmodule Easy.Factory do
         %{
           "set_type" => "working",
           "reps" => "8-12",
-          "load_value" => 80,
+          "load_value" => "80",
           "load_unit" => "kg",
           "rpe" => 8,
-          "rest_seconds" => 90
+          "rest_seconds" => 90,
+          "duration_seconds" => nil,
+          "distance_value" => nil,
+          "distance_unit" => nil,
+          "notes" => nil
         }
       ]
     }

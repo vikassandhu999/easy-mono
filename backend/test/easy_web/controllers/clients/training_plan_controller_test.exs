@@ -33,7 +33,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
     %{conn: conn, coach: coach, client: client, business: business}
   end
 
-  describe "GET /v1/client/training_plans" do
+  describe "GET /v1/client/training-plans" do
     test "lists only plans assigned to the client", ctx do
       insert(:training_plan,
         creator: ctx.coach,
@@ -55,14 +55,14 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
         end_date: ~D[2026-03-31]
       )
 
-      conn = get(ctx.conn, "/v1/client/training_plans")
+      conn = get(ctx.conn, "/v1/client/training-plans")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
       assert hd(data)["id"] != nil
     end
 
     test "returns empty list when no plans assigned", ctx do
-      conn = get(ctx.conn, "/v1/client/training_plans")
+      conn = get(ctx.conn, "/v1/client/training-plans")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
 
@@ -85,13 +85,13 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
         end_date: ~D[2026-03-31]
       )
 
-      conn = get(ctx.conn, "/v1/client/training_plans", %{"status" => "active"})
+      conn = get(ctx.conn, "/v1/client/training-plans", %{"status" => "active"})
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert hd(data)["status"] == "active"
     end
 
     test "rejects unauthenticated request", _ctx do
-      conn = build_conn() |> get("/v1/client/training_plans")
+      conn = build_conn() |> get("/v1/client/training-plans")
       assert json_response(conn, 403)
     end
 
@@ -99,13 +99,13 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       conn =
         build_conn()
         |> authenticate_coach(ctx.coach)
-        |> get("/v1/client/training_plans")
+        |> get("/v1/client/training-plans")
 
       assert json_response(conn, 403)
     end
   end
 
-  describe "GET /v1/client/training_plans/:id" do
+  describe "GET /v1/client/training-plans/:id" do
     test "shows plan with workouts, elements, exercises, and sets", ctx do
       plan =
         insert(:training_plan,
@@ -136,7 +136,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           ]
         )
 
-      conn = get(ctx.conn, "/v1/client/training_plans/#{plan.id}")
+      conn = get(ctx.conn, "/v1/client/training-plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert data["name"] == plan.name
@@ -169,14 +169,14 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           end_date: ~D[2026-03-31]
         )
 
-      conn = get(ctx.conn, "/v1/client/training_plans/#{plan.id}")
+      conn = get(ctx.conn, "/v1/client/training-plans/#{plan.id}")
       assert json_response(conn, 404)
     end
 
     test "returns 404 for template plans", ctx do
       plan = insert(:training_plan, creator: ctx.coach, business: ctx.business)
 
-      conn = get(ctx.conn, "/v1/client/training_plans/#{plan.id}")
+      conn = get(ctx.conn, "/v1/client/training-plans/#{plan.id}")
       assert json_response(conn, 404)
     end
 
@@ -190,7 +190,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           end_date: ~D[2026-03-31]
         )
 
-      conn = get(ctx.conn, "/v1/client/training_plans/#{plan.id}")
+      conn = get(ctx.conn, "/v1/client/training-plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
       refute Map.has_key?(data, "creator_id")
       refute Map.has_key?(data, "business_id")

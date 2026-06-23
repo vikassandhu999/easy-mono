@@ -124,43 +124,46 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanPlannedSet do
 
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "TrainingPlanPlannedSet",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
-      reps: %Schema{type: :string, nullable: true},
-      load_value: %Schema{type: :string, nullable: true},
-      load_unit: %Schema{
-        type: :string,
-        enum: ["kg", "lbs", "bodyweight", "none"],
-        nullable: true
+  OpenApiSpex.schema(
+    %{
+      title: "TrainingPlanPlannedSet",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
+        reps: %Schema{type: :string, nullable: true},
+        load_value: %Schema{type: :string, nullable: true},
+        load_unit: %Schema{
+          type: :string,
+          enum: ["kg", "lbs", "bodyweight", "none"],
+          nullable: true
+        },
+        duration_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
+        distance_value: %Schema{type: :string, nullable: true},
+        distance_unit: %Schema{
+          type: :string,
+          enum: ["meters", "km", "miles", "none"],
+          nullable: true
+        },
+        rpe: %Schema{type: :number, minimum: 1, maximum: 10, nullable: true},
+        rest_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
+        notes: %Schema{type: :string, nullable: true}
       },
-      duration_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
-      distance_value: %Schema{type: :string, nullable: true},
-      distance_unit: %Schema{
-        type: :string,
-        enum: ["meters", "km", "miles", "none"],
-        nullable: true
-      },
-      rpe: %Schema{type: :number, minimum: 1, maximum: 10, nullable: true},
-      rest_seconds: %Schema{type: :integer, minimum: 0, nullable: true},
-      notes: %Schema{type: :string, nullable: true}
+      required: [
+        :set_type,
+        :reps,
+        :load_value,
+        :load_unit,
+        :duration_seconds,
+        :distance_value,
+        :distance_unit,
+        :rpe,
+        :rest_seconds,
+        :notes
+      ]
     },
-    required: [
-      :set_type,
-      :reps,
-      :load_value,
-      :load_unit,
-      :duration_seconds,
-      :distance_value,
-      :distance_unit,
-      :rpe,
-      :rest_seconds,
-      :notes
-    ]
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutExercise do

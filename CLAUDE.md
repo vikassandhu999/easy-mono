@@ -16,7 +16,7 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 
 ## Working rules
 - Frontend changes: work inside `frontend/`; `@easy/*` imports resolve within the pnpm workspace.
-- Backend changes: work inside `backend/`; use `mix`.
+- Backend changes: work inside `backend/`; use `mix`. Follow `backend/AGENTS.md` (the `elixir-conventions` skill summarizes it) and run `mix precommit` before finishing.
 - When changing an API: update the backend OpenApiSpex schema AND both sides.
 - Use the root `Justfile` (`just --list`) for common tasks.
 

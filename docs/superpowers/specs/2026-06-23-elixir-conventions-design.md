@@ -33,7 +33,7 @@ examples, which still show raw-id signatures).
 `Easy.Ctx` is extended to carry the acting identity **and role**:
 
 ```elixir
-%Easy.Ctx{business_id: uuid, user_id: uuid, role: :coach | :client}
+%Easy.Ctx{business_id: uuid, user_id: uuid, role: :coach | :client, client_id: uuid | nil}
 ```
 
 - Built once in the auth plug from JWT claims + router scope.
@@ -41,6 +41,10 @@ examples, which still show raw-id signatures).
   (`assert_coach(ctx)` / `assert_client(ctx)`) — cheap insurance against a coach
   function being wired under a client route. The function name declares intent;
   the guard enforces it.
+- `client_id` is resolved once in the auth plug for `:client` actors (`user_id →
+  client_id`), `nil` for coaches. Client-owned data is keyed by `client_id`, so
+  Case-3 self-service reads `ctx.client_id` and the query layer never does the
+  `user_id → client_id` lookup.
 
 ### A2. The three-case naming convention
 
@@ -93,10 +97,9 @@ presence/absence of a `client_id` argument disambiguates Case 2 from Case 3:
   `create_changeset`. No generic `changeset/2` for top-level schemas (embedded
   schemas may keep a single `changeset/2` when there is one valid write path).
 - **Query builders:** every tenant-scoped schema exposes at minimum a
-  `for_business/2` builder. Builders are pure, composable, take an optional
-  queryable first, return `Ecto.Query`.
+  `for_business/2` builder. Full builder taxonomy in §A6.
 - **Trusted fields** are set with `put_change/3`, never `cast`. Cast only
-  client-editable fields.
+  client-editable fields. Full identity/trust rules in §A7.
 - **Closed sets** use `Ecto.Enum`, not `:string` + `validate_inclusion`.
 - **Timestamps:** `timestamps(type: :utc_datetime)` is the standard.
   `:utc_datetime_usec` only where sub-second precision is genuinely needed.
@@ -116,7 +119,79 @@ presence/absence of a `client_id` argument disambiguates Case 2 from Case 3:
 - `OpenApiSpex.Plug.CastAndValidate` on every write action.
 - A co-located `OpenApiSpex` `operation` for every public JSON endpoint.
 
-### A6. Documented exceptions
+### A6. Query builder taxonomy
+
+Query builders are pure, composable, take an optional queryable first
+(`query \\ __MODULE__`), and return `Ecto.Query`. They never touch `Repo`.
+`Repo.all` / `aggregate` / pagination live in the context, not the schema.
+
+The **prefix names the category** so a call site reads its own meaning:
+
+| Category | Convention | Examples |
+|---|---|---|
+| **Row filter** | `for_<dimension>(q, val)` — no-ops on `nil`/`""` | `for_status`, `for_search`, `for_muscle_ids` (identity filters `for_business`/`for_client`/`for_coach` follow §A7) |
+| **Named subset** (arg-less) | bare predicate | `templates`, `active`, `published` |
+| **Ordering** | named order, arg-less | `newest`, `oldest`, `alphabetical`, `by_position` |
+| **Preload** | `include_<assoc>(q, …)` — *reserved for preloads* | `include_workouts`, `include_muscles_and_equipment`, `include_elements` |
+| **Domain composite** | named multi-`where`, built **from** the primitives | `active_for_client(q, client_id, date)` |
+
+Rules:
+
+- **`for_` = filter, `include_` = preload.** Never mix. `with_*` is retired —
+  it read ambiguously as a filter ("plans *with* status active"); `include_`
+  only ever means "also load this association."
+- **No-op on nil/blank is mandatory** for every `for_*` filter, so contexts pipe
+  optional filters with zero conditionals
+  (`for_client(q, nil) → q`, `for_search(q, "") → q`).
+- **Ordering names carry direction and tie-breaks.** `newest` is
+  `order_by: [desc: inserted_at, desc: id]` — the second key keeps pagination
+  deterministic. A generic `ordered(q, dir)` can't encode that, so it is not
+  used. `by_position` is the manual-order builder for schemas with a `position`
+  field (Workout, Meal, PlannedSet, PlanItem) — a *different* concept from
+  `newest`, not a synonym.
+- **Preloads live in the schema**, never hand-rolled `from(... preload: ...)` in
+  a context. A preload builder over tenant-scoped children **takes
+  `business_id`** and scopes the nested query
+  (`include_workouts(q, business_id)`), so nested reads can't leak across
+  tenants.
+- **Domain composites are sugar over primitives** — `active_for_client` is built
+  by composing `for_client`/`active`/date filters internally, never by
+  duplicating `where` logic.
+
+### A7. Identities, trust, and changesets
+
+- **Identities are separate positional params, never in `attrs`.** A changeset
+  casts only client-editable fields; every trusted FK —
+  tenant (`business_id`), actor (`creator_id`), and parent
+  (`plan_id`, `thread_id`, …) — is a separate argument set with `put_change/3`.
+- **Canonical arg order:** `business_id` first, then actor, then parent, then
+  `attrs`:
+
+  ```elixir
+  insert_changeset(business_id, creator_id, attrs)
+  insert_changeset(business_id, creator_id, plan_id, attrs)
+  ```
+
+  Fix `Workout`/`Meal`, which put `plan_id` first. Cap at ~3 ids; more than that
+  signals a tangled schema.
+- **Changesets stay `Ctx`-ignorant.** A changeset never takes `%Ctx{}`. The
+  context unpacks `ctx.business_id` / `ctx.user_id` / `ctx.client_id` into
+  positional args, keeping the data layer free of the application layer.
+- **Identity filters carry `business_id` so tenant scope can't be forgotten:**
+
+  ```elixir
+  for_business(business_id)              # tenant-wide list (Case 1)
+  for_client(business_id, client_id)     # tenant + client, scope baked in
+  for_coach(business_id, coach_id)       # tenant + coach
+  ```
+
+  When using `for_client` / `for_coach`, do **not** also pipe `for_business` —
+  it is already scoped. `for_business` is for unfiltered tenant lists.
+- **Client-owned data is keyed by `client_id`.** Case 2 passes `client_id` from
+  the param; Case 3 passes `ctx.client_id`. Both reach the same
+  `for_client/2` builder. There is no `for_user` builder.
+
+### A8. Documented exceptions
 
 - **AuthController** (signup, OTP verify, token refresh, etc.) renders raw
   `json(%{...})`. These are not resource views; forcing them into `render(:show)`
@@ -156,6 +231,19 @@ Rename targets (examples): `create_training_plan_for_coach_user` →
 | Timestamp type → `:utc_datetime` | `training/equipment.ex:16`, `training/muscle.ex:16` (`_usec`); `identity/user.ex:20`, `identity/one_time_token.ex:26`, `identity/user_session.ex:28`, `clients/client.ex:37` (bare) |
 | Changeset trusted-id arg order (`business_id` first) | `training/workout.ex:24`, `nutrition/meal.ex:39` (currently `plan_id` first) |
 | Missing `@spec` on public fns | `identity/user.ex` helpers, `identity/coach.ex:99-105` |
+
+### Query builders (§A6/§A7)
+
+| Rule | Fix targets |
+|---|---|
+| `with_*` preload → `include_*` | `training_plan.ex` (`with_workouts`, `with_plan_items`), `workout.ex` (`with_elements`) |
+| `load_*` preload → `include_*` | `exercise.ex:116` (`load_muscles_and_equipment`) |
+| `with_*` filter → `for_*` | `training_plan.ex:125` (`with_status` → `for_status`) |
+| Ordering name → `newest` | `exercise.ex:111` (`newest_first`) |
+| Manual order → `by_position` | `workout.ex`, `nutrition/meal.ex`, `planned_set`, `plan_item` (`ordered`) |
+| Scope-or-system → one name | `exercise.ex:88` (`owned_or_system`) vs `nutrition/food.ex` (`for_business_or_system`) — pick `for_business_or_system` |
+| Identity filters carry `business_id` | audit `for_client`/`for_coach` builders that take only the id |
+| Preloads in schema, not context | `nutrition_plans.ex` hand-rolled preload `from`s (`with_full_preloads`, `with_meal_and_items`, …) → schema `include_*` builders |
 
 ### Web layer
 

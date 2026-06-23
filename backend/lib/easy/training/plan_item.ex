@@ -57,4 +57,14 @@ defmodule Easy.Training.PlanItem do
   @spec for_day(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_day(query \\ __MODULE__, day),
     do: from(p in query, where: p.day_of_week == ^day)
+
+  @spec with_workout(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_workout(query, business_id) do
+    workout_query =
+      Easy.Training.Workout
+      |> Easy.Training.Workout.for_business(business_id)
+      |> Easy.Training.Workout.with_elements(business_id)
+
+    from(p in query, preload: [workout: ^workout_query])
+  end
 end

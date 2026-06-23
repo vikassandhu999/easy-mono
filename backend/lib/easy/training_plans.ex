@@ -30,6 +30,45 @@ defmodule Easy.TrainingPlans do
     |> ok_or_not_found()
   end
 
+  @spec get_active_plan_day_for_user(String.t(), String.t(), Date.t()) ::
+          {:ok, map()} | {:error, :not_found}
+  def get_active_plan_day_for_user(business_id, user_id, date) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
+      get_active_plan_day_for_client(business_id, client.id, date)
+    end
+  end
+
+  @spec get_active_plan_day_for_client(String.t(), String.t(), Date.t()) ::
+          {:ok, map()} | {:error, :not_found}
+  def get_active_plan_day_for_client(business_id, client_id, date) do
+    plan =
+      TrainingPlan
+      |> TrainingPlan.for_business(business_id)
+      |> TrainingPlan.active_for_client(client_id, date)
+      |> Repo.one()
+
+    case plan do
+      nil ->
+        {:error, :not_found}
+
+      plan ->
+        day = Easy.Utils.weekday_name(date)
+
+        schedule_entry =
+          PlanItem
+          |> PlanItem.for_business(business_id)
+          |> PlanItem.for_plan(plan.id)
+          |> PlanItem.for_day(day)
+          |> PlanItem.with_workout(business_id)
+          |> Repo.one()
+
+        workout = schedule_entry && schedule_entry.workout
+
+        {:ok,
+         %{plan: plan, schedule_entry: schedule_entry, workout: workout, date: date, day: day}}
+    end
+  end
+
   @spec get_client_plan_full(String.t(), String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found}
   def get_client_plan_full(business_id, client_id, plan_id) do
@@ -163,9 +202,9 @@ defmodule Easy.TrainingPlans do
 
   @spec create_training_plan(String.t(), String.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
-  def create_training_plan(business_id, author_id, attrs) do
+  def create_training_plan(business_id, creator_id, attrs) do
     business_id
-    |> TrainingPlan.create_changeset(author_id, attrs)
+    |> TrainingPlan.create_changeset(creator_id, attrs)
     |> Repo.insert()
     |> preload_plan()
   end
@@ -184,7 +223,6 @@ defmodule Easy.TrainingPlans do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
       plan
       |> TrainingPlan.update_changeset(attrs)
-      |> check_rest_days_do_not_overlap_plan_items()
       |> Repo.update()
       |> preload_plan()
     end
@@ -204,11 +242,10 @@ defmodule Easy.TrainingPlans do
     with {:ok, plan} <- get_plan_full(business_id, plan_id) do
       attrs = %{
         name: generate_copy_name(plan.name, plan.business_id),
-        description: plan.description,
-        rest_days: plan.rest_days
+        description: plan.description
       }
 
-      clone_plan(plan, attrs, original_template_id: plan.id)
+      clone_plan(plan, attrs, source_template_id: plan.id)
     end
   end
 
@@ -229,12 +266,11 @@ defmodule Easy.TrainingPlans do
     attrs = %{
       name: plan.name,
       description: plan.description,
-      rest_days: plan.rest_days,
       start_date: start_date,
       end_date: end_date
     }
 
-    clone_plan(plan, attrs, client_id: client_id, original_template_id: plan.id)
+    clone_plan(plan, attrs, client_id: client_id, source_template_id: plan.id)
   end
 
   def assign_training_plan_to_client(business_id, plan_id, client_id, attrs) do
@@ -253,10 +289,9 @@ defmodule Easy.TrainingPlans do
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item(training_plan_id, business_id, creator_id, attrs) do
     with {:ok, plan} <- get_plan(business_id, training_plan_id),
-         :ok <- ensure_workout_for_plan(plan.id, business_id, Map.get(attrs, "workout_id")) do
+         :ok <- ensure_workout_for_plan(plan.id, business_id, Map.get(attrs, "training_workout_id")) do
       plan.id
       |> PlanItem.insert_changeset(business_id, creator_id, attrs)
-      |> validate_day_is_not_rest_day()
       |> Repo.insert()
     end
   end
@@ -276,7 +311,6 @@ defmodule Easy.TrainingPlans do
       plan_item
       |> PlanItem.update_changeset(attrs)
       |> validate_workout_belongs_to_plan()
-      |> validate_day_is_not_rest_day()
       |> Repo.update()
     end
   end
@@ -325,13 +359,13 @@ defmodule Easy.TrainingPlans do
   defp validate_workout_belongs_to_plan(%{valid?: false} = changeset), do: changeset
 
   defp validate_workout_belongs_to_plan(changeset) do
-    workout_id = get_field(changeset, :workout_id)
+    workout_id = get_field(changeset, :training_workout_id)
     plan_id = get_field(changeset, :training_plan_id)
     business_id = get_field(changeset, :business_id)
 
     if workout_id && plan_id && business_id &&
          not workout_for_plan?(plan_id, business_id, workout_id) do
-      add_error(changeset, :workout_id, "must belong to the training plan")
+      add_error(changeset, :training_workout_id, "must belong to the training plan")
     else
       changeset
     end
@@ -342,51 +376,6 @@ defmodule Easy.TrainingPlans do
     |> Workout.for_business(business_id)
     |> Workout.for_plan(plan_id)
     |> where([w], w.id == ^workout_id)
-    |> Repo.exists?()
-  end
-
-  defp validate_day_is_not_rest_day(%{valid?: false} = changeset), do: changeset
-
-  defp validate_day_is_not_rest_day(changeset) do
-    day = get_field(changeset, :day)
-    plan_id = get_field(changeset, :training_plan_id)
-    business_id = get_field(changeset, :business_id)
-
-    if day && plan_id && business_id && rest_day?(business_id, plan_id, day) do
-      add_error(changeset, :day, "cannot schedule workout on a rest day")
-    else
-      changeset
-    end
-  end
-
-  defp rest_day?(business_id, plan_id, day) do
-    TrainingPlan
-    |> TrainingPlan.for_business(business_id)
-    |> where([t], t.id == ^plan_id and fragment("? = ANY(?)", ^day, t.rest_days))
-    |> Repo.exists?()
-  end
-
-  defp check_rest_days_do_not_overlap_plan_items(%{valid?: false} = changeset), do: changeset
-
-  defp check_rest_days_do_not_overlap_plan_items(changeset) do
-    rest_days = get_change(changeset, :rest_days)
-    plan_id = get_field(changeset, :id)
-    business_id = get_field(changeset, :business_id)
-
-    if rest_days && plan_id && business_id && plan_items_on_days?(business_id, plan_id, rest_days) do
-      add_error(changeset, :rest_days, "cannot include days with scheduled workouts")
-    else
-      changeset
-    end
-  end
-
-  defp plan_items_on_days?(_business_id, _plan_id, []), do: false
-
-  defp plan_items_on_days?(business_id, plan_id, days) do
-    PlanItem
-    |> PlanItem.for_business(business_id)
-    |> PlanItem.for_plan(plan_id)
-    |> where([p], p.day in ^days)
     |> Repo.exists?()
   end
 
@@ -402,7 +391,7 @@ defmodule Easy.TrainingPlans do
 
     Repo.transaction(fn ->
       changeset =
-        TrainingPlan.create_changeset(plan.business_id, plan.author_id, attrs)
+        TrainingPlan.create_changeset(plan.business_id, plan.creator_id, attrs)
         |> put_relationship_changes(relationship_changes)
 
       case Repo.insert(changeset) do
@@ -440,7 +429,7 @@ defmodule Easy.TrainingPlans do
 
     with {:ok, new_workout} <-
            dest_plan_id
-           |> Workout.insert_changeset(workout.business_id, attrs)
+           |> Workout.insert_changeset(workout.business_id, nil, attrs)
            |> Repo.insert(),
          :ok <-
            copy_workout_elements(workout.workout_elements, new_workout.id, workout.business_id) do
@@ -464,12 +453,12 @@ defmodule Easy.TrainingPlans do
 
   defp copy_plan_items(plan_items, new_plan, workout_id_map) do
     Enum.reduce_while(plan_items, :ok, fn item, :ok ->
-      new_workout_id = Map.get(workout_id_map, item.workout_id, item.workout_id)
+      new_workout_id =
+        Map.get(workout_id_map, item.training_workout_id, item.training_workout_id)
 
       attrs = %{
-        "day" => item.day,
-        "workout_type" => item.workout_type,
-        "workout_id" => new_workout_id
+        "day_of_week" => item.day_of_week,
+        "training_workout_id" => new_workout_id
       }
 
       result =

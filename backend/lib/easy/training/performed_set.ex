@@ -82,4 +82,10 @@ defmodule Easy.Training.PerformedSet do
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__), do: from(s in query, order_by: [asc: s.position])
+
+  @spec with_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_exercise(query, business_id) do
+    exercise_query = Exercise |> Exercise.owned_or_system(business_id)
+    from(s in query, preload: [exercise: ^exercise_query])
+  end
 end

@@ -33,9 +33,32 @@ defmodule Easy.Sessions do
          base
          |> WorkoutSession.newest()
          |> Easy.Utils.paginate(offset, limit)
-         |> WorkoutSession.with_sets(business_id)
+         |> WorkoutSession.with_sets()
          |> Repo.all()
      }}
+  end
+
+  @spec list_sessions_for_client(String.t(), String.t(), Date.t(), Date.t()) ::
+          {:ok, [WorkoutSession.t()]}
+  def list_sessions_for_client(business_id, client_id, from, to) do
+    sessions =
+      WorkoutSession
+      |> WorkoutSession.for_business(business_id)
+      |> WorkoutSession.for_client(client_id)
+      |> WorkoutSession.for_date_range(from, to)
+      |> WorkoutSession.newest()
+      |> WorkoutSession.with_sets()
+      |> Repo.all()
+
+    {:ok, sessions}
+  end
+
+  @spec list_sessions_for_user(String.t(), String.t(), Date.t(), Date.t()) ::
+          {:ok, [WorkoutSession.t()]} | {:error, :not_found}
+  def list_sessions_for_user(business_id, user_id, %Date{} = from, %Date{} = to) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
+      list_sessions_for_client(business_id, client.id, from, to)
+    end
   end
 
   @spec get_session(String.t(), String.t()) :: {:ok, WorkoutSession.t()} | {:error, :not_found}
@@ -51,7 +74,7 @@ defmodule Easy.Sessions do
   def get_session_with_sets(business_id, session_id) do
     WorkoutSession
     |> WorkoutSession.for_business(business_id)
-    |> WorkoutSession.with_sets(business_id)
+    |> WorkoutSession.with_sets()
     |> Repo.get(session_id)
     |> ok_or_not_found()
   end
@@ -88,7 +111,7 @@ defmodule Easy.Sessions do
     WorkoutSession
     |> WorkoutSession.for_business(business_id)
     |> WorkoutSession.for_client(client_id)
-    |> WorkoutSession.with_sets(business_id)
+    |> WorkoutSession.with_sets()
     |> Repo.get(session_id)
     |> ok_or_not_found()
   end
@@ -100,7 +123,7 @@ defmodule Easy.Sessions do
     |> WorkoutSession.for_business(business_id)
     |> WorkoutSession.for_client(client_id)
     |> WorkoutSession.with_state(:active)
-    |> WorkoutSession.with_sets(business_id)
+    |> WorkoutSession.with_sets()
     |> Repo.one()
     |> ok_or_not_found()
   end
@@ -135,7 +158,7 @@ defmodule Easy.Sessions do
 
     PerformedSet
     |> PerformedSet.for_business(business_id)
-    |> where([p], p.workout_session_id in subquery(session_ids))
+    |> where([p], p.training_session_id in subquery(session_ids))
     |> PerformedSet.with_exercise(business_id)
     |> Repo.get(set_id)
     |> ok_or_not_found()
@@ -178,9 +201,11 @@ defmodule Easy.Sessions do
   @spec create_workout_session(String.t(), String.t(), map()) ::
           {:ok, WorkoutSession.t()} | {:error, :not_found | Ecto.Changeset.t() | Easy.Error.t()}
   def create_workout_session(business_id, client_id, attrs) do
+    attrs = put_default_date(attrs)
+
     with {:ok, _client} <- get_client(business_id, client_id),
          :ok <- ensure_no_active_workout_session(business_id, client_id),
-         :ok <- ensure_optional_workout(business_id, Map.get(attrs, "workout_id")) do
+         :ok <- ensure_optional_workout(business_id, workout_id_from(attrs)) do
       business_id
       |> WorkoutSession.insert_changeset(client_id, attrs)
       |> put_planned_snapshot(business_id)
@@ -200,6 +225,8 @@ defmodule Easy.Sessions do
   @spec create_client_workout_session(String.t(), String.t(), map()) ::
           {:ok, WorkoutSession.t()} | {:error, :not_found | Ecto.Changeset.t() | Easy.Error.t()}
   def create_client_workout_session(business_id, client_id, attrs) do
+    attrs = put_default_date(attrs)
+
     with :ok <- ensure_no_active_workout_session(business_id, client_id),
          {:ok, changeset} <-
            business_id
@@ -217,7 +244,6 @@ defmodule Easy.Sessions do
   def update_workout_session(%WorkoutSession{} = session, attrs) do
     session
     |> WorkoutSession.update_changeset(attrs)
-    |> put_planned_snapshot(session.business_id)
     |> Repo.update()
     |> preload_session()
   end
@@ -324,10 +350,11 @@ defmodule Easy.Sessions do
 
   @spec create_performed_set(String.t(), String.t(), map()) ::
           {:ok, PerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_performed_set(workout_session_id, business_id, attrs) do
-    with {:ok, _session} <- get_session(business_id, workout_session_id),
+  def create_performed_set(session_id, business_id, attrs) do
+    with {:ok, _session} <- get_session(business_id, session_id),
+         {:ok, attrs} <- put_exercise_name(attrs, business_id),
          {:ok, changeset} <-
-           workout_session_id
+           session_id
            |> PerformedSet.insert_changeset(business_id, attrs)
            |> validate_performed_set_context() do
       changeset
@@ -432,7 +459,7 @@ defmodule Easy.Sessions do
     do: {:ok, changeset}
 
   defp validate_client_workout_accessible(changeset, business_id, client_id) do
-    case get_field(changeset, :workout_id) do
+    case get_field(changeset, :training_workout_id) do
       nil ->
         {:ok, changeset}
 
@@ -459,13 +486,13 @@ defmodule Easy.Sessions do
   end
 
   defp put_planned_snapshot(changeset, business_id) do
-    case get_field(changeset, :workout_id) do
+    case get_field(changeset, :training_workout_id) do
       nil ->
         changeset
 
       workout_id ->
         case build_snapshot(business_id, workout_id) do
-          nil -> add_error(changeset, :workout_id, "does not exist")
+          nil -> add_error(changeset, :training_workout_id, "does not exist")
           snapshot -> put_change(changeset, :planned_snapshot, snapshot)
         end
     end
@@ -489,19 +516,64 @@ defmodule Easy.Sessions do
         workout = Repo.preload(workout, workout_elements: element_query)
 
         %{
-          "workout_name" => workout.name,
-          "elements" => Enum.map(workout.workout_elements, &WorkoutElement.to_snapshot/1)
+          "exercises" => Enum.map(workout.workout_elements, &element_to_snapshot/1)
         }
     end
   end
 
+  defp element_to_snapshot(element) do
+    %{
+      "name" => element.exercise && element.exercise.name,
+      "position" => element.position,
+      "sets" => Enum.map(element.planned_sets, &Easy.Training.PlannedSet.to_snapshot/1)
+    }
+  end
+
+  defp put_default_date(attrs) do
+    if present?(Map.get(attrs, "date")) or present?(Map.get(attrs, :date)) do
+      attrs
+    else
+      key = if Map.has_key?(attrs, :date), do: :date, else: "date"
+      Map.put(attrs, key, Date.utc_today())
+    end
+  end
+
+  defp workout_id_from(attrs),
+    do: Map.get(attrs, "training_workout_id") || Map.get(attrs, :training_workout_id)
+
+  defp put_exercise_name(attrs, business_id) do
+    has_name? =
+      present?(Map.get(attrs, "exercise_name")) or present?(Map.get(attrs, :exercise_name))
+
+    exercise_id = Map.get(attrs, "exercise_id") || Map.get(attrs, :exercise_id)
+
+    cond do
+      has_name? ->
+        {:ok, attrs}
+
+      is_nil(exercise_id) ->
+        {:ok, attrs}
+
+      true ->
+        case Exercise |> Exercise.owned_or_system(business_id) |> Repo.get(exercise_id) do
+          nil -> {:error, :not_found}
+          exercise -> {:ok, Map.put(attrs, exercise_name_key(attrs), exercise.name)}
+        end
+    end
+  end
+
+  defp exercise_name_key(attrs) do
+    if Map.has_key?(attrs, :exercise_id), do: :exercise_name, else: "exercise_name"
+  end
+
+  defp present?(nil), do: false
+  defp present?(""), do: false
+  defp present?(_), do: true
+
   defp validate_performed_set_context(%{valid?: false} = changeset), do: {:ok, changeset}
 
   defp validate_performed_set_context(changeset) do
-    case validate_exercise_in_business(changeset) do
-      {:ok, changeset} -> {:ok, validate_workout_element_matches_session(changeset)}
-      error -> error
-    end
+    validate_exercise_in_business(changeset)
   end
 
   defp validate_exercise_in_business(changeset) do
@@ -512,71 +584,13 @@ defmodule Easy.Sessions do
       is_nil(business_id) || is_nil(exercise_id) ->
         {:ok, changeset}
 
-      Exercise |> Exercise.for_business(business_id) |> Repo.get(exercise_id) ->
+      Exercise |> Exercise.owned_or_system(business_id) |> Repo.get(exercise_id) ->
         {:ok, changeset}
 
       true ->
         {:error, :not_found}
     end
   end
-
-  defp validate_workout_element_matches_session(changeset) do
-    element_id = get_field(changeset, :workout_element_id)
-    exercise_id = get_field(changeset, :exercise_id)
-    session_id = get_field(changeset, :workout_session_id)
-    business_id = get_field(changeset, :business_id)
-
-    cond do
-      is_nil(element_id) ->
-        changeset
-
-      is_nil(exercise_id) || is_nil(session_id) || is_nil(business_id) ->
-        changeset
-
-      workout_element_matches_session?(business_id, session_id, element_id, exercise_id) ->
-        changeset
-
-      true ->
-        add_error(changeset, :workout_element_id, "must belong to the session workout")
-    end
-  end
-
-  defp workout_element_matches_session?(business_id, session_id, element_id, exercise_id) do
-    case WorkoutSession |> WorkoutSession.for_business(business_id) |> Repo.get(session_id) do
-      nil ->
-        false
-
-      session ->
-        if usable_snapshot?(session.planned_snapshot) do
-          element_in_snapshot?(session.planned_snapshot, element_id, exercise_id)
-        else
-          element_in_session_workout?(business_id, session.workout_id, element_id, exercise_id)
-        end
-    end
-  end
-
-  defp usable_snapshot?(%{"elements" => elements}) when is_list(elements), do: true
-  defp usable_snapshot?(_), do: false
-
-  defp element_in_session_workout?(_business_id, nil, _element_id, _exercise_id), do: false
-
-  defp element_in_session_workout?(business_id, workout_id, element_id, exercise_id) do
-    WorkoutElement
-    |> WorkoutElement.for_business(business_id)
-    |> WorkoutElement.for_workout(workout_id)
-    |> where([e], e.exercise_id == ^exercise_id)
-    |> Repo.get(element_id)
-    |> is_struct(WorkoutElement)
-  end
-
-  defp element_in_snapshot?(%{"elements" => elements}, element_id, exercise_id)
-       when is_list(elements) do
-    Enum.any?(elements, fn element ->
-      element["element_id"] == element_id && element["exercise_id"] == exercise_id
-    end)
-  end
-
-  defp element_in_snapshot?(_, _element_id, _exercise_id), do: false
 
   defp preload_session({:ok, %WorkoutSession{} = session}) do
     set_query =

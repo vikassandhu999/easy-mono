@@ -11,16 +11,16 @@ defmodule Easy.ClientProfiles.FormAssignment do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
-  @assignment_statuses ["assigned", "in_progress", "completed", "dismissed"]
-  @priorities ["high", "normal"]
+  @purposes [:intake, :weekly_check_in, :nutrition_update, :training_update, :custom]
+  @assignment_statuses [:assigned, :in_progress, :completed, :dismissed]
+  @priorities [:high, :normal]
 
   @type t :: %__MODULE__{}
 
   schema "form_assignments" do
-    field :purpose, :string
-    field :priority, :string, default: "normal"
-    field :status, :string, default: "assigned"
+    field :purpose, Ecto.Enum, values: @purposes
+    field :priority, Ecto.Enum, values: @priorities, default: :normal
+    field :status, Ecto.Enum, values: @assignment_statuses, default: :assigned
     field :due_date, :date
     field :completed_at, :utc_datetime
 
@@ -41,9 +41,6 @@ defmodule Easy.ClientProfiles.FormAssignment do
     |> put_change(:client_id, client_id)
     |> put_change(:form_template_id, form_template_id)
     |> validate_required([:business_id, :client_id, :form_template_id, :purpose, :priority, :status])
-    |> validate_inclusion(:purpose, @purposes)
-    |> validate_inclusion(:priority, @priorities)
-    |> validate_inclusion(:status, @assignment_statuses)
     |> check_constraint(:purpose, name: :form_assignments_purpose_check)
     |> check_constraint(:priority, name: :form_assignments_priority_check)
     |> check_constraint(:status, name: :form_assignments_status_check)
@@ -57,9 +54,6 @@ defmodule Easy.ClientProfiles.FormAssignment do
     assignment
     |> cast(attrs, [:priority, :status, :due_date])
     |> validate_required([:purpose, :priority, :status])
-    |> validate_inclusion(:purpose, @purposes)
-    |> validate_inclusion(:priority, @priorities)
-    |> validate_inclusion(:status, @assignment_statuses)
     |> sync_completed_at()
     |> check_constraint(:purpose, name: :form_assignments_purpose_check)
     |> check_constraint(:priority, name: :form_assignments_priority_check)
@@ -72,10 +66,10 @@ defmodule Easy.ClientProfiles.FormAssignment do
     completed_at = get_field(changeset, :completed_at)
 
     case get_field(changeset, :status) do
-      "completed" when is_nil(completed_at) ->
+      :completed when is_nil(completed_at) ->
         put_change(changeset, :completed_at, DateTime.utc_now(:second))
 
-      "completed" ->
+      :completed ->
         changeset
 
       _other when not is_nil(completed_at) ->
@@ -89,9 +83,8 @@ defmodule Easy.ClientProfiles.FormAssignment do
   @spec complete_changeset(t(), DateTime.t()) :: Ecto.Changeset.t()
   def complete_changeset(assignment, completed_at) do
     assignment
-    |> change(status: "completed", completed_at: completed_at)
+    |> change(status: :completed, completed_at: completed_at)
     |> validate_required([:purpose, :priority, :status, :completed_at])
-    |> validate_inclusion(:status, @assignment_statuses)
     |> check_constraint(:status, name: :form_assignments_status_check)
   end
 
@@ -100,8 +93,8 @@ defmodule Easy.ClientProfiles.FormAssignment do
     from(a in query, where: a.business_id == ^business_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(a in query, where: a.client_id == ^client_id)
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(a in query, where: a.business_id == ^business_id and a.client_id == ^client_id)
   end
 end

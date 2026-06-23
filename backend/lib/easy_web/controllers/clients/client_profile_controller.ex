@@ -39,21 +39,19 @@ defmodule EasyWeb.Clients.ClientProfileController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
+    ctx = conn.assigns.ctx
 
-    with {:ok, client} <- Clients.get_client_for_user(business_id, user_id),
-         {:ok, profile} <- ClientProfiles.get_or_create_profile(business_id, client.id) do
+    with {:ok, client} <- Clients.get_client_account(ctx),
+         {:ok, profile} <- ClientProfiles.get_or_create_profile(ctx, client.id) do
       render(conn, :show, profile: profile)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
+    ctx = conn.assigns.ctx
 
-    with {:ok, client} <- Clients.get_client_for_user(business_id, user_id),
-         {:ok, profile} <-
-           ClientProfiles.update_profile_sections(business_id, client.id, conn.body_params) do
+    with {:ok, profile} <- ClientProfiles.update_client_profile_sections(ctx, conn.body_params) do
       render(conn, :show, profile: profile)
     end
   end

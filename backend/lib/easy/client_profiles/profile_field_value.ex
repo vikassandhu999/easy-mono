@@ -11,13 +11,13 @@ defmodule Easy.ClientProfiles.ProfileFieldValue do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @actors ["coach", "client", "system"]
+  @actors [:coach, :client, :system]
 
   @type t :: %__MODULE__{}
 
   schema "profile_field_values" do
     field :value, :map
-    field :updated_by_type, :string
+    field :updated_by_type, Ecto.Enum, values: @actors
     field :updated_by_id, :binary_id
     field :updated_from_submission_id, :binary_id
 
@@ -28,13 +28,15 @@ defmodule Easy.ClientProfiles.ProfileFieldValue do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, client_id, profile_field_definition_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), String.t(), atom(), binary() | nil, map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, client_id, profile_field_definition_id, updated_by_type, updated_by_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:value, :updated_by_type, :updated_by_id, :updated_from_submission_id])
+    |> cast(attrs, [:value, :updated_from_submission_id])
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> put_change(:profile_field_definition_id, profile_field_definition_id)
+    |> put_change(:updated_by_type, updated_by_type)
+    |> put_change(:updated_by_id, updated_by_id)
     |> validate_required([
       :business_id,
       :client_id,
@@ -42,7 +44,6 @@ defmodule Easy.ClientProfiles.ProfileFieldValue do
       :value,
       :updated_by_type
     ])
-    |> validate_inclusion(:updated_by_type, @actors)
     |> unique_constraint(:profile_field_definition_id,
       name: :profile_field_values_client_id_profile_field_definition_id_index
     )
@@ -59,9 +60,9 @@ defmodule Easy.ClientProfiles.ProfileFieldValue do
     from(v in query, where: v.business_id == ^business_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(v in query, where: v.client_id == ^client_id)
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(v in query, where: v.business_id == ^business_id and v.client_id == ^client_id)
   end
 
   @spec for_field(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

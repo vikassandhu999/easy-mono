@@ -75,28 +75,31 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldRequest do
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
-  OpenApiSpex.schema(%{
-    title: "ClientProfileFieldRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      section: %Schema{type: :string, enum: Common.sections()},
-      label: %Schema{type: :string},
-      key: %Schema{type: :string},
-      field_type: %Schema{type: :string, enum: Common.field_types()},
-      options: %Schema{type: :array, items: %Schema{type: :string}},
-      filterable: %Schema{type: :boolean}
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileFieldRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        section: %Schema{type: :string, enum: Common.sections()},
+        label: %Schema{type: :string},
+        key: %Schema{type: :string},
+        field_type: %Schema{type: :string, enum: Common.field_types()},
+        options: %Schema{type: :array, items: %Schema{type: :string}},
+        filterable: %Schema{type: :boolean}
+      },
+      required: [:section, :label, :key, :field_type],
+      example: %{
+        "section" => "nutrition",
+        "label" => "Meal prep ability",
+        "key" => "meal_prep_ability",
+        "field_type" => "select",
+        "options" => ["low", "medium", "high"],
+        "filterable" => true
+      }
     },
-    required: [:section, :label, :key, :field_type],
-    example: %{
-      "section" => "nutrition",
-      "label" => "Meal prep ability",
-      "key" => "meal_prep_ability",
-      "field_type" => "select",
-      "options" => ["low", "medium", "high"],
-      "filterable" => true
-    }
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldUpdateRequest do
@@ -105,23 +108,26 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldUpdateRequest do
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
-  OpenApiSpex.schema(%{
-    title: "ClientProfileFieldUpdateRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      section: %Schema{type: :string, enum: Common.sections()},
-      label: %Schema{type: :string},
-      key: %Schema{type: :string},
-      field_type: %Schema{type: :string, enum: Common.field_types()},
-      options: %Schema{type: :array, items: %Schema{type: :string}},
-      filterable: %Schema{type: :boolean}
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileFieldUpdateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        section: %Schema{type: :string, enum: Common.sections()},
+        label: %Schema{type: :string},
+        key: %Schema{type: :string},
+        field_type: %Schema{type: :string, enum: Common.field_types()},
+        options: %Schema{type: :array, items: %Schema{type: :string}},
+        filterable: %Schema{type: :boolean}
+      },
+      example: %{
+        "label" => "Meal prep confidence",
+        "options" => ["low", "medium", "high", "expert"]
+      }
     },
-    example: %{
-      "label" => "Meal prep confidence",
-      "options" => ["low", "medium", "high", "expert"]
-    }
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileField do
@@ -190,30 +196,33 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateRequest do
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
-  OpenApiSpex.schema(%{
-    title: "ClientProfileFormTemplateRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      name: %Schema{type: :string},
-      purpose: %Schema{type: :string, enum: Common.form_purposes()},
-      sections: %Schema{type: :array, items: Common.section_schema()},
-      status: %Schema{type: :string, enum: Common.template_statuses()}
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileFormTemplateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        name: %Schema{type: :string},
+        purpose: %Schema{type: :string, enum: Common.form_purposes()},
+        sections: %Schema{type: :array, items: Common.section_schema()},
+        status: %Schema{type: :string, enum: Common.template_statuses()}
+      },
+      required: [:name, :purpose, :sections],
+      example: %{
+        "name" => "Initial intake",
+        "purpose" => "intake",
+        "sections" => [
+          %{
+            "title" => "Nutrition",
+            "questions" => [
+              %{"id" => "meal_prep_ability", "label" => "Meal prep ability", "type" => "select"}
+            ]
+          }
+        ]
+      }
     },
-    required: [:name, :purpose, :sections],
-    example: %{
-      "name" => "Initial intake",
-      "purpose" => "intake",
-      "sections" => [
-        %{
-          "title" => "Nutrition",
-          "questions" => [
-            %{"id" => "meal_prep_ability", "label" => "Meal prep ability", "type" => "select"}
-          ]
-        }
-      ]
-    }
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateUpdateRequest do
@@ -222,21 +231,24 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateUpdateRequest do
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
-  OpenApiSpex.schema(%{
-    title: "ClientProfileFormTemplateUpdateRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      name: %Schema{type: :string},
-      purpose: %Schema{type: :string, enum: Common.form_purposes()},
-      sections: %Schema{type: :array, items: Common.section_schema()},
-      status: %Schema{type: :string, enum: Common.template_statuses()}
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileFormTemplateUpdateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        name: %Schema{type: :string},
+        purpose: %Schema{type: :string, enum: Common.form_purposes()},
+        sections: %Schema{type: :array, items: Common.section_schema()},
+        status: %Schema{type: :string, enum: Common.template_statuses()}
+      },
+      example: %{
+        "name" => "Updated intake",
+        "status" => "archived"
+      }
     },
-    example: %{
-      "name" => "Updated intake",
-      "status" => "archived"
-    }
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate do
@@ -288,21 +300,24 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentAssignRequest do
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
-  OpenApiSpex.schema(%{
-    title: "ClientProfileFormAssignmentAssignRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      client_id: %Schema{type: :string, format: :uuid},
-      priority: %Schema{type: :string, enum: Common.priorities()},
-      due_date: %Schema{type: :string, format: :date, nullable: true}
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileFormAssignmentAssignRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        client_id: %Schema{type: :string, format: :uuid},
+        priority: %Schema{type: :string, enum: Common.priorities()},
+        due_date: %Schema{type: :string, format: :date, nullable: true}
+      },
+      required: [:client_id],
+      example: %{
+        "client_id" => "00000000-0000-0000-0000-000000000000",
+        "priority" => "high"
+      }
     },
-    required: [:client_id],
-    example: %{
-      "client_id" => "00000000-0000-0000-0000-000000000000",
-      "priority" => "high"
-    }
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentUpdateRequest do
@@ -311,20 +326,23 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentUpdateRequest do
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
 
-  OpenApiSpex.schema(%{
-    title: "ClientProfileFormAssignmentUpdateRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      priority: %Schema{type: :string, enum: Common.priorities()},
-      status: %Schema{type: :string, enum: Common.assignment_statuses()},
-      due_date: %Schema{type: :string, format: :date, nullable: true}
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileFormAssignmentUpdateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        priority: %Schema{type: :string, enum: Common.priorities()},
+        status: %Schema{type: :string, enum: Common.assignment_statuses()},
+        due_date: %Schema{type: :string, format: :date, nullable: true}
+      },
+      example: %{
+        "priority" => "normal",
+        "status" => "in_progress"
+      }
     },
-    example: %{
-      "priority" => "normal",
-      "status" => "in_progress"
-    }
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
@@ -391,18 +409,21 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionRequest do
 
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "ClientProfileFormSubmissionRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      answers: %Schema{type: :object, additionalProperties: true}
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileFormSubmissionRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        answers: %Schema{type: :object, additionalProperties: true}
+      },
+      required: [:answers],
+      example: %{
+        "answers" => %{"meal_prep_ability" => "high"}
+      }
     },
-    required: [:answers],
-    example: %{
-      "answers" => %{"meal_prep_ability" => "high"}
-    }
-  })
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do

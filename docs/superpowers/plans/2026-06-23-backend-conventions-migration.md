@@ -243,3 +243,49 @@ Order: Task 10 (schemas) first; then 11 (training_plans) before 13 (sessions); 1
 - [ ] Convert context + controllers (ctx, path ids, CastAndValidate, no dual-key) + tests; `grep -rn "list_my_sessions\|_my_session\|create_my_\|update_my_\|delete_my_\|state\"\] || attrs\[:state" lib/easy/sessions.ex` → empty; cross-client write safety preserved (set lookup scoped by client from ctx); `mix precommit` green; commit `refactor(training): three-case session naming + opts + path ids`.
 
 *Slice 3 gate: compile, full suite, `grep -rn "_my_\|with_status\|with_sets\|with_elements\|_for_user" lib/easy/training_plans.ex lib/easy/sessions.ex lib/easy/workouts.ex lib/easy/exercises.ex lib/easy/training` empty, no dual-key, no hand-rolled context preloads.*
+
+---
+
+## Slice 4 — clients + client_profiles + weight_entries (authored at slice boundary)
+
+These three contexts are still raw-`business_id`-first (full Ctx-first conversion) and include TWO actor-stamp SECURITY casts. Reference: `lib/easy/foods.ex` + the migrated nutrition/training contexts.
+
+Order: Task 14 (schemas, incl. security) first; then 15 (clients), 16 (client_profiles), 17 (weight_entries).
+
+### Task 14: clients/client_profiles/weight_entries schema layer (+ SECURITY)
+
+**Files:** `lib/easy/clients/client.ex`; `lib/easy/client_profiles/{client_profile,form_assignment,form_template,form_submission,profile_field_definition,profile_field_value}.ex`; `lib/easy/fitness/weight_entry.ex`; `lib/easy/orgs/coach.ex` (builder); builder/changeset CALL-SITES in the 3 contexts (NOT public-fn renames — Tasks 15-17). Tests + JSON.
+
+**Changes (audit):**
+- **SECURITY (cast→put_change, §A7):** `form_submission.insert_changeset` casts `:submitted_by_type`/`:submitted_by_id` → take as positional args + `put_change`; `profile_field_value` (insert/upsert) casts `:updated_by_type`/`:updated_by_id` → positional + `put_change`. Update callers to pass the actor explicitly (the actor identity comes from `ctx` in the context layer — but schema stays Ctx-ignorant; context passes `ctx.user_id`/role down).
+- **Ecto.Enum:** `form_assignment.{purpose,priority,status}`; `form_template.{purpose,status}`; `form_submission.submitted_by_type`; `profile_field_definition.{section,field_type}`; `profile_field_value.updated_by_type`. Drop redundant `validate_inclusion`; safe atoms for filters; JSON renders strings (verify).
+- **Changeset arg-order (§A7):** `weight_entry.insert_changeset(client_id, business_id, attrs)` → `(business_id, client_id, attrs)`. Update callers.
+- **Builders (§A6):** `client.with_status`→`for_status`, `client.with_preloads`→`include_preloads(business_id)`, `coach.with_preloads`→`include_preloads(business_id)`; `for_client`+`business_id` on `client_profile.for_client`, `profile_field_value.for_client`, `form_assignment.for_client`, `weight_entry.for_client`. Update call-sites; when callers use `for_client`, drop redundant `for_business`.
+
+- [ ] Steps: (1) SECURITY put_change + callers. (2) Ecto.Enum + safe filter atoms. (3) weight_entry arg-order + callers. (4) builder renames (`for_status`/`include_preloads`/`for_client+business_id`) + call-sites. (5) tests + JSON; verify `grep -rn "cast(.*:submitted_by\|cast(.*:updated_by" lib/easy/client_profiles` → empty; `grep -rn "with_status\|with_preloads" lib/easy/clients lib/easy/client_profiles lib/easy/orgs/coach.ex` → empty; `grep -rn "validate_inclusion" lib/easy/client_profiles` → empty (converted fields). `mix precommit` green. (6) commit `refactor(clients/profiles): schema Ecto.Enum, put_change actor ids (security), arg-order, for_/include_ builders`.
+
+### Task 15: clients context Ctx-first + three-case + controllers
+
+**Files:** `lib/easy/clients.ex`; controllers `coaches/client_controller.ex`, `clients/profile_controller.ex`, `coaches/profile_controller.ex`, `business_controller.ex` (if it calls Clients); tests.
+
+**Shape (§A2/§A3):** all 14 fns `%Ctx{}`-first; `get_client_for_user`→ collapse into Case-3 `get_client(ctx)` private resolver + public client-self reads (`get_client_profile(ctx)`/`update_client_profile(ctx, attrs)` — distinguish from the `ClientProfiles` context's profile, this is the user/account profile); coach fns `get_client(ctx, client_id)` (Case-2: explicit client_id from path), `list_clients(ctx, opts \\ [])` (opts: `:search`/`:status`/`:profile_filter`/`:offset`/`:limit`, clamp, `{:ok, %{count, clients}}`), `invite_client`→`invite_client(ctx, attrs)` / Case naming, `update_client(ctx, client_id, attrs)`, `revoke_invitation(ctx, client_id)`, `resend_invitation(ctx, client_id)`, `create_inquiry(ctx, attrs)`. `accept_invite`/`invitation_preview`/`resolve_invitation_token` are token-based (no tenant ctx) — leave as documented exceptions if they predate auth. Controllers: ctx, path ids, CastAndValidate on writes (add where missing — client_controller update/delete, profile update per web audit), no dual-key/Repo.
+
+- [ ] Convert + controllers + tests; `grep -rn "_for_user" lib/easy/clients.ex` → empty; `mix precommit` green; commit `refactor(clients): Ctx-first + three-case + path ids`.
+
+### Task 16: client_profiles context Ctx-first + three-case + controllers
+
+**Files:** `lib/easy/client_profiles.ex`; controllers `coaches/client_profile_controller.ex`, `clients/client_profile_controller.ex`, `coaches/form_template_controller.ex`, `coaches/form_assignment_controller.ex`, `clients/form_assignment_controller.ex`, `coaches/profile_field_controller.ex`; tests.
+
+**Shape:** all 18 fns `%Ctx{}`-first (ids from path). Naming: coach Case-1/2 (`get_or_create_profile(ctx, client_id)` Case-2, `list_profile_fields(ctx)`, `create_profile_field(ctx, attrs)`, `assign_form_template_to_client(ctx, client_id, template_id, attrs)`); client Case-3 (`get_client_form_assignment`→`get_client_form_assignment(ctx, assignment_id)` Case-3 resolving ctx.client_id, `submit_client_form_assignment(ctx, assignment_id, attrs)`, `list_client_form_assignments(ctx)`); fix `get_client_form_assignment` Case-mismatch (it had `client_id` arg + `get_client_` prefix → pick Case-2 `get_form_assignment_for_client(ctx, client_id, assignment_id)` for coach, Case-3 `get_client_form_assignment(ctx, assignment_id)` for client). Actor stamp (submitted_by/updated_by) passed from ctx (role + user_id) to the schema put_change. List fns → `{:ok, [items]}` (small per-client lists) or opts where paginated. Controllers: ctx, path ids, CastAndValidate on writes (form_template create/update/delete, form_assignment update, profile_field create/update, client_profile update — per web audit), no dual-key/Repo; drop the `with_business_template` retired-prefix private helper → `include_*` or inline-via-schema-builder.
+
+- [ ] Convert + controllers + tests; `grep -rn "_for_user\|with_business_template" lib/easy/client_profiles.ex` → empty; `mix precommit` green; commit `refactor(client_profiles): Ctx-first + three-case + path ids + actor put_change`.
+
+### Task 17: weight_entries context Ctx-first + three-case + controllers
+
+**Files:** `lib/easy/weight_entries.ex`; controllers `clients/weight_entry_controller.ex`, `coaches/client_weight_entry_controller.ex`; tests.
+
+**Shape:** all 7 fns `%Ctx{}`-first; drop `_for_user` → Case-3: `list_entries_for_user`→`list_client_weight_entries(ctx, opts)` (opts `:since`); `upsert_for_user`→`upsert_client_weight_entry(ctx, attrs)`; `delete_for_user`→`delete_client_weight_entry(ctx, entry_id)` (entry_id path). Coach Case-2: `list_entries_for_client(ctx, client_id, opts)`, `adherence(ctx, client_id, opts)` (window_days as opt). Fix `upsert(client_id, business_id, attrs)` reversed arg-order (now via the Ctx-first public fns + Task-14 corrected `insert_changeset(business_id, client_id, attrs)`). Remove dual-key probes in `normalize_attrs` (`Map.get(attrs,:value)||Map.get(attrs,"value")` etc.) → atom-only (body atom-keyed). Controllers: ctx, path ids, CastAndValidate on writes (weight_entry create/delete per web audit), no dual-key/Repo.
+
+- [ ] Convert + controllers + tests; `grep -rn "_for_user\|Map.get(.*) || Map.get" lib/easy/weight_entries.ex` → empty; `mix precommit` green; commit `refactor(fitness): Ctx-first weight_entries + three-case + path ids`.
+
+*Slice 4 gate: compile, full suite, `grep -rn "_for_user\|_for_coach_user" lib/easy/{clients,client_profiles,weight_entries}.ex` empty; no dual-key; no `cast(.*:submitted_by\|:updated_by\|:user_id\|:business_id)` in client_profiles/fitness schemas (SECURITY); builder grep clean.*

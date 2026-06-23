@@ -13,6 +13,8 @@ defmodule EasyWeb.Coaches.ClientController do
     ErrorResponse
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:invite, :update]
+
   tags ["coach clients"]
 
   operation :invite,
@@ -131,10 +133,10 @@ defmodule EasyWeb.Coaches.ClientController do
     ]
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def invite(conn, params) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
+  def invite(conn, _params) do
+    ctx = conn.assigns.ctx
 
-    with {:ok, client} <- Clients.invite_client(business_id, user_id, params) do
+    with {:ok, client} <- Clients.invite_client(ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, client: client)
@@ -142,53 +144,53 @@ defmodule EasyWeb.Coaches.ClientController do
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => client_id}) do
-    business_id = conn.assigns.claims.business_id
+  def show(conn, _params) do
+    client_id = conn.path_params["id"]
 
-    with {:ok, client} <- Clients.get_client_with_preloads(business_id, client_id) do
+    with {:ok, client} <- Clients.get_client_with_preloads(conn.assigns.ctx, client_id) do
       render(conn, :show, client: client)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => client_id}) do
-    business_id = conn.assigns.claims.business_id
+  def update(conn, _params) do
+    client_id = conn.path_params["id"]
 
-    with {:ok, updated_client} <- Clients.update_client(business_id, client_id, conn.body_params) do
+    with {:ok, updated_client} <- Clients.update_client(conn.assigns.ctx, client_id, conn.body_params) do
       render(conn, :show, client: updated_client)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => client_id}) do
-    business_id = conn.assigns.claims.business_id
+  def delete(conn, _params) do
+    client_id = conn.path_params["id"]
 
-    with {:ok, _deleted} <- Clients.revoke_invitation(business_id, client_id) do
+    with {:ok, _deleted} <- Clients.revoke_invitation(conn.assigns.ctx, client_id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec resend_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def resend_invite(conn, %{"id" => client_id}) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
+  def resend_invite(conn, _params) do
+    client_id = conn.path_params["id"]
 
-    with {:ok, updated_client} <- Clients.resend_invitation(business_id, user_id, client_id) do
+    with {:ok, updated_client} <- Clients.resend_invitation(conn.assigns.ctx, client_id) do
       render(conn, :show, client: updated_client)
     end
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    business_id = conn.assigns.claims.business_id
-
-    search_term = Map.get(params, "search", "")
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 10)
-    status = Map.get(params, "status")
-    profile_filter = Map.get(params, "profile_filter", %{})
+    opts = [
+      search: Map.get(params, "search", ""),
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 10),
+      status: Map.get(params, "status"),
+      profile_filter: Map.get(params, "profile_filter", %{})
+    ]
 
     with {:ok, %{clients: clients, count: count, summary: summary}} <-
-           Clients.list_clients(business_id, search_term, status, offset, limit, profile_filter) do
+           Clients.list_clients(conn.assigns.ctx, opts) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, clients: clients, summary: summary)

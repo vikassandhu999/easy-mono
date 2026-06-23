@@ -9,17 +9,17 @@ defmodule Easy.ClientProfiles.FormTemplate do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
-  @statuses ["active", "archived"]
+  @purposes [:intake, :weekly_check_in, :nutrition_update, :training_update, :custom]
+  @statuses [:active, :archived]
   @core_sections ["general", "nutrition", "training", "lifestyle"]
 
   @type t :: %__MODULE__{}
 
   schema "form_templates" do
     field :name, :string
-    field :purpose, :string
+    field :purpose, Ecto.Enum, values: @purposes
     field :sections, {:array, :map}, default: []
-    field :status, :string, default: "active"
+    field :status, Ecto.Enum, values: @statuses, default: :active
 
     belongs_to :business, Orgs.Business
     has_many :form_assignments, Easy.ClientProfiles.FormAssignment
@@ -33,8 +33,6 @@ defmodule Easy.ClientProfiles.FormTemplate do
     |> cast(attrs, [:name, :purpose, :sections, :status])
     |> put_change(:business_id, business_id)
     |> validate_required([:business_id, :name, :purpose, :sections, :status])
-    |> validate_inclusion(:purpose, @purposes)
-    |> validate_inclusion(:status, @statuses)
     |> validate_sections()
     |> check_constraint(:purpose, name: :form_templates_purpose_check)
     |> check_constraint(:status, name: :form_templates_status_check)
@@ -46,8 +44,6 @@ defmodule Easy.ClientProfiles.FormTemplate do
     template
     |> cast(attrs, [:name, :purpose, :sections, :status])
     |> validate_required([:name, :purpose, :sections, :status])
-    |> validate_inclusion(:purpose, @purposes)
-    |> validate_inclusion(:status, @statuses)
     |> validate_sections()
     |> check_constraint(:purpose, name: :form_templates_purpose_check)
     |> check_constraint(:status, name: :form_templates_status_check)

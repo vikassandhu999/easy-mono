@@ -12,6 +12,8 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
     ErrorResponse
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
+
   tags ["coach form assignments"]
 
   operation :index,
@@ -42,18 +44,19 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"client_id" => client_id}) do
-    business_id = conn.assigns.claims.business_id
+    ctx = conn.assigns.ctx
 
-    with {:ok, assignments} <- ClientProfiles.list_form_assignments_for_client(business_id, client_id) do
+    with {:ok, assignments} <- ClientProfiles.list_form_assignments_for_client(ctx, client_id) do
       render(conn, :index, assignments: assignments)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
-    business_id = conn.assigns.claims.business_id
+  def update(conn, _params) do
+    ctx = conn.assigns.ctx
+    id = conn.path_params["id"]
 
-    with {:ok, assignment} <- ClientProfiles.update_form_assignment(business_id, id, conn.body_params) do
+    with {:ok, assignment} <- ClientProfiles.update_form_assignment(ctx, id, conn.body_params) do
       render(conn, :show, assignment: assignment)
     end
   end

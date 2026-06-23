@@ -42,7 +42,7 @@ defmodule Easy.Threads do
   @spec list_threads_for_client(Ctx.t(), String.t()) ::
           {:ok, %{count: non_neg_integer(), threads: [Thread.t()]}} | {:error, :not_found}
   def list_threads_for_client(%Ctx{} = ctx, client_id) do
-    with {:ok, _client} <- get_client(ctx.business_id, client_id) do
+    with {:ok, _client} <- Clients.get_client(ctx, client_id) do
       list_threads(ctx, client_id: client_id)
     end
   end
@@ -50,7 +50,7 @@ defmodule Easy.Threads do
   @spec list_client_threads(Ctx.t()) ::
           {:ok, %{count: non_neg_integer(), threads: [Thread.t()]}} | {:error, :not_found}
   def list_client_threads(%Ctx{} = ctx) do
-    with {:ok, client} <- Clients.get_client_for_user(ctx.business_id, ctx.user_id) do
+    with {:ok, client} <- get_client_account(ctx) do
       list_threads(ctx, client_id: client.id)
     end
   end
@@ -66,7 +66,7 @@ defmodule Easy.Threads do
 
   @spec get_client_thread(Ctx.t(), String.t()) :: {:ok, Thread.t()} | {:error, :not_found}
   def get_client_thread(%Ctx{} = ctx, thread_id) do
-    with {:ok, client} <- Clients.get_client_for_user(ctx.business_id, ctx.user_id) do
+    with {:ok, client} <- get_client_account(ctx) do
       Thread
       |> Thread.for_client(ctx.business_id, client.id)
       |> Thread.include_messages()
@@ -79,7 +79,7 @@ defmodule Easy.Threads do
           {:ok, Thread.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_thread_for_client(%Ctx{} = ctx, client_id, attrs) do
     with {:ok, coach} <- get_coach(ctx.business_id, ctx.user_id),
-         {:ok, client} <- get_client(ctx.business_id, client_id) do
+         {:ok, client} <- Clients.get_client(ctx, client_id) do
       ctx.business_id
       |> Thread.insert_changeset(client.id, %{type: "coach", id: coach.id}, attrs)
       |> Repo.insert()
@@ -89,7 +89,7 @@ defmodule Easy.Threads do
   @spec create_client_thread(Ctx.t(), map()) ::
           {:ok, Thread.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_client_thread(%Ctx{} = ctx, attrs) do
-    with {:ok, client} <- Clients.get_client_for_user(ctx.business_id, ctx.user_id) do
+    with {:ok, client} <- get_client_account(ctx) do
       ctx.business_id
       |> Thread.insert_changeset(client.id, %{type: "client", id: client.id}, attrs)
       |> Repo.insert()
@@ -118,7 +118,7 @@ defmodule Easy.Threads do
   @spec add_client_message(Ctx.t(), String.t(), map()) ::
           {:ok, ThreadMessage.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def add_client_message(%Ctx{} = ctx, thread_id, attrs) do
-    with {:ok, client} <- Clients.get_client_for_user(ctx.business_id, ctx.user_id),
+    with {:ok, client} <- get_client_account(ctx),
          {:ok, thread} <- get_client_thread_bare(ctx.business_id, client.id, thread_id) do
       add_message_to_thread(thread, %{type: "client", id: client.id}, attrs)
     end
@@ -167,12 +167,11 @@ defmodule Easy.Threads do
     |> ok_or_not_found()
   end
 
-  defp get_client(_business_id, nil), do: {:error, :not_found}
-
-  defp get_client(business_id, client_id) do
+  defp get_client_account(%Ctx{} = ctx) do
     Client
-    |> Client.for_business(business_id)
-    |> Repo.get(client_id)
+    |> Client.for_business(ctx.business_id)
+    |> Client.for_user(ctx.user_id)
+    |> Repo.one()
     |> ok_or_not_found()
   end
 

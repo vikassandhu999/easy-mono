@@ -6,24 +6,25 @@ defmodule Easy.ClientProfiles do
   alias Easy.ClientProfiles.ProfileFieldDefinition
   alias Easy.ClientProfiles.ProfileFieldValue
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Repo
 
   import Ecto.Query
 
-  @spec get_or_create_profile(String.t(), String.t()) ::
+  @spec get_or_create_profile(Ctx.t(), String.t()) ::
           {:ok, ClientProfile.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def get_or_create_profile(business_id, client_id) do
-    with {:ok, client} <- get_client(business_id, client_id) do
-      case fetch_profile(business_id, client.id) do
+  def get_or_create_profile(%Ctx{} = ctx, client_id) do
+    with {:ok, client} <- fetch_client(ctx.business_id, client_id) do
+      case fetch_profile(ctx.business_id, client.id) do
         nil ->
-          case business_id |> ClientProfile.insert_changeset(client.id) |> Repo.insert() do
+          case ctx.business_id |> ClientProfile.insert_changeset(client.id) |> Repo.insert() do
             {:ok, profile} ->
               {:ok, profile}
 
             # ponytail: a concurrent first-touch won the unique-constraint race; the row
             # exists now, so honour the get-or-create contract by returning it.
             {:error, %Ecto.Changeset{}} ->
-              ok_or_not_found(fetch_profile(business_id, client.id))
+              ok_or_not_found(fetch_profile(ctx.business_id, client.id))
           end
 
         %ClientProfile{} = profile ->
@@ -34,40 +35,36 @@ defmodule Easy.ClientProfiles do
 
   defp fetch_profile(business_id, client_id) do
     ClientProfile
-    |> ClientProfile.for_business(business_id)
-    |> ClientProfile.for_client(client_id)
+    |> ClientProfile.for_client(business_id, client_id)
     |> Repo.one()
   end
 
-  @spec update_profile(String.t(), String.t(), map()) ::
+  @spec update_profile(Ctx.t(), String.t(), map()) ::
           {:ok, ClientProfile.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_profile(business_id, client_id, attrs) do
-    with {:ok, profile} <- get_or_create_profile(business_id, client_id) do
+  def update_profile(%Ctx{} = ctx, client_id, attrs) do
+    with {:ok, profile} <- get_or_create_profile(ctx, client_id) do
       profile
       |> ClientProfile.update_changeset(attrs)
       |> Repo.update()
     end
   end
 
-  @doc """
-  Self-service profile update for the client. Restricted to the structured sections so a
-  client cannot write coach-owned intake workflow fields (intake_status/intake_completed_at).
-  """
-  @spec update_profile_sections(String.t(), String.t(), map()) ::
+  @spec update_client_profile_sections(Ctx.t(), map()) ::
           {:ok, ClientProfile.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_profile_sections(business_id, client_id, attrs) do
-    with {:ok, profile} <- get_or_create_profile(business_id, client_id) do
+  def update_client_profile_sections(%Ctx{} = ctx, attrs) do
+    with {:ok, client} <- get_client(ctx),
+         {:ok, profile} <- get_or_create_profile(ctx, client.id) do
       profile
       |> ClientProfile.update_sections_changeset(attrs)
       |> Repo.update()
     end
   end
 
-  @spec list_profile_fields(String.t()) :: {:ok, [ProfileFieldDefinition.t()]}
-  def list_profile_fields(business_id) do
+  @spec list_profile_fields(Ctx.t()) :: {:ok, [ProfileFieldDefinition.t()]}
+  def list_profile_fields(%Ctx{} = ctx) do
     fields =
       ProfileFieldDefinition
-      |> ProfileFieldDefinition.for_business(business_id)
+      |> ProfileFieldDefinition.for_business(ctx.business_id)
       |> where([f], is_nil(f.archived_at))
       |> order_by([f], asc: f.section, asc: f.inserted_at)
       |> Repo.all()
@@ -75,59 +72,54 @@ defmodule Easy.ClientProfiles do
     {:ok, fields}
   end
 
-  @spec create_profile_field(String.t(), map()) ::
+  @spec create_profile_field(Ctx.t(), map()) ::
           {:ok, ProfileFieldDefinition.t()} | {:error, Ecto.Changeset.t()}
-  def create_profile_field(business_id, attrs) do
-    business_id
+  def create_profile_field(%Ctx{} = ctx, attrs) do
+    ctx.business_id
     |> ProfileFieldDefinition.insert_changeset(attrs)
     |> Repo.insert()
   end
 
-  @spec update_profile_field(String.t(), String.t(), map()) ::
+  @spec update_profile_field(Ctx.t(), String.t(), map()) ::
           {:ok, ProfileFieldDefinition.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_profile_field(business_id, field_id, attrs) do
-    with {:ok, field} <- get_profile_field(business_id, field_id) do
+  def update_profile_field(%Ctx{} = ctx, field_id, attrs) do
+    with {:ok, field} <- get_profile_field(ctx.business_id, field_id) do
       field
       |> ProfileFieldDefinition.update_changeset(attrs)
       |> Repo.update()
     end
   end
 
-  @spec archive_profile_field(String.t(), String.t()) ::
+  @spec archive_profile_field(Ctx.t(), String.t()) ::
           {:ok, ProfileFieldDefinition.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def archive_profile_field(business_id, field_id) do
-    with {:ok, field} <- get_profile_field(business_id, field_id) do
+  def archive_profile_field(%Ctx{} = ctx, field_id) do
+    with {:ok, field} <- get_profile_field(ctx.business_id, field_id) do
       field
       |> ProfileFieldDefinition.archive_changeset()
       |> Repo.update()
     end
   end
 
-  @spec upsert_profile_field_value(String.t(), String.t(), String.t(), any(), map()) ::
+  @spec upsert_profile_field_value(Ctx.t(), String.t(), String.t(), any(), map()) ::
           {:ok, ProfileFieldValue.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def upsert_profile_field_value(business_id, client_id, field_id, value, %{
+  def upsert_profile_field_value(%Ctx{} = ctx, client_id, field_id, value, %{
         type: actor_type,
         id: actor_id,
         submission_id: submission_id
       }) do
-    with {:ok, _client} <- get_client(business_id, client_id),
-         {:ok, field} <- get_profile_field(business_id, field_id) do
-      attrs = %{
-        "value" => %{"value" => value},
-        "updated_by_type" => actor_type,
-        "updated_by_id" => actor_id,
-        "updated_from_submission_id" => submission_id
-      }
-
+    with {:ok, _client} <- fetch_client(ctx.business_id, client_id),
+         {:ok, field} <- get_profile_field(ctx.business_id, field_id) do
+      attrs = %{"value" => %{"value" => value}, "updated_from_submission_id" => submission_id}
+      updated_by_type = safe_actor_atom(actor_type)
       updated_at = DateTime.utc_now(:second)
 
-      business_id
-      |> ProfileFieldValue.insert_changeset(client_id, field.id, attrs)
+      ctx.business_id
+      |> ProfileFieldValue.insert_changeset(client_id, field.id, updated_by_type, actor_id, attrs)
       |> Repo.insert(
         on_conflict: [
           set: [
-            value: attrs["value"],
-            updated_by_type: actor_type,
+            value: %{"value" => value},
+            updated_by_type: updated_by_type,
             updated_by_id: actor_id,
             updated_from_submission_id: submission_id,
             updated_at: updated_at
@@ -139,48 +131,48 @@ defmodule Easy.ClientProfiles do
     end
   end
 
-  @spec list_form_templates(String.t()) :: {:ok, [FormTemplate.t()]}
-  def list_form_templates(business_id) do
+  @spec list_form_templates(Ctx.t()) :: {:ok, [FormTemplate.t()]}
+  def list_form_templates(%Ctx{} = ctx) do
     templates =
       FormTemplate
-      |> FormTemplate.for_business(business_id)
+      |> FormTemplate.for_business(ctx.business_id)
       |> order_by([t], asc: t.inserted_at)
       |> Repo.all()
 
     {:ok, templates}
   end
 
-  @spec create_form_template(String.t(), map()) ::
+  @spec create_form_template(Ctx.t(), map()) ::
           {:ok, FormTemplate.t()} | {:error, Ecto.Changeset.t()}
-  def create_form_template(business_id, attrs) do
-    business_id
+  def create_form_template(%Ctx{} = ctx, attrs) do
+    ctx.business_id
     |> FormTemplate.insert_changeset(attrs)
     |> Repo.insert()
   end
 
-  @spec get_form_template(String.t(), String.t()) :: {:ok, FormTemplate.t()} | {:error, :not_found}
-  def get_form_template(business_id, template_id) do
+  @spec get_form_template(Ctx.t(), String.t()) :: {:ok, FormTemplate.t()} | {:error, :not_found}
+  def get_form_template(%Ctx{} = ctx, template_id) do
     FormTemplate
-    |> FormTemplate.for_business(business_id)
+    |> FormTemplate.for_business(ctx.business_id)
     |> Repo.get(template_id)
     |> ok_or_not_found()
   end
 
-  @spec update_form_template(String.t(), String.t(), map()) ::
+  @spec update_form_template(Ctx.t(), String.t(), map()) ::
           {:ok, FormTemplate.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_form_template(business_id, template_id, attrs) do
-    with {:ok, template} <- get_form_template(business_id, template_id) do
+  def update_form_template(%Ctx{} = ctx, template_id, attrs) do
+    with {:ok, template} <- get_form_template(ctx, template_id) do
       template
       |> FormTemplate.update_changeset(attrs)
       |> Repo.update()
     end
   end
 
-  @spec delete_form_template(String.t(), String.t()) ::
+  @spec delete_form_template(Ctx.t(), String.t()) ::
           {:ok, FormTemplate.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
-  def delete_form_template(business_id, template_id) do
-    with {:ok, template} <- get_form_template(business_id, template_id) do
-      if form_template_has_assignments?(business_id, template.id) do
+  def delete_form_template(%Ctx{} = ctx, template_id) do
+    with {:ok, template} <- get_form_template(ctx, template_id) do
+      if form_template_has_assignments?(ctx.business_id, template.id) do
         {:error, Easy.Error.unprocessable(%{fields: %{form_template_id: ["has assignments"]}})}
       else
         # no_assoc_constraint backstops the check above against a TOCTOU race: the FK is
@@ -197,36 +189,35 @@ defmodule Easy.ClientProfiles do
     end
   end
 
-  @spec assign_form_template(String.t(), String.t(), String.t(), map()) ::
+  @spec assign_form_template_to_client(Ctx.t(), String.t(), String.t(), map()) ::
           {:ok, FormAssignment.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def assign_form_template(business_id, template_id, client_id, attrs) do
-    with {:ok, template} <- get_form_template(business_id, template_id),
-         {:ok, client} <- get_client(business_id, client_id) do
-      attrs =
-        attrs
-        |> Map.take(["priority", "due_date"])
-        |> Map.put_new("priority", "normal")
-        |> Map.put("purpose", template.purpose)
-        |> Map.put("status", "assigned")
+  def assign_form_template_to_client(%Ctx{} = ctx, client_id, template_id, attrs) do
+    with {:ok, template} <- get_form_template(ctx, template_id),
+         {:ok, client} <- fetch_client(ctx.business_id, client_id) do
+      attrs = %{
+        "priority" => Map.get(attrs, :priority, "normal"),
+        "due_date" => Map.get(attrs, :due_date),
+        "purpose" => template.purpose,
+        "status" => "assigned"
+      }
 
       with {:ok, assignment} <-
-             business_id
+             ctx.business_id
              |> FormAssignment.insert_changeset(client.id, template.id, attrs)
              |> Repo.insert() do
-        get_form_assignment(business_id, assignment.id)
+        get_form_assignment(ctx.business_id, assignment.id)
       end
     end
   end
 
-  @spec list_form_assignments_for_client(String.t(), String.t()) ::
+  @spec list_form_assignments_for_client(Ctx.t(), String.t()) ::
           {:ok, [FormAssignment.t()]} | {:error, :not_found}
-  def list_form_assignments_for_client(business_id, client_id) do
-    with {:ok, _client} <- get_client(business_id, client_id) do
+  def list_form_assignments_for_client(%Ctx{} = ctx, client_id) do
+    with {:ok, _client} <- fetch_client(ctx.business_id, client_id) do
       assignments =
         FormAssignment
-        |> FormAssignment.for_business(business_id)
-        |> FormAssignment.for_client(client_id)
-        |> with_business_template(business_id)
+        |> FormAssignment.for_client(ctx.business_id, client_id)
+        |> include_form_template(ctx.business_id)
         |> order_by([a, _t], asc: a.inserted_at)
         |> Repo.all()
 
@@ -234,52 +225,78 @@ defmodule Easy.ClientProfiles do
     end
   end
 
-  @spec update_form_assignment(String.t(), String.t(), map()) ::
+  @spec list_client_form_assignments(Ctx.t()) ::
+          {:ok, [FormAssignment.t()]} | {:error, :not_found}
+  def list_client_form_assignments(%Ctx{} = ctx) do
+    with {:ok, client} <- get_client(ctx) do
+      assignments =
+        FormAssignment
+        |> FormAssignment.for_client(ctx.business_id, client.id)
+        |> include_form_template(ctx.business_id)
+        |> order_by([a, _t], asc: a.inserted_at)
+        |> Repo.all()
+
+      {:ok, assignments}
+    end
+  end
+
+  @spec update_form_assignment(Ctx.t(), String.t(), map()) ::
           {:ok, FormAssignment.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_form_assignment(business_id, assignment_id, attrs) do
-    with {:ok, assignment} <- get_form_assignment(business_id, assignment_id) do
+  def update_form_assignment(%Ctx{} = ctx, assignment_id, attrs) do
+    with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id) do
       assignment
       |> FormAssignment.update_changeset(attrs)
       |> Repo.update()
     end
   end
 
-  @spec get_client_form_assignment(String.t(), String.t(), String.t()) ::
+  @spec get_form_assignment_for_client(Ctx.t(), String.t(), String.t()) ::
           {:ok, FormAssignment.t()} | {:error, :not_found}
-  def get_client_form_assignment(business_id, client_id, assignment_id) do
+  def get_form_assignment_for_client(%Ctx{} = ctx, client_id, assignment_id) do
     FormAssignment
-    |> FormAssignment.for_business(business_id)
-    |> FormAssignment.for_client(client_id)
-    |> with_business_template(business_id)
+    |> FormAssignment.for_client(ctx.business_id, client_id)
+    |> include_form_template(ctx.business_id)
     |> Repo.get(assignment_id)
     |> ok_or_not_found()
   end
 
-  @spec submit_form_assignment(String.t(), String.t(), String.t(), map()) ::
+  @spec get_client_form_assignment(Ctx.t(), String.t()) ::
+          {:ok, FormAssignment.t()} | {:error, :not_found}
+  def get_client_form_assignment(%Ctx{} = ctx, assignment_id) do
+    with {:ok, client} <- get_client(ctx) do
+      FormAssignment
+      |> FormAssignment.for_client(ctx.business_id, client.id)
+      |> include_form_template(ctx.business_id)
+      |> Repo.get(assignment_id)
+      |> ok_or_not_found()
+    end
+  end
+
+  @spec submit_client_form_assignment(Ctx.t(), String.t(), map()) ::
           {:ok, FormSubmission.t()}
           | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
-  def submit_form_assignment(business_id, client_id, assignment_id, attrs) do
+  def submit_client_form_assignment(%Ctx{} = ctx, assignment_id, attrs) do
     with {:ok, answers} <- answers_from_attrs(attrs),
-         {:ok, assignment} <- get_client_form_assignment(business_id, client_id, assignment_id),
+         {:ok, client} <- get_client(ctx),
+         {:ok, assignment} <- get_client_form_assignment(ctx, assignment_id),
          :ok <- ensure_assignment_submittable(assignment) do
       Repo.transaction(fn ->
         template = assignment.form_template
-
         submitted_at = DateTime.utc_now(:second)
 
         submission_attrs = %{
           "question_snapshot" => template.sections,
           "answers" => answers,
-          "submitted_by_type" => "client",
-          "submitted_by_id" => client_id,
           "submitted_at" => submitted_at
         }
 
         submission =
           case FormSubmission.insert_changeset(
-                 business_id,
-                 client_id,
+                 ctx.business_id,
+                 client.id,
                  assignment.id,
+                 :client,
+                 client.id,
                  submission_attrs
                )
                |> Repo.insert() do
@@ -287,7 +304,7 @@ defmodule Easy.ClientProfiles do
             {:error, reason} -> Repo.rollback(reason)
           end
 
-        apply_profile_mappings!(business_id, client_id, template.sections, answers, submission)
+        apply_profile_mappings!(ctx, client.id, template.sections, answers, submission)
 
         case assignment
              |> FormAssignment.complete_changeset(submitted_at)
@@ -302,7 +319,7 @@ defmodule Easy.ClientProfiles do
   # Defensive against malformed stored templates: a non-list `questions` or a non-map question
   # is skipped rather than crashing the submission transaction (which would surface as a 500).
   # New templates can't reach here malformed — FormTemplate changesets validate structure.
-  defp apply_profile_mappings!(business_id, client_id, sections, answers, submission) do
+  defp apply_profile_mappings!(ctx, client_id, sections, answers, submission) do
     sections
     |> List.wrap()
     |> Enum.each(fn
@@ -317,7 +334,7 @@ defmodule Easy.ClientProfiles do
             answer = Map.get(answers, question_id)
 
             if mapping && not is_nil(answer) do
-              apply_profile_mapping!(business_id, client_id, mapping, answer, submission)
+              apply_profile_mapping!(ctx, client_id, mapping, answer, submission)
             end
 
           _other ->
@@ -330,7 +347,7 @@ defmodule Easy.ClientProfiles do
   end
 
   defp apply_profile_mapping!(
-         business_id,
+         ctx,
          client_id,
          %{"kind" => "core", "section" => section, "field" => field},
          answer,
@@ -338,11 +355,11 @@ defmodule Easy.ClientProfiles do
        )
        when is_binary(field) and field != "" do
     with {:ok, section_key} <- core_profile_section(section),
-         {:ok, profile} <- get_or_create_profile(business_id, client_id) do
+         {:ok, profile} <- get_or_create_profile(ctx, client_id) do
       current = Map.get(profile, section_key) || %{}
       attrs = %{Atom.to_string(section_key) => Map.put(current, field, answer)}
 
-      case update_profile(business_id, client_id, attrs) do
+      case update_profile(ctx, client_id, attrs) do
         {:ok, _profile} -> :ok
         {:error, reason} -> Repo.rollback(reason)
       end
@@ -352,18 +369,18 @@ defmodule Easy.ClientProfiles do
   end
 
   defp apply_profile_mapping!(
-         business_id,
+         ctx,
          client_id,
          %{"kind" => "custom_field", "field_key" => field_key},
          answer,
          submission
        )
        when is_binary(field_key) and field_key != "" do
-    case get_profile_field_by_key(business_id, field_key) do
+    case get_profile_field_by_key(ctx.business_id, field_key) do
       {:ok, field} ->
         actor = %{type: "client", id: client_id, submission_id: submission.id}
 
-        case upsert_profile_field_value(business_id, client_id, field.id, answer, actor) do
+        case upsert_profile_field_value(ctx, client_id, field.id, answer, actor) do
           {:ok, _value} -> :ok
           {:error, reason} -> Repo.rollback(reason)
         end
@@ -373,7 +390,7 @@ defmodule Easy.ClientProfiles do
     end
   end
 
-  defp apply_profile_mapping!(_business_id, _client_id, _mapping, _answer, _submission) do
+  defp apply_profile_mapping!(_ctx, _client_id, _mapping, _answer, _submission) do
     Repo.rollback(invalid_profile_mapping_error())
   end
 
@@ -383,9 +400,9 @@ defmodule Easy.ClientProfiles do
   defp core_profile_section("lifestyle"), do: {:ok, :lifestyle}
   defp core_profile_section(_), do: {:error, invalid_profile_mapping_error()}
 
-  defp answers_from_attrs(%{"answers" => answers}) when is_map(answers), do: {:ok, answers}
+  defp answers_from_attrs(%{answers: answers}) when is_map(answers), do: {:ok, answers}
 
-  defp answers_from_attrs(%{"answers" => _answers}) do
+  defp answers_from_attrs(%{answers: _answers}) do
     {:error, Easy.Error.unprocessable(%{fields: %{answers: ["is invalid"]}})}
   end
 
@@ -393,7 +410,7 @@ defmodule Easy.ClientProfiles do
     {:error, Easy.Error.unprocessable(%{fields: %{answers: ["can't be blank"]}})}
   end
 
-  defp ensure_assignment_submittable(%FormAssignment{status: status}) when status in ["assigned", "in_progress"] do
+  defp ensure_assignment_submittable(%FormAssignment{status: status}) when status in [:assigned, :in_progress] do
     :ok
   end
 
@@ -405,7 +422,15 @@ defmodule Easy.ClientProfiles do
     Easy.Error.unprocessable(%{fields: %{profile_mapping: ["is invalid"]}})
   end
 
-  defp get_client(business_id, client_id) do
+  defp get_client(%Ctx{} = ctx) do
+    Client
+    |> Client.for_business(ctx.business_id)
+    |> Client.for_user(ctx.user_id)
+    |> Repo.one()
+    |> ok_or_not_found()
+  end
+
+  defp fetch_client(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
@@ -430,7 +455,7 @@ defmodule Easy.ClientProfiles do
   defp get_form_assignment(business_id, assignment_id) do
     FormAssignment
     |> FormAssignment.for_business(business_id)
-    |> with_business_template(business_id)
+    |> include_form_template(business_id)
     |> Repo.get(assignment_id)
     |> ok_or_not_found()
   end
@@ -442,11 +467,17 @@ defmodule Easy.ClientProfiles do
     |> Repo.exists?()
   end
 
-  defp with_business_template(query, business_id) do
+  defp include_form_template(query, business_id) do
     query
     |> join(:inner, [a], t in FormTemplate, on: t.id == a.form_template_id and t.business_id == ^business_id)
     |> preload([_a, t], form_template: t)
   end
+
+  defp safe_actor_atom(type) when is_atom(type), do: type
+  defp safe_actor_atom("coach"), do: :coach
+  defp safe_actor_atom("client"), do: :client
+  defp safe_actor_atom("system"), do: :system
+  defp safe_actor_atom(_), do: :system
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

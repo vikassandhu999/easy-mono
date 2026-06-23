@@ -15,6 +15,8 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ErrorResponse
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update, :assign]
+
   tags ["coach form templates"]
 
   operation :index,
@@ -94,18 +96,18 @@ defmodule EasyWeb.Coaches.FormTemplateController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    business_id = conn.assigns.claims.business_id
+    ctx = conn.assigns.ctx
 
-    with {:ok, templates} <- ClientProfiles.list_form_templates(business_id) do
+    with {:ok, templates} <- ClientProfiles.list_form_templates(ctx) do
       render(conn, :index, templates: templates)
     end
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    business_id = conn.assigns.claims.business_id
+    ctx = conn.assigns.ctx
 
-    with {:ok, template} <- ClientProfiles.create_form_template(business_id, conn.body_params) do
+    with {:ok, template} <- ClientProfiles.create_form_template(ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, template: template)
@@ -114,37 +116,40 @@ defmodule EasyWeb.Coaches.FormTemplateController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    business_id = conn.assigns.claims.business_id
+    ctx = conn.assigns.ctx
 
-    with {:ok, template} <- ClientProfiles.get_form_template(business_id, id) do
+    with {:ok, template} <- ClientProfiles.get_form_template(ctx, id) do
       render(conn, :show, template: template)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
-    business_id = conn.assigns.claims.business_id
+  def update(conn, _params) do
+    ctx = conn.assigns.ctx
+    id = conn.path_params["id"]
 
-    with {:ok, template} <- ClientProfiles.update_form_template(business_id, id, conn.body_params) do
+    with {:ok, template} <- ClientProfiles.update_form_template(ctx, id, conn.body_params) do
       render(conn, :show, template: template)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
-    business_id = conn.assigns.claims.business_id
+    ctx = conn.assigns.ctx
 
-    with {:ok, _template} <- ClientProfiles.delete_form_template(business_id, id) do
+    with {:ok, _template} <- ClientProfiles.delete_form_template(ctx, id) do
       send_resp(conn, :no_content, "")
     end
   end
 
   @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def assign(conn, %{"id" => id, "client_id" => client_id}) do
-    business_id = conn.assigns.claims.business_id
+  def assign(conn, _params) do
+    ctx = conn.assigns.ctx
+    id = conn.path_params["id"]
+    client_id = conn.body_params[:client_id]
 
     with {:ok, assignment} <-
-           ClientProfiles.assign_form_template(business_id, id, client_id, conn.body_params) do
+           ClientProfiles.assign_form_template_to_client(ctx, client_id, id, conn.body_params) do
       conn
       |> put_status(:created)
       |> put_view(json: EasyWeb.Coaches.FormAssignmentJSON)

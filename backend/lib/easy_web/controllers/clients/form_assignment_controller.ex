@@ -3,7 +3,6 @@ defmodule EasyWeb.Clients.FormAssignmentController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.ClientProfiles
-  alias Easy.Clients
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -13,6 +12,8 @@ defmodule EasyWeb.Clients.FormAssignmentController do
     ClientProfileFormSubmissionResponse,
     ErrorResponse
   }
+
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:submit]
 
   tags ["client form assignments"]
 
@@ -55,30 +56,28 @@ defmodule EasyWeb.Clients.FormAssignmentController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
+    ctx = conn.assigns.ctx
 
-    with {:ok, client} <- Clients.get_client_for_user(business_id, user_id),
-         {:ok, assignments} <- ClientProfiles.list_form_assignments_for_client(business_id, client.id) do
+    with {:ok, assignments} <- ClientProfiles.list_client_form_assignments(ctx) do
       render(conn, :index, assignments: assignments)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
+    ctx = conn.assigns.ctx
 
-    with {:ok, client} <- Clients.get_client_for_user(business_id, user_id),
-         {:ok, assignment} <- ClientProfiles.get_client_form_assignment(business_id, client.id, id) do
+    with {:ok, assignment} <- ClientProfiles.get_client_form_assignment(ctx, id) do
       render(conn, :show, assignment: assignment)
     end
   end
 
   @spec submit(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def submit(conn, %{"id" => id}) do
-    %{business_id: business_id, user_id: user_id} = conn.assigns.claims
+  def submit(conn, _params) do
+    ctx = conn.assigns.ctx
+    id = conn.path_params["id"]
 
-    with {:ok, client} <- Clients.get_client_for_user(business_id, user_id),
-         {:ok, submission} <- ClientProfiles.submit_form_assignment(business_id, client.id, id, conn.body_params) do
+    with {:ok, submission} <- ClientProfiles.submit_client_form_assignment(ctx, id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:submission, submission: submission)

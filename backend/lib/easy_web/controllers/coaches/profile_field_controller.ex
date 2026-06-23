@@ -13,6 +13,8 @@ defmodule EasyWeb.Coaches.ProfileFieldController do
     ErrorResponse
   }
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+
   tags ["coach profile fields"]
 
   operation :index,
@@ -69,18 +71,18 @@ defmodule EasyWeb.Coaches.ProfileFieldController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    business_id = conn.assigns.claims.business_id
+    ctx = conn.assigns.ctx
 
-    with {:ok, fields} <- ClientProfiles.list_profile_fields(business_id) do
+    with {:ok, fields} <- ClientProfiles.list_profile_fields(ctx) do
       render(conn, :index, fields: fields)
     end
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    business_id = conn.assigns.claims.business_id
+    ctx = conn.assigns.ctx
 
-    with {:ok, field} <- ClientProfiles.create_profile_field(business_id, conn.body_params) do
+    with {:ok, field} <- ClientProfiles.create_profile_field(ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, field: field)
@@ -88,19 +90,20 @@ defmodule EasyWeb.Coaches.ProfileFieldController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"id" => id}) do
-    business_id = conn.assigns.claims.business_id
+  def update(conn, _params) do
+    ctx = conn.assigns.ctx
+    id = conn.path_params["id"]
 
-    with {:ok, field} <- ClientProfiles.update_profile_field(business_id, id, conn.body_params) do
+    with {:ok, field} <- ClientProfiles.update_profile_field(ctx, id, conn.body_params) do
       render(conn, :show, field: field)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
-    business_id = conn.assigns.claims.business_id
+    ctx = conn.assigns.ctx
 
-    with {:ok, _field} <- ClientProfiles.archive_profile_field(business_id, id) do
+    with {:ok, _field} <- ClientProfiles.archive_profile_field(ctx, id) do
       send_resp(conn, :no_content, "")
     end
   end

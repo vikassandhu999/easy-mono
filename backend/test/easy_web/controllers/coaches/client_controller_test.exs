@@ -3,7 +3,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
   setup do
     coach = insert(:coach)
-    conn = build_conn() |> authenticate_coach(coach)
+    conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
 
     %{conn: conn, coach: coach, business: coach.business}
   end
@@ -142,7 +142,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
     test "rejects coach inviting their own email" do
       user = insert(:user, email: "rajat@coach.com")
       coach = insert(:coach, user: user)
-      conn = build_conn() |> authenticate_coach(coach)
+      conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
 
       attrs = %{"email" => "rajat@coach.com", "first_name" => "Rajat"}
       conn = post(conn, "/v1/coach/clients/invite", attrs)
@@ -457,8 +457,8 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
         })
 
       assert %{"data" => data} = json_response(conn, 200)
-      assert data["goal_weight_value"] == "88"
       assert data["goal_weight_unit"] == "kg"
+      assert data["goal_weight_value"] == "88.0"
 
       reloaded = Easy.Repo.get!(Easy.Clients.Client, client.id)
       assert Decimal.eq?(reloaded.goal_weight_value, Decimal.new("88"))

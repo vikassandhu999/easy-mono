@@ -251,12 +251,16 @@ defmodule Easy.Clients.Client do
     )
   end
 
-  @spec with_status(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
-  def with_status(query \\ __MODULE__, status)
-  def with_status(query, nil), do: query
-  def with_status(query, ""), do: query
+  @spec for_status(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
+  def for_status(query \\ __MODULE__, status)
+  def for_status(query, nil), do: query
+  def for_status(query, ""), do: query
 
-  def with_status(query, status) when is_binary(status) do
+  def for_status(query, status) when is_binary(status) do
+    from(c in query, where: c.status == ^status)
+  end
+
+  def for_status(query, status) when is_atom(status) do
     from(c in query, where: c.status == ^status)
   end
 
@@ -265,8 +269,8 @@ defmodule Easy.Clients.Client do
     from(c in query, order_by: [desc: c.inserted_at, desc: c.id])
   end
 
-  @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_preloads(query \\ __MODULE__) do
+  @spec include_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_preloads(query \\ __MODULE__, _business_id) do
     from(c in query, preload: [:user, :business, :creator])
   end
 

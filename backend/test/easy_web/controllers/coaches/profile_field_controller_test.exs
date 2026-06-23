@@ -6,7 +6,11 @@ defmodule EasyWeb.Coaches.ProfileFieldControllerTest do
 
   setup do
     coach = insert(:coach)
-    conn = build_conn() |> authenticate_coach(coach)
+
+    conn =
+      build_conn()
+      |> put_req_header("content-type", "application/json")
+      |> authenticate_coach(coach)
 
     %{conn: conn, coach: coach, business: coach.business}
   end
@@ -53,7 +57,7 @@ defmodule EasyWeb.Coaches.ProfileFieldControllerTest do
       assert data["options"] == ["low", "medium", "high"]
     end
 
-    test "ignores archived_at on create", %{conn: conn} do
+    test "rejects archived_at on create", %{conn: conn} do
       conn =
         post(conn, "/v1/coach/profile-fields", %{
           "section" => "nutrition",
@@ -64,8 +68,7 @@ defmodule EasyWeb.Coaches.ProfileFieldControllerTest do
           "archived_at" => DateTime.utc_now(:second)
         })
 
-      assert %{"data" => data} = json_response(conn, 201)
-      assert data["archived_at"] == nil
+      assert json_response(conn, 422)
     end
 
     test "rejects filterable text fields with 422", %{conn: conn} do
@@ -98,7 +101,7 @@ defmodule EasyWeb.Coaches.ProfileFieldControllerTest do
       assert data["options"] == ["low", "medium", "high", "expert"]
     end
 
-    test "ignores archived_at on update", %{conn: conn, business: business} do
+    test "rejects archived_at on update", %{conn: conn, business: business} do
       field = insert(:profile_field_definition, business: business)
 
       conn =
@@ -106,8 +109,7 @@ defmodule EasyWeb.Coaches.ProfileFieldControllerTest do
           "archived_at" => DateTime.utc_now(:second)
         })
 
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["archived_at"] == nil
+      assert json_response(conn, 422)
       assert Repo.get!(ProfileFieldDefinition, field.id).archived_at == nil
     end
 

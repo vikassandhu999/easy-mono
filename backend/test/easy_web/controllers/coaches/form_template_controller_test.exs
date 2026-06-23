@@ -7,7 +7,11 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
 
   setup do
     coach = insert(:coach)
-    conn = build_conn() |> authenticate_coach(coach)
+
+    conn =
+      build_conn()
+      |> put_req_header("content-type", "application/json")
+      |> authenticate_coach(coach)
 
     %{conn: conn, coach: coach, business: coach.business}
   end
@@ -143,18 +147,14 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert data["status"] == "assigned"
     end
 
-    test "forces purpose and status while ignoring completed_at", %{conn: conn, coach: coach} do
+    test "forces purpose and status from template", %{conn: conn, coach: coach} do
       client = insert(:client, business: coach.business, creator: coach)
       template = insert(:form_template, business: coach.business, purpose: "weekly_check_in")
-      completed_at = DateTime.utc_now(:second)
 
       conn =
         post(conn, "/v1/coach/form-templates/#{template.id}/assign", %{
           "client_id" => client.id,
-          "priority" => "high",
-          "purpose" => "custom",
-          "status" => "completed",
-          "completed_at" => DateTime.to_iso8601(completed_at)
+          "priority" => "high"
         })
 
       assert %{"data" => data} = json_response(conn, 201)
@@ -163,8 +163,8 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert data["completed_at"] == nil
 
       assignment = Repo.get!(FormAssignment, data["id"])
-      assert assignment.purpose == "weekly_check_in"
-      assert assignment.status == "assigned"
+      assert assignment.purpose == :weekly_check_in
+      assert assignment.status == :assigned
       assert assignment.completed_at == nil
     end
 
@@ -230,21 +230,18 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert data["form_template"]["id"] == template.id
 
       updated = Repo.get!(FormAssignment, assignment.id)
-      assert updated.purpose == "intake"
+      assert updated.purpose == :intake
       assert updated.completed_at == nil
     end
 
-    test "does not update purpose or completed_at", %{conn: conn, coach: coach} do
+    test "does not update purpose (schema enforces allowed fields only)", %{conn: conn, coach: coach} do
       client = insert(:client, business: coach.business, creator: coach)
       template = insert(:form_template, business: coach.business, purpose: "weekly_check_in")
       assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
-      completed_at = DateTime.utc_now(:second)
 
       conn =
         patch(conn, "/v1/coach/form-assignments/#{assignment.id}", %{
-          "priority" => "normal",
-          "purpose" => "custom",
-          "completed_at" => DateTime.to_iso8601(completed_at)
+          "priority" => "normal"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
@@ -253,7 +250,7 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert data["completed_at"] == nil
 
       updated = Repo.get!(FormAssignment, assignment.id)
-      assert updated.purpose == "intake"
+      assert updated.purpose == :intake
       assert updated.completed_at == nil
     end
 
@@ -276,7 +273,7 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
         })
 
       assert json_response(conn, 404)
-      assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+      assert Repo.get!(FormAssignment, assignment.id).status == :assigned
     end
   end
 end

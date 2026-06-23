@@ -38,8 +38,8 @@ defmodule Easy.Clients.ReadBoundaryTest do
     other_client =
       insert(:client, business: other_business, creator: other_coach, user: insert(:user))
 
-    assert {:ok, %{id: client_id}} = Clients.get_client(business.id, client.id)
+    assert {:ok, %{id: client_id}} = Clients.get_client(%Easy.Ctx{business_id: business.id, user_id: nil}, client.id)
     assert client_id == client.id
-    assert {:error, :not_found} = Clients.get_client(business.id, other_client.id)
+    assert {:error, :not_found} = Clients.get_client(%Easy.Ctx{business_id: business.id, user_id: nil}, other_client.id)
   end
 end

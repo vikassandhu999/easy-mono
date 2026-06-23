@@ -3,77 +3,75 @@ defmodule Easy.Clients do
   import Ecto.Query
 
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Identity.User
   alias Easy.Orgs
-  alias Easy.Coaches
   alias Easy.Repo
 
   @profile_filter_sections ["general", "nutrition", "training", "lifestyle"]
 
-  @spec get_client(String.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
-  def get_client(business_id, client_id) do
+  @spec get_client(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
+  def get_client(%Ctx{} = ctx, client_id) do
     Client
-    |> Client.for_business(business_id)
+    |> Client.for_business(ctx.business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  @spec get_client_with_preloads(String.t(), String.t()) ::
+  @spec get_client_with_preloads(Ctx.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found}
-  def get_client_with_preloads(business_id, client_id) do
+  def get_client_with_preloads(%Ctx{} = ctx, client_id) do
     Client
-    |> Client.for_business(business_id)
-    |> Client.with_preloads()
+    |> Client.for_business(ctx.business_id)
+    |> Client.include_preloads(ctx.business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  @spec get_client_for_user(String.t(), String.t()) ::
-          {:ok, Client.t()} | {:error, :not_found}
-  def get_client_for_user(business_id, user_id) do
+  @spec get_client_account(Ctx.t()) :: {:ok, Client.t()} | {:error, :not_found}
+  def get_client_account(%Ctx{} = ctx) do
     Client
-    |> Client.for_business(business_id)
-    |> Client.for_user(user_id)
+    |> Client.for_business(ctx.business_id)
+    |> Client.for_user(ctx.user_id)
     |> Repo.one()
     |> ok_or_not_found()
   end
 
-  @spec list_clients(
-          String.t(),
-          String.t(),
-          String.t() | nil,
-          non_neg_integer(),
-          pos_integer(),
-          map()
-        ) ::
+  @spec list_clients(Ctx.t(), keyword()) ::
           {:ok, %{clients: [Client.t()], count: non_neg_integer(), summary: map()}}
           | {:error, Easy.Error.t()}
-  def list_clients(business_id, search, status, offset, limit, profile_filter \\ %{}) do
+  def list_clients(%Ctx{} = ctx, opts \\ []) do
+    search = Keyword.get(opts, :search, "")
+    status = Keyword.get(opts, :status)
+    profile_filter = Keyword.get(opts, :profile_filter, %{})
+    offset = max(Keyword.get(opts, :offset, 0), 0)
+    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
+
     with {:ok, filters} <- normalize_profile_filter(profile_filter) do
       base =
         Client
-        |> Client.for_business(business_id)
+        |> Client.for_business(ctx.business_id)
         |> Client.search(search)
-        |> Client.with_status(status)
-        |> apply_profile_filters(business_id, filters)
+        |> Client.for_status(status)
+        |> apply_profile_filters(ctx.business_id, filters)
 
       {:ok,
        %{
          count: Repo.aggregate(base, :count, :id),
-         summary: summary(Client |> Client.for_business(business_id)),
+         summary: summary(Client |> Client.for_business(ctx.business_id)),
          clients:
            base
            |> Client.newest()
            |> Easy.Utils.paginate(offset, limit)
-           |> Client.with_preloads()
+           |> Client.include_preloads(ctx.business_id)
            |> Repo.all()
        }}
     end
   end
 
-  @spec invite_client(String.t(), String.t(), map()) :: {:ok, Client.t()} | {:error, any()}
-  def invite_client(business_id, user_id, invite_attrs) do
-    with {:ok, coach} <- Coaches.get_by_user_id(user_id, business_id),
+  @spec invite_client(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, any()}
+  def invite_client(%Ctx{} = ctx, invite_attrs) do
+    with {:ok, coach} <- get_coach(ctx),
          :ok <- validate_not_self_invite(coach, invite_attrs),
          :ok <- validate_email_has_no_active_client(invite_attrs),
          {:ok, client} <- create_invitation(coach, invite_attrs),
@@ -82,63 +80,65 @@ defmodule Easy.Clients do
     end
   end
 
-  @spec update_client(String.t(), String.t(), map()) ::
+  @spec update_client(Ctx.t(), String.t(), map()) ::
           {:ok, Client.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_client(business_id, client_id, attrs) do
-    with {:ok, client} <- get_client_with_preloads(business_id, client_id),
+  def update_client(%Ctx{} = ctx, client_id, attrs) do
+    with {:ok, client} <- get_client_with_preloads(ctx, client_id),
          {:ok, updated_client} <- client |> Client.update_changeset(attrs) |> Repo.update() do
       preload_client(updated_client)
     end
   end
 
-  @spec revoke_invitation(String.t(), String.t()) ::
+  @spec revoke_invitation(Ctx.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
-  def revoke_invitation(business_id, client_id) do
-    with {:ok, client} <- get_client(business_id, client_id) do
+  def revoke_invitation(%Ctx{} = ctx, client_id) do
+    with {:ok, client} <- get_client(ctx, client_id) do
       delete_pending_invitation(client)
     end
   end
 
-  @spec resend_invitation(String.t(), String.t(), String.t()) ::
+  @spec resend_invitation(Ctx.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
-  def resend_invitation(business_id, user_id, client_id) do
-    with {:ok, client} <- get_client(business_id, client_id),
-         {:ok, coach} <- Coaches.get_by_user_id(user_id, business_id),
+  def resend_invitation(%Ctx{} = ctx, client_id) do
+    with {:ok, client} <- get_client(ctx, client_id),
+         {:ok, coach} <- get_coach(ctx),
          {:ok, updated_client} <- resend_client_invitation(client, coach) do
       preload_client(updated_client)
     end
   end
 
-  @spec get_profile(String.t(), String.t()) ::
+  @spec get_client_account_profile(Ctx.t()) ::
           {:ok, %{client: Client.t(), coach: Orgs.Coach.t() | nil}} | {:error, :not_found}
-  def get_profile(business_id, user_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
+  def get_client_account_profile(%Ctx{} = ctx) do
+    with {:ok, client} <- get_client_account(ctx) do
       coach =
         Orgs.Coach
-        |> Orgs.Coach.for_business(business_id)
-        |> Orgs.Coach.with_preloads()
+        |> Orgs.Coach.for_business(ctx.business_id)
+        |> Orgs.Coach.include_preloads(ctx.business_id)
         |> Repo.one()
 
       {:ok, %{client: client, coach: coach}}
     end
   end
 
-  @spec update_profile(String.t(), String.t(), map()) ::
+  @spec update_client_account_profile(Ctx.t(), map()) ::
           {:ok, %{client: Client.t(), coach: Orgs.Coach.t() | nil}}
           | {:error, :not_found | Ecto.Changeset.t()}
-  def update_profile(business_id, user_id, attrs) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
+  def update_client_account_profile(%Ctx{} = ctx, attrs) do
+    with {:ok, client} <- get_client_account(ctx),
          {:ok, _updated} <- client |> Client.self_update_changeset(attrs) |> Repo.update() do
-      get_profile(business_id, user_id)
+      get_client_account_profile(ctx)
     end
   end
 
-  @spec create_inquiry(String.t(), map()) :: {:ok, Client.t()} | {:error, Ecto.Changeset.t()}
-  def create_inquiry(business_id, attrs) do
-    business_id
+  @spec create_inquiry(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, Ecto.Changeset.t()}
+  def create_inquiry(%Ctx{} = ctx, attrs) do
+    ctx.business_id
     |> Client.inquiry_changeset(attrs)
     |> Repo.insert()
   end
+
+  # Token-based exceptions — no authenticated tenant ctx; documented pre-auth path.
 
   @spec invitation_preview(String.t()) :: {:ok, map()}
   def invitation_preview(token) do
@@ -189,6 +189,15 @@ defmodule Easy.Clients do
 
   defp preload_client(%Client{} = client) do
     {:ok, Repo.preload(client, [:user, :business, :creator], force: true)}
+  end
+
+  defp get_coach(%Ctx{} = ctx) do
+    Orgs.Coach
+    |> Orgs.Coach.for_business(ctx.business_id)
+    |> Orgs.Coach.for_user(ctx.user_id)
+    |> Orgs.Coach.include_preloads(ctx.business_id)
+    |> Repo.one()
+    |> ok_or_not_found()
   end
 
   defp summary(query) do
@@ -310,14 +319,14 @@ defmodule Easy.Clients do
     {:error, Easy.Error.unprocessable(%{fields: %{profile_filter: ["is invalid"]}})}
   end
 
-  defp validate_not_self_invite(%Orgs.Coach{user: %User{email: coach_email}}, %{"email" => email})
+  defp validate_not_self_invite(%Orgs.Coach{user: %User{email: coach_email}}, %{email: email})
        when is_binary(coach_email) and is_binary(email) and email != "" and coach_email == email do
     {:error, Easy.Error.unprocessable(%{email: ["you can't invite yourself as a client"]})}
   end
 
   defp validate_not_self_invite(_coach, _attrs), do: :ok
 
-  defp validate_email_has_no_active_client(%{"email" => email})
+  defp validate_email_has_no_active_client(%{email: email})
        when is_binary(email) and email != "" do
     if Repo.exists?(Client.active_for_email(email)) do
       {:error,

@@ -69,8 +69,8 @@ defmodule Easy.ClientProfiles.ClientProfile do
     from(p in query, where: p.business_id == ^business_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(p in query, where: p.client_id == ^client_id)
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(p in query, where: p.business_id == ^business_id and p.client_id == ^client_id)
   end
 end

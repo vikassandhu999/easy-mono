@@ -1,6 +1,7 @@
 defmodule Easy.Storefront do
   alias Easy.Clients
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Repo
   alias Easy.Storefront.{Offer, StoreProfile, Testimonial}
 
@@ -22,7 +23,7 @@ defmodule Easy.Storefront do
           {:ok, Client.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_inquiry(slug, params) do
     with {:ok, profile} <- get_published_profile(slug) do
-      Clients.create_inquiry(profile.business_id, inquiry_params(params))
+      Clients.create_inquiry(%Ctx{business_id: profile.business_id, user_id: nil}, inquiry_params(params))
     end
   end
 

@@ -9,17 +9,17 @@ defmodule Easy.ClientProfiles.ProfileFieldDefinition do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @sections ["general", "nutrition", "training", "lifestyle"]
-  @field_types ["text", "number", "boolean", "date", "select", "multi_select"]
-  @filterable_types ["number", "boolean", "date", "select", "multi_select"]
+  @sections [:general, :nutrition, :training, :lifestyle]
+  @field_types [:text, :number, :boolean, :date, :select, :multi_select]
+  @filterable_types [:number, :boolean, :date, :select, :multi_select]
 
   @type t :: %__MODULE__{}
 
   schema "profile_field_definitions" do
-    field :section, :string
+    field :section, Ecto.Enum, values: @sections
     field :label, :string
     field :key, :string
-    field :field_type, :string
+    field :field_type, Ecto.Enum, values: @field_types
     field :options, {:array, :string}, default: []
     field :filterable, :boolean, default: false
     field :archived_at, :utc_datetime
@@ -36,8 +36,6 @@ defmodule Easy.ClientProfiles.ProfileFieldDefinition do
     |> cast(attrs, [:section, :label, :key, :field_type, :options, :filterable])
     |> put_change(:business_id, business_id)
     |> validate_required([:business_id, :section, :label, :key, :field_type])
-    |> validate_inclusion(:section, @sections)
-    |> validate_inclusion(:field_type, @field_types)
     |> validate_filterable_type()
     |> unique_constraint(:key, name: :profile_field_definitions_business_id_key_index)
     |> check_constraint(:section, name: :profile_field_definitions_section_check)
@@ -54,8 +52,6 @@ defmodule Easy.ClientProfiles.ProfileFieldDefinition do
     definition
     |> cast(attrs, [:section, :label, :key, :field_type, :options, :filterable])
     |> validate_required([:section, :label, :key, :field_type])
-    |> validate_inclusion(:section, @sections)
-    |> validate_inclusion(:field_type, @field_types)
     |> validate_filterable_type()
     |> unique_constraint(:key, name: :profile_field_definitions_business_id_key_index)
     |> check_constraint(:section, name: :profile_field_definitions_section_check)

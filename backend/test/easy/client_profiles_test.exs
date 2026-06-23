@@ -8,6 +8,7 @@ defmodule Easy.ClientProfilesTest do
   alias Easy.ClientProfiles.FormTemplate
   alias Easy.ClientProfiles.ProfileFieldDefinition
   alias Easy.ClientProfiles.ProfileFieldValue
+  alias Easy.Ctx
   alias Easy.Repo
 
   describe "client profile schemas" do
@@ -20,13 +21,14 @@ defmodule Easy.ClientProfilesTest do
 
     test "creates one profile per client" do
       client = insert_client()
+      ctx = client_ctx(client)
 
-      assert {:ok, profile} = ClientProfiles.get_or_create_profile(client.business_id, client.id)
+      assert {:ok, profile} = ClientProfiles.get_or_create_profile(ctx, client.id)
       assert profile.client_id == client.id
       assert profile.general == %{}
       assert profile.nutrition == %{}
 
-      assert {:ok, same_profile} = ClientProfiles.get_or_create_profile(client.business_id, client.id)
+      assert {:ok, same_profile} = ClientProfiles.get_or_create_profile(ctx, client.id)
       assert same_profile.id == profile.id
     end
 
@@ -92,9 +94,10 @@ defmodule Easy.ClientProfilesTest do
     test "rejects duplicate custom field keys in one business" do
       business = insert(:business)
       insert(:profile_field_definition, business: business, key: "meal_prep_ability")
+      ctx = %Ctx{business_id: business.id, user_id: Ecto.UUID.generate()}
 
       assert {:error, changeset} =
-               ClientProfiles.create_profile_field(business.id, %{
+               ClientProfiles.create_profile_field(ctx, %{
                  "section" => "nutrition",
                  "label" => "Meal prep ability",
                  "key" => "meal_prep_ability",
@@ -107,9 +110,10 @@ defmodule Easy.ClientProfilesTest do
 
     test "create_profile_field ignores archived_at attrs" do
       business = insert(:business)
+      ctx = %Ctx{business_id: business.id, user_id: Ecto.UUID.generate()}
 
       assert {:ok, field} =
-               ClientProfiles.create_profile_field(business.id, %{
+               ClientProfiles.create_profile_field(ctx, %{
                  "section" => "nutrition",
                  "label" => "Meal prep ability",
                  "key" => "meal_prep_ability",
@@ -124,9 +128,10 @@ defmodule Easy.ClientProfilesTest do
     test "update_profile_field ignores archived_at attrs" do
       business = insert(:business)
       field = insert(:profile_field_definition, business: business)
+      ctx = %Ctx{business_id: business.id, user_id: Ecto.UUID.generate()}
 
       assert {:ok, updated} =
-               ClientProfiles.update_profile_field(business.id, field.id, %{
+               ClientProfiles.update_profile_field(ctx, field.id, %{
                  "archived_at" => DateTime.utc_now(:second)
                })
 
@@ -151,18 +156,16 @@ defmodule Easy.ClientProfilesTest do
       field = insert(:profile_field_definition, business: client.business)
       other_field = insert(:profile_field_definition, business: other_client.business)
 
-      attrs = %{"value" => %{"value" => "high"}, "updated_by_type" => "coach"}
+      attrs = %{"value" => %{"value" => "high"}}
 
       assert {:error, client_changeset} =
-               client.business_id
-               |> ProfileFieldValue.insert_changeset(other_client.id, field.id, attrs)
+               ProfileFieldValue.insert_changeset(client.business_id, other_client.id, field.id, :coach, client.creator_id, attrs)
                |> Repo.insert()
 
       assert "does not exist" in errors_on(client_changeset).client_id
 
       assert {:error, field_changeset} =
-               client.business_id
-               |> ProfileFieldValue.insert_changeset(client.id, other_field.id, attrs)
+               ProfileFieldValue.insert_changeset(client.business_id, client.id, other_field.id, :coach, client.creator_id, attrs)
                |> Repo.insert()
 
       assert "does not exist" in errors_on(field_changeset).profile_field_definition_id
@@ -202,13 +205,11 @@ defmodule Easy.ClientProfilesTest do
       attrs = %{
         "question_snapshot" => [],
         "answers" => %{},
-        "submitted_by_type" => "client",
         "submitted_at" => DateTime.utc_now(:second)
       }
 
       assert {:error, changeset} =
-               business.id
-               |> FormSubmission.insert_changeset(submitting_client.id, assignment.id, attrs)
+               FormSubmission.insert_changeset(business.id, submitting_client.id, assignment.id, :client, submitting_client.id, attrs)
                |> Repo.insert()
 
       assert "does not exist" in errors_on(changeset).form_assignment_id
@@ -217,10 +218,11 @@ defmodule Easy.ClientProfilesTest do
     test "stores one custom field value per client and field" do
       client = insert_client()
       field = insert(:profile_field_definition, business: client.business)
+      ctx = client_ctx(client)
 
       assert {:ok, value} =
                ClientProfiles.upsert_profile_field_value(
-                 client.business_id,
+                 ctx,
                  client.id,
                  field.id,
                  "high",
@@ -231,7 +233,7 @@ defmodule Easy.ClientProfilesTest do
 
       assert {:ok, updated} =
                ClientProfiles.upsert_profile_field_value(
-                 client.business_id,
+                 ctx,
                  client.id,
                  field.id,
                  "low",
@@ -243,7 +245,7 @@ defmodule Easy.ClientProfilesTest do
 
       assert 1 ==
                ProfileFieldValue
-               |> ProfileFieldValue.for_client(client.id)
+               |> ProfileFieldValue.for_client(client.business_id, client.id)
                |> ProfileFieldValue.for_field(field.id)
                |> Repo.aggregate(:count, :id)
     end
@@ -263,23 +265,24 @@ defmodule Easy.ClientProfilesTest do
       assert "is invalid" in errors_on(changeset).status
     end
 
-    test "assign_form_template forces template purpose and assigned status" do
+    test "assign_form_template_to_client forces template purpose and assigned status" do
       client = insert_client()
       template = insert(:form_template, business: client.business, purpose: "weekly_check_in")
+      ctx = client_ctx(client)
       completed_at = DateTime.utc_now(:second)
 
       assert {:ok, assignment} =
-               ClientProfiles.assign_form_template(client.business_id, template.id, client.id, %{
-                 "priority" => "high",
-                 "due_date" => "2026-06-30",
-                 "purpose" => "custom",
-                 "status" => "completed",
-                 "completed_at" => completed_at
+               ClientProfiles.assign_form_template_to_client(ctx, client.id, template.id, %{
+                 priority: "high",
+                 due_date: "2026-06-30",
+                 purpose: "custom",
+                 status: "completed",
+                 completed_at: completed_at
                })
 
-      assert assignment.purpose == "weekly_check_in"
-      assert assignment.priority == "high"
-      assert assignment.status == "assigned"
+      assert assignment.purpose == :weekly_check_in
+      assert assignment.priority == :high
+      assert assignment.status == :assigned
       assert assignment.due_date == ~D[2026-06-30]
       assert assignment.completed_at == nil
     end
@@ -288,9 +291,10 @@ defmodule Easy.ClientProfilesTest do
       client = insert_client()
       template = insert(:form_template, business: client.business)
       assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+      ctx = client_ctx(client)
 
       assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
-               ClientProfiles.delete_form_template(client.business_id, template.id)
+               ClientProfiles.delete_form_template(ctx, template.id)
 
       assert detail == %{fields: %{form_template_id: ["has assignments"]}}
       assert Repo.get!(FormTemplate, template.id)
@@ -309,11 +313,15 @@ defmodule Easy.ClientProfilesTest do
           form_template: other_template
         )
 
-      assert {:ok, []} = ClientProfiles.list_form_assignments_for_client(client.business_id, client.id)
+      ctx = client_ctx(client)
+
+      assert {:ok, []} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
+
+      client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
 
       assert {:error, :not_found} =
-               ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
-                 "answers" => %{}
+               ClientProfiles.submit_client_form_assignment(client_self_ctx, assignment.id, %{
+                 answers: %{}
                })
     end
 
@@ -362,9 +370,11 @@ defmodule Easy.ClientProfilesTest do
       assignment =
         insert(:form_assignment, business: client.business, client: client, form_template: template)
 
+      client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
+
       assert {:ok, submission} =
-               ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
-                 "answers" => %{
+               ClientProfiles.submit_client_form_assignment(client_self_ctx, assignment.id, %{
+                 answers: %{
                    "protein_goal" => "120g",
                    "meal_prep_ability" => "high"
                  }
@@ -375,9 +385,9 @@ defmodule Easy.ClientProfilesTest do
 
       assert profile.nutrition["protein_goal"] == "120g"
       assert value.value == %{"value" => "high"}
-      assert value.updated_by_type == "client"
+      assert value.updated_by_type == :client
       assert value.updated_from_submission_id == submission.id
-      assert Repo.get!(FormAssignment, assignment.id).status == "completed"
+      assert Repo.get!(FormAssignment, assignment.id).status == :completed
     end
 
     test "malformed core profile mappings roll back submission and profile writes" do
@@ -411,15 +421,17 @@ defmodule Easy.ClientProfilesTest do
         assignment =
           insert(:form_assignment, business: client.business, client: client, form_template: template)
 
+        client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
+
         assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
-                 ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
-                   "answers" => %{"protein_goal" => "120g"}
+                 ClientProfiles.submit_client_form_assignment(client_self_ctx, assignment.id, %{
+                   answers: %{"protein_goal" => "120g"}
                  })
 
         assert detail == %{fields: %{profile_mapping: ["is invalid"]}}
         refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
         refute Repo.get_by(ClientProfile, client_id: client.id)
-        assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+        assert Repo.get!(FormAssignment, assignment.id).status == :assigned
       end
     end
 
@@ -452,16 +464,18 @@ defmodule Easy.ClientProfilesTest do
         assignment =
           insert(:form_assignment, business: client.business, client: client, form_template: template)
 
+        client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
+
         assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
-                 ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
-                   "answers" => %{"meal_prep_ability" => "high"}
+                 ClientProfiles.submit_client_form_assignment(client_self_ctx, assignment.id, %{
+                   answers: %{"meal_prep_ability" => "high"}
                  })
 
         assert detail == %{fields: %{profile_mapping: ["is invalid"]}}
         refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
         refute Repo.get_by(ClientProfile, client_id: client.id)
         refute Repo.get_by(ProfileFieldValue, client_id: client.id)
-        assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+        assert Repo.get!(FormAssignment, assignment.id).status == :assigned
       end
     end
   end
@@ -471,10 +485,11 @@ defmodule Easy.ClientProfilesTest do
       client = insert_client()
       other_client = insert_client()
       other_field = insert(:profile_field_definition, business: other_client.business)
+      ctx = client_ctx(client)
 
       assert {:error, :not_found} =
                ClientProfiles.upsert_profile_field_value(
-                 client.business_id,
+                 ctx,
                  client.id,
                  other_field.id,
                  "high",
@@ -486,10 +501,11 @@ defmodule Easy.ClientProfilesTest do
       client = insert_client()
       other_client = insert_client()
       field = insert(:profile_field_definition, business: client.business)
+      ctx = client_ctx(client)
 
       assert {:error, :not_found} =
                ClientProfiles.upsert_profile_field_value(
-                 client.business_id,
+                 ctx,
                  other_client.id,
                  field.id,
                  "high",
@@ -502,6 +518,7 @@ defmodule Easy.ClientProfilesTest do
       other_client = insert_client()
       other_field = insert(:profile_field_definition, business: other_client.business)
       other_template = insert(:form_template, business: other_client.business)
+      ctx = %Ctx{business_id: business.id, user_id: Ecto.UUID.generate()}
 
       other_assignment =
         insert(:form_assignment,
@@ -511,37 +528,39 @@ defmodule Easy.ClientProfilesTest do
         )
 
       assert {:error, :not_found} =
-               ClientProfiles.update_profile_field(business.id, other_field.id, %{"label" => "x"})
+               ClientProfiles.update_profile_field(ctx, other_field.id, %{"label" => "x"})
 
-      assert {:error, :not_found} = ClientProfiles.archive_profile_field(business.id, other_field.id)
-      assert {:error, :not_found} = ClientProfiles.get_form_template(business.id, other_template.id)
-
-      assert {:error, :not_found} =
-               ClientProfiles.update_form_template(business.id, other_template.id, %{"name" => "x"})
+      assert {:error, :not_found} = ClientProfiles.archive_profile_field(ctx, other_field.id)
+      assert {:error, :not_found} = ClientProfiles.get_form_template(ctx, other_template.id)
 
       assert {:error, :not_found} =
-               ClientProfiles.delete_form_template(business.id, other_template.id)
+               ClientProfiles.update_form_template(ctx, other_template.id, %{"name" => "x"})
 
       assert {:error, :not_found} =
-               ClientProfiles.update_form_assignment(business.id, other_assignment.id, %{
+               ClientProfiles.delete_form_template(ctx, other_template.id)
+
+      assert {:error, :not_found} =
+               ClientProfiles.update_form_assignment(ctx, other_assignment.id, %{
                  "priority" => "high"
                })
     end
 
     test "update_profile rejects a nil section" do
       client = insert_client()
+      ctx = client_ctx(client)
 
       assert {:error, changeset} =
-               ClientProfiles.update_profile(client.business_id, client.id, %{"nutrition" => nil})
+               ClientProfiles.update_profile(ctx, client.id, %{"nutrition" => nil})
 
       assert "can't be blank" in errors_on(changeset).nutrition
     end
 
-    test "update_profile_sections ignores client-supplied intake workflow fields" do
+    test "update_client_profile_sections ignores client-supplied intake workflow fields" do
       client = insert_client()
+      client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
 
       assert {:ok, profile} =
-               ClientProfiles.update_profile_sections(client.business_id, client.id, %{
+               ClientProfiles.update_client_profile_sections(client_self_ctx, %{
                  "general" => %{"goal" => "strength"},
                  "intake_status" => "completed",
                  "intake_completed_at" => DateTime.utc_now(:second)
@@ -555,24 +574,25 @@ defmodule Easy.ClientProfilesTest do
     test "update_form_assignment stamps and clears completed_at to match status" do
       client = insert_client()
       template = insert(:form_template, business: client.business)
+      ctx = client_ctx(client)
 
       assignment =
         insert(:form_assignment, business: client.business, client: client, form_template: template)
 
       assert {:ok, completed} =
-               ClientProfiles.update_form_assignment(client.business_id, assignment.id, %{
+               ClientProfiles.update_form_assignment(ctx, assignment.id, %{
                  "status" => "completed"
                })
 
-      assert completed.status == "completed"
+      assert completed.status == :completed
       refute is_nil(completed.completed_at)
 
       assert {:ok, reopened} =
-               ClientProfiles.update_form_assignment(client.business_id, assignment.id, %{
+               ClientProfiles.update_form_assignment(ctx, assignment.id, %{
                  "status" => "assigned"
                })
 
-      assert reopened.status == "assigned"
+      assert reopened.status == :assigned
       assert reopened.completed_at == nil
     end
 
@@ -622,5 +642,9 @@ defmodule Easy.ClientProfilesTest do
     creator = insert(:coach, business: business)
 
     insert(:client, business: business, creator: creator, user: insert(:user))
+  end
+
+  defp client_ctx(client) do
+    %Ctx{business_id: client.business_id, user_id: client.user_id}
   end
 end

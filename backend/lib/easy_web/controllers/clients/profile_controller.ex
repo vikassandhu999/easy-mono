@@ -5,6 +5,8 @@ defmodule EasyWeb.Clients.ProfileController do
   alias Easy.Clients
   alias EasyWeb.OpenApi.Schemas.{ClientProfileResponse, ClientProfileUpdateRequest, ErrorResponse}
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
+
   tags ["client profile"]
 
   operation :show,
@@ -33,18 +35,14 @@ defmodule EasyWeb.Clients.ProfileController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, profile} <- Clients.get_profile(business_id, user_id) do
+    with {:ok, profile} <- Clients.get_client_account_profile(conn.assigns.ctx) do
       render(conn, :show, profile: profile)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, profile} <- Clients.update_profile(business_id, user_id, params) do
+  def update(conn, _params) do
+    with {:ok, profile} <- Clients.update_client_account_profile(conn.assigns.ctx, conn.body_params) do
       render(conn, :show, profile: profile)
     end
   end

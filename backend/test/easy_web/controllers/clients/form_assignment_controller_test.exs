@@ -73,22 +73,23 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       field = insert(:profile_field_definition, business: coach.business, key: "meal_prep_ability")
       template = insert(:form_template, business: coach.business)
       assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
-      conn = build_conn() |> authenticate_client(client)
 
       conn =
-        post(conn, "/v1/client/form-assignments/#{assignment.id}/submit", %{
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_client(client)
+        |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{
           "answers" => %{"meal_prep_ability" => "high"}
         })
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["answers"]["meal_prep_ability"] == "high"
       assert data["form_assignment_id"] == assignment.id
-      assert Repo.get!(FormAssignment, assignment.id).status == "completed"
+      assert Repo.get!(FormAssignment, assignment.id).status == :completed
 
       value =
         Easy.ClientProfiles.ProfileFieldValue
-        |> Easy.ClientProfiles.ProfileFieldValue.for_business(coach.business_id)
-        |> Easy.ClientProfiles.ProfileFieldValue.for_client(client.id)
+        |> Easy.ClientProfiles.ProfileFieldValue.for_client(coach.business_id, client.id)
         |> Easy.Repo.one!()
 
       assert value.profile_field_definition_id == field.id
@@ -110,11 +111,12 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_client(client)
         |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{"answers" => %{}})
 
       assert json_response(conn, 404)
-      assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+      assert Repo.get!(FormAssignment, assignment.id).status == :assigned
       refute Repo.get_by(ProfileFieldValue, client_id: client.id)
     end
 
@@ -126,13 +128,13 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_client(client)
         |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{})
 
-      assert %{"error_detail" => %{"fields" => %{"answers" => ["can't be blank"]}}} =
-               json_response(conn, 422)
+      assert json_response(conn, 422)
 
-      assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+      assert Repo.get!(FormAssignment, assignment.id).status == :assigned
       refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
     end
 
@@ -144,13 +146,13 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_client(client)
         |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{"answers" => "high"})
 
-      assert %{"error_detail" => %{"fields" => %{"answers" => ["is invalid"]}}} =
-               json_response(conn, 422)
+      assert json_response(conn, 422)
 
-      assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+      assert Repo.get!(FormAssignment, assignment.id).status == :assigned
       refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
     end
 
@@ -170,6 +172,7 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_client(client)
         |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{
           "answers" => %{"meal_prep_ability" => "high"}
@@ -178,7 +181,7 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       assert %{"error_detail" => %{"fields" => %{"status" => ["cannot be submitted"]}}} =
                json_response(conn, 422)
 
-      assert Repo.get!(FormAssignment, assignment.id).status == "completed"
+      assert Repo.get!(FormAssignment, assignment.id).status == :completed
       refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
       refute Repo.get_by(ProfileFieldValue, client_id: client.id, profile_field_definition_id: field.id)
     end
@@ -209,6 +212,7 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_client(client)
         |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{
           "answers" => %{"protein_goal" => "120g"}
@@ -217,7 +221,7 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       assert %{"error_detail" => %{"fields" => %{"profile_mapping" => ["is invalid"]}}} =
                json_response(conn, 422)
 
-      assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+      assert Repo.get!(FormAssignment, assignment.id).status == :assigned
       refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
       refute Repo.get_by(ProfileFieldValue, client_id: client.id)
     end

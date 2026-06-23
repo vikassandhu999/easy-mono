@@ -45,7 +45,8 @@ defmodule Easy.Training.TrainingWorkoutExercise do
     |> validate_required([:training_workout_id, :business_id, :exercise_id])
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
     |> unique_constraint([:training_workout_id, :position],
-      name: :training_workout_exercises_training_workout_id_position_index)
+      name: :training_workout_exercises_training_workout_id_position_index
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -54,7 +55,8 @@ defmodule Easy.Training.TrainingWorkoutExercise do
     |> cast(attrs, [:position, :superset_group_id, :notes, :exercise_id])
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
     |> unique_constraint([:training_workout_id, :position],
-      name: :training_workout_exercises_training_workout_id_position_index)
+      name: :training_workout_exercises_training_workout_id_position_index
+    )
   end
 
   @spec for_workout(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

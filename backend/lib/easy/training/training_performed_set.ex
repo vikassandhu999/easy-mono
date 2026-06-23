@@ -38,9 +38,7 @@ defmodule Easy.Training.TrainingPerformedSet do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:exercise_name, :set_type, :position, :reps, :load_value, :load_unit,
-                :duration_seconds, :distance_value, :distance_unit, :rpe, :completed, :notes,
-                :exercise_id]
+  @cast_fields [:exercise_name, :set_type, :position, :reps, :load_value, :load_unit, :duration_seconds, :distance_value, :distance_unit, :rpe, :completed, :notes, :exercise_id]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(session_id, business_id, attrs) do
@@ -54,11 +52,11 @@ defmodule Easy.Training.TrainingPerformedSet do
     |> validate_inclusion(:distance_unit, @distance_units)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
     |> unique_constraint([:training_session_id, :position],
-      name: :training_performed_sets_training_session_id_position_index)
+      name: :training_performed_sets_training_session_id_position_index
+    )
   end
 
-  @update_fields [:exercise_name, :set_type, :position, :reps, :load_value, :load_unit,
-                  :duration_seconds, :distance_value, :distance_unit, :rpe, :completed, :notes]
+  @update_fields [:exercise_name, :set_type, :position, :reps, :load_value, :load_unit, :duration_seconds, :distance_value, :distance_unit, :rpe, :completed, :notes]
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(performed_set, attrs) do
@@ -69,7 +67,8 @@ defmodule Easy.Training.TrainingPerformedSet do
     |> validate_inclusion(:distance_unit, @distance_units)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
     |> unique_constraint([:training_session_id, :position],
-      name: :training_performed_sets_training_session_id_position_index)
+      name: :training_performed_sets_training_session_id_position_index
+    )
   end
 
   @spec for_session(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

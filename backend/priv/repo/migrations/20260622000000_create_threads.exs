@@ -15,7 +15,9 @@ defmodule Easy.Repo.Migrations.CreateThreads do
       add :created_by_type, :string, null: false
       add :created_by_id, :binary_id
 
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
+
       add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
 
       timestamps(type: :utc_datetime)
@@ -26,16 +28,20 @@ defmodule Easy.Repo.Migrations.CreateThreads do
     create index(:threads, [:business_id, :module])
 
     create constraint(:threads, :threads_module_check,
-             check: "module in ('nutrition','training','fitness','profile','general')")
+             check: "module in ('nutrition','training','fitness','profile','general')"
+           )
 
     create constraint(:threads, :threads_status_check,
-             check: "status in ('open','resolved','archived')")
+             check: "status in ('open','resolved','archived')"
+           )
 
     create constraint(:threads, :threads_priority_check,
-             check: "priority in ('normal','attention')")
+             check: "priority in ('normal','attention')"
+           )
 
     create constraint(:threads, :threads_created_by_type_check,
-             check: "created_by_type in ('coach','client','system')")
+             check: "created_by_type in ('coach','client','system')"
+           )
 
     create table(:thread_messages, primary_key: false) do
       add :id, :binary_id, primary_key: true
@@ -53,6 +59,7 @@ defmodule Easy.Repo.Migrations.CreateThreads do
     create index(:thread_messages, [:thread_id])
 
     create constraint(:thread_messages, :thread_messages_author_type_check,
-             check: "author_type in ('coach','client','system')")
+             check: "author_type in ('coach','client','system')"
+           )
   end
 end

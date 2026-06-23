@@ -67,8 +67,7 @@ defmodule Easy.TrainingPlans do
 
         workout = schedule_entry && schedule_entry.workout
 
-        {:ok,
-         %{plan: plan, schedule_entry: schedule_entry, workout: workout, date: date, day: day}}
+        {:ok, %{plan: plan, schedule_entry: schedule_entry, workout: workout, date: date, day: day}}
     end
   end
 

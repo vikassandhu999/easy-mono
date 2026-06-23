@@ -47,7 +47,8 @@ defmodule Easy.Training.TrainingPlan do
     |> constrain_relationships()
     |> exclusion_constraint(:start_date,
       name: :training_plans_no_overlapping_active,
-      message: "overlaps an existing active plan for this client")
+      message: "overlaps an existing active plan for this client"
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -58,7 +59,8 @@ defmodule Easy.Training.TrainingPlan do
     |> constrain_relationships()
     |> exclusion_constraint(:start_date,
       name: :training_plans_no_overlapping_active,
-      message: "overlaps an existing active plan for this client")
+      message: "overlaps an existing active plan for this client"
+    )
   end
 
   defp validate_fields(changeset) do

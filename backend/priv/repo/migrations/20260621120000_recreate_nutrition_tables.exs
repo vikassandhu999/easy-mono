@@ -92,9 +92,9 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
 
     create index(:nutrition_recipe_ingredients, [:recipe_id])
 
-    create constraint(:nutrition_recipe_ingredients, :nutrition_recipe_ingredients_weight_positive,
-             check: "weight_g > 0"
-           )
+    create constraint(
+             :nutrition_recipe_ingredients,
+             :nutrition_recipe_ingredients_weight_positive, check: "weight_g > 0")
 
     # --- nutrition_plans ---
     create table(:nutrition_plans, primary_key: false) do
@@ -113,7 +113,10 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
       add :target_fiber_g, :float
 
       add :creator_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
+
       add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all)
 
       add :source_template_id,
@@ -148,7 +151,9 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
           null: false
 
       add :creator_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -170,7 +175,9 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
 
       add :food_id, references(:nutrition_foods, type: :binary_id, on_delete: :nilify_all)
       add :recipe_id, references(:nutrition_recipes, type: :binary_id, on_delete: :nilify_all)
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -200,12 +207,18 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
           references(:nutrition_meals, type: :binary_id, on_delete: :delete_all),
           null: false
 
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:nutrition_schedule_entries, [:nutrition_plan_id, :day_of_week, :meal_slot])
+    create unique_index(:nutrition_schedule_entries, [
+             :nutrition_plan_id,
+             :day_of_week,
+             :meal_slot
+           ])
+
     create index(:nutrition_schedule_entries, [:business_id])
 
     # --- nutrition_meal_logs ---
@@ -218,7 +231,9 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
       add :logged_calories, :float, default: 0
 
       add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       timestamps(type: :utc_datetime)
     end

@@ -149,6 +149,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     test "filters by date range", ctx do
       today = Date.utc_today()
       insert(:workout_session, client: ctx.client, business: ctx.business, date: today)
+
       insert(:workout_session,
         client: ctx.client,
         business: ctx.business,

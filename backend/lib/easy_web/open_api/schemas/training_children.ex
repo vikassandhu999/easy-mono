@@ -99,6 +99,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleEntry do
   require OpenApiSpex
   alias OpenApiSpex.Schema
+
   OpenApiSpex.schema(%{
     title: "TrainingScheduleEntry",
     type: :object,
@@ -114,6 +115,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingDayScheduleRequest do
   require OpenApiSpex
   alias OpenApiSpex.Schema
+
   OpenApiSpex.schema(
     %{
       title: "TrainingDayScheduleRequest",
@@ -129,6 +131,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleResponse do
   require OpenApiSpex
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.TrainingScheduleEntry
+
   OpenApiSpex.schema(%{
     title: "TrainingScheduleResponse",
     type: :object,
@@ -140,6 +143,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleDayResponse do
   require OpenApiSpex
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.TrainingScheduleEntry
+
   OpenApiSpex.schema(%{
     title: "TrainingScheduleDayResponse",
     type: :object,

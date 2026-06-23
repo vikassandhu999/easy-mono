@@ -34,7 +34,8 @@ defmodule Easy.Training.ScheduleEntry do
     |> validate_required([:day_of_week, :training_workout_id, :training_plan_id, :business_id])
     |> validate_inclusion(:day_of_week, @days)
     |> unique_constraint([:training_plan_id, :day_of_week],
-      name: :training_schedule_entries_training_plan_id_day_of_week_index)
+      name: :training_schedule_entries_training_plan_id_day_of_week_index
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -43,7 +44,8 @@ defmodule Easy.Training.ScheduleEntry do
     |> cast(attrs, [:day_of_week, :training_workout_id])
     |> validate_inclusion(:day_of_week, @days)
     |> unique_constraint([:training_plan_id, :day_of_week],
-      name: :training_schedule_entries_training_plan_id_day_of_week_index)
+      name: :training_schedule_entries_training_plan_id_day_of_week_index
+    )
   end
 
   @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

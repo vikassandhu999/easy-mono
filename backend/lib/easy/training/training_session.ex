@@ -60,7 +60,8 @@ defmodule Easy.Training.TrainingSession do
     |> foreign_key_constraint(:training_schedule_entry_id)
     |> unique_constraint(:client_id,
       name: :training_sessions_active_client_index,
-      message: "you already have an active workout session — finish or discard it first")
+      message: "you already have an active workout session — finish or discard it first"
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()

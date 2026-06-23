@@ -59,17 +59,21 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
     create index(:training_exercises, [:business_id])
 
     create constraint(:training_exercises, :training_exercises_source_check,
-             check: "source in ('system','imported','custom')")
+             check: "source in ('system','imported','custom')"
+           )
 
     create constraint(:training_exercises, :training_exercises_tracking_type_check,
              check:
-               "tracking_type in ('weight_reps','bodyweight_reps','weighted_bodyweight','assisted_bodyweight','reps_only','duration','weight_duration','distance_duration','weight_distance')")
+               "tracking_type in ('weight_reps','bodyweight_reps','weighted_bodyweight','assisted_bodyweight','reps_only','duration','weight_duration','distance_duration','weight_distance')"
+           )
 
     create constraint(:training_exercises, :training_exercises_mechanics_check,
-             check: "mechanics is null or mechanics in ('compound','isolation','isometric')")
+             check: "mechanics is null or mechanics in ('compound','isolation','isometric')"
+           )
 
     create constraint(:training_exercises, :training_exercises_force_check,
-             check: "force is null or force in ('push','pull','static')")
+             check: "force is null or force in ('push','pull','static')"
+           )
 
     create table(:training_exercise_muscles, primary_key: false) do
       add :exercise_id, references(:training_exercises, type: :binary_id, on_delete: :delete_all),
@@ -102,7 +106,10 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
       add :end_date, :date
 
       add :creator_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
+
       add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all)
 
       add :source_template_id,
@@ -135,7 +142,9 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
           null: false
 
       add :creator_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -157,7 +166,9 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
           null: false
 
       add :creator_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -167,7 +178,8 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
 
     create constraint(:training_schedule_entries, :training_schedule_entries_day_check,
              check:
-               "day_of_week in ('monday','tuesday','wednesday','thursday','friday','saturday','sunday')")
+               "day_of_week in ('monday','tuesday','wednesday','thursday','friday','saturday','sunday')"
+           )
 
     # --- workout exercises (with embedded planned_sets) ---
     create table(:training_workout_exercises, primary_key: false) do
@@ -182,7 +194,9 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
           null: false
 
       add :exercise_id, references(:training_exercises, type: :binary_id, on_delete: :nilify_all)
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -202,7 +216,9 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
       add :planned_snapshot, :map
 
       add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       add :training_workout_id,
           references(:training_workouts, type: :binary_id, on_delete: :nilify_all)
@@ -222,7 +238,8 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
            )
 
     create constraint(:training_sessions, :training_sessions_state_check,
-             check: "state in ('active','completed','discarded')")
+             check: "state in ('active','completed','discarded')"
+           )
 
     # --- performed sets ---
     create table(:training_performed_sets, primary_key: false) do
@@ -245,7 +262,9 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
           null: false
 
       add :exercise_id, references(:training_exercises, type: :binary_id, on_delete: :nilify_all)
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :nothing),
+        null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -254,13 +273,16 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
     create index(:training_performed_sets, [:training_session_id])
 
     create constraint(:training_performed_sets, :training_performed_sets_set_type_check,
-             check: "set_type in ('working','warmup','dropset')")
+             check: "set_type in ('working','warmup','dropset')"
+           )
 
     create constraint(:training_performed_sets, :training_performed_sets_load_unit_check,
-             check: "load_unit is null or load_unit in ('kg','lbs','bodyweight','none')")
+             check: "load_unit is null or load_unit in ('kg','lbs','bodyweight','none')"
+           )
 
     create constraint(:training_performed_sets, :training_performed_sets_distance_unit_check,
-             check: "distance_unit is null or distance_unit in ('meters','km','miles','none')")
+             check: "distance_unit is null or distance_unit in ('meters','km','miles','none')"
+           )
   end
 
   def down do

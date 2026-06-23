@@ -5,67 +5,83 @@ defmodule Easy.Training.PerformedSetTest do
   alias Easy.Training.PerformedSet
 
   describe "insert_changeset/3" do
-    test "does not check session workout elements against the database" do
-      %{business: business, session: session, exercise: exercise, element: element} =
-        session_with_element_added_after_snapshot()
+    test "is valid with the required set fields" do
+      business = insert(:business)
 
       changeset =
-        PerformedSet.insert_changeset(session.id, business.id, %{
-          "exercise_id" => exercise.id,
-          "workout_element_id" => element.id,
+        PerformedSet.insert_changeset(Ecto.UUID.generate(), business.id, %{
+          "exercise_name" => "Bench Press",
+          "set_type" => "working",
           "position" => 0,
-          "actual_reps" => "10"
+          "reps" => "10"
         })
 
       assert changeset.valid?
     end
-  end
 
-  describe "create/3" do
-    test "rejects workout elements added after the planned snapshot was captured" do
-      %{business: business, session: session, exercise: exercise, element: element} =
-        session_with_element_added_after_snapshot()
+    test "requires set_type and position" do
+      business = insert(:business)
 
-      assert {:error, changeset} =
-               Sessions.create_performed_set(session.id, business.id, %{
-                 "exercise_id" => exercise.id,
-                 "workout_element_id" => element.id,
-                 "position" => 0,
-                 "actual_reps" => "10"
-               })
+      changeset =
+        PerformedSet.insert_changeset(Ecto.UUID.generate(), business.id, %{
+          "set_type" => nil,
+          "position" => nil
+        })
 
-      assert %{workout_element_id: ["must belong to the session workout"]} = errors_on(changeset)
+      errors = errors_on(changeset)
+      assert "can't be blank" in errors.set_type
+      assert "can't be blank" in errors.position
     end
   end
 
-  defp session_with_element_added_after_snapshot do
+  describe "create_performed_set/3" do
+    test "records a performed set for an exercise in the session" do
+      %{business: business, session: session, exercise: exercise} = session_with_element()
+
+      assert {:ok, set} =
+               Sessions.create_performed_set(session.id, business.id, %{
+                 "exercise_id" => exercise.id,
+                 "set_type" => "working",
+                 "position" => 0,
+                 "reps" => "10"
+               })
+
+      assert set.reps == "10"
+      assert set.exercise_name == exercise.name
+    end
+
+    test "rejects an exercise that is neither owned nor system" do
+      %{business: business, session: session} = session_with_element()
+      foreign_exercise = insert(:exercise, business: insert(:business))
+
+      assert {:error, :not_found} =
+               Sessions.create_performed_set(session.id, business.id, %{
+                 "exercise_id" => foreign_exercise.id,
+                 "set_type" => "working",
+                 "position" => 0,
+                 "reps" => "10"
+               })
+    end
+  end
+
+  defp session_with_element do
     business = insert(:business)
     coach = insert(:coach, business: business)
-    client = insert(:client, creator: coach, business: business)
-    plan = insert(:training_plan, author: coach, business: business)
-    workout = insert(:workout, training_plan: plan, business: business)
-    original_exercise = insert(:exercise, business: business)
+    client = insert(:client, user: insert(:user), creator: coach, business: business)
+    plan = insert(:training_plan, creator: coach, business: business)
+    workout = insert(:workout, plan: plan, creator: coach, business: business)
+    exercise = insert(:exercise, business: business)
 
     insert(:workout_element,
       workout: workout,
-      exercise: original_exercise,
+      exercise: exercise,
       business: business,
       position: 0
     )
 
     {:ok, session} =
-      Sessions.create_workout_session(business.id, client.id, %{"workout_id" => workout.id})
+      Sessions.create_workout_session(business.id, client.id, %{"training_workout_id" => workout.id})
 
-    added_exercise = insert(:exercise, business: business)
-
-    added_element =
-      insert(:workout_element,
-        workout: workout,
-        exercise: added_exercise,
-        business: business,
-        position: 1
-      )
-
-    %{business: business, session: session, exercise: added_exercise, element: added_element}
+    %{business: business, session: session, exercise: exercise}
   end
 end

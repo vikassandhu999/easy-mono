@@ -398,8 +398,10 @@ defmodule Easy.Factory do
       name: sequence(:exercise_name, &"Exercise #{&1}"),
       description: "Exercise description",
       instructions: "Exercise instructions",
-      mechanics: :compound,
-      force: :push,
+      source: "custom",
+      tracking_type: "weight_reps",
+      mechanics: "compound",
+      force: "push",
       images: [],
       business: build(:business)
     }
@@ -424,6 +426,8 @@ defmodule Easy.Factory do
       "name" => sequence(:exercise_attr_name, &"Exercise Attr #{&1}"),
       "description" => "Created via test",
       "instructions" => "Do it with control",
+      "source" => "custom",
+      "tracking_type" => "weight_reps",
       "mechanics" => "compound",
       "force" => "push",
       "images" => []
@@ -432,13 +436,13 @@ defmodule Easy.Factory do
 
   def training_plan_factory do
     business = build(:business)
-    author = build(:coach, business: business)
+    creator = build(:coach, business: business)
 
     %TrainingPlan{
       name: sequence(:training_plan_name, &"Training Plan #{&1}"),
       description: "Weekly strength plan",
       status: :active,
-      author: author,
+      creator: creator,
       business: business
     }
   end
@@ -457,7 +461,8 @@ defmodule Easy.Factory do
     %Workout{
       name: sequence(:workout_name, &"Workout #{&1}"),
       notes: "Push day",
-      training_plan: training_plan,
+      plan: training_plan,
+      creator: training_plan.creator,
       business: training_plan.business
     }
   end
@@ -471,23 +476,21 @@ defmodule Easy.Factory do
 
   def training_plan_item_factory do
     training_plan = build(:training_plan)
-    workout = build(:workout, training_plan: training_plan, business: training_plan.business)
-    author = training_plan.author
+    workout = build(:workout, plan: training_plan, business: training_plan.business)
+    creator = training_plan.creator
 
     %TrainingPlanItem{
-      day: "monday",
-      workout_type: "primary",
-      training_plan: training_plan,
+      day_of_week: "monday",
+      plan: training_plan,
       workout: workout,
       business: training_plan.business,
-      creator: author
+      creator: creator
     }
   end
 
   def training_plan_item_attrs_factory do
     %{
-      "day" => "monday",
-      "workout_type" => "primary"
+      "day_of_week" => "monday"
     }
   end
 
@@ -511,9 +514,11 @@ defmodule Easy.Factory do
       "notes" => "Created via test",
       "planned_sets" => [
         %{
-          "target_reps" => "8-12",
+          "set_type" => "working",
+          "reps" => "8-12",
           "load_value" => 80,
           "load_unit" => "kg",
+          "rpe" => 8,
           "rest_seconds" => 90
         }
       ]
@@ -526,7 +531,8 @@ defmodule Easy.Factory do
     client = build(:client, business: business, creator: creator)
 
     %WorkoutSession{
-      started_at: DateTime.utc_now(),
+      date: Date.utc_today(),
+      started_at: DateTime.utc_now() |> DateTime.truncate(:second),
       state: :active,
       notes: "Session note",
       client: client,

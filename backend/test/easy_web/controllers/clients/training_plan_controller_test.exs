@@ -36,19 +36,19 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
   describe "GET /v1/client/training_plans" do
     test "lists only plans assigned to the client", ctx do
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-03-31]
       )
 
-      insert(:training_plan, author: ctx.coach, business: ctx.business)
+      insert(:training_plan, creator: ctx.coach, business: ctx.business)
 
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
 
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: other_client.id,
         start_date: ~D[2026-01-01],
@@ -68,7 +68,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
 
     test "filters by status", ctx do
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         status: :active,
@@ -77,7 +77,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       )
 
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         status: :archived,
@@ -109,14 +109,14 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
     test "shows plan with workouts, elements, exercises, and sets", ctx do
       plan =
         insert(:training_plan,
-          author: ctx.coach,
+          creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
           start_date: ~D[2026-01-01],
           end_date: ~D[2026-03-31]
         )
 
-      workout = insert(:workout, training_plan: plan, business: ctx.business)
+      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
       exercise = insert(:exercise, business: ctx.business)
 
       _element =
@@ -126,9 +126,11 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           business: ctx.business,
           planned_sets: [
             %{
-              target_reps: "8-10",
+              set_type: "working",
+              reps: "8-10",
               load_value: 80,
-              load_unit: :kg,
+              load_unit: "kg",
+              rpe: 8,
               rest_seconds: 120
             }
           ]
@@ -138,7 +140,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert data["name"] == plan.name
-      assert data["rest_days"] == []
+      refute Map.has_key?(data, "rest_days")
       assert is_list(data["plan_items"])
 
       [workout_data] = data["workouts"]
@@ -149,7 +151,8 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       assert element_data["exercise"]["images"] != nil
 
       [set_data] = element_data["planned_sets"]
-      assert set_data["target_reps"] == "8-10"
+      assert set_data["set_type"] == "working"
+      assert set_data["reps"] == "8-10"
       assert set_data["load_value"] == "80"
       assert set_data["rest_seconds"] == 120
     end
@@ -159,7 +162,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
 
       plan =
         insert(:training_plan,
-          author: ctx.coach,
+          creator: ctx.coach,
           business: ctx.business,
           client_id: other_client.id,
           start_date: ~D[2026-01-01],
@@ -171,7 +174,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
     end
 
     test "returns 404 for template plans", ctx do
-      plan = insert(:training_plan, author: ctx.coach, business: ctx.business)
+      plan = insert(:training_plan, creator: ctx.coach, business: ctx.business)
 
       conn = get(ctx.conn, "/v1/client/training_plans/#{plan.id}")
       assert json_response(conn, 404)
@@ -180,7 +183,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
     test "does not expose coach-specific fields", ctx do
       plan =
         insert(:training_plan,
-          author: ctx.coach,
+          creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
           start_date: ~D[2026-01-01],
@@ -189,10 +192,10 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
 
       conn = get(ctx.conn, "/v1/client/training_plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
-      refute Map.has_key?(data, "author_id")
+      refute Map.has_key?(data, "creator_id")
       refute Map.has_key?(data, "business_id")
       refute Map.has_key?(data, "client_id")
-      refute Map.has_key?(data, "original_template_id")
+      refute Map.has_key?(data, "source_template_id")
     end
   end
 end

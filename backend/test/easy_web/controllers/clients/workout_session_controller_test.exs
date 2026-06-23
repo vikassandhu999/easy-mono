@@ -16,7 +16,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       conn = post(ctx.conn, "/v1/client/workout_sessions", %{})
       assert %{"data" => data} = json_response(conn, 201)
       assert data["state"] == "active"
-      assert data["workout_id"] == nil
+      assert data["training_workout_id"] == nil
       assert data["planned_snapshot"] == nil
       assert data["started_at"] != nil
     end
@@ -24,14 +24,14 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     test "starts a planned workout with snapshot", ctx do
       plan =
         insert(:training_plan,
-          author: ctx.coach,
+          creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
           start_date: Date.add(Date.utc_today(), -1),
           end_date: Date.add(Date.utc_today(), 30)
         )
 
-      workout = insert(:workout, training_plan: plan, business: ctx.business)
+      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
       exercise = insert(:exercise, business: ctx.business)
 
       _element =
@@ -41,9 +41,11 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
           business: ctx.business,
           planned_sets: [
             %{
-              target_reps: "8-10",
+              set_type: "working",
+              reps: "8-10",
               load_value: 80,
-              load_unit: :kg,
+              load_unit: "kg",
+              rpe: 8,
               rest_seconds: 120
             }
           ]
@@ -51,20 +53,20 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
       conn =
         post(ctx.conn, "/v1/client/workout_sessions", %{
-          "workout_id" => workout.id
+          "training_workout_id" => workout.id
         })
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["state"] == "active"
-      assert data["workout_id"] == workout.id
+      assert data["training_workout_id"] == workout.id
       assert data["planned_snapshot"] != nil
 
       snapshot = data["planned_snapshot"]
-      assert snapshot["workout_name"] == workout.name
-      assert [element_snap] = snapshot["elements"]
-      assert element_snap["exercise_name"] == exercise.name
-      assert [set_snap] = element_snap["planned_sets"]
-      assert set_snap["target_reps"] == "8-10"
+      assert [exercise_snap] = snapshot["exercises"]
+      assert exercise_snap["name"] == exercise.name
+      assert [set_snap] = exercise_snap["sets"]
+      assert set_snap["reps"] == "8-10"
+      assert set_snap["set_type"] == "working"
     end
 
     test "rejects another client's assigned workout", ctx do
@@ -72,30 +74,30 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
       other_plan =
         insert(:training_plan,
-          author: ctx.coach,
+          creator: ctx.coach,
           business: ctx.business,
           client_id: other_client.id,
           start_date: Date.add(Date.utc_today(), -1),
           end_date: Date.add(Date.utc_today(), 30)
         )
 
-      workout = insert(:workout, training_plan: other_plan, business: ctx.business)
+      workout = insert(:workout, plan: other_plan, creator: ctx.coach, business: ctx.business)
 
       conn =
         post(ctx.conn, "/v1/client/workout_sessions", %{
-          "workout_id" => workout.id
+          "training_workout_id" => workout.id
         })
 
       assert json_response(conn, 404)
     end
 
     test "rejects template workout", ctx do
-      plan = insert(:training_plan, author: ctx.coach, business: ctx.business)
-      workout = insert(:workout, training_plan: plan, business: ctx.business)
+      plan = insert(:training_plan, creator: ctx.coach, business: ctx.business)
+      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
 
       conn =
         post(ctx.conn, "/v1/client/workout_sessions", %{
-          "workout_id" => workout.id
+          "training_workout_id" => workout.id
         })
 
       assert json_response(conn, 404)
@@ -262,25 +264,25 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
       plan =
         insert(:training_plan,
-          author: ctx.coach,
+          creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
           start_date: Date.add(Date.utc_today(), -1),
           end_date: Date.add(Date.utc_today(), 30)
         )
 
-      workout = insert(:workout, training_plan: plan, business: ctx.business)
+      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
 
       conn =
         patch(ctx.conn, "/v1/client/workout_sessions/#{session.id}", %{
           "state" => "completed",
-          "workout_id" => workout.id,
+          "training_workout_id" => workout.id,
           "notes" => "Still active"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["state"] == "active"
-      assert data["workout_id"] == nil
+      assert data["training_workout_id"] == nil
       assert data["notes"] == "Still active"
     end
 

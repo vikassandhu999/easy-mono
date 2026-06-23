@@ -10,7 +10,7 @@ defmodule EasyWeb.Coaches.WorkoutControllerTest do
 
   describe "POST /v1/coach/training_plans/:plan_id/workouts" do
     test "creates workout", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
 
       conn =
         post(
@@ -26,8 +26,8 @@ defmodule EasyWeb.Coaches.WorkoutControllerTest do
 
   describe "GET /v1/coach/training_plans/:plan_id/workouts" do
     test "lists workouts", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business)
-      insert(:workout, training_plan: plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      insert(:workout, plan: plan, creator: coach, business: business)
 
       conn = get(conn, "/v1/coach/training_plans/#{plan.id}/workouts")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
@@ -37,8 +37,8 @@ defmodule EasyWeb.Coaches.WorkoutControllerTest do
 
   describe "PATCH /v1/coach/workouts/:id" do
     test "updates workout", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
 
       conn = patch(conn, "/v1/coach/workouts/#{workout.id}", %{"name" => "Updated Workout"})
 
@@ -49,12 +49,13 @@ defmodule EasyWeb.Coaches.WorkoutControllerTest do
 
   describe "POST /v1/coach/workouts/:id/duplicate" do
     test "duplicates workout", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
       exercise = insert(:exercise, business: business)
 
       workout =
         insert(:workout,
-          training_plan: plan,
+          plan: plan,
+          creator: coach,
           business: business,
           name: "Push Day"
         )
@@ -67,9 +68,11 @@ defmodule EasyWeb.Coaches.WorkoutControllerTest do
           position: 0,
           planned_sets: [
             %{
-              target_reps: "8-10",
+              set_type: "working",
+              reps: "8-10",
               load_value: 80,
-              load_unit: :kg,
+              load_unit: "kg",
+              rpe: 8,
               rest_seconds: 120
             }
           ]
@@ -86,15 +89,18 @@ defmodule EasyWeb.Coaches.WorkoutControllerTest do
       assert element["exercise"]["id"] == exercise.id
 
       [set] = element["planned_sets"]
-      assert set["target_reps"] == "8-10"
+      assert set["reps"] == "8-10"
+      assert set["set_type"] == "working"
       assert set["load_value"] == "80"
       assert set["rest_seconds"] == 120
     end
 
     test "returns 404 for cross-business workout", %{conn: conn} do
       other_coach = insert(:coach)
-      other_plan = insert(:training_plan, author: other_coach, business: other_coach.business)
-      other_workout = insert(:workout, training_plan: other_plan, business: other_coach.business)
+      other_plan = insert(:training_plan, creator: other_coach, business: other_coach.business)
+
+      other_workout =
+        insert(:workout, plan: other_plan, creator: other_coach, business: other_coach.business)
 
       conn = post(conn, "/v1/coach/workouts/#{other_workout.id}/duplicate")
       assert json_response(conn, 404)

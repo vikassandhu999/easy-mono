@@ -20,7 +20,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       assert data["client_id"] == client.id
       assert data["state"] == "active"
       assert is_nil(data["planned_snapshot"])
-      assert is_nil(data["workout_id"])
+      assert is_nil(data["training_workout_id"])
     end
 
     test "creates session with workout and builds snapshot", %{
@@ -29,14 +29,14 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       business: business
     } do
       client = insert(:client, creator: coach, business: business)
-      plan = insert(:training_plan, author: coach, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
 
       workout =
-        insert(:workout, training_plan: plan, business: business, name: "Push Day")
+        insert(:workout, plan: plan, creator: coach, business: business, name: "Push Day")
 
       exercise = insert(:exercise, business: business, name: "Bench Press")
 
-      element =
+      _element =
         insert(:workout_element,
           workout: workout,
           exercise: exercise,
@@ -44,10 +44,11 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
           position: 0,
           planned_sets: [
             %{
-              target_reps: "8-10",
+              set_type: "working",
+              reps: "8-10",
               load_value: 80,
-              load_unit: :kg,
-              rest_seconds: 120
+              load_unit: "kg",
+              rpe: 8
             }
           ]
         )
@@ -55,29 +56,26 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       conn =
         post(conn, "/v1/coach/workout_sessions", %{
           "client_id" => client.id,
-          "workout_id" => workout.id
+          "training_workout_id" => workout.id
         })
 
       assert %{"data" => data} = json_response(conn, 201)
 
-      assert data["workout_id"] == workout.id
+      assert data["training_workout_id"] == workout.id
 
-      assert %{"workout_name" => "Push Day", "elements" => elements} =
-               data["planned_snapshot"]
+      assert %{"exercises" => exercises} = data["planned_snapshot"]
+      assert length(exercises) == 1
 
-      assert length(elements) == 1
+      [snap_exercise] = exercises
+      assert snap_exercise["name"] == "Bench Press"
+      assert snap_exercise["position"] == 0
+      assert length(snap_exercise["sets"]) == 1
 
-      [snap_element] = elements
-      assert snap_element["element_id"] == element.id
-      assert snap_element["exercise_name"] == "Bench Press"
-      assert snap_element["exercise_id"] == exercise.id
-      assert length(snap_element["planned_sets"]) == 1
-
-      [snap_set] = snap_element["planned_sets"]
-      assert snap_set["target_reps"] == "8-10"
+      [snap_set] = snap_exercise["sets"]
+      assert snap_set["set_type"] == "working"
+      assert snap_set["reps"] == "8-10"
       assert snap_set["load_value"] == "80"
       assert snap_set["load_unit"] == "kg"
-      assert snap_set["rest_seconds"] == 120
     end
 
     test "returns 404 when workout belongs to another business", %{
@@ -88,14 +86,14 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       client = insert(:client, creator: coach, business: business)
 
       other = insert(:coach)
-      other_plan = insert(:training_plan, author: other, business: other.business)
+      other_plan = insert(:training_plan, creator: other, business: other.business)
 
-      other_workout = insert(:workout, training_plan: other_plan, business: other.business)
+      other_workout = insert(:workout, plan: other_plan, creator: other, business: other.business)
 
       conn =
         post(conn, "/v1/coach/workout_sessions", %{
           "client_id" => client.id,
-          "workout_id" => other_workout.id,
+          "training_workout_id" => other_workout.id,
           "notes" => "Start"
         })
 

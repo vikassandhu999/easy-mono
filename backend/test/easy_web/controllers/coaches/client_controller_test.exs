@@ -1120,7 +1120,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       plan =
         insert(:training_plan,
           business: business,
-          author: coach,
+          creator: coach,
           client_id: client.id,
           start_date: ~D[2026-01-01],
           end_date: ~D[2026-03-01]
@@ -1140,7 +1140,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       client = insert(:client, creator: coach, business: business, status: :pending)
 
       template =
-        insert(:training_plan, business: business, author: coach, client_id: nil)
+        insert(:training_plan, business: business, creator: coach, client_id: nil)
 
       conn = delete(conn, "/v1/coach/clients/#{client.id}")
       assert response(conn, 204)

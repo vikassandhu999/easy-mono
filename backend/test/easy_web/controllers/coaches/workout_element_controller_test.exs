@@ -10,8 +10,8 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
 
   describe "POST /v1/coach/workout_elements" do
     test "creates workout element", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
       exercise = insert(:exercise, business: business)
 
       attrs =
@@ -22,8 +22,27 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
       conn = post(conn, "/v1/coach/workout_elements", attrs)
       assert %{"data" => data} = json_response(conn, 201)
 
-      assert data["workout_id"] == workout.id
+      assert data["training_workout_id"] == workout.id
       assert data["exercise_id"] == exercise.id
+    end
+
+    test "allows a system exercise (no business) in a workout", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
+      system_exercise = insert(:exercise, source: "system", business: nil, creator: nil)
+
+      attrs =
+        build(:workout_element_attrs)
+        |> Map.put("workout_id", workout.id)
+        |> Map.put("exercise_id", system_exercise.id)
+
+      conn = post(conn, "/v1/coach/workout_elements", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["exercise_id"] == system_exercise.id
     end
 
     test "returns 404 when exercise belongs to another business", %{
@@ -31,8 +50,8 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
       coach: coach,
       business: business
     } do
-      plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
 
       other = insert(:coach)
       other_exercise = insert(:exercise, business: other.business)
@@ -49,8 +68,8 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
 
   describe "PATCH /v1/coach/workout_elements/:id" do
     test "updates workout element", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
       exercise = insert(:exercise, business: business)
 
       element =
@@ -71,8 +90,8 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
       coach: coach,
       business: business
     } do
-      plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
       exercise = insert(:exercise, business: business)
 
       element =

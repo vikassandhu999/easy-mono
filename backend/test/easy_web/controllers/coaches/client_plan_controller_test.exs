@@ -12,7 +12,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
   describe "GET /v1/coach/clients/:client_id/training_plans" do
     test "lists only this client's training plans", ctx do
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         start_date: ~D[2026-01-01],
@@ -20,13 +20,13 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       )
 
       # Template — should NOT appear
-      insert(:training_plan, author: ctx.coach, business: ctx.business)
+      insert(:training_plan, creator: ctx.coach, business: ctx.business)
 
       # Other client's plan — should NOT appear
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
 
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: other_client.id,
         start_date: ~D[2026-01-01],
@@ -47,7 +47,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
 
     test "filters by status", ctx do
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         status: :active,
@@ -56,7 +56,7 @@ defmodule EasyWeb.Coaches.ClientPlanControllerTest do
       )
 
       insert(:training_plan,
-        author: ctx.coach,
+        creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
         status: :archived,

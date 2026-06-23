@@ -8,34 +8,31 @@ defmodule Easy.Training.PlanItemTest do
     test "does not check workout membership against the database" do
       business = insert(:business)
       coach = insert(:coach, business: business)
-      plan = insert(:training_plan, author: coach, business: business)
-      other_plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: other_plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      other_plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: other_plan, creator: coach, business: business)
 
       changeset =
         PlanItem.insert_changeset(plan.id, business.id, coach.id, %{
-          "day" => "monday",
-          "workout_type" => "primary",
-          "workout_id" => workout.id
+          "day_of_week" => "monday",
+          "training_workout_id" => workout.id
         })
 
       assert changeset.valid?
     end
 
-    test "does not check rest days against the database" do
+    test "requires a day_of_week" do
       business = insert(:business)
       coach = insert(:coach, business: business)
-      plan = insert(:training_plan, author: coach, business: business, rest_days: ["monday"])
-      workout = insert(:workout, training_plan: plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
 
       changeset =
         PlanItem.insert_changeset(plan.id, business.id, coach.id, %{
-          "day" => "monday",
-          "workout_type" => "primary",
-          "workout_id" => workout.id
+          "training_workout_id" => workout.id
         })
 
-      assert changeset.valid?
+      assert %{day_of_week: ["can't be blank"]} = errors_on(changeset)
     end
   end
 
@@ -43,32 +40,52 @@ defmodule Easy.Training.PlanItemTest do
     test "returns not found when workout is outside the plan" do
       business = insert(:business)
       coach = insert(:coach, business: business)
-      plan = insert(:training_plan, author: coach, business: business)
-      other_plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:workout, training_plan: other_plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      other_plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: other_plan, creator: coach, business: business)
 
       assert {:error, :not_found} =
                Plans.create_plan_item(plan.id, business.id, coach.id, %{
-                 "day" => "monday",
-                 "workout_type" => "primary",
-                 "workout_id" => workout.id
+                 "day_of_week" => "monday",
+                 "training_workout_id" => workout.id
                })
     end
 
-    test "checks rest days at the action boundary" do
+    test "schedules a workout on a day for the plan" do
       business = insert(:business)
       coach = insert(:coach, business: business)
-      plan = insert(:training_plan, author: coach, business: business, rest_days: ["monday"])
-      workout = insert(:workout, training_plan: plan, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
+
+      assert {:ok, item} =
+               Plans.create_plan_item(plan.id, business.id, coach.id, %{
+                 "day_of_week" => "monday",
+                 "training_workout_id" => workout.id
+               })
+
+      assert item.day_of_week == "monday"
+    end
+
+    test "rejects a second workout on the same day for the plan" do
+      business = insert(:business)
+      coach = insert(:coach, business: business)
+      plan = insert(:training_plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, creator: coach, business: business)
+      other_workout = insert(:workout, plan: plan, creator: coach, business: business)
+
+      assert {:ok, _item} =
+               Plans.create_plan_item(plan.id, business.id, coach.id, %{
+                 "day_of_week" => "monday",
+                 "training_workout_id" => workout.id
+               })
 
       assert {:error, changeset} =
                Plans.create_plan_item(plan.id, business.id, coach.id, %{
-                 "day" => "monday",
-                 "workout_type" => "primary",
-                 "workout_id" => workout.id
+                 "day_of_week" => "monday",
+                 "training_workout_id" => other_workout.id
                })
 
-      assert %{day: ["cannot schedule workout on a rest day"]} = errors_on(changeset)
+      refute changeset.valid?
     end
   end
 end

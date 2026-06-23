@@ -104,10 +104,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, session} <-
-           Sessions.create_client_workout_session_for_user(business_id, user_id, params) do
+    with {:ok, session} <- Sessions.create_my_session(conn.assigns.ctx, params) do
       conn
       |> put_status(:created)
       |> render(:show, session: session)
@@ -116,73 +113,53 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 50)
     state = parse_enum(params, "state", TrainingSession.states())
 
     with {:ok, %{sessions: sessions, count: count}} <-
-           Sessions.list_sessions_for_user(business_id, user_id, state, offset, limit) do
+           Sessions.list_my_sessions_paginated(conn.assigns.ctx, state, offset, limit) do
       render(conn, :index, sessions: sessions, count: count)
     end
   end
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, session} <-
-           Sessions.get_client_session_with_sets_for_user(business_id, user_id, id) do
+    with {:ok, session} <- Sessions.get_my_session_with_sets(conn.assigns.ctx, id) do
       render(conn, :show, session: session)
     end
   end
 
   @spec active(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def active(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, session} <- Sessions.get_active_client_session_for_user(business_id, user_id) do
+    with {:ok, session} <- Sessions.get_my_active_session(conn.assigns.ctx) do
       render(conn, :show, session: session)
     end
   end
 
   @spec complete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def complete(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+    attrs = Map.merge(conn.body_params, %{"state" => "completed"})
 
-    with {:ok, completed} <-
-           Sessions.complete_client_workout_session_for_user(
-             business_id,
-             user_id,
-             id,
-             conn.body_params
-           ) do
+    with {:ok, completed} <- Sessions.update_my_session(conn.assigns.ctx, id, attrs) do
       render(conn, :show, session: completed)
     end
   end
 
   @spec discard(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def discard(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
     with {:ok, discarded} <-
-           Sessions.discard_client_workout_session_for_user(business_id, user_id, id) do
+           Sessions.update_my_session(conn.assigns.ctx, id, %{"state" => "discarded"}) do
       render(conn, :show, session: discarded)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id}) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
+    # Drop state so PATCH cannot change session state; use complete/discard actions for that
+    attrs = Map.drop(conn.body_params, ["state", :state])
 
-    with {:ok, updated} <-
-           Sessions.update_client_workout_session_for_user(
-             business_id,
-             user_id,
-             id,
-             conn.body_params
-           ) do
+    with {:ok, updated} <- Sessions.update_my_session(conn.assigns.ctx, id, attrs) do
       render(conn, :show, session: updated)
     end
   end

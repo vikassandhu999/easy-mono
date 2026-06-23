@@ -1,5 +1,6 @@
 defmodule Easy.Sessions do
   alias Easy.Clients.Client
+  alias Easy.Ctx
   alias Easy.Repo
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingPerformedSet
@@ -10,6 +11,10 @@ defmodule Easy.Sessions do
 
   import Ecto.Changeset
   import Ecto.Query
+
+  # ---------------------------------------------------------------------------
+  # Coach read fns (paginated / business-scoped)
+  # ---------------------------------------------------------------------------
 
   @spec list_sessions(
           String.t(),
@@ -38,12 +43,13 @@ defmodule Easy.Sessions do
      }}
   end
 
-  @spec list_sessions_for_client(String.t(), String.t(), Date.t(), Date.t()) ::
+  # Coach read-only Ctx-first date-range (Task 9 routes depend on this)
+  @spec list_sessions(Ctx.t(), String.t(), Date.t(), Date.t()) ::
           {:ok, [TrainingSession.t()]}
-  def list_sessions_for_client(business_id, client_id, from, to) do
+  def list_sessions(%Ctx{} = ctx, client_id, from, to) do
     sessions =
       TrainingSession
-      |> TrainingSession.for_business(business_id)
+      |> TrainingSession.for_business(ctx.business_id)
       |> TrainingSession.for_client(client_id)
       |> TrainingSession.for_date_range(from, to)
       |> TrainingSession.newest()
@@ -51,14 +57,6 @@ defmodule Easy.Sessions do
       |> Repo.all()
 
     {:ok, sessions}
-  end
-
-  @spec list_sessions_for_user(String.t(), String.t(), Date.t(), Date.t()) ::
-          {:ok, [TrainingSession.t()]} | {:error, :not_found}
-  def list_sessions_for_user(business_id, user_id, %Date{} = from, %Date{} = to) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      list_sessions_for_client(business_id, client.id, from, to)
-    end
   end
 
   @spec get_session(String.t(), String.t()) :: {:ok, TrainingSession.t()} | {:error, :not_found}
@@ -79,105 +77,106 @@ defmodule Easy.Sessions do
     |> ok_or_not_found()
   end
 
-  @spec get_client_session(String.t(), String.t(), String.t()) ::
+  # Coach read-only Ctx-first (Task 9 routes depend on this)
+  @spec get_client_session_with_sets(Ctx.t(), String.t(), String.t()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found}
-  def get_client_session(business_id, client_id, session_id) do
+  def get_client_session_with_sets(%Ctx{} = ctx, client_id, session_id) do
     TrainingSession
-    |> TrainingSession.for_business(business_id)
-    |> TrainingSession.for_client(client_id)
-    |> Repo.get(session_id)
-    |> ok_or_not_found()
-  end
-
-  @spec get_client_session_with_sets_for_user(String.t(), String.t(), String.t()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found}
-  def get_client_session_with_sets_for_user(business_id, user_id, session_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_client_session_with_sets(business_id, client.id, session_id)
-    end
-  end
-
-  @spec get_active_client_session_for_user(String.t(), String.t()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found}
-  def get_active_client_session_for_user(business_id, user_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_active_client_session(business_id, client.id)
-    end
-  end
-
-  @spec get_client_session_with_sets(String.t(), String.t(), String.t()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found}
-  def get_client_session_with_sets(business_id, client_id, session_id) do
-    TrainingSession
-    |> TrainingSession.for_business(business_id)
+    |> TrainingSession.for_business(ctx.business_id)
     |> TrainingSession.for_client(client_id)
     |> TrainingSession.with_sets()
     |> Repo.get(session_id)
     |> ok_or_not_found()
   end
 
-  @spec get_active_client_session(String.t(), String.t()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found}
-  def get_active_client_session(business_id, client_id) do
-    TrainingSession
-    |> TrainingSession.for_business(business_id)
-    |> TrainingSession.for_client(client_id)
-    |> TrainingSession.with_state(:active)
-    |> TrainingSession.with_sets()
-    |> Repo.one()
-    |> ok_or_not_found()
+  # ---------------------------------------------------------------------------
+  # Client self fns (Ctx-first)
+  # ---------------------------------------------------------------------------
+
+  @spec list_my_sessions(Ctx.t(), Date.t(), Date.t()) ::
+          {:ok, [TrainingSession.t()]} | {:error, :not_found}
+  def list_my_sessions(%Ctx{} = ctx, from, to) do
+    with {:ok, client} <- get_client(ctx) do
+      list_sessions_for_client(ctx.business_id, client.id, from, to)
+    end
   end
 
-  @spec get_performed_set(String.t(), String.t()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found}
-  def get_performed_set(business_id, set_id) do
-    TrainingPerformedSet
-    |> TrainingPerformedSet.for_business(business_id)
-    |> Repo.get(set_id)
-    |> ok_or_not_found()
-  end
-
-  @spec get_performed_set_with_exercise(String.t(), String.t()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found}
-  def get_performed_set_with_exercise(business_id, set_id) do
-    TrainingPerformedSet
-    |> TrainingPerformedSet.for_business(business_id)
-    |> TrainingPerformedSet.with_exercise(business_id)
-    |> Repo.get(set_id)
-    |> ok_or_not_found()
-  end
-
-  @spec get_client_performed_set(String.t(), String.t(), String.t()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found}
-  def get_client_performed_set(business_id, client_id, set_id) do
-    session_ids =
-      TrainingSession
-      |> TrainingSession.for_business(business_id)
-      |> TrainingSession.for_client(client_id)
-      |> select([s], s.id)
-
-    TrainingPerformedSet
-    |> TrainingPerformedSet.for_business(business_id)
-    |> where([p], p.training_session_id in subquery(session_ids))
-    |> TrainingPerformedSet.with_exercise(business_id)
-    |> Repo.get(set_id)
-    |> ok_or_not_found()
-  end
-
-  @spec list_sessions_for_user(
-          String.t(),
-          String.t(),
-          atom() | nil,
-          non_neg_integer(),
-          pos_integer()
-        ) ::
+  @spec list_my_sessions_paginated(Ctx.t(), atom() | nil, non_neg_integer(), pos_integer()) ::
           {:ok, %{count: non_neg_integer(), sessions: [TrainingSession.t()]}}
           | {:error, :not_found}
-  def list_sessions_for_user(business_id, user_id, state, offset, limit) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      list_sessions(business_id, client.id, state, offset, limit)
+  def list_my_sessions_paginated(%Ctx{} = ctx, state, offset, limit) do
+    with {:ok, client} <- get_client(ctx) do
+      list_sessions(ctx.business_id, client.id, state, offset, limit)
     end
   end
+
+  @spec get_my_session_with_sets(Ctx.t(), String.t()) ::
+          {:ok, TrainingSession.t()} | {:error, :not_found}
+  def get_my_session_with_sets(%Ctx{} = ctx, session_id) do
+    with {:ok, client} <- get_client(ctx) do
+      fetch_client_session_with_sets(ctx.business_id, client.id, session_id)
+    end
+  end
+
+  @spec get_my_active_session(Ctx.t()) ::
+          {:ok, TrainingSession.t()} | {:error, :not_found}
+  def get_my_active_session(%Ctx{} = ctx) do
+    with {:ok, client} <- get_client(ctx) do
+      get_active_client_session(ctx.business_id, client.id)
+    end
+  end
+
+  @spec create_my_session(Ctx.t(), map()) ::
+          {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t() | Easy.Error.t()}
+  def create_my_session(%Ctx{} = ctx, attrs) do
+    with {:ok, client} <- get_client(ctx) do
+      create_client_workout_session(ctx.business_id, client.id, attrs)
+    end
+  end
+
+  @spec update_my_session(Ctx.t(), String.t(), map()) ::
+          {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def update_my_session(%Ctx{} = ctx, session_id, attrs) do
+    with {:ok, client} <- get_client(ctx),
+         {:ok, session} <- fetch_client_session_with_sets(ctx.business_id, client.id, session_id) do
+      case to_string(attrs["state"] || attrs[:state] || "") do
+        "completed" -> complete_workout_session(session, attrs)
+        "discarded" -> discard_workout_session(session)
+        _ -> update_client_workout_session(session, attrs)
+      end
+    end
+  end
+
+  @spec create_my_performed_set(Ctx.t(), String.t(), map()) ::
+          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def create_my_performed_set(%Ctx{} = ctx, session_id, attrs) do
+    with {:ok, client} <- get_client(ctx),
+         {:ok, _session} <- get_client_session(ctx.business_id, client.id, session_id) do
+      create_performed_set(session_id, ctx.business_id, attrs)
+    end
+  end
+
+  @spec update_my_performed_set(Ctx.t(), String.t(), map()) ::
+          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def update_my_performed_set(%Ctx{} = ctx, set_id, attrs) do
+    with {:ok, client} <- get_client(ctx),
+         {:ok, set} <- get_client_performed_set(ctx.business_id, client.id, set_id) do
+      update_performed_set(set, attrs)
+    end
+  end
+
+  @spec delete_my_performed_set(Ctx.t(), String.t()) ::
+          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def delete_my_performed_set(%Ctx{} = ctx, set_id) do
+    with {:ok, client} <- get_client(ctx),
+         {:ok, set} <- get_client_performed_set(ctx.business_id, client.id, set_id) do
+      delete_performed_set(set)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Coach write fns (deferred to Task 9 for removal — routes still active)
+  # ---------------------------------------------------------------------------
 
   @spec ensure_no_active_workout_session(String.t(), String.t()) :: :ok | {:error, Easy.Error.t()}
   def ensure_no_active_workout_session(business_id, client_id) do
@@ -203,36 +202,11 @@ defmodule Easy.Sessions do
   def create_workout_session(business_id, client_id, attrs) do
     attrs = put_default_date(attrs)
 
-    with {:ok, _client} <- get_client(business_id, client_id),
+    with {:ok, _client} <- fetch_client(business_id, client_id),
          :ok <- ensure_no_active_workout_session(business_id, client_id),
          :ok <- ensure_optional_workout(business_id, workout_id_from(attrs)) do
       business_id
       |> TrainingSession.insert_changeset(client_id, attrs)
-      |> put_planned_snapshot(business_id)
-      |> Repo.insert()
-      |> preload_session()
-    end
-  end
-
-  @spec create_client_workout_session_for_user(String.t(), String.t(), map()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t() | Easy.Error.t()}
-  def create_client_workout_session_for_user(business_id, user_id, attrs) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      create_client_workout_session(business_id, client.id, attrs)
-    end
-  end
-
-  @spec create_client_workout_session(String.t(), String.t(), map()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t() | Easy.Error.t()}
-  def create_client_workout_session(business_id, client_id, attrs) do
-    attrs = put_default_date(attrs)
-
-    with :ok <- ensure_no_active_workout_session(business_id, client_id),
-         {:ok, changeset} <-
-           business_id
-           |> TrainingSession.insert_changeset(client_id, attrs)
-           |> validate_client_workout_accessible(business_id, client_id) do
-      changeset
       |> put_planned_snapshot(business_id)
       |> Repo.insert()
       |> preload_session()
@@ -256,43 +230,6 @@ defmodule Easy.Sessions do
     end
   end
 
-  @spec update_client_workout_session(TrainingSession.t(), map()) ::
-          {:ok, TrainingSession.t()} | {:error, Ecto.Changeset.t()}
-  def update_client_workout_session(%TrainingSession{} = session, attrs) do
-    session
-    |> TrainingSession.client_update_changeset(attrs)
-    |> Repo.update()
-    |> preload_session()
-  end
-
-  @spec update_client_workout_session_for_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_client_workout_session_for_user(business_id, user_id, session_id, attrs) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, session} <- get_client_session_with_sets(business_id, client.id, session_id) do
-      update_client_workout_session(session, attrs)
-    end
-  end
-
-  @spec complete_workout_session(TrainingSession.t()) ::
-          {:ok, TrainingSession.t()} | {:error, Ecto.Changeset.t()}
-  def complete_workout_session(%TrainingSession{} = session),
-    do: complete_workout_session(session, %{})
-
-  @spec complete_workout_session(TrainingSession.t(), map()) ::
-          {:ok, TrainingSession.t()} | {:error, Ecto.Changeset.t()}
-  def complete_workout_session(%TrainingSession{} = session, attrs) do
-    attrs =
-      attrs
-      |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
-      |> Map.merge(%{"ended_at" => DateTime.utc_now(), "state" => :completed})
-
-    session
-    |> TrainingSession.update_changeset(attrs)
-    |> Repo.update()
-    |> preload_session()
-  end
-
   @spec complete_workout_session(String.t(), String.t(), map()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def complete_workout_session(business_id, session_id, attrs) do
@@ -301,37 +238,10 @@ defmodule Easy.Sessions do
     end
   end
 
-  @spec complete_client_workout_session_for_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def complete_client_workout_session_for_user(business_id, user_id, session_id, attrs) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, session} <- get_client_session_with_sets(business_id, client.id, session_id) do
-      complete_workout_session(session, attrs)
-    end
-  end
-
-  @spec discard_workout_session(TrainingSession.t()) ::
-          {:ok, TrainingSession.t()} | {:error, Ecto.Changeset.t()}
-  def discard_workout_session(%TrainingSession{} = session) do
-    session
-    |> TrainingSession.update_changeset(%{"state" => :discarded})
-    |> Repo.update()
-    |> preload_session()
-  end
-
   @spec discard_workout_session(String.t(), String.t()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def discard_workout_session(business_id, session_id) do
     with {:ok, session} <- get_session_with_sets(business_id, session_id) do
-      discard_workout_session(session)
-    end
-  end
-
-  @spec discard_client_workout_session_for_user(String.t(), String.t(), String.t()) ::
-          {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def discard_client_workout_session_for_user(business_id, user_id, session_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, session} <- get_client_session_with_sets(business_id, client.id, session_id) do
       discard_workout_session(session)
     end
   end
@@ -363,15 +273,6 @@ defmodule Easy.Sessions do
     end
   end
 
-  @spec create_client_performed_set_for_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_client_performed_set_for_user(business_id, user_id, workout_session_id, attrs) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, _session} <- get_client_session(business_id, client.id, workout_session_id) do
-      create_performed_set(workout_session_id, business_id, attrs)
-    end
-  end
-
   @spec update_performed_set(TrainingPerformedSet.t(), map()) ::
           {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_performed_set(%TrainingPerformedSet{} = set, attrs) do
@@ -393,15 +294,6 @@ defmodule Easy.Sessions do
     end
   end
 
-  @spec update_client_performed_set_for_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_client_performed_set_for_user(business_id, user_id, set_id, attrs) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, set} <- get_client_performed_set(business_id, client.id, set_id) do
-      update_performed_set(set, attrs)
-    end
-  end
-
   @spec delete_performed_set(TrainingPerformedSet.t()) ::
           {:ok, TrainingPerformedSet.t()} | {:error, Ecto.Changeset.t()}
   def delete_performed_set(%TrainingPerformedSet{} = set), do: Repo.delete(set)
@@ -414,31 +306,144 @@ defmodule Easy.Sessions do
     end
   end
 
-  @spec delete_client_performed_set_for_user(String.t(), String.t(), String.t()) ::
-          {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_client_performed_set_for_user(business_id, user_id, set_id) do
-    with {:ok, client} <- get_client_for_user(business_id, user_id),
-         {:ok, set} <- get_client_performed_set(business_id, client.id, set_id) do
-      delete_performed_set(set)
-    end
+  # ---------------------------------------------------------------------------
+  # Private helpers
+  # ---------------------------------------------------------------------------
+
+  defp get_client(%Ctx{} = ctx) do
+    Client
+    |> Client.for_business(ctx.business_id)
+    |> Client.for_user(ctx.user_id)
+    |> Repo.one()
+    |> ok_or_not_found()
   end
 
-  defp get_client(_business_id, nil), do: {:error, :not_found}
-  defp get_client(_business_id, ""), do: {:error, :not_found}
+  defp fetch_client(_business_id, nil), do: {:error, :not_found}
+  defp fetch_client(_business_id, ""), do: {:error, :not_found}
 
-  defp get_client(business_id, client_id) do
+  defp fetch_client(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  defp get_client_for_user(business_id, user_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Client.for_user(user_id)
+  defp list_sessions_for_client(business_id, client_id, from, to) do
+    sessions =
+      TrainingSession
+      |> TrainingSession.for_business(business_id)
+      |> TrainingSession.for_client(client_id)
+      |> TrainingSession.for_date_range(from, to)
+      |> TrainingSession.newest()
+      |> TrainingSession.with_sets()
+      |> Repo.all()
+
+    {:ok, sessions}
+  end
+
+  defp get_client_session(business_id, client_id, session_id) do
+    TrainingSession
+    |> TrainingSession.for_business(business_id)
+    |> TrainingSession.for_client(client_id)
+    |> Repo.get(session_id)
+    |> ok_or_not_found()
+  end
+
+  defp fetch_client_session_with_sets(business_id, client_id, session_id) do
+    TrainingSession
+    |> TrainingSession.for_business(business_id)
+    |> TrainingSession.for_client(client_id)
+    |> TrainingSession.with_sets()
+    |> Repo.get(session_id)
+    |> ok_or_not_found()
+  end
+
+  defp get_active_client_session(business_id, client_id) do
+    TrainingSession
+    |> TrainingSession.for_business(business_id)
+    |> TrainingSession.for_client(client_id)
+    |> TrainingSession.with_state(:active)
+    |> TrainingSession.with_sets()
     |> Repo.one()
     |> ok_or_not_found()
+  end
+
+  defp get_performed_set(business_id, set_id) do
+    TrainingPerformedSet
+    |> TrainingPerformedSet.for_business(business_id)
+    |> Repo.get(set_id)
+    |> ok_or_not_found()
+  end
+
+  defp get_performed_set_with_exercise(business_id, set_id) do
+    TrainingPerformedSet
+    |> TrainingPerformedSet.for_business(business_id)
+    |> TrainingPerformedSet.with_exercise(business_id)
+    |> Repo.get(set_id)
+    |> ok_or_not_found()
+  end
+
+  defp get_client_performed_set(business_id, client_id, set_id) do
+    session_ids =
+      TrainingSession
+      |> TrainingSession.for_business(business_id)
+      |> TrainingSession.for_client(client_id)
+      |> select([s], s.id)
+
+    TrainingPerformedSet
+    |> TrainingPerformedSet.for_business(business_id)
+    |> where([p], p.training_session_id in subquery(session_ids))
+    |> TrainingPerformedSet.with_exercise(business_id)
+    |> Repo.get(set_id)
+    |> ok_or_not_found()
+  end
+
+  defp create_client_workout_session(business_id, client_id, attrs) do
+    attrs = put_default_date(attrs)
+
+    with :ok <- ensure_no_active_workout_session(business_id, client_id),
+         {:ok, changeset} <-
+           business_id
+           |> TrainingSession.insert_changeset(client_id, attrs)
+           |> validate_client_workout_accessible(business_id, client_id) do
+      changeset
+      |> put_planned_snapshot(business_id)
+      |> Repo.insert()
+      |> preload_session()
+    end
+  end
+
+  defp update_client_workout_session(%TrainingSession{} = session, attrs) do
+    session
+    |> TrainingSession.client_update_changeset(attrs)
+    |> Repo.update()
+    |> preload_session()
+  end
+
+  @spec complete_workout_session(TrainingSession.t()) ::
+          {:ok, TrainingSession.t()} | {:error, Ecto.Changeset.t()}
+  def complete_workout_session(%TrainingSession{} = session),
+    do: complete_workout_session(session, %{})
+
+  @spec complete_workout_session(TrainingSession.t(), map()) ::
+          {:ok, TrainingSession.t()} | {:error, Ecto.Changeset.t()}
+  def complete_workout_session(%TrainingSession{} = session, attrs) do
+    attrs =
+      attrs
+      |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
+      |> Map.merge(%{"ended_at" => DateTime.utc_now(), "state" => :completed})
+
+    session
+    |> TrainingSession.update_changeset(attrs)
+    |> Repo.update()
+    |> preload_session()
+  end
+
+  defp discard_workout_session(%TrainingSession{} = session) do
+    session
+    |> TrainingSession.update_changeset(%{"state" => :discarded})
+    |> Repo.update()
+    |> preload_session()
   end
 
   defp maybe_for_client(query, nil), do: query

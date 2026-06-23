@@ -39,12 +39,14 @@ defmodule EasyWeb.Clients.FoodController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    search = Map.get(params, "search", "")
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
+    opts = [
+      search: Map.get(params, "search", ""),
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 50)
+    ]
 
     with {:ok, %{foods: foods, count: count}} <-
-           Foods.list_visible_foods(conn.assigns.ctx, search, offset, limit) do
+           Foods.list_visible_foods(conn.assigns.ctx, opts) do
       render(conn, :index, foods: foods, count: count)
     end
   end

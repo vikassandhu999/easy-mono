@@ -1,10 +1,12 @@
 defmodule Easy.Coaches do
   alias Ecto.Changeset
+  alias Easy.Ctx
   alias Easy.Identity.User
   alias Easy.Orgs.Coach
   alias Easy.Orgs.Business
   alias Easy.Repo
 
+  # pre-auth onboarding: no ctx yet — runs during signup alongside create_business
   @spec create(User.t(), Business.t()) :: {:ok, Coach.t()} | {:error, any()}
   def create(user, business) do
     %{first_name: user.first_name, last_name: user.last_name}
@@ -14,9 +16,9 @@ defmodule Easy.Coaches do
     |> Repo.insert()
   end
 
-  @spec get_by_user_id(String.t(), String.t()) :: {:ok, Coach.t()} | {:error, Easy.Error.t()}
-  def get_by_user_id(user_id, business_id) do
-    Coach.get_for_user(business_id, user_id)
+  @spec get_coach(Ctx.t()) :: {:ok, Coach.t()} | {:error, Easy.Error.t()}
+  def get_coach(%Ctx{} = ctx) do
+    Coach.fetch(ctx.business_id, ctx.user_id)
   end
 
   @spec update(Coach.t(), map()) :: {:ok, Coach.t()} | {:error, Ecto.Changeset.t()}

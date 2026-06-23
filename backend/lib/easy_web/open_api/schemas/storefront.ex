@@ -84,13 +84,16 @@ defmodule EasyWeb.OpenApi.Schemas.SlugCheckRequest do
 
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "SlugCheckRequest",
-    type: :object,
-    additionalProperties: false,
-    properties: %{slug: %Schema{type: :string}},
-    required: [:slug]
-  }, struct?: false)
+  OpenApiSpex.schema(
+    %{
+      title: "SlugCheckRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{slug: %Schema{type: :string}},
+      required: [:slug]
+    },
+    struct?: false
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.SlugCheckResponse do

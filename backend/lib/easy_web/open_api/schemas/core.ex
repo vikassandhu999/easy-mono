@@ -112,7 +112,8 @@ defmodule EasyWeb.OpenApi.Schemas.CoachProfileUpdateRequest do
       properties: %{
         first_name: %Schema{type: :string, nullable: true},
         last_name: %Schema{type: :string, nullable: true},
-        phone: %Schema{type: :string, nullable: true}
+        phone: %Schema{type: :string, nullable: true},
+        business_name: %Schema{type: :string, nullable: true}
       },
       example: %{
         "first_name" => "Alex",

@@ -2,8 +2,10 @@ defmodule EasyWeb.Coaches.ProfileController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Orgs.Coach
+  alias Easy.Coaches
   alias EasyWeb.OpenApi.Schemas.{CoachProfileResponse, CoachProfileUpdateRequest, ErrorResponse}
+
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
 
   tags ["coach profile"]
 
@@ -33,19 +35,15 @@ defmodule EasyWeb.Coaches.ProfileController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, coach} <- Coach.get_for_user(business_id, user_id) do
+    with {:ok, coach} <- Coaches.get_coach(conn.assigns.ctx) do
       render(conn, :show, coach: coach)
     end
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, coach} <- Coach.get_for_user(business_id, user_id),
-         {:ok, coach} <- Coach.update_profile(coach, params) do
+  def update(conn, _params) do
+    with {:ok, coach} <- Coaches.get_coach(conn.assigns.ctx),
+         {:ok, coach} <- Easy.Orgs.Coach.update_profile(coach, conn.body_params) do
       render(conn, :show, coach: coach)
     end
   end

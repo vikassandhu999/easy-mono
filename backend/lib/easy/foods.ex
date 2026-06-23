@@ -22,10 +22,13 @@ defmodule Easy.Foods do
     |> ok_or_not_found()
   end
 
-  @spec list_visible_foods(Ctx.t(), String.t() | nil, non_neg_integer(), pos_integer()) ::
+  @spec list_visible_foods(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), foods: [Food.t()]}}
-  def list_visible_foods(%Ctx{} = ctx, search, offset, limit) do
-    search = String.trim(search || "")
+  def list_visible_foods(%Ctx{} = ctx, opts \\ []) do
+    search = String.trim(Keyword.get(opts, :search, "") || "")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
+
     base = Food |> Food.for_business_or_system(ctx.business_id) |> Food.search(search)
     ordered = if search == "", do: Food.newest(base), else: base
 
@@ -130,7 +133,7 @@ defmodule Easy.Foods do
     %{"label" => s.label, "amount" => s.amount, "unit" => s.unit, "weight_g" => s.weight_g, "is_default" => s.is_default}
   end
 
-  defp ensure_editable(%Food{source: source}) when source in ["system", "imported"],
+  defp ensure_editable(%Food{source: source}) when source in [:system, :imported],
     do: {:error, :read_only_source}
 
   defp ensure_editable(_food), do: :ok

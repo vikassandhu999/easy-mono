@@ -331,3 +331,41 @@ Each task is a vertical (schema cleanup + new/updated context + controller). Ind
 - [ ] Steps: enum + Repo-out of store_profile schema; storefront context upsert; controllers with/ctx/CastAndValidate; tests; verify `grep -rn "Repo\." lib/easy/storefront/store_profile.ex` → empty, `grep -rn "validate_inclusion" lib/easy/storefront/store_profile.ex` → empty; `mix precommit` green. Commit `refactor(storefront): store_profile Ecto.Enum + Repo-out + context upsert; controllers with/ctx`.
 
 *Slice 5 gate: compile, full suite, `grep -rn "Repo\." lib/easy/storefront` → empty (no Repo in storefront schemas), `grep -rn "alias Easy.Repo\|Repo\." lib/easy_web/controllers/coaches/{offer,testimonial,store_profile}_controller.ex` → empty, `grep -rn "case .*Repo" lib/easy_web/controllers` (offer/testimonial) → empty; new `Easy.Offers`/`Easy.Testimonials` contexts exist + Ctx-first.*
+
+---
+
+## Slice 6 — reference polish + web sweep + final verification (authored at slice boundary)
+
+Final slice: finish the last reference-context list-opts, sweep the remaining controllers (business + account-profile) to ctx/CastAndValidate, convert the thin onboarding contexts where a ctx exists, then a whole-tree strict pass + full end-to-end verification.
+
+### Task 21: foods + recipes list-opts (last reference cleanup)
+
+**Files:** `lib/easy/foods.ex`, `lib/easy/recipes.ex`; their coach+client controllers; tests.
+
+**Changes:** `list_visible_foods(ctx, search, offset, limit)` → `list_visible_foods(ctx, opts \\ [])`; `list_recipes(ctx, search, offset, limit)` → `list_recipes(ctx, opts \\ [])` (opts `:search`/`:offset`/`:limit`; clamp 100; `{:ok, %{count, foods/recipes}}`; search trimmed once). Update the food/recipe controllers' index actions to build opts. Remove any residual dual-key probes in these two contexts. (These were the reference Ctx-first modules but still had positional list tails.)
+
+- [ ] Convert both list fns + controllers + tests; `grep -rnE "list_visible_foods\(.*,.*,.*,|list_recipes\(.*,.*,.*," lib` → no positional-tail calls; `mix precommit` green. Commit `refactor(nutrition): opts-based list_visible_foods/list_recipes`.
+
+### Task 22: orgs/businesses/coaches + remaining controllers (web sweep)
+
+**Files:** `lib/easy/orgs.ex`, `lib/easy/businesses.ex`, `lib/easy/coaches.ex`; controllers `business_controller.ex`, `coaches/profile_controller.ex`, `clients/profile_controller.ex` (if not already done in Slice 4), and any controller still reading `conn.assigns.claims` for a non-auth action; tests.
+
+**Changes:**
+- `orgs.ex`/`businesses.ex`/`coaches.ex`: convert public fns to Ctx-first WHERE an authenticated ctx exists (`get_business(ctx)`, `update_business(ctx, attrs)`, `get_coach(ctx)`). ONBOARDING/pre-auth fns that legitimately take a `%User{}` before a ctx exists (`create_business(user, attrs)`, `Coaches.create(user, business)`) stay as documented exceptions (like AuthController) — do NOT force ctx where there's no authenticated tenant yet. Fix `coaches.get_by_user_id(user_id, business_id)` arg-order/naming → `get_coach(ctx)` or a clearly-named resolver.
+- `business_controller.ex`: `conn.assigns.ctx` (drop claims); CastAndValidate on create/update; `with`→Fallback; no Repo.
+- Sweep any remaining `conn.assigns.claims` in non-auth controllers: `grep -rn "assigns.claims" lib/easy_web/controllers` — for each (except `auth_controller.ex`, the §A8 exception), switch to `conn.assigns.ctx` + adjust the context call. Add CastAndValidate to any remaining write action missing it.
+
+- [ ] Convert contexts + controllers + tests; `grep -rn "assigns.claims" lib/easy_web/controllers` → only `auth_controller.ex` remains; `mix precommit` green. Commit `refactor(orgs/web): Ctx-first orgs/businesses/coaches + business/profile controllers; claims→ctx sweep`.
+
+### Task 23: Final verification + whole-tree strict pass
+
+Verification + documentation task (fix only what these surface).
+
+- [ ] `mix ecto.reset && mix run priv/repo/seeds.exs` → clean (no migrations changed this whole migration, but confirm).
+- [ ] `mix compile --warnings-as-errors` → exit 0.
+- [ ] `mix test` → full suite green (expect 611+). Run the convention-relevant tests explicitly: `mix test test/easy/context_layout_test.exs test/easy_web/controllers/business_id_response_test.exs test/easy_web/controllers/open_api_route_coverage_test.exs test/easy/*/schema_boundary_test.exs test/easy_web/controllers/*controller_boundary_test.exs` → all green (these encode the older convention guarantees).
+- [ ] `mix credo --strict` whole-tree → CAPTURE the output. The migration should have cleared the convention-relevant issues in `lib/easy/` and `lib/easy_web/controllers/`. Triage remaining: fix anything in the migrated scope that's a genuine convention violation (a builder `with_*`, a stray dual-key, a `create_changeset`); LEAVE generic Credo style nits (complexity, nesting) and document the count. Do NOT churn legacy stylistic debt.
+- [ ] `grep -rn "_for_user\|_for_coach_user\|_as_coach\|_as_client\|_my_" lib/easy/*.ex` → empty (all retired markers gone from contexts). `grep -rnE "def with_" lib/easy/*/` → empty (no `with_*` query builders). `grep -rn "create_changeset" lib/easy` → empty.
+- [ ] Append a final summary to `.superpowers/sdd/progress.md` + commit any fixups: `git commit -m "test(backend): final convention-migration verification"` (only if fixups).
+
+*Slice 6 + whole-migration gate: all the above green; then a whole-migration code review over the cumulative diff.*

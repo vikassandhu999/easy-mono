@@ -66,6 +66,7 @@ defmodule EasyWeb.Coaches.ClientProfileControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_coach(coach)
         |> patch("/v1/coach/clients/#{client.id}/profile", %{
           "general" => %{"goal" => "strength"},
@@ -110,6 +111,7 @@ defmodule EasyWeb.Coaches.ClientProfileControllerTest do
 
       create_conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_coach(coach)
         |> patch("/v1/coach/clients/#{other_client_without_profile.id}/profile", %{
           "general" => %{"goal" => "created"}
@@ -117,6 +119,7 @@ defmodule EasyWeb.Coaches.ClientProfileControllerTest do
 
       update_conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_coach(coach)
         |> patch("/v1/coach/clients/#{other_client_with_profile.id}/profile", %{
           "general" => %{"goal" => "updated"}

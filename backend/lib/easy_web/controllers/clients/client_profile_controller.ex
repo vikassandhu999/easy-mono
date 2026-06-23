@@ -2,6 +2,8 @@ defmodule EasyWeb.Clients.ClientProfileController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
+
   alias Easy.ClientProfiles
   alias Easy.Clients
 

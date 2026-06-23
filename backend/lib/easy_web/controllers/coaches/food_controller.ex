@@ -147,12 +147,14 @@ defmodule EasyWeb.Coaches.FoodController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    search_term = Map.get(params, "search", "")
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 10)
+    opts = [
+      search: Map.get(params, "search", ""),
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 20)
+    ]
 
     with {:ok, %{count: count, foods: foods}} <-
-           Foods.list_visible_foods(conn.assigns.ctx, search_term, offset, limit) do
+           Foods.list_visible_foods(conn.assigns.ctx, opts) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, foods: foods)

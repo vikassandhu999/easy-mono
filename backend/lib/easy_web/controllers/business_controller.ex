@@ -1,10 +1,12 @@
 defmodule EasyWeb.BusinessController do
-  alias Easy.Identity.Users
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  alias Easy.Identity.Users
   alias Easy.Orgs
   alias EasyWeb.OpenApi.Schemas.{BusinessRequest, BusinessResponse, BusinessUpdateRequest, ErrorResponse}
+
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
 
   tags ["businesses"]
 
@@ -45,9 +47,10 @@ defmodule EasyWeb.BusinessController do
     ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
-    with {:ok, user} <- Users.get_by_id(conn.assigns.claims.user_id),
-         {:ok, business} <- Orgs.create_business(user, params) do
+  def create(conn, _params) do
+    # pre-auth onboarding path: ctx.user_id exists but business not yet created
+    with {:ok, user} <- Users.get_by_id(conn.assigns.ctx.user_id),
+         {:ok, business} <- Orgs.create_business(user, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, business: business)
@@ -56,7 +59,7 @@ defmodule EasyWeb.BusinessController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    with {:ok, business} <- Orgs.get_business(conn.assigns.claims.business_id) do
+    with {:ok, business} <- Orgs.get_business(conn.assigns.ctx) do
       conn
       |> put_status(:ok)
       |> render(:show, business: business)
@@ -64,8 +67,8 @@ defmodule EasyWeb.BusinessController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, params) do
-    with {:ok, business} <- Orgs.update_business(conn.assigns.claims.business_id, params) do
+  def update(conn, _params) do
+    with {:ok, business} <- Orgs.update_business(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:ok)
       |> render(:show, business: business)

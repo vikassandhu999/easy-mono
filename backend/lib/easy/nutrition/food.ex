@@ -12,7 +12,6 @@ defmodule Easy.Nutrition.Food do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @sources ["system", "imported", "custom"]
   @allergens ~w(dairy egg fish shellfish tree_nuts peanuts wheat soy sesame)
   @dietary_tags ~w(vegan vegetarian halal kosher gluten_free dairy_free low_fodmap keto high_protein)
 
@@ -26,7 +25,7 @@ defmodule Easy.Nutrition.Food do
     field :name, :string
     field :brand, :string
     field :barcode, :string
-    field :source, :string
+    field :source, Ecto.Enum, values: [:system, :imported, :custom]
     field :category, :string
 
     field :calories_per_100g, :float
@@ -99,7 +98,6 @@ defmodule Easy.Nutrition.Food do
 
   defp validate_enums(changeset) do
     changeset
-    |> validate_inclusion(:source, @sources)
     |> validate_subset(:allergens, @allergens)
     |> validate_subset(:dietary_tags, @dietary_tags)
   end

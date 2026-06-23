@@ -196,14 +196,14 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
 
   describe "read-only sources" do
     test "patching a system food is rejected with 422", %{conn: conn} do
-      system_food = insert(:food, business: nil, creator: nil, source: "system")
+      system_food = insert(:food, business: nil, creator: nil, source: :system)
 
       conn = patch(conn, "/v1/coach/nutrition-foods/#{system_food.id}", %{"name" => "Renamed"})
       assert json_response(conn, 422)
     end
 
     test "deleting a system food is rejected with 422", %{conn: conn} do
-      system_food = insert(:food, business: nil, creator: nil, source: "system")
+      system_food = insert(:food, business: nil, creator: nil, source: :system)
 
       conn = delete(conn, "/v1/coach/nutrition-foods/#{system_food.id}")
       assert json_response(conn, 422)
@@ -213,7 +213,7 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
   describe "POST /v1/coach/nutrition-foods/:id/copy" do
     test "copy of a system food creates an editable business copy", %{conn: conn} do
       system_food =
-        insert(:food, business: nil, creator: nil, source: "system", calories_per_100g: 120.0)
+        insert(:food, business: nil, creator: nil, source: :system, calories_per_100g: 120.0)
 
       conn = post(conn, "/v1/coach/nutrition-foods/#{system_food.id}/copy")
       assert %{"data" => data} = json_response(conn, 201)

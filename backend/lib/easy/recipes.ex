@@ -27,10 +27,13 @@ defmodule Easy.Recipes do
     |> ok_or_not_found()
   end
 
-  @spec list_recipes(Ctx.t(), String.t() | nil, non_neg_integer(), pos_integer()) ::
+  @spec list_recipes(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), recipes: [Recipe.t()]}}
-  def list_recipes(%Ctx{} = ctx, search, offset, limit) do
-    search = String.trim(search || "")
+  def list_recipes(%Ctx{} = ctx, opts \\ []) do
+    search = String.trim(Keyword.get(opts, :search, "") || "")
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
+
     base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
     ordered = if search == "", do: Recipe.newest(base), else: base
 

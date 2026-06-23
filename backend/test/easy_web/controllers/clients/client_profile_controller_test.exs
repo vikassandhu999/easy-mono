@@ -44,6 +44,7 @@ defmodule EasyWeb.Clients.ClientProfileControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("content-type", "application/json")
         |> authenticate_client(client)
         |> patch("/v1/client/profile", %{
           "general" => %{"goal" => "fat loss"},

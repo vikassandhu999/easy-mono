@@ -37,12 +37,14 @@ defmodule EasyWeb.Clients.RecipeController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
-    search = Map.get(params, "search", "")
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
+    opts = [
+      search: Map.get(params, "search", ""),
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 50)
+    ]
 
     with {:ok, %{recipes: recipes, count: count}} <-
-           Recipes.list_recipes(conn.assigns.ctx, search, offset, limit) do
+           Recipes.list_recipes(conn.assigns.ctx, opts) do
       render(conn, :index, recipes: recipes, count: count)
     end
   end

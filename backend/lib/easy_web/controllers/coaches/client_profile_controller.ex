@@ -2,6 +2,8 @@ defmodule EasyWeb.Coaches.ClientProfileController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
+
   alias Easy.ClientProfiles
   alias OpenApiSpex.Operation
 
@@ -53,8 +55,9 @@ defmodule EasyWeb.Coaches.ClientProfileController do
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"client_id" => client_id}) do
+  def update(conn, _params) do
     ctx = conn.assigns.ctx
+    client_id = conn.path_params["client_id"]
 
     with {:ok, profile} <- ClientProfiles.update_profile(ctx, client_id, conn.body_params) do
       render(conn, :show, profile: profile)

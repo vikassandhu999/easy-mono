@@ -56,8 +56,8 @@ defmodule Easy.Orgs.Coach do
 
   # Actions
 
-  @spec get_for_user(String.t(), String.t()) :: {:ok, t()} | {:error, Easy.Error.t()}
-  def get_for_user(business_id, user_id) do
+  @spec fetch(String.t(), String.t()) :: {:ok, t()} | {:error, Easy.Error.t()}
+  def fetch(business_id, user_id) do
     case __MODULE__
          |> for_business(business_id)
          |> for_user(user_id)
@@ -70,8 +70,8 @@ defmodule Easy.Orgs.Coach do
 
   @spec update_profile(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update_profile(%__MODULE__{} = coach, params) do
-    coach_attrs = Map.take(params, ["first_name", "last_name", "phone"])
-    business_name = params["business_name"]
+    coach_attrs = Map.take(params, [:first_name, :last_name, :phone])
+    business_name = params[:business_name]
 
     Repo.transaction(fn ->
       updated_coach =

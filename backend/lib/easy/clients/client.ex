@@ -45,7 +45,8 @@ defmodule Easy.Clients.Client do
     :email,
     :notes,
     :goal_weight_value,
-    :goal_weight_unit
+    :goal_weight_unit,
+    :status
   ]
   @self_update_cast_fields [:first_name, :last_name, :phone]
   @inquiry_cast_fields [:email, :first_name, :last_name, :phone]
@@ -82,7 +83,7 @@ defmodule Easy.Clients.Client do
     |> normalize_goal_weight(attrs)
     |> validate_goal_weight_paired()
     |> validate_number(:goal_weight_value, greater_than: 0, less_than: 1000)
-    |> validate_status_transition(client.status, attrs)
+    |> validate_status_transition(client.status)
     |> unique_constraint(:email, name: :clients_business_id_email_index)
   end
 
@@ -128,49 +129,32 @@ defmodule Easy.Clients.Client do
     end
   end
 
-  defp validate_status_transition(changeset, _current, attrs)
-       when not is_map_key(attrs, "status") and not is_map_key(attrs, :status),
-       do: changeset
-
-  defp validate_status_transition(changeset, current, attrs) do
-    new_status_raw = attrs["status"] || attrs[:status]
-
-    case parse_status(new_status_raw) do
-      {:ok, ^current} ->
+  defp validate_status_transition(changeset, current) do
+    case get_change(changeset, :status) do
+      nil ->
         changeset
 
-      {:ok, :pending} ->
+      ^current ->
+        changeset
+
+      :pending ->
         add_error(changeset, :status, "cannot return to pending")
 
-      {:ok, _} when current == :pending ->
+      _ when current == :pending ->
         add_error(
           changeset,
           :status,
           "pending clients can only become active by accepting the invitation"
         )
 
-      {:ok, status} ->
-        if status in Map.get(@allowed_status_transitions, current, []) do
-          put_change(changeset, :status, status)
+      new_status ->
+        if new_status in Map.get(@allowed_status_transitions, current, []) do
+          changeset
         else
           add_error(changeset, :status, "invalid status transition")
         end
-
-      :error ->
-        add_error(changeset, :status, "is invalid")
     end
   end
-
-  defp parse_status(status) when status in @statuses, do: {:ok, status}
-
-  defp parse_status(status) when is_binary(status) do
-    case Enum.find(@statuses, fn s -> Atom.to_string(s) == status end) do
-      nil -> :error
-      s -> {:ok, s}
-    end
-  end
-
-  defp parse_status(_), do: :error
 
   @spec self_update_changeset(t(), map()) :: Ecto.Changeset.t()
   def self_update_changeset(client, attrs) do

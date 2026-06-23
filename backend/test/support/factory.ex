@@ -217,7 +217,8 @@ defmodule Easy.Factory do
 
   def inquiry_attrs_factory do
     %{
-      "name" => "Vikas Sandhu",
+      "first_name" => "Vikas",
+      "last_name" => "Sandhu",
       "email" => sequence(:inquiry_email, &"inquiry-#{&1}@test.com"),
       "phone" => "+91 98765 43210"
     }
@@ -226,7 +227,7 @@ defmodule Easy.Factory do
   def food_factory do
     %Food{
       name: sequence(:food_name, &"Food #{&1}"),
-      source: "custom",
+      source: :custom,
       category: "protein",
       calories_per_100g: 200.0,
       protein_g_per_100g: 20.0,

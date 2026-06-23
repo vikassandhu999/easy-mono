@@ -1,3 +1,12 @@
+> **⚠️ SUPERSEDED (2026-06-23).** This plan proposed custom Credo checks + a
+> bespoke changed-files CI gate. The chosen direction is lighter and avoids
+> inventing enforcement machinery: conventions live in `backend/AGENTS.md`
+> (authority), are followed via the agentic workflow (`.agents/skills/elixir-conventions`
+> while writing + `.agents/skills/review` and the superpowers SDD review loop at
+> review), and the mechanical rules are caught by **stock** `mix credo` + `mix format`
+> wired into the `precommit` alias — no custom checks, no CI. Kept for history only;
+> do not execute.
+
 # Backend Conventions Enforcement Gate Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

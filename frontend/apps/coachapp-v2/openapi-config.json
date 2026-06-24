@@ -1,0 +1,13 @@
+{
+  "schemaFile": "../../openapi/coach.openapi.json",
+  "apiFile": "./src/api/base.ts",
+  "apiImport": "api",
+  "outputFile": "./src/api/generated.ts",
+  "exportName": "coachApi",
+  "hooks": {
+    "queries": true,
+    "lazyQueries": true,
+    "mutations": true
+  },
+  "tag": false
+}

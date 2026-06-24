@@ -1,0 +1,13 @@
+{
+  "schemaFile": "../../openapi/client.openapi.json",
+  "apiFile": "./src/api/base.ts",
+  "apiImport": "api",
+  "outputFile": "./src/api/generated.ts",
+  "exportName": "clientApi",
+  "hooks": {
+    "queries": true,
+    "lazyQueries": true,
+    "mutations": true
+  },
+  "tag": false
+}

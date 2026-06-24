@@ -91,15 +91,8 @@ export type LogDayRequest = {
   plan_id: string;
 };
 
-export type ListMealLogsParams = {
-  date?: string;
-  from?: string;
-  to?: string;
-};
-
 // ── Response types ──────────────────────────────────────────
 
-type MealLogListResponse = {data: MealLog[]};
 type MealLogBulkResponse = {data: FoodLogEntry[]};
 
 // ── Endpoints ───────────────────────────────────────────────
@@ -126,26 +119,6 @@ export const clientMealLogsApi = api.injectEndpoints({
         {type: 'MealLog', id: 'LIST'},
         {type: 'NutritionPlan', id: 'TODAY'},
       ],
-    }),
-    listMyMealLogs: build.query<MealLogListResponse, ListMealLogsParams | void>({
-      query: (params) => {
-        const queryParams = {
-          ...(params?.date && {date: params.date}),
-          ...(params?.from && {from: params.from}),
-          ...(params?.to && {to: params.to}),
-        };
-        return {url: '/v1/client/meal_logs', params: Object.keys(queryParams).length ? queryParams : undefined};
-      },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((log) => ({
-                type: 'MealLog' as const,
-                id: log.id,
-              })),
-              {type: 'MealLog' as const, id: 'LIST'},
-            ]
-          : [{type: 'MealLog' as const, id: 'LIST'}],
     }),
     logDay: build.mutation<MealLogBulkResponse, LogDayRequest>({
       query: (body) => ({
@@ -186,7 +159,6 @@ export const clientMealLogsApi = api.injectEndpoints({
 export const {
   useCreateFoodLogEntryMutation,
   useDeleteFoodLogEntryMutation,
-  useListMyMealLogsQuery,
   useLogDayMutation,
   useLogMealMutation,
   useUpdateFoodLogEntryMutation,

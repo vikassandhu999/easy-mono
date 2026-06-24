@@ -372,9 +372,6 @@ defmodule Easy.Clients do
       from(np in Easy.Nutrition.Plan, where: np.client_id == ^client.id)
       |> Repo.delete_all()
 
-      from(l in Easy.Storefront.Lead, where: l.client_id == ^client.id)
-      |> Repo.update_all(set: [client_id: nil])
-
       delete_changeset =
         client
         |> change()

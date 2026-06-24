@@ -18,7 +18,7 @@ This is the repository-level contract. Keep it broad. Subtree `AGENTS.md` files 
   - `apps/website`: marketing site, Next.js 16, port 3000.
 - Shared packages:
   - `packages/ui`, `packages/hooks`, `packages/utils`, `packages/chat`, `packages/websocket`.
-  - `packages/error-parser`, `packages/typings`, `packages/storefront-types`.
+  - `packages/error-parser`, `packages/typings`.
 
 ## Commands
 
@@ -67,6 +67,56 @@ This is the repository-level contract. Keep it broad. Subtree `AGENTS.md` files 
 - Repo-wide refactors: run `pnpm build`; run `pnpm lint` only when formatting/lint writes are intended.
 - UI or routing changes: verify the touched flow in a browser after the build succeeds.
 - Never claim a command passes unless it ran in this checkout and exited successfully.
+
+## API Clients (Generated)
+
+Each app's API layer is generated from the backend OpenAPI spec. Do NOT hand-edit `src/api/generated.ts` in either app — it will be overwritten.
+
+### Regenerating
+
+After any backend API change:
+
+```
+just gen-api
+```
+
+This runs: backend spec dump → coach/client split → `gen:api` in both apps → Biome format on both output files.
+
+If you only need to regenerate the clients without re-dumping the spec:
+
+```
+cd frontend && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
+```
+
+### Architecture
+
+- Config files: `openapi-config.json` in each app root (NOT a `.ts` file).
+- Tool pin: `@rtk-query/codegen-openapi@2.1.0`. Do NOT upgrade to 2.2.0 — it crashes on TS 5.8.
+- Each app's `generated.ts` injects into the hand-maintained `src/api/base.ts` (the `api` slice with auth/refresh `baseQuery`). The base slice is never overwritten; the generated file is always overwritten.
+- Scope: coachapp = `/v1/coach` + `/v1/businesses` + auth/public; clientapp = `/v1/client` + auth/public.
+
+### Migration Rule: delete-then-use per feature
+
+Hand-written `src/api/*.ts` endpoints are being replaced by generated ones feature-by-feature. The rule:
+
+**When you migrate a feature, switch its components to the generated hook AND delete the hand-written endpoint in the same change.**
+
+Never leave a component importing `generated.ts` while a hand-written endpoint for the same operation still exists elsewhere — this causes duplicate-injection / first-wins ordering surprises.
+
+`generated.ts` should only ever be imported by already-migrated screens, never app-wide.
+
+### Cache Tags
+
+Codegen runs with `tag: false`, so generated endpoints have NO `providesTags`/`invalidatesTags`. When migrating a feature that mutates data, add cache-tag wiring per feature — otherwise screens won't auto-refresh after mutations.
+
+### Infinite-scroll Lists Stay Hand-Written
+
+`@rtk-query/codegen-openapi` cannot generate RTK Query `build.infiniteQuery`. The paginated list endpoints MUST remain hand-written `build.infiniteQuery`:
+
+- **coachapp:** exercises, foods, recipes, clients, workout-sessions, nutrition-plans, training-plans
+- **clientapp:** client exercises, client workout-sessions
+
+When migrating those, keep the hand-written infinite endpoint but refactor it to import generated TYPES (e.g. `ListFoodsApiArg` / `ListFoodsApiResponse` from `generated.ts`) instead of hand-maintaining `ApiListResponse<X>` / `ListXFilters`. The generated standard query and the hand-written infinite endpoint have different names and coexist cleanly.
 
 ## Final Response Checklist
 

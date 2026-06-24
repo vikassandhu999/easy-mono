@@ -178,23 +178,6 @@ defmodule EasyWeb.Router do
 
     # Meal logs (view client nutrition data — read-only)
     get "/clients/:client_id/nutrition-meal-logs", MealLogController, :index
-
-    # Storefront
-    get "/storefront/profile", StoreProfileController, :show
-    patch "/storefront/profile", StoreProfileController, :update
-    post "/storefront/check-slug", StoreProfileController, :check_slug
-
-    get "/offers", OfferController, :index
-    post "/offers", OfferController, :create
-    get "/offers/:id", OfferController, :show
-    patch "/offers/:id", OfferController, :update
-    delete "/offers/:id", OfferController, :delete
-
-    get "/testimonials", TestimonialController, :index
-    post "/testimonials", TestimonialController, :create
-    get "/testimonials/:id", TestimonialController, :show
-    patch "/testimonials/:id", TestimonialController, :update
-    delete "/testimonials/:id", TestimonialController, :delete
   end
 
   scope "/v1/client", EasyWeb.Clients do
@@ -260,12 +243,5 @@ defmodule EasyWeb.Router do
     post "/threads", ThreadController, :create
     get "/threads/:id", ThreadController, :show
     post "/threads/:thread_id/messages", ThreadMessageController, :create
-  end
-
-  scope "/v1/public", EasyWeb.Public do
-    pipe_through :api
-
-    get "/coaches/:slug/profile", StorefrontController, :show
-    post "/coaches/:slug/inquiries", StorefrontController, :create_inquiry
   end
 end

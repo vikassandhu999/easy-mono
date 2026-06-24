@@ -8,18 +8,18 @@ Easy (also called CoachEasy) is a platform for fitness and nutrition coaches to 
 
 The product has two sides:
 
-* The coach side: client roster, plan authoring, libraries of exercises, foods, and recipes, and a public storefront for getting leads.
+* The coach side: client roster, plan authoring, and libraries of exercises, foods, and recipes.
 * The client side: following assigned plans, logging workouts set by set, logging meals food by food, and tracking weight against a goal.
 
 Coaches author; clients execute and log. A client never creates a plan.
 
 ## Where the code lives
 
-* `backend/` is an Elixir/Phoenix API built on Ash. Domain logic lives in `backend/lib/easy`, grouped by domain (`identity`, `orgs`, `clients`, `training`, `nutrition`, `fitness`, `storefront`). The web layer is `backend/lib/easy_web`.
+* `backend/` is an Elixir/Phoenix API built on Ash. Domain logic lives in `backend/lib/easy`, grouped by domain (`identity`, `orgs`, `clients`, `training`, `nutrition`, `fitness`). The web layer is `backend/lib/easy_web`.
 * `frontend/apps/coachapp-v2` is the coach web app (React 19, Vite, Redux Toolkit + RTK Query, HeroUI, Tailwind).
 * `frontend/apps/clientapp-v2` is the client app, built as a PWA and wrapped with Capacitor for iOS and Android.
-* `frontend/apps/website` is the Next.js marketing site, which also renders public coach storefronts at `/coach/[slug]`.
-* `docs/api_contract.yaml` is the OpenAPI contract between frontend and backend. Any API change updates this file and both sides.
+* `frontend/apps/website` is the Next.js marketing site.
+* Generated OpenAPI is the API contract between frontend and backend. Backend changes update the OpenApiSpex operations and regenerate the frontend OpenAPI artifacts when needed.
 
 ## People and tenancy
 
@@ -67,18 +67,6 @@ On the logging side, a **MealLog** is a client's record for one meal slot on one
 
 The fitness domain is small. A **WeightEntry** is one weight measurement per client per date, in kg or lbs. Clients have a `goal_weight_value` and unit on their record, and the apps show progress toward it.
 
-## Storefront vocabulary
-
-The storefront domain is the public, lead-generation side of a business. The coach app has the editor (hidden in the MVP routes); the website renders the result.
-
-A **StoreProfile** is the coach's public page: slug, display name, bio, photos, theme color, intake questions, FAQ items, trust stats, and a WhatsApp call-to-action. It is only visible when `is_published` is true.
-
-An **Offer** is a service the coach sells: a nutrition plan, training plan, combo, consultation, or other, with a price, currency, and feature list. There is no payment processing; billing is a TODO in the Orgs module, and the storefront's purchase path is a WhatsApp conversation.
-
-A **Testimonial** is a client review shown on the profile. A **Lead** is a prospect who submitted the inquiry form, with statuses `new`, `contacted`, `converted`, and `rejected`. Converting a lead creates a pending Client and sends an invitation, closing the loop back to the client lifecycle.
-
-The types for this public surface live in `frontend/packages/storefront-types` (`PublicStoreProfile`, `PublicOffer`, `PublicTestimonial`) and are shared between the coach app's editor and the website.
-
 ## Easily confused pairs
 
 * Workout vs WorkoutSession: the design vs one execution of it.
@@ -86,22 +74,20 @@ The types for this public surface live in `frontend/packages/storefront-types` (
 * TrainingPlan vs Plan: `Plan` with no qualifier is the nutrition domain's resource. The API and frontend disambiguate with `training_plans` and `nutrition_plans`.
 * Meal vs MealLog: a reusable meal definition vs a client's daily log for a slot.
 * Client vs User: a Client is a roster entry owned by a business; a User is a login. A pending Client has no User.
-* Offer vs Lead: what the coach sells vs a person who asked about it.
 
 ## How the pieces talk
 
 Both React apps call the API through RTK Query against `/v1/...`, with a Bearer token that auto-refreshes and a redirect to login on 401/403. Cache invalidation uses RTK Query tags named after the resources above (Client, TrainingPlan, MealLog, and so on), so the vocabulary in this document is also the cache vocabulary.
 
-The contract in `docs/api_contract.yaml` is the source of truth for routes and shapes; `docs/api_contract_rules.md` has the rules for changing it. The backend also serves generated OpenAPI at `/api/openapi` and Swagger UI at `/swaggerui`.
+Generated OpenAPI is the source of truth for routes and shapes. The backend also serves generated OpenAPI at `/api/openapi` and Swagger UI at `/swaggerui`.
 
 `frontend/packages/websocket` provides a reconnecting `WebSocketClient`, and `frontend/packages/chat` provides a Lexical-based chat UI. Neither is wired into the MVP routes; they exist for the planned coach-client chat.
 
 ## A day in the life of the data
 
-1. A visitor finds a coach's storefront on the website and submits the inquiry form, creating a Lead.
-2. The coach converts the Lead, which creates a pending Client and emails an invitation.
-3. The client accepts, gets a User and a JWT with role `client`, and installs the client app.
-4. The coach duplicates a TrainingPlan template and a nutrition Plan template, assigns both to the client, and sets a goal weight.
-5. Each training day, the client opens the assigned workout, starts a WorkoutSession, and logs PerformedSets.
-6. Each meal slot, the client logs FoodLogEntries against the MealLog, and adherence is computed from planned versus logged calories.
-7. The client logs WeightEntries; the coach watches sessions, meal logs, and weight from the coach app.
+1. A coach invites a client, which creates a pending Client and emails an invitation.
+2. The client accepts, gets a User and a JWT with role `client`, and installs the client app.
+3. The coach duplicates a TrainingPlan template and a nutrition Plan template, assigns both to the client, and sets a goal weight.
+4. Each training day, the client opens the assigned workout, starts a WorkoutSession, and logs PerformedSets.
+5. Each meal slot, the client logs FoodLogEntries against the MealLog, and adherence is computed from planned versus logged calories.
+6. The client logs WeightEntries; the coach watches sessions, meal logs, and weight from the coach app.

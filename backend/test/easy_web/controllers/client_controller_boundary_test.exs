@@ -6,8 +6,7 @@ defmodule EasyWeb.ClientControllerBoundaryTest do
     "lib/easy_web/controllers/clients/profile_controller.ex",
     "lib/easy_web/controllers/clients/weight_entry_controller.ex",
     "lib/easy_web/controllers/coaches/client_weight_entry_controller.ex",
-    "lib/easy_web/controllers/auth_controller.ex",
-    "lib/easy_web/controllers/public/storefront_controller.ex"
+    "lib/easy_web/controllers/auth_controller.ex"
   ]
 
   test "client controllers do not call Repo directly" do

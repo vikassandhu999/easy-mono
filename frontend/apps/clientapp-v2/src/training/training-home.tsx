@@ -14,7 +14,7 @@ import {useMemo} from 'react';
 import {useNavigate} from 'react-router-dom';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useListMyMealLogsQuery} from '@/api/mealLogs';
+import {useListClientMealLogsQuery} from '@/api/generated';
 import {useGetClientProfileQuery} from '@/api/profile';
 import type {ClientTrainingPlan, ClientTrainingPlanItem, ClientWorkout, TrainingWeekday} from '@/api/trainingPlans';
 import {useListClientTrainingPlansQuery} from '@/api/trainingPlans';
@@ -82,7 +82,7 @@ function getDaysUntil(day: TrainingWeekday, today: TrainingWeekday): number {
 function TodayNutritionSummary() {
   const navigate = useNavigate();
   const todayISO = formatDateISO(new Date());
-  const {data: mealLogsData} = useListMyMealLogsQuery({date: todayISO});
+  const {data: mealLogsData} = useListClientMealLogsQuery({date: todayISO});
 
   const allEntries = useMemo(
     () => (mealLogsData?.data ?? []).flatMap((mealLog) => mealLog.food_log_entries),

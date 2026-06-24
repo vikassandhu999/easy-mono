@@ -118,14 +118,6 @@ export const exercisesApi = api.injectEndpoints({
         {type: 'Exercise', id: 'LIST'},
       ],
     }),
-    listMuscles: build.query<ApiResponse<Muscle[]>, {search?: string}>({
-      query: (params) => ({url: '/v1/coach/muscles', params}),
-      providesTags: [{type: 'Muscle', id: 'LIST'}],
-    }),
-    listEquipment: build.query<ApiResponse<Equipment[]>, {search?: string}>({
-      query: (params) => ({url: '/v1/coach/equipment', params}),
-      providesTags: [{type: 'Equipment', id: 'LIST'}],
-    }),
   }),
 });
 
@@ -135,7 +127,5 @@ export const {
   useDuplicateExerciseMutation,
   useExercisesInfiniteQuery,
   useGetExerciseQuery,
-  useListEquipmentQuery,
-  useListMusclesQuery,
   useUpdateExerciseMutation,
 } = exercisesApi;

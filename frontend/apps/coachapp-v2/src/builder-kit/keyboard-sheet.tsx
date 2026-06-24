@@ -155,7 +155,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
           // Shape
           'rounded-t-2xl',
           // Colours — HeroUI CSS-var tokens matching mockup's #16161b card / #34343d border
-          'bg-content1 border border-divider',
+          'bg-surface border border-border',
           // Shadow
           'shadow-[0_-12px_30px_rgba(0,0,0,0.55)]',
           // Layout
@@ -180,7 +180,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
           className="flex justify-center pb-2 pt-2"
           aria-hidden="true"
         >
-          <div className="h-1 w-10 rounded-full bg-default-400" />
+          <div className="h-1 w-10 rounded-full bg-default" />
         </div>
 
         {/* Title row — only rendered when a title is provided */}
@@ -194,7 +194,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
             </span>
             <button
               aria-label="Close"
-              className="text-foreground-400 hover:text-foreground transition-colors"
+              className="text-muted hover:text-foreground transition-colors"
               onClick={onClose}
               type="button"
             >
@@ -208,7 +208,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
 
         {/* Sticky footer dock */}
         {footer !== undefined ? (
-          <div className="border-t border-primary/30 bg-background px-4 py-3">{footer}</div>
+          <div className="border-t border-separator bg-background px-4 py-3">{footer}</div>
         ) : null}
       </div>
     </>,

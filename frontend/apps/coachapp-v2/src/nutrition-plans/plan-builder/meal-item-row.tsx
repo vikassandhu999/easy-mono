@@ -108,12 +108,12 @@ export function MealItemRow({item, onTap}: MealItemRowProps) {
         type="button"
       >
         <div className="truncate text-xs font-semibold text-foreground">{name}</div>
-        {amount ? <div className="mt-px text-[10px] text-foreground-500">{amount}</div> : null}
+        {amount ? <div className="mt-px text-[10px] text-muted">{amount}</div> : null}
       </button>
 
       {/* Right-aligned macro contribution column */}
       {macro ? (
-        <div className="shrink-0 whitespace-nowrap py-[7px] pl-2 text-right text-[10px] text-foreground-500">
+        <div className="shrink-0 whitespace-nowrap py-[7px] pl-2 text-right text-[10px] text-muted">
           <span className="font-medium text-[#cde]">{macro.kcal}</span> kcal
           <br />
           {macro.p}P {macro.c}C {macro.f}F

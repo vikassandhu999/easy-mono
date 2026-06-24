@@ -77,7 +77,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   const [updateMeal] = useUpdateMealMutation();
   const [deleteMeal] = useDeleteMealMutation();
   const [deleteMealItem] = useDeleteMealItemMutation();
-  const {refetch} = useGetNutritionPlanQuery({id: planId});
+  const {data: planData, refetch} = useGetNutritionPlanQuery({id: planId});
 
   // Inline rename state
   const [editingName, setEditingName] = useState(false);
@@ -233,6 +233,13 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   const mealTotal = formatMealTotal(meal.nutrition);
   const items = meal.meal_items as HydratedMealItem[];
 
+  // Shared-meal warning: a meal is a reusable entity, so editing it updates
+  // everywhere it's assigned. Count how many schedule slots/days reference this
+  // meal; warn when it's used in 2+ places.
+  const assignmentCount =
+    planData?.data.schedule_entries?.filter((entry) => entry.nutrition_meal_id === meal.id).length ?? 0;
+  const isShared = assignmentCount >= 2;
+
   // Resolve food/recipe for the AmountSheet create-mode
   const amountFood = currentAmountItem && !isRecipe(currentAmountItem) ? currentAmountItem : undefined;
   const amountRecipe = currentAmountItem && isRecipe(currentAmountItem) ? currentAmountItem : undefined;
@@ -243,8 +250,8 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
   return (
     <div
-      className={`rounded-xl border bg-content1 overflow-hidden ${
-        open ? 'border-primary ring-1 ring-primary/60 shadow-[0_0_18px_rgba(108,140,255,0.13)]' : 'border-divider'
+      className={`rounded-xl border bg-surface overflow-hidden ${
+        open ? 'border-accent ring-1 ring-accent/60 shadow-[0_0_18px_rgba(108,140,255,0.13)]' : 'border-border'
       }`}
     >
       {/* Header — acts as accordion toggle */}
@@ -261,9 +268,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         tabIndex={0}
       >
         {/* Chevron */}
-        <span className="shrink-0 text-foreground-500">
-          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </span>
+        <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
 
         {/* Name — inline-edit or plain text */}
         <div className="flex-1 min-w-0">
@@ -272,7 +277,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
               ref={nameInputRef}
               // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
               autoFocus
-              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-primary"
+              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
               onBlur={() => {
                 commitRename().catch(() => undefined);
               }}
@@ -296,7 +301,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
         {/* Meal total badge */}
         {mealTotal ? (
-          <span className={`shrink-0 text-xs ${open ? 'text-primary' : 'text-foreground-500'}`}>{mealTotal}</span>
+          <span className={`shrink-0 text-xs ${open ? 'text-accent' : 'text-muted'}`}>{mealTotal}</span>
         ) : null}
 
         {/* Meal options menu — stop propagation so clicks don't toggle accordion */}
@@ -358,9 +363,14 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
       {/* Body — meal items + add button */}
       {open ? (
-        <div className="border-t border-divider pb-3 pt-1">
+        <div className="border-t border-border pb-3 pt-1">
+          {isShared ? (
+            <div className="mx-2.5 mt-2 mb-1 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
+              Used in {assignmentCount} places — changes apply everywhere
+            </div>
+          ) : null}
           {items.length === 0 ? (
-            <div className="pl-2.5 py-2 text-xs text-foreground-500">Add foods</div>
+            <div className="pl-2.5 py-2 text-xs text-muted">Add foods</div>
           ) : (
             items.map((item) => (
               <MealItemRow
@@ -373,7 +383,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
           <div className="pl-2.5">
             <button
-              className="mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+              className="mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
               onClick={() => setPickerOpen(true)}
               type="button"
             >
@@ -383,12 +393,12 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
           {/* Meal total — rolls up live from server-recomputed meal.nutrition */}
           {meal.nutrition?.calories != null ? (
-            <div className="mt-2.5 mx-2.5 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+            <div className="mt-2.5 mx-2.5 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 px-3 py-2">
               <div>
-                <div className="text-[10px] text-foreground-500">Meal total</div>
+                <div className="text-[10px] text-muted">Meal total</div>
                 <div className="text-sm font-bold text-foreground">{Math.round(meal.nutrition.calories)} kcal</div>
               </div>
-              <div className="text-[10px] text-primary">
+              <div className="text-[10px] text-accent">
                 {fmt(meal.nutrition.protein_g)}P · {fmt(meal.nutrition.carbs_g)}C · {fmt(meal.nutrition.fat_g)}F
               </div>
             </div>
@@ -398,6 +408,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
       {/* Food/recipe picker sheet */}
       <FoodRecipePickerSheet
+        mealName={meal.name}
         onClose={() => setPickerOpen(false)}
         onPick={handlePick}
         open={pickerOpen}

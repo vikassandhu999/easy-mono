@@ -195,7 +195,7 @@ function DayTotalBar({totals, targetCalories, label, isOverridden}: DayTotalBarP
         <div className="text-sm font-bold text-foreground">
           {Math.round(totals.calories)} / {targetCalories ?? '—'} kcal
         </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-content3">
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-tertiary">
           <div
             className={`h-full rounded-full transition-all ${isOverridden ? 'bg-warning' : 'bg-success'}`}
             style={{width: `${calPct}%`}}
@@ -204,7 +204,7 @@ function DayTotalBar({totals, targetCalories, label, isOverridden}: DayTotalBarP
       </div>
 
       {/* Percentage */}
-      <div className={`ml-3 shrink-0 text-lg font-bold ${isOverridden ? 'text-warning' : 'text-primary'}`}>
+      <div className={`ml-3 shrink-0 text-lg font-bold ${isOverridden ? 'text-warning' : 'text-accent'}`}>
         {isOverridden ? '~' : `${calPct}%`}
       </div>
     </div>
@@ -230,11 +230,11 @@ function SlotRows({slots, meals, onSlotChange}: SlotRowsProps) {
 
         return (
           <div
-            className="rounded-lg border border-divider bg-content1 overflow-hidden"
+            className="rounded-lg border border-border bg-surface overflow-hidden"
             key={slot}
           >
             <div className="flex items-center gap-3 px-3 py-2">
-              <span className="w-[70px] shrink-0 text-[9px] uppercase tracking-wide leading-tight text-foreground-500">
+              <span className="w-[70px] shrink-0 text-[9px] uppercase tracking-wide leading-tight text-muted">
                 {MEAL_SLOT_LABELS[slot] ?? slot}
               </span>
 
@@ -260,7 +260,7 @@ function SlotRows({slots, meals, onSlotChange}: SlotRowsProps) {
                         key={UNASSIGNED_KEY}
                         textValue="Unassigned"
                       >
-                        <span className="text-foreground-500">Unassigned</span>
+                        <span className="text-muted">Unassigned</span>
                         <ListBox.ItemIndicator />
                       </ListBox.Item>
                       {meals.map((meal) => (
@@ -461,7 +461,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
   const mealById = new Map(meals.map((m) => [m.id, m]));
 
   return (
-    <section className="border-t border-divider py-4">
+    <section className="border-t border-border py-4">
       {/* Section header */}
       <div className="mb-3 flex items-center justify-between">
         <Typography
@@ -475,16 +475,16 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       </div>
 
       {/* Mode toggle */}
-      <div className="mb-3 flex gap-1 rounded-lg border border-divider bg-content1 p-1">
+      <div className="mb-3 flex gap-1 rounded-lg border border-border bg-surface p-1">
         <button
-          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'everyday' ? 'border border-primary bg-primary/10 text-primary font-semibold' : 'border border-transparent text-foreground-500 hover:text-foreground'}`}
+          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'everyday' ? 'border border-accent bg-accent/10 text-accent font-semibold' : 'border border-transparent text-muted hover:text-foreground'}`}
           onClick={() => setMode('everyday')}
           type="button"
         >
           Every day
         </button>
         <button
-          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'customize' ? 'border border-primary bg-primary/10 text-primary font-semibold' : 'border border-transparent text-foreground-500 hover:text-foreground'}`}
+          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'customize' ? 'border border-accent bg-accent/10 text-accent font-semibold' : 'border border-transparent text-muted hover:text-foreground'}`}
           onClick={() => setMode('customize')}
           type="button"
         >
@@ -503,10 +503,10 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
             const stateClass = isSelected
               ? overridden
                 ? 'border-warning/60 bg-warning/10 text-warning font-bold'
-                : 'border-primary/60 bg-primary/10 text-primary font-bold'
+                : 'border-accent/60 bg-accent/10 text-accent font-bold'
               : overridden
                 ? 'border-warning/30 text-warning/70 hover:border-warning/50'
-                : 'border-divider text-foreground-500 hover:text-foreground hover:border-divider';
+                : 'border-border text-muted hover:text-foreground hover:border-border';
 
             return (
               <button
@@ -577,19 +577,19 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
           >
             Week overview
           </Typography>
-          <span className="text-[10px] text-foreground-400">read-only · tap to edit a day</span>
+          <span className="text-[10px] text-muted">read-only · tap to edit a day</span>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-divider">
+        <div className="overflow-hidden rounded-lg border border-border">
           {/* Grid: 8 cols — 1 label + 7 days */}
           <div className="grid grid-cols-[48px_repeat(7,1fr)] text-[9px]">
             {/* Header row */}
-            <div className="border-b border-r border-divider bg-content2 px-1 py-1.5" />
+            <div className="border-b border-r border-border bg-surface-secondary px-1 py-1.5" />
             {WEEKDAYS.map((day) => {
               const overridden = isDayOverridden(scheduleMap[day], templateSlots);
               return (
                 <button
-                  className={`border-b border-r border-divider px-0.5 py-1.5 text-center font-semibold transition-colors last:border-r-0 hover:bg-content3 ${overridden ? 'bg-warning/10 text-warning' : 'bg-content2 text-foreground-500'}`}
+                  className={`border-b border-r border-border px-0.5 py-1.5 text-center font-semibold transition-colors last:border-r-0 hover:bg-surface-tertiary ${overridden ? 'bg-warning/10 text-warning' : 'bg-surface-secondary text-muted'}`}
                   key={day}
                   onClick={() => jumpToDay(day)}
                   type="button"
@@ -602,11 +602,11 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
             {/* Slot rows */}
             {MEAL_SLOTS.map((slot, slotIdx) => {
               const isLastRow = slotIdx === MEAL_SLOTS.length - 1;
-              const rowBorder = isLastRow ? '' : 'border-b border-divider';
+              const rowBorder = isLastRow ? '' : 'border-b border-border';
               return [
                 /* Slot label cell */
                 <div
-                  className={`${rowBorder} border-r border-divider bg-content2 px-1 py-1.5 text-left text-[9px] text-foreground-400`}
+                  className={`${rowBorder} border-r border-border bg-surface-secondary px-1 py-1.5 text-left text-[9px] text-muted`}
                   key={`label-${slot}`}
                 >
                   {(MEAL_SLOT_LABELS[slot] ?? slot).slice(0, 5)}
@@ -619,7 +619,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
                   const cellText = meal ? meal.name.slice(0, 4) : '–';
                   return (
                     <button
-                      className={`${rowBorder} border-r border-divider px-0.5 py-1.5 text-center last:border-r-0 transition-colors hover:bg-content3 ${overridden ? 'bg-warning/5 text-warning' : meal ? 'text-foreground-600' : 'text-foreground-300'}`}
+                      className={`${rowBorder} border-r border-border px-0.5 py-1.5 text-center last:border-r-0 transition-colors hover:bg-surface-tertiary ${overridden ? 'bg-warning/5 text-warning' : meal ? 'text-muted' : 'text-foreground/50'}`}
                       key={`${slot}-${day}`}
                       onClick={() => jumpToDay(day)}
                       title={meal?.name}

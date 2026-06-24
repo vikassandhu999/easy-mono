@@ -10,6 +10,7 @@
  * render a live macro preview without a refetch.
  *
  * Props:
+ *   mealName — name of the meal being added to (drives the header title)
  *   open     — controls visibility
  *   onClose  — close handler
  *   onPick   — called with the array of selected Food | Recipe objects
@@ -39,6 +40,8 @@ export type FoodOrRecipe = Food | Recipe;
 type ActiveTab = 'foods' | 'recipes';
 
 interface FoodRecipePickerSheetProps {
+  /** Name of the meal being added to; rendered in the header title. */
+  mealName: string;
   open: boolean;
   onClose: () => void;
   /** Called with the full array of picked Food | Recipe objects. */
@@ -84,7 +87,7 @@ export function isRecipe(item: FoodOrRecipe): item is Recipe {
 // Component
 // ---------------------------------------------------------------------------
 
-export function FoodRecipePickerSheet({open, onClose, onPick}: FoodRecipePickerSheetProps) {
+export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRecipePickerSheetProps) {
   // --- Tab state ---
   const [activeTab, setActiveTab] = useState<ActiveTab>('foods');
 
@@ -222,7 +225,7 @@ export function FoodRecipePickerSheet({open, onClose, onPick}: FoodRecipePickerS
           aria-hidden="true"
           className={[
             'h-5 w-5 shrink-0 rounded-md border-[1.5px] flex items-center justify-center',
-            selected ? 'border-primary bg-primary text-primary-foreground' : 'border-default-400',
+            selected ? 'border-accent bg-accent text-accent-foreground' : 'border-default',
           ].join(' ')}
         >
           {selected ? <span className="text-[11px] font-bold leading-none">✓</span> : null}
@@ -231,7 +234,7 @@ export function FoodRecipePickerSheet({open, onClose, onPick}: FoodRecipePickerS
         {/* Name + per-serving subtitle */}
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium text-foreground">{item.name}</div>
-          <div className="truncate text-xs text-foreground-500">
+          <div className="truncate text-xs text-muted">
             {isRecipe(item)
               ? `per srv · ${fmt(item.nutrition?.calories)} kcal`
               : `per 100g · ${fmt(item.calories_per_100g)} kcal`}
@@ -272,7 +275,7 @@ export function FoodRecipePickerSheet({open, onClose, onPick}: FoodRecipePickerS
       renderItem={renderItem}
       search={search}
       selectedKeys={selectedKeys}
-      title="Add food or recipe"
+      title={`Add to ${mealName}`}
     />
   );
 }

@@ -74,7 +74,7 @@ export function MealsList({planId}: MealsListProps) {
   // ---------------------------------------------------------------------------
 
   return (
-    <section className="border-t border-divider py-4">
+    <section className="border-t border-border py-4">
       {/* Section header */}
       <div className="mb-3 flex items-center justify-between">
         <Typography
@@ -88,7 +88,7 @@ export function MealsList({planId}: MealsListProps) {
 
         {meals.length > 0 ? (
           <button
-            className="text-xs text-foreground-500 hover:text-foreground transition-colors"
+            className="text-xs text-muted hover:text-foreground transition-colors"
             onClick={collapseAll}
             type="button"
           >

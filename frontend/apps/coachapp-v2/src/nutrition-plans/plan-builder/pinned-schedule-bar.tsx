@@ -84,7 +84,7 @@ export function PinnedScheduleBar({planId}: PinnedScheduleBarProps) {
     <div className="sticky top-0 z-10">
       {/* Collapsed bar */}
       <button
-        className="flex w-full items-center justify-between gap-2 border-b border-divider bg-content1 px-4 py-2 text-left transition-colors hover:bg-content2"
+        className="flex w-full items-center justify-between gap-2 border-b border-border bg-surface px-4 py-2 text-left transition-colors hover:bg-surface-hover"
         onClick={() => setExpanded((v) => !v)}
         type="button"
       >
@@ -104,18 +104,16 @@ export function PinnedScheduleBar({planId}: PinnedScheduleBarProps) {
               size="sm"
             />
           ) : (
-            <span className="truncate text-xs text-foreground-500">{projection}</span>
+            <span className="truncate text-xs text-muted">{projection}</span>
           )}
         </div>
 
-        <span className="shrink-0 text-foreground-500">
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </span>
+        <span className="shrink-0 text-muted">{expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
       </button>
 
       {/* Expanded slot list */}
       {expanded ? (
-        <div className="border-b border-divider bg-background px-4 py-3">
+        <div className="border-b border-border bg-background px-4 py-3">
           {isLoading ? (
             <div className="flex justify-center py-2">
               <Spinner
@@ -133,8 +131,8 @@ export function PinnedScheduleBar({planId}: PinnedScheduleBarProps) {
                     className="flex items-center gap-2"
                     key={slot}
                   >
-                    <span className="w-20 shrink-0 text-xs text-foreground-400">{MEAL_SLOT_LABELS[slot] ?? slot}</span>
-                    <span className={`text-xs ${meal ? 'font-medium text-foreground' : 'text-foreground-300'}`}>
+                    <span className="w-20 shrink-0 text-xs text-muted">{MEAL_SLOT_LABELS[slot] ?? slot}</span>
+                    <span className={`text-xs ${meal ? 'font-medium text-foreground' : 'text-muted'}`}>
                       {meal ? meal.name : '—'}
                     </span>
                   </div>

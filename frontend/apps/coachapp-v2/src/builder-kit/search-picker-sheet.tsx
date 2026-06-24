@@ -199,7 +199,7 @@ export function SearchPickerSheet<T>({
               className={[
                 'cursor-pointer rounded-[7px] border',
                 filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
-                chip.active ? 'border-primary' : 'border-divider',
+                chip.active ? 'border-accent' : 'border-border',
               ].join(' ')}
               color={chip.active ? 'accent' : 'default'}
               key={chip.id}
@@ -226,7 +226,7 @@ export function SearchPickerSheet<T>({
           return (
             <button
               aria-pressed={selected}
-              className="w-full border-b border-divider text-left last:border-b-0"
+              className="w-full border-b border-border text-left last:border-b-0"
               key={key}
               onClick={() => onToggleItem(item)}
               type="button"
@@ -239,7 +239,7 @@ export function SearchPickerSheet<T>({
         {/* Create-from-no-match row */}
         {showCreateRow ? (
           <button
-            className="flex w-full items-center gap-2 py-3 text-left text-sm text-primary hover:opacity-80 transition-opacity"
+            className="flex w-full items-center gap-2 py-3 text-left text-sm text-accent hover:opacity-80 transition-opacity"
             onClick={() => onCreateNoMatch?.(search)}
             type="button"
           >

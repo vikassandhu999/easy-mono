@@ -515,7 +515,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
       <div className="flex items-center justify-between px-4 pb-2 pt-3">
         <span className="text-sm font-semibold text-foreground truncate pr-2">{itemName}</span>
         <button
-          className="shrink-0 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+          className="shrink-0 text-sm font-semibold text-accent hover:text-accent/80 transition-colors"
           onClick={() => {
             flushPendingSave()
               .then(onClose)
@@ -531,8 +531,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Recipe mode: servings input ── */}
         {recipe ? (
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-foreground-500">Servings</div>
-            <div className="rounded-lg border border-primary/40 bg-primary/5 px-3 pb-2 pt-1.5 text-center">
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-muted">Servings</div>
+            <div className="rounded-lg border border-accent/40 bg-accent/5 px-3 pb-2 pt-1.5 text-center">
               <input
                 className="w-full bg-transparent text-center text-2xl font-semibold text-foreground outline-none"
                 inputMode="decimal"
@@ -548,15 +548,15 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Food mode: serving-size chips ── */}
         {isFoodMode && servingSizes.length > 0 ? (
           <div>
-            <div className="mb-1.5 text-[10px] uppercase tracking-wider text-foreground-500">Serving size</div>
+            <div className="mb-1.5 text-[10px] uppercase tracking-wider text-muted">Serving size</div>
             <div className="flex flex-wrap gap-1.5">
               {servingSizes.map((serving, idx) => (
                 <button
                   className={[
                     'rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors',
                     activeServingIdx === idx
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-divider text-foreground-500 hover:border-default-400 hover:text-foreground-300',
+                      ? 'border-accent bg-accent/10 text-accent'
+                      : 'border-border text-muted hover:border-default-hover hover:text-foreground',
                   ].join(' ')}
                   // eslint-disable-next-line react/no-array-index-key
                   key={idx}
@@ -570,8 +570,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
             </div>
             {activeServingIdx !== null ? (
               <div className="mt-2">
-                <div className="mb-1 text-[10px] uppercase tracking-wider text-foreground-500">Count</div>
-                <div className="rounded-lg border border-divider bg-background px-3 pb-2 pt-1.5 text-center">
+                <div className="mb-1 text-[10px] uppercase tracking-wider text-muted">Count</div>
+                <div className="rounded-lg border border-border bg-background px-3 pb-2 pt-1.5 text-center">
                   <input
                     className="w-full bg-transparent text-center text-xl font-semibold text-foreground outline-none"
                     inputMode="decimal"
@@ -589,11 +589,11 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Food mode: grams direct input ── */}
         {isFoodMode ? (
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-foreground-500">Or enter grams</div>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-muted">Or enter grams</div>
             <div
               className={[
                 'rounded-lg border px-3 pb-2 pt-1.5 text-center transition-colors',
-                gramsInput !== '' ? 'border-primary/40 bg-primary/5' : 'border-divider bg-background',
+                gramsInput !== '' ? 'border-accent/40 bg-accent/5' : 'border-border bg-background',
               ].join(' ')}
             >
               <input
@@ -604,24 +604,24 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
                 type="text"
                 value={gramsInput}
               />
-              <div className="mt-0.5 text-[10px] text-foreground-600">g</div>
+              <div className="mt-0.5 text-[10px] text-muted">g</div>
             </div>
           </div>
         ) : null}
 
         {/* ── Live macro preview ── */}
         {macroPreview ? (
-          <div className="flex items-center justify-between rounded-lg border border-divider bg-content2/40 px-3 py-2">
+          <div className="flex items-center justify-between rounded-lg border border-border bg-surface-secondary/40 px-3 py-2">
             <div>
               {resolvedWeightG != null ? (
-                <div className="text-[10px] text-foreground-500">resolves to {fmt(resolvedWeightG)}g →</div>
+                <div className="text-[10px] text-muted">resolves to {fmt(resolvedWeightG)}g →</div>
               ) : null}
               <div className="text-sm font-bold text-foreground">{macroPreview.kcal}</div>
             </div>
-            <div className="text-[10px] text-primary">{macroPreview.macros}</div>
+            <div className="text-[10px] text-accent">{macroPreview.macros}</div>
           </div>
         ) : (
-          <div className="rounded-lg border border-divider bg-content2 px-3 py-2 text-center text-xs text-foreground-600">
+          <div className="rounded-lg border border-border bg-surface-secondary px-3 py-2 text-center text-xs text-muted">
             {isFoodMode ? 'Select a serving or enter grams to preview macros' : 'Enter servings to preview macros'}
           </div>
         )}
@@ -632,8 +632,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
             className={[
               'w-full rounded-xl py-3 text-sm font-semibold transition-colors',
               canConfirm
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'cursor-not-allowed bg-content2 text-foreground-600',
+                ? 'bg-accent text-accent-foreground hover:bg-accent-hover'
+                : 'cursor-not-allowed bg-surface-secondary text-muted',
             ].join(' ')}
             disabled={!canConfirm}
             onClick={canConfirm ? handleCreate : undefined}
@@ -646,7 +646,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Edit mode footer: autosave hint + remove action ── */}
         {isEditMode ? (
           <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[10px] text-foreground-600">Changes save automatically</span>
+            <span className="text-[10px] text-muted">Changes save automatically</span>
             {onDelete ? (
               <button
                 className="text-xs font-medium text-danger transition-colors hover:text-danger/80"

@@ -68,10 +68,10 @@ function TargetSummary({plan}: {plan: NutritionPlan}) {
   const summary = [kcalPart, macroParts.join(' ')].filter(Boolean).join(' · ');
 
   if (summary.length === 0) {
-    return <span className="text-xs text-foreground-400">No targets set</span>;
+    return <span className="text-xs text-muted">No targets set</span>;
   }
 
-  return <span className="text-xs font-medium text-foreground-500">Target {summary}</span>;
+  return <span className="text-xs font-medium text-muted">Target {summary}</span>;
 }
 
 // ---------------------------------------------------------------------------
@@ -194,7 +194,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
     <div className="w-full space-y-3 py-4">
       {/* Section label + saving indicator + target summary */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-foreground-400">Plan details</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted">Plan details</span>
         {isSaving ? (
           <Spinner
             color="accent"
@@ -210,7 +210,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
         control={control}
         inputProps={{
           className:
-            'bg-transparent border-0 border-b border-divider rounded-none px-0 text-xl font-semibold focus:border-[#6c8cff] focus:ring-0 transition-colors placeholder:text-foreground-400',
+            'bg-transparent border-0 border-b border-border rounded-none px-0 text-xl font-semibold focus:border-[#6c8cff] focus:ring-0 transition-colors placeholder:text-muted',
           placeholder: 'Plan name',
         }}
         label=""

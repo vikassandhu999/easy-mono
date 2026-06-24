@@ -514,6 +514,12 @@ export function SetSheet({workoutExercise, setIndex, planId, open, onClose, onPr
     return () => mq.removeEventListener('change', handler);
   }, []);
 
+  // Stable ref object pointing at the row element the popover anchors to.
+  // react-aria's Popover (Popover.Content) reads `triggerRef`, not the root
+  // DialogTrigger — so the anchor must live on Content.
+  const triggerRef = useRef<HTMLElement | null>(null);
+  triggerRef.current = anchorEl ?? null;
+
   const contentProps: SetSheetContentProps = {
     workoutExercise,
     setIndex,
@@ -532,16 +538,11 @@ export function SetSheet({workoutExercise, setIndex, planId, open, onClose, onPr
             onClose();
           }
         }}
-        triggerRef={{current: anchorEl}}
       >
-        <Popover.Trigger>
-          {/* Invisible sentinel — the actual trigger is the anchorEl passed in */}
-          <span
-            aria-hidden="true"
-            className="sr-only pointer-events-none"
-          />
-        </Popover.Trigger>
-        <Popover.Content className="w-80 rounded-xl border border-divider bg-content1 p-0 shadow-xl">
+        <Popover.Content
+          className="w-80 rounded-xl border border-divider bg-content1 p-0 shadow-xl"
+          triggerRef={triggerRef}
+        >
           <Popover.Dialog className="outline-none">
             <SetSheetContent {...contentProps} />
           </Popover.Dialog>

@@ -10,10 +10,8 @@
  * a round-trip.
  */
 import {Button, Spinner, Typography} from '@heroui/react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
-import {useCreateWorkoutMutation, useListWorkoutsQuery} from '@/api/generated';
+import {coachApi, useCreateWorkoutMutation, useListWorkoutsQuery} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 import {useWorkoutAccordion} from './hooks/use-workout-accordion';
 import {WorkoutCard} from './workout-card';
@@ -31,7 +29,7 @@ interface WorkoutListProps {
 // ---------------------------------------------------------------------------
 
 export function WorkoutList({planId}: WorkoutListProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const {data, isLoading, isError} = useListWorkoutsQuery({planId, limit: 100});
   const [createWorkout, {isLoading: isCreating}] = useCreateWorkoutMutation();
 
@@ -53,7 +51,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
       const newWorkout = result.data;
       // Optimistic append into cache
       dispatch(
-        api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+        coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
           draft.data.push(newWorkout);
         }),
       );

@@ -16,16 +16,15 @@
 import {Button, Dropdown, Label, Separator, toast} from '@heroui/react';
 import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
 import type {NutritionMeal} from '@/api/generated';
 import {
+  coachApi,
   useDeleteMealItemMutation,
   useDeleteMealMutation,
   useGetNutritionPlanQuery,
   useUpdateMealMutation,
 } from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 import {AmountSheet} from './amount-sheet';
 import type {FoodOrRecipe} from './food-recipe-picker-sheet';
@@ -74,7 +73,7 @@ function formatMealTotal(nutrition: NutritionMeal['nutrition']): string {
 // ---------------------------------------------------------------------------
 
 export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [updateMeal] = useUpdateMealMutation();
   const [deleteMeal] = useDeleteMealMutation();
   const [deleteMealItem] = useDeleteMealItemMutation();
@@ -120,7 +119,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
     }
     setEditingName(false);
     const patch = dispatch(
-      api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
+      coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
         const m = draft.data.meals?.find((x) => x.id === meal.id);
         if (m) {
           m.name = trimmed;
@@ -158,7 +157,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
   const handleDelete = useCallback(async () => {
     const patch = dispatch(
-      api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
+      coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
         const idx = draft.data.meals?.findIndex((x) => x.id === meal.id) ?? -1;
         if (idx !== -1) {
           draft.data.meals?.splice(idx, 1);
@@ -181,7 +180,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   const handleDeleteItem = useCallback(
     async (itemId: string) => {
       const patch = dispatch(
-        api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
+        coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
           const m = draft.data.meals?.find((x) => x.id === meal.id);
           if (m) {
             const idx = m.meal_items.findIndex((i) => i.id === itemId);

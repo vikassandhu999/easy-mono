@@ -10,11 +10,14 @@
 import {Button, Dropdown, Label, Separator, toast} from '@heroui/react';
 import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
 import type {TrainingExercise, TrainingPlanWorkout} from '@/api/generated';
-import {useCreateWorkoutElementMutation, useDeleteWorkoutMutation, useUpdateWorkoutMutation} from '@/api/generated';
+import {
+  coachApi,
+  useCreateWorkoutElementMutation,
+  useDeleteWorkoutMutation,
+  useUpdateWorkoutMutation,
+} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 import {ExercisePickerSheet} from './exercise-picker-sheet';
 import {ExerciseRow} from './exercise-row';
@@ -35,7 +38,7 @@ interface WorkoutCardProps {
 // ---------------------------------------------------------------------------
 
 export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [updateWorkout] = useUpdateWorkoutMutation();
   const [deleteWorkout] = useDeleteWorkoutMutation();
   const [createWorkoutElement] = useCreateWorkoutElementMutation();
@@ -74,7 +77,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     }
     setEditingName(false);
     const patch = dispatch(
-      api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+      coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
         const w = draft.data.find((x) => x.id === workout.id);
         if (w) {
           w.name = trimmed;
@@ -113,7 +116,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     try {
       await deleteWorkout({id: workout.id}).unwrap();
       dispatch(
-        api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+        coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
           const idx = draft.data.findIndex((x) => x.id === workout.id);
           if (idx !== -1) {
             draft.data.splice(idx, 1);
@@ -157,7 +160,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
           // Append the new element into the cache immediately
           const newElement = result.data;
           dispatch(
-            api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+            coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
               const w = draft.data.find((x) => x.id === workout.id);
               if (w) {
                 w.workout_elements = [...w.workout_elements, newElement];

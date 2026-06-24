@@ -4,7 +4,7 @@ import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {clearTokens} from '@/api/authStorage';
-import {api} from '@/api/base';
+import {coachApi} from '@/api/generated';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
 import EditableRow from '@/settings/components/editable-row';
 import SectionHeading from '@/settings/components/section-heading';
@@ -175,7 +175,7 @@ export default function Settings() {
 
   const handleLogout = useCallback(() => {
     clearTokens();
-    store.dispatch(api.util.resetApiState());
+    store.dispatch(coachApi.util.resetApiState());
     navigate('/login', {replace: true});
   }, [navigate]);
 

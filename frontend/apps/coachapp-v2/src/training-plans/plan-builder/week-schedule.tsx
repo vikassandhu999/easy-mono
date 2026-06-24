@@ -9,14 +9,13 @@
 import {ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
 import {ChevronDown, ChevronRight} from 'lucide-react';
 import {useState} from 'react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
 import {
+  coachApi,
   useGetTrainingPlanScheduleQuery,
   useListWorkoutsQuery,
   useSetTrainingPlanDayScheduleMutation,
 } from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -91,7 +90,7 @@ interface WeekScheduleProps {
 // ---------------------------------------------------------------------------
 
 export function WeekSchedule({planId}: WeekScheduleProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const {
     data: scheduleData,
     isLoading: scheduleLoading,
@@ -124,7 +123,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
 
     // Optimistic update — patch holds the inverse so we can roll back on failure.
     const patch = dispatch(
-      api.util.updateQueryData('getTrainingPlanSchedule', {planId}, (draft) => {
+      coachApi.util.updateQueryData('getTrainingPlanSchedule', {planId}, (draft) => {
         if (!draft.data) {
           draft.data = {};
         }

@@ -12,12 +12,10 @@
 import {Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
-import {useDispatch} from 'react-redux';
-
 import {FormTextField} from '@/@components/form-fields';
-import {api} from '@/api/base';
 import type {TrainingPlan, TrainingPlanUpdateRequest} from '@/api/generated';
-import {useUpdateTrainingPlanMutation} from '@/api/generated';
+import {coachApi, useUpdateTrainingPlanMutation} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 import {schema, type TrainingPlanFormValues, trainingPlanToFormValues} from '../training-plan-form/training-plan-form';
 
 // ---------------------------------------------------------------------------
@@ -33,7 +31,7 @@ interface PlanHeaderProps {
 // ---------------------------------------------------------------------------
 
 export function PlanHeader({plan}: PlanHeaderProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [updatePlan, {isLoading: isSaving}] = useUpdateTrainingPlanMutation();
 
   const form = useForm<TrainingPlanFormValues>({
@@ -73,7 +71,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
 
     // Optimistic update — merge the changed field into the cached plan.
     const patch = dispatch(
-      api.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
+      coachApi.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
         if (body.name !== undefined) {
           draft.data.name = body.name;
         }

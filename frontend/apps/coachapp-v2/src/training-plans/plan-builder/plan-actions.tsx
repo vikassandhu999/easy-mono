@@ -1,9 +1,7 @@
 import {Button, Dropdown, Header, Label, Separator, toast, useOverlayState} from '@heroui/react';
 import {ArchiveIcon, ArchiveRestoreIcon, Copy, MoreHorizontal, Pencil, TrashIcon} from 'lucide-react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
-import {TrainingPlan, useUpdateTrainingPlanMutation} from '@/api/generated';
+import {coachApi, TrainingPlan, useUpdateTrainingPlanMutation} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 import PlanDeleteAlertDialog from './plan-delete-alert-dialog';
 
@@ -13,14 +11,14 @@ export type Props = {
 };
 
 export function PlanActions({plan, onDeleted}: Props) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [updatePlan, {isLoading: updating}] = useUpdateTrainingPlanMutation();
 
   // Generated endpoints are tag:false, so optimistically patch the cached plan
   // status and roll back on failure.
   const setStatus = async (status: 'active' | 'archived', successMessage: string) => {
     const patch = dispatch(
-      api.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
+      coachApi.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
         draft.data.status = status;
       }),
     );

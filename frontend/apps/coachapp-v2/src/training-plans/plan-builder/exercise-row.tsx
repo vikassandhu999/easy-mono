@@ -10,11 +10,9 @@
  */
 import {toast} from '@heroui/react';
 import {useRef, useState} from 'react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
-import {useUpdateWorkoutElementMutation} from '@/api/generated';
+import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 import {SetRow} from './set-row';
 import {SetSheet} from './set-sheet';
@@ -52,7 +50,7 @@ function makeDefaultSet(): TrainingPlanPlannedSet {
 // ---------------------------------------------------------------------------
 
 export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [updateElement] = useUpdateWorkoutElementMutation();
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -81,7 +79,7 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
       // Reflect the appended set in the listWorkouts cache immediately so the
       // new SetRow renders before any field edit.
       dispatch(
-        api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+        coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
           for (const workout of draft.data) {
             const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
             if (idx !== -1) {

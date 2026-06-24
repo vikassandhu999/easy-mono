@@ -11,12 +11,10 @@
  */
 import {Popover, toast} from '@heroui/react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
-import {useUpdateWorkoutElementMutation} from '@/api/generated';
+import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+import {useAppDispatch} from '@/store';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -114,7 +112,7 @@ interface SetSheetContentProps {
 }
 
 export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onPrev, onNext}: SetSheetContentProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [updateElement] = useUpdateWorkoutElementMutation();
 
   const currentSet = workoutExercise.planned_sets[setIndex];
@@ -184,7 +182,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
 
       // Optimistic write
       const cachePatch = dispatch(
-        api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+        coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
           for (const workout of draft.data) {
             const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
             if (idx !== -1) {

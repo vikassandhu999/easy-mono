@@ -30,13 +30,16 @@
 import {computeMacrosFromSnapshot} from '@easy/utils';
 import {toast} from '@heroui/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
 import type {Food, Recipe} from '@/api/generated';
-import {useCreateMealItemMutation, useGetNutritionPlanQuery, useUpdateMealItemMutation} from '@/api/generated';
+import {
+  coachApi,
+  useCreateMealItemMutation,
+  useGetNutritionPlanQuery,
+  useUpdateMealItemMutation,
+} from '@/api/generated';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
+import {useAppDispatch} from '@/store';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -105,7 +108,7 @@ interface ContentProps {
 }
 
 function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose}: ContentProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [createMealItem] = useCreateMealItemMutation();
   const [updateMealItem] = useUpdateMealItemMutation();
   const {refetch} = useGetNutritionPlanQuery({id: planId});
@@ -291,7 +294,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
       // Optimistic write into getNutritionPlan cache
       const cachePatch = dispatch(
-        api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
+        coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
           const meals = draft.data.meals ?? [];
           for (const meal of meals) {
             const idx = meal.meal_items.findIndex((mi) => mi.id === existingItem.id);
@@ -456,7 +459,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     };
 
     const cachePatch = dispatch(
-      api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
+      coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
         const meals = draft.data.meals ?? [];
         const meal = meals.find((m) => m.id === mealId);
         if (meal) {

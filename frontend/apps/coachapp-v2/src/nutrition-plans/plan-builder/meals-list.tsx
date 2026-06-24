@@ -11,10 +11,8 @@
  * server-computed nutrition snapshots reconcile.
  */
 import {Button, Spinner, Typography, toast} from '@heroui/react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
-import {useCreateMealMutation, useGetNutritionPlanQuery} from '@/api/generated';
+import {coachApi, useCreateMealMutation, useGetNutritionPlanQuery} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 import {useWorkoutAccordion} from '@/training-plans/plan-builder/hooks/use-workout-accordion';
 import {MealCard} from './meal-card';
@@ -32,7 +30,7 @@ interface MealsListProps {
 // ---------------------------------------------------------------------------
 
 export function MealsList({planId}: MealsListProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const {data, isLoading, isError, refetch} = useGetNutritionPlanQuery({id: planId});
   const [createMeal, {isLoading: isCreating}] = useCreateMealMutation();
 
@@ -54,7 +52,7 @@ export function MealsList({planId}: MealsListProps) {
       const newMeal = result.data;
       // Optimistic append into cache
       dispatch(
-        api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
+        coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
           if (!draft.data.meals) {
             draft.data.meals = [];
           }

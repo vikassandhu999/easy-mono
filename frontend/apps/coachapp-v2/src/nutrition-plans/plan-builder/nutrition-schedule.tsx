@@ -40,16 +40,15 @@ import {
 } from '@easy/utils';
 import {ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
 import {useState} from 'react';
-import {useDispatch} from 'react-redux';
-
-import {api} from '@/api/base';
 import {
+  coachApi,
   NutritionMeal,
   NutritionScheduleEntry,
   useGetNutritionPlanQuery,
   useGetNutritionPlanScheduleQuery,
   useSetNutritionPlanDayScheduleMutation,
 } from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -387,7 +386,7 @@ interface NutritionScheduleProps {
 // ---------------------------------------------------------------------------
 
 export function NutritionSchedule({planId}: NutritionScheduleProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [mode, setMode] = useState<'everyday' | 'customize'>('everyday');
   const [selectedDay, setSelectedDay] = useState<string>('monday');
@@ -419,7 +418,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
     // Apply optimistic cache patches for ALL 7 days before any PUTs.
     const patches = WEEKDAYS.map((day) => {
       return dispatch(
-        api.util.updateQueryData('getNutritionPlanSchedule', {planId}, (draft) => {
+        coachApi.util.updateQueryData('getNutritionPlanSchedule', {planId}, (draft) => {
           if (!draft.data) {
             draft.data = {};
           }
@@ -475,7 +474,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
     const currentDaySlots = scheduleMap[day];
 
     const patch = dispatch(
-      api.util.updateQueryData('getNutritionPlanSchedule', {planId}, (draft) => {
+      coachApi.util.updateQueryData('getNutritionPlanSchedule', {planId}, (draft) => {
         if (!draft.data) {
           draft.data = {};
         }

@@ -15,12 +15,11 @@
 import {Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
-import {useDispatch} from 'react-redux';
 import {z} from 'zod';
 import {FormNumberField, FormTextField} from '@/@components/form-fields';
-import {api} from '@/api/base';
 import type {NutritionPlan} from '@/api/generated';
-import {useUpdateNutritionPlanMutation} from '@/api/generated';
+import {coachApi, useUpdateNutritionPlanMutation} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 // ---------------------------------------------------------------------------
 // Schema + form values
@@ -92,7 +91,7 @@ interface PlanHeaderProps {
 // ---------------------------------------------------------------------------
 
 export function PlanHeader({plan}: PlanHeaderProps) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [updatePlan, {isLoading: isSaving}] = useUpdateNutritionPlanMutation();
 
   const form = useForm<PlanHeaderFormValues>({
@@ -168,7 +167,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
 
     // Optimistic update — merge body fields into the cached plan.
     const patch = dispatch(
-      api.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
+      coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
         if (body.name !== undefined) {
           draft.data.name = body.name;
         }

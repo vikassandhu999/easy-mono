@@ -157,20 +157,22 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // ---------------------------------------------------------------------------
 
   const handleDelete = useCallback(async () => {
+    const patch = dispatch(
+      api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
+        const idx = draft.data.meals?.findIndex((x) => x.id === meal.id) ?? -1;
+        if (idx !== -1) {
+          draft.data.meals?.splice(idx, 1);
+        }
+      }),
+    );
     try {
       await deleteMeal({id: meal.id}).unwrap();
-      dispatch(
-        api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
-          const idx = draft.data.meals?.findIndex((x) => x.id === meal.id) ?? -1;
-          if (idx !== -1) {
-            draft.data.meals?.splice(idx, 1);
-          }
-        }),
-      );
+      refetch().catch(() => undefined);
     } catch {
+      patch.undo();
       toast.danger("Couldn't delete meal");
     }
-  }, [meal.id, planId, deleteMeal, dispatch]);
+  }, [meal.id, planId, deleteMeal, dispatch, refetch]);
 
   // ---------------------------------------------------------------------------
   // Delete meal item

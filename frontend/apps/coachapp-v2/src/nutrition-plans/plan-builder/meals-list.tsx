@@ -10,7 +10,7 @@
  * updateQueryData('getNutritionPlan', {id: planId}, …) + refetch so the
  * server-computed nutrition snapshots reconcile.
  */
-import {Button, Spinner, Typography} from '@heroui/react';
+import {Button, Spinner, Typography, toast} from '@heroui/react';
 import {useDispatch} from 'react-redux';
 
 import {api} from '@/api/base';
@@ -66,7 +66,8 @@ export function MealsList({planId}: MealsListProps) {
       // Reconcile server snapshot
       refetch().catch(() => undefined);
     } catch {
-      // Create failed — nothing to roll back
+      // Create failed — nothing to roll back (optimistic push only runs on success)
+      toast.danger("Couldn't add meal");
     }
   };
 

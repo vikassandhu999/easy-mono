@@ -15,7 +15,7 @@
  *   onPick   — called with the array of selected Food | Recipe objects
  */
 
-import {Chip} from '@heroui/react';
+import {Chip, toast} from '@heroui/react';
 import {useCallback, useMemo, useState} from 'react';
 
 import type {Food, Recipe} from '@/api/generated';
@@ -78,8 +78,9 @@ function recipeMacroBadge(recipe: Recipe): string {
   return `${cal}kcal/srv · ${protein}P`;
 }
 
-/** Type guard: is the item a Recipe (has `recipe_ingredients`)? */
-function isRecipe(item: FoodOrRecipe): item is Recipe {
+/** Type guard: is the item a Recipe (has `recipe_ingredients`)? Exported so the
+ * amount sheet (Task 4) can branch food (grams) vs recipe (servings) per pick. */
+export function isRecipe(item: FoodOrRecipe): item is Recipe {
   return 'recipe_ingredients' in item;
 }
 
@@ -199,6 +200,7 @@ export function FoodRecipePickerSheet({open, onClose, onPick}: FoodRecipePickerS
         setActiveTab('foods');
       } catch {
         // Creation failed — leave search text so the user can retry
+        toast.danger("Couldn't create food. Try again.");
       }
     },
     [createFood],

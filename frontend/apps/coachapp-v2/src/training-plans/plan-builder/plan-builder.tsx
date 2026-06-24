@@ -9,6 +9,7 @@ import {useGetTrainingPlanQuery} from '@/api/trainingPlans';
 
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
+import {WorkoutList} from './workout-list';
 
 const STATUS_MAP = {
   active: {color: 'success', label: 'Active'},
@@ -140,30 +141,7 @@ export default function TrainingPlanDetail() {
       </Page.Toolbar>
       <Page.Content className={'px-4 md:px-6 lg:px-8'}>
         <div className="min-w-0 max-w-4xl overflow-hidden">
-          <section className="border-t border-divider py-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <Typography
-                  className="uppercase tracking-wider"
-                  color="muted"
-                  type="body-xs"
-                  weight="semibold"
-                >
-                  Workouts
-                </Typography>
-              </div>
-            </div>
-
-            <Typography
-              className="mb-3"
-              color="muted"
-              type="body-sm"
-            >
-              No workouts yet. Create your first workout to start building this plan.
-            </Typography>
-
-            <div className="mt-3"></div>
-          </section>
+          <WorkoutList planId={plan.id} />
 
           <section className="border-t border-divider py-4">
             <Typography

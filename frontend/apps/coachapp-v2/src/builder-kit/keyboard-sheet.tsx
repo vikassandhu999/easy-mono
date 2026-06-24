@@ -23,7 +23,7 @@
  * purpose rather than switching to a different layout mode.
  */
 
-import {type ReactNode, useEffect, useRef, useState} from 'react';
+import {type ReactNode, useEffect, useId, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {useVisualViewport} from './use-visual-viewport';
@@ -63,6 +63,9 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
   const [visible, setVisible] = useState(false);
   const rafRef = useRef<number | null>(null);
 
+  // Stable id for aria-labelledby — only used when title is provided.
+  const titleId = useId();
+
   useEffect(() => {
     if (open) {
       setMounted(true);
@@ -85,9 +88,49 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
     };
   }, [open]);
 
+  // Escape-to-close: bind while open, clean up on close/unmount.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  // Body scroll-lock: prevent background scrolling while the sheet is open.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   if (!mounted) {
     return null;
   }
+
+  // Desktop hidden state: use translate(-50%, 100%) so the horizontal centering
+  // from md:left-1/2 / md:-translate-x-1/2 is preserved during the slide-out.
+  // Mobile hidden state: translateY(100%) as before.
+  // We detect "desktop" by checking whether the md breakpoint is active. Because
+  // this runs inside a portal we can't use Tailwind classes for the hidden
+  // transform, so we apply it via inline style logic using a matchMedia query.
+  const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
+  const hiddenTransform = isDesktop ? 'translate(-50%, 100%)' : 'translateY(100%)';
 
   return createPortal(
     <>
@@ -104,6 +147,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
 
       {/* Sheet panel */}
       <div
+        aria-labelledby={title !== undefined ? titleId : undefined}
         aria-modal="true"
         className={[
           // Positioning
@@ -125,11 +169,8 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
         role="dialog"
         style={{
           bottom: keyboardHeight,
-          transform: visible ? undefined : 'translateY(100%)',
+          transform: visible ? (isDesktop ? 'translateX(-50%)' : undefined) : hiddenTransform,
           transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
-          // On desktop translateX(-50%) must persist alongside the slide animation.
-          // We handle the desktop centering via Tailwind's md:-translate-x-1/2 and
-          // override only for mobile slide state when not visible.
         }}
       >
         {/* Grip handle */}
@@ -143,7 +184,12 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
         {/* Title row — only rendered when a title is provided */}
         {title !== undefined ? (
           <div className="flex items-center justify-between px-4 pb-2 pt-1">
-            <span className="text-sm font-semibold text-foreground">{title}</span>
+            <span
+              className="text-sm font-semibold text-foreground"
+              id={titleId}
+            >
+              {title}
+            </span>
             <button
               aria-label="Close"
               className="text-foreground-400 hover:text-foreground transition-colors"

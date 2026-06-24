@@ -188,7 +188,7 @@ export function SearchPickerSheet<T>({
               className="cursor-pointer shrink-0"
               color={chip.active ? 'primary' : 'default'}
               key={chip.id}
-              onClick={chip.onToggle}
+              onPress={chip.onToggle}
               variant={chip.active ? 'solid' : 'bordered'}
             >
               {chip.label}
@@ -203,14 +203,14 @@ export function SearchPickerSheet<T>({
            renderItem provides the visual content; the button is the tap target. */}
       <div
         className="flex flex-col"
-        role={multiSelect ? 'group' : 'radiogroup'}
+        role="group"
       >
         {items.map((item) => {
           const key = itemKey(item);
           const selected = selectedKeys.has(key);
           return (
             <button
-              aria-pressed={multiSelect ? selected : undefined}
+              aria-pressed={selected}
               className="w-full border-b border-divider text-left last:border-b-0"
               key={key}
               onClick={() => onToggleItem(item)}

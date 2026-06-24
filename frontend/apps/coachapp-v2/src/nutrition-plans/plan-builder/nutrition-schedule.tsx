@@ -149,8 +149,10 @@ export function isDayOverridden(
   }
   for (const key of dayKeys) {
     if (
-      (daySlots as Record<string, NutritionScheduleEntry>)[key].nutrition_meal_id !==
-      (mondaySlots as Record<string, NutritionScheduleEntry>)[key].nutrition_meal_id
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      (daySlots as Record<string, NutritionScheduleEntry>)[key]!.nutrition_meal_id !==
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      (mondaySlots as Record<string, NutritionScheduleEntry>)[key]!.nutrition_meal_id
     ) {
       return true;
     }
@@ -334,7 +336,6 @@ function SlotRows({slots, meals, onSlotChange}: SlotRowsProps) {
                     }
                   }}
                   selectedKey={assignedMealId ?? UNASSIGNED_KEY}
-                  size="sm"
                   variant="secondary"
                 >
                   <Select.Trigger className="h-8 min-h-8 text-sm">
@@ -680,7 +681,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
                   onClick={() => jumpToDay(day)}
                   type="button"
                 >
-                  {DAY_SINGLE[day] ?? day[0].toUpperCase()}
+                  {DAY_SINGLE[day] ?? day.charAt(0).toUpperCase()}
                 </button>
               );
             })}

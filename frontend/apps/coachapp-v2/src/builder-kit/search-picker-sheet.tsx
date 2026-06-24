@@ -85,7 +85,7 @@ export function SearchPickerSheet<T>({
   items,
   renderItem,
   itemKey,
-  multiSelect = true,
+  multiSelect: _multiSelect = true,
   selectedKeys,
   onToggleItem,
   onConfirm,
@@ -153,9 +153,9 @@ export function SearchPickerSheet<T>({
   const dockButton = (
     <Button
       className="w-full font-semibold"
-      color="primary"
       isDisabled={selectedCount === 0}
       onPress={onConfirm}
+      variant="primary"
     >
       {confirmLabel(selectedCount)}
     </Button>
@@ -173,11 +173,10 @@ export function SearchPickerSheet<T>({
         aria-label={`Search ${title}`}
         autoFocus
         className="mb-2"
-        isClearable
-        onValueChange={onSearchChange}
+        onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Search…"
         value={search}
-        variant="bordered"
+        variant="secondary"
       />
 
       {/* Filter chips — horizontally scrollable row */}
@@ -186,10 +185,10 @@ export function SearchPickerSheet<T>({
           {filters.map((chip) => (
             <Chip
               className="cursor-pointer shrink-0"
-              color={chip.active ? 'primary' : 'default'}
+              color={chip.active ? 'accent' : 'default'}
               key={chip.id}
-              onPress={chip.onToggle}
-              variant={chip.active ? 'solid' : 'bordered'}
+              onClick={chip.onToggle}
+              variant={chip.active ? 'primary' : 'secondary'}
             >
               {chip.label}
             </Chip>

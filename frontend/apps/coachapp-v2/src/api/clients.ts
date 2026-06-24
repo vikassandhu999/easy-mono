@@ -116,7 +116,7 @@ export const clientsApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Client', id}],
     }),
     listClients: build.query<ClientListResponse, ListClientsParams | void>({
-      query: (params) => ({url: '/v1/coach/clients', params}),
+      query: (params) => ({url: '/v1/coach/clients', params: params ?? undefined}),
       providesTags: (result) => listTags('Client', result),
     }),
     clients: build.infiniteQuery<ClientListResponse, ListClientsFilters | void, number>({

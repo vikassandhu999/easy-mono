@@ -210,7 +210,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
       return;
     }
     const [first, ...rest] = items;
-    setCurrentAmountItem(first);
+    setCurrentAmountItem(first ?? null);
     setAmountQueue(rest);
   }, []);
 
@@ -218,7 +218,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
     // Advance to the next queued item, or clear
     if (amountQueue.length > 0) {
       const [next, ...rest] = amountQueue;
-      setCurrentAmountItem(next);
+      setCurrentAmountItem(next ?? null);
       setAmountQueue(rest);
     } else {
       setCurrentAmountItem(null);

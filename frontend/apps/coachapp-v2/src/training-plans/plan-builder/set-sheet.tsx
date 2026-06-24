@@ -175,7 +175,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
   const executeSave = useCallback(
     async (patch: Partial<TrainingPlanPlannedSet>) => {
       const updatedSet: TrainingPlanPlannedSet = {
-        ...workoutExercise.planned_sets[setIndex],
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...workoutExercise.planned_sets[setIndex]!,
         ...patch,
       };
       const updatedSets = workoutExercise.planned_sets.map((s, i) => (i === setIndex ? updatedSet : s));
@@ -186,8 +187,10 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           for (const workout of draft.data) {
             const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
             if (idx !== -1) {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               workout.workout_elements[idx] = {
-                ...workout.workout_elements[idx],
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                ...workout.workout_elements[idx]!,
                 planned_sets: updatedSets,
               };
               break;

@@ -129,7 +129,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
       {/* Add workout */}
       <div className="mt-3">
         <Button
-          isLoading={isCreating}
+          isDisabled={isCreating}
           onPress={() => {
             handleAddWorkout().catch(() => undefined);
           }}

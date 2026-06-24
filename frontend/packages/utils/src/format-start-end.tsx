@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import React, {ReactNode} from 'react';
+import type {ReactNode} from 'react';
 
 export function formatStartEnd(startIso: string, endsIn: {minutes: number; seconds: number; hours: number}): ReactNode {
   const start = dayjs(startIso);

@@ -232,9 +232,9 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
         {exercise.tracking_type ? (
           <Chip
             className="shrink-0"
-            color="primary"
+            color="accent"
             size="sm"
-            variant="bordered"
+            variant="secondary"
           >
             {trackingTypeBadgeLabel(exercise.tracking_type)}
           </Chip>

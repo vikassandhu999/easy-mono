@@ -242,7 +242,7 @@ export function FoodRecipePickerSheet({open, onClose, onPick}: FoodRecipePickerS
           className="shrink-0"
           size="sm"
           style={{borderColor: '#6c8cff', color: '#6c8cff'}}
-          variant="bordered"
+          variant="secondary"
         >
           {macroBadge}
         </Chip>

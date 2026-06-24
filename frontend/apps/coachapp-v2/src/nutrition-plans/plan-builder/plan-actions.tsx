@@ -8,7 +8,7 @@ import {Button, Dropdown, Header, Label, Separator, toast, useOverlayState} from
 import {ArchiveIcon, ArchiveRestoreIcon, MoreHorizontal, TrashIcon} from 'lucide-react';
 
 import type {NutritionPlan} from '@/api/generated';
-import {useDeleteNutritionPlanMutation, useUpdateNutritionPlanMutation} from '@/api/generated';
+import {useUpdateNutritionPlanMutation} from '@/api/generated';
 
 import NutritionPlanDeleteAlertDialog from './plan-delete-alert-dialog';
 

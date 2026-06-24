@@ -207,7 +207,6 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
                     }
                   }}
                   selectedKey={assignedWorkoutId ?? REST_KEY}
-                  size="sm"
                   variant="secondary"
                 >
                   <Select.Trigger className="h-8 min-h-8 text-sm">

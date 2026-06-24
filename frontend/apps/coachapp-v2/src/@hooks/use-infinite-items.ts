@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 
 type InfiniteItemsQuery<T> = {
-  data: {pages: {data: T[]}[]} | undefined;
+  data?: {pages: Array<{data: T[]}>} | null;
   fetchNextPage: () => void;
   isLoading: boolean;
   isFetchingNextPage: boolean;

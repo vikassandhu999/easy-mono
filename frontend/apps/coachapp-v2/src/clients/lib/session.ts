@@ -72,7 +72,8 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
       const plannedName = exercise.name ?? 'Unknown exercise';
       const matchKey = groupOrder.find(
         (key) =>
-          !matchedKeys.has(key) && performedSetName((groupMap.get(key) as TrainingPerformedSet[])[0]) === plannedName,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          !matchedKeys.has(key) && performedSetName((groupMap.get(key) as TrainingPerformedSet[])[0]!) === plannedName,
       );
       const setsForExercise = matchKey ? (groupMap.get(matchKey) ?? []) : [];
       if (matchKey) {
@@ -96,7 +97,8 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
       const setsForGroup = groupMap.get(key) ?? [];
       groups.push({
         exerciseId: key,
-        exerciseName: performedSetName(setsForGroup[0]),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        exerciseName: performedSetName(setsForGroup[0]!),
         isAdded: true,
         plannedSets: [],
         sets: setsForGroup,
@@ -107,7 +109,8 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
       const setsForGroup = groupMap.get(key) ?? [];
       groups.push({
         exerciseId: key,
-        exerciseName: performedSetName(setsForGroup[0]),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        exerciseName: performedSetName(setsForGroup[0]!),
         isAdded: false,
         plannedSets: [],
         sets: setsForGroup,

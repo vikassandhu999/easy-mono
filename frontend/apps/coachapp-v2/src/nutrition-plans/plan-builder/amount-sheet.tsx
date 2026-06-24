@@ -299,8 +299,10 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
           for (const meal of meals) {
             const idx = meal.meal_items.findIndex((mi) => mi.id === existingItem.id);
             if (idx !== -1) {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               meal.meal_items[idx] = {
-                ...meal.meal_items[idx],
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                ...meal.meal_items[idx]!,
                 weight_g: optimisticItem.weight_g ?? null,
                 amount: optimisticItem.amount ?? null,
                 unit: optimisticItem.unit ?? null,

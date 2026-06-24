@@ -83,8 +83,10 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
           for (const workout of draft.data) {
             const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
             if (idx !== -1) {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               workout.workout_elements[idx] = {
-                ...workout.workout_elements[idx],
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                ...workout.workout_elements[idx]!,
                 planned_sets: updatedSets,
               };
               break;

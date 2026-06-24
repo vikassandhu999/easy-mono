@@ -8,12 +8,21 @@
  * and `Recipe` / `RecipeListResponse` / `ListRecipesApiArg` types from
  * `generated.ts` so the hand-written queries stay type-synced.
  *
- * NOTE: `useCreateFoodMutation` (generated) invalidates `{type: 'Food', id: 'LIST'}`
- * automatically via its generated `invalidatesTags`. Confirm at Task 3 when
- * the create-custom-food flow is wired in — no extra work needed here.
+ * Generated endpoints are `tag: false`, so the generated `useCreateFoodMutation`
+ * does NOT invalidate the foods list. We re-declare `createCoachFood` here with
+ * `invalidatesTags: [{type: 'Food', id: 'LIST'}]` (same approach as
+ * `createCoachTrainingExercise` in `training-exercises.ts`) so create-custom-food
+ * in the picker refreshes the list. Import that hook from this module.
  */
 import {api} from '@/api/base';
-import type {FoodListResponse, ListFoodsApiArg, ListRecipesApiArg, RecipeListResponse} from '@/api/generated';
+import type {
+  CreateFoodApiArg,
+  CreateFoodApiResponse,
+  FoodListResponse,
+  ListFoodsApiArg,
+  ListRecipesApiArg,
+  RecipeListResponse,
+} from '@/api/generated';
 import {pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 20;
@@ -71,7 +80,22 @@ export const nutritionFoodsApi = api.injectEndpoints({
       // field of Recipe[].
       providesTags: (result) => pageTags('Recipe', result as {pages: {data: {id: string}[]}[]} | undefined),
     }),
+
+    /**
+     * Create a custom coach food. The generated `useCreateFoodMutation` posts to
+     * the same endpoint but is `tag: false`; we re-add it here with
+     * `invalidatesTags` so creating a food from the picker's "no match" flow
+     * refreshes the infinite foods list. Callers import everything from one module.
+     */
+    createCoachFood: build.mutation<CreateFoodApiResponse, CreateFoodApiArg>({
+      query: ({foodRequest}) => ({
+        url: '/v1/coach/nutrition-foods',
+        method: 'POST',
+        body: foodRequest,
+      }),
+      invalidatesTags: [{type: 'Food', id: 'LIST'}],
+    }),
   }),
 });
 
-export const {useCoachFoodsInfiniteQuery, useCoachRecipesInfiniteQuery} = nutritionFoodsApi;
+export const {useCoachFoodsInfiniteQuery, useCoachRecipesInfiniteQuery, useCreateCoachFoodMutation} = nutritionFoodsApi;

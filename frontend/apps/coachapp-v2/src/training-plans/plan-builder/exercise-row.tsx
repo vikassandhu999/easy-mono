@@ -101,6 +101,10 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
   };
 
   const exerciseName = workoutExercise.exercise?.name ?? '—';
+  // The embedded TrainingPlanExercise type omits tracking_type; read it through
+  // a cast (same as SetSheet) so set summaries show the right measures.
+  const trackingType =
+    (workoutExercise.exercise as unknown as {tracking_type?: string | null} | null)?.tracking_type ?? null;
 
   return (
     <>
@@ -122,6 +126,7 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
             index={i}
             onTap={() => openSet(i)}
             set={set}
+            trackingType={trackingType}
           />
         ))}
 

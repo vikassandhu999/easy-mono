@@ -2,42 +2,65 @@ import {forwardRef} from 'react';
 
 import type {TrainingPlanPlannedSet} from '@/api/generated';
 
+import {fieldsForTrackingType} from './tracking-fields';
+
 interface SetRowProps {
   set: TrainingPlanPlannedSet;
   index: number;
+  /** Exercise tracking_type — drives WHICH measures the summary shows (same
+   * source of truth as the SetSheet editor), so the row and sheet never disagree. */
+  trackingType: string | null;
   onTap: () => void;
 }
 
-function formatSetSummary(set: TrainingPlanPlannedSet): string {
+function formatLoad(set: TrainingPlanPlannedSet): string | null {
+  if (set.load_value === null || set.load_value === undefined || set.load_unit === 'none' || set.load_unit === null) {
+    return null;
+  }
+  const unit = set.load_unit === 'bodyweight' ? 'bw' : set.load_unit;
+  return `${set.load_value}${unit}`;
+}
+
+function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | null): string {
+  const fields = fieldsForTrackingType(trackingType);
   const parts: string[] = [];
 
   const setTypeLabel =
     set.set_type === 'warmup' ? 'warm-up' : set.set_type === 'dropset' ? 'drop' : (set.set_type ?? 'working');
-
   parts.push(setTypeLabel);
 
-  if (set.reps !== null && set.reps !== undefined) {
-    if (set.load_value !== null && set.load_value !== undefined && set.load_unit !== 'none' && set.load_unit !== null) {
-      const unit = set.load_unit === 'bodyweight' ? 'bw' : (set.load_unit ?? 'kg');
-      parts.push(`${set.reps} × ${set.load_value}${unit}`);
-    } else {
-      parts.push(`${set.reps} reps`);
+  // Reps (combined with load when both are tracked, e.g. weight_reps -> "8 × 100kg")
+  if (fields.showReps && set.reps !== null && set.reps !== undefined) {
+    const load = fields.showLoad ? formatLoad(set) : null;
+    parts.push(load ? `${set.reps} × ${load}` : `${set.reps} reps`);
+  } else if (fields.showLoad && !fields.showReps) {
+    // Load tracked without reps (weight_duration, weight_distance)
+    const load = formatLoad(set);
+    if (load) {
+      parts.push(load);
     }
-  } else if (set.duration_seconds !== null && set.duration_seconds !== undefined) {
+  }
+
+  if (fields.showDuration && set.duration_seconds !== null && set.duration_seconds !== undefined) {
     parts.push(`${set.duration_seconds}s`);
-  } else if (set.distance_value !== null && set.distance_value !== undefined) {
+  }
+
+  if (fields.showDistance && set.distance_value !== null && set.distance_value !== undefined) {
     const distUnit = set.distance_unit && set.distance_unit !== 'none' ? set.distance_unit : 'm';
     parts.push(`${set.distance_value}${distUnit}`);
   }
 
-  if (set.rpe !== null && set.rpe !== undefined) {
+  if (fields.showRpe && set.rpe !== null && set.rpe !== undefined) {
     parts.push(`RPE ${set.rpe}`);
   }
 
   return parts.join(' · ');
 }
 
-export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow({set, index, onTap}, ref) {
+export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow(
+  {set, index, trackingType, onTap},
+  ref,
+) {
   return (
     <button
       ref={ref}
@@ -47,7 +70,7 @@ export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow
     >
       <span>
         <span className="mr-1.5 text-muted">Set {index + 1}</span>
-        {formatSetSummary(set)}
+        {formatSetSummary(set, trackingType)}
       </span>
       <span className="text-muted text-[10px]">···</span>
     </button>

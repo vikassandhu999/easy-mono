@@ -20,7 +20,7 @@ export default function PlanDeleteAlertDialog({plan, state, onSuccess}: Props) {
       })
       .catch((e) => {
         state.close();
-        toast.danger('Plan deleted failed', {timeout: 1500, description: e?.message});
+        toast.danger("Couldn't delete plan", {timeout: 1500, description: e?.message});
       });
   };
   return (

@@ -50,7 +50,20 @@ export function PlanActions({plan, onDeleted}: Props) {
           <MoreHorizontal size={18} />
         </Button>
         <Dropdown.Popover>
-          <Dropdown.Menu onAction={(key) => console.log(`Selected: ${key}`)}>
+          <Dropdown.Menu
+            onAction={(key) => {
+              // Drive selection via the menu so it fires on pointer AND keyboard
+              // (RAC routes Enter/Space through onAction, not item onPress).
+              if (key === 'restore-plan') {
+                restore().catch(() => undefined);
+              } else if (key === 'archive-plan') {
+                archive().catch(() => undefined);
+              } else if (key === 'delete-plan') {
+                deleteAlertState.open();
+              }
+              // 'edit-plan' / 'copy-plan' intentionally unwired (pending product decision).
+            }}
+          >
             <Dropdown.Section>
               <Header>Actions</Header>
 
@@ -58,8 +71,7 @@ export function PlanActions({plan, onDeleted}: Props) {
                 <Dropdown.Item
                   id="restore-plan"
                   isDisabled={blocking}
-                  onPress={restore}
-                  textValue="Restore "
+                  textValue="Restore"
                 >
                   <div className="flex items-start justify-center pt-px">
                     <ArchiveRestoreIcon className="size-4 shrink-0 text-muted" />
@@ -101,7 +113,6 @@ export function PlanActions({plan, onDeleted}: Props) {
               <Dropdown.Item
                 id="archive-plan"
                 isDisabled={blocking}
-                onPress={archive}
                 textValue="Archive"
               >
                 <div className="flex items-start justify-center pt-px">
@@ -117,7 +128,6 @@ export function PlanActions({plan, onDeleted}: Props) {
               <Dropdown.Item
                 id="delete-plan"
                 isDisabled={blocking}
-                onPress={() => deleteAlertState.open()}
                 textValue="Delete"
                 variant="danger"
               >

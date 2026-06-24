@@ -1,9 +1,9 @@
-import {Button} from '@heroui/react';
+import {Button, toast} from '@heroui/react';
 import {UserPlus} from 'lucide-react';
 import {useState} from 'react';
 
 import ClientPicker from '@/@components/client-picker';
-import type {TrainingPlan} from '@/api/generated';
+import {type TrainingPlan, useAssignTrainingPlanMutation} from '@/api/generated';
 
 export type Props = {
   plan: TrainingPlan;
@@ -11,6 +11,7 @@ export type Props = {
 
 export function PlanAddToClient({plan}: Props) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [assignTraining] = useAssignTrainingPlanMutation();
 
   return (
     <div className="relative">
@@ -28,7 +29,18 @@ export function PlanAddToClient({plan}: Props) {
           <ClientPicker
             autoFocus
             excludeIds={plan.client_id ? [plan.client_id] : undefined}
-            onSelect={() => setIsPickerOpen(false)}
+            onSelect={async (client) => {
+              try {
+                await assignTraining({
+                  id: plan.id,
+                  trainingPlanAssignRequest: {client_id: client.id},
+                }).unwrap();
+                toast.success(`"${plan.name}" assigned`);
+                setIsPickerOpen(false);
+              } catch {
+                toast.danger("Training plan wasn't assigned");
+              }
+            }}
             placeholder="Search clients"
           />
         </div>

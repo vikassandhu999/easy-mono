@@ -7,7 +7,7 @@
  * Width discipline: WorkoutCard adds no horizontal padding inside the body —
  * ExerciseRow already owns its own 10px indent + 2px accent rule.
  */
-import {Button, Dropdown, Label, Separator, toast} from '@heroui/react';
+import {Button, Dropdown, Label, Separator, Typography, toast} from '@heroui/react';
 import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {TrainingExercise, TrainingPlanWorkout} from '@/api/generated';
@@ -295,13 +295,23 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
       {/* Body — exercises + add button */}
       {open ? (
         <div className="border-t border-border pb-3 pt-1">
-          {workout.workout_elements.map((element) => (
-            <ExerciseRow
-              key={element.id}
-              planId={planId}
-              workoutExercise={element}
-            />
-          ))}
+          {exerciseCount === 0 ? (
+            <Typography
+              className="pl-2.5"
+              color="muted"
+              type="body-sm"
+            >
+              Add exercises
+            </Typography>
+          ) : (
+            workout.workout_elements.map((element) => (
+              <ExerciseRow
+                key={element.id}
+                planId={planId}
+                workoutExercise={element}
+              />
+            ))
+          )}
 
           <div className="pl-2.5">
             <button

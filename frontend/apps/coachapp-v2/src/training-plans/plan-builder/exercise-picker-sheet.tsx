@@ -51,6 +51,14 @@ function trackingTypeBadgeLabel(trackingType: string | null): string {
       return 'dist+time';
     case 'bodyweight_reps':
       return 'bw+reps';
+    case 'weighted_bodyweight':
+      return 'wt+bw';
+    case 'assisted_bodyweight':
+      return 'asst+bw';
+    case 'weight_duration':
+      return 'wt+time';
+    case 'weight_distance':
+      return 'wt+dist';
     default:
       return trackingType ?? '—';
   }

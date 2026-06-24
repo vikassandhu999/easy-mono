@@ -16,6 +16,8 @@ import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import {useAppDispatch} from '@/store';
 
+import {fieldsForTrackingType} from './tracking-fields';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -39,42 +41,7 @@ export interface SetSheetProps {
   anchorEl?: HTMLElement | null;
 }
 
-// ---------------------------------------------------------------------------
-// tracking_type → shown fields (schema spec table)
-// ---------------------------------------------------------------------------
-
-interface FieldConfig {
-  showReps: boolean;
-  showLoad: boolean;
-  showDuration: boolean;
-  showDistance: boolean;
-  showRpe: boolean;
-}
-
-function fieldsForTrackingType(trackingType: string | null): FieldConfig {
-  switch (trackingType) {
-    case 'weight_reps':
-      return {showReps: true, showLoad: true, showDuration: false, showDistance: false, showRpe: true};
-    case 'bodyweight_reps':
-      return {showReps: true, showLoad: false, showDuration: false, showDistance: false, showRpe: true};
-    case 'weighted_bodyweight':
-      return {showReps: true, showLoad: true, showDuration: false, showDistance: false, showRpe: true};
-    case 'assisted_bodyweight':
-      return {showReps: true, showLoad: true, showDuration: false, showDistance: false, showRpe: true};
-    case 'reps_only':
-      return {showReps: true, showLoad: false, showDuration: false, showDistance: false, showRpe: false};
-    case 'duration':
-      return {showReps: false, showLoad: false, showDuration: true, showDistance: false, showRpe: false};
-    case 'weight_duration':
-      return {showReps: false, showLoad: true, showDuration: true, showDistance: false, showRpe: false};
-    case 'distance_duration':
-      return {showReps: false, showLoad: false, showDuration: true, showDistance: true, showRpe: false};
-    case 'weight_distance':
-      return {showReps: false, showLoad: true, showDuration: false, showDistance: true, showRpe: false};
-    default:
-      return {showReps: true, showLoad: true, showDuration: false, showDistance: false, showRpe: true};
-  }
-}
+// tracking_type → shown fields lives in ./tracking-fields (shared with SetRow).
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -373,7 +340,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
               <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Reps</div>
               <input
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
-                inputMode="numeric"
+                inputMode="text"
                 onChange={(e) => handleReps(e.target.value)}
                 placeholder="—"
                 type="text"

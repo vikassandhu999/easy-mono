@@ -42,7 +42,7 @@ export default function TrainingExerciseListItem({exercise}: {exercise: Training
       id={exercise.id}
       textValue={exercise.name}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-secondary">
         {exercise.images[0] ? (
           <img
             alt={exercise.name}
@@ -51,7 +51,7 @@ export default function TrainingExerciseListItem({exercise}: {exercise: Training
           />
         ) : (
           <Dumbbell
-            className="text-foreground-400"
+            className="text-muted"
             size={20}
           />
         )}

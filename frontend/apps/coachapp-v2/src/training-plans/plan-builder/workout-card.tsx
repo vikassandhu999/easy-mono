@@ -186,7 +186,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="rounded-xl border border-divider bg-content1 overflow-hidden">
+    <div className="rounded-xl border border-border bg-surface overflow-hidden">
       {/* Header — acts as accordion toggle */}
       <div
         aria-expanded={open}
@@ -201,9 +201,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
         tabIndex={0}
       >
         {/* Chevron */}
-        <span className="shrink-0 text-foreground-500">
-          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </span>
+        <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
 
         {/* Name — inline-edit or plain text */}
         <div className="flex-1 min-w-0">
@@ -212,7 +210,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
               ref={nameInputRef}
               // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
               autoFocus
-              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-primary"
+              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
               onBlur={() => {
                 commitRename().catch(() => undefined);
               }}
@@ -235,7 +233,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
         </div>
 
         {/* Exercise count badge */}
-        <span className="shrink-0 text-xs text-foreground-500">{exerciseCount} ex</span>
+        <span className="shrink-0 text-xs text-muted">{exerciseCount} ex</span>
 
         {/* Workout options menu — stop propagation so clicks don't toggle the accordion */}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown; role is on the Button inside */}
@@ -296,7 +294,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
 
       {/* Body — exercises + add button */}
       {open ? (
-        <div className="border-t border-divider pb-3 pt-1">
+        <div className="border-t border-border pb-3 pt-1">
           {workout.workout_elements.map((element) => (
             <ExerciseRow
               key={element.id}
@@ -307,7 +305,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
 
           <div className="pl-2.5">
             <button
-              className="mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+              className="mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
               onClick={() => setPickerOpen(true)}
               type="button"
             >

@@ -58,7 +58,19 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
           <MoreHorizontal size={18} />
         </Button>
         <Dropdown.Popover>
-          <Dropdown.Menu>
+          <Dropdown.Menu
+            onAction={(key) => {
+              // Drive selection via the menu so it fires on pointer AND keyboard
+              // activation (RAC routes Enter/Space through onAction, not onPress).
+              if (key === 'restore-plan') {
+                restore().catch(() => undefined);
+              } else if (key === 'archive-plan') {
+                archive().catch(() => undefined);
+              } else if (key === 'delete-plan') {
+                deleteAlertState.open();
+              }
+            }}
+          >
             <Dropdown.Section>
               <Header>Actions</Header>
 
@@ -66,7 +78,6 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
                 <Dropdown.Item
                   id="restore-plan"
                   isDisabled={blocking}
-                  onPress={restore}
                   textValue="Restore"
                 >
                   <div className="flex items-start justify-center pt-px">
@@ -82,7 +93,6 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
                 <Dropdown.Item
                   id="archive-plan"
                   isDisabled={blocking}
-                  onPress={archive}
                   textValue="Archive"
                 >
                   <div className="flex items-start justify-center pt-px">
@@ -99,7 +109,6 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
               <Dropdown.Item
                 id="delete-plan"
                 isDisabled={blocking}
-                onPress={() => deleteAlertState.open()}
                 textValue="Delete"
                 variant="danger"
               >

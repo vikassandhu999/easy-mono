@@ -26,7 +26,7 @@ function StatusIcon({type}: {type: ComparisonType}) {
     case 'partial':
       return (
         <Minus
-          className="text-foreground-400"
+          className="text-muted"
           size={14}
         />
       );
@@ -40,7 +40,7 @@ function StatusIcon({type}: {type: ComparisonType}) {
     case 'skipped':
       return (
         <Minus
-          className="text-foreground-300"
+          className="text-muted"
           size={14}
         />
       );
@@ -59,14 +59,14 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
     <section>
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-foreground-400">{slotLabel}</h4>
-          <p className="text-xs text-foreground-400">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{slotLabel}</h4>
+          <p className="text-xs text-muted">
             Logged: {loggedCal} cal
             {hasSnapshot ? ` \u00B7 Plan: ${plannedCal} cal` : ''}
           </p>
         </div>
         {hasSnapshot && !isFullySkipped ? (
-          <span className="text-xs text-foreground-400">
+          <span className="text-xs text-muted">
             {comparison.filter((c) => c.type === 'followed').length}/{comparison.length}
           </span>
         ) : null}
@@ -92,16 +92,14 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
                     <Table.Cell className="truncate">
                       {item.type === 'replaced' && item.entry ? (
                         <div>
-                          <p className="truncate text-foreground-400 line-through">{item.planned.food_name}</p>
+                          <p className="truncate text-muted line-through">{item.planned.food_name}</p>
                           <p className="truncate">{item.entry.food_name}</p>
                         </div>
                       ) : (
-                        <span className={item.type === 'skipped' ? 'text-foreground-300' : ''}>
-                          {item.planned.food_name}
-                        </span>
+                        <span className={item.type === 'skipped' ? 'text-muted' : ''}>{item.planned.food_name}</span>
                       )}
                     </Table.Cell>
-                    <Table.Cell className="text-right text-foreground-400">
+                    <Table.Cell className="text-right text-muted">
                       {item.planned.amount}
                       {item.planned.unit}
                     </Table.Cell>
@@ -112,7 +110,7 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
                           {item.entry.unit}
                         </span>
                       ) : (
-                        <span className="text-foreground-300">&mdash;</span>
+                        <span className="text-muted">&mdash;</span>
                       )}
                     </Table.Cell>
                     <Table.Cell className="text-center">
@@ -126,10 +124,10 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
         </Table>
       ) : !hasSnapshot ? (
         // No plan — show flat entry list
-        <div className="overflow-hidden rounded-lg border border-divider">
+        <div className="overflow-hidden rounded-lg border border-border">
           <table className="w-full table-fixed text-sm">
             <thead>
-              <tr className="border-b border-divider bg-content2 text-xs text-foreground-400">
+              <tr className="border-b border-border bg-surface-secondary text-xs text-muted">
                 <th className="w-auto px-3 py-1.5 text-left font-medium">Food</th>
                 <th className="w-16 px-3 py-1.5 text-right font-medium">Amount</th>
                 <th className="w-14 px-3 py-1.5 text-right font-medium">Cal</th>
@@ -138,11 +136,11 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
             <tbody>
               {mealLog.food_log_entries.map((entry) => (
                 <tr
-                  className="border-b border-divider last:border-b-0"
+                  className="border-b border-border last:border-b-0"
                   key={entry.id}
                 >
                   <td className="truncate px-3 py-2">{entry.food_name}</td>
-                  <td className="px-3 py-2 text-right text-foreground-400">
+                  <td className="px-3 py-2 text-right text-muted">
                     {entry.amount != null ? `${entry.amount}${entry.unit ?? 'g'}` : ''}
                   </td>
                   <td className="px-3 py-2 text-right">{Math.round(entry.calories ?? 0)}</td>
@@ -154,24 +152,24 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
       ) : null}
 
       {unplanned.length > 0 ? (
-        <div className="mt-2 overflow-hidden rounded-lg border border-dashed border-divider">
+        <div className="mt-2 overflow-hidden rounded-lg border border-dashed border-border">
           <table className="w-full table-fixed text-sm">
             <tbody>
               {unplanned.map((entry) => (
                 <tr
-                  className="border-b border-divider last:border-b-0"
+                  className="border-b border-border last:border-b-0"
                   key={entry.id}
                 >
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-1.5">
                       <Plus
-                        className="shrink-0 text-foreground-300"
+                        className="shrink-0 text-muted"
                         size={12}
                       />
-                      <span className="truncate text-foreground-400">{entry.food_name}</span>
+                      <span className="truncate text-muted">{entry.food_name}</span>
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-right text-foreground-400">
+                  <td className="px-3 py-2 text-right text-muted">
                     {entry.amount != null ? `${entry.amount}${entry.unit ?? 'g'}` : ''}
                   </td>
                   <td className="px-3 py-2 text-right">{Math.round(entry.calories ?? 0)} cal</td>
@@ -189,8 +187,8 @@ function SkippedMealSlot({slotLabel}: {slotLabel: string}) {
   return (
     <section>
       <div className="mb-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-foreground-400">{slotLabel}</h4>
-        <p className="text-xs text-foreground-300">Not logged</p>
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{slotLabel}</h4>
+        <p className="text-xs text-muted">Not logged</p>
       </div>
     </section>
   );
@@ -236,7 +234,7 @@ export default function ClientNutritionDetail({
       </div>
 
       <h3 className="mb-1 text-sm font-semibold">{formatDateDisplay(date)}</h3>
-      <p className="mb-4 text-xs text-foreground-400">
+      <p className="mb-4 text-xs text-muted">
         Logged: {Math.round(totalLoggedCal)} cal
         {totalPlannedCal > 0 ? ` \u00B7 Plan: ${Math.round(totalPlannedCal)} cal` : ''}
         {adherencePercent != null ? ` (${adherencePercent}%)` : ''}
@@ -244,7 +242,7 @@ export default function ClientNutritionDetail({
       </p>
 
       {sortedLogs.length === 0 ? (
-        <p className="text-sm text-foreground-400">No food logged for this day.</p>
+        <p className="text-sm text-muted">No food logged for this day.</p>
       ) : (
         <div className="flex flex-col gap-4">
           {sortedLogs.map((mealLog) => (

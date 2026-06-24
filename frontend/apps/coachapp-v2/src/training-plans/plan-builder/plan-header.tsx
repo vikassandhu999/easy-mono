@@ -96,7 +96,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
     <div className="w-full space-y-3 py-4">
       {/* Section title + saving indicator */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-foreground-400">Plan details</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted">Plan details</span>
         {isSaving && (
           <Spinner
             color="accent"
@@ -111,7 +111,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           control={control}
           inputProps={{
             className:
-              'bg-transparent border-0 border-b border-divider rounded-none px-0 text-xl font-semibold focus:border-[#6c8cff] focus:ring-0 transition-colors placeholder:text-foreground-400',
+              'bg-transparent border-0 border-b border-border rounded-none px-0 text-xl font-semibold focus:border-[#6c8cff] focus:ring-0 transition-colors placeholder:text-muted',
             placeholder: 'Plan name',
           }}
           label=""

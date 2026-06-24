@@ -215,7 +215,7 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
         <div
           className={[
             'h-5 w-5 shrink-0 rounded-md border-[1.5px] flex items-center justify-center',
-            selected ? 'border-primary bg-primary text-primary-foreground' : 'border-default-400',
+            selected ? 'border-accent bg-accent text-accent-foreground' : 'border-default-hover',
           ].join(' ')}
           aria-hidden="true"
         >
@@ -225,7 +225,7 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
         {/* Name + meta */}
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium text-foreground">{exercise.name}</div>
-          {meta ? <div className="truncate text-xs text-foreground-500">{meta}</div> : null}
+          {meta ? <div className="truncate text-xs text-muted">{meta}</div> : null}
         </div>
 
         {/* tracking_type badge */}

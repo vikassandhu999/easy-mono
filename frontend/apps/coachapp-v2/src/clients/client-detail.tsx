@@ -94,7 +94,7 @@ function ClientPlans({clientId}: {clientId: string}) {
                 const mealCount = plan.meals?.length ?? 0;
                 return (
                   <Link
-                    className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
+                    className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                     key={plan.id}
                     to={`/library/nutrition-plans/${plan.id}`}
                   >
@@ -128,7 +128,7 @@ function ClientPlans({clientId}: {clientId: string}) {
                 const workoutCount = plan.workouts.length;
                 return (
                   <Link
-                    className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
+                    className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                     key={plan.id}
                     to={`/library/training-plans/${plan.id}`}
                   >
@@ -170,7 +170,7 @@ function ClientPlans({clientId}: {clientId: string}) {
 
           <div className="mt-2 flex gap-2">
             <Button
-              className="text-foreground-500"
+              className="text-muted"
               onPress={() => {
                 setShowNutritionPicker((v) => !v);
                 setShowTrainingPicker(false);
@@ -181,7 +181,7 @@ function ClientPlans({clientId}: {clientId: string}) {
               + Nutrition plan
             </Button>
             <Button
-              className="text-foreground-500"
+              className="text-muted"
               onPress={() => {
                 setShowTrainingPicker((v) => !v);
                 setShowNutritionPicker(false);
@@ -194,7 +194,7 @@ function ClientPlans({clientId}: {clientId: string}) {
           </div>
 
           {showNutritionPicker ? (
-            <div className="mt-2 rounded-xl border border-divider bg-content1 p-3">
+            <div className="mt-2 rounded-xl border border-border bg-surface p-3">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -221,7 +221,7 @@ function ClientPlans({clientId}: {clientId: string}) {
             </div>
           ) : null}
           {showTrainingPicker ? (
-            <div className="mt-2 rounded-xl border border-divider bg-content1 p-3">
+            <div className="mt-2 rounded-xl border border-border bg-surface p-3">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -303,7 +303,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
 
   return (
     <div
-      className="-mx-2 cursor-pointer rounded-lg p-2 transition-colors hover:bg-content2 active:bg-content2"
+      className="-mx-2 cursor-pointer rounded-lg p-2 transition-colors hover:bg-surface-hover active:bg-surface-hover"
       onClick={startEditing}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -423,7 +423,7 @@ export default function ClientDetail() {
 
       <Page.Content className={'px-4 md:px-6 lg:px-8'}>
         <div className=" max-w-xl overflow-hidden">
-          <div className="rounded-xl border border-divider bg-content1 p-4">
+          <div className="rounded-xl border border-border bg-surface p-4">
             <div className="flex items-center gap-3">
               <Avatar
                 className="size-12"
@@ -458,7 +458,7 @@ export default function ClientDetail() {
             </div>
 
             {client.phone ? (
-              <div className="mt-3 flex gap-2 border-t border-divider pt-3">
+              <div className="mt-3 flex gap-2 border-t border-border pt-3">
                 <a
                   className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm font-medium text-success-700 transition-colors hover:bg-success-100 active:bg-success-200"
                   href={getWhatsAppUrl(client.phone)}
@@ -469,7 +469,7 @@ export default function ClientDetail() {
                   WhatsApp
                 </a>
                 <a
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-divider px-3 py-2 text-sm font-medium transition-colors hover:bg-default-100 active:bg-default-200"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft"
                   href={`tel:${client.phone}`}
                 >
                   <Phone size={16} />

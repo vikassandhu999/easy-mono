@@ -87,13 +87,14 @@ export function MealsList({planId}: MealsListProps) {
         </Typography>
 
         {meals.length > 0 ? (
-          <button
-            className="text-xs text-muted hover:text-foreground transition-colors"
-            onClick={collapseAll}
-            type="button"
+          <Button
+            className="text-xs"
+            onPress={collapseAll}
+            size="sm"
+            variant="ghost"
           >
             Collapse all
-          </button>
+          </Button>
         ) : null}
       </div>
 

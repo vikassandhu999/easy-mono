@@ -48,7 +48,7 @@ export default function CopyMenu({clientId, onCopyToClient, onDuplicate}: CopyMe
               textValue={isPersonal ? 'Copy to another client' : 'Copy to client'}
             >
               <UserPlus
-                className="shrink-0 text-foreground-500"
+                className="shrink-0 text-muted"
                 size={14}
               />
               {isPersonal ? 'Copy to another client' : 'Copy to client'}
@@ -58,7 +58,7 @@ export default function CopyMenu({clientId, onCopyToClient, onDuplicate}: CopyMe
               textValue={isPersonal ? 'Save as template' : 'Duplicate as template'}
             >
               <CopyPlus
-                className="shrink-0 text-foreground-500"
+                className="shrink-0 text-muted"
                 size={14}
               />
               {isPersonal ? 'Save as template' : 'Duplicate as template'}

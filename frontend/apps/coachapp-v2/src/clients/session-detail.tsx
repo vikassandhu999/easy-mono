@@ -69,16 +69,10 @@ function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
                       id={set.id}
                       key={set.id}
                     >
-                      <Table.Cell className="text-foreground-400">{idx + 1}</Table.Cell>
-                      {hasPlan ? (
-                        <Table.Cell className="text-foreground-500">{planned?.targetReps ?? '—'}</Table.Cell>
-                      ) : null}
+                      <Table.Cell className="text-muted">{idx + 1}</Table.Cell>
+                      {hasPlan ? <Table.Cell className="text-muted">{planned?.targetReps ?? '—'}</Table.Cell> : null}
                       <Table.Cell>
-                        {set.completed ? (
-                          <span>{set.reps ?? '—'}</span>
-                        ) : (
-                          <span className="text-foreground-400">skipped</span>
-                        )}
+                        {set.completed ? <span>{set.reps ?? '—'}</span> : <span className="text-muted">skipped</span>}
                       </Table.Cell>
                       <Table.Cell>{formatLoad(set.load_value, set.load_unit)}</Table.Cell>
                     </Table.Row>
@@ -199,25 +193,25 @@ export default function SessionDetail() {
 
           <div className="flex flex-wrap gap-4 pb-4">
             {duration ? (
-              <div className="flex items-center gap-1.5 text-sm text-foreground-500">
+              <div className="flex items-center gap-1.5 text-sm text-muted">
                 <Clock size={14} />
                 {duration}
               </div>
             ) : null}
             {session.soreness_rating ? (
-              <div className="flex items-center gap-1.5 text-sm text-foreground-500">
+              <div className="flex items-center gap-1.5 text-sm text-muted">
                 <Activity size={14} />
                 Effort: {session.soreness_rating}/5
               </div>
             ) : null}
             {snapshot ? (
-              <div className="flex items-center gap-1.5 text-sm text-foreground-500">
+              <div className="flex items-center gap-1.5 text-sm text-muted">
                 <Dumbbell size={14} />
                 {adherence.completed}/{adherence.totalPlanned} exercises
                 {adherence.totalSets > 0 ? ` \u00B7 ${adherence.totalSets} sets` : ''}
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-sm text-foreground-500">
+              <div className="flex items-center gap-1.5 text-sm text-muted">
                 <Dumbbell size={14} />
                 {adherence.totalSets} sets across {groups.length} exercise{groups.length !== 1 ? 's' : ''}
               </div>
@@ -227,7 +221,7 @@ export default function SessionDetail() {
           {session.notes ? (
             <div className="flex items-start gap-2 pb-4">
               <MessageSquare
-                className="mt-0.5 shrink-0 text-foreground-400"
+                className="mt-0.5 shrink-0 text-muted"
                 size={14}
               />
               <Typography
@@ -275,7 +269,7 @@ export default function SessionDetail() {
           <Separator />
 
           {groups.length > 0 ? (
-            <div className="divide-y divide-divider">
+            <div className="divide-y divide-border">
               {groups.map((group) => (
                 <ExerciseGroupSection
                   group={group}

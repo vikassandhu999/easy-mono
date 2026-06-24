@@ -176,7 +176,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
 
         return (
           <div
-            className="rounded-xl border border-divider"
+            className="rounded-xl border border-border"
             key={item.food_id}
           >
             <div className="flex min-h-11 items-center gap-2 px-3">
@@ -187,7 +187,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                 onPress={() => toggleExpand(item.food_id)}
                 variant="ghost"
               >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
                   {item.food.image_url ? (
                     <img
                       alt={item.food.name}
@@ -196,7 +196,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                     />
                   ) : (
                     <Apple
-                      className="text-foreground-400"
+                      className="text-muted"
                       size={14}
                     />
                   )}
@@ -217,12 +217,12 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                 </Typography>
                 {isExpanded ? (
                   <ChevronUp
-                    className="shrink-0 text-foreground-400"
+                    className="shrink-0 text-muted"
                     size={14}
                   />
                 ) : (
                   <ChevronDown
-                    className="shrink-0 text-foreground-400"
+                    className="shrink-0 text-muted"
                     size={14}
                   />
                 )}
@@ -239,7 +239,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
             </div>
 
             {isExpanded && (
-              <div className="border-t border-divider px-3 pb-3 pt-2">
+              <div className="border-t border-border px-3 pb-3 pt-2">
                 {item.food.serving_sizes.length > 0 && (
                   <div className="-mx-1 mb-2 flex gap-1.5 overflow-x-auto px-1 pb-1">
                     {item.food.serving_sizes.map((s, sIdx) => {
@@ -250,7 +250,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                           className={`min-h-11 shrink-0 rounded-md px-3 text-xs font-medium transition-colors ${
                             isActive
                               ? 'bg-foreground text-background'
-                              : 'bg-content2 text-foreground-500 hover:bg-content3'
+                              : 'bg-surface-secondary text-muted hover:bg-surface-tertiary'
                           }`}
                           key={sIdx}
                           onPress={() => applyServing(index, item.food_id, s, sIdx)}

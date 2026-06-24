@@ -52,7 +52,7 @@ export default function EditableRow({
   if (editing) {
     return (
       <Form
-        className="flex items-center gap-2 border-t border-divider px-4 py-2"
+        className="flex items-center gap-2 border-t border-border px-4 py-2"
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <Typography
@@ -99,7 +99,7 @@ export default function EditableRow({
   }
 
   return (
-    <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
+    <div className="flex min-h-11 items-center border-t border-border px-4 py-3">
       <Typography
         className="w-20 shrink-0"
         color="muted"

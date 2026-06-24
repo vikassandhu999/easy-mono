@@ -159,9 +159,9 @@ export default function RecipeDetail() {
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
         <div className="max-w-lg">
           <div className="flex items-start gap-4 pb-6">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-surface-secondary">
               <ChefHat
-                className="text-foreground-400"
+                className="text-muted"
                 size={24}
               />
             </div>
@@ -171,7 +171,7 @@ export default function RecipeDetail() {
           </div>
 
           {recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0 && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -190,7 +190,7 @@ export default function RecipeDetail() {
           )}
 
           {nutritionEntries.length > 0 && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -225,7 +225,7 @@ export default function RecipeDetail() {
           )}
 
           {recipe.recipe_ingredients.length > 0 && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -246,7 +246,7 @@ export default function RecipeDetail() {
 
                   return (
                     <div
-                      className="flex items-center justify-between gap-3 rounded-lg border border-divider px-3 py-2 text-sm"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm"
                       key={i}
                     >
                       <Typography
@@ -272,7 +272,7 @@ export default function RecipeDetail() {
           )}
 
           {recipe.instructions && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -291,7 +291,7 @@ export default function RecipeDetail() {
           )}
 
           {recipe.serving_sizes.length > 0 && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -303,7 +303,7 @@ export default function RecipeDetail() {
               <div className="flex flex-col gap-2">
                 {recipe.serving_sizes.map((serving, i) => (
                   <div
-                    className="flex items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
                     key={i}
                   >
                     <Typography weight="medium">
@@ -323,7 +323,7 @@ export default function RecipeDetail() {
             </section>
           )}
 
-          <section className="border-t border-divider py-4">
+          <section className="border-t border-border py-4">
             <Typography
               className="mb-2"
               color="muted"

@@ -11,7 +11,7 @@ import {buildWorkoutSessionSubtitle, getPlannedSnapshot, getWorkoutSessionTitle}
 const PREVIEW_LIMIT = 7;
 
 const SESSION_CARD_CLASS =
-  'flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2';
+  'flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover';
 
 function SessionCardContent({session}: {session: TrainingSession}) {
   const title = getWorkoutSessionTitle(session);
@@ -21,22 +21,22 @@ function SessionCardContent({session}: {session: TrainingSession}) {
 
   return (
     <>
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-content2">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-secondary">
         {getPlannedSnapshot(session) ? (
           <Dumbbell
-            className="text-foreground-400"
+            className="text-muted"
             size={16}
           />
         ) : (
           <Activity
-            className="text-foreground-400"
+            className="text-muted"
             size={16}
           />
         )}
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{title}</p>
-        {subtitle ? <p className="mt-0.5 truncate text-xs text-foreground-500">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-0.5 truncate text-xs text-muted">{subtitle}</p> : null}
         <div className="mt-1 flex items-center gap-2">
           {stateChip ? (
             <Chip
@@ -48,14 +48,14 @@ function SessionCardContent({session}: {session: TrainingSession}) {
             </Chip>
           ) : null}
           {session.soreness_rating ? (
-            <span className="text-xs text-foreground-400">Effort: {session.soreness_rating}/5</span>
+            <span className="text-xs text-muted">Effort: {session.soreness_rating}/5</span>
           ) : null}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <span className="text-xs text-foreground-400">{dateStr}</span>
+        <span className="text-xs text-muted">{dateStr}</span>
         <ChevronRight
-          className="text-foreground-300"
+          className="text-muted"
           size={16}
         />
       </div>
@@ -101,7 +101,7 @@ export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
   return (
     <section className="py-4">
       <Separator className="mb-4" />
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Workout History</h3>
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Workout History</h3>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-6">
@@ -118,7 +118,7 @@ export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
           ))}
           {hasMore ? (
             <Link
-              className="mt-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground-500 transition-colors hover:bg-default-100 active:bg-default-200"
+              className="mt-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-default-soft active:bg-default-soft"
               to={`/clients/${clientId}/workout-history`}
             >
               View all workouts
@@ -127,7 +127,7 @@ export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
           ) : null}
         </div>
       ) : (
-        <p className="text-sm text-foreground-400">No workouts logged yet.</p>
+        <p className="text-sm text-muted">No workouts logged yet.</p>
       )}
     </section>
   );

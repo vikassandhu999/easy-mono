@@ -36,7 +36,7 @@ export function PinnedWeekBar({planId}: PinnedWeekBarProps) {
     <div className="sticky top-0 z-10">
       {/* Bar */}
       <button
-        className="flex w-full items-center justify-between gap-2 bg-content1 border-b border-divider px-4 py-2 text-left transition-colors hover:bg-content2"
+        className="flex w-full items-center justify-between gap-2 bg-surface border-b border-border px-4 py-2 text-left transition-colors hover:bg-surface-hover"
         onClick={() => setExpanded((v) => !v)}
         type="button"
       >
@@ -56,18 +56,16 @@ export function PinnedWeekBar({planId}: PinnedWeekBarProps) {
               size="sm"
             />
           ) : (
-            <span className="truncate text-xs text-foreground-500">{projection}</span>
+            <span className="truncate text-xs text-muted">{projection}</span>
           )}
         </div>
 
-        <span className="shrink-0 text-foreground-500">
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </span>
+        <span className="shrink-0 text-muted">{expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
       </button>
 
       {/* Expanded schedule */}
       {expanded ? (
-        <div className="bg-background border-b border-divider px-4 py-3">
+        <div className="bg-background border-b border-border px-4 py-3">
           <WeekSchedule planId={planId} />
         </div>
       ) : null}

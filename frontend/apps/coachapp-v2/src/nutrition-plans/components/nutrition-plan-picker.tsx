@@ -97,9 +97,9 @@ export default function NutritionPlanPicker({
                 key={plan.id}
                 textValue={plan.name}
               >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
                   <ClipboardList
-                    className="text-foreground-400"
+                    className="text-muted"
                     size={14}
                   />
                 </div>

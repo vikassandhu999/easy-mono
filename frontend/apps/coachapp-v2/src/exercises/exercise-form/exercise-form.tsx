@@ -119,9 +119,9 @@ function ImageThumbnail({url}: {url: string}) {
 
   if (failed) {
     return (
-      <div className="flex size-8 shrink-0 items-center justify-center rounded bg-content2">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded bg-surface-secondary">
         <ImageOff
-          className="text-foreground-400"
+          className="text-muted"
           size={14}
         />
       </div>

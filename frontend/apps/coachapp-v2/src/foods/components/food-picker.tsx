@@ -104,7 +104,7 @@ export default function FoodPicker({
                   key={food.id}
                   textValue={food.name}
                 >
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
                     {food.image_url ? (
                       <img
                         alt={food.name}
@@ -113,7 +113,7 @@ export default function FoodPicker({
                       />
                     ) : (
                       <Apple
-                        className="text-foreground-400"
+                        className="text-muted"
                         size={14}
                       />
                     )}
@@ -121,13 +121,11 @@ export default function FoodPicker({
                   <div className="flex min-w-0 flex-1 flex-col">
                     <div className="flex items-center justify-between gap-2">
                       <Label>{food.name}</Label>
-                      {cal != null && cal > 0 && (
-                        <span className="shrink-0 text-xs text-foreground-400">{cal} Cal</span>
-                      )}
+                      {cal != null && cal > 0 && <span className="shrink-0 text-xs text-muted">{cal} Cal</span>}
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       {food.category && <Description>{food.category}</Description>}
-                      {pro != null && pro > 0 && <span className="shrink-0 text-xs text-foreground-400">{pro}g P</span>}
+                      {pro != null && pro > 0 && <span className="shrink-0 text-xs text-muted">{pro}g P</span>}
                     </div>
                   </div>
                   <ListBox.ItemIndicator />

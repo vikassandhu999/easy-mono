@@ -189,7 +189,7 @@ export default function ExerciseDetail() {
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
         <div className="max-w-lg">
           <div className="flex items-start gap-4 pb-6">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-surface-secondary">
               {exercise.images[0] ? (
                 <img
                   alt={exercise.name}
@@ -198,7 +198,7 @@ export default function ExerciseDetail() {
                 />
               ) : (
                 <Dumbbell
-                  className="text-foreground-400"
+                  className="text-muted"
                   size={24}
                 />
               )}
@@ -229,7 +229,7 @@ export default function ExerciseDetail() {
           </div>
 
           {exercise.description && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -248,7 +248,7 @@ export default function ExerciseDetail() {
           )}
 
           {exercise.instructions && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -267,7 +267,7 @@ export default function ExerciseDetail() {
           )}
 
           {muscleNames.length > 0 && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -291,7 +291,7 @@ export default function ExerciseDetail() {
           )}
 
           {equipmentNames.length > 0 && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -315,7 +315,7 @@ export default function ExerciseDetail() {
           )}
 
           {exercise.images.length > 0 && (
-            <section className="border-t border-divider py-4">
+            <section className="border-t border-border py-4">
               <Typography
                 className="mb-2"
                 color="muted"
@@ -337,7 +337,7 @@ export default function ExerciseDetail() {
             </section>
           )}
 
-          <section className="border-t border-divider py-4">
+          <section className="border-t border-border py-4">
             <Typography
               className="mb-2"
               color="muted"

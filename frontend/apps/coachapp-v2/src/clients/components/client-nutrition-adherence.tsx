@@ -62,7 +62,7 @@ export default function ClientNutritionAdherence({
   return (
     <section className="py-4">
       <Separator className="mb-4" />
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Nutrition</h3>
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Nutrition</h3>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
@@ -79,7 +79,7 @@ export default function ClientNutritionAdherence({
                 onPress={() => handleDayTap(day.dateStr, day.level)}
                 variant="ghost"
               >
-                <p className="text-[10px] text-foreground-400">{day.label}</p>
+                <p className="text-[10px] text-muted">{day.label}</p>
                 <div
                   className={`flex size-8 items-center justify-center rounded-full text-xs font-semibold transition-all ${day.style.bg} ${
                     selectedDate === day.dateStr ? 'ring-2 ring-accent ring-offset-1 ring-offset-background' : ''
@@ -88,15 +88,15 @@ export default function ClientNutritionAdherence({
                   {day.style.icon}
                 </div>
                 {day.percent != null ? (
-                  <p className="text-[10px] text-foreground-400">{day.percent}%</p>
+                  <p className="text-[10px] text-muted">{day.percent}%</p>
                 ) : (
-                  <p className="text-[10px] text-foreground-400">&nbsp;</p>
+                  <p className="text-[10px] text-muted">&nbsp;</p>
                 )}
               </Button>
             ))}
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-foreground-400">
+          <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-muted">
             <span>{'\u2713'} &ge;80%</span>
             <span>{'\u25D0'} 50-80%</span>
             <span>{'\u25CB'} &lt;50%</span>
@@ -105,14 +105,14 @@ export default function ClientNutritionAdherence({
 
           {!selectedDate && summaries.length > 0 ? (
             <div className="mt-4 flex flex-col gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Recent days</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Recent days</p>
               {[...summaries]
                 .filter((s) => s.total_entries > 0)
                 .sort((a, b) => b.date.localeCompare(a.date))
                 .map((summary) => {
                   return (
                     <Button
-                      className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-divider px-3 py-2 text-left transition-colors hover:bg-content2 active:bg-content2"
+                      className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-border px-3 py-2 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover"
                       key={summary.date}
                       onPress={() => setSelectedDate(summary.date)}
                       variant="ghost"
@@ -120,12 +120,12 @@ export default function ClientNutritionAdherence({
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium">
                           {formatWeekday(summary.date)}
-                          <span className="ml-1 font-normal text-foreground-400">
+                          <span className="ml-1 font-normal text-muted">
                             {Math.round(summary.logged_calories)}
                             {summary.planned_calories > 0 ? ` / ${Math.round(summary.planned_calories)} cal` : ' cal'}
                           </span>
                         </p>
-                        <p className="text-xs text-foreground-400">{buildRecentNutritionDaySubtitle(summary)}</p>
+                        <p className="text-xs text-muted">{buildRecentNutritionDaySubtitle(summary)}</p>
                       </div>
                     </Button>
                   );
@@ -134,7 +134,7 @@ export default function ClientNutritionAdherence({
           ) : null}
 
           {selectedDate ? (
-            <div className="mt-4 rounded-xl border border-divider bg-content1 p-4">
+            <div className="mt-4 rounded-xl border border-border bg-surface p-4">
               <ClientNutritionDetail
                 clientId={clientId}
                 date={selectedDate}

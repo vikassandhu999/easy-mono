@@ -191,7 +191,7 @@ export function SearchPickerSheet<T>({
           className={
             filtersLayout === 'segmented'
               ? 'mb-2 flex gap-1.5'
-              : 'mb-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+              : 'mb-2 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide'
           }
         >
           {filters.map((chip) => (

@@ -189,7 +189,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
 
         return (
           <div
-            className="rounded-lg border border-divider bg-content1 overflow-hidden"
+            className="rounded-lg border border-border bg-surface overflow-hidden"
             key={day}
           >
             {/* Day row */}
@@ -220,7 +220,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
                         key={REST_KEY}
                         textValue="Rest"
                       >
-                        <span className="text-foreground-500">Rest</span>
+                        <span className="text-muted">Rest</span>
                         <ListBox.ItemIndicator />
                       </ListBox.Item>
                       {workouts.map((w) => (
@@ -242,7 +242,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
               {hasWorkout ? (
                 <button
                   aria-label={isExpanded ? 'Collapse exercises' : 'Expand exercises'}
-                  className="shrink-0 text-foreground-500 hover:text-foreground transition-colors"
+                  className="shrink-0 text-muted hover:text-foreground transition-colors"
                   onClick={() => toggleExpand(day)}
                   type="button"
                 >
@@ -255,7 +255,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
 
             {/* Expanded exercise list (read-only) */}
             {isExpanded && assignedWorkout ? (
-              <div className="border-t border-divider px-3 pb-2 pt-1.5">
+              <div className="border-t border-border px-3 pb-2 pt-1.5">
                 {assignedWorkout.workout_elements.length === 0 ? (
                   <Typography
                     color="muted"
@@ -267,7 +267,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
                   <ul className="flex flex-col gap-0.5">
                     {assignedWorkout.workout_elements.map((element) => (
                       <li
-                        className="text-xs text-foreground-500"
+                        className="text-xs text-muted"
                         key={element.id}
                       >
                         {element.exercise?.name ?? 'Unknown exercise'}

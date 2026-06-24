@@ -303,8 +303,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
               className={[
                 'rounded border px-2 py-0.5 text-xs transition-colors',
                 hasPrev
-                  ? 'border-divider text-foreground-400 hover:border-default-400 hover:text-foreground-300'
-                  : 'cursor-default border-transparent text-foreground-600',
+                  ? 'border-border text-muted hover:border-default-hover hover:text-foreground'
+                  : 'cursor-default border-transparent text-muted',
               ].join(' ')}
               disabled={!hasPrev}
               onClick={hasPrev ? onPrev : undefined}
@@ -322,8 +322,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
               className={[
                 'rounded border px-2 py-0.5 text-xs transition-colors',
                 hasNext
-                  ? 'border-divider text-foreground-400 hover:border-default-400 hover:text-foreground-300'
-                  : 'cursor-default border-transparent text-foreground-600',
+                  ? 'border-border text-muted hover:border-default-hover hover:text-foreground'
+                  : 'cursor-default border-transparent text-muted',
               ].join(' ')}
               disabled={!hasNext}
               onClick={hasNext ? onNext : undefined}
@@ -334,7 +334,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           ) : null}
         </div>
         <button
-          className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+          className="text-sm font-semibold text-accent hover:text-accent/80 transition-colors"
           onClick={() => {
             flushPendingSave()
               .then(onClose)
@@ -354,8 +354,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
               className={[
                 'flex-1 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors',
                 setType === value
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-divider text-foreground-500 hover:border-default-400 hover:text-foreground-300',
+                  ? 'border-accent bg-accent/10 text-accent'
+                  : 'border-border text-muted hover:border-default-hover hover:text-foreground',
               ].join(' ')}
               key={value}
               onClick={() => handleSetType(value)}
@@ -369,8 +369,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
         {/* tracking_type-driven numeric fields */}
         <div className="mb-3 flex gap-2">
           {fields.showReps ? (
-            <div className="flex-1 rounded-lg border border-divider bg-background px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-foreground-500">Reps</div>
+            <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
+              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Reps</div>
               <input
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="numeric"
@@ -383,8 +383,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           ) : null}
 
           {fields.showLoad ? (
-            <div className="flex-1 rounded-lg border border-primary/40 bg-primary/5 px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-foreground-500">Weight</div>
+            <div className="flex-1 rounded-lg border border-accent/40 bg-accent/5 px-2 pb-2 pt-1.5 text-center">
+              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Weight</div>
               <input
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="decimal"
@@ -399,8 +399,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
                     className={[
                       'rounded border px-1.5 py-0.5 text-[9px] transition-colors',
                       loadUnit === value
-                        ? 'border-primary text-primary'
-                        : 'border-divider text-foreground-600 hover:text-foreground-400',
+                        ? 'border-accent text-accent'
+                        : 'border-border text-muted hover:text-foreground',
                     ].join(' ')}
                     key={value}
                     onClick={() => handleLoadUnit(value)}
@@ -414,8 +414,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           ) : null}
 
           {fields.showRpe ? (
-            <div className="flex-1 rounded-lg border border-divider bg-background px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-foreground-500">RPE</div>
+            <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
+              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">RPE</div>
               <input
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="decimal"
@@ -428,8 +428,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           ) : null}
 
           {fields.showDuration ? (
-            <div className="flex-1 rounded-lg border border-divider bg-background px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-foreground-500">Secs</div>
+            <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
+              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Secs</div>
               <input
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="numeric"
@@ -442,8 +442,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           ) : null}
 
           {fields.showDistance ? (
-            <div className="flex-1 rounded-lg border border-divider bg-background px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-foreground-500">Dist</div>
+            <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
+              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Dist</div>
               <input
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="decimal"
@@ -458,8 +458,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
                     className={[
                       'rounded border px-1.5 py-0.5 text-[9px] transition-colors',
                       distanceUnit === value
-                        ? 'border-primary text-primary'
-                        : 'border-divider text-foreground-600 hover:text-foreground-400',
+                        ? 'border-accent text-accent'
+                        : 'border-border text-muted hover:text-foreground',
                     ].join(' ')}
                     key={value}
                     onClick={() => handleDistanceUnit(value)}
@@ -475,7 +475,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
 
         {/* Advanced disclosure: rest timer + notes */}
         <button
-          className="mb-2 text-xs text-primary hover:text-primary/80 transition-colors"
+          className="mb-2 text-xs text-accent hover:text-accent/80 transition-colors"
           onClick={() => setShowAdvanced((v) => !v)}
           type="button"
         >
@@ -486,13 +486,13 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           <div className="space-y-2">
             <div>
               <label
-                className="mb-1 block text-[10px] uppercase tracking-wider text-foreground-500"
+                className="mb-1 block text-[10px] uppercase tracking-wider text-muted"
                 htmlFor="rest-seconds"
               >
                 Rest (seconds)
               </label>
               <input
-                className="w-full rounded-lg border border-divider bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
                 id="rest-seconds"
                 inputMode="numeric"
                 onChange={(e) => handleRestSeconds(e.target.value)}
@@ -503,13 +503,13 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
             </div>
             <div>
               <label
-                className="mb-1 block text-[10px] uppercase tracking-wider text-foreground-500"
+                className="mb-1 block text-[10px] uppercase tracking-wider text-muted"
                 htmlFor="set-notes"
               >
                 Notes
               </label>
               <textarea
-                className="w-full resize-none rounded-lg border border-divider bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
                 id="set-notes"
                 onChange={(e) => handleNotes(e.target.value)}
                 placeholder="Tempo, cues, %1RM targets…"
@@ -569,7 +569,7 @@ export function SetSheet({workoutExercise, setIndex, planId, open, onClose, onPr
         }}
       >
         <Popover.Content
-          className="w-80 rounded-xl border border-divider bg-content1 p-0 shadow-xl"
+          className="w-80 rounded-xl border border-border bg-surface p-0 shadow-xl"
           triggerRef={triggerRef}
         >
           <Popover.Dialog className="outline-none">

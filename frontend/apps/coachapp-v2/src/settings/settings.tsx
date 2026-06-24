@@ -47,8 +47,8 @@ function ProfileSection({
   return (
     <section>
       <SectionHeading title="Profile" />
-      <div className="overflow-hidden rounded-xl border border-divider bg-content1">
-        <div className="flex items-center gap-3 border-b border-divider p-4">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="flex items-center gap-3 border-b border-border p-4">
           <Avatar
             className="size-12"
             color="accent"
@@ -100,9 +100,9 @@ function InviteLinkSection({slug}: {slug: string}) {
   return (
     <section className="mt-6">
       <SectionHeading title="Client invite link" />
-      <div className="overflow-hidden rounded-xl border border-divider bg-content1">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
         <div className="flex items-center gap-2 p-4">
-          <div className="min-w-0 flex-1 truncate rounded-lg bg-content2 px-3 py-2 font-mono text-xs text-foreground-500">
+          <div className="min-w-0 flex-1 truncate rounded-lg bg-surface-secondary px-3 py-2 font-mono text-xs text-muted">
             coachapp.in/join/{slug}
           </div>
           <Button
@@ -114,7 +114,7 @@ function InviteLinkSection({slug}: {slug: string}) {
           </Button>
         </div>
         <Typography
-          className="border-t border-divider px-4 py-2"
+          className="border-t border-border px-4 py-2"
           color="muted"
           type="body-xs"
         >
@@ -129,7 +129,7 @@ function AccountSection({email}: {email: string}) {
   return (
     <section className="mt-6">
       <SectionHeading title="Account" />
-      <div className="overflow-hidden rounded-xl border border-divider bg-content1">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
         <div className="flex min-h-11 items-center px-4 py-3">
           <Typography
             className="w-20 shrink-0"
@@ -147,7 +147,7 @@ function AccountSection({email}: {email: string}) {
             {email}
           </Typography>
         </div>
-        <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
+        <div className="flex min-h-11 items-center border-t border-border px-4 py-3">
           <Typography
             className="w-20 shrink-0"
             color="muted"

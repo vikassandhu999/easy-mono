@@ -127,7 +127,7 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
 
         {/* + set */}
         <button
-          className="mt-1 text-xs text-primary hover:text-primary/80 transition-colors"
+          className="mt-1 text-xs text-accent hover:text-accent/80 transition-colors"
           onClick={handleAddSet}
           type="button"
         >

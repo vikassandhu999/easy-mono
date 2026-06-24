@@ -112,9 +112,9 @@ export default function ClientPicker({
                 key={client.id}
                 textValue={getFullName(client.first_name, client.last_name)}
               >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
                   <Users
-                    className="text-foreground-400"
+                    className="text-muted"
                     size={14}
                   />
                 </div>

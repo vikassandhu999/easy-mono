@@ -156,11 +156,11 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
       <Card.Content className="flex flex-col gap-4 p-4">
         <div className="flex flex-col gap-1">
           <h3 className="text-sm font-semibold">Invitation</h3>
-          <p className="text-xs text-foreground-500">Share this link with {displayName} to onboard them:</p>
+          <p className="text-xs text-muted">Share this link with {displayName} to onboard them:</p>
         </div>
 
-        <div className="flex min-h-11 items-center gap-2 rounded-lg border border-divider bg-content2 px-3 py-2">
-          <p className="min-w-0 flex-1 truncate text-xs text-foreground-500">{inviteUrl}</p>
+        <div className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-secondary px-3 py-2">
+          <p className="min-w-0 flex-1 truncate text-xs text-muted">{inviteUrl}</p>
           <Button
             aria-label="Copy invite link"
             onPress={handleCopy}
@@ -193,11 +193,11 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
           </Button>
         </div>
         {!client.email ? (
-          <p className="text-xs text-foreground-400">No email on file — use WhatsApp to share the link.</p>
+          <p className="text-xs text-muted">No email on file — use WhatsApp to share the link.</p>
         ) : null}
 
         {sentAgo || expiresIn ? (
-          <div className="flex flex-col gap-0.5 text-xs text-foreground-500">
+          <div className="flex flex-col gap-0.5 text-xs text-muted">
             {sentAgo ? <p>Invited {sentAgo}.</p> : null}
             {expiresIn ? <p>Invitation expires {expiresIn}.</p> : null}
           </div>

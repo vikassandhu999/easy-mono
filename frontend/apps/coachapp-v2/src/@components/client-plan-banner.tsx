@@ -27,7 +27,7 @@ export default function ClientPlanBanner({client, endDate, startDate}: ClientPla
 
   return (
     <Link
-      className="mb-4 flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content2 p-3 transition-colors hover:bg-content3 active:bg-content3"
+      className="mb-4 flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface-secondary p-3 transition-colors hover:bg-surface-tertiary active:bg-surface-tertiary"
       to={`/clients/${client.id}`}
     >
       <Avatar
@@ -41,7 +41,7 @@ export default function ClientPlanBanner({client, endDate, startDate}: ClientPla
           Personal plan for <span className="font-semibold">{fullName}</span>
         </p>
         {hasDates ? (
-          <p className="text-xs text-foreground-500">
+          <p className="text-xs text-muted">
             {startDate ? formatDateShort(startDate) : ''}
             {startDate && endDate ? ' \u2192 ' : ''}
             {endDate ? formatDateShort(endDate) : ''}

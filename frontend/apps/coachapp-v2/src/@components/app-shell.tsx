@@ -123,8 +123,8 @@ function SidebarNavItem({item}: {item: NavItem}) {
       className={({isActive}) =>
         `relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
           isActive
-            ? 'bg-primary/10 font-semibold text-primary before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-full before:bg-primary'
-            : 'font-medium text-foreground-500 hover:bg-default-100 active:bg-default-200'
+            ? 'bg-accent/10 font-semibold text-accent before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-full before:bg-accent'
+            : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
         }`
       }
       to={item.path}
@@ -163,8 +163,8 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
       <Button
         className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
           isGroupActive && !open
-            ? 'bg-primary/10 font-semibold text-primary'
-            : 'font-medium text-foreground-500 hover:bg-default-100 active:bg-default-200'
+            ? 'bg-accent/10 font-semibold text-accent'
+            : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
         }`}
         fullWidth
         onPress={() => setOpen((prev) => !prev)}
@@ -175,14 +175,14 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
         <ChevronRight className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : ''}`} />
       </Button>
       {open ? (
-        <div className="ml-3 mt-1 space-y-0.5 border-l border-divider pl-3">
+        <div className="ml-3 mt-1 space-y-0.5 border-l border-border pl-3">
           {group.items.map((item) => (
             <NavLink
               className={({isActive}) =>
                 `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                   isActive
-                    ? 'bg-primary/10 font-semibold text-primary'
-                    : 'font-medium text-foreground-500 hover:bg-default-100 active:bg-default-200'
+                    ? 'bg-accent/10 font-semibold text-accent'
+                    : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
                 }`
               }
               key={item.path}
@@ -203,14 +203,14 @@ function BottomNavItem({item}: {item: NavItem}) {
     <NavLink
       className={({isActive}) =>
         `relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-1 rounded-lg px-2 text-[10px] ${
-          isActive ? 'bg-primary/10 font-semibold text-primary' : 'font-medium text-foreground-400'
+          isActive ? 'bg-accent/10 font-semibold text-accent' : 'font-medium text-muted'
         }`
       }
       to={item.path}
     >
       {({isActive}) => (
         <>
-          {isActive && <span className="absolute top-0.5 h-1 w-5 rounded-full bg-primary" />}
+          {isActive && <span className="absolute top-0.5 h-1 w-5 rounded-full bg-accent" />}
           <span className={isActive ? 'mt-1' : ''}>{item.icon}</span>
           <span>{item.label}</span>
         </>
@@ -232,7 +232,7 @@ export default function AppShell() {
       {/* Global toast renderer — queued via toast() from @heroui/react */}
       <Toast.Provider placement="bottom end" />
 
-      <aside className="hidden border-r border-divider bg-content1 lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <aside className="hidden border-r border-border bg-surface lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex h-16 items-center px-6">
           <img
             alt="CoachEasy"
@@ -260,8 +260,8 @@ export default function AppShell() {
             ))}
           </div>
           {canInstall ? (
-            <div className="mx-1 mt-3 rounded-lg border border-divider bg-content2 p-3">
-              <p className="text-xs text-foreground-500">Install the app for quick access</p>
+            <div className="mx-1 mt-3 rounded-lg border border-border bg-surface-secondary p-3">
+              <p className="text-xs text-muted">Install the app for quick access</p>
               <div className="mt-2 flex gap-2">
                 <Button
                   className="flex-1"
@@ -296,14 +296,14 @@ export default function AppShell() {
 
       {/* Mobile install banner — above bottom nav */}
       {canInstall && showBottomNav ? (
-        <div className="fixed inset-x-0 bottom-16 z-40 border-t border-divider bg-content1 px-4 py-2.5 lg:hidden">
+        <div className="fixed inset-x-0 bottom-16 z-40 border-t border-border bg-surface px-4 py-2.5 lg:hidden">
           <div className="flex items-center gap-3">
             <img
               alt=""
               className="size-8 rounded-lg"
               src="/icons/icon-192x192.webp"
             />
-            <p className="flex-1 text-xs text-foreground-500">Install CoachEasy for quick access</p>
+            <p className="flex-1 text-xs text-muted">Install CoachEasy for quick access</p>
             <Button
               onPress={promptInstall}
               size="sm"
@@ -311,7 +311,7 @@ export default function AppShell() {
               Install
             </Button>
             <CloseButton
-              className="min-h-11 min-w-11 text-foreground-400"
+              className="min-h-11 min-w-11 text-muted"
               onPress={dismiss}
             >
               <X size={16} />
@@ -322,7 +322,7 @@ export default function AppShell() {
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showBottomNav ? (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-divider bg-background lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-border bg-background lg:hidden">
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
               item={item}

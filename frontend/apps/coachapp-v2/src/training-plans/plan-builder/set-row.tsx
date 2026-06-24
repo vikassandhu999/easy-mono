@@ -41,15 +41,15 @@ export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow
   return (
     <button
       ref={ref}
-      className="flex w-full items-center justify-between py-1.5 text-left text-xs text-foreground-400 hover:text-foreground-300 transition-colors"
+      className="flex w-full items-center justify-between py-1.5 text-left text-xs text-muted hover:text-foreground transition-colors"
       onClick={onTap}
       type="button"
     >
       <span>
-        <span className="mr-1.5 text-foreground-500">Set {index + 1}</span>
+        <span className="mr-1.5 text-muted">Set {index + 1}</span>
         {formatSetSummary(set)}
       </span>
-      <span className="text-foreground-600 text-[10px]">···</span>
+      <span className="text-muted text-[10px]">···</span>
     </button>
   );
 });

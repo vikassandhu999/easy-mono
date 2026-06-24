@@ -23,9 +23,9 @@ export default function RecipeListItem({recipe}: {recipe: Recipe}) {
       id={recipe.id}
       textValue={recipe.name}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-secondary">
         <ChefHat
-          className="text-foreground-400"
+          className="text-muted"
           size={20}
         />
       </div>

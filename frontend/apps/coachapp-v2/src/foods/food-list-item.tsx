@@ -37,7 +37,7 @@ export default function FoodListItem({food}: {food: Food}) {
       id={food.id}
       textValue={food.name}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-secondary">
         {food.image_url ? (
           <img
             alt={food.name}

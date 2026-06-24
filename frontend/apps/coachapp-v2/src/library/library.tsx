@@ -51,7 +51,7 @@ export default function Library() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SECTIONS.map((section) => (
             <Link
-              className="flex min-h-11 flex-col gap-1 rounded-xl border border-divider bg-content1 p-4 transition-colors hover:bg-content2 active:bg-content2"
+              className="flex min-h-11 flex-col gap-1 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
               key={section.path}
               to={section.path}
             >

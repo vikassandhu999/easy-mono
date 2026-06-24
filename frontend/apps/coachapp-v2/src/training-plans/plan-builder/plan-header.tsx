@@ -11,7 +11,6 @@
  */
 import {Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useEffect} from 'react';
 import {useForm} from 'react-hook-form';
 
 import {FormTextField} from '@/@components/form-fields';
@@ -41,12 +40,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
     values: trainingPlanToFormValues(plan),
   });
 
-  const {control, getValues, reset} = form;
-
-  // Keep the form in sync if the plan identity changes (e.g. navigating between plans).
-  useEffect(() => {
-    reset(trainingPlanToFormValues(plan));
-  }, [plan, reset]);
+  const {control, getValues} = form;
 
   // Autosave a single field on blur. Ignores unchanged / invalid values.
   const handleBlur = async (field: keyof TrainingPlanFormValues) => {
@@ -82,9 +76,20 @@ export function PlanHeader({plan}: PlanHeaderProps) {
   };
 
   return (
-    <div className="w-full max-w-2xl space-y-3 py-4">
+    <div className="w-full space-y-3 py-4">
+      {/* Section title + saving indicator */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium uppercase tracking-wide text-foreground-400">Plan details</span>
+        {isSaving && (
+          <Spinner
+            color="accent"
+            size="sm"
+          />
+        )}
+      </div>
+
       {/* Plan name — large inline input */}
-      <div className="relative">
+      <div>
         <FormTextField
           control={control}
           inputProps={{
@@ -96,14 +101,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           name="name"
           onFieldBlur={() => handleBlur('name')}
         />
-        {isSaving && (
-          <span className="absolute right-2 top-1/2 -translate-y-1/2">
-            <Spinner
-              color="accent"
-              size="sm"
-            />
-          </span>
-        )}
       </div>
 
       {/* Start / end dates — side by side on narrow screens too */}

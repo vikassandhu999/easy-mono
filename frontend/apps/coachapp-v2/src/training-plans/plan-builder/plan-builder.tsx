@@ -86,25 +86,19 @@ export default function TrainingPlanDetail() {
         </div>
       </Page.Header>
 
-      {/*
-       * Sticky week-bar must live outside any overflow-hidden ancestor.
-       * Page.Toolbar renders above Page.Content and does not clip overflow,
-       * so PinnedWeekBar's sticky top-0 works correctly here.
-       */}
-      <Page.Toolbar className="px-4 md:px-6 lg:px-8 pb-0">
-        <PinnedWeekBar planId={plan.id} />
-      </Page.Toolbar>
-
       <Page.Content className="px-4 md:px-6 lg:px-8">
         {/* Layout A — single centred column, max-w-2xl */}
         <div className="w-full max-w-2xl">
           {/* 1. Plan header: inline name + dates → autosave */}
           <PlanHeader plan={plan} />
 
-          {/* 2. Workout list: accordion, add workout, empty state */}
+          {/* 2. Pinned week bar: sticky below header */}
+          <PinnedWeekBar planId={plan.id} />
+
+          {/* 3. Workout list: accordion, add workout, empty state */}
           <WorkoutList planId={plan.id} />
 
-          {/* 3. Week schedule: day → workout assignment */}
+          {/* 4. Week schedule: day → workout assignment */}
           <WeekSchedule planId={plan.id} />
         </div>
       </Page.Content>

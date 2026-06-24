@@ -36,7 +36,7 @@ export default function RecipeListItem({recipe}: {recipe: Recipe}) {
       </div>
 
       <div className="ms-auto hidden shrink-0 gap-1.5 sm:flex">
-        {calories !== undefined && (
+        {calories != null && (
           <Chip
             size="sm"
             variant="soft"

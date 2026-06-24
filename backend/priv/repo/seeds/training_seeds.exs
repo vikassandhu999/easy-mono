@@ -1,10 +1,33 @@
 defmodule Easy.Repo.Seeds.Training do
   alias Easy.Repo
-  alias Easy.Training.{Muscle, Equipment, Exercise, ExerciseMuscle, ExerciseEquipment}
+  alias Easy.Training.TrainingEquipment, as: Equipment
+  alias Easy.Training.TrainingExercise, as: Exercise
+  alias Easy.Training.TrainingMuscle, as: Muscle
 
   import Ecto.Query
 
-  @exercise_fields [:name, :description, :instructions, :mechanics, :force, :images, :import_id]
+  @exercise_fields [
+    :source,
+    :tracking_type,
+    :name,
+    :description,
+    :instructions,
+    :mechanics,
+    :force,
+    :images,
+    :import_id
+  ]
+  @tracking_types [
+    :weight_reps,
+    :bodyweight_reps,
+    :weighted_bodyweight,
+    :assisted_bodyweight,
+    :reps_only,
+    :duration,
+    :weight_duration,
+    :distance_duration,
+    :weight_distance
+  ]
 
   @spec run() :: :ok
   def run do
@@ -52,7 +75,7 @@ defmodule Easy.Repo.Seeds.Training do
 
   defp seed_muscles(exercises) do
     names = extract_muscle_names(exercises)
-    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     rows =
       Enum.map(names, fn name ->
@@ -72,7 +95,7 @@ defmodule Easy.Repo.Seeds.Training do
 
   defp seed_equipment(exercises) do
     names = extract_equipment_names(exercises)
-    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     rows =
       Enum.map(names, fn name ->
@@ -93,7 +116,7 @@ defmodule Easy.Repo.Seeds.Training do
   defp seed_exercises(exercises) do
     muscle_map = build_lookup_map(Muscle)
     equipment_map = build_lookup_map(Equipment)
-    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     # Build exercise rows and association data from JSON
     {exercise_rows, assoc_data} =
@@ -116,14 +139,13 @@ defmodule Easy.Repo.Seeds.Training do
       # Load import_id->id map for system exercises
       exercise_id_map =
         Exercise
-        |> Exercise.system()
-        |> where([e], not is_nil(e.import_id))
+        |> where([e], is_nil(e.business_id) and not is_nil(e.import_id))
         |> select([e], {e.import_id, e.id})
         |> Repo.all()
         |> Map.new()
 
       # Build all join-table rows
-      {muscle_rows, equipment_rows} = build_association_rows(assoc_data, exercise_id_map, now)
+      {muscle_rows, equipment_rows} = build_association_rows(assoc_data, exercise_id_map)
 
       # Replace associations: delete old, insert new
       system_exercise_ids = Map.values(exercise_id_map)
@@ -141,20 +163,20 @@ defmodule Easy.Repo.Seeds.Training do
   end
 
   defp build_exercise_row(data, muscle_map, equipment_map, now) do
-    primary_ids = resolve_ids(data["primaryMuscles"] || [], muscle_map)
-    secondary_ids = resolve_ids(data["secondaryMuscles"] || [], muscle_map)
-    muscle_ids = Enum.uniq(primary_ids ++ secondary_ids)
-    equipment_ids = resolve_ids(List.wrap(data["equipment"]), equipment_map)
+    muscle_ids = data |> exercise_muscles() |> resolve_ids(muscle_map) |> Enum.uniq()
+    equipment_ids = data |> exercise_equipment() |> resolve_ids(equipment_map)
 
     row = %{
       id: Ecto.UUID.generate(),
       import_id: data["id"],
-      name: data["name"],
-      description: data["category"],
+      name: data["title"] || data["name"],
+      description: data["manual_tag"] || data["category"],
       instructions: parse_instructions(data["instructions"]),
-      mechanics: parse_enum(data["mechanic"], [:compound, :isolation, :isometric]),
+      tracking_type: parse_tracking_type(data["exercise_type"]),
+      mechanics: parse_enum(data["mechanics"] || data["mechanic"], [:compound, :isolation, :isometric]),
       force: parse_enum(data["force"], [:push, :pull, :static]),
-      images: data["images"] || [],
+      images: exercise_images(data),
+      source: :system,
       business_id: nil,
       inserted_at: now,
       updated_at: now
@@ -163,34 +185,28 @@ defmodule Easy.Repo.Seeds.Training do
     {row, muscle_ids, equipment_ids}
   end
 
-  defp build_association_rows(assoc_data, exercise_id_map, now) do
-    Enum.reduce(assoc_data, {[], []}, fn {import_id, {muscle_ids, equipment_ids}},
-                                         {m_acc, e_acc} ->
+  defp build_association_rows(assoc_data, exercise_id_map) do
+    Enum.reduce(assoc_data, {[], []}, fn {import_id, {muscle_ids, equipment_ids}}, {m_acc, e_acc} ->
       case Map.get(exercise_id_map, import_id) do
         nil ->
           {m_acc, e_acc}
 
         exercise_id ->
+          exercise_db_id = Ecto.UUID.dump!(exercise_id)
+
           new_muscles =
             Enum.map(muscle_ids, fn mid ->
               %{
-                id: Ecto.UUID.generate(),
-                exercise_id: exercise_id,
-                muscle_id: mid,
-                role: :primary,
-                inserted_at: now,
-                updated_at: now
+                exercise_id: exercise_db_id,
+                muscle_id: Ecto.UUID.dump!(mid)
               }
             end)
 
           new_equipment =
             Enum.map(equipment_ids, fn eid ->
               %{
-                id: Ecto.UUID.generate(),
-                exercise_id: exercise_id,
-                equipment_id: eid,
-                inserted_at: now,
-                updated_at: now
+                exercise_id: exercise_db_id,
+                equipment_id: Ecto.UUID.dump!(eid)
               }
             end)
 
@@ -200,13 +216,15 @@ defmodule Easy.Repo.Seeds.Training do
   end
 
   defp replace_associations(exercise_ids, muscle_rows, equipment_rows) do
+    exercise_db_ids = Enum.map(exercise_ids, &Ecto.UUID.dump!/1)
+
     # Delete existing associations for all system exercises
-    from(em in ExerciseMuscle, where: em.exercise_id in ^exercise_ids) |> Repo.delete_all()
-    from(ee in ExerciseEquipment, where: ee.exercise_id in ^exercise_ids) |> Repo.delete_all()
+    from(em in "training_exercise_muscles", where: em.exercise_id in ^exercise_db_ids) |> Repo.delete_all()
+    from(ee in "training_exercise_equipment", where: ee.exercise_id in ^exercise_db_ids) |> Repo.delete_all()
 
     # Bulk insert new associations in chunks (Postgres param limit)
-    chunk_insert_all(ExerciseMuscle, muscle_rows)
-    chunk_insert_all(ExerciseEquipment, equipment_rows)
+    chunk_insert_all("training_exercise_muscles", muscle_rows)
+    chunk_insert_all("training_exercise_equipment", equipment_rows)
   end
 
   defp chunk_insert_all(_schema, []), do: :ok
@@ -219,7 +237,7 @@ defmodule Easy.Repo.Seeds.Training do
 
   defp extract_muscle_names(exercises) do
     exercises
-    |> Enum.flat_map(fn e -> (e["primaryMuscles"] || []) ++ (e["secondaryMuscles"] || []) end)
+    |> Enum.flat_map(&exercise_muscles/1)
     |> Enum.map(&capitalize/1)
     |> Enum.uniq()
     |> Enum.sort()
@@ -227,15 +245,30 @@ defmodule Easy.Repo.Seeds.Training do
 
   defp extract_equipment_names(exercises) do
     exercises
-    |> Enum.map(fn e -> e["equipment"] end)
-    |> Enum.reject(&is_nil/1)
+    |> Enum.flat_map(&exercise_equipment/1)
     |> Enum.map(&capitalize/1)
     |> Enum.uniq()
     |> Enum.sort()
   end
 
+  defp exercise_muscles(data) do
+    List.wrap(data["muscle_group"] || data["primaryMuscles"]) ++
+      (data["other_muscles"] || data["secondaryMuscles"] || [])
+  end
+
+  defp exercise_equipment(data) do
+    equipment = data["equipment_category"] || data["equipment"]
+
+    equipment
+    |> List.wrap()
+    |> Enum.reject(&(&1 in [nil, "", "none"]))
+  end
+
+  defp exercise_images(data), do: data["images"] || Enum.reject([data["thumbnail_url"], data["url"]], &is_nil/1)
+
   defp capitalize(name) do
     name
+    |> String.replace("_", " ")
     |> String.split(~r/[\s\-]/, include_captures: true)
     |> Enum.map_join(fn
       <<c::utf8, rest::binary>> when c in ?a..?z -> <<c - 32::utf8, rest::binary>>
@@ -246,23 +279,35 @@ defmodule Easy.Repo.Seeds.Training do
   defp build_lookup_map(schema) do
     schema
     |> Repo.all()
-    |> Map.new(fn record -> {String.downcase(record.name), record.id} end)
+    |> Map.new(fn record -> {lookup_key(record.name), record.id} end)
   end
 
   defp resolve_ids(names, lookup_map) do
     names
-    |> Enum.map(&Map.get(lookup_map, String.downcase(&1)))
+    |> Enum.map(&Map.get(lookup_map, lookup_key(&1)))
     |> Enum.reject(&is_nil/1)
   end
+
+  defp lookup_key(name), do: name |> String.replace("_", " ") |> String.downcase()
 
   defp parse_enum(nil, _valid), do: nil
 
   defp parse_enum(value, valid) do
-    atom = String.to_existing_atom(value)
+    atom =
+      value
+      |> String.downcase()
+      |> String.to_existing_atom()
+
     if atom in valid, do: atom, else: nil
   rescue
     ArgumentError -> nil
   end
+
+  defp parse_tracking_type("bodyweight_assisted_reps"), do: :assisted_bodyweight
+  defp parse_tracking_type("short_distance_weight"), do: :weight_distance
+  defp parse_tracking_type("floors_duration"), do: :duration
+  defp parse_tracking_type("steps_duration"), do: :duration
+  defp parse_tracking_type(value), do: parse_enum(value, @tracking_types) || :weight_reps
 
   defp parse_instructions(nil), do: nil
 

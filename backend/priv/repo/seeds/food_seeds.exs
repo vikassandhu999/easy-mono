@@ -5,16 +5,21 @@ defmodule Easy.Repo.Seeds.Foods do
   alias Easy.Repo
 
   @batch_size 500
-  @source "system"
+  @source :system
   @food_categories ["I", "PF"]
 
   @food_fields [
     :name,
-    :macros,
+    :calories_per_100g,
+    :protein_g_per_100g,
+    :carbs_g_per_100g,
+    :fat_g_per_100g,
+    :fiber_g_per_100g,
     :serving_sizes,
     :source,
     :category,
-    :tags,
+    :allergens,
+    :dietary_tags,
     :notes,
     :image_url,
     :import_id
@@ -80,27 +85,22 @@ defmodule Easy.Repo.Seeds.Foods do
       id: Ecto.UUID.generate(),
       import_id: to_string(food["food_id"]),
       name: food["food_name"] |> String.trim(),
-      macros: build_macros(food),
+      calories_per_100g: round_macro(food["calorie"]),
+      protein_g_per_100g: round_macro(food["proteins"]),
+      carbs_g_per_100g: round_macro(food["carbs"]),
+      fat_g_per_100g: round_macro(food["fats"]),
+      fiber_g_per_100g: round_macro(food["fibre"]),
       serving_sizes: build_serving_sizes(measures),
       source: @source,
       category: map_category(food["food_category"]),
-      tags: [],
+      allergens: [],
+      dietary_tags: [],
       notes: nil,
       image_url: food["food_image_url"],
       creator_id: nil,
       business_id: nil,
       inserted_at: now,
       updated_at: now
-    }
-  end
-
-  defp build_macros(food) do
-    %{
-      "calories" => round_macro(food["calorie"]),
-      "protein" => round_macro(food["proteins"]),
-      "carbs" => round_macro(food["carbs"]),
-      "fat" => round_macro(food["fats"]),
-      "fiber" => round_macro(food["fibre"])
     }
   end
 

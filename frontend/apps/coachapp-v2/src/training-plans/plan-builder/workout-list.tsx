@@ -111,7 +111,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
           color="muted"
           type="body-sm"
         >
-          Add your first workout to start building this plan.
+          Add your first workout
         </Typography>
       ) : (
         /* Workout accordion */

@@ -73,22 +73,21 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
       return;
     }
     setEditingName(false);
+    const patch = dispatch(
+      api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
+        const w = draft.data.find((x) => x.id === workout.id);
+        if (w) {
+          w.name = trimmed;
+        }
+      }),
+    );
     try {
       await updateWorkout({
         id: workout.id,
         trainingWorkoutUpdateRequest: {name: trimmed},
       }).unwrap();
-      // Optimistic update in listWorkouts cache
-      dispatch(
-        api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
-          const w = draft.data.find((x) => x.id === workout.id);
-          if (w) {
-            w.name = trimmed;
-          }
-        }),
-      );
     } catch {
-      // Revert on error
+      patch.undo();
       setNameValue(workout.name);
     }
   }, [nameValue, workout.id, workout.name, planId, updateWorkout, dispatch]);
@@ -293,7 +292,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
 
       {/* Body — exercises + add button */}
       {open ? (
-        <div className="border-t border-divider px-3 pb-3 pt-1">
+        <div className="border-t border-divider pb-3 pt-1">
           {workout.workout_elements.map((element) => (
             <ExerciseRow
               key={element.id}
@@ -302,13 +301,15 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
             />
           ))}
 
-          <button
-            className="mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-            onClick={() => setPickerOpen(true)}
-            type="button"
-          >
-            + Add exercise
-          </button>
+          <div className="pl-2.5">
+            <button
+              className="mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+              onClick={() => setPickerOpen(true)}
+              type="button"
+            >
+              + Add exercise
+            </button>
+          </div>
         </div>
       ) : null}
 

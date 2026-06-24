@@ -199,6 +199,55 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert nutrition["protein_g"] == 10.0
     end
 
+    test "food meal item includes food name", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:plan, creator: coach, business: business)
+      meal = insert(:meal, creator: coach, plan: plan, business: business)
+      food = insert(:food, creator: coach, business: business, name: "Rolled Oats")
+      insert(:meal_item, meal: meal, business: business, food: food, weight_g: 80.0)
+
+      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      [meal_data] = data["meals"]
+      [item] = meal_data["meal_items"]
+      assert item["name"] == "Rolled Oats"
+    end
+
+    test "recipe meal item includes recipe name", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:plan, creator: coach, business: business)
+      meal = insert(:meal, creator: coach, plan: plan, business: business)
+
+      food = insert(:food, creator: coach, business: business)
+
+      recipe =
+        insert(:recipe,
+          creator: coach,
+          business: business,
+          name: "Turkey Rice Bowl",
+          cooked_weight_g: 400.0,
+          recipe_ingredients: [
+            build(:recipe_ingredient, food: food, weight_g: 200.0)
+          ]
+        )
+
+      insert(:meal_item, meal: meal, business: business, food: nil, recipe: recipe, weight_g: 200.0)
+
+      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      [meal_data] = data["meals"]
+      [item] = meal_data["meal_items"]
+      assert item["name"] == "Turkey Rice Bowl"
+    end
+
     test "meal item nutrition is zero-valued map when food has no macros set", %{
       conn: conn,
       coach: coach,

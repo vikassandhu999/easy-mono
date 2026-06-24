@@ -6710,6 +6710,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "nutrition": {
             "nullable": true,
             "properties": {

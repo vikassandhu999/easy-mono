@@ -37,6 +37,7 @@ defmodule EasyWeb.Coaches.MealJSON do
   defp meal_item_data(%MealItem{} = meal_item) do
     %{
       id: meal_item.id,
+      name: meal_item_name(meal_item),
       weight_g: meal_item.weight_g,
       amount: meal_item.amount,
       unit: meal_item.unit,
@@ -51,4 +52,8 @@ defmodule EasyWeb.Coaches.MealJSON do
   end
 
   defp meal_item_data(_), do: nil
+
+  defp meal_item_name(%MealItem{food: %{name: name}}), do: name
+  defp meal_item_name(%MealItem{recipe: %{name: name}}), do: name
+  defp meal_item_name(_), do: nil
 end

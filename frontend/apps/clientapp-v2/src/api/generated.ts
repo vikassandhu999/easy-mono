@@ -930,6 +930,7 @@ export type NutritionMealItem = {
   food_id: string | null;
   id: string;
   inserted_at: string;
+  name?: string | null;
   nutrition?: {
     calories?: number | null;
     carbs_g?: number | null;

@@ -229,6 +229,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealItem do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string, nullable: true},
           weight_g: %Schema{type: :number, nullable: true},
           amount: %Schema{type: :number, nullable: true},
           unit: %Schema{type: :string, nullable: true},

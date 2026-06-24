@@ -79,6 +79,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
   defp meal_item_data(%MealItem{} = meal_item) do
     %{
       id: meal_item.id,
+      name: meal_item_name(meal_item),
       weight_g: meal_item.weight_g,
       amount: meal_item.amount,
       unit: meal_item.unit,
@@ -93,6 +94,10 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
   end
 
   defp meal_item_data(_), do: nil
+
+  defp meal_item_name(%MealItem{food: %{name: name}}), do: name
+  defp meal_item_name(%MealItem{recipe: %{name: name}}), do: name
+  defp meal_item_name(_), do: nil
 
   defp schedule_entries_data(entries) when is_list(entries) do
     Enum.map(entries, &schedule_entry_data/1)

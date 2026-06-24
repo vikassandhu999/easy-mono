@@ -213,8 +213,10 @@ export function computeDailyNutritionSummaries(mealLogs: MealLog[]): DailyNutrit
   return [...byDate.values()];
 }
 
-// Assert: a meal log with known values produces the correct aggregate.
-(function assertComputeDailyNutritionSummaries() {
+// Assert (dev-only — must not run/throw in production): a meal log with known
+// values produces the correct aggregate.
+if (import.meta.env.DEV) {
+  (function assertComputeDailyNutritionSummaries() {
   const fakeLogs: MealLog[] = [
     {
       id: 'a',
@@ -298,4 +300,5 @@ export function computeDailyNutritionSummaries(mealLogs: MealLog[]): DailyNutrit
   if (day.meals_logged !== 2) {
     throw new Error('computeDailyNutritionSummaries: wrong meals_logged');
   }
-})();
+  })();
+}

@@ -17,6 +17,7 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery} from '@/api/generated';
 
 import {MealsList} from './meals-list';
+import {NutritionSchedule} from './nutrition-schedule';
 
 export default function NutritionPlanBuilder() {
   const {id} = useParams<{id: string}>();
@@ -95,7 +96,8 @@ export default function NutritionPlanBuilder() {
           {/* Meals library — meal cards + items + amount sheet */}
           <MealsList planId={plan.id} />
 
-          {/* TODO(Task 7): <Schedule planId={plan.id} /> — day → meal-slot assignment */}
+          {/* Schedule — "Every day" template + day total bar (Task 6a) */}
+          <NutritionSchedule planId={plan.id} />
         </div>
       </Page.Content>
     </Page>

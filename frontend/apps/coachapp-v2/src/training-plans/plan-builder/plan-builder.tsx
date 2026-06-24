@@ -7,8 +7,10 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetTrainingPlanQuery} from '@/api/trainingPlans';
 
+import {PinnedWeekBar} from './pinned-week-bar';
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
+import {WeekSchedule} from './week-schedule';
 import {WorkoutList} from './workout-list';
 
 const STATUS_MAP = {
@@ -140,8 +142,21 @@ export default function TrainingPlanDetail() {
         </div>
       </Page.Toolbar>
       <Page.Content className={'px-4 md:px-6 lg:px-8'}>
+        <PinnedWeekBar planId={plan.id} />
         <div className="min-w-0 max-w-4xl overflow-hidden">
           <WorkoutList planId={plan.id} />
+
+          <section className="border-t border-divider py-4">
+            <Typography
+              className="mb-3 uppercase tracking-wider"
+              color="muted"
+              type="body-xs"
+              weight="semibold"
+            >
+              Week Schedule
+            </Typography>
+            <WeekSchedule planId={plan.id} />
+          </section>
 
           <section className="border-t border-divider py-4">
             <Typography

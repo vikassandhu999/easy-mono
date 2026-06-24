@@ -18,7 +18,7 @@ This is the repository-level contract. Keep it broad. Subtree `AGENTS.md` files 
   - `apps/website`: marketing site, Next.js 16, port 3000.
 - Shared packages:
   - `packages/ui`, `packages/hooks`, `packages/utils`, `packages/chat`, `packages/websocket`.
-  - `packages/error-parser`, `packages/typings`, `packages/storefront-types`.
+  - `packages/error-parser`, `packages/typings`.
 
 ## Commands
 

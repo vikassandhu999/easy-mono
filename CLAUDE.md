@@ -5,7 +5,7 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 ## Map
 - **`frontend/`** — pnpm workspace, TypeScript/React.
   - Apps: `frontend/apps/{coachapp-v2,clientapp-v2,website,pwa-assets}`
-  - Shared packages: `frontend/packages/{ui,chat,hooks,utils,websocket,error-parser,storefront-types,typings}`
+  - Shared packages: `frontend/packages/{ui,chat,hooks,utils,websocket,error-parser,typings}`
   - Lint/format: Biome (`frontend/biome.json`). Run from `frontend/`.
   - Detailed FE guide: `frontend/AGENTS.md`
 - **`backend/`** — Elixir / Phoenix / Ecto API.

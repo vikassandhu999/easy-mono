@@ -1,14 +1,9 @@
 import type {Food} from '@/api/generated';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 
-const RECIPE_COMPUTED_MACRO_KEYS = [
-  'calories_per_100g',
-  'protein_g',
-  'carbs_g',
-  'fats_g',
-  'fiber_g',
-  'sugar_g',
-] as const;
+// sugar_g dropped: Food has no sugar_g_per_100g field and RecipeRequest has
+// no macros at all — computed nutrition is backend-owned via recipe_ingredients.
+const RECIPE_COMPUTED_MACRO_KEYS = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g'] as const;
 
 type RecipeComputedMacroKey = (typeof RECIPE_COMPUTED_MACRO_KEYS)[number];
 
@@ -74,7 +69,6 @@ export function computeRecipeNutritionFromIngredients({
       carbs_g: food.carbs_g_per_100g,
       fats_g: food.fat_g_per_100g,
       fiber_g: food.fiber_g_per_100g,
-      sugar_g: undefined,
     };
 
     for (const key of RECIPE_COMPUTED_MACRO_KEYS) {
@@ -100,9 +94,6 @@ export function computeRecipeNutritionFromIngredients({
 
   if (totals.fiber_g !== undefined) {
     result.fiber_g = roundToSingleDecimal(totals.fiber_g * (100 / divisor));
-  }
-  if (totals.sugar_g !== undefined) {
-    result.sugar_g = roundToSingleDecimal(totals.sugar_g * (100 / divisor));
   }
 
   return result;

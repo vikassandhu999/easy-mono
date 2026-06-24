@@ -4,7 +4,7 @@ import {useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
+import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {
@@ -19,7 +19,7 @@ import RecipeForm, {
 // into local state (which the React Compiler lint rule forbids).
 function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: string}) {
   const goBack = useGoBack(backPath);
-  const {data} = useGetRecipeQuery(recipeId);
+  const {data} = useGetRecipeQuery({id: recipeId});
   const [updateRecipe, {isLoading: isUpdating}] = useUpdateRecipeMutation();
 
   const recipe = data!.data;
@@ -33,7 +33,10 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 
   const onSubmit = async (formData: RecipeFormValues) => {
     try {
-      await updateRecipe({body: recipeToUpdateRequest({ingredients, values: formData}), id: recipeId}).unwrap();
+      await updateRecipe({
+        id: recipeId,
+        recipeRequest: recipeToUpdateRequest({ingredients, values: formData}),
+      }).unwrap();
       goBack();
     } catch (err) {
       applyFormErrors(err, "Recipe wasn't updated. Check the details and try again", form.setError);
@@ -76,7 +79,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 
 export default function EditRecipe() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetRecipeQuery(id!);
+  const {data, isError, isLoading: isFetching} = useGetRecipeQuery({id: id!});
   const backPath = `/library/recipes/${id}`;
   const goBackOuter = useGoBack(backPath);
 

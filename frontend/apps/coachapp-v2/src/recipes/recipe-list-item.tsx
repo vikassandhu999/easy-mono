@@ -2,23 +2,20 @@ import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {ChefHat} from 'lucide-react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import type {Recipe} from '@/api/recipes';
+import type {Recipe} from '@/api/generated';
 
 function getRecipeSubtitle(recipe: Recipe): string {
   const ingredientCount = recipe.recipe_ingredients.length;
 
-  if (recipe.category) {
-    return recipe.category;
-  }
   if (ingredientCount > 0) {
     return `${ingredientCount} ingredient${ingredientCount !== 1 ? 's' : ''}`;
   }
-  return 'No category';
+  return 'No ingredients';
 }
 
 export default function RecipeListItem({recipe}: {recipe: Recipe}) {
   const ingredientCount = recipe.recipe_ingredients.length;
-  const calories = recipe.macros.calories_per_100g;
+  const calories = recipe.nutrition?.calories;
 
   return (
     <ListBox.Item
@@ -27,18 +24,10 @@ export default function RecipeListItem({recipe}: {recipe: Recipe}) {
       textValue={recipe.name}
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
-        {recipe.image_url ? (
-          <img
-            alt={recipe.name}
-            className="size-10 rounded-lg object-cover"
-            src={recipe.image_url}
-          />
-        ) : (
-          <ChefHat
-            className="text-foreground-400"
-            size={20}
-          />
-        )}
+        <ChefHat
+          className="text-foreground-400"
+          size={20}
+        />
       </div>
 
       <div className="flex min-w-0 flex-col">

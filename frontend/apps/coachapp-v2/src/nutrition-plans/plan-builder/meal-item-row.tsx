@@ -14,8 +14,7 @@
  * from generated (which lacks food/recipe) so we can include those fields.
  */
 
-import type {Food} from '@/api/generated';
-import type {Recipe} from '@/api/recipes';
+import type {Food, Recipe} from '@/api/generated';
 
 // ---------------------------------------------------------------------------
 // Types

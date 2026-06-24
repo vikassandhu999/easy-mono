@@ -1,32 +1,34 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, Spinner, Typography} from '@heroui/react';
+import {AlertDialog, Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft, ChefHat, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/recipes';
+import {useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/generated';
 
+// recipe.nutrition is the recipe's total computed macros (not per-100g).
+// The backend computes this from recipe_ingredients; it is null when no
+// ingredients have weight data. We display it as recipe totals.
 const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
-  calories_per_100g: {label: 'Calories', unit: ''},
+  calories: {label: 'Calories', unit: ''},
   protein_g: {label: 'Protein', unit: 'g'},
   carbs_g: {label: 'Carbs', unit: 'g'},
-  fats_g: {label: 'Fats', unit: 'g'},
+  fat_g: {label: 'Fats', unit: 'g'},
   fiber_g: {label: 'Fiber', unit: 'g'},
-  sugar_g: {label: 'Sugar', unit: 'g'},
 };
 
 export default function RecipeDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
-  const {data, isError, isLoading} = useGetRecipeQuery(id!);
+  const {data, isError, isLoading} = useGetRecipeQuery({id: id!});
   const [deleteRecipe, {isLoading: isDeleting}] = useDeleteRecipeMutation();
 
   const handleDelete = async () => {
     try {
-      await deleteRecipe(id!).unwrap();
+      await deleteRecipe({id: id!}).unwrap();
       navigate(ROUTES.RECIPES, {replace: true});
     } catch {
       // Mutation error — could add a toast here in the future.
@@ -83,9 +85,10 @@ export default function RecipeDetail() {
   }
 
   const recipe = data.data;
-  const macroEntries = Object.entries(recipe.macros);
-  const knownMacros = macroEntries.filter(([key, value]) => key in MACRO_LABELS && value !== 0);
-  const unknownMacros = macroEntries.filter(([key, value]) => !(key in MACRO_LABELS) && value !== 0);
+  // Build display entries from recipe.nutrition (recipe totals, not per-100g).
+  const nutritionEntries = recipe.nutrition
+    ? Object.entries(recipe.nutrition).filter(([key, value]) => key in MACRO_LABELS && value != null && value !== 0)
+    : [];
 
   return (
     <Page>
@@ -157,42 +160,13 @@ export default function RecipeDetail() {
         <div className="max-w-lg">
           <div className="flex items-start gap-4 pb-6">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
-              {recipe.image_url ? (
-                <img
-                  alt={recipe.name}
-                  className="size-14 rounded-xl object-cover"
-                  src={recipe.image_url}
-                />
-              ) : (
-                <ChefHat
-                  className="text-foreground-400"
-                  size={24}
-                />
-              )}
+              <ChefHat
+                className="text-foreground-400"
+                size={24}
+              />
             </div>
             <div className="min-w-0 flex-1">
               <Typography type="h5">{recipe.name}</Typography>
-              {(recipe.category || recipe.source) && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {recipe.category && (
-                    <Chip
-                      size="sm"
-                      variant="soft"
-                    >
-                      {recipe.category}
-                    </Chip>
-                  )}
-                  {recipe.source && (
-                    <Chip
-                      color="default"
-                      size="sm"
-                      variant="soft"
-                    >
-                      {recipe.source}
-                    </Chip>
-                  )}
-                </div>
-              )}
             </div>
           </div>
 
@@ -215,7 +189,7 @@ export default function RecipeDetail() {
             </section>
           )}
 
-          {(knownMacros.length > 0 || unknownMacros.length > 0) && (
+          {nutritionEntries.length > 0 && (
             <section className="border-t border-divider py-4">
               <Typography
                 className="mb-2"
@@ -223,10 +197,10 @@ export default function RecipeDetail() {
                 type="body-xs"
                 weight="semibold"
               >
-                Nutrition for 100 g
+                Nutrition (recipe totals)
               </Typography>
               <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-                {knownMacros.map(([key, value]) => {
+                {nutritionEntries.map(([key, value]) => {
                   const meta = MACRO_LABELS[key] as {
                     label: string;
                     unit: string;
@@ -246,17 +220,6 @@ export default function RecipeDetail() {
                     </div>
                   );
                 })}
-                {unknownMacros.map(([key, value]) => (
-                  <div key={key}>
-                    <Typography
-                      color="muted"
-                      type="body-xs"
-                    >
-                      {key}
-                    </Typography>
-                    <Typography weight="medium">{value}</Typography>
-                  </div>
-                ))}
               </div>
             </section>
           )}
@@ -291,7 +254,7 @@ export default function RecipeDetail() {
                         truncate
                         weight="medium"
                       >
-                        {ingredient.food.name}
+                        {ingredient.food?.name ?? 'Unknown ingredient'}
                       </Typography>
                       {detail && (
                         <Typography
@@ -355,30 +318,6 @@ export default function RecipeDetail() {
                       </Typography>
                     )}
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {recipe.tags.length > 0 && (
-            <section className="border-t border-divider py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Tags
-              </Typography>
-              <div className="flex flex-wrap gap-1.5">
-                {recipe.tags.map((tag) => (
-                  <Chip
-                    key={tag}
-                    size="sm"
-                    variant="soft"
-                  >
-                    {tag}
-                  </Chip>
                 ))}
               </div>
             </section>

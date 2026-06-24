@@ -9,7 +9,7 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useRecipesInfiniteQuery} from '@/api/recipes';
+import {useCoachRecipesInfiniteQuery} from '@/api/nutrition-foods';
 
 import RecipeListItem from './recipe-list-item';
 
@@ -19,7 +19,7 @@ export default function ListRecipes() {
   const [search, setSearch] = useState('');
 
   const deferredSearch = useDeferredValue(search);
-  const list = useRecipesInfiniteQuery({search: deferredSearch});
+  const list = useCoachRecipesInfiniteQuery({search: deferredSearch});
   const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
 
   return (

@@ -5,7 +5,7 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useCreateRecipeMutation} from '@/api/recipes';
+import {useCreateRecipeMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {
@@ -24,7 +24,7 @@ export default function CreateRecipe() {
 
   const onSubmit = async (data: RecipeFormValues) => {
     try {
-      const result = await createRecipe(recipeToCreateRequest({ingredients, values: data})).unwrap();
+      const result = await createRecipe({recipeRequest: recipeToCreateRequest({ingredients, values: data})}).unwrap();
       navigate(`/library/recipes/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Recipe wasn't created. Check the details and try again", form.setError);

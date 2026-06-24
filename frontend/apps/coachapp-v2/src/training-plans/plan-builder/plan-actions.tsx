@@ -1,7 +1,9 @@
 import {Button, Dropdown, Header, Label, Separator, toast, useOverlayState} from '@heroui/react';
 import {ArchiveIcon, ArchiveRestoreIcon, Copy, MoreHorizontal, Pencil, TrashIcon} from 'lucide-react';
+import {useDispatch} from 'react-redux';
 
-import {TrainingPlan, useUpdateTrainingPlanMutation} from '@/api/trainingPlans';
+import {api} from '@/api/base';
+import {TrainingPlan, useUpdateTrainingPlanMutation} from '@/api/generated';
 
 import PlanDeleteAlertDialog from './plan-delete-alert-dialog';
 
@@ -11,21 +13,27 @@ export type Props = {
 };
 
 export function PlanActions({plan, onDeleted}: Props) {
+  const dispatch = useDispatch();
   const [updatePlan, {isLoading: updating}] = useUpdateTrainingPlanMutation();
-  const archive = async () => {
-    return updatePlan({body: {status: 'archived'}, id: plan.id})
-      .unwrap()
-      .then(() => {
-        toast.success('Plan archived', {timeout: 1000});
-      });
+
+  // Generated endpoints are tag:false, so optimistically patch the cached plan
+  // status and roll back on failure.
+  const setStatus = async (status: 'active' | 'archived', successMessage: string) => {
+    const patch = dispatch(
+      api.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
+        draft.data.status = status;
+      }),
+    );
+    try {
+      await updatePlan({id: plan.id, trainingPlanUpdateRequest: {status}}).unwrap();
+      toast.success(successMessage, {timeout: 1000});
+    } catch (e) {
+      patch.undo();
+      throw e;
+    }
   };
-  const restore = async () => {
-    return updatePlan({body: {status: 'active'}, id: plan.id})
-      .unwrap()
-      .then(() => {
-        toast.success('Plan restored', {timeout: 1000});
-      });
-  };
+  const archive = () => setStatus('archived', 'Plan archived');
+  const restore = () => setStatus('active', 'Plan restored');
 
   const deleteAlertState = useOverlayState();
 

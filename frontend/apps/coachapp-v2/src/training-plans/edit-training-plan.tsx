@@ -4,8 +4,8 @@ import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
-import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/trainingPlans';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
   trainingPlanToFormValues,
@@ -15,7 +15,7 @@ import TrainingPlanForm, {
 
 function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
   const goBack = useGoBack(backPath);
-  const {data} = useGetTrainingPlanQuery(planId);
+  const {data} = useGetTrainingPlanQuery({id: planId});
   const [updatePlan, {isLoading: isUpdating}] = useUpdateTrainingPlanMutation();
 
   const plan = data!.data;
@@ -26,7 +26,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
   const onSubmit = async (formData: TrainingPlanFormValues) => {
     try {
-      await updatePlan({body: trainingPlanToUpdateRequest(formData), id: planId}).unwrap();
+      await updatePlan({id: planId, trainingPlanUpdateRequest: trainingPlanToUpdateRequest(formData)}).unwrap();
       goBack();
     } catch (err) {
       applyFormErrors(err, "Training plan wasn't updated. Check the details and try again", form.setError);
@@ -67,7 +67,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
 export default function EditTrainingPlan() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetTrainingPlanQuery(id!);
+  const {data, isError, isLoading: isFetching} = useGetTrainingPlanQuery({id: id!});
   const backPath = `/library/training-plans/${id}`;
   const goBackOuter = useGoBack(backPath);
 

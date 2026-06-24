@@ -100,9 +100,9 @@ export const api = createApi({
     'TrainingExercise',
     'TrainingPlan',
     'TrainingPlanItem',
+    'TrainingSession',
     'Workout',
     'WorkoutElement',
-    'WorkoutSession',
   ],
   endpoints: () => ({}),
 });

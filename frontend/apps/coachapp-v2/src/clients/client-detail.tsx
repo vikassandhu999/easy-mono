@@ -9,12 +9,16 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {
+  type ClientTrainingPlan,
   type NutritionPlan,
+  type TrainingPlan,
+  type TrainingPlanAssignRequest,
   useAssignNutritionPlanMutation,
+  useAssignTrainingPlanMutation,
   useListCoachClientNutritionPlansQuery,
+  useListCoachClientTrainingPlansQuery,
 } from '@/api/generated';
 import {toNullableText} from '@/api/shared';
-import {type TrainingPlan, useAssignTrainingPlanMutation, useListClientTrainingPlansQuery} from '@/api/trainingPlans';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
@@ -43,7 +47,7 @@ function ClientPlans({clientId}: {clientId: string}) {
   const [assignTraining, {isLoading: isAssigningTraining}] = useAssignTrainingPlanMutation();
 
   const {data: nutritionData, isLoading: isLoadingNutrition} = useListCoachClientNutritionPlansQuery({clientId});
-  const {data: trainingData, isLoading: isLoadingTraining} = useListClientTrainingPlansQuery({clientId});
+  const {data: trainingData, isLoading: isLoadingTraining} = useListCoachClientTrainingPlansQuery({clientId});
 
   const nutritionPlans = nutritionData?.data ?? [];
   const trainingPlans = trainingData?.data ?? [];
@@ -62,7 +66,17 @@ function ClientPlans({clientId}: {clientId: string}) {
 
   const handleAssignTraining = async (plan: TrainingPlan) => {
     try {
-      await assignTraining({id: plan.id, body: {client_id: clientId}}).unwrap();
+      // The assign UI collects only a client (no date pickers), matching the
+      // nutrition-plan assign flow. The backend accepts a body with just
+      // `client_id` (start/end default to null server-side — see
+      // Easy.TrainingPlans.assign_plan_to_client), but the generated
+      // TrainingPlanAssignRequest incorrectly marks start_date/end_date as
+      // required (an OpenApiSpex schema bug — flagged in the slice report).
+      // Cast to send the correct runtime payload without fabricating dates.
+      await assignTraining({
+        id: plan.id,
+        trainingPlanAssignRequest: {client_id: clientId} as TrainingPlanAssignRequest,
+      }).unwrap();
       toast.success(`"${plan.name}" assigned to client`);
       setShowTrainingPicker(false);
     } catch {
@@ -117,7 +131,7 @@ function ClientPlans({clientId}: {clientId: string}) {
                   </Link>
                 );
               })}
-              {trainingPlans.map((plan: TrainingPlan) => {
+              {trainingPlans.map((plan: ClientTrainingPlan) => {
                 const planStatus = PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS;
                 const workoutCount = plan.workouts.length;
                 return (

@@ -1,6 +1,6 @@
 import {AlertDialog, Button, Spinner, toast, UseOverlayStateReturn} from '@heroui/react';
 
-import {TrainingPlan, useDeleteTrainingPlanMutation} from '@/api/trainingPlans';
+import {TrainingPlan, useDeleteTrainingPlanMutation} from '@/api/generated';
 
 type Props = {
   plan: Pick<TrainingPlan, 'id' | 'name'>;
@@ -11,7 +11,7 @@ type Props = {
 export default function PlanDeleteAlertDialog({plan, state, onSuccess}: Props) {
   const [deletePlan, {isLoading: deleting}] = useDeleteTrainingPlanMutation();
   const deleteFn = async () => {
-    return deletePlan(plan.id)
+    return deletePlan({id: plan.id})
       .unwrap()
       .then(() => {
         toast.success('Plan deleted', {timeout: 1000});

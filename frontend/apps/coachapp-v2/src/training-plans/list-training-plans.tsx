@@ -9,7 +9,7 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useTrainingPlansInfiniteQuery} from '@/api/trainingPlans';
+import {useCoachTrainingPlansInfiniteQuery} from '@/api/training-plans-list';
 
 import TrainingPlanListItem from './training-plan-list-item';
 
@@ -19,7 +19,7 @@ export default function ListTrainingPlans() {
   const [search, setSearch] = useState('');
 
   const deferredSearch = useDeferredValue(search);
-  const list = useTrainingPlansInfiniteQuery({search: deferredSearch});
+  const list = useCoachTrainingPlansInfiniteQuery({search: deferredSearch});
   const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
 
   return (

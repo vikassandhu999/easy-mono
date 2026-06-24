@@ -3,17 +3,17 @@ import {Chip, ListBox, Separator, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
-import type {WorkoutSession} from '@/api/workoutSessions';
+import type {TrainingSession} from '@/api/generated';
 
-import {useListWorkoutSessionsQuery} from '@/api/workoutSessions';
-import {buildWorkoutSessionSubtitle, getWorkoutSessionTitle} from '@/domain/workout-sessions';
+import {useListCoachClientTrainingSessionsQuery} from '@/api/generated';
+import {buildWorkoutSessionSubtitle, getPlannedSnapshot, getWorkoutSessionTitle} from '@/domain/workout-sessions';
 
 const PREVIEW_LIMIT = 7;
 
 const SESSION_CARD_CLASS =
   'flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2';
 
-function SessionCardContent({session}: {session: WorkoutSession}) {
+function SessionCardContent({session}: {session: TrainingSession}) {
   const title = getWorkoutSessionTitle(session);
   const dateStr = formatSessionDate(session.started_at);
   const subtitle = buildWorkoutSessionSubtitle(session);
@@ -22,7 +22,7 @@ function SessionCardContent({session}: {session: WorkoutSession}) {
   return (
     <>
       <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-content2">
-        {session.planned_snapshot ? (
+        {getPlannedSnapshot(session) ? (
           <Dumbbell
             className="text-foreground-400"
             size={16}
@@ -64,7 +64,7 @@ function SessionCardContent({session}: {session: WorkoutSession}) {
 }
 
 /** Link-card variant — used in the plain-list preview on the client detail page. */
-export function SessionCard({clientId, session}: {clientId: string; session: WorkoutSession}) {
+export function SessionCard({clientId, session}: {clientId: string; session: TrainingSession}) {
   return (
     <Link
       className={SESSION_CARD_CLASS}
@@ -76,7 +76,7 @@ export function SessionCard({clientId, session}: {clientId: string; session: Wor
 }
 
 /** ListBox.Item variant — used in the infinite workout-history list; navigation is handled by the parent ListBox's onAction. */
-export function SessionListItem({session}: {session: WorkoutSession}) {
+export function SessionListItem({session}: {session: TrainingSession}) {
   return (
     <ListBox.Item
       className={`${SESSION_CARD_CLASS} active:scale-100! data-[pressed=true]:scale-100!`}
@@ -89,13 +89,13 @@ export function SessionListItem({session}: {session: WorkoutSession}) {
 }
 
 export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
-  const {data, isLoading} = useListWorkoutSessionsQuery({
-    client_id: clientId,
-    limit: PREVIEW_LIMIT,
-  });
+  // The client-scoped sessions endpoint returns the full list (no limit param);
+  // slice to the preview length client-side.
+  const {data, isLoading} = useListCoachClientTrainingSessionsQuery({clientId});
 
-  const sessions = data?.data ?? [];
-  const totalCount = data?.count ?? 0;
+  const allSessions = data?.data ?? [];
+  const totalCount = data?.count ?? allSessions.length;
+  const sessions = allSessions.slice(0, PREVIEW_LIMIT);
   const hasMore = totalCount > PREVIEW_LIMIT;
 
   return (

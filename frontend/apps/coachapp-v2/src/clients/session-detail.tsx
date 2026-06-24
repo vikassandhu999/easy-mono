@@ -1,11 +1,11 @@
 import {formatDuration, formatSessionDateLong, SESSION_STATE_CHIP} from '@easy/utils';
 import {Alert, Button, Chip, Separator, Spinner, Table, Typography} from '@heroui/react';
-import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, RefreshCw, SkipForward} from 'lucide-react';
+import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, SkipForward} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetWorkoutSessionQuery} from '@/api/workoutSessions';
+import {useGetCoachClientTrainingSessionQuery} from '@/api/generated';
 import {buildExerciseGroups, type ExerciseGroup, formatLoad, getAdherenceSummary} from '@/clients/lib/session';
 import {getWorkoutSessionTitle} from '@/domain/workout-sessions';
 
@@ -22,16 +22,6 @@ function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
         >
           {group.exerciseName}
         </Typography>
-        {group.isReplacement ? (
-          <Chip
-            color="default"
-            size="sm"
-            variant="soft"
-          >
-            <RefreshCw size={10} />
-            <span className="ml-1">Replaced {group.originalExerciseName}</span>
-          </Chip>
-        ) : null}
         {group.isAdded ? (
           <Chip
             color="success"
@@ -85,7 +75,7 @@ function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
                       ) : null}
                       <Table.Cell>
                         {set.completed ? (
-                          <span>{set.actual_reps ?? '—'}</span>
+                          <span>{set.reps ?? '—'}</span>
                         ) : (
                           <span className="text-foreground-400">skipped</span>
                         )}
@@ -106,7 +96,7 @@ function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
 export default function SessionDetail() {
   const {clientId, sessionId} = useParams<{clientId: string; sessionId: string}>();
   const goBack = useGoBack(`/clients/${clientId}`);
-  const {data, isError, isLoading} = useGetWorkoutSessionQuery(sessionId!);
+  const {data, isError, isLoading} = useGetCoachClientTrainingSessionQuery({clientId: clientId!, id: sessionId!});
 
   if (isLoading) {
     return (
@@ -289,7 +279,7 @@ export default function SessionDetail() {
               {groups.map((group) => (
                 <ExerciseGroupSection
                   group={group}
-                  key={group.elementId ?? `added_${group.exerciseId}`}
+                  key={`${group.exerciseId}_${group.exerciseName}`}
                 />
               ))}
             </div>

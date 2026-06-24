@@ -3,7 +3,7 @@ import {UserPlus} from 'lucide-react';
 import {useState} from 'react';
 
 import ClientPicker from '@/@components/client-picker';
-import type {TrainingPlan} from '@/api/trainingPlans';
+import type {TrainingPlan} from '@/api/generated';
 
 export type Props = {
   plan: TrainingPlan;

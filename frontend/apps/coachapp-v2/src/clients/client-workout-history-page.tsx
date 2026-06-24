@@ -5,8 +5,8 @@ import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
+import {useCoachClientTrainingSessionsInfiniteQuery} from '@/api/client-training-sessions';
 import {useGetClientQuery} from '@/api/clients';
-import {useWorkoutSessionsInfiniteQuery} from '@/api/workoutSessions';
 import {SessionListItem} from '@/clients/components/client-workout-history';
 
 export default function ClientWorkoutHistoryPage() {
@@ -16,7 +16,7 @@ export default function ClientWorkoutHistoryPage() {
   const {data: clientData, isLoading: isLoadingClient} = useGetClientQuery(id!);
   const client = clientData?.data;
 
-  const list = useWorkoutSessionsInfiniteQuery({client_id: id!});
+  const list = useCoachClientTrainingSessionsInfiniteQuery({clientId: id!});
   const {fetchNextPage, isFetchingNextPage, isLoading, items: sessions} = useInfiniteItems(list);
 
   const clientName = client ? [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';

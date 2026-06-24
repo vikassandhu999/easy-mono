@@ -4,7 +4,7 @@ import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spin
 import {Dumbbell} from 'lucide-react';
 import {useCallback, useDeferredValue, useMemo, useState} from 'react';
 
-import {type TrainingPlan, useListTrainingPlansQuery} from '@/api/trainingPlans';
+import {type TrainingPlan, useListTrainingPlansQuery} from '@/api/generated';
 
 type TrainingPlanPickerProps = {
   autoFocus?: boolean;
@@ -30,9 +30,12 @@ export default function TrainingPlanPicker({
   const deferredSearch = useDeferredValue(searchInput);
   const shouldQuery = deferredSearch.length >= 1;
 
-  const {data, isFetching} = useListTrainingPlansQuery(shouldQuery ? {limit: 10, search: deferredSearch} : undefined, {
-    skip: !shouldQuery,
-  });
+  const {data, isFetching} = useListTrainingPlansQuery(
+    {limit: 10, search: deferredSearch},
+    {
+      skip: !shouldQuery,
+    },
+  );
 
   const plans = useMemo(() => data?.data ?? [], [data]);
 

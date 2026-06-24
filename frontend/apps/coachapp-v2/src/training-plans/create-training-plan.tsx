@@ -5,8 +5,8 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useCreateTrainingPlanMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
-import {useCreateTrainingPlanMutation} from '@/api/trainingPlans';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
   trainingPlanToCreateRequest,
@@ -22,7 +22,7 @@ export default function CreateTrainingPlan() {
 
   const onSubmit = async (data: TrainingPlanFormValues) => {
     try {
-      const result = await createPlan(trainingPlanToCreateRequest(data)).unwrap();
+      const result = await createPlan({trainingPlanCreateRequest: trainingPlanToCreateRequest(data)}).unwrap();
       navigate(`/library/training-plans/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Training plan wasn't created. Check the details and try again", form.setError);

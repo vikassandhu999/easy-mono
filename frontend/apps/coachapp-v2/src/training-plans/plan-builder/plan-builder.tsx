@@ -4,7 +4,7 @@ import {useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetTrainingPlanQuery} from '@/api/trainingPlans';
+import {useGetTrainingPlanQuery} from '@/api/generated';
 
 import {PinnedWeekBar} from './pinned-week-bar';
 import {PlanActions} from './plan-actions';
@@ -16,7 +16,7 @@ import {WorkoutList} from './workout-list';
 export default function TrainingPlanDetail() {
   const {id} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.TRAINING_PLANS);
-  const {data, isError, isLoading} = useGetTrainingPlanQuery(id!);
+  const {data, isError, isLoading} = useGetTrainingPlanQuery({id: id!});
 
   if (isLoading) {
     return (

@@ -1,7 +1,9 @@
 import {Chip, Description, Label, ListBox} from '@heroui/react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import type {TrainingPlan, TrainingPlanStatus} from '@/api/trainingPlans';
+import type {TrainingPlan} from '@/api/generated';
+
+type TrainingPlanStatus = TrainingPlan['status'];
 
 const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},

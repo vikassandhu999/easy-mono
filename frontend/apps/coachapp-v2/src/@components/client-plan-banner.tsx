@@ -2,19 +2,19 @@ import {formatDateShort} from '@easy/utils';
 import {Avatar, Chip} from '@heroui/react';
 import {Link} from 'react-router-dom';
 
-import type {PlanClient} from '@/api/trainingPlans';
+import type {TrainingPlanClient} from '@/api/generated';
 
 type ClientPlanBannerProps = {
-  client: PlanClient;
+  client: TrainingPlanClient;
   endDate?: null | string;
   startDate?: null | string;
 };
 
-function getFullName(client: PlanClient): string {
+function getFullName(client: TrainingPlanClient): string {
   return [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client';
 }
 
-function getInitials(client: PlanClient): string {
+function getInitials(client: TrainingPlanClient): string {
   const first = client.first_name?.charAt(0) ?? '';
   const last = client.last_name?.charAt(0) ?? '';
   return (first + last).toUpperCase() || '?';

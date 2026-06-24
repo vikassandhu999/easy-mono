@@ -4,18 +4,20 @@
  * Renders the plan name as a large editable input and two date inputs
  * (start/end). Each field autosaves on blur via PATCH.
  *
- * Cache: the hand-written updateTrainingPlan mutation already updates
- * the getTrainingPlan cache on success via onQueryStarted in trainingPlans.ts.
- * On failure the cache stays at the last confirmed server state (no explicit
- * rollback needed here since we aren't doing an optimistic pre-patch).
+ * Cache: generated endpoints are `tag:false`, so this optimistically merges
+ * the changed field into the `getTrainingPlan({id: planId})` cache via
+ * api.util.updateQueryData and rolls back with patch.undo() + toast.danger on
+ * failure. Mirrors the pattern used in nutrition-plans/plan-builder/plan-header.
  */
 import {Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
+import {useDispatch} from 'react-redux';
 
 import {FormTextField} from '@/@components/form-fields';
-import type {TrainingPlan} from '@/api/trainingPlans';
-import {useUpdateTrainingPlanMutation} from '@/api/trainingPlans';
+import {api} from '@/api/base';
+import type {TrainingPlan, TrainingPlanUpdateRequest} from '@/api/generated';
+import {useUpdateTrainingPlanMutation} from '@/api/generated';
 import {schema, type TrainingPlanFormValues, trainingPlanToFormValues} from '../training-plan-form/training-plan-form';
 
 // ---------------------------------------------------------------------------
@@ -31,6 +33,7 @@ interface PlanHeaderProps {
 // ---------------------------------------------------------------------------
 
 export function PlanHeader({plan}: PlanHeaderProps) {
+  const dispatch = useDispatch();
   const [updatePlan, {isLoading: isSaving}] = useUpdateTrainingPlanMutation();
 
   const form = useForm<TrainingPlanFormValues>({
@@ -58,7 +61,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
       return;
     }
 
-    const body: Parameters<typeof updatePlan>[0]['body'] = {};
+    const body: TrainingPlanUpdateRequest = {};
 
     if (field === 'name') {
       body.name = values.name;
@@ -68,9 +71,25 @@ export function PlanHeader({plan}: PlanHeaderProps) {
       body.end_date = values.end_date || null;
     }
 
+    // Optimistic update — merge the changed field into the cached plan.
+    const patch = dispatch(
+      api.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
+        if (body.name !== undefined) {
+          draft.data.name = body.name;
+        }
+        if ('start_date' in body) {
+          draft.data.start_date = body.start_date ?? null;
+        }
+        if ('end_date' in body) {
+          draft.data.end_date = body.end_date ?? null;
+        }
+      }),
+    );
+
     try {
-      await updatePlan({id: plan.id, body}).unwrap();
+      await updatePlan({id: plan.id, trainingPlanUpdateRequest: body}).unwrap();
     } catch {
+      patch.undo();
       toast.danger("Couldn't save changes");
     }
   };

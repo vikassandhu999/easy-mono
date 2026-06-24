@@ -3,8 +3,8 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import type {TrainingPlan, TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '@/api/generated';
 import {omitUndefined, toNullableText, toOptionalText} from '@/api/shared';
-import type {TrainingPlan, TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '@/api/trainingPlans';
 
 export const schema = z.object({
   description: z.string().optional(),

@@ -1,14 +1,13 @@
-import type {PerformedSet, PlannedSnapshotElement, WorkoutSession} from '@/api/workoutSessions';
+import type {TrainingPerformedSet, TrainingSession} from '@/api/generated';
+
+import {getPlannedSnapshot, type PlannedSnapshotExercise} from '@/domain/workout-sessions';
 
 export type ExerciseGroup = {
-  elementId: null | string;
   exerciseId: string;
   exerciseName: string;
   isAdded: boolean;
-  isReplacement: boolean;
-  originalExerciseName: null | string;
   plannedSets: Array<{loadUnit: null | string; loadValue: null | string; targetReps: null | string}>;
-  sets: PerformedSet[];
+  sets: TrainingPerformedSet[];
 };
 
 export function formatLoad(value: null | number, unit: null | string): string {
@@ -21,22 +20,39 @@ export function formatLoad(value: null | number, unit: null | string): string {
   return `${value} ${unit ?? ''}`.trim();
 }
 
-export function buildExerciseGroups(session: WorkoutSession): ExerciseGroup[] {
-  const snapshot = session.planned_snapshot;
+function performedSetName(set: TrainingPerformedSet): string {
+  return set.exercise?.name ?? set.exercise_name ?? 'Unknown exercise';
+}
+
+function plannedExerciseSets(
+  exercise: PlannedSnapshotExercise,
+): Array<{loadUnit: null | string; loadValue: null | string; targetReps: null | string}> {
+  return (exercise.sets ?? []).map((ps) => ({
+    loadUnit: ps.load_unit ?? null,
+    loadValue: ps.load_value != null ? String(ps.load_value) : null,
+    targetReps: ps.reps ?? null,
+  }));
+}
+
+/**
+ * Group a session's performed sets into per-exercise rows, aligning with the
+ * planned snapshot where one exists.
+ *
+ * NOTE: the kebab TrainingSession contract dropped the per-set
+ * `workout_element_id` ↔ snapshot `element_id` linkage, so performed sets are
+ * grouped by `exercise_id` and matched to planned snapshot exercises by name.
+ * Exercise *replacement* detection (which the old element-linked model
+ * supported) is no longer derivable and has been removed (see slice report).
+ */
+export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
+  const snapshot = getPlannedSnapshot(session);
   const sets = session.performed_sets;
 
-  const elementMap = new Map<string, PlannedSnapshotElement>();
-  if (snapshot) {
-    for (const el of snapshot.elements) {
-      elementMap.set(el.element_id, el);
-    }
-  }
-
-  const groupMap = new Map<string, PerformedSet[]>();
+  // Group performed sets by exercise, preserving first-seen order by position.
+  const groupMap = new Map<string, TrainingPerformedSet[]>();
   const groupOrder: string[] = [];
-
   for (const set of [...sets].sort((a, b) => a.position - b.position)) {
-    const key = set.workout_element_id ?? `freestyle_${set.exercise_id}`;
+    const key = set.exercise_id;
     const existing = groupMap.get(key);
     if (existing) {
       existing.push(set);
@@ -48,60 +64,51 @@ export function buildExerciseGroups(session: WorkoutSession): ExerciseGroup[] {
 
   const groups: ExerciseGroup[] = [];
 
-  if (snapshot) {
-    const processedKeys = new Set<string>();
+  if (snapshot?.exercises && snapshot.exercises.length > 0) {
+    const matchedKeys = new Set<string>();
 
-    for (const el of [...snapshot.elements].sort((a, b) => a.position - b.position)) {
-      const key = el.element_id;
-      const setsForElement = groupMap.get(key) ?? [];
-      processedKeys.add(key);
-
-      const firstSet = setsForElement[0];
-      const isReplacement = firstSet ? firstSet.exercise_id !== el.exercise_id : false;
+    // One row per planned exercise, matched to performed sets by exercise name.
+    for (const exercise of [...snapshot.exercises].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))) {
+      const plannedName = exercise.name ?? 'Unknown exercise';
+      const matchKey = groupOrder.find(
+        (key) =>
+          !matchedKeys.has(key) && performedSetName((groupMap.get(key) as TrainingPerformedSet[])[0]) === plannedName,
+      );
+      const setsForExercise = matchKey ? (groupMap.get(matchKey) ?? []) : [];
+      if (matchKey) {
+        matchedKeys.add(matchKey);
+      }
 
       groups.push({
-        elementId: el.element_id,
-        exerciseId: firstSet?.exercise_id ?? el.exercise_id,
-        exerciseName: isReplacement ? (firstSet?.exercise?.name ?? 'Unknown exercise') : el.exercise_name,
+        exerciseId: matchKey ?? '',
+        exerciseName: plannedName,
         isAdded: false,
-        isReplacement,
-        originalExerciseName: isReplacement ? el.exercise_name : null,
-        plannedSets: el.planned_sets.map((ps) => ({
-          loadUnit: ps.load_unit,
-          loadValue: ps.load_value,
-          targetReps: ps.target_reps,
-        })),
-        sets: setsForElement,
+        plannedSets: plannedExerciseSets(exercise),
+        sets: setsForExercise,
       });
     }
 
+    // Performed exercises with no planned counterpart → added on the fly.
     for (const key of groupOrder) {
-      if (!processedKeys.has(key) && key.startsWith('freestyle_')) {
-        const setsForGroup = groupMap.get(key) ?? [];
-        const firstSet = setsForGroup[0];
-        groups.push({
-          elementId: null,
-          exerciseId: firstSet?.exercise_id ?? '',
-          exerciseName: firstSet?.exercise?.name ?? 'Unknown exercise',
-          isAdded: true,
-          isReplacement: false,
-          originalExerciseName: null,
-          plannedSets: [],
-          sets: setsForGroup,
-        });
+      if (matchedKeys.has(key)) {
+        continue;
       }
+      const setsForGroup = groupMap.get(key) ?? [];
+      groups.push({
+        exerciseId: key,
+        exerciseName: performedSetName(setsForGroup[0]),
+        isAdded: true,
+        plannedSets: [],
+        sets: setsForGroup,
+      });
     }
   } else {
     for (const key of groupOrder) {
       const setsForGroup = groupMap.get(key) ?? [];
-      const firstSet = setsForGroup[0];
       groups.push({
-        elementId: null,
-        exerciseId: firstSet?.exercise_id ?? '',
-        exerciseName: firstSet?.exercise?.name ?? 'Unknown exercise',
+        exerciseId: key,
+        exerciseName: performedSetName(setsForGroup[0]),
         isAdded: false,
-        isReplacement: false,
-        originalExerciseName: null,
         plannedSets: [],
         sets: setsForGroup,
       });
@@ -112,12 +119,11 @@ export function buildExerciseGroups(session: WorkoutSession): ExerciseGroup[] {
 }
 
 export function getAdherenceSummary(
-  session: WorkoutSession,
+  session: TrainingSession,
   groups: ExerciseGroup[],
 ): {added: number; completed: number; replaced: number; skipped: number; totalPlanned: number; totalSets: number} {
-  const totalPlanned = session.planned_snapshot?.elements.length ?? 0;
+  const totalPlanned = getPlannedSnapshot(session)?.exercises?.length ?? 0;
   let completed = 0;
-  let replaced = 0;
   let skipped = 0;
   let added = 0;
   let totalSets = 0;
@@ -128,13 +134,11 @@ export function getAdherenceSummary(
       added++;
     } else if (group.sets.length === 0) {
       skipped++;
-    } else if (group.isReplacement) {
-      replaced++;
-      completed++;
     } else {
       completed++;
     }
   }
 
-  return {added, completed, replaced, skipped, totalPlanned, totalSets};
+  // `replaced` is no longer derivable from the kebab session contract.
+  return {added, completed, replaced: 0, skipped, totalPlanned, totalSets};
 }

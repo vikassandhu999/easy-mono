@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 1314 --host",
     "build": "tsc --noEmit && vite build",
+    "gen:api": "rtk-query-codegen-openapi openapi-config.json",
     "lint": "biome check --write .",
     "preview": "vite preview",
     "cap:sync": "cap sync",
@@ -42,6 +43,7 @@
     "@capacitor/android": "^8.3.0",
     "@capacitor/cli": "^8.3.0",
     "@capacitor/ios": "^8.3.0",
+    "@rtk-query/codegen-openapi": "2.1.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

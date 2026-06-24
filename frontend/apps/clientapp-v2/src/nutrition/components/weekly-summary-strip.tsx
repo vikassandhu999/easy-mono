@@ -2,9 +2,7 @@ import {formatDateISO, getWeekDates, isFutureDate, toLocalDate} from '@easy/util
 import {Button} from '@heroui/react';
 import {useMemo} from 'react';
 
-import type {MealLog} from '@/api/mealLogs';
-
-import {useListMyMealLogsQuery} from '@/api/mealLogs';
+import {type MealLog, useListClientMealLogsQuery} from '@/api/generated';
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -63,8 +61,8 @@ export default function WeeklySummaryStrip({
   const dates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
 
   // Fetch all logs — client-side filter by date. The client endpoint may not support from/to range.
-  const {data: weekData} = useListMyMealLogsQuery();
-  const allLogs: MealLog[] = useMemo(() => weekData?.data ?? [], [weekData]);
+  const {data: weekData} = useListClientMealLogsQuery({});
+  const allLogs = useMemo(() => weekData?.data ?? [], [weekData]);
 
   const days = useMemo(() => {
     return dates.map((dateStr, index) => {

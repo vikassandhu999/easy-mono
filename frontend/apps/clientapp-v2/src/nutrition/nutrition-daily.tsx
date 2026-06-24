@@ -6,7 +6,8 @@ import {useNavigate} from 'react-router-dom';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import type {FoodLogEntry, MealLog, PlannedSnapshotItem} from '@/api/mealLogs';
-import {useListMyMealLogsQuery, useLogDayMutation} from '@/api/mealLogs';
+import {useLogDayMutation} from '@/api/mealLogs';
+import {useListClientMealLogsQuery} from '@/api/generated';
 import type {TodayPlanMeal} from '@/api/nutritionPlans';
 import {useGetTodayPlanQuery, useListMyNutritionPlansQuery} from '@/api/nutritionPlans';
 import DailyMacroProgress from '@/nutrition/components/daily-macro-progress';
@@ -154,7 +155,7 @@ export default function NutritionDaily() {
   const dateISO = formatDateISO(selectedDate);
 
   // Fetch meal logs + today's plan + plan list (for macros_goal) in parallel
-  const {data: mealLogsData, isLoading: isLogsLoading} = useListMyMealLogsQuery({date: dateISO});
+  const {data: mealLogsData, isLoading: isLogsLoading} = useListClientMealLogsQuery({date: dateISO});
   const {data: todayPlanData, isLoading: isPlanLoading} = useGetTodayPlanQuery({date: dateISO});
   const {data: plansData} = useListMyNutritionPlansQuery({status: 'active'});
 

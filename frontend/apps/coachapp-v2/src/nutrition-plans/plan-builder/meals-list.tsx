@@ -136,7 +136,7 @@ export function MealsList({planId}: MealsListProps) {
       {/* Add meal */}
       <div className="mt-3">
         <Button
-          isDisabled={isCreating}
+          isPending={isCreating}
           onPress={() => {
             handleAddMeal().catch(() => undefined);
           }}

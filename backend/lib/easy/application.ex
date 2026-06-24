@@ -6,7 +6,6 @@ defmodule Easy.Application do
     children = [
       Easy.Repo,
       {Phoenix.PubSub, name: Easy.PubSub},
-      # Task supervisor for async email delivery
       {Task.Supervisor, name: Easy.TaskSupervisor},
       EasyWeb.Endpoint
     ]

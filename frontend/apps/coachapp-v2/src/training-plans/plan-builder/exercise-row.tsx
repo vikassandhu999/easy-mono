@@ -9,7 +9,9 @@
  * the SetSheet on the new set.
  */
 import {useRef, useState} from 'react';
+import {useDispatch} from 'react-redux';
 
+import {api} from '@/api/base';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
 import {useUpdateWorkoutElementMutation} from '@/api/generated';
 
@@ -49,6 +51,7 @@ function makeDefaultSet(): TrainingPlanPlannedSet {
 // ---------------------------------------------------------------------------
 
 export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
+  const dispatch = useDispatch();
   const [updateElement] = useUpdateWorkoutElementMutation();
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -74,8 +77,22 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
         id: workoutExercise.id,
         trainingWorkoutExerciseRequest: {planned_sets: updatedSets},
       }).unwrap();
-      // Note: cache will be updated by SetSheet's scheduleSave after the user
-      // edits the new set, or we can rely on a re-fetch from the parent.
+      // Reflect the appended set in the listWorkouts cache immediately so the
+      // new SetRow renders before any field edit.
+      dispatch(
+        api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
+          for (const workout of draft.data) {
+            const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
+            if (idx !== -1) {
+              workout.workout_elements[idx] = {
+                ...workout.workout_elements[idx],
+                planned_sets: updatedSets,
+              };
+              break;
+            }
+          }
+        }),
+      );
       openSet(newIndex);
     } catch {
       // Add failed — don't open sheet

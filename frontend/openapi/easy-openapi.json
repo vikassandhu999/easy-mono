@@ -14536,6 +14536,23 @@
               "x-struct": null,
               "x-validate": null
             }
+          },
+          {
+            "description": "Only exercises linked to any of these equipment ids",
+            "in": "query",
+            "name": "equipment_ids",
+            "required": false,
+            "schema": {
+              "items": {
+                "format": "uuid",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "type": "array",
+              "x-struct": null,
+              "x-validate": null
+            }
           }
         ],
         "responses": {
@@ -16164,6 +16181,23 @@
             "description": "Only exercises linked to any of these muscle ids",
             "in": "query",
             "name": "muscle_ids",
+            "required": false,
+            "schema": {
+              "items": {
+                "format": "uuid",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "type": "array",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Only exercises linked to any of these equipment ids",
+            "in": "query",
+            "name": "equipment_ids",
             "required": false,
             "schema": {
               "items": {

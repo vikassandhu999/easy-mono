@@ -308,6 +308,7 @@ const injectedRtkApi = api.injectEndpoints({
           limit: queryArg.limit,
           search: queryArg.search,
           muscle_ids: queryArg.muscleIds,
+          equipment_ids: queryArg.equipmentIds,
         },
       }),
     }),
@@ -583,6 +584,8 @@ export type ListClientExercisesApiArg = {
   search?: string;
   /** Only exercises linked to any of these muscle ids */
   muscleIds?: string[];
+  /** Only exercises linked to any of these equipment ids */
+  equipmentIds?: string[];
 };
 export type SendOtpApiResponse = /** status 200 OTP sent */ MessageResponse;
 export type SendOtpApiArg = {

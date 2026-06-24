@@ -95,8 +95,24 @@ defmodule Easy.Training.TrainingExercise do
   def for_muscle_ids(query, []), do: query
 
   def for_muscle_ids(query, muscle_ids) do
+    binary_ids = Enum.map(muscle_ids, &Ecto.UUID.dump!/1)
+
     exercise_ids =
-      from(em in "training_exercise_muscles", where: em.muscle_id in ^muscle_ids, select: em.exercise_id)
+      from(em in "training_exercise_muscles", where: em.muscle_id in ^binary_ids, select: em.exercise_id)
+
+    from(e in query, where: e.id in subquery(exercise_ids))
+  end
+
+  @spec for_equipment_ids(Ecto.Queryable.t(), [String.t()] | nil) :: Ecto.Query.t()
+  def for_equipment_ids(query \\ __MODULE__, equipment_ids)
+  def for_equipment_ids(query, nil), do: query
+  def for_equipment_ids(query, []), do: query
+
+  def for_equipment_ids(query, equipment_ids) do
+    binary_ids = Enum.map(equipment_ids, &Ecto.UUID.dump!/1)
+
+    exercise_ids =
+      from(ee in "training_exercise_equipment", where: ee.equipment_id in ^binary_ids, select: ee.exercise_id)
 
     from(e in query, where: e.id in subquery(exercise_ids))
   end

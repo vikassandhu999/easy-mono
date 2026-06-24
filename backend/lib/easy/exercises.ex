@@ -33,6 +33,7 @@ defmodule Easy.Exercises do
   def list_exercises(%Ctx{} = ctx, opts \\ []) do
     search = String.trim(Keyword.get(opts, :search, "") || "")
     muscle_ids = Keyword.get(opts, :muscle_ids)
+    equipment_ids = Keyword.get(opts, :equipment_ids)
     offset = Keyword.get(opts, :offset, 0)
     limit = min(Keyword.get(opts, :limit, 20), 100)
 
@@ -41,6 +42,7 @@ defmodule Easy.Exercises do
       |> TrainingExercise.for_business_or_system(ctx.business_id)
       |> TrainingExercise.for_search(search)
       |> TrainingExercise.for_muscle_ids(muscle_ids)
+      |> TrainingExercise.for_equipment_ids(equipment_ids)
 
     exercises =
       base

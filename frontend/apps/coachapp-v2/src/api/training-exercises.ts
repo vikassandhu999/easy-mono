@@ -19,9 +19,7 @@ import {pageTags} from '@/api/shared';
 const PAGE_SIZE = 20;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachTrainingExercisesFilters = Pick<ListCoachExercisesApiArg, 'search' | 'muscleIds'> & {
-  equipment_ids?: string[];
-};
+export type CoachTrainingExercisesFilters = Pick<ListCoachExercisesApiArg, 'search' | 'muscleIds' | 'equipmentIds'>;
 
 export const trainingExercisesApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -35,7 +33,7 @@ export const trainingExercisesApi = api.injectEndpoints({
         params: {
           ...(queryArg?.search ? {search: queryArg.search} : {}),
           ...(queryArg?.muscleIds?.length ? {muscle_ids: queryArg.muscleIds.join(',')} : {}),
-          ...(queryArg?.equipment_ids?.length ? {equipment_ids: queryArg.equipment_ids.join(',')} : {}),
+          ...(queryArg?.equipmentIds?.length ? {equipment_ids: queryArg.equipmentIds.join(',')} : {}),
           offset: pageParam,
           limit: PAGE_SIZE,
         },

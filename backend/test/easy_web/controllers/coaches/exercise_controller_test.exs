@@ -192,6 +192,41 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
              |> Enum.sort() == Enum.sort([matching_business_exercise.id, matching_system_exercise.id])
     end
 
+    test "filters by equipment ids", %{conn: conn, business: business} do
+      barbell = insert(:equipment, name: "Barbell #{Ecto.UUID.generate()}")
+      cable = insert(:equipment, name: "Cable #{Ecto.UUID.generate()}")
+
+      with_barbell =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Barbell Row #{Ecto.UUID.generate()}",
+          equipment: [barbell]
+        )
+
+      with_cable =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Cable Curl #{Ecto.UUID.generate()}",
+          equipment: [cable]
+        )
+
+      _no_equipment =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Bodyweight Squat #{Ecto.UUID.generate()}"
+        )
+
+      conn = get(conn, "/v1/coach/training-exercises", %{"equipment_ids" => barbell.id})
+      assert %{"data" => data} = json_response(conn, 200)
+
+      returned_ids = Enum.map(data, & &1["id"])
+      assert with_barbell.id in returned_ids
+      refute with_cable.id in returned_ids
+    end
+
     test "returns 403 without a coach token" do
       conn = build_conn() |> get("/v1/coach/training-exercises")
       assert %{"error_code" => "unauthorized"} = json_response(conn, 403)

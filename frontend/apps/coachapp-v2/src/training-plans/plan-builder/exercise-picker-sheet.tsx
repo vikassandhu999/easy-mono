@@ -87,7 +87,7 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
   } = useCoachTrainingExercisesInfiniteQuery({
     search: debouncedSearch || undefined,
     muscleIds: activeMuscleIds.size > 0 ? Array.from(activeMuscleIds) : undefined,
-    equipment_ids: activeEquipmentIds.size > 0 ? Array.from(activeEquipmentIds) : undefined,
+    equipmentIds: activeEquipmentIds.size > 0 ? Array.from(activeEquipmentIds) : undefined,
   });
 
   // --- Data: create mutation ---

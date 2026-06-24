@@ -24,6 +24,13 @@ defmodule EasyWeb.Clients.ExerciseController do
         %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
         "Only exercises linked to any of these muscle ids",
         required: false
+      ),
+      Operation.parameter(
+        :equipment_ids,
+        :query,
+        %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
+        "Only exercises linked to any of these equipment ids",
+        required: false
       )
     ],
     responses: [
@@ -52,7 +59,8 @@ defmodule EasyWeb.Clients.ExerciseController do
       offset: parse_integer(params, "offset", 0),
       limit: parse_integer(params, "limit", 20),
       search: Map.get(params, "search", ""),
-      muscle_ids: parse_list(params, "muscle_ids")
+      muscle_ids: parse_list(params, "muscle_ids"),
+      equipment_ids: parse_list(params, "equipment_ids")
     ]
 
     with {:ok, %{exercises: exercises, count: count}} <-

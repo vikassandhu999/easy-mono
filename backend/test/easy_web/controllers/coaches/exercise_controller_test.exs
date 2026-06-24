@@ -212,7 +212,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
           equipment: [cable]
         )
 
-      _no_equipment =
+      no_equipment =
         insert(:exercise,
           business: nil,
           business_id: business.id,
@@ -225,6 +225,81 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       returned_ids = Enum.map(data, & &1["id"])
       assert with_barbell.id in returned_ids
       refute with_cable.id in returned_ids
+      refute no_equipment.id in returned_ids
+    end
+
+    test "filters by muscle ids", %{conn: conn, business: business} do
+      chest = insert(:muscle, name: "Chest #{Ecto.UUID.generate()}")
+      back = insert(:muscle, name: "Back #{Ecto.UUID.generate()}")
+
+      with_chest =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Bench Press #{Ecto.UUID.generate()}",
+          muscles: [chest]
+        )
+
+      with_back =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Bent Row #{Ecto.UUID.generate()}",
+          muscles: [back]
+        )
+
+      no_muscles =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Plank #{Ecto.UUID.generate()}"
+        )
+
+      conn = get(conn, "/v1/coach/training-exercises", %{"muscle_ids" => chest.id})
+      assert %{"data" => data} = json_response(conn, 200)
+
+      returned_ids = Enum.map(data, & &1["id"])
+      assert with_chest.id in returned_ids
+      refute with_back.id in returned_ids
+      refute no_muscles.id in returned_ids
+    end
+
+    test "filters by multiple muscle ids returns exercises matching any", %{conn: conn, business: business} do
+      chest = insert(:muscle, name: "Chest #{Ecto.UUID.generate()}")
+      back = insert(:muscle, name: "Back #{Ecto.UUID.generate()}")
+      legs = insert(:muscle, name: "Legs #{Ecto.UUID.generate()}")
+
+      with_chest =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Bench Press #{Ecto.UUID.generate()}",
+          muscles: [chest]
+        )
+
+      with_back =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Bent Row #{Ecto.UUID.generate()}",
+          muscles: [back]
+        )
+
+      with_legs =
+        insert(:exercise,
+          business: nil,
+          business_id: business.id,
+          name: "Squat #{Ecto.UUID.generate()}",
+          muscles: [legs]
+        )
+
+      conn = get(conn, "/v1/coach/training-exercises", %{"muscle_ids" => [chest.id, back.id]})
+      assert %{"data" => data} = json_response(conn, 200)
+
+      returned_ids = Enum.map(data, & &1["id"])
+      assert with_chest.id in returned_ids
+      assert with_back.id in returned_ids
+      refute with_legs.id in returned_ids
     end
 
     test "returns 403 without a coach token" do

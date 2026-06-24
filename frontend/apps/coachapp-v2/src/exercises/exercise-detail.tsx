@@ -6,7 +6,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useDeleteExerciseMutation, useDuplicateExerciseMutation, useGetExerciseQuery} from '@/api/exercises';
+import {useCopyExerciseMutation, useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/generated';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',
@@ -24,13 +24,17 @@ export default function ExerciseDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.EXERCISES);
-  const {data, isError, isLoading} = useGetExerciseQuery(id!);
+  const {data, isError, isLoading} = useGetExerciseQuery({id: id!});
   const [deleteExercise, {isLoading: isDeleting}] = useDeleteExerciseMutation();
-  const [duplicateExercise, {isLoading: isDuplicating}] = useDuplicateExerciseMutation();
+  const [copyExercise, {isLoading: isDuplicating}] = useCopyExerciseMutation();
 
   const handleDuplicate = async () => {
+    const exercise = data?.data;
     try {
-      const result = await duplicateExercise(id!).unwrap();
+      const result = await copyExercise({
+        id: id!,
+        trainingExerciseCopyRequest: {name: `${exercise?.name ?? 'Exercise'} (copy)`},
+      }).unwrap();
       toast.success('Exercise duplicated');
       navigate(`/library/exercises/${result.data.id}`);
     } catch {
@@ -40,7 +44,7 @@ export default function ExerciseDetail() {
 
   const handleDelete = async () => {
     try {
-      await deleteExercise(id!).unwrap();
+      await deleteExercise({id: id!}).unwrap();
       navigate(ROUTES.EXERCISES, {replace: true});
     } catch {
       // Mutation error — could add a toast here in the future.
@@ -97,7 +101,7 @@ export default function ExerciseDetail() {
   }
 
   const exercise = data.data;
-  const isSystemExercise = exercise.business_id === null;
+  const isSystemExercise = exercise.source === 'system';
   const mechanicsLabel = exercise.mechanics ? MECHANICS_LABEL[exercise.mechanics] : null;
   const forceLabel = exercise.force ? FORCE_LABEL[exercise.force] : null;
   const muscleNames = exercise.muscles.map((m) => m.name);

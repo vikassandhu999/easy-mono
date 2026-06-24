@@ -4,8 +4,13 @@ import {Navigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {type Exercise, useGetExerciseQuery, useUpdateExerciseMutation} from '@/api/exercises';
-import {useListEquipmentQuery, useListMusclesQuery} from '@/api/generated';
+import {
+  type TrainingExercise,
+  useGetExerciseQuery,
+  useListEquipmentQuery,
+  useListMusclesQuery,
+  useUpdateExerciseMutation,
+} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import ExerciseForm, {
   type ExerciseFormValues,
@@ -21,7 +26,7 @@ function EditExerciseForm({
   exerciseId,
 }: {
   backPath: string;
-  exercise: Exercise;
+  exercise: TrainingExercise;
   exerciseId: string;
 }) {
   const goBack = useGoBack(backPath);
@@ -35,7 +40,7 @@ function EditExerciseForm({
 
   const onSubmit = async (formData: ExerciseFormValues) => {
     try {
-      await updateExercise({body: exerciseToUpdateRequest(formData), id: exerciseId}).unwrap();
+      await updateExercise({id: exerciseId, trainingExerciseUpdateRequest: exerciseToUpdateRequest(formData)}).unwrap();
       goBack();
     } catch (err) {
       applyFormErrors(err, "Exercise wasn't updated. Check the details and try again", form.setError);
@@ -80,7 +85,7 @@ function EditExerciseForm({
 
 export default function EditExercise() {
   const {id} = useParams<{id: string}>();
-  const {data, isLoading: isFetching} = useGetExerciseQuery(id!);
+  const {data, isLoading: isFetching} = useGetExerciseQuery({id: id!});
 
   const exercise = data?.data;
   const backPath = `/library/exercises/${id}`;
@@ -103,7 +108,7 @@ export default function EditExercise() {
   }
 
   // Guard: system exercises cannot be edited — redirect to detail page
-  if (exercise.business_id === null) {
+  if (exercise.source === 'system') {
     return (
       <Navigate
         replace

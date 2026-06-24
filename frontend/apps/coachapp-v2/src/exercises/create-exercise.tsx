@@ -5,9 +5,9 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useCreateExerciseMutation} from '@/api/exercises';
 import {useListEquipmentQuery, useListMusclesQuery} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
+import {useCreateCoachTrainingExerciseMutation} from '@/api/training-exercises';
 import ExerciseForm, {
   type ExerciseFormValues,
   exerciseToCreateRequest,
@@ -17,14 +17,14 @@ import ExerciseForm, {
 export default function CreateExercise() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.EXERCISES);
-  const [createExercise, {isLoading}] = useCreateExerciseMutation();
+  const [createExercise, {isLoading}] = useCreateCoachTrainingExerciseMutation();
   const {data: musclesData} = useListMusclesQuery({});
   const {data: equipmentData} = useListEquipmentQuery({});
   const form = useExerciseForm();
 
   const onSubmit = async (data: ExerciseFormValues) => {
     try {
-      const result = await createExercise(exerciseToCreateRequest(data)).unwrap();
+      const result = await createExercise({trainingExerciseCreateRequest: exerciseToCreateRequest(data)}).unwrap();
       navigate(`/library/exercises/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Exercise wasn't created. Check the details and try again", form.setError);

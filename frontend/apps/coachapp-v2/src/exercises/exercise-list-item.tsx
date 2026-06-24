@@ -2,7 +2,7 @@ import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import type {Exercise} from '@/api/exercises';
+import type {TrainingTrainingExercise} from '@/api/generated';
 
 const MECHANICS_MAP: Record<string, {color: 'accent' | 'default' | 'warning'; label: string}> = {
   compound: {color: 'accent', label: 'Compound'},
@@ -16,9 +16,9 @@ const FORCE_MAP: Record<string, string> = {
   static: 'Static',
 };
 
-function getExerciseSubtitle(exercise: Exercise): string {
+function getTrainingExerciseSubtitle(exercise: TrainingExercise): string {
   const muscleNames = exercise.muscles.map((muscle) => muscle.name).join(', ');
-  const isSystem = exercise.business_id === null;
+  const isSystem = exercise.source === 'system';
 
   if (muscleNames && isSystem) {
     return `${muscleNames} · system`;
@@ -32,7 +32,7 @@ function getExerciseSubtitle(exercise: Exercise): string {
   return 'No muscles assigned';
 }
 
-export default function ExerciseListItem({exercise}: {exercise: Exercise}) {
+export default function TrainingExerciseListItem({exercise}: {exercise: TrainingExercise}) {
   const mechanics = exercise.mechanics ? MECHANICS_MAP[exercise.mechanics] : null;
   const force = exercise.force ? FORCE_MAP[exercise.force] : null;
 
@@ -59,7 +59,7 @@ export default function ExerciseListItem({exercise}: {exercise: Exercise}) {
 
       <div className="flex min-w-0 flex-col">
         <Label className="truncate">{exercise.name}</Label>
-        <Description className="truncate">{getExerciseSubtitle(exercise)}</Description>
+        <Description className="truncate">{getTrainingExerciseSubtitle(exercise)}</Description>
       </div>
 
       <div className="ms-auto hidden shrink-0 gap-1.5 sm:flex">

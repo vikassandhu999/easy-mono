@@ -9,8 +9,8 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useExercisesInfiniteQuery} from '@/api/exercises';
 import {useListMusclesQuery} from '@/api/generated';
+import {useCoachTrainingExercisesInfiniteQuery} from '@/api/training-exercises';
 import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
 
 import ExerciseListItem from './exercise-list-item';
@@ -22,7 +22,7 @@ export default function ListExercises() {
   const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
 
   const deferredSearch = useDeferredValue(search);
-  const list = useExercisesInfiniteQuery({muscle_ids: selectedMuscleIds, search: deferredSearch});
+  const list = useCoachTrainingExercisesInfiniteQuery({muscleIds: selectedMuscleIds, search: deferredSearch});
   const {fetchNextPage, isLoading, items, isFetchingNextPage} = useInfiniteItems(list);
 
   const {data: musclesData} = useListMusclesQuery({});

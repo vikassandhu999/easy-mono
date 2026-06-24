@@ -5,17 +5,17 @@ import {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-import {
-  type Equipment,
-  type Exercise,
-  type ExerciseCreateRequest,
-  type ExerciseForce,
-  type ExerciseMechanics,
-  type ExerciseUpdateRequest,
-  type Muscle,
-} from '@/api/exercises';
+import type {
+  TrainingExercise,
+  TrainingExerciseCreateRequest,
+  TrainingExerciseRelation,
+  TrainingExerciseUpdateRequest,
+} from '@/api/generated';
 import {omitUndefined, toOptionalText} from '@/api/shared';
 import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
+
+type ExerciseMechanics = 'compound' | 'isolation' | 'isometric';
+type ExerciseForce = 'push' | 'pull' | 'static';
 
 const MECHANICS_OPTIONS: {label: string; value: ExerciseMechanics}[] = [
   {label: 'Compound', value: 'compound'},
@@ -63,7 +63,7 @@ export function useExerciseForm(options?: {values?: ExerciseFormValues}) {
   });
 }
 
-export function exerciseToFormValues(exercise: Exercise): ExerciseFormValues {
+export function exerciseToFormValues(exercise: TrainingExercise): ExerciseFormValues {
   return {
     description: exercise.description ?? '',
     equipment_ids: exercise.equipment.map((item) => item.id),
@@ -77,7 +77,7 @@ export function exerciseToFormValues(exercise: Exercise): ExerciseFormValues {
   };
 }
 
-export function exerciseToCreateRequest(values: ExerciseFormValues): ExerciseCreateRequest {
+export function exerciseToCreateRequest(values: ExerciseFormValues): TrainingExerciseCreateRequest {
   return omitUndefined({
     name: values.name,
     description: toOptionalText(values.description),
@@ -90,7 +90,7 @@ export function exerciseToCreateRequest(values: ExerciseFormValues): ExerciseCre
   });
 }
 
-export function exerciseToUpdateRequest(values: ExerciseFormValues): ExerciseUpdateRequest {
+export function exerciseToUpdateRequest(values: ExerciseFormValues): TrainingExerciseUpdateRequest {
   return {
     name: values.name,
     description: toOptionalText(values.description),
@@ -104,10 +104,10 @@ export function exerciseToUpdateRequest(values: ExerciseFormValues): ExerciseUpd
 }
 
 type ExerciseFormProps = {
-  equipment: Equipment[];
+  equipment: TrainingExerciseRelation[];
   form: ReturnType<typeof useExerciseForm>;
   isSubmitting: boolean;
-  muscles: Muscle[];
+  muscles: TrainingExerciseRelation[];
   onCancel: () => void;
   onSubmit: (data: ExerciseFormValues) => void;
   submitLabel: string;

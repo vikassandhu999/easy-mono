@@ -3,9 +3,8 @@ import {Button, Spinner, Table} from '@heroui/react';
 import {ArrowLeft, Check, Minus, Plus, RefreshCw} from 'lucide-react';
 import {useMemo} from 'react';
 
-import type {CoachMealLog} from '@/api/mealLogs';
-
-import {useListCoachMealLogsQuery} from '@/api/mealLogs';
+import {useListCoachMealLogsQuery} from '@/api/generated';
+import type {CoachMealLog} from '@/domain/client-nutrition';
 import {
   buildMealLogComparison,
   type ComparisonType,
@@ -206,7 +205,7 @@ export default function ClientNutritionDetail({
   date: string;
   onBack: () => void;
 }) {
-  const {data, isLoading} = useListCoachMealLogsQuery({client_id: clientId, date});
+  const {data, isLoading} = useListCoachMealLogsQuery({clientId, date});
   const mealLogs = useMemo(() => data?.data ?? [], [data]);
   const sortedLogs = useMemo(() => sortMealLogsBySlot(mealLogs), [mealLogs]);
   const {adherencePercent, totalEntries, totalLoggedCal, totalPlannedCal} = useMemo(

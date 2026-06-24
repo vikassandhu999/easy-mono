@@ -1,7 +1,35 @@
 import {isFutureDate, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
 
-import type {CoachMealLog, DailyNutritionSummary, FoodLogEntry, PlannedSnapshotItem} from '@/api/mealLogs';
+import type {FoodLogEntry as GeneratedFoodLogEntry, MealLog} from '@/api/generated';
 import type {Macros} from '@/api/shared';
+
+// Re-export generated types under legacy names used throughout this domain
+export type CoachMealLog = MealLog;
+export type FoodLogEntry = GeneratedFoodLogEntry;
+
+// PlannedSnapshotItem — the backend returns planned_snapshot as a free object;
+// define the shape we actually read from it in this module.
+export type PlannedSnapshotItem = {
+  amount: number;
+  calories: number;
+  carbs_g: number;
+  fat_g: number;
+  food_name: string;
+  protein_g: number;
+  unit: string;
+  weight_g: number;
+};
+
+// DailyNutritionSummary is FE-computed (no backend summary route exists).
+export type DailyNutritionSummary = {
+  date: string;
+  logged_calories: number;
+  meals_logged: number;
+  planned_calories: number;
+  replacements: number;
+  total_entries: number;
+  unplanned_count: number;
+};
 
 export type AdherenceLevel = 'future' | 'high' | 'low' | 'medium' | 'none';
 
@@ -87,7 +115,8 @@ export function buildMealLogComparison(mealLog: CoachMealLog): {
   unplanned: FoodLogEntry[];
 } {
   const entries = mealLog.food_log_entries;
-  const planned = mealLog.planned_snapshot?.items ?? [];
+  // planned_snapshot is typed as a free object in generated types; cast to known shape.
+  const planned = (mealLog.planned_snapshot?.items ?? []) as PlannedSnapshotItem[];
 
   const comparison: ComparisonItem[] = planned.map((item, index) => {
     const entry = entries.find((foodLogEntry) => foodLogEntry.planned_item_index === index);
@@ -145,3 +174,128 @@ export function getSkippedMealSlots(mealLogs: CoachMealLog[]): string[] {
 export function getMealSlotLabel(slot: string): string {
   return MEAL_SLOT_LABELS[slot] ?? slot;
 }
+
+/**
+ * Aggregate a flat list of MealLog entries (from useListCoachMealLogsQuery) into
+ * one DailyNutritionSummary per date. Replaces the defunct server-side summary route.
+ */
+export function computeDailyNutritionSummaries(mealLogs: MealLog[]): DailyNutritionSummary[] {
+  const byDate = new Map<string, DailyNutritionSummary>();
+
+  for (const log of mealLogs) {
+    const existing = byDate.get(log.date);
+    const totalEntries = log.food_log_entries.length;
+    const replacements = log.food_log_entries.filter((e) => e.source === 'replacement').length;
+    const unplanned = log.food_log_entries.filter(
+      (e) => e.source === 'unplanned' || e.planned_item_index == null,
+    ).length;
+
+    if (!existing) {
+      byDate.set(log.date, {
+        date: log.date,
+        logged_calories: log.logged_calories ?? 0,
+        meals_logged: totalEntries > 0 ? 1 : 0,
+        planned_calories: log.planned_calories ?? 0,
+        replacements,
+        total_entries: totalEntries,
+        unplanned_count: unplanned,
+      });
+    } else {
+      existing.logged_calories += log.logged_calories ?? 0;
+      existing.meals_logged += totalEntries > 0 ? 1 : 0;
+      existing.planned_calories += log.planned_calories ?? 0;
+      existing.replacements += replacements;
+      existing.total_entries += totalEntries;
+      existing.unplanned_count += unplanned;
+    }
+  }
+
+  return [...byDate.values()];
+}
+
+// Assert: a meal log with known values produces the correct aggregate.
+(function assertComputeDailyNutritionSummaries() {
+  const fakeLogs: MealLog[] = [
+    {
+      id: 'a',
+      date: '2026-01-01',
+      meal_slot: 'breakfast',
+      logged_calories: 400,
+      planned_calories: 500,
+      inserted_at: '',
+      updated_at: '',
+      food_log_entries: [
+        {
+          id: 'e1',
+          amount: 1,
+          food_name: 'egg',
+          meal_log_id: 'a',
+          inserted_at: '',
+          updated_at: '',
+          unit: null,
+          weight_g: null,
+          source: 'planned',
+          planned_item_index: 0,
+        },
+        {
+          id: 'e2',
+          amount: 1,
+          food_name: 'toast',
+          meal_log_id: 'a',
+          inserted_at: '',
+          updated_at: '',
+          unit: null,
+          weight_g: null,
+          source: 'replacement',
+          planned_item_index: 1,
+        },
+      ],
+    },
+    {
+      id: 'b',
+      date: '2026-01-01',
+      meal_slot: 'lunch',
+      logged_calories: 600,
+      planned_calories: 700,
+      inserted_at: '',
+      updated_at: '',
+      food_log_entries: [
+        {
+          id: 'e3',
+          amount: 1,
+          food_name: 'salad',
+          meal_log_id: 'b',
+          inserted_at: '',
+          updated_at: '',
+          unit: null,
+          weight_g: null,
+          source: 'unplanned',
+          planned_item_index: null,
+        },
+      ],
+    },
+  ];
+  const result = computeDailyNutritionSummaries(fakeLogs);
+  if (result.length !== 1) {
+    throw new Error('computeDailyNutritionSummaries: expected 1 day');
+  }
+  const day = result[0]!;
+  if (day.logged_calories !== 1000) {
+    throw new Error('computeDailyNutritionSummaries: wrong logged_calories');
+  }
+  if (day.planned_calories !== 1200) {
+    throw new Error('computeDailyNutritionSummaries: wrong planned_calories');
+  }
+  if (day.total_entries !== 3) {
+    throw new Error('computeDailyNutritionSummaries: wrong total_entries');
+  }
+  if (day.replacements !== 1) {
+    throw new Error('computeDailyNutritionSummaries: wrong replacements');
+  }
+  if (day.unplanned_count !== 1) {
+    throw new Error('computeDailyNutritionSummaries: wrong unplanned_count');
+  }
+  if (day.meals_logged !== 2) {
+    throw new Error('computeDailyNutritionSummaries: wrong meals_logged');
+  }
+})();

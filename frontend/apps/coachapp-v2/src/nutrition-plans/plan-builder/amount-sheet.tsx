@@ -45,29 +45,22 @@ import {useAppDispatch} from '@/store';
 // Types
 // ---------------------------------------------------------------------------
 
-/** Create mode: pass food or recipe from the picker. */
-interface CreateProps {
+/**
+ * Mode is derived at runtime from `existingItem`:
+ *   CREATE — `food` or `recipe` passed (from the picker), no `existingItem`.
+ *   EDIT   — `existingItem` passed (autosaves; `onDelete` surfaces removal).
+ */
+export interface AmountSheetProps {
   food?: Food;
   recipe?: Recipe;
-  existingItem?: undefined;
+  existingItem?: HydratedMealItem;
   planId: string;
   mealId: string;
   open: boolean;
   onClose: () => void;
+  /** Remove the item from the meal (edit mode only). Surfaces the delete the row no longer renders. */
+  onDelete?: () => void;
 }
-
-/** Edit mode: pass an existing hydrated meal item. */
-interface EditProps {
-  food?: Food;
-  recipe?: Recipe;
-  existingItem: HydratedMealItem;
-  planId: string;
-  mealId: string;
-  open: boolean;
-  onClose: () => void;
-}
-
-export type AmountSheetProps = CreateProps | EditProps;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -78,8 +71,16 @@ function fmt(n: number): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
-function formatMacroPreview(macros: ReturnType<typeof computeMacrosFromSnapshot>): string {
-  return `${Math.round(macros.calories)} kcal · ${fmt(macros.protein)}P / ${fmt(macros.carbs)}C / ${fmt(macros.fat)}F`;
+interface MacroPreview {
+  kcal: string;
+  macros: string;
+}
+
+function formatMacroPreview(macros: ReturnType<typeof computeMacrosFromSnapshot>): MacroPreview {
+  return {
+    kcal: `${Math.round(macros.calories)} kcal`,
+    macros: `${fmt(macros.protein)}P · ${fmt(macros.carbs)}C · ${fmt(macros.fat)}F`,
+  };
 }
 
 /**
@@ -105,9 +106,10 @@ interface ContentProps {
   planId: string;
   mealId: string;
   onClose: () => void;
+  onDelete?: () => void;
 }
 
-function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose}: ContentProps) {
+function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose, onDelete}: ContentProps) {
   const dispatch = useAppDispatch();
   const [createMealItem] = useCreateMealItemMutation();
   const [updateMealItem] = useUpdateMealItemMutation();
@@ -208,7 +210,10 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         carbs: Math.round((itemNutrition.carbs_g ?? 0) * scale * 10) / 10,
         fat: Math.round((itemNutrition.fat_g ?? 0) * scale * 10) / 10,
       };
-      return `${scaled.calories} kcal · ${scaled.protein}P / ${scaled.carbs}C / ${scaled.fat}F`;
+      return {
+        kcal: `${scaled.calories} kcal`,
+        macros: `${scaled.protein}P · ${scaled.carbs}C · ${scaled.fat}F`,
+      };
     }
 
     // ── Create mode: compute from generated Food / Recipe fields ──
@@ -548,7 +553,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
               {servingSizes.map((serving, idx) => (
                 <button
                   className={[
-                    'rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                    'rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors',
                     activeServingIdx === idx
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-divider text-foreground-500 hover:border-default-400 hover:text-foreground-300',
@@ -606,8 +611,14 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
         {/* ── Live macro preview ── */}
         {macroPreview ? (
-          <div className="rounded-lg border border-divider bg-content2 px-3 py-2 text-center text-xs text-foreground-400">
-            {macroPreview}
+          <div className="flex items-center justify-between rounded-lg border border-divider bg-content2/40 px-3 py-2">
+            <div>
+              {resolvedWeightG != null ? (
+                <div className="text-[10px] text-foreground-500">resolves to {fmt(resolvedWeightG)}g →</div>
+              ) : null}
+              <div className="text-sm font-bold text-foreground">{macroPreview.kcal}</div>
+            </div>
+            <div className="text-[10px] text-primary">{macroPreview.macros}</div>
           </div>
         ) : (
           <div className="rounded-lg border border-divider bg-content2 px-3 py-2 text-center text-xs text-foreground-600">
@@ -621,8 +632,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
             className={[
               'w-full rounded-xl py-3 text-sm font-semibold transition-colors',
               canConfirm
-                ? 'bg-primary text-white hover:bg-primary/90'
-                : 'cursor-not-allowed bg-default-200 text-foreground-500',
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'cursor-not-allowed bg-content2 text-foreground-600',
             ].join(' ')}
             disabled={!canConfirm}
             onClick={canConfirm ? handleCreate : undefined}
@@ -632,9 +643,28 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
           </button>
         ) : null}
 
-        {/* ── Edit mode hint ── */}
+        {/* ── Edit mode footer: autosave hint + remove action ── */}
         {isEditMode ? (
-          <div className="text-center text-[10px] text-foreground-600">Changes save automatically</div>
+          <div className="flex items-center justify-between pt-0.5">
+            <span className="text-[10px] text-foreground-600">Changes save automatically</span>
+            {onDelete ? (
+              <button
+                className="text-xs font-medium text-danger transition-colors hover:text-danger/80"
+                onClick={() => {
+                  // Cancel any pending debounced save — the item is being removed.
+                  if (saveTimerRef.current) {
+                    clearTimeout(saveTimerRef.current);
+                    saveTimerRef.current = null;
+                    pendingPatchRef.current = null;
+                  }
+                  onDelete();
+                }}
+                type="button"
+              >
+                Remove from meal
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </div>
@@ -646,7 +676,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 // ---------------------------------------------------------------------------
 
 export function AmountSheet(props: AmountSheetProps) {
-  const {open, onClose, existingItem, planId, mealId} = props;
+  const {open, onClose, existingItem, planId, mealId, onDelete} = props;
 
   // Resolve food/recipe from props.
   // In edit mode, existingItem.food/recipe are legacy-typed (HydratedMealItem
@@ -668,6 +698,7 @@ export function AmountSheet(props: AmountSheetProps) {
           food={food}
           mealId={mealId}
           onClose={onClose}
+          onDelete={onDelete}
           planId={planId}
           recipe={recipe}
         />

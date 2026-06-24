@@ -42,6 +42,11 @@ export interface SearchPickerSheetProps<T> {
 
   // --- Filter chips (horizontal scroll row) ---
   filters?: FilterChip[];
+  /** Layout for the filter chip row. 'scroll' (default) is a left-aligned,
+   *  horizontally-scrollable auto-width pill row (e.g. exercise muscle/equipment
+   *  chips). 'segmented' makes each chip equal-flex and centered, spanning the
+   *  full sheet width like a segmented control (e.g. the Foods/Recipes toggle). */
+  filtersLayout?: 'scroll' | 'segmented';
 
   // --- Items & rendering ---
   items: T[];
@@ -82,6 +87,7 @@ export function SearchPickerSheet<T>({
   search,
   onSearchChange,
   filters,
+  filtersLayout = 'scroll',
   items,
   renderItem,
   itemKey,
@@ -179,16 +185,26 @@ export function SearchPickerSheet<T>({
         variant="secondary"
       />
 
-      {/* Filter chips — horizontally scrollable row */}
+      {/* Filter chips — scrollable pill row, or an equal-flex segmented control */}
       {filters && filters.length > 0 ? (
-        <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          className={
+            filtersLayout === 'segmented'
+              ? 'mb-2 flex gap-1.5'
+              : 'mb-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+          }
+        >
           {filters.map((chip) => (
             <Chip
-              className="cursor-pointer shrink-0"
+              className={[
+                'cursor-pointer rounded-[7px] border',
+                filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
+                chip.active ? 'border-primary' : 'border-divider',
+              ].join(' ')}
               color={chip.active ? 'accent' : 'default'}
               key={chip.id}
               onClick={chip.onToggle}
-              variant={chip.active ? 'primary' : 'secondary'}
+              variant={chip.active ? 'soft' : 'tertiary'}
             >
               {chip.label}
             </Chip>

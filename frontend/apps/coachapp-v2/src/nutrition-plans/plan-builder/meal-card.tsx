@@ -242,7 +242,11 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="rounded-xl border border-divider bg-content1 overflow-hidden">
+    <div
+      className={`rounded-xl border bg-content1 overflow-hidden ${
+        open ? 'border-primary ring-1 ring-primary/60 shadow-[0_0_18px_rgba(108,140,255,0.13)]' : 'border-divider'
+      }`}
+    >
       {/* Header — acts as accordion toggle */}
       <div
         aria-expanded={open}
@@ -291,7 +295,9 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         </div>
 
         {/* Meal total badge */}
-        {mealTotal ? <span className="shrink-0 text-xs text-foreground-500">{mealTotal}</span> : null}
+        {mealTotal ? (
+          <span className={`shrink-0 text-xs ${open ? 'text-primary' : 'text-foreground-500'}`}>{mealTotal}</span>
+        ) : null}
 
         {/* Meal options menu — stop propagation so clicks don't toggle accordion */}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown */}
@@ -354,15 +360,12 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
       {open ? (
         <div className="border-t border-divider pb-3 pt-1">
           {items.length === 0 ? (
-            <div className="px-4 py-2 text-xs text-foreground-500">Add foods</div>
+            <div className="pl-2.5 py-2 text-xs text-foreground-500">Add foods</div>
           ) : (
             items.map((item) => (
               <MealItemRow
                 key={item.id}
                 item={item}
-                onDelete={() => {
-                  handleDeleteItem(item.id).catch(() => undefined);
-                }}
                 onTap={() => setEditingItem(item)}
               />
             ))
@@ -377,6 +380,19 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
               + Add food or recipe
             </button>
           </div>
+
+          {/* Meal total — rolls up live from server-recomputed meal.nutrition */}
+          {meal.nutrition?.calories != null ? (
+            <div className="mt-2.5 mx-2.5 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+              <div>
+                <div className="text-[10px] text-foreground-500">Meal total</div>
+                <div className="text-sm font-bold text-foreground">{Math.round(meal.nutrition.calories)} kcal</div>
+              </div>
+              <div className="text-[10px] text-primary">
+                {fmt(meal.nutrition.protein_g)}P · {fmt(meal.nutrition.carbs_g)}C · {fmt(meal.nutrition.fat_g)}F
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -402,6 +418,14 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         existingItem={editingItem ?? undefined}
         mealId={meal.id}
         onClose={() => setEditingItem(null)}
+        onDelete={
+          editingItem
+            ? () => {
+                handleDeleteItem(editingItem.id).catch(() => undefined);
+                setEditingItem(null);
+              }
+            : undefined
+        }
         open={editingItem !== null}
         planId={planId}
       />

@@ -160,6 +160,8 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
           'shadow-[0_-12px_30px_rgba(0,0,0,0.55)]',
           // Layout
           'flex flex-col',
+          // Height ceiling so the inner overflow-y-auto engages instead of growing off-screen
+          'max-h-[calc(100dvh-3rem)]',
           // Desktop: max-width + centred
           'md:left-1/2 md:right-auto md:w-full md:max-w-lg md:-translate-x-1/2',
           className,
@@ -175,10 +177,10 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
       >
         {/* Grip handle */}
         <div
-          className="flex justify-center pb-1 pt-2"
+          className="flex justify-center pb-2 pt-2"
           aria-hidden="true"
         >
-          <div className="h-1 w-10 rounded-full bg-default-300" />
+          <div className="h-1 w-10 rounded-full bg-default-400" />
         </div>
 
         {/* Title row — only rendered when a title is provided */}
@@ -205,7 +207,9 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">{children}</div>
 
         {/* Sticky footer dock */}
-        {footer !== undefined ? <div className="border-t border-divider bg-background px-4 py-3">{footer}</div> : null}
+        {footer !== undefined ? (
+          <div className="border-t border-primary/30 bg-background px-4 py-3">{footer}</div>
+        ) : null}
       </div>
     </>,
     document.body,

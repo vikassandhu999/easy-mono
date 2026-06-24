@@ -59,23 +59,19 @@ function fmt(n: number | null | undefined): string {
 }
 
 /**
- * Macro badge label for a Food item (per-100g).
- * Example: "380kcal/100g · 80P"
+ * Macro badge label for a Food item (protein-only).
+ * Example: "80P"
  */
 function foodMacroBadge(food: Food): string {
-  const cal = fmt(food.calories_per_100g);
-  const protein = fmt(food.protein_g_per_100g);
-  return `${cal}kcal/100g · ${protein}P`;
+  return `${fmt(food.protein_g_per_100g)}P`;
 }
 
 /**
- * Macro badge label for a Recipe item (per-serving from nutrition).
- * Example: "520kcal/srv · 35P"
+ * Macro badge label for a Recipe item (protein-only, per-serving).
+ * Example: "35P"
  */
 function recipeMacroBadge(recipe: Recipe): string {
-  const cal = fmt(recipe.nutrition?.calories);
-  const protein = fmt(recipe.nutrition?.protein_g);
-  return `${cal}kcal/srv · ${protein}P`;
+  return `${fmt(recipe.nutrition?.protein_g)}P`;
 }
 
 /** Type guard: is the item a Recipe (has `recipe_ingredients`)? Exported so the
@@ -226,22 +222,27 @@ export function FoodRecipePickerSheet({open, onClose, onPick}: FoodRecipePickerS
           aria-hidden="true"
           className={[
             'h-5 w-5 shrink-0 rounded-md border-[1.5px] flex items-center justify-center',
-            selected ? 'border-[#6c8cff] bg-[#6c8cff] text-white' : 'border-default-400',
+            selected ? 'border-primary bg-primary text-primary-foreground' : 'border-default-400',
           ].join(' ')}
         >
           {selected ? <span className="text-[11px] font-bold leading-none">✓</span> : null}
         </div>
 
-        {/* Name */}
+        {/* Name + per-serving subtitle */}
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium text-foreground">{item.name}</div>
+          <div className="truncate text-xs text-foreground-500">
+            {isRecipe(item)
+              ? `per srv · ${fmt(item.nutrition?.calories)} kcal`
+              : `per 100g · ${fmt(item.calories_per_100g)} kcal`}
+          </div>
         </div>
 
         {/* Macro badge */}
         <Chip
           className="shrink-0"
+          color="accent"
           size="sm"
-          style={{borderColor: '#6c8cff', color: '#6c8cff'}}
           variant="secondary"
         >
           {macroBadge}
@@ -254,6 +255,7 @@ export function FoodRecipePickerSheet({open, onClose, onPick}: FoodRecipePickerS
     <SearchPickerSheet<FoodOrRecipe>
       confirmLabel={(n) => (n === 0 ? 'Add items' : `Add ${n} item${n === 1 ? '' : 's'}`)}
       filters={filters}
+      filtersLayout="segmented"
       hasMore={hasMore}
       itemKey={(item) => item.id}
       items={items}

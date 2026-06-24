@@ -167,13 +167,11 @@ export function isDayOverridden(
 interface DayTotalBarProps {
   totals: MacroTotals;
   targetCalories: number | null | undefined;
-  targetProtein: number | null | undefined;
-  targetCarbs: number | null | undefined;
-  targetFat: number | null | undefined;
+  label: string;
   isOverridden?: boolean;
 }
 
-function DayTotalBar({totals, targetCalories, targetProtein, targetCarbs, targetFat, isOverridden}: DayTotalBarProps) {
+function DayTotalBar({totals, targetCalories, label, isOverridden}: DayTotalBarProps) {
   const pct = (value: number, target: number | null | undefined): number => {
     if (!target || target <= 0) {
       return 0;
@@ -182,119 +180,32 @@ function DayTotalBar({totals, targetCalories, targetProtein, targetCarbs, target
   };
 
   const calPct = pct(totals.calories, targetCalories);
-  const protPct = pct(totals.protein, targetProtein);
-  const carbsPct = pct(totals.carbs, targetCarbs);
-  const fatPct = pct(totals.fat, targetFat);
-
-  const hasTargets = Boolean(targetCalories || targetProtein || targetCarbs || targetFat);
 
   const containerClass = isOverridden
-    ? 'rounded-lg border border-warning/40 bg-warning/5 px-4 py-3'
-    : 'rounded-lg border border-divider bg-content1 px-4 py-3';
+    ? 'rounded-xl border border-warning/40 bg-warning/5 px-3 py-2.5'
+    : 'rounded-xl border border-success/40 bg-success/5 px-3 py-2.5';
 
   return (
-    <div className={containerClass}>
-      <Typography
-        className="mb-2 uppercase tracking-wider"
-        color="muted"
-        type="body-xs"
-        weight="semibold"
-      >
-        Daily Total
-      </Typography>
-
-      <div className="flex flex-col gap-2">
-        {/* Calories */}
-        <div className="flex items-center gap-3">
-          <span className="w-24 shrink-0 text-xs text-foreground-500">Calories</span>
-          <div className="flex-1">
-            {hasTargets && targetCalories ? (
-              <div className="relative h-2 overflow-hidden rounded-full bg-content3">
-                <div
-                  className={`h-full rounded-full transition-all ${isOverridden ? 'bg-warning' : 'bg-primary'}`}
-                  style={{width: `${calPct}%`}}
-                />
-              </div>
-            ) : null}
-          </div>
-          <span className="shrink-0 text-xs font-medium text-foreground">
-            {Math.round(totals.calories)} kcal
-            {targetCalories ? (
-              <span className="ml-1 text-foreground-400">
-                / {targetCalories} ({calPct}%)
-              </span>
-            ) : null}
-          </span>
+    <div className={`${containerClass} flex items-center justify-between`}>
+      {/* Day-vs-target column */}
+      <div className="min-w-0 flex-1">
+        <div className={`text-[10px] uppercase tracking-wider ${isOverridden ? 'text-warning' : 'text-success'}`}>
+          {label}
         </div>
-
-        {/* Protein */}
-        <div className="flex items-center gap-3">
-          <span className="w-24 shrink-0 text-xs text-foreground-500">Protein</span>
-          <div className="flex-1">
-            {hasTargets && targetProtein ? (
-              <div className="relative h-2 overflow-hidden rounded-full bg-content3">
-                <div
-                  className="h-full rounded-full bg-success transition-all"
-                  style={{width: `${protPct}%`}}
-                />
-              </div>
-            ) : null}
-          </div>
-          <span className="shrink-0 text-xs font-medium text-foreground">
-            {Math.round(totals.protein)}g
-            {targetProtein ? (
-              <span className="ml-1 text-foreground-400">
-                / {targetProtein}g ({protPct}%)
-              </span>
-            ) : null}
-          </span>
+        <div className="text-sm font-bold text-foreground">
+          {Math.round(totals.calories)} / {targetCalories ?? '—'} kcal
         </div>
-
-        {/* Carbs */}
-        <div className="flex items-center gap-3">
-          <span className="w-24 shrink-0 text-xs text-foreground-500">Carbs</span>
-          <div className="flex-1">
-            {hasTargets && targetCarbs ? (
-              <div className="relative h-2 overflow-hidden rounded-full bg-content3">
-                <div
-                  className="h-full rounded-full bg-warning transition-all"
-                  style={{width: `${carbsPct}%`}}
-                />
-              </div>
-            ) : null}
-          </div>
-          <span className="shrink-0 text-xs font-medium text-foreground">
-            {Math.round(totals.carbs)}g
-            {targetCarbs ? (
-              <span className="ml-1 text-foreground-400">
-                / {targetCarbs}g ({carbsPct}%)
-              </span>
-            ) : null}
-          </span>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-content3">
+          <div
+            className={`h-full rounded-full transition-all ${isOverridden ? 'bg-warning' : 'bg-success'}`}
+            style={{width: `${calPct}%`}}
+          />
         </div>
+      </div>
 
-        {/* Fat */}
-        <div className="flex items-center gap-3">
-          <span className="w-24 shrink-0 text-xs text-foreground-500">Fat</span>
-          <div className="flex-1">
-            {hasTargets && targetFat ? (
-              <div className="relative h-2 overflow-hidden rounded-full bg-content3">
-                <div
-                  className="h-full rounded-full bg-secondary transition-all"
-                  style={{width: `${fatPct}%`}}
-                />
-              </div>
-            ) : null}
-          </div>
-          <span className="shrink-0 text-xs font-medium text-foreground">
-            {Math.round(totals.fat)}g
-            {targetFat ? (
-              <span className="ml-1 text-foreground-400">
-                / {targetFat}g ({fatPct}%)
-              </span>
-            ) : null}
-          </span>
-        </div>
+      {/* Percentage */}
+      <div className={`ml-3 shrink-0 text-lg font-bold ${isOverridden ? 'text-warning' : 'text-primary'}`}>
+        {isOverridden ? '~' : `${calPct}%`}
       </div>
     </div>
   );
@@ -323,7 +234,7 @@ function SlotRows({slots, meals, onSlotChange}: SlotRowsProps) {
             key={slot}
           >
             <div className="flex items-center gap-3 px-3 py-2">
-              <span className="w-32 shrink-0 text-sm font-medium text-foreground">
+              <span className="w-[70px] shrink-0 text-[9px] uppercase tracking-wide leading-tight text-foreground-500">
                 {MEAL_SLOT_LABELS[slot] ?? slot}
               </span>
 
@@ -566,14 +477,14 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       {/* Mode toggle */}
       <div className="mb-3 flex gap-1 rounded-lg border border-divider bg-content1 p-1">
         <button
-          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'everyday' ? 'bg-primary text-primary-foreground' : 'text-foreground-500 hover:text-foreground'}`}
+          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'everyday' ? 'border border-primary bg-primary/10 text-primary font-semibold' : 'border border-transparent text-foreground-500 hover:text-foreground'}`}
           onClick={() => setMode('everyday')}
           type="button"
         >
           Every day
         </button>
         <button
-          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'customize' ? 'bg-primary text-primary-foreground' : 'text-foreground-500 hover:text-foreground'}`}
+          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'customize' ? 'border border-primary bg-primary/10 text-primary font-semibold' : 'border border-transparent text-foreground-500 hover:text-foreground'}`}
           onClick={() => setMode('customize')}
           type="button"
         >
@@ -646,10 +557,12 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       {/* Daily total bar */}
       <DayTotalBar
         isOverridden={selectedDayOverridden}
+        label={
+          mode === 'customize'
+            ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)} vs target`
+            : 'Daily total vs target'
+        }
         targetCalories={plan?.target_calories}
-        targetCarbs={plan?.target_carbs_g}
-        targetFat={plan?.target_fat_g}
-        targetProtein={plan?.target_protein_g}
         totals={totals}
       />
 

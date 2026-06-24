@@ -2,7 +2,7 @@
  * PlanHeader — inline-editable plan name + macro TARGET fields.
  *
  * Renders the plan name as a large editable input and number inputs for each
- * daily macro target (calories, protein, carbs, fat, fiber). Each field
+ * daily macro target (calories, protein, carbs, fat). Each field
  * autosaves on blur via PATCH.
  *
  * Cache: optimistic updateQueryData('getNutritionPlan', {id: planId}, …) +
@@ -33,7 +33,6 @@ const planHeaderSchema = z.object({
   protein_g: optionalNumber,
   carbs_g: optionalNumber,
   fats_g: optionalNumber,
-  fiber_g: optionalNumber,
 });
 
 type PlanHeaderFormValues = z.infer<typeof planHeaderSchema>;
@@ -45,7 +44,6 @@ function planToFormValues(plan: NutritionPlan): PlanHeaderFormValues {
     protein_g: plan.target_protein_g ?? undefined,
     carbs_g: plan.target_carbs_g ?? undefined,
     fats_g: plan.target_fat_g ?? undefined,
-    fiber_g: plan.target_fiber_g ?? undefined,
   };
 }
 
@@ -54,28 +52,26 @@ function planToFormValues(plan: NutritionPlan): PlanHeaderFormValues {
 // ---------------------------------------------------------------------------
 
 function TargetSummary({plan}: {plan: NutritionPlan}) {
-  const parts: string[] = [];
-  if (plan.target_calories != null) {
-    parts.push(`${plan.target_calories}`);
-  }
+  const kcalPart = plan.target_calories != null ? String(plan.target_calories) : '';
+
+  const macroParts: string[] = [];
   if (plan.target_protein_g != null) {
-    parts.push(`${plan.target_protein_g}P`);
+    macroParts.push(`${plan.target_protein_g}P`);
   }
   if (plan.target_carbs_g != null) {
-    parts.push(`${plan.target_carbs_g}C`);
+    macroParts.push(`${plan.target_carbs_g}C`);
   }
   if (plan.target_fat_g != null) {
-    parts.push(`${plan.target_fat_g}F`);
-  }
-  if (plan.target_fiber_g != null) {
-    parts.push(`${plan.target_fiber_g}Fb`);
+    macroParts.push(`${plan.target_fat_g}F`);
   }
 
-  if (parts.length === 0) {
+  const summary = [kcalPart, macroParts.join(' ')].filter(Boolean).join(' · ');
+
+  if (summary.length === 0) {
     return <span className="text-xs text-foreground-400">No targets set</span>;
   }
 
-  return <span className="text-xs font-medium text-foreground-500">Target {parts.join(' · ')}</span>;
+  return <span className="text-xs font-medium text-foreground-500">Target {summary}</span>;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +116,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
       target_protein_g?: number | null;
       target_carbs_g?: number | null;
       target_fat_g?: number | null;
-      target_fiber_g?: number | null;
     } = {};
 
     if (field === 'name') {
@@ -153,12 +148,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
         body.target_fat_g = next;
         changed = true;
       }
-    } else if (field === 'fiber_g') {
-      const next = values.fiber_g ?? null;
-      if (next !== (plan.target_fiber_g ?? null)) {
-        body.target_fiber_g = next;
-        changed = true;
-      }
     }
 
     if (!changed) {
@@ -182,9 +171,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
         }
         if ('target_fat_g' in body) {
           draft.data.target_fat_g = body.target_fat_g;
-        }
-        if ('target_fiber_g' in body) {
-          draft.data.target_fiber_g = body.target_fiber_g;
         }
       }),
     );
@@ -233,7 +219,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
       />
 
       {/* Macro targets — two-column grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <FormNumberField
           control={control}
           label="Calories (kcal)"
@@ -264,14 +250,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           minValue={0}
           name="fats_g"
           onFieldBlur={() => handleBlur('fats_g')}
-          step={0.1}
-        />
-        <FormNumberField
-          control={control}
-          label="Fiber (g)"
-          minValue={0}
-          name="fiber_g"
-          onFieldBlur={() => handleBlur('fiber_g')}
           step={0.1}
         />
       </div>

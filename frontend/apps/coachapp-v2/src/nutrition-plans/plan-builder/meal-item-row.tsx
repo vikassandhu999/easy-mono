@@ -63,7 +63,9 @@ function fmt(n: number | null | undefined): string {
   return String(Math.round(n));
 }
 
-function formatMacroContribution(nutrition: HydratedMealItem['nutrition']): string | null {
+function formatMacroContribution(
+  nutrition: HydratedMealItem['nutrition'],
+): {kcal: string; p: string; c: string; f: string} | null {
   if (!nutrition) {
     return null;
   }
@@ -75,7 +77,7 @@ function formatMacroContribution(nutrition: HydratedMealItem['nutrition']): stri
   if (kcal === '—') {
     return null;
   }
-  return `${kcal} · ${p}/${c}/${f}`;
+  return {kcal, p, c, f};
 }
 
 // ---------------------------------------------------------------------------
@@ -84,47 +86,39 @@ function formatMacroContribution(nutrition: HydratedMealItem['nutrition']): stri
 
 export interface MealItemRowProps {
   item: HydratedMealItem;
+  /** Tap opens the AmountSheet, where the item can be edited or removed. */
   onTap: () => void;
-  onDelete: () => void;
 }
 
-export function MealItemRow({item, onTap, onDelete}: MealItemRowProps) {
+export function MealItemRow({item, onTap}: MealItemRowProps) {
   const name = item.name ?? item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
   const amount = formatAmount(item);
-  const macroLine = formatMacroContribution(item.nutrition);
+  const macro = formatMacroContribution(item.nutrition);
 
   return (
-    <div className="flex items-center">
-      {/* 2px #6c8cff accent rule */}
-      <div
-        aria-hidden="true"
-        className="mr-2.5 w-0.5 self-stretch rounded-full"
-        style={{backgroundColor: '#6c8cff', minHeight: 36}}
-      />
-
-      {/* Main tap target */}
+    // 2px #6c8cff accent rule on the row itself; single 10px indent, content-driven height
+    <div
+      className="mt-[7px] flex items-start justify-between pl-2.5"
+      style={{borderLeft: '2px solid #6c8cff'}}
+    >
+      {/* Main tap target — name + amount stacked */}
       <button
-        className="min-w-0 flex-1 py-2 text-left transition-colors hover:opacity-80"
+        className="min-w-0 flex-1 py-[7px] text-left transition-colors hover:opacity-80"
         onClick={onTap}
-        style={{paddingLeft: 10}}
         type="button"
       >
-        <div className="flex items-baseline gap-1.5">
-          <span className="truncate text-sm font-medium text-foreground">{name}</span>
-          {amount ? <span className="shrink-0 text-xs text-foreground-500">{amount}</span> : null}
-        </div>
-        {macroLine ? <div className="mt-0.5 text-[11px] text-foreground-500">{macroLine}</div> : null}
+        <div className="truncate text-xs font-semibold text-foreground">{name}</div>
+        {amount ? <div className="mt-px text-[10px] text-foreground-500">{amount}</div> : null}
       </button>
 
-      {/* Delete */}
-      <button
-        aria-label={`Remove ${name}`}
-        className="ml-2 shrink-0 p-1.5 text-foreground-600 transition-colors hover:text-danger"
-        onClick={onDelete}
-        type="button"
-      >
-        ✕
-      </button>
+      {/* Right-aligned macro contribution column */}
+      {macro ? (
+        <div className="shrink-0 whitespace-nowrap py-[7px] pl-2 text-right text-[10px] text-foreground-500">
+          <span className="font-medium text-[#cde]">{macro.kcal}</span> kcal
+          <br />
+          {macro.p}P {macro.c}C {macro.f}F
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -44,6 +44,7 @@ defmodule EasyWeb.Coaches.MealJSON do
       recipe_id: meal_item.recipe_id,
       food_id: meal_item.food_id,
       nutrition_meal_id: meal_item.nutrition_meal_id,
+      nutrition: MacroCalc.for_meal_item(meal_item),
       inserted_at: meal_item.inserted_at,
       updated_at: meal_item.updated_at
     }

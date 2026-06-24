@@ -235,7 +235,18 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealItem do
           position: %Schema{type: :integer, minimum: 0},
           recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
           food_id: %Schema{type: :string, format: :uuid, nullable: true},
-          nutrition_meal_id: %Schema{type: :string, format: :uuid, nullable: true}
+          nutrition_meal_id: %Schema{type: :string, format: :uuid, nullable: true},
+          nutrition: %Schema{
+            type: :object,
+            nullable: true,
+            properties: %{
+              calories: %Schema{type: :number, nullable: true},
+              protein_g: %Schema{type: :number, nullable: true},
+              carbs_g: %Schema{type: :number, nullable: true},
+              fat_g: %Schema{type: :number, nullable: true},
+              fiber_g: %Schema{type: :number, nullable: true}
+            }
+          }
         },
         Shared.timestamps()
       ),

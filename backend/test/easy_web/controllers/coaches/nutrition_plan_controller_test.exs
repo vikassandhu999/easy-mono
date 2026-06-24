@@ -116,6 +116,120 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       conn = get(conn, "/v1/coach/nutrition-plans/#{other_plan.id}")
       assert json_response(conn, 404)
     end
+
+    test "meal items include per-item nutrition snapshot for food item", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:plan, creator: coach, business: business)
+      meal = insert(:meal, creator: coach, plan: plan, business: business)
+
+      food =
+        insert(:food,
+          creator: coach,
+          business: business,
+          calories_per_100g: 200.0,
+          protein_g_per_100g: 20.0,
+          carbs_g_per_100g: 30.0,
+          fat_g_per_100g: 5.0,
+          fiber_g_per_100g: 2.0
+        )
+
+      insert(:meal_item, meal: meal, business: business, food: food, weight_g: 150.0)
+
+      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      [meal_data] = data["meals"]
+      [item] = meal_data["meal_items"]
+      nutrition = item["nutrition"]
+
+      # weight_g=150 × per_100g macros / 100 → rounded to 1 decimal
+      assert nutrition["calories"] == 300.0
+      assert nutrition["protein_g"] == 30.0
+      assert nutrition["carbs_g"] == 45.0
+      assert nutrition["fat_g"] == 7.5
+      assert nutrition["fiber_g"] == 3.0
+    end
+
+    test "meal items include per-item nutrition snapshot for recipe item", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:plan, creator: coach, business: business)
+      meal = insert(:meal, creator: coach, plan: plan, business: business)
+
+      food =
+        insert(:food,
+          creator: coach,
+          business: business,
+          calories_per_100g: 100.0,
+          protein_g_per_100g: 10.0,
+          carbs_g_per_100g: 10.0,
+          fat_g_per_100g: 5.0,
+          fiber_g_per_100g: 1.0
+        )
+
+      # recipe: one ingredient 200g of the food above, cooked_weight_g: 400g
+      # recipe totals: cal=200, prot=20, carbs=20, fat=10, fiber=2
+      # item weight_g=200 → factor=200/400=0.5
+      # item nutrition: cal=100, prot=10, carbs=10, fat=5, fiber=1
+      recipe =
+        insert(:recipe,
+          creator: coach,
+          business: business,
+          cooked_weight_g: 400.0,
+          recipe_ingredients: [
+            build(:recipe_ingredient, food: food, weight_g: 200.0)
+          ]
+        )
+
+      insert(:meal_item, meal: meal, business: business, food: nil, recipe: recipe, weight_g: 200.0)
+
+      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      [meal_data] = data["meals"]
+      [item] = meal_data["meal_items"]
+      nutrition = item["nutrition"]
+
+      assert nutrition["calories"] == 100.0
+      assert nutrition["protein_g"] == 10.0
+    end
+
+    test "meal item nutrition is zero-valued map when food has no macros set", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:plan, creator: coach, business: business)
+      meal = insert(:meal, creator: coach, plan: plan, business: business)
+
+      food =
+        insert(:food,
+          creator: coach,
+          business: business,
+          calories_per_100g: 0.0,
+          protein_g_per_100g: 0.0,
+          carbs_g_per_100g: 0.0,
+          fat_g_per_100g: 0.0,
+          fiber_g_per_100g: 0.0
+        )
+
+      insert(:meal_item, meal: meal, business: business, food: food, weight_g: 100.0)
+
+      conn = get(conn, "/v1/coach/nutrition-plans/#{plan.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      [meal_data] = data["meals"]
+      [item] = meal_data["meal_items"]
+
+      # nutrition map present, all zeros — no crash
+      assert is_map(item["nutrition"])
+      assert item["nutrition"]["calories"] == 0.0
+    end
   end
 
   describe "PATCH /v1/coach/nutrition-plans/:id" do

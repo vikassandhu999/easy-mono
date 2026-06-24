@@ -359,6 +359,36 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert copied_workout_id == copied_workout["id"]
     end
 
+    test "assigns a template to a client with only client_id (no dates)", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:training_plan, creator: coach, business: business)
+
+      client_user = insert(:user, email: "assign-nodate-client-#{Ecto.UUID.generate()}@test.com")
+
+      client =
+        insert(:client,
+          email: "assign-nodate-client-#{Ecto.UUID.generate()}@test.com",
+          user: client_user,
+          creator: coach,
+          business: business
+        )
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/training-plans/#{plan.id}/assign", %{
+          "client_id" => client.id
+        })
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["client_id"] == client.id
+      assert data["start_date"] == nil
+      assert data["end_date"] == nil
+    end
+
     test "returns 404 for a client from another business", %{
       conn: conn,
       coach: coach,

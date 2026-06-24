@@ -67,15 +67,11 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanAssignRequest do
       additionalProperties: false,
       properties: %{
         client_id: %Schema{type: :string, format: :uuid},
-        start_date: %Schema{type: :string, format: :date},
-        end_date: %Schema{type: :string, format: :date}
+        start_date: %Schema{type: :string, format: :date, nullable: true},
+        end_date: %Schema{type: :string, format: :date, nullable: true}
       },
-      required: [:client_id, :start_date, :end_date],
-      example: %{
-        "client_id" => "0c6ee321-1fb1-41c7-93c2-b4e4649eb2eb",
-        "start_date" => "2026-06-01",
-        "end_date" => "2026-06-28"
-      }
+      required: [:client_id],
+      example: %{"client_id" => "0c6ee321-1fb1-41c7-93c2-b4e4649eb2eb"}
     },
     struct?: false
   )

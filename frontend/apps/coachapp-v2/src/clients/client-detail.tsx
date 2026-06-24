@@ -12,7 +12,6 @@ import {
   type ClientTrainingPlan,
   type NutritionPlan,
   type TrainingPlan,
-  type TrainingPlanAssignRequest,
   useAssignNutritionPlanMutation,
   useAssignTrainingPlanMutation,
   useListCoachClientNutritionPlansQuery,
@@ -66,16 +65,9 @@ function ClientPlans({clientId}: {clientId: string}) {
 
   const handleAssignTraining = async (plan: TrainingPlan) => {
     try {
-      // The assign UI collects only a client (no date pickers), matching the
-      // nutrition-plan assign flow. The backend accepts a body with just
-      // `client_id` (start/end default to null server-side — see
-      // Easy.TrainingPlans.assign_plan_to_client), but the generated
-      // TrainingPlanAssignRequest incorrectly marks start_date/end_date as
-      // required (an OpenApiSpex schema bug — flagged in the slice report).
-      // Cast to send the correct runtime payload without fabricating dates.
       await assignTraining({
         id: plan.id,
-        trainingPlanAssignRequest: {client_id: clientId} as TrainingPlanAssignRequest,
+        trainingPlanAssignRequest: {client_id: clientId},
       }).unwrap();
       toast.success(`"${plan.name}" assigned to client`);
       setShowTrainingPicker(false);

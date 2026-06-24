@@ -1105,9 +1105,7 @@
         "additionalProperties": false,
         "description": "Request body for assigning a template to a client.",
         "example": {
-          "client_id": "0c6ee321-1fb1-41c7-93c2-b4e4649eb2eb",
-          "end_date": "2026-06-28",
-          "start_date": "2026-06-01"
+          "client_id": "0c6ee321-1fb1-41c7-93c2-b4e4649eb2eb"
         },
         "properties": {
           "client_id": {
@@ -1118,21 +1116,21 @@
           },
           "end_date": {
             "format": "date",
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
           "start_date": {
             "format": "date",
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           }
         },
         "required": [
-          "client_id",
-          "start_date",
-          "end_date"
+          "client_id"
         ],
         "title": "TrainingPlanAssignRequest",
         "type": "object",

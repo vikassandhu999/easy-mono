@@ -2371,8 +2371,8 @@ export type NutritionDayScheduleRequest = {
 };
 export type TrainingPlanAssignRequest = {
   client_id: string;
-  end_date: string;
-  start_date: string;
+  end_date?: string | null;
+  start_date?: string | null;
 };
 export type ClientProfileFormTemplateListResponse = {
   data: ClientProfileFormTemplate[];

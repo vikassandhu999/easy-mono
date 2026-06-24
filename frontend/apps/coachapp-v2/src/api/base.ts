@@ -97,6 +97,7 @@ export const api = createApi({
     'NutritionPlan',
     'PlanItem',
     'Recipe',
+    'TrainingExercise',
     'TrainingPlan',
     'TrainingPlanItem',
     'Workout',

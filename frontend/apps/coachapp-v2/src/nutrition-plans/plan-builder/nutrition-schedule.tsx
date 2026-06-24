@@ -1,36 +1,45 @@
 /**
- * NutritionSchedule — "Every day" template view for a nutrition plan's schedule.
+ * NutritionSchedule — schedule editor for a nutrition plan.
  *
- * Renders 6 meal slots (breakfast → evening_snack) each as a HeroUI Select of
- * the plan's library meals + an "Unassigned" / clear option.
+ * Two modes, toggled via a segmented control:
  *
- * "Every day" semantics: assigning (or clearing) a slot writes that slot for
- * ALL 7 days. For each day the handler reads the current slot map from the
- * getNutritionPlanSchedule cache, applies the set/clear, then PUTs the whole
- * merged day map via setNutritionPlanDaySchedule. All 7 optimistic patches are
- * applied before any PUT; if any PUT fails, ALL day-patches are rolled back and
- * a toast.danger is shown.
+ * "Every day" (default): editing a slot writes that slot for ALL 7 days.
+ *   All 7 optimistic patches are applied before any PUTs; if any fails,
+ *   ALL patches roll back and a toast.danger is shown.
+ *   Monday's slot map is used as the canonical template display.
  *
- * Schedule response shape (as observed in the API):
+ * "Customize days": reveals day tabs (Mon–Sun). Editing a slot writes ONLY
+ *   the selected day — single optimistic patch + single PUT. Patch rolls back
+ *   on failure with toast.danger + refetch to reconcile.
+ *
+ * Overridden day: a day whose slot map (meal IDs per slot) differs from
+ *   monday's. See isDayOverridden(). Shown with amber accent in day tabs
+ *   and in the week overview grid.
+ *
+ * Week overview grid: read-only 6×7 (slots × days) compact projection.
+ *   Each cell shows the meal name truncated to 4 chars (or "–"). Tapping
+ *   a cell switches to Customize mode and selects that day for editing.
+ *
+ * Schedule response shape:
  *   NutritionScheduleResponse.data = {
  *     [day: DayKey]: {
  *       [meal_slot: MealSlot]: NutritionScheduleEntry  // { nutrition_meal_id, … }
  *     }
  *   }
- * A day key absent from data means that day has no slots assigned yet.
- * A slot key absent from data[day] means that slot is unassigned for that day.
- *
- * "Every day" display reads monday's slot map as the canonical template; all
- * other days are assumed to match (since every assignment writes all 7 days).
- *
- * Daily total bar: sums the nutrition of the assigned meals vs the plan's
- * target_calories / target_protein_g / target_carbs_g / target_fat_g.
  *
  * Cache: tag:false — optimistic updateQueryData('getNutritionPlanSchedule', {planId}, …)
  */
 
-import {MacroTotals, MEAL_SLOT_LABELS, MEAL_SLOTS, sumMacrosFromEntries} from '@easy/utils';
+import {
+  MacroTotals,
+  MEAL_SLOT_LABELS,
+  MEAL_SLOTS,
+  sumMacrosFromEntries,
+  WEEKDAY_SHORT_LABELS,
+  WEEKDAYS,
+} from '@easy/utils';
 import {ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
+import {useState} from 'react';
 import {useDispatch} from 'react-redux';
 
 import {api} from '@/api/base';
@@ -46,10 +55,19 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-const ORDERED_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-
 /** Sentinel key used for the "Unassigned" Select item. */
 const UNASSIGNED_KEY = '__unassigned__';
+
+// Day abbreviations for the week grid header (single char)
+const DAY_SINGLE: Record<string, string> = {
+  friday: 'F',
+  monday: 'M',
+  saturday: 'S',
+  sunday: 'S',
+  thursday: 'T',
+  tuesday: 'T',
+  wednesday: 'W',
+};
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -86,8 +104,7 @@ export function buildMergedDayMap(
 }
 
 /**
- * Compute the daily macro totals from the assigned meals for the template day
- * (monday slot map used as canonical "every day" state).
+ * Compute the daily macro totals from the assigned meals for a given day's slots.
  */
 export function computeDailyTotals(
   templateSlots: Record<string, NutritionScheduleEntry> | undefined,
@@ -118,6 +135,30 @@ export function computeDailyTotals(
   return sumMacrosFromEntries(assignedMeals);
 }
 
+/**
+ * A day is considered overridden if its assigned meal IDs differ from monday's
+ * (monday is the canonical template day for every-day mode).
+ */
+export function isDayOverridden(
+  daySlots: Record<string, NutritionScheduleEntry> | undefined,
+  mondaySlots: Record<string, NutritionScheduleEntry> | undefined,
+): boolean {
+  const dayKeys = Object.keys(daySlots ?? {}).sort();
+  const monKeys = Object.keys(mondaySlots ?? {}).sort();
+  if (dayKeys.join(',') !== monKeys.join(',')) {
+    return true;
+  }
+  for (const key of dayKeys) {
+    if (
+      (daySlots as Record<string, NutritionScheduleEntry>)[key].nutrition_meal_id !==
+      (mondaySlots as Record<string, NutritionScheduleEntry>)[key].nutrition_meal_id
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // Sub-component: DayTotalBar
 // ---------------------------------------------------------------------------
@@ -128,9 +169,10 @@ interface DayTotalBarProps {
   targetProtein: number | null | undefined;
   targetCarbs: number | null | undefined;
   targetFat: number | null | undefined;
+  isOverridden?: boolean;
 }
 
-function DayTotalBar({totals, targetCalories, targetProtein, targetCarbs, targetFat}: DayTotalBarProps) {
+function DayTotalBar({totals, targetCalories, targetProtein, targetCarbs, targetFat, isOverridden}: DayTotalBarProps) {
   const pct = (value: number, target: number | null | undefined): number => {
     if (!target || target <= 0) {
       return 0;
@@ -145,8 +187,12 @@ function DayTotalBar({totals, targetCalories, targetProtein, targetCarbs, target
 
   const hasTargets = Boolean(targetCalories || targetProtein || targetCarbs || targetFat);
 
+  const containerClass = isOverridden
+    ? 'rounded-lg border border-warning/40 bg-warning/5 px-4 py-3'
+    : 'rounded-lg border border-divider bg-content1 px-4 py-3';
+
   return (
-    <div className="rounded-lg border border-divider bg-content1 px-4 py-3">
+    <div className={containerClass}>
       <Typography
         className="mb-2 uppercase tracking-wider"
         color="muted"
@@ -164,7 +210,7 @@ function DayTotalBar({totals, targetCalories, targetProtein, targetCarbs, target
             {hasTargets && targetCalories ? (
               <div className="relative h-2 overflow-hidden rounded-full bg-content3">
                 <div
-                  className="h-full rounded-full bg-primary transition-all"
+                  className={`h-full rounded-full transition-all ${isOverridden ? 'bg-warning' : 'bg-primary'}`}
                   style={{width: `${calPct}%`}}
                 />
               </div>
@@ -254,6 +300,81 @@ function DayTotalBar({totals, targetCalories, targetProtein, targetCarbs, target
 }
 
 // ---------------------------------------------------------------------------
+// Sub-component: SlotRows (shared between both modes)
+// ---------------------------------------------------------------------------
+
+interface SlotRowsProps {
+  slots: Record<string, NutritionScheduleEntry> | undefined;
+  meals: NutritionMeal[];
+  onSlotChange: (slot: string, selectedKey: string) => void;
+}
+
+function SlotRows({slots, meals, onSlotChange}: SlotRowsProps) {
+  return (
+    <div className="flex flex-col gap-1 mb-4">
+      {MEAL_SLOTS.map((slot) => {
+        const entry = slots?.[slot];
+        const assignedMealId = entry?.nutrition_meal_id ?? null;
+
+        return (
+          <div
+            className="rounded-lg border border-divider bg-content1 overflow-hidden"
+            key={slot}
+          >
+            <div className="flex items-center gap-3 px-3 py-2">
+              <span className="w-32 shrink-0 text-sm font-medium text-foreground">
+                {MEAL_SLOT_LABELS[slot] ?? slot}
+              </span>
+
+              <div className="flex-1 min-w-0">
+                <Select
+                  aria-label={`Meal for ${MEAL_SLOT_LABELS[slot] ?? slot}`}
+                  onSelectionChange={(key) => {
+                    if (key) {
+                      onSlotChange(slot, key as string);
+                    }
+                  }}
+                  selectedKey={assignedMealId ?? UNASSIGNED_KEY}
+                  size="sm"
+                  variant="secondary"
+                >
+                  <Select.Trigger className="h-8 min-h-8 text-sm">
+                    <Select.Value />
+                    <Select.Indicator />
+                  </Select.Trigger>
+                  <Select.Popover>
+                    <ListBox>
+                      <ListBox.Item
+                        id={UNASSIGNED_KEY}
+                        key={UNASSIGNED_KEY}
+                        textValue="Unassigned"
+                      >
+                        <span className="text-foreground-500">Unassigned</span>
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                      {meals.map((meal) => (
+                        <ListBox.Item
+                          id={meal.id}
+                          key={meal.id}
+                          textValue={meal.name}
+                        >
+                          {meal.name}
+                          <ListBox.ItemIndicator />
+                        </ListBox.Item>
+                      ))}
+                    </ListBox>
+                  </Select.Popover>
+                </Select>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -267,6 +388,9 @@ interface NutritionScheduleProps {
 
 export function NutritionSchedule({planId}: NutritionScheduleProps) {
   const dispatch = useDispatch();
+
+  const [mode, setMode] = useState<'everyday' | 'customize'>('everyday');
+  const [selectedDay, setSelectedDay] = useState<string>('monday');
 
   const {
     data: scheduleData,
@@ -283,14 +407,17 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
   const meals = planData?.data.meals ?? [];
   const plan = planData?.data;
 
-  // Use monday's slot map as the canonical "every day" template display
+  // Monday is the canonical "every day" template
   const templateSlots = scheduleMap.monday;
 
-  const handleSlotChange = async (slot: string, selectedKey: string) => {
+  // ---------------------------------------------------------------------------
+  // Every-day handler: fan-out to all 7 days
+  // ---------------------------------------------------------------------------
+  const handleEveryDaySlotChange = async (slot: string, selectedKey: string) => {
     const mealId = selectedKey === UNASSIGNED_KEY ? null : selectedKey;
 
     // Apply optimistic cache patches for ALL 7 days before any PUTs.
-    const patches = ORDERED_DAYS.map((day) => {
+    const patches = WEEKDAYS.map((day) => {
       return dispatch(
         api.util.updateQueryData('getNutritionPlanSchedule', {planId}, (draft) => {
           if (!draft.data) {
@@ -299,7 +426,6 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
           const currentDaySlots = (draft.data[day] ?? {}) as Record<string, NutritionScheduleEntry>;
 
           if (mealId === null) {
-            // Clear this slot for the day
             const updated: Record<string, NutritionScheduleEntry> = {};
             for (const [s, entry] of Object.entries(currentDaySlots)) {
               if (s !== slot) {
@@ -308,7 +434,6 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
             }
             draft.data[day] = updated;
           } else {
-            // Set this slot for the day
             draft.data[day] = {
               ...currentDaySlots,
               [slot]: {
@@ -325,32 +450,77 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       );
     });
 
-    // Build the PUT body for each day from the PRE-patch schedule state,
-    // then issue all 7 PUTs concurrently.
-    const putRequests = ORDERED_DAYS.map((day) => {
-      // Read the current (pre-patch) slots for this day from scheduleMap.
+    const putRequests = WEEKDAYS.map((day) => {
       const currentDaySlots = scheduleMap[day];
       const mergedMap = buildMergedDayMap(currentDaySlots, slot, mealId);
-
-      return setNutritionPlanDaySchedule({
-        planId,
-        day,
-        nutritionDayScheduleRequest: mergedMap,
-      }).unwrap();
+      return setNutritionPlanDaySchedule({planId, day, nutritionDayScheduleRequest: mergedMap}).unwrap();
     });
 
     try {
       await Promise.all(putRequests);
     } catch {
-      // Roll back ALL day patches on any failure
       for (const patch of patches) {
         patch.undo();
       }
-      // A partial failure may have persisted some of the 7 PUTs server-side,
-      // so the rolled-back cache can diverge from the server — refetch to reconcile.
       refetchSchedule().catch(() => undefined);
       toast.danger("Couldn't update schedule");
     }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Customize handler: single-day PUT
+  // ---------------------------------------------------------------------------
+  const handleCustomizeDaySlotChange = async (day: string, slot: string, selectedKey: string) => {
+    const mealId = selectedKey === UNASSIGNED_KEY ? null : selectedKey;
+    const currentDaySlots = scheduleMap[day];
+
+    const patch = dispatch(
+      api.util.updateQueryData('getNutritionPlanSchedule', {planId}, (draft) => {
+        if (!draft.data) {
+          draft.data = {};
+        }
+        const existing = (draft.data[day] ?? {}) as Record<string, NutritionScheduleEntry>;
+
+        if (mealId === null) {
+          const updated: Record<string, NutritionScheduleEntry> = {};
+          for (const [s, entry] of Object.entries(existing)) {
+            if (s !== slot) {
+              updated[s] = entry;
+            }
+          }
+          draft.data[day] = updated;
+        } else {
+          draft.data[day] = {
+            ...existing,
+            [slot]: {
+              day_of_week: day,
+              id: `optimistic-${day}-${slot}`,
+              inserted_at: new Date().toISOString(),
+              meal_slot: slot,
+              nutrition_meal_id: mealId,
+              updated_at: new Date().toISOString(),
+            },
+          };
+        }
+      }),
+    );
+
+    const mergedMap = buildMergedDayMap(currentDaySlots, slot, mealId);
+    try {
+      await setNutritionPlanDaySchedule({planId, day, nutritionDayScheduleRequest: mergedMap}).unwrap();
+    } catch {
+      patch.undo();
+      refetchSchedule().catch(() => undefined);
+      toast.danger("Couldn't update schedule");
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Jump to day (from week grid tap)
+  // ---------------------------------------------------------------------------
+  const jumpToDay = (day: string) => {
+    setMode('customize');
+    setSelectedDay(day);
   };
 
   if (scheduleLoading || planLoading) {
@@ -372,7 +542,12 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
     );
   }
 
-  const totals = computeDailyTotals(templateSlots, meals);
+  const activeSlots = mode === 'customize' ? scheduleMap[selectedDay] : templateSlots;
+  const selectedDayOverridden = mode === 'customize' && isDayOverridden(scheduleMap[selectedDay], templateSlots);
+  const totals = computeDailyTotals(activeSlots, meals);
+
+  // Meal lookup for week grid cells
+  const mealById = new Map(meals.map((m) => [m.id, m]));
 
   return (
     <section className="border-t border-divider py-4">
@@ -386,86 +561,166 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
         >
           Schedule
         </Typography>
-        <Typography
-          color="muted"
-          type="body-xs"
+      </div>
+
+      {/* Mode toggle */}
+      <div className="mb-3 flex gap-1 rounded-lg border border-divider bg-content1 p-1">
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'everyday' ? 'bg-primary text-primary-foreground' : 'text-foreground-500 hover:text-foreground'}`}
+          onClick={() => setMode('everyday')}
+          type="button"
         >
           Every day
-        </Typography>
+        </button>
+        <button
+          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'customize' ? 'bg-primary text-primary-foreground' : 'text-foreground-500 hover:text-foreground'}`}
+          onClick={() => setMode('customize')}
+          type="button"
+        >
+          Customize days
+        </button>
       </div>
 
-      {/* 6 meal slot rows */}
-      <div className="flex flex-col gap-1 mb-4">
-        {MEAL_SLOTS.map((slot) => {
-          const entry = templateSlots?.[slot];
-          const assignedMealId = entry?.nutrition_meal_id ?? null;
+      {/* Day tabs (customize mode only) */}
+      {mode === 'customize' ? (
+        <div className="mb-3 flex gap-1 overflow-x-auto">
+          {WEEKDAYS.map((day) => {
+            const overridden = isDayOverridden(scheduleMap[day], templateSlots);
+            const isSelected = selectedDay === day;
+            const baseClass =
+              'flex-1 min-w-[40px] rounded-lg border px-1 py-1.5 text-center text-xs font-medium transition-colors';
+            const stateClass = isSelected
+              ? overridden
+                ? 'border-warning/60 bg-warning/10 text-warning font-bold'
+                : 'border-primary/60 bg-primary/10 text-primary font-bold'
+              : overridden
+                ? 'border-warning/30 text-warning/70 hover:border-warning/50'
+                : 'border-divider text-foreground-500 hover:text-foreground hover:border-divider';
 
-          return (
-            <div
-              className="rounded-lg border border-divider bg-content1 overflow-hidden"
-              key={slot}
-            >
-              <div className="flex items-center gap-3 px-3 py-2">
-                {/* Slot label */}
-                <span className="w-32 shrink-0 text-sm font-medium text-foreground">
-                  {MEAL_SLOT_LABELS[slot] ?? slot}
-                </span>
+            return (
+              <button
+                className={`${baseClass} ${stateClass}`}
+                key={day}
+                onClick={() => setSelectedDay(day)}
+                type="button"
+              >
+                {WEEKDAY_SHORT_LABELS[day]?.slice(0, 3) ?? day.slice(0, 3)}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
-                {/* Meal select */}
-                <div className="flex-1 min-w-0">
-                  <Select
-                    aria-label={`Meal for ${MEAL_SLOT_LABELS[slot] ?? slot}`}
-                    onSelectionChange={(key) => {
-                      if (key) {
-                        handleSlotChange(slot, key as string).catch(() => undefined);
-                      }
-                    }}
-                    selectedKey={assignedMealId ?? UNASSIGNED_KEY}
-                    size="sm"
-                    variant="secondary"
-                  >
-                    <Select.Trigger className="h-8 min-h-8 text-sm">
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        <ListBox.Item
-                          id={UNASSIGNED_KEY}
-                          key={UNASSIGNED_KEY}
-                          textValue="Unassigned"
-                        >
-                          <span className="text-foreground-500">Unassigned</span>
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                        {meals.map((meal) => (
-                          <ListBox.Item
-                            id={meal.id}
-                            key={meal.id}
-                            textValue={meal.name}
-                          >
-                            {meal.name}
-                            <ListBox.ItemIndicator />
-                          </ListBox.Item>
-                        ))}
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Day label + overridden badge (customize mode) */}
+      {mode === 'customize' ? (
+        <div className="mb-2 flex items-center gap-2">
+          <Typography
+            className="uppercase tracking-wider"
+            color="muted"
+            type="body-xs"
+            weight="semibold"
+          >
+            {selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}
+          </Typography>
+          {selectedDayOverridden ? (
+            <span className="rounded border border-warning/50 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+              Overridden
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Slot rows */}
+      <SlotRows
+        meals={meals}
+        onSlotChange={(slot, key) => {
+          if (mode === 'customize') {
+            handleCustomizeDaySlotChange(selectedDay, slot, key).catch(() => undefined);
+          } else {
+            handleEveryDaySlotChange(slot, key).catch(() => undefined);
+          }
+        }}
+        slots={activeSlots}
+      />
 
       {/* Daily total bar */}
       <DayTotalBar
+        isOverridden={selectedDayOverridden}
         targetCalories={plan?.target_calories}
         targetCarbs={plan?.target_carbs_g}
         targetFat={plan?.target_fat_g}
         targetProtein={plan?.target_protein_g}
         totals={totals}
       />
+
+      {/* Week overview grid */}
+      <div className="mt-4">
+        <div className="mb-1 flex items-center justify-between">
+          <Typography
+            className="uppercase tracking-wider"
+            color="muted"
+            type="body-xs"
+            weight="semibold"
+          >
+            Week overview
+          </Typography>
+          <span className="text-[10px] text-foreground-400">read-only · tap to edit a day</span>
+        </div>
+
+        <div className="overflow-hidden rounded-lg border border-divider">
+          {/* Grid: 8 cols — 1 label + 7 days */}
+          <div className="grid grid-cols-[48px_repeat(7,1fr)] text-[9px]">
+            {/* Header row */}
+            <div className="border-b border-r border-divider bg-content2 px-1 py-1.5" />
+            {WEEKDAYS.map((day) => {
+              const overridden = isDayOverridden(scheduleMap[day], templateSlots);
+              return (
+                <button
+                  className={`border-b border-r border-divider px-0.5 py-1.5 text-center font-semibold transition-colors last:border-r-0 hover:bg-content3 ${overridden ? 'bg-warning/10 text-warning' : 'bg-content2 text-foreground-500'}`}
+                  key={day}
+                  onClick={() => jumpToDay(day)}
+                  type="button"
+                >
+                  {DAY_SINGLE[day] ?? day[0].toUpperCase()}
+                </button>
+              );
+            })}
+
+            {/* Slot rows */}
+            {MEAL_SLOTS.map((slot, slotIdx) => {
+              const isLastRow = slotIdx === MEAL_SLOTS.length - 1;
+              const rowBorder = isLastRow ? '' : 'border-b border-divider';
+              return [
+                /* Slot label cell */
+                <div
+                  className={`${rowBorder} border-r border-divider bg-content2 px-1 py-1.5 text-left text-[9px] text-foreground-400`}
+                  key={`label-${slot}`}
+                >
+                  {(MEAL_SLOT_LABELS[slot] ?? slot).slice(0, 5)}
+                </div>,
+                /* Day cells */
+                ...WEEKDAYS.map((day) => {
+                  const overridden = isDayOverridden(scheduleMap[day], templateSlots);
+                  const entry = scheduleMap[day]?.[slot];
+                  const meal = entry ? mealById.get(entry.nutrition_meal_id) : undefined;
+                  const cellText = meal ? meal.name.slice(0, 4) : '–';
+                  return (
+                    <button
+                      className={`${rowBorder} border-r border-divider px-0.5 py-1.5 text-center last:border-r-0 transition-colors hover:bg-content3 ${overridden ? 'bg-warning/5 text-warning' : meal ? 'text-foreground-600' : 'text-foreground-300'}`}
+                      key={`${slot}-${day}`}
+                      onClick={() => jumpToDay(day)}
+                      title={meal?.name}
+                      type="button"
+                    >
+                      {cellText}
+                    </button>
+                  );
+                }),
+              ];
+            })}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

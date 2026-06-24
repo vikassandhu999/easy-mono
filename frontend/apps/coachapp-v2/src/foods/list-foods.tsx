@@ -9,7 +9,7 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useFoodsInfiniteQuery} from '@/api/foods';
+import {useCoachFoodsInfiniteQuery} from '@/api/nutrition-foods';
 
 import FoodListItem from './food-list-item';
 
@@ -19,7 +19,7 @@ export default function ListFoods() {
   const [search, setSearch] = useState('');
 
   const deferredSearch = useDeferredValue(search);
-  const list = useFoodsInfiniteQuery({search: deferredSearch});
+  const list = useCoachFoodsInfiniteQuery({search: deferredSearch});
   const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
 
   return (

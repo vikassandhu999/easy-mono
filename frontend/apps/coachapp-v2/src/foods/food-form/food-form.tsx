@@ -15,12 +15,12 @@ import {
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Plus, X} from 'lucide-react';
 import {useCallback, useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-import type {Food, FoodCreateRequest, FoodUpdateRequest} from '@/api/foods';
-import {omitUndefined, pickDefined, type ServingSize, toOptionalText} from '@/api/shared';
+import type {Food, FoodRequest, FoodUpdateRequest} from '@/api/generated';
+import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
 
 export const foodFormSchema = z.object({
   name: z.string().min(1, 'Enter food name'),
@@ -50,25 +50,18 @@ export const FOOD_FORM_DEFAULTS: FoodFormValues = {
   sugar_g: undefined,
 };
 
-const FOOD_MACRO_KEYS = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
-
-function toOptionalMacros(values: FoodFormValues): FoodCreateRequest['macros'] | undefined {
-  const macros = pickDefined(values, FOOD_MACRO_KEYS);
-  return Object.keys(macros).length > 0 ? macros : undefined;
-}
-
 export function foodToFormValues(food: Food): FoodFormValues {
   return {
     name: food.name,
     category: food.category ?? '',
     source: food.source ?? '',
     notes: food.notes ?? '',
-    calories_per_100g: food.macros.calories_per_100g,
-    protein_g: food.macros.protein_g,
-    carbs_g: food.macros.carbs_g,
-    fats_g: food.macros.fats_g,
-    fiber_g: food.macros.fiber_g,
-    sugar_g: food.macros.sugar_g,
+    calories_per_100g: food.calories_per_100g ?? undefined,
+    protein_g: food.protein_g_per_100g ?? undefined,
+    carbs_g: food.carbs_g_per_100g ?? undefined,
+    fats_g: food.fat_g_per_100g ?? undefined,
+    fiber_g: food.fiber_g_per_100g ?? undefined,
+    sugar_g: undefined,
   };
 }
 
@@ -80,20 +73,34 @@ export function foodToDuplicateFormValues(food: Food): FoodFormValues {
   };
 }
 
+function toFoodServingSizes(sizes: ServingSize[]): import('@/api/generated').FoodServingSize[] {
+  return sizes.map((s) => ({
+    unit: s.unit,
+    amount: s.amount ?? 1,
+    weight_g: s.weight_g ?? 0,
+    is_default: false,
+    label: s.unit,
+  }));
+}
+
 export function foodToCreateRequest({
   servingSizes,
   values,
 }: {
   servingSizes: ServingSize[];
   values: FoodFormValues;
-}): FoodCreateRequest {
+}): FoodRequest {
   return omitUndefined({
     name: values.name,
     category: toOptionalText(values.category),
-    source: toOptionalText(values.source),
+    source: toOptionalText(values.source) as FoodRequest['source'],
     notes: toOptionalText(values.notes),
-    macros: toOptionalMacros(values),
-    serving_sizes: servingSizes.length > 0 ? servingSizes : undefined,
+    calories_per_100g: values.calories_per_100g,
+    protein_g_per_100g: values.protein_g,
+    carbs_g_per_100g: values.carbs_g,
+    fat_g_per_100g: values.fats_g,
+    fiber_g_per_100g: values.fiber_g,
+    serving_sizes: servingSizes.length > 0 ? toFoodServingSizes(servingSizes) : undefined,
   });
 }
 
@@ -107,10 +114,14 @@ export function foodToUpdateRequest({
   return omitUndefined({
     name: values.name,
     category: toOptionalText(values.category),
-    source: toOptionalText(values.source),
+    source: toOptionalText(values.source) as FoodUpdateRequest['source'],
     notes: toOptionalText(values.notes),
-    macros: toOptionalMacros(values),
-    serving_sizes: servingSizes,
+    calories_per_100g: values.calories_per_100g,
+    protein_g_per_100g: values.protein_g,
+    carbs_g_per_100g: values.carbs_g,
+    fat_g_per_100g: values.fats_g,
+    fiber_g_per_100g: values.fiber_g,
+    serving_sizes: servingSizes.length > 0 ? toFoodServingSizes(servingSizes) : undefined,
   });
 }
 

@@ -4,7 +4,7 @@ import {useState} from 'react';
 import {Navigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
+import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/generated';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
 import FoodForm, {
@@ -18,12 +18,14 @@ import FoodForm, {
 // into local state (which the React Compiler lint rule forbids).
 function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
   const goBack = useGoBack(backPath);
-  const {data} = useGetFoodQuery(foodId);
+  const {data} = useGetFoodQuery({id: foodId});
   const [updateFood, {isLoading: isUpdating}] = useUpdateFoodMutation();
 
   const food = data!.data;
 
-  const [servingSizes, setServingSizes] = useState<ServingSize[]>(food.serving_sizes);
+  const [servingSizes, setServingSizes] = useState<ServingSize[]>(
+    food.serving_sizes.map((s) => ({unit: s.unit, amount: s.amount ?? null, weight_g: s.weight_g ?? null})),
+  );
 
   const form = useFoodForm({
     values: foodToFormValues(food),
@@ -31,7 +33,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
   const onSubmit = async (formData: FoodFormValues) => {
     try {
-      await updateFood({body: foodToUpdateRequest({servingSizes, values: formData}), id: foodId}).unwrap();
+      await updateFood({id: foodId, foodUpdateRequest: foodToUpdateRequest({servingSizes, values: formData})}).unwrap();
       goBack();
     } catch (err) {
       applyFormErrors(err, "Food wasn't updated. Check the details and try again", form.setError);
@@ -74,7 +76,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
 export default function EditFood() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetFoodQuery(id!);
+  const {data, isError, isLoading: isFetching} = useGetFoodQuery({id: id!});
   const backPath = `/library/foods/${id}`;
   const goBackOuter = useGoBack(backPath);
 

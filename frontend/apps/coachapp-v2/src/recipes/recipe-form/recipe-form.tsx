@@ -6,7 +6,7 @@ import {useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-import type {Food} from '@/api/foods';
+import type {Food} from '@/api/generated';
 import type {
   Recipe,
   RecipeCreateRequest,

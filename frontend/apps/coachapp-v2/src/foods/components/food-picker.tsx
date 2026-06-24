@@ -4,7 +4,8 @@ import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spin
 import {Apple} from 'lucide-react';
 import {useCallback, useDeferredValue, useMemo, useState} from 'react';
 
-import {type Food, useListFoodsQuery} from '@/api/foods';
+import type {Food} from '@/api/generated';
+import {useListFoodsQuery} from '@/api/generated';
 
 type FoodPickerProps = {
   onSelect: (food: Food) => void;
@@ -95,8 +96,8 @@ export default function FoodPicker({
             renderEmptyState={() => <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>}
           >
             {(food: Food) => {
-              const cal = food.macros.calories_per_100g;
-              const pro = food.macros.protein_g;
+              const cal = food.calories_per_100g;
+              const pro = food.protein_g_per_100g;
               return (
                 <ListBox.Item
                   id={food.id}

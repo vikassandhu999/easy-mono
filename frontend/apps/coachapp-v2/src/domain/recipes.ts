@@ -1,5 +1,4 @@
-import type {Food} from '@/api/foods';
-import type {Macros} from '@/api/shared';
+import type {Food} from '@/api/generated';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 
 const RECIPE_COMPUTED_MACRO_KEYS = [
@@ -14,7 +13,10 @@ const RECIPE_COMPUTED_MACRO_KEYS = [
 type RecipeComputedMacroKey = (typeof RECIPE_COMPUTED_MACRO_KEYS)[number];
 
 type IngredientLike = {
-  food: {macros: Macros};
+  food: Pick<
+    Food,
+    'calories_per_100g' | 'protein_g_per_100g' | 'carbs_g_per_100g' | 'fat_g_per_100g' | 'fiber_g_per_100g'
+  >;
   weight_g: null | number | string;
 };
 
@@ -65,9 +67,19 @@ export function computeRecipeNutritionFromIngredients({
     totalWeight += weightG;
     const factor = weightG / 100;
 
+    const {food} = ingredient;
+    const macroValues: Partial<Record<RecipeComputedMacroKey, number | null | undefined>> = {
+      calories_per_100g: food.calories_per_100g,
+      protein_g: food.protein_g_per_100g,
+      carbs_g: food.carbs_g_per_100g,
+      fats_g: food.fat_g_per_100g,
+      fiber_g: food.fiber_g_per_100g,
+      sugar_g: undefined,
+    };
+
     for (const key of RECIPE_COMPUTED_MACRO_KEYS) {
-      const macro = ingredient.food.macros[key];
-      if (macro === undefined) {
+      const macro = macroValues[key];
+      if (macro == null) {
         continue;
       }
       totals[key] = (totals[key] ?? 0) + macro * factor;

@@ -5,8 +5,8 @@ import {useLocation, useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Food} from '@/api/foods';
-import {useCreateFoodMutation} from '@/api/foods';
+import type {Food} from '@/api/generated';
+import {useCreateCoachFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
 import FoodForm, {
@@ -20,7 +20,7 @@ export default function CreateFood() {
   const navigate = useNavigate();
   const location = useLocation();
   const goBack = useGoBack(ROUTES.FOODS);
-  const [createFood, {isLoading}] = useCreateFoodMutation();
+  const [createFood, {isLoading}] = useCreateCoachFoodMutation();
 
   // Duplicate pre-fill: read food data passed via route state
   const duplicateFrom = (location.state as null | {duplicateFrom?: Food})?.duplicateFrom ?? null;
@@ -30,13 +30,19 @@ export default function CreateFood() {
     [duplicateFrom],
   );
 
-  const [servingSizes, setServingSizes] = useState<ServingSize[]>(duplicateFrom?.serving_sizes ?? []);
+  const [servingSizes, setServingSizes] = useState<ServingSize[]>(
+    (duplicateFrom?.serving_sizes ?? []).map((s) => ({
+      unit: s.unit,
+      amount: s.amount ?? null,
+      weight_g: s.weight_g ?? null,
+    })),
+  );
 
   const form = useFoodForm(duplicateFormValues ? {defaultValues: duplicateFormValues} : undefined);
 
   const onSubmit = async (data: FoodFormValues) => {
     try {
-      const result = await createFood(foodToCreateRequest({servingSizes, values: data})).unwrap();
+      const result = await createFood({foodRequest: foodToCreateRequest({servingSizes, values: data})}).unwrap();
       navigate(`/library/foods/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Food wasn't created. Check the details and try again", form.setError);

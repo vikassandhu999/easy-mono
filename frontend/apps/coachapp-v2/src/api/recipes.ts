@@ -1,6 +1,10 @@
 import {api} from '@/api/base';
-import {type Food, foodFromApi} from '@/api/foods';
+import type {Food} from '@/api/generated';
 import {ApiListResponse, ApiResponse, listTags, Macros, normalizeMacros, pageTags, ServingSize} from '@/api/shared';
+
+function foodFromApi(food: Food): Food {
+  return food;
+}
 
 const PAGE_SIZE = 20;
 

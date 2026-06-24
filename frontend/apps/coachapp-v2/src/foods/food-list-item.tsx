@@ -3,13 +3,15 @@ import {cn} from '@heroui/styles';
 import {HandPlatter} from 'lucide-react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import type {Food} from '@/api/foods';
+import type {Food} from '@/api/generated';
 
-const MACRO_DISPLAY: {key: string; label: string; unit: string}[] = [
+type NumericFoodKey = 'calories_per_100g' | 'protein_g_per_100g' | 'carbs_g_per_100g' | 'fat_g_per_100g';
+
+const MACRO_DISPLAY: {key: NumericFoodKey; label: string; unit: string}[] = [
   {key: 'calories_per_100g', label: 'Cal', unit: ''},
-  {key: 'protein_g', label: 'P', unit: 'g'},
-  {key: 'carbs_g', label: 'C', unit: 'g'},
-  {key: 'fats_g', label: 'F', unit: 'g'},
+  {key: 'protein_g_per_100g', label: 'P', unit: 'g'},
+  {key: 'carbs_g_per_100g', label: 'C', unit: 'g'},
+  {key: 'fat_g_per_100g', label: 'F', unit: 'g'},
 ];
 
 function getSubtitle(food: Food, isSystem: boolean): string {
@@ -26,7 +28,7 @@ function getSubtitle(food: Food, isSystem: boolean): string {
 }
 
 export default function FoodListItem({food}: {food: Food}) {
-  const hasMacros = Object.keys(food.macros).length > 0;
+  const hasMacros = MACRO_DISPLAY.some(({key}) => food[key] != null);
   const isSystem = food.source === 'system';
 
   return (
@@ -55,8 +57,8 @@ export default function FoodListItem({food}: {food: Food}) {
       {hasMacros && (
         <div className="ms-auto hidden shrink-0 gap-1.5 sm:flex">
           {MACRO_DISPLAY.map((macro) => {
-            const value = food.macros[macro.key];
-            if (value === undefined) {
+            const value = food[macro.key];
+            if (value == null) {
               return null;
             }
             return (

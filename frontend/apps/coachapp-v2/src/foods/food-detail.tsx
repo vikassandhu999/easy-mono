@@ -6,27 +6,30 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/foods';
+import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/generated';
 
-const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
-  calories_per_100g: {label: 'Calories', unit: ''},
-  protein_g: {label: 'Protein', unit: 'g'},
-  carbs_g: {label: 'Carbs', unit: 'g'},
-  fats_g: {label: 'Fats', unit: 'g'},
-  fiber_g: {label: 'Fiber', unit: 'g'},
-  sugar_g: {label: 'Sugar', unit: 'g'},
-};
+const MACRO_DISPLAY: {
+  label: string;
+  unit: string;
+  value: (food: import('@/api/generated').Food) => number | null | undefined;
+}[] = [
+  {label: 'Calories', unit: '', value: (f) => f.calories_per_100g},
+  {label: 'Protein', unit: 'g', value: (f) => f.protein_g_per_100g},
+  {label: 'Carbs', unit: 'g', value: (f) => f.carbs_g_per_100g},
+  {label: 'Fats', unit: 'g', value: (f) => f.fat_g_per_100g},
+  {label: 'Fiber', unit: 'g', value: (f) => f.fiber_g_per_100g},
+];
 
 export default function FoodDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.FOODS);
-  const {data, isError, isLoading} = useGetFoodQuery(id!);
+  const {data, isError, isLoading} = useGetFoodQuery({id: id!});
   const [deleteFood, {isLoading: isDeleting}] = useDeleteFoodMutation();
 
   const handleDelete = async () => {
     try {
-      await deleteFood(id!).unwrap();
+      await deleteFood({id: id!}).unwrap();
       navigate(ROUTES.FOODS, {replace: true});
     } catch {
       // Mutation error — could add a toast here in the future.
@@ -84,9 +87,12 @@ export default function FoodDetail() {
 
   const food = data.data;
   const isSystemFood = food.source === 'system';
-  const macroEntries = Object.entries(food.macros);
-  const knownMacros = macroEntries.filter(([key, value]) => key in MACRO_LABELS && value !== 0);
-  const unknownMacros = macroEntries.filter(([key, value]) => !(key in MACRO_LABELS) && value !== 0);
+  // `tags` is not yet in the generated schema — guard defensively
+  const tags: string[] = (food as unknown as {tags?: string[]}).tags ?? [];
+  const visibleMacros = MACRO_DISPLAY.filter(({value}) => {
+    const v = value(food);
+    return v != null && v !== 0;
+  });
 
   return (
     <Page>
@@ -209,7 +215,7 @@ export default function FoodDetail() {
             </div>
           </div>
 
-          {(knownMacros.length > 0 || unknownMacros.length > 0) && (
+          {visibleMacros.length > 0 && (
             <section className="border-t border-divider py-4">
               <Typography
                 className="mb-2"
@@ -220,35 +226,18 @@ export default function FoodDetail() {
                 Nutrition for 100 g
               </Typography>
               <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-                {knownMacros.map(([key, value]) => {
-                  const meta = MACRO_LABELS[key] as {
-                    label: string;
-                    unit: string;
-                  };
-                  return (
-                    <div key={key}>
-                      <Typography
-                        color="muted"
-                        type="body-xs"
-                      >
-                        {meta.label}
-                      </Typography>
-                      <Typography weight="medium">
-                        {value}
-                        {meta.unit}
-                      </Typography>
-                    </div>
-                  );
-                })}
-                {unknownMacros.map(([key, value]) => (
-                  <div key={key}>
+                {visibleMacros.map(({label, unit, value}) => (
+                  <div key={label}>
                     <Typography
                       color="muted"
                       type="body-xs"
                     >
-                      {key}
+                      {label}
                     </Typography>
-                    <Typography weight="medium">{value}</Typography>
+                    <Typography weight="medium">
+                      {value(food)}
+                      {unit}
+                    </Typography>
                   </div>
                 ))}
               </div>
@@ -288,7 +277,7 @@ export default function FoodDetail() {
             </section>
           )}
 
-          {food.tags.length > 0 && (
+          {tags.length > 0 && (
             <section className="border-t border-divider py-4">
               <Typography
                 className="mb-2"
@@ -299,7 +288,7 @@ export default function FoodDetail() {
                 Tags
               </Typography>
               <div className="flex flex-wrap gap-1.5">
-                {food.tags.map((tag) => (
+                {tags.map((tag) => (
                   <Chip
                     key={tag}
                     size="sm"

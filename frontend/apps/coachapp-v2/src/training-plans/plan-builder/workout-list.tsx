@@ -32,7 +32,7 @@ interface WorkoutListProps {
 
 export function WorkoutList({planId}: WorkoutListProps) {
   const dispatch = useDispatch();
-  const {data, isLoading, isError} = useListWorkoutsQuery({planId});
+  const {data, isLoading, isError} = useListWorkoutsQuery({planId, limit: 100});
   const [createWorkout, {isLoading: isCreating}] = useCreateWorkoutMutation();
 
   const {openId, toggle, collapseAll} = useWorkoutAccordion();
@@ -53,7 +53,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
       const newWorkout = result.data;
       // Optimistic append into cache
       dispatch(
-        api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
+        api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
           draft.data.push(newWorkout);
         }),
       );

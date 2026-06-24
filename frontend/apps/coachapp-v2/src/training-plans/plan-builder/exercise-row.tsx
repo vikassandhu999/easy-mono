@@ -8,6 +8,7 @@
  * "+ set" appends a default working set via PATCH planned_sets, then opens
  * the SetSheet on the new set.
  */
+import {toast} from '@heroui/react';
 import {useRef, useState} from 'react';
 import {useDispatch} from 'react-redux';
 
@@ -80,7 +81,7 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
       // Reflect the appended set in the listWorkouts cache immediately so the
       // new SetRow renders before any field edit.
       dispatch(
-        api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
+        api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
           for (const workout of draft.data) {
             const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
             if (idx !== -1) {
@@ -95,7 +96,7 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
       );
       openSet(newIndex);
     } catch {
-      // Add failed — don't open sheet
+      toast.danger("Couldn't add set");
     }
   };
 
@@ -113,18 +114,15 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
 
         {/* Set rows — full width within the group (no extra indent) */}
         {workoutExercise.planned_sets.map((set, i) => (
-          <div
+          <SetRow
             key={i}
             ref={(el) => {
-              setButtonRefs.current[i] = el?.querySelector('button') ?? null;
+              setButtonRefs.current[i] = el;
             }}
-          >
-            <SetRow
-              index={i}
-              onTap={() => openSet(i)}
-              set={set}
-            />
-          </div>
+            index={i}
+            onTap={() => openSet(i)}
+            set={set}
+          />
         ))}
 
         {/* + set */}

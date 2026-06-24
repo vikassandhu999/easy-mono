@@ -7,7 +7,7 @@
  * Width discipline: WorkoutCard adds no horizontal padding inside the body —
  * ExerciseRow already owns its own 10px indent + 2px accent rule.
  */
-import {Button, Dropdown, Label, Separator} from '@heroui/react';
+import {Button, Dropdown, Label, Separator, toast} from '@heroui/react';
 import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useDispatch} from 'react-redux';
@@ -74,7 +74,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     }
     setEditingName(false);
     const patch = dispatch(
-      api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
+      api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
         const w = draft.data.find((x) => x.id === workout.id);
         if (w) {
           w.name = trimmed;
@@ -89,6 +89,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     } catch {
       patch.undo();
       setNameValue(workout.name);
+      toast.danger("Couldn't save changes");
     }
   }, [nameValue, workout.id, workout.name, planId, updateWorkout, dispatch]);
 
@@ -112,7 +113,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     try {
       await deleteWorkout({id: workout.id}).unwrap();
       dispatch(
-        api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
+        api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
           const idx = draft.data.findIndex((x) => x.id === workout.id);
           if (idx !== -1) {
             draft.data.splice(idx, 1);
@@ -120,7 +121,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
         }),
       );
     } catch {
-      // Delete failed — no visible rollback needed, the card stays
+      toast.danger("Couldn't delete workout");
     }
   }, [workout.id, planId, deleteWorkout, dispatch]);
 
@@ -156,7 +157,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
           // Append the new element into the cache immediately
           const newElement = result.data;
           dispatch(
-            api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
+            api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
               const w = draft.data.find((x) => x.id === workout.id);
               if (w) {
                 w.workout_elements = [...w.workout_elements, newElement];
@@ -164,7 +165,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
             }),
           );
         } catch {
-          // Element creation failed for this exercise — continue with others
+          toast.danger("Couldn't add exercise");
         }
       }
     },

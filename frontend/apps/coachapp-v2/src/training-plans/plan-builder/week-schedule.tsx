@@ -6,7 +6,7 @@
  * An assigned day can be expanded (read-only) to show its exercises.
  * Cache: tag:false — we use optimistic updateQueryData after each PUT.
  */
-import {ListBox, Select, Spinner, Typography} from '@heroui/react';
+import {ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
 import {ChevronDown, ChevronRight} from 'lucide-react';
 import {useState} from 'react';
 import {useDispatch} from 'react-redux';
@@ -97,7 +97,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
     isLoading: scheduleLoading,
     isError: scheduleError,
   } = useGetTrainingPlanScheduleQuery({planId});
-  const {data: workoutsData, isLoading: workoutsLoading} = useListWorkoutsQuery({planId});
+  const {data: workoutsData, isLoading: workoutsLoading} = useListWorkoutsQuery({planId, limit: 100});
   const [setDaySchedule] = useSetTrainingPlanDayScheduleMutation();
 
   // Track which days are expanded (read-only exercise list)
@@ -156,8 +156,8 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
         trainingDayScheduleRequest: {training_workout_id: workoutId},
       }).unwrap();
     } catch {
-      // Roll back the optimistic change so the UI doesn't show a failed write as committed.
       patch.undo();
+      toast.danger("Couldn't save changes");
     }
   };
 

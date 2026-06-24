@@ -9,7 +9,7 @@
  * On failure the cache stays at the last confirmed server state (no explicit
  * rollback needed here since we aren't doing an optimistic pre-patch).
  */
-import {Spinner} from '@heroui/react';
+import {Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 
@@ -71,7 +71,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
     try {
       await updatePlan({id: plan.id, body}).unwrap();
     } catch {
-      // Cache stays at last server state; show no toast (silent failure for autosave).
+      toast.danger("Couldn't save changes");
     }
   };
 

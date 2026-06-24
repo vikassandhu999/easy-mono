@@ -1,3 +1,5 @@
+import {forwardRef} from 'react';
+
 import type {TrainingPlanPlannedSet} from '@/api/generated';
 
 interface SetRowProps {
@@ -35,9 +37,10 @@ function formatSetSummary(set: TrainingPlanPlannedSet): string {
   return parts.join(' · ');
 }
 
-export function SetRow({set, index, onTap}: SetRowProps) {
+export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow({set, index, onTap}, ref) {
   return (
     <button
+      ref={ref}
       className="flex w-full items-center justify-between py-1.5 text-left text-xs text-foreground-400 hover:text-foreground-300 transition-colors"
       onClick={onTap}
       type="button"
@@ -49,4 +52,4 @@ export function SetRow({set, index, onTap}: SetRowProps) {
       <span className="text-foreground-600 text-[10px]">···</span>
     </button>
   );
-}
+});

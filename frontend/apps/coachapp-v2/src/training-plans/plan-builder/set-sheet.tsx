@@ -9,7 +9,7 @@
  * updates the listWorkouts cache directly so set rows reflect the change
  * immediately (optimistic update pattern).
  */
-import {Popover} from '@heroui/react';
+import {Popover, toast} from '@heroui/react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useDispatch} from 'react-redux';
 
@@ -169,56 +169,80 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
     setNotes(s.notes ?? '');
   }, [setIndex, workoutExercise]);
 
-  // Debounced save — patches the workout element and updates the listWorkouts cache
+  // Debounced save — optimistic: write cache first, then PATCH, rollback on failure.
+  // pendingSaveRef holds the latest patch so flush-on-close can fire it immediately.
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPatchRef = useRef<Partial<TrainingPlanPlannedSet> | null>(null);
 
-  const scheduleSave = useCallback(
-    (patch: Partial<TrainingPlanPlannedSet>) => {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
+  const executeSave = useCallback(
+    async (patch: Partial<TrainingPlanPlannedSet>) => {
+      const updatedSet: TrainingPlanPlannedSet = {
+        ...workoutExercise.planned_sets[setIndex],
+        ...patch,
+      };
+      const updatedSets = workoutExercise.planned_sets.map((s, i) => (i === setIndex ? updatedSet : s));
+
+      // Optimistic write
+      const cachePatch = dispatch(
+        api.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+          for (const workout of draft.data) {
+            const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
+            if (idx !== -1) {
+              workout.workout_elements[idx] = {
+                ...workout.workout_elements[idx],
+                planned_sets: updatedSets,
+              };
+              break;
+            }
+          }
+        }),
+      );
+
+      try {
+        await updateElement({
+          id: workoutExercise.id,
+          trainingWorkoutExerciseRequest: {planned_sets: updatedSets},
+        }).unwrap();
+      } catch {
+        cachePatch.undo();
+        toast.danger("Couldn't save set");
       }
-      saveTimerRef.current = setTimeout(async () => {
-        const updatedSet: TrainingPlanPlannedSet = {
-          ...workoutExercise.planned_sets[setIndex],
-          ...patch,
-        };
-        const updatedSets = workoutExercise.planned_sets.map((s, i) => (i === setIndex ? updatedSet : s));
-
-        try {
-          await updateElement({
-            id: workoutExercise.id,
-            trainingWorkoutExerciseRequest: {planned_sets: updatedSets},
-          }).unwrap();
-
-          dispatch(
-            api.util.updateQueryData('listWorkouts', {planId}, (draft) => {
-              for (const workout of draft.data) {
-                const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
-                if (idx !== -1) {
-                  workout.workout_elements[idx] = {
-                    ...workout.workout_elements[idx],
-                    planned_sets: updatedSets,
-                  };
-                  break;
-                }
-              }
-            }),
-          );
-        } catch {
-          // Save failed silently; user can retry by editing again
-        }
-      }, 600);
     },
     [workoutExercise, setIndex, updateElement, dispatch, planId],
   );
 
-  useEffect(() => {
-    return () => {
+  const scheduleSave = useCallback(
+    (patch: Partial<TrainingPlanPlannedSet>) => {
+      pendingPatchRef.current = patch;
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
+      saveTimerRef.current = setTimeout(async () => {
+        saveTimerRef.current = null;
+        pendingPatchRef.current = null;
+        await executeSave(patch);
+      }, 600);
+    },
+    [executeSave],
+  );
+
+  // Flush any pending debounced save on close/unmount — prevents last edit being dropped
+  const flushPendingSave = useCallback(async () => {
+    if (saveTimerRef.current !== null && pendingPatchRef.current !== null) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+      const patch = pendingPatchRef.current;
+      pendingPatchRef.current = null;
+      await executeSave(patch);
+    }
+  }, [executeSave]);
+
+  useEffect(() => {
+    return () => {
+      // Fire on unmount — don't just discard
+      flushPendingSave().catch(() => undefined);
     };
-  }, []);
+  }, [flushPendingSave]);
 
   const handleSetType = (v: SetType) => {
     setSetType(v);
@@ -230,11 +254,11 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
   };
   const handleLoadValue = (v: string) => {
     setLoadValue(v);
-    scheduleSave({load_value: v || null, load_unit: loadUnit});
+    scheduleSave({load_value: v || null});
   };
   const handleLoadUnit = (v: LoadUnit) => {
     setLoadUnit(v);
-    scheduleSave({load_unit: v, load_value: loadValue || null});
+    scheduleSave({load_unit: v});
   };
   const handleRpe = (v: string) => {
     setRpe(v);
@@ -248,11 +272,11 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
   };
   const handleDistanceValue = (v: string) => {
     setDistanceValue(v);
-    scheduleSave({distance_value: v || null, distance_unit: distanceUnit});
+    scheduleSave({distance_value: v || null});
   };
   const handleDistanceUnit = (v: DistanceUnit) => {
     setDistanceUnit(v);
-    scheduleSave({distance_unit: v, distance_value: distanceValue || null});
+    scheduleSave({distance_unit: v});
   };
   const handleRestSeconds = (v: string) => {
     setRestSeconds(v);
@@ -310,7 +334,11 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
         </div>
         <button
           className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-          onClick={onClose}
+          onClick={() => {
+            flushPendingSave()
+              .then(onClose)
+              .catch(() => undefined);
+          }}
           type="button"
         >
           Done

@@ -29,7 +29,7 @@ import Library from '@/library/library';
 import CreateNutritionPlan from '@/nutrition-plans/create-nutrition-plan';
 import EditNutritionPlan from '@/nutrition-plans/edit-nutrition-plan';
 import ListNutritionPlans from '@/nutrition-plans/list-nutrition-plans';
-import NutritionPlanDetail from '@/nutrition-plans/nutrition-plan-detail';
+import NutritionPlanBuilder from '@/nutrition-plans/plan-builder/nutrition-plan-builder';
 import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
@@ -101,7 +101,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.EDIT_RECIPE, Component: EditRecipe},
       {path: ROUTES.NUTRITION_PLANS, Component: ListNutritionPlans},
       {path: ROUTES.CREATE_NUTRITION_PLAN, Component: CreateNutritionPlan},
-      {path: ROUTES.NUTRITION_PLAN_DETAIL, Component: NutritionPlanDetail},
+      {path: ROUTES.NUTRITION_PLAN_DETAIL, Component: NutritionPlanBuilder},
       {path: ROUTES.EDIT_NUTRITION_PLAN, Component: EditNutritionPlan},
       {path: ROUTES.TRAINING_PLANS, Component: ListTrainingPlans},
       {path: ROUTES.CREATE_TRAINING_PLAN, Component: CreateTrainingPlan},

@@ -11,8 +11,8 @@ import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {
   type NutritionPlan,
   useAssignNutritionPlanMutation,
-  useListClientNutritionPlansQuery,
-} from '@/api/nutritionPlans';
+  useListCoachClientNutritionPlansQuery,
+} from '@/api/generated';
 import {toNullableText} from '@/api/shared';
 import {type TrainingPlan, useAssignTrainingPlanMutation, useListClientTrainingPlansQuery} from '@/api/trainingPlans';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
@@ -42,7 +42,7 @@ function ClientPlans({clientId}: {clientId: string}) {
   const [assignNutrition, {isLoading: isAssigningNutrition}] = useAssignNutritionPlanMutation();
   const [assignTraining, {isLoading: isAssigningTraining}] = useAssignTrainingPlanMutation();
 
-  const {data: nutritionData, isLoading: isLoadingNutrition} = useListClientNutritionPlansQuery({clientId});
+  const {data: nutritionData, isLoading: isLoadingNutrition} = useListCoachClientNutritionPlansQuery({clientId});
   const {data: trainingData, isLoading: isLoadingTraining} = useListClientTrainingPlansQuery({clientId});
 
   const nutritionPlans = nutritionData?.data ?? [];
@@ -52,7 +52,7 @@ function ClientPlans({clientId}: {clientId: string}) {
 
   const handleAssignNutrition = async (plan: NutritionPlan) => {
     try {
-      await assignNutrition({id: plan.id, body: {client_id: clientId}}).unwrap();
+      await assignNutrition({id: plan.id, nutritionPlanAssignRequest: {client_id: clientId}}).unwrap();
       toast.success(`"${plan.name}" assigned to client`);
       setShowNutritionPicker(false);
     } catch {

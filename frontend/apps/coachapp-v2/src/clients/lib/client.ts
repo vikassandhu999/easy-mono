@@ -1,6 +1,8 @@
 import type {ClientStatus} from '@/api/clients';
-import type {NutritionPlanStatus} from '@/api/nutritionPlans';
+import type {NutritionPlan} from '@/api/generated';
 import type {TrainingPlanStatus} from '@/api/trainingPlans';
+
+type NutritionPlanStatus = NutritionPlan['status'];
 
 export type PlanStatus = NutritionPlanStatus | TrainingPlanStatus;
 

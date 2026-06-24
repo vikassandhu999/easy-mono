@@ -1,9 +1,8 @@
 import {formatWeekday, getCurrentWeekRange, getDateForWeekdayIndex} from '@easy/utils';
 import {Button, Separator, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
-
+import {useListCoachClientNutritionPlansQuery} from '@/api/generated';
 import {useGetCoachMealLogSummaryQuery} from '@/api/mealLogs';
-import {useListClientNutritionPlansQuery} from '@/api/nutritionPlans';
 import type {Macros} from '@/api/shared';
 import ClientNutritionDetail from '@/clients/components/client-nutrition-detail';
 import {
@@ -27,7 +26,7 @@ export default function ClientNutritionAdherence({
 }) {
   const {from, to} = useMemo(() => getCurrentWeekRange(), []);
   const {data, isLoading} = useGetCoachMealLogSummaryQuery({client_id: clientId, from, to});
-  const {data: plansData} = useListClientNutritionPlansQuery({clientId});
+  const {data: plansData} = useListCoachClientNutritionPlansQuery({clientId});
   const [selectedDate, setSelectedDate] = useState<null | string>(null);
 
   const summaries = useMemo(() => data?.data ?? [], [data]);

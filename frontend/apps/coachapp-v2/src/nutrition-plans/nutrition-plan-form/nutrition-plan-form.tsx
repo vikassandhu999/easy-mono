@@ -3,8 +3,8 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-import type {NutritionPlan, NutritionPlanCreateRequest, NutritionPlanUpdateRequest} from '@/api/nutritionPlans';
-import {omitUndefined, pickDefined, toOptionalText} from '@/api/shared';
+import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
+import {omitUndefined, toOptionalText} from '@/api/shared';
 
 const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();
 
@@ -13,6 +13,7 @@ export const nutritionPlanFormSchema = z.object({
   carbs_g: optionalNumber,
   description: z.string().optional(),
   fats_g: optionalNumber,
+  fiber_g: optionalNumber,
   name: z.string().min(1, 'Enter plan name'),
   protein_g: optionalNumber,
 });
@@ -24,41 +25,51 @@ export const NUTRITION_PLAN_FORM_DEFAULTS: NutritionPlanFormValues = {
   carbs_g: undefined,
   description: '',
   fats_g: undefined,
+  fiber_g: undefined,
   name: '',
   protein_g: undefined,
 };
 
-const NUTRITION_PLAN_MACRO_KEYS = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
-
-function toOptionalMacrosGoal(values: NutritionPlanFormValues): NutritionPlanCreateRequest['macros_goal'] | undefined {
-  const macros = pickDefined(values, NUTRITION_PLAN_MACRO_KEYS);
-  return Object.keys(macros).length > 0 ? macros : undefined;
+/**
+ * Map the form's macro fields (`calories`/`protein_g`/`carbs_g`/`fats_g`/`fiber_g`)
+ * onto the backend's `target_*` request fields. Undefined entries are stripped
+ * by `omitUndefined` on the caller side.
+ */
+function toTargetFields(values: NutritionPlanFormValues): Partial<NutritionPlanRequest> {
+  return {
+    target_calories: values.calories,
+    target_protein_g: values.protein_g,
+    target_carbs_g: values.carbs_g,
+    target_fat_g: values.fats_g,
+    target_fiber_g: values.fiber_g,
+  };
 }
 
 export function nutritionPlanToFormValues(plan: NutritionPlan): NutritionPlanFormValues {
   return {
-    calories: plan.macros_goal?.calories,
-    carbs_g: plan.macros_goal?.carbs_g,
+    calories: plan.target_calories ?? undefined,
+    carbs_g: plan.target_carbs_g ?? undefined,
     description: plan.description ?? '',
-    fats_g: plan.macros_goal?.fats_g,
+    fats_g: plan.target_fat_g ?? undefined,
+    fiber_g: plan.target_fiber_g ?? undefined,
     name: plan.name,
-    protein_g: plan.macros_goal?.protein_g,
+    protein_g: plan.target_protein_g ?? undefined,
   };
 }
 
-export function nutritionPlanToCreateRequest(values: NutritionPlanFormValues): NutritionPlanCreateRequest {
+export function nutritionPlanToCreateRequest(values: NutritionPlanFormValues): NutritionPlanRequest {
   return omitUndefined({
     name: values.name,
     description: toOptionalText(values.description),
-    macros_goal: toOptionalMacrosGoal(values),
+    ...toTargetFields(values),
   });
 }
 
-export function nutritionPlanToUpdateRequest(values: NutritionPlanFormValues): NutritionPlanUpdateRequest {
+export function nutritionPlanToUpdateRequest(values: NutritionPlanFormValues): NutritionPlanRequest {
   return omitUndefined({
     name: values.name,
     description: toOptionalText(values.description),
-    macros_goal: toOptionalMacrosGoal(values),
+    ...toTargetFields(values),
   });
 }
 
@@ -84,6 +95,7 @@ const MACRO_FIELDS = [
   {label: 'Protein, grams (optional)', name: 'protein_g', step: 0.1},
   {label: 'Carbs, grams (optional)', name: 'carbs_g', step: 0.1},
   {label: 'Fat, grams (optional)', name: 'fats_g', step: 0.1},
+  {label: 'Fiber, grams (optional)', name: 'fiber_g', step: 0.1},
 ] as const;
 
 export default function NutritionPlanForm({

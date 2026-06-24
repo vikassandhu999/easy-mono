@@ -34,8 +34,7 @@ import {useDispatch} from 'react-redux';
 
 import {api} from '@/api/base';
 import type {Food} from '@/api/foods';
-import {useCreateMealItemMutation, useUpdateMealItemMutation} from '@/api/meals';
-import {useGetNutritionPlanQuery} from '@/api/nutritionPlans';
+import {useCreateMealItemMutation, useGetNutritionPlanQuery, useUpdateMealItemMutation} from '@/api/generated';
 import type {Recipe} from '@/api/recipes';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
@@ -110,7 +109,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
   const dispatch = useDispatch();
   const [createMealItem] = useCreateMealItemMutation();
   const [updateMealItem] = useUpdateMealItemMutation();
-  const {refetch} = useGetNutritionPlanQuery(planId);
+  const {refetch} = useGetNutritionPlanQuery({id: planId});
 
   const isEditMode = existingItem !== undefined;
   const isFoodMode = food !== null && !recipe;
@@ -212,7 +211,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
       // Optimistic write into getNutritionPlan cache
       const cachePatch = dispatch(
-        api.util.updateQueryData('getNutritionPlan', planId, (draft) => {
+        api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
           const meals = draft.data.meals ?? [];
           for (const meal of meals) {
             const idx = meal.meal_items.findIndex((mi) => mi.id === existingItem.id);
@@ -231,14 +230,12 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
       try {
         await updateMealItem({
-          body: {
-            ...(patch.weight_g !== undefined && {weight_g: patch.weight_g ?? undefined}),
-            ...(patch.amount !== undefined && {amount: patch.amount ?? undefined}),
-            ...(patch.unit !== undefined && {unit: patch.unit ?? undefined}),
-          },
           id: existingItem.id,
-          mealId,
-          planId,
+          nutritionMealItemRequest: {
+            ...(patch.weight_g !== undefined && {weight_g: patch.weight_g}),
+            ...(patch.amount !== undefined && {amount: patch.amount}),
+            ...(patch.unit !== undefined && {unit: patch.unit}),
+          },
         }).unwrap();
         // Reconcile: server computes meal.nutrition snapshots
         refetch().catch(() => undefined);
@@ -247,7 +244,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         toast.danger("Couldn't save amount");
       }
     },
-    [existingItem, dispatch, planId, updateMealItem, mealId, refetch],
+    [existingItem, dispatch, planId, updateMealItem, refetch],
   );
 
   const scheduleSave = useCallback(
@@ -379,7 +376,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     };
 
     const cachePatch = dispatch(
-      api.util.updateQueryData('getNutritionPlan', planId, (draft) => {
+      api.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
         const meals = draft.data.meals ?? [];
         const meal = meals.find((m) => m.id === mealId);
         if (meal) {
@@ -390,9 +387,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
     try {
       await createMealItem({
-        body,
         mealId,
-        planId,
+        nutritionMealItemRequest: body,
       }).unwrap();
       // Reconcile: server assigns real id + computes nutrition snapshot
       refetch().catch(() => undefined);

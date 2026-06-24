@@ -4,7 +4,8 @@ import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spin
 import {ClipboardList} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 
-import {type NutritionPlan, useListNutritionPlansQuery} from '@/api/nutritionPlans';
+import type {NutritionPlan} from '@/api/generated';
+import {useCoachNutritionPlansInfiniteQuery} from '@/api/nutrition-plans-list';
 
 type NutritionPlanPickerProps = {
   autoFocus?: boolean;
@@ -12,7 +13,9 @@ type NutritionPlanPickerProps = {
   placeholder?: string;
 };
 
-// Backed by GET /v1/coach/nutrition_plans, which strictly returns templates only.
+// Backed by GET /v1/coach/nutrition-plans, which strictly returns templates only.
+// Uses the hand-written infinite query (the generated list hook does not model
+// the `search` param); we only consume the first page for the picker dropdown.
 export default function NutritionPlanPicker({
   autoFocus = false,
   onSelect,
@@ -22,14 +25,14 @@ export default function NutritionPlanPicker({
   const deferredSearch = useDeferredValue(searchInput);
   const skipQuery = deferredSearch.length < 1;
 
-  const {data, isFetching} = useListNutritionPlansQuery(
-    {search: deferredSearch, limit: 10},
+  const {data, isFetching} = useCoachNutritionPlansInfiniteQuery(
+    {search: deferredSearch},
     {
-      skip: !skipQuery,
+      skip: skipQuery,
     },
   );
 
-  const plans = data?.data ?? [];
+  const plans: NutritionPlan[] = data?.pages.flatMap((page) => page.data) ?? [];
 
   const handleChange = (key: Key | Key[] | null) => {
     if (key == null) {

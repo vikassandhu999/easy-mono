@@ -5,7 +5,7 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useCreateNutritionPlanMutation} from '@/api/nutritionPlans';
+import {useCreateNutritionPlanMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
@@ -22,7 +22,7 @@ export default function CreateNutritionPlan() {
 
   const onSubmit = async (data: NutritionPlanFormValues) => {
     try {
-      const result = await createPlan(nutritionPlanToCreateRequest(data)).unwrap();
+      const result = await createPlan({nutritionPlanRequest: nutritionPlanToCreateRequest(data)}).unwrap();
       navigate(`/library/nutrition-plans/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Nutrition plan wasn't created. Check the details and try again", form.setError);

@@ -25,6 +25,8 @@ export interface HydratedMealItem {
   id: string;
   food_id: string | null;
   recipe_id: string | null;
+  /** Server-provided display name for the item (backend now sets this). */
+  name?: string | null;
   food?: Food | null;
   recipe?: Recipe | null;
   weight_g: number | null;
@@ -88,7 +90,7 @@ export interface MealItemRowProps {
 }
 
 export function MealItemRow({item, onTap, onDelete}: MealItemRowProps) {
-  const name = item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
+  const name = item.name ?? item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
   const amount = formatAmount(item);
   const macroLine = formatMacroContribution(item.nutrition);
 

@@ -9,7 +9,10 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {type NutritionPlan, type NutritionPlanStatus, useNutritionPlansInfiniteQuery} from '@/api/nutritionPlans';
+import type {NutritionPlan} from '@/api/generated';
+import {useCoachNutritionPlansInfiniteQuery} from '@/api/nutrition-plans-list';
+
+type NutritionPlanStatus = NutritionPlan['status'];
 
 const STATUS_MAP: Record<NutritionPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},
@@ -33,7 +36,7 @@ export default function ListNutritionPlans() {
   const [search, setSearch] = useState('');
 
   const deferredSearch = useDeferredValue(search);
-  const list = useNutritionPlansInfiniteQuery({search: deferredSearch});
+  const list = useCoachNutritionPlansInfiniteQuery({search: deferredSearch});
   const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
 
   return (

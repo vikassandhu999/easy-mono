@@ -4,7 +4,7 @@ import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutritionPlans';
+import {useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
@@ -15,7 +15,7 @@ import NutritionPlanForm, {
 
 export default function EditNutritionPlan() {
   const {id} = useParams<{id: string}>();
-  const {data, isLoading: isFetching} = useGetNutritionPlanQuery(id!);
+  const {data, isLoading: isFetching} = useGetNutritionPlanQuery({id: id!});
   const [updatePlan, {isLoading: isUpdating}] = useUpdateNutritionPlanMutation();
 
   const plan = data?.data;
@@ -45,7 +45,7 @@ export default function EditNutritionPlan() {
 
   const onSubmit = async (formData: NutritionPlanFormValues) => {
     try {
-      await updatePlan({body: nutritionPlanToUpdateRequest(formData), id: id!}).unwrap();
+      await updatePlan({nutritionPlanRequest: nutritionPlanToUpdateRequest(formData), id: id!}).unwrap();
       goBack();
     } catch (err) {
       applyFormErrors(err, "Nutrition plan wasn't updated. Check the details and try again", form.setError);

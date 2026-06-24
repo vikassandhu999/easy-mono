@@ -1,5 +1,4 @@
-import {formatDateLong, formatIsoDate} from '@easy/utils';
-import {Button, Chip, Spinner, Typography} from '@heroui/react';
+import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
@@ -10,13 +9,9 @@ import {useGetTrainingPlanQuery} from '@/api/trainingPlans';
 import {PinnedWeekBar} from './pinned-week-bar';
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
+import {PlanHeader} from './plan-header';
 import {WeekSchedule} from './week-schedule';
 import {WorkoutList} from './workout-list';
-
-const STATUS_MAP = {
-  active: {color: 'success', label: 'Active'},
-  archived: {color: 'warning', label: 'Archived'},
-} as const;
 
 export default function TrainingPlanDetail() {
   const {id} = useParams<{id: string}>();
@@ -68,23 +63,21 @@ export default function TrainingPlanDetail() {
   }
 
   const plan = data.data;
-  const status = STATUS_MAP[plan?.status];
-  // Defensive: matches both `null` and `undefined` in case the backend omits the key.
-  const isTemplate = !plan.client_id;
 
   return (
     <Page>
-      <Page.Header className="py-4 max-w-4xl sm:py-8 items-center">
+      {/* Nav bar — back + plan actions */}
+      <Page.Header className="py-3 items-center">
         <Button
-          className={'-ml-3'}
+          className="-ml-3"
           onPress={goBack}
-          size={'sm'}
-          variant={'ghost'}
+          size="sm"
+          variant="ghost"
         >
           <ArrowLeft size={18} />
           Back
         </Button>
-        <div className={'flex gap-2'}>
+        <div className="flex gap-2">
           <PlanAddToClient plan={plan} />
           <PlanActions
             onDeleted={() => goBack()}
@@ -92,102 +85,27 @@ export default function TrainingPlanDetail() {
           />
         </div>
       </Page.Header>
-      <Page.Toolbar className={'flex items-center justify-between max-w-4xl'}>
-        <div>
-          <Typography type="h5">{plan.name}</Typography>
-          {plan.description && (
-            <Typography
-              className="mt-1"
-              color="muted"
-              type="body-sm"
-            >
-              {plan.description}
-            </Typography>
-          )}
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <Chip
-              color={status?.color}
-              size="sm"
-              variant="soft"
-            >
-              {status?.label}
-            </Chip>
-            {isTemplate ? (
-              <Chip
-                color="default"
-                size="sm"
-                variant="soft"
-              >
-                Template
-              </Chip>
-            ) : null}
-          </div>
-          {/* Start / End dates — hidden when the client banner already shows them */}
-          {!plan.client && (plan.start_date || plan.end_date) ? (
-            <div className="mt-2 flex gap-4">
-              <Typography
-                color="muted"
-                type="body-sm"
-              >
-                Start: {plan.start_date ? formatDateLong(plan.start_date) : '\u2014'}
-              </Typography>
-              <Typography
-                color="muted"
-                type="body-sm"
-              >
-                End: {plan.end_date ? formatDateLong(plan.end_date) : '\u2014'}
-              </Typography>
-            </div>
-          ) : null}
-        </div>
-      </Page.Toolbar>
-      <Page.Content className={'px-4 md:px-6 lg:px-8'}>
+
+      {/*
+       * Sticky week-bar must live outside any overflow-hidden ancestor.
+       * Page.Toolbar renders above Page.Content and does not clip overflow,
+       * so PinnedWeekBar's sticky top-0 works correctly here.
+       */}
+      <Page.Toolbar className="px-4 md:px-6 lg:px-8 pb-0">
         <PinnedWeekBar planId={plan.id} />
-        <div className="min-w-0 max-w-4xl overflow-hidden">
+      </Page.Toolbar>
+
+      <Page.Content className="px-4 md:px-6 lg:px-8">
+        {/* Layout A — single centred column, max-w-2xl */}
+        <div className="w-full max-w-2xl">
+          {/* 1. Plan header: inline name + dates → autosave */}
+          <PlanHeader plan={plan} />
+
+          {/* 2. Workout list: accordion, add workout, empty state */}
           <WorkoutList planId={plan.id} />
 
-          <section className="border-t border-divider py-4">
-            <Typography
-              className="mb-3 uppercase tracking-wider"
-              color="muted"
-              type="body-xs"
-              weight="semibold"
-            >
-              Week Schedule
-            </Typography>
-            <WeekSchedule planId={plan.id} />
-          </section>
-
-          <section className="border-t border-divider py-4">
-            <Typography
-              className="mb-2 uppercase tracking-wider"
-              color="muted"
-              type="body-xs"
-              weight="semibold"
-            >
-              Details
-            </Typography>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Typography
-                  color="muted"
-                  type="body-xs"
-                >
-                  Created
-                </Typography>
-                <Typography type="body-sm">{formatIsoDate(plan.inserted_at)}</Typography>
-              </div>
-              <div>
-                <Typography
-                  color="muted"
-                  type="body-xs"
-                >
-                  Last updated
-                </Typography>
-                <Typography type="body-sm">{formatIsoDate(plan.updated_at)}</Typography>
-              </div>
-            </div>
-          </section>
+          {/* 3. Week schedule: day → workout assignment */}
+          <WeekSchedule planId={plan.id} />
         </div>
       </Page.Content>
     </Page>

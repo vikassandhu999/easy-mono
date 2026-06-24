@@ -33,9 +33,8 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useDispatch} from 'react-redux';
 
 import {api} from '@/api/base';
-import type {Food} from '@/api/foods';
+import type {Food, Recipe} from '@/api/generated';
 import {useCreateMealItemMutation, useGetNutritionPlanQuery, useUpdateMealItemMutation} from '@/api/generated';
-import type {Recipe} from '@/api/recipes';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
 
@@ -184,13 +183,94 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
   // ── Live macro preview ───────────────────────────────────────────────────
 
   const macroPreview = useMemo(() => {
-    const macros = food?.macros ?? recipe?.macros ?? null;
-    if (!macros || resolvedWeightG == null) {
+    // ── Edit mode: linear scaling of the stored item.nutrition snapshot ──
+    // NutritionMealItem.nutrition is the server-computed absolute snapshot for
+    // the item's current weight_g. Macros are LINEAR in weight, so we can
+    // scale to the new weight without re-fetching the food record.
+    if (isEditMode && existingItem) {
+      const itemNutrition = existingItem.nutrition;
+      const baseWeightG = existingItem.weight_g;
+      if (!itemNutrition || baseWeightG == null || baseWeightG <= 0) {
+        // No baseline to scale from — show placeholder
+        return null;
+      }
+      const newWeightG = resolvedWeightG;
+      if (newWeightG == null || newWeightG <= 0) {
+        return null;
+      }
+      const scale = newWeightG / baseWeightG;
+      const scaled = {
+        calories: Math.round((itemNutrition.calories ?? 0) * scale),
+        protein: Math.round((itemNutrition.protein_g ?? 0) * scale * 10) / 10,
+        carbs: Math.round((itemNutrition.carbs_g ?? 0) * scale * 10) / 10,
+        fat: Math.round((itemNutrition.fat_g ?? 0) * scale * 10) / 10,
+      };
+      return `${scaled.calories} kcal · ${scaled.protein}P / ${scaled.carbs}C / ${scaled.fat}F`;
+    }
+
+    // ── Create mode: compute from generated Food / Recipe fields ──
+    if (food) {
+      // Food: top-level per-100g fields. Remap to the canonical keys that
+      // computeMacrosFromSnapshot's normalizeMacros expects.
+      if (resolvedWeightG == null) {
+        return null;
+      }
+      const snapshot = {
+        calories_per_100g: food.calories_per_100g ?? 0,
+        protein_g: food.protein_g_per_100g ?? 0,
+        carbs_g: food.carbs_g_per_100g ?? 0,
+        fats_g: food.fat_g_per_100g ?? 0,
+      };
+      const computed = computeMacrosFromSnapshot(snapshot, resolvedWeightG);
+      return formatMacroPreview(computed);
+    }
+
+    if (recipe) {
+      // Recipe: recipe.nutrition holds the TOTAL macros for the whole recipe
+      // (summed from ingredients at their recorded weights). We derive
+      // per-serving macros using recipe.servings_count (number of servings the
+      // total nutrition was computed for). If servings_count is unavailable but
+      // cooked_weight_g is set, fall back to a per-100g basis via
+      // computeMacrosFromSnapshot. If neither is available, no preview.
+      const n = recipe.nutrition;
+      if (!n) {
+        return null;
+      }
+      const servingsEntered = Number.parseFloat(servingCount);
+      if (Number.isNaN(servingsEntered) || servingsEntered <= 0) {
+        return null;
+      }
+
+      if ((recipe.servings_count ?? 0) > 0) {
+        // Scale total nutrition by (entered / total) servings
+        const scale = servingsEntered / (recipe.servings_count as number);
+        const computed = {
+          calories: (n.calories ?? 0) * scale,
+          protein: (n.protein_g ?? 0) * scale,
+          carbs: (n.carbs_g ?? 0) * scale,
+          fat: (n.fat_g ?? 0) * scale,
+        };
+        return formatMacroPreview(computed);
+      }
+
+      if (recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0 && resolvedWeightG != null) {
+        // No servings_count — use cooked_weight_g as the total basis.
+        // Derive per-100g values and use computeMacrosFromSnapshot.
+        const perHundred = {
+          calories_per_100g: ((n.calories ?? 0) / recipe.cooked_weight_g) * 100,
+          protein_g: ((n.protein_g ?? 0) / recipe.cooked_weight_g) * 100,
+          carbs_g: ((n.carbs_g ?? 0) / recipe.cooked_weight_g) * 100,
+          fats_g: ((n.fat_g ?? 0) / recipe.cooked_weight_g) * 100,
+        };
+        const computed = computeMacrosFromSnapshot(perHundred, resolvedWeightG);
+        return formatMacroPreview(computed);
+      }
+
       return null;
     }
-    const computed = computeMacrosFromSnapshot(macros, resolvedWeightG);
-    return formatMacroPreview(computed);
-  }, [food, recipe, resolvedWeightG]);
+
+    return null;
+  }, [food, recipe, resolvedWeightG, isEditMode, existingItem, servingCount]);
 
   // ── Save logic (edit mode) ───────────────────────────────────────────────
 
@@ -563,9 +643,14 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 export function AmountSheet(props: AmountSheetProps) {
   const {open, onClose, existingItem, planId, mealId} = props;
 
-  // Resolve food/recipe from props
-  const food = props.food ?? existingItem?.food ?? null;
-  const recipe = props.recipe ?? existingItem?.recipe ?? null;
+  // Resolve food/recipe from props.
+  // In edit mode, existingItem.food/recipe are legacy-typed (HydratedMealItem
+  // imports from @/api/foods|recipes) but structurally compatible for the fields
+  // we access here (name, serving_sizes). The macro preview in edit mode uses
+  // existingItem.nutrition (linear scaling) and never reads food.calories_per_100g,
+  // so the cast is safe.
+  const food = (props.food ?? (existingItem?.food as unknown as Food) ?? null) as Food | null;
+  const recipe = (props.recipe ?? (existingItem?.recipe as unknown as Recipe) ?? null) as Recipe | null;
 
   return (
     <KeyboardSheet

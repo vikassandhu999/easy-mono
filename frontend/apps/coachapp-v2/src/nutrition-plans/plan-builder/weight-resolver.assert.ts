@@ -32,7 +32,10 @@ function assertNullish(value: unknown, message: string): void {
 }
 
 function assertClose(actual: number | null, expected: number, message: string, tolerance = 0.001): void {
-  assert(actual !== null && Math.abs(actual - expected) < tolerance, `${message} (got ${actual}, expected ${expected})`);
+  assert(
+    actual !== null && Math.abs(actual - expected) < tolerance,
+    `${message} (got ${actual}, expected ${expected})`,
+  );
 }
 
 // ---------------------------------------------------------------------------

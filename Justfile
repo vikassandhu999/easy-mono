@@ -49,3 +49,8 @@ deploy:
 openapi:
     cd backend && mix openapi.spec.json --spec EasyWeb.ApiSpec --pretty=true ../frontend/openapi/easy-openapi.json
     node frontend/scripts/split-openapi.mjs
+
+# regenerate the OpenAPI spec + both app clients end-to-end
+gen-api: openapi
+    cd frontend && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
+    cd frontend && pnpm exec biome check --write apps/coachapp-v2/src/api/generated.ts apps/clientapp-v2/src/api/generated.ts

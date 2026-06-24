@@ -2,7 +2,7 @@ import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import type {TrainingTrainingExercise} from '@/api/generated';
+import type {TrainingExercise} from '@/api/generated';
 
 const MECHANICS_MAP: Record<string, {color: 'accent' | 'default' | 'warning'; label: string}> = {
   compound: {color: 'accent', label: 'Compound'},

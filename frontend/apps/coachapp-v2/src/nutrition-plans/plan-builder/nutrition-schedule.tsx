@@ -272,6 +272,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
     data: scheduleData,
     isLoading: scheduleLoading,
     isError: scheduleError,
+    refetch: refetchSchedule,
   } = useGetNutritionPlanScheduleQuery({planId});
 
   const {data: planData, isLoading: planLoading} = useGetNutritionPlanQuery({id: planId});
@@ -345,6 +346,9 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       for (const patch of patches) {
         patch.undo();
       }
+      // A partial failure may have persisted some of the 7 PUTs server-side,
+      // so the rolled-back cache can diverge from the server — refetch to reconcile.
+      refetchSchedule().catch(() => undefined);
       toast.danger("Couldn't update schedule");
     }
   };

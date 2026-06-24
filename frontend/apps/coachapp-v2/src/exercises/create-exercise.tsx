@@ -5,7 +5,8 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useCreateExerciseMutation, useListEquipmentQuery, useListMusclesQuery} from '@/api/exercises';
+import {useCreateExerciseMutation} from '@/api/exercises';
+import {useListEquipmentQuery, useListMusclesQuery} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import ExerciseForm, {
   type ExerciseFormValues,

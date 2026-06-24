@@ -1,11 +1,17 @@
 /**
- * NutritionPlanBuilder — entry shell for the nutrition plan builder.
+ * NutritionPlanBuilder — assembled nutrition plan builder screen.
  *
- * Loads the plan via the generated `useGetNutritionPlanQuery({id})` (id from the
- * route param) and renders the Page shell with loading/error guards. The actual
- * builder sections (PlanHeader / MealsList / Schedule) are filled in by later
- * tasks — see the TODO slots in Page.Content. Mirrors the training builder shell
- * in `src/training-plans/plan-builder/plan-builder.tsx`.
+ * Layout A — single centred column, max-w-2xl:
+ *   1. PlanHeader     — inline name + macro targets + autosave
+ *   2. PinnedScheduleBar — sticky top-0 schedule summary
+ *   3. MealsList      — meal cards + items + amount sheet
+ *   4. NutritionSchedule — weekly schedule
+ *
+ * PinnedScheduleBar is placed inside the Page.Content (overflow-y-auto) column
+ * so that its `sticky top-0` positioning works correctly — NOT inside an
+ * overflow-hidden container, and NOT in Page.Toolbar (mirrors training builder).
+ *
+ * Mirrors training `src/training-plans/plan-builder/plan-builder.tsx`.
  */
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
@@ -18,6 +24,9 @@ import {useGetNutritionPlanQuery} from '@/api/generated';
 
 import {MealsList} from './meals-list';
 import {NutritionSchedule} from './nutrition-schedule';
+import {PinnedScheduleBar} from './pinned-schedule-bar';
+import {NutritionPlanActions} from './plan-actions';
+import {PlanHeader} from './plan-header';
 
 export default function NutritionPlanBuilder() {
   const {id} = useParams<{id: string}>();
@@ -72,7 +81,7 @@ export default function NutritionPlanBuilder() {
 
   return (
     <Page>
-      {/* Nav bar — back */}
+      {/* Nav bar — back + plan actions */}
       <Page.Header className="py-3 items-center">
         <Button
           className="-ml-3"
@@ -83,20 +92,27 @@ export default function NutritionPlanBuilder() {
           <ArrowLeft size={18} />
           Back
         </Button>
+        <NutritionPlanActions
+          onDeleted={() => goBack()}
+          plan={plan}
+        />
       </Page.Header>
 
       <Page.Content className="px-4 md:px-6 lg:px-8">
-        {/* Single centred column, max-w-2xl */}
+        {/* Layout A — single centred column, max-w-2xl */}
         <div className="w-full max-w-2xl">
-          {/* Plan name placeholder until PlanHeader lands (Task 5). */}
-          <h1 className="text-lg font-semibold text-foreground">{plan.name}</h1>
+          {/* 1. Plan header: inline name + macro targets → autosave */}
+          <PlanHeader plan={plan} />
 
-          {/* TODO(Task 5): <PlanHeader plan={plan} /> — inline name/description/targets autosave */}
+          {/* 2. Pinned schedule bar: sticky below header.
+               Must live inside the overflow-y-auto Page.Content scroll ancestor
+               (not in an overflow-hidden box) for `sticky top-0` to work. */}
+          <PinnedScheduleBar planId={plan.id} />
 
-          {/* Meals library — meal cards + items + amount sheet */}
+          {/* 3. Meals library: meal cards + items + amount sheet */}
           <MealsList planId={plan.id} />
 
-          {/* Schedule — "Every day" template + day total bar (Task 6a) */}
+          {/* 4. Weekly schedule: day templates + schedule grid */}
           <NutritionSchedule planId={plan.id} />
         </div>
       </Page.Content>

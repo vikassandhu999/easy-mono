@@ -16,6 +16,8 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery} from '@/api/generated';
 
+import {MealsList} from './meals-list';
+
 export default function NutritionPlanBuilder() {
   const {id} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.NUTRITION_PLANS);
@@ -90,7 +92,8 @@ export default function NutritionPlanBuilder() {
 
           {/* TODO(Task 5): <PlanHeader plan={plan} /> — inline name/description/targets autosave */}
 
-          {/* TODO(Task 6): <MealsList planId={plan.id} /> — meals + meal items + AmountSheet */}
+          {/* Meals library — meal cards + items + amount sheet */}
+          <MealsList planId={plan.id} />
 
           {/* TODO(Task 7): <Schedule planId={plan.id} /> — day → meal-slot assignment */}
         </div>

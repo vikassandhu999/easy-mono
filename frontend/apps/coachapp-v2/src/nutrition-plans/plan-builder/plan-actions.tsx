@@ -58,7 +58,7 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
           <MoreHorizontal size={18} />
         </Button>
         <Dropdown.Popover>
-          <Dropdown.Menu onAction={(key) => console.log(`Selected: ${key}`)}>
+          <Dropdown.Menu>
             <Dropdown.Section>
               <Header>Actions</Header>
 

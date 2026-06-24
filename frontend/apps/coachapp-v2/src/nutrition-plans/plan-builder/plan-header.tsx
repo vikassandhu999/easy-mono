@@ -68,6 +68,9 @@ function TargetSummary({plan}: {plan: NutritionPlan}) {
   if (plan.target_fat_g != null) {
     parts.push(`${plan.target_fat_g}F`);
   }
+  if (plan.target_fiber_g != null) {
+    parts.push(`${plan.target_fiber_g}Fb`);
+  }
 
   if (parts.length === 0) {
     return <span className="text-xs text-foreground-400">No targets set</span>;

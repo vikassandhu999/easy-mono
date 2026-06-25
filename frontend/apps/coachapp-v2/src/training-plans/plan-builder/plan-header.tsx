@@ -1,22 +1,66 @@
 /**
- * PlanHeader — inline-editable plan name + start/end dates.
+ * PlanHeader — inline-editable plan name + (when assigned) start/end dates.
  *
- * Renders the plan name as a large editable input and two date inputs
- * (start/end). Each field autosaves on blur via PATCH.
+ * Start/end dates only apply once the plan is assigned to a client (plan.client_id
+ * set) — a library template has no assignment period, so the date fields are
+ * hidden for unassigned plans.
  *
- * Cache: generated endpoints are `tag:false`, so this optimistically merges
- * the changed field into the `getTrainingPlan({id: planId})` cache via
- * api.util.updateQueryData and rolls back with patch.undo() + toast.danger on
- * failure. Mirrors the pattern used in nutrition-plans/plan-builder/plan-header.
+ * Dates use the HeroUI v3 DateField (segmented date input). Values cross the
+ * string<->DateValue boundary via @internationalized/date.
+ *
+ * Cache: generated endpoints are `tag:false`, so each field optimistically merges
+ * into the `getTrainingPlan({id})` cache and rolls back with patch.undo() +
+ * toast.danger on failure. Mirrors nutrition-plans/plan-builder/plan-header.
  */
-import {Spinner, toast} from '@heroui/react';
+import {DateField, Label, Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {type DateValue, parseDate} from '@internationalized/date';
 import {useForm} from 'react-hook-form';
 import {FormTextField} from '@/@components/form-fields';
-import type {TrainingPlan, TrainingPlanUpdateRequest} from '@/api/generated';
+import type {TrainingPlan} from '@/api/generated';
 import {coachApi, useUpdateTrainingPlanMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 import {schema, type TrainingPlanFormValues, trainingPlanToFormValues} from '../training-plan-form/training-plan-form';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** ISO "YYYY-MM-DD" -> DateValue (or null). Tolerates a datetime by slicing. */
+function toDateValue(iso: string | null): DateValue | null {
+  if (!iso) {
+    return null;
+  }
+  try {
+    return parseDate(iso.slice(0, 10));
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: a single HeroUI DateField bound to a string date
+// ---------------------------------------------------------------------------
+
+interface PlanDateFieldProps {
+  label: string;
+  value: string | null;
+  onChange: (value: string | null) => void;
+}
+
+function PlanDateField({label, value, onChange}: PlanDateFieldProps) {
+  return (
+    <DateField
+      onChange={(date) => onChange(date ? date.toString() : null)}
+      value={toDateValue(value)}
+    >
+      <Label className="mb-1 block text-xs text-muted">{label}</Label>
+      <DateField.Group className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-within:border-accent">
+        <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
+      </DateField.Group>
+    </DateField>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -43,47 +87,40 @@ export function PlanHeader({plan}: PlanHeaderProps) {
 
   const {control, getValues} = form;
 
-  // Autosave a single field on blur. Ignores unchanged / invalid values.
-  const handleBlur = async (field: keyof TrainingPlanFormValues) => {
-    const isValid = await form.trigger(field);
+  // Autosave the plan name on blur (ignores unchanged / invalid values).
+  const handleNameBlur = async () => {
+    const isValid = await form.trigger('name');
     if (!isValid) {
       return;
     }
-
-    const values = getValues();
-    const current = values[field];
-
-    // Skip if the value hasn't changed from what the server last returned.
-    const serverValue = plan[field as keyof TrainingPlan] ?? '';
-    if (current === serverValue) {
+    const name = getValues().name;
+    if (name === (plan.name ?? '')) {
       return;
     }
-
-    const body: TrainingPlanUpdateRequest = {};
-
-    if (field === 'name') {
-      body.name = values.name;
-    } else if (field === 'start_date') {
-      body.start_date = values.start_date || null;
-    } else if (field === 'end_date') {
-      body.end_date = values.end_date || null;
-    }
-
-    // Optimistic update — merge the changed field into the cached plan.
     const patch = dispatch(
       coachApi.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
-        if (body.name !== undefined) {
-          draft.data.name = body.name;
-        }
-        if ('start_date' in body) {
-          draft.data.start_date = body.start_date ?? null;
-        }
-        if ('end_date' in body) {
-          draft.data.end_date = body.end_date ?? null;
-        }
+        draft.data.name = name;
       }),
     );
+    try {
+      await updatePlan({id: plan.id, trainingPlanUpdateRequest: {name}}).unwrap();
+    } catch {
+      patch.undo();
+      toast.danger("Couldn't save changes");
+    }
+  };
 
+  // Autosave a single date (optimistic). value is ISO "YYYY-MM-DD" or null.
+  const saveDate = async (field: 'start_date' | 'end_date', value: string | null) => {
+    if ((plan[field] ?? null) === value) {
+      return;
+    }
+    const body = field === 'start_date' ? {start_date: value} : {end_date: value};
+    const patch = dispatch(
+      coachApi.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
+        draft.data[field] = value;
+      }),
+    );
     try {
       await updatePlan({id: plan.id, trainingPlanUpdateRequest: body}).unwrap();
     } catch {
@@ -91,6 +128,8 @@ export function PlanHeader({plan}: PlanHeaderProps) {
       toast.danger("Couldn't save changes");
     }
   };
+
+  const isAssigned = plan.client_id !== null;
 
   return (
     <div className="w-full space-y-3 py-4">
@@ -117,31 +156,35 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           }}
           label=""
           name="name"
-          onFieldBlur={() => handleBlur('name')}
+          onFieldBlur={handleNameBlur}
         />
       </div>
 
-      {/* Start / end dates — side by side on narrow screens too */}
-      <div className="flex gap-3">
-        <div className="flex-1">
-          <FormTextField
-            control={control}
-            inputProps={{type: 'date'}}
-            label="Start date"
-            name="start_date"
-            onFieldBlur={() => handleBlur('start_date')}
-          />
+      {/* Start / end dates — only meaningful once the plan is assigned to a client */}
+      {isAssigned ? (
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <PlanDateField
+              label="Start date"
+              onChange={(v) => {
+                saveDate('start_date', v).catch(() => undefined);
+              }}
+              value={plan.start_date}
+            />
+          </div>
+          <div className="flex-1">
+            <PlanDateField
+              label="End date"
+              onChange={(v) => {
+                saveDate('end_date', v).catch(() => undefined);
+              }}
+              value={plan.end_date}
+            />
+          </div>
         </div>
-        <div className="flex-1">
-          <FormTextField
-            control={control}
-            inputProps={{type: 'date'}}
-            label="End date"
-            name="end_date"
-            onFieldBlur={() => handleBlur('end_date')}
-          />
-        </div>
-      </div>
+      ) : (
+        <p className="text-xs text-muted">Start and end dates apply once the plan is assigned to a client.</p>
+      )}
     </div>
   );
 }

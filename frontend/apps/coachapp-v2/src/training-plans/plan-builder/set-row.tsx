@@ -51,7 +51,8 @@ function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | nu
   }
 
   if (fields.showRpe && set.rpe !== null && set.rpe !== undefined) {
-    parts.push(`RPE ${set.rpe}`);
+    // rpe is a decimal at the API; Number() drops a trailing ".0" (10.0 -> 10, 8.5 -> 8.5).
+    parts.push(`RPE ${Number(set.rpe)}`);
   }
 
   return parts.join(' · ');

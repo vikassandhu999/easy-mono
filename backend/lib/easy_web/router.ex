@@ -161,6 +161,7 @@ defmodule EasyWeb.Router do
     put "/training-plans/:plan_id/schedule/:day", TrainingScheduleController, :update
 
     post "/training-workouts/:workout_id/exercises", WorkoutElementController, :create
+    put "/training-workouts/:workout_id/exercises/reorder", WorkoutElementController, :reorder
     patch "/training-workout-exercises/:id", WorkoutElementController, :update
     delete "/training-workout-exercises/:id", WorkoutElementController, :delete
 

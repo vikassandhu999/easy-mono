@@ -14,7 +14,9 @@ import type {TrainingExercise, TrainingPlanWorkout} from '@/api/generated';
 import {
   coachApi,
   useCreateWorkoutElementMutation,
+  useDeleteWorkoutElementMutation,
   useDeleteWorkoutMutation,
+  useReorderWorkoutElementsMutation,
   useUpdateWorkoutMutation,
 } from '@/api/generated';
 import {useAppDispatch} from '@/store';
@@ -42,6 +44,8 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
   const [updateWorkout] = useUpdateWorkoutMutation();
   const [deleteWorkout] = useDeleteWorkoutMutation();
   const [createWorkoutElement] = useCreateWorkoutElementMutation();
+  const [deleteWorkoutElement] = useDeleteWorkoutElementMutation();
+  const [reorderWorkoutElements] = useReorderWorkoutElementsMutation();
 
   // Inline rename state
   const [editingName, setEditingName] = useState(false);
@@ -176,6 +180,70 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
   );
 
   // ---------------------------------------------------------------------------
+  // Remove / reorder exercises
+  // ---------------------------------------------------------------------------
+
+  const handleRemoveExercise = useCallback(
+    async (elementId: string) => {
+      const patch = dispatch(
+        coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+          const w = draft.data.find((x) => x.id === workout.id);
+          if (w) {
+            w.workout_elements = w.workout_elements.filter((e) => e.id !== elementId);
+          }
+        }),
+      );
+      try {
+        await deleteWorkoutElement({id: elementId}).unwrap();
+      } catch {
+        patch.undo();
+        toast.danger("Couldn't remove exercise");
+      }
+    },
+    [workout.id, planId, deleteWorkoutElement, dispatch],
+  );
+
+  const handleMoveExercise = useCallback(
+    async (index: number, direction: -1 | 1) => {
+      const elements = workout.workout_elements;
+      const target = index + direction;
+      const movedId = elements[index]?.id;
+      if (target < 0 || target >= elements.length || movedId === undefined) {
+        return;
+      }
+      // Move the element to its new adjacent slot; the resulting id order is the
+      // new exercise order.
+      const elementIds = elements.map((e) => e.id);
+      elementIds.splice(index, 1);
+      elementIds.splice(target, 0, movedId);
+
+      const patch = dispatch(
+        coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+          const w = draft.data.find((x) => x.id === workout.id);
+          if (!w) {
+            return;
+          }
+          const byId = new Map(w.workout_elements.map((e) => [e.id, e]));
+          w.workout_elements = elementIds.flatMap((id, i) => {
+            const el = byId.get(id);
+            return el ? [{...el, position: i}] : [];
+          });
+        }),
+      );
+      try {
+        await reorderWorkoutElements({
+          workoutId: workout.id,
+          trainingWorkoutReorderRequest: {element_ids: elementIds},
+        }).unwrap();
+      } catch {
+        patch.undo();
+        toast.danger("Couldn't reorder exercises");
+      }
+    },
+    [workout.id, workout.workout_elements, planId, reorderWorkoutElements, dispatch],
+  );
+
+  // ---------------------------------------------------------------------------
   // Derived
   // ---------------------------------------------------------------------------
 
@@ -304,9 +372,16 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
               Add exercises
             </Typography>
           ) : (
-            workout.workout_elements.map((element) => (
+            workout.workout_elements.map((element, index) => (
               <ExerciseRow
                 key={element.id}
+                index={index}
+                isFirst={index === 0}
+                isLast={index === workout.workout_elements.length - 1}
+                onMove={handleMoveExercise}
+                onRemove={() => {
+                  handleRemoveExercise(element.id).catch(() => undefined);
+                }}
                 planId={planId}
                 workoutExercise={element}
               />

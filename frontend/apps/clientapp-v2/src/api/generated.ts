@@ -1,50 +1,41 @@
-import { api } from "./base";
+import {api} from './base';
+
 const injectedRtkApi = api.injectEndpoints({
   endpoints: (build) => ({
     logMeal: build.mutation<LogMealApiResponse, LogMealApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-food-log-entries/log-meal`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.foodLogEntryRequest,
       }),
     }),
-    submitClientFormAssignment: build.mutation<
-      SubmitClientFormAssignmentApiResponse,
-      SubmitClientFormAssignmentApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/v1/client/form-assignments/${queryArg.id}/submit`,
-        method: "POST",
-        body: queryArg.clientProfileFormSubmissionRequest,
-      }),
-    }),
-    deleteFoodLogEntry: build.mutation<
-      DeleteFoodLogEntryApiResponse,
-      DeleteFoodLogEntryApiArg
-    >({
+    submitClientFormAssignment: build.mutation<SubmitClientFormAssignmentApiResponse, SubmitClientFormAssignmentApiArg>(
+      {
+        query: (queryArg) => ({
+          url: `/v1/client/form-assignments/${queryArg.id}/submit`,
+          method: 'POST',
+          body: queryArg.clientProfileFormSubmissionRequest,
+        }),
+      },
+    ),
+    deleteFoodLogEntry: build.mutation<DeleteFoodLogEntryApiResponse, DeleteFoodLogEntryApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-food-log-entries/${queryArg.id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
     }),
-    updateFoodLogEntry: build.mutation<
-      UpdateFoodLogEntryApiResponse,
-      UpdateFoodLogEntryApiArg
-    >({
+    updateFoodLogEntry: build.mutation<UpdateFoodLogEntryApiResponse, UpdateFoodLogEntryApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-food-log-entries/${queryArg.id}`,
-        method: "PATCH",
+        method: 'PATCH',
         body: queryArg.foodLogEntryRequest,
       }),
     }),
-    listClientTrainingSessions: build.query<
-      ListClientTrainingSessionsApiResponse,
-      ListClientTrainingSessionsApiArg
-    >({
+    listClientTrainingSessions: build.query<ListClientTrainingSessionsApiResponse, ListClientTrainingSessionsApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-sessions`,
         params: {
-          from: queryArg["from"],
+          from: queryArg['from'],
           to: queryArg.to,
         },
       }),
@@ -55,44 +46,29 @@ const injectedRtkApi = api.injectEndpoints({
     >({
       query: (queryArg) => ({
         url: `/v1/client/training-sessions`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.trainingSessionRequest,
       }),
     }),
-    listClientThreads: build.query<
-      ListClientThreadsApiResponse,
-      ListClientThreadsApiArg
-    >({
-      query: () => ({ url: `/v1/client/threads` }),
+    listClientThreads: build.query<ListClientThreadsApiResponse, ListClientThreadsApiArg>({
+      query: () => ({url: `/v1/client/threads`}),
     }),
-    createClientThread: build.mutation<
-      CreateClientThreadApiResponse,
-      CreateClientThreadApiArg
-    >({
+    createClientThread: build.mutation<CreateClientThreadApiResponse, CreateClientThreadApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/threads`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.clientThreadCreateRequest,
       }),
     }),
-    showInvitation: build.query<
-      ShowInvitationApiResponse,
-      ShowInvitationApiArg
-    >({
-      query: (queryArg) => ({ url: `/v1/auth/invitations/${queryArg.token}` }),
+    showInvitation: build.query<ShowInvitationApiResponse, ShowInvitationApiArg>({
+      query: (queryArg) => ({url: `/v1/auth/invitations/${queryArg.token}`}),
     }),
-    getClientExercise: build.query<
-      GetClientExerciseApiResponse,
-      GetClientExerciseApiArg
-    >({
+    getClientExercise: build.query<GetClientExerciseApiResponse, GetClientExerciseApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-exercises/${queryArg.id}`,
       }),
     }),
-    listClientNutritionPlans: build.query<
-      ListClientNutritionPlansApiResponse,
-      ListClientNutritionPlansApiArg
-    >({
+    listClientNutritionPlans: build.query<ListClientNutritionPlansApiResponse, ListClientNutritionPlansApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-plans`,
         params: {
@@ -102,20 +78,14 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
-    createAuthToken: build.mutation<
-      CreateAuthTokenApiResponse,
-      CreateAuthTokenApiArg
-    >({
+    createAuthToken: build.mutation<CreateAuthTokenApiResponse, CreateAuthTokenApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/token`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.tokenRequest,
       }),
     }),
-    listClientRecipes: build.query<
-      ListClientRecipesApiResponse,
-      ListClientRecipesApiArg
-    >({
+    listClientRecipes: build.query<ListClientRecipesApiResponse, ListClientRecipesApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-recipes`,
         params: {
@@ -125,10 +95,7 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
-    getClientTrainingPlanToday: build.query<
-      GetClientTrainingPlanTodayApiResponse,
-      GetClientTrainingPlanTodayApiArg
-    >({
+    getClientTrainingPlanToday: build.query<GetClientTrainingPlanTodayApiResponse, GetClientTrainingPlanTodayApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-plans/today`,
         params: {
@@ -139,52 +106,37 @@ const injectedRtkApi = api.injectEndpoints({
     logDay: build.mutation<LogDayApiResponse, LogDayApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-food-log-entries/log-day`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.foodLogEntryRequest,
       }),
     }),
     acceptInvite: build.mutation<AcceptInviteApiResponse, AcceptInviteApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/accept-invite`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.acceptInviteRequest,
       }),
     }),
-    getClientThread: build.query<
-      GetClientThreadApiResponse,
-      GetClientThreadApiArg
-    >({
-      query: (queryArg) => ({ url: `/v1/client/threads/${queryArg.id}` }),
+    getClientThread: build.query<GetClientThreadApiResponse, GetClientThreadApiArg>({
+      query: (queryArg) => ({url: `/v1/client/threads/${queryArg.id}`}),
     }),
-    listClientFormAssignments: build.query<
-      ListClientFormAssignmentsApiResponse,
-      ListClientFormAssignmentsApiArg
-    >({
-      query: () => ({ url: `/v1/client/form-assignments` }),
+    listClientFormAssignments: build.query<ListClientFormAssignmentsApiResponse, ListClientFormAssignmentsApiArg>({
+      query: () => ({url: `/v1/client/form-assignments`}),
     }),
-    createClientPerformedSet: build.mutation<
-      CreateClientPerformedSetApiResponse,
-      CreateClientPerformedSetApiArg
-    >({
+    createClientPerformedSet: build.mutation<CreateClientPerformedSetApiResponse, CreateClientPerformedSetApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-sessions/${queryArg.sessionId}/performed-sets`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.trainingPerformedSetRequest,
       }),
     }),
-    getClientRecipe: build.query<
-      GetClientRecipeApiResponse,
-      GetClientRecipeApiArg
-    >({
+    getClientRecipe: build.query<GetClientRecipeApiResponse, GetClientRecipeApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-recipes/${queryArg.id}`,
       }),
     }),
-    getClientCoachingProfile: build.query<
-      GetClientCoachingProfileApiResponse,
-      GetClientCoachingProfileApiArg
-    >({
-      query: () => ({ url: `/v1/client/profile` }),
+    getClientCoachingProfile: build.query<GetClientCoachingProfileApiResponse, GetClientCoachingProfileApiArg>({
+      query: () => ({url: `/v1/client/profile`}),
     }),
     updateClientCoachingProfile: build.mutation<
       UpdateClientCoachingProfileApiResponse,
@@ -192,14 +144,11 @@ const injectedRtkApi = api.injectEndpoints({
     >({
       query: (queryArg) => ({
         url: `/v1/client/profile`,
-        method: "PATCH",
+        method: 'PATCH',
         body: queryArg.clientCoachingProfileUpdateRequest,
       }),
     }),
-    listClientTrainingPlans: build.query<
-      ListClientTrainingPlansApiResponse,
-      ListClientTrainingPlansApiArg
-    >({
+    listClientTrainingPlans: build.query<ListClientTrainingPlansApiResponse, ListClientTrainingPlansApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-plans`,
         params: {
@@ -209,10 +158,7 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
-    listClientFoods: build.query<
-      ListClientFoodsApiResponse,
-      ListClientFoodsApiArg
-    >({
+    listClientFoods: build.query<ListClientFoodsApiResponse, ListClientFoodsApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-foods`,
         params: {
@@ -222,10 +168,7 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
-    getClientFormAssignment: build.query<
-      GetClientFormAssignmentApiResponse,
-      GetClientFormAssignmentApiArg
-    >({
+    getClientFormAssignment: build.query<GetClientFormAssignmentApiResponse, GetClientFormAssignmentApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/form-assignments/${queryArg.id}`,
       }),
@@ -233,57 +176,39 @@ const injectedRtkApi = api.injectEndpoints({
     verifyAuth: build.mutation<VerifyAuthApiResponse, VerifyAuthApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/verify`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.verifyRequest,
       }),
     }),
-    getClientProfile: build.query<
-      GetClientProfileApiResponse,
-      GetClientProfileApiArg
-    >({
-      query: () => ({ url: `/v1/client/me` }),
+    getClientProfile: build.query<GetClientProfileApiResponse, GetClientProfileApiArg>({
+      query: () => ({url: `/v1/client/me`}),
     }),
-    updateClientProfile: build.mutation<
-      UpdateClientProfileApiResponse,
-      UpdateClientProfileApiArg
-    >({
+    updateClientProfile: build.mutation<UpdateClientProfileApiResponse, UpdateClientProfileApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/me`,
-        method: "PATCH",
+        method: 'PATCH',
         body: queryArg.clientProfileUpdateRequest,
       }),
     }),
-    deleteClientPerformedSet: build.mutation<
-      DeleteClientPerformedSetApiResponse,
-      DeleteClientPerformedSetApiArg
-    >({
+    deleteClientPerformedSet: build.mutation<DeleteClientPerformedSetApiResponse, DeleteClientPerformedSetApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-performed-sets/${queryArg.id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
     }),
-    updateClientPerformedSet: build.mutation<
-      UpdateClientPerformedSetApiResponse,
-      UpdateClientPerformedSetApiArg
-    >({
+    updateClientPerformedSet: build.mutation<UpdateClientPerformedSetApiResponse, UpdateClientPerformedSetApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-performed-sets/${queryArg.id}`,
-        method: "PATCH",
+        method: 'PATCH',
         body: queryArg.trainingPerformedSetRequest,
       }),
     }),
-    getClientNutritionPlan: build.query<
-      GetClientNutritionPlanApiResponse,
-      GetClientNutritionPlanApiArg
-    >({
+    getClientNutritionPlan: build.query<GetClientNutritionPlanApiResponse, GetClientNutritionPlanApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-plans/${queryArg.id}`,
       }),
     }),
-    getClientTrainingSession: build.query<
-      GetClientTrainingSessionApiResponse,
-      GetClientTrainingSessionApiArg
-    >({
+    getClientTrainingSession: build.query<GetClientTrainingSessionApiResponse, GetClientTrainingSessionApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-sessions/${queryArg.id}`,
       }),
@@ -294,14 +219,11 @@ const injectedRtkApi = api.injectEndpoints({
     >({
       query: (queryArg) => ({
         url: `/v1/client/training-sessions/${queryArg.id}`,
-        method: "PATCH",
+        method: 'PATCH',
         body: queryArg.trainingSessionUpdateRequest,
       }),
     }),
-    getClientTrainingPlan: build.query<
-      GetClientTrainingPlanApiResponse,
-      GetClientTrainingPlanApiArg
-    >({
+    getClientTrainingPlan: build.query<GetClientTrainingPlanApiResponse, GetClientTrainingPlanApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-plans/${queryArg.id}`,
       }),
@@ -311,10 +233,7 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/client/nutrition-foods/${queryArg.id}`,
       }),
     }),
-    listWeightEntries: build.query<
-      ListWeightEntriesApiResponse,
-      ListWeightEntriesApiArg
-    >({
+    listWeightEntries: build.query<ListWeightEntriesApiResponse, ListWeightEntriesApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/weight_entries`,
         params: {
@@ -322,30 +241,21 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
-    createWeightEntry: build.mutation<
-      CreateWeightEntryApiResponse,
-      CreateWeightEntryApiArg
-    >({
+    createWeightEntry: build.mutation<CreateWeightEntryApiResponse, CreateWeightEntryApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/weight_entries`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.weightEntryRequest,
       }),
     }),
-    verifyInvitation: build.mutation<
-      VerifyInvitationApiResponse,
-      VerifyInvitationApiArg
-    >({
+    verifyInvitation: build.mutation<VerifyInvitationApiResponse, VerifyInvitationApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/accept-invite/verify`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.acceptInviteVerifyRequest,
       }),
     }),
-    getTodayNutritionPlan: build.query<
-      GetTodayNutritionPlanApiResponse,
-      GetTodayNutritionPlanApiArg
-    >({
+    getTodayNutritionPlan: build.query<GetTodayNutritionPlanApiResponse, GetTodayNutritionPlanApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-plans/today`,
         params: {
@@ -353,59 +263,44 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
-    listClientMealLogs: build.query<
-      ListClientMealLogsApiResponse,
-      ListClientMealLogsApiArg
-    >({
+    listClientMealLogs: build.query<ListClientMealLogsApiResponse, ListClientMealLogsApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-meal-logs`,
         params: {
           date: queryArg.date,
-          from: queryArg["from"],
+          from: queryArg['from'],
           to: queryArg.to,
         },
       }),
     }),
-    createClientThreadMessage: build.mutation<
-      CreateClientThreadMessageApiResponse,
-      CreateClientThreadMessageApiArg
-    >({
+    createClientThreadMessage: build.mutation<CreateClientThreadMessageApiResponse, CreateClientThreadMessageApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/threads/${queryArg.threadId}/messages`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.threadMessageRequest,
       }),
     }),
-    createFoodLogEntry: build.mutation<
-      CreateFoodLogEntryApiResponse,
-      CreateFoodLogEntryApiArg
-    >({
+    createFoodLogEntry: build.mutation<CreateFoodLogEntryApiResponse, CreateFoodLogEntryApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/nutrition-food-log-entries`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.foodLogEntryRequest,
       }),
     }),
     signup: build.mutation<SignupApiResponse, SignupApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/signup`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.signupRequest,
       }),
     }),
-    deleteWeightEntry: build.mutation<
-      DeleteWeightEntryApiResponse,
-      DeleteWeightEntryApiArg
-    >({
+    deleteWeightEntry: build.mutation<DeleteWeightEntryApiResponse, DeleteWeightEntryApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/weight_entries/${queryArg.id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
     }),
-    listClientExercises: build.query<
-      ListClientExercisesApiResponse,
-      ListClientExercisesApiArg
-    >({
+    listClientExercises: build.query<ListClientExercisesApiResponse, ListClientExercisesApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-exercises`,
         params: {
@@ -420,19 +315,19 @@ const injectedRtkApi = api.injectEndpoints({
     sendOtp: build.mutation<SendOtpApiResponse, SendOtpApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/otp`,
-        method: "POST",
+        method: 'POST',
         body: queryArg.otpRequest,
       }),
     }),
     healthCheck: build.query<HealthCheckApiResponse, HealthCheckApiArg>({
-      query: () => ({ url: `/api/health` }),
+      query: () => ({url: `/api/health`}),
     }),
   }),
   overrideExisting: false,
 });
-export { injectedRtkApi as clientApi };
-export type LogMealApiResponse =
-  /** status 201 Food log entries */ FoodLogEntryListResponse;
+
+export {injectedRtkApi as clientApi};
+export type LogMealApiResponse = /** status 201 Food log entries */ FoodLogEntryListResponse;
 export type LogMealApiArg = {
   /** Log meal request */
   foodLogEntryRequest: FoodLogEntryRequest;
@@ -450,67 +345,57 @@ export type DeleteFoodLogEntryApiArg = {
   /** Food log entry id */
   id: string;
 };
-export type UpdateFoodLogEntryApiResponse =
-  /** status 200 Food log entry updated */ FoodLogEntryResponse;
+export type UpdateFoodLogEntryApiResponse = /** status 200 Food log entry updated */ FoodLogEntryResponse;
 export type UpdateFoodLogEntryApiArg = {
   /** Food log entry id */
   id: string;
   /** Food log entry request */
   foodLogEntryRequest: FoodLogEntryRequest;
 };
-export type ListClientTrainingSessionsApiResponse =
-  /** status 200 Training sessions */ TrainingSessionListResponse;
+export type ListClientTrainingSessionsApiResponse = /** status 200 Training sessions */ TrainingSessionListResponse;
 export type ListClientTrainingSessionsApiArg = {
   /** Start date (YYYY-MM-DD) */
   from?: string;
   /** End date (YYYY-MM-DD) */
   to?: string;
 };
-export type CreateClientTrainingSessionApiResponse =
-  /** status 201 Training session created */ TrainingSessionResponse;
+export type CreateClientTrainingSessionApiResponse = /** status 201 Training session created */ TrainingSessionResponse;
 export type CreateClientTrainingSessionApiArg = {
   /** Training session request */
   trainingSessionRequest: TrainingSessionRequest;
 };
-export type ListClientThreadsApiResponse =
-  /** status 200 Threads */ ThreadListResponse;
+export type ListClientThreadsApiResponse = /** status 200 Threads */ ThreadListResponse;
 export type ListClientThreadsApiArg = void;
-export type CreateClientThreadApiResponse =
-  /** status 201 Thread */ ThreadResponse;
+export type CreateClientThreadApiResponse = /** status 201 Thread */ ThreadResponse;
 export type CreateClientThreadApiArg = {
   /** Thread */
   clientThreadCreateRequest: ClientThreadCreateRequest;
 };
-export type ShowInvitationApiResponse =
-  /** status 200 Invitation preview */ InvitationPreviewResponse;
+export type ShowInvitationApiResponse = /** status 200 Invitation preview */ InvitationPreviewResponse;
 export type ShowInvitationApiArg = {
   /** Invitation token */
   token: string;
 };
-export type GetClientExerciseApiResponse =
-  /** status 200 Exercise */ TrainingExerciseResponse;
+export type GetClientExerciseApiResponse = /** status 200 Exercise */ TrainingExerciseResponse;
 export type GetClientExerciseApiArg = {
   /** Exercise id */
   id: string;
 };
-export type ListClientNutritionPlansApiResponse =
-  /** status 200 Nutrition plans */ NutritionPlanListResponse;
+export type ListClientNutritionPlansApiResponse = /** status 200 Nutrition plans */ NutritionPlanListResponse;
 export type ListClientNutritionPlansApiArg = {
   /** Number of nutrition plans to skip */
   offset?: number;
   /** Maximum nutrition plans to return */
   limit?: number;
   /** Only nutrition plans with this status */
-  status?: "active" | "archived";
+  status?: 'active' | 'archived';
 };
-export type CreateAuthTokenApiResponse =
-  /** status 200 Auth token */ AuthTokenResponse;
+export type CreateAuthTokenApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type CreateAuthTokenApiArg = {
   /** Token request */
   tokenRequest: TokenRequest;
 };
-export type ListClientRecipesApiResponse =
-  /** status 200 Recipes */ RecipeListResponse;
+export type ListClientRecipesApiResponse = /** status 200 Recipes */ RecipeListResponse;
 export type ListClientRecipesApiArg = {
   /** Number of recipes to skip */
   offset?: number;
@@ -525,20 +410,17 @@ export type GetClientTrainingPlanTodayApiArg = {
   /** Date (YYYY-MM-DD), defaults to today */
   date?: string;
 };
-export type LogDayApiResponse =
-  /** status 201 Food log entries */ FoodLogEntryListResponse;
+export type LogDayApiResponse = /** status 201 Food log entries */ FoodLogEntryListResponse;
 export type LogDayApiArg = {
   /** Log day request */
   foodLogEntryRequest: FoodLogEntryRequest;
 };
-export type AcceptInviteApiResponse =
-  /** status 200 OTP sent */ MessageResponse;
+export type AcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
 export type AcceptInviteApiArg = {
   /** Accept invite request */
   acceptInviteRequest: AcceptInviteRequest;
 };
-export type GetClientThreadApiResponse =
-  /** status 200 Thread */ ThreadDetailResponse;
+export type GetClientThreadApiResponse = /** status 200 Thread */ ThreadDetailResponse;
 export type GetClientThreadApiArg = {
   /** Thread id */
   id: string;
@@ -546,16 +428,14 @@ export type GetClientThreadApiArg = {
 export type ListClientFormAssignmentsApiResponse =
   /** status 200 Form assignments */ ClientProfileFormAssignmentListResponse;
 export type ListClientFormAssignmentsApiArg = void;
-export type CreateClientPerformedSetApiResponse =
-  /** status 201 Performed set created */ TrainingPerformedSetResponse;
+export type CreateClientPerformedSetApiResponse = /** status 201 Performed set created */ TrainingPerformedSetResponse;
 export type CreateClientPerformedSetApiArg = {
   /** Training session id */
   sessionId: string;
   /** Performed set request */
   trainingPerformedSetRequest: TrainingPerformedSetRequest;
 };
-export type GetClientRecipeApiResponse =
-  /** status 200 Recipe */ RecipeResponse;
+export type GetClientRecipeApiResponse = /** status 200 Recipe */ RecipeResponse;
 export type GetClientRecipeApiArg = {
   /** Recipe id */
   id: string;
@@ -569,18 +449,16 @@ export type UpdateClientCoachingProfileApiArg = {
   /** Client profile update request */
   clientCoachingProfileUpdateRequest: ClientCoachingProfileUpdateRequest;
 };
-export type ListClientTrainingPlansApiResponse =
-  /** status 200 Training plans */ ClientTrainingPlanListResponse;
+export type ListClientTrainingPlansApiResponse = /** status 200 Training plans */ ClientTrainingPlanListResponse;
 export type ListClientTrainingPlansApiArg = {
   /** Number of training plans to skip */
   offset?: number;
   /** Maximum training plans to return */
   limit?: number;
   /** Only training plans with this status */
-  status?: "active" | "archived";
+  status?: 'active' | 'archived';
 };
-export type ListClientFoodsApiResponse =
-  /** status 200 Foods */ FoodListResponse;
+export type ListClientFoodsApiResponse = /** status 200 Foods */ FoodListResponse;
 export type ListClientFoodsApiArg = {
   /** Number of foods to skip */
   offset?: number;
@@ -589,23 +467,19 @@ export type ListClientFoodsApiArg = {
   /** Case-insensitive food name search */
   search?: string;
 };
-export type GetClientFormAssignmentApiResponse =
-  /** status 200 Form assignment */ ClientProfileFormAssignmentResponse;
+export type GetClientFormAssignmentApiResponse = /** status 200 Form assignment */ ClientProfileFormAssignmentResponse;
 export type GetClientFormAssignmentApiArg = {
   /** Form assignment id */
   id: string;
 };
-export type VerifyAuthApiResponse =
-  /** status 200 Auth token */ AuthTokenResponse;
+export type VerifyAuthApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type VerifyAuthApiArg = {
   /** Verify request */
   verifyRequest: VerifyRequest;
 };
-export type GetClientProfileApiResponse =
-  /** status 200 Client profile */ ClientProfileResponse;
+export type GetClientProfileApiResponse = /** status 200 Client profile */ ClientProfileResponse;
 export type GetClientProfileApiArg = void;
-export type UpdateClientProfileApiResponse =
-  /** status 200 Client profile updated */ ClientProfileResponse;
+export type UpdateClientProfileApiResponse = /** status 200 Client profile updated */ ClientProfileResponse;
 export type UpdateClientProfileApiArg = {
   /** Client profile update request */
   clientProfileUpdateRequest: ClientProfileUpdateRequest;
@@ -615,36 +489,31 @@ export type DeleteClientPerformedSetApiArg = {
   /** Performed set id */
   id: string;
 };
-export type UpdateClientPerformedSetApiResponse =
-  /** status 200 Performed set updated */ TrainingPerformedSetResponse;
+export type UpdateClientPerformedSetApiResponse = /** status 200 Performed set updated */ TrainingPerformedSetResponse;
 export type UpdateClientPerformedSetApiArg = {
   /** Performed set id */
   id: string;
   /** Performed set request */
   trainingPerformedSetRequest: TrainingPerformedSetRequest;
 };
-export type GetClientNutritionPlanApiResponse =
-  /** status 200 Nutrition plan */ NutritionPlanResponse;
+export type GetClientNutritionPlanApiResponse = /** status 200 Nutrition plan */ NutritionPlanResponse;
 export type GetClientNutritionPlanApiArg = {
   /** Nutrition plan id */
   id: string;
 };
-export type GetClientTrainingSessionApiResponse =
-  /** status 200 Training session */ TrainingSessionResponse;
+export type GetClientTrainingSessionApiResponse = /** status 200 Training session */ TrainingSessionResponse;
 export type GetClientTrainingSessionApiArg = {
   /** Training session id */
   id: string;
 };
-export type UpdateClientTrainingSessionApiResponse =
-  /** status 200 Training session updated */ TrainingSessionResponse;
+export type UpdateClientTrainingSessionApiResponse = /** status 200 Training session updated */ TrainingSessionResponse;
 export type UpdateClientTrainingSessionApiArg = {
   /** Training session id */
   id: string;
   /** Training session update request */
   trainingSessionUpdateRequest: TrainingSessionUpdateRequest;
 };
-export type GetClientTrainingPlanApiResponse =
-  /** status 200 Training plan */ ClientTrainingPlanResponse;
+export type GetClientTrainingPlanApiResponse = /** status 200 Training plan */ ClientTrainingPlanResponse;
 export type GetClientTrainingPlanApiArg = {
   /** Training plan id */
   id: string;
@@ -654,32 +523,27 @@ export type GetClientFoodApiArg = {
   /** Food id */
   id: string;
 };
-export type ListWeightEntriesApiResponse =
-  /** status 200 Weight entries */ WeightEntryListResponse;
+export type ListWeightEntriesApiResponse = /** status 200 Weight entries */ WeightEntryListResponse;
 export type ListWeightEntriesApiArg = {
   /** Only entries since this date */
   since?: string;
 };
-export type CreateWeightEntryApiResponse =
-  /** status 201 Weight entry created */ WeightEntryResponse;
+export type CreateWeightEntryApiResponse = /** status 201 Weight entry created */ WeightEntryResponse;
 export type CreateWeightEntryApiArg = {
   /** Weight entry request */
   weightEntryRequest: WeightEntryRequest;
 };
-export type VerifyInvitationApiResponse =
-  /** status 200 Auth token */ AuthTokenResponse;
+export type VerifyInvitationApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type VerifyInvitationApiArg = {
   /** Accept invite verification request */
   acceptInviteVerifyRequest: AcceptInviteVerifyRequest;
 };
-export type GetTodayNutritionPlanApiResponse =
-  /** status 200 Nutrition plan day */ NutritionMapResponse;
+export type GetTodayNutritionPlanApiResponse = /** status 200 Nutrition plan day */ NutritionMapResponse;
 export type GetTodayNutritionPlanApiArg = {
   /** Date to load, defaults to today */
   date?: string;
 };
-export type ListClientMealLogsApiResponse =
-  /** status 200 Meal logs */ MealLogListResponse;
+export type ListClientMealLogsApiResponse = /** status 200 Meal logs */ MealLogListResponse;
 export type ListClientMealLogsApiArg = {
   /** Exact date */
   date?: string;
@@ -688,16 +552,14 @@ export type ListClientMealLogsApiArg = {
   /** End date */
   to?: string;
 };
-export type CreateClientThreadMessageApiResponse =
-  /** status 201 Message */ ThreadMessageResponse;
+export type CreateClientThreadMessageApiResponse = /** status 201 Message */ ThreadMessageResponse;
 export type CreateClientThreadMessageApiArg = {
   /** Thread id */
   threadId: string;
   /** Message */
   threadMessageRequest: ThreadMessageRequest;
 };
-export type CreateFoodLogEntryApiResponse =
-  /** status 201 Food log entry created */ FoodLogEntryResponse;
+export type CreateFoodLogEntryApiResponse = /** status 201 Food log entry created */ FoodLogEntryResponse;
 export type CreateFoodLogEntryApiArg = {
   /** Food log entry request */
   foodLogEntryRequest: FoodLogEntryRequest;
@@ -712,8 +574,7 @@ export type DeleteWeightEntryApiArg = {
   /** Weight entry id */
   id: string;
 };
-export type ListClientExercisesApiResponse =
-  /** status 200 Exercises */ TrainingExerciseListResponse;
+export type ListClientExercisesApiResponse = /** status 200 Exercises */ TrainingExerciseListResponse;
 export type ListClientExercisesApiArg = {
   /** Number of exercises to skip */
   offset?: number;
@@ -790,7 +651,7 @@ export type ClientProfileFormSubmission = {
     [key: string]: any;
   }[];
   submitted_at: string;
-  submitted_by_type: "coach" | "client" | "system";
+  submitted_by_type: 'coach' | 'client' | 'system';
 };
 export type ClientProfileFormSubmissionResponse = {
   data: ClientProfileFormSubmission;
@@ -804,10 +665,10 @@ export type FoodLogEntryResponse = {
   data: FoodLogEntry;
 };
 export type TrainingPlanExercise = {
-  force: ("push" | "pull" | "static") | null;
+  force: ('push' | 'pull' | 'static') | null;
   id: string;
   images?: string[];
-  mechanics: ("compound" | "isolation" | "isometric") | null;
+  mechanics: ('compound' | 'isolation' | 'isometric') | null;
   name: string;
 };
 export type TrainingPerformedSet = {
@@ -826,7 +687,7 @@ export type TrainingPerformedSet = {
   position: number;
   reps: string | null;
   rpe?: number | null;
-  set_type?: ("working" | "warmup" | "dropset") | null;
+  set_type?: ('working' | 'warmup' | 'dropset') | null;
   training_session_id?: string | null;
   updated_at: string;
 };
@@ -843,7 +704,7 @@ export type TrainingSession = {
   } | null;
   soreness_rating?: number | null;
   started_at: string;
-  state: "active" | "completed" | "discarded";
+  state: 'active' | 'completed' | 'discarded';
   training_schedule_entry_id?: string | null;
   training_workout_id?: string | null;
   updated_at: string;
@@ -863,14 +724,14 @@ export type TrainingSessionRequest = {
 export type Thread = {
   client_id: string;
   created_by_id?: string | null;
-  created_by_type?: "coach" | "client" | "system";
+  created_by_type?: 'coach' | 'client' | 'system';
   id: string;
   inserted_at: string;
   last_message_at?: string | null;
   last_message_preview?: string | null;
-  module: "nutrition" | "training" | "fitness" | "profile" | "general";
-  priority: "normal" | "attention";
-  status: "open" | "resolved" | "archived";
+  module: 'nutrition' | 'training' | 'fitness' | 'profile' | 'general';
+  priority: 'normal' | 'attention';
+  status: 'open' | 'resolved' | 'archived';
   subject_ref?: {
     [key: string]: any;
   };
@@ -886,7 +747,7 @@ export type ThreadResponse = {
   data: Thread;
 };
 export type ClientThreadCreateRequest = {
-  module: "nutrition" | "training" | "fitness" | "profile" | "general";
+  module: 'nutrition' | 'training' | 'fitness' | 'profile' | 'general';
   subject_ref?: {
     [key: string]: any;
   };
@@ -899,7 +760,7 @@ export type InvitationPreviewResponse = {
     coach_first_name?: string | null;
     expires_at?: string | null;
     prefill_email?: string | null;
-    state: "pending" | "used" | "expired" | "invalid";
+    state: 'pending' | 'used' | 'expired' | 'invalid';
   };
 };
 export type TrainingExerciseRelation = {
@@ -910,12 +771,12 @@ export type TrainingExerciseRelation = {
 export type TrainingExercise = {
   description: string | null;
   equipment: TrainingExerciseRelation[];
-  force: ("push" | "pull" | "static") | null;
+  force: ('push' | 'pull' | 'static') | null;
   id: string;
   images: string[];
   inserted_at: string;
   instructions: string | null;
-  mechanics: ("compound" | "isolation" | "isometric") | null;
+  mechanics: ('compound' | 'isolation' | 'isometric') | null;
   muscles: TrainingExerciseRelation[];
   name: string;
   source: string | null;
@@ -947,16 +808,7 @@ export type NutritionMealItem = {
 };
 export type NutritionMeal = {
   creator_id?: string | null;
-  default_meal_slot?:
-    | (
-        | "breakfast"
-        | "morning_snack"
-        | "lunch"
-        | "afternoon_snack"
-        | "dinner"
-        | "evening_snack"
-      )
-    | null;
+  default_meal_slot?: ('breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack') | null;
   id: string;
   inserted_at: string;
   meal_items: NutritionMealItem[];
@@ -996,7 +848,7 @@ export type NutritionPlan = {
   schedule_entries?: NutritionScheduleEntry[];
   source_template_id?: string | null;
   start_date: string | null;
-  status: "active" | "archived";
+  status: 'active' | 'archived';
   tags: string[];
   target_calories?: number | null;
   target_carbs_g?: number | null;
@@ -1019,17 +871,17 @@ export type AuthTokenResponse = {
 export type TokenRequest =
   | {
       email?: string;
-      grant_type: "refresh_token" | "otp";
+      grant_type: 'refresh_token' | 'otp';
       otp?: string;
       refresh_token: string;
-      role?: "owner" | "coach" | "client" | "guest";
+      role?: 'owner' | 'coach' | 'client' | 'guest';
     }
   | {
       email: string;
-      grant_type: "refresh_token" | "otp";
+      grant_type: 'refresh_token' | 'otp';
       otp: string;
       refresh_token?: string;
-      role: "owner" | "coach" | "client" | "guest";
+      role: 'owner' | 'coach' | 'client' | 'guest';
     };
 export type FoodServingSize = {
   amount: number;
@@ -1039,17 +891,7 @@ export type FoodServingSize = {
   weight_g: number;
 };
 export type Food = {
-  allergens?: (
-    | "dairy"
-    | "egg"
-    | "fish"
-    | "shellfish"
-    | "tree_nuts"
-    | "peanuts"
-    | "wheat"
-    | "soy"
-    | "sesame"
-  )[];
+  allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
   barcode?: string | null;
   brand?: string | null;
   calories_per_100g?: number | null;
@@ -1057,15 +899,15 @@ export type Food = {
   category: string | null;
   creator_id?: string | null;
   dietary_tags?: (
-    | "vegan"
-    | "vegetarian"
-    | "halal"
-    | "kosher"
-    | "gluten_free"
-    | "dairy_free"
-    | "low_fodmap"
-    | "keto"
-    | "high_protein"
+    | 'vegan'
+    | 'vegetarian'
+    | 'halal'
+    | 'kosher'
+    | 'gluten_free'
+    | 'dairy_free'
+    | 'low_fodmap'
+    | 'keto'
+    | 'high_protein'
   )[];
   fat_g_per_100g?: number | null;
   fiber_g_per_100g?: number | null;
@@ -1076,7 +918,7 @@ export type Food = {
   notes: string | null;
   protein_g_per_100g?: number | null;
   serving_sizes: FoodServingSize[];
-  source: ("system" | "imported" | "custom") | null;
+  source: ('system' | 'imported' | 'custom') | null;
   updated_at: string;
 };
 export type RecipeIngredient = {
@@ -1088,30 +930,20 @@ export type RecipeIngredient = {
   weight_g: number | null;
 };
 export type Recipe = {
-  allergens?: (
-    | "dairy"
-    | "egg"
-    | "fish"
-    | "shellfish"
-    | "tree_nuts"
-    | "peanuts"
-    | "wheat"
-    | "soy"
-    | "sesame"
-  )[];
+  allergens?: ('dairy' | 'egg' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame')[];
   cooked_weight_g: number | null;
   creator_id?: string | null;
   description?: string | null;
   dietary_tags?: (
-    | "vegan"
-    | "vegetarian"
-    | "halal"
-    | "kosher"
-    | "gluten_free"
-    | "dairy_free"
-    | "low_fodmap"
-    | "keto"
-    | "high_protein"
+    | 'vegan'
+    | 'vegetarian'
+    | 'halal'
+    | 'kosher'
+    | 'gluten_free'
+    | 'dairy_free'
+    | 'low_fodmap'
+    | 'keto'
+    | 'high_protein'
   )[];
   foods?: Food[];
   id: string;
@@ -1136,14 +968,7 @@ export type RecipeListResponse = {
 };
 export type TrainingPlanItem = {
   creator_id?: string;
-  day_of_week:
-    | "monday"
-    | "tuesday"
-    | "wednesday"
-    | "thursday"
-    | "friday"
-    | "saturday"
-    | "sunday";
+  day_of_week: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
   id: string;
   inserted_at: string;
   training_plan_id: string;
@@ -1151,16 +976,16 @@ export type TrainingPlanItem = {
   updated_at: string;
 };
 export type TrainingPlanPlannedSet = {
-  distance_unit: ("meters" | "km" | "miles" | "none") | null;
+  distance_unit: ('meters' | 'km' | 'miles' | 'none') | null;
   distance_value: string | null;
   duration_seconds: number | null;
-  load_unit: ("kg" | "lbs" | "bodyweight" | "none") | null;
+  load_unit: ('kg' | 'lbs' | 'bodyweight' | 'none') | null;
   load_value: string | null;
   notes: string | null;
   reps: string | null;
   rest_seconds: number | null;
   rpe: number | null;
-  set_type: ("working" | "warmup" | "dropset") | null;
+  set_type: ('working' | 'warmup' | 'dropset') | null;
 };
 export type TrainingPlanWorkoutExercise = {
   exercise: TrainingPlanExercise | null;
@@ -1191,7 +1016,7 @@ export type ClientTrainingPlan = {
   name: string;
   plan_items: TrainingPlanItem[];
   start_date: string | null;
-  status: "active" | "archived";
+  status: 'active' | 'archived';
   updated_at: string;
   workouts: TrainingPlanWorkout[];
 };
@@ -1207,7 +1032,7 @@ export type AcceptInviteRequest = {
 };
 export type ThreadMessage = {
   author_id?: string | null;
-  author_type: "coach" | "client" | "system";
+  author_type: 'coach' | 'client' | 'system';
   body: string;
   id: string;
   inserted_at: string;
@@ -1221,15 +1046,15 @@ export type ThreadMessage = {
 export type ThreadWithMessages = {
   client_id: string;
   created_by_id?: string | null;
-  created_by_type?: "coach" | "client" | "system";
+  created_by_type?: 'coach' | 'client' | 'system';
   id: string;
   inserted_at: string;
   last_message_at?: string | null;
   last_message_preview?: string | null;
   messages?: ThreadMessage[];
-  module: "nutrition" | "training" | "fitness" | "profile" | "general";
-  priority: "normal" | "attention";
-  status: "open" | "resolved" | "archived";
+  module: 'nutrition' | 'training' | 'fitness' | 'profile' | 'general';
+  priority: 'normal' | 'attention';
+  status: 'open' | 'resolved' | 'archived';
   subject_ref?: {
     [key: string]: any;
   };
@@ -1244,16 +1069,11 @@ export type ClientProfileFormTemplate = {
   id: string;
   inserted_at: string;
   name: string;
-  purpose:
-    | "intake"
-    | "weekly_check_in"
-    | "nutrition_update"
-    | "training_update"
-    | "custom";
+  purpose: 'intake' | 'weekly_check_in' | 'nutrition_update' | 'training_update' | 'custom';
   sections: {
     [key: string]: any;
   }[];
-  status: "active" | "archived";
+  status: 'active' | 'archived';
   updated_at: string;
 };
 export type ClientProfileFormAssignment = {
@@ -1264,14 +1084,9 @@ export type ClientProfileFormAssignment = {
   form_template_id: string;
   id: string;
   inserted_at: string;
-  priority: "high" | "normal";
-  purpose:
-    | "intake"
-    | "weekly_check_in"
-    | "nutrition_update"
-    | "training_update"
-    | "custom";
-  status: "assigned" | "in_progress" | "completed" | "dismissed";
+  priority: 'high' | 'normal';
+  purpose: 'intake' | 'weekly_check_in' | 'nutrition_update' | 'training_update' | 'custom';
+  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
   updated_at: string;
 };
 export type ClientProfileFormAssignmentListResponse = {
@@ -1282,18 +1097,18 @@ export type TrainingPerformedSetResponse = {
 };
 export type TrainingPerformedSetRequest = {
   completed?: boolean;
-  distance_unit?: ("meters" | "km" | "miles" | "none") | null;
+  distance_unit?: ('meters' | 'km' | 'miles' | 'none') | null;
   distance_value?: number | null;
   duration_seconds?: number | null;
   exercise_id?: string;
   exercise_name?: string | null;
-  load_unit?: ("kg" | "lbs" | "bodyweight" | "none") | null;
+  load_unit?: ('kg' | 'lbs' | 'bodyweight' | 'none') | null;
   load_value?: number | null;
   notes?: string | null;
   position?: number;
   reps?: string | null;
   rpe?: number | null;
-  set_type?: ("working" | "warmup" | "dropset") | null;
+  set_type?: ('working' | 'warmup' | 'dropset') | null;
 };
 export type RecipeResponse = {
   data: Recipe;
@@ -1306,7 +1121,7 @@ export type ClientCoachingProfile = {
   id: string;
   inserted_at: string;
   intake_completed_at: string | null;
-  intake_status: "assigned" | "in_progress" | "completed" | "dismissed";
+  intake_status: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
   lifestyle: {
     [key: string]: any;
   };
@@ -1391,7 +1206,7 @@ export type TrainingSessionUpdateRequest = {
   ended_at?: string;
   notes?: string;
   soreness_rating?: number;
-  state?: "completed" | "discarded";
+  state?: 'completed' | 'discarded';
 };
 export type FoodResponse = {
   data: Food;
@@ -1401,7 +1216,7 @@ export type WeightEntry = {
   id: string;
   inserted_at: string;
   note: string | null;
-  unit: "kg" | "lbs";
+  unit: 'kg' | 'lbs';
   value: number;
 };
 export type WeightEntryListResponse = {
@@ -1422,7 +1237,7 @@ export type WeightEntryResponse = {
 export type WeightEntryRequest = {
   date: string;
   note?: string | null;
-  unit: "kg" | "lbs";
+  unit: 'kg' | 'lbs';
   value: number;
 };
 export type AcceptInviteVerifyRequest = {
@@ -1477,7 +1292,7 @@ export type TrainingExerciseListResponse = {
 };
 export type OtpRequest = {
   email: string;
-  type: "email_confirmation" | "authentication";
+  type: 'email_confirmation' | 'authentication';
 };
 export type HealthResponse = {
   service: string;

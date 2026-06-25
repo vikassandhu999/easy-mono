@@ -2742,6 +2742,22 @@
         "x-struct": null,
         "x-validate": null
       },
+      "TrainingWorkoutExerciseArrayResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingPlanWorkoutExercise"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "TrainingWorkoutExerciseArrayResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseArrayResponse",
+        "x-validate": null
+      },
       "ClientUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -3807,6 +3823,37 @@
         "title": "TrainingExerciseRelation",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingExerciseRelation",
+        "x-validate": null
+      },
+      "TrainingWorkoutReorderRequest": {
+        "additionalProperties": false,
+        "example": {
+          "element_ids": [
+            "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+            "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+          ]
+        },
+        "properties": {
+          "element_ids": {
+            "description": "Workout element ids in the desired order (must be exactly the workout's elements).",
+            "items": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "minItems": 1,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "element_ids"
+        ],
+        "title": "TrainingWorkoutReorderRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "ThreadListResponse": {
@@ -12600,6 +12647,88 @@
         "summary": "Update nutrition plan",
         "tags": [
           "coach nutrition plans"
+        ]
+      }
+    },
+    "/v1/coach/training-workouts/{workout_id}/exercises/reorder": {
+      "put": {
+        "callbacks": {},
+        "description": "Reorders the exercises within a workout to match the given element id order.",
+        "operationId": "reorderWorkoutElements",
+        "parameters": [
+          {
+            "description": "Workout id",
+            "in": "path",
+            "name": "workout_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingWorkoutReorderRequest"
+              }
+            }
+          },
+          "description": "Reorder request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingWorkoutExerciseArrayResponse"
+                }
+              }
+            },
+            "description": "Workout elements reordered"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Reorder workout elements",
+        "tags": [
+          "coach workout elements"
         ]
       }
     },

@@ -96,6 +96,49 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseResponse do
   OpenApiSpex.schema(Shared.data_response(TrainingPlanWorkoutExercise, "TrainingWorkoutExerciseResponse"))
 end
 
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutReorderRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "TrainingWorkoutReorderRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        element_ids: %Schema{
+          type: :array,
+          minItems: 1,
+          items: %Schema{type: :string, format: :uuid},
+          description: "Workout element ids in the desired order (must be exactly the workout's elements)."
+        }
+      },
+      required: [:element_ids],
+      example: %{
+        "element_ids" => [
+          "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        ]
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseArrayResponse do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutExercise
+
+  OpenApiSpex.schema(%{
+    title: "TrainingWorkoutExerciseArrayResponse",
+    type: :object,
+    properties: %{data: %Schema{type: :array, items: TrainingPlanWorkoutExercise}}
+  })
+end
+
 defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleEntry do
   require OpenApiSpex
   alias OpenApiSpex.Schema

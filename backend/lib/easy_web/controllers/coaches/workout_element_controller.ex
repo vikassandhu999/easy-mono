@@ -7,11 +7,13 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
+    TrainingWorkoutExerciseArrayResponse,
     TrainingWorkoutExerciseRequest,
-    TrainingWorkoutExerciseResponse
+    TrainingWorkoutExerciseResponse,
+    TrainingWorkoutReorderRequest
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update, :reorder]
 
   tags ["coach workout elements"]
 
@@ -61,6 +63,22 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
+  operation :reorder,
+    summary: "Reorder workout elements",
+    description: "Reorders the exercises within a workout to match the given element id order.",
+    operation_id: "reorderWorkoutElements",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:workout_id, :path, :string, "Workout id")
+    ],
+    request_body: {"Reorder request", "application/json", TrainingWorkoutReorderRequest, required: true},
+    responses: [
+      ok: {"Workout elements reordered", "application/json", TrainingWorkoutExerciseArrayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
     workout_id = conn.path_params["workout_id"]
@@ -85,6 +103,16 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   def delete(conn, %{"id" => id}) do
     with {:ok, _element} <- Workouts.delete_workout_element(conn.assigns.ctx, id) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  @spec reorder(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def reorder(conn, _params) do
+    workout_id = conn.path_params["workout_id"]
+    element_ids = conn.body_params.element_ids
+
+    with {:ok, elements} <- Workouts.reorder_workout_elements(conn.assigns.ctx, workout_id, element_ids) do
+      render(conn, :index, elements: elements)
     end
   end
 end

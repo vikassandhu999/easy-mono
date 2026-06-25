@@ -1,6 +1,7 @@
 import {Button, Dropdown, Header, Label, Separator, toast, useOverlayState} from '@heroui/react';
 import {ArchiveIcon, ArchiveRestoreIcon, Copy, MoreHorizontal, Pencil, TrashIcon} from 'lucide-react';
-import {coachApi, TrainingPlan, useUpdateTrainingPlanMutation} from '@/api/generated';
+import {useNavigate} from 'react-router-dom';
+import {coachApi, TrainingPlan, useDuplicateTrainingPlanMutation, useUpdateTrainingPlanMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
 import PlanDeleteAlertDialog from './plan-delete-alert-dialog';
@@ -12,7 +13,9 @@ export type Props = {
 
 export function PlanActions({plan, onDeleted}: Props) {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [updatePlan, {isLoading: updating}] = useUpdateTrainingPlanMutation();
+  const [duplicatePlan, {isLoading: duplicating}] = useDuplicateTrainingPlanMutation();
 
   // Generated endpoints are tag:false, so optimistically patch the cached plan
   // status and roll back on failure.
@@ -33,9 +36,24 @@ export function PlanActions({plan, onDeleted}: Props) {
   const archive = () => setStatus('archived', 'Plan archived');
   const restore = () => setStatus('active', 'Plan restored');
 
+  // Edit = jump to the always-on inline header editor (the builder has no
+  // separate edit surface). ponytail: focus by id avoids threading a ref through
+  // PlanBuilder → PlanHeader for a single menu action.
+  const editName = () => {
+    const el = document.getElementById('training-plan-name-input');
+    el?.scrollIntoView({block: 'center', behavior: 'smooth'});
+    (el as HTMLInputElement | null)?.focus();
+  };
+
+  const copy = async () => {
+    const result = await duplicatePlan({id: plan.id}).unwrap();
+    toast.success('Plan copied', {timeout: 1000});
+    navigate(`/library/training-plans/${result.data.id}`);
+  };
+
   const deleteAlertState = useOverlayState();
 
-  const blocking = deleteAlertState.isOpen || updating;
+  const blocking = deleteAlertState.isOpen || updating || duplicating;
 
   return (
     <>
@@ -58,10 +76,13 @@ export function PlanActions({plan, onDeleted}: Props) {
                 restore().catch(() => undefined);
               } else if (key === 'archive-plan') {
                 archive().catch(() => undefined);
+              } else if (key === 'edit-plan') {
+                editName();
+              } else if (key === 'copy-plan') {
+                copy().catch(() => toast.danger("Couldn't copy plan"));
               } else if (key === 'delete-plan') {
                 deleteAlertState.open();
               }
-              // 'edit-plan' / 'copy-plan' intentionally unwired (pending product decision).
             }}
           >
             <Dropdown.Section>

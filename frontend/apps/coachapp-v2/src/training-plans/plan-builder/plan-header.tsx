@@ -110,6 +110,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
         <FormTextField
           control={control}
           inputProps={{
+            id: 'training-plan-name-input',
             className:
               'bg-transparent border-0 border-b border-border rounded-none px-0 text-xl font-semibold focus:border-accent focus:ring-0 transition-colors placeholder:text-muted',
             placeholder: 'Plan name',

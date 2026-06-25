@@ -1,10 +1,17 @@
 defmodule Easy.Workouts do
+  import Ecto.Query
+
   alias Easy.Ctx
   alias Easy.Repo
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingWorkout
   alias Easy.Training.TrainingWorkoutExercise
+
+  # Offset that lifts every element clear of the 0..n-1 target range during a
+  # reorder, so the (training_workout_id, position) unique index never collides
+  # mid-reassignment.
+  @position_reorder_offset 1_000_000
 
   @spec get_workout(Ctx.t(), String.t()) :: {:ok, TrainingWorkout.t()} | {:error, :not_found}
   def get_workout(%Ctx{} = ctx, workout_id) do
@@ -110,6 +117,7 @@ defmodule Easy.Workouts do
            TrainingWorkoutExercise.insert_changeset(ctx.business_id, workout.id, attrs)
            |> validate_exercise_in_business() do
       changeset
+      |> maybe_put_next_position(ctx.business_id, workout.id, attrs)
       |> Repo.insert()
       |> preload_element()
     end
@@ -137,11 +145,86 @@ defmodule Easy.Workouts do
     end
   end
 
+  @spec reorder_workout_elements(Ctx.t(), String.t(), [String.t()]) ::
+          {:ok, [TrainingWorkoutExercise.t()]} | {:error, :not_found | :invalid_element_ids}
+  def reorder_workout_elements(%Ctx{} = ctx, workout_id, ordered_ids) do
+    with {:ok, workout} <- get_workout(ctx, workout_id),
+         :ok <- validate_complete_element_set(ctx.business_id, workout.id, ordered_ids) do
+      {:ok, _} = Repo.transaction(fn -> reassign_positions(ctx.business_id, workout.id, ordered_ids) end)
+      {:ok, ordered_workout_elements(ctx.business_id, workout.id)}
+    end
+  end
+
   defp get_plan(business_id, plan_id) do
     TrainingPlan
     |> TrainingPlan.for_business(business_id)
     |> Repo.get(plan_id)
     |> ok_or_not_found()
+  end
+
+  defp maybe_put_next_position(changeset, business_id, workout_id, attrs) do
+    if changeset.valid? and not Map.has_key?(attrs, :position) do
+      Ecto.Changeset.put_change(changeset, :position, next_position(business_id, workout_id))
+    else
+      changeset
+    end
+  end
+
+  defp next_position(business_id, workout_id) do
+    query =
+      TrainingWorkoutExercise
+      |> TrainingWorkoutExercise.for_business(business_id)
+      |> TrainingWorkoutExercise.for_workout(workout_id)
+      |> select([e], max(e.position))
+
+    case Repo.one(query) do
+      nil -> 0
+      max -> max + 1
+    end
+  end
+
+  # ordered_ids must be exactly the workout's current element ids (no more, no fewer)
+  # so the reorder is a pure permutation.
+  defp validate_complete_element_set(business_id, workout_id, ordered_ids) do
+    current_ids =
+      TrainingWorkoutExercise
+      |> TrainingWorkoutExercise.for_business(business_id)
+      |> TrainingWorkoutExercise.for_workout(workout_id)
+      |> select([e], e.id)
+      |> Repo.all()
+
+    if MapSet.equal?(MapSet.new(current_ids), MapSet.new(ordered_ids)) do
+      :ok
+    else
+      {:error, :invalid_element_ids}
+    end
+  end
+
+  # Collision-free position reassignment under the unique index: shift every
+  # element clear of the 0..n-1 range, then set each to its final index.
+  defp reassign_positions(business_id, workout_id, ordered_ids) do
+    TrainingWorkoutExercise
+    |> TrainingWorkoutExercise.for_business(business_id)
+    |> TrainingWorkoutExercise.for_workout(workout_id)
+    |> Repo.update_all(inc: [position: @position_reorder_offset])
+
+    ordered_ids
+    |> Enum.with_index()
+    |> Enum.each(fn {id, index} ->
+      TrainingWorkoutExercise
+      |> TrainingWorkoutExercise.for_workout(workout_id)
+      |> where([e], e.id == ^id)
+      |> Repo.update_all(set: [position: index])
+    end)
+  end
+
+  defp ordered_workout_elements(business_id, workout_id) do
+    TrainingWorkoutExercise
+    |> TrainingWorkoutExercise.for_business(business_id)
+    |> TrainingWorkoutExercise.for_workout(workout_id)
+    |> TrainingWorkoutExercise.ordered()
+    |> TrainingWorkoutExercise.include_exercise(business_id)
+    |> Repo.all()
   end
 
   defp validate_exercise_in_business(%{valid?: false} = changeset), do: {:ok, changeset}

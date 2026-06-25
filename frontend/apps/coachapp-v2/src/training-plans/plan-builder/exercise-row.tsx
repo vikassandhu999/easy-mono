@@ -9,6 +9,7 @@
  * the SetSheet on the new set.
  */
 import {toast} from '@heroui/react';
+import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import {useRef, useState} from 'react';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
 import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
@@ -24,6 +25,14 @@ import {SetSheet} from './set-sheet';
 interface ExerciseRowProps {
   workoutExercise: TrainingPlanWorkoutExercise;
   planId: string;
+  /** Position of this exercise within the workout (for reordering). */
+  index: number;
+  isFirst: boolean;
+  isLast: boolean;
+  /** Move this exercise up (-1) or down (+1) within the workout. */
+  onMove: (index: number, direction: -1 | 1) => void;
+  /** Remove this exercise from the workout. */
+  onRemove: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -49,7 +58,7 @@ function makeDefaultSet(): TrainingPlanPlannedSet {
 // Component
 // ---------------------------------------------------------------------------
 
-export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
+export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, onMove, onRemove}: ExerciseRowProps) {
   const dispatch = useAppDispatch();
   const [updateElement] = useUpdateWorkoutElementMutation();
 
@@ -113,8 +122,38 @@ export function ExerciseRow({workoutExercise, planId}: ExerciseRowProps) {
         className="mt-2 pl-2.5"
         style={{borderLeft: '2px solid #6c8cff'}}
       >
-        {/* Exercise name */}
-        <div className="mb-1 text-sm font-semibold text-foreground">{exerciseName}</div>
+        {/* Exercise name + reorder/remove controls */}
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate text-sm font-semibold text-foreground">{exerciseName}</span>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              aria-label="Move exercise up"
+              className="rounded p-0.5 text-muted transition-colors hover:text-foreground disabled:opacity-30"
+              disabled={isFirst}
+              onClick={() => onMove(index, -1)}
+              type="button"
+            >
+              <ChevronUp size={14} />
+            </button>
+            <button
+              aria-label="Move exercise down"
+              className="rounded p-0.5 text-muted transition-colors hover:text-foreground disabled:opacity-30"
+              disabled={isLast}
+              onClick={() => onMove(index, 1)}
+              type="button"
+            >
+              <ChevronDown size={14} />
+            </button>
+            <button
+              aria-label="Remove exercise"
+              className="rounded p-0.5 text-muted transition-colors hover:text-danger"
+              onClick={onRemove}
+              type="button"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
 
         {/* Set rows — full width within the group (no extra indent) */}
         {workoutExercise.planned_sets.map((set, i) => (

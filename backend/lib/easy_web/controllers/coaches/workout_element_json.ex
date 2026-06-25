@@ -6,6 +6,11 @@ defmodule EasyWeb.Coaches.WorkoutElementJSON do
     %{data: data(element)}
   end
 
+  @spec index(map()) :: map()
+  def index(%{elements: elements}) do
+    %{data: Enum.map(elements, &data/1)}
+  end
+
   defp data(%TrainingWorkoutExercise{} = element) do
     %{
       id: element.id,

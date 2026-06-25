@@ -28,6 +28,13 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Easy.Error.unprocessable(%{fields: %{day: ["is invalid"]}})})
   end
 
+  def call(conn, {:error, :invalid_element_ids}) do
+    call(
+      conn,
+      {:error, Easy.Error.unprocessable(%{fields: %{element_ids: ["must be exactly the workout's elements"]}})}
+    )
+  end
+
   def call(conn, {:error, :read_only_source}) do
     call(
       conn,

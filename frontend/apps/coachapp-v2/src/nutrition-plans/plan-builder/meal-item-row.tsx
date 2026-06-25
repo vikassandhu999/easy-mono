@@ -1,7 +1,7 @@
 /**
  * MealItemRow — full-width row for a meal item in the nutrition plan builder.
  *
- * Width discipline: single 10px indent + 2px #6c8cff accent rule.
+ * Width discipline: single 10px indent + 2px border-accent rule.
  * Shows food/recipe name + amount (e.g. "Rolled Oats 80g") + per-item macro
  * contribution from item.nutrition (Task 1 server snapshot). If nutrition is
  * absent, shows amount only.
@@ -96,11 +96,8 @@ export function MealItemRow({item, onTap}: MealItemRowProps) {
   const macro = formatMacroContribution(item.nutrition);
 
   return (
-    // 2px #6c8cff accent rule on the row itself; single 10px indent, content-driven height
-    <div
-      className="mt-[7px] flex items-start justify-between pl-2.5"
-      style={{borderLeft: '2px solid #6c8cff'}}
-    >
+    // 2px accent rule on the row itself; single 10px indent, content-driven height
+    <div className="mt-[7px] flex items-start justify-between border-l-2 border-accent pl-2.5">
       {/* Main tap target — name + amount stacked */}
       <button
         className="min-w-0 flex-1 py-[7px] text-left transition-colors hover:opacity-80"

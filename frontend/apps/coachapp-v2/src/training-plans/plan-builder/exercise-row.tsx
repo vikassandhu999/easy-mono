@@ -2,7 +2,7 @@
  * ExerciseRow — one exercise group inside a workout card.
  *
  * Width discipline: ONE 10px left indent anchored by a 2px accent rule
- * (#6c8cff). Set rows and the "+ set" button sit flush within that group —
+ * (border-accent). Set rows and the "+ set" button sit flush within that group —
  * no additional nesting or padding per level.
  *
  * "+ set" appends a default working set via PATCH planned_sets, then opens
@@ -118,10 +118,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
   return (
     <>
       {/* Exercise group: single 10px indent + 2px accent rule — no further nesting */}
-      <div
-        className="mt-2 pl-2.5"
-        style={{borderLeft: '2px solid #6c8cff'}}
-      >
+      <div className="mt-2 border-l-2 border-accent pl-2.5">
         {/* Exercise name + reorder/remove controls */}
         <div className="mb-1 flex items-center justify-between gap-2">
           <span className="min-w-0 truncate text-sm font-semibold text-foreground">{exerciseName}</span>

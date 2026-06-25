@@ -76,8 +76,12 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
   };
 
   const handleAddSet = async () => {
-    const newSet = makeDefaultSet();
-    const updatedSets = [...workoutExercise.planned_sets, newSet];
+    // A new set defaults to a copy of the previous (last) set so the coach tweaks
+    // rather than re-enters; falls back to a blank set only if somehow empty.
+    const sets = workoutExercise.planned_sets;
+    const previous = sets[sets.length - 1];
+    const newSet: TrainingPlanPlannedSet = previous ? {...previous} : makeDefaultSet();
+    const updatedSets = [...sets, newSet];
     const newIndex = updatedSets.length - 1;
 
     try {

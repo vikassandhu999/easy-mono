@@ -1,3 +1,4 @@
+import {X} from 'lucide-react';
 import {forwardRef} from 'react';
 
 import type {TrainingPlanPlannedSet} from '@/api/generated';
@@ -10,7 +11,12 @@ interface SetRowProps {
   /** Exercise tracking_type — drives WHICH measures the summary shows (same
    * source of truth as the SetSheet editor), so the row and sheet never disagree. */
   trackingType: string | null;
+  /** Tap the summary to open the SetSheet editor. */
   onTap: () => void;
+  /** Remove this set. */
+  onRemove: () => void;
+  /** False when this is the only set (planned_sets requires ≥1) — hides remove. */
+  canRemove: boolean;
 }
 
 function formatLoad(set: TrainingPlanPlannedSet): string | null {
@@ -59,21 +65,32 @@ function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | nu
 }
 
 export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow(
-  {set, index, trackingType, onTap},
+  {set, index, trackingType, onTap, onRemove, canRemove},
   ref,
 ) {
   return (
-    <button
-      ref={ref}
-      className="flex w-full items-center justify-between py-1.5 text-left text-xs text-muted hover:text-foreground transition-colors"
-      onClick={onTap}
-      type="button"
-    >
-      <span>
-        <span className="mr-1.5 text-muted">Set {index + 1}</span>
+    <div className="flex items-center gap-2 py-2">
+      {/* Tap the summary to edit this set in the SetSheet */}
+      <button
+        ref={ref}
+        className="min-w-0 flex-1 text-left text-xs text-muted transition-colors hover:text-foreground"
+        onClick={onTap}
+        type="button"
+      >
+        <span className="mr-1.5 font-medium text-foreground">Set {index + 1}</span>
         {formatSetSummary(set, trackingType)}
-      </span>
-      <span className="text-muted text-[10px]">···</span>
-    </button>
+      </button>
+
+      {canRemove ? (
+        <button
+          aria-label={`Remove set ${index + 1}`}
+          className="shrink-0 rounded p-1 text-muted transition-colors hover:text-danger"
+          onClick={onRemove}
+          type="button"
+        >
+          <X size={14} />
+        </button>
+      ) : null}
+    </div>
   );
 });

@@ -266,42 +266,6 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
     scheduleSave({notes: v || null});
   };
 
-  // An exercise must keep at least one set (planned_sets minItems: 1); to clear the
-  // last set you remove the exercise instead.
-  const canRemoveSet = workoutExercise.planned_sets.length > 1;
-
-  const handleRemoveSet = useCallback(async () => {
-    // Cancel any pending autosave — this set is being removed.
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-      pendingPatchRef.current = null;
-    }
-    const updatedSets = workoutExercise.planned_sets.filter((_, i) => i !== setIndex);
-    const cachePatch = dispatch(
-      coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
-        for (const workout of draft.data) {
-          const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
-          if (idx !== -1) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            workout.workout_elements[idx] = {...workout.workout_elements[idx]!, planned_sets: updatedSets};
-            break;
-          }
-        }
-      }),
-    );
-    onClose();
-    try {
-      await updateElement({
-        id: workoutExercise.id,
-        trainingWorkoutExerciseRequest: {planned_sets: updatedSets},
-      }).unwrap();
-    } catch {
-      cachePatch.undo();
-      toast.danger("Couldn't remove set");
-    }
-  }, [workoutExercise, setIndex, updateElement, dispatch, planId, onClose]);
-
   const hasPrev = setIndex > 0;
   const hasNext = setIndex < workoutExercise.planned_sets.length - 1;
 
@@ -531,18 +495,6 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
               />
             </div>
           </div>
-        ) : null}
-
-        {canRemoveSet ? (
-          <button
-            className="mt-3 w-full text-center text-xs font-medium text-danger transition-colors hover:text-danger/80"
-            onClick={() => {
-              handleRemoveSet().catch(() => undefined);
-            }}
-            type="button"
-          >
-            Remove set
-          </button>
         ) : null}
       </div>
     </div>

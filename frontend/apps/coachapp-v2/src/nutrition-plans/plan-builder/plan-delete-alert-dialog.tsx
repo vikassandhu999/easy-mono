@@ -39,7 +39,7 @@ export default function NutritionPlanDeleteAlertDialog({plan, state, onSuccess}:
       onOpenChange={state.setOpen}
     >
       <AlertDialog.Container>
-        <AlertDialog.Dialog className="sm:max-w-[400px]">
+        <AlertDialog.Dialog className="sm:max-w-100">
           <AlertDialog.CloseTrigger />
           <AlertDialog.Header>
             <AlertDialog.Icon status="danger" />

@@ -109,8 +109,34 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
     }
   };
 
+  const handleRemoveSet = async (setIndex: number) => {
+    const updatedSets = workoutExercise.planned_sets.filter((_, i) => i !== setIndex);
+    const cachePatch = dispatch(
+      coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+        for (const workout of draft.data) {
+          const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
+          if (idx !== -1) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            workout.workout_elements[idx] = {...workout.workout_elements[idx]!, planned_sets: updatedSets};
+            break;
+          }
+        }
+      }),
+    );
+    try {
+      await updateElement({
+        id: workoutExercise.id,
+        trainingWorkoutExerciseRequest: {planned_sets: updatedSets},
+      }).unwrap();
+    } catch {
+      cachePatch.undo();
+      toast.danger("Couldn't remove set");
+    }
+  };
+
   const exerciseName = workoutExercise.exercise?.name ?? '—';
   const trackingType = workoutExercise.exercise?.tracking_type ?? null;
+  const canRemoveSet = workoutExercise.planned_sets.length > 1;
 
   return (
     <>
@@ -156,7 +182,11 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             ref={(el) => {
               setButtonRefs.current[i] = el;
             }}
+            canRemove={canRemoveSet}
             index={i}
+            onRemove={() => {
+              handleRemoveSet(i).catch(() => undefined);
+            }}
             onTap={() => openSet(i)}
             set={set}
             trackingType={trackingType}

@@ -224,7 +224,10 @@ export function SearchPickerSheet<T>({
           return (
             <button
               aria-pressed={selected}
-              className="w-full border-b border-border text-left last:border-b-0"
+              className={[
+                'w-full border-b border-border text-left transition-colors last:border-b-0',
+                selected ? 'bg-accent/10' : '',
+              ].join(' ')}
               key={key}
               onClick={() => onToggleItem(item)}
               type="button"
@@ -244,6 +247,11 @@ export function SearchPickerSheet<T>({
             <span className="text-base leading-none">+</span>
             <span>{createLabel ? createLabel(search) : `Create "${search}"`}</span>
           </button>
+        ) : null}
+
+        {/* No-results state — distinct from the loading + create-row cases */}
+        {!loading && items.length === 0 && !showCreateRow ? (
+          <div className="py-8 text-center text-sm text-muted">No results found.</div>
         ) : null}
 
         {/* Infinite scroll sentinel — observed by IntersectionObserver */}

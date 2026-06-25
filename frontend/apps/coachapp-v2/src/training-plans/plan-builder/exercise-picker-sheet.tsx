@@ -147,7 +147,9 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
     [equipmentData, activeEquipmentIds],
   );
 
-  const filters: FilterChip[] = [...muscleChips, ...equipmentChips];
+  // Equipment first (a short, finite set) so it's reachable before the long
+  // muscle list — otherwise it's buried past ~20 muscle chips in the scroll row.
+  const filters: FilterChip[] = [...equipmentChips, ...muscleChips];
 
   // --- Handlers ---
   const handleToggleItem = useCallback((exercise: TrainingExercise) => {
@@ -193,7 +195,10 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
         // Auto-select the newly created exercise
         setSelectedKeys((prev) => new Set([...prev, newExercise.id]));
         setSelectedExercises((prev) => new Map([...prev, [newExercise.id, newExercise]]));
+        // Clear search + filters so the just-created exercise is visible in the list.
         setSearch('');
+        setActiveMuscleIds(new Set());
+        setActiveEquipmentIds(new Set());
       } catch {
         // Creation failed — leave search text so the user can retry
       }
@@ -258,7 +263,7 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
       hasMore={hasNextPage ?? false}
       itemKey={(ex) => ex.id}
       items={exercises}
-      loading={isFetching}
+      loading={isFetching || search !== debouncedSearch}
       onClose={handleClose}
       onConfirm={handleConfirm}
       onCreateNoMatch={handleCreateNoMatch}

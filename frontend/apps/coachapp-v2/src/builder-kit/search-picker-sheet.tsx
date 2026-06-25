@@ -53,8 +53,7 @@ export interface SearchPickerSheetProps<T> {
   renderItem: (item: T, selected: boolean) => ReactNode;
   itemKey: (item: T) => string;
 
-  // --- Selection (controlled) ---
-  multiSelect?: boolean;
+  // --- Selection (controlled, multi-select) ---
   selectedKeys: Set<string>;
   onToggleItem: (item: T) => void;
 
@@ -91,7 +90,6 @@ export function SearchPickerSheet<T>({
   items,
   renderItem,
   itemKey,
-  multiSelect: _multiSelect = true,
   selectedKeys,
   onToggleItem,
   onConfirm,

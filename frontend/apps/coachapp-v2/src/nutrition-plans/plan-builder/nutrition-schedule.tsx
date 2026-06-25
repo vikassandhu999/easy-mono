@@ -203,9 +203,10 @@ function DayTotalBar({totals, targetCalories, label, isOverridden}: DayTotalBarP
         </div>
       </div>
 
-      {/* Percentage */}
+      {/* Percentage — spec shows the real day-vs-target %; the amber tint already
+          signals an overridden day, so no need to hide the number. */}
       <div className={`ml-3 shrink-0 text-lg font-bold ${isOverridden ? 'text-warning' : 'text-accent'}`}>
-        {isOverridden ? '~' : `${calPct}%`}
+        {calPct}%
       </div>
     </div>
   );

@@ -263,7 +263,6 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRec
       itemKey={(item) => item.id}
       items={items}
       loading={loading}
-      multiSelect
       onClose={handleClose}
       onConfirm={handleConfirm}
       onCreateNoMatch={activeTab === 'foods' ? handleCreateNoMatch : undefined}

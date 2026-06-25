@@ -112,8 +112,12 @@ export function MealItemRow({item, onTap}: MealItemRowProps) {
       {macro ? (
         <div className="shrink-0 whitespace-nowrap py-[7px] pl-2 text-right text-[10px] text-muted">
           <span className="font-medium text-[#cde]">{macro.kcal}</span> kcal
-          <br />
-          {macro.p}P {macro.c}C {macro.f}F
+          {macro.p !== '—' || macro.c !== '—' || macro.f !== '—' ? (
+            <>
+              <br />
+              {macro.p}P {macro.c}C {macro.f}F
+            </>
+          ) : null}
         </div>
       ) : null}
     </div>

@@ -259,7 +259,6 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
       itemKey={(ex) => ex.id}
       items={exercises}
       loading={isFetching}
-      multiSelect
       onClose={handleClose}
       onConfirm={handleConfirm}
       onCreateNoMatch={handleCreateNoMatch}

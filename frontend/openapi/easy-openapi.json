@@ -413,6 +413,23 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "tracking_type": {
+            "enum": [
+              "weight_reps",
+              "bodyweight_reps",
+              "weighted_bodyweight",
+              "assisted_bodyweight",
+              "reps_only",
+              "duration",
+              "weight_duration",
+              "distance_duration",
+              "weight_distance"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [

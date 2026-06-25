@@ -109,6 +109,21 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPlanExercise do
       name: %Schema{type: :string},
       mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
       force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
+      tracking_type: %Schema{
+        type: :string,
+        enum: [
+          "weight_reps",
+          "bodyweight_reps",
+          "weighted_bodyweight",
+          "assisted_bodyweight",
+          "reps_only",
+          "duration",
+          "weight_duration",
+          "distance_duration",
+          "weight_distance"
+        ],
+        nullable: true
+      },
       images: %Schema{type: :array, items: %Schema{type: :string}}
     },
     required: [:id, :name, :mechanics, :force]

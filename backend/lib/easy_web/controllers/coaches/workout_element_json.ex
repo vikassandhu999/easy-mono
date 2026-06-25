@@ -27,7 +27,13 @@ defmodule EasyWeb.Coaches.WorkoutElementJSON do
   end
 
   defp exercise_data(%TrainingExercise{} = exercise) do
-    %{id: exercise.id, name: exercise.name, mechanics: exercise.mechanics, force: exercise.force}
+    %{
+      id: exercise.id,
+      name: exercise.name,
+      mechanics: exercise.mechanics,
+      force: exercise.force,
+      tracking_type: exercise.tracking_type
+    }
   end
 
   defp exercise_data(_), do: nil

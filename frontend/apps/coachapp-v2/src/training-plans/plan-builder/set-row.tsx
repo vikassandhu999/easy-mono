@@ -25,8 +25,8 @@ function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | nu
   const fields = fieldsForTrackingType(trackingType);
   const parts: string[] = [];
 
-  const setTypeLabel =
-    set.set_type === 'warmup' ? 'warm-up' : set.set_type === 'dropset' ? 'drop' : (set.set_type ?? 'working');
+  // Title-case to match the SetSheet's set-type buttons (Working / Warm-up / Drop).
+  const setTypeLabel = set.set_type === 'warmup' ? 'Warm-up' : set.set_type === 'dropset' ? 'Drop' : 'Working';
   parts.push(setTypeLabel);
 
   // Reps (combined with load when both are tracked, e.g. weight_reps -> "8 × 100kg")

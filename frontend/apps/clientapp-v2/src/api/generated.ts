@@ -670,6 +670,19 @@ export type TrainingPlanExercise = {
   images?: string[];
   mechanics: ('compound' | 'isolation' | 'isometric') | null;
   name: string;
+  tracking_type?:
+    | (
+        | 'weight_reps'
+        | 'bodyweight_reps'
+        | 'weighted_bodyweight'
+        | 'assisted_bodyweight'
+        | 'reps_only'
+        | 'duration'
+        | 'weight_duration'
+        | 'distance_duration'
+        | 'weight_distance'
+      )
+    | null;
 };
 export type TrainingPerformedSet = {
   completed: boolean;

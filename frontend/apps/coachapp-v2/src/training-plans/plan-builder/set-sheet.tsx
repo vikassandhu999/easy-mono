@@ -55,7 +55,7 @@ const SET_TYPES: {value: SetType; label: string}[] = [
 
 const LOAD_UNITS: {value: LoadUnit; label: string}[] = [
   {value: 'kg', label: 'kg'},
-  {value: 'lbs', label: 'lb'},
+  {value: 'lbs', label: 'lbs'},
   {value: 'bodyweight', label: 'bw'},
 ];
 
@@ -64,6 +64,12 @@ const DISTANCE_UNITS: {value: DistanceUnit; label: string}[] = [
   {value: 'km', label: 'km'},
   {value: 'miles', label: 'mi'},
 ];
+
+// The editor only offers m/km/mi; a stored 'none' (or null) shows as meters,
+// matching the SetRow summary which renders none→'m'.
+function normalizeDistanceUnit(unit: string | null | undefined): DistanceUnit {
+  return unit === 'km' || unit === 'miles' ? unit : 'meters';
+}
 
 // ---------------------------------------------------------------------------
 // SetSheetContent — editor UI shared between mobile sheet and desktop popover
@@ -85,10 +91,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
   const currentSet = workoutExercise.planned_sets[setIndex];
   const exerciseName = workoutExercise.exercise?.name ?? 'Exercise';
 
-  // TrainingPlanExercise (embedded type) doesn't include tracking_type in the
-  // generated schema, but the API does return it at runtime.
-  const trackingType =
-    (workoutExercise.exercise as unknown as {tracking_type?: string | null} | null)?.tracking_type ?? null;
+  const trackingType = workoutExercise.exercise?.tracking_type ?? null;
 
   const fields = fieldsForTrackingType(trackingType);
 
@@ -105,9 +108,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
       : '',
   );
   const [distanceValue, setDistanceValue] = useState<string>(currentSet?.distance_value ?? '');
-  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(
-    (currentSet?.distance_unit as DistanceUnit | null) ?? 'meters',
-  );
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(normalizeDistanceUnit(currentSet?.distance_unit));
   const [restSeconds, setRestSeconds] = useState<string>(
     currentSet?.rest_seconds !== null && currentSet?.rest_seconds !== undefined ? String(currentSet.rest_seconds) : '',
   );
@@ -129,7 +130,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
       s.duration_seconds !== null && s.duration_seconds !== undefined ? String(s.duration_seconds) : '',
     );
     setDistanceValue(s.distance_value ?? '');
-    setDistanceUnit((s.distance_unit as DistanceUnit | null) ?? 'meters');
+    setDistanceUnit(normalizeDistanceUnit(s.distance_unit));
     setRestSeconds(s.rest_seconds !== null && s.rest_seconds !== undefined ? String(s.rest_seconds) : '');
     setNotes(s.notes ?? '');
   }, [setIndex, workoutExercise]);
@@ -230,8 +231,17 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
   };
   const handleRpe = (v: string) => {
     setRpe(v);
+    if (v === '') {
+      scheduleSave({rpe: null});
+      return;
+    }
+    // RPE is bounded 1–10 by the API contract — don't autosave a value the
+    // server would 422 (which would optimistically write then silently roll back).
     const num = Number.parseFloat(v);
-    scheduleSave({rpe: Number.isNaN(num) ? null : num});
+    if (Number.isNaN(num) || num < 1 || num > 10) {
+      return;
+    }
+    scheduleSave({rpe: num});
   };
   const handleDuration = (v: string) => {
     setDurationSeconds(v);

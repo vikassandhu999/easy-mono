@@ -47,7 +47,7 @@ function makeDefaultSet(): TrainingPlanPlannedSet {
     load_unit: 'kg',
     duration_seconds: null,
     distance_value: null,
-    distance_unit: 'none',
+    distance_unit: 'meters',
     rpe: null,
     rest_seconds: null,
     notes: null,
@@ -110,10 +110,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
   };
 
   const exerciseName = workoutExercise.exercise?.name ?? '—';
-  // The embedded TrainingPlanExercise type omits tracking_type; read it through
-  // a cast (same as SetSheet) so set summaries show the right measures.
-  const trackingType =
-    (workoutExercise.exercise as unknown as {tracking_type?: string | null} | null)?.tracking_type ?? null;
+  const trackingType = workoutExercise.exercise?.tracking_type ?? null;
 
   return (
     <>

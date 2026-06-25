@@ -10,6 +10,7 @@
  * immediately (optimistic update pattern).
  */
 import {Popover, toast} from '@heroui/react';
+import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
 import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
@@ -271,56 +272,47 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
 
   return (
     <div className="w-full">
-      {/* Header row: Prev · title · Next on left, Done on right */}
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
-        <div className="flex items-center gap-1.5">
-          {onPrev !== undefined ? (
-            <button
-              aria-label="Previous set"
-              className={[
-                'rounded border px-2 py-0.5 text-xs transition-colors',
-                hasPrev
-                  ? 'border-border text-muted hover:border-default-hover hover:text-foreground'
-                  : 'cursor-default border-transparent text-muted',
-              ].join(' ')}
-              disabled={!hasPrev}
-              onClick={hasPrev ? onPrev : undefined}
-              type="button"
-            >
-              ‹ Prev
-            </button>
-          ) : null}
-          <span className="text-sm font-semibold text-foreground">
-            {exerciseName} · Set {setIndex + 1}
-          </span>
-          {onNext !== undefined ? (
-            <button
-              aria-label="Next set"
-              className={[
-                'rounded border px-2 py-0.5 text-xs transition-colors',
-                hasNext
-                  ? 'border-border text-muted hover:border-default-hover hover:text-foreground'
-                  : 'cursor-default border-transparent text-muted',
-              ].join(' ')}
-              disabled={!hasNext}
-              onClick={hasNext ? onNext : undefined}
-              type="button"
-            >
-              Next ›
-            </button>
-          ) : null}
+      {/* Header: exercise + Done on top, then a "Set N of M" nav row.
+          Prev/Next move between sets without closing (spec — replaces swipe). */}
+      <div className="px-4 pb-2 pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="min-w-0 truncate text-sm font-semibold text-foreground">{exerciseName}</span>
+          <button
+            className="shrink-0 text-sm font-semibold text-accent transition-colors hover:text-accent/80"
+            onClick={() => {
+              flushPendingSave()
+                .then(onClose)
+                .catch(() => undefined);
+            }}
+            type="button"
+          >
+            Done
+          </button>
         </div>
-        <button
-          className="text-sm font-semibold text-accent hover:text-accent/80 transition-colors"
-          onClick={() => {
-            flushPendingSave()
-              .then(onClose)
-              .catch(() => undefined);
-          }}
-          type="button"
-        >
-          Done
-        </button>
+
+        <div className="mt-1.5 flex items-center justify-center gap-4">
+          <button
+            aria-label="Previous set"
+            className="rounded p-1 text-muted transition-colors hover:text-foreground disabled:opacity-30"
+            disabled={!hasPrev}
+            onClick={hasPrev ? onPrev : undefined}
+            type="button"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-xs font-medium text-muted">
+            Set {setIndex + 1} of {workoutExercise.planned_sets.length}
+          </span>
+          <button
+            aria-label="Next set"
+            className="rounded p-1 text-muted transition-colors hover:text-foreground disabled:opacity-30"
+            disabled={!hasNext}
+            onClick={hasNext ? onNext : undefined}
+            type="button"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="px-4 pb-4">

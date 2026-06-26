@@ -69,7 +69,6 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
       <Fieldset>
-        <Fieldset.Legend>Client details</Fieldset.Legend>
         <Fieldset.Group>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormTextField

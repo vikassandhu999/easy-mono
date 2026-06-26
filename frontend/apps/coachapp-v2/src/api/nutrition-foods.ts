@@ -15,13 +15,14 @@
  * in the picker refreshes the list. Import that hook from this module.
  */
 import {api} from '@/api/base';
-import type {
-  CreateFoodApiArg,
-  CreateFoodApiResponse,
-  FoodListResponse,
-  ListFoodsApiArg,
-  ListRecipesApiArg,
-  RecipeListResponse,
+import {
+  type CreateFoodApiArg,
+  type CreateFoodApiResponse,
+  coachApi,
+  type FoodListResponse,
+  type ListFoodsApiArg,
+  type ListRecipesApiArg,
+  type RecipeListResponse,
 } from '@/api/generated';
 import {pageTags} from '@/api/shared';
 
@@ -99,3 +100,25 @@ export const nutritionFoodsApi = api.injectEndpoints({
 });
 
 export const {useCoachFoodsInfiniteQuery, useCoachRecipesInfiniteQuery, useCreateCoachFoodMutation} = nutritionFoodsApi;
+
+// Generated get/update for food & recipe are tag:false. Editing is a separate
+// page that navigates back to the detail (and list) on save, so wire the
+// detail<->list tags here to avoid stale reads after an edit.
+coachApi.enhanceEndpoints({
+  endpoints: {
+    getFood: {providesTags: (_r, _e, {id}) => [{type: 'Food', id}]},
+    updateFood: {
+      invalidatesTags: (_r, _e, {id}) => [
+        {type: 'Food', id},
+        {type: 'Food', id: 'LIST'},
+      ],
+    },
+    getRecipe: {providesTags: (_r, _e, {id}) => [{type: 'Recipe', id}]},
+    updateRecipe: {
+      invalidatesTags: (_r, _e, {id}) => [
+        {type: 'Recipe', id},
+        {type: 'Recipe', id: 'LIST'},
+      ],
+    },
+  },
+});

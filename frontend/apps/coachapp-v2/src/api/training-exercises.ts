@@ -8,11 +8,12 @@
  * types from `generated.ts` so the hand-written query stays type-synced.
  */
 import {api} from '@/api/base';
-import type {
-  CreateExerciseApiArg,
-  CreateExerciseApiResponse,
-  ListCoachExercisesApiArg,
-  TrainingExerciseListResponse,
+import {
+  type CreateExerciseApiArg,
+  type CreateExerciseApiResponse,
+  coachApi,
+  type ListCoachExercisesApiArg,
+  type TrainingExerciseListResponse,
 } from '@/api/generated';
 import {pageTags} from '@/api/shared';
 
@@ -71,3 +72,18 @@ export const trainingExercisesApi = api.injectEndpoints({
 });
 
 export const {useCoachTrainingExercisesInfiniteQuery, useCreateCoachTrainingExerciseMutation} = trainingExercisesApi;
+
+// The generated getExercise/updateExercise are tag:false. Editing happens on a
+// separate page that navigates back to the detail (and list) on save, so without
+// cache coherence both show stale data. Wire the detail<->list tags here.
+coachApi.enhanceEndpoints({
+  endpoints: {
+    getExercise: {providesTags: (_r, _e, {id}) => [{type: 'TrainingExercise', id}]},
+    updateExercise: {
+      invalidatesTags: (_r, _e, {id}) => [
+        {type: 'TrainingExercise', id},
+        {type: 'TrainingExercise', id: 'LIST'},
+      ],
+    },
+  },
+});

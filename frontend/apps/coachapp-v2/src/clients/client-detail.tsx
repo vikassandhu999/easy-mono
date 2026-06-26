@@ -323,7 +323,7 @@ export default function ClientDetail() {
 
   return (
     <Page>
-      <Page.Header className="py-4 sm:py-8 items-center w-full max-w-5xl">
+      <Page.Header className="py-4 sm:py-8 items-center w-full max-w-6xl">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <Button
@@ -350,7 +350,7 @@ export default function ClientDetail() {
       </Page.Header>
 
       <Page.Content className={'px-4 pb-6 md:px-6 lg:px-8'}>
-        <div className="max-w-5xl space-y-4">
+        <div className="max-w-6xl space-y-4">
           {/* Hero — flat profile card */}
           <div className="rounded-xl border border-border bg-surface p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -428,10 +428,10 @@ export default function ClientDetail() {
                 clientId={client.id}
                 clientName={name}
               />
-              <ClientWorkoutHistory clientId={client.id} />
+              <ClientNutritionAdherence clientId={client.id} />
             </div>
             <div className="space-y-4">
-              <ClientNutritionAdherence clientId={client.id} />
+              <ClientWorkoutHistory clientId={client.id} />
               <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
                 <SectionHeading title="Notes" />
                 <InlineNotes

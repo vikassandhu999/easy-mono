@@ -19,7 +19,7 @@ import ClientNutritionAdherence from '@/clients/components/client-nutrition-adhe
 import ClientStatStrip from '@/clients/components/client-stat-strip';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
-import PlanAssignSheet from '@/clients/components/plan-assign-sheet';
+import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_CHIP_COLOR, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
 
 function SectionHeading({title}: {title: string}) {
@@ -55,8 +55,6 @@ function formatPlanSchedule(start: string | null, end: string | null): string | 
 }
 
 function ClientPlans({clientId, clientName}: {clientId: string; clientName: string}) {
-  const [openSheet, setOpenSheet] = useState<'nutrition' | 'training' | null>(null);
-
   const {data: nutritionData, isLoading: isLoadingNutrition} = useListCoachClientNutritionPlansQuery({clientId});
   const {data: trainingData, isLoading: isLoadingTraining} = useListCoachClientTrainingPlansQuery({clientId});
 
@@ -165,40 +163,21 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
           )}
 
           <div className="mt-2 flex gap-2">
-            <Button
-              className="text-muted"
-              onPress={() => setOpenSheet('nutrition')}
-              size="sm"
-              variant="ghost"
-            >
-              + Nutrition plan
-            </Button>
-            <Button
-              className="text-muted"
-              onPress={() => setOpenSheet('training')}
-              size="sm"
-              variant="ghost"
-            >
-              + Training plan
-            </Button>
+            <PlanAssignControl
+              clientId={clientId}
+              clientName={clientName}
+              kind="nutrition"
+              label="+ Nutrition plan"
+            />
+            <PlanAssignControl
+              clientId={clientId}
+              clientName={clientName}
+              kind="training"
+              label="+ Training plan"
+            />
           </div>
         </>
       )}
-
-      <PlanAssignSheet
-        clientId={clientId}
-        clientName={clientName}
-        kind="nutrition"
-        onClose={() => setOpenSheet(null)}
-        open={openSheet === 'nutrition'}
-      />
-      <PlanAssignSheet
-        clientId={clientId}
-        clientName={clientName}
-        kind="training"
-        onClose={() => setOpenSheet(null)}
-        open={openSheet === 'training'}
-      />
     </section>
   );
 }
@@ -345,7 +324,7 @@ export default function ClientDetail() {
 
   return (
     <Page>
-      <Page.Header className="py-4 sm:py-8 items-center mx-auto w-full max-w-5xl">
+      <Page.Header className="py-4 sm:py-8 items-center w-full max-w-5xl">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <Button
@@ -372,7 +351,7 @@ export default function ClientDetail() {
       </Page.Header>
 
       <Page.Content className={'px-4 pb-6 md:px-6 lg:px-8'}>
-        <div className="mx-auto max-w-5xl space-y-4">
+        <div className="max-w-5xl space-y-4">
           {/* Hero — flat profile card */}
           <div className="rounded-xl border border-border bg-surface p-4">
             <div className="flex flex-wrap items-center gap-3">

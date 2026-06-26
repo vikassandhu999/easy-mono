@@ -316,6 +316,7 @@ export default function ClientDetail() {
   }
 
   const client = data.data;
+  const isPending = client.status === 'pending';
   const statusColor = STATUS_CHIP_COLOR[client.status] ?? 'default';
 
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
@@ -413,7 +414,7 @@ export default function ClientDetail() {
             </div>
           </div>
 
-          {client.status === 'pending' ? (
+          {isPending ? (
             <InvitationWidget
               client={client}
               onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
@@ -428,10 +429,11 @@ export default function ClientDetail() {
                 clientId={client.id}
                 clientName={name}
               />
-              <ClientNutritionAdherence clientId={client.id} />
+              {/* Nutrition adherence only makes sense once the client logs — hidden while pending. */}
+              {isPending ? null : <ClientNutritionAdherence clientId={client.id} />}
             </div>
             <div className="space-y-4">
-              <ClientWorkoutHistory clientId={client.id} />
+              {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
               <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
                 <SectionHeading title="Notes" />
                 <InlineNotes

@@ -126,129 +126,119 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
 
   const whatsappUrl = buildInvitationWhatsAppUrl({phone: client.phone, firstName, inviteUrl});
   const expiresIn = client.invitation_expires_at ? formatInvitationExpiresIn(client.invitation_expires_at) : null;
+  const headingName = firstName ?? 'This client';
 
   const resendDisabled = !client.email || isResending;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
-            <Send size={15} />
-          </span>
-          <div className="min-w-0">
-            <Typography
-              type="body-sm"
-              weight="semibold"
-            >
-              Invitation pending
-            </Typography>
-            {expiresIn ? (
-              <Typography
-                color="muted"
-                type="body-xs"
-              >
-                Expires {expiresIn}
-              </Typography>
-            ) : null}
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
+    <div className="rounded-xl border border-border bg-surface px-6 py-8">
+      <div className="flex flex-col items-center text-center">
+        <span className="mb-4 grid size-12 place-items-center rounded-full bg-accent-soft text-accent">
+          <Send size={22} />
+        </span>
+        <Typography type="h6">{headingName} hasn’t joined yet</Typography>
+        <Typography
+          className="mt-1 max-w-sm"
+          color="muted"
+          type="body-sm"
+        >
+          Share their invite link so they can set up the app{expiresIn ? ` — expires ${expiresIn}` : ''}.
+        </Typography>
+
+        <div className="mt-5 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">
           <a
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-success/10 px-3 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
+            className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success/10 px-4 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
             href={whatsappUrl}
             rel="noopener noreferrer"
             target="_blank"
           >
-            <MessageCircle size={15} />
-            WhatsApp
+            <MessageCircle size={16} />
+            Share on WhatsApp
           </a>
           <Button
             onPress={handleCopy}
-            size="sm"
             variant="secondary"
           >
-            <ClipboardCopy size={15} />
+            <ClipboardCopy size={16} />
             Copy link
           </Button>
           <Button
             isDisabled={resendDisabled}
             isPending={isResending}
             onPress={handleResend}
+            variant="ghost"
+          >
+            <Mail size={16} />
+            Resend email
+          </Button>
+        </div>
+        {!client.email ? (
+          <Typography
+            className="mt-3"
+            color="muted"
+            type="body-xs"
+          >
+            No email on file — use WhatsApp to share the link.
+          </Typography>
+        ) : null}
+
+        <AlertDialog>
+          <Button
+            className="mt-5 text-muted hover:text-danger"
             size="sm"
             variant="ghost"
           >
-            <Mail size={15} />
-            Resend
+            <Trash2 size={14} />
+            Revoke invitation
           </Button>
-          <AlertDialog>
-            <Button
-              aria-label="Revoke invitation"
-              className="text-danger"
-              isIconOnly
-              size="sm"
-              variant="ghost"
-            >
-              <Trash2 size={15} />
-            </Button>
-            <AlertDialog.Backdrop>
-              <AlertDialog.Container>
-                <AlertDialog.Dialog className="sm:max-w-[400px]">
-                  {/*
+          <AlertDialog.Backdrop>
+            <AlertDialog.Container>
+              <AlertDialog.Dialog className="sm:max-w-[400px]">
+                {/*
                   Using the render-prop form so we can call `close()`
                   programmatically after a revoke attempt. On success the
                   parent nav unmounts this tree anyway; on failure the
                   explicit close hides the dialog so the error toast is
                   actually visible.
                 */}
-                  {({close}) => (
-                    <>
-                      <AlertDialog.CloseTrigger />
-                      <AlertDialog.Header>
-                        <AlertDialog.Icon status="danger" />
-                        <AlertDialog.Heading>Revoke this invitation?</AlertDialog.Heading>
-                      </AlertDialog.Header>
-                      <AlertDialog.Body>
-                        <p>
-                          {displayName === 'your client' ? 'Their' : `${displayName}'s`} link will no longer work. You
-                          can re-invite them later.
-                        </p>
-                      </AlertDialog.Body>
-                      <AlertDialog.Footer>
-                        <Button
-                          slot="close"
-                          variant="tertiary"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          isPending={isRevoking}
-                          onPress={async () => {
-                            await handleRevoke();
-                            close();
-                          }}
-                          variant="danger"
-                        >
-                          {isRevoking ? 'Revoking...' : 'Revoke'}
-                        </Button>
-                      </AlertDialog.Footer>
-                    </>
-                  )}
-                </AlertDialog.Dialog>
-              </AlertDialog.Container>
-            </AlertDialog.Backdrop>
-          </AlertDialog>
-        </div>
+                {({close}) => (
+                  <>
+                    <AlertDialog.CloseTrigger />
+                    <AlertDialog.Header>
+                      <AlertDialog.Icon status="danger" />
+                      <AlertDialog.Heading>Revoke this invitation?</AlertDialog.Heading>
+                    </AlertDialog.Header>
+                    <AlertDialog.Body>
+                      <p>
+                        {displayName === 'your client' ? 'Their' : `${displayName}'s`} link will no longer work. You can
+                        re-invite them later.
+                      </p>
+                    </AlertDialog.Body>
+                    <AlertDialog.Footer>
+                      <Button
+                        slot="close"
+                        variant="tertiary"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        isPending={isRevoking}
+                        onPress={async () => {
+                          await handleRevoke();
+                          close();
+                        }}
+                        variant="danger"
+                      >
+                        {isRevoking ? 'Revoking...' : 'Revoke'}
+                      </Button>
+                    </AlertDialog.Footer>
+                  </>
+                )}
+              </AlertDialog.Dialog>
+            </AlertDialog.Container>
+          </AlertDialog.Backdrop>
+        </AlertDialog>
       </div>
-      {!client.email ? (
-        <Typography
-          className="mt-2"
-          color="muted"
-          type="body-xs"
-        >
-          No email on file — use WhatsApp to share the link.
-        </Typography>
-      ) : null}
     </div>
   );
 }

@@ -50,16 +50,18 @@ export default function CreateRecipe() {
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <RecipeForm
-          form={form}
-          ingredients={ingredients}
-          isSubmitting={isLoading}
-          onCancel={goBack}
-          onIngredientsChange={setIngredients}
-          onSubmit={onSubmit}
-          submitLabel="Create recipe"
-          submittingLabel="Creating recipe"
-        />
+        <div className="max-w-160 mt-4">
+          <RecipeForm
+            form={form}
+            ingredients={ingredients}
+            isSubmitting={isLoading}
+            onCancel={goBack}
+            onIngredientsChange={setIngredients}
+            onSubmit={onSubmit}
+            submitLabel="Create recipe"
+            submittingLabel="Creating recipe"
+          />
+        </div>
       </Page.Content>
     </Page>
   );

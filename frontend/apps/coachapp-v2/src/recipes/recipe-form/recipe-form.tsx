@@ -1,4 +1,4 @@
-import {Button, Description, ErrorMessage, Fieldset, Form, Spinner} from '@heroui/react';
+import {Button, ErrorMessage, Fieldset, Form, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useCallback, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
@@ -156,22 +156,17 @@ export default function RecipeForm({
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
       <Fieldset>
-        <Fieldset.Legend>Recipe details</Fieldset.Legend>
-        <Description>Name the recipe and add instructions</Description>
-
         <Fieldset.Group>
           <FormTextField
             control={control}
-            description="Use the name clients will recognize"
             fullWidth
             isRequired
-            label="Name (required)"
+            label="Name"
             name="name"
           />
 
           <FormTextAreaField
             control={control}
-            description="Add prep steps or serving notes"
             fullWidth
             label="Instructions (optional)"
             name="instructions"
@@ -182,7 +177,6 @@ export default function RecipeForm({
 
       <Fieldset>
         <Fieldset.Legend>Ingredients</Fieldset.Legend>
-        <Description>Search and add foods to this recipe</Description>
         <Fieldset.Group>
           <FoodPicker
             excludeIds={excludeIds}

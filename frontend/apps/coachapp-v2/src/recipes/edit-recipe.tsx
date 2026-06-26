@@ -62,16 +62,18 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <RecipeForm
-          form={form}
-          ingredients={ingredients}
-          isSubmitting={isUpdating}
-          onCancel={goBack}
-          onIngredientsChange={setIngredients}
-          onSubmit={onSubmit}
-          submitLabel="Save changes"
-          submittingLabel="Saving changes"
-        />
+        <div className="max-w-160 mt-4">
+          <RecipeForm
+            form={form}
+            ingredients={ingredients}
+            isSubmitting={isUpdating}
+            onCancel={goBack}
+            onIngredientsChange={setIngredients}
+            onSubmit={onSubmit}
+            submitLabel="Save changes"
+            submittingLabel="Saving changes"
+          />
+        </div>
       </Page.Content>
     </Page>
   );

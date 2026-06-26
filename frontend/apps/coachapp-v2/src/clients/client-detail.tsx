@@ -19,6 +19,7 @@ import {
 } from '@/api/generated';
 import {toNullableText} from '@/api/shared';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
+import ClientStatStrip from '@/clients/components/client-stat-strip';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
 import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_CHIP_COLOR, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
@@ -395,7 +396,7 @@ export default function ClientDetail() {
 
   return (
     <Page>
-      <Page.Header className="py-4 max-w-xl sm:py-8 items-center">
+      <Page.Header className="py-4 sm:py-8 items-center mx-auto w-full max-w-5xl">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <Button
@@ -421,98 +422,103 @@ export default function ClientDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className={'px-4 md:px-6 lg:px-8'}>
-        <div className=" max-w-xl overflow-hidden">
+      <Page.Content className={'px-4 pb-6 md:px-6 lg:px-8'}>
+        <div className="mx-auto max-w-5xl space-y-4">
+          {/* Hero — flat profile card */}
           <div className="rounded-xl border border-border bg-surface p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Avatar
-                className="size-12"
+                className="size-14"
                 color="accent"
               >
                 <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <Typography
-                  truncate
-                  type="h5"
-                >
-                  {name}
-                </Typography>
+                <div className="flex items-center gap-2">
+                  <Typography
+                    truncate
+                    type="h5"
+                  >
+                    {name}
+                  </Typography>
+                  <Chip
+                    color={statusColor}
+                    size="sm"
+                    variant="soft"
+                  >
+                    {client.status}
+                  </Chip>
+                </div>
                 {client.phone ? (
                   <Typography
+                    className="mt-0.5 flex items-center gap-1.5"
                     color="muted"
                     truncate
                     type="body-sm"
                   >
+                    <Phone size={14} />
                     {client.phone}
                   </Typography>
                 ) : null}
               </div>
-              <Chip
-                color={statusColor}
-                size="sm"
-                variant="soft"
-              >
-                {client.status}
-              </Chip>
+              {client.phone ? (
+                <div className="flex w-full gap-2 sm:w-auto">
+                  <a
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success/10 px-4 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20 sm:flex-none"
+                    href={getWhatsAppUrl(client.phone)}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <MessageCircle size={16} />
+                    WhatsApp
+                  </a>
+                  <a
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft sm:flex-none"
+                    href={`tel:${client.phone}`}
+                  >
+                    <Phone size={16} />
+                    Call
+                  </a>
+                </div>
+              ) : null}
             </div>
-
-            {client.phone ? (
-              <div className="mt-3 flex gap-2 border-t border-border pt-3">
-                <a
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
-                  href={getWhatsAppUrl(client.phone)}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <MessageCircle size={16} />
-                  WhatsApp
-                </a>
-                <a
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft"
-                  href={`tel:${client.phone}`}
-                >
-                  <Phone size={16} />
-                  Call
-                </a>
-              </div>
-            ) : null}
           </div>
 
           {client.status === 'pending' ? (
-            <section className="py-4">
-              <Separator className="mb-4" />
-              <InvitationWidget
-                client={client}
-                onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
-              />
-            </section>
-          ) : null}
-
-          <ClientPlans clientId={client.id} />
-
-          <section className="py-4">
-            <Separator className="mb-4" />
-            <SectionHeading title="Notes" />
-            <InlineNotes
-              clientId={client.id}
-              initialNotes={client.notes}
+            <InvitationWidget
+              client={client}
+              onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
             />
-          </section>
+          ) : (
+            <ClientStatStrip clientId={client.id} />
+          )}
 
-          <ClientNutritionAdherence clientId={client.id} />
-
-          <ClientWorkoutHistory clientId={client.id} />
-
-          <section className="py-4">
-            <Separator className="mb-4" />
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              Added {formatIsoDateOnly(client.inserted_at)}
-            </Typography>
-          </section>
+          <div className="grid gap-x-8 lg:grid-cols-3 lg:items-start">
+            <div className="lg:col-span-2">
+              <ClientPlans clientId={client.id} />
+              <ClientWorkoutHistory clientId={client.id} />
+            </div>
+            <div>
+              <ClientNutritionAdherence clientId={client.id} />
+              <section className="py-4">
+                <Separator className="mb-4" />
+                <SectionHeading title="Notes" />
+                <InlineNotes
+                  clientId={client.id}
+                  initialNotes={client.notes}
+                />
+              </section>
+              <section className="py-4">
+                <Separator className="mb-4" />
+                <Typography
+                  color="muted"
+                  type="body-sm"
+                >
+                  Added {formatIsoDateOnly(client.inserted_at)}
+                </Typography>
+              </section>
+            </div>
+          </div>
         </div>
       </Page.Content>
     </Page>

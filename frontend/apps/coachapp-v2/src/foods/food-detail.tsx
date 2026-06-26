@@ -102,19 +102,19 @@ export default function FoodDetail() {
   return (
     <Page>
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-        <Page.TitleGroup>
+        <Page.TitleGroup className={'flex items-center'}>
+          <Button
+            onPress={goBack}
+            size="sm"
+            variant="ghost"
+            isIconOnly
+          >
+            <ArrowLeft size={18} />
+          </Button>
           <Page.Title>Food</Page.Title>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Toolbar className="flex items-center gap-2">
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Foods
-        </Button>
         {!isSystemFood && (
           <Button
             onPress={() => navigate(`/library/foods/${food.id}/edit`)}

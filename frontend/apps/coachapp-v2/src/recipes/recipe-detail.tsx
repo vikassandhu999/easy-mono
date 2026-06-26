@@ -98,19 +98,19 @@ export default function RecipeDetail() {
   return (
     <Page>
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-        <Page.TitleGroup>
+        <Page.TitleGroup className={'flex items-center'}>
+          <Button
+            onPress={goBack}
+            size="sm"
+            variant="ghost"
+            isIconOnly
+          >
+            <ArrowLeft size={18} />
+          </Button>
           <Page.Title>Recipe</Page.Title>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Toolbar className="flex items-center gap-2">
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Recipes
-        </Button>
         <Button
           onPress={() => navigate(`/library/recipes/${recipe.id}/edit`)}
           size="sm"

@@ -37,20 +37,20 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
     <Page>
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
         <Page.TitleGroup>
-          <Page.Title>Edit training plan</Page.Title>
+          <div className={'flex items-center gap-1'}>
+            <Button
+              onPress={goBack}
+              size="md"
+              variant="ghost"
+              isIconOnly
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <Page.Title>Edit training plan</Page.Title>
+          </div>
           <Page.Description>{plan.name}</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Toolbar>
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Training plan
-        </Button>
-      </Page.Toolbar>
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
         <TrainingPlanForm
           form={form}

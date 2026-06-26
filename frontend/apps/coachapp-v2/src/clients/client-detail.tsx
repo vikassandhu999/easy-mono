@@ -1,6 +1,6 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {Alert, Avatar, Button, Chip, Separator, Spinner, TextArea, Typography, toast} from '@heroui/react';
-import {ArrowLeft, MessageCircle, Pencil, Phone} from 'lucide-react';
+import {ArrowLeft, Dumbbell, MessageCircle, Pencil, Phone, Utensils} from 'lucide-react';
 import {useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 
@@ -25,7 +25,7 @@ import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_CHIP_COLOR, UNKNOWN_PLAN_STATUS}
 function SectionHeading({title}: {title: string}) {
   return (
     <Typography
-      className="mb-3"
+      className="mb-3 uppercase tracking-wider"
       color="muted"
       type="body-xs"
       weight="semibold"
@@ -33,6 +33,25 @@ function SectionHeading({title}: {title: string}) {
       {title}
     </Typography>
   );
+}
+
+/** Compact assigned-plan window: "Jun 26 – Aug 21, 2026" (drops the repeated
+ *  year), "From …" / "Until …" for open-ended, or null when unscheduled. */
+function formatPlanSchedule(start: string | null, end: string | null): string | null {
+  if (start && end) {
+    const startLabel = formatIsoDateOnly(start);
+    const endLabel = formatIsoDateOnly(end);
+    return start.slice(0, 4) === end.slice(0, 4)
+      ? `${startLabel.replace(/, \d{4}$/, '')} – ${endLabel}`
+      : `${startLabel} – ${endLabel}`;
+  }
+  if (start) {
+    return `From ${formatIsoDateOnly(start)}`;
+  }
+  if (end) {
+    return `Until ${formatIsoDateOnly(end)}`;
+  }
+  return null;
 }
 
 function ClientPlans({clientId, clientName}: {clientId: string; clientName: string}) {
@@ -61,13 +80,16 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
             <div className="flex flex-col gap-2">
               {nutritionPlans.map((plan: NutritionPlan) => {
                 const planStatus = PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS;
-                const mealCount = plan.meals?.length ?? 0;
+                const schedule = formatPlanSchedule(plan.start_date, plan.end_date);
                 return (
                   <Link
                     className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                     key={plan.id}
                     to={`/library/nutrition-plans/${plan.id}`}
                   >
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-success/10 text-success">
+                      <Utensils size={16} />
+                    </span>
                     <div className="min-w-0 flex-1">
                       <Typography
                         truncate
@@ -80,7 +102,7 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
                         color="muted"
                         type="body-xs"
                       >
-                        Nutrition{mealCount > 0 ? ` · ${mealCount} meal${mealCount !== 1 ? 's' : ''}` : ''}
+                        Nutrition{schedule ? ` · ${schedule}` : ''}
                       </Typography>
                     </div>
                     <Chip
@@ -96,12 +118,16 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
               {trainingPlans.map((plan: ClientTrainingPlan) => {
                 const planStatus = PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS;
                 const workoutCount = plan.workouts.length;
+                const schedule = formatPlanSchedule(plan.start_date, plan.end_date);
                 return (
                   <Link
                     className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                     key={plan.id}
                     to={`/library/training-plans/${plan.id}`}
                   >
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                      <Dumbbell size={16} />
+                    </span>
                     <div className="min-w-0 flex-1">
                       <Typography
                         truncate
@@ -114,8 +140,8 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
                         color="muted"
                         type="body-xs"
                       >
-                        Training
-                        {workoutCount > 0 ? ` · ${workoutCount} workout${workoutCount !== 1 ? 's' : ''}` : ''}
+                        Training{workoutCount > 0 ? ` · ${workoutCount} workout${workoutCount !== 1 ? 's' : ''}` : ''}
+                        {schedule ? ` · ${schedule}` : ''}
                       </Typography>
                     </div>
                     <Chip

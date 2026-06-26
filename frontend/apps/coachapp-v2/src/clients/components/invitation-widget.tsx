@@ -1,5 +1,5 @@
-import {AlertDialog, Button, Card, Separator, toast} from '@heroui/react';
-import {ClipboardCopy, MessageCircle, Send, Trash2} from 'lucide-react';
+import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
+import {ClipboardCopy, Link2, Mail, MessageCircle, Trash2, UserPlus} from 'lucide-react';
 
 import {type Client, useResendClientInviteMutation, useRevokeInvitationMutation} from '@/api/clients';
 import {getApiErrorMessage} from '@/api/shared';
@@ -102,13 +102,14 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
   // client and no hint why.
   if (!inviteUrl) {
     return (
-      <Card>
-        <Card.Content className="p-4">
-          <p className="text-sm text-danger">
-            Invitation link unavailable. Refresh the page; if the problem persists, revoke and re-invite.
-          </p>
-        </Card.Content>
-      </Card>
+      <div className="rounded-xl border border-danger/20 bg-danger/5 p-4">
+        <Typography
+          className="text-danger"
+          type="body-sm"
+        >
+          Invitation link unavailable. Refresh the page; if the problem persists, revoke and re-invite.
+        </Typography>
+      </div>
     );
   }
 
@@ -152,65 +153,104 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
   const resendDisabled = !client.email || isResending;
 
   return (
-    <Card>
-      <Card.Content className="flex flex-col gap-4 p-4">
-        <div className="flex flex-col gap-1">
-          <h3 className="text-sm font-semibold">Invitation</h3>
-          <p className="text-xs text-muted">Share this link with {displayName} to onboard them:</p>
-        </div>
-
-        <div className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-secondary px-3 py-2">
-          <p className="min-w-0 flex-1 truncate text-xs text-muted">{inviteUrl}</p>
-          <Button
-            aria-label="Copy invite link"
-            onPress={handleCopy}
-            size="sm"
-            variant="ghost"
-          >
-            <ClipboardCopy size={16} />
-            Copy
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <a
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
-            href={whatsappUrl}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <MessageCircle size={16} />
-            Share on WhatsApp
-          </a>
-          <Button
-            isDisabled={resendDisabled}
-            isPending={isResending}
-            onPress={handleResend}
-            variant="secondary"
-          >
-            <Send size={16} />
-            Resend email
-          </Button>
-        </div>
-        {!client.email ? (
-          <p className="text-xs text-muted">No email on file — use WhatsApp to share the link.</p>
-        ) : null}
-
-        {sentAgo || expiresIn ? (
-          <div className="flex flex-col gap-0.5 text-xs text-muted">
-            {sentAgo ? <p>Invited {sentAgo}.</p> : null}
-            {expiresIn ? <p>Invitation expires {expiresIn}.</p> : null}
+    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+      {/* Header: icon + title + expiry chip */}
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
+          <UserPlus size={18} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Typography
+              type="body-sm"
+              weight="semibold"
+            >
+              Invitation pending
+            </Typography>
+            {expiresIn ? (
+              <Chip
+                color={expiresIn === 'today' || expiresIn === 'expired' ? 'warning' : 'default'}
+                size="sm"
+                variant="soft"
+              >
+                Expires {expiresIn}
+              </Chip>
+            ) : null}
           </div>
-        ) : null}
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            Share this link with {displayName} to get them onboarded.
+          </Typography>
+        </div>
+      </div>
 
-        <Separator />
+      {/* Copy-link field */}
+      <div className="mt-4 flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-secondary py-1.5 pr-1.5 pl-3">
+        <Link2
+          className="shrink-0 text-muted"
+          size={14}
+        />
+        <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted">{inviteUrl}</span>
+        <Button
+          aria-label="Copy invite link"
+          onPress={handleCopy}
+          size="sm"
+          variant="secondary"
+        >
+          <ClipboardCopy size={14} />
+          Copy
+        </Button>
+      </div>
+
+      {/* Share actions */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-success/10 px-4 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
+          href={whatsappUrl}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <MessageCircle size={16} />
+          Share on WhatsApp
+        </a>
+        <Button
+          isDisabled={resendDisabled}
+          isPending={isResending}
+          onPress={handleResend}
+          variant="secondary"
+        >
+          <Mail size={16} />
+          Resend email
+        </Button>
+      </div>
+      {!client.email ? (
+        <Typography
+          className="mt-2"
+          color="muted"
+          type="body-xs"
+        >
+          No email on file — use WhatsApp to share the link.
+        </Typography>
+      ) : null}
+
+      {/* Footer: sent-ago + revoke */}
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
+        <Typography
+          color="muted"
+          type="body-xs"
+        >
+          {sentAgo ? `Invited ${sentAgo}` : 'Invitation sent'}
+        </Typography>
         <AlertDialog>
           <Button
+            className="text-danger"
             size="sm"
             variant="ghost"
           >
-            <Trash2 size={16} />
-            Revoke invitation
+            <Trash2 size={14} />
+            Revoke
           </Button>
           <AlertDialog.Backdrop>
             <AlertDialog.Container>
@@ -259,7 +299,7 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
             </AlertDialog.Container>
           </AlertDialog.Backdrop>
         </AlertDialog>
-      </Card.Content>
-    </Card>
+      </div>
+    </div>
   );
 }

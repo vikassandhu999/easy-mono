@@ -52,7 +52,7 @@ export default function ExerciseDetail() {
       dispatch(coachApi.util.invalidateTags([{type: 'TrainingExercise', id: 'LIST'}]));
       navigate(ROUTES.EXERCISES, {replace: true});
     } catch {
-      // Mutation error — could add a toast here in the future.
+      toast.danger("Couldn't delete exercise");
     }
   };
 

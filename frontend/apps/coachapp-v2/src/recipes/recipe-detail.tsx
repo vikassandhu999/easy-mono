@@ -1,5 +1,5 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Spinner, Typography} from '@heroui/react';
+import {AlertDialog, Button, Spinner, Typography, toast} from '@heroui/react';
 import {ArrowLeft, ChefHat, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -36,7 +36,7 @@ export default function RecipeDetail() {
       dispatch(coachApi.util.invalidateTags([{type: 'Recipe', id: 'LIST'}]));
       navigate(ROUTES.RECIPES, {replace: true});
     } catch {
-      // Mutation error — could add a toast here in the future.
+      toast.danger("Couldn't delete recipe");
     }
   };
 

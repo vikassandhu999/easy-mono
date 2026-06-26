@@ -1,5 +1,5 @@
 import {formatWeekday, getCurrentWeekRange, getDateForWeekdayIndex} from '@easy/utils';
-import {Button, Separator, Spinner} from '@heroui/react';
+import {Button, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
 import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/generated';
 import type {Macros} from '@/api/shared';
@@ -60,8 +60,7 @@ export default function ClientNutritionAdherence({
   };
 
   return (
-    <section className="py-4">
-      <Separator className="mb-4" />
+    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Nutrition</h3>
 
       {isLoading ? (
@@ -144,6 +143,6 @@ export default function ClientNutritionAdherence({
           ) : null}
         </>
       )}
-    </section>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import {formatSessionDate, SESSION_STATE_CHIP} from '@easy/utils';
-import {Chip, ListBox, Separator, Spinner} from '@heroui/react';
+import {Chip, ListBox, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
@@ -99,8 +99,7 @@ export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
   const hasMore = totalCount > PREVIEW_LIMIT;
 
   return (
-    <section className="py-4">
-      <Separator className="mb-4" />
+    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Workout History</h3>
 
       {isLoading ? (
@@ -129,6 +128,6 @@ export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
       ) : (
         <p className="text-sm text-muted">No workouts logged yet.</p>
       )}
-    </section>
+    </div>
   );
 }

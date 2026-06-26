@@ -1,5 +1,5 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {Alert, Avatar, Button, Chip, Separator, Spinner, TextArea, Typography, toast} from '@heroui/react';
+import {Alert, Avatar, Button, Chip, Spinner, TextArea, Typography, toast} from '@heroui/react';
 import {ArrowLeft, Dumbbell, MessageCircle, Pencil, Phone, Utensils} from 'lucide-react';
 import {useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
@@ -64,8 +64,7 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
   const hasPlans = nutritionPlans.length > 0 || trainingPlans.length > 0;
 
   return (
-    <section className="py-4">
-      <Separator className="mb-4" />
+    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
       <SectionHeading title="Plans" />
 
       {isLoading ? (
@@ -81,7 +80,7 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
                 const schedule = formatPlanSchedule(plan.start_date, plan.end_date);
                 return (
                   <Link
-                    className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                    className="flex min-h-11 items-center gap-3 rounded-xl bg-surface-secondary p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                     key={plan.id}
                     to={`/library/nutrition-plans/${plan.id}`}
                   >
@@ -119,7 +118,7 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
                 const schedule = formatPlanSchedule(plan.start_date, plan.end_date);
                 return (
                   <Link
-                    className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                    className="flex min-h-11 items-center gap-3 rounded-xl bg-surface-secondary p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                     key={plan.id}
                     to={`/library/training-plans/${plan.id}`}
                   >
@@ -178,7 +177,7 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
           </div>
         </>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -423,33 +422,30 @@ export default function ClientDetail() {
             <ClientStatStrip clientId={client.id} />
           )}
 
-          <div className="grid gap-x-8 lg:grid-cols-3 lg:items-start">
-            <div className="lg:col-span-2">
+          <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+            <div className="space-y-4 lg:col-span-2">
               <ClientPlans
                 clientId={client.id}
                 clientName={name}
               />
               <ClientWorkoutHistory clientId={client.id} />
             </div>
-            <div>
+            <div className="space-y-4">
               <ClientNutritionAdherence clientId={client.id} />
-              <section className="py-4">
-                <Separator className="mb-4" />
+              <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
                 <SectionHeading title="Notes" />
                 <InlineNotes
                   clientId={client.id}
                   initialNotes={client.notes}
                 />
-              </section>
-              <section className="py-4">
-                <Separator className="mb-4" />
-                <Typography
-                  color="muted"
-                  type="body-sm"
-                >
-                  Added {formatIsoDateOnly(client.inserted_at)}
-                </Typography>
-              </section>
+              </div>
+              <Typography
+                className="px-1"
+                color="muted"
+                type="body-xs"
+              >
+                Added {formatIsoDateOnly(client.inserted_at)}
+              </Typography>
             </div>
           </div>
         </div>

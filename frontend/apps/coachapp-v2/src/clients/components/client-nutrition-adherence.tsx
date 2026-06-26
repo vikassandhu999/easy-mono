@@ -17,6 +17,15 @@ import {
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+/** Bar fill per adherence level (height encodes the day's %). */
+const BAR_BG: Record<AdherenceLevel, string> = {
+  high: 'bg-success',
+  medium: 'bg-warning',
+  low: 'bg-danger',
+  none: 'bg-default',
+  future: 'bg-default',
+};
+
 export default function ClientNutritionAdherence({
   clientId,
   macrosGoal: macrosGoalProp,
@@ -52,6 +61,15 @@ export default function ClientNutritionAdherence({
     });
   }, [summaries, plannedCalories]);
 
+  // Weekly average across logged days (the big headline %).
+  const weekAvg = useMemo(() => {
+    const percents = days.map((d) => d.percent).filter((p): p is number => p != null);
+    if (percents.length === 0) {
+      return null;
+    }
+    return Math.round(percents.reduce((sum, p) => sum + p, 0) / percents.length);
+  }, [days]);
+
   const handleDayTap = (dateStr: string, level: AdherenceLevel) => {
     if (level === 'future') {
       return;
@@ -69,37 +87,39 @@ export default function ClientNutritionAdherence({
         </div>
       ) : (
         <>
-          <div className="flex justify-between gap-1">
-            {days.map((day) => (
-              <Button
-                className="flex flex-1 flex-col items-center gap-1"
-                isDisabled={day.level === 'future'}
-                key={day.dateStr}
-                onPress={() => handleDayTap(day.dateStr, day.level)}
-                variant="ghost"
-              >
-                <p className="text-[10px] text-muted">{day.label}</p>
-                <div
-                  className={`flex size-8 items-center justify-center rounded-full text-xs font-semibold transition-all ${day.style.bg} ${
-                    selectedDate === day.dateStr ? 'ring-2 ring-accent ring-offset-1 ring-offset-background' : ''
-                  } ${day.level !== 'future' ? 'cursor-pointer' : 'cursor-default'}`}
-                >
-                  {day.style.icon}
-                </div>
-                {day.percent != null ? (
-                  <p className="text-[10px] text-muted">{day.percent}%</p>
-                ) : (
-                  <p className="text-[10px] text-muted">&nbsp;</p>
-                )}
-              </Button>
-            ))}
+          <div className="mb-3 flex items-end justify-between">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-2xl font-semibold">{weekAvg == null ? '\u2014' : weekAvg}</span>
+              {weekAvg != null ? <span className="text-base text-muted">%</span> : null}
+            </div>
+            <span className="text-xs text-muted">this week</span>
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-muted">
-            <span>{'\u2713'} &ge;80%</span>
-            <span>{'\u25D0'} 50-80%</span>
-            <span>{'\u25CB'} &lt;50%</span>
-            <span>{'\u2014'} future</span>
+          {/* Weekly bar chart \u2014 bars are flex-1 so they fit any width; height = day %. */}
+          <div className="flex items-end gap-1.5">
+            {days.map((day) => {
+              const height = day.percent != null ? Math.max(8, Math.min(100, day.percent)) : 6;
+              const isSelected = selectedDate === day.dateStr;
+              return (
+                <button
+                  className="flex flex-1 flex-col items-center gap-1.5"
+                  disabled={day.level === 'future'}
+                  key={day.dateStr}
+                  onClick={() => handleDayTap(day.dateStr, day.level)}
+                  type="button"
+                >
+                  <span className="flex h-16 w-full items-end">
+                    <span
+                      className={`w-full rounded-md transition-all ${BAR_BG[day.level]} ${
+                        isSelected ? 'ring-2 ring-accent ring-offset-1 ring-offset-background' : ''
+                      }`}
+                      style={{height: `${height}%`}}
+                    />
+                  </span>
+                  <span className="text-[10px] text-muted">{day.label.charAt(0)}</span>
+                </button>
+              );
+            })}
           </div>
 
           {!selectedDate && summaries.length > 0 ? (

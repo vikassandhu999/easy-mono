@@ -391,7 +391,7 @@ export default function ClientDetail() {
   const statusColor = STATUS_CHIP_COLOR[client.status] ?? 'default';
 
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
-  const initials = (client.first_name?.[0] || '' + client.last_name?.[0] || '')?.toUpperCase();
+  const initials = `${client.first_name?.[0] ?? ''}${client.last_name?.[0] ?? ''}`.toUpperCase();
 
   return (
     <Page>
@@ -460,7 +460,7 @@ export default function ClientDetail() {
             {client.phone ? (
               <div className="mt-3 flex gap-2 border-t border-border pt-3">
                 <a
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm font-medium text-success-700 transition-colors hover:bg-success-100 active:bg-success-200"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
                   href={getWhatsAppUrl(client.phone)}
                   rel="noopener noreferrer"
                   target="_blank"

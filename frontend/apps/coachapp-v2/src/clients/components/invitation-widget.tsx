@@ -174,7 +174,7 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
 
         <div className="flex flex-wrap gap-2">
           <a
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm font-medium text-success-700 transition-colors hover:bg-success-100 active:bg-success-200"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
             href={whatsappUrl}
             rel="noopener noreferrer"
             target="_blank"

@@ -7,7 +7,8 @@
 import {AlertDialog, Button, Spinner, toast, type UseOverlayStateReturn} from '@heroui/react';
 
 import type {NutritionPlan} from '@/api/generated';
-import {useDeleteNutritionPlanMutation} from '@/api/generated';
+import {coachApi, useDeleteNutritionPlanMutation} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 type Props = {
   plan: Pick<NutritionPlan, 'id' | 'name'>;
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export default function NutritionPlanDeleteAlertDialog({plan, state, onSuccess}: Props) {
+  const dispatch = useAppDispatch();
   const [deletePlan, {isLoading: deleting}] = useDeleteNutritionPlanMutation();
 
   const deleteFn = async () => {
@@ -23,6 +25,8 @@ export default function NutritionPlanDeleteAlertDialog({plan, state, onSuccess}:
       .unwrap()
       .then(() => {
         toast.success('Plan deleted', {timeout: 1000});
+        // Generated mutation is tag:false — refresh the plan list.
+        dispatch(coachApi.util.invalidateTags([{type: 'NutritionPlan', id: 'LIST'}]));
         state.close();
         onSuccess();
       })

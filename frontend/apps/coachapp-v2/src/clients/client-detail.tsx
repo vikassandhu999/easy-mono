@@ -354,43 +354,45 @@ export default function ClientDetail() {
         <div className="max-w-5xl space-y-4">
           {/* Hero — flat profile card */}
           <div className="rounded-xl border border-border bg-surface p-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <Avatar
-                className="size-14"
-                color="accent"
-              >
-                <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <Typography
-                    truncate
-                    type="h5"
-                  >
-                    {name}
-                  </Typography>
-                  <Chip
-                    color={statusColor}
-                    size="sm"
-                    variant="soft"
-                  >
-                    {client.status}
-                  </Chip>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar
+                  className="size-14 shrink-0"
+                  color="accent"
+                >
+                  <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Typography
+                      truncate
+                      type="h5"
+                    >
+                      {name}
+                    </Typography>
+                    <Chip
+                      color={statusColor}
+                      size="sm"
+                      variant="soft"
+                    >
+                      {client.status}
+                    </Chip>
+                  </div>
+                  {client.phone ? (
+                    <Typography
+                      className="mt-0.5 flex items-center gap-1.5"
+                      color="muted"
+                      truncate
+                      type="body-sm"
+                    >
+                      <Phone size={14} />
+                      {client.phone}
+                    </Typography>
+                  ) : null}
                 </div>
-                {client.phone ? (
-                  <Typography
-                    className="mt-0.5 flex items-center gap-1.5"
-                    color="muted"
-                    truncate
-                    type="body-sm"
-                  >
-                    <Phone size={14} />
-                    {client.phone}
-                  </Typography>
-                ) : null}
               </div>
               {client.phone ? (
-                <div className="flex w-full gap-2 sm:w-auto">
+                <div className="flex gap-2 sm:ml-auto sm:shrink-0">
                   <a
                     className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success/10 px-4 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20 sm:flex-none"
                     href={getWhatsAppUrl(client.phone)}

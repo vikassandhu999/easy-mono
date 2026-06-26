@@ -71,7 +71,7 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
       <Fieldset>
         <Fieldset.Legend>Client details</Fieldset.Legend>
         <Fieldset.Group>
-          <Fieldset.Group>
+          <div className="grid gap-4 sm:grid-cols-2">
             <FormTextField
               control={control}
               fullWidth
@@ -84,9 +84,9 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
               label="Last name (optional)"
               name="last_name"
             />
-          </Fieldset.Group>
+          </div>
 
-          <Fieldset.Group>
+          <div className="grid gap-4 sm:grid-cols-2">
             <FormTextField
               control={control}
               fullWidth
@@ -103,7 +103,7 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
               name="email"
               type="email"
             />
-          </Fieldset.Group>
+          </div>
 
           {client.status === 'pending' ? null : (
             <FormSelectField
@@ -136,13 +136,7 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
 
       {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
+      <Fieldset.Actions className="mt-4 flex gap-4">
         <Button
           isPending={isSubmitting}
           type="submit"
@@ -158,6 +152,12 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
           ) : (
             'Save changes'
           )}
+        </Button>
+        <Button
+          onPress={onCancel}
+          variant="ghost"
+        >
+          Cancel
         </Button>
       </Fieldset.Actions>
     </Form>

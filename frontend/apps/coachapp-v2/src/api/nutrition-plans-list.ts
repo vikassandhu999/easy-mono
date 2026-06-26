@@ -12,7 +12,7 @@
  * Only the infinite list is missing, so this module supplies just that.
  */
 import {api} from '@/api/base';
-import type {ListNutritionPlansApiArg, NutritionPlanListResponse} from '@/api/generated';
+import {coachApi, type ListNutritionPlansApiArg, type NutritionPlanListResponse} from '@/api/generated';
 import {pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 20;
@@ -51,3 +51,13 @@ export const nutritionPlansListApi = api.injectEndpoints({
 });
 
 export const {useCoachNutritionPlansInfiniteQuery} = nutritionPlansListApi;
+
+// The builder keeps its own detail (getNutritionPlan) fresh via optimistic
+// updateQueryData, but nothing refreshes the plan LIST after a rename/status
+// change — so the list shows stale names. updateNutritionPlan is tag:false;
+// invalidate just the LIST tag (not the detail, which the builder owns).
+coachApi.enhanceEndpoints({
+  endpoints: {
+    updateNutritionPlan: {invalidatesTags: [{type: 'NutritionPlan', id: 'LIST'}]},
+  },
+});

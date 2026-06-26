@@ -1,4 +1,4 @@
-import {Button, Form, Typography} from '@heroui/react';
+import {Form, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Apple, ChevronDown, ChevronUp, X} from 'lucide-react';
 import {useState} from 'react';
@@ -83,7 +83,7 @@ function IngredientFieldsForm({
   });
 
   return (
-    <Form className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+    <Form className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-3">
       <FormNumberField
         control={form.control}
         fullWidth
@@ -170,28 +170,28 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       {value.map((item, index) => {
         const isExpanded = activeExpandedId === item.food_id;
 
         return (
           <div
-            className="rounded-xl border border-border"
+            className="overflow-hidden rounded-xl border border-border bg-surface"
             key={item.food_id}
           >
-            <div className="flex min-h-11 items-center gap-2 px-3">
-              <Button
+            <div className="flex min-h-11 items-center gap-2 pr-2 pl-3">
+              <button
                 aria-expanded={isExpanded}
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.food.name}`}
-                className="flex min-h-11 min-w-0 flex-1 items-center gap-2"
-                onPress={() => toggleExpand(item.food_id)}
-                variant="ghost"
+                className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 text-left"
+                onClick={() => toggleExpand(item.food_id)}
+                type="button"
               >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
+                <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary">
                   {item.food.image_url ? (
                     <img
                       alt={item.food.name}
-                      className="size-7 rounded-md object-cover"
+                      className="size-7 object-cover"
                       src={item.food.image_url}
                     />
                   ) : (
@@ -200,9 +200,9 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                       size={14}
                     />
                   )}
-                </div>
+                </span>
                 <Typography
-                  className="min-w-0 flex-1 truncate text-left"
+                  className="min-w-0 flex-1 truncate"
                   type="body-sm"
                   weight="medium"
                 >
@@ -218,48 +218,50 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                 {isExpanded ? (
                   <ChevronUp
                     className="shrink-0 text-muted"
-                    size={14}
+                    size={15}
                   />
                 ) : (
                   <ChevronDown
                     className="shrink-0 text-muted"
-                    size={14}
+                    size={15}
                   />
                 )}
-              </Button>
-              <Button
+              </button>
+              <button
                 aria-label={`Remove ${item.food.name}`}
-                className="min-h-11 min-w-11"
-                onPress={() => removeItem(index)}
-                size="sm"
-                variant="ghost"
+                className="grid size-9 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                onClick={() => removeItem(index)}
+                type="button"
               >
-                <X size={14} />
-              </Button>
+                <X size={15} />
+              </button>
             </div>
 
             {isExpanded && (
-              <div className="border-t border-border px-3 pb-3 pt-2">
+              <div className="border-t border-border p-3">
                 {item.food.serving_sizes.length > 0 && (
-                  <div className="-mx-1 mb-2 flex gap-1.5 overflow-x-auto px-1 pb-1">
-                    {item.food.serving_sizes.map((s, sIdx) => {
-                      const isActive = activeServingMap[item.food_id] === sIdx;
-                      return (
-                        <Button
-                          aria-label={`Use serving: ${formatServingLabel(s)}`}
-                          className={`min-h-9 shrink-0 rounded-lg border px-3 text-xs font-medium transition-colors ${
-                            isActive
-                              ? 'border-accent bg-accent-soft text-accent'
-                              : 'border-border text-muted hover:bg-surface-hover'
-                          }`}
-                          key={sIdx}
-                          onPress={() => applyServing(index, item.food_id, s, sIdx)}
-                          variant="ghost"
-                        >
-                          {formatServingLabel(s)}
-                        </Button>
-                      );
-                    })}
+                  <div className="mb-3">
+                    <p className="mb-1.5 text-xs font-medium text-muted">Quick fill</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.food.serving_sizes.map((s, sIdx) => {
+                        const isActive = activeServingMap[item.food_id] === sIdx;
+                        return (
+                          <button
+                            aria-label={`Use serving: ${formatServingLabel(s)}`}
+                            className={`min-h-8 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
+                              isActive
+                                ? 'border-accent bg-accent-soft text-accent'
+                                : 'border-border text-muted hover:bg-surface-hover'
+                            }`}
+                            key={sIdx}
+                            onClick={() => applyServing(index, item.food_id, s, sIdx)}
+                            type="button"
+                          >
+                            {formatServingLabel(s)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 

@@ -247,10 +247,10 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                       return (
                         <Button
                           aria-label={`Use serving: ${formatServingLabel(s)}`}
-                          className={`min-h-11 shrink-0 rounded-md px-3 text-xs font-medium transition-colors ${
+                          className={`min-h-9 shrink-0 rounded-lg border px-3 text-xs font-medium transition-colors ${
                             isActive
-                              ? 'bg-foreground text-background'
-                              : 'bg-surface-secondary text-muted hover:bg-surface-tertiary'
+                              ? 'border-accent bg-accent-soft text-accent'
+                              : 'border-border text-muted hover:bg-surface-hover'
                           }`}
                           key={sIdx}
                           onPress={() => applyServing(index, item.food_id, s, sIdx)}

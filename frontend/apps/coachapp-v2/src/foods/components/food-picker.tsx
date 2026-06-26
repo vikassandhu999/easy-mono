@@ -1,140 +1,152 @@
-import type {Key} from '@heroui/react';
-
-import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
+import {SearchField, Spinner, Typography} from '@heroui/react';
 import {Apple} from 'lucide-react';
-import {useCallback, useDeferredValue, useMemo, useState} from 'react';
+import {useDeferredValue, useEffect, useMemo, useRef, useState} from 'react';
 
 import type {Food} from '@/api/generated';
 import {useListFoodsQuery} from '@/api/generated';
 
 type FoodPickerProps = {
   onSelect: (food: Food) => void;
-  label?: string;
-  description?: string;
   placeholder?: string;
   excludeIds?: string[];
 };
 
-export default function FoodPicker({
-  onSelect,
-  label,
-  description,
-  placeholder = 'Search foods to add...',
-  excludeIds = [],
-}: FoodPickerProps) {
-  const [searchInput, setSearchInput] = useState('');
-  const deferredSearch = useDeferredValue(searchInput);
-  const shouldQuery = deferredSearch.length >= 1;
+/**
+ * Single-input food search: type → a results panel drops below the field, click
+ * a row to add it. Replaces the old Autocomplete (which awkwardly showed two
+ * stacked search fields). Result rows follow the app's list-row pattern.
+ */
+export default function FoodPicker({onSelect, placeholder = 'Search foods to add…', excludeIds = []}: FoodPickerProps) {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const deferredSearch = useDeferredValue(search);
+  const shouldQuery = deferredSearch.trim().length >= 1;
+  const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  const {data, isFetching} = useListFoodsQuery(
-    {search: deferredSearch, limit: 10},
-    {
-      skip: !shouldQuery,
-    },
-  );
+  const {data, isFetching} = useListFoodsQuery({search: deferredSearch, limit: 10}, {skip: !shouldQuery});
+  const foods = useMemo(() => (data?.data ?? []).filter((f) => !excludeIds.includes(f.id)), [data, excludeIds]);
 
-  const foods = useMemo(() => data?.data ?? [], [data]);
+  // Close the panel on an outside click.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
 
-  const handleChange = useCallback(
-    (key: Key | Key[] | null) => {
-      if (key == null) {
-        return;
-      }
-      const id = String(Array.isArray(key) ? (key[0] ?? '') : key);
-      if (!id) {
-        return;
-      }
-      const food = foods.find((f) => f.id === id);
-      if (food) {
-        onSelect(food);
-        // Clear the search after selection
-        setSearchInput('');
-      }
-    },
-    [onSelect, foods],
-  );
+  const handleSelect = (food: Food) => {
+    onSelect(food);
+    setSearch('');
+    setOpen(false);
+  };
 
   return (
-    <Autocomplete
-      allowsEmptyCollection
-      className="w-full"
-      disabledKeys={excludeIds}
-      onChange={handleChange}
-      placeholder={placeholder}
-      selectionMode="single"
-      value={null}
+    <div
+      className="relative"
+      ref={wrapRef}
     >
-      {label && <Label>{label}</Label>}
-      <Autocomplete.Trigger>
-        <Autocomplete.Value />
-        <Autocomplete.Indicator />
-      </Autocomplete.Trigger>
-      {description && <Description>{description}</Description>}
-      <Autocomplete.Popover>
-        <Autocomplete.Filter
-          inputValue={searchInput}
-          onInputChange={setSearchInput}
-        >
-          <SearchField
-            className="sticky top-0 z-10"
-            name="food-search"
-            variant="secondary"
-          >
-            <SearchField.Group>
-              <SearchField.SearchIcon />
-              <SearchField.Input placeholder="Search foods..." />
-              <Spinner
-                className={`absolute right-2 top-1/2 -translate-y-1/2 ${isFetching ? '' : 'pointer-events-none opacity-0'}`}
-                size="sm"
-              />
-              <SearchField.ClearButton className={isFetching ? 'pointer-events-none opacity-0' : ''} />
-            </SearchField.Group>
-          </SearchField>
-          <ListBox
-            className="max-h-70 overflow-y-auto"
-            items={foods}
-            renderEmptyState={() => <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>}
-          >
-            {(food: Food) => {
+      <SearchField
+        aria-label="Search foods to add"
+        onChange={(value) => {
+          setSearch(value);
+          setOpen(true);
+        }}
+        value={search}
+        variant="secondary"
+      >
+        <SearchField.Group>
+          <SearchField.SearchIcon />
+          <SearchField.Input placeholder={placeholder} />
+          {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton />}
+        </SearchField.Group>
+      </SearchField>
+
+      {open && shouldQuery ? (
+        <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-lg">
+          {foods.length === 0 ? (
+            <Typography
+              align="center"
+              className="px-3 py-6"
+              color="muted"
+              type="body-sm"
+            >
+              {isFetching ? 'Searching…' : 'No foods found'}
+            </Typography>
+          ) : (
+            foods.map((food) => {
               const cal = food.calories_per_100g;
               const pro = food.protein_g_per_100g;
               return (
-                <ListBox.Item
-                  id={food.id}
+                <button
+                  className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-hover"
                   key={food.id}
-                  textValue={food.name}
+                  onClick={() => handleSelect(food)}
+                  type="button"
                 >
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
+                  <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary">
                     {food.image_url ? (
                       <img
                         alt={food.name}
-                        className="size-7 rounded-md object-cover"
+                        className="size-8 object-cover"
                         src={food.image_url}
                       />
                     ) : (
                       <Apple
                         className="text-muted"
-                        size={14}
+                        size={15}
                       />
                     )}
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <div className="flex items-center justify-between gap-2">
-                      <Label>{food.name}</Label>
-                      {cal != null && cal > 0 && <span className="shrink-0 text-xs text-muted">{cal} Cal</span>}
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      {food.category && <Description>{food.category}</Description>}
-                      {pro != null && pro > 0 && <span className="shrink-0 text-xs text-muted">{pro}g P</span>}
-                    </div>
-                  </div>
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <Typography
+                      truncate
+                      type="body-sm"
+                      weight="medium"
+                    >
+                      {food.name}
+                    </Typography>
+                    {food.category ? (
+                      <Typography
+                        color="muted"
+                        truncate
+                        type="body-xs"
+                      >
+                        {food.category}
+                      </Typography>
+                    ) : null}
+                  </span>
+                  {(cal != null && cal > 0) || (pro != null && pro > 0) ? (
+                    <span className="shrink-0 text-right">
+                      {cal != null && cal > 0 ? (
+                        <Typography
+                          color="muted"
+                          type="body-xs"
+                        >
+                          {Math.round(cal)} kcal
+                        </Typography>
+                      ) : null}
+                      {pro != null && pro > 0 ? (
+                        <Typography
+                          color="muted"
+                          type="body-xs"
+                        >
+                          {pro}g protein
+                        </Typography>
+                      ) : null}
+                    </span>
+                  ) : null}
+                </button>
               );
-            }}
-          </ListBox>
-        </Autocomplete.Filter>
-      </Autocomplete.Popover>
-    </Autocomplete>
+            })
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -11,9 +11,6 @@ import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {
   type ClientTrainingPlan,
   type NutritionPlan,
-  type TrainingPlan,
-  useAssignNutritionPlanMutation,
-  useAssignTrainingPlanMutation,
   useListCoachClientNutritionPlansQuery,
   useListCoachClientTrainingPlansQuery,
 } from '@/api/generated';
@@ -22,9 +19,8 @@ import ClientNutritionAdherence from '@/clients/components/client-nutrition-adhe
 import ClientStatStrip from '@/clients/components/client-stat-strip';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
+import PlanAssignSheet from '@/clients/components/plan-assign-sheet';
 import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_CHIP_COLOR, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
-import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-picker';
-import TrainingPlanPicker from '@/training-plans/components/training-plan-picker';
 
 function SectionHeading({title}: {title: string}) {
   return (
@@ -39,12 +35,8 @@ function SectionHeading({title}: {title: string}) {
   );
 }
 
-function ClientPlans({clientId}: {clientId: string}) {
-  const [showNutritionPicker, setShowNutritionPicker] = useState(false);
-  const [showTrainingPicker, setShowTrainingPicker] = useState(false);
-
-  const [assignNutrition, {isLoading: isAssigningNutrition}] = useAssignNutritionPlanMutation();
-  const [assignTraining, {isLoading: isAssigningTraining}] = useAssignTrainingPlanMutation();
+function ClientPlans({clientId, clientName}: {clientId: string; clientName: string}) {
+  const [openSheet, setOpenSheet] = useState<'nutrition' | 'training' | null>(null);
 
   const {data: nutritionData, isLoading: isLoadingNutrition} = useListCoachClientNutritionPlansQuery({clientId});
   const {data: trainingData, isLoading: isLoadingTraining} = useListCoachClientTrainingPlansQuery({clientId});
@@ -53,29 +45,6 @@ function ClientPlans({clientId}: {clientId: string}) {
   const trainingPlans = trainingData?.data ?? [];
   const isLoading = isLoadingNutrition || isLoadingTraining;
   const hasPlans = nutritionPlans.length > 0 || trainingPlans.length > 0;
-
-  const handleAssignNutrition = async (plan: NutritionPlan) => {
-    try {
-      await assignNutrition({id: plan.id, nutritionPlanAssignRequest: {client_id: clientId}}).unwrap();
-      toast.success(`"${plan.name}" assigned to client`);
-      setShowNutritionPicker(false);
-    } catch {
-      toast.danger("Nutrition plan wasn't assigned");
-    }
-  };
-
-  const handleAssignTraining = async (plan: TrainingPlan) => {
-    try {
-      await assignTraining({
-        id: plan.id,
-        trainingPlanAssignRequest: {client_id: clientId},
-      }).unwrap();
-      toast.success(`"${plan.name}" assigned to client`);
-      setShowTrainingPicker(false);
-    } catch {
-      toast.danger("Training plan wasn't assigned");
-    }
-  };
 
   return (
     <section className="py-4">
@@ -172,10 +141,7 @@ function ClientPlans({clientId}: {clientId: string}) {
           <div className="mt-2 flex gap-2">
             <Button
               className="text-muted"
-              onPress={() => {
-                setShowNutritionPicker((v) => !v);
-                setShowTrainingPicker(false);
-              }}
+              onPress={() => setOpenSheet('nutrition')}
               size="sm"
               variant="ghost"
             >
@@ -183,73 +149,30 @@ function ClientPlans({clientId}: {clientId: string}) {
             </Button>
             <Button
               className="text-muted"
-              onPress={() => {
-                setShowTrainingPicker((v) => !v);
-                setShowNutritionPicker(false);
-              }}
+              onPress={() => setOpenSheet('training')}
               size="sm"
               variant="ghost"
             >
               + Training plan
             </Button>
           </div>
-
-          {showNutritionPicker ? (
-            <div className="mt-2 rounded-xl border border-border bg-surface p-3">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-sm"
-              >
-                Search for a nutrition plan template to copy to this client
-              </Typography>
-              <NutritionPlanPicker
-                autoFocus
-                onSelect={handleAssignNutrition}
-                placeholder="Search nutrition plans"
-              />
-              {isAssigningNutrition ? (
-                <div className="mt-2 flex items-center gap-2">
-                  <Spinner size="sm" />
-                  <Typography
-                    color="muted"
-                    type="body-sm"
-                  >
-                    Assigning plan
-                  </Typography>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          {showTrainingPicker ? (
-            <div className="mt-2 rounded-xl border border-border bg-surface p-3">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-sm"
-              >
-                Search for a training plan template to copy to this client
-              </Typography>
-              <TrainingPlanPicker
-                autoFocus
-                onSelect={handleAssignTraining}
-                placeholder="Search training plans"
-              />
-              {isAssigningTraining ? (
-                <div className="mt-2 flex items-center gap-2">
-                  <Spinner size="sm" />
-                  <Typography
-                    color="muted"
-                    type="body-sm"
-                  >
-                    Assigning plan
-                  </Typography>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
         </>
       )}
+
+      <PlanAssignSheet
+        clientId={clientId}
+        clientName={clientName}
+        kind="nutrition"
+        onClose={() => setOpenSheet(null)}
+        open={openSheet === 'nutrition'}
+      />
+      <PlanAssignSheet
+        clientId={clientId}
+        clientName={clientName}
+        kind="training"
+        onClose={() => setOpenSheet(null)}
+        open={openSheet === 'training'}
+      />
     </section>
   );
 }
@@ -495,7 +418,10 @@ export default function ClientDetail() {
 
           <div className="grid gap-x-8 lg:grid-cols-3 lg:items-start">
             <div className="lg:col-span-2">
-              <ClientPlans clientId={client.id} />
+              <ClientPlans
+                clientId={client.id}
+                clientName={name}
+              />
               <ClientWorkoutHistory clientId={client.id} />
             </div>
             <div>

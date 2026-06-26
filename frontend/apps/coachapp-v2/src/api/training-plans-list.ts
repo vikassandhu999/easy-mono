@@ -58,5 +58,9 @@ export const {useCoachTrainingPlansInfiniteQuery} = trainingPlansListApi;
 coachApi.enhanceEndpoints({
   endpoints: {
     updateTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
+    // The client's assigned-plans list + assign mutation are tag:false; wire a
+    // shared CLIENT-LIST tag so assigning refreshes the list (and the stat strip).
+    listCoachClientTrainingPlans: {providesTags: [{type: 'TrainingPlan', id: 'CLIENT-LIST'}]},
+    assignTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'CLIENT-LIST'}]},
   },
 });

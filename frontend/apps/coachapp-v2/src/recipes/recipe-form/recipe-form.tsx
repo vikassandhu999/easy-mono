@@ -8,7 +8,7 @@ import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {Food, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';
 import {omitUndefined, toOptionalText} from '@/api/shared';
 import {createIngredientDraft} from '@/domain/recipes';
-import FoodPicker from '@/foods/components/food-picker';
+import FoodPickerControl from '@/foods/components/food-picker-control';
 import IngredientList, {type IngredientItem} from '@/foods/components/ingredient-list';
 
 const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();
@@ -178,14 +178,14 @@ export default function RecipeForm({
       <Fieldset>
         <Fieldset.Legend>Ingredients</Fieldset.Legend>
         <Fieldset.Group>
-          <FoodPicker
-            excludeIds={excludeIds}
-            onSelect={handleFoodSelect}
-          />
           <IngredientList
             autoExpandId={autoExpandId}
             onChange={onIngredientsChange}
             value={ingredients}
+          />
+          <FoodPickerControl
+            excludeIds={excludeIds}
+            onSelect={handleFoodSelect}
           />
         </Fieldset.Group>
       </Fieldset>

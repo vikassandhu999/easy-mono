@@ -1,92 +1,93 @@
 import {SearchField, Spinner, Typography} from '@heroui/react';
-import {Apple} from 'lucide-react';
-import {useDeferredValue, useEffect, useMemo, useRef, useState} from 'react';
+import {Apple, ArrowRight, X} from 'lucide-react';
+import {useDeferredValue, useMemo, useState} from 'react';
 
 import type {Food} from '@/api/generated';
 import {useListFoodsQuery} from '@/api/generated';
 
-type FoodPickerProps = {
+interface Props {
   onSelect: (food: Food) => void;
-  placeholder?: string;
+  onClose: () => void;
   excludeIds?: string[];
-};
+}
 
 /**
- * Single-input food search: type → a results panel drops below the field, click
- * a row to add it. Replaces the old Autocomplete (which awkwardly showed two
- * stacked search fields). Result rows follow the app's list-row pattern.
+ * Body of the food picker — search + result rows. Rendered inside an anchored
+ * Popover (desktop) or KeyboardSheet (mobile) by FoodPickerControl, mirroring
+ * the nutrition/training PlanAssignContent pattern. Selecting a food adds it and
+ * keeps the surface open so the coach can add several ingredients in a row
+ * (already-added foods drop out of the results via excludeIds).
  */
-export default function FoodPicker({onSelect, placeholder = 'Search foods to add…', excludeIds = []}: FoodPickerProps) {
+export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: Props) {
   const [search, setSearch] = useState('');
-  const [open, setOpen] = useState(false);
   const deferredSearch = useDeferredValue(search);
   const shouldQuery = deferredSearch.trim().length >= 1;
-  const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  const {data, isFetching} = useListFoodsQuery({search: deferredSearch, limit: 10}, {skip: !shouldQuery});
+  const {data, isFetching} = useListFoodsQuery({search: deferredSearch, limit: 20}, {skip: !shouldQuery});
   const foods = useMemo(() => (data?.data ?? []).filter((f) => !excludeIds.includes(f.id)), [data, excludeIds]);
 
-  // Close the panel on an outside click.
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onDown = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [open]);
-
-  const handleSelect = (food: Food) => {
-    onSelect(food);
-    setSearch('');
-    setOpen(false);
-  };
-
   return (
-    <div
-      className="relative"
-      ref={wrapRef}
-    >
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <Typography
+          type="body-sm"
+          weight="semibold"
+        >
+          Add ingredient
+        </Typography>
+        <button
+          aria-label="Close"
+          className="text-muted transition-colors hover:text-foreground"
+          onClick={onClose}
+          type="button"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
       <SearchField
-        aria-label="Search foods to add"
-        onChange={(value) => {
-          setSearch(value);
-          setOpen(true);
-        }}
+        aria-label="Search foods"
+        autoFocus
+        onChange={setSearch}
         value={search}
         variant="secondary"
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input placeholder={placeholder} />
+          <SearchField.Input placeholder="Search foods…" />
           {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton />}
         </SearchField.Group>
       </SearchField>
 
-      {open && shouldQuery ? (
-        <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-lg">
-          {foods.length === 0 ? (
-            <Typography
-              align="center"
-              className="px-3 py-6"
-              color="muted"
-              type="body-sm"
-            >
-              {isFetching ? 'Searching…' : 'No foods found'}
-            </Typography>
-          ) : (
-            foods.map((food) => {
+      <div className="mt-2 max-h-72 overflow-y-auto">
+        {!shouldQuery ? (
+          <Typography
+            align="center"
+            className="py-8"
+            color="muted"
+            type="body-sm"
+          >
+            Type to search foods
+          </Typography>
+        ) : foods.length === 0 ? (
+          <Typography
+            align="center"
+            className="py-8"
+            color="muted"
+            type="body-sm"
+          >
+            {isFetching ? 'Searching…' : 'No foods found'}
+          </Typography>
+        ) : (
+          <div className="flex flex-col gap-0.5">
+            {foods.map((food) => {
               const cal = food.calories_per_100g;
               const pro = food.protein_g_per_100g;
               return (
                 <button
-                  className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-hover"
+                  className="group flex items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-hover"
                   key={food.id}
-                  onClick={() => handleSelect(food)}
+                  onClick={() => onSelect(food)}
                   type="button"
                 >
                   <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary">
@@ -141,12 +142,16 @@ export default function FoodPicker({onSelect, placeholder = 'Search foods to add
                       ) : null}
                     </span>
                   ) : null}
+                  <ArrowRight
+                    className="shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100"
+                    size={16}
+                  />
                 </button>
               );
-            })
-          )}
-        </div>
-      ) : null}
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

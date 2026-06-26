@@ -164,7 +164,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
         color="muted"
         type="body-xs"
       >
-        No ingredients added yet. Use the search above to add foods.
+        No ingredients yet. Use “Add ingredient” below to add foods.
       </Typography>
     );
   }

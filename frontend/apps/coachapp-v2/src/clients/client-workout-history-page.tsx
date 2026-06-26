@@ -17,7 +17,7 @@ export default function ClientWorkoutHistoryPage() {
   const client = clientData?.data;
 
   const list = useCoachClientTrainingSessionsInfiniteQuery({clientId: id!});
-  const {fetchNextPage, isFetchingNextPage, isLoading, items: sessions} = useInfiniteItems(list);
+  const {fetchNextPage, isError, isFetchingNextPage, isLoading, items: sessions, refetch} = useInfiniteItems(list);
 
   const clientName = client ? [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';
 
@@ -82,9 +82,11 @@ export default function ClientWorkoutHistoryPage() {
                 </div>
               }
               fetchNextPage={fetchNextPage}
+              isError={isError}
               isLoading={isFetchingNextPage}
               items={sessions}
               onAction={(key) => navigate(`/clients/${id}/sessions/${key}`)}
+              onRetry={refetch}
               renderItem={(session) => <SessionListItem session={session} />}
             />
           )}

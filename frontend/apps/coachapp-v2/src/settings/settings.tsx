@@ -169,7 +169,7 @@ function AccountSection({email}: {email: string}) {
 }
 
 export default function Settings() {
-  const {data, isLoading} = useGetCoachProfileQuery();
+  const {data, isError, isLoading, refetch} = useGetCoachProfileQuery();
   const [updateProfile] = useUpdateCoachProfileMutation();
   const navigate = useNavigate();
 
@@ -196,8 +196,33 @@ export default function Settings() {
     );
   }
 
-  if (!data) {
-    return null;
+  if (isError || !data) {
+    return (
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Settings</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex flex-col items-center gap-3 py-20 text-center">
+            <Typography
+              color="muted"
+              type="body-sm"
+            >
+              Couldn't load your settings. Check your connection and try again.
+            </Typography>
+            <Button
+              onPress={() => refetch()}
+              size="sm"
+              variant="secondary"
+            >
+              Retry
+            </Button>
+          </div>
+        </Page.Content>
+      </Page>
+    );
   }
 
   const profile = data.data;

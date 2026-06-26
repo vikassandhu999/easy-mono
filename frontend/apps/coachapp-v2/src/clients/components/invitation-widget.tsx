@@ -1,32 +1,10 @@
-import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
-import {ClipboardCopy, Link2, Mail, MessageCircle, Trash2, UserPlus} from 'lucide-react';
+import {AlertDialog, Button, Typography, toast} from '@heroui/react';
+import {ClipboardCopy, Mail, MessageCircle, Send, Trash2} from 'lucide-react';
 
 import {type Client, useResendClientInviteMutation, useRevokeInvitationMutation} from '@/api/clients';
 import {getApiErrorMessage} from '@/api/shared';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-function formatInvitationSentAgo(sentAt: string): string {
-  const sentMs = new Date(sentAt).getTime();
-  const diffMs = Date.now() - sentMs;
-  if (Number.isNaN(diffMs)) {
-    return '';
-  }
-
-  const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) {
-    return 'just now';
-  }
-  if (mins < 60) {
-    return `${mins} minute${mins === 1 ? '' : 's'} ago`;
-  }
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) {
-    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-  }
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? '' : 's'} ago`;
-}
 
 function formatInvitationExpiresIn(expiresAt: string): string {
   const expiresMs = new Date(expiresAt).getTime();
@@ -147,20 +125,18 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
   };
 
   const whatsappUrl = buildInvitationWhatsAppUrl({phone: client.phone, firstName, inviteUrl});
-  const sentAgo = client.invitation_sent_at ? formatInvitationSentAgo(client.invitation_sent_at) : null;
   const expiresIn = client.invitation_expires_at ? formatInvitationExpiresIn(client.invitation_expires_at) : null;
 
   const resendDisabled = !client.email || isResending;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-      {/* Header: icon + title + expiry chip */}
-      <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
-          <UserPlus size={18} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+            <Send size={15} />
+          </span>
+          <div className="min-w-0">
             <Typography
               type="body-sm"
               weight="semibold"
@@ -168,62 +144,101 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
               Invitation pending
             </Typography>
             {expiresIn ? (
-              <Chip
-                color={expiresIn === 'today' || expiresIn === 'expired' ? 'warning' : 'default'}
-                size="sm"
-                variant="soft"
+              <Typography
+                color="muted"
+                type="body-xs"
               >
                 Expires {expiresIn}
-              </Chip>
+              </Typography>
             ) : null}
           </div>
-          <Typography
-            color="muted"
-            type="body-sm"
-          >
-            Share this link with {displayName} to get them onboarded.
-          </Typography>
         </div>
-      </div>
-
-      {/* Copy-link field */}
-      <div className="mt-4 flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface-secondary py-1.5 pr-1.5 pl-3">
-        <Link2
-          className="shrink-0 text-muted"
-          size={14}
-        />
-        <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted">{inviteUrl}</span>
-        <Button
-          aria-label="Copy invite link"
-          onPress={handleCopy}
-          size="sm"
-          variant="secondary"
-        >
-          <ClipboardCopy size={14} />
-          Copy
-        </Button>
-      </div>
-
-      {/* Share actions */}
-      <div className="mt-3 flex flex-wrap gap-2">
-        <a
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-success/10 px-4 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
-          href={whatsappUrl}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <MessageCircle size={16} />
-          Share on WhatsApp
-        </a>
-        <Button
-          isDisabled={resendDisabled}
-          isPending={isResending}
-          onPress={handleResend}
-          variant="secondary"
-        >
-          <Mail size={16} />
-          Resend email
-        </Button>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <a
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-success/10 px-3 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
+            href={whatsappUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <MessageCircle size={15} />
+            WhatsApp
+          </a>
+          <Button
+            onPress={handleCopy}
+            size="sm"
+            variant="secondary"
+          >
+            <ClipboardCopy size={15} />
+            Copy link
+          </Button>
+          <Button
+            isDisabled={resendDisabled}
+            isPending={isResending}
+            onPress={handleResend}
+            size="sm"
+            variant="ghost"
+          >
+            <Mail size={15} />
+            Resend
+          </Button>
+          <AlertDialog>
+            <Button
+              aria-label="Revoke invitation"
+              className="text-danger"
+              isIconOnly
+              size="sm"
+              variant="ghost"
+            >
+              <Trash2 size={15} />
+            </Button>
+            <AlertDialog.Backdrop>
+              <AlertDialog.Container>
+                <AlertDialog.Dialog className="sm:max-w-[400px]">
+                  {/*
+                  Using the render-prop form so we can call `close()`
+                  programmatically after a revoke attempt. On success the
+                  parent nav unmounts this tree anyway; on failure the
+                  explicit close hides the dialog so the error toast is
+                  actually visible.
+                */}
+                  {({close}) => (
+                    <>
+                      <AlertDialog.CloseTrigger />
+                      <AlertDialog.Header>
+                        <AlertDialog.Icon status="danger" />
+                        <AlertDialog.Heading>Revoke this invitation?</AlertDialog.Heading>
+                      </AlertDialog.Header>
+                      <AlertDialog.Body>
+                        <p>
+                          {displayName === 'your client' ? 'Their' : `${displayName}'s`} link will no longer work. You
+                          can re-invite them later.
+                        </p>
+                      </AlertDialog.Body>
+                      <AlertDialog.Footer>
+                        <Button
+                          slot="close"
+                          variant="tertiary"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          isPending={isRevoking}
+                          onPress={async () => {
+                            await handleRevoke();
+                            close();
+                          }}
+                          variant="danger"
+                        >
+                          {isRevoking ? 'Revoking...' : 'Revoke'}
+                        </Button>
+                      </AlertDialog.Footer>
+                    </>
+                  )}
+                </AlertDialog.Dialog>
+              </AlertDialog.Container>
+            </AlertDialog.Backdrop>
+          </AlertDialog>
+        </div>
       </div>
       {!client.email ? (
         <Typography
@@ -234,72 +249,6 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
           No email on file — use WhatsApp to share the link.
         </Typography>
       ) : null}
-
-      {/* Footer: sent-ago + revoke */}
-      <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
-        <Typography
-          color="muted"
-          type="body-xs"
-        >
-          {sentAgo ? `Invited ${sentAgo}` : 'Invitation sent'}
-        </Typography>
-        <AlertDialog>
-          <Button
-            className="text-danger"
-            size="sm"
-            variant="ghost"
-          >
-            <Trash2 size={14} />
-            Revoke
-          </Button>
-          <AlertDialog.Backdrop>
-            <AlertDialog.Container>
-              <AlertDialog.Dialog className="sm:max-w-[400px]">
-                {/*
-                  Using the render-prop form so we can call `close()`
-                  programmatically after a revoke attempt. On success the
-                  parent nav unmounts this tree anyway; on failure the
-                  explicit close hides the dialog so the error toast is
-                  actually visible.
-                */}
-                {({close}) => (
-                  <>
-                    <AlertDialog.CloseTrigger />
-                    <AlertDialog.Header>
-                      <AlertDialog.Icon status="danger" />
-                      <AlertDialog.Heading>Revoke this invitation?</AlertDialog.Heading>
-                    </AlertDialog.Header>
-                    <AlertDialog.Body>
-                      <p>
-                        {displayName === 'your client' ? 'Their' : `${displayName}'s`} link will no longer work. You can
-                        re-invite them later.
-                      </p>
-                    </AlertDialog.Body>
-                    <AlertDialog.Footer>
-                      <Button
-                        slot="close"
-                        variant="tertiary"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        isPending={isRevoking}
-                        onPress={async () => {
-                          await handleRevoke();
-                          close();
-                        }}
-                        variant="danger"
-                      >
-                        {isRevoking ? 'Revoking...' : 'Revoke'}
-                      </Button>
-                    </AlertDialog.Footer>
-                  </>
-                )}
-              </AlertDialog.Dialog>
-            </AlertDialog.Container>
-          </AlertDialog.Backdrop>
-        </AlertDialog>
-      </div>
     </div>
   );
 }

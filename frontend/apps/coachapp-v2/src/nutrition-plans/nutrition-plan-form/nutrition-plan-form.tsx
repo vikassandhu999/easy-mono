@@ -160,7 +160,7 @@ export default function NutritionPlanForm({
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions>
+      <Fieldset.Actions className={'mt-4 flex gap-4'}>
         <Button
           isPending={isSubmitting}
           type="submit"

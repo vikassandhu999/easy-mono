@@ -6,7 +6,8 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useCopyExerciseMutation, useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/generated';
+import {coachApi, useCopyExerciseMutation, useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',
@@ -23,6 +24,7 @@ const FORCE_LABEL: Record<string, string> = {
 export default function ExerciseDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const goBack = useGoBack(ROUTES.EXERCISES);
   const {data, isError, isLoading} = useGetExerciseQuery({id: id!});
   const [deleteExercise, {isLoading: isDeleting}] = useDeleteExerciseMutation();
@@ -45,6 +47,9 @@ export default function ExerciseDetail() {
   const handleDelete = async () => {
     try {
       await deleteExercise({id: id!}).unwrap();
+      // Generated mutation is tag:false — invalidate the list so the deleted
+      // item doesn't linger when we land back on it.
+      dispatch(coachApi.util.invalidateTags([{type: 'TrainingExercise', id: 'LIST'}]));
       navigate(ROUTES.EXERCISES, {replace: true});
     } catch {
       // Mutation error — could add a toast here in the future.

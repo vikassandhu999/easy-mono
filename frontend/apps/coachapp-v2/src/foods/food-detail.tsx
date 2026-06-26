@@ -6,7 +6,8 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/generated';
+import {coachApi, useDeleteFoodMutation, useGetFoodQuery} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 const MACRO_DISPLAY: {
   label: string;
@@ -23,6 +24,7 @@ const MACRO_DISPLAY: {
 export default function FoodDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const goBack = useGoBack(ROUTES.FOODS);
   const {data, isError, isLoading} = useGetFoodQuery({id: id!});
   const [deleteFood, {isLoading: isDeleting}] = useDeleteFoodMutation();
@@ -30,6 +32,9 @@ export default function FoodDetail() {
   const handleDelete = async () => {
     try {
       await deleteFood({id: id!}).unwrap();
+      // Generated mutation is tag:false — invalidate the list so the deleted
+      // item doesn't linger when we land back on it.
+      dispatch(coachApi.util.invalidateTags([{type: 'Food', id: 'LIST'}]));
       navigate(ROUTES.FOODS, {replace: true});
     } catch {
       // Mutation error — could add a toast here in the future.

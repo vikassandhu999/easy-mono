@@ -6,7 +6,8 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/generated';
+import {coachApi, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 // recipe.nutrition is the recipe's total computed macros (not per-100g).
 // The backend computes this from recipe_ingredients; it is null when no
@@ -22,6 +23,7 @@ const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
 export default function RecipeDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const goBack = useGoBack(ROUTES.RECIPES);
   const {data, isError, isLoading} = useGetRecipeQuery({id: id!});
   const [deleteRecipe, {isLoading: isDeleting}] = useDeleteRecipeMutation();
@@ -29,6 +31,9 @@ export default function RecipeDetail() {
   const handleDelete = async () => {
     try {
       await deleteRecipe({id: id!}).unwrap();
+      // Generated mutation is tag:false — invalidate the list so the deleted
+      // item doesn't linger when we land back on it.
+      dispatch(coachApi.util.invalidateTags([{type: 'Recipe', id: 'LIST'}]));
       navigate(ROUTES.RECIPES, {replace: true});
     } catch {
       // Mutation error — could add a toast here in the future.

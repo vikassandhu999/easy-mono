@@ -37,7 +37,7 @@ export default function ListNutritionPlans() {
 
   const deferredSearch = useDeferredValue(search);
   const list = useCoachNutritionPlansInfiniteQuery({search: deferredSearch});
-  const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
+  const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
 
   return (
     <Page>
@@ -93,7 +93,9 @@ export default function ListNutritionPlans() {
             />
           }
           fetchNextPage={fetchNextPage}
+          isError={isError}
           isLoading={isLoading}
+          onRetry={refetch}
           items={items}
           onAction={(key) => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', String(key)))}
           renderItem={(plan) => {

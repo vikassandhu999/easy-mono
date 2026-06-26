@@ -20,7 +20,7 @@ export default function ListFoods() {
 
   const deferredSearch = useDeferredValue(search);
   const list = useCoachFoodsInfiniteQuery({search: deferredSearch});
-  const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
+  const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
 
   return (
     <Page>
@@ -75,7 +75,9 @@ export default function ListFoods() {
             />
           }
           fetchNextPage={fetchNextPage}
+          isError={isError}
           isLoading={isLoading}
+          onRetry={refetch}
           items={items}
           onAction={(key) => navigate(ROUTES.FOOD_DETAIL.replace(':id', String(key)))}
           renderItem={(food) => <FoodListItem food={food} />}

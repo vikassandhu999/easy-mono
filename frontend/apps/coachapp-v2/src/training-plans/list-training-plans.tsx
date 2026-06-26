@@ -20,7 +20,7 @@ export default function ListTrainingPlans() {
 
   const deferredSearch = useDeferredValue(search);
   const list = useCoachTrainingPlansInfiniteQuery({search: deferredSearch});
-  const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
+  const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
 
   return (
     <Page>
@@ -76,7 +76,9 @@ export default function ListTrainingPlans() {
             />
           }
           fetchNextPage={fetchNextPage}
+          isError={isError}
           isLoading={isLoading}
+          onRetry={refetch}
           items={items}
           onAction={(key) => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', String(key)))}
           renderItem={(plan) => <TrainingPlanListItem plan={plan} />}

@@ -23,7 +23,7 @@ export default function ListExercises() {
 
   const deferredSearch = useDeferredValue(search);
   const list = useCoachTrainingExercisesInfiniteQuery({muscleIds: selectedMuscleIds, search: deferredSearch});
-  const {fetchNextPage, isLoading, items, isFetchingNextPage} = useInfiniteItems(list);
+  const {fetchNextPage, isError, isLoading, items, isFetchingNextPage, refetch} = useInfiniteItems(list);
 
   const {data: musclesData} = useListMusclesQuery({});
   const muscles = musclesData?.data ?? [];
@@ -95,8 +95,10 @@ export default function ListExercises() {
             />
           }
           fetchNextPage={fetchNextPage}
+          isError={isError}
           isLoading={isLoading || isFetchingNextPage}
           items={items}
+          onRetry={refetch}
           onAction={(key) => navigate(ROUTES.EXERCISE_DETAIL.replace(':id', String(key)))}
           renderItem={(exercise) => <ExerciseListItem exercise={exercise} />}
         />

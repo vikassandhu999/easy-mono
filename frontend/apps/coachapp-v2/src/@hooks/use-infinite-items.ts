@@ -5,6 +5,8 @@ type InfiniteItemsQuery<T> = {
   fetchNextPage: () => void;
   isLoading: boolean;
   isFetchingNextPage: boolean;
+  isError?: boolean;
+  refetch?: () => unknown;
 };
 
 /** Flattens an infinite-query's pages into a single item array. */
@@ -14,6 +16,8 @@ export function useInfiniteItems<T>(query: InfiniteItemsQuery<T>) {
     fetchNextPage: query.fetchNextPage,
     isLoading: query.isLoading,
     isFetchingNextPage: query.isFetchingNextPage,
+    isError: query.isError ?? false,
+    refetch: () => query.refetch?.(),
     items,
   };
 }

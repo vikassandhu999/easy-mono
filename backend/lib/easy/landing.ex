@@ -21,7 +21,7 @@ defmodule Easy.Landing do
     page =
       LandingPage
       |> LandingPage.for_business(ctx.business_id)
-      |> order_by(asc: :inserted_at)
+      |> order_by(asc: :inserted_at, asc: :id)
       |> limit(1)
       |> preload(:programs)
       |> Repo.one()
@@ -39,12 +39,15 @@ defmodule Easy.Landing do
     if length(programs) > @max_programs do
       {:error, :too_many_programs}
     else
-      Repo.transaction(fn ->
-        case do_upsert(ctx, attrs, programs) do
-          {:ok, page} -> page
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
+      Repo.transaction(fn -> do_upsert!(ctx, attrs, programs) end)
+    end
+  end
+
+  # Runs inside the transaction; rolls back (with the error reason) on any step failure.
+  defp do_upsert!(ctx, attrs, programs) do
+    case do_upsert(ctx, attrs, programs) do
+      {:ok, page} -> page
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 
@@ -170,14 +173,16 @@ defmodule Easy.Landing do
           | {:error, :not_found | any()}
   def enroll_prospect(%Ctx{} = ctx, id, attrs) do
     with {:ok, prospect} <- get_prospect(ctx, id) do
-      if prospect.client_id do
-        {:ok, %{prospect: prospect, client: prospect.client, already_enrolled: true}}
-      else
-        with {:ok, client} <- Clients.invite_client(ctx, invite_attrs(prospect, attrs)),
-             {:ok, prospect} <- prospect |> Prospect.enroll_changeset(client.id) |> Repo.update() do
-          {:ok, %{prospect: %{prospect | client: client}, client: client, already_enrolled: false}}
-        end
-      end
+      if prospect.client_id,
+        do: {:ok, %{prospect: prospect, client: prospect.client, already_enrolled: true}},
+        else: invite_and_link(ctx, prospect, attrs)
+    end
+  end
+
+  defp invite_and_link(ctx, prospect, attrs) do
+    with {:ok, client} <- Clients.invite_client(ctx, invite_attrs(prospect, attrs)),
+         {:ok, prospect} <- prospect |> Prospect.enroll_changeset(client.id) |> Repo.update() do
+      {:ok, %{prospect: %{prospect | client: client}, client: client, already_enrolled: false}}
     end
   end
 

@@ -74,25 +74,23 @@ defmodule Easy.Orgs.Coach do
     business_attrs = take_present(params, business_name: :name, whatsapp_number: :whatsapp_number)
 
     Repo.transaction(fn ->
-      updated_coach =
-        case coach |> update_changeset(coach_attrs) |> Repo.update() do
-          {:ok, c} -> c
-          {:error, changeset} -> Repo.rollback(changeset)
-        end
-
-      updated_business =
-        if business_attrs == %{} do
-          coach.business
-        else
-          case coach.business |> Business.update_changeset(business_attrs) |> Repo.update() do
-            {:ok, b} -> b
-            {:error, changeset} -> Repo.rollback(changeset)
-          end
-        end
-
+      updated_coach = update_or_rollback(update_changeset(coach, coach_attrs))
+      updated_business = update_business_or_rollback(coach.business, business_attrs)
       %{updated_coach | business: updated_business, user: coach.user}
     end)
   end
+
+  defp update_or_rollback(changeset) do
+    case Repo.update(changeset) do
+      {:ok, updated} -> updated
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp update_business_or_rollback(business, attrs) when attrs == %{}, do: business
+
+  defp update_business_or_rollback(business, attrs),
+    do: update_or_rollback(Business.update_changeset(business, attrs))
 
   # Only forward business fields the caller actually sent, so a coach-only profile edit
   # never blanks the business name/whatsapp.

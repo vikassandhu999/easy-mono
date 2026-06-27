@@ -89,6 +89,6 @@ defmodule Easy.Landing.Prospect do
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(p in query, order_by: [desc: p.inserted_at])
+    from(p in query, order_by: [desc: p.inserted_at, desc: p.id])
   end
 end

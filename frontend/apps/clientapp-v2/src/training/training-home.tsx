@@ -218,7 +218,7 @@ function WeeklyPlanStrip({plan}: {plan: ClientTrainingPlan}) {
     let summary = '—';
     if (scheduledWorkout) {
       summary = scheduledWorkout.workout.name;
-    } else if (plan.rest_days.includes(day)) {
+    } else if ((plan.rest_days ?? []).includes(day)) {
       summary = 'Rest';
     }
 
@@ -443,7 +443,7 @@ export default function TrainingHome() {
               ) : activePlan ? (
                 <div className="rounded-xl border border-dashed border-border bg-surface p-4">
                   <p className="text-sm text-muted">
-                    {activePlan.rest_days.includes(todayDay)
+                    {(activePlan.rest_days ?? []).includes(todayDay)
                       ? 'Rest day today — enjoy your recovery.'
                       : 'No workout scheduled for today.'}
                   </p>

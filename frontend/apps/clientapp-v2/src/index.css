@@ -149,84 +149,83 @@
      Clean, minimal, Zerodha-inspired.
      Same teal accent, light surfaces.
      ───────────────────────────────────────────── */
+  /* ─────────────────────────────────────────────
+     CLIENT APP THEME — dark + periwinkle-blue
+     Source of truth: docs/superpowers/specs/assets/client-{training,nutrition}.
+     bg #0c0c0e · cards #16161b · accent #6c8cff. Applied via :root (app is dark-only).
+     ───────────────────────────────────────────── */
   :root,
-  .light,
-  [data-theme="light"] {
-    color-scheme: light;
+  .dark,
+  [data-theme="dark"] {
+    color-scheme: dark;
 
-    /* == Primitives == */
-    --white: oklch(100% 0 0);
-    --black: oklch(0% 0 0);
-    --snow: oklch(0.9911 0 0);
-    --eclipse: oklch(0.2077 0.0398 265.75);
-
-    /* == Layout == */
+    /* Layout */
     --spacing: 0.25rem;
     --border-width: 1px;
     --field-border-width: 1px;
-    --disabled-opacity: 0.5;
+    --disabled-opacity: 0.45;
     --ring-offset-width: 2px;
     --cursor-interactive: pointer;
     --cursor-disabled: not-allowed;
-    --radius: 0.75rem;
-    --field-radius: calc(var(--radius) * 1.25);
+    --radius: 1rem;
+    --field-radius: 0.75rem;
 
-    /* ── Base Colors ── */
-    --background: oklch(0.9839 0.0025 228.78);
-    --foreground: oklch(0.2077 0.0398 265.75);
+    /* Base */
+    --background: #0c0c0e;
+    --foreground: #f5f5f7;
 
-    /* ── Surface ── */
-    --surface: var(--white);
+    /* Surfaces */
+    --surface: #16161b;
     --surface-foreground: var(--foreground);
-    --surface-secondary: oklch(0.9683 0.0069 247.9);
+    --surface-secondary: #1a1a1f;
     --surface-secondary-foreground: var(--foreground);
-    --surface-tertiary: oklch(0.9288 0.0126 255.51);
+    --surface-tertiary: #202028;
     --surface-tertiary-foreground: var(--foreground);
 
-    /* ── Overlay ── */
-    --overlay: var(--white);
+    /* Overlay */
+    --overlay: #16161b;
     --overlay-foreground: var(--foreground);
 
-    /* ── Muted & Default ── */
-    --muted: oklch(0.5544 0.0407 257.42);
-    --scrollbar: oklch(0.7107 0.0351 256.79);
-    --default: oklch(0.9683 0.0069 247.9);
-    --default-foreground: var(--eclipse);
+    /* Muted & default */
+    --muted: #9499a3;
+    --scrollbar: #34343d;
+    --default: #1a1a1f;
+    --default-foreground: var(--foreground);
 
-    /* ── Accent: same teal ── */
-    --accent: oklch(0.6002 0.1038 184.7);
-    --accent-foreground: var(--snow);
-    --accent-soft: oklch(0.9836 0.0142 180.72);
-    --accent-soft-foreground: oklch(0.437 0.0705 188.22);
+    /* Accent — periwinkle-blue */
+    --accent: #6c8cff;
+    --accent-foreground: #06122e;
+    --accent-soft: #1a2440;
+    --accent-soft-foreground: #9fb0ff;
 
-    /* ── Form Fields ── */
-    --field-background: var(--white);
+    /* Form fields */
+    --field-background: #0c0c0e;
     --field-foreground: var(--foreground);
-    --field-placeholder: oklch(0.7107 0.0351 256.79);
-    --field-border: oklch(0.9288 0.0126 255.51);
+    --field-placeholder: #5b5b63;
+    --field-border: #34343d;
 
-    /* ── Status ── */
-    --success: oklch(0.7227 0.192 149.58);
-    --success-foreground: var(--eclipse);
-    --warning: oklch(0.7686 0.1647 70.08);
-    --warning-foreground: var(--eclipse);
-    --danger: oklch(0.6368 0.2078 25.33);
-    --danger-foreground: var(--snow);
+    /* Status */
+    --success: #3ad07a;
+    --success-foreground: #06200f;
+    --warning: #e0a14d;
+    --warning-foreground: #0c0c0e;
+    --danger: #e0524d;
+    --danger-foreground: #ffffff;
 
-    /* ── Component ── */
-    --segment: var(--white);
-    --segment-foreground: var(--eclipse);
+    /* Component */
+    --segment: #1a1a1f;
+    --segment-foreground: var(--foreground);
 
-    /* ── Misc ── */
-    --border: oklch(0.9288 0.0126 255.51);
-    --separator: oklch(0.9683 0.0069 247.9);
+    /* Misc */
+    --border: #2a2a31;
+    --separator: #1f1f25;
     --focus: var(--accent);
-    --link: oklch(0.6002 0.1038 184.7);
+    --link: var(--accent);
 
-    /* ── Shadows ── */
-    --surface-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-    --overlay-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06), 0 8px 24px 0 rgba(0, 0, 0, 0.08);
-    --field-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    /* Shadows */
+    --surface-shadow: 0 0 0 0 transparent;
+    --overlay-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    --field-shadow: 0 0 0 0 transparent;
 
     --skeleton-animation: shimmer;
   }

@@ -84,7 +84,7 @@ export type ClientTrainingPlan = {
   inserted_at: string;
   name: string;
   plan_items: ClientTrainingPlanItem[];
-  rest_days: TrainingWeekday[];
+  rest_days: null | TrainingWeekday[];
   start_date: null | string;
   status: TrainingPlanStatus;
   updated_at: string;

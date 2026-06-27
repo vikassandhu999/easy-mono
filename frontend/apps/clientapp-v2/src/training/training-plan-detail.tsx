@@ -305,7 +305,7 @@ export default function TrainingPlanDetail() {
               );
             }
 
-            if (plan.rest_days.includes(day)) {
+            if ((plan.rest_days ?? []).includes(day)) {
               return (
                 <RestDayCard
                   day={day}

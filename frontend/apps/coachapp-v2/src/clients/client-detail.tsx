@@ -15,6 +15,7 @@ import {
   useListCoachClientTrainingPlansQuery,
 } from '@/api/generated';
 import {toNullableText} from '@/api/shared';
+import ClientCheckins from '@/clients/components/client-checkins';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientStatStrip from '@/clients/components/client-stat-strip';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
@@ -431,6 +432,10 @@ export default function ClientDetail() {
               />
               {/* Nutrition adherence only makes sense once the client logs — hidden while pending. */}
               {isPending ? null : <ClientNutritionAdherence clientId={client.id} />}
+              <ClientCheckins
+                clientId={client.id}
+                clientName={name}
+              />
             </div>
             <div className="space-y-4">
               {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}

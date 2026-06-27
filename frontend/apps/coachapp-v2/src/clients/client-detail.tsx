@@ -18,6 +18,7 @@ import {toNullableText} from '@/api/shared';
 import ClientCheckins from '@/clients/components/client-checkins';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientStatStrip from '@/clients/components/client-stat-strip';
+import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
@@ -439,6 +440,7 @@ export default function ClientDetail() {
             </div>
             <div className="space-y-4">
               {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
+              {isPending ? null : <ClientWeight clientId={client.id} />}
               <Link
                 className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover sm:p-5"
                 to={`/clients/${client.id}/profile`}

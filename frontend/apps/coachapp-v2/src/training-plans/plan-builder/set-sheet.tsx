@@ -12,6 +12,7 @@
 import {Popover, toast} from '@heroui/react';
 import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
 import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
@@ -498,19 +499,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
 // ---------------------------------------------------------------------------
 
 export function SetSheet({workoutExercise, setIndex, planId, open, onClose, onPrev, onNext, anchorEl}: SetSheetProps) {
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
-    return window.matchMedia('(pointer: fine) and (min-width: 768px)').matches;
-  });
-
-  useEffect(() => {
-    const mq = window.matchMedia('(pointer: fine) and (min-width: 768px)');
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
+  const isDesktop = useIsDesktop();
 
   // Stable ref object pointing at the row element the popover anchors to.
   // react-aria's Popover (Popover.Content) reads `triggerRef`, not the root

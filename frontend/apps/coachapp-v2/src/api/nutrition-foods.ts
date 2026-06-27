@@ -113,12 +113,15 @@ coachApi.enhanceEndpoints({
         {type: 'Food', id: 'LIST'},
       ],
     },
+    deleteFood: {invalidatesTags: [{type: 'Food', id: 'LIST'}]},
     getRecipe: {providesTags: (_r, _e, {id}) => [{type: 'Recipe', id}]},
+    createRecipe: {invalidatesTags: [{type: 'Recipe', id: 'LIST'}]},
     updateRecipe: {
       invalidatesTags: (_r, _e, {id}) => [
         {type: 'Recipe', id},
         {type: 'Recipe', id: 'LIST'},
       ],
     },
+    deleteRecipe: {invalidatesTags: [{type: 'Recipe', id: 'LIST'}]},
   },
 });

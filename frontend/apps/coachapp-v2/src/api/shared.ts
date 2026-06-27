@@ -47,6 +47,15 @@ export function toNullableText(value: string | undefined): null | string {
   return trimmed ? trimmed : null;
 }
 
+/** Empty string / null → undefined; otherwise the finite Number (else undefined). */
+export function toOptionalNumber(value: number | string): number | undefined {
+  if (value === '' || value === null) {
+    return undefined;
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num : undefined;
+}
+
 export type ErrorResponse = {
   error_code: string;
   error_message: string;

@@ -6,8 +6,9 @@
  * Same routing pattern as the training SetSheet. Body is PlanAssignContent.
  */
 import {Button, Popover} from '@heroui/react';
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import PlanAssignContent, {type PlanKind} from '@/clients/components/plan-assign-content';
 
@@ -20,20 +21,8 @@ interface Props {
 
 export default function PlanAssignControl({kind, clientId, clientName, label}: Props) {
   const [open, setOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
-    return window.matchMedia('(pointer: fine) and (min-width: 768px)').matches;
-  });
+  const isDesktop = useIsDesktop();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(pointer: fine) and (min-width: 768px)');
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
 
   const close = () => setOpen(false);
   const content = (

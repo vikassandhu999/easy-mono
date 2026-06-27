@@ -1,6 +1,6 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {Alert, Avatar, Button, Chip, Spinner, TextArea, Typography, toast} from '@heroui/react';
-import {ArrowLeft, Dumbbell, MessageCircle, Pencil, Phone, Utensils} from 'lucide-react';
+import {ArrowLeft, ChevronRight, ClipboardList, Dumbbell, MessageCircle, Pencil, Phone, Utensils} from 'lucide-react';
 import {useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 
@@ -434,6 +434,32 @@ export default function ClientDetail() {
             </div>
             <div className="space-y-4">
               {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
+              <Link
+                className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover sm:p-5"
+                to={`/clients/${client.id}/profile`}
+              >
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                  <ClipboardList size={16} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Typography
+                    type="body-sm"
+                    weight="semibold"
+                  >
+                    Profile
+                  </Typography>
+                  <Typography
+                    color="muted"
+                    type="body-xs"
+                  >
+                    Intake &amp; coaching details
+                  </Typography>
+                </div>
+                <ChevronRight
+                  className="shrink-0 text-muted"
+                  size={18}
+                />
+              </Link>
               <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
                 <SectionHeading title="Notes" />
                 <InlineNotes

@@ -10,6 +10,7 @@ export const ROUTES = {
   CLIENT_DETAIL: '/clients/:id',
   CLIENT_WORKOUT_HISTORY: '/clients/:id/workout-history',
   CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',
+  CLIENT_PROFILE: '/clients/:id/profile',
   EDIT_CLIENT: '/clients/:id/edit',
   LIBRARY: '/library',
   EXERCISES: '/library/exercises',
@@ -33,4 +34,5 @@ export const ROUTES = {
   TRAINING_PLAN_DETAIL: '/library/training-plans/:id',
   EDIT_TRAINING_PLAN: '/library/training-plans/:id/edit',
   SETTINGS: '/settings',
+  SETTINGS_PROFILE_FIELDS: '/settings/client-profile-fields',
 } as const;

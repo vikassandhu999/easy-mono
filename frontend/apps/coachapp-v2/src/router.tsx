@@ -12,6 +12,7 @@ import Signup from '@/auth/signup';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
 import VerifySignupOtp from '@/auth/verify-signup-otp';
 import ClientDetail from '@/clients/client-detail';
+import ClientProfilePage from '@/clients/client-profile';
 import ClientWorkoutHistoryPage from '@/clients/client-workout-history-page';
 import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
@@ -34,6 +35,7 @@ import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
+import ProfileFields from '@/settings/profile-fields';
 import Settings from '@/settings/settings';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
@@ -84,6 +86,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
       {path: ROUTES.CLIENT_WORKOUT_HISTORY, Component: ClientWorkoutHistoryPage},
       {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},
+      {path: ROUTES.CLIENT_PROFILE, Component: ClientProfilePage},
       {path: ROUTES.CLIENT_DETAIL, Component: ClientDetail},
       {path: ROUTES.EDIT_CLIENT, Component: EditClient},
       {path: ROUTES.LIBRARY, Component: Library},
@@ -108,6 +111,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.TRAINING_PLAN_DETAIL, Component: TrainingPlanDetail},
       {path: ROUTES.EDIT_TRAINING_PLAN, Component: EditTrainingPlan},
       {path: ROUTES.SETTINGS, Component: Settings},
+      {path: ROUTES.SETTINGS_PROFILE_FIELDS, Component: ProfileFields},
     ],
   },
 

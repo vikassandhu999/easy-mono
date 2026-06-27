@@ -1,7 +1,8 @@
 import {Button, Popover} from '@heroui/react';
 import {Plus} from 'lucide-react';
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Food} from '@/api/generated';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import FoodPickerContent from '@/foods/components/food-picker-content';
@@ -18,22 +19,15 @@ interface Props {
  */
 export default function FoodPickerControl({onSelect, excludeIds}: Props) {
   const [open, setOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
-    return window.matchMedia('(pointer: fine) and (min-width: 768px)').matches;
-  });
+  const isDesktop = useIsDesktop();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  useEffect(() => {
-    const mq = window.matchMedia('(pointer: fine) and (min-width: 768px)');
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  const close = () => setOpen(false);
+  const close = () => {
+    setOpen(false);
+    // Return focus to the trigger so keyboard users aren't dropped at the top
+    // of the document after the picker closes.
+    triggerRef.current?.focus();
+  };
   const content = (
     <FoodPickerContent
       excludeIds={excludeIds}
@@ -45,6 +39,8 @@ export default function FoodPickerControl({onSelect, excludeIds}: Props) {
   return (
     <>
       <Button
+        aria-expanded={open}
+        aria-haspopup="listbox"
         onPress={() => setOpen(true)}
         ref={triggerRef}
         size="sm"
@@ -64,10 +60,15 @@ export default function FoodPickerControl({onSelect, excludeIds}: Props) {
           }}
         >
           <Popover.Content
-            className="w-[26rem] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-4 shadow-xl"
+            className="max-w-md max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-4 shadow-xl"
             triggerRef={triggerRef}
           >
-            <Popover.Dialog className="outline-none">{open ? content : null}</Popover.Dialog>
+            <Popover.Dialog
+              aria-label="Add ingredient"
+              className="outline-none"
+            >
+              {open ? content : null}
+            </Popover.Dialog>
           </Popover.Content>
         </Popover>
       ) : (

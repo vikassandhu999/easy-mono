@@ -1,6 +1,6 @@
 import {SearchField, Spinner, Typography} from '@heroui/react';
 import {Apple, ArrowRight, X} from 'lucide-react';
-import {useDeferredValue, useMemo, useState} from 'react';
+import {type KeyboardEvent, useDeferredValue, useMemo, useState} from 'react';
 
 import type {Food} from '@/api/generated';
 import {useListFoodsQuery} from '@/api/generated';
@@ -26,6 +26,40 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
   const {data, isFetching} = useListFoodsQuery({search: deferredSearch, limit: 20}, {skip: !shouldQuery});
   const foods = useMemo(() => (data?.data ?? []).filter((f) => !excludeIds.includes(f.id)), [data, excludeIds]);
 
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+
+  // Reset the highlight to the top whenever the query changes (new result set).
+  const onSearchChange = (value: string) => {
+    setSearch(value);
+    setHighlightedIndex(0);
+  };
+
+  const select = (food: Food) => {
+    onSelect(food);
+    // Clear the search so the batch-add flow doesn't strand the coach on an
+    // empty filtered result set after the chosen food drops out via excludeIds.
+    onSearchChange('');
+  };
+
+  const onInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (foods.length === 0) {
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.min(i + 1, foods.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const food = foods[highlightedIndex] ?? foods[0];
+      if (food) {
+        select(food);
+      }
+    }
+  };
+
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -37,7 +71,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
         </Typography>
         <button
           aria-label="Close"
-          className="text-muted transition-colors hover:text-foreground"
+          className="rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={onClose}
           type="button"
         >
@@ -48,13 +82,16 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
       <SearchField
         aria-label="Search foods"
         autoFocus
-        onChange={setSearch}
+        onChange={onSearchChange}
         value={search}
         variant="secondary"
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input placeholder="Search foods…" />
+          <SearchField.Input
+            onKeyDown={onInputKeyDown}
+            placeholder="Search foods…"
+          />
           {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton />}
         </SearchField.Group>
       </SearchField>
@@ -79,15 +116,25 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
             {isFetching ? 'Searching…' : 'No foods found'}
           </Typography>
         ) : (
-          <div className="flex flex-col gap-0.5">
-            {foods.map((food) => {
+          <div
+            aria-label="Search results"
+            className="flex flex-col gap-0.5"
+            role="listbox"
+          >
+            {foods.map((food, index) => {
               const cal = food.calories_per_100g;
               const pro = food.protein_g_per_100g;
+              const isHighlighted = index === highlightedIndex;
               return (
                 <button
-                  className="group flex items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-hover"
+                  aria-selected={isHighlighted}
+                  className={`group flex items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${
+                    isHighlighted ? 'bg-surface-hover' : ''
+                  }`}
                   key={food.id}
-                  onClick={() => onSelect(food)}
+                  onClick={() => select(food)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  role="option"
                   type="button"
                 >
                   <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary">

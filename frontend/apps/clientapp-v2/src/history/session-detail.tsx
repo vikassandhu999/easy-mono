@@ -1,412 +1,203 @@
-import {formatDuration, formatSessionDateLong, getWorkoutTitle, SESSION_STATE_CHIP} from '@easy/utils';
-import {Alert, Button, Chip, Separator, Spinner} from '@heroui/react';
-import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, RefreshCw, SkipForward} from 'lucide-react';
+/**
+ * Session detail — actual vs plan (spec: assets/client-training/07-history.html, detail).
+ * Reconstructs plan-vs-actual from planned_snapshot (targets) + performed_sets (actuals):
+ * matched ✓, beat ↑, missed ↓; a planned exercise with no sets = skipped, a performed
+ * exercise not in the plan = added. Coach note shown. Read-only. Dark + periwinkle, new schema.
+ */
+import {formatDuration} from '@easy/utils';
+import {Button, Spinner} from '@heroui/react';
+import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
-import PageLayout from '@/@components/page-layout';
+
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {ClientPerformedSet, ClientWorkoutSession, PlannedSnapshotElement} from '@/api/workoutSessions';
-import {useGetClientWorkoutSessionQuery} from '@/api/workoutSessions';
+import {type TrainingPerformedSet, type TrainingSession, useGetClientTrainingSessionQuery} from '@/api/training';
+import {
+  addedExercises,
+  assignPerformed,
+  formatDayDate,
+  formatVolume,
+  type SnapshotSet,
+  sessionVolumeKg,
+  snapshotExercises,
+  snapshotOf,
+  sorenessEmoji,
+} from '@/workout/session-utils';
 
-// ── Helpers ──────────────────────────────────────────────────
+function unitLabel(unit?: null | string): string {
+  return unit === 'lbs' ? 'lb' : unit === 'kg' ? 'kg' : '';
+}
 
-function formatLoad(value: null | string, unit: null | string): string {
-  if (!value) {
+function actualLabel(p: TrainingPerformedSet): string {
+  if (p.load_value == null || p.load_unit === 'none' || p.load_unit === 'bodyweight') {
+    return `${p.reps ?? '—'} reps`;
+  }
+  return `${p.load_value}${unitLabel(p.load_unit)} × ${p.reps ?? '—'}`;
+}
+
+function targetLabel(planned?: SnapshotSet): null | string {
+  if (!planned) {
+    return null;
+  }
+  if (planned.load_value == null) {
+    return planned.reps != null ? `target ${planned.reps}` : null;
+  }
+  return `target ${planned.load_value}×${planned.reps ?? '—'}`;
+}
+
+// ↑ beat / ↓ missed / ✓ matched — compared like-for-like on whichever dimension the
+// plan prescribes: load when a target load is set, else reps. No mark if neither.
+function deltaMark(p: TrainingPerformedSet, planned?: SnapshotSet): '' | '↑' | '↓' | '✓' {
+  if (!planned) {
     return '';
   }
-  if (unit === 'bodyweight') {
-    return 'BW';
-  }
-  if (unit === 'none') {
+  const [actual, target] =
+    planned.load_value != null
+      ? [p.load_value != null ? Number(p.load_value) : Number.NaN, Number(planned.load_value)]
+      : planned.reps != null
+        ? [Number(p.reps), Number(planned.reps)]
+        : [Number.NaN, Number.NaN];
+  if (!Number.isFinite(actual) || !Number.isFinite(target)) {
     return '';
   }
-  return `${value} ${unit ?? ''}`.trim();
+  return actual > target ? '↑' : actual < target ? '↓' : '✓';
 }
 
-type ExerciseGroup = {
-  elementId: null | string;
-  exerciseId: string;
-  exerciseName: string;
-  isAdded: boolean;
-  isReplacement: boolean;
-  originalExerciseName: null | string;
-  plannedSets: Array<{loadUnit: null | string; loadValue: null | string; targetReps: null | string}>;
-  sets: ClientPerformedSet[];
-};
+type Row = {actual: string; id: string; mark: '' | '↑' | '↓' | '✓'; target: null | string};
 
-function buildExerciseGroups(session: ClientWorkoutSession): ExerciseGroup[] {
-  const snapshot = session.planned_snapshot;
-  const sets = session.performed_sets;
-
-  const elementMap = new Map<string, PlannedSnapshotElement>();
-  if (snapshot) {
-    for (const el of snapshot.elements) {
-      elementMap.set(el.element_id, el);
-    }
-  }
-
-  const groupMap = new Map<string, ClientPerformedSet[]>();
-  const groupOrder: string[] = [];
-
-  for (const set of [...sets].sort((a, b) => a.position - b.position)) {
-    const key = set.workout_element_id ?? `freestyle_${set.exercise_id}`;
-    const existing = groupMap.get(key);
-    if (existing) {
-      existing.push(set);
-    } else {
-      groupMap.set(key, [set]);
-      groupOrder.push(key);
-    }
-  }
-
-  const groups: ExerciseGroup[] = [];
-
-  if (snapshot) {
-    const processedKeys = new Set<string>();
-
-    for (const el of [...snapshot.elements].sort((a, b) => a.position - b.position)) {
-      const key = el.element_id;
-      const setsForElement = groupMap.get(key) ?? [];
-      processedKeys.add(key);
-
-      const firstSet = setsForElement[0];
-      const isReplacement = firstSet ? firstSet.exercise_id !== el.exercise_id : false;
-
-      groups.push({
-        elementId: el.element_id,
-        exerciseId: firstSet?.exercise_id ?? el.exercise_id,
-        exerciseName: isReplacement ? (firstSet?.exercise?.name ?? 'Unknown exercise') : el.exercise_name,
-        isAdded: false,
-        isReplacement,
-        originalExerciseName: isReplacement ? el.exercise_name : null,
-        plannedSets: el.planned_sets.map((ps) => ({
-          loadUnit: ps.load_unit,
-          loadValue: ps.load_value,
-          targetReps: ps.target_reps,
-        })),
-        sets: setsForElement,
-      });
-    }
-
-    for (const key of groupOrder) {
-      if (!processedKeys.has(key) && key.startsWith('freestyle_')) {
-        const setsForGroup = groupMap.get(key) ?? [];
-        const firstSet = setsForGroup[0];
-        groups.push({
-          elementId: null,
-          exerciseId: firstSet?.exercise_id ?? '',
-          exerciseName: firstSet?.exercise?.name ?? 'Unknown exercise',
-          isAdded: true,
-          isReplacement: false,
-          originalExerciseName: null,
-          plannedSets: [],
-          sets: setsForGroup,
-        });
-      }
-    }
-  } else {
-    for (const key of groupOrder) {
-      const setsForGroup = groupMap.get(key) ?? [];
-      const firstSet = setsForGroup[0];
-      groups.push({
-        elementId: null,
-        exerciseId: firstSet?.exercise_id ?? '',
-        exerciseName: firstSet?.exercise?.name ?? 'Unknown exercise',
-        isAdded: false,
-        isReplacement: false,
-        originalExerciseName: null,
-        plannedSets: [],
-        sets: setsForGroup,
-      });
-    }
-  }
-
-  return groups;
-}
-
-function getAdherenceSummary(
-  session: ClientWorkoutSession,
-  groups: ExerciseGroup[],
-): {added: number; completed: number; replaced: number; skipped: number; totalPlanned: number; totalSets: number} {
-  const totalPlanned = session.planned_snapshot?.elements.length ?? 0;
-  let completed = 0;
-  let replaced = 0;
-  let skipped = 0;
-  let added = 0;
-  let totalSets = 0;
-
-  for (const group of groups) {
-    totalSets += group.sets.length;
-    if (group.isAdded) {
-      added++;
-    } else if (group.sets.length === 0) {
-      skipped++;
-    } else if (group.isReplacement) {
-      replaced++;
-      completed++;
-    } else {
-      completed++;
-    }
-  }
-
-  return {added, completed, replaced, skipped, totalPlanned, totalSets};
-}
-
-// ── Exercise group section ───────────────────────────────────
-
-function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
-  const isSkipped = group.sets.length === 0 && !group.isAdded;
-  const hasPlan = group.plannedSets.length > 0;
-
+function ExerciseCard({name, badge, rows}: {badge?: 'added' | 'skipped'; name: string; rows: Row[]}) {
+  const markClass = (m: Row['mark']) => (m === '↑' ? 'text-success' : m === '↓' ? 'text-[#e0926c]' : 'text-muted');
   return (
-    <div className="py-3">
-      <div className="mb-2 flex items-center gap-2">
-        <h4 className="text-sm font-semibold">{group.exerciseName}</h4>
-        {group.isReplacement ? (
-          <Chip
-            color="default"
-            size="sm"
-            variant="soft"
-          >
-            <RefreshCw size={10} />
-            <span className="ml-1">Replaced {group.originalExerciseName}</span>
-          </Chip>
-        ) : null}
-        {group.isAdded ? (
-          <Chip
-            color="success"
-            size="sm"
-            variant="soft"
-          >
-            <Plus size={10} />
-            <span className="ml-1">Added</span>
-          </Chip>
-        ) : null}
-        {isSkipped ? (
-          <Chip
-            color="default"
-            size="sm"
-            variant="soft"
-          >
-            <SkipForward size={10} />
-            <span className="ml-1">Skipped</span>
-          </Chip>
+    <div className="mb-2.5 rounded-xl border border-border bg-surface p-3">
+      <div className="flex items-center justify-between">
+        <span className={`font-semibold ${badge === 'skipped' ? 'text-muted' : ''}`}>{name}</span>
+        {badge === 'skipped' ? (
+          <span className="rounded border border-[#3a3a42] px-1.5 py-px text-[9px] text-muted">skipped</span>
+        ) : badge === 'added' ? (
+          <span className="rounded border border-[#7d5a2f] px-1.5 py-px text-[9px] text-warning">added</span>
         ) : null}
       </div>
+      {rows.map((r) => (
+        <div
+          className="mt-1.5 flex items-center justify-between gap-2 border-t border-[#202026] pt-1.5 text-xs"
+          key={r.id}
+        >
+          <span className="text-[#cfe]">{r.actual}</span>
+          {r.target ? (
+            <span className="text-[11px] text-[#666]">
+              {r.target} <span className={markClass(r.mark)}>{r.mark}</span>
+            </span>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
 
-      {isSkipped ? (
-        <p className="text-xs text-muted">
-          {group.plannedSets.length} set{group.plannedSets.length !== 1 ? 's' : ''} planned, none performed
-        </p>
-      ) : group.sets.length > 0 ? (
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface-secondary">
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-muted">#</th>
-                {hasPlan ? <th className="px-3 py-1.5 text-left text-xs font-medium text-muted">Plan</th> : null}
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-muted">Done</th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-muted">Load</th>
-              </tr>
-            </thead>
-            <tbody>
-              {group.sets.map((set, idx) => {
-                const planned = hasPlan ? group.plannedSets[idx] : null;
-                return (
-                  <tr
-                    className="border-b border-border last:border-b-0"
-                    key={set.id}
-                  >
-                    <td className="px-3 py-1.5 text-muted">{idx + 1}</td>
-                    {hasPlan ? <td className="px-3 py-1.5 text-muted">{planned?.targetReps ?? '—'}</td> : null}
-                    <td className="px-3 py-1.5">
-                      {set.completed ? (
-                        <span>{set.actual_reps ?? '—'}</span>
-                      ) : (
-                        <span className="text-muted">skipped</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-1.5">{formatLoad(set.load_value, set.load_unit)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+function Detail({session}: {session: TrainingSession}) {
+  const goBack = useGoBack(ROUTES.WORKOUT_HISTORY);
+  const exercises = snapshotExercises(session);
+  const assigned = assignPerformed(exercises, session.performed_sets);
+  const added = addedExercises(exercises, session.performed_sets);
+
+  const setCount = session.performed_sets.length;
+  const volume = formatVolume(sessionVolumeKg(session.performed_sets));
+  const exerciseCount = exercises.filter((_, i) => (assigned[i]?.length ?? 0) > 0).length + added.size;
+  const sub = [
+    formatDayDate(session.started_at),
+    formatDuration(session.started_at, session.ended_at),
+    sorenessEmoji(session.soreness_rating),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  return (
+    <div className="px-4 pb-10 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <button
+        aria-label="Back"
+        className="mb-3 -ml-1 flex size-9 items-center justify-center rounded-lg text-muted active:bg-surface-secondary"
+        onClick={goBack}
+        type="button"
+      >
+        <ArrowLeft size={20} />
+      </button>
+
+      <h1 className="text-lg font-bold">{snapshotOf(session).workout_name ?? 'Workout'}</h1>
+      <p className="mt-0.5 text-xs text-muted">{sub}</p>
+
+      <div className="my-3.5 flex gap-4 text-xs text-[#9aa]">
+        <span>
+          Sets <b className="text-foreground">{setCount}</b>
+        </span>
+        <span>
+          Volume <b className="text-foreground">{volume}</b>
+        </span>
+        <span>
+          Exercises <b className="text-foreground">{exerciseCount}</b>
+        </span>
+      </div>
+
+      {exercises.map((ex, i) => {
+        const done = assigned[i] ?? [];
+        return (
+          <ExerciseCard
+            badge={done.length === 0 ? 'skipped' : undefined}
+            key={`${ex.exercise_id}-${ex.position ?? i}`}
+            name={ex.name ?? 'Exercise'}
+            rows={done.map((p, si) => ({
+              actual: actualLabel(p),
+              id: p.id,
+              mark: deltaMark(p, ex.sets?.[si]),
+              target: targetLabel(ex.sets?.[si]),
+            }))}
+          />
+        );
+      })}
+
+      {[...added.entries()].map(([id, ps]) => (
+        <ExerciseCard
+          badge="added"
+          key={id}
+          name={ps[0]?.exercise_name ?? 'Exercise'}
+          rows={ps.map((p) => ({actual: actualLabel(p), id: p.id, mark: '' as const, target: null}))}
+        />
+      ))}
+
+      {session.notes ? (
+        <div className="mt-1 rounded-[10px] border border-border bg-surface p-2.5 text-xs text-[#9aa]">
+          “{session.notes}”
         </div>
       ) : null}
     </div>
   );
 }
 
-// ── Main component ───────────────────────────────────────────
-
 export default function SessionDetail() {
   const {sessionId} = useParams<{sessionId: string}>();
   const goBack = useGoBack(ROUTES.WORKOUT_HISTORY);
-  const {data, isError, isLoading} = useGetClientWorkoutSessionQuery(sessionId!);
+  const {data, isLoading} = useGetClientTrainingSessionQuery({id: sessionId!}, {skip: !sessionId});
 
   if (isLoading) {
     return (
-      <PageLayout title="Workout Session">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner />
+      </div>
     );
   }
 
-  if (isError || !data) {
+  if (!data) {
     return (
-      <PageLayout title="Workout Session">
-        <div className="mb-4">
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </Button>
-        </div>
-        <Alert status="danger">
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Title>Failed to load session</Alert.Title>
-            <Alert.Description>The workout session could not be found.</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      </PageLayout>
-    );
-  }
-
-  const session = data.data;
-  const snapshot = session.planned_snapshot;
-  const title = getWorkoutTitle(snapshot);
-  const dateStr = formatSessionDateLong(session.started_at);
-  const duration = formatDuration(session.started_at, session.ended_at);
-  const groups = buildExerciseGroups(session);
-  const adherence = getAdherenceSummary(session, groups);
-  const stateChip = SESSION_STATE_CHIP[session.state];
-
-  return (
-    <PageLayout title="Workout Session">
-      <div className="mb-4">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
+        <p className="text-sm text-muted">Workout not found.</p>
         <Button
           onPress={goBack}
-          size="sm"
-          variant="ghost"
+          variant="primary"
         >
-          <ArrowLeft size={16} />
-          Back
+          Back to history
         </Button>
       </div>
+    );
+  }
 
-      <div className="max-w-lg">
-        {/* Header */}
-        <div className="pb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">{title}</h2>
-            {stateChip ? (
-              <Chip
-                color={stateChip.color}
-                size="sm"
-                variant="soft"
-              >
-                {stateChip.label}
-              </Chip>
-            ) : null}
-          </div>
-          <p className="mt-1 text-sm text-muted">{dateStr}</p>
-        </div>
-
-        {/* Stats */}
-        <div className="flex flex-wrap gap-4 pb-4">
-          {duration ? (
-            <div className="flex items-center gap-1.5 text-sm text-muted">
-              <Clock size={14} />
-              {duration}
-            </div>
-          ) : null}
-          {session.soreness_rating ? (
-            <div className="flex items-center gap-1.5 text-sm text-muted">
-              <Activity size={14} />
-              Effort: {session.soreness_rating}/5
-            </div>
-          ) : null}
-          {snapshot ? (
-            <div className="flex items-center gap-1.5 text-sm text-muted">
-              <Dumbbell size={14} />
-              {adherence.completed}/{adherence.totalPlanned} exercises
-              {adherence.totalSets > 0 ? ` \u00B7 ${adherence.totalSets} sets` : ''}
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-sm text-muted">
-              <Dumbbell size={14} />
-              {adherence.totalSets} sets across {groups.length} exercise{groups.length !== 1 ? 's' : ''}
-            </div>
-          )}
-        </div>
-
-        {/* Notes */}
-        {session.notes ? (
-          <div className="flex items-start gap-2 pb-4">
-            <MessageSquare
-              className="mt-0.5 shrink-0 text-muted"
-              size={14}
-            />
-            <p className="text-sm italic text-muted">&ldquo;{session.notes}&rdquo;</p>
-          </div>
-        ) : null}
-
-        {/* Adherence badges */}
-        {snapshot ? (
-          <div className="flex flex-wrap gap-2 pb-4">
-            {adherence.replaced > 0 ? (
-              <Chip
-                color="default"
-                size="sm"
-                variant="soft"
-              >
-                {adherence.replaced} replaced
-              </Chip>
-            ) : null}
-            {adherence.skipped > 0 ? (
-              <Chip
-                color="default"
-                size="sm"
-                variant="soft"
-              >
-                {adherence.skipped} skipped
-              </Chip>
-            ) : null}
-            {adherence.added > 0 ? (
-              <Chip
-                color="success"
-                size="sm"
-                variant="soft"
-              >
-                {adherence.added} added
-              </Chip>
-            ) : null}
-          </div>
-        ) : null}
-
-        <Separator />
-
-        {/* Exercise groups */}
-        {groups.length > 0 ? (
-          <div className="divide-y divide-border">
-            {groups.map((group) => (
-              <ExerciseGroupSection
-                group={group}
-                key={group.elementId ?? `added_${group.exerciseId}`}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="py-6 text-center text-sm text-muted">No exercises logged in this session.</p>
-        )}
-      </div>
-    </PageLayout>
-  );
+  return <Detail session={data.data} />;
 }

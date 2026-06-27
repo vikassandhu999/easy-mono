@@ -15,27 +15,13 @@ import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 import {
-  type TrainingPerformedSet,
   type TrainingSession,
   useCreateClientPerformedSetMutation,
   useGetClientTrainingSessionQuery,
   useListClientTrainingSessionsQuery,
   useUpdateClientTrainingSessionMutation,
 } from '@/api/training';
-
-type SnapshotSet = {
-  load_unit?: null | string;
-  load_value?: null | string;
-  reps?: null | string;
-  set_type?: null | string;
-};
-type SnapshotExercise = {
-  exercise_id?: null | string;
-  name?: null | string;
-  position?: number;
-  sets?: SnapshotSet[];
-  tracking_type?: null | string;
-};
+import {assignPerformed, type SnapshotExercise} from '@/workout/session-utils';
 
 const REPS_ONLY = new Set(['reps_only', 'bodyweight_reps']);
 
@@ -53,27 +39,6 @@ function formatSet(
     return `${reps ?? '—'} reps`;
   }
   return `${load ?? '—'}${unitLabel(unit)} × ${reps ?? '—'}`;
-}
-
-// Assign performed sets to exercise occurrences. A performed set carries only
-// exercise_id (no per-occurrence key), so a workout with the same exercise twice
-// can't tell its occurrences apart by id alone. Consume them greedily in logged
-// (position) order: each occurrence claims up to its planned set count.
-// ponytail: relies on sets being logged in occurrence order — the linear UI
-// (current = first incomplete exercise) guarantees it. Add a workout_element_id
-// to the performed set if free-order logging is ever added.
-function assignPerformed(exercises: SnapshotExercise[], performed: TrainingPerformedSet[]): TrainingPerformedSet[][] {
-  const queues = new Map<string, TrainingPerformedSet[]>();
-  for (const p of [...performed].sort((a, b) => a.position - b.position)) {
-    const key = p.exercise_id ?? '';
-    const q = queues.get(key) ?? [];
-    q.push(p);
-    queues.set(key, q);
-  }
-  return exercises.map((ex) => {
-    const q = queues.get(ex.exercise_id ?? '');
-    return q ? q.splice(0, (ex.sets ?? []).length) : [];
-  });
 }
 
 function ElapsedClock({startedAt}: {startedAt: string}) {

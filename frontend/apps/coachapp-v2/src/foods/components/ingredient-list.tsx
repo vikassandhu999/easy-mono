@@ -1,4 +1,4 @@
-import {Form, Typography} from '@heroui/react';
+import {Button, Form, Label, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Apple, ChevronDown, ChevronUp, X} from 'lucide-react';
 import {useState} from 'react';
@@ -173,6 +173,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
     <div className="flex flex-col gap-2">
       {value.map((item, index) => {
         const isExpanded = activeExpandedId === item.food_id;
+        const activeServing = activeServingMap[item.food_id] ?? null;
 
         return (
           <div
@@ -227,41 +228,50 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                   />
                 )}
               </button>
-              <button
+              <Button
                 aria-label={`Remove ${item.food.name}`}
-                className="grid size-9 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
-                onClick={() => removeItem(index)}
-                type="button"
+                isIconOnly
+                onPress={() => removeItem(index)}
+                size="sm"
+                variant="ghost"
               >
                 <X size={15} />
-              </button>
+              </Button>
             </div>
 
             {isExpanded && (
               <div className="border-t border-border p-3">
                 {item.food.serving_sizes.length > 0 && (
                   <div className="mb-3">
-                    <p className="mb-1.5 text-sm font-medium text-muted">Quick fill</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.food.serving_sizes.map((s, sIdx) => {
-                        const isActive = activeServingMap[item.food_id] === sIdx;
-                        return (
-                          <button
-                            aria-label={`Use serving: ${formatServingLabel(s)}`}
-                            className={`min-h-8 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
-                              isActive
-                                ? 'border-accent bg-accent-soft text-accent'
-                                : 'border-border text-muted hover:bg-surface-hover'
-                            }`}
-                            key={sIdx}
-                            onClick={() => applyServing(index, item.food_id, s, sIdx)}
-                            type="button"
-                          >
-                            {formatServingLabel(s)}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <Label className="mb-1.5 block text-sm font-medium text-muted">Quick fill</Label>
+                    <ToggleButtonGroup
+                      className="flex flex-wrap gap-1.5"
+                      isDetached
+                      onSelectionChange={(keys) => {
+                        const first = [...keys][0];
+                        if (first == null) {
+                          return;
+                        }
+                        const sIdx = Number(first);
+                        const serving = item.food.serving_sizes[sIdx];
+                        if (serving) {
+                          applyServing(index, item.food_id, serving, sIdx);
+                        }
+                      }}
+                      selectedKeys={activeServing != null ? [String(activeServing)] : []}
+                      selectionMode="single"
+                      size="sm"
+                    >
+                      {item.food.serving_sizes.map((s, sIdx) => (
+                        <ToggleButton
+                          aria-label={`Use serving: ${formatServingLabel(s)}`}
+                          id={String(sIdx)}
+                          key={sIdx}
+                        >
+                          {formatServingLabel(s)}
+                        </ToggleButton>
+                      ))}
+                    </ToggleButtonGroup>
                   </div>
                 )}
 

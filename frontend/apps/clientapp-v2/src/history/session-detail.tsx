@@ -23,6 +23,7 @@ import {
   snapshotExercises,
   snapshotOf,
   sorenessEmoji,
+  swapOf,
 } from '@/workout/session-utils';
 
 // ↑ beat / ↓ missed / ✓ matched — compared like-for-like on the first dimension the
@@ -50,17 +51,22 @@ function deltaMark(p: TrainingPerformedSet, planned?: SnapshotSet): '' | '↑' |
 }
 
 type Row = {actual: string; id: string; mark: '' | '↑' | '↓' | '✓'; target: null | string};
+type Badge = 'added' | 'skipped' | {swappedFrom: string};
 
-function ExerciseCard({name, badge, rows}: {badge?: 'added' | 'skipped'; name: string; rows: Row[]}) {
+function ExerciseCard({name, badge, rows}: {badge?: Badge; name: string; rows: Row[]}) {
   const markClass = (m: Row['mark']) => (m === '↑' ? 'text-success' : m === '↓' ? 'text-[#e0926c]' : 'text-muted');
   return (
     <div className="mb-2.5 rounded-xl border border-border bg-surface p-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className={`font-semibold ${badge === 'skipped' ? 'text-muted' : ''}`}>{name}</span>
         {badge === 'skipped' ? (
-          <span className="rounded border border-[#3a3a42] px-1.5 py-px text-[9px] text-muted">skipped</span>
+          <span className="shrink-0 rounded border border-[#3a3a42] px-1.5 py-px text-[9px] text-muted">skipped</span>
         ) : badge === 'added' ? (
-          <span className="rounded border border-[#7d5a2f] px-1.5 py-px text-[9px] text-warning">added</span>
+          <span className="shrink-0 rounded border border-[#7d5a2f] px-1.5 py-px text-[9px] text-warning">added</span>
+        ) : badge ? (
+          <span className="shrink-0 rounded border border-[#34506e] px-1.5 py-px text-[9px] text-[#9fb0ff]">
+            swapped from {badge.swappedFrom}
+          </span>
         ) : null}
       </div>
       {rows.map((r) => (
@@ -125,17 +131,19 @@ function Detail({session}: {session: TrainingSession}) {
 
       {exercises.map((ex, i) => {
         const done = assigned[i] ?? [];
+        const swap = swapOf(done);
+        const tt = swap?.trackingType ?? ex.tracking_type;
         return (
           <ExerciseCard
-            badge={done.length === 0 ? 'skipped' : undefined}
+            badge={swap ? {swappedFrom: ex.name ?? 'planned'} : done.length === 0 ? 'skipped' : undefined}
             key={`${ex.exercise_id}-${ex.position ?? i}`}
-            name={ex.name ?? 'Exercise'}
+            name={swap?.name ?? ex.name ?? 'Exercise'}
             rows={done.map((p, si) => {
-              const planned = ex.sets?.[si];
+              const planned = swap ? undefined : ex.sets?.[si];
               return {
-                actual: describeSet(ex.tracking_type, p),
+                actual: describeSet(tt, p),
                 id: p.id,
-                mark: deltaMark(p, planned),
+                mark: planned ? deltaMark(p, planned) : '',
                 target: planned ? `target ${describeSet(ex.tracking_type, planned)}` : null,
               };
             })}

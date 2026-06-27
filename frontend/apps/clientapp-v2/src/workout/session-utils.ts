@@ -32,10 +32,17 @@ export function snapshotExercises(session: TrainingSession): SnapshotExercise[] 
   return [...(snapshotOf(session).exercises ?? [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
-// Assign performed sets to exercise occurrences. A performed set carries only
-// exercise_id (no per-occurrence key), so a workout with the same exercise twice
-// can't tell its occurrences apart by id alone. Consume them greedily in logged
-// (position) order: each occurrence claims up to its planned set count.
+// The planned slot a performed set belongs to: its swapped-from exercise when the
+// client swapped this slot, else the exercise it was logged under.
+function plannedKey(p: TrainingPerformedSet): string {
+  return p.swapped_from_exercise_id ?? p.exercise_id ?? '';
+}
+
+// Assign performed sets to exercise occurrences. A performed set carries only its
+// (planned-slot) exercise id — no per-occurrence key — so a workout with the same
+// exercise twice can't tell its occurrences apart by id alone. Consume them greedily
+// in logged (position) order: each occurrence claims up to its planned set count.
+// Swapped sets map back to the slot they replaced via plannedKey, so they fill it.
 // ponytail: relies on sets being logged in occurrence order — the linear logger
 // (current = first incomplete exercise) guarantees it. Add a workout_element_id
 // to the performed set if free-order logging is ever added.
@@ -45,7 +52,7 @@ export function assignPerformed(
 ): TrainingPerformedSet[][] {
   const queues = new Map<string, TrainingPerformedSet[]>();
   for (const p of [...performed].sort((a, b) => a.position - b.position)) {
-    const key = p.exercise_id ?? '';
+    const key = plannedKey(p);
     const q = queues.get(key) ?? [];
     q.push(p);
     queues.set(key, q);
@@ -56,7 +63,9 @@ export function assignPerformed(
   });
 }
 
-// Performed sets whose exercise wasn't in the plan — extras added during the workout.
+// Performed sets whose planned slot wasn't in the plan — extras added during the
+// workout (grouped by the exercise actually performed). Swapped sets are excluded
+// (their plannedKey is a planned slot).
 export function addedExercises(
   exercises: SnapshotExercise[],
   performed: TrainingPerformedSet[],
@@ -64,15 +73,23 @@ export function addedExercises(
   const planned = new Set(exercises.map((e) => e.exercise_id ?? ''));
   const extra = new Map<string, TrainingPerformedSet[]>();
   for (const p of [...performed].sort((a, b) => a.position - b.position)) {
-    const key = p.exercise_id ?? '';
-    if (planned.has(key)) {
+    if (planned.has(plannedKey(p))) {
       continue;
     }
+    const key = p.exercise_id ?? '';
     const q = extra.get(key) ?? [];
     q.push(p);
     extra.set(key, q);
   }
   return extra;
+}
+
+// If a planned slot's logged sets were swapped, the exercise actually performed.
+export function swapOf(sets: TrainingPerformedSet[]): null | {name: string; trackingType: null | string} {
+  const swapped = sets.find((p) => p.swapped_from_exercise_id != null);
+  return swapped
+    ? {name: swapped.exercise_name ?? 'Exercise', trackingType: swapped.exercise?.tracking_type ?? null}
+    : null;
 }
 
 export function sessionVolumeKg(performed: TrainingPerformedSet[]): number {

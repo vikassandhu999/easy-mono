@@ -9,7 +9,6 @@ export const ROUTES = {
   PROGRESS: '/progress',
   CHECKINS: '/check-ins',
   CHECKIN_FILL: '/check-ins/:id',
-  TRAINING_PLAN: '/plan/:planId',
   WORKOUT_ACTIVE: '/workout',
   WORKOUT_HISTORY: '/history',
   SESSION_DETAIL: '/history/:sessionId',

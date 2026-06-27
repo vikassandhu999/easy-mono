@@ -120,6 +120,7 @@ export const api = createApi({
     'PerformedSet',
     'Recipe',
     'TrainingPlan',
+    'WeightEntry',
     'WorkoutSession',
   ],
   endpoints: () => ({}),

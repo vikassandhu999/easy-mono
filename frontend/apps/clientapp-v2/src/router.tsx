@@ -17,7 +17,6 @@ import NutritionToday from '@/nutrition/nutrition-today';
 import ProgressHome from '@/progress/progress-home';
 import Settings from '@/settings/settings';
 import TrainingHome from '@/training/training-home';
-import TrainingPlanDetail from '@/training/training-plan-detail';
 import ActiveWorkout from '@/workout/active-workout';
 
 // ── Auth wrappers ────────────────────────────────────────────
@@ -44,7 +43,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.PROGRESS, Component: ProgressHome},
       {path: ROUTES.CHECKINS, Component: ListCheckins},
       {path: ROUTES.CHECKIN_FILL, Component: FillCheckin},
-      {path: ROUTES.TRAINING_PLAN, Component: TrainingPlanDetail},
       {path: ROUTES.WORKOUT_ACTIVE, Component: ActiveWorkout},
       {path: ROUTES.WORKOUT_HISTORY, Component: WorkoutHistory},
       {path: ROUTES.SESSION_DETAIL, Component: SessionDetail},

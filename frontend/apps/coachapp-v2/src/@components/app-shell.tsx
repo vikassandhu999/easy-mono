@@ -7,6 +7,7 @@ import {
   Download,
   Dumbbell,
   FolderOpen,
+  Inbox,
   LayoutDashboard,
   Settings,
   Users,
@@ -19,6 +20,7 @@ import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom'
 import {useInstallPrompt} from '@/@components/use-install-prompt';
 import {ROUTES} from '@/@config/routes';
 import {useListClientsQuery} from '@/api/clients';
+import {useListProspectsQuery} from '@/api/prospects';
 
 const ICON_SIZE = 20;
 
@@ -48,6 +50,12 @@ const SIDEBAR_TOP: NavItem[] = [
     icon: <Users size={ICON_SIZE} />,
     label: 'Clients',
     path: ROUTES.CLIENTS,
+  },
+  {
+    badge: <NewProspectBadge />,
+    icon: <Inbox size={ICON_SIZE} />,
+    label: 'Prospects',
+    path: ROUTES.PROSPECTS,
   },
 ];
 
@@ -112,6 +120,11 @@ const BOTTOM_NAV: NavItem[] = [
     path: ROUTES.CLIENTS,
   },
   {
+    icon: <Inbox size={ICON_SIZE} />,
+    label: 'Prospects',
+    path: ROUTES.PROSPECTS,
+  },
+  {
     icon: <FolderOpen size={ICON_SIZE} />,
     label: 'Library',
     path: ROUTES.LIBRARY,
@@ -146,6 +159,22 @@ function SidebarNavItem({item}: {item: NavItem}) {
 function PendingClientBadge() {
   const {data} = useListClientsQuery({status: 'pending', limit: 0});
   const count = data?.summary?.pending ?? 0;
+  if (count === 0) {
+    return null;
+  }
+  return (
+    <Chip
+      color="accent"
+      size="sm"
+    >
+      {count > 99 ? '99+' : count}
+    </Chip>
+  );
+}
+
+function NewProspectBadge() {
+  const {data} = useListProspectsQuery({limit: 0});
+  const count = data?.summary?.new ?? 0;
   if (count === 0) {
     return null;
   }

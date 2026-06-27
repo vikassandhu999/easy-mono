@@ -50,6 +50,13 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.trainingSessionRequest,
       }),
     }),
+    submitApplication: build.mutation<SubmitApplicationApiResponse, SubmitApplicationApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/public/landing-pages/${queryArg.slug}/applications`,
+        method: 'POST',
+        body: queryArg.publicApplicationRequest,
+      }),
+    }),
     listClientThreads: build.query<ListClientThreadsApiResponse, ListClientThreadsApiArg>({
       query: () => ({url: `/v1/client/threads`}),
     }),
@@ -76,6 +83,11 @@ const injectedRtkApi = api.injectEndpoints({
           limit: queryArg.limit,
           status: queryArg.status,
         },
+      }),
+    }),
+    getPublicLandingPage: build.query<GetPublicLandingPageApiResponse, GetPublicLandingPageApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/public/landing-pages/${queryArg.slug}`,
       }),
     }),
     createAuthToken: build.mutation<CreateAuthTokenApiResponse, CreateAuthTokenApiArg>({
@@ -364,6 +376,13 @@ export type CreateClientTrainingSessionApiArg = {
   /** Training session request */
   trainingSessionRequest: TrainingSessionRequest;
 };
+export type SubmitApplicationApiResponse = /** status 201 Application received */ PublicApplicationResponse;
+export type SubmitApplicationApiArg = {
+  /** Landing page slug */
+  slug: string;
+  /** Application request */
+  publicApplicationRequest: PublicApplicationRequest;
+};
 export type ListClientThreadsApiResponse = /** status 200 Threads */ ThreadListResponse;
 export type ListClientThreadsApiArg = void;
 export type CreateClientThreadApiResponse = /** status 201 Thread */ ThreadResponse;
@@ -389,6 +408,11 @@ export type ListClientNutritionPlansApiArg = {
   limit?: number;
   /** Only nutrition plans with this status */
   status?: 'active' | 'archived';
+};
+export type GetPublicLandingPageApiResponse = /** status 200 Landing page */ PublicLandingPageResponse;
+export type GetPublicLandingPageApiArg = {
+  /** Landing page slug */
+  slug: string;
 };
 export type CreateAuthTokenApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type CreateAuthTokenApiArg = {
@@ -735,6 +759,25 @@ export type TrainingSessionRequest = {
   soreness_rating?: number | null;
   training_workout_id?: string | null;
 };
+export type PublicApplicationResponse = {
+  data: {
+    business_name: string;
+    id: string;
+    name: string;
+    program_name?: string | null;
+    whatsapp_number?: string | null;
+  };
+};
+export type PublicApplicationRequest = {
+  answers?: {
+    [key: string]: any;
+  };
+  email?: string | null;
+  instagram?: string | null;
+  landing_program_id?: string | null;
+  name: string;
+  phone?: string | null;
+};
 export type Thread = {
   client_id: string;
   created_by_id?: string | null;
@@ -874,6 +917,38 @@ export type NutritionPlan = {
 export type NutritionPlanListResponse = {
   count: number;
   data: NutritionPlan[];
+};
+export type LandingProgram = {
+  audience?: string | null;
+  description?: string | null;
+  id: string;
+  name: string;
+  position: number;
+  price_display?: string | null;
+  promise?: string | null;
+};
+export type PublicLandingPage = {
+  application_questions: {
+    id?: string;
+    label?: string;
+    options?: string[];
+    type?: 'short_text' | 'long_text' | 'single_select';
+  }[];
+  business_name: string;
+  coach_intro?: string | null;
+  headline: string;
+  programs: LandingProgram[];
+  proof_points?: {
+    label?: string;
+    value?: string;
+  }[];
+  slug: string;
+  subheadline?: string | null;
+  template: 'proof_first' | 'problem_fit' | 'coach_story';
+  whatsapp_number?: string | null;
+};
+export type PublicLandingPageResponse = {
+  data: PublicLandingPage;
 };
 export type AuthTokenResponse = {
   access_token: string;
@@ -1323,6 +1398,7 @@ export const {
   useListClientTrainingSessionsQuery,
   useLazyListClientTrainingSessionsQuery,
   useCreateClientTrainingSessionMutation,
+  useSubmitApplicationMutation,
   useListClientThreadsQuery,
   useLazyListClientThreadsQuery,
   useCreateClientThreadMutation,
@@ -1332,6 +1408,8 @@ export const {
   useLazyGetClientExerciseQuery,
   useListClientNutritionPlansQuery,
   useLazyListClientNutritionPlansQuery,
+  useGetPublicLandingPageQuery,
+  useLazyGetPublicLandingPageQuery,
   useCreateAuthTokenMutation,
   useListClientRecipesQuery,
   useLazyListClientRecipesQuery,

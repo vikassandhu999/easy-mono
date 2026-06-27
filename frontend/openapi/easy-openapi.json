@@ -513,6 +513,156 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntry",
         "x-validate": null
       },
+      "LandingPage": {
+        "additionalProperties": false,
+        "properties": {
+          "application_questions": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "label": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "options": {
+                  "items": {
+                    "type": "string",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "type": {
+                  "enum": [
+                    "short_text",
+                    "long_text",
+                    "single_select"
+                  ],
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "type": "object",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "coach_intro": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "headline": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "programs": {
+            "items": {
+              "$ref": "#/components/schemas/LandingProgram"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "proof_points": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "value": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "type": "object",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "slug": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "subheadline": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "template": {
+            "enum": [
+              "proof_first",
+              "problem_fit",
+              "coach_story"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "template",
+          "headline",
+          "status",
+          "programs"
+        ],
+        "title": "LandingPage",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LandingPage",
+        "x-validate": null
+      },
       "NutritionPlanRequest": {
         "additionalProperties": false,
         "example": {
@@ -862,6 +1012,140 @@
         "title": "TrainingExerciseUpdateRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "PublicLandingPage": {
+        "additionalProperties": false,
+        "properties": {
+          "application_questions": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "label": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "options": {
+                  "items": {
+                    "type": "string",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "type": {
+                  "enum": [
+                    "short_text",
+                    "long_text",
+                    "single_select"
+                  ],
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "type": "object",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "business_name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "coach_intro": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "headline": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "programs": {
+            "items": {
+              "$ref": "#/components/schemas/LandingProgram"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "proof_points": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "value": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "type": "object",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "slug": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "subheadline": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "template": {
+            "enum": [
+              "proof_first",
+              "problem_fit",
+              "coach_story"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "whatsapp_number": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "slug",
+          "template",
+          "headline",
+          "programs",
+          "application_questions",
+          "business_name"
+        ],
+        "title": "PublicLandingPage",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicLandingPage",
         "x-validate": null
       },
       "TrainingPlanResponse": {
@@ -2383,6 +2667,62 @@
         "x-struct": null,
         "x-validate": null
       },
+      "PublicApplicationRequest": {
+        "additionalProperties": false,
+        "example": {
+          "answers": {
+            "goal": "Lose 8 kg and build a routine."
+          },
+          "email": "priya@example.com",
+          "landing_program_id": "00000000-0000-0000-0000-000000000000",
+          "name": "Priya Sharma"
+        },
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "email": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "instagram": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "landing_program_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "phone": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "PublicApplicationRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "Business": {
         "additionalProperties": false,
         "properties": {
@@ -2432,6 +2772,30 @@
         "title": "Business",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Business",
+        "x-validate": null
+      },
+      "ProspectProgram": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ProspectProgram",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectProgram",
         "x-validate": null
       },
       "ClientProfileUpdateRequest": {
@@ -2963,6 +3327,21 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfile",
         "x-validate": null
       },
+      "ProspectResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Prospect"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ProspectResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectResponse",
+        "x-validate": null
+      },
       "ClientSummary": {
         "additionalProperties": false,
         "properties": {
@@ -3114,6 +3493,38 @@
         "x-struct": null,
         "x-validate": null
       },
+      "ProspectEnrollResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": false,
+            "properties": {
+              "already_enrolled": {
+                "type": "boolean",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "prospect": {
+                "$ref": "#/components/schemas/Prospect"
+              }
+            },
+            "required": [
+              "prospect",
+              "already_enrolled"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ProspectEnrollResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectEnrollResponse",
+        "x-validate": null
+      },
       "ThreadUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -3206,6 +3617,165 @@
         "title": "NutritionScheduleEntry",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionScheduleEntry",
+        "x-validate": null
+      },
+      "LandingPageUpsertRequest": {
+        "additionalProperties": false,
+        "example": {
+          "application_questions": [
+            {
+              "id": "goal",
+              "label": "What is your main goal?",
+              "options": [],
+              "type": "long_text"
+            }
+          ],
+          "headline": "Build strength without guessing what to do next.",
+          "programs": [
+            {
+              "audience": "For busy professionals",
+              "name": "Fat loss coaching"
+            }
+          ],
+          "proof_points": [
+            {
+              "label": "clients coached",
+              "value": "220+"
+            }
+          ],
+          "slug": "kavya-strength",
+          "status": "published",
+          "subheadline": "Personal coaching for people who train hard but need structure.",
+          "template": "proof_first"
+        },
+        "properties": {
+          "application_questions": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "label": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "options": {
+                  "items": {
+                    "type": "string",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "type": {
+                  "enum": [
+                    "short_text",
+                    "long_text",
+                    "single_select"
+                  ],
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "type": "object",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "maxItems": 5,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "coach_intro": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "headline": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "programs": {
+            "items": {
+              "$ref": "#/components/schemas/LandingProgramInput"
+            },
+            "maxItems": 3,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "proof_points": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "value": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "type": "object",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "slug": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "subheadline": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "template": {
+            "enum": [
+              "proof_first",
+              "problem_fit",
+              "coach_story"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "slug",
+          "template",
+          "headline",
+          "status"
+        ],
+        "title": "LandingPageUpsertRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "ClientProfileFormSubmissionRequest": {
@@ -3549,7 +4119,8 @@
         "example": {
           "first_name": "Alex",
           "last_name": "Coach",
-          "phone": "+15551234567"
+          "phone": "+15551234567",
+          "whatsapp_number": "+15551234567"
         },
         "properties": {
           "business_name": {
@@ -3575,11 +4146,108 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "whatsapp_number": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "title": "CoachProfileUpdateRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "ProspectEnrollRequest": {
+        "additionalProperties": false,
+        "example": {
+          "email": "priya@example.com",
+          "first_name": "Priya",
+          "last_name": "Sharma"
+        },
+        "properties": {
+          "email": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "first_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "phone": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "ProspectEnrollRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
+      "PublicApplicationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": false,
+            "properties": {
+              "business_name": {
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "name": {
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "program_name": {
+                "nullable": true,
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "whatsapp_number": {
+                "nullable": true,
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "business_name"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "PublicApplicationResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicApplicationResponse",
         "x-validate": null
       },
       "TrainingScheduleEntry": {
@@ -4030,6 +4698,62 @@
         "title": "RecipeRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "ProspectListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Prospect"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "summary": {
+            "additionalProperties": false,
+            "properties": {
+              "lost": {
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "new": {
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "reviewing": {
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "won": {
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "summary"
+        ],
+        "title": "ProspectListResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectListResponse",
         "x-validate": null
       },
       "FoodResponse": {
@@ -4996,16 +5720,64 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "whatsapp_number": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [
           "id",
           "name",
-          "slug"
+          "slug",
+          "whatsapp_number"
         ],
         "title": "CoachProfileBusiness",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachProfileBusiness",
+        "x-validate": null
+      },
+      "LandingProgramInput": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "description": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "price_display": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "promise": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "LandingProgramInput",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "NutritionScheduleResponse": {
@@ -5356,6 +6128,60 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFieldListResponse",
         "x-validate": null
       },
+      "LandingProgram": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "description": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "price_display": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "promise": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "position"
+        ],
+        "title": "LandingProgram",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LandingProgram",
+        "x-validate": null
+      },
       "RecipeIngredient": {
         "additionalProperties": false,
         "properties": {
@@ -5656,6 +6482,39 @@
         "title": "ClientProfileFormTemplateResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateResponse",
+        "x-validate": null
+      },
+      "ProspectUpdateRequest": {
+        "additionalProperties": false,
+        "example": {
+          "notes": "Followed up on WhatsApp.",
+          "status": "reviewing"
+        },
+        "properties": {
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "new",
+              "reviewing",
+              "won",
+              "lost"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "ProspectUpdateRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "NutritionMealItemRequest": {
@@ -6507,6 +7366,21 @@
         "x-struct": null,
         "x-validate": null
       },
+      "PublicLandingPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PublicLandingPage"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "PublicLandingPageResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.PublicLandingPageResponse",
+        "x-validate": null
+      },
       "WeightEntryListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -7211,6 +8085,111 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RecipeImpactResponse",
         "x-validate": null
       },
+      "Prospect": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "client": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProspectClient"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "email": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "instagram": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "landing_page_slug": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "phone": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "program": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProspectProgram"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "new",
+              "reviewing",
+              "won",
+              "lost"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "answers"
+        ],
+        "title": "Prospect",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Prospect",
+        "x-validate": null
+      },
       "ThreadDetailResponse": {
         "additionalProperties": false,
         "properties": {
@@ -7224,6 +8203,42 @@
         "title": "ThreadDetailResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ThreadDetailResponse",
+        "x-validate": null
+      },
+      "ProspectClient": {
+        "additionalProperties": false,
+        "properties": {
+          "first_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "ProspectClient",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectClient",
         "x-validate": null
       },
       "NutritionPlan": {
@@ -7697,6 +8712,28 @@
         "title": "ClientProfileFormSubmission",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission",
+        "x-validate": null
+      },
+      "LandingPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LandingPage"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "LandingPageResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LandingPageResponse",
         "x-validate": null
       },
       "AcceptInviteRequest": {
@@ -8464,6 +9501,88 @@
         ]
       }
     },
+    "/v1/coach/prospects/{id}/enroll": {
+      "post": {
+        "callbacks": {},
+        "description": "Creates a pending client from the prospect, sends the invite, and marks it won. Already-enrolled prospects return the linked client without creating another.",
+        "operationId": "enrollProspect",
+        "parameters": [
+          {
+            "description": "Prospect id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProspectEnrollRequest"
+              }
+            }
+          },
+          "description": "Enroll request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProspectEnrollResponse"
+                }
+              }
+            },
+            "description": "Prospect enrolled"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Enroll prospect",
+        "tags": [
+          "coach prospects"
+        ]
+      }
+    },
     "/v1/client/nutrition-food-log-entries/{id}": {
       "delete": {
         "callbacks": {},
@@ -8971,6 +10090,73 @@
         "summary": "Start a training session",
         "tags": [
           "client training sessions"
+        ]
+      }
+    },
+    "/v1/public/landing-pages/{slug}/applications": {
+      "post": {
+        "callbacks": {},
+        "description": "Submits a public application, creating a prospect. No authentication.",
+        "operationId": "submitApplication",
+        "parameters": [
+          {
+            "description": "Landing page slug",
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicApplicationRequest"
+              }
+            }
+          },
+          "description": "Application request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApplicationResponse"
+                }
+              }
+            },
+            "description": "Application received"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "summary": "Submit application",
+        "tags": [
+          "public landing page"
         ]
       }
     },
@@ -9851,6 +11037,52 @@
         ]
       }
     },
+    "/v1/public/landing-pages/{slug}": {
+      "get": {
+        "callbacks": {},
+        "description": "Loads a published landing page by slug. No authentication.",
+        "operationId": "getPublicLandingPage",
+        "parameters": [
+          {
+            "description": "Landing page slug",
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicLandingPageResponse"
+                }
+              }
+            },
+            "description": "Landing page"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "summary": "Get public landing page",
+        "tags": [
+          "public landing page"
+        ]
+      }
+    },
     "/v1/coach/clients/{client_id}/threads": {
       "get": {
         "callbacks": {},
@@ -10197,6 +11429,79 @@
         "summary": "List client recipes",
         "tags": [
           "client recipes"
+        ]
+      }
+    },
+    "/v1/coach/prospects": {
+      "get": {
+        "callbacks": {},
+        "description": "Lists prospects in the authenticated coach business, optionally filtered by status.",
+        "operationId": "listProspects",
+        "parameters": [
+          {
+            "description": "Filter by status",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Pagination offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Page size (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProspectListResponse"
+                }
+              }
+            },
+            "description": "Prospects"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List prospects",
+        "tags": [
+          "coach prospects"
         ]
       }
     },
@@ -12880,6 +14185,146 @@
         ]
       }
     },
+    "/v1/coach/prospects/{id}": {
+      "get": {
+        "callbacks": {},
+        "operationId": "getProspect",
+        "parameters": [
+          {
+            "description": "Prospect id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProspectResponse"
+                }
+              }
+            },
+            "description": "Prospect"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get prospect",
+        "tags": [
+          "coach prospects"
+        ]
+      },
+      "patch": {
+        "callbacks": {},
+        "description": "Updates prospect status or notes.",
+        "operationId": "updateProspect",
+        "parameters": [
+          {
+            "description": "Prospect id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProspectUpdateRequest"
+              }
+            }
+          },
+          "description": "Prospect update request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProspectResponse"
+                }
+              }
+            },
+            "description": "Prospect updated"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update prospect",
+        "tags": [
+          "coach prospects"
+        ]
+      }
+    },
     "/v1/client/nutrition-plans/{id}": {
       "get": {
         "callbacks": {},
@@ -15448,6 +16893,103 @@
         "summary": "Copy a recipe into the coach's business",
         "tags": [
           "coach recipes"
+        ]
+      }
+    },
+    "/v1/coach/landing-page": {
+      "get": {
+        "callbacks": {},
+        "description": "Loads the authenticated coach business landing page, or null if none exists yet.",
+        "operationId": "getLandingPage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandingPageResponse"
+                }
+              }
+            },
+            "description": "Landing page"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get landing page",
+        "tags": [
+          "coach landing page"
+        ]
+      },
+      "put": {
+        "callbacks": {},
+        "description": "Upserts the landing page (page fields, programs, and questions) in one request.",
+        "operationId": "saveLandingPage",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LandingPageUpsertRequest"
+              }
+            }
+          },
+          "description": "Landing page upsert request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandingPageResponse"
+                }
+              }
+            },
+            "description": "Landing page saved"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Save landing page",
+        "tags": [
+          "coach landing page"
         ]
       }
     },

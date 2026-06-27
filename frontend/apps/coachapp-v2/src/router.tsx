@@ -27,11 +27,15 @@ import CreateFood from '@/foods/create-food';
 import EditFood from '@/foods/edit-food';
 import FoodDetail from '@/foods/food-detail';
 import ListFoods from '@/foods/list-foods';
+import LandingPageEditor from '@/landing/landing-page-editor';
 import Library from '@/library/library';
 import CreateNutritionPlan from '@/nutrition-plans/create-nutrition-plan';
 import EditNutritionPlan from '@/nutrition-plans/edit-nutrition-plan';
 import ListNutritionPlans from '@/nutrition-plans/list-nutrition-plans';
 import NutritionPlanBuilder from '@/nutrition-plans/plan-builder/nutrition-plan-builder';
+import EnrollProspect from '@/prospects/enroll-prospect';
+import ListProspects from '@/prospects/list-prospects';
+import ProspectDetail from '@/prospects/prospect-detail';
 import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
@@ -104,8 +108,12 @@ export const router = createBrowserRouter([
       {path: ROUTES.CHECKINS, Component: ListCheckins},
       {path: ROUTES.CREATE_CHECKIN, Component: CreateCheckin},
       {path: ROUTES.EDIT_CHECKIN, Component: EditCheckin},
+      {path: ROUTES.PROSPECTS, Component: ListProspects},
+      {path: ROUTES.ENROLL_PROSPECT, Component: EnrollProspect},
+      {path: ROUTES.PROSPECT_DETAIL, Component: ProspectDetail},
       {path: ROUTES.SETTINGS, Component: Settings},
       {path: ROUTES.SETTINGS_PROFILE_FIELDS, Component: ProfileFields},
+      {path: ROUTES.SETTINGS_LANDING_PAGE, Component: LandingPageEditor},
     ],
   },
 

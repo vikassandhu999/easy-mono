@@ -60,6 +60,13 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.coachingClientProfileRequest,
       }),
     }),
+    enrollProspect: build.mutation<EnrollProspectApiResponse, EnrollProspectApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/prospects/${queryArg.id}/enroll`,
+        method: 'POST',
+        body: queryArg.prospectEnrollRequest,
+      }),
+    }),
     getCoachProfile: build.query<GetCoachProfileApiResponse, GetCoachProfileApiArg>({
       query: () => ({url: `/v1/coach/me`}),
     }),
@@ -86,6 +93,13 @@ const injectedRtkApi = api.injectEndpoints({
           from: queryArg['from'],
           to: queryArg.to,
         },
+      }),
+    }),
+    submitApplication: build.mutation<SubmitApplicationApiResponse, SubmitApplicationApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/public/landing-pages/${queryArg.slug}/applications`,
+        method: 'POST',
+        body: queryArg.publicApplicationRequest,
       }),
     }),
     getCoachClientTrainingSession: build.query<
@@ -157,6 +171,11 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.businessUpdateRequest,
       }),
     }),
+    getPublicLandingPage: build.query<GetPublicLandingPageApiResponse, GetPublicLandingPageApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/public/landing-pages/${queryArg.slug}`,
+      }),
+    }),
     listCoachClientThreads: build.query<ListCoachClientThreadsApiResponse, ListCoachClientThreadsApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/clients/${queryArg.clientId}/threads`,
@@ -181,6 +200,16 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/auth/token`,
         method: 'POST',
         body: queryArg.tokenRequest,
+      }),
+    }),
+    listProspects: build.query<ListProspectsApiResponse, ListProspectsApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/prospects`,
+        params: {
+          status: queryArg.status,
+          offset: queryArg.offset,
+          limit: queryArg.limit,
+        },
       }),
     }),
     acceptInvite: build.mutation<AcceptInviteApiResponse, AcceptInviteApiArg>({
@@ -347,6 +376,16 @@ const injectedRtkApi = api.injectEndpoints({
           limit: queryArg.limit,
           status: queryArg.status,
         },
+      }),
+    }),
+    getProspect: build.query<GetProspectApiResponse, GetProspectApiArg>({
+      query: (queryArg) => ({url: `/v1/coach/prospects/${queryArg.id}`}),
+    }),
+    updateProspect: build.mutation<UpdateProspectApiResponse, UpdateProspectApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/prospects/${queryArg.id}`,
+        method: 'PATCH',
+        body: queryArg.prospectUpdateRequest,
       }),
     }),
     createBusiness: build.mutation<CreateBusinessApiResponse, CreateBusinessApiArg>({
@@ -557,6 +596,16 @@ const injectedRtkApi = api.injectEndpoints({
         method: 'POST',
       }),
     }),
+    getLandingPage: build.query<GetLandingPageApiResponse, GetLandingPageApiArg>({
+      query: () => ({url: `/v1/coach/landing-page`}),
+    }),
+    saveLandingPage: build.mutation<SaveLandingPageApiResponse, SaveLandingPageApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/landing-page`,
+        method: 'PUT',
+        body: queryArg.landingPageUpsertRequest,
+      }),
+    }),
     listFormSubmissions: build.query<ListFormSubmissionsApiResponse, ListFormSubmissionsApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/form-assignments/${queryArg.id}/submissions`,
@@ -762,6 +811,13 @@ export type UpdateCoachingClientProfileApiArg = {
   /** Client profile update request */
   coachingClientProfileRequest: CoachingClientProfileRequest;
 };
+export type EnrollProspectApiResponse = /** status 201 Prospect enrolled */ ProspectEnrollResponse;
+export type EnrollProspectApiArg = {
+  /** Prospect id */
+  id: string;
+  /** Enroll request */
+  prospectEnrollRequest: ProspectEnrollRequest;
+};
 export type GetCoachProfileApiResponse = /** status 200 Coach profile */ CoachProfileResponse;
 export type GetCoachProfileApiArg = void;
 export type UpdateCoachProfileApiResponse = /** status 200 Coach profile updated */ CoachProfileResponse;
@@ -783,6 +839,13 @@ export type ListCoachClientTrainingSessionsApiArg = {
   from?: string;
   /** End date (YYYY-MM-DD) */
   to?: string;
+};
+export type SubmitApplicationApiResponse = /** status 201 Application received */ PublicApplicationResponse;
+export type SubmitApplicationApiArg = {
+  /** Landing page slug */
+  slug: string;
+  /** Application request */
+  publicApplicationRequest: PublicApplicationRequest;
 };
 export type GetCoachClientTrainingSessionApiResponse = /** status 200 Training session */ TrainingSessionResponse;
 export type GetCoachClientTrainingSessionApiArg = {
@@ -841,6 +904,11 @@ export type UpdateCurrentBusinessApiArg = {
   /** Business update request */
   businessUpdateRequest: BusinessUpdateRequest;
 };
+export type GetPublicLandingPageApiResponse = /** status 200 Landing page */ PublicLandingPageResponse;
+export type GetPublicLandingPageApiArg = {
+  /** Landing page slug */
+  slug: string;
+};
 export type ListCoachClientThreadsApiResponse = /** status 200 Threads */ ThreadListResponse;
 export type ListCoachClientThreadsApiArg = {
   /** Client id */
@@ -864,6 +932,15 @@ export type CreateAuthTokenApiResponse = /** status 200 Auth token */ AuthTokenR
 export type CreateAuthTokenApiArg = {
   /** Token request */
   tokenRequest: TokenRequest;
+};
+export type ListProspectsApiResponse = /** status 200 Prospects */ ProspectListResponse;
+export type ListProspectsApiArg = {
+  /** Filter by status */
+  status?: string;
+  /** Pagination offset */
+  offset?: number;
+  /** Page size (max 100) */
+  limit?: number;
 };
 export type AcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
 export type AcceptInviteApiArg = {
@@ -1017,6 +1094,18 @@ export type ListCoachClientNutritionPlansApiArg = {
   limit?: number;
   /** Only plans with this status */
   status?: 'active' | 'archived';
+};
+export type GetProspectApiResponse = /** status 200 Prospect */ ProspectResponse;
+export type GetProspectApiArg = {
+  /** Prospect id */
+  id: string;
+};
+export type UpdateProspectApiResponse = /** status 200 Prospect updated */ ProspectResponse;
+export type UpdateProspectApiArg = {
+  /** Prospect id */
+  id: string;
+  /** Prospect update request */
+  prospectUpdateRequest: ProspectUpdateRequest;
 };
 export type CreateBusinessApiResponse = /** status 201 Business created */ BusinessResponse;
 export type CreateBusinessApiArg = {
@@ -1220,6 +1309,13 @@ export type DuplicateNutritionPlanApiArg = {
 export type CopyNutritionRecipeApiResponse = /** status 201 Recipe */ RecipeResponse;
 export type CopyNutritionRecipeApiArg = {
   id: string;
+};
+export type GetLandingPageApiResponse = /** status 200 Landing page */ LandingPageResponse;
+export type GetLandingPageApiArg = void;
+export type SaveLandingPageApiResponse = /** status 200 Landing page saved */ LandingPageResponse;
+export type SaveLandingPageApiArg = {
+  /** Landing page upsert request */
+  landingPageUpsertRequest: LandingPageUpsertRequest;
 };
 export type ListFormSubmissionsApiResponse = /** status 200 Form submissions */ ClientProfileFormSubmissionListResponse;
 export type ListFormSubmissionsApiArg = {
@@ -1543,10 +1639,50 @@ export type CoachingClientProfileRequest = {
     [key: string]: any;
   };
 };
+export type ProspectClient = {
+  first_name?: string | null;
+  id: string;
+  last_name?: string | null;
+  status: string;
+};
+export type ProspectProgram = {
+  id: string;
+  name: string;
+};
+export type Prospect = {
+  answers: {
+    [key: string]: any;
+  };
+  client?: ProspectClient | null;
+  email?: string | null;
+  id: string;
+  inserted_at?: string;
+  instagram?: string | null;
+  landing_page_slug?: string | null;
+  name: string;
+  notes?: string | null;
+  phone?: string | null;
+  program?: ProspectProgram | null;
+  status: 'new' | 'reviewing' | 'won' | 'lost';
+  updated_at?: string;
+};
+export type ProspectEnrollResponse = {
+  data: {
+    already_enrolled: boolean;
+    prospect: Prospect;
+  };
+};
+export type ProspectEnrollRequest = {
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+};
 export type CoachProfileBusiness = {
   id: string;
   name: string;
   slug: string;
+  whatsapp_number: string | null;
 };
 export type CoachProfile = {
   business: CoachProfileBusiness;
@@ -1564,6 +1700,7 @@ export type CoachProfileUpdateRequest = {
   first_name?: string | null;
   last_name?: string | null;
   phone?: string | null;
+  whatsapp_number?: string | null;
 };
 export type TrainingPerformedSet = {
   completed: boolean;
@@ -1607,6 +1744,25 @@ export type TrainingSession = {
 export type TrainingSessionListResponse = {
   count: number;
   data: TrainingSession[];
+};
+export type PublicApplicationResponse = {
+  data: {
+    business_name: string;
+    id: string;
+    name: string;
+    program_name?: string | null;
+    whatsapp_number?: string | null;
+  };
+};
+export type PublicApplicationRequest = {
+  answers?: {
+    [key: string]: any;
+  };
+  email?: string | null;
+  instagram?: string | null;
+  landing_program_id?: string | null;
+  name: string;
+  phone?: string | null;
 };
 export type TrainingSessionResponse = {
   data: TrainingSession;
@@ -1796,6 +1952,38 @@ export type BusinessUpdateRequest = {
   handle?: string;
   name?: string;
 };
+export type LandingProgram = {
+  audience?: string | null;
+  description?: string | null;
+  id: string;
+  name: string;
+  position: number;
+  price_display?: string | null;
+  promise?: string | null;
+};
+export type PublicLandingPage = {
+  application_questions: {
+    id?: string;
+    label?: string;
+    options?: string[];
+    type?: 'short_text' | 'long_text' | 'single_select';
+  }[];
+  business_name: string;
+  coach_intro?: string | null;
+  headline: string;
+  programs: LandingProgram[];
+  proof_points?: {
+    label?: string;
+    value?: string;
+  }[];
+  slug: string;
+  subheadline?: string | null;
+  template: 'proof_first' | 'problem_fit' | 'coach_story';
+  whatsapp_number?: string | null;
+};
+export type PublicLandingPageResponse = {
+  data: PublicLandingPage;
+};
 export type Thread = {
   client_id: string;
   created_by_id?: string | null;
@@ -1863,6 +2051,16 @@ export type TokenRequest =
       refresh_token?: string;
       role: 'owner' | 'coach' | 'client' | 'guest';
     };
+export type ProspectListResponse = {
+  count: number;
+  data: Prospect[];
+  summary: {
+    lost?: number;
+    new?: number;
+    reviewing?: number;
+    won?: number;
+  };
+};
 export type MessageResponse = {
   message: string;
 };
@@ -2040,6 +2238,13 @@ export type TrainingWorkoutExerciseArrayResponse = {
 export type TrainingWorkoutReorderRequest = {
   /** Workout element ids in the desired order (must be exactly the workout's elements). */
   element_ids: string[];
+};
+export type ProspectResponse = {
+  data: Prospect;
+};
+export type ProspectUpdateRequest = {
+  notes?: string | null;
+  status: 'new' | 'reviewing' | 'won' | 'lost';
 };
 export type BusinessRequest = {
   about?: string | null;
@@ -2243,6 +2448,57 @@ export type Recipe = {
 };
 export type RecipeResponse = {
   data: Recipe;
+};
+export type LandingPage = {
+  application_questions?: {
+    id?: string;
+    label?: string;
+    options?: string[];
+    type?: 'short_text' | 'long_text' | 'single_select';
+  }[];
+  coach_intro?: string | null;
+  headline: string;
+  id: string;
+  inserted_at?: string;
+  programs: LandingProgram[];
+  proof_points?: {
+    label?: string;
+    value?: string;
+  }[];
+  slug: string;
+  status: 'draft' | 'published';
+  subheadline?: string | null;
+  template: 'proof_first' | 'problem_fit' | 'coach_story';
+  updated_at?: string;
+};
+export type LandingPageResponse = {
+  data: LandingPage | null;
+};
+export type LandingProgramInput = {
+  audience?: string | null;
+  description?: string | null;
+  name: string;
+  price_display?: string | null;
+  promise?: string | null;
+};
+export type LandingPageUpsertRequest = {
+  application_questions?: {
+    id?: string;
+    label?: string;
+    options?: string[];
+    type?: 'short_text' | 'long_text' | 'single_select';
+  }[];
+  coach_intro?: string | null;
+  headline: string;
+  programs?: LandingProgramInput[];
+  proof_points?: {
+    label?: string;
+    value?: string;
+  }[];
+  slug: string;
+  status: 'draft' | 'published';
+  subheadline?: string | null;
+  template: 'proof_first' | 'problem_fit' | 'coach_story';
 };
 export type ClientProfileFormSubmission = {
   answers: {
@@ -2463,12 +2719,14 @@ export const {
   useGetCoachingClientProfileQuery,
   useLazyGetCoachingClientProfileQuery,
   useUpdateCoachingClientProfileMutation,
+  useEnrollProspectMutation,
   useGetCoachProfileQuery,
   useLazyGetCoachProfileQuery,
   useUpdateCoachProfileMutation,
   useResendClientInviteMutation,
   useListCoachClientTrainingSessionsQuery,
   useLazyListCoachClientTrainingSessionsQuery,
+  useSubmitApplicationMutation,
   useGetCoachClientTrainingSessionQuery,
   useLazyGetCoachClientTrainingSessionQuery,
   useListCoachClientTrainingPlansQuery,
@@ -2486,11 +2744,15 @@ export const {
   useGetCurrentBusinessQuery,
   useLazyGetCurrentBusinessQuery,
   useUpdateCurrentBusinessMutation,
+  useGetPublicLandingPageQuery,
+  useLazyGetPublicLandingPageQuery,
   useListCoachClientThreadsQuery,
   useLazyListCoachClientThreadsQuery,
   useCreateCoachThreadMutation,
   useCreateMealItemMutation,
   useCreateAuthTokenMutation,
+  useListProspectsQuery,
+  useLazyListProspectsQuery,
   useAcceptInviteMutation,
   useGetTrainingPlanScheduleQuery,
   useLazyGetTrainingPlanScheduleQuery,
@@ -2522,6 +2784,9 @@ export const {
   useReorderWorkoutElementsMutation,
   useListCoachClientNutritionPlansQuery,
   useLazyListCoachClientNutritionPlansQuery,
+  useGetProspectQuery,
+  useLazyGetProspectQuery,
+  useUpdateProspectMutation,
   useCreateBusinessMutation,
   useListMusclesQuery,
   useLazyListMusclesQuery,
@@ -2563,6 +2828,9 @@ export const {
   useLazyGetNutritionRecipeImpactQuery,
   useDuplicateNutritionPlanMutation,
   useCopyNutritionRecipeMutation,
+  useGetLandingPageQuery,
+  useLazyGetLandingPageQuery,
+  useSaveLandingPageMutation,
   useListFormSubmissionsQuery,
   useLazyListFormSubmissionsQuery,
   useListCoachThreadsQuery,

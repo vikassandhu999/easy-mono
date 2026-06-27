@@ -36,6 +36,10 @@ export const ROUTES = {
   CHECKINS: '/library/check-ins',
   CREATE_CHECKIN: '/library/check-ins/create',
   EDIT_CHECKIN: '/library/check-ins/:id/edit',
+  PROSPECTS: '/prospects',
+  PROSPECT_DETAIL: '/prospects/:id',
+  ENROLL_PROSPECT: '/prospects/:id/enroll',
   SETTINGS: '/settings',
   SETTINGS_PROFILE_FIELDS: '/settings/client-profile-fields',
+  SETTINGS_LANDING_PAGE: '/settings/landing-page',
 } as const;

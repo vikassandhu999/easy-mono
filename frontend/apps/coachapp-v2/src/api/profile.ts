@@ -5,6 +5,7 @@ export type CoachProfileBusiness = {
   id: string;
   name: string;
   slug: string;
+  whatsapp_number: null | string;
 };
 
 export type CoachProfile = {
@@ -21,6 +22,7 @@ export type UpdateProfileRequest = {
   last_name?: string;
   phone?: string;
   business_name?: string;
+  whatsapp_number?: string;
 };
 
 export const profileApi = api.injectEndpoints({

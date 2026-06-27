@@ -71,7 +71,7 @@ defmodule Easy.Orgs.Coach do
   @spec update_profile(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update_profile(%__MODULE__{} = coach, params) do
     coach_attrs = Map.take(params, [:first_name, :last_name, :phone])
-    business_name = params[:business_name]
+    business_attrs = take_present(params, business_name: :name, whatsapp_number: :whatsapp_number)
 
     Repo.transaction(fn ->
       updated_coach =
@@ -81,18 +81,28 @@ defmodule Easy.Orgs.Coach do
         end
 
       updated_business =
-        if business_name do
-          case coach.business
-               |> Business.update_changeset(%{"name" => business_name})
-               |> Repo.update() do
+        if business_attrs == %{} do
+          coach.business
+        else
+          case coach.business |> Business.update_changeset(business_attrs) |> Repo.update() do
             {:ok, b} -> b
             {:error, changeset} -> Repo.rollback(changeset)
           end
-        else
-          coach.business
         end
 
       %{updated_coach | business: updated_business, user: coach.user}
+    end)
+  end
+
+  # Only forward business fields the caller actually sent, so a coach-only profile edit
+  # never blanks the business name/whatsapp.
+  defp take_present(params, mapping) do
+    Enum.reduce(mapping, %{}, fn {param_key, column}, acc ->
+      if Map.has_key?(params, param_key) do
+        Map.put(acc, column, params[param_key])
+      else
+        acc
+      end
     end)
   end
 

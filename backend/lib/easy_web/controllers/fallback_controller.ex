@@ -35,6 +35,13 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  def call(conn, {:error, :too_many_programs}) do
+    call(
+      conn,
+      {:error, Easy.Error.unprocessable(%{fields: %{programs: ["a page can have at most 3 programs"]}})}
+    )
+  end
+
   def call(conn, {:error, :read_only_source}) do
     call(
       conn,

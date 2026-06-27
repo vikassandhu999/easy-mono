@@ -113,12 +113,14 @@ defmodule EasyWeb.OpenApi.Schemas.CoachProfileUpdateRequest do
         first_name: %Schema{type: :string, nullable: true},
         last_name: %Schema{type: :string, nullable: true},
         phone: %Schema{type: :string, nullable: true},
-        business_name: %Schema{type: :string, nullable: true}
+        business_name: %Schema{type: :string, nullable: true},
+        whatsapp_number: %Schema{type: :string, nullable: true}
       },
       example: %{
         "first_name" => "Alex",
         "last_name" => "Coach",
-        "phone" => "+15551234567"
+        "phone" => "+15551234567",
+        "whatsapp_number" => "+15551234567"
       }
     },
     struct?: false
@@ -137,9 +139,10 @@ defmodule EasyWeb.OpenApi.Schemas.CoachProfileBusiness do
     properties: %{
       id: %Schema{type: :string, format: :uuid},
       name: %Schema{type: :string},
-      slug: %Schema{type: :string}
+      slug: %Schema{type: :string},
+      whatsapp_number: %Schema{type: :string, nullable: true}
     },
-    required: [:id, :name, :slug]
+    required: [:id, :name, :slug, :whatsapp_number]
   })
 end
 

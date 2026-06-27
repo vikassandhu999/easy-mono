@@ -54,6 +54,15 @@ defmodule EasyWeb.Router do
     post "/token", AuthController, :token
   end
 
+  # Unauthenticated public landing funnel: anonymous prospects render a coach's published
+  # page and submit applications. No auth pipeline by design.
+  scope "/v1/public", EasyWeb.Public do
+    pipe_through :api
+
+    get "/landing-pages/:slug", LandingPageController, :show
+    post "/landing-pages/:slug/applications", LandingPageController, :apply
+  end
+
   scope "/v1/businesses", EasyWeb do
     pipe_through :require_user
     post "/", BusinessController, :create
@@ -68,6 +77,14 @@ defmodule EasyWeb.Router do
 
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
+
+    # Landing funnel
+    get "/landing-page", LandingPageController, :show
+    put "/landing-page", LandingPageController, :update
+    get "/prospects", ProspectController, :index
+    get "/prospects/:id", ProspectController, :show
+    patch "/prospects/:id", ProspectController, :update
+    post "/prospects/:id/enroll", ProspectController, :enroll
 
     post "/clients/invite", ClientController, :invite
     post "/clients/:id/resend-invite", ClientController, :resend_invite

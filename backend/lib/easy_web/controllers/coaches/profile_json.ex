@@ -22,7 +22,8 @@ defmodule EasyWeb.Coaches.ProfileJSON do
     %{
       id: business.id,
       name: business.name,
-      slug: business.handle
+      slug: business.handle,
+      whatsapp_number: business.whatsapp_number
     }
   end
 end

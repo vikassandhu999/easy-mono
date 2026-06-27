@@ -12,6 +12,7 @@ defmodule Easy.Orgs.Business do
     field :name, :string
     field :handle, :string
     field :about, :string
+    field :whatsapp_number, :string
 
     belongs_to :owner, User
 
@@ -30,6 +31,6 @@ defmodule Easy.Orgs.Business do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(business, attrs) do
     business
-    |> cast(attrs, [:name, :about])
+    |> cast(attrs, [:name, :about, :whatsapp_number])
   end
 end

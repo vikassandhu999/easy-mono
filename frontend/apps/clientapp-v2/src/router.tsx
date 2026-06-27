@@ -12,8 +12,8 @@ import FillCheckin from '@/checkins/fill-checkin';
 import ListCheckins from '@/checkins/list-checkins';
 import SessionDetail from '@/history/session-detail';
 import WorkoutHistory from '@/history/workout-history';
-import AddFood from '@/nutrition/add-food';
-import NutritionDaily from '@/nutrition/nutrition-daily';
+import NutritionHistory from '@/nutrition/nutrition-history';
+import NutritionToday from '@/nutrition/nutrition-today';
 import ProgressHome from '@/progress/progress-home';
 import Settings from '@/settings/settings';
 import TrainingHome from '@/training/training-home';
@@ -39,8 +39,8 @@ export const router = createBrowserRouter([
     Component: AppShellScreen,
     children: [
       {path: ROUTES.TRAINING, Component: TrainingHome},
-      {path: ROUTES.NUTRITION, Component: NutritionDaily},
-      {path: ROUTES.NUTRITION_ADD_FOOD, Component: AddFood},
+      {path: ROUTES.NUTRITION, Component: NutritionToday},
+      {path: ROUTES.NUTRITION_HISTORY, Component: NutritionHistory},
       {path: ROUTES.PROGRESS, Component: ProgressHome},
       {path: ROUTES.CHECKINS, Component: ListCheckins},
       {path: ROUTES.CHECKIN_FILL, Component: FillCheckin},

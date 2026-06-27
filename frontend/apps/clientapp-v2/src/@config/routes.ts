@@ -5,7 +5,7 @@ export const ROUTES = {
   VERIFY_INVITE_OTP: '/invite/:token/verify',
   TRAINING: '/',
   NUTRITION: '/nutrition',
-  NUTRITION_ADD_FOOD: '/nutrition/add-food',
+  NUTRITION_HISTORY: '/nutrition/history',
   PROGRESS: '/progress',
   CHECKINS: '/check-ins',
   CHECKIN_FILL: '/check-ins/:id',

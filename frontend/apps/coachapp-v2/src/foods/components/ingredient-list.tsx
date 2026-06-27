@@ -241,7 +241,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
               <div className="border-t border-border p-3">
                 {item.food.serving_sizes.length > 0 && (
                   <div className="mb-3">
-                    <p className="mb-1.5 text-xs font-medium text-muted">Quick fill</p>
+                    <p className="mb-1.5 text-sm font-medium text-muted">Quick fill</p>
                     <div className="flex flex-wrap gap-1.5">
                       {item.food.serving_sizes.map((s, sIdx) => {
                         const isActive = activeServingMap[item.food_id] === sIdx;

@@ -250,6 +250,20 @@ defmodule Easy.ClientProfiles do
     end
   end
 
+  @spec list_form_submissions(Ctx.t(), String.t()) ::
+          {:ok, [FormSubmission.t()]} | {:error, :not_found}
+  def list_form_submissions(%Ctx{} = ctx, assignment_id) do
+    with {:ok, _assignment} <- get_form_assignment(ctx.business_id, assignment_id) do
+      submissions =
+        FormSubmission
+        |> FormSubmission.for_assignment(ctx.business_id, assignment_id)
+        |> FormSubmission.newest()
+        |> Repo.all()
+
+      {:ok, submissions}
+    end
+  end
+
   @spec get_form_assignment_for_client(Ctx.t(), String.t(), String.t()) ::
           {:ok, FormAssignment.t()} | {:error, :not_found}
   def get_form_assignment_for_client(%Ctx{} = ctx, client_id, assignment_id) do

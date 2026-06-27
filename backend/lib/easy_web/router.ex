@@ -91,6 +91,7 @@ defmodule EasyWeb.Router do
     delete "/form-templates/:id", FormTemplateController, :delete
     post "/form-templates/:id/assign", FormTemplateController, :assign
     get "/clients/:client_id/form-assignments", FormAssignmentController, :index
+    get "/form-assignments/:id/submissions", FormAssignmentController, :submissions
     patch "/form-assignments/:id", FormAssignmentController, :update
 
     # Client-scoped plan lists

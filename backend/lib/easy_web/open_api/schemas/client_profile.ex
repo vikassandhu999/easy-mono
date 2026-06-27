@@ -465,6 +465,20 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionResponse do
   OpenApiSpex.schema(Shared.data_response(ClientProfileFormSubmission, "ClientProfileFormSubmissionResponse"))
 end
 
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionListResponse do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormSubmission, Shared}
+
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{type: :array, items: ClientProfileFormSubmission},
+      "ClientProfileFormSubmissionListResponse"
+    )
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfile do
   require OpenApiSpex
 

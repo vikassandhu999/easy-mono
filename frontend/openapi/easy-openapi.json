@@ -3333,6 +3333,26 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingEquipment",
         "x-validate": null
       },
+      "ClientProfileFormSubmissionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ClientProfileFormSubmission"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ClientProfileFormSubmissionListResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionListResponse",
+        "x-validate": null
+      },
       "TrainingExerciseCreateRequest": {
         "additionalProperties": false,
         "description": "Request body for creating a coach exercise.",
@@ -15485,6 +15505,67 @@
         "summary": "Get today's nutrition plan",
         "tags": [
           "client nutrition plans"
+        ]
+      }
+    },
+    "/v1/coach/form-assignments/{id}/submissions": {
+      "get": {
+        "callbacks": {},
+        "description": "Lists submissions (answers) for a form assignment in the authenticated coach business.",
+        "operationId": "listFormSubmissions",
+        "parameters": [
+          {
+            "description": "Form assignment id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProfileFormSubmissionListResponse"
+                }
+              }
+            },
+            "description": "Form submissions"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List form submissions",
+        "tags": [
+          "coach form assignments"
         ]
       }
     },

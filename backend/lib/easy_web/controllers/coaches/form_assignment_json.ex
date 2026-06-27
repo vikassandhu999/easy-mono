@@ -1,5 +1,6 @@
 defmodule EasyWeb.Coaches.FormAssignmentJSON do
   alias Easy.ClientProfiles.FormAssignment
+  alias Easy.ClientProfiles.FormSubmission
   alias Easy.ClientProfiles.FormTemplate
   alias EasyWeb.Coaches.FormTemplateJSON
 
@@ -11,6 +12,11 @@ defmodule EasyWeb.Coaches.FormAssignmentJSON do
   @spec index(%{assignments: [FormAssignment.t()]}) :: %{data: [map()]}
   def index(%{assignments: assignments}) do
     %{data: Enum.map(assignments, &data/1)}
+  end
+
+  @spec submissions(%{submissions: [FormSubmission.t()]}) :: %{data: [map()]}
+  def submissions(%{submissions: submissions}) do
+    %{data: Enum.map(submissions, &submission_data/1)}
   end
 
   @spec data(FormAssignment.t()) :: map()
@@ -32,4 +38,16 @@ defmodule EasyWeb.Coaches.FormAssignmentJSON do
 
   defp form_template(%FormTemplate{} = template), do: FormTemplateJSON.data(template)
   defp form_template(_template), do: nil
+
+  defp submission_data(%FormSubmission{} = submission) do
+    %{
+      id: submission.id,
+      form_assignment_id: submission.form_assignment_id,
+      question_snapshot: submission.question_snapshot,
+      answers: submission.answers,
+      submitted_by_type: submission.submitted_by_type,
+      submitted_at: submission.submitted_at,
+      inserted_at: submission.inserted_at
+    }
+  end
 end

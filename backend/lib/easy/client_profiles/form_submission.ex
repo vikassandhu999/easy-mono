@@ -6,6 +6,7 @@ defmodule Easy.ClientProfiles.FormSubmission do
   alias Easy.Orgs
 
   import Ecto.Changeset
+  import Ecto.Query
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -52,5 +53,15 @@ defmodule Easy.ClientProfiles.FormSubmission do
     |> foreign_key_constraint(:form_assignment_id,
       name: :form_submissions_assignment_client_business_id_fkey
     )
+  end
+
+  @spec for_assignment(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_assignment(query \\ __MODULE__, business_id, assignment_id) do
+    from(s in query, where: s.business_id == ^business_id and s.form_assignment_id == ^assignment_id)
+  end
+
+  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def newest(query \\ __MODULE__) do
+    from(s in query, order_by: [desc: s.submitted_at])
   end
 end

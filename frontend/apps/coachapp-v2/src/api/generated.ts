@@ -557,6 +557,11 @@ const injectedRtkApi = api.injectEndpoints({
         method: 'POST',
       }),
     }),
+    listFormSubmissions: build.query<ListFormSubmissionsApiResponse, ListFormSubmissionsApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/form-assignments/${queryArg.id}/submissions`,
+      }),
+    }),
     listCoachThreads: build.query<ListCoachThreadsApiResponse, ListCoachThreadsApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/threads`,
@@ -1214,6 +1219,11 @@ export type DuplicateNutritionPlanApiArg = {
 };
 export type CopyNutritionRecipeApiResponse = /** status 201 Recipe */ RecipeResponse;
 export type CopyNutritionRecipeApiArg = {
+  id: string;
+};
+export type ListFormSubmissionsApiResponse = /** status 200 Form submissions */ ClientProfileFormSubmissionListResponse;
+export type ListFormSubmissionsApiArg = {
+  /** Form assignment id */
   id: string;
 };
 export type ListCoachThreadsApiResponse = /** status 200 Threads */ ThreadListResponse;
@@ -2233,6 +2243,22 @@ export type Recipe = {
 export type RecipeResponse = {
   data: Recipe;
 };
+export type ClientProfileFormSubmission = {
+  answers: {
+    [key: string]: any;
+  };
+  form_assignment_id: string;
+  id: string;
+  inserted_at: string;
+  question_snapshot: {
+    [key: string]: any;
+  }[];
+  submitted_at: string;
+  submitted_by_type: 'coach' | 'client' | 'system';
+};
+export type ClientProfileFormSubmissionListResponse = {
+  data: ClientProfileFormSubmission[];
+};
 export type ThreadWithMessages = {
   client_id: string;
   created_by_id?: string | null;
@@ -2536,6 +2562,8 @@ export const {
   useLazyGetNutritionRecipeImpactQuery,
   useDuplicateNutritionPlanMutation,
   useCopyNutritionRecipeMutation,
+  useListFormSubmissionsQuery,
+  useLazyListFormSubmissionsQuery,
   useListCoachThreadsQuery,
   useLazyListCoachThreadsQuery,
   useGetCoachThreadQuery,

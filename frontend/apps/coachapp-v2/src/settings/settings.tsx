@@ -22,7 +22,7 @@ function ProfileSection({
   profile: CoachProfile;
 }) {
   const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
-  const initials = (profile.first_name?.[0] || '' + profile.last_name?.[0] || '').toLowerCase();
+  const initials = `${profile.first_name?.[0] ?? ''}${profile.last_name?.[0] ?? ''}`.toUpperCase();
 
   const handleNameSave = useCallback(
     async (value: string) => {

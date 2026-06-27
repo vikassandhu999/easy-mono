@@ -32,7 +32,14 @@ export default function Login() {
         state: {email: data.email},
       });
     } catch (err) {
-      applyFormErrors(err, "Verification code wasn't sent. Try again", form.setError);
+      // A 404 means no coach account for that email — show friendly copy instead of
+      // the raw backend code ("user_not_found"). (Whether to avoid account
+      // enumeration entirely is a separate product decision.)
+      if ((err as {status?: number})?.status === 404) {
+        form.setError('root', {message: "We couldn't find a coach account for that email."});
+      } else {
+        applyFormErrors(err, "Verification code wasn't sent. Try again", form.setError);
+      }
     }
   };
 

@@ -22,12 +22,17 @@ const STATUS_MAP: Record<NutritionPlanStatus, {color: 'default' | 'success' | 'w
 const UNKNOWN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
 function getNutritionPlanSubtitle(plan: NutritionPlan): string {
-  const mealCount = plan.meals?.length ?? 0;
+  // The list endpoint returns plan summaries WITHOUT meals, so summarise the
+  // macro targets it does carry (omitting any that are unset), falling back to
+  // the description, then a neutral label.
+  const targets = [
+    plan.target_calories != null ? `${plan.target_calories} kcal` : null,
+    plan.target_protein_g != null ? `${plan.target_protein_g}g protein` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
-  if (mealCount > 0) {
-    return `${mealCount} meal${mealCount !== 1 ? 's' : ''}`;
-  }
-  return plan.description || 'No meals yet';
+  return targets || plan.description || 'No targets set';
 }
 
 export default function ListNutritionPlans() {

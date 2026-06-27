@@ -1,4 +1,4 @@
-import {Button, ErrorMessage, Form, Link, Spinner, Typography} from '@heroui/react';
+import {Button, ErrorMessage, Form, Link, Spinner, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate} from 'react-router-dom';
@@ -56,8 +56,10 @@ export default function VerifySignupOtp() {
       setTokens(result);
       navigate(ROUTES.REGISTER_BUSINESS, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Invalid code. Try again', form.setError);
+      // clear the field first, then set the error — reset() wipes errors, so the
+      // order matters or the invalid-code message never shows.
       form.reset({otp: ''});
+      applyFormErrors(err, 'Invalid code. Try again', form.setError);
     }
   };
 
@@ -67,6 +69,7 @@ export default function VerifySignupOtp() {
         email: state.email,
         type: 'email_confirmation',
       }).unwrap();
+      toast.success('A new code is on its way');
     } catch (err) {
       applyFormErrors(err, "Code wasn't resent. Try again", form.setError);
     }

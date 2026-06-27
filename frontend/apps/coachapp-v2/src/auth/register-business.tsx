@@ -1,7 +1,7 @@
 import {Button, ErrorMessage, Form, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm, useWatch} from 'react-hook-form';
-import {useNavigate} from 'react-router-dom';
+import {Navigate, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 import {FormTextField} from '@/@components/form-fields';
 
@@ -9,6 +9,7 @@ import {ROUTES} from '@/@config/routes';
 import {useExchangeTokenMutation} from '@/api/auth';
 import {getRefreshToken, setTokens} from '@/api/authStorage';
 import {useCreateBusinessMutation} from '@/api/business';
+import {useGetCurrentBusinessQuery} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -38,12 +39,36 @@ export default function RegisterBusiness() {
   const [exchangeToken, {isLoading: isExchanging}] = useExchangeTokenMutation();
   const isLoading = isCreating || isExchanging;
 
+  // Already-onboarded coaches shouldn't see the registration form again.
+  const {data: business, isLoading: isCheckingBusiness} = useGetCurrentBusinessQuery();
+
   const form = useForm<RegisterBusinessFormValues>({
     defaultValues: {handle: '', name: ''},
     resolver: zodResolver(schema),
   });
 
   const nameValue = useWatch({control: form.control, name: 'name'});
+
+  if (isCheckingBusiness) {
+    return (
+      <AuthLayout
+        description="Set up your coaching business to get started."
+        title="Register your business"
+      >
+        <div className="flex justify-center py-10">
+          <Spinner color="accent" />
+        </div>
+      </AuthLayout>
+    );
+  }
+  if (business?.data) {
+    return (
+      <Navigate
+        replace
+        to={ROUTES.DASHBOARD}
+      />
+    );
+  }
 
   const onSubmit = async (data: RegisterBusinessFormValues) => {
     try {

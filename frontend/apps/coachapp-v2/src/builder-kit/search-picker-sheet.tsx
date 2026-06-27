@@ -14,7 +14,7 @@
  *   filter chips (h-scroll) → item list → "+ Create" row → confirm dock (footer).
  */
 
-import {Button, Chip, Input, Spinner} from '@heroui/react';
+import {Button, Input, Spinner} from '@heroui/react';
 import {type ReactNode, useCallback, useEffect, useRef} from 'react';
 
 import {KeyboardSheet} from './keyboard-sheet';
@@ -193,19 +193,23 @@ export function SearchPickerSheet<T>({
           }
         >
           {filters.map((chip) => (
-            <Chip
+            // A real button (not a Chip) so the filter is keyboard-operable and its
+            // selected state is announced via aria-pressed.
+            <button
+              aria-pressed={chip.active}
               className={[
-                'cursor-pointer rounded-[7px] border',
+                'inline-flex min-h-8 items-center rounded-[7px] border px-2.5 py-1 text-xs font-medium transition-colors',
                 filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
-                chip.active ? 'border-accent' : 'border-border',
+                chip.active
+                  ? 'border-accent bg-accent-soft text-accent'
+                  : 'border-border text-muted hover:bg-default-soft',
               ].join(' ')}
-              color={chip.active ? 'accent' : 'default'}
               key={chip.id}
               onClick={chip.onToggle}
-              variant={chip.active ? 'soft' : 'tertiary'}
+              type="button"
             >
               {chip.label}
-            </Chip>
+            </button>
           ))}
         </div>
       ) : null}

@@ -200,10 +200,16 @@ export default function RecipeForm({
         setError('root', {message: 'Add at least one ingredient'});
         return;
       }
+      // The backend rejects a recipe whose ingredients can't be costed into macros;
+      // catch it here with an actionable message instead of a generic 422.
+      if (!canComputeRecipeNutrition(ingredients)) {
+        setError('root', {message: 'An ingredient is missing nutrition data — edit that food to add its macros.'});
+        return;
+      }
       clearErrors('root');
       onSubmit(data);
     },
-    [clearErrors, ingredients.length, onSubmit, setError],
+    [clearErrors, ingredients, onSubmit, setError],
   );
 
   return (

@@ -126,26 +126,20 @@ function CoachSection({coach}: {coach: ClientCoach}) {
         </div>
         {coach.phone && (
           <div className="flex gap-2 border-t border-divider px-4 py-3">
-            <Button
-              as="a"
-              className="flex-1"
-              color="success"
+            <a
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success/10 px-4 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20"
               href={`https://wa.me/${cleanPhone(coach.phone)}`}
-              size="sm"
+              rel="noopener noreferrer"
               target="_blank"
-              variant="soft"
             >
               WhatsApp
-            </Button>
-            <Button
-              as="a"
-              className="flex-1"
+            </a>
+            <a
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-divider px-4 py-2 text-sm font-medium transition-colors hover:bg-content2"
               href={`tel:${coach.phone}`}
-              size="sm"
-              variant="secondary"
             >
               Call
-            </Button>
+            </a>
           </div>
         )}
       </div>
@@ -174,7 +168,7 @@ function AccountSection({email}: {email: null | string}) {
 // ── Main page ───────────────────────────────────────────────
 
 export default function Settings() {
-  const {data, isLoading} = useGetClientProfileQuery();
+  const {data, isError, isLoading, refetch} = useGetClientProfileQuery();
   const [updateProfile] = useUpdateClientProfileMutation();
   const navigate = useNavigate();
 
@@ -194,8 +188,23 @@ export default function Settings() {
     );
   }
 
-  if (!data) {
-    return null;
+  if (isError || !data) {
+    return (
+      <PageLayout title="Settings">
+        <div className="flex flex-col items-center gap-3 py-20 text-center">
+          <p className="text-sm text-foreground-500">
+            Couldn&apos;t load your settings. Check your connection and try again.
+          </p>
+          <Button
+            onPress={() => refetch()}
+            size="sm"
+            variant="secondary"
+          >
+            Retry
+          </Button>
+        </div>
+      </PageLayout>
+    );
   }
 
   const profile = data.data;
@@ -215,9 +224,8 @@ export default function Settings() {
           <Separator className="mb-4" />
           <Button
             className="w-full"
-            color="danger"
             onPress={handleLogout}
-            variant="ghost"
+            variant="danger-soft"
           >
             Log out
           </Button>

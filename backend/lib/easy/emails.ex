@@ -207,13 +207,10 @@ defmodule Easy.Emails do
     """
   end
 
-  # Helper function to build invitation URL
+  # Invitation links open the CLIENT app's /invite/:token route — use the client
+  # frontend URL (same base as Client.build_invite_url), NOT the backend app_url.
   defp build_invitation_url(token) do
-    # Get base URL from email configuration
-    base_url =
-      Application.get_env(:easy, :email)[:app_url] ||
-        Application.get_env(:easy, :app_url, "http://localhost:4000")
-
+    base_url = Application.get_env(:easy, :client_frontend_url, "http://localhost:1314")
     "#{base_url}/invite/#{token}"
   end
 end

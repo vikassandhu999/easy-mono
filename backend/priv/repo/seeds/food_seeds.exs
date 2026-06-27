@@ -27,12 +27,15 @@ defmodule Easy.Repo.Seeds.Foods do
 
   @spec run() :: :ok
   def run do
-    csv_path = Path.join(:code.priv_dir(:easy), "repo/foods_database.csv")
+    # Prefer the curated subset shipped in the release image; fall back to the full
+    # local-only database (foods_database.csv, excluded from the Docker image) when present.
+    seed_csv = Path.join(:code.priv_dir(:easy), "repo/foods_seed.csv")
+    full_csv = Path.join(:code.priv_dir(:easy), "repo/foods_database.csv")
 
-    if File.exists?(csv_path) do
-      seed_foods(csv_path)
-    else
-      IO.puts("  Skipping foods — foods_database.csv not found")
+    cond do
+      File.exists?(full_csv) -> seed_foods(full_csv)
+      File.exists?(seed_csv) -> seed_foods(seed_csv)
+      true -> IO.puts("  Skipping foods — no foods CSV found")
     end
 
     :ok

@@ -41,8 +41,8 @@ coacheasy_api/
 # Data files (if not needed in production)
 data/
 
-# Large seed data files (seeded manually, not in Docker image)
-priv/repo/exercises.json
+# The full foods DB (~249MB / 126k rows) is local-only — the release seeds the
+# curated foods_seed.csv subset + exercises.json, which DO ship in the image.
 priv/repo/foods_database.csv
 
 # Crash dumps

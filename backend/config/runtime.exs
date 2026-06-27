@@ -12,7 +12,7 @@ config :easy,
   jwt_secret: System.get_env("JWT_SECRET") || "dev-secret-key-minimum-32-characters-long-for-hs256",
   app_url: System.get_env("APP_URL") || "http://localhost:4000",
   frontend_url: System.get_env("FRONTEND_URL") || "http://localhost:2020",
-  client_frontend_url: System.get_env("CLIENT_FRONTEND_URL") || "http://localhost:1313"
+  client_frontend_url: System.get_env("CLIENT_FRONTEND_URL") || "http://localhost:1314"
 
 # Email configuration for all environments
 config :easy, :email,
@@ -149,9 +149,19 @@ if config_env() == :prod do
         tls: :always
 
     _ ->
+      # Fail loudly at boot rather than silently dropping every OTP/invite email
+      # (login is email-OTP, so a missing key means no one can sign in).
+      resend_api_key =
+        System.get_env("RESEND_API_KEY") ||
+          raise """
+          RESEND_API_KEY is missing. Email is required for login (OTP) and client invites.
+          Set it on the host (fly secrets set RESEND_API_KEY=...) and verify the sender domain
+          in Resend, or set MAILER_ADAPTER=smtp with the SMTP_* vars.
+          """
+
       config :easy, Easy.Mailer,
         adapter: Resend.Swoosh.Adapter,
-        api_key: System.get_env("RESEND_API_KEY")
+        api_key: resend_api_key
   end
 
   # Configure Swoosh API client to use Req (already available in dependencies)

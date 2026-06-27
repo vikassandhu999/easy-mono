@@ -270,7 +270,7 @@ defmodule Easy.Clients.Client do
   @spec build_invite_url(t()) :: String.t() | nil
   def build_invite_url(%__MODULE__{status: :pending, invitation_token: token})
       when is_binary(token) do
-    base_url = Application.get_env(:easy, :client_frontend_url, "http://localhost:1313")
+    base_url = Application.get_env(:easy, :client_frontend_url, "http://localhost:1314")
     "#{base_url}/invite/#{token}"
   end
 

@@ -8,6 +8,8 @@ import AcceptInvite from '@/auth/accept-invite';
 import Login from '@/auth/login';
 import VerifyInviteOtp from '@/auth/verify-invite-otp';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
+import FillCheckin from '@/checkins/fill-checkin';
+import ListCheckins from '@/checkins/list-checkins';
 import SessionDetail from '@/history/session-detail';
 import WorkoutHistory from '@/history/workout-history';
 import AddFood from '@/nutrition/add-food';
@@ -40,6 +42,8 @@ export const router = createBrowserRouter([
       {path: ROUTES.NUTRITION, Component: NutritionDaily},
       {path: ROUTES.NUTRITION_ADD_FOOD, Component: AddFood},
       {path: ROUTES.PROGRESS, Component: ProgressHome},
+      {path: ROUTES.CHECKINS, Component: ListCheckins},
+      {path: ROUTES.CHECKIN_FILL, Component: FillCheckin},
       {path: ROUTES.TRAINING_PLAN, Component: TrainingPlanDetail},
       {path: ROUTES.WORKOUT_ACTIVE, Component: ActiveWorkout},
       {path: ROUTES.WORKOUT_HISTORY, Component: WorkoutHistory},

@@ -1,5 +1,5 @@
 import {Separator, Toast} from '@heroui/react';
-import {Dumbbell, Settings, TrendingUp, UtensilsCrossed} from 'lucide-react';
+import {ClipboardCheck, Dumbbell, Settings, TrendingUp, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 
@@ -31,6 +31,11 @@ const SIDEBAR_TOP: NavItem[] = [
     label: 'Progress',
     path: ROUTES.PROGRESS,
   },
+  {
+    icon: <ClipboardCheck size={ICON_SIZE} />,
+    label: 'Check-ins',
+    path: ROUTES.CHECKINS,
+  },
 ];
 
 // Bottom sidebar items
@@ -58,6 +63,11 @@ const BOTTOM_NAV: NavItem[] = [
     icon: <TrendingUp size={ICON_SIZE} />,
     label: 'Progress',
     path: ROUTES.PROGRESS,
+  },
+  {
+    icon: <ClipboardCheck size={ICON_SIZE} />,
+    label: 'Check-ins',
+    path: ROUTES.CHECKINS,
   },
   {
     icon: <Settings size={ICON_SIZE} />,

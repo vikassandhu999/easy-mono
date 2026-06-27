@@ -114,6 +114,7 @@ export const api = createApi({
     'ClientProfile',
     'Exercise',
     'Food',
+    'FormAssignment',
     'MealLog',
     'NutritionPlan',
     'PerformedSet',

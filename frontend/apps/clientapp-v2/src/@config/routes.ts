@@ -7,6 +7,8 @@ export const ROUTES = {
   NUTRITION: '/nutrition',
   NUTRITION_ADD_FOOD: '/nutrition/add-food',
   PROGRESS: '/progress',
+  CHECKINS: '/check-ins',
+  CHECKIN_FILL: '/check-ins/:id',
   TRAINING_PLAN: '/plan/:planId',
   WORKOUT_ACTIVE: '/workout',
   WORKOUT_HISTORY: '/history',

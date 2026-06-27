@@ -1,6 +1,6 @@
 import {Avatar, Button, Separator, Spinner, Typography} from '@heroui/react';
 import {ChevronRight} from 'lucide-react';
-import {useCallback, useState} from 'react';
+import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
@@ -84,44 +84,6 @@ function ProfileSection({
           onSave={handlePhoneSave}
           value={profile.phone}
         />
-      </div>
-    </section>
-  );
-}
-
-function InviteLinkSection({slug}: {slug: string}) {
-  const [copied, setCopied] = useState(false);
-  const inviteUrl = `https://coachapp.in/join/${slug}`;
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(inviteUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <section className="mt-6">
-      <SectionHeading title="Client invite link" />
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
-        <div className="flex items-center gap-2 p-4">
-          <div className="min-w-0 flex-1 truncate rounded-lg bg-surface-secondary px-3 py-2 font-mono text-xs text-muted">
-            coachapp.in/join/{slug}
-          </div>
-          <Button
-            onPress={handleCopy}
-            size="sm"
-            variant="secondary"
-          >
-            {copied ? 'Copied' : 'Copy'}
-          </Button>
-        </div>
-        <Typography
-          className="border-t border-border px-4 py-2"
-          color="muted"
-          type="body-xs"
-        >
-          Share this link with clients to invite them
-        </Typography>
       </div>
     </section>
   );
@@ -272,7 +234,6 @@ export default function Settings() {
             onUpdate={updateProfile}
             profile={profile}
           />
-          <InviteLinkSection slug={profile.business.slug} />
           <ClientProfileSection />
           <AccountSection email={profile.email} />
 

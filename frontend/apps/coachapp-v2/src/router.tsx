@@ -1,8 +1,6 @@
-import {Typography} from '@heroui/react';
 import {createBrowserRouter, Navigate} from 'react-router-dom';
 
 import AppShell from '@/@components/app-shell';
-import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {withAuth} from '@/@hoc/with-auth';
 import {withNotAuth} from '@/@hoc/with-not-auth';
@@ -50,26 +48,6 @@ const SignupScreen = withNotAuth(Signup);
 const RegisterBusinessScreen = withAuth(RegisterBusiness);
 const AppShellScreen = withAuth(AppShell);
 
-function Placeholder({title}: {title: string}) {
-  return (
-    <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-        <Page.TitleGroup>
-          <Page.Title>{title}</Page.Title>
-        </Page.TitleGroup>
-      </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <Typography
-          color="muted"
-          type="body-sm"
-        >
-          This page is under construction
-        </Typography>
-      </Page.Content>
-    </Page>
-  );
-}
-
 export const router = createBrowserRouter([
   // Public
   {path: ROUTES.LOGIN, Component: LoginScreen},
@@ -84,7 +62,17 @@ export const router = createBrowserRouter([
   {
     Component: AppShellScreen,
     children: [
-      {path: ROUTES.DASHBOARD, element: <Placeholder title="Dashboard" />},
+      // No dashboard yet — send coaches straight to their clients (also the
+      // post-onboarding + catch-all target).
+      {
+        path: ROUTES.DASHBOARD,
+        element: (
+          <Navigate
+            replace
+            to={ROUTES.CLIENTS}
+          />
+        ),
+      },
       {path: ROUTES.CLIENTS, Component: ListClients},
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
       {path: ROUTES.CLIENT_WORKOUT_HISTORY, Component: ClientWorkoutHistoryPage},

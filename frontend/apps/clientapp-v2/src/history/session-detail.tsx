@@ -15,6 +15,7 @@ import {type TrainingPerformedSet, type TrainingSession, useGetClientTrainingSes
 import {
   addedExercises,
   assignPerformed,
+  describeSet,
   formatDayDate,
   formatVolume,
   type SnapshotSet,
@@ -24,43 +25,28 @@ import {
   sorenessEmoji,
 } from '@/workout/session-utils';
 
-function unitLabel(unit?: null | string): string {
-  return unit === 'lbs' ? 'lb' : unit === 'kg' ? 'kg' : '';
-}
-
-function actualLabel(p: TrainingPerformedSet): string {
-  if (p.load_value == null || p.load_unit === 'none' || p.load_unit === 'bodyweight') {
-    return `${p.reps ?? '—'} reps`;
-  }
-  return `${p.load_value}${unitLabel(p.load_unit)} × ${p.reps ?? '—'}`;
-}
-
-function targetLabel(planned?: SnapshotSet): null | string {
-  if (!planned) {
-    return null;
-  }
-  if (planned.load_value == null) {
-    return planned.reps != null ? `target ${planned.reps}` : null;
-  }
-  return `target ${planned.load_value}×${planned.reps ?? '—'}`;
-}
-
-// ↑ beat / ↓ missed / ✓ matched — compared like-for-like on whichever dimension the
-// plan prescribes: load when a target load is set, else reps. No mark if neither.
+// ↑ beat / ↓ missed / ✓ matched — compared like-for-like on the first dimension the
+// plan prescribes (load → duration → distance → reps). No mark if none is set.
 function deltaMark(p: TrainingPerformedSet, planned?: SnapshotSet): '' | '↑' | '↓' | '✓' {
   if (!planned) {
     return '';
   }
   const [actual, target] =
     planned.load_value != null
-      ? [p.load_value != null ? Number(p.load_value) : Number.NaN, Number(planned.load_value)]
-      : planned.reps != null
-        ? [Number(p.reps), Number(planned.reps)]
-        : [Number.NaN, Number.NaN];
-  if (!Number.isFinite(actual) || !Number.isFinite(target)) {
+      ? [p.load_value, planned.load_value]
+      : planned.duration_seconds != null
+        ? [p.duration_seconds, planned.duration_seconds]
+        : planned.distance_value != null
+          ? [p.distance_value, planned.distance_value]
+          : planned.reps != null
+            ? [p.reps, planned.reps]
+            : [null, null];
+  const a = Number(actual);
+  const t = Number(target);
+  if (actual == null || !Number.isFinite(a) || !Number.isFinite(t)) {
     return '';
   }
-  return actual > target ? '↑' : actual < target ? '↓' : '✓';
+  return a > t ? '↑' : a < t ? '↓' : '✓';
 }
 
 type Row = {actual: string; id: string; mark: '' | '↑' | '↓' | '✓'; target: null | string};
@@ -144,12 +130,15 @@ function Detail({session}: {session: TrainingSession}) {
             badge={done.length === 0 ? 'skipped' : undefined}
             key={`${ex.exercise_id}-${ex.position ?? i}`}
             name={ex.name ?? 'Exercise'}
-            rows={done.map((p, si) => ({
-              actual: actualLabel(p),
-              id: p.id,
-              mark: deltaMark(p, ex.sets?.[si]),
-              target: targetLabel(ex.sets?.[si]),
-            }))}
+            rows={done.map((p, si) => {
+              const planned = ex.sets?.[si];
+              return {
+                actual: describeSet(ex.tracking_type, p),
+                id: p.id,
+                mark: deltaMark(p, planned),
+                target: planned ? `target ${describeSet(ex.tracking_type, planned)}` : null,
+              };
+            })}
           />
         );
       })}
@@ -159,7 +148,12 @@ function Detail({session}: {session: TrainingSession}) {
           badge="added"
           key={id}
           name={ps[0]?.exercise_name ?? 'Exercise'}
-          rows={ps.map((p) => ({actual: actualLabel(p), id: p.id, mark: '' as const, target: null}))}
+          rows={ps.map((p) => ({
+            actual: describeSet(p.exercise?.tracking_type, p),
+            id: p.id,
+            mark: '' as const,
+            target: null,
+          }))}
         />
       ))}
 

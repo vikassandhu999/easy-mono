@@ -1,16 +1,17 @@
 /**
  * Active workout — in-gym logging (spec: assets/client-training/02-active-structure,
- * 03-set-logging, 06-finish-discard). Continuous list: current exercise glows, current
- * set is a big block with ± steppers + one ✓ Log set, pre-filled from the plan. Done sets
- * collapse to green rows above. Full-screen (no tab bar). New schema: planned_snapshot +
- * performed_sets; log = create performed set; finish/discard = update session state.
+ * 03-set-logging, 04-set-measurables, 06-finish-discard). Continuous list: current
+ * exercise glows, current set is a big block whose fields are driven by the exercise's
+ * tracking_type (weight / reps / time / distance) with ± steppers + a hold-timer for
+ * duration, pre-filled from the plan. Done sets collapse to rows above. Full-screen.
+ * New schema: planned_snapshot + performed_sets; log = create performed set;
+ * finish/discard = update session state.
  *
- * Deferred to a follow-up: rest timer, tap-to-type keypad, swap/skip/add actions (05),
- * non weight/reps measurables (04).
+ * Deferred to a follow-up: rest timer, tap-to-type keypad, RPE field, swap/skip/add (05).
  */
 import {AlertDialog, Button, Spinner, toast, useOverlayState} from '@heroui/react';
-import {Check, Minus, Plus} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {Check, Minus, Pause, Play, Plus} from 'lucide-react';
+import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -21,25 +22,22 @@ import {
   useListClientTrainingSessionsQuery,
   useUpdateClientTrainingSessionMutation,
 } from '@/api/training';
-import {assignPerformed, type SnapshotExercise} from '@/workout/session-utils';
+import {
+  assignPerformed,
+  describeSet,
+  type FieldKind,
+  fieldsFor,
+  formatSeconds,
+  type SnapshotExercise,
+  type SnapshotSet,
+} from '@/workout/session-utils';
 
-const REPS_ONLY = new Set(['reps_only', 'bodyweight_reps']);
-
-function unitLabel(unit?: null | string): string {
-  return unit === 'lbs' ? 'lb' : unit === 'kg' ? 'kg' : '';
-}
-
-function formatSet(
-  load: null | number | string | undefined,
-  unit: null | string | undefined,
-  reps: null | string | undefined,
-  repsOnly: boolean,
-): string {
-  if (repsOnly) {
-    return `${reps ?? '—'} reps`;
-  }
-  return `${load ?? '—'}${unitLabel(unit)} × ${reps ?? '—'}`;
-}
+type LoggedSet = {
+  distance_value: null | number;
+  duration_seconds: null | number;
+  load_value: null | number;
+  reps: null | string;
+};
 
 function ElapsedClock({startedAt}: {startedAt: string}) {
   const [now, setNow] = useState(() => Date.now());
@@ -95,63 +93,159 @@ function Stepper({
   );
 }
 
+// Duration field: ± 5s steppers plus a live hold-timer (▶ counts up → fills the
+// value, ⏸ stops) so planks / timed carries need no typing (spec 04).
+function DurationField({value, onChange}: {onChange: (v: number) => void; value: number}) {
+  const [running, setRunning] = useState(false);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const timer = useRef<null | number>(null);
+
+  const stop = () => {
+    if (timer.current != null) {
+      clearInterval(timer.current);
+      timer.current = null;
+    }
+    setRunning(false);
+  };
+  useEffect(() => stop, []);
+
+  const toggle = () => {
+    if (running) {
+      stop();
+    } else {
+      setRunning(true);
+      timer.current = window.setInterval(() => onChange(valueRef.current + 1), 1000);
+    }
+  };
+
+  return (
+    <div className="flex flex-1 items-center gap-1.5">
+      <div className="flex flex-1 items-center overflow-hidden rounded-[10px] border border-[#34343d]">
+        <button
+          aria-label="Decrease time"
+          className="grid place-items-center bg-[#1a1d2a] px-3 py-3 text-accent-soft-foreground active:opacity-70"
+          onClick={() => onChange(Math.max(0, value - 5))}
+          type="button"
+        >
+          <Minus size={16} />
+        </button>
+        <div className="flex-1 py-1.5 text-center">
+          <div className="text-[8px] uppercase tracking-wider text-muted">TIME</div>
+          <div className={`text-lg font-bold tabular-nums ${running ? 'text-accent' : ''}`}>{formatSeconds(value)}</div>
+        </div>
+        <button
+          aria-label="Increase time"
+          className="grid place-items-center bg-[#1a1d2a] px-3 py-3 text-accent-soft-foreground active:opacity-70"
+          onClick={() => onChange(value + 5)}
+          type="button"
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+      <button
+        aria-label={running ? 'Stop timer' : 'Start timer'}
+        className="grid size-11 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground active:opacity-80"
+        onClick={toggle}
+        type="button"
+      >
+        {running ? <Pause size={18} /> : <Play size={18} />}
+      </button>
+    </div>
+  );
+}
+
+const STEP: Record<FieldKind, number> = {distance: 5, duration: 5, reps: 1, weight: 2.5};
+const LABEL: Record<FieldKind, string> = {distance: 'METERS', duration: 'TIME', reps: 'REPS', weight: 'KG'};
+const DISTANCE_LABEL: Record<string, string> = {km: 'KM', meters: 'METERS', miles: 'MILES'};
+
+function plannedValue(planned: SnapshotSet | undefined, kind: FieldKind): null | number {
+  if (!planned) {
+    return null;
+  }
+  const raw =
+    kind === 'weight'
+      ? planned.load_value
+      : kind === 'reps'
+        ? planned.reps
+        : kind === 'distance'
+          ? planned.distance_value
+          : planned.duration_seconds;
+  return raw == null || raw === '' ? null : Number(raw);
+}
+
+const FALLBACK: Record<FieldKind, number> = {distance: 0, duration: 30, reps: 10, weight: 0};
+
 function CurrentSetBlock({
   exercise,
   setIndex,
-  lastWeight,
+  carry,
   isLogging,
   onLog,
 }: {
+  // last logged value per field, to carry forward (e.g. weight set-to-set)
+  carry: Partial<Record<FieldKind, null | number>>;
   exercise: SnapshotExercise;
   isLogging: boolean;
-  lastWeight: null | number;
-  onLog: (weight: null | number, reps: number) => void;
+  onLog: (values: LoggedSet) => void;
   setIndex: number;
 }) {
+  const fields = fieldsFor(exercise.tracking_type);
   const planned = (exercise.sets ?? [])[setIndex];
-  const repsOnly = REPS_ONLY.has(exercise.tracking_type ?? 'weight_reps');
-  const plannedWeight = planned?.load_value != null ? Number(planned.load_value) : null;
-  const plannedReps = planned?.reps != null ? Number(planned.reps) : 10;
   const total = (exercise.sets ?? []).length;
 
-  const [weight, setWeight] = useState<number>(lastWeight ?? plannedWeight ?? 0);
-  const [reps, setReps] = useState<number>(Number.isFinite(plannedReps) ? plannedReps : 10);
+  const init = (kind: FieldKind): number => carry[kind] ?? plannedValue(planned, kind) ?? FALLBACK[kind];
+  const [vals, setVals] = useState<Record<FieldKind, number>>(() => ({
+    distance: init('distance'),
+    duration: init('duration'),
+    reps: init('reps'),
+    weight: init('weight'),
+  }));
+  const set = (kind: FieldKind, v: number) => setVals((prev) => ({...prev, [kind]: v}));
 
-  // Reset steppers only when the current set changes (key), carrying the last
-  // logged weight forward — intentionally not re-running on the value deps.
+  // Reset only when the current set changes (key) — carry weight forward.
   const key = `${exercise.exercise_id}-${setIndex}`;
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset is keyed to the set, not its values
   useEffect(() => {
-    setWeight(lastWeight ?? plannedWeight ?? 0);
-    setReps(Number.isFinite(plannedReps) ? plannedReps : 10);
+    setVals({distance: init('distance'), duration: init('duration'), reps: init('reps'), weight: init('weight')});
   }, [key]);
+
+  const log = () =>
+    onLog({
+      distance_value: fields.includes('distance') ? vals.distance : null,
+      duration_seconds: fields.includes('duration') ? vals.duration : null,
+      load_value: fields.includes('weight') ? vals.weight : null,
+      reps: fields.includes('reps') ? String(vals.reps) : null,
+    });
 
   return (
     <div className="mt-1 border-t border-[#202026] pt-2.5">
       <p className="mb-2 text-[11px] text-muted">
-        Set {setIndex + 1} of {total} · target{' '}
-        {formatSet(planned?.load_value, planned?.load_unit, planned?.reps, repsOnly)}
+        Set {setIndex + 1} of {total} · target {describeSet(exercise.tracking_type, planned ?? {})}
       </p>
       <div className="mb-2.5 flex gap-2.5">
-        {repsOnly ? null : (
-          <Stepper
-            label="KG"
-            onChange={setWeight}
-            step={2.5}
-            value={weight}
-          />
+        {fields.map((kind) =>
+          kind === 'duration' ? (
+            <DurationField
+              key={kind}
+              onChange={(v) => set('duration', v)}
+              value={vals.duration}
+            />
+          ) : (
+            <Stepper
+              key={kind}
+              label={kind === 'distance' ? (DISTANCE_LABEL[planned?.distance_unit ?? 'meters'] ?? 'METERS') : LABEL[kind]}
+              onChange={(v) => set(kind, v)}
+              step={STEP[kind]}
+              value={vals[kind]}
+            />
+          ),
         )}
-        <Stepper
-          label="REPS"
-          onChange={setReps}
-          step={1}
-          value={reps}
-        />
       </div>
       <button
         className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-success py-3.5 text-[15px] font-extrabold text-success-foreground transition-opacity active:opacity-90 disabled:opacity-50"
         disabled={isLogging}
-        onClick={() => onLog(repsOnly ? null : weight, reps)}
+        onClick={log}
         type="button"
       >
         <Check size={18} />
@@ -174,19 +268,25 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
   const currentIndex = exercises.findIndex((ex, i) => (assigned[i] ?? []).length < (ex.sets ?? []).length);
 
-  const handleLog = async (exercise: SnapshotExercise, setIndex: number, weight: null | number, reps: number) => {
+  const handleLog = async (exercise: SnapshotExercise, setIndex: number, values: LoggedSet) => {
     const planned = (exercise.sets ?? [])[setIndex];
     try {
       await createSet({
         sessionId: session.id,
         trainingPerformedSetRequest: {
           completed: true,
+          distance_unit:
+            values.distance_value == null
+              ? 'none'
+              : ((planned?.distance_unit as 'km' | 'meters' | 'miles' | null) ?? 'meters'),
+          distance_value: values.distance_value,
+          duration_seconds: values.duration_seconds,
           exercise_id: exercise.exercise_id ?? undefined,
           exercise_name: exercise.name ?? undefined,
-          load_unit: weight == null ? 'none' : ((planned?.load_unit as 'kg' | 'lbs' | null) ?? 'kg'),
-          load_value: weight,
+          load_unit: values.load_value == null ? 'none' : ((planned?.load_unit as 'kg' | 'lbs' | null) ?? 'kg'),
+          load_value: values.load_value,
           position: performed.length,
-          reps: String(reps),
+          reps: values.reps ?? undefined,
           set_type: (planned?.set_type as 'dropset' | 'warmup' | 'working' | null) ?? 'working',
         },
       }).unwrap();
@@ -231,9 +331,9 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
             const done = assigned[i] ?? [];
             const total = (ex.sets ?? []).length;
             const isCurrent = i === currentIndex;
-            const repsOnly = REPS_ONLY.has(ex.tracking_type ?? 'weight_reps');
             const isDoneEx = total > 0 && done.length >= total;
-            const lastWeight = done.length > 0 ? (done[done.length - 1]?.load_value ?? null) : null;
+            const last = done[done.length - 1];
+            const carry = {distance: last?.distance_value ?? null, weight: last?.load_value ?? null};
             return (
               <div
                 className={`mb-2.5 rounded-xl border bg-surface p-3 ${
@@ -261,7 +361,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
                     key={p.id}
                   >
                     <span>{si + 1}</span>
-                    <span className="text-[#9aa]">{formatSet(p.load_value, p.load_unit, p.reps, repsOnly)}</span>
+                    <span className="text-[#9aa]">{describeSet(ex.tracking_type, p)}</span>
                     <Check
                       className="text-success"
                       size={14}
@@ -271,10 +371,10 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
                 {isCurrent ? (
                   <CurrentSetBlock
+                    carry={carry}
                     exercise={ex}
                     isLogging={isLogging}
-                    lastWeight={lastWeight}
-                    onLog={(w, r) => handleLog(ex, done.length, w, r)}
+                    onLog={(values) => handleLog(ex, done.length, values)}
                     setIndex={done.length}
                   />
                 ) : null}

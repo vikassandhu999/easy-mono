@@ -67,6 +67,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
 
     %{
       meal_item_id: item.id,
+      position: item.position,
       food_id: item.food_id,
       recipe_id: item.recipe_id,
       food_name: food_name,

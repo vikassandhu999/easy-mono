@@ -10,10 +10,12 @@
  * `errorMessage` (the parent owns the mutation).
  */
 import {formatIsoDateOnly} from '@easy/utils';
-import {Button, DateField, Label, Typography} from '@heroui/react';
-import {type DateValue, getLocalTimeZone, parseDate, today} from '@internationalized/date';
+import {Button, Label, Typography} from '@heroui/react';
+import {getLocalTimeZone, parseDate, today} from '@internationalized/date';
 import {ChevronLeft, Dumbbell, Utensils} from 'lucide-react';
 import {useState} from 'react';
+
+import DateInput from '@/@components/date-input';
 
 type Kind = 'nutrition' | 'training';
 
@@ -34,18 +36,6 @@ interface Props {
 
 const DURATIONS = [4, 8, 12] as const;
 
-/** ISO "YYYY-MM-DD" -> DateValue (or null). Tolerates a datetime by slicing. */
-function toDateValue(iso: string | null): DateValue | null {
-  if (!iso) {
-    return null;
-  }
-  try {
-    return parseDate(iso.slice(0, 10));
-  } catch {
-    return null;
-  }
-}
-
 function addWeeks(startIso: string, weeks: number): string {
   return parseDate(startIso).add({weeks}).toString();
 }
@@ -56,28 +46,6 @@ function endNotBeforeStart(startIso: string, endIso: string | null): boolean {
     return true;
   }
   return parseDate(endIso).compare(parseDate(startIso)) >= 0;
-}
-
-function DateInput({
-  label,
-  value,
-  onChange,
-}: {
-  label?: string;
-  value: string | null;
-  onChange: (iso: string | null) => void;
-}) {
-  return (
-    <DateField
-      onChange={(v: DateValue | null) => onChange(v ? v.toString() : null)}
-      value={toDateValue(value)}
-    >
-      {label ? <Label className="mb-1.5 block text-sm font-medium">{label}</Label> : null}
-      <DateField.Group className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus-within:border-accent">
-        <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
-      </DateField.Group>
-    </DateField>
-  );
 }
 
 export default function PlanScheduleStep({
@@ -186,6 +154,7 @@ export default function PlanScheduleStep({
               })}
             </div>
             <DateInput
+              ariaLabel="End date"
               onChange={setEnd}
               value={end}
             />

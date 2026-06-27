@@ -5,62 +5,21 @@
  * set) — a library template has no assignment period, so the date fields are
  * hidden for unassigned plans.
  *
- * Dates use the HeroUI v3 DateField (segmented date input). Values cross the
- * string<->DateValue boundary via @internationalized/date.
+ * Dates use the shared DateInput (segmented entry + calendar popover).
  *
  * Cache: generated endpoints are `tag:false`, so each field optimistically merges
  * into the `getTrainingPlan({id})` cache and rolls back with patch.undo() +
  * toast.danger on failure. Mirrors nutrition-plans/plan-builder/plan-header.
  */
-import {DateField, Label, Spinner, toast} from '@heroui/react';
+import {Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {type DateValue, parseDate} from '@internationalized/date';
 import {useForm} from 'react-hook-form';
+import DateInput from '@/@components/date-input';
 import {FormTextField} from '@/@components/form-fields';
 import type {TrainingPlan} from '@/api/generated';
 import {coachApi, useUpdateTrainingPlanMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 import {schema, type TrainingPlanFormValues, trainingPlanToFormValues} from '../training-plan-form/training-plan-form';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** ISO "YYYY-MM-DD" -> DateValue (or null). Tolerates a datetime by slicing. */
-function toDateValue(iso: string | null): DateValue | null {
-  if (!iso) {
-    return null;
-  }
-  try {
-    return parseDate(iso.slice(0, 10));
-  } catch {
-    return null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Sub-component: a single HeroUI DateField bound to a string date
-// ---------------------------------------------------------------------------
-
-interface PlanDateFieldProps {
-  label: string;
-  value: string | null;
-  onChange: (value: string | null) => void;
-}
-
-function PlanDateField({label, value, onChange}: PlanDateFieldProps) {
-  return (
-    <DateField
-      onChange={(date) => onChange(date ? date.toString() : null)}
-      value={toDateValue(value)}
-    >
-      <Label className="mb-1 block text-xs text-muted">{label}</Label>
-      <DateField.Group className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-within:border-accent">
-        <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
-      </DateField.Group>
-    </DateField>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -164,8 +123,9 @@ export function PlanHeader({plan}: PlanHeaderProps) {
       {isAssigned ? (
         <div className="flex gap-3">
           <div className="flex-1">
-            <PlanDateField
+            <DateInput
               label="Start date"
+              labelClassName="mb-1 block text-xs text-muted"
               onChange={(v) => {
                 saveDate('start_date', v).catch(() => undefined);
               }}
@@ -173,8 +133,9 @@ export function PlanHeader({plan}: PlanHeaderProps) {
             />
           </div>
           <div className="flex-1">
-            <PlanDateField
+            <DateInput
               label="End date"
+              labelClassName="mb-1 block text-xs text-muted"
               onChange={(v) => {
                 saveDate('end_date', v).catch(() => undefined);
               }}

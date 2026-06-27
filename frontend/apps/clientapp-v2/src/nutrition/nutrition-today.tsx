@@ -25,7 +25,17 @@ import {
 import AmountSheet, {type SheetTarget} from '@/nutrition/components/amount-sheet';
 import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
 import MacroHero from '@/nutrition/components/macro-hero';
-import {buildSlots, dayTotals, type PlannedRow, planTargets, type SlotView} from '@/nutrition/nutrition-utils';
+import {
+  adherence,
+  buildSlots,
+  dayTotals,
+  type PlannedRow,
+  planTargets,
+  type SlotView,
+} from '@/nutrition/nutrition-utils';
+
+const VERDICT_LABEL: Record<string, string> = {on: 'on target ✓', over: 'over target', under: 'under target'};
+const VERDICT_COLOR: Record<string, string> = {on: '#5fe08a', over: '#e08a86', under: '#e0a14d'};
 
 function localToday(): string {
   const d = new Date();
@@ -70,8 +80,13 @@ export default function NutritionToday() {
   const date = params.get('date') ?? today;
   const isFuture = date > today;
 
-  const {data: todayResp, isLoading: loadingPlan} = useGetTodayNutritionPlanQuery({date});
-  const {data: logsResp, isLoading: loadingLogs} = useListClientMealLogsQuery({date});
+  const {data: todayResp, isLoading: loadingPlan, refetch: refetchPlan} = useGetTodayNutritionPlanQuery({date});
+  const {
+    data: logsResp,
+    isLoading: loadingLogs,
+    isError: logsError,
+    refetch: refetchLogs,
+  } = useListClientMealLogsQuery({date});
   const {data: plansResp} = useListClientNutritionPlansQuery({status: 'active'});
 
   const [createEntry] = useCreateFoodLogEntryMutation();
@@ -169,6 +184,11 @@ export default function NutritionToday() {
     setReplaceTarget(null);
     try {
       if (replacing) {
+        // Delete the old entry first so the planned slot never holds two entries
+        // (which dayTotals would double-count); a failed create then just reverts to unlogged.
+        if (replacing.loggedEntry) {
+          await deleteEntry({id: replacing.loggedEntry.id}).unwrap();
+        }
         await createEntry({
           foodLogEntryRequest: {
             date,
@@ -182,9 +202,6 @@ export default function NutritionToday() {
             weight_g: picked.defaultWeightG,
           },
         }).unwrap();
-        if (replacing.loggedEntry) {
-          await deleteEntry({id: replacing.loggedEntry.id}).unwrap();
-        }
       } else {
         await createEntry({
           foodLogEntryRequest: {
@@ -214,11 +231,41 @@ export default function NutritionToday() {
   };
 
   const anyUnlogged = slots.some((s) => s.planned.some((p) => !p.logged));
+  // Past-day adherence verdict (the today plan endpoint 404s with no plan, which is the
+  // empty state — only the meal-logs query erroring is a real failure to surface).
+  const adh = adherence(consumed.calories, targets.calories);
+  const verdict =
+    date < today && consumed.calories > 0 && targets.calories != null && adh !== 'none' ? (
+      <p
+        className="mt-1.5 text-[11px] font-semibold"
+        style={{color: VERDICT_COLOR[adh]}}
+      >
+        {VERDICT_LABEL[adh]}
+      </p>
+    ) : undefined;
 
   if (loadingPlan || loadingLogs) {
     return (
       <div className="flex items-center justify-center py-20">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (logsError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
+        <p className="text-sm text-muted">Couldn't load your day. Check your connection.</p>
+        <button
+          className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground active:opacity-90"
+          onClick={() => {
+            refetchLogs();
+            refetchPlan();
+          }}
+          type="button"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -248,6 +295,7 @@ export default function NutritionToday() {
 
       <MacroHero
         consumed={consumed}
+        statusLine={verdict}
         targets={targets}
       />
 
@@ -278,7 +326,9 @@ export default function NutritionToday() {
                   ✓ log whole meal
                 </button>
               ) : (
-                <span className="text-[11px] text-muted">{Math.round(slot.plannedCalories)}</span>
+                <span className="text-[11px] text-muted">
+                  {Math.round(slot.hasLog ? slot.loggedCalories : slot.plannedCalories)}
+                </span>
               )}
             </div>
 

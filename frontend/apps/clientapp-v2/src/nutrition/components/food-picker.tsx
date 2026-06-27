@@ -86,6 +86,7 @@ export default function FoodPicker({
 
   const Toggle = ({value, label}: {label: string; value: 'foods' | 'recipes'}) => (
     <button
+      aria-pressed={tab === value}
       className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold ${
         tab === value ? 'border-accent bg-[#1d2030] text-[#9fb0ff]' : 'border-border text-muted'
       }`}
@@ -97,7 +98,12 @@ export default function FoodPicker({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div
+      aria-label={title}
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex flex-col bg-background"
+      role="dialog"
+    >
       <div className="flex items-center gap-2 border-b border-[#1f1f25] px-3 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <button
           aria-label="Close"
@@ -128,7 +134,7 @@ export default function FoodPicker({
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-        {loading && foodItems.length === 0 && recipeItems.length === 0 ? (
+        {loading && (tab === 'foods' ? foodItems : recipeItems).length === 0 ? (
           <div className="flex justify-center py-10">
             <Spinner />
           </div>
@@ -177,6 +183,7 @@ export default function FoodPicker({
           <div className="flex flex-wrap gap-1.5">
             {MEAL_SLOTS.map((s) => (
               <button
+                aria-pressed={slot === s}
                 className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${
                   slot === s ? 'border-accent text-[#9fb0ff]' : 'border-border text-muted'
                 }`}

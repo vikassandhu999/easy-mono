@@ -47,11 +47,14 @@ export default function AmountSheet({
 
   const {loggedEntry, plannedItem} = target;
   const plannedWeight = loggedEntry?.weight_g ?? plannedItem?.weight_g ?? 100;
-  const [weight, setWeight] = useState<number>(plannedWeight);
+  // raw string so decimals (0.5) and a cleared field stay typeable; parse on use.
+  const [raw, setRaw] = useState<string>(String(plannedWeight));
   const [free, setFree] = useState(false);
+  const weight = Math.max(0, Number(raw) || 0);
 
-  // per-100g macros from a planned food item (accurate); else scale the logged entry.
-  const per100 = plannedItem?.food_id ? plannedItem.nutrition : null;
+  // Use the planned food's per-100g only for an unlogged item; once an entry exists
+  // (incl. a replacement, whose food differs from the plan) scale its frozen macros.
+  const per100 = !loggedEntry && plannedItem?.food_id ? plannedItem.nutrition : null;
   const liveMacros = (w: number): Macros | null => {
     if (per100) {
       return {
@@ -120,7 +123,12 @@ export default function AmountSheet({
         className="flex-1"
         onClick={onClose}
       />
-      <div className="rounded-t-2xl border-t border-[#34343d] bg-surface p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-12px_30px_rgba(0,0,0,0.5)]">
+      <div
+        aria-label={`Adjust ${target.name}`}
+        aria-modal="true"
+        className="rounded-t-2xl border-t border-[#34343d] bg-surface p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-12px_30px_rgba(0,0,0,0.5)]"
+        role="dialog"
+      >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#444]" />
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="min-w-0 truncate font-semibold">{target.name}</span>
@@ -129,18 +137,20 @@ export default function AmountSheet({
 
         <div className="mb-2.5 flex gap-2">
           <button
+            aria-pressed={!free}
             className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium ${
               !free ? 'border-accent bg-[#1d2030] text-[#9fb0ff]' : 'border-border text-muted'
             }`}
             onClick={() => {
               setFree(false);
-              setWeight(plannedWeight);
+              setRaw(String(plannedWeight));
             }}
             type="button"
           >
             as planned · {plannedWeight}g
           </button>
           <button
+            aria-pressed={free}
             className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium ${
               free ? 'border-accent bg-[#1d2030] text-[#9fb0ff]' : 'border-border text-muted'
             }`}
@@ -158,9 +168,9 @@ export default function AmountSheet({
               className="w-20 bg-transparent text-center text-xl font-bold text-foreground outline-none"
               disabled={!free}
               inputMode="decimal"
-              onChange={(e) => setWeight(Math.max(0, Number(e.target.value) || 0))}
+              onChange={(e) => setRaw(e.target.value)}
               type="text"
-              value={weight}
+              value={raw}
             />
             <span className="text-sm text-muted">g</span>
           </span>

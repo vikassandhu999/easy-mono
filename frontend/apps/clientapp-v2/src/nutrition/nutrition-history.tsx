@@ -4,7 +4,8 @@
  * over the week range and buckets each day on consumed-vs-target calories. Dark + periwinkle.
  */
 import {Spinner} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
+import {ArrowLeft, ChevronLeft, ChevronRight} from 'lucide-react';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -27,6 +28,15 @@ function mondayOf(date: string): string {
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return fmt(d);
 }
+function shiftDate(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return fmt(d);
+}
+// "Jun 13"
+function shortDate(date: string): string {
+  return new Date(`${date}T00:00:00`).toLocaleDateString('en-US', {day: 'numeric', month: 'short'});
+}
 
 type DayStat = {
   adh: Adherence;
@@ -42,14 +52,13 @@ export default function NutritionHistory() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.NUTRITION);
   const today = localToday();
-  const weekStart = mondayOf(today);
-  const weekEnd = (() => {
-    const d = new Date(`${weekStart}T00:00:00`);
-    d.setDate(d.getDate() + 6);
-    return fmt(d);
-  })();
+  const thisWeek = mondayOf(today);
+  const [weekStart, setWeekStart] = useState(thisWeek);
+  const weekEnd = shiftDate(weekStart, 6);
+  const atCurrentWeek = weekStart >= thisWeek;
+  const weekLabel = weekStart === thisWeek ? 'This week' : `Week of ${shortDate(weekStart)}`;
 
-  const {data: logsResp, isLoading} = useListClientMealLogsQuery({from: weekStart, to: weekEnd});
+  const {data: logsResp, isLoading, isError, refetch} = useListClientMealLogsQuery({from: weekStart, to: weekEnd});
   const {data: plansResp} = useListClientNutritionPlansQuery({status: 'active'});
   const target = planTargets(plansResp?.data[0]).calories;
 
@@ -88,9 +97,42 @@ export default function NutritionHistory() {
       </button>
       <h1 className="mb-3 text-lg font-bold">History</h1>
 
+      {/* week navigator */}
+      <div className="mb-3.5 flex items-center justify-between border-b border-[#1f1f25] pb-3">
+        <button
+          aria-label="Previous week"
+          className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary"
+          onClick={() => setWeekStart(shiftDate(weekStart, -7))}
+          type="button"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <span className="text-sm font-bold">{weekLabel}</span>
+        <button
+          aria-label="Next week"
+          className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary disabled:opacity-30"
+          disabled={atCurrentWeek}
+          onClick={() => setWeekStart(shiftDate(weekStart, 7))}
+          type="button"
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center py-20">
           <Spinner />
+        </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <p className="text-sm text-muted">Couldn't load your history.</p>
+          <button
+            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground active:opacity-90"
+            onClick={() => refetch()}
+            type="button"
+          >
+            Retry
+          </button>
         </div>
       ) : (
         <>
@@ -157,8 +199,7 @@ export default function NutritionHistory() {
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-semibold">
-                      {d.weekday}
-                      {d.isToday ? ' · Today' : ''}
+                      {d.weekday} · {d.isToday ? 'Today' : shortDate(d.date)}
                     </p>
                     <p className="mt-0.5 text-[11px] text-[#9aa]">
                       {Math.round(d.calories)} / {target ?? '—'} kcal · {Math.round(d.protein)}P

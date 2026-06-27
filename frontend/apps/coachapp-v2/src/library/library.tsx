@@ -36,6 +36,11 @@ const SECTIONS: LibrarySection[] = [
     label: 'Training Plans',
     path: ROUTES.TRAINING_PLANS,
   },
+  {
+    description: 'Build check-in & intake forms',
+    label: 'Check-ins',
+    path: ROUTES.CHECKINS,
+  },
 ];
 
 export default function Library() {

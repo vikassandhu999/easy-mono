@@ -2,6 +2,7 @@ import {Button, Chip, CloseButton, Separator, Toast} from '@heroui/react';
 import {
   BookOpen,
   ChevronRight,
+  ClipboardCheck,
   ClipboardList,
   Download,
   Dumbbell,
@@ -78,6 +79,11 @@ const LIBRARY_GROUP: NavGroup = {
       icon: <ClipboardList size={ICON_SIZE} />,
       label: 'Training Plans',
       path: ROUTES.TRAINING_PLANS,
+    },
+    {
+      icon: <ClipboardCheck size={ICON_SIZE} />,
+      label: 'Check-ins',
+      path: ROUTES.CHECKINS,
     },
   ],
   label: 'Library',

@@ -33,6 +33,9 @@ export const ROUTES = {
   CREATE_TRAINING_PLAN: '/library/training-plans/create',
   TRAINING_PLAN_DETAIL: '/library/training-plans/:id',
   EDIT_TRAINING_PLAN: '/library/training-plans/:id/edit',
+  CHECKINS: '/library/check-ins',
+  CREATE_CHECKIN: '/library/check-ins/create',
+  EDIT_CHECKIN: '/library/check-ins/:id/edit',
   SETTINGS: '/settings',
   SETTINGS_PROFILE_FIELDS: '/settings/client-profile-fields',
 } as const;

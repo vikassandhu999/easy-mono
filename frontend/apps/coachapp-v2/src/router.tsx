@@ -11,6 +11,9 @@ import RegisterBusiness from '@/auth/register-business';
 import Signup from '@/auth/signup';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
 import VerifySignupOtp from '@/auth/verify-signup-otp';
+import CreateCheckin from '@/checkins/create-checkin';
+import EditCheckin from '@/checkins/edit-checkin';
+import ListCheckins from '@/checkins/list-checkins';
 import ClientDetail from '@/clients/client-detail';
 import ClientProfilePage from '@/clients/client-profile';
 import ClientWorkoutHistoryPage from '@/clients/client-workout-history-page';
@@ -110,6 +113,9 @@ export const router = createBrowserRouter([
       {path: ROUTES.CREATE_TRAINING_PLAN, Component: CreateTrainingPlan},
       {path: ROUTES.TRAINING_PLAN_DETAIL, Component: TrainingPlanDetail},
       {path: ROUTES.EDIT_TRAINING_PLAN, Component: EditTrainingPlan},
+      {path: ROUTES.CHECKINS, Component: ListCheckins},
+      {path: ROUTES.CREATE_CHECKIN, Component: CreateCheckin},
+      {path: ROUTES.EDIT_CHECKIN, Component: EditCheckin},
       {path: ROUTES.SETTINGS, Component: Settings},
       {path: ROUTES.SETTINGS_PROFILE_FIELDS, Component: ProfileFields},
     ],

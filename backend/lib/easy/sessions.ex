@@ -298,6 +298,7 @@ defmodule Easy.Sessions do
         workout = Repo.preload(workout, workout_elements: element_query)
 
         %{
+          "workout_name" => workout.name,
           "exercises" => Enum.map(workout.workout_elements, &element_to_snapshot/1)
         }
     end
@@ -305,7 +306,9 @@ defmodule Easy.Sessions do
 
   defp element_to_snapshot(element) do
     %{
+      "exercise_id" => element.exercise_id,
       "name" => element.exercise && element.exercise.name,
+      "tracking_type" => element.exercise && element.exercise.tracking_type,
       "position" => element.position,
       "sets" => Enum.map(element.planned_sets, &Easy.Training.PlannedSet.to_snapshot/1)
     }

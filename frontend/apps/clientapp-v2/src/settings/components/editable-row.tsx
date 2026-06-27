@@ -66,10 +66,10 @@ export default function EditableRow({
   if (editing) {
     return (
       <form
-        className="flex items-center gap-2 border-t border-divider px-4 py-2"
+        className="flex items-center gap-2 border-t border-border px-4 py-2"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
+        <span className="w-20 shrink-0 text-sm text-muted">{label}</span>
         <div className="min-w-0 flex-1">
           <Input
             className="w-full"
@@ -108,8 +108,8 @@ export default function EditableRow({
   }
 
   return (
-    <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
-      <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
+    <div className="flex min-h-11 items-center border-t border-border px-4 py-3">
+      <span className="w-20 shrink-0 text-sm text-muted">{label}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{value || '\u2014'}</span>
       <Button
         className="shrink-0"

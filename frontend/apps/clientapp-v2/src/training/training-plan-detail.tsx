@@ -70,14 +70,14 @@ function ExerciseCard({element, index}: {element: ClientWorkoutElement; index: n
   const summary = formatSetSummary(element.planned_sets);
 
   return (
-    <div className="flex min-h-11 items-center gap-3 border-b border-divider px-4 py-3 last:border-b-0">
-      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-content2 text-xs font-medium text-foreground-400">
+    <div className="flex min-h-11 items-center gap-3 border-b border-border px-4 py-3 last:border-b-0">
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-xs font-medium text-muted">
         {index + 1}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{element.exercise.name}</p>
-        <p className="mt-0.5 text-xs text-foreground-500">{summary}</p>
-        {element.notes ? <p className="mt-0.5 text-xs text-foreground-400">{element.notes}</p> : null}
+        <p className="mt-0.5 text-xs text-muted">{summary}</p>
+        {element.notes ? <p className="mt-0.5 text-xs text-muted">{element.notes}</p> : null}
       </div>
       {element.exercise.mechanics ? (
         <Chip
@@ -98,17 +98,17 @@ function ScheduledWorkoutCard({item, workout}: {item: ClientTrainingPlanItem; wo
   const totalSets = elements.reduce((sum, element) => sum + element.planned_sets.length, 0);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-divider bg-content1">
-      <div className="flex items-center gap-3 border-b border-divider px-4 py-3">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
           <Dumbbell
-            className="text-primary"
+            className="text-accent"
             size={16}
           />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{workout?.name ?? 'Missing workout'}</p>
-          <p className="text-xs text-foreground-500">
+          <p className="text-xs text-muted">
             {TRAINING_DAY_LABELS[item.day]}
             {item.workout_type === 'alternative' ? ' · Alternative' : ''}
             {workout ? ` · ${elements.length} exercise${elements.length !== 1 ? 's' : ''} · ${totalSets} sets` : ''}
@@ -125,14 +125,14 @@ function ScheduledWorkoutCard({item, workout}: {item: ClientTrainingPlanItem; wo
           />
         ))
       ) : (
-        <div className="px-4 py-6 text-center text-sm text-foreground-400">
+        <div className="px-4 py-6 text-center text-sm text-muted">
           {workout ? 'No exercises in this workout' : 'This workout is no longer available.'}
         </div>
       )}
 
       {workout?.notes ? (
-        <div className="border-t border-divider px-4 py-2">
-          <p className="text-xs text-foreground-400">{workout.notes}</p>
+        <div className="border-t border-border px-4 py-2">
+          <p className="text-xs text-muted">{workout.notes}</p>
         </div>
       ) : null}
     </div>
@@ -149,10 +149,10 @@ function DayScheduleSection({
   workoutMap: Map<string, ClientWorkout>;
 }) {
   return (
-    <div className="rounded-xl border border-divider bg-content1 p-4">
+    <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">{TRAINING_DAY_LABELS[day]}</h3>
-        <span className="text-xs text-foreground-400">{items.length} scheduled</span>
+        <span className="text-xs text-muted">{items.length} scheduled</span>
       </div>
       <div className="flex flex-col gap-3">
         {items.map((item) => (
@@ -169,18 +169,18 @@ function DayScheduleSection({
 
 function RestDayCard({day}: {day: TrainingWeekday}) {
   return (
-    <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
+    <div className="rounded-xl border border-dashed border-border bg-surface p-4">
       <p className="text-sm font-medium">{TRAINING_DAY_LABELS[day]}</p>
-      <p className="mt-1 text-sm text-foreground-400">Rest day</p>
+      <p className="mt-1 text-sm text-muted">Rest day</p>
     </div>
   );
 }
 
 function EmptyDayCard({day}: {day: TrainingWeekday}) {
   return (
-    <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
+    <div className="rounded-xl border border-dashed border-border bg-surface p-4">
       <p className="text-sm font-medium">{TRAINING_DAY_LABELS[day]}</p>
-      <p className="mt-1 text-sm text-foreground-400">No workout scheduled.</p>
+      <p className="mt-1 text-sm text-muted">No workout scheduled.</p>
     </div>
   );
 }
@@ -262,7 +262,7 @@ export default function TrainingPlanDetail() {
         </Button>
 
         <h1 className="text-lg font-semibold md:text-xl">{plan.name}</h1>
-        {plan.description ? <p className="mt-1 text-sm text-foreground-500">{plan.description}</p> : null}
+        {plan.description ? <p className="mt-1 text-sm text-muted">{plan.description}</p> : null}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Chip
@@ -272,14 +272,14 @@ export default function TrainingPlanDetail() {
           >
             {statusChip.label}
           </Chip>
-          <span className="text-xs text-foreground-400">
+          <span className="text-xs text-muted">
             {plan.workouts.length} workout{plan.workouts.length !== 1 ? 's' : ''} · {totalExercises} exercise
             {totalExercises !== 1 ? 's' : ''}
           </span>
         </div>
 
         {plan.start_date || plan.end_date ? (
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-foreground-400">
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted">
             <Calendar size={12} />
             {plan.start_date ? formatDateLong(plan.start_date) : '—'}
             {' — '}
@@ -288,8 +288,8 @@ export default function TrainingPlanDetail() {
         ) : null}
       </div>
 
-      <section className="border-t border-divider py-4">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly Schedule</h2>
+      <section className="border-t border-border py-4">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Weekly Schedule</h2>
         <div className="flex flex-col gap-4">
           {TRAINING_WEEKDAYS.map((day) => {
             const dayItems = itemsByDay.get(day) ?? [];

@@ -41,10 +41,10 @@ export default function RestTimer({
   const progress = 1 - remaining / restSeconds;
 
   return (
-    <div className="rounded-xl border border-divider bg-content2 p-4">
+    <div className="rounded-xl border border-border bg-surface-secondary p-4">
       <div className="mb-2 flex items-center gap-2">
         <Timer
-          className="text-foreground-400"
+          className="text-muted"
           size={16}
         />
         <p className="text-sm font-semibold">Rest</p>
@@ -52,20 +52,20 @@ export default function RestTimer({
 
       <p className="text-center text-xl font-semibold tabular-nums">
         {mins}:{pad(secs)}
-        <span className="text-sm font-normal text-foreground-400">
+        <span className="text-sm font-normal text-muted">
           {' '}
           / {totalMins}:{pad(totalSecs)}
         </span>
       </p>
 
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-foreground-200">
+      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-default">
         <div
-          className="h-full rounded-full bg-primary transition-all duration-1000 ease-linear"
+          className="h-full rounded-full bg-accent transition-all duration-1000 ease-linear"
           style={{width: `${progress * 100}%`}}
         />
       </div>
 
-      {nextSetSummary ? <p className="mt-3 text-sm text-foreground-500">Next: {nextSetSummary}</p> : null}
+      {nextSetSummary ? <p className="mt-3 text-sm text-muted">Next: {nextSetSummary}</p> : null}
 
       <Button
         className="mt-3"

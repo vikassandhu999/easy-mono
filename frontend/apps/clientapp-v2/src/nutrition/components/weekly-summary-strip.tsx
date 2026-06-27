@@ -84,7 +84,7 @@ export default function WeeklySummaryStrip({
 
   return (
     <div className="rounded-xl bg-default px-3 py-2">
-      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-400">This week</p>
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">This week</p>
       <div className="flex justify-between gap-1">
         {days.map((day) => (
           <Button
@@ -94,7 +94,7 @@ export default function WeeklySummaryStrip({
             onPress={() => handleTap(day.dateStr, day.level)}
             variant="ghost"
           >
-            <p className="text-[10px] text-foreground-400">{day.label}</p>
+            <p className="text-[10px] text-muted">{day.label}</p>
             <div
               className={`flex size-7 items-center justify-center rounded-full text-[10px] font-semibold transition-all ${day.style.bg} ${
                 day.isSelected ? 'ring-2 ring-accent ring-offset-1 ring-offset-background' : ''

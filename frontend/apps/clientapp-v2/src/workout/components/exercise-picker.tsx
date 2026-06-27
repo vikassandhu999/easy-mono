@@ -114,9 +114,9 @@ export default function ExercisePicker({
                   key={exercise.id}
                   textValue={exercise.name}
                 >
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
                     <Dumbbell
-                      className="text-foreground-400"
+                      className="text-muted"
                       size={14}
                     />
                   </div>

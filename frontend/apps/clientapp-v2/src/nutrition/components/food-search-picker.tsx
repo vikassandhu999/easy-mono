@@ -108,7 +108,7 @@ export default function FoodSearchPicker({onSelect}: {onSelect: (item: PickedIte
       </SearchField>
 
       {skipQuery && !isFetching && items.length === 0 ? (
-        <p className="px-2 py-3 text-center text-sm text-foreground-400">No results found.</p>
+        <p className="px-2 py-3 text-center text-sm text-muted">No results found.</p>
       ) : null}
 
       {items.length > 0 ? (
@@ -130,7 +130,7 @@ export default function FoodSearchPicker({onSelect}: {onSelect: (item: PickedIte
               <div className="flex min-h-11 items-center gap-3 py-1">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{item.name}</p>
-                  <p className="text-xs text-foreground-400">
+                  <p className="text-xs text-muted">
                     {item.type === 'recipe' ? 'Recipe' : 'Food'}
                     {getCalorieDisplay(item.macros) ? ` \u00B7 ${getCalorieDisplay(item.macros)}` : ''}
                     {getProteinDisplay(item.macros) ? ` \u00B7 ${getProteinDisplay(item.macros)}` : ''}
@@ -142,7 +142,7 @@ export default function FoodSearchPicker({onSelect}: {onSelect: (item: PickedIte
         </ListBox>
       ) : null}
 
-      {isFetching ? <p className="px-2 py-3 text-center text-sm text-foreground-400">Searching...</p> : null}
+      {isFetching ? <p className="px-2 py-3 text-center text-sm text-muted">Searching...</p> : null}
     </div>
   );
 }

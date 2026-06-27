@@ -115,7 +115,7 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
     <PageLayout title={assignment.form_template?.name ?? 'Check-in'}>
       <div className="max-w-lg">
         <BackButton onPress={() => navigate(ROUTES.CHECKINS)} />
-        <div className="rounded-xl border border-divider bg-content1 p-8 text-center">
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-success/10">
             <CheckCircle2
               className="text-success"
@@ -123,7 +123,7 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
             />
           </div>
           <h3 className="text-base font-medium">Check-in submitted</h3>
-          <p className="mt-2 text-sm text-foreground-500">
+          <p className="mt-2 text-sm text-muted">
             {assignment.completed_at
               ? `You completed this on ${formatIsoDateOnly(assignment.completed_at)}.`
               : 'Thanks — your coach has your answers.'}
@@ -154,7 +154,7 @@ export default function FillCheckin() {
       <PageLayout title="Check-in">
         <div className="max-w-lg">
           <BackButton onPress={() => navigate(ROUTES.CHECKINS)} />
-          <div className="rounded-xl border border-divider bg-content1 p-6 text-center">
+          <div className="rounded-xl border border-border bg-surface p-6 text-center">
             <p className="text-sm text-danger">Check-in couldn&apos;t load.</p>
           </div>
         </div>

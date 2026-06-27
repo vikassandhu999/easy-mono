@@ -1,3 +1,3 @@
 export default function SectionHeading({title}: {title: string}) {
-  return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">{title}</h3>;
+  return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">{title}</h3>;
 }

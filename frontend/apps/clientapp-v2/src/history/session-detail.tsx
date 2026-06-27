@@ -195,20 +195,18 @@ function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
       </div>
 
       {isSkipped ? (
-        <p className="text-xs text-foreground-400">
+        <p className="text-xs text-muted">
           {group.plannedSets.length} set{group.plannedSets.length !== 1 ? 's' : ''} planned, none performed
         </p>
       ) : group.sets.length > 0 ? (
-        <div className="overflow-hidden rounded-lg border border-divider">
+        <div className="overflow-hidden rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-divider bg-content2">
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-foreground-400">#</th>
-                {hasPlan ? (
-                  <th className="px-3 py-1.5 text-left text-xs font-medium text-foreground-400">Plan</th>
-                ) : null}
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-foreground-400">Done</th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-foreground-400">Load</th>
+              <tr className="border-b border-border bg-surface-secondary">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-muted">#</th>
+                {hasPlan ? <th className="px-3 py-1.5 text-left text-xs font-medium text-muted">Plan</th> : null}
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-muted">Done</th>
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-muted">Load</th>
               </tr>
             </thead>
             <tbody>
@@ -216,16 +214,16 @@ function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
                 const planned = hasPlan ? group.plannedSets[idx] : null;
                 return (
                   <tr
-                    className="border-b border-divider last:border-b-0"
+                    className="border-b border-border last:border-b-0"
                     key={set.id}
                   >
-                    <td className="px-3 py-1.5 text-foreground-400">{idx + 1}</td>
-                    {hasPlan ? <td className="px-3 py-1.5 text-foreground-500">{planned?.targetReps ?? '—'}</td> : null}
+                    <td className="px-3 py-1.5 text-muted">{idx + 1}</td>
+                    {hasPlan ? <td className="px-3 py-1.5 text-muted">{planned?.targetReps ?? '—'}</td> : null}
                     <td className="px-3 py-1.5">
                       {set.completed ? (
                         <span>{set.actual_reps ?? '—'}</span>
                       ) : (
-                        <span className="text-foreground-400">skipped</span>
+                        <span className="text-muted">skipped</span>
                       )}
                     </td>
                     <td className="px-3 py-1.5">{formatLoad(set.load_value, set.load_unit)}</td>
@@ -318,31 +316,31 @@ export default function SessionDetail() {
               </Chip>
             ) : null}
           </div>
-          <p className="mt-1 text-sm text-foreground-500">{dateStr}</p>
+          <p className="mt-1 text-sm text-muted">{dateStr}</p>
         </div>
 
         {/* Stats */}
         <div className="flex flex-wrap gap-4 pb-4">
           {duration ? (
-            <div className="flex items-center gap-1.5 text-sm text-foreground-500">
+            <div className="flex items-center gap-1.5 text-sm text-muted">
               <Clock size={14} />
               {duration}
             </div>
           ) : null}
           {session.soreness_rating ? (
-            <div className="flex items-center gap-1.5 text-sm text-foreground-500">
+            <div className="flex items-center gap-1.5 text-sm text-muted">
               <Activity size={14} />
               Effort: {session.soreness_rating}/5
             </div>
           ) : null}
           {snapshot ? (
-            <div className="flex items-center gap-1.5 text-sm text-foreground-500">
+            <div className="flex items-center gap-1.5 text-sm text-muted">
               <Dumbbell size={14} />
               {adherence.completed}/{adherence.totalPlanned} exercises
               {adherence.totalSets > 0 ? ` \u00B7 ${adherence.totalSets} sets` : ''}
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-sm text-foreground-500">
+            <div className="flex items-center gap-1.5 text-sm text-muted">
               <Dumbbell size={14} />
               {adherence.totalSets} sets across {groups.length} exercise{groups.length !== 1 ? 's' : ''}
             </div>
@@ -353,10 +351,10 @@ export default function SessionDetail() {
         {session.notes ? (
           <div className="flex items-start gap-2 pb-4">
             <MessageSquare
-              className="mt-0.5 shrink-0 text-foreground-400"
+              className="mt-0.5 shrink-0 text-muted"
               size={14}
             />
-            <p className="text-sm italic text-foreground-500">&ldquo;{session.notes}&rdquo;</p>
+            <p className="text-sm italic text-muted">&ldquo;{session.notes}&rdquo;</p>
           </div>
         ) : null}
 
@@ -397,7 +395,7 @@ export default function SessionDetail() {
 
         {/* Exercise groups */}
         {groups.length > 0 ? (
-          <div className="divide-y divide-divider">
+          <div className="divide-y divide-border">
             {groups.map((group) => (
               <ExerciseGroupSection
                 group={group}
@@ -406,7 +404,7 @@ export default function SessionDetail() {
             ))}
           </div>
         ) : (
-          <p className="py-6 text-center text-sm text-foreground-400">No exercises logged in this session.</p>
+          <p className="py-6 text-center text-sm text-muted">No exercises logged in this session.</p>
         )}
       </div>
     </PageLayout>

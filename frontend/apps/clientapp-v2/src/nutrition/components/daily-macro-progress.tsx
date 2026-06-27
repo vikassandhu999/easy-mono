@@ -21,7 +21,7 @@ function MacroRow({consumed, fillClass, label, planned, unit}: MacroRowProps) {
     <div>
       <div className="mb-1 flex items-center justify-between gap-2 text-sm">
         <p className="font-medium">{label}</p>
-        <p className="text-foreground-500">
+        <p className="text-muted">
           {consumedDisplay} / {plannedDisplay}
           {suffix}
         </p>
@@ -38,7 +38,7 @@ function MacroRow({consumed, fillClass, label, planned, unit}: MacroRowProps) {
 
 export default function DailyMacroProgress({consumed, planned}: {consumed: MacroTotals; planned: MacroTotals}) {
   return (
-    <div className="rounded-xl border border-divider bg-content1 p-4">
+    <div className="rounded-xl border border-border bg-surface p-4">
       <div className="space-y-3">
         <MacroRow
           consumed={consumed.protein}

@@ -82,8 +82,8 @@ function SidebarNavItem({item}: {item: NavItem}) {
       className={({isActive}) =>
         `relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
           isActive
-            ? 'bg-primary/10 font-semibold text-primary before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-full before:bg-primary'
-            : 'font-medium text-foreground-500 hover:bg-default-100 active:bg-default-200'
+            ? 'bg-accent/10 font-semibold text-accent before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-full before:bg-accent'
+            : 'font-medium text-muted hover:bg-default-100 active:bg-default-200'
         }`
       }
       // `end` for root path so `/` doesn't match every nested route (would mark Training active everywhere).
@@ -102,7 +102,7 @@ function BottomNavItem({item}: {item: NavItem}) {
     <NavLink
       className={({isActive}) =>
         `relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-1 rounded-lg px-2 text-[10px] ${
-          isActive ? 'bg-primary/10 font-semibold text-primary' : 'font-medium text-foreground-400'
+          isActive ? 'bg-accent/10 font-semibold text-accent' : 'font-medium text-muted'
         }`
       }
       // `end` for root path — see SidebarNavItem comment.
@@ -111,7 +111,7 @@ function BottomNavItem({item}: {item: NavItem}) {
     >
       {({isActive}) => (
         <>
-          {isActive ? <span className="absolute top-0.5 h-1 w-5 rounded-full bg-primary" /> : null}
+          {isActive ? <span className="absolute top-0.5 h-1 w-5 rounded-full bg-accent" /> : null}
           <span className={isActive ? 'mt-1' : ''}>{item.icon}</span>
           <span>{item.label}</span>
         </>
@@ -140,7 +140,7 @@ export default function AppShell() {
 
       {/* Desktop sidebar — hidden on full-screen routes (active workout) */}
       {showSidebar ? (
-        <aside className="hidden border-r border-divider bg-content1 lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+        <aside className="hidden border-r border-border bg-surface lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
           <div className="flex h-16 items-center px-6">
             <img
               alt="CoachEasy"
@@ -184,7 +184,7 @@ export default function AppShell() {
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showBottomNav ? (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-divider bg-background lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-border bg-background lg:hidden">
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
               item={item}

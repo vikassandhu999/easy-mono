@@ -85,7 +85,7 @@ export default function FinishWorkout({
   };
 
   return (
-    <div className="rounded-xl border border-divider bg-content1 p-4">
+    <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-1 flex justify-end">
         <Button
           aria-label="Close"
@@ -100,7 +100,7 @@ export default function FinishWorkout({
 
       <div className="text-center">
         <h3 className="text-xl font-semibold">💪 Workout complete</h3>
-        <p className="mt-1 text-sm text-foreground-500">
+        <p className="mt-1 text-sm text-muted">
           {workoutTitle} · {duration}
         </p>
       </div>
@@ -109,7 +109,7 @@ export default function FinishWorkout({
 
       <div className="space-y-1">
         <p className="text-sm">{summary.totalSets} sets logged</p>
-        <p className="text-sm text-foreground-500">
+        <p className="text-sm text-muted">
           {summary.completed} of {summary.totalPlanned} exercises completed
         </p>
       </div>
@@ -122,9 +122,7 @@ export default function FinishWorkout({
           {MOOD_OPTIONS.map((option) => (
             <Button
               className={`flex min-h-11 flex-1 items-center justify-center gap-1 border px-2 text-sm ${
-                sorenessRating === option.value
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-divider text-foreground-500'
+                sorenessRating === option.value ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted'
               }`}
               key={option.value}
               onPress={() => setSorenessRating((prev) => (prev === option.value ? null : option.value))}

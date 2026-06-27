@@ -181,7 +181,7 @@ export default function ActiveWorkout() {
         >
           <ArrowLeft size={16} />
         </Button>
-        <div className="flex items-center gap-1.5 text-sm font-medium text-foreground-500">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-muted">
           <Clock size={14} />
           {elapsed}
         </div>
@@ -189,7 +189,7 @@ export default function ActiveWorkout() {
       </div>
 
       {/* Exercise list */}
-      <div className="overflow-hidden rounded-xl border border-divider bg-content1">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
         {exercises.length > 0 ? (
           exercises.map((exercise, index) => (
             <ExerciseRow
@@ -211,7 +211,7 @@ export default function ActiveWorkout() {
           ))
         ) : (
           <div className="px-4 py-8 text-center">
-            <p className="text-sm text-foreground-400">
+            <p className="text-sm text-muted">
               {snapshot ? 'Great work — all exercises are logged.' : 'No exercises yet. Add one to get started.'}
             </p>
           </div>
@@ -221,7 +221,7 @@ export default function ActiveWorkout() {
       {/* Add exercise */}
       <div className="mt-3">
         {showAddPicker ? (
-          <div className="rounded-xl border border-divider bg-content1 p-4">
+          <div className="rounded-xl border border-border bg-surface p-4">
             <p className="mb-2 text-sm font-semibold">Add exercise</p>
             <ExercisePicker
               onSelect={handleAddExercise}

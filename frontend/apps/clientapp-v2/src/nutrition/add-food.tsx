@@ -152,9 +152,7 @@ export default function AddFood() {
         {/* Step 1: Meal slot selector (only if not pre-set) */}
         {!state.mealSlot ? (
           <div className="mb-4">
-            <Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-foreground-400">
-              Meal
-            </Label>
+            <Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Meal</Label>
             <div className="flex flex-wrap gap-2">
               {MEAL_SLOTS.map((slot) => (
                 <Button
@@ -169,7 +167,7 @@ export default function AddFood() {
             </div>
           </div>
         ) : (
-          <p className="mb-4 text-sm text-foreground-400">
+          <p className="mb-4 text-sm text-muted">
             Meal: <span className="font-medium text-foreground">{MEAL_SLOT_LABELS[mealSlot] ?? mealSlot}</span>
           </p>
         )}
@@ -180,11 +178,11 @@ export default function AddFood() {
             {!selectedItem ? (
               <FoodSearchPicker onSelect={handleSelectItem} />
             ) : (
-              <div className="rounded-xl border border-divider bg-default p-4">
+              <div className="rounded-xl border border-border bg-default p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold">{selectedItem.name}</p>
-                    <p className="text-xs text-foreground-400">{selectedItem.type === 'recipe' ? 'Recipe' : 'Food'}</p>
+                    <p className="text-xs text-muted">{selectedItem.type === 'recipe' ? 'Recipe' : 'Food'}</p>
                   </div>
                   <Button
                     onPress={() => setSelectedItem(null)}
@@ -198,7 +196,7 @@ export default function AddFood() {
                 {/* Step 3: Amount */}
                 <div className="mb-3 flex items-end gap-2">
                   <div className="flex flex-1 flex-col gap-1">
-                    <Label className="text-xs text-foreground-400">Amount</Label>
+                    <Label className="text-xs text-muted">Amount</Label>
                     <Input
                       inputMode="decimal"
                       placeholder="100"
@@ -206,7 +204,7 @@ export default function AddFood() {
                     />
                   </div>
                   <div className="flex w-20 flex-col gap-1">
-                    <Label className="text-xs text-foreground-400">Unit</Label>
+                    <Label className="text-xs text-muted">Unit</Label>
                     <Input
                       placeholder="g"
                       {...register('unit')}
@@ -242,7 +240,7 @@ export default function AddFood() {
 
                 {/* Macros preview */}
                 {macros ? (
-                  <div className="mb-3 flex gap-3 text-xs text-foreground-400">
+                  <div className="mb-3 flex gap-3 text-xs text-muted">
                     <span>{formatMacroValue(macros.calories, '')} cal</span>
                     <span>{formatMacroValue(macros.protein, 'g')} protein</span>
                     <span>{formatMacroValue(macros.carbs, 'g')} carbs</span>

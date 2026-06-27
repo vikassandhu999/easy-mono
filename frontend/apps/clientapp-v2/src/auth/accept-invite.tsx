@@ -233,7 +233,7 @@ function WelcomeForm({
       >
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">What&apos;s your email?</Label>
-          <p className="text-xs text-foreground-500">We&apos;ll send you a login code.</p>
+          <p className="text-xs text-muted">We&apos;ll send you a login code.</p>
           <Input
             autoComplete="email"
             autoFocus={shouldFocusEmail}
@@ -324,7 +324,7 @@ function InvalidInvitation() {
           <Alert.Description>Contact your coach.</Alert.Description>
         </Alert.Content>
       </Alert>
-      <p className="mt-6 text-center text-sm text-foreground-500">
+      <p className="mt-6 text-center text-sm text-muted">
         Already have an account?{' '}
         <Link
           className="text-sm text-foreground underline"

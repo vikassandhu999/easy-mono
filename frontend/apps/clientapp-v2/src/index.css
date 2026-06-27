@@ -341,33 +341,6 @@
     border-radius: calc(var(--radius) * 1.25);
   }
 
-  /* ── Text opacity tiers (dark mode hierarchy) ── */
-  .text-bright {
-    color: oklch(0.96 0.005 250);
-  }
-
-  /* 100% — headings */
-  .text-body {
-    color: oklch(0.96 0.005 250 / 0.7);
-  }
-
-  /* 70% — body */
-  .text-muted {
-    color: oklch(0.96 0.005 250 / 0.45);
-  }
-
-  /* 45% — secondary */
-  .text-hint {
-    color: oklch(0.96 0.005 250 / 0.25);
-  }
-
-  /* 25% — hints, disabled */
-  .text-teal {
-    color: oklch(0.82 0.08 178);
-  }
-
-  /* #5EEAD4 — accent text on dark */
-
   /* ── Progress bar base ── */
   .progress-track {
     height: 4px;

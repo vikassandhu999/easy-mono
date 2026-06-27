@@ -95,31 +95,31 @@ function NutritionDailySkeleton() {
       <div className="max-w-lg">
         {/* Date navigator skeleton */}
         <div className="mb-4 flex items-center justify-between">
-          <div className="size-8 animate-pulse rounded-lg bg-content2" />
-          <div className="h-5 w-32 animate-pulse rounded bg-content2" />
-          <div className="size-8 animate-pulse rounded-lg bg-content2" />
+          <div className="size-8 animate-pulse rounded-lg bg-surface-secondary" />
+          <div className="h-5 w-32 animate-pulse rounded bg-surface-secondary" />
+          <div className="size-8 animate-pulse rounded-lg bg-surface-secondary" />
         </div>
 
         {/* Weekly strip skeleton — 7 day cells */}
         <div className="mb-4 flex gap-1">
           {[1, 2, 3, 4, 5, 6, 7].map((i) => (
             <div
-              className="h-12 flex-1 animate-pulse rounded-lg bg-content2"
+              className="h-12 flex-1 animate-pulse rounded-lg bg-surface-secondary"
               key={i}
             />
           ))}
         </div>
 
         {/* Macro progress skeleton — 4 bars (calories, protein, carbs, fat) */}
-        <div className="mb-4 rounded-xl border border-divider bg-content1 p-4">
+        <div className="mb-4 rounded-xl border border-border bg-surface p-4">
           <div className="flex flex-col gap-3">
             {[1, 2, 3, 4].map((i) => (
               <div key={i}>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <div className="h-3 w-16 animate-pulse rounded bg-content2" />
-                  <div className="h-3 w-20 animate-pulse rounded bg-content2" />
+                  <div className="h-3 w-16 animate-pulse rounded bg-surface-secondary" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-surface-secondary" />
                 </div>
-                <div className="h-2 w-full animate-pulse rounded-full bg-content2" />
+                <div className="h-2 w-full animate-pulse rounded-full bg-surface-secondary" />
               </div>
             ))}
           </div>
@@ -129,16 +129,16 @@ function NutritionDailySkeleton() {
         <div className="flex flex-col gap-3">
           {[1, 2, 3].map((i) => (
             <div
-              className="rounded-xl border border-divider bg-content1 p-4"
+              className="rounded-xl border border-border bg-surface p-4"
               key={i}
             >
               <div className="mb-3 flex items-center justify-between">
-                <div className="h-4 w-24 animate-pulse rounded bg-content2" />
-                <div className="h-3 w-16 animate-pulse rounded bg-content2" />
+                <div className="h-4 w-24 animate-pulse rounded bg-surface-secondary" />
+                <div className="h-3 w-16 animate-pulse rounded bg-surface-secondary" />
               </div>
               <div className="flex flex-col gap-2">
-                <div className="h-4 w-full animate-pulse rounded bg-content2" />
-                <div className="h-4 w-5/6 animate-pulse rounded bg-content2" />
+                <div className="h-4 w-full animate-pulse rounded bg-surface-secondary" />
+                <div className="h-4 w-5/6 animate-pulse rounded bg-surface-secondary" />
               </div>
             </div>
           ))}
@@ -313,7 +313,7 @@ export default function NutritionDaily() {
 
         {/* First-run empty state — no plan, no logs */}
         {!hasPlan && allEntries.length === 0 && !isFuture ? (
-          <div className="mb-4 rounded-xl border border-divider bg-content1 p-6 text-center">
+          <div className="mb-4 rounded-xl border border-border bg-surface p-6 text-center">
             <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-accent/10">
               <UtensilsCrossed
                 className="text-accent"
@@ -321,7 +321,7 @@ export default function NutritionDaily() {
               />
             </div>
             <h3 className="text-base font-medium">No meal plan yet</h3>
-            <p className="mt-2 text-sm text-foreground-500">
+            <p className="mt-2 text-sm text-muted">
               Your coach will assign one soon.
               <br />
               You can still log what you eat.
@@ -393,7 +393,7 @@ export default function NutritionDaily() {
         {/* Freestyle logs (no plan, no meal slots from above, but has logs) */}
         {!hasPlan && mealSlots.length === 0 && allEntries.length > 0 ? (
           <div className="mb-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Logged today</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">Logged today</p>
             <div className="flex flex-col gap-1 rounded-xl bg-default p-3">
               {allEntries.map((entry) => (
                 <Button
@@ -404,7 +404,7 @@ export default function NutritionDaily() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{entry.food_name}</p>
-                    <p className="text-xs text-foreground-400">
+                    <p className="text-xs text-muted">
                       {entry.amount ?? ''}
                       {entry.unit ?? ''}
                     </p>

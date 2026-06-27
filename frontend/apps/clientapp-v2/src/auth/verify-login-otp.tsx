@@ -141,7 +141,7 @@ export default function VerifyLoginOtp() {
       </form>
 
       <div className="mt-6 flex items-center justify-center gap-1">
-        <p className="text-sm text-foreground-500">Didn&apos;t receive a code?</p>
+        <p className="text-sm text-muted">Didn&apos;t receive a code?</p>
         <Link
           className="text-sm text-foreground underline"
           isDisabled={isResending}

@@ -45,7 +45,7 @@ export default function SplashScreen() {
       )}
       {elapsed === 'stuck' && (
         <div className="mt-6 flex flex-col items-center gap-3">
-          <p className="text-center text-sm text-foreground-500">Taking longer than usual...</p>
+          <p className="text-center text-sm text-muted">Taking longer than usual...</p>
           <Button
             onPress={handleReload}
             size="sm"

@@ -79,7 +79,7 @@ export default function ExerciseRow({
     !exercise.isReplaced;
 
   return (
-    <div className="border-b border-divider last:border-b-0">
+    <div className="border-b border-border last:border-b-0">
       {/* Header — always visible, tappable */}
       <Button
         className="flex h-auto min-h-11 w-full items-center gap-3 rounded-none px-4 py-3 text-left"
@@ -95,11 +95,11 @@ export default function ExerciseRow({
             />
           ) : exercise.status === 'skipped' ? (
             <SkipForward
-              className="text-foreground-300"
+              className="text-muted"
               size={16}
             />
           ) : (
-            <div className="size-2.5 rounded-full bg-foreground-300" />
+            <div className="size-2.5 rounded-full bg-default" />
           )}
         </div>
 
@@ -109,20 +109,20 @@ export default function ExerciseRow({
             <p className="truncate text-sm font-semibold">{exercise.exerciseName}</p>
             {exercise.isReplaced ? (
               <RefreshCw
-                className="shrink-0 text-foreground-400"
+                className="shrink-0 text-muted"
                 size={12}
               />
             ) : null}
             {exercise.isAdded ? (
               <Plus
-                className="shrink-0 text-foreground-400"
+                className="shrink-0 text-muted"
                 size={12}
               />
             ) : null}
           </div>
-          {!isExpanded ? <p className="mt-0.5 truncate text-xs text-foreground-500">{summary}</p> : null}
+          {!isExpanded ? <p className="mt-0.5 truncate text-xs text-muted">{summary}</p> : null}
           {exercise.isReplaced && isExpanded ? (
-            <p className="mt-0.5 text-xs text-foreground-400">Replaces {exercise.originalExerciseName}</p>
+            <p className="mt-0.5 text-xs text-muted">Replaces {exercise.originalExerciseName}</p>
           ) : null}
         </div>
 
@@ -139,12 +139,12 @@ export default function ExerciseRow({
           ) : null}
           {isExpanded ? (
             <ChevronUp
-              className="text-foreground-400"
+              className="text-muted"
               size={16}
             />
           ) : (
             <ChevronDown
-              className="text-foreground-400"
+              className="text-muted"
               size={16}
             />
           )}

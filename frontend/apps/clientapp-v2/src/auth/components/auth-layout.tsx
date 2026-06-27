@@ -10,7 +10,7 @@ export default function AuthLayout({children, description, title}: AuthLayoutPro
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
           <h1 className="text-xl font-semibold md:text-2xl">{title}</h1>
-          <p className="mt-2 text-sm text-foreground-500">{description}</p>
+          <p className="mt-2 text-sm text-muted">{description}</p>
         </div>
         {children}
       </div>

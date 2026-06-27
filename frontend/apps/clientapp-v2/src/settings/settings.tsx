@@ -72,9 +72,9 @@ function ProfileSection({
   return (
     <section>
       <SectionHeading title="Profile" />
-      <div className="overflow-hidden rounded-xl border border-divider bg-content1">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
         {/* Header with avatar */}
-        <div className="flex items-center gap-3 border-b border-divider p-4">
+        <div className="flex items-center gap-3 border-b border-border p-4">
           <Avatar
             className="size-12"
             color="accent"
@@ -83,7 +83,7 @@ function ProfileSection({
           </Avatar>
           <div className="min-w-0">
             <p className="text-base font-medium">{fullName || 'No name'}</p>
-            <p className="text-sm text-foreground-500">{profile.email || '\u2014'}</p>
+            <p className="text-sm text-muted">{profile.email || '\u2014'}</p>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ function CoachSection({coach}: {coach: ClientCoach}) {
   return (
     <section className="mt-6">
       <SectionHeading title="My coach" />
-      <div className="overflow-hidden rounded-xl border border-divider bg-content1">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
         <div className="flex items-center gap-3 p-4">
           <Avatar
             className="size-10"
@@ -121,11 +121,11 @@ function CoachSection({coach}: {coach: ClientCoach}) {
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{coachName || 'Coach'}</p>
-            <p className="text-xs text-foreground-500">{coach.business_name}</p>
+            <p className="text-xs text-muted">{coach.business_name}</p>
           </div>
         </div>
         {coach.phone && (
-          <div className="flex gap-2 border-t border-divider px-4 py-3">
+          <div className="flex gap-2 border-t border-border px-4 py-3">
             <a
               className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success/10 px-4 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20"
               href={`https://wa.me/${cleanPhone(coach.phone)}`}
@@ -135,7 +135,7 @@ function CoachSection({coach}: {coach: ClientCoach}) {
               WhatsApp
             </a>
             <a
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-divider px-4 py-2 text-sm font-medium transition-colors hover:bg-content2"
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-surface-secondary"
               href={`tel:${coach.phone}`}
             >
               Call
@@ -151,14 +151,14 @@ function AccountSection({email}: {email: null | string}) {
   return (
     <section className="mt-6">
       <SectionHeading title="Account" />
-      <div className="overflow-hidden rounded-xl border border-divider bg-content1">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
         <div className="flex min-h-11 items-center px-4 py-3">
-          <span className="w-20 shrink-0 text-sm text-foreground-400">Email</span>
-          <span className="min-w-0 flex-1 truncate text-sm text-foreground-500">{email || '\u2014'}</span>
+          <span className="w-20 shrink-0 text-sm text-muted">Email</span>
+          <span className="min-w-0 flex-1 truncate text-sm text-muted">{email || '\u2014'}</span>
         </div>
-        <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
-          <span className="w-20 shrink-0 text-sm text-foreground-400">Auth</span>
-          <span className="flex-1 text-sm text-foreground-500">Email login code</span>
+        <div className="flex min-h-11 items-center border-t border-border px-4 py-3">
+          <span className="w-20 shrink-0 text-sm text-muted">Auth</span>
+          <span className="flex-1 text-sm text-muted">Email login code</span>
         </div>
       </div>
     </section>
@@ -192,9 +192,7 @@ export default function Settings() {
     return (
       <PageLayout title="Settings">
         <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <p className="text-sm text-foreground-500">
-            Couldn&apos;t load your settings. Check your connection and try again.
-          </p>
+          <p className="text-sm text-muted">Couldn&apos;t load your settings. Check your connection and try again.</p>
           <Button
             onPress={() => refetch()}
             size="sm"
@@ -229,7 +227,7 @@ export default function Settings() {
           >
             Log out
           </Button>
-          <p className="mt-4 text-center text-xs text-foreground-400">CoachEasy v{__APP_VERSION__}</p>
+          <p className="mt-4 text-center text-xs text-muted">CoachEasy v{__APP_VERSION__}</p>
         </div>
       </div>
     </PageLayout>

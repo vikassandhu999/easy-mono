@@ -100,9 +100,7 @@ export default function Login() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-foreground-500">
-        Your coach will send you an invitation link to get started.
-      </p>
+      <p className="mt-6 text-center text-sm text-muted">Your coach will send you an invitation link to get started.</p>
     </AuthLayout>
   );
 }

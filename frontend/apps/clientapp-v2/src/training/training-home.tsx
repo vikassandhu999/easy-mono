@@ -93,7 +93,7 @@ function TodayNutritionSummary() {
 
   return (
     <Button
-      className="mb-6 flex h-auto w-full items-start gap-3 rounded-xl border border-divider bg-content1 p-4 text-left"
+      className="mb-6 flex h-auto w-full items-start gap-3 rounded-xl border border-border bg-surface p-4 text-left"
       onPress={() => navigate(ROUTES.NUTRITION)}
       variant="ghost"
     >
@@ -106,16 +106,16 @@ function TodayNutritionSummary() {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">Nutrition</p>
         {logCount > 0 ? (
-          <p className="mt-0.5 text-sm text-foreground-500">
+          <p className="mt-0.5 text-sm text-muted">
             {Math.round(macros.calories)} cal &middot; {Math.round(macros.protein)}g protein &middot; {logCount} item
             {logCount !== 1 ? 's' : ''} logged
           </p>
         ) : (
-          <p className="mt-0.5 text-sm text-foreground-400">Nothing logged yet today</p>
+          <p className="mt-0.5 text-sm text-muted">Nothing logged yet today</p>
         )}
       </div>
       <ChevronRight
-        className="mt-1 shrink-0 text-foreground-300"
+        className="mt-1 shrink-0 text-muted"
         size={16}
       />
     </Button>
@@ -140,7 +140,7 @@ function ActiveSessionBanner({session}: {session: ClientWorkoutSession}) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">You&apos;re in the middle of a workout</p>
-          <p className="mt-0.5 text-sm text-foreground-500">
+          <p className="mt-0.5 text-sm text-muted">
             {workoutName}
             {setCount > 0 ? ` · ${setCount} set${setCount !== 1 ? 's' : ''} logged` : ''}
           </p>
@@ -174,23 +174,23 @@ function TodayWorkoutCard({
   const durationMins = estimateWorkoutDurationMinutes(scheduledWorkout.workout);
 
   return (
-    <div className="rounded-xl border border-divider bg-content1 p-4">
-      <p className="mb-3 text-sm font-medium text-foreground-500">Today</p>
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <p className="mb-3 text-sm font-medium text-muted">Today</p>
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
           <Dumbbell
-            className="text-primary"
+            className="text-accent"
             size={20}
           />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-base font-semibold">{scheduledWorkout.workout.name}</p>
-          <p className="mt-0.5 text-sm text-foreground-500">
+          <p className="mt-0.5 text-sm text-muted">
             {exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''}
             {durationMins ? ` · about ${durationMins} minutes` : ''}
           </p>
           {scheduledWorkout.item.workout_type === 'alternative' ? (
-            <p className="mt-1 text-xs text-foreground-400">Alternative workout</p>
+            <p className="mt-1 text-xs text-muted">Alternative workout</p>
           ) : null}
         </div>
       </div>
@@ -226,13 +226,13 @@ function WeeklyPlanStrip({plan}: {plan: ClientTrainingPlan}) {
   });
 
   return (
-    <div className="mb-6 rounded-xl border border-divider bg-content1 p-3">
+    <div className="mb-6 rounded-xl border border-border bg-surface p-3">
       <p className="mb-2 text-sm font-medium">This week</p>
       <div className="grid grid-cols-7 gap-1 text-center">
         {days.map((day) => (
           <div key={day.day}>
-            <p className="text-[10px] text-foreground-400">{TRAINING_DAY_SHORT_LABELS[day.day]}</p>
-            <p className="mt-1 truncate text-[11px] font-medium text-foreground-500">{day.summary}</p>
+            <p className="text-[10px] text-muted">{TRAINING_DAY_SHORT_LABELS[day.day]}</p>
+            <p className="mt-1 truncate text-[11px] font-medium text-muted">{day.summary}</p>
           </div>
         ))}
       </div>
@@ -259,10 +259,10 @@ function ComingUpList({todayDay, workouts}: {todayDay: TrainingWeekday; workouts
 
           return (
             <div
-              className="rounded-lg border border-divider bg-content1 px-3 py-2"
+              className="rounded-lg border border-border bg-surface px-3 py-2"
               key={entry.item.id}
             >
-              <p className="text-sm text-foreground-500">
+              <p className="text-sm text-muted">
                 <span className="font-medium text-foreground">{TRAINING_DAY_LABELS[entry.item.day]}</span> —{' '}
                 {entry.workout.name}
                 {exerciseCount > 0 ? ` · ${exerciseCount} exercise${exerciseCount !== 1 ? 's' : ''}` : ''}
@@ -281,37 +281,37 @@ function TrainingHomeSkeleton() {
   return (
     <PageLayout title="Training">
       <div className="max-w-lg">
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-divider bg-content1 p-4">
-          <div className="size-10 shrink-0 animate-pulse rounded-lg bg-content2" />
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-border bg-surface p-4">
+          <div className="size-10 shrink-0 animate-pulse rounded-lg bg-surface-secondary" />
           <div className="min-w-0 flex-1">
-            <div className="h-4 w-20 animate-pulse rounded bg-content2" />
-            <div className="mt-2 h-3 w-40 animate-pulse rounded bg-content2" />
+            <div className="h-4 w-20 animate-pulse rounded bg-surface-secondary" />
+            <div className="mt-2 h-3 w-40 animate-pulse rounded bg-surface-secondary" />
           </div>
         </div>
 
         <div className="mb-4">
-          <div className="h-5 w-36 animate-pulse rounded bg-content2" />
-          <div className="mt-2 h-4 w-20 animate-pulse rounded bg-content2" />
+          <div className="h-5 w-36 animate-pulse rounded bg-surface-secondary" />
+          <div className="mt-2 h-4 w-20 animate-pulse rounded bg-surface-secondary" />
         </div>
 
-        <div className="mb-6 rounded-xl border border-divider bg-content1 p-4">
-          <div className="mb-3 h-4 w-12 animate-pulse rounded bg-content2" />
+        <div className="mb-6 rounded-xl border border-border bg-surface p-4">
+          <div className="mb-3 h-4 w-12 animate-pulse rounded bg-surface-secondary" />
           <div className="flex items-start gap-3">
-            <div className="size-10 shrink-0 animate-pulse rounded-lg bg-content2" />
+            <div className="size-10 shrink-0 animate-pulse rounded-lg bg-surface-secondary" />
             <div className="min-w-0 flex-1">
-              <div className="h-5 w-40 animate-pulse rounded bg-content2" />
-              <div className="mt-2 h-3 w-28 animate-pulse rounded bg-content2" />
+              <div className="h-5 w-40 animate-pulse rounded bg-surface-secondary" />
+              <div className="mt-2 h-3 w-28 animate-pulse rounded bg-surface-secondary" />
             </div>
           </div>
-          <div className="mt-4 h-10 w-full animate-pulse rounded-lg bg-content2" />
+          <div className="mt-4 h-10 w-full animate-pulse rounded-lg bg-surface-secondary" />
         </div>
 
-        <div className="mb-6 rounded-xl border border-divider bg-content1 p-3">
-          <div className="mb-2 h-4 w-20 animate-pulse rounded bg-content2" />
+        <div className="mb-6 rounded-xl border border-border bg-surface p-3">
+          <div className="mb-2 h-4 w-20 animate-pulse rounded bg-surface-secondary" />
           <div className="grid grid-cols-7 gap-1">
             {TRAINING_WEEKDAYS.map((day) => (
               <div
-                className="h-8 animate-pulse rounded bg-content2"
+                className="h-8 animate-pulse rounded bg-surface-secondary"
                 key={day}
               />
             ))}
@@ -326,15 +326,15 @@ function TrainingHomeSkeleton() {
 
 function EmptyPlanState({isStarting, onStartFreestyle}: {isStarting: boolean; onStartFreestyle: () => void}) {
   return (
-    <div className="rounded-xl border border-divider bg-content1 p-6 text-center">
-      <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10">
+    <div className="rounded-xl border border-border bg-surface p-6 text-center">
+      <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-accent/10">
         <Dumbbell
-          className="text-primary"
+          className="text-accent"
           size={24}
         />
       </div>
       <h3 className="text-base font-medium">Your plan is on the way</h3>
-      <p className="mt-2 text-sm text-foreground-500">
+      <p className="mt-2 text-sm text-muted">
         Your coach is setting up your training plan. You&apos;ll see it here as soon as it&apos;s ready.
       </p>
       <Button
@@ -425,7 +425,7 @@ export default function TrainingHome() {
           <>
             <div className="mb-4">
               <p className="text-lg font-semibold">{greeting}</p>
-              <p className="text-sm text-foreground-500">{TRAINING_DAY_LABELS[todayDay]}</p>
+              <p className="text-sm text-muted">{TRAINING_DAY_LABELS[todayDay]}</p>
             </div>
 
             <div className="mb-6">
@@ -441,8 +441,8 @@ export default function TrainingHome() {
                   ))}
                 </div>
               ) : activePlan ? (
-                <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
-                  <p className="text-sm text-foreground-400">
+                <div className="rounded-xl border border-dashed border-border bg-surface p-4">
+                  <p className="text-sm text-muted">
                     {activePlan.rest_days.includes(todayDay)
                       ? 'Rest day today — enjoy your recovery.'
                       : 'No workout scheduled for today.'}
@@ -470,7 +470,7 @@ export default function TrainingHome() {
                 Freestyle workout
               </Button>
               {hasActiveSession ? (
-                <p className="mt-2 text-center text-xs text-foreground-400">
+                <p className="mt-2 text-center text-xs text-muted">
                   Finish or discard your current workout to start a new one.
                 </p>
               ) : null}
@@ -491,9 +491,9 @@ export default function TrainingHome() {
             >
               Active
             </Chip>
-            <span className="text-sm text-foreground-500">{activePlan.name}</span>
+            <span className="text-sm text-muted">{activePlan.name}</span>
             <ChevronRight
-              className="ml-auto shrink-0 text-foreground-300"
+              className="ml-auto shrink-0 text-muted"
               size={14}
             />
           </Button>

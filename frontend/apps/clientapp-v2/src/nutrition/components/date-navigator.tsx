@@ -55,7 +55,7 @@ export default function DateNavigator({date, onDateChange}: {date: Date; onDateC
       </Button>
       <div className="text-center">
         <p className="text-sm font-semibold">{formatDateDisplay(date)}</p>
-        {isToday ? <p className="text-xs text-foreground-400">Today</p> : null}
+        {isToday ? <p className="text-xs text-muted">Today</p> : null}
       </div>
       <Button
         onPress={goForward}

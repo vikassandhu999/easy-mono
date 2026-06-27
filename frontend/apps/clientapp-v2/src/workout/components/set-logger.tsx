@@ -144,9 +144,9 @@ function LoggedSetCard({
 
   if (isEditing) {
     return (
-      <div className="rounded-lg border border-divider bg-content2/40 p-3">
-        <p className="text-xs font-medium text-foreground-500">Set {index + 1}</p>
-        <p className="mt-1 text-xs text-foreground-400">{formatPlannedTarget(planned)}</p>
+      <div className="rounded-lg border border-border bg-surface-secondary/40 p-3">
+        <p className="text-xs font-medium text-muted">Set {index + 1}</p>
+        <p className="mt-1 text-xs text-muted">{formatPlannedTarget(planned)}</p>
 
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <Input
@@ -193,15 +193,15 @@ function LoggedSetCard({
 
   return (
     <Button
-      className="h-auto w-full rounded-lg border border-divider bg-content2/20 p-3 text-left"
+      className="h-auto w-full rounded-lg border border-border bg-surface-secondary/20 p-3 text-left"
       onPress={() => setIsEditing(true)}
       variant="ghost"
     >
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium">Set {index + 1}</p>
-          <p className="mt-0.5 text-xs text-foreground-400">{formatPlannedTarget(planned)}</p>
-          <p className="mt-1 text-sm text-foreground-600">{formatDoneTarget(set)}</p>
+          <p className="mt-0.5 text-xs text-muted">{formatPlannedTarget(planned)}</p>
+          <p className="mt-1 text-sm text-muted">{formatDoneTarget(set)}</p>
         </div>
         <div className="mt-1">
           {set.completed ? (
@@ -211,7 +211,7 @@ function LoggedSetCard({
             />
           ) : (
             <SkipForward
-              className="text-foreground-300"
+              className="text-muted"
               size={16}
             />
           )}
@@ -250,9 +250,9 @@ function PendingSetCard({
 
   if (isExpanded) {
     return (
-      <div className="rounded-lg border border-divider bg-content2/40 p-3">
+      <div className="rounded-lg border border-border bg-surface-secondary/40 p-3">
         <p className="text-sm font-medium">Set {index + 1}</p>
-        <p className="mt-0.5 text-xs text-foreground-400">{formatPlannedTarget(planned)}</p>
+        <p className="mt-0.5 text-xs text-muted">{formatPlannedTarget(planned)}</p>
 
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <Input
@@ -297,12 +297,12 @@ function PendingSetCard({
   }
 
   return (
-    <div className="rounded-lg border border-divider bg-content2/20 p-3">
+    <div className="rounded-lg border border-border bg-surface-secondary/20 p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium">Set {index + 1}</p>
-          <p className="mt-0.5 text-xs text-foreground-400">{formatPlannedTarget(planned)}</p>
-          <p className="mt-1 text-sm text-foreground-500">Done: —</p>
+          <p className="mt-0.5 text-xs text-muted">{formatPlannedTarget(planned)}</p>
+          <p className="mt-1 text-sm text-muted">Done: —</p>
         </div>
 
         <div className="flex items-center gap-1">
@@ -315,10 +315,10 @@ function PendingSetCard({
             variant="ghost"
           >
             {isLogging ? (
-              <div className="size-3 animate-spin rounded-full border-2 border-foreground-300 border-t-transparent" />
+              <div className="size-3 animate-spin rounded-full border-2 border-border border-t-transparent" />
             ) : (
               <Circle
-                className="text-foreground-400"
+                className="text-muted"
                 size={16}
               />
             )}
@@ -370,8 +370,8 @@ function AddSetCard({
   };
 
   return (
-    <div className="rounded-lg border border-dashed border-divider bg-content2/20 p-3">
-      <p className="mb-2 text-xs font-medium text-foreground-500">Add extra set</p>
+    <div className="rounded-lg border border-dashed border-border bg-surface-secondary/20 p-3">
+      <p className="mb-2 text-xs font-medium text-muted">Add extra set</p>
       <div className="flex flex-wrap items-end gap-2">
         <Input
           className="w-20"

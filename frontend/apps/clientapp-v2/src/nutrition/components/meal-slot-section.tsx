@@ -59,21 +59,21 @@ function PlannedItemRow({
       <div className="min-w-0 flex-1">
         {isReplacement && entry ? (
           <>
-            <p className="truncate text-sm text-foreground-400 line-through">{item.food_name}</p>
+            <p className="truncate text-sm text-muted line-through">{item.food_name}</p>
             <p className="truncate text-sm font-medium">{entry.food_name}</p>
           </>
         ) : (
-          <p className={`truncate text-sm ${isLogged ? 'text-foreground-400' : 'font-medium'}`}>{item.food_name}</p>
+          <p className={`truncate text-sm ${isLogged ? 'text-muted' : 'font-medium'}`}>{item.food_name}</p>
         )}
       </div>
       {isReplacement ? <span className="shrink-0 text-xs text-warning">replaced</span> : null}
-      {displayAmount ? <span className="shrink-0 text-xs text-foreground-400">{displayAmount}</span> : null}
+      {displayAmount ? <span className="shrink-0 text-xs text-muted">{displayAmount}</span> : null}
       {item.calories > 0 ? (
-        <span className="shrink-0 text-xs text-foreground-400">{formatMacroValue(item.calories, '')} cal</span>
+        <span className="shrink-0 text-xs text-muted">{formatMacroValue(item.calories, '')} cal</span>
       ) : null}
       {isLogged ? (
         <Pencil
-          className="shrink-0 text-foreground-300"
+          className="shrink-0 text-muted"
           size={12}
         />
       ) : null}
@@ -94,19 +94,19 @@ function UnplannedEntryRow({entry, onEditEntry}: {entry: FoodLogEntry; onEditEnt
     >
       <div className="flex size-5 shrink-0 items-center justify-center">
         <Plus
-          className="text-foreground-300"
+          className="text-muted"
           size={14}
         />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-foreground-400">{entry.food_name}</p>
+        <p className="truncate text-sm text-muted">{entry.food_name}</p>
       </div>
-      {displayAmount ? <span className="shrink-0 text-xs text-foreground-400">{displayAmount}</span> : null}
+      {displayAmount ? <span className="shrink-0 text-xs text-muted">{displayAmount}</span> : null}
       {(entry.calories ?? 0) > 0 ? (
-        <span className="shrink-0 text-xs text-foreground-400">{formatMacroValue(entry.calories ?? 0, '')} cal</span>
+        <span className="shrink-0 text-xs text-muted">{formatMacroValue(entry.calories ?? 0, '')} cal</span>
       ) : null}
       <Pencil
-        className="shrink-0 text-foreground-300"
+        className="shrink-0 text-muted"
         size={12}
       />
     </Button>
@@ -180,7 +180,7 @@ export default function MealSlotSection({
       <div className="mb-2 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold">{slotLabel}</h3>
-          {totalCal > 0 ? <p className="text-xs text-foreground-400">{formatMacroValue(totalCal, '')} cal</p> : null}
+          {totalCal > 0 ? <p className="text-xs text-muted">{formatMacroValue(totalCal, '')} cal</p> : null}
         </div>
         {allLogged && plannedItems.length > 0 ? (
           <span className="text-xs text-success">Logged</span>
@@ -220,12 +220,12 @@ export default function MealSlotSection({
           })}
         </div>
       ) : (
-        <p className="py-2 text-sm text-foreground-400">No items planned.</p>
+        <p className="py-2 text-sm text-muted">No items planned.</p>
       )}
 
       {/* Unplanned items */}
       {unplannedEntries.length > 0 ? (
-        <div className="mt-1 border-t border-divider pt-1">
+        <div className="mt-1 border-t border-border pt-1">
           {unplannedEntries.map((entry) => (
             <UnplannedEntryRow
               entry={entry}

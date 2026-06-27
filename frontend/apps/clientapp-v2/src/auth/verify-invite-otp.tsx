@@ -210,7 +210,7 @@ export default function VerifyInviteOtp() {
 
       <div className="mt-6 flex flex-col items-center gap-2 text-sm">
         <div className="flex items-center gap-1">
-          <span className="text-foreground-500">Didn&apos;t get it?</span>
+          <span className="text-muted">Didn&apos;t get it?</span>
           <Link
             className="text-foreground underline"
             isDisabled={resendDisabled}
@@ -220,7 +220,7 @@ export default function VerifyInviteOtp() {
           </Link>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-foreground-500">Wrong email?</span>
+          <span className="text-muted">Wrong email?</span>
           <Link
             className="text-foreground underline"
             onPress={handleChangeEmail}

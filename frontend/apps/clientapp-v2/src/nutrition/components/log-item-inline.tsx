@@ -95,7 +95,7 @@ export default function LogItemInline({
   };
 
   return (
-    <div className="rounded-xl border border-divider bg-default p-4">
+    <div className="rounded-xl border border-border bg-default p-4">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-semibold">{item.food_name ?? 'Log item'}</h4>
         <Button
@@ -110,7 +110,7 @@ export default function LogItemInline({
       {/* Amount inputs */}
       <div className="mb-3 flex items-end gap-2">
         <div className="flex flex-1 flex-col gap-1">
-          <Label className="text-xs text-foreground-400">Amount</Label>
+          <Label className="text-xs text-muted">Amount</Label>
           <Input
             inputMode="decimal"
             placeholder="Amount"
@@ -118,7 +118,7 @@ export default function LogItemInline({
           />
         </div>
         <div className="flex w-20 flex-col gap-1">
-          <Label className="text-xs text-foreground-400">Unit</Label>
+          <Label className="text-xs text-muted">Unit</Label>
           <Input
             placeholder="g"
             {...register('unit')}
@@ -128,14 +128,14 @@ export default function LogItemInline({
 
       {/* Plan reference */}
       {plannedAmount != null ? (
-        <p className="mb-2 text-xs text-foreground-400">
+        <p className="mb-2 text-xs text-muted">
           Per plan: {plannedAmount}
           {plannedUnit}
         </p>
       ) : null}
 
       {/* Macros preview */}
-      <div className="mb-3 flex gap-3 text-xs text-foreground-400">
+      <div className="mb-3 flex gap-3 text-xs text-muted">
         <span>{formatMacroValue(previewMacros.calories, '')} cal</span>
         <span>{formatMacroValue(previewMacros.protein, 'g')} protein</span>
         <span>{formatMacroValue(previewMacros.carbs, 'g')} carbs</span>

@@ -70,7 +70,7 @@ export default function CheckinField({
           <FieldLabel required={question.required}>{question.label}</FieldLabel>
           {/* Native date input — mobile-friendly and avoids an extra date dep in the client app. */}
           <input
-            className="w-full rounded-lg border border-divider bg-content1 px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm focus:border-accent focus:outline-none"
             onChange={(e) => onChange(e.target.value || null)}
             type="date"
             value={typeof value === 'string' ? value : ''}
@@ -180,7 +180,7 @@ export function AnswerDisplay({label, value}: {label: string; value: AnswerValue
           : String(value);
   return (
     <div>
-      <p className="text-sm text-foreground-500">{label}</p>
+      <p className="text-sm text-muted">{label}</p>
       <p className="text-sm">{text}</p>
     </div>
   );

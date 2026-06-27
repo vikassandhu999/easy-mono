@@ -22,6 +22,7 @@ defmodule EasyWeb.Clients.PerformedSetJSON do
       completed: set.completed,
       notes: set.notes,
       exercise_id: set.exercise_id,
+      swapped_from_exercise_id: set.swapped_from_exercise_id,
       training_session_id: set.training_session_id,
       exercise: exercise_data(set.exercise),
       inserted_at: set.inserted_at,

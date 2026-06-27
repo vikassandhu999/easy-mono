@@ -1582,6 +1582,7 @@ export type TrainingPerformedSet = {
   reps: string | null;
   rpe?: number | null;
   set_type?: ('working' | 'warmup' | 'dropset') | null;
+  swapped_from_exercise_id?: string | null;
   training_session_id?: string | null;
   updated_at: string;
 };

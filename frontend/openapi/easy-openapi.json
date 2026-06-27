@@ -5133,6 +5133,13 @@
             "x-struct": null,
             "x-validate": null
           },
+          "swapped_from_exercise_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "training_session_id": {
             "format": "uuid",
             "nullable": true,
@@ -6482,6 +6489,13 @@
               "warmup",
               "dropset"
             ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "swapped_from_exercise_id": {
+            "format": "uuid",
             "nullable": true,
             "type": "string",
             "x-struct": null,

@@ -49,6 +49,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionJSON do
       completed: set.completed,
       notes: set.notes,
       exercise_id: set.exercise_id,
+      swapped_from_exercise_id: set.swapped_from_exercise_id,
       exercise: exercise_data(set.exercise),
       inserted_at: set.inserted_at,
       updated_at: set.updated_at

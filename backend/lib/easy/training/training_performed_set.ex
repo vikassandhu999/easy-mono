@@ -30,6 +30,7 @@ defmodule Easy.Training.TrainingPerformedSet do
     field :rpe, :decimal
     field :completed, :boolean, default: false
     field :notes, :string
+    field :swapped_from_exercise_id, :binary_id
 
     belongs_to :session, TrainingSession, foreign_key: :training_session_id
     belongs_to :exercise, TrainingExercise
@@ -38,7 +39,22 @@ defmodule Easy.Training.TrainingPerformedSet do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:exercise_name, :set_type, :position, :reps, :load_value, :load_unit, :duration_seconds, :distance_value, :distance_unit, :rpe, :completed, :notes, :exercise_id]
+  @cast_fields [
+    :exercise_name,
+    :set_type,
+    :position,
+    :reps,
+    :load_value,
+    :load_unit,
+    :duration_seconds,
+    :distance_value,
+    :distance_unit,
+    :rpe,
+    :completed,
+    :notes,
+    :exercise_id,
+    :swapped_from_exercise_id
+  ]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(session_id, business_id, attrs) do

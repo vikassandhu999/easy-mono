@@ -21,7 +21,8 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetRequest do
         distance_unit: %Schema{type: :string, enum: ["meters", "km", "miles", "none"], nullable: true},
         completed: %Schema{type: :boolean},
         notes: %Schema{type: :string, maxLength: 5000, nullable: true},
-        exercise_id: %Schema{type: :string, format: :uuid}
+        exercise_id: %Schema{type: :string, format: :uuid},
+        swapped_from_exercise_id: %Schema{type: :string, format: :uuid, nullable: true}
       },
       example: %{
         "position" => 0,
@@ -63,6 +64,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSet do
           completed: %Schema{type: :boolean},
           notes: %Schema{type: :string, nullable: true},
           exercise_id: %Schema{type: :string, format: :uuid},
+          swapped_from_exercise_id: %Schema{type: :string, format: :uuid, nullable: true},
           training_session_id: %Schema{type: :string, format: :uuid, nullable: true},
           exercise: %Schema{allOf: [TrainingPlanExercise], nullable: true}
         },

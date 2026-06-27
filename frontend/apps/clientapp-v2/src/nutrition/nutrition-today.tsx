@@ -19,8 +19,10 @@ import {
   useGetTodayNutritionPlanQuery,
   useListClientMealLogsQuery,
   useListClientNutritionPlansQuery,
+  useLogDayMutation,
   useLogMealMutation,
 } from '@/api/nutrition';
+import AmountSheet, {type SheetTarget} from '@/nutrition/components/amount-sheet';
 import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
 import MacroHero from '@/nutrition/components/macro-hero';
 import {buildSlots, dayTotals, type PlannedRow, planTargets, type SlotView} from '@/nutrition/nutrition-utils';
@@ -75,7 +77,10 @@ export default function NutritionToday() {
   const [createEntry] = useCreateFoodLogEntryMutation();
   const [deleteEntry] = useDeleteFoodLogEntryMutation();
   const [logMeal, {isLoading: loggingMeal}] = useLogMealMutation();
-  const [picker, setPicker] = useState(false);
+  const [logDay, {isLoading: loggingDay}] = useLogDayMutation();
+  const [sheet, setSheet] = useState<null | SheetTarget>(null);
+  const [pickerMode, setPickerMode] = useState<'add' | 'replace' | null>(null);
+  const [replaceTarget, setReplaceTarget] = useState<null | SheetTarget>(null);
 
   const plan = asTodayPlan(todayResp);
   const mealLogs = logsResp?.data ?? [];
@@ -126,23 +131,89 @@ export default function NutritionToday() {
     }
   };
 
-  const addOffPlan = async (picked: Picked) => {
-    setPicker(false);
+  const openSheet = (slot: SlotView, row: PlannedRow) =>
+    setSheet({
+      date,
+      loggedEntry: row.logged,
+      mealId: slot.mealId,
+      name: row.replaced && row.logged ? (row.logged.food_name ?? 'Food') : (row.item.food_name ?? 'Food'),
+      planId: plan?.plan_id,
+      plannedIndex: row.position,
+      plannedItem: row.item,
+      slot: slot.slot,
+      slotLabel: slot.label,
+    });
+
+  const openExtraSheet = (slot: SlotView, entry: FoodLogEntry) =>
+    setSheet({
+      date,
+      loggedEntry: entry,
+      mealId: slot.mealId,
+      name: entry.food_name ?? 'Food',
+      planId: plan?.plan_id,
+      plannedIndex: null,
+      plannedItem: null,
+      slot: slot.slot,
+      slotLabel: slot.label,
+    });
+
+  const onReplace = (t: SheetTarget) => {
+    setSheet(null);
+    setReplaceTarget(t);
+    setPickerMode('replace');
+  };
+
+  const onPick = async (picked: Picked) => {
+    const replacing = pickerMode === 'replace' ? replaceTarget : null;
+    setPickerMode(null);
+    setReplaceTarget(null);
     try {
-      await createEntry({
-        foodLogEntryRequest: {
-          date,
-          food_id: picked.kind === 'food' ? picked.id : undefined,
-          meal_slot: picked.slot,
-          recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
-          source: 'unplanned',
-          weight_g: picked.defaultWeightG,
-        },
-      }).unwrap();
+      if (replacing) {
+        await createEntry({
+          foodLogEntryRequest: {
+            date,
+            food_id: picked.kind === 'food' ? picked.id : undefined,
+            meal_id: replacing.mealId ?? undefined,
+            meal_slot: replacing.slot,
+            plan_id: replacing.planId,
+            planned_item_index: replacing.plannedIndex ?? undefined,
+            recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
+            source: 'replacement',
+            weight_g: picked.defaultWeightG,
+          },
+        }).unwrap();
+        if (replacing.loggedEntry) {
+          await deleteEntry({id: replacing.loggedEntry.id}).unwrap();
+        }
+      } else {
+        await createEntry({
+          foodLogEntryRequest: {
+            date,
+            food_id: picked.kind === 'food' ? picked.id : undefined,
+            meal_slot: picked.slot,
+            recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
+            source: 'unplanned',
+            weight_g: picked.defaultWeightG,
+          },
+        }).unwrap();
+      }
     } catch {
-      toast.danger("Couldn't add it. Try again.");
+      toast.danger("Couldn't save it. Try again.");
     }
   };
+
+  const logWholeDay = async () => {
+    if (!plan?.plan_id) {
+      return;
+    }
+    try {
+      await logDay({foodLogEntryRequest: {date, plan_id: plan.plan_id}}).unwrap();
+    } catch {
+      toast.danger("Couldn't log the day. Try again.");
+    }
+  };
+
+  const anyUnlogged = slots.some((s) => s.planned.some((p) => !p.logged));
 
   if (loadingPlan || loadingLogs) {
     return (
@@ -225,15 +296,22 @@ export default function NutritionToday() {
                     on={!!logged}
                     onPress={() => (logged ? removeEntry(logged) : logPlanned(slot, row))}
                   />
-                  <span className={`flex-1 truncate ${logged ? 'text-[#7c8]' : ''}`}>
-                    {name}
-                    {row.replaced ? (
-                      <span className="ml-1.5 rounded border border-[#34506e] px-1 py-px text-[9px] text-[#9fb0ff]">
-                        replaced
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="shrink-0 text-[11px] text-muted">{kcal != null ? Math.round(kcal) : '—'}</span>
+                  <button
+                    className="flex flex-1 items-center justify-between gap-2 text-left"
+                    disabled={isFuture}
+                    onClick={() => openSheet(slot, row)}
+                    type="button"
+                  >
+                    <span className={`flex-1 truncate ${logged ? 'text-[#7c8]' : ''}`}>
+                      {name}
+                      {row.replaced ? (
+                        <span className="ml-1.5 rounded border border-[#34506e] px-1 py-px text-[9px] text-[#9fb0ff]">
+                          replaced
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="shrink-0 text-[11px] text-muted">{kcal != null ? Math.round(kcal) : '—'}</span>
+                  </button>
                 </div>
               );
             })}
@@ -248,13 +326,20 @@ export default function NutritionToday() {
                   on
                   onPress={() => removeEntry(entry)}
                 />
-                <span className="flex-1 truncate text-[#7c8]">
-                  {entry.food_name ?? 'Food'}
-                  <span className="ml-1.5 rounded border border-[#7d5a2f] px-1 py-px text-[9px] text-warning">
-                    off-plan
+                <button
+                  className="flex flex-1 items-center justify-between gap-2 text-left"
+                  disabled={isFuture}
+                  onClick={() => openExtraSheet(slot, entry)}
+                  type="button"
+                >
+                  <span className="flex-1 truncate text-[#7c8]">
+                    {entry.food_name ?? 'Food'}
+                    <span className="ml-1.5 rounded border border-[#7d5a2f] px-1 py-px text-[9px] text-warning">
+                      off-plan
+                    </span>
                   </span>
-                </span>
-                <span className="shrink-0 text-[11px] text-muted">{Math.round(entry.calories ?? 0)}</span>
+                  <span className="shrink-0 text-[11px] text-muted">{Math.round(entry.calories ?? 0)}</span>
+                </button>
               </div>
             ))}
           </div>
@@ -262,14 +347,26 @@ export default function NutritionToday() {
       )}
 
       {!isFuture ? (
-        <button
-          className="mt-1 flex items-center gap-1.5 text-xs font-medium text-accent active:opacity-70"
-          onClick={() => setPicker(true)}
-          type="button"
-        >
-          <Plus size={14} />
-          Add food off-plan
-        </button>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <button
+            className="flex items-center gap-1.5 text-xs font-medium text-accent active:opacity-70"
+            onClick={() => setPickerMode('add')}
+            type="button"
+          >
+            <Plus size={14} />
+            Add food off-plan
+          </button>
+          {plan && anyUnlogged ? (
+            <button
+              className="text-xs font-medium text-muted active:opacity-70 disabled:opacity-50"
+              disabled={loggingDay}
+              onClick={logWholeDay}
+              type="button"
+            >
+              ✓ Log rest of day
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       <button
@@ -287,13 +384,24 @@ export default function NutritionToday() {
         {targets.calories ? ` · ${Math.max(0, Math.round(targets.calories - consumed.calories))} left` : ''}
       </p>
 
-      {picker ? (
+      {pickerMode ? (
         <FoodPicker
-          defaultSlot={slots[0]?.slot ?? 'breakfast'}
-          onClose={() => setPicker(false)}
-          onPick={addOffPlan}
-          showSlotPicker
-          title="Add food…"
+          defaultSlot={replaceTarget?.slot ?? slots[0]?.slot ?? 'breakfast'}
+          onClose={() => {
+            setPickerMode(null);
+            setReplaceTarget(null);
+          }}
+          onPick={onPick}
+          showSlotPicker={pickerMode === 'add'}
+          title={pickerMode === 'replace' ? 'Replace with…' : 'Add food…'}
+        />
+      ) : null}
+
+      {sheet ? (
+        <AmountSheet
+          onClose={() => setSheet(null)}
+          onReplace={onReplace}
+          target={sheet}
         />
       ) : null}
     </div>

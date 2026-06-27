@@ -1,13 +1,12 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Spinner, Typography, toast} from '@heroui/react';
-import {ArrowLeft, ChefHat, Pencil, Trash2} from 'lucide-react';
+import {ArrowLeft, ChefHat, Copy, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {coachApi, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/generated';
-import {useAppDispatch} from '@/store';
+import {useCopyNutritionRecipeMutation, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/generated';
 
 // recipe.nutrition is the recipe's total computed macros (not per-100g).
 // The backend computes this from recipe_ingredients; it is null when no
@@ -23,17 +22,24 @@ const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
 export default function RecipeDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const goBack = useGoBack(ROUTES.RECIPES);
   const {data, isError, isLoading} = useGetRecipeQuery({id: id!});
   const [deleteRecipe, {isLoading: isDeleting}] = useDeleteRecipeMutation();
+  const [copyRecipe, {isLoading: isDuplicating}] = useCopyNutritionRecipeMutation();
+
+  const handleDuplicate = async () => {
+    try {
+      const result = await copyRecipe({id: id!}).unwrap();
+      toast.success('Recipe duplicated');
+      navigate(`/library/recipes/${result.data.id}`);
+    } catch {
+      toast.danger("Recipe wasn't duplicated");
+    }
+  };
 
   const handleDelete = async () => {
     try {
       await deleteRecipe({id: id!}).unwrap();
-      // Generated mutation is tag:false — invalidate the list so the deleted
-      // item doesn't linger when we land back on it.
-      dispatch(coachApi.util.invalidateTags([{type: 'Recipe', id: 'LIST'}]));
       navigate(ROUTES.RECIPES, {replace: true});
     } catch {
       toast.danger("Couldn't delete recipe");
@@ -90,6 +96,8 @@ export default function RecipeDetail() {
   }
 
   const recipe = data.data;
+  // Render ingredients in their stored order (position is the source of truth).
+  const orderedIngredients = [...recipe.recipe_ingredients].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   // Build display entries from recipe.nutrition (recipe totals, not per-100g).
   const nutritionEntries = recipe.nutrition
     ? Object.entries(recipe.nutrition).filter(([key, value]) => key in MACRO_LABELS && value != null && value !== 0)
@@ -118,6 +126,15 @@ export default function RecipeDetail() {
         >
           <Pencil size={16} />
           Edit
+        </Button>
+        <Button
+          isPending={isDuplicating}
+          onPress={handleDuplicate}
+          size="sm"
+          variant="secondary"
+        >
+          <Copy size={16} />
+          Duplicate
         </Button>
         <AlertDialog>
           <Button
@@ -240,7 +257,7 @@ export default function RecipeDetail() {
                 Ingredients
               </Typography>
               <div className="flex flex-col gap-2">
-                {recipe.recipe_ingredients.map((ingredient, i) => {
+                {orderedIngredients.map((ingredient, i) => {
                   const hasAmount = ingredient.amount != null && ingredient.amount !== 0;
                   const hasWeight = ingredient.weight_g != null && ingredient.weight_g !== 0;
                   const amountPart = hasAmount

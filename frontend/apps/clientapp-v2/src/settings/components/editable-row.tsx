@@ -1,4 +1,4 @@
-import {Button, Input, Spinner} from '@heroui/react';
+import {Button, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
@@ -62,6 +62,7 @@ export default function EditableRow({
   }, [editing]);
 
   const errorMessage = errors.value?.message || errors.root?.message;
+  const valueField = register('value');
 
   if (editing) {
     return (
@@ -71,13 +72,16 @@ export default function EditableRow({
       >
         <span className="w-20 shrink-0 text-sm text-muted">{label}</span>
         <div className="min-w-0 flex-1">
-          <Input
-            className="w-full"
-            isInvalid={!!errorMessage}
-            ref={inputRef}
-            size="sm"
+          <input
+            className={`w-full rounded-lg border bg-surface-secondary px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-accent ${
+              errorMessage ? 'border-danger' : 'border-border'
+            }`}
             type={inputType}
-            {...register('value')}
+            {...valueField}
+            ref={(el) => {
+              valueField.ref(el);
+              inputRef.current = el;
+            }}
           />
           {errorMessage && <p className="mt-0.5 text-xs text-danger">{errorMessage}</p>}
         </div>

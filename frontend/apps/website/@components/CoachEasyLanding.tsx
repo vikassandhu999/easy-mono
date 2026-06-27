@@ -2,6 +2,14 @@
 
 import {useEffect, useRef, useState} from 'react';
 
+const COACHAPP_URL = process.env.NEXT_PUBLIC_COACHAPP_URL || 'http://localhost:2021';
+const goToSignup = () => {
+  window.location.href = `${COACHAPP_URL}/signup`;
+};
+const goToLogin = () => {
+  window.location.href = `${COACHAPP_URL}/login`;
+};
+
 const useInView = (threshold = 0.15) => {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -461,6 +469,7 @@ const PricingCard = ({
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
         }}
+        onClick={goToSignup}
       >
         {popular ? 'Start Free Trial' : 'Get Started'}
       </button>
@@ -579,6 +588,21 @@ export default function CoachEasyLanding() {
               </a>
             ))}
             <button
+              onClick={goToLogin}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#64748B',
+              }}
+              type="button"
+            >
+              Log in
+            </button>
+            <button
               style={{
                 padding: '10px 24px',
                 borderRadius: '10px',
@@ -599,6 +623,7 @@ export default function CoachEasyLanding() {
                 e.currentTarget.style.transform = 'scale(1)';
                 e.currentTarget.style.boxShadow = 'none';
               }}
+              onClick={goToSignup}
             >
               Start Free
             </button>
@@ -750,6 +775,7 @@ export default function CoachEasyLanding() {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 8px 30px rgba(249,115,22,0.3)';
               }}
+              onClick={goToSignup}
             >
               Start Free → 2 Clients Forever
             </button>
@@ -1505,6 +1531,7 @@ export default function CoachEasyLanding() {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 8px 40px rgba(249,115,22,0.35)';
               }}
+              onClick={goToSignup}
             >
               Start Coaching on CoachEasy →
             </button>

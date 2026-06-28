@@ -5,10 +5,12 @@
  * `useUpdateNutritionPlanMutation` and `useDeleteNutritionPlanMutation` hooks.
  */
 import {Button, Dropdown, Header, Label, Separator, toast, useOverlayState} from '@heroui/react';
-import {ArchiveIcon, ArchiveRestoreIcon, MoreHorizontal, TrashIcon} from 'lucide-react';
+import {ArchiveIcon, ArchiveRestoreIcon, Copy, MoreHorizontal, Pencil, TrashIcon} from 'lucide-react';
+import {useNavigate} from 'react-router-dom';
 
+import {ROUTES} from '@/@config/routes';
 import type {NutritionPlan} from '@/api/generated';
-import {useUpdateNutritionPlanMutation} from '@/api/generated';
+import {useDuplicateNutritionPlanMutation, useUpdateNutritionPlanMutation} from '@/api/generated';
 
 import NutritionPlanDeleteAlertDialog from './plan-delete-alert-dialog';
 
@@ -18,8 +20,20 @@ export type Props = {
 };
 
 export function NutritionPlanActions({plan, onDeleted}: Props) {
+  const navigate = useNavigate();
   const [updatePlan, {isLoading: updating}] = useUpdateNutritionPlanMutation();
+  const [duplicatePlan, {isLoading: duplicating}] = useDuplicateNutritionPlanMutation();
   const deleteAlertState = useOverlayState();
+
+  // Edit details = the full metadata form (name + description). The builder's inline
+  // header autosaves the name; this is the only surface for description.
+  const editDetails = () => navigate(ROUTES.EDIT_NUTRITION_PLAN.replace(':id', plan.id));
+
+  const copy = async () => {
+    const result = await duplicatePlan({id: plan.id}).unwrap();
+    toast.success('Plan copied', {timeout: 1000});
+    navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', result.data.id));
+  };
 
   const archive = async () => {
     await updatePlan({
@@ -43,7 +57,7 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
       });
   };
 
-  const blocking = deleteAlertState.isOpen || updating;
+  const blocking = deleteAlertState.isOpen || updating || duplicating;
 
   return (
     <>
@@ -66,6 +80,10 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
                 restore().catch(() => undefined);
               } else if (key === 'archive-plan') {
                 archive().catch(() => undefined);
+              } else if (key === 'edit-plan') {
+                editDetails();
+              } else if (key === 'copy-plan') {
+                copy().catch(() => toast.danger("Couldn't copy plan"));
               } else if (key === 'delete-plan') {
                 deleteAlertState.open();
               }
@@ -89,6 +107,19 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
                 </Dropdown.Item>
               ) : null}
 
+              <Dropdown.Item
+                id="edit-plan"
+                isDisabled={blocking}
+                textValue="Edit details"
+              >
+                <div className="flex items-start justify-center pt-px">
+                  <Pencil className="size-4 shrink-0 text-muted" />
+                </div>
+                <div className="flex flex-col">
+                  <Label>Edit details</Label>
+                </div>
+              </Dropdown.Item>
+
               {plan.status === 'active' ? (
                 <Dropdown.Item
                   id="archive-plan"
@@ -103,6 +134,20 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
                   </div>
                 </Dropdown.Item>
               ) : null}
+            </Dropdown.Section>
+            <Dropdown.Section>
+              <Dropdown.Item
+                id="copy-plan"
+                isDisabled={blocking}
+                textValue="Copy"
+              >
+                <div className="flex items-start justify-center pt-px">
+                  <Copy className="size-4 shrink-0 text-muted" />
+                </div>
+                <div className="flex flex-col">
+                  <Label>Copy</Label>
+                </div>
+              </Dropdown.Item>
             </Dropdown.Section>
             <Separator />
             <Dropdown.Section>

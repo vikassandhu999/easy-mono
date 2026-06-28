@@ -1,6 +1,7 @@
 import {Button, Dropdown, Header, Label, Separator, toast, useOverlayState} from '@heroui/react';
 import {ArchiveIcon, ArchiveRestoreIcon, Copy, MoreHorizontal, Pencil, TrashIcon} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
+import {ROUTES} from '@/@config/routes';
 import {coachApi, TrainingPlan, useDuplicateTrainingPlanMutation, useUpdateTrainingPlanMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
@@ -36,14 +37,9 @@ export function PlanActions({plan, onDeleted}: Props) {
   const archive = () => setStatus('archived', 'Plan archived');
   const restore = () => setStatus('active', 'Plan restored');
 
-  // Edit = jump to the always-on inline header editor (the builder has no
-  // separate edit surface). ponytail: focus by id avoids threading a ref through
-  // PlanBuilder → PlanHeader for a single menu action.
-  const editName = () => {
-    const el = document.getElementById('training-plan-name-input');
-    el?.scrollIntoView({block: 'center', behavior: 'smooth'});
-    (el as HTMLInputElement | null)?.focus();
-  };
+  // Edit details = the full metadata form (name + description + dates). The builder's
+  // inline header still autosaves the name; this is the only surface for description.
+  const editDetails = () => navigate(ROUTES.EDIT_TRAINING_PLAN.replace(':id', plan.id));
 
   const copy = async () => {
     const result = await duplicatePlan({id: plan.id}).unwrap();
@@ -77,7 +73,7 @@ export function PlanActions({plan, onDeleted}: Props) {
               } else if (key === 'archive-plan') {
                 archive().catch(() => undefined);
               } else if (key === 'edit-plan') {
-                editName();
+                editDetails();
               } else if (key === 'copy-plan') {
                 copy().catch(() => toast.danger("Couldn't copy plan"));
               } else if (key === 'delete-plan') {
@@ -106,13 +102,13 @@ export function PlanActions({plan, onDeleted}: Props) {
               <Dropdown.Item
                 id="edit-plan"
                 isDisabled={blocking}
-                textValue="Edit"
+                textValue="Edit details"
               >
                 <div className="flex items-start justify-center pt-px">
                   <Pencil className="size-4 shrink-0 text-muted" />
                 </div>
                 <div className="flex flex-col">
-                  <Label>Edit</Label>
+                  <Label>Edit details</Label>
                 </div>
               </Dropdown.Item>
             </Dropdown.Section>

@@ -11,6 +11,7 @@ import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
+import {ROUTES} from '@/@config/routes';
 import {
   buildProfileSectionsPayload,
   type ClientProfileField,
@@ -178,7 +179,7 @@ function ClientProfileEditor({
               </Typography>
               <Button
                 className="mt-3"
-                onPress={() => navigate('/settings/client-profile-fields')}
+                onPress={() => navigate(ROUTES.SETTINGS_PROFILE_FIELDS)}
                 size="sm"
                 variant="secondary"
               >

@@ -1,4 +1,5 @@
-import {Chip, Spinner, Typography} from '@heroui/react';
+import {Chip, Spinner, Tabs, Typography} from '@heroui/react';
+import type {Key} from '@heroui/react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -12,9 +13,7 @@ import {
   useListProspectsQuery,
 } from '@/api/prospects';
 
-type Filter = 'all' | ProspectStatus;
-
-const FILTERS: {id: Filter; label: string}[] = [
+const FILTERS: {id: string; label: string}[] = [
   {id: 'all', label: 'All'},
   {id: 'new', label: 'New'},
   {id: 'reviewing', label: 'Reviewing'},
@@ -57,10 +56,10 @@ function ProspectRow({prospect, onClick}: {prospect: Prospect; onClick: () => vo
 
 export default function ListProspects() {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<Key>('all');
   const {data, isError, isLoading, refetch} = useListProspectsQuery({
     limit: 100,
-    status: filter === 'all' ? undefined : filter,
+    status: filter === 'all' ? undefined : (filter as ProspectStatus),
   });
 
   const prospects = data?.data ?? [];
@@ -68,33 +67,37 @@ export default function ListProspects() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
           <Page.Title>Prospects</Page.Title>
+          <Page.Description>People who applied through your landing page.</Page.Description>
         </Page.TitleGroup>
-        <Page.Description>People who applied through your landing page.</Page.Description>
       </Page.Header>
 
-      <Page.Toolbar className="sticky top-0 z-10 border-b border-border bg-surface px-4 py-2 md:px-6 lg:px-8">
-        <div className="flex gap-1 overflow-x-auto">
-          {FILTERS.map((f) => {
-            const active = filter === f.id;
-            const count = f.id === 'all' ? undefined : summary?.[f.id as ProspectStatus];
-            return (
-              <button
-                className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  active ? 'bg-segment text-segment-foreground' : 'text-muted hover:text-foreground'
-                }`}
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                type="button"
-              >
-                {f.label}
-                {count ? <span className="ml-1 text-xs opacity-70">{count}</span> : null}
-              </button>
-            );
-          })}
-        </div>
+      <Page.Toolbar className="sticky top-0 z-10 flex flex-col gap-3 pt-2 pb-3 border-b bg-surface">
+        <Tabs
+          aria-label="Filter prospects by status"
+          className="min-w-0 flex-1"
+          onSelectionChange={setFilter}
+          selectedKey={filter}
+        >
+          <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
+            <Tabs.List className="w-max! min-w-max">
+              {FILTERS.map((f) => {
+                const count = f.id === 'all' ? undefined : summary?.[f.id as ProspectStatus];
+                return (
+                  <Tabs.Tab
+                    className="w-auto! h-6 whitespace-nowrap data-[selected=true]:bg-segment data-[selected=true]:text-segment-foreground data-[selected=true]:shadow-sm"
+                    id={f.id}
+                    key={f.id}
+                  >
+                    {f.label}{count ? ` (${count})` : ''}
+                  </Tabs.Tab>
+                );
+              })}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
       </Page.Toolbar>
 
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">

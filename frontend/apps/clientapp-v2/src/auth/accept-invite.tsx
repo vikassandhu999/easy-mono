@@ -7,7 +7,8 @@ import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
-import {useAcceptInviteMutation, useLookupInvitationQuery} from '@/api/auth';
+import {useLookupInvitationQuery} from '@/api/auth';
+import {useAcceptInviteMutation} from '@/api/generated';
 import {clearTokens, getAccessToken} from '@/api/authStorage';
 import {api} from '@/api/base';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
@@ -205,7 +206,7 @@ function WelcomeForm({
 
   const onSubmit = async (data: AcceptInviteFormValues) => {
     try {
-      await acceptInvite({invitation_token: token, email: data.email}).unwrap();
+      await acceptInvite({acceptInviteRequest: {invitation_token: token, email: data.email}}).unwrap();
       navigate(`/invite/${token}/verify`, {state: {email: data.email}});
     } catch (err) {
       const code = getApiErrorCode(err);

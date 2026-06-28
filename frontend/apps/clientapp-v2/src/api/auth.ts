@@ -23,33 +23,13 @@ export type InvitationLookup =
 
 // ── Two-phase invitation acceptance ──────────────────────────
 
-export type AcceptInviteRequest = {
-  email: string;
-  invitation_token: string;
-};
-
 export type AcceptInviteVerifyRequest = {
   email: string;
   invitation_token: string;
   otp: string;
 };
 
-export type MessageResponse = {
-  message: string;
-};
-
 // ── Returning-client login ───────────────────────────────────
-
-/**
- * The /v1/auth/otp endpoint accepts both 'authentication' and 'email_confirmation'
- * types on the backend, but the v2 onboarding flow never needs email_confirmation
- * from the client app — it's inlined into POST /accept-invite. Narrowing the type
- * here prevents callers from accidentally sending the wrong kind.
- */
-export type OtpRequest = {
-  email: string;
-  type: 'authentication';
-};
 
 export type TokenOtpRequest = {
   email: string;
@@ -84,20 +64,6 @@ export const authApi = api.injectEndpoints({
     }),
 
     /**
-     * Phase 1 of acceptance. Validates the invitation and mails a 6-digit OTP
-     * to the supplied email. Does NOT mutate — Client stays pending, no User
-     * is created or linked. Client completes the flow by posting to
-     * /v1/auth/accept-invite/verify.
-     */
-    acceptInvite: build.mutation<MessageResponse, AcceptInviteRequest>({
-      query: (body) => ({
-        url: '/v1/auth/accept-invite',
-        method: 'POST',
-        body,
-      }),
-    }),
-
-    /**
      * Phase 2 of acceptance. Verifies the OTP against the (token, email, otp)
      * tuple. On success, atomically creates/links the User, flips the Client
      * to active, and issues a scope=client session.
@@ -110,13 +76,6 @@ export const authApi = api.injectEndpoints({
       }),
     }),
 
-    sendOtp: build.mutation<MessageResponse, OtpRequest>({
-      query: (body) => ({
-        url: '/v1/auth/otp',
-        method: 'POST',
-        body,
-      }),
-    }),
     exchangeToken: build.mutation<AuthTokenResponse, TokenOtpRequest | TokenRefreshRequest>({
       query: (body) => ({
         url: '/v1/auth/token',
@@ -127,10 +86,4 @@ export const authApi = api.injectEndpoints({
   }),
 });
 
-export const {
-  useAcceptInviteMutation,
-  useAcceptInviteVerifyMutation,
-  useExchangeTokenMutation,
-  useLookupInvitationQuery,
-  useSendOtpMutation,
-} = authApi;
+export const {useAcceptInviteVerifyMutation, useExchangeTokenMutation, useLookupInvitationQuery} = authApi;

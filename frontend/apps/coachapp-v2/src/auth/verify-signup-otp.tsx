@@ -6,7 +6,8 @@ import {z} from 'zod';
 import {FormOtpField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
-import {useSendOtpMutation, useVerifyOtpMutation} from '@/api/auth';
+import {useVerifyOtpMutation} from '@/api/auth';
+import {useSendOtpMutation} from '@/api/generated';
 import {setTokens} from '@/api/authStorage';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
@@ -65,10 +66,7 @@ export default function VerifySignupOtp() {
 
   const handleResend = async () => {
     try {
-      await sendOtp({
-        email: state.email,
-        type: 'email_confirmation',
-      }).unwrap();
+      await sendOtp({otpRequest: {email: state.email, type: 'email_confirmation'}}).unwrap();
       toast.success('A new code is on its way');
     } catch (err) {
       applyFormErrors(err, "Code wasn't resent. Try again", form.setError);

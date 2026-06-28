@@ -6,12 +6,8 @@ import PageLayout from '@/@components/page-layout';
 import SectionHeading from '@/@components/section-heading';
 import {clearTokens} from '@/api/authStorage';
 import {api} from '@/api/base';
-import {
-  type ClientCoach,
-  type ClientProfile,
-  useGetClientProfileQuery,
-  useUpdateClientProfileMutation,
-} from '@/api/profile';
+import {useUpdateClientProfileMutation} from '@/api/generated';
+import {type ClientCoach, type ClientProfile, useGetClientProfileQuery} from '@/api/profile';
 import EditableRow from '@/settings/components/editable-row';
 import {store} from '@/store';
 
@@ -46,9 +42,7 @@ function ProfileSection({
   onUpdate,
   profile,
 }: {
-  onUpdate: (
-    body: Parameters<ReturnType<typeof useUpdateClientProfileMutation>[0]>[0],
-  ) => ReturnType<ReturnType<typeof useUpdateClientProfileMutation>[0]>;
+  onUpdate: ReturnType<typeof useUpdateClientProfileMutation>[0];
   profile: ClientProfile;
 }) {
   const fullName = getFullName(profile.first_name, profile.last_name);
@@ -57,14 +51,14 @@ function ProfileSection({
   const handleNameSave = useCallback(
     async (value: string) => {
       const {firstName, lastName} = splitName(value.trim());
-      await onUpdate({first_name: firstName, last_name: lastName}).unwrap();
+      await onUpdate({clientProfileUpdateRequest: {first_name: firstName, last_name: lastName}}).unwrap();
     },
     [onUpdate],
   );
 
   const handlePhoneSave = useCallback(
     async (value: string) => {
-      await onUpdate({phone: value.trim()}).unwrap();
+      await onUpdate({clientProfileUpdateRequest: {phone: value.trim()}}).unwrap();
     },
     [onUpdate],
   );

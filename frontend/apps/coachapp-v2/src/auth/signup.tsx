@@ -6,7 +6,7 @@ import {z} from 'zod';
 import {FormTextField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
-import {useSignupMutation} from '@/api/auth';
+import {useSignupMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -30,9 +30,11 @@ export default function Signup() {
   const onSubmit = async (data: SignupFormValues) => {
     try {
       await signup({
-        email: data.email,
-        first_name: data.first_name || undefined,
-        last_name: data.last_name || undefined,
+        signupRequest: {
+          email: data.email,
+          first_name: data.first_name || undefined,
+          last_name: data.last_name || undefined,
+        },
       }).unwrap();
       navigate(ROUTES.VERIFY_SIGNUP_OTP, {
         state: {email: data.email},

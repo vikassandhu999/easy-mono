@@ -5,7 +5,7 @@ import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
-import {useSendOtpMutation} from '@/api/auth';
+import {useSendOtpMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -37,7 +37,7 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      await sendOtp({email: data.email, type: 'authentication'}).unwrap();
+      await sendOtp({otpRequest: {email: data.email, type: 'authentication'}}).unwrap();
       navigate(ROUTES.VERIFY_LOGIN_OTP, {
         state: {email: data.email, redirectTo},
       });

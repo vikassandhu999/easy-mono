@@ -20,12 +20,6 @@ export type ClientProfile = {
   coach: ClientCoach;
 };
 
-export type UpdateClientProfileRequest = {
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-};
-
 // ── Endpoints ───────────────────────────────────────────────
 
 export const profileApi = api.injectEndpoints({
@@ -34,15 +28,7 @@ export const profileApi = api.injectEndpoints({
       query: () => '/v1/client/me',
       providesTags: [{type: 'ClientProfile', id: 'ME'}],
     }),
-    updateClientProfile: build.mutation<ApiResponse<ClientProfile>, UpdateClientProfileRequest>({
-      query: (body) => ({
-        body,
-        method: 'PATCH',
-        url: '/v1/client/me',
-      }),
-      invalidatesTags: [{type: 'ClientProfile', id: 'ME'}],
-    }),
   }),
 });
 
-export const {useGetClientProfileQuery, useUpdateClientProfileMutation} = profileApi;
+export const {useGetClientProfileQuery} = profileApi;

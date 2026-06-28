@@ -109,7 +109,7 @@ defmodule EasyWeb.AuthController do
 
   @spec signup(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def signup(conn, params) do
-    with {:ok, user} <- Easy.Identity.signup(auth_attrs(params)) do
+    with {:ok, user} <- Easy.Identity.signup(signup_attrs(params)) do
       conn
       |> put_status(201)
       |> json(%{
@@ -122,10 +122,14 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  @spec accept_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def accept_invite(conn, params) do
-    params = auth_attrs(params)
+  defp signup_attrs(%{"signupRequest" => attrs}) when is_map(attrs), do: attrs
+  defp signup_attrs(%{signupRequest: attrs}) when is_map(attrs), do: attrs
+  defp signup_attrs(%{"user" => attrs}) when is_map(attrs), do: attrs
+  defp signup_attrs(%{user: attrs}) when is_map(attrs), do: attrs
+  defp signup_attrs(attrs), do: attrs
 
+  @spec accept_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def accept_invite(conn, %{"invitation_token" => _, "email" => _} = params) do
     with {:ok, :otp_sent} <- Identity.accept_invite(params) do
       conn
       |> put_status(200)
@@ -134,8 +138,10 @@ defmodule EasyWeb.AuthController do
   end
 
   @spec accept_invite_verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def accept_invite_verify(conn, params) do
-    params = auth_attrs(params)
+  def accept_invite_verify(
+        conn,
+        %{"invitation_token" => _, "email" => _, "otp" => _} = params
+      ) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
@@ -155,36 +161,12 @@ defmodule EasyWeb.AuthController do
   end
 
   @spec verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def verify(conn, params) do
-    params = auth_attrs(params)
+  def verify(conn, %{"token" => token_hash}) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
-    verify_params(conn, params, %{ip: ip, user_agent: user_agent, role: :guest})
-  end
-
-  @spec otp(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def otp(conn, params) do
-    %{"email" => email, "type" => type} = auth_attrs(params)
-
-    with {:ok, _} <- Easy.Identity.send_otp(email, type) do
-      conn
-      |> put_status(200)
-      |> json(%{message: "OTP sent successfully"})
-    end
-  end
-
-  @spec token(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def token(conn, params) do
-    params = auth_attrs(params)
-    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
-    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
-
-    token_params(conn, params, ip, user_agent)
-  end
-
-  defp verify_params(conn, %{"token" => token_hash}, opts) do
-    with {:ok, token} <- Easy.Identity.verify(token_hash, opts) do
+    with {:ok, token} <-
+           Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
       conn
       |> put_status(200)
       |> json(token)
@@ -205,10 +187,14 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  defp verify_params(conn, %{"email" => email, "otp" => otp}, opts) do
+  def verify(conn, %{"email" => email, "otp" => otp}) do
+    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
+    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
+
     token_hash = Easy.Identity.OneTimeTokens.generate_token_hash(email <> otp)
 
-    with {:ok, token} <- Easy.Identity.verify(token_hash, opts) do
+    with {:ok, token} <-
+           Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
       conn
       |> put_status(200)
       |> json(token)
@@ -221,15 +207,26 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  defp token_params(
-         conn,
-         %{
-           "grant_type" => "refresh_token",
-           "refresh_token" => refresh_token
-         } = params,
-         ip,
-         user_agent
-       ) do
+  @spec otp(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def otp(conn, %{"email" => email, "type" => type}) do
+    with {:ok, _} <- Easy.Identity.send_otp(email, type) do
+      conn
+      |> put_status(200)
+      |> json(%{message: "OTP sent successfully"})
+    end
+  end
+
+  @spec token(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def token(
+        conn,
+        %{
+          "grant_type" => "refresh_token",
+          "refresh_token" => refresh_token
+        } = params
+      ) do
+    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
+    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
+
     opts = %{
       refresh_token: refresh_token,
       ip: ip,
@@ -244,7 +241,10 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  defp token_params(conn, %{"grant_type" => "otp", "email" => email, "otp" => otp, "role" => role}, ip, user_agent) do
+  def token(conn, %{"grant_type" => "otp", "email" => email, "otp" => otp, "role" => role}) do
+    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
+    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
+
     token_hash = Easy.Identity.OneTimeTokens.generate_token_hash(email <> otp)
 
     opts = %{
@@ -260,13 +260,4 @@ defmodule EasyWeb.AuthController do
       |> json(auth_token)
     end
   end
-
-  defp auth_attrs(%{"signupRequest" => attrs}) when is_map(attrs), do: attrs
-  defp auth_attrs(%{"otpRequest" => attrs}) when is_map(attrs), do: attrs
-  defp auth_attrs(%{"verifyRequest" => attrs}) when is_map(attrs), do: attrs
-  defp auth_attrs(%{"tokenRequest" => attrs}) when is_map(attrs), do: attrs
-  defp auth_attrs(%{"acceptInviteRequest" => attrs}) when is_map(attrs), do: attrs
-  defp auth_attrs(%{"acceptInviteVerifyRequest" => attrs}) when is_map(attrs), do: attrs
-  defp auth_attrs(%{"user" => attrs}) when is_map(attrs), do: attrs
-  defp auth_attrs(attrs), do: attrs
 end

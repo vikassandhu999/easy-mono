@@ -53,10 +53,10 @@ defmodule Easy.Identity.Signup do
   defp resend_confirmation_otp(changeset, email, otp) do
     with {:ok, user} <- Users.get_by_email(email),
          false <- User.is_email_confirmed?(user),
-         {:ok, :rotated} <- rotate_confirmation_otp(user, otp) do
+         {:ok, user} <- rotate_confirmation_otp(user, otp) do
       Mailer.send_otp(email, otp)
 
-      {:error, Error.new("confirmation_resent", "Confirmation OTP has been sent to your email")}
+      {:ok, user}
     else
       true ->
         {:error, Error.new("email_already_exists", "An account with this email already exists")}
@@ -78,10 +78,10 @@ defmodule Easy.Identity.Signup do
 
   defp rotate_confirmation_otp(user, otp) do
     Repo.transaction(fn ->
-      with {:ok, _} <- Users.touch_confirmation_sent_at(user),
+      with {:ok, user} <- Users.touch_confirmation_sent_at(user),
            _ <- OneTimeTokens.delete_all_for_user_and_type(user, :email_confirmation),
            {:ok, _} <- OneTimeTokens.create_token(user, :email_confirmation, otp) do
-        :rotated
+        user
       else
         {:error, reason} -> Repo.rollback(reason)
       end

@@ -19,6 +19,7 @@ import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
 import SessionDetail from '@/clients/session-detail';
+import Dashboard from '@/dashboard/dashboard';
 import CreateExercise from '@/exercises/create-exercise';
 import EditExercise from '@/exercises/edit-exercise';
 import ExerciseDetail from '@/exercises/exercise-detail';
@@ -66,17 +67,8 @@ export const router = createBrowserRouter([
   {
     Component: AppShellScreen,
     children: [
-      // No dashboard yet — send coaches straight to their clients (also the
-      // post-onboarding + catch-all target).
-      {
-        path: ROUTES.DASHBOARD,
-        element: (
-          <Navigate
-            replace
-            to={ROUTES.CLIENTS}
-          />
-        ),
-      },
+      // Coach home (also the post-onboarding + catch-all target).
+      {path: ROUTES.DASHBOARD, Component: Dashboard},
       {path: ROUTES.CLIENTS, Component: ListClients},
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
       {path: ROUTES.CLIENT_WORKOUT_HISTORY, Component: ClientWorkoutHistoryPage},

@@ -78,6 +78,13 @@ client routes (`/v1/client/nutrition_plans`) because tests still used the old pa
 final OpenAPI route list for both coach and client scopes, then update generated clients/tests.
 **Enforced by:** generated OpenAPI path diff / `just gen-api` plus route tests for both roles.
 
+### RM-010 — Public context functions are Ctx-first
+Backend plans and implementations must follow the convention used by modules like
+`Easy.Exercises`: public context functions take `%Easy.Ctx{} = ctx` as their first argument,
+not separate `business_id` / `user_id` arguments threaded through every call. The session had
+to correct plans after they proposed separate identity params. **Enforced by:** backend
+conventions review (`backend/AGENTS.md`) and `mix precommit` after backend changes.
+
 ---
 
 ## Frontend
@@ -170,6 +177,52 @@ sections that stack cleanly on mobile. Before shipping a page redesign, compare 
 coachapp list/detail/create/edit screens for header placement, width cap, section casing,
 action spacing, and mobile stacking. **Enforced by:** visual check at desktop + mobile widths
 and code review for `mx-auto` / full-width stretches / leading separators in page shells.
+
+### RM-114 — Do not let legacy components drive builder architecture
+Existing code is app-fit reference only, not proof of quality. The plan builders needed an
+explicit correction: build to the validated spec/mockups and clean architecture, not by copying
+legacy builder structure. Reuse only primitives that are actually good (`KeyboardSheet`, shared
+accordion patterns, generated hooks); otherwise rebuild the component properly. **Enforced by:**
+implementation prompts/reviews must include a "legacy-mimicry" check against the spec.
+
+### RM-115 — Coachapp headers and form action spacing follow the reference screen
+Exercise create/edit/detail screens established the canonical simple page header: icon back
+arrow in the header/title group, no labeled back button in `Page.Toolbar`. Food, recipe,
+nutrition-plan, training-plan, and client edit screens drifted and had to be corrected. Their
+form action bars also had tighter spacing until they copied the exercise form's
+`<Fieldset.Actions className="mt-4 flex gap-4">`. **Enforced by:** when adding/editing a
+coachapp create/edit/detail page, compare header + bottom actions against the exercise page.
+
+### RM-116 — Prefer idiomatic HeroUI v3 primitives over raw HTML controls
+Recipe/ingredient redesign initially used raw `<button>`, `<p>`, and `<span>` controls where
+HeroUI v3 had the right primitives (`Disclosure`, `ToggleButtonGroup`, `ListBox`, `Chip`,
+`NumberField`, `DateField`). Raw controls caused typography, spacing, and interaction drift.
+Use raw HTML only for deliberate low-level layout, not for controls HeroUI already provides.
+**Enforced by:** before custom controls, check installed HeroUI exports/types and nearby app
+usage; biome/tsc after converting.
+
+### RM-117 — Do not ship permanent edit forms as the primary detail experience
+The coaching profile module drifted into a stack of bordered edit sections, leaving empty
+desktop space and reading as a form dump. The app pattern is detail view + edit flow (recipe,
+client, exercise, etc.), not every module as always-editable boxes. When building a module,
+decide whether the primary screen is a designed read/detail surface with explicit edit affordances.
+**Enforced by:** design review asks "is this a detail surface or just a permanent form?" before
+shipping new module screens.
+
+### RM-118 — Mutation and delete flows must invalidate/refetch every visible list/detail
+Coachapp screen validation found an app-wide delete-staleness bug across five deletable
+resources: the mutation succeeded, but infinite lists/details stayed stale. Whenever adding or
+rewiring mutations, update RTK Query tag invalidation or explicit refetch wiring for every
+visible consumer. **Enforced by:** after create/update/delete, test list, detail, and empty/error
+states in the browser; review generated hook tags or manual invalidation.
+
+### RM-119 — Do not finish blind visual redesigns without live verification
+Several redesigns were implemented while the browser bridge was unavailable, then needed user
+screenshots and follow-up fixes (mobile hero wrapping, cramped SetSheet header, ingredient row
+spacing, nutrition adherence overflow). For UI/layout changes, typecheck/build is not enough:
+verify live at desktop and mobile widths, or explicitly mark the visual path unverified and do
+not call it done. **Enforced by:** final UI report must say which viewports were visually checked
+and which states remain unverified.
 
 ---
 

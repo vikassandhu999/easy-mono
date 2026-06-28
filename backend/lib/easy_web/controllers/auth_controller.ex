@@ -109,7 +109,7 @@ defmodule EasyWeb.AuthController do
 
   @spec signup(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def signup(conn, params) do
-    with {:ok, user} <- Easy.Identity.signup(params) do
+    with {:ok, user} <- Easy.Identity.signup(signup_attrs(params)) do
       conn
       |> put_status(201)
       |> json(%{
@@ -121,6 +121,12 @@ defmodule EasyWeb.AuthController do
       })
     end
   end
+
+  defp signup_attrs(%{"signupRequest" => attrs}) when is_map(attrs), do: attrs
+  defp signup_attrs(%{signupRequest: attrs}) when is_map(attrs), do: attrs
+  defp signup_attrs(%{"user" => attrs}) when is_map(attrs), do: attrs
+  defp signup_attrs(%{user: attrs}) when is_map(attrs), do: attrs
+  defp signup_attrs(attrs), do: attrs
 
   @spec accept_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def accept_invite(conn, %{"invitation_token" => _, "email" => _} = params) do

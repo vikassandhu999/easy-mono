@@ -158,7 +158,7 @@ export default function ProspectDetail() {
 
   return (
     <Page>
-      <Page.Header className="py-4 sm:py-8 items-center w-full max-w-6xl">
+      <Page.Header className="flex-col items-start gap-3 py-4 sm:flex-row sm:items-center sm:py-8 w-full max-w-6xl">
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
             <Button
@@ -172,7 +172,7 @@ export default function ProspectDetail() {
             <Page.Title>{prospect.name}</Page.Title>
           </div>
         </Page.TitleGroup>
-        <Page.Actions>
+        <Page.Actions className="flex-wrap">
           {enrolled ? (
             <Button
               onPress={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', prospect.client?.id ?? ''))}

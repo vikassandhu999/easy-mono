@@ -43,6 +43,14 @@ defmodule Easy.Identity.Signup do
   defp handle_duplicate_email(changeset, otp) do
     email = Ecto.Changeset.get_field(changeset, :email)
 
+    if duplicate_email_error?(changeset) do
+      resend_confirmation_otp(changeset, email, otp)
+    else
+      {:error, changeset}
+    end
+  end
+
+  defp resend_confirmation_otp(changeset, email, otp) do
     with {:ok, user} <- Users.get_by_email(email),
          false <- User.is_email_confirmed?(user),
          {:ok, :rotated} <- rotate_confirmation_otp(user, otp) do
@@ -59,6 +67,13 @@ defmodule Easy.Identity.Signup do
       _ ->
         {:error, changeset}
     end
+  end
+
+  defp duplicate_email_error?(%Ecto.Changeset{errors: errors}) do
+    Enum.any?(errors, fn
+      {:email, {_message, opts}} -> Keyword.get(opts, :constraint) == :unique
+      _ -> false
+    end)
   end
 
   defp rotate_confirmation_otp(user, otp) do

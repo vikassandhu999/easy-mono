@@ -1,5 +1,5 @@
-import {Alert, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
+import {Alert, Avatar, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
+import {ArrowLeft, Mail, Phone} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -14,7 +14,19 @@ import {
   useUpdateProspectMutation,
 } from '@/api/prospects';
 import {getApiErrorMessage} from '@/api/shared';
-import SectionHeading from '@/settings/components/section-heading';
+
+function SectionHeading({title}: {title: string}) {
+  return (
+    <Typography
+      className="mb-3 uppercase tracking-wider"
+      color="muted"
+      type="body-xs"
+      weight="semibold"
+    >
+      {title}
+    </Typography>
+  );
+}
 
 function Card({children}: {children: React.ReactNode}) {
   return <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">{children}</div>;
@@ -45,17 +57,13 @@ export default function ProspectDetail() {
   const prospect = data?.data;
   const [notes, setNotes] = useState('');
   useEffect(() => {
-    if (prospect) {
-      setNotes(prospect.notes ?? '');
-    }
+    if (prospect) setNotes(prospect.notes ?? '');
   }, [prospect]);
 
   const questionLabels = new Map((pageData?.data?.application_questions ?? []).map((q) => [q.id ?? '', q.label ?? '']));
 
   const setStatus = async (status: ProspectStatus) => {
-    if (!prospect) {
-      return;
-    }
+    if (!prospect) return;
     try {
       await update({id, prospectUpdateRequest: {status, notes: prospect.notes}}).unwrap();
       toast.success(`Marked ${PROSPECT_STATUS_LABEL[status].toLowerCase()}`);
@@ -65,9 +73,7 @@ export default function ProspectDetail() {
   };
 
   const saveNotes = async () => {
-    if (!prospect) {
-      return;
-    }
+    if (!prospect) return;
     try {
       await update({id, prospectUpdateRequest: {status: prospect.status, notes: notes.trim() || null}}).unwrap();
       toast.success('Notes saved');
@@ -76,25 +82,24 @@ export default function ProspectDetail() {
     }
   };
 
-  const header = (
-    <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-      <button
-        className="mb-2 flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
-        onClick={() => navigate(ROUTES.PROSPECTS)}
-        type="button"
-      >
-        <ArrowLeft size={16} /> Prospects
-      </button>
-      <Page.TitleGroup>
-        <Page.Title>{prospect?.name ?? 'Prospect'}</Page.Title>
-      </Page.TitleGroup>
-    </Page.Header>
-  );
-
   if (isLoading) {
     return (
       <Page>
-        {header}
+        <Page.Header>
+          <Page.TitleGroup>
+            <div className="flex items-center gap-1">
+              <Button
+                isIconOnly
+                onPress={() => navigate(ROUTES.PROSPECTS)}
+                size="md"
+                variant="ghost"
+              >
+                <ArrowLeft size={20} />
+              </Button>
+              <Page.Title>Prospect</Page.Title>
+            </div>
+          </Page.TitleGroup>
+        </Page.Header>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Spinner color="accent" />
@@ -107,9 +112,23 @@ export default function ProspectDetail() {
   if (isError || !prospect) {
     return (
       <Page>
-        {header}
+        <Page.Header>
+          <Page.TitleGroup>
+            <div className="flex items-center gap-1">
+              <Button
+                isIconOnly
+                onPress={() => navigate(ROUTES.PROSPECTS)}
+                size="md"
+                variant="ghost"
+              >
+                <ArrowLeft size={20} />
+              </Button>
+              <Page.Title>Prospect</Page.Title>
+            </div>
+          </Page.TitleGroup>
+        </Page.Header>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl pt-4">
+          <div className="max-w-4xl pt-4">
             <Alert status="danger">
               <Alert.Content>
                 <Alert.Title>Couldn't load this prospect.</Alert.Title>
@@ -130,89 +149,141 @@ export default function ProspectDetail() {
 
   const answers = Object.entries(prospect.answers ?? {}).filter(([, v]) => v !== null && v !== undefined && v !== '');
   const enrolled = Boolean(prospect.client);
+  const initials = prospect.name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <Page>
-      {header}
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-2xl flex-col gap-6 pt-2">
-          {/* Status + actions */}
-          <Card>
-            <div className="mb-4 flex items-center gap-2">
-              <Chip
-                color={PROSPECT_STATUS_CHIP[prospect.status]}
-                variant="soft"
-              >
-                {PROSPECT_STATUS_LABEL[prospect.status]}
-              </Chip>
-              {prospect.program ? (
-                <Typography
-                  color="muted"
-                  type="body-sm"
-                >
-                  Interested in {prospect.program.name}
-                </Typography>
-              ) : null}
-            </div>
-
-            {enrolled ? (
-              <div className="flex flex-col gap-2">
-                <Typography
-                  color="muted"
-                  type="body-sm"
-                >
-                  Enrolled as a client.
-                </Typography>
+      <Page.Header className="py-4 sm:py-8 items-center w-full max-w-6xl">
+        <Page.TitleGroup>
+          <div className="flex items-center gap-1">
+            <Button
+              isIconOnly
+              onPress={() => navigate(ROUTES.PROSPECTS)}
+              size="md"
+              variant="ghost"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <Page.Title>{prospect.name}</Page.Title>
+          </div>
+        </Page.TitleGroup>
+        <Page.Actions>
+          {enrolled ? (
+            <Button
+              onPress={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', prospect.client?.id ?? ''))}
+              size="sm"
+              variant="secondary"
+            >
+              View client
+            </Button>
+          ) : (
+            <>
+              {prospect.status === 'new' ? (
                 <Button
-                  className="self-start"
-                  onPress={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', prospect.client?.id ?? ''))}
+                  isDisabled={isUpdating}
+                  onPress={() => setStatus('reviewing')}
                   size="sm"
                   variant="secondary"
                 >
-                  View client
+                  Mark reviewing
                 </Button>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {prospect.status === 'new' ? (
-                  <Button
-                    isDisabled={isUpdating}
-                    onPress={() => setStatus('reviewing')}
-                    size="sm"
-                    variant="secondary"
-                  >
-                    Mark reviewing
-                  </Button>
-                ) : null}
+              ) : null}
+              <Button
+                isDisabled={isUpdating}
+                onPress={() => navigate(ROUTES.ENROLL_PROSPECT.replace(':id', prospect.id))}
+                size="sm"
+              >
+                Enroll
+              </Button>
+              {prospect.status !== 'lost' ? (
                 <Button
                   isDisabled={isUpdating}
-                  onPress={() => navigate(ROUTES.ENROLL_PROSPECT.replace(':id', prospect.id))}
+                  onPress={() => setStatus('lost')}
                   size="sm"
+                  variant="ghost"
                 >
-                  Enroll
+                  Mark lost
                 </Button>
-                {prospect.status !== 'lost' ? (
-                  <Button
-                    isDisabled={isUpdating}
-                    onPress={() => setStatus('lost')}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Mark lost
-                  </Button>
-                ) : null}
+              ) : null}
+            </>
+          )}
+        </Page.Actions>
+      </Page.Header>
+
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <div className="max-w-4xl space-y-4">
+          {/* Profile hero */}
+          <Card>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar
+                  className="size-14 shrink-0"
+                  color="accent"
+                >
+                  <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Typography
+                      truncate
+                      type="h5"
+                    >
+                      {prospect.name}
+                    </Typography>
+                    <Chip
+                      color={PROSPECT_STATUS_CHIP[prospect.status]}
+                      size="sm"
+                      variant="soft"
+                    >
+                      {PROSPECT_STATUS_LABEL[prospect.status]}
+                    </Chip>
+                  </div>
+                  {prospect.program ? (
+                    <Typography
+                      className="mt-0.5"
+                      color="muted"
+                      truncate
+                      type="body-sm"
+                    >
+                      Interested in {prospect.program.name}
+                    </Typography>
+                  ) : null}
+                </div>
               </div>
-            )}
+              {(prospect.phone || prospect.email) ? (
+                <div className="flex gap-2 sm:ml-auto sm:shrink-0">
+                  {prospect.phone ? (
+                    <a
+                      className="inline-flex min-h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:flex-none"
+                      href={`tel:${prospect.phone}`}
+                    >
+                      <Phone size={15} />
+                      Call
+                    </a>
+                  ) : null}
+                  {prospect.email ? (
+                    <a
+                      className="inline-flex min-h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:flex-none"
+                      href={`mailto:${prospect.email}`}
+                    >
+                      <Mail size={15} />
+                      Email
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </Card>
 
-          {/* Contact */}
+          {/* Contact details */}
           <section>
             <SectionHeading title="Contact" />
             <Card>
-              <Field
-                label="Name"
-                value={prospect.name}
-              />
               {prospect.phone ? (
                 <Field
                   label="Phone"
@@ -254,12 +325,12 @@ export default function ProspectDetail() {
             </Card>
           </section>
 
-          {/* Answers */}
+          {/* Application answers */}
           {answers.length > 0 ? (
             <section>
               <SectionHeading title="Answers" />
               <Card>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                   {answers.map(([qid, value]) => (
                     <div key={qid}>
                       <Typography
@@ -281,7 +352,7 @@ export default function ProspectDetail() {
             <SectionHeading title="Notes" />
             <Card>
               <textarea
-                className="min-h-20 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent placeholder:text-muted"
+                className="min-h-24 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent placeholder:text-muted"
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Private notes about this prospect."
                 value={notes}

@@ -9,5 +9,13 @@ defmodule Easy.Identity.SignupTest do
 
       assert %{email: ["can't be blank"]} = errors_on(changeset)
     end
+
+    test "resending confirmation OTP for an unconfirmed email succeeds" do
+      email = "unconfirmed-#{System.unique_integer([:positive])}@example.com"
+      insert(:user, email: email, email_confirmed_at: nil)
+
+      assert {:ok, user} = Signup.signup(%{"email" => email})
+      assert user.email == email
+    end
   end
 end

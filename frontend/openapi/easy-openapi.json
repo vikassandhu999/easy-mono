@@ -565,7 +565,29 @@
             "x-struct": null,
             "x-validate": null
           },
+          "eyebrow": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fit_points": {
+            "items": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "headline": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "hero_image_url": {
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -1071,7 +1093,29 @@
             "x-struct": null,
             "x-validate": null
           },
+          "eyebrow": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fit_points": {
+            "items": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "headline": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "hero_image_url": {
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -3699,7 +3743,29 @@
             "x-struct": null,
             "x-validate": null
           },
+          "eyebrow": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "fit_points": {
+            "items": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "headline": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "hero_image_url": {
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null

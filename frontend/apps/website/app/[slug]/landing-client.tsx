@@ -2,7 +2,14 @@
 
 import {cloneElement, useEffect, useId, useRef, useState} from 'react';
 
-import {type ApplicationResult, type LandingPage, type Question, submitApplication, whatsappLink} from '@/lib/api';
+import {
+  type ApplicationResult,
+  COACHAPP_URL,
+  type LandingPage,
+  type Question,
+  submitApplication,
+  whatsappLink,
+} from '@/lib/api';
 
 const c = {
   ink: '#17201b',
@@ -20,16 +27,14 @@ const c = {
 
 const FONT = "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
-type TrustKind = 'proof' | 'coach';
+type TrustKind = 'proof' | 'coach' | 'fit';
 
-// Section order + lead-block theming is the only thing that varies per template.
-const TEMPLATE: Record<
-  LandingPage['template'],
-  {order: TrustKind[]; coachTone: 'coral' | 'blue'; coachHeading: string}
-> = {
-  proof_first: {order: ['proof', 'coach'], coachTone: 'blue', coachHeading: 'Meet your coach'},
-  problem_fit: {order: ['coach', 'proof'], coachTone: 'coral', coachHeading: 'Is this coaching right for you?'},
-  coach_story: {order: ['coach', 'proof'], coachTone: 'blue', coachHeading: 'Meet your coach'},
+// Section order is the only thing that varies per template; each template leads with its
+// signature trust section (proof band / fit list / coach bio).
+const TEMPLATE: Record<LandingPage['template'], {order: TrustKind[]; coachHeading: string}> = {
+  proof_first: {order: ['proof', 'fit', 'coach'], coachHeading: 'Meet your coach'},
+  problem_fit: {order: ['fit', 'proof', 'coach'], coachHeading: 'Meet your coach'},
+  coach_story: {order: ['coach', 'proof', 'fit'], coachHeading: 'Meet your coach'},
 };
 
 export default function LandingClient({page}: {page: LandingPage}) {
@@ -58,12 +63,19 @@ export default function LandingClient({page}: {page: LandingPage}) {
         />
       ) : null;
     }
+    if (kind === 'fit') {
+      return page.fit_points && page.fit_points.length > 0 ? (
+        <FitList
+          key="fit"
+          points={page.fit_points}
+        />
+      ) : null;
+    }
     return page.coach_intro ? (
       <CoachIntro
         heading={tpl.coachHeading}
         intro={page.coach_intro}
         key="coach"
-        tone={tpl.coachTone}
       />
     ) : null;
   };
@@ -89,47 +101,58 @@ export default function LandingClient({page}: {page: LandingPage}) {
       </nav>
 
       <main className="mx-auto max-w-3xl">
-        {/* Hero */}
-        <section className="px-5 py-10">
-          <p
-            style={{color: c.green, fontWeight: 800, letterSpacing: '0.02em'}}
-            className="mb-2 text-xs uppercase"
-          >
-            {page.business_name}
-          </p>
-          <h1
-            className="text-3xl font-bold sm:text-4xl"
-            style={{lineHeight: 1.1}}
-          >
-            {page.headline}
-          </h1>
-          {page.subheadline ? (
-            <p
-              className="mt-3 text-base"
-              style={{color: c.muted}}
-            >
-              {page.subheadline}
-            </p>
-          ) : null}
-          <div className="mt-6 flex flex-wrap gap-2">
-            <button
-              onClick={scrollToApply}
-              style={{background: c.green, color: '#fff', borderRadius: 8}}
-              className="px-5 py-2.5 text-sm font-semibold"
-              type="button"
-            >
-              Apply for coaching
-            </button>
-            {page.programs.length > 0 ? (
-              <a
-                href="#programs"
-                style={{border: `1px solid ${c.line}`, color: c.ink, borderRadius: 8}}
-                className="px-5 py-2.5 text-sm font-semibold"
+        {/* Hero — split with the coach image when present, else text-only */}
+        <section className="grid gap-6 px-5 py-10 sm:grid-cols-2 sm:items-center">
+          <div>
+            {page.eyebrow ? (
+              <p
+                style={{color: c.green, fontWeight: 800, letterSpacing: '0.02em'}}
+                className="mb-2 text-xs uppercase"
               >
-                See programs
-              </a>
+                {page.eyebrow}
+              </p>
             ) : null}
+            <h1
+              className="text-3xl font-bold sm:text-4xl"
+              style={{lineHeight: 1.1}}
+            >
+              {page.headline}
+            </h1>
+            {page.subheadline ? (
+              <p
+                className="mt-3 text-base"
+                style={{color: c.muted}}
+              >
+                {page.subheadline}
+              </p>
+            ) : null}
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button
+                onClick={scrollToApply}
+                style={{background: c.green, color: '#fff', borderRadius: 8}}
+                className="px-5 py-2.5 text-sm font-semibold"
+                type="button"
+              >
+                Apply for coaching
+              </button>
+              {page.programs.length > 0 ? (
+                <a
+                  href="#programs"
+                  style={{border: `1px solid ${c.line}`, color: c.ink, borderRadius: 8}}
+                  className="px-5 py-2.5 text-sm font-semibold"
+                >
+                  See programs
+                </a>
+              ) : null}
+            </div>
           </div>
+          {page.hero_image_url ? (
+            <img
+              alt={page.business_name}
+              className="aspect-[4/3] w-full rounded-2xl object-cover"
+              src={page.hero_image_url}
+            />
+          ) : null}
         </section>
 
         {/* Trust sections, ordered per template */}
@@ -251,17 +274,42 @@ function ProofBand({points}: {points: NonNullable<LandingPage['proof_points']>})
   );
 }
 
-function CoachIntro({heading, intro, tone}: {heading: string; intro: string; tone: 'coral' | 'blue'}) {
-  const bg = tone === 'coral' ? c.coralSoft : c.blueSoft;
-  const accent = tone === 'coral' ? c.coral : c.blue;
+function FitList({points}: {points: string[]}) {
   return (
     <section
       className="px-5 py-8"
-      style={{background: bg, borderTop: `1px solid ${c.line}`}}
+      style={{background: c.coralSoft, borderTop: `1px solid ${c.line}`}}
+    >
+      <h2
+        className="mb-3 text-lg font-semibold"
+        style={{color: c.coral}}
+      >
+        This is for you if…
+      </h2>
+      <div className="flex flex-col gap-2">
+        {points.map((point) => (
+          <div
+            className="text-sm"
+            key={point}
+            style={{background: c.panel, borderLeft: `4px solid ${c.coral}`, borderRadius: 8, padding: '9px 12px'}}
+          >
+            {point}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CoachIntro({heading, intro}: {heading: string; intro: string}) {
+  return (
+    <section
+      className="px-5 py-8"
+      style={{background: c.blueSoft, borderTop: `1px solid ${c.line}`}}
     >
       <h2
         className="mb-2 text-lg font-semibold"
-        style={{color: accent}}
+        style={{color: c.blue}}
       >
         {heading}
       </h2>
@@ -503,6 +551,8 @@ function Success({
         name: result.name,
         programName: result.program_name,
         summary,
+        ref: result.id,
+        coachLink: `${COACHAPP_URL}/prospects/${result.id}`,
       })
     : null;
 

@@ -1,0 +1,485 @@
+{
+  "generatedAt": "2026-06-28T03:03:56.248Z",
+  "results": [
+    {
+      "route": "/",
+      "url": "http://localhost:2021/",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/login",
+      "url": "http://localhost:2021/login",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/signup",
+      "url": "http://localhost:2021/signup",
+      "finalUrl": "http://localhost:2021/signup",
+      "title": "CoachEasy Coach",
+      "text": "Create account\n\nCreate your coaching account to get started.\n\nFirst name (optional)\nLast name (optional)\nEmail\nCreate account\n\nAlready have an account? Log in",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Create account",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Log in",
+          "href": "http://localhost:2021/login",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/clients",
+      "url": "http://localhost:2021/clients",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/library",
+      "url": "http://localhost:2021/library",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/library/exercises",
+      "url": "http://localhost:2021/library/exercises",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/library/foods",
+      "url": "http://localhost:2021/library/foods",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/library/recipes",
+      "url": "http://localhost:2021/library/recipes",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/nutrition-plans",
+      "url": "http://localhost:2021/nutrition-plans",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/training-plans",
+      "url": "http://localhost:2021/training-plans",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/check-ins",
+      "url": "http://localhost:2021/check-ins",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/settings",
+      "url": "http://localhost:2021/settings",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "/register-business",
+      "url": "http://localhost:2021/register-business",
+      "finalUrl": "http://localhost:2021/login",
+      "title": "CoachEasy Coach",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nContinue with email\n\nDon't have an account? Sign up",
+      "buttons": [
+        {
+          "tag": "INPUT",
+          "text": "",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Continue with email",
+          "href": "",
+          "disabled": null
+        },
+        {
+          "tag": "A",
+          "text": "Sign up",
+          "href": "http://localhost:2021/signup",
+          "disabled": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "route": "smoke /login",
+      "finalUrl": "http://localhost:2021/login",
+      "text": "Welcome back\n\nEnter your email and we'll send you a verification code.\n\nEmail\nBad Request\nContinue with email\n\nDon't have an account? Sign up",
+      "events": [
+        {
+          "type": "action-error",
+          "route": "/login",
+          "action": {
+            "type": "fill",
+            "sel": "input[type=\"password\"], input[name*=\"password\" i]",
+            "value": "not-a-real-password"
+          },
+          "text": "locator.fill: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"password\"], input[name*=\"password\" i]').first()\u001b[22m\n"
+        },
+        {
+          "type": "http",
+          "status": 400,
+          "url": "http://localhost:4000/v1/auth/otp",
+          "page": "http://localhost:2021/login"
+        },
+        {
+          "type": "console",
+          "level": "error",
+          "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+          "url": "http://localhost:2021/login"
+        }
+      ]
+    },
+    {
+      "route": "smoke /signup",
+      "finalUrl": "http://localhost:2021/signup",
+      "text": "Create account\n\nCreate your coaching account to get started.\n\nFirst name (optional)\nLast name (optional)\nEmail\nAn internal server error occurred.\nCreate account\n\nAlready have an account? Log in",
+      "events": [
+        {
+          "type": "action-error",
+          "route": "/signup",
+          "action": {
+            "type": "fill",
+            "sel": "input[type=\"password\"], input[name*=\"password\" i]",
+            "value": "Password123!"
+          },
+          "text": "locator.fill: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"password\"], input[name*=\"password\" i]').first()\u001b[22m\n"
+        },
+        {
+          "type": "http",
+          "status": 500,
+          "url": "http://localhost:4000/v1/auth/signup",
+          "page": "http://localhost:2021/signup"
+        },
+        {
+          "type": "console",
+          "level": "error",
+          "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "url": "http://localhost:2021/signup"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "type": "action-error",
+      "route": "/login",
+      "action": {
+        "type": "fill",
+        "sel": "input[type=\"password\"], input[name*=\"password\" i]",
+        "value": "not-a-real-password"
+      },
+      "text": "locator.fill: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"password\"], input[name*=\"password\" i]').first()\u001b[22m\n"
+    },
+    {
+      "type": "http",
+      "status": 400,
+      "url": "http://localhost:4000/v1/auth/otp",
+      "page": "http://localhost:2021/login"
+    },
+    {
+      "type": "console",
+      "level": "error",
+      "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+      "url": "http://localhost:2021/login"
+    },
+    {
+      "type": "action-error",
+      "route": "/signup",
+      "action": {
+        "type": "fill",
+        "sel": "input[type=\"password\"], input[name*=\"password\" i]",
+        "value": "Password123!"
+      },
+      "text": "locator.fill: Timeout 3000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"password\"], input[name*=\"password\" i]').first()\u001b[22m\n"
+    },
+    {
+      "type": "http",
+      "status": 500,
+      "url": "http://localhost:4000/v1/auth/signup",
+      "page": "http://localhost:2021/signup"
+    },
+    {
+      "type": "console",
+      "level": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "url": "http://localhost:2021/signup"
+    }
+  ]
+}

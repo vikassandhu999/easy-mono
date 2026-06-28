@@ -1,6 +1,6 @@
 # Coach App Bug Report
 
-Run date: June 27, 2026
+Run dates: June 27-28, 2026
 
 Target: `http://localhost:2021`
 
@@ -9,6 +9,8 @@ Browser automation: `chrome-devtools-axi`
 ## Scope
 
 This report contains confirmed bugs from public auth/onboarding, route-guard checks, and authenticated coach workflows tested after completing signup OTP and business registration with a fresh QA account.
+
+The June 28 acquisition/prospects pass was blocked at auth before the landing-page and prospect routes could be exercised through normal UI flows.
 
 ## Bugs
 
@@ -447,6 +449,82 @@ Likely source:
 Recommended fix:
 
 Add an onboarding/business-exists guard around `RegisterBusiness`, or make the component redirect when the current coach already has a business.
+
+### COACH-QA-013 - Fresh coach signup can fail with a generic 500 before OTP
+
+Severity: High
+
+Route: `/signup`
+
+Status: Open
+
+Evidence:
+
+- Screenshot: [screenshots/68-acquisition-signup-500-blocker.png](./screenshots/68-acquisition-signup-500-blocker.png)
+- Network summary showed `POST http://localhost:4000/v1/auth/signup [500]`.
+- Console showed `Failed to load resource: the server responded with a status of 500 (Internal Server Error)`.
+
+Steps:
+
+1. Open `/signup`.
+2. Enter `QA` as first name and `Acquisition` as last name.
+3. Submit a fresh QA email.
+4. Repeat with a no-plus QA email.
+
+Expected:
+
+The app creates the account and navigates to `/verify-signup`, or shows a field-specific/user-actionable signup error.
+
+Actual:
+
+The form remains on `/signup` and shows `An internal server error occurred.` The OTP screen is never reached.
+
+Likely source:
+
+- `backend/lib/easy/identity/signup.ex:27-32` sends the OTP after the user/token transaction succeeds.
+- `backend/config/dev.exs:41-45` configures the dev mailer with the Resend adapter, so a local email-delivery failure can surface as a 500 after partial signup work.
+- `frontend/apps/coachapp-v2/src/auth/signup.tsx:36-38` maps the generic API failure into the form root.
+
+Recommended fix:
+
+Do not let OTP delivery failures produce a generic 500 in local/dev signup. Return actionable UI copy and use a local/dev-safe mail adapter or log-only OTP delivery for development.
+
+### COACH-QA-014 - Existing QA coach login can fail with a generic 400 before OTP
+
+Severity: High
+
+Route: `/login`
+
+Status: Open
+
+Evidence:
+
+- Screenshot: [screenshots/69-acquisition-login-400-blocker.png](./screenshots/69-acquisition-login-400-blocker.png)
+- Network summary showed `POST http://localhost:4000/v1/auth/otp [400]`.
+- Console showed `Failed to load resource: the server responded with a status of 400 (Bad Request)`.
+
+Steps:
+
+1. Open `/login`.
+2. Enter the prior verified QA coach email.
+3. Click `Continue with email`.
+
+Expected:
+
+The login flow sends an OTP and navigates to `/verify-login`, or shows a user-actionable reason the account cannot receive an OTP.
+
+Actual:
+
+The form stays on `/login` and shows only `Bad Request`.
+
+Likely source:
+
+- `backend/lib/easy/identity/otp_delivery.ex:12-32` creates the OTP and dispatches email after validation.
+- `frontend/apps/coachapp-v2/src/auth/login.tsx:30-39` only special-cases `404`; other auth failures go through generic form-error mapping.
+
+Recommended fix:
+
+Map known OTP-send failures to product copy and avoid exposing bare HTTP status text. Add a regression case for non-404 OTP failures.
 
 ## Non-Bugs Confirmed In This Session
 

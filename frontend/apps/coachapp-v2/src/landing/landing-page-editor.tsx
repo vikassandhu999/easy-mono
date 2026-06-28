@@ -8,6 +8,7 @@ import {ROUTES} from '@/@config/routes';
 import {
   draftToRequest,
   emptyLandingDraft,
+  type FitDraft,
   type LandingDraft,
   landingToDraft,
   type ProgramDraft,
@@ -18,7 +19,7 @@ import {
   useSaveLandingPageMutation,
 } from '@/api/landing-page';
 import {useGetCoachProfileQuery} from '@/api/profile';
-import {getApiErrorMessage} from '@/api/shared';
+import {getApiErrorMessage, getValidationErrors} from '@/api/shared';
 import SectionHeading from '@/settings/components/section-heading';
 
 const MAX_PROGRAMS = 3;
@@ -37,6 +38,7 @@ function TextRow({
   placeholder,
   textarea,
   description,
+  error,
 }: {
   label: string;
   value: string;
@@ -44,6 +46,7 @@ function TextRow({
   placeholder?: string;
   textarea?: boolean;
   description?: string;
+  error?: string;
 }) {
   const id = useId();
   return (
@@ -56,7 +59,7 @@ function TextRow({
       </label>
       {textarea ? (
         <textarea
-          className={`${inputCls} min-h-20 resize-y`}
+          className={`${inputCls} min-h-20 resize-y ${error ? 'border-danger' : ''}`}
           id={id}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
@@ -64,14 +67,21 @@ function TextRow({
         />
       ) : (
         <input
-          className={inputCls}
+          className={`${inputCls} ${error ? 'border-danger' : ''}`}
           id={id}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           value={value}
         />
       )}
-      {description ? (
+      {error ? (
+        <Typography
+          className="mt-1 text-danger"
+          type="body-xs"
+        >
+          {error}
+        </Typography>
+      ) : description ? (
         <Typography
           className="mt-1"
           color="muted"
@@ -95,6 +105,7 @@ export default function LandingPageEditor() {
   const [save, {isLoading: isSaving}] = useSaveLandingPageMutation();
 
   const [draft, setDraft] = useState<LandingDraft | null>(null);
+  const [slugError, setSlugError] = useState<string | null>(null);
 
   // Seed the draft once the page loads (or start blank when none exists yet).
   useEffect(() => {
@@ -111,13 +122,22 @@ export default function LandingPageEditor() {
     if (!draft) {
       return;
     }
+    setSlugError(null);
     const next = {...draft, status};
     setDraft(next);
     try {
       await save({landingPageUpsertRequest: draftToRequest(next)}).unwrap();
       toast.success(status === 'published' ? 'Page published' : 'Draft saved');
     } catch (error) {
-      toast.danger(getApiErrorMessage(error, "Couldn't save the page"));
+      // Surface a taken slug / second-published-page conflict inline on the field.
+      const fields = getValidationErrors(error);
+      const slugMsg = fields?.slug?.[0] ?? fields?.status?.[0];
+      if (slugMsg) {
+        setSlugError(fields?.slug ? slugMsg : null);
+        toast.danger(slugMsg);
+      } else {
+        toast.danger(getApiErrorMessage(error, "Couldn't save the page"));
+      }
     }
   };
 
@@ -218,11 +238,22 @@ export default function LandingPageEditor() {
             <Card>
               <div className="flex flex-col gap-4">
                 <TextRow
-                  description={`Public address: ${publicUrl}`}
+                  description={slugError ? undefined : `Public address: ${publicUrl}`}
+                  error={slugError ?? undefined}
                   label="Slug"
-                  onChange={(v) => update({slug: v})}
+                  onChange={(v) => {
+                    setSlugError(null);
+                    update({slug: v});
+                  }}
                   placeholder="kavya-strength"
                   value={draft.slug}
+                />
+                <TextRow
+                  description="The 'who this is for' line above the headline."
+                  label="Eyebrow"
+                  onChange={(v) => update({eyebrow: v})}
+                  placeholder="Online coaching for busy lifters"
+                  value={draft.eyebrow}
                 />
                 <TextRow
                   label="Headline"
@@ -236,6 +267,13 @@ export default function LandingPageEditor() {
                   placeholder="Personal coaching for people who train hard but need structure."
                   textarea
                   value={draft.subheadline}
+                />
+                <TextRow
+                  description="A coach photo or training image shown in the hero."
+                  label="Hero image URL"
+                  onChange={(v) => update({hero_image_url: v})}
+                  placeholder="https://…/photo.jpg"
+                  value={draft.hero_image_url}
                 />
                 <TextRow
                   description="Shown prominently on the Coach story template."
@@ -253,6 +291,12 @@ export default function LandingPageEditor() {
           <ProofPointsEditor
             points={draft.proof_points}
             onChange={(proof_points) => update({proof_points})}
+          />
+
+          {/* Fit points (Problem-fit template) */}
+          <FitPointsEditor
+            onChange={(fit_points) => update({fit_points})}
+            points={draft.fit_points}
           />
 
           {/* Programs */}
@@ -394,6 +438,54 @@ function ProofPointsEditor({
             variant="ghost"
           >
             <Plus size={16} /> Add proof point
+          </Button>
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+function FitPointsEditor({onChange, points}: {onChange: (p: FitDraft[]) => void; points: FitDraft[]}) {
+  return (
+    <section>
+      <SectionHeading title="Fit list" />
+      <Card>
+        <div className="flex flex-col gap-3">
+          <Typography
+            color="muted"
+            type="body-xs"
+          >
+            "This is for you if…" qualifiers — featured on the Problem-fit template.
+          </Typography>
+          {points.map((point, index) => (
+            <div
+              className="flex items-center gap-2"
+              key={point.key}
+            >
+              <input
+                className={inputCls}
+                onChange={(e) => onChange(points.map((p, i) => (i === index ? {...p, value: e.target.value} : p)))}
+                placeholder="You have tried plans but can't stay consistent."
+                value={point.value}
+              />
+              <Button
+                isIconOnly
+                aria-label="Remove fit point"
+                onPress={() => onChange(points.filter((_, i) => i !== index))}
+                size="sm"
+                variant="ghost"
+              >
+                <Trash2 size={16} />
+              </Button>
+            </div>
+          ))}
+          <Button
+            className="self-start"
+            onPress={() => onChange([...points, {key: crypto.randomUUID(), value: ''}])}
+            size="sm"
+            variant="ghost"
+          >
+            <Plus size={16} /> Add fit point
           </Button>
         </div>
       </Card>

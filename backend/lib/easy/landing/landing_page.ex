@@ -18,10 +18,13 @@ defmodule Easy.Landing.LandingPage do
   schema "landing_pages" do
     field :slug, :string
     field :template, Ecto.Enum, values: @templates
+    field :eyebrow, :string
     field :headline, :string
     field :subheadline, :string
     field :coach_intro, :string
+    field :hero_image_url, :string
     field :proof_points, {:array, :map}, default: []
+    field :fit_points, {:array, :string}, default: []
     field :application_questions, {:array, :map}, default: []
     field :status, Ecto.Enum, values: @statuses, default: :draft
 
@@ -31,7 +34,19 @@ defmodule Easy.Landing.LandingPage do
     timestamps(type: :utc_datetime)
   end
 
-  @editable [:slug, :template, :headline, :subheadline, :coach_intro, :proof_points, :application_questions, :status]
+  @editable [
+    :slug,
+    :template,
+    :eyebrow,
+    :headline,
+    :subheadline,
+    :coach_intro,
+    :hero_image_url,
+    :proof_points,
+    :fit_points,
+    :application_questions,
+    :status
+  ]
 
   @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, attrs) do

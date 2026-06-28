@@ -29,10 +29,13 @@ export type ProofPoint = {label?: string; value?: string};
 export type LandingPage = {
   slug: string;
   template: Template;
+  eyebrow?: string | null;
   headline: string;
   subheadline?: string | null;
   coach_intro?: string | null;
+  hero_image_url?: string | null;
   proof_points?: ProofPoint[];
+  fit_points?: string[];
   application_questions: Question[];
   programs: Program[];
   business_name: string;
@@ -99,16 +102,26 @@ export async function submitApplication(slug: string, input: ApplicationInput): 
   };
 }
 
-/** Builds a wa.me deep link prefilled with the application summary. */
+/** Builds a wa.me deep link prefilled with the application summary + a stable prospect ref. */
 export function whatsappLink(
   number: string,
-  args: {businessName: string; name: string; programName?: string | null; summary: string},
+  args: {
+    businessName: string;
+    name: string;
+    programName?: string | null;
+    summary: string;
+    ref: string;
+    coachLink?: string;
+  },
 ): string {
   const digits = number.replace(/[^0-9]/g, '');
   const lines = [
     `Hi ${args.businessName}, I'm ${args.name} and I just applied through your page.`,
     args.programName ? `Program: ${args.programName}` : '',
     args.summary,
+    // Stable reference so the coach can tie this chat back to the saved Prospect.
+    `Ref: ${args.ref}`,
+    args.coachLink ?? '',
   ].filter(Boolean);
   return `https://wa.me/${digits}?text=${encodeURIComponent(lines.join('\n'))}`;
 }

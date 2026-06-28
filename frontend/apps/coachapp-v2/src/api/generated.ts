@@ -1970,7 +1970,10 @@ export type PublicLandingPage = {
   }[];
   business_name: string;
   coach_intro?: string | null;
+  eyebrow?: string | null;
+  fit_points?: string[];
   headline: string;
+  hero_image_url?: string | null;
   programs: LandingProgram[];
   proof_points?: {
     label?: string;
@@ -2457,7 +2460,10 @@ export type LandingPage = {
     type?: 'short_text' | 'long_text' | 'single_select';
   }[];
   coach_intro?: string | null;
+  eyebrow?: string | null;
+  fit_points?: string[];
   headline: string;
+  hero_image_url?: string | null;
   id: string;
   inserted_at?: string;
   programs: LandingProgram[];
@@ -2489,7 +2495,10 @@ export type LandingPageUpsertRequest = {
     type?: 'short_text' | 'long_text' | 'single_select';
   }[];
   coach_intro?: string | null;
+  eyebrow?: string | null;
+  fit_points?: string[];
   headline: string;
+  hero_image_url?: string | null;
   programs?: LandingProgramInput[];
   proof_points?: {
     label?: string;

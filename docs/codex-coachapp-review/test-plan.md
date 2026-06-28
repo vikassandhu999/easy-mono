@@ -27,6 +27,7 @@ Tooling: Chrome through `chrome-devtools-axi`, screenshots, console, and network
 | P1 | Library lists and create/edit forms | Core content management. |
 | P1 | Nutrition/training plan builders | High-complexity product flows. |
 | P1 | Settings/profile fields | Account and intake configuration. |
+| P1 | Acquisition/prospects | Public funnel creates coach leads and converts them into clients. |
 | P2 | PWA/install behavior | Important, but not a core data workflow. |
 
 ## Test Areas
@@ -94,7 +95,26 @@ Tooling: Chrome through `chrome-devtools-axi`, screenshots, console, and network
 | Copy invite link | Click copy. | Clipboard success state is visible. |
 | Profile fields | Open `/settings/client-profile-fields`. | Empty, create, edit, delete, reorder if supported, and errors work. |
 
-### 6. Responsive And Accessibility
+### 6. Acquisition And Prospects
+
+| Case | Steps | Expected |
+| --- | --- | --- |
+| Acquisition entry | Open `/settings` and click `Landing page`. | User reaches `/settings/landing-page`. |
+| Empty landing draft | Open editor with no page. | Default template, default questions, and one empty program render. |
+| Editor validation | Clear slug/headline/program name and publish. | Required errors are actionable and field-specific. |
+| Save draft | Fill slug/headline and save as draft. | Success feedback appears; preview stays disabled until published. |
+| Publish page | Publish a complete draft. | Success feedback appears and preview is enabled. |
+| Public preview | Open the preview URL. | Published page renders with headline, proof points, programs, questions, and WhatsApp follow-up copy when configured. |
+| Public application validation | Submit empty and malformed contact details. | Inline errors show without creating a prospect. |
+| Public application success | Submit a valid application. | Success state appears; optional WhatsApp link is correct when a number exists. |
+| Prospect list | Open `/prospects`. | New application appears with source/program and status chip. |
+| Prospect filters | Switch All/New/Reviewing/Won/Lost. | Rows and counts match each status. |
+| Prospect detail | Open a new prospect. | Contact fields, answers, source slug, program, notes, and actions render. |
+| Notes | Save private notes. | Save button disables after success and notes persist after reload. |
+| Status changes | Mark reviewing, lost, and where applicable won/enrolled. | Toast appears; status chip and list counts refresh. |
+| Enrollment | Enroll prospect with prefilled contact info. | Client invite is created, prospect links to client, and already-enrolled state works. |
+
+### 7. Responsive And Accessibility
 
 Run the P0 and P1 flows at:
 
@@ -111,7 +131,7 @@ Checks:
 - Focus moves predictably after navigation and form submission.
 - No text overlaps fixed bottom nav or sticky toolbars.
 
-### 7. Console And Network
+### 8. Console And Network
 
 - Check console errors after every major flow.
 - Check failed API calls for user-facing error handling.
@@ -142,6 +162,7 @@ Completed:
 - Authenticated `/login`, `/signup`, catch-all, and `/register-business` guard checks.
 - Detail/edit/create route sweep for clients, exercises, foods, recipes, nutrition plans, training plans, check-ins, and profile fields.
 - Console and network inspection for tested flows.
+- Acquisition/prospects auth-blocker pass on June 28, 2026.
 
 Deferred:
 
@@ -149,3 +170,4 @@ Deferred:
 - Destructive or cleanup actions: delete, revoke, archive, and full edit/delete coverage.
 - Active-client assignment flows, populated client dashboards, and workout session detail.
 - Tablet breakpoint at `768x1024`.
+- Acquisition/prospects UI coverage after normal auth is unblocked.

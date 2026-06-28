@@ -936,7 +936,10 @@ export type PublicLandingPage = {
   }[];
   business_name: string;
   coach_intro?: string | null;
+  eyebrow?: string | null;
+  fit_points?: string[];
   headline: string;
+  hero_image_url?: string | null;
   programs: LandingProgram[];
   proof_points?: {
     label?: string;

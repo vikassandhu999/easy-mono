@@ -8,10 +8,13 @@ defmodule EasyWeb.Public.LandingPageJSON do
       data: %{
         slug: page.slug,
         template: page.template,
+        eyebrow: page.eyebrow,
         headline: page.headline,
         subheadline: page.subheadline,
         coach_intro: page.coach_intro,
+        hero_image_url: page.hero_image_url,
         proof_points: page.proof_points,
+        fit_points: page.fit_points,
         application_questions: page.application_questions,
         programs: Enum.map(page.programs, &program/1),
         business_name: business.name,

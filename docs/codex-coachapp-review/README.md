@@ -1,6 +1,6 @@
 # Coach App Review
 
-Manual QA review for `frontend/apps/coachapp-v2`, run against `http://localhost:2021` on June 27, 2026 using `chrome-devtools-axi`.
+Manual QA review for `frontend/apps/coachapp-v2`, run against `http://localhost:2021` on June 27-28, 2026 using `chrome-devtools-axi`.
 
 ## Artifacts
 
@@ -9,6 +9,7 @@ Manual QA review for `frontend/apps/coachapp-v2`, run against `http://localhost:
 - [manual-run-2026-06-27.md](./manual-run-2026-06-27.md) - execution log and coverage notes.
 - [authenticated-run-2026-06-27.md](./authenticated-run-2026-06-27.md) - authenticated signup, onboarding, clients, library, builders, settings, and mobile execution log.
 - [rigorous-route-run-2026-06-27.md](./rigorous-route-run-2026-06-27.md) - deeper authenticated route sweep across detail/edit/create paths.
+- [acquisition-prospects-run-2026-06-28.md](./acquisition-prospects-run-2026-06-28.md) - acquisition/prospects QA attempt and auth blockers.
 - [screenshots/](./screenshots/) - browser evidence captured during testing.
 
 ## Session Summary
@@ -27,6 +28,8 @@ Confirmed bugs:
 10. Recipe create can surface a generic 422 instead of actionable validation.
 11. Adding a profile field can leave behind an empty modal shell.
 12. Onboarded coaches can still open `/register-business`.
+13. Fresh coach signup can fail with a generic 500 before OTP.
+14. Existing QA coach login can fail with a generic 400 before OTP.
 
 Coverage completed:
 

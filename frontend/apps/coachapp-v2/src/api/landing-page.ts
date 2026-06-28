@@ -6,6 +6,7 @@ export type Template = 'proof_first' | 'problem_fit' | 'coach_story';
 export type QuestionType = 'short_text' | 'long_text' | 'single_select';
 
 export type ProofDraft = {key: string; label: string; value: string};
+export type FitDraft = {key: string; value: string};
 export type QuestionDraft = {key: string; id: string; label: string; type: QuestionType; options: string[]};
 export type ProgramDraft = {
   key: string;
@@ -19,11 +20,14 @@ export type ProgramDraft = {
 export type LandingDraft = {
   slug: string;
   template: Template;
+  eyebrow: string;
   headline: string;
   subheadline: string;
   coach_intro: string;
+  hero_image_url: string;
   status: 'draft' | 'published';
   proof_points: ProofDraft[];
+  fit_points: FitDraft[];
   application_questions: QuestionDraft[];
   programs: ProgramDraft[];
 };
@@ -48,11 +52,14 @@ export function emptyLandingDraft(): LandingDraft {
   return {
     slug: '',
     template: 'proof_first',
+    eyebrow: '',
     headline: '',
     subheadline: '',
     coach_intro: '',
+    hero_image_url: '',
     status: 'draft',
     proof_points: [],
+    fit_points: [],
     application_questions: DEFAULT_QUESTIONS.map((q) => ({
       key: key(),
       id: key(),
@@ -68,11 +75,14 @@ export function landingToDraft(page: LandingPage): LandingDraft {
   return {
     slug: page.slug,
     template: page.template,
+    eyebrow: page.eyebrow ?? '',
     headline: page.headline,
     subheadline: page.subheadline ?? '',
     coach_intro: page.coach_intro ?? '',
+    hero_image_url: page.hero_image_url ?? '',
     status: page.status,
     proof_points: (page.proof_points ?? []).map((p) => ({key: key(), label: p.label ?? '', value: p.value ?? ''})),
+    fit_points: (page.fit_points ?? []).map((value) => ({key: key(), value})),
     application_questions: (page.application_questions ?? []).map((q) => ({
       key: key(),
       id: q.id ?? key(),
@@ -98,13 +108,16 @@ export function draftToRequest(draft: LandingDraft): LandingPageUpsertRequest {
   return {
     slug: trimmed(draft.slug),
     template: draft.template,
+    eyebrow: orNull(draft.eyebrow),
     headline: trimmed(draft.headline),
     subheadline: orNull(draft.subheadline),
     coach_intro: orNull(draft.coach_intro),
+    hero_image_url: orNull(draft.hero_image_url),
     status: draft.status,
     proof_points: draft.proof_points
       .filter((p) => trimmed(p.label) || trimmed(p.value))
       .map((p) => ({label: trimmed(p.label), value: trimmed(p.value)})),
+    fit_points: draft.fit_points.map((f) => trimmed(f.value)).filter(Boolean),
     application_questions: draft.application_questions
       .filter((q) => trimmed(q.label))
       .map((q) => ({

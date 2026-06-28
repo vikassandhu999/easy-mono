@@ -101,7 +101,7 @@ export default function ListProspects() {
       </Page.Toolbar>
 
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl pt-4">
+        <div className="w-full pt-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Spinner color="accent" />

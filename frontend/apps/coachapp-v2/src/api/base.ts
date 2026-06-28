@@ -81,9 +81,11 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
 
   const result = await rawBaseQuery(args, api, extra);
   if ('error' in result && result.error) {
-    const status = result.error.status;
-    // BUG: this is also wrong as we can have insufficient permissions error as well.
-    if (status === 401 || status === 403) {
+    // Only a 401 (unauthenticated) ends the session. A 403 means the token is
+    // valid but lacks permission for this resource (e.g. a guest-scoped token
+    // hitting a coach-only route during onboarding) — logging out there would
+    // bounce a legitimately-signed-in user to /login.
+    if (result.error.status === 401) {
       forceLogout();
     }
   }

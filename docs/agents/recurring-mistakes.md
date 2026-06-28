@@ -152,6 +152,25 @@ cite concrete spec lines and distinguish literal requirements from interpretatio
 by:** adversarial verification: grep/read the cited spec text before filing or fixing a drift
 finding.
 
+### RM-112 — Pickers must use the app's responsive overlay pattern
+Do not ship desktop-only or centered-modal pickers for coachapp assignment/search flows. The
+client-detail redesign first built assignment as a centered modal and weak mobile pass; it had
+to be rebuilt to match the spec and app pattern: anchored `Popover` under the trigger on
+desktop, bottom `KeyboardSheet` on mobile, with surface-agnostic content shared between both.
+Mirror `plan-assign-control.tsx` / `food-picker-control.tsx`: one content component, one
+responsive wrapper selected by pointer/width. **Enforced by:** for any new picker, verify both
+desktop and mobile surfaces exist, and test at a narrow viewport before finishing.
+
+### RM-113 — Preserve standard coachapp page alignment and section structure
+Do not let redesigned detail pages float centered, stretch oddly, or use ad-hoc separators that
+break the app rhythm. Client-detail was initially centered (`mx-auto`), under-used desktop
+space, and had floaty section dividers; it was corrected to the standard coachapp pattern:
+left-aligned max-width content, responsive grid, uppercase section headings, and carded
+sections that stack cleanly on mobile. Before shipping a page redesign, compare against nearby
+coachapp list/detail/create/edit screens for header placement, width cap, section casing,
+action spacing, and mobile stacking. **Enforced by:** visual check at desktop + mobile widths
+and code review for `mx-auto` / full-width stretches / leading separators in page shells.
+
 ---
 
 ## Deploy / ops

@@ -43,6 +43,41 @@ Editing a schema while `phx.server` runs returns 422 "Unexpected field" on the n
 the spec is built once at boot. Fully restart the server (not code-reload) after schema
 edits. **Enforced by:** this doc / memory.
 
+### RM-005 — Write responses must be tested at value level, not just truthiness
+When a write response renders derived fields from preloads, create/update must return the
+same fully-loaded shape as GET. In the nutrition refactor, `create_recipe` / `update_recipe`
+and meal writes returned structs without re-preloading ingredients/items, so `nutrition`
+rendered as zero and nested rows rendered empty while truthiness-only tests still passed.
+Assert concrete values in write-response tests for derived fields and nested collections.
+**Enforced by:** controller tests with exact value assertions for create/update responses.
+
+### RM-006 — OpenApiSpex enums and examples must mirror domain enums
+Do not hand-wave examples as harmless: invalid examples (`"milk"`, `"high-protein"`,
+`"breakfast"`) hid drift from real domain enum values (`"dairy"`, `"high_protein"`, etc.).
+When adding enum-ish fields, source the OpenApiSpex `enum:` from a shared helper or the same
+domain vocabulary, and make examples valid members. **Enforced by:** schema review + tests
+that exercise representative enum members when feasible.
+
+### RM-007 — CastAndValidate nested request schemas need map output
+For controller actions that pass nested request bodies into Ecto `cast_embed` / `cast_assoc`,
+OpenApiSpex nested object schemas must set `struct?: false` where maps are expected.
+Otherwise `CastAndValidate` yields OpenApiSpex structs, which are non-enumerable or fail Ecto
+casting. Hit in nutrition schedule slots, food serving sizes, and recipe ingredient requests.
+**Enforced by:** request tests through the real router with `content-type: application/json`.
+
+### RM-008 — CastAndValidate controllers read `conn.body_params`, not pattern-matched params
+After `OpenApiSpex.Plug.CastAndValidate`, validated bodies live in `conn.body_params` and path
+params remain string-keyed in `conn.path_params`. Do not pattern-match old merged controller
+params for write actions after enabling the plug. Also ensure tests send JSON content-type.
+**Enforced by:** controller tests that hit the routed action, not direct context calls.
+
+### RM-009 — Route renames must be verified from the generated OpenAPI surface
+When renaming HTTP paths (e.g. snake_case → kebab-case), checking only the edited route block
+or grepping broadly is not enough. The nutrition route pass kebab-cased coach routes but missed
+client routes (`/v1/client/nutrition_plans`) because tests still used the old paths. Verify the
+final OpenAPI route list for both coach and client scopes, then update generated clients/tests.
+**Enforced by:** generated OpenAPI path diff / `just gen-api` plus route tests for both roles.
+
 ---
 
 ## Frontend
@@ -76,6 +111,46 @@ separate from any persisted id (see the proof-points / fit-points editors).
 `pnpm exec biome check --write <files>` and `pnpm --filter <app> exec tsc --noEmit`.
 The trailing biome step in `just gen-api` errors on the generated file by design — that's
 expected, not a regression. **Enforced by:** biome + tsc.
+
+### RM-106 — Never use `as unknown` to read fields absent from the generated contract
+If generated types do not expose a field, the runtime response probably does not either. The
+training builder read `exercise.tracking_type` via `(exercise as unknown as ...)`, but the
+embedded exercise schema/view omitted `tracking_type`, so the UI always defaulted to
+weight+reps and broke duration/distance exercises. Fix the backend JSON view + OpenApiSpex
+schema, regenerate clients, then consume the typed field. **Enforced by:** avoid contract-bypass
+casts in app code; grep for `as unknown as` on API response objects during review.
+
+### RM-107 — Field-driving logic must have one shared source of truth
+The set row guessed displayed fields by null-checking values while the set sheet used
+`tracking_type`, causing row/sheet drift for combined tracking types. Extract tables such as
+`tracking_type → fields` into a shared module used by every renderer/editor. **Enforced by:**
+shared helper + tests or component review for each consumer.
+
+### RM-108 — Client inputs should not optimistically send values the server rejects
+If the API contract has bounds (`rpe` 1–10), the client must enforce or block invalid values
+before autosave. Letting an invalid optimistic cache write roll back with a generic save error
+looks broken and hides the real constraint. **Enforced by:** mirror OpenApiSpex min/max in form
+input attributes and save handlers for edited numeric fields.
+
+### RM-109 — No literal brand colors in UI classes/styles
+Hardcoded values like `#6c8cff` bypass the theme and drift from HeroUI tokens. Use semantic
+tokens (`border-accent`, `focus:border-accent`, etc.) instead. Hit in builder accent-rule
+borders and focus styles. **Enforced by:** grep app `src` for `#[0-9a-fA-F]{3,8}` before
+finishing UI work; any remaining literals need a deliberate exception.
+
+### RM-110 — Verify HeroUI component semantics against app usage before "fixing" them
+Audit agents flagged `<Label>` / `<Description>` in menu/list item text as suspicious, but the
+same pattern was used across pickers, list items, and menus and matched the intended HeroUI v3
+slot pattern. Do not replace established primitives from an audit hunch; verify against local
+usage and installed package/types first. **Enforced by:** app-wide usage grep + package/type
+check before changing shared UI primitives.
+
+### RM-111 — Spec audits must quote exact spec text, never inferred requirements
+One training audit escalated a judgment call by inventing a sentence that did not exist in the
+spec ("builder must handle not-yet-persisted → persisted plan id transition"). Findings must
+cite concrete spec lines and distinguish literal requirements from interpretations. **Enforced
+by:** adversarial verification: grep/read the cited spec text before filing or fixing a drift
+finding.
 
 ---
 

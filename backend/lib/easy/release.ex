@@ -10,8 +10,7 @@ defmodule Easy.Release do
         {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
       end
 
-    {:ok, seed_results} = seed()
-    {:ok, migration_results ++ seed_results}
+    {:ok, migration_results}
   end
 
   @spec seed() :: {:ok, [term()]}

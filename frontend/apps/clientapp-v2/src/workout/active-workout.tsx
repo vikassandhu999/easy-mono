@@ -30,8 +30,10 @@ import {
   type FieldKind,
   fieldsFor,
   formatSeconds,
+  formatVolume,
   type SnapshotExercise,
   type SnapshotSet,
+  sessionVolumeKg,
   snapshotExercises,
 } from '@/workout/session-utils';
 
@@ -367,6 +369,15 @@ type Card = {
   total: null | number;
 };
 
+// Soft-intake soreness scale (1–5) shown on the finish wrap-up.
+const SORENESS_OPTIONS = [
+  {rating: 1, emoji: '😎', label: 'Fresh'},
+  {rating: 2, emoji: '🙂', label: 'Easy'},
+  {rating: 3, emoji: '😮‍💨', label: 'Worked'},
+  {rating: 4, emoji: '🥵', label: 'Hard'},
+  {rating: 5, emoji: '💀', label: 'Brutal'},
+];
+
 function ActiveWorkout({session}: {session: TrainingSession}) {
   const navigate = useNavigate();
   const [createSet, {isLoading: isLogging}] = useCreateClientPerformedSetMutation();
@@ -380,10 +391,17 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   const [added, setAdded] = useState<Picked[]>([]);
   const [doneAdded, setDoneAdded] = useState<Set<string>>(() => new Set());
   const [picker, setPicker] = useState<null | {index: number; mode: 'swap'} | {mode: 'add'}>(null);
+  const [soreness, setSoreness] = useState<number | null>(null);
+  const [note, setNote] = useState('');
 
   const workoutName = (session.planned_snapshot as {workout_name?: string} | null)?.workout_name ?? 'Workout';
   const planned = snapshotExercises(session);
   const performed = session.performed_sets;
+  const summary = {
+    sets: performed.length,
+    exercises: new Set(performed.map((p) => p.exercise_id)).size,
+    volume: formatVolume(sessionVolumeKg(performed)),
+  };
   const assigned = assignPerformed(planned, performed);
   const extra = addedExercises(planned, performed);
 
@@ -485,11 +503,21 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   };
 
   const finish = async (state: 'completed' | 'discarded') => {
+    // Soft intake: soreness + note are captured on save but never required.
+    const body: {ended_at: string; state: 'completed' | 'discarded'; soreness_rating?: number; notes?: string} = {
+      ended_at: new Date().toISOString(),
+      state,
+    };
+    if (state === 'completed') {
+      if (soreness != null) {
+        body.soreness_rating = soreness;
+      }
+      if (note.trim()) {
+        body.notes = note.trim();
+      }
+    }
     try {
-      await updateSession({
-        id: session.id,
-        trainingSessionUpdateRequest: {ended_at: new Date().toISOString(), state},
-      }).unwrap();
+      await updateSession({id: session.id, trainingSessionUpdateRequest: body}).unwrap();
       finishOverlay.close();
       toast.success(state === 'completed' ? 'Workout saved' : 'Workout discarded');
       navigate(ROUTES.TRAINING);
@@ -666,7 +694,56 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
             <AlertDialog.Header>
               <AlertDialog.Heading>Finish workout?</AlertDialog.Heading>
             </AlertDialog.Header>
-            <AlertDialog.Body>Save this workout, or discard it if it was a mistake.</AlertDialog.Body>
+            <AlertDialog.Body>
+              <div className="flex flex-col gap-4">
+                {/* Summary */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    {label: 'SETS', value: String(summary.sets)},
+                    {label: 'EX', value: String(summary.exercises)},
+                    {label: 'VOL', value: summary.volume},
+                  ].map((stat) => (
+                    <div
+                      className="rounded-lg border border-border bg-surface px-2 py-2 text-center"
+                      key={stat.label}
+                    >
+                      <p className="text-lg font-bold leading-none">{stat.value}</p>
+                      <p className="mt-1 text-[10px] tracking-wide text-muted">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Soreness — optional */}
+                <div>
+                  <p className="mb-1.5 text-xs text-muted">How did it feel?</p>
+                  <div className="flex justify-between gap-1">
+                    {SORENESS_OPTIONS.map((opt) => (
+                      <button
+                        aria-label={opt.label}
+                        aria-pressed={soreness === opt.rating}
+                        className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg border py-2 transition-colors ${
+                          soreness === opt.rating ? 'border-accent bg-accent/10' : 'border-border'
+                        }`}
+                        key={opt.rating}
+                        onClick={() => setSoreness((cur) => (cur === opt.rating ? null : opt.rating))}
+                        type="button"
+                      >
+                        <span className="text-xl">{opt.emoji}</span>
+                        <span className="text-[9px] text-muted">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Note — optional */}
+                <textarea
+                  className="min-h-16 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent"
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Add a note for your coach (optional)"
+                  value={note}
+                />
+              </div>
+            </AlertDialog.Body>
             <AlertDialog.Footer>
               <Button
                 isDisabled={isFinishing}

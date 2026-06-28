@@ -56,7 +56,7 @@ export default function PlanAssignControl({kind, clientId, clientName, label}: P
           }}
         >
           <Popover.Content
-            className="w-[26rem] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-4 shadow-xl"
+            className="w-104 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface shadow-xl"
             triggerRef={triggerRef}
           >
             <Popover.Dialog className="outline-none">{open ? content : null}</Popover.Dialog>

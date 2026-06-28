@@ -11,6 +11,15 @@ if (window.location.hostname.startsWith('192.168.')) {
   baseURL = `http://${localIP}:4000`;
 }
 
+// A deployed (non-local) origin with no VITE_API_BASE_URL means every request silently
+// targets localhost and fails. Make that loud instead of a mysterious "spins then fails".
+if (!import.meta.env.VITE_API_BASE_URL && !/^(localhost|127\.0\.0\.1|192\.168\.)/.test(window.location.hostname)) {
+  console.error(
+    '[config] VITE_API_BASE_URL is not set but the app is served from a non-local origin — ' +
+      `API calls target ${baseURL} and will fail. Set VITE_API_BASE_URL at build time (see .env.example).`,
+  );
+}
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: baseURL,
   prepareHeaders: (headers) => {

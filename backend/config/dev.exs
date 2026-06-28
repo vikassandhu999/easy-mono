@@ -49,10 +49,8 @@ config :easy, Easy.Mailer,
 # Authentication and JWT configuration for development
 config :easy, :jwt_secret, "dev-secret-key-minimum-32-characters-long-for-hs256"
 
-# CORS configuration for development - allow all origins
-config :cors_plug,
-  origin: ["http://localhost:3000", "http://localhost:4000"],
-  credentials: true
+# CORS in dev is permissive by default: EasyWeb.Cors.origins/0 falls back to "*" when
+# :easy/:cors_origins is unset (only prod sets it from CORS_ALLOWED_ORIGINS).
 
 # Cookie configuration for development - disable Secure flag for HTTP
 config :easy, EasyWeb.CookieHelper, secure: false

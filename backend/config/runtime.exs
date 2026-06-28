@@ -81,9 +81,9 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
-  config :cors_plug,
-    origin: cors_origins,
-    credentials: true
+  # Governs EasyWeb.Cors.origins/0. Empty (unset CORS_ALLOWED_ORIGINS) falls back to
+  # permissive "*" so a missing env never blocks the frontends.
+  config :easy, cors_origins: cors_origins
 
   config :easy, EasyWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],

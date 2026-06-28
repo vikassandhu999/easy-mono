@@ -20,39 +20,10 @@ defmodule EasyWeb.Endpoint do
   plug(Plug.MethodOverride)
   plug(Plug.Head)
 
-  # CORS configuration for cross-origin requests
+  # CORS — origins governed by CORS_ALLOWED_ORIGINS in prod, permissive fallback otherwise.
+  # See EasyWeb.Cors. (Evaluated per request, so runtime config applies.)
   plug(CORSPlug,
-    origin: [
-      # Development URLs
-      "http://localhost:2020",
-      "http://localhost:2021",
-      "http://localhost:1314",
-      "http://localhost:3000",
-      "http://localhost:1313",
-      "http://localhost:3001",
-      "http://localhost:5173",
-      "http://192.168.1.2:2020",
-      "http://192.168.1.2:1313",
-      "http://192.168.1.3:2020",
-      "http://192.168.1.6:2020",
-      "http://192.168.1.8:2020",
-      "http://192.168.1.9:2020",
-      "http://192.168.1.3:2021",
-      "http://192.168.1.3:4173",
-      "http://192.168.1.6:2021",
-      "http://192.168.1.8:2021",
-      "http://192.168.1.9:2021",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:3001",
-      "http://127.0.0.1:5173",
-      # Production URLs (update these for your domains)
-      "https://api.coacheasy.app",
-      "https://admin.coacheasy.app",
-      "https://app.api.coacheasy.app",
-      "https://coach.api.coacheasy.app",
-      "https://client.api.coacheasy.app",
-      "*"
-    ],
+    origin: &EasyWeb.Cors.origins/0,
     credentials: true,
     max_age: 86400,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

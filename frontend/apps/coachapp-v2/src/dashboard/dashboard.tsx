@@ -1,5 +1,5 @@
-import {Spinner, Typography} from '@heroui/react';
-import {ChevronRight, Dumbbell, Globe, Inbox, type LucideIcon, UserPlus, Users, UtensilsCrossed} from 'lucide-react';
+import {Avatar, Collection, Description, Label, ListBox, Spinner, Typography} from '@heroui/react';
+import {ChevronRight, Dumbbell, Globe, type LucideIcon, UserPlus, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
@@ -7,16 +7,11 @@ import {ROUTES} from '@/@config/routes';
 import {type Client, useListClientsQuery} from '@/api/clients';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {type Prospect, useListProspectsQuery} from '@/api/prospects';
-import SectionHeading from '@/settings/components/section-heading';
 
 function greeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) {
-    return 'Good morning';
-  }
-  if (hour < 18) {
-    return 'Good afternoon';
-  }
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
   return 'Good evening';
 }
 
@@ -24,77 +19,15 @@ function initials(first?: null | string, last?: null | string): string {
   return `${first?.[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase() || '?';
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  onClick,
-  value,
-}: {
-  icon: LucideIcon;
-  label: string;
-  onClick: () => void;
-  value: number;
-}) {
+function StatCell({label, onClick, value}: {label: string; onClick: () => void; value: number}) {
   return (
     <button
-      className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-accent/50"
+      className="flex flex-col gap-1 p-4 text-left transition-colors hover:bg-surface-hover"
       onClick={onClick}
       type="button"
     >
-      <Icon
-        className="text-muted"
-        size={18}
-      />
-      <span className="text-2xl font-semibold leading-none">{value}</span>
-      <Typography
-        color="muted"
-        type="body-xs"
-      >
-        {label}
-      </Typography>
-    </button>
-  );
-}
-
-function AttentionRow({
-  initial,
-  meta,
-  onClick,
-  title,
-}: {
-  initial: string;
-  meta: string;
-  onClick: () => void;
-  title: string;
-}) {
-  return (
-    <button
-      className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-surface-hover"
-      onClick={onClick}
-      type="button"
-    >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-medium text-accent">
-        {initial}
-      </span>
-      <div className="min-w-0 flex-1">
-        <Typography
-          truncate
-          weight="medium"
-        >
-          {title}
-        </Typography>
-        <Typography
-          color="muted"
-          truncate
-          type="body-xs"
-        >
-          {meta}
-        </Typography>
-      </div>
-      <ChevronRight
-        className="shrink-0 text-muted"
-        size={18}
-      />
+      <span className="text-2xl font-bold leading-none tabular-nums">{value}</span>
+      <span className="text-xs text-muted">{label}</span>
     </button>
   );
 }
@@ -102,15 +35,15 @@ function AttentionRow({
 function QuickAction({icon: Icon, label, onClick}: {icon: LucideIcon; label: string; onClick: () => void}) {
   return (
     <button
-      className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent/50"
+      className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3.5 text-left text-sm font-medium transition-colors hover:bg-surface-hover"
       onClick={onClick}
       type="button"
     >
       <Icon
-        className="shrink-0 text-accent"
-        size={18}
+        className="shrink-0 text-muted"
+        size={16}
       />
-      <Typography type="body-sm">{label}</Typography>
+      {label}
     </button>
   );
 }
@@ -118,15 +51,13 @@ function QuickAction({icon: Icon, label, onClick}: {icon: LucideIcon; label: str
 export default function Dashboard() {
   const navigate = useNavigate();
   const {data: profileData, isLoading: profileLoading} = useGetCoachProfileQuery();
-  // A filtered query still returns the full business summary, so one call per
-  // resource gives both the headline counts and the "needs attention" rows.
   const {data: clientsData} = useListClientsQuery({limit: 5, status: 'pending'});
   const {data: prospectsData} = useListProspectsQuery({limit: 5, status: 'new'});
 
   if (profileLoading) {
     return (
       <Page>
-        <Page.Content className="flex items-center justify-center px-4 py-20">
+        <Page.Content className="flex items-center justify-center py-20">
           <Spinner color="accent" />
         </Page.Content>
       </Page>
@@ -144,46 +75,55 @@ export default function Dashboard() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header className="pb-0">
         <Page.TitleGroup>
           <Page.Title>{name ? `${greeting()}, ${name}` : greeting()}</Page.Title>
+          {profile?.business.name ? (
+            <Page.Description>{profile.business.name}</Page.Description>
+          ) : null}
         </Page.TitleGroup>
-        {profile?.business.name ? <Page.Description>{profile.business.name}</Page.Description> : null}
       </Page.Header>
 
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <Page.Content className="px-4 pb-8 md:px-6 lg:px-8">
+        <div className="flex max-w-2xl flex-col gap-8 pt-6">
+
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard
-              icon={Users}
-              label="Active clients"
-              onClick={() => navigate(ROUTES.CLIENTS)}
-              value={clientSummary?.active ?? 0}
-            />
-            <StatCard
-              icon={UserPlus}
-              label="Pending invites"
-              onClick={() => navigate(ROUTES.CLIENTS)}
-              value={clientSummary?.pending ?? 0}
-            />
-            <StatCard
-              icon={Inbox}
-              label="New prospects"
-              onClick={() => navigate(ROUTES.PROSPECTS)}
-              value={prospectSummary?.new ?? 0}
-            />
-            <StatCard
-              icon={Users}
-              label="Clients won"
-              onClick={() => navigate(ROUTES.PROSPECTS)}
-              value={prospectSummary?.won ?? 0}
-            />
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+            <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
+              <StatCell
+                label="Active clients"
+                onClick={() => navigate(ROUTES.CLIENTS)}
+                value={clientSummary?.active ?? 0}
+              />
+              <StatCell
+                label="Pending invites"
+                onClick={() => navigate(ROUTES.CLIENTS)}
+                value={clientSummary?.pending ?? 0}
+              />
+              <StatCell
+                label="New prospects"
+                onClick={() => navigate(ROUTES.PROSPECTS)}
+                value={prospectSummary?.new ?? 0}
+              />
+              <StatCell
+                label="Clients won"
+                onClick={() => navigate(ROUTES.PROSPECTS)}
+                value={prospectSummary?.won ?? 0}
+              />
+            </div>
           </div>
 
           {/* Needs attention */}
-          <section>
-            <SectionHeading title="Needs your attention" />
+          <section className="flex flex-col gap-3">
+            <Typography
+              color="muted"
+              type="body-xs"
+              weight="semibold"
+              className="uppercase tracking-wider"
+            >
+              Needs your attention
+            </Typography>
+
             {nothingPending ? (
               <div className="rounded-xl border border-border bg-surface px-4 py-8 text-center">
                 <Typography weight="medium">You're all caught up</Typography>
@@ -199,46 +139,85 @@ export default function Dashboard() {
                 {newProspects.length > 0 ? (
                   <div>
                     <Typography
-                      className="mb-1.5"
+                      className="mb-1.5 px-1"
                       color="muted"
                       type="body-xs"
                     >
                       New prospects to review
                     </Typography>
-                    <div className="overflow-hidden rounded-xl border border-border bg-surface">
-                      {newProspects.map((prospect) => (
-                        <AttentionRow
-                          initial={initials(prospect.name)}
-                          key={prospect.id}
-                          meta={prospect.program?.name ?? 'General application'}
-                          onClick={() => navigate(ROUTES.PROSPECT_DETAIL.replace(':id', prospect.id))}
-                          title={prospect.name}
-                        />
-                      ))}
-                    </div>
+                    <ListBox
+                      aria-label="New prospects"
+                      className="overflow-hidden rounded-xl border border-border bg-surface"
+                      onAction={(key) => navigate(ROUTES.PROSPECT_DETAIL.replace(':id', String(key)))}
+                      selectionMode="none"
+                    >
+                      <Collection items={newProspects}>
+                        {(prospect) => (
+                          <ListBox.Item
+                            className="min-h-fit px-4 py-3 transition-none! active:scale-100! data-[pressed=true]:scale-100!"
+                            id={prospect.id}
+                            textValue={prospect.name}
+                          >
+                            <Avatar size="sm">
+                              <Avatar.Fallback>{prospect.name[0]?.toUpperCase()}</Avatar.Fallback>
+                            </Avatar>
+                            <div className="flex min-w-0 flex-col">
+                              <Label className="truncate">{prospect.name}</Label>
+                              <Description className="truncate">
+                                {prospect.program?.name ?? 'General application'}
+                              </Description>
+                            </div>
+                            <ChevronRight
+                              className="ms-auto shrink-0 text-muted"
+                              size={16}
+                            />
+                          </ListBox.Item>
+                        )}
+                      </Collection>
+                    </ListBox>
                   </div>
                 ) : null}
 
                 {pendingClients.length > 0 ? (
                   <div>
                     <Typography
-                      className="mb-1.5"
+                      className="mb-1.5 px-1"
                       color="muted"
                       type="body-xs"
                     >
                       Awaiting invite acceptance
                     </Typography>
-                    <div className="overflow-hidden rounded-xl border border-border bg-surface">
-                      {pendingClients.map((client) => (
-                        <AttentionRow
-                          initial={initials(client.first_name, client.last_name)}
-                          key={client.id}
-                          meta={client.email ?? 'Invite sent'}
-                          onClick={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', client.id))}
-                          title={[client.first_name, client.last_name].filter(Boolean).join(' ') || 'Invited client'}
-                        />
-                      ))}
-                    </div>
+                    <ListBox
+                      aria-label="Pending clients"
+                      className="overflow-hidden rounded-xl border border-border bg-surface"
+                      onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
+                      selectionMode="none"
+                    >
+                      <Collection items={pendingClients}>
+                        {(client) => {
+                          const fullName = [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Invited client';
+                          return (
+                            <ListBox.Item
+                              className="min-h-fit px-4 py-3 transition-none! active:scale-100! data-[pressed=true]:scale-100!"
+                              id={client.id}
+                              textValue={fullName}
+                            >
+                              <Avatar size="sm">
+                                <Avatar.Fallback>{initials(client.first_name, client.last_name)}</Avatar.Fallback>
+                              </Avatar>
+                              <div className="flex min-w-0 flex-col">
+                                <Label className="truncate">{fullName}</Label>
+                                <Description className="truncate">{client.email ?? 'Invite sent'}</Description>
+                              </div>
+                              <ChevronRight
+                                className="ms-auto shrink-0 text-muted"
+                                size={16}
+                              />
+                            </ListBox.Item>
+                          );
+                        }}
+                      </Collection>
+                    </ListBox>
                   </div>
                 ) : null}
               </div>
@@ -246,9 +225,16 @@ export default function Dashboard() {
           </section>
 
           {/* Quick actions */}
-          <section>
-            <SectionHeading title="Quick actions" />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <section className="flex flex-col gap-3">
+            <Typography
+              color="muted"
+              type="body-xs"
+              weight="semibold"
+              className="uppercase tracking-wider"
+            >
+              Quick actions
+            </Typography>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <QuickAction
                 icon={UserPlus}
                 label="Invite a client"
@@ -271,6 +257,7 @@ export default function Dashboard() {
               />
             </div>
           </section>
+
         </div>
       </Page.Content>
     </Page>

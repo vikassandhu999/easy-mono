@@ -20,15 +20,33 @@ export type ClientProfile = {
   coach: ClientCoach;
 };
 
+export type UpdateClientProfileRequest = {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+};
+
 // ── Endpoints ───────────────────────────────────────────────
 
 export const profileApi = api.injectEndpoints({
+  // Hand-managed endpoints (cache tags, precise types) that share names with
+  // the generated client — override makes these authoritative regardless of
+  // import order.
+  overrideExisting: true,
   endpoints: (build) => ({
     getClientProfile: build.query<ApiResponse<ClientProfile>, void>({
       query: () => '/v1/client/me',
       providesTags: [{type: 'ClientProfile', id: 'ME'}],
     }),
+    updateClientProfile: build.mutation<ApiResponse<ClientProfile>, UpdateClientProfileRequest>({
+      query: (body) => ({
+        body,
+        method: 'PATCH',
+        url: '/v1/client/me',
+      }),
+      invalidatesTags: [{type: 'ClientProfile', id: 'ME'}],
+    }),
   }),
 });
 
-export const {useGetClientProfileQuery} = profileApi;
+export const {useGetClientProfileQuery, useUpdateClientProfileMutation} = profileApi;

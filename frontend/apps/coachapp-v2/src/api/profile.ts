@@ -26,6 +26,10 @@ export type UpdateProfileRequest = {
 };
 
 export const profileApi = api.injectEndpoints({
+  // Hand-managed endpoints (cache tags, precise types) that share names with
+  // the generated client — override makes these authoritative regardless of
+  // import order.
+  overrideExisting: true,
   endpoints: (build) => ({
     getCoachProfile: build.query<ApiResponse<CoachProfile>, void>({
       query: () => '/v1/coach/me',

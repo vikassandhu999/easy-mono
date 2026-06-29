@@ -8,8 +8,7 @@ import {FormTextField} from '@/@components/form-fields';
 import {ROUTES} from '@/@config/routes';
 import {useExchangeTokenMutation} from '@/api/auth';
 import {getRefreshToken, setTokens} from '@/api/authStorage';
-import {useCreateBusinessMutation} from '@/api/business';
-import {useGetCurrentBusinessQuery} from '@/api/generated';
+import {useCreateBusinessMutation, useGetCurrentBusinessQuery} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -72,7 +71,7 @@ export default function RegisterBusiness() {
 
   const onSubmit = async (data: RegisterBusinessFormValues) => {
     try {
-      await createBusiness({name: data.name, handle: data.handle}).unwrap();
+      await createBusiness({businessRequest: {name: data.name, handle: data.handle}}).unwrap();
 
       const refreshToken = getRefreshToken();
       if (refreshToken) {

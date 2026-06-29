@@ -102,6 +102,11 @@ export type ListClientsFilters = {
 };
 
 export const clientsApi = api.injectEndpoints({
+  // These hand-managed endpoints (cache tags, infinite query, precise types)
+  // share names with the generated client. Without override, which definition
+  // wins depends on import order — override makes the richer handwritten ones
+  // authoritative and deterministic.
+  overrideExisting: true,
   endpoints: (build) => ({
     inviteClient: build.mutation<ApiResponse<Client>, ClientInviteRequest>({
       query: (body) => ({

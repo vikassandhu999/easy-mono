@@ -6,8 +6,12 @@ import PageLayout from '@/@components/page-layout';
 import SectionHeading from '@/@components/section-heading';
 import {clearTokens} from '@/api/authStorage';
 import {api} from '@/api/base';
-import {useUpdateClientProfileMutation} from '@/api/generated';
-import {type ClientCoach, type ClientProfile, useGetClientProfileQuery} from '@/api/profile';
+import {
+  type ClientCoach,
+  type ClientProfile,
+  useGetClientProfileQuery,
+  useUpdateClientProfileMutation,
+} from '@/api/profile';
 import EditableRow from '@/settings/components/editable-row';
 import {store} from '@/store';
 
@@ -51,14 +55,14 @@ function ProfileSection({
   const handleNameSave = useCallback(
     async (value: string) => {
       const {firstName, lastName} = splitName(value.trim());
-      await onUpdate({clientProfileUpdateRequest: {first_name: firstName, last_name: lastName}}).unwrap();
+      await onUpdate({first_name: firstName, last_name: lastName}).unwrap();
     },
     [onUpdate],
   );
 
   const handlePhoneSave = useCallback(
     async (value: string) => {
-      await onUpdate({clientProfileUpdateRequest: {phone: value.trim()}}).unwrap();
+      await onUpdate({phone: value.trim()}).unwrap();
     },
     [onUpdate],
   );

@@ -36,7 +36,7 @@ export function FormNumberField<T extends FieldValues>({
             field.onChange(nextValue);
             onValueChange?.(nextValue);
           }}
-          value={field.value}
+          value={field.value ?? Number.NaN}
           variant={'secondary'}
         >
           <Label>{label}</Label>

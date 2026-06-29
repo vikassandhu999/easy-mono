@@ -7,7 +7,8 @@ import {z} from 'zod';
 import {FormOtpField} from '@/@components/form-otp-field';
 
 import {ROUTES} from '@/@config/routes';
-import {useAcceptInviteMutation, useAcceptInviteVerifyMutation} from '@/api/auth';
+import {useAcceptInviteVerifyMutation} from '@/api/auth';
+import {useAcceptInviteMutation} from '@/api/generated';
 import {setTokens} from '@/api/authStorage';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
@@ -127,7 +128,7 @@ export default function VerifyInviteOtp() {
       return;
     }
     try {
-      await resendInvite({email: state.email, invitation_token: token}).unwrap();
+      await resendInvite({acceptInviteRequest: {email: state.email, invitation_token: token}}).unwrap();
       setCooldownRemaining(RESEND_COOLDOWN_SECONDS);
       reset({otp: ''});
       toast.success('A new code is on its way.');

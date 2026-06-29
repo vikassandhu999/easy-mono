@@ -224,6 +224,15 @@ verify live at desktop and mobile widths, or explicitly mark the visual path unv
 not call it done. **Enforced by:** final UI report must say which viewports were visually checked
 and which states remain unverified.
 
+### RM-120 — Shared form wrappers must not mount uncontrolled
+Optional form values can start as `undefined`, but shared HeroUI wrappers must still pass a
+controlled value to the underlying input. Coachapp macro fields passed `field.value` directly
+through `FormNumberField`, so empty optional numbers mounted uncontrolled and filling them
+emitted uncontrolled-to-controlled warnings across food, recipe, and nutrition forms. Normalize
+empty values in the shared wrapper, not each caller. **Enforced by:** browser console check on
+empty optional form fields after build; add a component test when coachapp has a frontend test
+runner.
+
 ---
 
 ## Deploy / ops

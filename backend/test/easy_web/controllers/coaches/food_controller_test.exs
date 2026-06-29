@@ -122,6 +122,46 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       assert length(foods) == 2
     end
 
+    test "uses a stable order for foods with matching timestamps", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      inserted_at = ~U[2026-06-29 00:00:00Z]
+
+      insert(:food,
+        id: "00000000-0000-0000-0000-000000000001",
+        name: "Food A",
+        creator: coach,
+        business: business,
+        inserted_at: inserted_at,
+        updated_at: inserted_at
+      )
+
+      insert(:food,
+        id: "00000000-0000-0000-0000-000000000003",
+        name: "Food C",
+        creator: coach,
+        business: business,
+        inserted_at: inserted_at,
+        updated_at: inserted_at
+      )
+
+      insert(:food,
+        id: "00000000-0000-0000-0000-000000000002",
+        name: "Food B",
+        creator: coach,
+        business: business,
+        inserted_at: inserted_at,
+        updated_at: inserted_at
+      )
+
+      conn = get(conn, "/v1/coach/nutrition-foods", %{"offset" => "1", "limit" => "1"})
+      assert %{"data" => [food], "count" => 3} = json_response(conn, 200)
+
+      assert food["id"] == "00000000-0000-0000-0000-000000000002"
+    end
+
     test "does not return foods from another business", %{
       conn: conn,
       coach: coach,

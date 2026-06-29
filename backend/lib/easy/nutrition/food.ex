@@ -141,7 +141,7 @@ defmodule Easy.Nutrition.Food do
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(f in query, order_by: [desc: f.inserted_at])
+    from(f in query, order_by: [desc: f.inserted_at, desc: f.id])
   end
 
   defp to_tsquery(term) do

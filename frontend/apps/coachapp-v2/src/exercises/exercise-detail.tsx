@@ -118,16 +118,16 @@ export default function ExerciseDetail() {
         <Page.TitleGroup className={'flex items-center'}>
           <Button
             onPress={goBack}
-            size="sm"
+            size="md"
             variant="ghost"
             isIconOnly
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={20} />
           </Button>
           <Page.Title>Exercise</Page.Title>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Toolbar className="flex items-center gap-2">
+      <Page.Toolbar className="flex flex-wrap items-center gap-2">
         {!isSystemExercise && (
           <Button
             onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}

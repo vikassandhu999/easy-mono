@@ -149,10 +149,10 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
         {/* Exercise name + reorder/remove controls */}
         <div className="mb-1 flex items-center justify-between gap-2">
           <span className="min-w-0 truncate text-sm font-semibold text-foreground">{exerciseName}</span>
-          <div className="flex shrink-0 items-center gap-0.5">
+          <div className="flex shrink-0 items-center gap-1">
             <button
               aria-label="Move exercise up"
-              className="rounded p-0.5 text-muted transition-colors hover:text-foreground disabled:opacity-30"
+              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-foreground disabled:opacity-30"
               disabled={isFirst}
               onClick={() => onMove(index, -1)}
               type="button"
@@ -161,7 +161,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             </button>
             <button
               aria-label="Move exercise down"
-              className="rounded p-0.5 text-muted transition-colors hover:text-foreground disabled:opacity-30"
+              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-foreground disabled:opacity-30"
               disabled={isLast}
               onClick={() => onMove(index, 1)}
               type="button"
@@ -170,7 +170,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             </button>
             <button
               aria-label="Remove exercise"
-              className="rounded p-0.5 text-muted transition-colors hover:text-danger"
+              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-danger"
               onClick={onRemove}
               type="button"
             >

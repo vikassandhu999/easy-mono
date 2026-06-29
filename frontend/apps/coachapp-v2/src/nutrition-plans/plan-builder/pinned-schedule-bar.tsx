@@ -132,7 +132,7 @@ export function PinnedScheduleBar({planId}: PinnedScheduleBarProps) {
                     key={slot}
                   >
                     <span className="w-20 shrink-0 text-xs text-muted">{MEAL_SLOT_LABELS[slot] ?? slot}</span>
-                    <span className={`text-xs ${meal ? 'font-medium text-foreground' : 'text-muted'}`}>
+                    <span className={`min-w-0 truncate text-xs ${meal ? 'font-medium text-foreground' : 'text-muted'}`}>
                       {meal ? meal.name : '—'}
                     </span>
                   </div>

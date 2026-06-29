@@ -242,14 +242,14 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
               {hasWorkout ? (
                 <button
                   aria-label={isExpanded ? 'Collapse exercises' : 'Expand exercises'}
-                  className="shrink-0 text-muted hover:text-foreground transition-colors"
+                  className="shrink-0 -mr-1 p-2 text-muted hover:text-foreground transition-colors"
                   onClick={() => toggleExpand(day)}
                   type="button"
                 >
                   {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                 </button>
               ) : (
-                <span className="w-[15px] shrink-0" />
+                <span className="w-[27px] shrink-0" />
               )}
             </div>
 

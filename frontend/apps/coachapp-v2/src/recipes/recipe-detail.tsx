@@ -109,7 +109,7 @@ export default function RecipeDetail() {
         <Page.TitleGroup className={'flex items-center'}>
           <Button
             onPress={goBack}
-            size="sm"
+            size="md"
             variant="ghost"
             isIconOnly
           >
@@ -118,7 +118,7 @@ export default function RecipeDetail() {
           <Page.Title>Recipe</Page.Title>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Toolbar className="flex items-center gap-2">
+      <Page.Toolbar className="flex flex-wrap items-center gap-2">
         <Button
           onPress={() => navigate(`/library/recipes/${recipe.id}/edit`)}
           size="sm"
@@ -188,7 +188,12 @@ export default function RecipeDetail() {
               />
             </div>
             <div className="min-w-0 flex-1">
-              <Typography type="h5">{recipe.name}</Typography>
+              <Typography
+                className="break-words"
+                type="h5"
+              >
+                {recipe.name}
+              </Typography>
             </div>
           </div>
 

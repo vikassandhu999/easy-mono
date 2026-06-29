@@ -50,7 +50,7 @@ export default function ListNutritionPlans() {
         <Page.TitleGroup className="flex items-center">
           <Button
             onPress={goBack}
-            size="sm"
+            size="md"
             variant="ghost"
             isIconOnly
             className={'lg:hidden'}

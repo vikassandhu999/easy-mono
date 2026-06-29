@@ -478,14 +478,14 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       {/* Mode toggle */}
       <div className="mb-3 flex gap-1 rounded-lg border border-border bg-surface p-1">
         <button
-          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'everyday' ? 'border border-accent bg-accent/10 text-accent font-semibold' : 'border border-transparent text-muted hover:text-foreground'}`}
+          className={`flex-1 rounded-md px-3 py-2 min-h-10 text-xs font-medium transition-colors ${mode === 'everyday' ? 'border border-accent bg-accent/10 text-accent font-semibold' : 'border border-transparent text-muted hover:text-foreground'}`}
           onClick={() => setMode('everyday')}
           type="button"
         >
           Every day
         </button>
         <button
-          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${mode === 'customize' ? 'border border-accent bg-accent/10 text-accent font-semibold' : 'border border-transparent text-muted hover:text-foreground'}`}
+          className={`flex-1 rounded-md px-3 py-2 min-h-10 text-xs font-medium transition-colors ${mode === 'customize' ? 'border border-accent bg-accent/10 text-accent font-semibold' : 'border border-transparent text-muted hover:text-foreground'}`}
           onClick={() => setMode('customize')}
           type="button"
         >
@@ -500,7 +500,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
             const overridden = isDayOverridden(scheduleMap[day], templateSlots);
             const isSelected = selectedDay === day;
             const baseClass =
-              'flex-1 min-w-[40px] rounded-lg border px-1 py-1.5 text-center text-xs font-medium transition-colors';
+              'flex-1 min-w-[40px] rounded-lg border px-1 py-2 min-h-10 text-center text-xs font-medium transition-colors';
             const stateClass = isSelected
               ? overridden
                 ? 'border-warning/60 bg-warning/10 text-warning font-bold'

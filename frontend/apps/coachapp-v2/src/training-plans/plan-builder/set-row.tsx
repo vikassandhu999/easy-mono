@@ -84,7 +84,7 @@ export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow
       {canRemove ? (
         <button
           aria-label={`Remove set ${index + 1}`}
-          className="shrink-0 rounded p-1 text-muted transition-colors hover:text-danger"
+          className="shrink-0 rounded p-2 text-muted transition-colors hover:text-danger"
           onClick={onRemove}
           type="button"
         >

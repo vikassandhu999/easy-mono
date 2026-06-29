@@ -253,7 +253,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
                   {item.food.name}
                 </Typography>
                 <Typography
-                  className="shrink-0"
+                  className="min-w-0 shrink truncate max-w-[45%]"
                   color="muted"
                   type="body-sm"
                 >
@@ -293,6 +293,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               </Button>
               <Button
                 aria-label={`Remove ${item.food.name}`}
+                className="min-h-11 min-w-11"
                 isIconOnly
                 onPress={() => removeItem(index)}
                 size="sm"

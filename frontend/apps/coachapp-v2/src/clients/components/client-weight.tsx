@@ -123,6 +123,7 @@ export default function ClientWeight({clientId}: {clientId: string}) {
                   {e.value} {e.unit}
                 </Typography>
                 <Typography
+                  className="min-w-0 text-right"
                   color="muted"
                   truncate
                   type="body-xs"

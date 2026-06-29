@@ -83,7 +83,7 @@ function TextRow({
         </Typography>
       ) : description ? (
         <Typography
-          className="mt-1"
+          className="mt-1 break-words"
           color="muted"
           type="body-xs"
         >
@@ -412,7 +412,7 @@ function ProofPointsEditor({
                   value={point.value}
                 />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <TextRow
                   label="Label"
                   onChange={(v) => onChange(points.map((p, i) => (i === index ? {...p, label: v} : p)))}
@@ -463,7 +463,7 @@ function FitPointsEditor({onChange, points}: {onChange: (p: FitDraft[]) => void;
               key={point.key}
             >
               <input
-                className={inputCls}
+                className={`${inputCls} min-w-0`}
                 onChange={(e) => onChange(points.map((p, i) => (i === index ? {...p, value: e.target.value} : p)))}
                 placeholder="You have tried plans but can't stay consistent."
                 value={point.value}

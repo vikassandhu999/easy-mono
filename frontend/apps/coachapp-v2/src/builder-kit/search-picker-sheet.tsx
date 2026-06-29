@@ -172,47 +172,51 @@ export function SearchPickerSheet<T>({
       open={open}
       title={title}
     >
-      {/* Search input — autofocus when sheet opens */}
-      <Input
-        aria-label={`Search ${title}`}
-        autoFocus
-        className="mb-2"
-        onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Search…"
-        value={search}
-        variant="secondary"
-      />
+      {/* Search + filters pinned to the top of the sheet's scroll area so they
+           stay reachable as the item list scrolls. -mx-4/px-4 cancels the parent
+           content padding; bg-surface matches the panel so scrolled rows don't
+           show through. */}
+      <div className="sticky top-0 z-10 -mx-4 bg-surface px-4 pb-2">
+        {/* Search input — autofocus when sheet opens */}
+        <Input
+          aria-label={`Search ${title}`}
+          autoFocus
+          className="mb-2"
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search…"
+          value={search}
+          variant="secondary"
+        />
 
-      {/* Filter chips — scrollable pill row, or an equal-flex segmented control */}
-      {filters && filters.length > 0 ? (
-        <div
-          className={
-            filtersLayout === 'segmented'
-              ? 'mb-2 flex gap-1.5'
-              : 'mb-2 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide'
-          }
-        >
-          {filters.map((chip) => (
-            // A real button (not a Chip) so the filter is keyboard-operable and its
-            // selected state is announced via aria-pressed.
-            <button
-              aria-pressed={chip.active}
-              className={[
-                'inline-flex min-h-8 items-center rounded-[7px] border px-2.5 py-1 text-xs font-medium transition-colors',
-                filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
-                chip.active
-                  ? 'border-accent bg-accent-soft text-accent'
-                  : 'border-border text-muted hover:bg-default-soft',
-              ].join(' ')}
-              key={chip.id}
-              onClick={chip.onToggle}
-              type="button"
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
+        {/* Filter chips — scrollable pill row, or an equal-flex segmented control */}
+        {filters && filters.length > 0 ? (
+          <div
+            className={
+              filtersLayout === 'segmented' ? 'flex gap-1.5' : 'flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide'
+            }
+          >
+            {filters.map((chip) => (
+              // A real button (not a Chip) so the filter is keyboard-operable and its
+              // selected state is announced via aria-pressed.
+              <button
+                aria-pressed={chip.active}
+                className={[
+                  'inline-flex min-h-8 items-center rounded-[7px] border px-2.5 py-1 text-xs font-medium transition-colors',
+                  filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
+                  chip.active
+                    ? 'border-accent bg-accent-soft text-accent'
+                    : 'border-border text-muted hover:bg-default-soft',
+                ].join(' ')}
+                key={chip.id}
+                onClick={chip.onToggle}
+                type="button"
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       {/* Item list — caller-rendered rows.
            Each row is a <button> so it is an interactive element (satisfies

@@ -77,7 +77,7 @@ export default function PlanScheduleStep({
   return (
     <div className="space-y-4 pb-2">
       <button
-        className="flex items-center gap-1 text-xs font-medium text-muted hover:text-foreground"
+        className="flex min-h-9 items-center gap-1 py-1.5 text-xs font-medium text-muted hover:text-foreground"
         onClick={onBack}
         type="button"
       >
@@ -123,7 +123,7 @@ export default function PlanScheduleStep({
           </Label>
           {!requireEnd && end ? (
             <button
-              className="text-xs font-medium text-accent hover:underline"
+              className="min-h-9 py-1.5 text-xs font-medium text-accent hover:underline"
               onClick={() => setEnd(null)}
               type="button"
             >
@@ -139,7 +139,7 @@ export default function PlanScheduleStep({
                 const on = activeDuration === w;
                 return (
                   <button
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                    className={`min-h-10 rounded-lg border px-3 py-2 text-xs font-medium ${
                       on
                         ? 'border-accent bg-accent-soft text-accent'
                         : 'border-border text-muted hover:bg-surface-hover'

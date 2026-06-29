@@ -54,7 +54,7 @@ export default function ClientListItem({
         {showQuickActions && whatsapp ? (
           <a
             aria-label={`Message ${name} on WhatsApp`}
-            className="flex min-h-9 min-w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-default-soft hover:text-success active:bg-default-soft"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted transition-colors hover:bg-default-soft hover:text-success active:bg-default-soft"
             href={`https://wa.me/${whatsapp}`}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}

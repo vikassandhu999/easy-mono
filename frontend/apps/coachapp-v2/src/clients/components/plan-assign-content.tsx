@@ -132,7 +132,7 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
         </Typography>
         <button
           aria-label="Close"
-          className="text-muted transition-colors hover:text-foreground"
+          className="grid size-9 place-items-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={onClose}
           type="button"
         >

@@ -42,7 +42,7 @@ function Field({label, value}: {label: string; value: React.ReactNode}) {
       >
         {label}
       </Typography>
-      <div className="min-w-0 flex-1 text-sm">{value}</div>
+      <div className="min-w-0 flex-1 text-sm break-words">{value}</div>
     </div>
   );
 }
@@ -259,7 +259,7 @@ export default function ProspectDetail() {
                 <div className="flex gap-2 sm:ml-auto sm:shrink-0">
                   {prospect.phone ? (
                     <a
-                      className="inline-flex min-h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:flex-none"
+                      className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:min-h-9 sm:flex-none"
                       href={`tel:${prospect.phone}`}
                     >
                       <Phone size={15} />
@@ -268,7 +268,7 @@ export default function ProspectDetail() {
                   ) : null}
                   {prospect.email ? (
                     <a
-                      className="inline-flex min-h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:flex-none"
+                      className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:min-h-9 sm:flex-none"
                       href={`mailto:${prospect.email}`}
                     >
                       <Mail size={15} />
@@ -339,7 +339,12 @@ export default function ProspectDetail() {
                       >
                         {questionLabels.get(qid) || qid}
                       </Typography>
-                      <Typography type="body-sm">{String(value)}</Typography>
+                      <Typography
+                        className="break-words"
+                        type="body-sm"
+                      >
+                        {String(value)}
+                      </Typography>
                     </div>
                   ))}
                 </div>

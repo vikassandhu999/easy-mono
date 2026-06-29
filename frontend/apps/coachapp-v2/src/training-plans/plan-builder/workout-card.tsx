@@ -313,7 +313,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
           <Dropdown>
             <Button
               aria-label="Workout options"
-              className="h-7 w-7 min-w-7"
+              className="h-9 w-9 min-w-9"
               isIconOnly
               size="sm"
               variant="ghost"

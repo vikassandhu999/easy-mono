@@ -71,7 +71,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
         </Typography>
         <button
           aria-label="Close"
-          className="rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="-mr-1.5 flex size-9 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={onClose}
           type="button"
         >

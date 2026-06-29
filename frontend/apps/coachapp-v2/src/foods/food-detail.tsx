@@ -114,7 +114,7 @@ export default function FoodDetail() {
           <Page.Title>Food</Page.Title>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Toolbar className="flex items-center gap-2">
+      <Page.Toolbar className="flex flex-wrap items-center gap-2">
         {!isSystemFood && (
           <Button
             onPress={() => navigate(`/library/foods/${food.id}/edit`)}
@@ -195,7 +195,12 @@ export default function FoodDetail() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <Typography type="h5">{food.name}</Typography>
+              <Typography
+                className="break-words"
+                type="h5"
+              >
+                {food.name}
+              </Typography>
               {(food.category || food.source) && (
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {food.category && (

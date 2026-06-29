@@ -52,13 +52,13 @@ function PageHeader({children, className}: PageProps) {
 }
 
 function PageTitleGroup({children, className}: PageProps) {
-  return <div className={className}>{children}</div>;
+  return <div className={cn('min-w-0 flex-1', className)}>{children}</div>;
 }
 
 function PageTitle({children, className}: PageTitleProps) {
   return (
     <Typography
-      className={className}
+      className={cn('min-w-0 truncate', className)}
       type="h6"
     >
       {children}

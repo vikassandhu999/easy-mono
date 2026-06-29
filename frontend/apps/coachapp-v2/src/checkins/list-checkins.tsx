@@ -28,7 +28,7 @@ export default function ListCheckins() {
             className="lg:hidden"
             isIconOnly
             onPress={goBack}
-            size="sm"
+            size="md"
             variant="ghost"
           >
             <ArrowLeft size={18} />

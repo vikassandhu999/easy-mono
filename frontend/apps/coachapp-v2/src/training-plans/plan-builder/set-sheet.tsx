@@ -367,7 +367,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
                 {LOAD_UNITS.map(({value, label}) => (
                   <button
                     className={[
-                      'rounded border px-1.5 py-0.5 text-[9px] transition-colors',
+                      'rounded border px-1.5 py-1.5 text-[10px] transition-colors',
                       loadUnit === value
                         ? 'border-accent text-accent'
                         : 'border-border text-muted hover:text-foreground',
@@ -426,7 +426,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
                 {DISTANCE_UNITS.map(({value, label}) => (
                   <button
                     className={[
-                      'rounded border px-1.5 py-0.5 text-[9px] transition-colors',
+                      'rounded border px-1.5 py-1.5 text-[10px] transition-colors',
                       distanceUnit === value
                         ? 'border-accent text-accent'
                         : 'border-border text-muted hover:text-foreground',

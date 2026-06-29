@@ -77,7 +77,12 @@ function CheckinResponses({assignmentId}: {assignmentId: string}) {
             >
               {q.label ?? q.id}
             </Typography>
-            <Typography type="body-sm">{formatAnswer(q.id ? answers[q.id] : undefined)}</Typography>
+            <Typography
+              className="break-words"
+              type="body-sm"
+            >
+              {formatAnswer(q.id ? answers[q.id] : undefined)}
+            </Typography>
           </div>
         )),
       )}

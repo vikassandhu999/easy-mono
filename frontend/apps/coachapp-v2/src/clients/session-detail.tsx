@@ -225,7 +225,7 @@ export default function SessionDetail() {
                 size={14}
               />
               <Typography
-                className="italic"
+                className="italic min-w-0 break-words"
                 color="muted"
                 type="body-sm"
               >

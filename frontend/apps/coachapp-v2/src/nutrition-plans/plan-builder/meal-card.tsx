@@ -314,7 +314,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
           <Dropdown>
             <Button
               aria-label="Meal options"
-              className="h-7 w-7 min-w-7"
+              className="h-9 w-9 min-w-9"
               isIconOnly
               size="sm"
               variant="ghost"

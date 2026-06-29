@@ -52,47 +52,49 @@ export default function EditableRow({
   if (editing) {
     return (
       <Form
-        className="flex items-center gap-2 border-t border-border px-4 py-2"
+        className="flex flex-col gap-1 border-t border-border px-4 py-2"
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <Typography
-          className="w-20 shrink-0"
-          color="muted"
-          type="body-sm"
-        >
-          {label}
-        </Typography>
-        <div className="min-w-0 flex-1">
-          <FormTextField
-            className="w-full"
-            control={form.control}
-            label={<span className="sr-only">{label}</span>}
-            name="value"
-            type={inputType}
-          />
-        </div>
-        <Button
-          isPending={form.formState.isSubmitting}
-          size="sm"
-          type="submit"
-        >
-          {form.formState.isSubmitting ? (
-            <Spinner
-              color="current"
-              size="sm"
+        <div className="flex min-w-0 items-center gap-2">
+          <Typography
+            className="w-20 shrink-0"
+            color="muted"
+            type="body-sm"
+          >
+            {label}
+          </Typography>
+          <div className="min-w-0 flex-1">
+            <FormTextField
+              className="w-full"
+              control={form.control}
+              label={<span className="sr-only">{label}</span>}
+              name="value"
+              type={inputType}
             />
-          ) : (
-            'Save'
-          )}
-        </Button>
-        <Button
-          onPress={cancel}
-          size="sm"
-          type="button"
-          variant="ghost"
-        >
-          Cancel
-        </Button>
+          </div>
+          <Button
+            isPending={form.formState.isSubmitting}
+            size="sm"
+            type="submit"
+          >
+            {form.formState.isSubmitting ? (
+              <Spinner
+                color="current"
+                size="sm"
+              />
+            ) : (
+              'Save'
+            )}
+          </Button>
+          <Button
+            onPress={cancel}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            Cancel
+          </Button>
+        </div>
         {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
       </Form>
     );

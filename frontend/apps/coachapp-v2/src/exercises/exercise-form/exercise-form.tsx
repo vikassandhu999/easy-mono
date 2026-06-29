@@ -303,6 +303,8 @@ export default function ExerciseForm({
                   <Fieldset.Actions>
                     <Button
                       aria-label={`Remove image ${index + 1}`}
+                      className="min-h-10 min-w-10"
+                      isIconOnly
                       onPress={() =>
                         setValue(
                           'images',
@@ -313,7 +315,7 @@ export default function ExerciseForm({
                       size="sm"
                       variant="ghost"
                     >
-                      <X size={14} />
+                      <X size={16} />
                     </Button>
                   </Fieldset.Actions>
                 </Fieldset.Group>

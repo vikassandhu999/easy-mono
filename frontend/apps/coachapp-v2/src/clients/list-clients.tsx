@@ -88,7 +88,7 @@ export default function ListClients() {
             <Tabs.List className="w-max! min-w-max">
               {FILTER_OPTIONS.map((option) => (
                 <Tabs.Tab
-                  className="w-auto! h-6 whitespace-nowrap data-[selected=true]:bg-segment data-[selected=true]:text-segment-foreground data-[selected=true]:shadow-sm"
+                  className="w-auto! h-8 whitespace-nowrap data-[selected=true]:bg-segment data-[selected=true]:text-segment-foreground data-[selected=true]:shadow-sm sm:h-6"
                   id={option.id}
                   key={option.id}
                 >

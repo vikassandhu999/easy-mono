@@ -160,8 +160,6 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
           'shadow-[0_-12px_30px_rgba(0,0,0,0.55)]',
           // Layout
           'flex flex-col',
-          // Height ceiling so the inner overflow-y-auto engages instead of growing off-screen
-          'max-h-[calc(100dvh-3rem)]',
           // Desktop: max-width + centred
           'md:left-1/2 md:right-auto md:w-full md:max-w-lg md:-translate-x-1/2',
           className,
@@ -171,6 +169,13 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
         role="dialog"
         style={{
           bottom: keyboardHeight,
+          // Height ceiling so the inner overflow-y-auto engages instead of growing
+          // off-screen. Subtract keyboardHeight: the panel is anchored at
+          // bottom:keyboardHeight and grows upward, so the keyboard's height must
+          // come out of the ceiling or the grip/title/search get pushed above the
+          // visible viewport when the keyboard is open. On desktop keyboardHeight
+          // is 0, so this is identical to calc(100dvh - 3rem).
+          maxHeight: `calc(100dvh - 3rem - ${keyboardHeight}px)`,
           transform: visible ? (isDesktop ? 'translateX(-50%)' : undefined) : hiddenTransform,
           transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
         }}
@@ -194,7 +199,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
             </span>
             <button
               aria-label="Close"
-              className="text-muted hover:text-foreground transition-colors"
+              className="-mr-2 flex min-h-10 min-w-10 items-center justify-center rounded-md text-muted hover:text-foreground transition-colors"
               onClick={onClose}
               type="button"
             >
@@ -208,7 +213,9 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
 
         {/* Sticky footer dock */}
         {footer !== undefined ? (
-          <div className="border-t border-separator bg-background px-4 py-3">{footer}</div>
+          <div className="border-t border-separator bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            {footer}
+          </div>
         ) : null}
       </div>
     </>,

@@ -119,8 +119,8 @@ export default function ClientPicker({
                   />
                 </div>
                 <div className="flex min-w-0 flex-col">
-                  <Label>{getFullName(client.first_name, client.last_name)}</Label>
-                  <Description>{client.email}</Description>
+                  <Label className="truncate">{getFullName(client.first_name, client.last_name)}</Label>
+                  <Description className="truncate">{client.email}</Description>
                 </div>
                 <ListBox.ItemIndicator />
               </ListBox.Item>

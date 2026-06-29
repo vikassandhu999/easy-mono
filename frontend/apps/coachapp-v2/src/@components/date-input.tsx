@@ -48,7 +48,7 @@ export default function DateInput({ariaLabel, isRequired, label, labelClassName,
           </DatePicker.Trigger>
         </DateField.Suffix>
       </DateField.Group>
-      <DatePicker.Popover className="p-2">
+      <DatePicker.Popover className="max-w-[calc(100vw-1rem)] p-2">
         <Calendar aria-label={ariaLabel ?? (typeof label === 'string' ? label : 'Choose date')}>
           <Calendar.Header>
             <Calendar.NavButton slot="previous" />

@@ -581,9 +581,11 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
           <span className="text-[10px] text-muted">read-only · tap to edit a day</span>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-border">
-          {/* Grid: 8 cols — 1 label + 7 days */}
-          <div className="grid grid-cols-[48px_repeat(7,1fr)] text-[9px]">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          {/* Grid: 8 cols — 1 label + 7 days. min-w keeps day cells tappable on
+              narrow phones; the wrapper scrolls horizontally instead of shrinking
+              cells into unreadable slivers. */}
+          <div className="grid min-w-[420px] grid-cols-[48px_repeat(7,1fr)] text-[9px]">
             {/* Header row */}
             <div className="border-b border-r border-border bg-surface-secondary px-1 py-1.5" />
             {WEEKDAYS.map((day) => {

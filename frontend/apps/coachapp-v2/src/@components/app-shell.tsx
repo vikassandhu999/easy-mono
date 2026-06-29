@@ -263,7 +263,7 @@ export default function AppShell() {
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       {/* Global toast renderer — queued via toast() from @heroui/react */}
       <Toast.Provider placement="bottom end" />
 
@@ -275,7 +275,7 @@ export default function AppShell() {
             src="/TextLogo.webp"
           />
         </div>
-        <nav className="flex flex-1 flex-col px-3 py-4">
+        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-4">
           <div className="flex-1 space-y-1">
             {SIDEBAR_TOP.map((item) => (
               <SidebarNavItem
@@ -321,7 +321,7 @@ export default function AppShell() {
 
       {/* Main content — only add bottom padding when bottom nav is visible */}
       <main
-        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-64 ${showBottomNav ? (canInstall ? 'pb-32' : 'pb-16') : ''}`}
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-64 ${showBottomNav ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4rem+env(safe-area-inset-bottom))]') : ''}`}
       >
         <Outlet />
       </main>
@@ -331,7 +331,7 @@ export default function AppShell() {
 
       {/* Mobile install banner — above bottom nav */}
       {canInstall && showBottomNav ? (
-        <div className="fixed inset-x-0 bottom-16 z-40 border-t border-border bg-surface px-4 py-2.5 lg:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-surface px-4 py-2.5 lg:hidden">
           <div className="flex items-center gap-3">
             <img
               alt=""
@@ -357,7 +357,7 @@ export default function AppShell() {
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showBottomNav ? (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-border bg-background lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex min-h-16 items-center justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)] lg:hidden">
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
               item={item}

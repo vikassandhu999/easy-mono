@@ -89,31 +89,35 @@ export default function MultiSelectAutocomplete({
             const selectedItemKeys = state.selectedItems.map((item) => item.key);
 
             return (
-              <TagGroup
-                onRemove={handleRemoveTags}
-                size="sm"
-                variant="surface"
-              >
-                <TagGroup.List>
-                  {selectedItemKeys.map((key) => {
-                    const item = items.find((option) => option.id === String(key));
+              // Cap the trigger chip area so many long selections can't grow it
+              // unbounded and push the surrounding sticky toolbar around.
+              <div className="max-h-16 overflow-y-auto">
+                <TagGroup
+                  onRemove={handleRemoveTags}
+                  size="sm"
+                  variant="surface"
+                >
+                  <TagGroup.List>
+                    {selectedItemKeys.map((key) => {
+                      const item = items.find((option) => option.id === String(key));
 
-                    if (!item) {
-                      return null;
-                    }
+                      if (!item) {
+                        return null;
+                      }
 
-                    return (
-                      <Tag
-                        id={item.id}
-                        key={item.id}
-                        textValue={item.name}
-                      >
-                        {item.name}
-                      </Tag>
-                    );
-                  })}
-                </TagGroup.List>
-              </TagGroup>
+                      return (
+                        <Tag
+                          id={item.id}
+                          key={item.id}
+                          textValue={item.name}
+                        >
+                          {item.name}
+                        </Tag>
+                      );
+                    })}
+                  </TagGroup.List>
+                </TagGroup>
+              </div>
             );
           }}
         </Autocomplete.Value>

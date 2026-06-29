@@ -112,10 +112,14 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
       return;
     }
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    // The app scrolls inside `.easy_main-content` (see Page), not <body>, so lock
+    // that element or the background keeps scrolling behind the open sheet. Fall
+    // back to <body> on surfaces that don't use Page (e.g. auth).
+    const scroller = document.querySelector<HTMLElement>('.easy_main-content') ?? document.body;
+    const previousOverflow = scroller.style.overflow;
+    scroller.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = previousOverflow;
+      scroller.style.overflow = previousOverflow;
     };
   }, [open]);
 

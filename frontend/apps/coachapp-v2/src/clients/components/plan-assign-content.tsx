@@ -148,18 +148,20 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
           >
             Copies a template to {clientName}.
           </Typography>
-          <SearchField
-            aria-label="Search plan templates"
-            onChange={setSearch}
-            value={search}
-            variant="secondary"
-          >
-            <SearchField.Group>
-              <SearchField.SearchIcon />
-              <SearchField.Input placeholder="Search plan templates…" />
-              <SearchField.ClearButton />
-            </SearchField.Group>
-          </SearchField>
+          <div className="sticky top-0 z-10 bg-surface pb-1">
+            <SearchField
+              aria-label="Search plan templates"
+              onChange={setSearch}
+              value={search}
+              variant="secondary"
+            >
+              <SearchField.Group>
+                <SearchField.SearchIcon />
+                <SearchField.Input placeholder="Search plan templates…" />
+                <SearchField.ClearButton />
+              </SearchField.Group>
+            </SearchField>
+          </div>
 
           {query.isLoading ? (
             <div className="flex justify-center py-8">

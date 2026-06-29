@@ -346,8 +346,8 @@ export default function LandingPageEditor() {
       </Page.Content>
 
       {/* Sticky action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur md:px-6 lg:left-64 lg:px-8">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:px-6 lg:left-64 lg:px-8">
+        <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3">
           <Button
             isDisabled={!draft.slug || !isPublished}
             onPress={() => window.open(publicUrl, '_blank', 'noopener')}

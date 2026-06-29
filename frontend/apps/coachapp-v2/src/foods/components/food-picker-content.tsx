@@ -62,39 +62,42 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <Typography
-          type="body-sm"
-          weight="semibold"
-        >
-          Add ingredient
-        </Typography>
-        <button
-          aria-label="Close"
-          className="-mr-1.5 flex size-9 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          onClick={onClose}
-          type="button"
-        >
-          <X size={16} />
-        </button>
-      </div>
+      {/* Search + close pinned so the field stays reachable while results scroll. */}
+      <div className="sticky top-0 z-10 bg-surface pb-2">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <Typography
+            type="body-sm"
+            weight="semibold"
+          >
+            Add ingredient
+          </Typography>
+          <button
+            aria-label="Close"
+            className="-mr-1.5 flex size-9 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            onClick={onClose}
+            type="button"
+          >
+            <X size={16} />
+          </button>
+        </div>
 
-      <SearchField
-        aria-label="Search foods"
-        autoFocus
-        onChange={onSearchChange}
-        value={search}
-        variant="secondary"
-      >
-        <SearchField.Group>
-          <SearchField.SearchIcon />
-          <SearchField.Input
-            onKeyDown={onInputKeyDown}
-            placeholder="Search foods…"
-          />
-          {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton />}
-        </SearchField.Group>
-      </SearchField>
+        <SearchField
+          aria-label="Search foods"
+          autoFocus
+          onChange={onSearchChange}
+          value={search}
+          variant="secondary"
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input
+              onKeyDown={onInputKeyDown}
+              placeholder="Search foods…"
+            />
+            {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton />}
+          </SearchField.Group>
+        </SearchField>
+      </div>
 
       <div className="mt-2 max-h-72 overflow-y-auto">
         {!shouldQuery ? (

@@ -248,12 +248,12 @@ export function SearchPickerSheet<T>({
         {/* Create-from-no-match row */}
         {showCreateRow ? (
           <button
-            className="flex w-full items-center gap-2 py-3 text-left text-sm text-accent hover:opacity-80 transition-opacity"
+            className="flex w-full min-w-0 items-center gap-2 py-3 text-left text-sm text-accent hover:opacity-80 transition-opacity"
             onClick={() => onCreateNoMatch?.(search)}
             type="button"
           >
-            <span className="text-base leading-none">+</span>
-            <span>{createLabel ? createLabel(search) : `Create "${search}"`}</span>
+            <span className="shrink-0 text-base leading-none">+</span>
+            <span className="min-w-0 flex-1 truncate">{createLabel ? createLabel(search) : `Create "${search}"`}</span>
           </button>
         ) : null}
 

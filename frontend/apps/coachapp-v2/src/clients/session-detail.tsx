@@ -170,10 +170,16 @@ export default function SessionDetail() {
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
         <div className="max-w-lg">
           <div className="pb-4">
-            <div className="flex items-center gap-2">
-              <Typography type="h5">{title}</Typography>
+            <div className="flex min-w-0 items-center gap-2">
+              <Typography
+                truncate
+                type="h5"
+              >
+                {title}
+              </Typography>
               {stateChip ? (
                 <Chip
+                  className="shrink-0"
                   color={stateChip.color}
                   size="sm"
                   variant="soft"

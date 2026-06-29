@@ -47,7 +47,7 @@ export default function ListTrainingPlans() {
           </Button>
         </Page.Actions>
       </Page.Header>
-      <Page.Toolbar className={'sticky top-0 z-10 flex flex-col gap-3 pt-2 pb-3 border-b'}>
+      <Page.Toolbar className={'sticky top-0 z-10 flex flex-col gap-3 border-b bg-surface pt-2 pb-3'}>
         <SearchField
           aria-label="Search training plans"
           className="w-full sm:max-w-xs"

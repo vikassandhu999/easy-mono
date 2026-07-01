@@ -243,6 +243,17 @@ that holds its own string and parses up to a number — the shared `@/@component
 `NumberField` when adding a numeric field. **Enforced by:** `NumberInput` is the one numeric-entry
 component; grep for new `<NumberField` in coachapp should come back empty.
 
+### RM-122 — Build coachapp forms from the shared form primitives, not ad-hoc markup
+Coachapp forms drifted into 42 "(optional)" labels, label-restating descriptions, copy-pasted
+"mt-4 flex gap-4" submit rows, and ArrowLeft back buttons at 3 sizes. There is now ONE canonical
+pattern via shared components: `FormLayout` (width + section gap), `FormActions`, `FieldRow`,
+`FormTextField`/`FormNumberField`/`FormSelectField`/`FormTextAreaField`, `BackButton`, `ErrorState`,
+`SectionHeading` (all under `@/@components`). Rules: labels sentence case, units as `(g)`, NEVER
+`(optional)`/`(required)` in a label (optional is implicit; required = `isRequired` asterisk on the
+wrapper); descriptions only when they add real info; sections are `Fieldset` + `Legend`; header
+parity (same `BackButton` + `Title`) across loading/error/loaded. Don't hand-roll a `<Form>`,
+submit row, or header back button. **Enforced by:** grep must stay empty — `rg '\(optional\)|\(required\)' -g '*.tsx' apps/coachapp-v2/src` (labels) and no new `<Form ` / raw `ArrowLeft` back buttons in form/detail headers; visual check at mobile + desktop widths.
+
 ---
 
 ## Deploy / ops

@@ -92,6 +92,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <Button
+              aria-label="Back"
               onPress={attemptLeave}
               size="md"
               variant="ghost"

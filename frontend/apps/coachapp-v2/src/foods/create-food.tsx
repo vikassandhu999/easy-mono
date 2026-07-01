@@ -55,6 +55,7 @@ export default function CreateFood() {
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <Button
+              aria-label="Back"
               onPress={goBack}
               size="md"
               variant="ghost"

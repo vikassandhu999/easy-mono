@@ -53,6 +53,7 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
             <Button
+              aria-label="Back"
               isIconOnly
               onPress={goBack}
               size="md"

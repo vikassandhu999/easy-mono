@@ -314,6 +314,7 @@ export default function ProfileFields() {
       <Page.TitleGroup>
         <div className="flex items-center gap-1">
           <Button
+            aria-label="Back"
             isIconOnly
             onPress={() => navigate(ROUTES.SETTINGS)}
             size="md"

@@ -120,6 +120,7 @@ export default function ExerciseDetail() {
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
         <Page.TitleGroup className={'flex items-center'}>
           <Button
+            aria-label="Back"
             onPress={goBack}
             size="md"
             variant="ghost"

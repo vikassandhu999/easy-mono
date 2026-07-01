@@ -25,6 +25,7 @@ export default function ListCheckins() {
       <Page.Header>
         <Page.TitleGroup className="flex items-center">
           <Button
+            aria-label="Back"
             className="lg:hidden"
             isIconOnly
             onPress={goBack}

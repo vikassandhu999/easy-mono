@@ -321,18 +321,24 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
               <MoreHorizontal size={15} />
             </Button>
             <Dropdown.Popover>
-              {/* biome-ignore lint/suspicious/noEmptyBlockStatements: Dropdown.Menu requires onAction; individual items handle their own onPress */}
-              <Dropdown.Menu onAction={() => {}}>
+              <Dropdown.Menu
+                onAction={(key) => {
+                  // Route through onAction so it fires on pointer AND keyboard
+                  // (RAC sends Enter/Space through onAction, not item onPress).
+                  if (key === 'rename-workout') {
+                    setEditingName(true);
+                    setTimeout(() => nameInputRef.current?.select(), 0);
+                    if (!open) {
+                      onToggle();
+                    }
+                  } else if (key === 'delete-workout') {
+                    handleDelete().catch(() => undefined);
+                  }
+                }}
+              >
                 <Dropdown.Section>
                   <Dropdown.Item
                     id="rename-workout"
-                    onPress={() => {
-                      setEditingName(true);
-                      setTimeout(() => nameInputRef.current?.select(), 0);
-                      if (!open) {
-                        onToggle();
-                      }
-                    }}
                     textValue="Rename"
                   >
                     <Label>Rename</Label>
@@ -342,9 +348,6 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
                 <Dropdown.Section>
                   <Dropdown.Item
                     id="delete-workout"
-                    onPress={() => {
-                      handleDelete().catch(() => undefined);
-                    }}
                     textValue="Delete"
                     variant="danger"
                   >

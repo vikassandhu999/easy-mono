@@ -9,8 +9,13 @@ import {ArchiveIcon, ArchiveRestoreIcon, Copy, MoreHorizontal, Pencil, TrashIcon
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
-import type {NutritionPlan} from '@/api/generated';
-import {useDuplicateNutritionPlanMutation, useUpdateNutritionPlanMutation} from '@/api/generated';
+import {
+  coachApi,
+  type NutritionPlan,
+  useDuplicateNutritionPlanMutation,
+  useUpdateNutritionPlanMutation,
+} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 import NutritionPlanDeleteAlertDialog from './plan-delete-alert-dialog';
 
@@ -21,6 +26,7 @@ export type Props = {
 
 export function NutritionPlanActions({plan, onDeleted}: Props) {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [updatePlan, {isLoading: updating}] = useUpdateNutritionPlanMutation();
   const [duplicatePlan, {isLoading: duplicating}] = useDuplicateNutritionPlanMutation();
   const deleteAlertState = useOverlayState();
@@ -35,27 +41,25 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
     navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', result.data.id));
   };
 
-  const archive = async () => {
-    await updatePlan({
-      id: plan.id,
-      nutritionPlanRequest: {name: plan.name, status: 'archived'},
-    })
-      .unwrap()
-      .then(() => {
-        toast.success('Plan archived', {timeout: 1000});
-      });
+  // Optimistically patch the builder's getNutritionPlan detail (mirrors training
+  // plan-actions) so the dropdown flips Archive<->Restore immediately;
+  // updateNutritionPlan is tag:false and only invalidates the LIST, not the detail.
+  const setStatus = async (status: 'active' | 'archived', successMessage: string) => {
+    const patch = dispatch(
+      coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
+        draft.data.status = status;
+      }),
+    );
+    try {
+      await updatePlan({id: plan.id, nutritionPlanRequest: {name: plan.name, status}}).unwrap();
+      toast.success(successMessage, {timeout: 1000});
+    } catch (e) {
+      patch.undo();
+      throw e;
+    }
   };
-
-  const restore = async () => {
-    await updatePlan({
-      id: plan.id,
-      nutritionPlanRequest: {name: plan.name, status: 'active'},
-    })
-      .unwrap()
-      .then(() => {
-        toast.success('Plan restored', {timeout: 1000});
-      });
-  };
+  const archive = () => setStatus('archived', 'Plan archived');
+  const restore = () => setStatus('active', 'Plan restored');
 
   const blocking = deleteAlertState.isOpen || updating || duplicating;
 

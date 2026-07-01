@@ -54,6 +54,7 @@ export default function CreateRecipe() {
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <Button
+              aria-label="Back"
               onPress={attemptLeave}
               size="md"
               variant="ghost"

@@ -414,9 +414,12 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         open={pickerOpen}
       />
 
-      {/* Amount sheet — create mode (sequenced per picked item) */}
+      {/* Amount sheet — create mode (sequenced per picked item). key by the
+          current item so each queued food/recipe remounts with fresh state
+          instead of carrying the previous item's grams/serving selection. */}
       <AmountSheet
         food={amountFood}
+        key={currentAmountItem?.id}
         mealId={meal.id}
         onClose={handleAmountClose}
         open={currentAmountItem !== null}

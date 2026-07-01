@@ -111,7 +111,7 @@ interface ContentProps {
 
 function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose, onDelete}: ContentProps) {
   const dispatch = useAppDispatch();
-  const [createMealItem] = useCreateMealItemMutation();
+  const [createMealItem, {isLoading: isCreating}] = useCreateMealItemMutation();
   const [updateMealItem] = useUpdateMealItemMutation();
   const {refetch} = useGetNutritionPlanQuery({id: planId});
 
@@ -631,12 +631,12 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
           <button
             className={[
               'w-full rounded-xl py-3 text-sm font-semibold transition-colors',
-              canConfirm
+              canConfirm && !isCreating
                 ? 'bg-accent text-accent-foreground hover:bg-accent-hover'
                 : 'cursor-not-allowed bg-surface-secondary text-muted',
             ].join(' ')}
-            disabled={!canConfirm}
-            onClick={canConfirm ? handleCreate : undefined}
+            disabled={!canConfirm || isCreating}
+            onClick={canConfirm && !isCreating ? handleCreate : undefined}
             type="button"
           >
             ✓ Add to meal

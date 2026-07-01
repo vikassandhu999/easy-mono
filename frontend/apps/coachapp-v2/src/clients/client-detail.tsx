@@ -186,7 +186,7 @@ function ClientPlans({clientId, clientName}: {clientId: string; clientName: stri
 function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: null | string}) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const [updateClient] = useUpdateClientMutation();
+  const [updateClient, {isLoading: isSaving}] = useUpdateClientMutation();
 
   const startEditing = () => {
     setDraft(initialNotes ?? '');
@@ -221,6 +221,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
             Cancel
           </Button>
           <Button
+            isPending={isSaving}
             onPress={handleSave}
             size="sm"
           >
@@ -330,6 +331,7 @@ export default function ClientDetail() {
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <Button
+              aria-label="Back"
               onPress={goBack}
               size="md"
               variant="ghost"

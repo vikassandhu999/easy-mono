@@ -27,6 +27,7 @@ export default function ListRecipes() {
       <Page.Header>
         <Page.TitleGroup className="flex items-center">
           <Button
+            aria-label="Back"
             onPress={goBack}
             size="md"
             variant="ghost"

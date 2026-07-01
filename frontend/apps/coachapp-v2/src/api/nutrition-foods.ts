@@ -123,5 +123,8 @@ coachApi.enhanceEndpoints({
       ],
     },
     deleteRecipe: {invalidatesTags: [{type: 'Recipe', id: 'LIST'}]},
+    // Copy is tag:false too — invalidate the list so the duplicate appears when
+    // the coach returns to it (mirrors createRecipe/deleteRecipe).
+    copyNutritionRecipe: {invalidatesTags: [{type: 'Recipe', id: 'LIST'}]},
   },
 });

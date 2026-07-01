@@ -2,6 +2,8 @@ import type {Key} from '@heroui/react';
 import {Button, Collection, ListBox, ListBoxLoadMoreItem, Spinner, Typography} from '@heroui/react';
 import type {ReactNode} from 'react';
 
+import {ListSkeleton} from '@/@components/list-skeleton';
+
 /** Shared row styling for browse-list items: padding + disabled press animation. */
 export const LIST_ITEM_CLASS =
   'min-h-fit px-4 py-2 sm:px-8 transition-none! active:scale-100! data-[pressed=true]:scale-100!';
@@ -17,6 +19,8 @@ type Props<T extends object> = {
   onAction?: (key: Key) => void;
   onRetry?: () => void;
   renderItem: (item: T) => ReactNode;
+  /** Render round leading blocks in the loading skeleton (client-style rows). */
+  skeletonAvatar?: boolean;
 };
 
 export default function BrowseListBox<T extends object>({
@@ -30,6 +34,7 @@ export default function BrowseListBox<T extends object>({
   onAction,
   onRetry,
   renderItem,
+  skeletonAvatar,
 }: Props<T>) {
   return (
     <ListBox
@@ -38,9 +43,7 @@ export default function BrowseListBox<T extends object>({
       onAction={onAction}
       renderEmptyState={() =>
         isLoading ? (
-          <div className="flex justify-center py-12">
-            <Spinner size="sm" />
-          </div>
+          <ListSkeleton avatar={skeletonAvatar} />
         ) : isError ? (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <Typography

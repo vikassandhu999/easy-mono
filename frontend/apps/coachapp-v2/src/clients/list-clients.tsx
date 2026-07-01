@@ -109,6 +109,7 @@ export default function ListClients() {
           items={clients}
           onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
           renderItem={(client) => <ClientListItem client={client} />}
+          skeletonAvatar
         />
       </Page.Content>
     </Page>

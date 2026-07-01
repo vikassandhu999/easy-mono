@@ -174,7 +174,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
   if (scheduleError) {
     return (
       <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
-        Failed to load schedule.
+        Couldn't load schedule.
       </div>
     );
   }

@@ -97,10 +97,10 @@ export function MealItemRow({item, onTap}: MealItemRowProps) {
 
   return (
     // 2px accent rule on the row itself; single 10px indent, content-driven height
-    <div className="mt-[7px] flex items-start justify-between border-l-2 border-accent pl-2.5">
+    <div className="mt-1.75 flex items-start justify-between border-l-2 border-accent pl-2.5">
       {/* Main tap target — name + amount stacked */}
       <button
-        className="min-w-0 flex-1 py-[7px] text-left transition-colors hover:opacity-80"
+        className="min-w-0 flex-1 py-1.75 text-left transition-colors hover:opacity-80"
         onClick={onTap}
         type="button"
       >
@@ -110,7 +110,7 @@ export function MealItemRow({item, onTap}: MealItemRowProps) {
 
       {/* Right-aligned macro contribution column */}
       {macro ? (
-        <div className="shrink-0 whitespace-nowrap py-[7px] pl-2 text-right text-[10px] text-muted">
+        <div className="shrink-0 whitespace-nowrap py-1.75 pl-2 text-right text-[10px] text-muted">
           <span className="font-medium text-[#cde]">{macro.kcal}</span> kcal
           {macro.p !== '—' || macro.c !== '—' || macro.f !== '—' ? (
             <>

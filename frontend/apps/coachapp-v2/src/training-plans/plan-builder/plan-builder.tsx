@@ -1,6 +1,7 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -54,9 +55,7 @@ export default function TrainingPlanDetail() {
           </Page.Actions>
         </Page.Header>
         <Page.Content>
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-            Failed to load training plan. It may not exist or you don&apos;t have access.
-          </div>
+          <ErrorState message="Couldn't load training plan. It may not exist or you don't have access." />
         </Page.Content>
       </Page>
     );

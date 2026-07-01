@@ -100,7 +100,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
-          Failed to load workouts.
+          Couldn't load workouts.
         </div>
       ) : workouts.length === 0 ? (
         /* Empty state */

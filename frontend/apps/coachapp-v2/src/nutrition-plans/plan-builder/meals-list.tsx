@@ -108,7 +108,7 @@ export function MealsList({planId}: MealsListProps) {
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
-          Failed to load meals.
+          Couldn't load meals.
         </div>
       ) : meals.length === 0 ? (
         /* Empty state */

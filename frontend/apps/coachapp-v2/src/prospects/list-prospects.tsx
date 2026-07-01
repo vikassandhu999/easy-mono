@@ -1,9 +1,9 @@
 import type {Key} from '@heroui/react';
-import {Avatar, Chip, Collection, Description, Label, ListBox, Spinner, Tabs, Typography} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox, Tabs, Typography} from '@heroui/react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {ErrorState} from '@/@components/error-state';
+import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {
@@ -99,42 +99,30 @@ export default function ListProspects() {
       </Page.Toolbar>
 
       <Page.Content>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
-        ) : isError ? (
-          <div className="mx-auto w-full max-w-md px-4 pt-4">
-            <ErrorState message="Couldn't load prospects." />
-            <button
-              className="mt-3 inline-flex min-h-9 w-full items-center justify-center px-3 text-sm text-accent"
-              onClick={() => refetch()}
-              type="button"
-            >
-              Retry
-            </button>
-          </div>
-        ) : (
-          <ListBox
-            aria-label="Prospects"
-            className="flex-1 gap-0"
-            onAction={(key) => navigate(ROUTES.PROSPECT_DETAIL.replace(':id', String(key)))}
-            renderEmptyState={() => (
-              <div className="flex flex-col items-center gap-2 px-4 py-20 text-center">
-                <Typography weight="medium">No prospects yet</Typography>
-                <Typography
-                  color="muted"
-                  type="body-sm"
-                >
-                  Publish your landing page and applications will show up here.
-                </Typography>
-              </div>
-            )}
-            selectionMode="none"
-          >
-            <Collection items={prospects}>{(prospect) => <ProspectListItem prospect={prospect} />}</Collection>
-          </ListBox>
-        )}
+        <BrowseListBox
+          ariaLabel="Prospects"
+          className="flex-1 gap-0"
+          emptyState={
+            <div className="flex flex-col items-center gap-2 px-4 py-20 text-center">
+              <Typography weight="medium">No prospects yet</Typography>
+              <Typography
+                color="muted"
+                type="body-sm"
+              >
+                Publish your landing page and applications will show up here.
+              </Typography>
+            </div>
+          }
+          // Flat query (limit: 100), no pagination — nothing to fetch.
+          fetchNextPage={() => undefined}
+          isError={isError}
+          isLoading={isLoading}
+          items={prospects}
+          onAction={(key) => navigate(ROUTES.PROSPECT_DETAIL.replace(':id', String(key)))}
+          onRetry={refetch}
+          renderItem={(prospect) => <ProspectListItem prospect={prospect} />}
+          skeletonAvatar
+        />
       </Page.Content>
     </Page>
   );

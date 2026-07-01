@@ -268,6 +268,19 @@ copy of `ErrorState`'s markup). Sub-panel/inline load errors say "Couldn't load 
 page-level danger boxes go through `ErrorState`; `rg 'Failed to load' -g '*.tsx' apps/coachapp-v2/src`
 stays empty.
 
+### RM-124 — Don't stack an inline `transform: translateX` with a Tailwind `-translate-x-*` (v4 uses the `translate` property)
+Tailwind v4 emits translate utilities as the CSS `translate` property, NOT `transform`. So a
+`-translate-x-1/2` class and an inline `style={{transform: 'translateX(-50%)'}}` on the same element
+BOTH apply and STACK — it shifts a full -100% of its width instead of -50%. In `keyboard-sheet.tsx`
+this centered every builder sheet (amount/set/food+exercise picker/search picker) at `left:-62px`,
+clipping it off the left edge at ≥768px (i.e. every coach on a tablet/laptop; phones <768 were fine
+because the utility doesn't apply there). Verified via `getComputedStyle`: `translate: -50%` AND
+`transform: matrix(...-256...)` simultaneously. Rule: pick ONE mechanism per axis. If a Tailwind
+translate utility centers an element, the inline `transform` must not touch that axis — animate the
+other axis only (here: `translateY` for the slide; X-centering left to `md:-translate-x-1/2`).
+**Enforced by:** no element carries both a `-translate-x` utility and an inline `transform`/`translate`
+on the same axis; `rg 'translateX\(-?50%\)|translate\(-50%' -g '*.tsx' apps/coachapp-v2/src` stays empty.
+
 ---
 
 ## Deploy / ops

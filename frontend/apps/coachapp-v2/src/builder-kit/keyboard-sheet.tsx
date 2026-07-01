@@ -127,15 +127,6 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
     return null;
   }
 
-  // Desktop hidden state: use translate(-50%, 100%) so the horizontal centering
-  // from md:left-1/2 / md:-translate-x-1/2 is preserved during the slide-out.
-  // Mobile hidden state: translateY(100%) as before.
-  // We detect "desktop" by checking whether the md breakpoint is active. Because
-  // this runs inside a portal we can't use Tailwind classes for the hidden
-  // transform, so we apply it via inline style logic using a matchMedia query.
-  const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
-  const hiddenTransform = isDesktop ? 'translate(-50%, 100%)' : 'translateY(100%)';
-
   return createPortal(
     <>
       {/* Backdrop */}
@@ -180,7 +171,12 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
           // visible viewport when the keyboard is open. On desktop keyboardHeight
           // is 0, so this is identical to calc(100dvh - 3rem).
           maxHeight: `calc(100dvh - 3rem - ${keyboardHeight}px)`,
-          transform: visible ? (isDesktop ? 'translateX(-50%)' : undefined) : hiddenTransform,
+          // Y-axis ONLY. Horizontal centering on desktop (>=md) is owned by the
+          // `md:-translate-x-1/2` utility, which in Tailwind v4 emits the CSS
+          // `translate` property — independent of `transform`. Putting translateX
+          // here too would STACK with it (both apply), shifting the panel a second
+          // -50% and clipping it off the left edge at >=768px. Animate only Y. RM-124.
+          transform: visible ? undefined : 'translateY(100%)',
           transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
         }}
       >

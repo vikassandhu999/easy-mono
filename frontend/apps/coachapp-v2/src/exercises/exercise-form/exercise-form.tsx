@@ -289,7 +289,7 @@ export default function ExerciseForm({
           {images.length > 0 && (
             <Fieldset.Group>
               {images.map((url, index) => (
-                <Fieldset.Group key={url}>
+                <Fieldset.Group key={`${url}-${index}`}>
                   <div className="flex min-w-0 items-center gap-2">
                     <ImageThumbnail url={url} />
                     <Typography

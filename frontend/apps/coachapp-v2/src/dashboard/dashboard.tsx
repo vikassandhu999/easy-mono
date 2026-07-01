@@ -10,8 +10,12 @@ import {type Prospect, useListProspectsQuery} from '@/api/prospects';
 
 function greeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
+  if (hour < 12) {
+    return 'Good morning';
+  }
+  if (hour < 18) {
+    return 'Good afternoon';
+  }
   return 'Good evening';
 }
 
@@ -51,8 +55,8 @@ function QuickAction({icon: Icon, label, onClick}: {icon: LucideIcon; label: str
 export default function Dashboard() {
   const navigate = useNavigate();
   const {data: profileData, isLoading: profileLoading} = useGetCoachProfileQuery();
-  const {data: clientsData} = useListClientsQuery({limit: 5, status: 'pending'});
-  const {data: prospectsData} = useListProspectsQuery({limit: 5, status: 'new'});
+  const {data: clientsData, isError: clientsError} = useListClientsQuery({limit: 5, status: 'pending'});
+  const {data: prospectsData, isError: prospectsError} = useListProspectsQuery({limit: 5, status: 'new'});
 
   if (profileLoading) {
     return (
@@ -70,6 +74,7 @@ export default function Dashboard() {
   const pendingClients: Client[] = clientsData?.data ?? [];
   const newProspects: Prospect[] = prospectsData?.data ?? [];
   const nothingPending = pendingClients.length === 0 && newProspects.length === 0;
+  const hasError = clientsError || prospectsError;
 
   const name = profile?.first_name?.trim();
 
@@ -78,15 +83,12 @@ export default function Dashboard() {
       <Page.Header className="pb-0">
         <Page.TitleGroup>
           <Page.Title>{name ? `${greeting()}, ${name}` : greeting()}</Page.Title>
-          {profile?.business.name ? (
-            <Page.Description>{profile.business.name}</Page.Description>
-          ) : null}
+          {profile?.business.name ? <Page.Description>{profile.business.name}</Page.Description> : null}
         </Page.TitleGroup>
       </Page.Header>
 
       <Page.Content className="px-4 pb-8 md:px-6 lg:px-8">
         <div className="flex max-w-2xl flex-col gap-8 pt-6">
-
           {/* Stats */}
           <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
@@ -124,7 +126,16 @@ export default function Dashboard() {
               Needs your attention
             </Typography>
 
-            {nothingPending ? (
+            {hasError ? (
+              <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-8 text-center">
+                <Typography
+                  className="text-danger"
+                  type="body-sm"
+                >
+                  Couldn't load your latest activity. Check your connection and try again.
+                </Typography>
+              </div>
+            ) : nothingPending ? (
               <div className="rounded-xl border border-border bg-surface px-4 py-8 text-center">
                 <Typography weight="medium">You're all caught up</Typography>
                 <Typography
@@ -195,7 +206,8 @@ export default function Dashboard() {
                     >
                       <Collection items={pendingClients}>
                         {(client) => {
-                          const fullName = [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Invited client';
+                          const fullName =
+                            [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Invited client';
                           return (
                             <ListBox.Item
                               className="min-h-fit px-4 py-3 transition-none! active:scale-100! data-[pressed=true]:scale-100!"
@@ -257,7 +269,6 @@ export default function Dashboard() {
               />
             </div>
           </section>
-
         </div>
       </Page.Content>
     </Page>

@@ -1,4 +1,4 @@
-import {Button, Spinner} from '@heroui/react';
+import {Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
@@ -19,7 +19,7 @@ export default function EditClient() {
   const backPath = `/clients/${id}`;
   const goBack = useGoBack(backPath);
 
-  const {data, isLoading: isFetching} = useGetClientQuery(id!);
+  const {data, isError, isLoading: isFetching} = useGetClientQuery(id!);
   const [updateClient, {isLoading: isUpdating}] = useUpdateClientMutation();
   const client = data?.data;
 
@@ -27,7 +27,7 @@ export default function EditClient() {
     values: client ? clientToEditFormValues(client) : undefined,
   });
 
-  if (isFetching || !client) {
+  if (isFetching) {
     return (
       <Page>
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
@@ -38,6 +38,38 @@ export default function EditClient() {
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
+    );
+  }
+
+  if (isError || !client) {
+    return (
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit client</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
+          <Button
+            onPress={goBack}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
+            <Typography
+              className="text-danger"
+              type="body-sm"
+            >
+              Client couldn't load
+            </Typography>
           </div>
         </Page.Content>
       </Page>

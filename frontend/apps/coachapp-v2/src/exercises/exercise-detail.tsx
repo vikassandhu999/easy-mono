@@ -37,6 +37,9 @@ export default function ExerciseDetail() {
         id: id!,
         trainingExerciseCopyRequest: {name: `${exercise?.name ?? 'Exercise'} (copy)`},
       }).unwrap();
+      // copyExercise is tag:false — invalidate the list so the copy is present
+      // when the coach navigates back to it (mirrors handleDelete below).
+      dispatch(coachApi.util.invalidateTags([{type: 'TrainingExercise', id: 'LIST'}]));
       toast.success('Exercise duplicated');
       navigate(`/library/exercises/${result.data.id}`);
     } catch {
@@ -209,7 +212,12 @@ export default function ExerciseDetail() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <Typography type="h5">{exercise.name}</Typography>
+              <Typography
+                className="wrap-break-word"
+                type="h5"
+              >
+                {exercise.name}
+              </Typography>
               {(mechanicsLabel || forceLabel) && (
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {mechanicsLabel && (

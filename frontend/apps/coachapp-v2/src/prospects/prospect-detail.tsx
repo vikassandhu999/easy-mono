@@ -1,6 +1,6 @@
 import {Alert, Avatar, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
 import {ArrowLeft, Mail, Phone} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
@@ -56,14 +56,23 @@ export default function ProspectDetail() {
 
   const prospect = data?.data;
   const [notes, setNotes] = useState('');
+  // Seed the notes draft only once per prospect (by id). A refetch — e.g. after a
+  // status change invalidates the Prospect tag — hands us a new object identity for
+  // the same prospect; without the id guard that re-seed would wipe an unsaved draft.
+  const seededProspectIdRef = useRef<null | string>(null);
   useEffect(() => {
-    if (prospect) setNotes(prospect.notes ?? '');
+    if (prospect && seededProspectIdRef.current !== prospect.id) {
+      seededProspectIdRef.current = prospect.id;
+      setNotes(prospect.notes ?? '');
+    }
   }, [prospect]);
 
   const questionLabels = new Map((pageData?.data?.application_questions ?? []).map((q) => [q.id ?? '', q.label ?? '']));
 
   const setStatus = async (status: ProspectStatus) => {
-    if (!prospect) return;
+    if (!prospect) {
+      return;
+    }
     try {
       await update({id, prospectUpdateRequest: {status, notes: prospect.notes}}).unwrap();
       toast.success(`Marked ${PROSPECT_STATUS_LABEL[status].toLowerCase()}`);
@@ -73,7 +82,9 @@ export default function ProspectDetail() {
   };
 
   const saveNotes = async () => {
-    if (!prospect) return;
+    if (!prospect) {
+      return;
+    }
     try {
       await update({id, prospectUpdateRequest: {status: prospect.status, notes: notes.trim() || null}}).unwrap();
       toast.success('Notes saved');
@@ -255,7 +266,7 @@ export default function ProspectDetail() {
                   ) : null}
                 </div>
               </div>
-              {(prospect.phone || prospect.email) ? (
+              {prospect.phone || prospect.email ? (
                 <div className="flex gap-2 sm:ml-auto sm:shrink-0">
                   {prospect.phone ? (
                     <a

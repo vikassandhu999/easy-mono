@@ -199,7 +199,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
 
         {/* + set */}
         <button
-          className="mt-1 text-xs text-accent hover:text-accent/80 transition-colors"
+          className="mt-1 -ml-2 inline-flex min-h-9 items-center px-2 py-1 text-xs text-accent hover:text-accent/80 transition-colors"
           onClick={handleAddSet}
           type="button"
         >

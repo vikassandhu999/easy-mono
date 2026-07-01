@@ -142,7 +142,8 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
           color="muted"
           type="body-sm"
         >
-          Share their invite link so they can set up the app{expiresIn ? ` — expires ${expiresIn}` : ''}.
+          Share their invite link so they can set up the app
+          {expiresIn && expiresIn !== 'expired' ? ` — expires ${expiresIn}` : ''}.
         </Typography>
 
         <div className="mt-5 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">

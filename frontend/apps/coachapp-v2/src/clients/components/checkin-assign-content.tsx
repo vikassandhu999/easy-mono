@@ -6,6 +6,7 @@
 import {Button, Label, ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
 import {X} from 'lucide-react';
 import {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 import DateInput from '@/@components/date-input';
 import {ROUTES} from '@/@config/routes';
@@ -20,6 +21,7 @@ interface Props {
 type Priority = 'high' | 'normal';
 
 export default function CheckinAssignContent({clientId, clientName, onClose}: Props) {
+  const navigate = useNavigate();
   const {data, isLoading} = useListFormTemplatesQuery();
   const [assign, {isLoading: isAssigning}] = useAssignFormTemplateMutation();
   const templates = data?.data ?? [];
@@ -78,7 +80,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
           <Button
             className="mt-3"
             onPress={() => {
-              window.location.assign(ROUTES.CREATE_CHECKIN);
+              navigate(ROUTES.CREATE_CHECKIN);
             }}
             size="sm"
             variant="secondary"

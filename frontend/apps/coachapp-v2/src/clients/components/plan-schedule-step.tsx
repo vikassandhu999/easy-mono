@@ -37,12 +37,17 @@ interface Props {
 const DURATIONS = [4, 8, 12] as const;
 
 function addWeeks(startIso: string, weeks: number): string {
+  // Guard the cleared/incomplete-date case: DateInput emits '' and parseDate('')
+  // throws RangeError. Callers treat '' as "no start yet".
+  if (!startIso) {
+    return startIso;
+  }
   return parseDate(startIso).add({weeks}).toString();
 }
 
-/** Returns true when end is on or after start (or end is empty). */
+/** Returns true when end is on or after start (or either date is empty). */
 function endNotBeforeStart(startIso: string, endIso: string | null): boolean {
-  if (!endIso) {
+  if (!endIso || !startIso) {
     return true;
   }
   return parseDate(endIso).compare(parseDate(startIso)) >= 0;

@@ -380,6 +380,7 @@ function RecipeServingSizesEditor({
                 )}
                 <Button
                   aria-label={`Remove ${serving.unit}`}
+                  className="min-h-11 min-w-11"
                   isIconOnly
                   onPress={() => handleRemove(i)}
                   size="sm"

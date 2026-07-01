@@ -24,7 +24,7 @@ export default function ClientListItem({
   showQuickActions?: boolean;
 }) {
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
-  const initials = (client.first_name?.[0] || '' + client.last_name?.[0] || '')?.toUpperCase();
+  const initials = `${client.first_name?.[0] ?? ''}${client.last_name?.[0] ?? ''}`.toUpperCase();
 
   let subtitle = client.email ?? client.phone ?? client.status;
   if (client.status === 'active') {

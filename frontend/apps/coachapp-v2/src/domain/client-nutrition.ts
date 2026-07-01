@@ -78,7 +78,10 @@ export function getAdherenceLevel(
     return 'none';
   }
   if (plannedCalories <= 0) {
-    return 'high';
+    // No target to adhere to — treat as neutral, matching getDayPercent (null)
+    // so the weekly bar and the headline average agree instead of showing a
+    // solid-green "full adherence" bar with an em-dash percentage.
+    return 'none';
   }
 
   const percent = (summary.logged_calories / plannedCalories) * 100;
@@ -217,88 +220,88 @@ export function computeDailyNutritionSummaries(mealLogs: MealLog[]): DailyNutrit
 // values produces the correct aggregate.
 if (import.meta.env.DEV) {
   (function assertComputeDailyNutritionSummaries() {
-  const fakeLogs: MealLog[] = [
-    {
-      id: 'a',
-      date: '2026-01-01',
-      meal_slot: 'breakfast',
-      logged_calories: 400,
-      planned_calories: 500,
-      inserted_at: '',
-      updated_at: '',
-      food_log_entries: [
-        {
-          id: 'e1',
-          amount: 1,
-          food_name: 'egg',
-          meal_log_id: 'a',
-          inserted_at: '',
-          updated_at: '',
-          unit: null,
-          weight_g: null,
-          source: 'planned',
-          planned_item_index: 0,
-        },
-        {
-          id: 'e2',
-          amount: 1,
-          food_name: 'toast',
-          meal_log_id: 'a',
-          inserted_at: '',
-          updated_at: '',
-          unit: null,
-          weight_g: null,
-          source: 'replacement',
-          planned_item_index: 1,
-        },
-      ],
-    },
-    {
-      id: 'b',
-      date: '2026-01-01',
-      meal_slot: 'lunch',
-      logged_calories: 600,
-      planned_calories: 700,
-      inserted_at: '',
-      updated_at: '',
-      food_log_entries: [
-        {
-          id: 'e3',
-          amount: 1,
-          food_name: 'salad',
-          meal_log_id: 'b',
-          inserted_at: '',
-          updated_at: '',
-          unit: null,
-          weight_g: null,
-          source: 'unplanned',
-          planned_item_index: null,
-        },
-      ],
-    },
-  ];
-  const result = computeDailyNutritionSummaries(fakeLogs);
-  if (result.length !== 1) {
-    throw new Error('computeDailyNutritionSummaries: expected 1 day');
-  }
-  const day = result[0]!;
-  if (day.logged_calories !== 1000) {
-    throw new Error('computeDailyNutritionSummaries: wrong logged_calories');
-  }
-  if (day.planned_calories !== 1200) {
-    throw new Error('computeDailyNutritionSummaries: wrong planned_calories');
-  }
-  if (day.total_entries !== 3) {
-    throw new Error('computeDailyNutritionSummaries: wrong total_entries');
-  }
-  if (day.replacements !== 1) {
-    throw new Error('computeDailyNutritionSummaries: wrong replacements');
-  }
-  if (day.unplanned_count !== 1) {
-    throw new Error('computeDailyNutritionSummaries: wrong unplanned_count');
-  }
-  if (day.meals_logged !== 2) {
-    throw new Error('computeDailyNutritionSummaries: wrong meals_logged');
-  }
+    const fakeLogs: MealLog[] = [
+      {
+        id: 'a',
+        date: '2026-01-01',
+        meal_slot: 'breakfast',
+        logged_calories: 400,
+        planned_calories: 500,
+        inserted_at: '',
+        updated_at: '',
+        food_log_entries: [
+          {
+            id: 'e1',
+            amount: 1,
+            food_name: 'egg',
+            meal_log_id: 'a',
+            inserted_at: '',
+            updated_at: '',
+            unit: null,
+            weight_g: null,
+            source: 'planned',
+            planned_item_index: 0,
+          },
+          {
+            id: 'e2',
+            amount: 1,
+            food_name: 'toast',
+            meal_log_id: 'a',
+            inserted_at: '',
+            updated_at: '',
+            unit: null,
+            weight_g: null,
+            source: 'replacement',
+            planned_item_index: 1,
+          },
+        ],
+      },
+      {
+        id: 'b',
+        date: '2026-01-01',
+        meal_slot: 'lunch',
+        logged_calories: 600,
+        planned_calories: 700,
+        inserted_at: '',
+        updated_at: '',
+        food_log_entries: [
+          {
+            id: 'e3',
+            amount: 1,
+            food_name: 'salad',
+            meal_log_id: 'b',
+            inserted_at: '',
+            updated_at: '',
+            unit: null,
+            weight_g: null,
+            source: 'unplanned',
+            planned_item_index: null,
+          },
+        ],
+      },
+    ];
+    const result = computeDailyNutritionSummaries(fakeLogs);
+    if (result.length !== 1) {
+      throw new Error('computeDailyNutritionSummaries: expected 1 day');
+    }
+    const day = result[0]!;
+    if (day.logged_calories !== 1000) {
+      throw new Error('computeDailyNutritionSummaries: wrong logged_calories');
+    }
+    if (day.planned_calories !== 1200) {
+      throw new Error('computeDailyNutritionSummaries: wrong planned_calories');
+    }
+    if (day.total_entries !== 3) {
+      throw new Error('computeDailyNutritionSummaries: wrong total_entries');
+    }
+    if (day.replacements !== 1) {
+      throw new Error('computeDailyNutritionSummaries: wrong replacements');
+    }
+    if (day.unplanned_count !== 1) {
+      throw new Error('computeDailyNutritionSummaries: wrong unplanned_count');
+    }
+    if (day.meals_logged !== 2) {
+      throw new Error('computeDailyNutritionSummaries: wrong meals_logged');
+    }
   })();
 }

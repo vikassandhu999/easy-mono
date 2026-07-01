@@ -117,8 +117,16 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
   const [notes, setNotes] = useState<string>(currentSet?.notes ?? '');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Sync local state when navigating Prev/Next
+  // Sync local state only when the set being edited actually changes (Prev/Next).
+  // NOT on every workoutExercise identity change: our own optimistic saves rewrite
+  // that object, and re-running the reset would clobber in-progress field edits
+  // (e.g. a not-yet-valid RPE the coach is still typing).
+  const syncedSetIndexRef = useRef(setIndex);
   useEffect(() => {
+    if (syncedSetIndexRef.current === setIndex) {
+      return;
+    }
+    syncedSetIndexRef.current = setIndex;
     const s = workoutExercise.planned_sets[setIndex];
     if (!s) {
       return;
@@ -184,14 +192,18 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
 
   const scheduleSave = useCallback(
     (patch: Partial<TrainingPlanPlannedSet>) => {
-      pendingPatchRef.current = patch;
+      // Accumulate patches within the debounce window: a second field edited
+      // before the timer fires must merge in, not replace, or its value is lost
+      // when executeSave rebuilds the set from the cached base + patch.
+      pendingPatchRef.current = {...(pendingPatchRef.current ?? {}), ...patch};
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
       saveTimerRef.current = setTimeout(async () => {
         saveTimerRef.current = null;
+        const merged = pendingPatchRef.current ?? patch;
         pendingPatchRef.current = null;
-        await executeSave(patch);
+        await executeSave(merged);
       }, 600);
     },
     [executeSave],
@@ -294,9 +306,16 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
         <div className="mt-1.5 flex items-center justify-center gap-4">
           <button
             aria-label="Previous set"
-            className="rounded p-1 text-muted transition-colors hover:text-foreground disabled:opacity-30"
+            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-foreground disabled:opacity-30"
             disabled={!hasPrev}
-            onClick={hasPrev ? onPrev : undefined}
+            onClick={
+              hasPrev
+                ? () => {
+                    flushPendingSave();
+                    onPrev?.();
+                  }
+                : undefined
+            }
             type="button"
           >
             <ChevronLeft size={16} />
@@ -306,9 +325,16 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           </span>
           <button
             aria-label="Next set"
-            className="rounded p-1 text-muted transition-colors hover:text-foreground disabled:opacity-30"
+            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-foreground disabled:opacity-30"
             disabled={!hasNext}
-            onClick={hasNext ? onNext : undefined}
+            onClick={
+              hasNext
+                ? () => {
+                    flushPendingSave();
+                    onNext?.();
+                  }
+                : undefined
+            }
             type="button"
           >
             <ChevronRight size={16} />

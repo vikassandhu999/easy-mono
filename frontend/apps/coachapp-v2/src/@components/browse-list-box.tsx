@@ -37,7 +37,11 @@ export default function BrowseListBox<T extends object>({
       className={className}
       onAction={onAction}
       renderEmptyState={() =>
-        isError ? (
+        isLoading ? (
+          <div className="flex justify-center py-12">
+            <Spinner size="sm" />
+          </div>
+        ) : isError ? (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <Typography
               color="muted"

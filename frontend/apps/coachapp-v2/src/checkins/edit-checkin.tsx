@@ -134,7 +134,7 @@ export default function EditCheckin() {
   const goBack = useGoBack(ROUTES.CHECKINS);
   const {data, isError, isLoading} = useGetFormTemplateQuery({id: id!});
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <Page>
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
@@ -151,7 +151,7 @@ export default function EditCheckin() {
     );
   }
 
-  if (isError) {
+  if (isError || !data) {
     return (
       <Page>
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">

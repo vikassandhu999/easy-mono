@@ -209,7 +209,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
                   selectedKey={assignedWorkoutId ?? REST_KEY}
                   variant="secondary"
                 >
-                  <Select.Trigger className="h-8 min-h-8 text-sm">
+                  <Select.Trigger className="h-9 min-h-9 text-sm">
                     <Select.Value />
                     <Select.Indicator />
                   </Select.Trigger>
@@ -242,14 +242,14 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
               {hasWorkout ? (
                 <button
                   aria-label={isExpanded ? 'Collapse exercises' : 'Expand exercises'}
-                  className="shrink-0 -mr-1 p-2 text-muted hover:text-foreground transition-colors"
+                  className="shrink-0 -mr-1 flex min-h-9 min-w-9 items-center justify-center text-muted hover:text-foreground transition-colors"
                   onClick={() => toggleExpand(day)}
                   type="button"
                 >
                   {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                 </button>
               ) : (
-                <span className="w-[27px] shrink-0" />
+                <span className="w-8 shrink-0" />
               )}
             </div>
 

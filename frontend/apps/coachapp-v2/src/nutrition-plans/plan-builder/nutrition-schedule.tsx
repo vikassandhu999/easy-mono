@@ -250,7 +250,7 @@ function SlotRows({slots, meals, onSlotChange}: SlotRowsProps) {
                   selectedKey={assignedMealId ?? UNASSIGNED_KEY}
                   variant="secondary"
                 >
-                  <Select.Trigger className="h-8 min-h-8 text-sm">
+                  <Select.Trigger className="min-h-9 text-sm">
                     <Select.Value />
                     <Select.Indicator />
                   </Select.Trigger>

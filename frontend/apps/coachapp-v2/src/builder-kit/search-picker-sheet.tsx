@@ -201,7 +201,7 @@ export function SearchPickerSheet<T>({
               <button
                 aria-pressed={chip.active}
                 className={[
-                  'inline-flex min-h-8 items-center rounded-[7px] border px-2.5 py-1 text-xs font-medium transition-colors',
+                  'inline-flex min-h-9 items-center rounded-[7px] border px-2.5 py-1 text-xs font-medium transition-colors',
                   filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
                   chip.active
                     ? 'border-accent bg-accent-soft text-accent'

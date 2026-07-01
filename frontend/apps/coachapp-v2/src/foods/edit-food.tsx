@@ -80,7 +80,7 @@ export default function EditFood() {
   const backPath = `/library/foods/${id}`;
   const goBackOuter = useGoBack(backPath);
 
-  if (isFetching || !data) {
+  if (isFetching) {
     return (
       <Page>
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
@@ -97,7 +97,7 @@ export default function EditFood() {
     );
   }
 
-  if (isError) {
+  if (isError || !data) {
     return (
       <Page>
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">

@@ -52,7 +52,7 @@ function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | nu
   }
 
   if (fields.showDistance && set.distance_value !== null && set.distance_value !== undefined) {
-    const distUnit = set.distance_unit && set.distance_unit !== 'none' ? set.distance_unit : 'm';
+    const distUnit = set.distance_unit === 'miles' ? 'mi' : set.distance_unit === 'km' ? 'km' : 'm';
     parts.push(`${set.distance_value}${distUnit}`);
   }
 
@@ -84,7 +84,7 @@ export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow
       {canRemove ? (
         <button
           aria-label={`Remove set ${index + 1}`}
-          className="shrink-0 rounded p-2 text-muted transition-colors hover:text-danger"
+          className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded text-muted transition-colors hover:text-danger"
           onClick={onRemove}
           type="button"
         >

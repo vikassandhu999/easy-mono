@@ -1,5 +1,5 @@
-import {Avatar, Chip, Collection, Description, Label, ListBox, Spinner, Tabs, Typography} from '@heroui/react';
 import type {Key} from '@heroui/react';
+import {Avatar, Chip, Collection, Description, Label, ListBox, Spinner, Tabs, Typography} from '@heroui/react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -87,7 +87,8 @@ export default function ListProspects() {
                     id={f.id}
                     key={f.id}
                   >
-                    {f.label}{count ? ` (${count})` : ''}
+                    {f.label}
+                    {count ? ` (${count})` : ''}
                   </Tabs.Tab>
                 );
               })}
@@ -110,7 +111,7 @@ export default function ListProspects() {
               Couldn't load prospects.
             </Typography>
             <button
-              className="text-sm text-accent"
+              className="inline-flex min-h-9 items-center px-3 text-sm text-accent"
               onClick={() => refetch()}
               type="button"
             >
@@ -135,9 +136,7 @@ export default function ListProspects() {
             )}
             selectionMode="none"
           >
-            <Collection items={prospects}>
-              {(prospect) => <ProspectListItem prospect={prospect} />}
-            </Collection>
+            <Collection items={prospects}>{(prospect) => <ProspectListItem prospect={prospect} />}</Collection>
           </ListBox>
         )}
       </Page.Content>

@@ -70,7 +70,7 @@ export default function ClientWeight({clientId}: {clientId: string}) {
                   className={`mt-0.5 ${changeColor}`}
                   type="body-xs"
                 >
-                  {change > 0 ? '▲' : '▼'} {Math.abs(change).toFixed(1)} {unit} since{' '}
+                  {change > 0 ? '▲' : change < 0 ? '▼' : '→'} {Math.abs(change).toFixed(1)} {unit} since{' '}
                   {formatIsoDateShort(earliest.date)}
                 </Typography>
               ) : null}

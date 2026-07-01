@@ -4,7 +4,7 @@ Use this file as the app contract. If it conflicts with older README text, trust
 
 ## Stack And Commands
 
-- Stack: Vite, React 19, TypeScript strict, HeroUI v3, Tailwind v4, Redux Toolkit, RTK Query, react-hook-form, zod, React Router v7 data mode.
+- Stack: Vite, React 19, TypeScript strict, HeroUI 3.2.1, Tailwind 4.1.18 (the HeroUI tokens version), Redux Toolkit, RTK Query, react-hook-form, zod, React Router v7 data mode.
 - Dev server: `pnpm -C apps/coachapp-v2 dev` on port 2021.
 - Build/type-check: `pnpm -C apps/coachapp-v2 build`.
 - Lint/format: `pnpm -C apps/coachapp-v2 lint`. This runs Biome with `--write`, so expect file changes.

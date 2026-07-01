@@ -254,6 +254,20 @@ wrapper); descriptions only when they add real info; sections are `Fieldset` + `
 parity (same `BackButton` + `Title`) across loading/error/loaded. Don't hand-roll a `<Form>`,
 submit row, or header back button. **Enforced by:** grep must stay empty — `rg '\(optional\)|\(required\)' -g '*.tsx' apps/coachapp-v2/src` (labels) and no new `<Form ` / raw `ArrowLeft` back buttons in form/detail headers; visual check at mobile + desktop widths.
 
+### RM-123 — Browse lists use BrowseListBox; don't hand-roll list loading/error/empty
+`prospects/list-prospects.tsx` re-implemented a raw `ListBox` + `Collection` with its own `isLoading`
+Spinner, `isError` block, and `renderEmptyState`, drifting from the six other browse lists (and missing
+the skeleton loading they get for free). There is ONE list shell: `BrowseListBox`
+(`@/@components/browse-list-box`) — it bakes in skeleton loading (`ListSkeleton`), the error+Retry
+treatment, the empty state, and infinite load-more. For any browse/search list render
+`<BrowseListBox items renderItem emptyState isLoading isError onRetry fetchNextPage skeletonAvatar? />`;
+for a flat (non-paginated) query pass `fetchNextPage={() => undefined}`. Page-level fetch errors use the
+shared `ErrorState` card — never a hand-inlined `border-danger/20 bg-danger/5` danger box (those are a
+copy of `ErrorState`'s markup). Sub-panel/inline load errors say "Couldn't load X", not "Failed to load X".
+**Enforced by:** no new `renderEmptyState=` for a browse list outside `browse-list-box.tsx`; new
+page-level danger boxes go through `ErrorState`; `rg 'Failed to load' -g '*.tsx' apps/coachapp-v2/src`
+stays empty.
+
 ---
 
 ## Deploy / ops

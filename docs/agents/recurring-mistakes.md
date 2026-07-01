@@ -233,6 +233,16 @@ empty values in the shared wrapper, not each caller. **Enforced by:** browser co
 empty optional form fields after build; add a component test when coachapp has a frontend test
 runner.
 
+### RM-121 — Don't use react-aria NumberField for text-entry numbers; use a plain decimal input
+HeroUI/react-aria `NumberField` is controlled by the *numeric* value and re-pushes a reformatted
+string on every keystroke. On mobile soft keyboards that races with the virtual keyboard and
+drops characters after ~2 digits, so coaches couldn't type full macro/serving values (looked fine
+on desktop because a physical keyboard wins the race). Use a plain `<input inputMode="decimal">`
+that holds its own string and parses up to a number — the shared `@/@components/number-input`
+`NumberInput` primitive (and `FormNumberField`, which delegates to it). Do NOT reach back for
+`NumberField` when adding a numeric field. **Enforced by:** `NumberInput` is the one numeric-entry
+component; grep for new `<NumberField` in coachapp should come back empty.
+
 ---
 
 ## Deploy / ops

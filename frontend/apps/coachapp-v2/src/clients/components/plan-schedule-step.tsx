@@ -114,6 +114,7 @@ export default function PlanScheduleStep({
       </div>
 
       <DateInput
+        isRequired
         label="Start date"
         onChange={(iso) => setStart(iso ?? '')}
         value={start}
@@ -122,10 +123,7 @@ export default function PlanScheduleStep({
       {/* End date */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">
-            End date{requireEnd ? '' : ' '}
-            {requireEnd ? null : <span className="ml-1 font-normal text-muted">optional</span>}
-          </Label>
+          <Label className="text-sm font-medium">End date</Label>
           {!requireEnd && end ? (
             <button
               className="min-h-9 py-1.5 text-xs font-medium text-accent hover:underline"
@@ -216,7 +214,7 @@ export default function PlanScheduleStep({
         isPending={isSubmitting}
         onPress={() => onConfirm(start, requireEnd || end ? end : null)}
       >
-        {isSubmitting ? 'Assigning…' : `Assign to ${clientName}`}
+        {isSubmitting ? 'Assigning' : `Assign to ${clientName}`}
       </Button>
     </div>
   );

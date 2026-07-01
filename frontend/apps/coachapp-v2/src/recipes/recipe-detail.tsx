@@ -1,9 +1,12 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Spinner, Typography, toast} from '@heroui/react';
-import {ArrowLeft, ChefHat, Copy, Pencil, Trash2} from 'lucide-react';
+import {ChefHat, Copy, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCopyNutritionRecipeMutation, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/generated';
@@ -49,12 +52,13 @@ export default function RecipeDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
+        <Page.Header>
+          <Page.TitleGroup className={'flex items-center'}>
+            <BackButton onPress={goBack} />
             <Page.Title>Recipe</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Spinner color="accent" />
           </div>
@@ -66,30 +70,14 @@ export default function RecipeDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
+        <Page.Header>
+          <Page.TitleGroup className={'flex items-center'}>
+            <BackButton onPress={goBack} />
             <Page.Title>Recipe</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Recipes
-          </Button>
-        </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
-            <Typography
-              className="text-danger"
-              type="body-sm"
-            >
-              Recipe couldn&apos;t load. It may not exist, or you may not have access
-            </Typography>
-          </div>
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <ErrorState message="Couldn't load recipe." />
         </Page.Content>
       </Page>
     );
@@ -105,17 +93,9 @@ export default function RecipeDetail() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup className={'flex items-center'}>
-          <Button
-            aria-label="Back"
-            onPress={goBack}
-            size="md"
-            variant="ghost"
-            isIconOnly
-          >
-            <ArrowLeft size={18} />
-          </Button>
+          <BackButton onPress={goBack} />
           <Page.Title>Recipe</Page.Title>
         </Page.TitleGroup>
       </Page.Header>
@@ -179,7 +159,7 @@ export default function RecipeDetail() {
         </AlertDialog>
       </Page.Toolbar>
 
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <div className="max-w-lg">
           <div className="flex items-start gap-4 pb-6">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-surface-secondary">
@@ -200,14 +180,7 @@ export default function RecipeDetail() {
 
           {recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0 && (
             <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Cooked weight
-              </Typography>
+              <SectionHeading title="Cooked weight" />
               <Typography
                 type="body-sm"
                 weight="medium"
@@ -219,14 +192,7 @@ export default function RecipeDetail() {
 
           {nutritionEntries.length > 0 && (
             <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Nutrition (recipe totals)
-              </Typography>
+              <SectionHeading title="Nutrition (recipe totals)" />
               <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
                 {nutritionEntries.map(([key, value]) => {
                   const meta = MACRO_LABELS[key] as {
@@ -254,14 +220,7 @@ export default function RecipeDetail() {
 
           {recipe.recipe_ingredients.length > 0 && (
             <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Ingredients
-              </Typography>
+              <SectionHeading title="Ingredients" />
               <div className="flex flex-col gap-2">
                 {orderedIngredients.map((ingredient, i) => {
                   const hasAmount = ingredient.amount != null && ingredient.amount !== 0;
@@ -301,14 +260,7 @@ export default function RecipeDetail() {
 
           {recipe.instructions && (
             <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Instructions
-              </Typography>
+              <SectionHeading title="Instructions" />
               <Typography
                 className="whitespace-pre-wrap"
                 type="body-sm"
@@ -320,14 +272,7 @@ export default function RecipeDetail() {
 
           {recipe.serving_sizes.length > 0 && (
             <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Serving sizes
-              </Typography>
+              <SectionHeading title="Serving sizes" />
               <div className="flex flex-col gap-2">
                 {recipe.serving_sizes.map((serving, i) => (
                   <div
@@ -352,14 +297,7 @@ export default function RecipeDetail() {
           )}
 
           <section className="border-t border-border py-4">
-            <Typography
-              className="mb-2"
-              color="muted"
-              type="body-xs"
-              weight="semibold"
-            >
-              Details
-            </Typography>
+            <SectionHeading title="Details" />
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <Typography

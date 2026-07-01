@@ -59,7 +59,7 @@ function assignErrorMessage(error: unknown, kind: PlanKind, clientName: string):
   if (status === 409 || text.includes('overlap') || text.includes('active plan') || text.includes('exclusion')) {
     return `${clientName} already has an active ${kindLabel} plan during these dates. Adjust the dates or end the current plan first.`;
   }
-  return 'Couldn’t assign the plan. Please check the dates and try again.';
+  return "Couldn't assign the plan. Check the dates and try again.";
 }
 
 export default function PlanAssignContent({kind, clientId, clientName, onClose}: Props) {

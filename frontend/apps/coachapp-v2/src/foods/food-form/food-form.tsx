@@ -4,10 +4,8 @@ import {
   ErrorMessage,
   FieldError,
   Fieldset,
-  Form,
   Input,
   Label,
-  Spinner,
   TextField,
   Typography,
 } from '@heroui/react';
@@ -17,7 +15,14 @@ import {useCallback, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {
+  FieldRow,
+  FormActions,
+  FormLayout,
+  FormNumberField,
+  FormTextAreaField,
+  FormTextField,
+} from '@/@components/form-fields';
 import {NumberInput} from '@/@components/number-input';
 import type {Food, FoodRequest, FoodUpdateRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
@@ -147,12 +152,12 @@ type FoodFormProps = {
 type MacroFieldName = 'calories_per_100g' | 'carbs_g' | 'fats_g' | 'fiber_g' | 'protein_g' | 'sugar_g';
 
 const MACRO_FIELDS: {label: string; name: MacroFieldName; step?: number}[] = [
-  {label: 'Calories (optional)', name: 'calories_per_100g'},
-  {label: 'Protein, grams (optional)', name: 'protein_g', step: 0.1},
-  {label: 'Carbs, grams (optional)', name: 'carbs_g', step: 0.1},
-  {label: 'Fat, grams (optional)', name: 'fats_g', step: 0.1},
-  {label: 'Fiber, grams (optional)', name: 'fiber_g', step: 0.1},
-  {label: 'Sugar, grams (optional)', name: 'sugar_g', step: 0.1},
+  {label: 'Calories', name: 'calories_per_100g'},
+  {label: 'Protein (g)', name: 'protein_g', step: 0.1},
+  {label: 'Carbs (g)', name: 'carbs_g', step: 0.1},
+  {label: 'Fat (g)', name: 'fats_g', step: 0.1},
+  {label: 'Fiber (g)', name: 'fiber_g', step: 0.1},
+  {label: 'Sugar (g)', name: 'sugar_g', step: 0.1},
 ];
 
 export default function FoodForm({
@@ -206,42 +211,37 @@ export default function FoodForm({
   );
 
   return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
+    <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <Fieldset>
         <Fieldset.Legend>Food details</Fieldset.Legend>
-        <Description>Name the food and choose where it belongs</Description>
         <Fieldset.Group>
           <FormTextField
             control={control}
-            description="Use the name clients will recognize"
             fullWidth
             isRequired
-            label="Name (required)"
+            label="Name"
             name="name"
           />
 
-          <Fieldset.Group>
+          <FieldRow>
             <FormTextField
               control={control}
-              description="Group similar foods, like protein or grains"
               fullWidth
-              label="Category (optional)"
+              label="Category"
               name="category"
             />
             <FormTextField
               control={control}
-              description="Add the brand, database, or source"
               fullWidth
-              label="Source (optional)"
+              label="Source"
               name="source"
             />
-          </Fieldset.Group>
+          </FieldRow>
 
           <FormTextAreaField
             control={control}
-            description="Add prep, shopping, or coaching notes"
             fullWidth
-            label="Notes (optional)"
+            label="Notes"
             name="notes"
             textAreaProps={{rows: 2}}
           />
@@ -249,26 +249,27 @@ export default function FoodForm({
       </Fieldset>
 
       <Fieldset>
-        <Fieldset.Legend>Nutrition for 100 g</Fieldset.Legend>
-        <Description>Enter values for 100 g so plans calculate macros correctly</Description>
+        <Fieldset.Legend>Nutrition</Fieldset.Legend>
+        <Description>Enter values per 100 g.</Description>
         <Fieldset.Group>
-          {MACRO_FIELDS.map((fieldConfig) => (
-            <FormNumberField
-              control={control}
-              fullWidth
-              key={fieldConfig.name}
-              label={fieldConfig.label}
-              minValue={0}
-              name={fieldConfig.name}
-              step={fieldConfig.step}
-            />
-          ))}
+          <FieldRow>
+            {MACRO_FIELDS.map((fieldConfig) => (
+              <FormNumberField
+                control={control}
+                fullWidth
+                key={fieldConfig.name}
+                label={fieldConfig.label}
+                minValue={0}
+                name={fieldConfig.name}
+                step={fieldConfig.step}
+              />
+            ))}
+          </FieldRow>
         </Fieldset.Group>
       </Fieldset>
 
       <Fieldset>
         <Fieldset.Legend>Serving sizes</Fieldset.Legend>
-        <Description>Add common portions like 1 scoop or 1 cup</Description>
 
         <Fieldset.Group>
           {servingSizes.length > 0 && (
@@ -308,30 +309,29 @@ export default function FoodForm({
                   fullWidth
                   isInvalid={!!servingError}
                   isRequired
+                  variant="secondary"
                 >
-                  <Label>Unit (required)</Label>
-                  <Description>Use a common portion, like scoop or cup</Description>
+                  <Label>Unit</Label>
                   {servingError && <FieldError>{servingError}</FieldError>}
                   <Input
                     onChange={(e) => {
                       setNewUnit(e.target.value);
                       setServingError('');
                     }}
+                    placeholder="e.g. scoop, cup"
                     value={newUnit}
                   />
                 </TextField>
                 <NumberInput
-                  description="Use 1 if it is a single portion"
                   fullWidth
-                  label="Amount (optional)"
+                  label="Amount"
                   minValue={0}
                   onChange={setNewAmount}
                   value={newAmount}
                 />
                 <NumberInput
-                  description="Add this when the portion has a known weight"
                   fullWidth
-                  label="Weight, grams (optional)"
+                  label="Weight (g)"
                   minValue={0}
                   onChange={setNewWeightG}
                   value={newWeightG}
@@ -372,30 +372,12 @@ export default function FoodForm({
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions className={'mt-4 flex gap-4'}>
-        <Button
-          isPending={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner
-                color="current"
-                size="sm"
-              />
-              {submittingLabel}
-            </>
-          ) : (
-            submitLabel
-          )}
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </Fieldset.Actions>
-    </Form>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+      />
+    </FormLayout>
   );
 }

@@ -9,7 +9,7 @@ type FormOtpFieldProps<T extends FieldValues> = {
 
 export function FormOtpField<T extends FieldValues>({control, label, name}: FormOtpFieldProps<T>) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1">
       <Label>{label}</Label>
       <Controller
         control={control}

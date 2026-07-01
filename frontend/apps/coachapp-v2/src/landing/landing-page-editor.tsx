@@ -542,7 +542,7 @@ function ProgramsEditor({programs, onChange}: {programs: ProgramDraft[]; onChang
                 value={program.description}
               />
               <TextRow
-                label="Price (optional)"
+                label="Price"
                 onChange={(v) => set(index, {price_display: v})}
                 placeholder="From ₹6,000 / month"
                 value={program.price_display}

@@ -1,7 +1,9 @@
 import {AlertDialog, Button, Spinner, Typography, toast, useOverlayState} from '@heroui/react';
-import {ArrowLeft, Trash2} from 'lucide-react';
+import {Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -49,44 +51,34 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
-            <Button
-              aria-label="Back"
-              isIconOnly
-              onPress={goBack}
-              size="md"
-              variant="ghost"
-            >
-              <ArrowLeft size={20} />
-            </Button>
+            <BackButton onPress={goBack} />
             <Page.Title>Edit check-in</Page.Title>
           </div>
           <Page.Description>{template.name}</Page.Description>
         </Page.TitleGroup>
+        <Page.Actions>
+          <Button
+            onPress={deleteConfirm.open}
+            size="sm"
+            variant="danger"
+          >
+            <Trash2 size={16} />
+            Delete
+          </Button>
+        </Page.Actions>
       </Page.Header>
-      <Page.Toolbar className="flex items-center gap-2">
-        <Button
-          onPress={deleteConfirm.open}
-          size="sm"
-          variant="danger"
-        >
-          <Trash2 size={16} />
-          Delete
-        </Button>
-      </Page.Toolbar>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="max-w-160 mt-4">
-          <CheckinBuilder
-            initialDraft={templateToDraft(template)}
-            isSubmitting={isUpdating}
-            onCancel={goBack}
-            onSubmit={onSubmit}
-            submitLabel="Save changes"
-            submittingLabel="Saving"
-          />
-        </div>
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <CheckinBuilder
+          initialDraft={templateToDraft(template)}
+          isSubmitting={isUpdating}
+          onCancel={goBack}
+          onSubmit={onSubmit}
+          submitLabel="Save changes"
+          submittingLabel="Saving changes"
+        />
       </Page.Content>
 
       <AlertDialog.Backdrop
@@ -138,12 +130,15 @@ export default function EditCheckin() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
-            <Page.Title>Edit check-in</Page.Title>
+            <div className="flex items-center gap-1">
+              <BackButton onPress={goBack} />
+              <Page.Title>Edit check-in</Page.Title>
+            </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Spinner color="accent" />
           </div>
@@ -155,30 +150,16 @@ export default function EditCheckin() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
-            <Page.Title>Edit check-in</Page.Title>
+            <div className="flex items-center gap-1">
+              <BackButton onPress={goBack} />
+              <Page.Title>Edit check-in</Page.Title>
+            </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Check-ins
-          </Button>
-        </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
-            <Typography
-              className="text-danger"
-              type="body-sm"
-            >
-              Check-in couldn't load
-            </Typography>
-          </div>
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <ErrorState message="Couldn't load check-in." />
         </Page.Content>
       </Page>
     );

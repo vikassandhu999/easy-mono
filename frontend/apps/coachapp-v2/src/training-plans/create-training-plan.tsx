@@ -1,7 +1,6 @@
-import {Button} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -31,24 +30,16 @@ export default function CreateTrainingPlan() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
-          <div className={'flex items-center gap-1'}>
-            <Button
-              aria-label="Back"
-              onPress={goBack}
-              size="md"
-              variant="ghost"
-              isIconOnly
-            >
-              <ArrowLeft size={20} />
-            </Button>
+          <div className="flex items-center gap-1">
+            <BackButton onPress={goBack} />
             <Page.Title>Create training plan</Page.Title>
           </div>
           <Page.Description>Set plan details now, then build workouts next</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <TrainingPlanForm
           form={form}
           isSubmitting={isLoading}

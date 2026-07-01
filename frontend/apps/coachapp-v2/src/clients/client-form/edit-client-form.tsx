@@ -1,9 +1,16 @@
-import {Button, ErrorMessage, Fieldset, Form, ListBox, Spinner} from '@heroui/react';
+import {ErrorMessage, Fieldset, ListBox} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {
+  FieldRow,
+  FormActions,
+  FormLayout,
+  FormSelectField,
+  FormTextAreaField,
+  FormTextField,
+} from '@/@components/form-fields';
 import {type AllowedUpdateStatus, allowedStatusesFor, type Client, type ClientUpdateRequest} from '@/api/clients';
 import {toNullableText, toOptionalText} from '@/api/shared';
 
@@ -67,30 +74,30 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
   const {control, handleSubmit} = form;
 
   return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
+    <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <Fieldset>
         <Fieldset.Group>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <FieldRow>
             <FormTextField
               control={control}
               fullWidth
-              label="First name (optional)"
+              label="First name"
               name="first_name"
             />
             <FormTextField
               control={control}
               fullWidth
-              label="Last name (optional)"
+              label="Last name"
               name="last_name"
             />
-          </div>
+          </FieldRow>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <FieldRow>
             <FormTextField
               control={control}
               fullWidth
               inputProps={{type: 'tel'}}
-              label="Phone (optional)"
+              label="Phone"
               name="phone"
               type="tel"
             />
@@ -98,16 +105,16 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
               control={control}
               fullWidth
               inputProps={{type: 'email'}}
-              label="Email (optional)"
+              label="Email"
               name="email"
               type="email"
             />
-          </div>
+          </FieldRow>
 
           {client.status === 'pending' ? null : (
             <FormSelectField
               control={control}
-              label="Status (optional)"
+              label="Status"
               name="status"
             >
               {allowedStatusesFor(client.status).map((value) => (
@@ -126,7 +133,7 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
           <FormTextAreaField
             control={control}
             fullWidth
-            label="Notes (optional)"
+            label="Notes"
             name="notes"
             textAreaProps={{rows: 3}}
           />
@@ -135,30 +142,12 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
 
       {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions className="mt-4 flex gap-4">
-        <Button
-          isPending={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner
-                color="current"
-                size="sm"
-              />
-              Saving changes
-            </>
-          ) : (
-            'Save changes'
-          )}
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </Fieldset.Actions>
-    </Form>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel="Save changes"
+        submittingLabel="Saving changes"
+      />
+    </FormLayout>
   );
 }

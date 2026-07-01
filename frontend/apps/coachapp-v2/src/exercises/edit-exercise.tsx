@@ -1,7 +1,8 @@
-import {Button, Spinner} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
+import {Spinner} from '@heroui/react';
 import {Navigate, useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {
@@ -18,6 +19,22 @@ import ExerciseForm, {
   exerciseToUpdateRequest,
   useExerciseForm,
 } from '@/exercises/exercise-form/exercise-form';
+
+// One header for every state (loading / error / loaded) so the back button,
+// title, and description slot never shift between them.
+function EditExerciseHeader({goBack, name}: {goBack: () => void; name?: string}) {
+  return (
+    <Page.Header>
+      <Page.TitleGroup>
+        <div className={'flex items-center gap-1'}>
+          <BackButton onPress={goBack} />
+          <Page.Title>Edit exercise</Page.Title>
+        </div>
+        {name ? <Page.Description>{name}</Page.Description> : null}
+      </Page.TitleGroup>
+    </Page.Header>
+  );
+}
 
 // Mounts only when exercise data is available, so useState(exercise.images) initialises without useEffect.
 function EditExerciseForm({
@@ -49,36 +66,21 @@ function EditExerciseForm({
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-        <Page.TitleGroup>
-          <div className={'flex items-center gap-1'}>
-            <Button
-              aria-label="Back"
-              onPress={goBack}
-              size="md"
-              variant="ghost"
-              isIconOnly
-            >
-              <ArrowLeft size={20} />
-            </Button>
-            <Page.Title>Edit exercise</Page.Title>
-          </div>
-          <Page.Description>{exercise.name}</Page.Description>
-        </Page.TitleGroup>
-      </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className={'max-w-160 mt-4'}>
-          <ExerciseForm
-            equipment={equipmentData?.data ?? []}
-            form={form}
-            isSubmitting={isUpdating}
-            muscles={musclesData?.data ?? []}
-            onCancel={goBack}
-            onSubmit={onSubmit}
-            submitLabel="Save changes"
-            submittingLabel="Saving changes"
-          />
-        </div>
+      <EditExerciseHeader
+        goBack={goBack}
+        name={exercise.name}
+      />
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <ExerciseForm
+          equipment={equipmentData?.data ?? []}
+          form={form}
+          isSubmitting={isUpdating}
+          muscles={musclesData?.data ?? []}
+          onCancel={goBack}
+          onSubmit={onSubmit}
+          submitLabel="Save changes"
+          submittingLabel="Saving changes"
+        />
       </Page.Content>
     </Page>
   );
@@ -86,23 +88,31 @@ function EditExerciseForm({
 
 export default function EditExercise() {
   const {id} = useParams<{id: string}>();
-  const {data, isLoading: isFetching} = useGetExerciseQuery({id: id!});
+  const {data, isError, isLoading: isFetching} = useGetExerciseQuery({id: id!});
 
   const exercise = data?.data;
   const backPath = `/library/exercises/${id}`;
+  const goBack = useGoBack(backPath);
 
-  if (isFetching || !exercise) {
+  if (isFetching) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
-            <Page.Title>Edit exercise</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <EditExerciseHeader goBack={goBack} />
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Spinner color="accent" />
           </div>
+        </Page.Content>
+      </Page>
+    );
+  }
+
+  if (isError || !exercise) {
+    return (
+      <Page>
+        <EditExerciseHeader goBack={goBack} />
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <ErrorState message="Couldn't load exercise." />
         </Page.Content>
       </Page>
     );

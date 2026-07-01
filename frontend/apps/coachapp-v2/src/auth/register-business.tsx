@@ -102,6 +102,7 @@ export default function RegisterBusiness() {
           control={form.control}
           fullWidth
           inputProps={{autoComplete: 'organization'}}
+          isRequired
           label="Business name"
           name="name"
           onValueChange={(value) => {
@@ -112,8 +113,9 @@ export default function RegisterBusiness() {
 
         <FormTextField
           control={form.control}
-          description="This will be your unique URL identifier"
+          description="This becomes your unique URL identifier."
           fullWidth
+          isRequired
           label="Handle"
           name="handle"
         />

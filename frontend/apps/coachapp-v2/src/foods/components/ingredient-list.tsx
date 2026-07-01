@@ -111,7 +111,8 @@ function IngredientFieldsForm({
       <FormNumberField
         control={form.control}
         fullWidth
-        label="Weight, grams"
+        isRequired
+        label="Weight (g)"
         minValue={0.1}
         name="weight_g"
         onValueChange={(value) => onChange('weight_g', value ?? '')}

@@ -44,7 +44,10 @@ function PageRoot({children, className}: PageProps) {
 function PageHeader({children, className}: PageProps) {
   return (
     <div
-      className={cn('flex shrink-0 flex-row items-center justify-between gap-3 pt-4 px-4 md:px-6 lg:px-8', className)}
+      className={cn(
+        'flex shrink-0 flex-row items-center justify-between gap-3 px-4 pt-4 pb-2 md:px-6 md:pt-6 lg:px-8 lg:pt-8',
+        className,
+      )}
     >
       {children}
     </div>

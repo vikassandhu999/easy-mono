@@ -1,8 +1,9 @@
 import {Button, SearchField} from '@heroui/react';
-import {ArrowLeft, Plus} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import BrowseListBox from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
@@ -32,16 +33,9 @@ export default function ListExercises() {
     <Page>
       <Page.Header>
         <Page.TitleGroup className={'flex items-center'}>
-          <Button
-            aria-label="Back"
-            onPress={goBack}
-            size="md"
-            variant="ghost"
-            isIconOnly
-            className={'lg:hidden'}
-          >
-            <ArrowLeft size={18} />
-          </Button>
+          <div className={'lg:hidden'}>
+            <BackButton onPress={goBack} />
+          </div>
           <Page.Title>Exercises</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
@@ -87,7 +81,7 @@ export default function ListExercises() {
           ariaLabel="Exercises"
           emptyState={
             <ListEmptyState
-              createLabel="Create Exercise"
+              createLabel="Create exercise"
               createRoute={ROUTES.CREATE_EXERCISE}
               emptyDescription="Create your first exercise to get started."
               filterDescription="Try adjusting your search or filters to find what you're looking for."

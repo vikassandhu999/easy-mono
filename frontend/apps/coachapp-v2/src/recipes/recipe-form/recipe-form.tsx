@@ -1,24 +1,13 @@
-import {
-  Button,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Form,
-  Input,
-  Label,
-  Spinner,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Button, ErrorMessage, FieldError, Fieldset, Input, Label, TextField, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Plus, X} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import {NumberInput} from '@/@components/number-input';
+import SectionHeading from '@/@components/section-heading';
 import type {Food, FoodServingSize, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalNumber, toOptionalText} from '@/api/shared';
 import {
@@ -213,8 +202,9 @@ export default function RecipeForm({
   );
 
   return (
-    <Form onSubmit={handleSubmit(handleValidSubmit)}>
+    <FormLayout onSubmit={handleSubmit(handleValidSubmit)}>
       <Fieldset>
+        <Fieldset.Legend>Details</Fieldset.Legend>
         <Fieldset.Group>
           <FormTextField
             control={control}
@@ -227,7 +217,7 @@ export default function RecipeForm({
           <FormTextAreaField
             control={control}
             fullWidth
-            label="Instructions (optional)"
+            label="Instructions"
             name="instructions"
             textAreaProps={{rows: 4}}
           />
@@ -235,82 +225,69 @@ export default function RecipeForm({
           <FormNumberField
             control={control}
             fullWidth
-            label="Cooked weight, grams"
+            label="Cooked weight (g)"
             minValue={0}
             name="cooked_weight_g"
             step={1}
           />
+        </Fieldset.Group>
+      </Fieldset>
 
-          <div className="space-y-2">
-            <Label className="block text-sm font-medium">Ingredients</Label>
-            <IngredientList
-              autoExpandId={autoExpandId}
-              onAutoExpandConsumed={() => setAutoExpandId(null)}
-              onChange={onIngredientsChange}
-              value={ingredients}
-            />
-            <FoodPickerControl
-              excludeIds={excludeIds}
-              onSelect={handleFoodSelect}
-            />
-          </div>
-
-          {nutrition && (
-            <div className="space-y-2">
-              <Label className="block text-sm font-medium">Nutrition (per 100 g)</Label>
-              <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-surface p-3 text-sm sm:grid-cols-3">
-                {PREVIEW_MACRO_LABELS.filter(({key}) => nutrition[key] != null).map(({key, label, unit}) => (
-                  <div key={key}>
-                    <Typography
-                      color="muted"
-                      type="body-xs"
-                    >
-                      {label}
-                    </Typography>
-                    <Typography weight="medium">
-                      {nutrition[key]}
-                      {unit}
-                    </Typography>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <RecipeServingSizesEditor
-            onChange={onServingSizesChange}
-            servingSizes={servingSizes}
+      <Fieldset>
+        <Fieldset.Legend>Ingredients</Fieldset.Legend>
+        <Fieldset.Group>
+          <IngredientList
+            autoExpandId={autoExpandId}
+            onAutoExpandConsumed={() => setAutoExpandId(null)}
+            onChange={onIngredientsChange}
+            value={ingredients}
+          />
+          <FoodPickerControl
+            excludeIds={excludeIds}
+            onSelect={handleFoodSelect}
           />
         </Fieldset.Group>
       </Fieldset>
 
+      {nutrition && (
+        <div>
+          <SectionHeading title="Nutrition (per 100 g)" />
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-surface p-3 text-sm sm:grid-cols-3">
+            {PREVIEW_MACRO_LABELS.filter(({key}) => nutrition[key] != null).map(({key, label, unit}) => (
+              <div key={key}>
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  {label}
+                </Typography>
+                <Typography weight="medium">
+                  {nutrition[key]}
+                  {unit}
+                </Typography>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Fieldset>
+        <Fieldset.Legend>Serving sizes</Fieldset.Legend>
+        <RecipeServingSizesEditor
+          onChange={onServingSizesChange}
+          servingSizes={servingSizes}
+        />
+      </Fieldset>
+
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions className={'mt-4 flex gap-4'}>
-        <Button
-          isPending={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner
-                color="current"
-                size="sm"
-              />
-              {submittingLabel}
-            </>
-          ) : (
-            submitLabel
-          )}
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </Fieldset.Actions>
-    </Form>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+      />
+    </FormLayout>
   );
 }
 
@@ -357,8 +334,6 @@ function RecipeServingSizesEditor({
 
   return (
     <div className="space-y-2">
-      <Label className="block text-sm font-medium">Serving sizes</Label>
-
       {servingSizes.length > 0 && (
         <div className="flex flex-col gap-2">
           {servingSizes.map((serving, i) => (
@@ -403,28 +378,26 @@ function RecipeServingSizesEditor({
               isRequired
             >
               <Label>Unit</Label>
-              <Description>Use a common portion, like cup or serving</Description>
               {servingError && <FieldError>{servingError}</FieldError>}
               <Input
                 onChange={(e) => {
                   setNewUnit(e.target.value);
                   setServingError('');
                 }}
+                placeholder="cup, serving, slice"
                 value={newUnit}
               />
             </TextField>
             <NumberInput
-              description="Use 1 if it is a single portion"
               fullWidth
-              label="Amount (optional)"
+              label="Amount"
               minValue={0}
               onChange={setNewAmount}
               value={newAmount}
             />
             <NumberInput
-              description="Add this when the portion has a known weight"
               fullWidth
-              label="Weight, grams (optional)"
+              label="Weight (g)"
               minValue={0}
               onChange={setNewWeightG}
               value={newWeightG}

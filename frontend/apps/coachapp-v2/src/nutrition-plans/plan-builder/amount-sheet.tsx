@@ -3,7 +3,7 @@
  *
  * Modes:
  *   CREATE — item is a freshly-picked Food or Recipe (no existingItem). Shows
- *            "✓ Add to meal" button. Posts createMealItem on confirm.
+ *            "Add to meal" button. Posts createMealItem on confirm.
  *   EDIT   — item is an existing HydratedMealItem. Autosaves on change with
  *            600ms debounce. Flushes pending save on close AND on unmount.
  *
@@ -30,6 +30,7 @@
 import {computeMacrosFromSnapshot} from '@easy/utils';
 import {toast} from '@heroui/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import SectionHeading from '@/@components/section-heading';
 import type {Food, Recipe} from '@/api/generated';
 import {
   coachApi,
@@ -531,7 +532,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Recipe mode: servings input ── */}
         {recipe ? (
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-muted">Servings</div>
+            <SectionHeading title="Servings" />
             <div className="rounded-lg border border-accent/40 bg-accent/5 px-3 pb-2 pt-1.5 text-center">
               <input
                 className="w-full bg-transparent text-center text-2xl font-semibold text-foreground outline-none"
@@ -548,7 +549,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Food mode: serving-size chips ── */}
         {isFoodMode && servingSizes.length > 0 ? (
           <div>
-            <div className="mb-1.5 text-[10px] uppercase tracking-wider text-muted">Serving size</div>
+            <SectionHeading title="Serving size" />
             <div className="flex flex-wrap gap-1.5">
               {servingSizes.map((serving, idx) => (
                 <button
@@ -570,7 +571,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
             </div>
             {activeServingIdx !== null ? (
               <div className="mt-2">
-                <div className="mb-1 text-[10px] uppercase tracking-wider text-muted">Count</div>
+                <SectionHeading title="Count" />
                 <div className="rounded-lg border border-border bg-background px-3 pb-2 pt-1.5 text-center">
                   <input
                     className="w-full bg-transparent text-center text-xl font-semibold text-foreground outline-none"
@@ -589,7 +590,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Food mode: grams direct input ── */}
         {isFoodMode ? (
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-muted">Or enter grams</div>
+            <SectionHeading title="Or enter grams" />
             <div
               className={[
                 'rounded-lg border px-3 pb-2 pt-1.5 text-center transition-colors',
@@ -639,7 +640,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
             onClick={canConfirm && !isCreating ? handleCreate : undefined}
             type="button"
           >
-            ✓ Add to meal
+            {isCreating ? 'Adding to meal' : 'Add to meal'}
           </button>
         ) : null}
 

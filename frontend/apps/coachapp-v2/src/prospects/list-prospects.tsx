@@ -3,6 +3,7 @@ import {Avatar, Chip, Collection, Description, Label, ListBox, Spinner, Tabs, Ty
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {
@@ -103,15 +104,10 @@ export default function ListProspects() {
             <Spinner color="accent" />
           </div>
         ) : isError ? (
-          <div className="flex flex-col items-center gap-3 px-4 py-20 text-center">
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              Couldn't load prospects.
-            </Typography>
+          <div className="mx-auto w-full max-w-md px-4 pt-4">
+            <ErrorState message="Couldn't load prospects." />
             <button
-              className="inline-flex min-h-9 items-center px-3 text-sm text-accent"
+              className="mt-3 inline-flex min-h-9 w-full items-center justify-center px-3 text-sm text-accent"
               onClick={() => refetch()}
               type="button"
             >

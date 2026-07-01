@@ -119,7 +119,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
           </Select>
 
           <DateInput
-            label="Due date (optional)"
+            label="Due date"
             onChange={setDueDate}
             value={dueDate}
           />
@@ -150,7 +150,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
             isPending={isAssigning}
             onPress={handleAssign}
           >
-            {isAssigning ? 'Assigning…' : `Assign to ${clientName}`}
+            {isAssigning ? 'Assigning' : `Assign to ${clientName}`}
           </Button>
         </div>
       )}

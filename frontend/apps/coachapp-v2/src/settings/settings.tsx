@@ -3,13 +3,14 @@ import {ChevronRight} from 'lucide-react';
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {clearTokens} from '@/api/authStorage';
 import {coachApi} from '@/api/generated';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
 import EditableRow from '@/settings/components/editable-row';
-import SectionHeading from '@/settings/components/section-heading';
 import {store} from '@/store';
 
 function ProfileSection({
@@ -219,7 +220,7 @@ export default function Settings() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
             <Page.Title>Settings</Page.Title>
           </Page.TitleGroup>
@@ -236,20 +237,16 @@ export default function Settings() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
             <Page.Title>Settings</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              Couldn't load your settings. Check your connection and try again.
-            </Typography>
+          <div className="max-w-lg">
+            <ErrorState message="Couldn't load settings." />
             <Button
+              className="mt-3"
               onPress={() => refetch()}
               size="sm"
               variant="secondary"
@@ -266,7 +263,7 @@ export default function Settings() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
           <Page.Title>Settings</Page.Title>
         </Page.TitleGroup>

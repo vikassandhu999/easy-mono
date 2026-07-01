@@ -4,9 +4,22 @@
  * its answer onto an existing profile field (custom-field mapping). Draft state
  * lives here; the create/edit wrappers own the mutation.
  */
-import {Button, Input, Label, ListBox, Select, Switch, TextArea, TextField, Typography} from '@heroui/react';
+import {
+  Button,
+  ErrorMessage,
+  Fieldset,
+  Input,
+  Label,
+  ListBox,
+  Select,
+  Switch,
+  TextArea,
+  TextField,
+  Typography,
+} from '@heroui/react';
 import {ArrowDown, ArrowUp, Plus, Trash2} from 'lucide-react';
 import {useState} from 'react';
+import {FieldRow, FormActions, FormLayout} from '@/@components/form-fields';
 import {
   type FormPurpose,
   newQuestion,
@@ -342,42 +355,49 @@ export default function CheckinBuilder({
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
-          onChange={(value) => setDraft((d) => ({...d, name: value}))}
-          value={draft.name}
-          variant="secondary"
-        >
-          <Label>Name</Label>
-          <Input placeholder="e.g. Weekly check-in" />
-        </TextField>
-        <Select
-          onChange={(key) => key && setDraft((d) => ({...d, purpose: key as FormPurpose}))}
-          value={draft.purpose}
-          variant="secondary"
-        >
-          <Label>Purpose</Label>
-          <Select.Trigger>
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              {PURPOSES.map((p) => (
-                <ListBox.Item
-                  id={p}
-                  key={p}
-                  textValue={PURPOSE_LABELS[p]}
-                >
-                  {PURPOSE_LABELS[p]}
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              ))}
-            </ListBox>
-          </Select.Popover>
-        </Select>
-      </div>
+    <FormLayout
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit();
+      }}
+    >
+      <Fieldset>
+        <FieldRow>
+          <TextField
+            onChange={(value) => setDraft((d) => ({...d, name: value}))}
+            value={draft.name}
+            variant="secondary"
+          >
+            <Label>Name</Label>
+            <Input placeholder="e.g. Weekly check-in" />
+          </TextField>
+          <Select
+            onChange={(key) => key && setDraft((d) => ({...d, purpose: key as FormPurpose}))}
+            value={draft.purpose}
+            variant="secondary"
+          >
+            <Label>Purpose</Label>
+            <Select.Trigger>
+              <Select.Value />
+              <Select.Indicator />
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox>
+                {PURPOSES.map((p) => (
+                  <ListBox.Item
+                    id={p}
+                    key={p}
+                    textValue={PURPOSE_LABELS[p]}
+                  >
+                    {PURPOSE_LABELS[p]}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </ListBox>
+            </Select.Popover>
+          </Select>
+        </FieldRow>
+      </Fieldset>
 
       <div className="flex flex-col gap-4">
         {draft.sections.map((section, index) => (
@@ -402,29 +422,14 @@ export default function CheckinBuilder({
         Add section
       </Button>
 
-      {error ? (
-        <Typography
-          className="text-danger"
-          type="body-sm"
-        >
-          {error}
-        </Typography>
-      ) : null}
+      {error ? <ErrorMessage>{error}</ErrorMessage> : null}
 
-      <div className="flex gap-4">
-        <Button
-          isPending={isSubmitting}
-          onPress={handleSubmit}
-        >
-          {isSubmitting ? submittingLabel : submitLabel}
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </div>
-    </div>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+      />
+    </FormLayout>
   );
 }

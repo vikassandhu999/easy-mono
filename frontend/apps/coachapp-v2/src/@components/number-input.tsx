@@ -15,6 +15,7 @@ type NumberInputProps = {
   error?: string;
   fullWidth?: boolean;
   inputProps?: Omit<ComponentProps<typeof Input>, 'onBlur' | 'onChange' | 'value'>;
+  isRequired?: boolean;
   label?: ReactNode;
   minValue?: number;
   name?: string;
@@ -30,6 +31,7 @@ export function NumberInput({
   error,
   fullWidth,
   inputProps,
+  isRequired,
   label,
   minValue,
   name,
@@ -77,6 +79,7 @@ export function NumberInput({
     <TextField
       fullWidth={fullWidth}
       isInvalid={!!error}
+      isRequired={isRequired}
       name={name}
       onBlur={onBlur}
       onChange={handleChange}

@@ -1,8 +1,8 @@
-import {Button, Description, ErrorMessage, Fieldset, Form, Spinner} from '@heroui/react';
+import {ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {FieldRow, FormActions, FormLayout, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {TrainingPlan, TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '@/api/generated';
 import {omitUndefined, toNullableText, toOptionalText} from '@/api/shared';
 
@@ -81,81 +81,62 @@ export default function TrainingPlanForm({
   } = form;
 
   return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
+    <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <Fieldset>
         <Fieldset.Legend>Plan details</Fieldset.Legend>
-        <Description>Name the plan and add optional coaching context</Description>
 
         <Fieldset.Group>
           <FormTextField
             control={control}
-            description="Use a clear name, like push pull legs"
             fullWidth
+            inputProps={{placeholder: 'Push pull legs'}}
             isRequired
-            label="Name (required)"
+            label="Name"
             name="name"
           />
 
           <FormTextAreaField
             control={control}
-            description="Add goals, training split, or coaching notes"
             fullWidth
-            label="Description (optional)"
+            label="Description"
             name="description"
-            textAreaProps={{rows: 2}}
+            textAreaProps={{placeholder: 'Goals, training split, or coaching notes', rows: 2}}
           />
         </Fieldset.Group>
       </Fieldset>
 
       <Fieldset>
         <Fieldset.Legend>Schedule</Fieldset.Legend>
-        <Description>Set dates only if this plan has a fixed timeline</Description>
 
         <Fieldset.Group>
-          <FormTextField
-            control={control}
-            fullWidth
-            label="Start date (optional)"
-            name="start_date"
-            type="date"
-          />
+          <FieldRow>
+            <FormTextField
+              control={control}
+              fullWidth
+              label="Start date"
+              name="start_date"
+              type="date"
+            />
 
-          <FormTextField
-            control={control}
-            fullWidth
-            label="End date (optional)"
-            name="end_date"
-            type="date"
-          />
+            <FormTextField
+              control={control}
+              fullWidth
+              label="End date"
+              name="end_date"
+              type="date"
+            />
+          </FieldRow>
         </Fieldset.Group>
       </Fieldset>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions className={'mt-4 flex gap-4'}>
-        <Button
-          isPending={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner
-                color="current"
-                size="sm"
-              />
-              {submittingLabel}
-            </>
-          ) : (
-            submitLabel
-          )}
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </Fieldset.Actions>
-    </Form>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+      />
+    </FormLayout>
   );
 }

@@ -45,7 +45,7 @@ export default function EditableRow({
       await onSave(data.value);
       setEditing(false);
     } catch (err) {
-      applyFormErrors(err, "Value wasn't saved. Try again", form.setError);
+      applyFormErrors(err, "Couldn't save. Try again.", form.setError);
     }
   };
 

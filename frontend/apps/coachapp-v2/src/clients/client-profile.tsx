@@ -6,11 +6,13 @@
  */
 import {formatIsoDateOnly} from '@easy/utils';
 import {Button, Label, ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {
   buildProfileSectionsPayload,
@@ -25,7 +27,6 @@ import {
 } from '@/api/client-profile';
 import {type Client, useGetClientQuery} from '@/api/clients';
 import ProfileFieldInput from '@/clients/components/profile-field-input';
-import SectionHeading from '@/settings/components/section-heading';
 
 type IntakeStatus = CoachingClientProfile['intake_status'];
 
@@ -42,6 +43,20 @@ function clientName(client: Client): string {
   return [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client';
 }
 
+function ProfileHeader({goBack, name}: {goBack: () => void; name?: string}) {
+  return (
+    <Page.Header>
+      <Page.TitleGroup>
+        <div className="flex items-center gap-1">
+          <BackButton onPress={goBack} />
+          <Page.Title>Profile</Page.Title>
+        </div>
+        {name ? <Page.Description>{name}</Page.Description> : null}
+      </Page.TitleGroup>
+    </Page.Header>
+  );
+}
+
 function ClientProfileEditor({
   client,
   profile,
@@ -53,6 +68,7 @@ function ClientProfileEditor({
 }) {
   const navigate = useNavigate();
   const backPath = `/clients/${client.id}`;
+  const goBack = () => navigate(backPath);
   const [updateProfile, {isLoading: isSaving}] = useUpdateCoachingClientProfileMutation();
 
   const [values, setValues] = useState<Record<string, ProfileFieldValue>>(() => {
@@ -87,25 +103,12 @@ function ClientProfileEditor({
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-        <Page.TitleGroup>
-          <div className="flex items-center gap-1">
-            <Button
-              aria-label="Back"
-              isIconOnly
-              onPress={() => navigate(backPath)}
-              size="md"
-              variant="ghost"
-            >
-              <ArrowLeft size={20} />
-            </Button>
-            <Page.Title>Profile</Page.Title>
-          </div>
-          <Page.Description>{clientName(client)}</Page.Description>
-        </Page.TitleGroup>
-      </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="max-w-160 mt-4 space-y-8">
+      <ProfileHeader
+        goBack={goBack}
+        name={clientName(client)}
+      />
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-160 space-y-8">
           {/* Intake status — a single control, sized to its content rather than boxed. */}
           <div className="max-w-xs">
             <Select
@@ -189,15 +192,15 @@ function ClientProfileEditor({
             </div>
           )}
 
-          <div className="flex gap-4 pt-2">
+          <div className="flex gap-3 pt-2">
             <Button
               isPending={isSaving}
               onPress={handleSave}
             >
-              {isSaving ? 'Saving' : 'Save profile'}
+              {isSaving ? 'Saving profile' : 'Save profile'}
             </Button>
             <Button
-              onPress={() => navigate(backPath)}
+              onPress={goBack}
               variant="ghost"
             >
               Cancel
@@ -209,50 +212,33 @@ function ClientProfileEditor({
   );
 }
 
-function LoadingPage() {
-  return (
-    <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-        <Page.TitleGroup>
-          <Page.Title>Profile</Page.Title>
-        </Page.TitleGroup>
-      </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </Page.Content>
-    </Page>
-  );
-}
-
 export default function ClientProfilePage() {
   const {id} = useParams<{id: string}>();
+  const navigate = useNavigate();
+  const goBack = () => navigate(`/clients/${id}`);
   const clientQuery = useGetClientQuery(id!);
   const profileQuery = useGetCoachingClientProfileQuery({clientId: id!});
   const fieldsQuery = useListProfileFieldsQuery();
 
   if (clientQuery.isLoading || profileQuery.isLoading || fieldsQuery.isLoading) {
-    return <LoadingPage />;
+    return (
+      <Page>
+        <ProfileHeader goBack={goBack} />
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
+    );
   }
 
   if (clientQuery.isError || profileQuery.isError || !clientQuery.data || !profileQuery.data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
-            <Page.Title>Profile</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
-            <Typography
-              className="text-danger"
-              type="body-sm"
-            >
-              Profile couldn't load
-            </Typography>
-          </div>
+        <ProfileHeader goBack={goBack} />
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <ErrorState message="Couldn't load profile." />
         </Page.Content>
       </Page>
     );

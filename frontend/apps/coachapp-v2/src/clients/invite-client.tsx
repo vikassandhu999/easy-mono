@@ -1,8 +1,9 @@
 import {Alert, Button, Card, Separator, Typography, toast} from '@heroui/react';
-import {ArrowLeft, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
+import {ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -98,7 +99,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
               color="muted"
               type="body-sm"
             >
-              The invite was sent. The invite link will appear once the backend returns it
+              The invite was sent. The invite link will appear once the backend returns it.
             </Typography>
           </Card.Content>
         </Card>
@@ -147,23 +148,16 @@ export default function InviteClient() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
-          <Page.Title>{inviteResult ? 'Invite sent' : 'Invite client'}</Page.Title>
+          <div className="flex items-center gap-1">
+            <BackButton onPress={goBack} />
+            <Page.Title>{inviteResult ? 'Invite sent' : 'Invite client'}</Page.Title>
+          </div>
           {!inviteResult && <Page.Description>Send an invite to a new client</Page.Description>}
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Toolbar>
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Clients
-        </Button>
-      </Page.Toolbar>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         {inviteResult ? (
           <InviteConfirmation
             client={inviteResult}

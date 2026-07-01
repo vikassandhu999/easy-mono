@@ -1,7 +1,8 @@
-import {Button, Spinner, Typography} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
+import {Spinner} from '@heroui/react';
 import {useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/generated';
@@ -29,12 +30,15 @@ export default function EditNutritionPlan() {
   if (isFetching) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
-            <Page.Title>Edit nutrition plan</Page.Title>
+            <div className={'flex items-center gap-1'}>
+              <BackButton onPress={goBack} />
+              <Page.Title>Edit nutrition plan</Page.Title>
+            </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Spinner color="accent" />
           </div>
@@ -46,30 +50,16 @@ export default function EditNutritionPlan() {
   if (isError || !plan) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
-            <Page.Title>Edit nutrition plan</Page.Title>
+            <div className={'flex items-center gap-1'}>
+              <BackButton onPress={goBack} />
+              <Page.Title>Edit nutrition plan</Page.Title>
+            </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </Button>
-        </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
-            <Typography
-              className="text-danger"
-              type="body-sm"
-            >
-              Nutrition plan couldn't load
-            </Typography>
-          </div>
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <ErrorState message="Couldn't load nutrition plan." />
         </Page.Content>
       </Page>
     );
@@ -86,24 +76,16 @@ export default function EditNutritionPlan() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
-            <Button
-              aria-label="Back"
-              onPress={goBack}
-              size="md"
-              variant="ghost"
-              isIconOnly
-            >
-              <ArrowLeft size={20} />
-            </Button>
+            <BackButton onPress={goBack} />
             <Page.Title>Edit nutrition plan</Page.Title>
           </div>
           <Page.Description>{plan.name}</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <NutritionPlanForm
           form={form}
           isSubmitting={isUpdating}

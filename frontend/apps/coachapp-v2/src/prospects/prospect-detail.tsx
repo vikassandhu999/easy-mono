@@ -1,9 +1,12 @@
-import {Alert, Avatar, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
-import {ArrowLeft, Mail, Phone} from 'lucide-react';
+import {Avatar, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
+import {Mail, Phone} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {useGetLandingPageQuery} from '@/api/landing-page';
 import {
@@ -14,19 +17,6 @@ import {
   useUpdateProspectMutation,
 } from '@/api/prospects';
 import {getApiErrorMessage} from '@/api/shared';
-
-function SectionHeading({title}: {title: string}) {
-  return (
-    <Typography
-      className="mb-3 uppercase tracking-wider"
-      color="muted"
-      type="body-xs"
-      weight="semibold"
-    >
-      {title}
-    </Typography>
-  );
-}
 
 function Card({children}: {children: React.ReactNode}) {
   return <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">{children}</div>;
@@ -99,15 +89,7 @@ export default function ProspectDetail() {
         <Page.Header>
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
-              <Button
-                aria-label="Back"
-                isIconOnly
-                onPress={() => navigate(ROUTES.PROSPECTS)}
-                size="md"
-                variant="ghost"
-              >
-                <ArrowLeft size={20} />
-              </Button>
+              <BackButton onPress={() => navigate(ROUTES.PROSPECTS)} />
               <Page.Title>Prospect</Page.Title>
             </div>
           </Page.TitleGroup>
@@ -127,33 +109,22 @@ export default function ProspectDetail() {
         <Page.Header>
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
-              <Button
-                aria-label="Back"
-                isIconOnly
-                onPress={() => navigate(ROUTES.PROSPECTS)}
-                size="md"
-                variant="ghost"
-              >
-                <ArrowLeft size={20} />
-              </Button>
+              <BackButton onPress={() => navigate(ROUTES.PROSPECTS)} />
               <Page.Title>Prospect</Page.Title>
             </div>
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="max-w-4xl pt-4">
-            <Alert status="danger">
-              <Alert.Content>
-                <Alert.Title>Couldn't load this prospect.</Alert.Title>
-              </Alert.Content>
-              <Button
-                onPress={() => refetch()}
-                size="sm"
-                variant="secondary"
-              >
-                Retry
-              </Button>
-            </Alert>
+          <div className="max-w-4xl">
+            <ErrorState message="Couldn't load prospect." />
+            <Button
+              className="mt-3"
+              onPress={() => refetch()}
+              size="sm"
+              variant="secondary"
+            >
+              Retry
+            </Button>
           </div>
         </Page.Content>
       </Page>
@@ -171,18 +142,10 @@ export default function ProspectDetail() {
 
   return (
     <Page>
-      <Page.Header className="flex-col items-start gap-3 py-4 sm:flex-row sm:items-center sm:py-8 w-full max-w-6xl">
+      <Page.Header className="flex-col items-start sm:flex-row sm:items-center">
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
-            <Button
-              aria-label="Back"
-              isIconOnly
-              onPress={() => navigate(ROUTES.PROSPECTS)}
-              size="md"
-              variant="ghost"
-            >
-              <ArrowLeft size={20} />
-            </Button>
+            <BackButton onPress={() => navigate(ROUTES.PROSPECTS)} />
             <Page.Title>{prospect.name}</Page.Title>
           </div>
         </Page.TitleGroup>

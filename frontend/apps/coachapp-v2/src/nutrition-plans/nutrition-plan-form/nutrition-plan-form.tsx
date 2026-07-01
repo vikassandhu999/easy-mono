@@ -1,8 +1,15 @@
-import {Button, Description, ErrorMessage, Fieldset, Form, Spinner} from '@heroui/react';
+import {ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {
+  FieldRow,
+  FormActions,
+  FormLayout,
+  FormNumberField,
+  FormTextAreaField,
+  FormTextField,
+} from '@/@components/form-fields';
 import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
 import {omitUndefined, toOptionalText} from '@/api/shared';
 
@@ -91,11 +98,11 @@ type NutritionPlanFormProps = {
 };
 
 const MACRO_FIELDS = [
-  {label: 'Calories (optional)', name: 'calories', step: undefined},
-  {label: 'Protein, grams (optional)', name: 'protein_g', step: 0.1},
-  {label: 'Carbs, grams (optional)', name: 'carbs_g', step: 0.1},
-  {label: 'Fat, grams (optional)', name: 'fats_g', step: 0.1},
-  {label: 'Fiber, grams (optional)', name: 'fiber_g', step: 0.1},
+  {label: 'Calories', name: 'calories', step: undefined},
+  {label: 'Protein (g)', name: 'protein_g', step: 0.1},
+  {label: 'Carbs (g)', name: 'carbs_g', step: 0.1},
+  {label: 'Fat (g)', name: 'fats_g', step: 0.1},
+  {label: 'Fiber (g)', name: 'fiber_g', step: 0.1},
 ] as const;
 
 export default function NutritionPlanForm({
@@ -113,26 +120,23 @@ export default function NutritionPlanForm({
   } = form;
 
   return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
+    <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <Fieldset>
         <Fieldset.Legend>Plan details</Fieldset.Legend>
-        <Description>Name the plan and describe who it is for</Description>
 
         <Fieldset.Group>
           <FormTextField
             control={control}
-            description="Use a clear name, like fat loss week 1"
             fullWidth
             isRequired
-            label="Name (required)"
+            label="Name"
             name="name"
           />
 
           <FormTextAreaField
             control={control}
-            description="Add goals, constraints, or coaching notes"
             fullWidth
-            label="Description (optional)"
+            label="Description"
             name="description"
             textAreaProps={{rows: 2}}
           />
@@ -141,49 +145,32 @@ export default function NutritionPlanForm({
 
       <Fieldset>
         <Fieldset.Legend>Daily macro goal</Fieldset.Legend>
-        <Description>Set optional daily targets for calories and macros</Description>
 
         <Fieldset.Group>
-          {MACRO_FIELDS.map((fieldConfig) => (
-            <FormNumberField
-              control={control}
-              fullWidth
-              label={fieldConfig.label}
-              key={fieldConfig.name}
-              minValue={0}
-              name={fieldConfig.name}
-              step={fieldConfig.step}
-            />
-          ))}
+          <FieldRow>
+            {MACRO_FIELDS.map((fieldConfig) => (
+              <FormNumberField
+                control={control}
+                fullWidth
+                label={fieldConfig.label}
+                key={fieldConfig.name}
+                minValue={0}
+                name={fieldConfig.name}
+                step={fieldConfig.step}
+              />
+            ))}
+          </FieldRow>
         </Fieldset.Group>
       </Fieldset>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions className={'mt-4 flex gap-4'}>
-        <Button
-          isPending={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner
-                color="current"
-                size="sm"
-              />
-              {submittingLabel}
-            </>
-          ) : (
-            submitLabel
-          )}
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </Fieldset.Actions>
-    </Form>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+      />
+    </FormLayout>
   );
 }

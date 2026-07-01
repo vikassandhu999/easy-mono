@@ -16,6 +16,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import DateInput from '@/@components/date-input';
 import {FormTextField} from '@/@components/form-fields';
+import SectionHeading from '@/@components/section-heading';
 import type {TrainingPlan} from '@/api/generated';
 import {coachApi, useUpdateTrainingPlanMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
@@ -91,10 +92,10 @@ export function PlanHeader({plan}: PlanHeaderProps) {
   const isAssigned = plan.client_id !== null;
 
   return (
-    <div className="w-full space-y-3 py-4">
-      {/* Section title + saving indicator */}
+    <div className="w-full py-4">
+      {/* Section caption + saving indicator */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted">Plan details</span>
+        <SectionHeading title="Plan details" />
         {isSaving && (
           <Spinner
             color="accent"
@@ -104,7 +105,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
       </div>
 
       {/* Plan name — large inline input */}
-      <div>
+      <div className="mb-3">
         <FormTextField
           control={control}
           inputProps={{

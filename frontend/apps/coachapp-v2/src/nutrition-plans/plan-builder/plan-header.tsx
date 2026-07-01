@@ -17,6 +17,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField, FormTextField} from '@/@components/form-fields';
+import SectionHeading from '@/@components/section-heading';
 import type {NutritionPlan} from '@/api/generated';
 import {coachApi, useUpdateNutritionPlanMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
@@ -194,7 +195,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
     <div className="w-full space-y-3 py-4">
       {/* Section label + saving indicator + target summary */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted">Plan details</span>
+        <SectionHeading title="Plan details" />
         {isSaving ? (
           <Spinner
             color="accent"
@@ -222,7 +223,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <FormNumberField
           control={control}
-          label="Calories (kcal)"
+          label="Calories"
           minValue={0}
           name="calories"
           onFieldBlur={() => handleBlur('calories')}

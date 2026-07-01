@@ -11,6 +11,7 @@ import type {BaseFormFieldProps} from './form-field-types';
 type FormNumberFieldProps<T extends FieldValues> = BaseFormFieldProps<T> & {
   fullWidth?: boolean;
   inputProps?: ComponentProps<typeof NumberInput>['inputProps'];
+  isRequired?: boolean;
   minValue?: number;
   // Accepted for call-site compatibility with the old NumberField API; a text
   // input has no stepper, so it is intentionally unused.
@@ -24,6 +25,7 @@ export function FormNumberField<T extends FieldValues>({
   description,
   fullWidth,
   inputProps,
+  isRequired,
   label,
   minValue,
   name,
@@ -40,6 +42,7 @@ export function FormNumberField<T extends FieldValues>({
           error={fieldState.error?.message}
           fullWidth={fullWidth}
           inputProps={inputProps}
+          isRequired={isRequired}
           label={label}
           minValue={minValue}
           name={field.name}

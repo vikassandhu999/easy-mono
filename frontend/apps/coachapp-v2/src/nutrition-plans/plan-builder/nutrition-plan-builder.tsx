@@ -13,10 +13,11 @@
  *
  * Mirrors training `src/training-plans/plan-builder/plan-builder.tsx`.
  */
-import {Button, Spinner} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
+import {Spinner} from '@heroui/react';
 import {useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -36,10 +37,8 @@ export default function NutritionPlanBuilder() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2">
-          <Page.TitleGroup>
-            <Page.Title>Nutrition Plan</Page.Title>
-          </Page.TitleGroup>
+        <Page.Header className="py-3 items-center">
+          <BackButton onPress={goBack} />
         </Page.Header>
         <Page.Content>
           <div className="flex items-center justify-center py-20">
@@ -53,25 +52,11 @@ export default function NutritionPlanBuilder() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2">
-          <Page.TitleGroup>
-            <Page.Title>Nutrition Plan</Page.Title>
-          </Page.TitleGroup>
-          <Page.Actions>
-            <Button
-              onPress={goBack}
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </Button>
-          </Page.Actions>
+        <Page.Header className="py-3 items-center">
+          <BackButton onPress={goBack} />
         </Page.Header>
-        <Page.Content>
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-            Failed to load nutrition plan. It may not exist or you don&apos;t have access.
-          </div>
+        <Page.Content className="px-4 pt-4 md:px-6 lg:px-8">
+          <ErrorState message="Couldn't load nutrition plan." />
         </Page.Content>
       </Page>
     );
@@ -83,15 +68,7 @@ export default function NutritionPlanBuilder() {
     <Page>
       {/* Nav bar — back + plan actions */}
       <Page.Header className="py-3 items-center">
-        <Button
-          className="-ml-3"
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={18} />
-          Back
-        </Button>
+        <BackButton onPress={goBack} />
         <NutritionPlanActions
           onDeleted={() => goBack()}
           plan={plan}

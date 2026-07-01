@@ -1,7 +1,7 @@
 import {AlertDialog, Button, toast, useOverlayState} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
+import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -50,38 +50,28 @@ export default function CreateRecipe() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
-            <Button
-              aria-label="Back"
-              onPress={attemptLeave}
-              size="md"
-              variant="ghost"
-              isIconOnly
-            >
-              <ArrowLeft size={20} />
-            </Button>
+            <BackButton onPress={attemptLeave} />
             <Page.Title>Create recipe</Page.Title>
           </div>
           <Page.Description>Add ingredients, nutrition details, and instructions</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="max-w-160 mt-4">
-          <RecipeForm
-            form={form}
-            ingredients={ingredients}
-            isSubmitting={isLoading}
-            onCancel={attemptLeave}
-            onIngredientsChange={setIngredients}
-            onServingSizesChange={setServingSizes}
-            onSubmit={onSubmit}
-            servingSizes={servingSizes}
-            submitLabel="Create recipe"
-            submittingLabel="Creating recipe"
-          />
-        </div>
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <RecipeForm
+          form={form}
+          ingredients={ingredients}
+          isSubmitting={isLoading}
+          onCancel={attemptLeave}
+          onIngredientsChange={setIngredients}
+          onServingSizesChange={setServingSizes}
+          onSubmit={onSubmit}
+          servingSizes={servingSizes}
+          submitLabel="Create recipe"
+          submittingLabel="Creating recipe"
+        />
       </Page.Content>
 
       <AlertDialog.Backdrop

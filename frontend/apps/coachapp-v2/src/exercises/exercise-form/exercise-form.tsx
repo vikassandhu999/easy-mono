@@ -1,10 +1,17 @@
-import {Button, Description, ErrorMessage, Fieldset, Form, ListBox, Spinner, Typography} from '@heroui/react';
+import {Button, ErrorMessage, Fieldset, ListBox, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ImageOff, Plus, X} from 'lucide-react';
 import {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {
+  FieldRow,
+  FormActions,
+  FormLayout,
+  FormSelectField,
+  FormTextAreaField,
+  FormTextField,
+} from '@/@components/form-fields';
 import type {
   TrainingExercise,
   TrainingExerciseCreateRequest,
@@ -162,11 +169,9 @@ export default function ExerciseForm({
   const images = watch('images') ?? [];
 
   return (
-    <Form
-      onSubmit={handleSubmit(onSubmit)}
-      className={'flex flex-col gap-4'}
-    >
+    <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <Fieldset>
+        <Fieldset.Legend>Details</Fieldset.Legend>
         <Fieldset.Group>
           <FormTextField
             control={control}
@@ -174,12 +179,10 @@ export default function ExerciseForm({
             isRequired
             label="Name"
             name="name"
-            variant={'secondary'}
           />
 
           <FormTextAreaField
             control={control}
-            description="Summarize what this exercise is for"
             fullWidth
             label="Description"
             name="description"
@@ -188,102 +191,99 @@ export default function ExerciseForm({
 
           <FormTextAreaField
             control={control}
-            description="Add cues, setup notes, and execution steps"
             fullWidth
             label="Instructions"
             name="instructions"
-            textAreaProps={{rows: 3}}
+            textAreaProps={{placeholder: 'Add cues, setup notes, and execution steps', rows: 3}}
           />
         </Fieldset.Group>
       </Fieldset>
 
       <Fieldset>
+        <Fieldset.Legend>Attributes</Fieldset.Legend>
         <Fieldset.Group>
-          <FormSelectField
-            control={control}
-            label="Mechanics"
-            name="mechanics"
-          >
-            {MECHANICS_OPTIONS.map((option) => (
-              <ListBox.Item
-                id={option.value}
-                key={option.value}
-                textValue={option.label}
-              >
-                {option.label}
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            ))}
-          </FormSelectField>
+          <FieldRow>
+            <FormSelectField
+              control={control}
+              label="Mechanics"
+              name="mechanics"
+            >
+              {MECHANICS_OPTIONS.map((option) => (
+                <ListBox.Item
+                  id={option.value}
+                  key={option.value}
+                  textValue={option.label}
+                >
+                  {option.label}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </FormSelectField>
 
-          <FormSelectField
-            control={control}
-            label="Force"
-            name="force"
-          >
-            {FORCE_OPTIONS.map((option) => (
-              <ListBox.Item
-                id={option.value}
-                key={option.value}
-                textValue={option.label}
-              >
-                {option.label}
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            ))}
-          </FormSelectField>
+            <FormSelectField
+              control={control}
+              label="Force"
+              name="force"
+            >
+              {FORCE_OPTIONS.map((option) => (
+                <ListBox.Item
+                  id={option.value}
+                  key={option.value}
+                  textValue={option.label}
+                >
+                  {option.label}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </FormSelectField>
+          </FieldRow>
+
+          {muscles.length > 0 && (
+            <Controller
+              control={control}
+              name="muscle_ids"
+              render={({field, fieldState}) => (
+                <MultiSelectAutocomplete
+                  emptyMessage="No muscles found"
+                  errorMessage={fieldState.error?.message}
+                  isInvalid={!!fieldState.error}
+                  items={muscles}
+                  label="Muscles"
+                  name={field.name}
+                  onChange={field.onChange}
+                  placeholder="Search and select muscles"
+                  searchPlaceholder="Search muscles..."
+                  value={field.value ?? []}
+                />
+              )}
+            />
+          )}
+
+          {equipment.length > 0 && (
+            <Controller
+              control={control}
+              name="equipment_ids"
+              render={({field, fieldState}) => (
+                <MultiSelectAutocomplete
+                  emptyMessage="No equipment found"
+                  errorMessage={fieldState.error?.message}
+                  isInvalid={!!fieldState.error}
+                  items={equipment}
+                  label="Equipment"
+                  name={field.name}
+                  onChange={field.onChange}
+                  placeholder="Search and select equipment"
+                  searchPlaceholder="Search equipment..."
+                  value={field.value ?? []}
+                />
+              )}
+            />
+          )}
         </Fieldset.Group>
       </Fieldset>
-
-      {muscles.length > 0 && (
-        <Fieldset>
-          <Controller
-            control={control}
-            name="muscle_ids"
-            render={({field, fieldState}) => (
-              <MultiSelectAutocomplete
-                emptyMessage="No muscles found"
-                errorMessage={fieldState.error?.message}
-                isInvalid={!!fieldState.error}
-                items={muscles}
-                label="Muscles"
-                name={field.name}
-                onChange={field.onChange}
-                placeholder="Search and select muscles"
-                searchPlaceholder="Search muscles..."
-                value={field.value ?? []}
-              />
-            )}
-          />
-        </Fieldset>
-      )}
-
-      {equipment.length > 0 && (
-        <Fieldset>
-          <Controller
-            control={control}
-            name="equipment_ids"
-            render={({field, fieldState}) => (
-              <MultiSelectAutocomplete
-                emptyMessage="No equipment found"
-                errorMessage={fieldState.error?.message}
-                isInvalid={!!fieldState.error}
-                items={equipment}
-                label="Equipment"
-                name={field.name}
-                onChange={field.onChange}
-                placeholder="Search and select equipment"
-                searchPlaceholder="Search equipment..."
-                value={field.value ?? []}
-              />
-            )}
-          />
-        </Fieldset>
-      )}
 
       <Fieldset>
         <Fieldset.Legend>Images</Fieldset.Legend>
-        <Description>Add optional image URLs that show the exercise setup or movement</Description>
 
         <Fieldset.Group>
           {images.length > 0 && (
@@ -327,9 +327,9 @@ export default function ExerciseForm({
             <Fieldset>
               <FormTextField
                 control={control}
-                description="Paste a full URL that starts with http:// or https://"
                 fullWidth
-                label="Image URL (required)"
+                inputProps={{placeholder: 'https://example.com/exercise.jpg'}}
+                label="Image URL"
                 name="image_url"
                 onValueChange={() => {
                   if (errors.image_url) {
@@ -391,30 +391,12 @@ export default function ExerciseForm({
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions className={'mt-4 flex gap-4'}>
-        <Button
-          isPending={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner
-                color="current"
-                size="sm"
-              />
-              {submittingLabel}
-            </>
-          ) : (
-            submitLabel
-          )}
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </Fieldset.Actions>
-    </Form>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+      />
+    </FormLayout>
   );
 }

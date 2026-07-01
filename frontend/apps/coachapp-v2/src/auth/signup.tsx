@@ -3,11 +3,12 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FormTextField} from '@/@components/form-fields';
+import {FieldRow, FormTextField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
 import {useSignupMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
+import {AuthFooter} from '@/auth/components/auth-footer';
 import AuthLayout from '@/auth/components/auth-layout';
 
 const schema = z.object({
@@ -53,12 +54,12 @@ export default function Signup() {
         className="flex flex-col gap-4"
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FieldRow>
           <FormTextField
             control={form.control}
             fullWidth
             inputProps={{autoComplete: 'given-name'}}
-            label="First name (optional)"
+            label="First name"
             name="first_name"
           />
 
@@ -66,15 +67,16 @@ export default function Signup() {
             control={form.control}
             fullWidth
             inputProps={{autoComplete: 'family-name'}}
-            label="Last name (optional)"
+            label="Last name"
             name="last_name"
           />
-        </div>
+        </FieldRow>
 
         <FormTextField
           control={form.control}
           fullWidth
           inputProps={{autoComplete: 'email'}}
+          isRequired
           label="Email"
           name="email"
           type="email"
@@ -101,19 +103,20 @@ export default function Signup() {
         </Button>
       </Form>
 
-      <Typography
-        className="mt-6 text-center"
-        color="muted"
-        type="body-sm"
-      >
-        Already have an account?{' '}
+      <AuthFooter>
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Already have an account?
+        </Typography>
         <Link
           className="text-sm text-foreground underline"
           href={ROUTES.LOGIN}
         >
           Log in
         </Link>
-      </Typography>
+      </AuthFooter>
     </AuthLayout>
   );
 }

@@ -4,15 +4,35 @@
  * lifestyle) and has a type; the per-client profile screen renders these as
  * inputs. CRUD via the generated profile-field endpoints.
  */
-import {AlertDialog, Button, Form, ListBox, Spinner, Typography, toast, useOverlayState} from '@heroui/react';
+import {
+  AlertDialog,
+  Button,
+  ErrorMessage,
+  Fieldset,
+  Form,
+  ListBox,
+  Spinner,
+  Typography,
+  toast,
+  useOverlayState,
+} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
+import {Pencil, Plus, Trash2} from 'lucide-react';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FormSelectField, FormSwitchField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
+import {
+  FormActions,
+  FormSelectField,
+  FormSwitchField,
+  FormTextAreaField,
+  FormTextField,
+} from '@/@components/form-fields';
 import {Page} from '@/@components/page';
+import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {
   type ClientProfileField,
@@ -28,7 +48,6 @@ import {
 } from '@/api/client-profile';
 import {applyFormErrors} from '@/api/shared';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
-import SectionHeading from '@/settings/components/section-heading';
 
 const FIELD_TYPES = Object.keys(FIELD_TYPE_LABELS) as ProfileFieldType[];
 
@@ -150,89 +169,79 @@ function FieldForm({
 
   return (
     <Form
-      className="gap-4 pb-2"
+      className="pb-2"
       onSubmit={form.handleSubmit(onSubmit)}
     >
-      <FormTextField
-        control={form.control}
-        fullWidth
-        label="Label"
-        name="label"
+      <Fieldset>
+        <Fieldset.Group>
+          <FormTextField
+            control={form.control}
+            fullWidth
+            isRequired
+            label="Label"
+            name="label"
+          />
+          <FormSelectField
+            control={form.control}
+            label="Section"
+            name="section"
+          >
+            {PROFILE_SECTIONS.map((s) => (
+              <ListBox.Item
+                id={s.key}
+                key={s.key}
+                textValue={s.label}
+              >
+                {s.label}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </FormSelectField>
+          <FormSelectField
+            control={form.control}
+            label="Type"
+            name="field_type"
+          >
+            {FIELD_TYPES.map((t) => (
+              <ListBox.Item
+                id={t}
+                key={t}
+                textValue={FIELD_TYPE_LABELS[t]}
+              >
+                {FIELD_TYPE_LABELS[t]}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </FormSelectField>
+          {showOptions ? (
+            <FormTextAreaField
+              control={form.control}
+              description="One option per line."
+              fullWidth
+              label="Options"
+              name="optionsText"
+              textAreaProps={{rows: 4}}
+            />
+          ) : null}
+          {filterableAllowed ? (
+            <FormSwitchField
+              control={form.control}
+              description="Let coaches filter the client list by this field."
+              label="Filterable"
+              name="filterable"
+            />
+          ) : null}
+        </Fieldset.Group>
+      </Fieldset>
+
+      {form.formState.errors.root ? <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage> : null}
+
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onDone}
+        submitLabel={target.mode === 'edit' ? 'Save field' : 'Add field'}
+        submittingLabel={target.mode === 'edit' ? 'Saving field' : 'Adding field'}
       />
-      <FormSelectField
-        control={form.control}
-        label="Section"
-        name="section"
-      >
-        {PROFILE_SECTIONS.map((s) => (
-          <ListBox.Item
-            id={s.key}
-            key={s.key}
-            textValue={s.label}
-          >
-            {s.label}
-            <ListBox.ItemIndicator />
-          </ListBox.Item>
-        ))}
-      </FormSelectField>
-      <FormSelectField
-        control={form.control}
-        label="Type"
-        name="field_type"
-      >
-        {FIELD_TYPES.map((t) => (
-          <ListBox.Item
-            id={t}
-            key={t}
-            textValue={FIELD_TYPE_LABELS[t]}
-          >
-            {FIELD_TYPE_LABELS[t]}
-            <ListBox.ItemIndicator />
-          </ListBox.Item>
-        ))}
-      </FormSelectField>
-      {showOptions ? (
-        <FormTextAreaField
-          control={form.control}
-          description="One option per line"
-          fullWidth
-          label="Options"
-          name="optionsText"
-          textAreaProps={{rows: 4}}
-        />
-      ) : null}
-      {filterableAllowed ? (
-        <FormSwitchField
-          control={form.control}
-          description="Let coaches filter the client list by this field"
-          label="Filterable"
-          name="filterable"
-        />
-      ) : null}
-
-      {form.formState.errors.root ? (
-        <Typography
-          className="text-danger"
-          type="body-sm"
-        >
-          {form.formState.errors.root.message}
-        </Typography>
-      ) : null}
-
-      <div className="mt-2 flex gap-3">
-        <Button
-          isPending={isSubmitting}
-          type="submit"
-        >
-          {target.mode === 'edit' ? 'Save field' : 'Add field'}
-        </Button>
-        <Button
-          onPress={onDone}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </div>
     </Form>
   );
 }
@@ -310,18 +319,10 @@ export default function ProfileFields() {
   };
 
   const header = (
-    <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+    <Page.Header>
       <Page.TitleGroup>
         <div className="flex items-center gap-1">
-          <Button
-            aria-label="Back"
-            isIconOnly
-            onPress={() => navigate(ROUTES.SETTINGS)}
-            size="md"
-            variant="ghost"
-          >
-            <ArrowLeft size={20} />
-          </Button>
+          <BackButton onPress={() => navigate(ROUTES.SETTINGS)} />
           <Page.Title>Client profile fields</Page.Title>
         </div>
         <Page.Description>Define the intake questions shown on each client's profile.</Page.Description>
@@ -347,14 +348,10 @@ export default function ProfileFields() {
       <Page>
         {header}
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              Couldn't load profile fields. Check your connection and try again.
-            </Typography>
+          <div className="max-w-2xl">
+            <ErrorState message="Couldn't load profile fields." />
             <Button
+              className="mt-3"
               onPress={() => refetch()}
               size="sm"
               variant="secondary"

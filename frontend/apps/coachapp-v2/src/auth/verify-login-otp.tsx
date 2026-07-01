@@ -7,9 +7,10 @@ import {FormOtpField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
 import {useExchangeTokenMutation} from '@/api/auth';
-import {useSendOtpMutation} from '@/api/generated';
 import {setTokens} from '@/api/authStorage';
+import {useSendOtpMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
+import {AuthFooter} from '@/auth/components/auth-footer';
 import AuthLayout from '@/auth/components/auth-layout';
 
 interface VerifyLoginOtpLocationState {
@@ -112,7 +113,7 @@ export default function VerifyLoginOtp() {
         </Button>
       </Form>
 
-      <div className="mt-6 flex items-center justify-center gap-1">
+      <AuthFooter>
         <Typography
           color="muted"
           type="body-sm"
@@ -126,7 +127,7 @@ export default function VerifyLoginOtp() {
         >
           {isResending ? 'Sending' : 'Resend'}
         </Link>
-      </div>
+      </AuthFooter>
     </AuthLayout>
   );
 }

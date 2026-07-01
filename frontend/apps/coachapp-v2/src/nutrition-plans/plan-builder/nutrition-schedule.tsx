@@ -38,8 +38,10 @@ import {
   WEEKDAY_SHORT_LABELS,
   WEEKDAYS,
 } from '@easy/utils';
-import {ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
+import {ListBox, Select, Spinner, toast} from '@heroui/react';
 import {useState} from 'react';
+import {ErrorState} from '@/@components/error-state';
+import SectionHeading from '@/@components/section-heading';
 import {
   coachApi,
   NutritionMeal,
@@ -447,11 +449,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
   }
 
   if (scheduleError) {
-    return (
-      <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
-        Failed to load schedule.
-      </div>
-    );
+    return <ErrorState message="Couldn't load schedule." />;
   }
 
   const activeSlots = mode === 'customize' ? scheduleMap[selectedDay] : templateSlots;
@@ -464,16 +462,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
   return (
     <section className="border-t border-border py-4">
       {/* Section header */}
-      <div className="mb-3 flex items-center justify-between">
-        <Typography
-          className="uppercase tracking-wider"
-          color="muted"
-          type="body-xs"
-          weight="semibold"
-        >
-          Schedule
-        </Typography>
-      </div>
+      <SectionHeading title="Schedule" />
 
       {/* Mode toggle */}
       <div className="mb-3 flex gap-1 rounded-lg border border-border bg-surface p-1">
@@ -526,14 +515,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       {/* Day label + overridden badge (customize mode) */}
       {mode === 'customize' ? (
         <div className="mb-2 flex items-center gap-2">
-          <Typography
-            className="uppercase tracking-wider"
-            color="muted"
-            type="body-xs"
-            weight="semibold"
-          >
-            {selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}
-          </Typography>
+          <SectionHeading title={selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)} />
           {selectedDayOverridden ? (
             <span className="rounded border border-warning/50 px-1.5 py-0.5 text-[10px] font-medium text-warning">
               Overridden
@@ -570,14 +552,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       {/* Week overview grid */}
       <div className="mt-4">
         <div className="mb-1 flex items-center justify-between">
-          <Typography
-            className="uppercase tracking-wider"
-            color="muted"
-            type="body-xs"
-            weight="semibold"
-          >
-            Week overview
-          </Typography>
+          <SectionHeading title="Week overview" />
           <span className="text-[10px] text-muted">read-only · tap to edit a day</span>
         </div>
 

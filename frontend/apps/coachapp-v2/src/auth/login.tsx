@@ -8,6 +8,7 @@ import {FormTextField} from '@/@components/form-fields';
 import {ROUTES} from '@/@config/routes';
 import {useSendOtpMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
+import {AuthFooter} from '@/auth/components/auth-footer';
 import AuthLayout from '@/auth/components/auth-layout';
 
 const schema = z.object({
@@ -56,6 +57,7 @@ export default function Login() {
           control={form.control}
           fullWidth
           inputProps={{autoComplete: 'email'}}
+          isRequired
           label="Email"
           name="email"
           type="email"
@@ -82,19 +84,20 @@ export default function Login() {
         </Button>
       </Form>
 
-      <Typography
-        className="mt-6 text-center"
-        color="muted"
-        type="body-sm"
-      >
-        Don&apos;t have an account?{' '}
+      <AuthFooter>
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Don&apos;t have an account?
+        </Typography>
         <Link
           className="text-sm text-foreground underline"
           href={ROUTES.SIGNUP}
         >
           Sign up
         </Link>
-      </Typography>
+      </AuthFooter>
     </AuthLayout>
   );
 }

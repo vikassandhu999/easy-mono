@@ -1,7 +1,8 @@
-import {Button, Spinner, Typography} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
+import {Spinner} from '@heroui/react';
 import {useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/generated';
@@ -12,6 +13,22 @@ import TrainingPlanForm, {
   trainingPlanToUpdateRequest,
   useTrainingPlanForm,
 } from '@/training-plans/training-plan-form/training-plan-form';
+
+// The one header for every state (loading / error / loaded). Keeps the back
+// button, title, and reserved description slot identical so only the body swaps.
+function EditTrainingPlanHeader({description, goBack}: {description?: string; goBack: () => void}) {
+  return (
+    <Page.Header>
+      <Page.TitleGroup>
+        <div className="flex items-center gap-1">
+          <BackButton onPress={goBack} />
+          <Page.Title>Edit training plan</Page.Title>
+        </div>
+        {description ? <Page.Description>{description}</Page.Description> : null}
+      </Page.TitleGroup>
+    </Page.Header>
+  );
+}
 
 function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
   const goBack = useGoBack(backPath);
@@ -35,24 +52,11 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-        <Page.TitleGroup>
-          <div className={'flex items-center gap-1'}>
-            <Button
-              aria-label="Back"
-              onPress={goBack}
-              size="md"
-              variant="ghost"
-              isIconOnly
-            >
-              <ArrowLeft size={20} />
-            </Button>
-            <Page.Title>Edit training plan</Page.Title>
-          </div>
-          <Page.Description>{plan.name}</Page.Description>
-        </Page.TitleGroup>
-      </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <EditTrainingPlanHeader
+        description={plan.name}
+        goBack={goBack}
+      />
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <TrainingPlanForm
           form={form}
           isSubmitting={isUpdating}
@@ -70,17 +74,13 @@ export default function EditTrainingPlan() {
   const {id} = useParams<{id: string}>();
   const {data, isError, isLoading: isFetching} = useGetTrainingPlanQuery({id: id!});
   const backPath = `/library/training-plans/${id}`;
-  const goBackOuter = useGoBack(backPath);
+  const goBack = useGoBack(backPath);
 
   if (isFetching) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
-            <Page.Title>Edit training plan</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <EditTrainingPlanHeader goBack={goBack} />
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Spinner color="accent" />
           </div>
@@ -92,30 +92,9 @@ export default function EditTrainingPlan() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
-            <Page.Title>Edit training plan</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBackOuter}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Training plan
-          </Button>
-        </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
-            <Typography
-              className="text-danger"
-              type="body-sm"
-            >
-              Training plan couldn't load
-            </Typography>
-          </div>
+        <EditTrainingPlanHeader goBack={goBack} />
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <ErrorState message="Couldn't load training plan." />
         </Page.Content>
       </Page>
     );

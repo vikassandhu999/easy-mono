@@ -1,7 +1,8 @@
-import {Button, Spinner, Typography} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
+import {Spinner} from '@heroui/react';
 import {useState} from 'react';
 import {Navigate, useParams} from 'react-router-dom';
+import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/generated';
@@ -42,24 +43,16 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
-            <Button
-              aria-label="Back"
-              onPress={goBack}
-              size="md"
-              variant="ghost"
-              isIconOnly
-            >
-              <ArrowLeft size={20} />
-            </Button>
+            <BackButton onPress={goBack} />
             <Page.Title>Edit food</Page.Title>
           </div>
           <Page.Description>{food.name}</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <FoodForm
           form={form}
           isSubmitting={isUpdating}
@@ -84,12 +77,15 @@ export default function EditFood() {
   if (isFetching) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
-            <Page.Title>Edit food</Page.Title>
+            <div className={'flex items-center gap-1'}>
+              <BackButton onPress={goBackOuter} />
+              <Page.Title>Edit food</Page.Title>
+            </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Spinner color="accent" />
           </div>
@@ -101,30 +97,16 @@ export default function EditFood() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
-            <Page.Title>Edit food</Page.Title>
+            <div className={'flex items-center gap-1'}>
+              <BackButton onPress={goBackOuter} />
+              <Page.Title>Edit food</Page.Title>
+            </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBackOuter}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Food
-          </Button>
-        </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
-            <Typography
-              className="text-danger"
-              type="body-sm"
-            >
-              Food couldn't load
-            </Typography>
-          </div>
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <ErrorState message="Couldn't load food." />
         </Page.Content>
       </Page>
     );

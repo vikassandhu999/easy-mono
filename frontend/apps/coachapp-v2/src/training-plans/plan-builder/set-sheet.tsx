@@ -10,7 +10,7 @@
  * immediately (optimistic update pattern).
  */
 import {Popover, toast} from '@heroui/react';
-import {ChevronLeft, ChevronRight} from 'lucide-react';
+import {ChevronDown, ChevronLeft, ChevronRight} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
@@ -471,11 +471,15 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
 
         {/* Advanced disclosure: rest timer + notes */}
         <button
-          className="mb-2 text-xs text-accent hover:text-accent/80 transition-colors"
+          className="mb-2 inline-flex items-center gap-1 text-xs text-accent transition-colors hover:text-accent/80"
           onClick={() => setShowAdvanced((v) => !v)}
           type="button"
         >
-          {showAdvanced ? '− rest timer · notes' : '+ rest timer · notes'}
+          <ChevronDown
+            className={showAdvanced ? 'rotate-180 transition-transform' : 'transition-transform'}
+            size={14}
+          />
+          Rest timer and notes
         </button>
 
         {showAdvanced ? (

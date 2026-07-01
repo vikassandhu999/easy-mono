@@ -1,8 +1,8 @@
-import {Button, Description, ErrorMessage, Fieldset, Form, Spinner} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {FormActions, FormLayout, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {ClientInviteRequest} from '@/api/clients';
 import {toOptionalText} from '@/api/shared';
 import {splitName} from '@/clients/lib/invite-client';
@@ -68,10 +68,10 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
   } = form;
 
   return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
+    <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <Fieldset>
         <Fieldset.Legend>Client details</Fieldset.Legend>
-        <Description>Add a name and at least one contact method</Description>
+        <Description>Add an email or phone number so the client can receive the invite.</Description>
 
         <Fieldset.Group>
           <FormTextField
@@ -79,16 +79,15 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
             fullWidth
             inputProps={{autoComplete: 'name'}}
             isRequired
-            label="Name (required)"
+            label="Name"
             name="name"
           />
 
           <FormTextField
             control={control}
-            description="Add email or phone so the client can receive the invite"
             fullWidth
             inputProps={{autoComplete: 'email'}}
-            label="Email (optional)"
+            label="Email"
             name="email"
             type="email"
           />
@@ -97,16 +96,15 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
             control={control}
             fullWidth
             inputProps={{autoComplete: 'tel'}}
-            label="Phone (optional)"
+            label="Phone"
             name="phone"
             type="tel"
           />
 
           <FormTextAreaField
             control={control}
-            description="Add private notes about this client"
             fullWidth
-            label="Notes (optional)"
+            label="Notes"
             name="notes"
             textAreaProps={{rows: 3}}
           />
@@ -115,30 +113,12 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions>
-        <Button
-          isPending={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner
-                color="current"
-                size="sm"
-              />
-              Sending invite
-            </>
-          ) : (
-            'Send invite'
-          )}
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Cancel
-        </Button>
-      </Fieldset.Actions>
-    </Form>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel="Send invite"
+        submittingLabel="Sending invite"
+      />
+    </FormLayout>
   );
 }

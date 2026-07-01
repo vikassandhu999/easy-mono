@@ -57,7 +57,7 @@ export default function ListCheckins() {
               color="muted"
               type="body-sm"
             >
-              Couldn't load check-ins. Check your connection and try again.
+              Couldn't load check-ins.
             </Typography>
             <Button
               onPress={() => refetch()}

@@ -1,51 +1,58 @@
-import {Description, FieldError, Label, NumberField} from '@heroui/react';
-import type {ComponentProps} from 'react';
+import {type ComponentProps} from 'react';
 import {Controller, type FieldValues} from 'react-hook-form';
 
+import {NumberInput} from '../number-input';
 import type {BaseFormFieldProps} from './form-field-types';
 
+// Number field for react-hook-form. Delegates to the shared NumberInput (a plain
+// text input) so mobile soft keyboards don't drop digits the way react-aria's
+// NumberField does — see number-input.tsx.
+
 type FormNumberFieldProps<T extends FieldValues> = BaseFormFieldProps<T> & {
+  fullWidth?: boolean;
+  inputProps?: ComponentProps<typeof NumberInput>['inputProps'];
+  minValue?: number;
+  // Accepted for call-site compatibility with the old NumberField API; a text
+  // input has no stepper, so it is intentionally unused.
+  step?: number;
   onFieldBlur?: () => void;
   onValueChange?: (value: number | undefined) => void;
-} & Omit<ComponentProps<typeof NumberField>, 'children' | 'isInvalid' | 'name' | 'onBlur' | 'onChange' | 'value'>;
+};
 
 export function FormNumberField<T extends FieldValues>({
   control,
   description,
+  fullWidth,
+  inputProps,
   label,
+  minValue,
   name,
   onFieldBlur,
   onValueChange,
-  ...props
 }: FormNumberFieldProps<T>) {
   return (
     <Controller
       control={control}
       name={name}
       render={({field, fieldState}) => (
-        <NumberField
-          {...props}
-          isInvalid={!!fieldState.error}
+        <NumberInput
+          description={description}
+          error={fieldState.error?.message}
+          fullWidth={fullWidth}
+          inputProps={inputProps}
+          label={label}
+          minValue={minValue}
           name={field.name}
           onBlur={() => {
             field.onBlur();
             onFieldBlur?.();
           }}
           onChange={(value) => {
-            const nextValue = Number.isNaN(value) ? undefined : value;
-            field.onChange(nextValue);
-            onValueChange?.(nextValue);
+            field.onChange(value);
+            onValueChange?.(value);
           }}
-          value={field.value ?? Number.NaN}
-          variant={'secondary'}
-        >
-          <Label>{label}</Label>
-          {description ? <Description>{description}</Description> : null}
-          {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
-          <NumberField.Group>
-            <NumberField.Input />
-          </NumberField.Group>
-        </NumberField>
+          value={typeof field.value === 'number' ? field.value : undefined}
+        />
       )}
     />
   );

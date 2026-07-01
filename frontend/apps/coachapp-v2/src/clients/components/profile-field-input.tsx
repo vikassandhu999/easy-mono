@@ -8,7 +8,6 @@ import {
   Input,
   Label,
   ListBox,
-  NumberField,
   Select,
   Switch,
   TextField,
@@ -17,8 +16,8 @@ import {
   Typography,
 } from '@heroui/react';
 import {useId} from 'react';
-
 import DateInput from '@/@components/date-input';
+import {NumberInput} from '@/@components/number-input';
 import type {ClientProfileField, ProfileFieldValue} from '@/api/client-profile';
 
 interface Props {
@@ -96,16 +95,11 @@ export default function ProfileFieldInput({field, value, onChange}: Props) {
 
     case 'number':
       return (
-        <NumberField
-          onChange={(v) => onChange(Number.isNaN(v) ? null : v)}
+        <NumberInput
+          label={field.label}
+          onChange={(v) => onChange(v ?? null)}
           value={typeof value === 'number' ? value : undefined}
-          variant="secondary"
-        >
-          <Label>{field.label}</Label>
-          <NumberField.Group>
-            <NumberField.Input />
-          </NumberField.Group>
-        </NumberField>
+        />
       );
 
     case 'select':

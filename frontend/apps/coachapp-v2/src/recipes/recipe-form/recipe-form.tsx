@@ -7,7 +7,6 @@ import {
   Form,
   Input,
   Label,
-  NumberField,
   Spinner,
   TextField,
   Typography,
@@ -19,6 +18,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {NumberInput} from '@/@components/number-input';
 import type {Food, FoodServingSize, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalNumber, toOptionalText} from '@/api/shared';
 import {
@@ -413,30 +413,22 @@ function RecipeServingSizesEditor({
                 value={newUnit}
               />
             </TextField>
-            <NumberField
+            <NumberInput
+              description="Use 1 if it is a single portion"
               fullWidth
+              label="Amount (optional)"
               minValue={0}
-              onChange={(value) => setNewAmount(Number.isNaN(value) ? undefined : value)}
+              onChange={setNewAmount}
               value={newAmount}
-            >
-              <Label>Amount (optional)</Label>
-              <Description>Use 1 if it is a single portion</Description>
-              <NumberField.Group>
-                <NumberField.Input />
-              </NumberField.Group>
-            </NumberField>
-            <NumberField
+            />
+            <NumberInput
+              description="Add this when the portion has a known weight"
               fullWidth
+              label="Weight, grams (optional)"
               minValue={0}
-              onChange={(value) => setNewWeightG(Number.isNaN(value) ? undefined : value)}
+              onChange={setNewWeightG}
               value={newWeightG}
-            >
-              <Label>Weight, grams (optional)</Label>
-              <Description>Add this when the portion has a known weight</Description>
-              <NumberField.Group>
-                <NumberField.Input />
-              </NumberField.Group>
-            </NumberField>
+            />
           </Fieldset.Group>
           <Fieldset.Actions>
             <Button

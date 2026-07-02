@@ -61,21 +61,23 @@ export default function NutritionPlanDeleteAlertDialog({plan, state, onSuccess}:
               Cancel
             </Button>
             <Button
+              className="relative"
               isPending={deleting}
               onPress={deleteFn}
               variant="danger"
             >
+              {/* RM-125: constant-width pending button — spinner overlays an
+                  invisible copy of the label instead of swapping children */}
+              <span className={deleting ? 'invisible' : undefined}>Delete plan</span>
               {deleting ? (
-                <>
+                <span className="absolute inset-0 flex items-center justify-center">
                   <Spinner
                     color="current"
                     size="sm"
                   />
-                  Deleting...
-                </>
-              ) : (
-                'Delete Plan'
-              )}
+                  <span className="sr-only">Deleting</span>
+                </span>
+              ) : null}
             </Button>
           </AlertDialog.Footer>
         </AlertDialog.Dialog>

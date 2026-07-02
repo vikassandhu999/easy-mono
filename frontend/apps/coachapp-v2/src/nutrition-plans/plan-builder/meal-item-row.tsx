@@ -50,7 +50,8 @@ function formatAmount(item: HydratedMealItem): string {
     return `${item.weight_g}g`;
   }
   if (item.amount != null) {
-    const unitStr = item.unit ? ` ${item.unit}` : '';
+    const plural = item.unit === 'serving' && item.amount !== 1 ? 's' : '';
+    const unitStr = item.unit ? ` ${item.unit}${plural}` : '';
     return `${item.amount}${unitStr}`;
   }
   return '';
@@ -105,13 +106,13 @@ export function MealItemRow({item, onTap}: MealItemRowProps) {
         type="button"
       >
         <div className="truncate text-xs font-semibold text-foreground">{name}</div>
-        {amount ? <div className="mt-px text-[10px] text-muted">{amount}</div> : null}
+        {amount ? <div className="mt-px text-[11px] text-muted">{amount}</div> : null}
       </button>
 
       {/* Right-aligned macro contribution column */}
       {macro ? (
-        <div className="shrink-0 whitespace-nowrap py-1.75 pl-2 text-right text-[10px] text-muted">
-          <span className="font-medium text-[#cde]">{macro.kcal}</span> kcal
+        <div className="shrink-0 whitespace-nowrap py-1.75 pl-2 text-right text-[11px] text-muted">
+          <span className="font-medium text-foreground">{macro.kcal}</span> kcal
           {macro.p !== '—' || macro.c !== '—' || macro.f !== '—' ? (
             <>
               <br />

@@ -19,9 +19,11 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import type {NutritionMeal} from '@/api/generated';
 import {
   coachApi,
+  NutritionScheduleEntry,
   useDeleteMealItemMutation,
   useDeleteMealMutation,
   useGetNutritionPlanQuery,
+  useGetNutritionPlanScheduleQuery,
   useUpdateMealMutation,
 } from '@/api/generated';
 import {useAppDispatch} from '@/store';
@@ -77,7 +79,8 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   const [updateMeal] = useUpdateMealMutation();
   const [deleteMeal] = useDeleteMealMutation();
   const [deleteMealItem] = useDeleteMealItemMutation();
-  const {data: planData, refetch} = useGetNutritionPlanQuery({id: planId});
+  const {refetch} = useGetNutritionPlanQuery({id: planId});
+  const {data: scheduleData} = useGetNutritionPlanScheduleQuery({planId});
 
   // Inline rename state
   const [editingName, setEditingName] = useState(false);
@@ -103,12 +106,6 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // ---------------------------------------------------------------------------
   // Rename handlers
   // ---------------------------------------------------------------------------
-
-  const startEditing = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingName(true);
-    setTimeout(() => nameInputRef.current?.select(), 0);
-  }, []);
 
   const commitRename = useCallback(async () => {
     const trimmed = nameValue.trim();
@@ -235,9 +232,13 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
   // Shared-meal warning: a meal is a reusable entity, so editing it updates
   // everywhere it's assigned. Count how many schedule slots/days reference this
-  // meal; warn when it's used in 2+ places.
-  const assignmentCount =
-    planData?.data.schedule_entries?.filter((entry) => entry.nutrition_meal_id === meal.id).length ?? 0;
+  // meal; warn when it's used in 2+ places. Counted from the schedule query
+  // cache (not plan.schedule_entries) so schedule edits keep the count fresh.
+  const scheduleMap = (scheduleData?.data ?? {}) as Record<string, Record<string, NutritionScheduleEntry>>;
+  const assignmentCount = Object.values(scheduleMap).reduce(
+    (n, slots) => n + Object.values(slots ?? {}).filter((entry) => entry.nutrition_meal_id === meal.id).length,
+    0,
+  );
   const isShared = assignmentCount >= 2;
 
   // Resolve food/recipe for the AmountSheet create-mode
@@ -254,111 +255,92 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         open ? 'border-accent ring-1 ring-accent/60 shadow-[0_0_18px_rgba(108,140,255,0.13)]' : 'border-border'
       }`}
     >
-      {/* Header — acts as accordion toggle */}
-      <div
-        aria-expanded={open}
-        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none"
-        onClick={editingName ? undefined : onToggle}
-        onKeyDown={(e) => {
-          if (!editingName && (e.key === 'Enter' || e.key === ' ')) {
-            onToggle();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-      >
-        {/* Chevron */}
-        <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
-
-        {/* Name — inline-edit or plain text */}
-        <div className="flex-1 min-w-0">
-          {editingName ? (
+      {/* Header — the toggle is a real button; total badge and menu are
+          SIBLINGS of it, so no stop-propagation wrappers are needed. Rename
+          lives in the menu (double-click was undiscoverable and touch-hostile). */}
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        {editingName ? (
+          <>
+            <span className="shrink-0 text-muted">
+              <ChevronDown size={16} />
+            </span>
             <input
               ref={nameInputRef}
               // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
               autoFocus
-              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
+              className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
               onBlur={() => {
                 commitRename().catch(() => undefined);
               }}
               onChange={(e) => setNameValue(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
               onKeyDown={handleNameKeyDown}
               value={nameValue}
             />
-          ) : (
-            // biome-ignore lint/a11y/noNoninteractiveElementInteractions: double-click to rename is a progressive enhancement on a display label; primary rename is in the dropdown menu
-            // biome-ignore lint/a11y/noStaticElementInteractions: same as above
-            <span
-              className="text-sm font-semibold text-foreground truncate block"
-              onDoubleClick={startEditing}
-              title="Double-click to rename"
-            >
-              {meal.name}
-            </span>
-          )}
-        </div>
+          </>
+        ) : (
+          <button
+            aria-expanded={open}
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+            onClick={onToggle}
+            type="button"
+          >
+            <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
+            <span className="min-w-0 truncate text-sm font-semibold text-foreground">{meal.name}</span>
+          </button>
+        )}
 
         {/* Meal total badge */}
         {mealTotal ? (
           <span className={`shrink-0 text-xs ${open ? 'text-accent' : 'text-muted'}`}>{mealTotal}</span>
         ) : null}
 
-        {/* Meal options menu — stop propagation so clicks don't toggle accordion */}
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown */}
-        {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: same as above */}
-        <div
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          <Dropdown>
-            <Button
-              aria-label="Meal options"
-              className="h-9 w-9 min-w-9"
-              isIconOnly
-              size="sm"
-              variant="ghost"
-            >
-              <MoreHorizontal size={15} />
-            </Button>
-            <Dropdown.Popover>
-              {/* biome-ignore lint/suspicious/noEmptyBlockStatements: Dropdown.Menu requires onAction; individual items handle their own onPress */}
-              <Dropdown.Menu onAction={() => {}}>
-                <Dropdown.Section>
-                  <Dropdown.Item
-                    id="rename-meal"
-                    onPress={() => {
-                      setEditingName(true);
-                      setTimeout(() => nameInputRef.current?.select(), 0);
-                      if (!open) {
-                        onToggle();
-                      }
-                    }}
-                    textValue="Rename"
-                  >
-                    <Label>Rename</Label>
-                  </Dropdown.Item>
-                </Dropdown.Section>
-                <Separator />
-                <Dropdown.Section>
-                  <Dropdown.Item
-                    id="delete-meal"
-                    onPress={() => {
-                      handleDelete().catch(() => undefined);
-                    }}
-                    textValue="Delete"
-                    variant="danger"
-                  >
-                    <div className="flex items-center gap-2">
-                      <TrashIcon className="size-4 shrink-0 text-danger" />
-                      <Label>Delete meal</Label>
-                    </div>
-                  </Dropdown.Item>
-                </Dropdown.Section>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
-        </div>
+        <Dropdown>
+          <Button
+            aria-label="Meal options"
+            className="h-9 w-9 min-w-9"
+            isIconOnly
+            size="sm"
+            variant="ghost"
+          >
+            <MoreHorizontal size={15} />
+          </Button>
+          <Dropdown.Popover>
+            {/* biome-ignore lint/suspicious/noEmptyBlockStatements: Dropdown.Menu requires onAction; individual items handle their own onPress */}
+            <Dropdown.Menu onAction={() => {}}>
+              <Dropdown.Section>
+                <Dropdown.Item
+                  id="rename-meal"
+                  onPress={() => {
+                    setEditingName(true);
+                    setTimeout(() => nameInputRef.current?.select(), 0);
+                    if (!open) {
+                      onToggle();
+                    }
+                  }}
+                  textValue="Rename"
+                >
+                  <Label>Rename</Label>
+                </Dropdown.Item>
+              </Dropdown.Section>
+              <Separator />
+              <Dropdown.Section>
+                <Dropdown.Item
+                  id="delete-meal"
+                  onPress={() => {
+                    handleDelete().catch(() => undefined);
+                  }}
+                  textValue="Delete"
+                  variant="danger"
+                >
+                  <div className="flex items-center gap-2">
+                    <TrashIcon className="size-4 shrink-0 text-danger" />
+                    <Label>Delete meal</Label>
+                  </div>
+                </Dropdown.Item>
+              </Dropdown.Section>
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
       </div>
 
       {/* Body — meal items + add button */}
@@ -395,10 +377,10 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
           {meal.nutrition?.calories != null ? (
             <div className="mt-2.5 mx-2.5 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 px-3 py-2">
               <div>
-                <div className="text-[10px] text-muted">Meal total</div>
+                <div className="text-[11px] text-muted">Meal total</div>
                 <div className="text-sm font-bold text-foreground">{Math.round(meal.nutrition.calories)} kcal</div>
               </div>
-              <div className="text-[10px] text-accent">
+              <div className="text-[11px] text-accent">
                 {fmt(meal.nutrition.protein_g)}P · {fmt(meal.nutrition.carbs_g)}C · {fmt(meal.nutrition.fat_g)}F
               </div>
             </div>

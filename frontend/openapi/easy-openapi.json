@@ -5850,7 +5850,9 @@
         "properties": {
           "data": {
             "additionalProperties": {
-              "additionalProperties": true,
+              "additionalProperties": {
+                "$ref": "#/components/schemas/NutritionScheduleEntry"
+              },
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -6172,6 +6174,44 @@
         "title": "ClientTrainingPlanResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingPlanResponse",
+        "x-validate": null
+      },
+      "NutritionScheduleRequest": {
+        "additionalProperties": false,
+        "description": "Full-week desired state, keyed by weekday. Omitted days/slots are cleared.",
+        "example": {
+          "monday": {
+            "breakfast": {
+              "meal_id": "11111111-1111-1111-1111-111111111111"
+            }
+          }
+        },
+        "properties": {
+          "friday": {
+            "$ref": "#/components/schemas/NutritionDayScheduleRequest"
+          },
+          "monday": {
+            "$ref": "#/components/schemas/NutritionDayScheduleRequest"
+          },
+          "saturday": {
+            "$ref": "#/components/schemas/NutritionDayScheduleRequest"
+          },
+          "sunday": {
+            "$ref": "#/components/schemas/NutritionDayScheduleRequest"
+          },
+          "thursday": {
+            "$ref": "#/components/schemas/NutritionDayScheduleRequest"
+          },
+          "tuesday": {
+            "$ref": "#/components/schemas/NutritionDayScheduleRequest"
+          },
+          "wednesday": {
+            "$ref": "#/components/schemas/NutritionDayScheduleRequest"
+          }
+        },
+        "title": "NutritionScheduleRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "ClientProfileFieldListResponse": {
@@ -12723,6 +12763,85 @@
           }
         ],
         "summary": "Get a plan's weekly schedule",
+        "tags": [
+          "coach nutrition schedule"
+        ]
+      },
+      "put": {
+        "callbacks": {},
+        "operationId": "setNutritionPlanSchedule",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionScheduleRequest"
+              }
+            }
+          },
+          "description": "Weekly schedule",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionScheduleResponse"
+                }
+              }
+            },
+            "description": "Schedule"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atomically replace the plan's entire weekly schedule (desired state)",
         "tags": [
           "coach nutrition schedule"
         ]

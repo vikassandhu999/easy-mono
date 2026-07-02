@@ -106,7 +106,7 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
                     <ArchiveRestoreIcon className="size-4 shrink-0 text-muted" />
                   </div>
                   <div className="flex flex-col">
-                    <Label>Restore plan</Label>
+                    <Label>Restore</Label>
                   </div>
                 </Dropdown.Item>
               ) : null}

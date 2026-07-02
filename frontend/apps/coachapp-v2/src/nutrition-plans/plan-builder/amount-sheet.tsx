@@ -117,7 +117,10 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
   const {refetch} = useGetNutritionPlanQuery({id: planId});
 
   const isEditMode = existingItem !== undefined;
-  const isFoodMode = food !== null && !recipe;
+  // Mode from ids as well as hydrated objects — edit-mode items may carry only
+  // food_id/recipe_id (+ server-set name) and must still get amount controls.
+  const isRecipeMode = recipe !== null || existingItem?.recipe_id != null;
+  const isFoodMode = !isRecipeMode && (food !== null || existingItem?.food_id != null);
 
   // ── Local state ──────────────────────────────────────────────────────────
 
@@ -148,9 +151,9 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
   // ── Derived: resolved weight_g ───────────────────────────────────────────
 
   const resolvedWeightG = useMemo<number | null>(() => {
-    if (recipe) {
+    if (isRecipeMode) {
       // Recipe mode: try to resolve via first serving size that has weight_g
-      const sizes = recipe.serving_sizes ?? [];
+      const sizes = recipe?.serving_sizes ?? [];
       const count = Number.parseFloat(servingCount);
       if (Number.isNaN(count) || count <= 0) {
         return null;
@@ -184,7 +187,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     }
 
     return null;
-  }, [food, recipe, gramsInput, servingCount, activeServingIdx]);
+  }, [food, recipe, isRecipeMode, gramsInput, servingCount, activeServingIdx]);
 
   // ── Live macro preview ───────────────────────────────────────────────────
 
@@ -195,16 +198,24 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     // scale to the new weight without re-fetching the food record.
     if (isEditMode && existingItem) {
       const itemNutrition = existingItem.nutrition;
-      const baseWeightG = existingItem.weight_g;
-      if (!itemNutrition || baseWeightG == null || baseWeightG <= 0) {
-        // No baseline to scale from — show placeholder
+      if (!itemNutrition) {
         return null;
       }
-      const newWeightG = resolvedWeightG;
-      if (newWeightG == null || newWeightG <= 0) {
+      // Scale by weight when the item is weighed, else by servings (amount).
+      let scale: number | null = null;
+      if (existingItem.weight_g != null && existingItem.weight_g > 0) {
+        if (resolvedWeightG != null && resolvedWeightG > 0) {
+          scale = resolvedWeightG / existingItem.weight_g;
+        }
+      } else if (existingItem.amount != null && existingItem.amount > 0) {
+        const count = Number.parseFloat(servingCount);
+        if (!Number.isNaN(count) && count > 0) {
+          scale = count / existingItem.amount;
+        }
+      }
+      if (scale == null) {
         return null;
       }
-      const scale = newWeightG / baseWeightG;
       const scaled = {
         calories: Math.round((itemNutrition.calories ?? 0) * scale),
         protein: Math.round((itemNutrition.protein_g ?? 0) * scale * 10) / 10,
@@ -236,11 +247,9 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
     if (recipe) {
       // Recipe: recipe.nutrition holds the TOTAL macros for the whole recipe
-      // (summed from ingredients at their recorded weights). We derive
-      // per-serving macros using recipe.servings_count (number of servings the
-      // total nutrition was computed for). If servings_count is unavailable but
-      // cooked_weight_g is set, fall back to a per-100g basis via
-      // computeMacrosFromSnapshot. If neither is available, no preview.
+      // (summed from ingredients at their recorded weights). Mirrors the
+      // backend's MacroCalc: a weighed item scales by cooked_weight_g; a
+      // servings item scales totals by entered/servings_count (default 1).
       const n = recipe.nutrition;
       if (!n) {
         return null;
@@ -250,21 +259,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         return null;
       }
 
-      if ((recipe.servings_count ?? 0) > 0) {
-        // Scale total nutrition by (entered / total) servings
-        const scale = servingsEntered / (recipe.servings_count as number);
-        const computed = {
-          calories: (n.calories ?? 0) * scale,
-          protein: (n.protein_g ?? 0) * scale,
-          carbs: (n.carbs_g ?? 0) * scale,
-          fat: (n.fat_g ?? 0) * scale,
-        };
-        return formatMacroPreview(computed);
-      }
-
-      if (recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0 && resolvedWeightG != null) {
-        // No servings_count — use cooked_weight_g as the total basis.
-        // Derive per-100g values and use computeMacrosFromSnapshot.
+      if (resolvedWeightG != null && recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0) {
+        // Weighed serving — per-100g basis over cooked weight.
         const perHundred = {
           calories_per_100g: ((n.calories ?? 0) / recipe.cooked_weight_g) * 100,
           protein_g: ((n.protein_g ?? 0) / recipe.cooked_weight_g) * 100,
@@ -275,7 +271,17 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         return formatMacroPreview(computed);
       }
 
-      return null;
+      // Servings — totals cover servings_count servings; no servings_count
+      // means the recipe IS one serving.
+      const totalServings = (recipe.servings_count ?? 0) > 0 ? (recipe.servings_count as number) : 1;
+      const scale = servingsEntered / totalServings;
+      const computed = {
+        calories: (n.calories ?? 0) * scale,
+        protein: (n.protein_g ?? 0) * scale,
+        carbs: (n.carbs_g ?? 0) * scale,
+        fat: (n.fat_g ?? 0) * scale,
+      };
+      return formatMacroPreview(computed);
     }
 
     return null;
@@ -303,16 +309,11 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
           const meals = draft.data.meals ?? [];
           for (const meal of meals) {
-            const idx = meal.meal_items.findIndex((mi) => mi.id === existingItem.id);
-            if (idx !== -1) {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              meal.meal_items[idx] = {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                ...meal.meal_items[idx]!,
-                weight_g: optimisticItem.weight_g ?? null,
-                amount: optimisticItem.amount ?? null,
-                unit: optimisticItem.unit ?? null,
-              };
+            const target = meal.meal_items.find((mi) => mi.id === existingItem.id);
+            if (target) {
+              target.weight_g = optimisticItem.weight_g ?? null;
+              target.amount = optimisticItem.amount ?? null;
+              target.unit = optimisticItem.unit ?? null;
               break;
             }
           }
@@ -365,12 +366,16 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     }
   }, [executeSave]);
 
-  // Unmount flush — prevents last edit being dropped
+  // Unmount flush — prevents last edit being dropped. Via ref so the cleanup
+  // runs ONLY on unmount; a [flushPendingSave] dep would fire mid-debounce
+  // whenever existingItem's identity changes on refetch.
+  const flushRef = useRef(flushPendingSave);
+  flushRef.current = flushPendingSave;
   useEffect(() => {
     return () => {
-      flushPendingSave().catch(() => undefined);
+      flushRef.current().catch(() => undefined);
     };
-  }, [flushPendingSave]);
+  }, []);
 
   // ── Field change handlers (edit mode autosave) ────────────────────────────
 
@@ -410,8 +415,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
       if (Number.isNaN(count) || count <= 0) {
         return;
       }
-      if (recipe) {
-        const sizes = recipe.serving_sizes ?? [];
+      if (isRecipeMode) {
+        const sizes = recipe?.serving_sizes ?? [];
         const servingWithWeight = sizes.find((s) => s.weight_g != null && s.amount != null);
         const wg = servingWithWeight
           ? resolveServingWeight(servingWithWeight.weight_g, servingWithWeight.amount, count)
@@ -456,6 +461,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     const provisionalId = `provisional-${Date.now()}`;
     const provisionalItem = {
       id: provisionalId,
+      name: food?.name ?? recipe?.name ?? null,
       food_id: food?.id ?? null,
       recipe_id: recipe?.id ?? null,
       weight_g: resolvedWeightG ?? null,
@@ -504,7 +510,13 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const itemName = food?.name ?? recipe?.name ?? existingItem?.food?.name ?? existingItem?.recipe?.name ?? 'Item';
+  const itemName =
+    food?.name ??
+    recipe?.name ??
+    existingItem?.name ??
+    existingItem?.food?.name ??
+    existingItem?.recipe?.name ??
+    'Item';
   const servingSizes = food?.serving_sizes ?? recipe?.serving_sizes ?? [];
 
   // For food mode: weight_g must resolve to enable confirm
@@ -524,13 +536,15 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
           }}
           type="button"
         >
-          Done
+          {/* Create mode has an explicit "Add to meal" confirm below — the
+              header action there only dismisses, so label it honestly. */}
+          {isEditMode ? 'Done' : 'Cancel'}
         </button>
       </div>
 
       <div className="px-4 pb-4 space-y-3">
         {/* ── Recipe mode: servings input ── */}
-        {recipe ? (
+        {isRecipeMode ? (
           <div>
             <SectionHeading title="Servings" />
             <div className="rounded-lg border border-accent/40 bg-accent/5 px-3 pb-2 pt-1.5 text-center">
@@ -590,7 +604,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Food mode: grams direct input ── */}
         {isFoodMode ? (
           <div>
-            <SectionHeading title="Or enter grams" />
+            {/* "Or" only makes sense when serving chips render above */}
+            <SectionHeading title={servingSizes.length > 0 ? 'Or enter grams' : 'Grams'} />
             <div
               className={[
                 'rounded-lg border px-3 pb-2 pt-1.5 text-center transition-colors',
@@ -605,7 +620,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
                 type="text"
                 value={gramsInput}
               />
-              <div className="mt-0.5 text-[10px] text-muted">g</div>
+              <div className="mt-0.5 text-[11px] text-muted">g</div>
             </div>
           </div>
         ) : null}
@@ -615,11 +630,11 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
           <div className="flex items-center justify-between rounded-lg border border-border bg-surface-secondary/40 px-3 py-2">
             <div>
               {resolvedWeightG != null ? (
-                <div className="text-[10px] text-muted">resolves to {fmt(resolvedWeightG)}g →</div>
+                <div className="text-[11px] text-muted">resolves to {fmt(resolvedWeightG)}g →</div>
               ) : null}
               <div className="text-sm font-bold text-foreground">{macroPreview.kcal}</div>
             </div>
-            <div className="text-[10px] text-accent">{macroPreview.macros}</div>
+            <div className="text-[11px] text-accent">{macroPreview.macros}</div>
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-surface-secondary px-3 py-2 text-center text-xs text-muted">
@@ -647,7 +662,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Edit mode footer: autosave hint + remove action ── */}
         {isEditMode ? (
           <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[10px] text-muted">Changes save automatically</span>
+            <span className="text-[11px] text-muted">Changes save automatically</span>
             {onDelete ? (
               <button
                 className="text-xs font-medium text-danger transition-colors hover:text-danger/80"

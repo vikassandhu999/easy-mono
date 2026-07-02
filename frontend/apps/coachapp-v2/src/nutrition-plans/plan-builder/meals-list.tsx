@@ -10,7 +10,7 @@
  * updateQueryData('getNutritionPlan', {id: planId}, …) + refetch so the
  * server-computed nutrition snapshots reconcile.
  */
-import {Button, Spinner, Typography, toast} from '@heroui/react';
+import {Button, Typography, toast} from '@heroui/react';
 import {coachApi, useCreateMealMutation, useGetNutritionPlanQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
@@ -31,7 +31,7 @@ interface MealsListProps {
 
 export function MealsList({planId}: MealsListProps) {
   const dispatch = useAppDispatch();
-  const {data, isLoading, isError, refetch} = useGetNutritionPlanQuery({id: planId});
+  const {data, isError, refetch} = useGetNutritionPlanQuery({id: planId});
   const [createMeal, {isLoading: isCreating}] = useCreateMealMutation();
 
   const {openId, toggle, collapseAll} = useWorkoutAccordion();
@@ -43,7 +43,10 @@ export function MealsList({planId}: MealsListProps) {
   // ---------------------------------------------------------------------------
 
   const handleAddMeal = async () => {
-    const name = `Meal ${meals.length + 1}`;
+    // Next number after the highest existing "Meal N" — length+1 duplicates
+    // names after a delete.
+    const nextNum = meals.reduce((n, m) => Math.max(n, Number(/^Meal (\d+)$/.exec(m.name)?.[1] ?? 0)), 0) + 1;
+    const name = `Meal ${nextNum}`;
     try {
       const result = await createMeal({
         planId,
@@ -98,15 +101,9 @@ export function MealsList({planId}: MealsListProps) {
         ) : null}
       </div>
 
-      {/* Loading */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Spinner
-            color="accent"
-            size="sm"
-          />
-        </div>
-      ) : isError ? (
+      {/* Loading is handled by the page-level PageSkeleton (parent gates on
+          the same getNutritionPlan query), so no loading branch here. */}
+      {isError ? (
         <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
           Couldn't load meals.
         </div>

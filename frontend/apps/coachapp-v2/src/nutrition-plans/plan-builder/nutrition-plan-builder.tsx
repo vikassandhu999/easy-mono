@@ -3,13 +3,8 @@
  *
  * Layout A — single centred column, max-w-2xl:
  *   1. PlanHeader     — inline name + macro targets + autosave
- *   2. PinnedScheduleBar — sticky top-0 schedule summary
- *   3. MealsList      — meal cards + items + amount sheet
- *   4. NutritionSchedule — weekly schedule
- *
- * PinnedScheduleBar is placed inside the Page.Content (overflow-y-auto) column
- * so that its `sticky top-0` positioning works correctly — NOT inside an
- * overflow-hidden container, and NOT in Page.Toolbar (mirrors training builder).
+ *   2. MealsList      — meal cards + items + amount sheet
+ *   3. NutritionSchedule — weekly schedule
  *
  * Mirrors training `src/training-plans/plan-builder/plan-builder.tsx`.
  */
@@ -25,7 +20,6 @@ import {useGetNutritionPlanQuery} from '@/api/generated';
 
 import {MealsList} from './meals-list';
 import {NutritionSchedule} from './nutrition-schedule';
-import {PinnedScheduleBar} from './pinned-schedule-bar';
 import {NutritionPlanActions} from './plan-actions';
 import {PlanHeader} from './plan-header';
 
@@ -79,15 +73,10 @@ export default function NutritionPlanBuilder() {
           {/* 1. Plan header: inline name + macro targets → autosave */}
           <PlanHeader plan={plan} />
 
-          {/* 2. Pinned schedule bar: sticky below header.
-               Must live inside the overflow-y-auto Page.Content scroll ancestor
-               (not in an overflow-hidden box) for `sticky top-0` to work. */}
-          <PinnedScheduleBar planId={plan.id} />
-
-          {/* 3. Meals library: meal cards + items + amount sheet */}
+          {/* 2. Meals library: meal cards + items + amount sheet */}
           <MealsList planId={plan.id} />
 
-          {/* 4. Weekly schedule: day templates + schedule grid */}
+          {/* 3. Weekly schedule: day templates + schedule grid */}
           <NutritionSchedule planId={plan.id} />
         </div>
       </Page.Content>

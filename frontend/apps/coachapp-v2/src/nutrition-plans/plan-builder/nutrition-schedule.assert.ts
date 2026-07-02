@@ -94,6 +94,57 @@ function demo(): void {
   assert(result4.lunch?.meal_id === 'meal-5', 'add new slot: lunch added');
   assert(Object.keys(result4).length === 2, 'add new slot: 2 slots total');
 
+  // ---------------------------------------------------------------------------
+  // Consensus helpers (mirrors nutrition-schedule.tsx)
+  // ---------------------------------------------------------------------------
+
+  const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const MEAL_SLOTS = ['breakfast', 'lunch'];
+  type ScheduleMap = Record<string, Record<string, NutritionScheduleEntry>>;
+
+  function unanimousSlotValue(scheduleMap: ScheduleMap, slot: string): string | null | 'varies' {
+    let first: string | null | undefined;
+    for (const day of WEEKDAYS) {
+      const id = scheduleMap[day]?.[slot]?.nutrition_meal_id ?? null;
+      if (first === undefined) {
+        first = id;
+      } else if (id !== first) {
+        return 'varies';
+      }
+    }
+    return first ?? null;
+  }
+
+  function buildConsensusMap(scheduleMap: ScheduleMap): Record<string, string | null> {
+    const consensus: Record<string, string | null> = {};
+    for (const slot of MEAL_SLOTS) {
+      const counts = new Map<string | null, number>();
+      for (const day of WEEKDAYS) {
+        const id = scheduleMap[day]?.[slot]?.nutrition_meal_id ?? null;
+        counts.set(id, (counts.get(id) ?? 0) + 1);
+      }
+      let best: string | null = null;
+      let bestCount = -1;
+      for (const [id, count] of counts) {
+        if (count > bestCount) {
+          best = id;
+          bestCount = count;
+        }
+      }
+      consensus[slot] = best;
+    }
+    return consensus;
+  }
+
+  const uniform: ScheduleMap = Object.fromEntries(WEEKDAYS.map((d) => [d, {breakfast: makeEntry('breakfast', 'm1')}]));
+  assert(unanimousSlotValue(uniform, 'breakfast') === 'm1', 'unanimous: all days m1 → m1');
+  assert(unanimousSlotValue(uniform, 'lunch') === null, 'unanimous: unassigned everywhere → null');
+
+  const split: ScheduleMap = {...uniform, friday: {breakfast: makeEntry('breakfast', 'm2')}};
+  assert(unanimousSlotValue(split, 'breakfast') === 'varies', 'unanimous: one day differs → varies');
+  assert(buildConsensusMap(split).breakfast === 'm1', 'consensus: majority (6×m1 vs 1×m2) → m1');
+  assert(buildConsensusMap(uniform).lunch === null, 'consensus: unassigned everywhere → null');
+
   console.log('\nAll assertions passed.');
 }
 

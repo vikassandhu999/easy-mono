@@ -69,12 +69,23 @@ function foodMacroBadge(food: Food): string {
   return `${fmt(food.protein_g_per_100g)}P`;
 }
 
+/** recipe.nutrition covers servings_count servings (default: the whole recipe = 1). */
+function recipeServings(recipe: Recipe): number {
+  return (recipe.servings_count ?? 0) > 0 ? (recipe.servings_count as number) : 1;
+}
+
+function perServingCalories(recipe: Recipe): number | null | undefined {
+  const kcal = recipe.nutrition?.calories;
+  return kcal == null ? kcal : kcal / recipeServings(recipe);
+}
+
 /**
  * Macro badge label for a Recipe item (protein-only, per-serving).
  * Example: "35P"
  */
 function recipeMacroBadge(recipe: Recipe): string {
-  return `${fmt(recipe.nutrition?.protein_g)}P`;
+  const protein = recipe.nutrition?.protein_g;
+  return `${fmt(protein == null ? protein : protein / recipeServings(recipe))}P`;
 }
 
 /** Type guard: is the item a Recipe (has `recipe_ingredients`)? Exported so the
@@ -236,7 +247,9 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRec
           <div className="truncate text-sm font-medium text-foreground">{item.name}</div>
           <div className="truncate text-xs text-muted">
             {isRecipe(item)
-              ? `per srv · ${fmt(item.nutrition?.calories)} kcal`
+              ? // Recipe totals cover servings_count servings; without one the
+                // whole recipe is a single serving — label accordingly.
+                `${(item.servings_count ?? 0) > 0 ? 'per srv' : 'per recipe'} · ${fmt(perServingCalories(item))} kcal`
               : `per 100g · ${fmt(item.calories_per_100g)} kcal`}
           </div>
         </div>
@@ -266,7 +279,7 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRec
       onClose={handleClose}
       onConfirm={handleConfirm}
       onCreateNoMatch={activeTab === 'foods' ? handleCreateNoMatch : undefined}
-      createLabel={(query) => `+ Create food "${query}"`}
+      createLabel={(query) => `Create food "${query}"`}
       onLoadMore={fetchNextPage}
       onSearchChange={setSearch}
       onToggleItem={handleToggleItem}

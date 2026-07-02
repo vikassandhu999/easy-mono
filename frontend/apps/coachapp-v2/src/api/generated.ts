@@ -287,6 +287,13 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/nutrition-plans/${queryArg.planId}/schedule`,
       }),
     }),
+    setNutritionPlanSchedule: build.mutation<SetNutritionPlanScheduleApiResponse, SetNutritionPlanScheduleApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/nutrition-plans/${queryArg.planId}/schedule`,
+        method: 'PUT',
+        body: queryArg.nutritionScheduleRequest,
+      }),
+    }),
     createCoachThreadMessage: build.mutation<CreateCoachThreadMessageApiResponse, CreateCoachThreadMessageApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/threads/${queryArg.threadId}/messages`,
@@ -1011,6 +1018,12 @@ export type CreateMealApiArg = {
 export type GetNutritionPlanScheduleApiResponse = /** status 200 Schedule */ NutritionScheduleResponse;
 export type GetNutritionPlanScheduleApiArg = {
   planId: string;
+};
+export type SetNutritionPlanScheduleApiResponse = /** status 200 Schedule */ NutritionScheduleResponse;
+export type SetNutritionPlanScheduleApiArg = {
+  planId: string;
+  /** Weekly schedule */
+  nutritionScheduleRequest: NutritionScheduleRequest;
 };
 export type CreateCoachThreadMessageApiResponse = /** status 201 Message */ ThreadMessageResponse;
 export type CreateCoachThreadMessageApiArg = {
@@ -2156,9 +2169,29 @@ export type NutritionMealRequest = {
 export type NutritionScheduleResponse = {
   data?: {
     [key: string]: {
-      [key: string]: any;
+      [key: string]: NutritionScheduleEntry;
     };
   };
+};
+export type NutritionScheduleSlot = {
+  meal_id: string;
+};
+export type NutritionDayScheduleRequest = {
+  afternoon_snack?: NutritionScheduleSlot;
+  breakfast?: NutritionScheduleSlot;
+  dinner?: NutritionScheduleSlot;
+  evening_snack?: NutritionScheduleSlot;
+  lunch?: NutritionScheduleSlot;
+  morning_snack?: NutritionScheduleSlot;
+};
+export type NutritionScheduleRequest = {
+  friday?: NutritionDayScheduleRequest;
+  monday?: NutritionDayScheduleRequest;
+  saturday?: NutritionDayScheduleRequest;
+  sunday?: NutritionDayScheduleRequest;
+  thursday?: NutritionDayScheduleRequest;
+  tuesday?: NutritionDayScheduleRequest;
+  wednesday?: NutritionDayScheduleRequest;
 };
 export type ThreadMessage = {
   author_id?: string | null;
@@ -2290,17 +2323,6 @@ export type NutritionScheduleDayResponse = {
   data?: {
     [key: string]: NutritionScheduleEntry;
   };
-};
-export type NutritionScheduleSlot = {
-  meal_id: string;
-};
-export type NutritionDayScheduleRequest = {
-  afternoon_snack?: NutritionScheduleSlot;
-  breakfast?: NutritionScheduleSlot;
-  dinner?: NutritionScheduleSlot;
-  evening_snack?: NutritionScheduleSlot;
-  lunch?: NutritionScheduleSlot;
-  morning_snack?: NutritionScheduleSlot;
 };
 export type TrainingPlanAssignRequest = {
   client_id: string;
@@ -2777,6 +2799,7 @@ export const {
   useCreateMealMutation,
   useGetNutritionPlanScheduleQuery,
   useLazyGetNutritionPlanScheduleQuery,
+  useSetNutritionPlanScheduleMutation,
   useCreateCoachThreadMessageMutation,
   useGetNutritionFoodImpactQuery,
   useLazyGetNutritionFoodImpactQuery,

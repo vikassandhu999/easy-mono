@@ -67,6 +67,39 @@ defmodule Easy.Nutrition.MealItemTest do
     end
   end
 
+  describe "servings-sized recipe items" do
+    setup do
+      coach = insert_coach()
+      plan = insert(:plan, business: coach.business, creator: coach)
+      meal = insert(:meal, business: coach.business, creator: coach, plan: plan)
+
+      recipe =
+        insert(:recipe, business: coach.business, creator: coach, servings_count: nil, cooked_weight_g: nil)
+
+      ctx = Easy.Ctx.new(meal.business_id, coach.user_id)
+      %{ctx: ctx, meal: meal, recipe: recipe, coach: coach}
+    end
+
+    test "a recipe item can be created with amount and no weight_g", %{ctx: ctx, meal: meal, recipe: recipe} do
+      assert {:ok, item} =
+               Meals.create_meal_item(ctx, meal.id, %{recipe_id: recipe.id, amount: 2.0, unit: "serving"})
+
+      assert item.weight_g == nil
+      assert item.amount == 2.0
+    end
+
+    test "a recipe item without weight_g or amount is invalid", %{ctx: ctx, meal: meal, recipe: recipe} do
+      assert {:error, changeset} = Meals.create_meal_item(ctx, meal.id, %{recipe_id: recipe.id})
+      assert %{weight_g: [_message]} = errors_on(changeset)
+    end
+
+    test "a food item still requires weight_g", %{ctx: ctx, meal: meal, coach: coach} do
+      food = insert(:food, business: coach.business, creator: coach)
+      assert {:error, changeset} = Meals.create_meal_item(ctx, meal.id, %{food_id: food.id, amount: 1.0})
+      assert %{weight_g: [_message]} = errors_on(changeset)
+    end
+  end
+
   defp insert_coach do
     business = insert(:business, owner: build(:user, email: unique_email()))
     insert(:coach, business: business, user: build(:user, email: unique_email()))

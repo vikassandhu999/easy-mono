@@ -539,6 +539,31 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayScheduleRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.NutritionScheduleRequest do
+  require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.NutritionDayScheduleRequest
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionScheduleRequest",
+      description: "Full-week desired state, keyed by weekday. Omitted days/slots are cleared.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        monday: NutritionDayScheduleRequest,
+        tuesday: NutritionDayScheduleRequest,
+        wednesday: NutritionDayScheduleRequest,
+        thursday: NutritionDayScheduleRequest,
+        friday: NutritionDayScheduleRequest,
+        saturday: NutritionDayScheduleRequest,
+        sunday: NutritionDayScheduleRequest
+      },
+      example: %{"monday" => %{"breakfast" => %{"meal_id" => "11111111-1111-1111-1111-111111111111"}}}
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionScheduleDayResponse do
   require OpenApiSpex
   alias OpenApiSpex.Schema
@@ -554,6 +579,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.NutritionScheduleResponse do
   require OpenApiSpex
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.NutritionScheduleEntry
 
   OpenApiSpex.schema(%{
     title: "NutritionScheduleResponse",
@@ -561,7 +587,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionScheduleResponse do
     properties: %{
       data: %Schema{
         type: :object,
-        additionalProperties: %Schema{type: :object, additionalProperties: true}
+        additionalProperties: %Schema{type: :object, additionalProperties: NutritionScheduleEntry}
       }
     }
   })

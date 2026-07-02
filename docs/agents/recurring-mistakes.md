@@ -29,8 +29,14 @@ non-deterministic on same-second timestamps. Hit in `Easy.Landing.Prospect.newes
 The OpenApiSpex schema generates the FE types; the JSON view produces the actual response.
 They are hand-maintained separately and drift (e.g. `FoodLogEntry` declared `meal_log_id`
 but the view emits `nutrition_meal_log_id`; `fiber_g` returned but absent from the schema).
-When you change a JSON view, change its OpenApiSpex schema in the same edit (and vice
-versa), then `just gen-api`. **Enforced by:** review + this doc.
+Recurred: `ScheduleJSON` emitted `meal_id`/`meal_name` while `NutritionScheduleEntry`
+said `nutrition_meal_id` — the whole nutrition schedule UI read "Unassigned" against a
+fully-scheduled plan, and controller tests had codified the wrong shape. When you change a
+JSON view, change its OpenApiSpex schema in the same edit (and vice versa), then
+`just gen-api`. **Enforced by:** each JSON view's controller test asserts the rendered
+entity with `OpenApiSpex.TestAssertions.assert_schema(entity, "SchemaTitle",
+EasyWeb.ApiSpec.spec())` (see `schedule_controller_test.exs`) — add one when touching a
+view that lacks it. Review alone is not enough.
 
 ### RM-003 — Keep function nesting ≤ 2 (credo)
 `Repo.transaction(fn -> case ... end)` and nested `with`/`if` trip credo's

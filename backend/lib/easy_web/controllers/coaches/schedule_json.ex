@@ -11,16 +11,17 @@ defmodule EasyWeb.Coaches.ScheduleJSON do
     %{data: Map.new(entries, fn {slot, e} -> {slot, entry(e)} end)}
   end
 
+  # Must match EasyWeb.OpenApi.Schemas.NutritionScheduleEntry — the frontend
+  # reads nutrition_meal_id; emitting a different key breaks the schedule UI.
   defp entry(%ScheduleEntry{} = e) do
     %{
       id: e.id,
       day_of_week: e.day_of_week,
       meal_slot: e.meal_slot,
-      meal_id: e.nutrition_meal_id,
-      meal_name: meal_name(e.meal)
+      nutrition_meal_id: e.nutrition_meal_id,
+      nutrition_plan_id: e.nutrition_plan_id,
+      inserted_at: e.inserted_at,
+      updated_at: e.updated_at
     }
   end
-
-  defp meal_name(%Easy.Nutrition.Meal{name: name}), do: name
-  defp meal_name(_), do: nil
 end

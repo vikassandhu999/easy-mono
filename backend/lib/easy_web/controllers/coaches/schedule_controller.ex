@@ -7,11 +7,13 @@ defmodule EasyWeb.Coaches.ScheduleController do
   alias EasyWeb.OpenApi.Schemas.{
     NutritionDayScheduleRequest,
     NutritionScheduleDayResponse,
+    NutritionScheduleRequest,
     NutritionScheduleResponse,
     ErrorResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:update, :update_all]
 
   tags ["coach nutrition schedule"]
 
@@ -42,9 +44,32 @@ defmodule EasyWeb.Coaches.ScheduleController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :update_all,
+    summary: "Atomically replace the plan's entire weekly schedule (desired state)",
+    operation_id: "setNutritionPlanSchedule",
+    security: [%{"bearerAuth" => []}],
+    parameters: [plan_id: [in: :path, type: :string, required: true]],
+    request_body: {"Weekly schedule", "application/json", NutritionScheduleRequest, required: true},
+    responses: [
+      ok: {"Schedule", "application/json", NutritionScheduleResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"plan_id" => plan_id}) do
     with {:ok, schedule} <- NutritionPlans.get_schedule(conn.assigns.ctx, plan_id) do
+      render(conn, :show, schedule: schedule)
+    end
+  end
+
+  @spec update_all(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_all(conn, _params) do
+    %{"plan_id" => plan_id} = conn.path_params
+    days = Map.drop(conn.body_params, [:plan_id, "plan_id"])
+
+    with {:ok, schedule} <- NutritionPlans.set_schedule(conn.assigns.ctx, plan_id, days) do
       render(conn, :show, schedule: schedule)
     end
   end

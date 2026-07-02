@@ -75,6 +75,32 @@ defmodule Easy.MacroCalcTest do
     assert MacroCalc.for_meal_item(item).calories == 100.0
   end
 
+  test "for_meal_item scales a servings-sized recipe item by servings_count" do
+    recipe = %Recipe{
+      servings_count: 2,
+      recipe_ingredients: [
+        %RecipeIngredient{food: food(calories_per_100g: 100.0), weight_g: 400.0}
+      ]
+    }
+
+    # totals = 400 cal over 2 servings → 1 serving = 200, 3 servings = 600
+    item = %MealItem{food: nil, recipe: recipe, weight_g: nil, amount: 1.0}
+    assert MacroCalc.for_meal_item(item).calories == 200.0
+    assert MacroCalc.for_meal_item(%{item | amount: 3.0}).calories == 600.0
+  end
+
+  test "for_meal_item treats a recipe without servings_count as one serving" do
+    recipe = %Recipe{
+      servings_count: nil,
+      recipe_ingredients: [
+        %RecipeIngredient{food: food(calories_per_100g: 100.0), weight_g: 400.0}
+      ]
+    }
+
+    item = %MealItem{food: nil, recipe: recipe, weight_g: nil, amount: 2.0}
+    assert MacroCalc.for_meal_item(item).calories == 800.0
+  end
+
   test "meal_totals sums items" do
     items = [
       %MealItem{food: food(calories_per_100g: 100.0), weight_g: 100.0},

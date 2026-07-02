@@ -37,9 +37,11 @@ defmodule Easy.Nutrition.MealItem do
     |> cast(attrs, @cast_fields)
     |> put_change(:nutrition_meal_id, meal_id)
     |> put_change(:business_id, business_id)
-    |> validate_required([:nutrition_meal_id, :business_id, :weight_g])
+    |> validate_required([:nutrition_meal_id, :business_id])
     |> validate_number(:weight_g, greater_than: 0)
+    |> validate_number(:amount, greater_than: 0)
     |> validate_food_or_recipe()
+    |> validate_sizing()
     |> check_constraint(:weight_g,
       name: :nutrition_meal_items_weight_positive,
       message: "must be greater than 0"
@@ -58,7 +60,28 @@ defmodule Easy.Nutrition.MealItem do
     meal_item
     |> cast(attrs, @update_fields)
     |> validate_number(:weight_g, greater_than: 0)
+    |> validate_number(:amount, greater_than: 0)
+    |> validate_sizing()
     |> unique_constraint(:position, name: :nutrition_meal_items_nutrition_meal_id_position_index)
+  end
+
+  # Food items are always weighed. Recipe items may be weighed OR sized in
+  # servings (amount/unit) — a recipe without a recorded cooked weight has no
+  # gram equivalent, so servings is the only way to add it.
+  defp validate_sizing(changeset) do
+    weight_g = get_field(changeset, :weight_g)
+    amount = get_field(changeset, :amount)
+
+    cond do
+      not is_nil(get_field(changeset, :food_id)) and is_nil(weight_g) ->
+        add_error(changeset, :weight_g, "is required for food items")
+
+      not is_nil(get_field(changeset, :recipe_id)) and is_nil(weight_g) and is_nil(amount) ->
+        add_error(changeset, :weight_g, "either weight_g or amount is required for recipe items")
+
+      true ->
+        changeset
+    end
   end
 
   defp validate_food_or_recipe(changeset) do

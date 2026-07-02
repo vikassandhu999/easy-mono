@@ -1,9 +1,9 @@
-import {Spinner} from '@heroui/react';
 import {useState} from 'react';
 import {Navigate, useParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/generated';
 import type {ServingSize} from '@/api/shared';
@@ -86,9 +86,7 @@ export default function EditFood() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

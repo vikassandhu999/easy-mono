@@ -1,8 +1,9 @@
-import {Button, Spinner} from '@heroui/react';
+import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetTrainingPlanQuery} from '@/api/generated';
@@ -28,9 +29,7 @@ export default function TrainingPlanDetail() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content>
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

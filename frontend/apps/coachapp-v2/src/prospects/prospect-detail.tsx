@@ -1,4 +1,4 @@
-import {Avatar, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
+import {Avatar, Button, Chip, Typography, toast} from '@heroui/react';
 import {Mail, Phone} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -6,6 +6,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {useGetLandingPageQuery} from '@/api/landing-page';
@@ -95,9 +96,7 @@ export default function ProspectDetail() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

@@ -1,10 +1,11 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
+import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
 import {Apple, ArrowLeft, Copy, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {coachApi, useDeleteFoodMutation, useGetFoodQuery} from '@/api/generated';
@@ -51,9 +52,7 @@ export default function FoodDetail() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

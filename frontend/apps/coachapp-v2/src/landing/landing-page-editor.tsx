@@ -1,9 +1,10 @@
-import {Button, Spinner, Typography, toast} from '@heroui/react';
+import {Button, Typography, toast} from '@heroui/react';
 import {ArrowLeft, ExternalLink, Plus, Trash2} from 'lucide-react';
 import {type ReactNode, useEffect, useId, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {
   draftToRequest,
@@ -161,9 +162,7 @@ export default function LandingPageEditor() {
       <Page>
         {header}
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

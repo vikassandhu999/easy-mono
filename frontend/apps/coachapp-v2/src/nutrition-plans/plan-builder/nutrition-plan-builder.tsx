@@ -13,12 +13,12 @@
  *
  * Mirrors training `src/training-plans/plan-builder/plan-builder.tsx`.
  */
-import {Spinner} from '@heroui/react';
 import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery} from '@/api/generated';
@@ -41,9 +41,7 @@ export default function NutritionPlanBuilder() {
           <BackButton onPress={goBack} />
         </Page.Header>
         <Page.Content>
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

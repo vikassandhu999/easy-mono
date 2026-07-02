@@ -1,8 +1,9 @@
-import {Avatar, Collection, Description, Label, ListBox, Spinner, Typography} from '@heroui/react';
+import {Avatar, Collection, Description, Label, ListBox, Typography} from '@heroui/react';
 import {ChevronRight, Dumbbell, Globe, type LucideIcon, UserPlus, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {type Client, useListClientsQuery} from '@/api/clients';
 import {useGetCoachProfileQuery} from '@/api/profile';
@@ -61,8 +62,8 @@ export default function Dashboard() {
   if (profileLoading) {
     return (
       <Page>
-        <Page.Content className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
+        <Page.Content className="px-4 pb-8 pt-4 md:px-6 lg:px-8">
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

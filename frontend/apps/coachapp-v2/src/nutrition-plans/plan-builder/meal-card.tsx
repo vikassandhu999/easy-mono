@@ -13,9 +13,10 @@
  * Cache: rename/delete → optimistic updateQueryData('getNutritionPlan', {id: planId}, …)
  *        + refetch for server-recomputed nutrition snapshots; patch.undo() + toast on failure.
  */
-import {Button, Dropdown, Label, Separator, toast} from '@heroui/react';
+import {Button, Dropdown, Label, Separator} from '@heroui/react';
 import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {toastMutationError} from '@/@components/mutation-toast';
 import type {NutritionMeal} from '@/api/generated';
 import {
   coachApi,
@@ -129,10 +130,10 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         nutritionMealRequest: {name: trimmed},
       }).unwrap();
       refetch().catch(() => undefined);
-    } catch {
+    } catch (e) {
       patch.undo();
       setNameValue(meal.name);
-      toast.danger("Couldn't save changes");
+      toastMutationError(e, "Couldn't save changes");
     }
   }, [nameValue, meal.id, meal.name, planId, updateMeal, dispatch, refetch]);
 
@@ -164,9 +165,9 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
     try {
       await deleteMeal({id: meal.id}).unwrap();
       refetch().catch(() => undefined);
-    } catch {
+    } catch (e) {
       patch.undo();
-      toast.danger("Couldn't delete meal");
+      toastMutationError(e, "Couldn't delete meal");
     }
   }, [meal.id, planId, deleteMeal, dispatch, refetch]);
 
@@ -190,9 +191,9 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
       try {
         await deleteMealItem({id: itemId}).unwrap();
         refetch().catch(() => undefined);
-      } catch {
+      } catch (e) {
         patch.undo();
-        toast.danger("Couldn't remove item");
+        toastMutationError(e, "Couldn't remove item");
       }
     },
     [meal.id, planId, deleteMealItem, dispatch, refetch],

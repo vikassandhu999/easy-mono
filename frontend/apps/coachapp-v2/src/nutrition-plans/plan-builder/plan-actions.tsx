@@ -8,6 +8,7 @@ import {Button, Dropdown, Header, Label, Separator, toast, useOverlayState} from
 import {ArchiveIcon, ArchiveRestoreIcon, Copy, MoreHorizontal, Pencil, TrashIcon} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
+import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
 import {
   coachApi,
@@ -81,13 +82,13 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
               // Drive selection via the menu so it fires on pointer AND keyboard
               // activation (RAC routes Enter/Space through onAction, not onPress).
               if (key === 'restore-plan') {
-                restore().catch(() => undefined);
+                restore().catch((e) => toastMutationError(e, "Couldn't restore plan"));
               } else if (key === 'archive-plan') {
-                archive().catch(() => undefined);
+                archive().catch((e) => toastMutationError(e, "Couldn't archive plan"));
               } else if (key === 'edit-plan') {
                 editDetails();
               } else if (key === 'copy-plan') {
-                copy().catch(() => toast.danger("Couldn't copy plan"));
+                copy().catch((e) => toastMutationError(e, "Couldn't copy plan"));
               } else if (key === 'delete-plan') {
                 deleteAlertState.open();
               }

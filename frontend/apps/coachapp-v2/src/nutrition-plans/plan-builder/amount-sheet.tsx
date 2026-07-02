@@ -28,8 +28,8 @@
  */
 
 import {computeMacrosFromSnapshot} from '@easy/utils';
-import {toast} from '@heroui/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import type {Food, Recipe} from '@/api/generated';
 import {
@@ -331,9 +331,9 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         }).unwrap();
         // Reconcile: server computes meal.nutrition snapshots
         refetch().catch(() => undefined);
-      } catch {
+      } catch (e) {
         cachePatch.undo();
-        toast.danger("Couldn't save amount");
+        toastMutationError(e, "Couldn't save amount");
       }
     },
     [existingItem, dispatch, planId, updateMealItem, refetch],
@@ -490,9 +490,9 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
       // Reconcile: server assigns real id + computes nutrition snapshot
       refetch().catch(() => undefined);
       onClose();
-    } catch {
+    } catch (e) {
       cachePatch.undo();
-      toast.danger("Couldn't add item");
+      toastMutationError(e, "Couldn't add item");
     }
   }, [
     food,

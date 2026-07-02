@@ -10,7 +10,8 @@
  * updateQueryData('getNutritionPlan', {id: planId}, …) + refetch so the
  * server-computed nutrition snapshots reconcile.
  */
-import {Button, Typography, toast} from '@heroui/react';
+import {Button, Typography} from '@heroui/react';
+import {toastMutationError} from '@/@components/mutation-toast';
 import {coachApi, useCreateMealMutation, useGetNutritionPlanQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
@@ -66,9 +67,9 @@ export function MealsList({planId}: MealsListProps) {
       toggle(newMeal.id);
       // Reconcile server snapshot
       refetch().catch(() => undefined);
-    } catch {
+    } catch (e) {
       // Create failed — nothing to roll back (optimistic push only runs on success)
-      toast.danger("Couldn't add meal");
+      toastMutationError(e, "Couldn't add meal");
     }
   };
 

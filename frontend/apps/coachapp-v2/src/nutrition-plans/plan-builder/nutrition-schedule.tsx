@@ -31,9 +31,10 @@ import {
   WEEKDAY_SHORT_LABELS,
   WEEKDAYS,
 } from '@easy/utils';
-import {ListBox, Select, Skeleton, Typography, toast} from '@heroui/react';
+import {ListBox, Select, Skeleton, Typography} from '@heroui/react';
 import {useState} from 'react';
 import {ErrorState} from '@/@components/error-state';
+import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import {
   coachApi,
@@ -401,10 +402,10 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
 
     try {
       await setNutritionPlanSchedule({planId, nutritionScheduleRequest: body}).unwrap();
-    } catch {
+    } catch (e) {
       patch.undo();
       refetchSchedule().catch(() => undefined);
-      toast.danger("Couldn't update schedule");
+      toastMutationError(e, "Couldn't update schedule");
     }
   };
 
@@ -449,10 +450,10 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
     const mergedMap = buildMergedDayMap(currentDaySlots, slot, mealId);
     try {
       await setNutritionPlanDaySchedule({planId, day, nutritionDayScheduleRequest: mergedMap}).unwrap();
-    } catch {
+    } catch (e) {
       patch.undo();
       refetchSchedule().catch(() => undefined);
-      toast.danger("Couldn't update schedule");
+      toastMutationError(e, "Couldn't update schedule");
     }
   };
 

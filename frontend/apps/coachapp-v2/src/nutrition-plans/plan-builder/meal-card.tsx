@@ -81,7 +81,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   const [deleteMeal] = useDeleteMealMutation();
   const [deleteMealItem] = useDeleteMealItemMutation();
   const {refetch} = useGetNutritionPlanQuery({id: planId});
-  const {data: scheduleData} = useGetNutritionPlanScheduleQuery({planId});
+  const {data: scheduleData, refetch: refetchSchedule} = useGetNutritionPlanScheduleQuery({planId});
 
   // Inline rename state
   const [editingName, setEditingName] = useState(false);
@@ -162,14 +162,30 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         }
       }),
     );
+    // The backend cascades schedule entries with the meal — mirror that in the
+    // schedule cache, or the slots keep pointing at a meal that no longer
+    // exists (blank "Select an item" selects, ghost grid cells).
+    const schedulePatch = dispatch(
+      coachApi.util.updateQueryData('getNutritionPlanSchedule', {planId}, (draft) => {
+        for (const slots of Object.values(draft.data ?? {})) {
+          for (const [slot, entry] of Object.entries(slots ?? {})) {
+            if (entry.nutrition_meal_id === meal.id) {
+              delete slots[slot];
+            }
+          }
+        }
+      }),
+    );
     try {
       await deleteMeal({id: meal.id}).unwrap();
       refetch().catch(() => undefined);
+      refetchSchedule().catch(() => undefined);
     } catch (e) {
       patch.undo();
+      schedulePatch.undo();
       toastMutationError(e, "Couldn't delete meal");
     }
-  }, [meal.id, planId, deleteMeal, dispatch, refetch]);
+  }, [meal.id, planId, deleteMeal, dispatch, refetch, refetchSchedule]);
 
   // ---------------------------------------------------------------------------
   // Delete meal item

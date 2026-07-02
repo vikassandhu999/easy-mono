@@ -1,16 +1,24 @@
-defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
+defmodule Easy.Repo.Migrations.CreateClientProfilesFormsAndWeightEntries do
   use Ecto.Migration
 
   def change do
-    # Tenant-scoped composite FKs below reference clients(id, business_id); that key is only
-    # sound if business_id is NOT NULL (a NULL-tenant client could never satisfy the FK).
-    # ponytail: errors if any existing client has a NULL business_id — backfill first if so.
-    execute(
-      "ALTER TABLE clients ALTER COLUMN business_id SET NOT NULL",
-      "ALTER TABLE clients ALTER COLUMN business_id DROP NOT NULL"
-    )
+    create table(:weight_entries, primary_key: false) do
+      add :id, :binary_id, primary_key: true
+      add :date, :date, null: false
+      add :value, :decimal, precision: 5, scale: 2, null: false
+      add :unit, :string, null: false
+      add :note, :text
 
-    create unique_index(:clients, [:id, :business_id], name: :clients_id_business_id_index)
+      add :client_id, references(:clients, type: :binary_id, on_delete: :delete_all), null: false
+
+      add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
+        null: false
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create unique_index(:weight_entries, [:client_id, :date])
+    create index(:weight_entries, [:business_id, :client_id, :date])
 
     create table(:client_profiles, primary_key: false) do
       add :id, :binary_id, primary_key: true
@@ -73,8 +81,6 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
              check: "NOT (filterable = true AND field_type = 'text')"
            )
 
-    # Partial: archived (soft-deleted) definitions release their key so a coach can
-    # recreate a field with the same key after archiving the old one.
     create unique_index(:profile_field_definitions, [:business_id, :key],
              where: "archived_at IS NULL"
            )
@@ -171,9 +177,6 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
           ),
           null: false
 
-      # :restrict (not :delete_all) so deleting a template with assignments is rejected by the
-      # DB rather than silently cascade-deleting assignments. Businesses are never hard-deleted,
-      # so no tenant-teardown path relies on this cascading.
       add :form_template_id,
           references(:form_templates,
             type: :binary_id,
@@ -202,8 +205,6 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
     create index(:form_assignments, [:business_id, :client_id])
     create index(:form_assignments, [:business_id, :purpose, :status])
 
-    # The PK on :id plus the (id, client_id, business_id) unique index below cover every FK
-    # target and lookup; a separate (id, business_id) unique index adds only write cost.
     create unique_index(:form_assignments, [:id, :client_id, :business_id],
              name: :form_assignments_id_client_id_business_id_index
            )

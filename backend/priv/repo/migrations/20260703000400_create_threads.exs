@@ -1,4 +1,4 @@
-defmodule Easy.Repo.Migrations.CreateThreads do
+defmodule Easy.Repo.Migrations.CreateThreadsGreenfield do
   use Ecto.Migration
 
   def change do

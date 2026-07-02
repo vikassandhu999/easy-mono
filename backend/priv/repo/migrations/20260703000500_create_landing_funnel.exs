@@ -1,12 +1,7 @@
-defmodule Easy.Repo.Migrations.CreateLandingFunnel do
+defmodule Easy.Repo.Migrations.CreateLandingFunnelGreenfield do
   use Ecto.Migration
 
   def change do
-    # WhatsApp follow-up is a business-profile setting, not a per-page one (see spec).
-    alter table(:businesses) do
-      add :whatsapp_number, :string
-    end
-
     create table(:landing_pages, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :slug, :string, null: false
@@ -17,6 +12,9 @@ defmodule Easy.Repo.Migrations.CreateLandingFunnel do
       add :proof_points, {:array, :map}, default: [], null: false
       add :application_questions, {:array, :map}, default: [], null: false
       add :status, :string, null: false, default: "draft"
+      add :fit_points, {:array, :string}, default: [], null: false
+      add :hero_image_url, :string
+      add :eyebrow, :string
 
       add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
         null: false
@@ -32,11 +30,8 @@ defmodule Easy.Repo.Migrations.CreateLandingFunnel do
              check: "status in ('draft','published')"
            )
 
-    # Public route resolves a page by bare slug, so slug is globally unique.
-    # ponytail: global slug uniqueness; namespace the public URL by business if collisions bite.
     create unique_index(:landing_pages, [:slug])
 
-    # V1: at most one published page per business (DB-enforced).
     create unique_index(:landing_pages, [:business_id],
              where: "status = 'published'",
              name: :landing_pages_one_published_per_business
@@ -105,7 +100,6 @@ defmodule Easy.Repo.Migrations.CreateLandingFunnel do
             name: :prospects_program_business_id_fkey
           )
 
-      # Set when the prospect is enrolled as a client.
       add :client_id,
           references(:clients,
             type: :binary_id,

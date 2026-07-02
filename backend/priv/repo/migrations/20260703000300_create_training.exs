@@ -1,23 +1,7 @@
-defmodule Easy.Repo.Migrations.RecreateTrainingTables do
+defmodule Easy.Repo.Migrations.CreateTraining do
   use Ecto.Migration
 
-  def up do
-    # Drop old (dependents first). Drop & recreate clean — no data preserved.
-    drop_if_exists table(:performed_sets)
-    drop_if_exists table(:workout_sessions)
-    drop_if_exists table(:workout_elements)
-    drop_if_exists table(:training_plan_items)
-    drop_if_exists table(:exercise_muscles)
-    drop_if_exists table(:exercise_equipment)
-    drop_if_exists table(:workouts)
-    drop_if_exists table(:exercises)
-    drop_if_exists table(:muscles)
-    drop_if_exists table(:equipment)
-    drop_if_exists table(:training_plans)
-
-    execute "CREATE EXTENSION IF NOT EXISTS btree_gist"
-
-    # --- reference data ---
+  def change do
     create table(:training_muscles, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
@@ -36,7 +20,6 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
 
     create unique_index(:training_equipment, [:name])
 
-    # --- exercises ---
     create table(:training_exercises, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :source, :string, null: false, default: "custom"
@@ -57,6 +40,8 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
 
     create unique_index(:training_exercises, [:name, :business_id])
     create index(:training_exercises, [:business_id])
+    # System-exercise seeds upsert with ON CONFLICT ("import_id") WHERE import_id IS NOT NULL
+    create unique_index(:training_exercises, [:import_id], where: "import_id IS NOT NULL")
 
     create constraint(:training_exercises, :training_exercises_source_check,
              check: "source in ('system','imported','custom')"
@@ -96,7 +81,6 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
 
     create unique_index(:training_exercise_equipment, [:exercise_id, :equipment_id])
 
-    # --- plans ---
     create table(:training_plans, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
@@ -121,17 +105,19 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
     create index(:training_plans, [:business_id])
     create index(:training_plans, [:business_id, :client_id])
 
-    execute """
-    ALTER TABLE training_plans
-    ADD CONSTRAINT training_plans_no_overlapping_active
-    EXCLUDE USING gist (
-      client_id WITH =,
-      daterange(start_date, end_date, '[]') WITH &&
+    execute(
+      """
+      ALTER TABLE training_plans
+      ADD CONSTRAINT training_plans_no_overlapping_active
+      EXCLUDE USING gist (
+        client_id WITH =,
+        daterange(start_date, end_date, '[]') WITH &&
+      )
+      WHERE (client_id IS NOT NULL AND status = 'active')
+      """,
+      "ALTER TABLE training_plans DROP CONSTRAINT training_plans_no_overlapping_active"
     )
-    WHERE (client_id IS NOT NULL AND status = 'active')
-    """
 
-    # --- workouts ---
     create table(:training_workouts, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
@@ -152,7 +138,6 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
     create index(:training_workouts, [:business_id])
     create index(:training_workouts, [:training_plan_id])
 
-    # --- schedule entries ---
     create table(:training_schedule_entries, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :day_of_week, :string, null: false
@@ -181,7 +166,6 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
                "day_of_week in ('monday','tuesday','wednesday','thursday','friday','saturday','sunday')"
            )
 
-    # --- workout exercises (with embedded planned_sets) ---
     create table(:training_workout_exercises, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :position, :integer, null: false, default: 0
@@ -204,7 +188,6 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
     create unique_index(:training_workout_exercises, [:training_workout_id, :position])
     create index(:training_workout_exercises, [:business_id])
 
-    # --- sessions ---
     create table(:training_sessions, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :date, :date
@@ -241,7 +224,6 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
              check: "state in ('active','completed','discarded')"
            )
 
-    # --- performed sets ---
     create table(:training_performed_sets, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :exercise_name, :string
@@ -256,6 +238,7 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
       add :rpe, :decimal
       add :completed, :boolean, null: false, default: false
       add :notes, :text
+      add :swapped_from_exercise_id, :binary_id
 
       add :training_session_id,
           references(:training_sessions, type: :binary_id, on_delete: :delete_all),
@@ -283,20 +266,5 @@ defmodule Easy.Repo.Migrations.RecreateTrainingTables do
     create constraint(:training_performed_sets, :training_performed_sets_distance_unit_check,
              check: "distance_unit is null or distance_unit in ('meters','km','miles','none')"
            )
-  end
-
-  def down do
-    drop_if_exists table(:training_performed_sets)
-    drop_if_exists table(:training_sessions)
-    drop_if_exists table(:training_workout_exercises)
-    drop_if_exists table(:training_schedule_entries)
-    drop_if_exists table(:training_workouts)
-    drop_if_exists table(:training_exercise_equipment)
-    drop_if_exists table(:training_exercise_muscles)
-    drop_if_exists table(:training_exercises)
-    drop_if_exists table(:training_muscles)
-    drop_if_exists table(:training_equipment)
-    drop_if_exists table(:training_plans)
-    # Not reversible to the old schema (clean recreate). Use `mix ecto.reset` in dev.
   end
 end

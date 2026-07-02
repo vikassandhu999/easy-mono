@@ -1,21 +1,7 @@
-defmodule Easy.Repo.Migrations.RecreateNutritionTables do
+defmodule Easy.Repo.Migrations.CreateNutrition do
   use Ecto.Migration
 
-  def up do
-    # Drop old tables (dependents first). Drop & recreate clean — no data preserved.
-    drop_if_exists table(:food_log_entries)
-    drop_if_exists table(:meal_logs)
-    drop_if_exists table(:meal_items)
-    drop_if_exists table(:plan_items)
-    drop_if_exists table(:recipe_ingredients)
-    drop_if_exists table(:meals)
-    drop_if_exists table(:recipes)
-    drop_if_exists table(:foods)
-    drop_if_exists table(:plans)
-
-    execute "CREATE EXTENSION IF NOT EXISTS btree_gist"
-
-    # --- nutrition_foods ---
+  def change do
     create table(:nutrition_foods, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
@@ -46,16 +32,23 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
 
     create index(:nutrition_foods, [:business_id])
     create index(:nutrition_foods, [:business_id, "lower(name)"])
+    # System-food seeds upsert with ON CONFLICT ("import_id") WHERE import_id IS NOT NULL
+    create unique_index(:nutrition_foods, [:import_id], where: "import_id IS NOT NULL")
 
-    execute """
-    ALTER TABLE nutrition_foods
-    ADD COLUMN search_vector tsvector
-    GENERATED ALWAYS AS (to_tsvector('simple', coalesce(name, ''))) STORED
-    """
+    execute(
+      """
+      ALTER TABLE nutrition_foods
+      ADD COLUMN search_vector tsvector
+      GENERATED ALWAYS AS (to_tsvector('simple', coalesce(name, ''))) STORED
+      """,
+      "ALTER TABLE nutrition_foods DROP COLUMN search_vector"
+    )
 
-    execute "CREATE INDEX nutrition_foods_search_vector_idx ON nutrition_foods USING gin (search_vector)"
+    execute(
+      "CREATE INDEX nutrition_foods_search_vector_idx ON nutrition_foods USING gin (search_vector)",
+      "DROP INDEX nutrition_foods_search_vector_idx"
+    )
 
-    # --- nutrition_recipes ---
     create table(:nutrition_recipes, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
@@ -76,7 +69,6 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
 
     create index(:nutrition_recipes, [:business_id])
 
-    # --- nutrition_recipe_ingredients ---
     create table(:nutrition_recipe_ingredients, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :amount, :float
@@ -98,7 +90,6 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
              check: "weight_g > 0"
            )
 
-    # --- nutrition_plans ---
     create table(:nutrition_plans, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
@@ -130,18 +121,19 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
     create index(:nutrition_plans, [:business_id])
     create index(:nutrition_plans, [:business_id, :client_id])
 
-    # One active assigned plan per client/date range (DB guarantee).
-    execute """
-    ALTER TABLE nutrition_plans
-    ADD CONSTRAINT nutrition_plans_no_overlapping_active
-    EXCLUDE USING gist (
-      client_id WITH =,
-      daterange(start_date, end_date, '[]') WITH &&
+    execute(
+      """
+      ALTER TABLE nutrition_plans
+      ADD CONSTRAINT nutrition_plans_no_overlapping_active
+      EXCLUDE USING gist (
+        client_id WITH =,
+        daterange(start_date, end_date, '[]') WITH &&
+      )
+      WHERE (client_id IS NOT NULL AND status = 'active')
+      """,
+      "ALTER TABLE nutrition_plans DROP CONSTRAINT nutrition_plans_no_overlapping_active"
     )
-    WHERE (client_id IS NOT NULL AND status = 'active')
-    """
 
-    # --- nutrition_meals ---
     create table(:nutrition_meals, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
@@ -163,12 +155,11 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
     create index(:nutrition_meals, [:business_id])
     create index(:nutrition_meals, [:nutrition_plan_id])
 
-    # --- nutrition_meal_items ---
     create table(:nutrition_meal_items, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :amount, :float
       add :unit, :string
-      add :weight_g, :float, null: false
+      add :weight_g, :float
       add :position, :integer, default: 0, null: false
 
       add :nutrition_meal_id,
@@ -195,7 +186,6 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
              check: "weight_g > 0"
            )
 
-    # --- nutrition_schedule_entries ---
     create table(:nutrition_schedule_entries, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :day_of_week, :string, null: false
@@ -223,7 +213,6 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
 
     create index(:nutrition_schedule_entries, [:business_id])
 
-    # --- nutrition_meal_logs ---
     create table(:nutrition_meal_logs, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :date, :date, null: false
@@ -243,7 +232,6 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
     create unique_index(:nutrition_meal_logs, [:client_id, :date, :meal_slot])
     create index(:nutrition_meal_logs, [:business_id, :client_id])
 
-    # --- nutrition_food_log_entries ---
     create table(:nutrition_food_log_entries, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :food_name, :string, null: false
@@ -280,18 +268,5 @@ defmodule Easy.Repo.Migrations.RecreateNutritionTables do
     create constraint(:nutrition_food_log_entries, :nutrition_food_log_entries_weight_positive,
              check: "weight_g > 0"
            )
-  end
-
-  def down do
-    drop_if_exists table(:nutrition_food_log_entries)
-    drop_if_exists table(:nutrition_meal_logs)
-    drop_if_exists table(:nutrition_schedule_entries)
-    drop_if_exists table(:nutrition_meal_items)
-    drop_if_exists table(:nutrition_meals)
-    drop_if_exists table(:nutrition_recipe_ingredients)
-    drop_if_exists table(:nutrition_recipes)
-    drop_if_exists table(:nutrition_foods)
-    drop_if_exists table(:nutrition_plans)
-    # Not reversible to the old unprefixed schema. Use `mix ecto.reset` in dev.
   end
 end

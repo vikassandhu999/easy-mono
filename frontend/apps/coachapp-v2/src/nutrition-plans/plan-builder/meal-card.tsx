@@ -181,6 +181,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
       refetch().catch(() => undefined);
       refetchSchedule().catch(() => undefined);
     } catch (e) {
+      console.error('[meal-delete] rejected:', e);
       patch.undo();
       schedulePatch.undo();
       toastMutationError(e, "Couldn't delete meal");
@@ -322,18 +323,25 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
             <MoreHorizontal size={15} />
           </Button>
           <Dropdown.Popover>
-            {/* biome-ignore lint/suspicious/noEmptyBlockStatements: Dropdown.Menu requires onAction; individual items handle their own onPress */}
-            <Dropdown.Menu onAction={() => {}}>
+            {/* Drive selection via the menu so it fires on pointer AND keyboard
+                activation — RAC routes Enter/Space through onAction, not the
+                item's onPress (same pattern as plan-actions.tsx). */}
+            <Dropdown.Menu
+              onAction={(key) => {
+                if (key === 'rename-meal') {
+                  setEditingName(true);
+                  setTimeout(() => nameInputRef.current?.select(), 0);
+                  if (!open) {
+                    onToggle();
+                  }
+                } else if (key === 'delete-meal') {
+                  handleDelete().catch(() => undefined);
+                }
+              }}
+            >
               <Dropdown.Section>
                 <Dropdown.Item
                   id="rename-meal"
-                  onPress={() => {
-                    setEditingName(true);
-                    setTimeout(() => nameInputRef.current?.select(), 0);
-                    if (!open) {
-                      onToggle();
-                    }
-                  }}
                   textValue="Rename"
                 >
                   <Label>Rename</Label>
@@ -343,9 +351,6 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
               <Dropdown.Section>
                 <Dropdown.Item
                   id="delete-meal"
-                  onPress={() => {
-                    handleDelete().catch(() => undefined);
-                  }}
                   textValue="Delete"
                   variant="danger"
                 >

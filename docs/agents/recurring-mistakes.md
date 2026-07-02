@@ -281,6 +281,18 @@ other axis only (here: `translateY` for the slide; X-centering left to `md:-tran
 **Enforced by:** no element carries both a `-translate-x` utility and an inline `transform`/`translate`
 on the same axis; `rg 'translateX\(-?50%\)|translate\(-50%' -g '*.tsx' apps/coachapp-v2/src` stays empty.
 
+### RM-125 — Loading and pending states must not change layout
+Two recurring shift bugs: (a) pending buttons swapped children (`{isSubmitting ? <Spinner/>+label2 : label1}`)
+so the button resized mid-submit on every form; (b) detail/settings pages showed a CENTERED full-page
+Spinner that jumped to the real top-aligned layout when data landed. Rules: pending buttons keep a
+constant-width child — overlay the spinner on an `invisible` copy of the same label (see
+`form-actions.tsx`), never swap label text for a different-length one; first-load of a page/list renders
+a layout-approximating skeleton, not a centered spinner — `ListSkeleton` for browse lists (baked into
+`BrowseListBox`), `PageSkeleton` for detail/settings pages (keep the real `Page.Header` for parity).
+**Enforced by:** `rg 'justify-center py-20' -g '*.tsx' apps/coachapp-v2/src` stays empty (the old
+centered-spinner idiom); no ternary inside a `<Button>` that swaps between two different label strings
+on a pending flag.
+
 ---
 
 ## Deploy / ops

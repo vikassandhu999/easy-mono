@@ -3,6 +3,7 @@ import {AlertDialog, Button, Chip, Spinner, Typography, toast} from '@heroui/rea
 import {ArrowLeft, Copy, Dumbbell, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -119,15 +120,7 @@ export default function ExerciseDetail() {
     <Page>
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
         <Page.TitleGroup className={'flex items-center'}>
-          <Button
-            aria-label="Back"
-            onPress={goBack}
-            size="md"
-            variant="ghost"
-            isIconOnly
-          >
-            <ArrowLeft size={20} />
-          </Button>
+          <BackButton onPress={goBack} />
           <Page.Title>Exercise</Page.Title>
         </Page.TitleGroup>
       </Page.Header>

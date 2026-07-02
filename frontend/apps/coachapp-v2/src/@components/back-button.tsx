@@ -5,10 +5,19 @@ import {ArrowLeft} from 'lucide-react';
 // inside Page.TitleGroup next to the title. Replaces the ArrowLeft 16/18/20 +
 // icon-vs-text + Toolbar-vs-TitleGroup drift across the app.
 
-export function BackButton({label = 'Back', onPress}: {label?: string; onPress: () => void}) {
+export function BackButton({
+  className,
+  label = 'Back',
+  onPress,
+}: {
+  className?: string;
+  label?: string;
+  onPress: () => void;
+}) {
   return (
     <Button
       aria-label={label}
+      className={className}
       isIconOnly
       onPress={onPress}
       size="md"

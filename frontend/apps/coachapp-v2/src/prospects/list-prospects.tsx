@@ -1,9 +1,10 @@
 import type {Key} from '@heroui/react';
-import {Avatar, Chip, Description, Label, ListBox, Tabs, Typography} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox, Tabs} from '@heroui/react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import BrowseListBox from '@/@components/browse-list-box';
+import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {
@@ -103,15 +104,11 @@ export default function ListProspects() {
           ariaLabel="Prospects"
           className="flex-1 gap-0"
           emptyState={
-            <div className="flex flex-col items-center gap-2 px-4 py-20 text-center">
-              <Typography weight="medium">No prospects yet</Typography>
-              <Typography
-                color="muted"
-                type="body-sm"
-              >
-                Publish your landing page and applications will show up here.
-              </Typography>
-            </div>
+            <ListEmptyState
+              emptyDescription="Publish your landing page and applications will show up here."
+              hasFilter={filter !== 'all'}
+              nounPlural="prospects"
+            />
           }
           // Flat query (limit: 100), no pagination — nothing to fetch.
           fetchNextPage={() => undefined}

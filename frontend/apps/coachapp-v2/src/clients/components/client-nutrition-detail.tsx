@@ -59,7 +59,7 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
     <section>
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{slotLabel}</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">{slotLabel}</h4>
           <p className="text-xs text-muted">
             Logged: {loggedCal} cal
             {hasSnapshot ? ` \u00B7 Plan: ${plannedCal} cal` : ''}
@@ -187,7 +187,7 @@ function SkippedMealSlot({slotLabel}: {slotLabel: string}) {
   return (
     <section>
       <div className="mb-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{slotLabel}</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">{slotLabel}</h4>
         <p className="text-xs text-muted">Not logged</p>
       </div>
     </section>

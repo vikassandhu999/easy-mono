@@ -81,7 +81,7 @@ export function PinnedScheduleBar({planId}: PinnedScheduleBarProps) {
   const projection = buildProjection(mondaySlots, mealById);
 
   return (
-    <div className="sticky top-0 z-10">
+    <div className="sticky top-0 z-10 bg-background">
       {/* Collapsed bar */}
       <button
         className="flex w-full items-center justify-between gap-2 border-b border-border bg-surface px-4 py-2 text-left transition-colors hover:bg-surface-hover"

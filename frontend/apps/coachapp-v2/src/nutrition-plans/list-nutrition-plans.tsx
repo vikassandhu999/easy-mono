@@ -1,8 +1,9 @@
 import {Button, Chip, Description, Label, ListBox, SearchField} from '@heroui/react';
-import {ArrowLeft, Plus} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
@@ -48,16 +49,10 @@ export default function ListNutritionPlans() {
     <Page>
       <Page.Header>
         <Page.TitleGroup className="flex items-center">
-          <Button
-            aria-label="Back"
-            onPress={goBack}
-            size="md"
-            variant="ghost"
-            isIconOnly
+          <BackButton
             className={'lg:hidden'}
-          >
-            <ArrowLeft size={18} />
-          </Button>
+            onPress={goBack}
+          />
           <Page.Title>Nutrition Plans</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>

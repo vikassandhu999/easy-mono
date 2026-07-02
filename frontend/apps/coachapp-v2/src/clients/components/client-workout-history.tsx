@@ -3,6 +3,7 @@ import {Chip, ListBox, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
+import SectionHeading from '@/@components/section-heading';
 import type {TrainingSession} from '@/api/generated';
 
 import {useListCoachClientTrainingSessionsQuery} from '@/api/generated';
@@ -100,7 +101,7 @@ export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Workout History</h3>
+      <SectionHeading title="Workout History" />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-6">

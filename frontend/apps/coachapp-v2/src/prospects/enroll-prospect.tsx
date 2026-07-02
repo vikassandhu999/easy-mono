@@ -1,4 +1,4 @@
-import {Button, Fieldset, Spinner, Typography, toast} from '@heroui/react';
+import {Button, Fieldset, Typography, toast} from '@heroui/react';
 import {useForm} from 'react-hook-form';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -6,6 +6,7 @@ import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {FieldRow, FormActions, FormLayout, FormTextField} from '@/@components/form-fields';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useEnrollProspectMutation, useGetProspectQuery} from '@/api/prospects';
 import {getApiErrorMessage} from '@/api/shared';
@@ -74,9 +75,7 @@ export default function EnrollProspect() {
       <Page>
         {header}
         <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

@@ -1,7 +1,10 @@
-import {Button, Chip, Spinner, Typography} from '@heroui/react';
-import {ArrowLeft, ClipboardCheck, Plus} from 'lucide-react';
+import {Button, Chip, Typography} from '@heroui/react';
+import {ClipboardCheck, Plus} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
+import ListEmptyState from '@/@components/list-empty-state';
+import {ListSkeleton} from '@/@components/list-skeleton';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -24,16 +27,10 @@ export default function ListCheckins() {
     <Page>
       <Page.Header>
         <Page.TitleGroup className="flex items-center">
-          <Button
-            aria-label="Back"
+          <BackButton
             className="lg:hidden"
-            isIconOnly
             onPress={goBack}
-            size="md"
-            variant="ghost"
-          >
-            <ArrowLeft size={18} />
-          </Button>
+          />
           <Page.Title>Check-ins</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
@@ -48,9 +45,7 @@ export default function ListCheckins() {
       </Page.Header>
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <ListSkeleton />
         ) : isError ? (
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <Typography
@@ -68,26 +63,13 @@ export default function ListCheckins() {
             </Button>
           </div>
         ) : templates.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-6 py-16 text-center">
-            <ClipboardCheck
-              className="text-muted"
-              size={28}
-            />
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              No check-ins yet. Build an intake or weekly check-in to send your clients.
-            </Typography>
-            <Button
-              className="mt-1"
-              onPress={() => navigate(ROUTES.CREATE_CHECKIN)}
-              size="sm"
-            >
-              <Plus size={16} />
-              Create check-in
-            </Button>
-          </div>
+          <ListEmptyState
+            createLabel="Create check-in"
+            createRoute={ROUTES.CREATE_CHECKIN}
+            emptyDescription="Build an intake or weekly check-in to send your clients."
+            hasFilter={false}
+            nounPlural="check-ins"
+          />
         ) : (
           <div className="mt-4 flex max-w-2xl flex-col gap-2">
             {templates.map((template) => {

@@ -73,7 +73,7 @@ export default function TrainingPlanDetail() {
           size="sm"
           variant="ghost"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
           Back
         </Button>
         <div className="flex gap-2">

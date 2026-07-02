@@ -3,6 +3,7 @@ import {ArrowLeft} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useCoachClientTrainingSessionsInfiniteQuery} from '@/api/client-training-sessions';
@@ -30,9 +31,7 @@ export default function ClientWorkoutHistoryPage() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

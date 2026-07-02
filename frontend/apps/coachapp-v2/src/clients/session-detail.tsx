@@ -1,9 +1,10 @@
 import {formatDuration, formatSessionDateLong, SESSION_STATE_CHIP} from '@easy/utils';
-import {Alert, Button, Chip, Separator, Spinner, Table, Typography} from '@heroui/react';
+import {Alert, Button, Chip, Separator, Table, Typography} from '@heroui/react';
 import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, SkipForward} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetCoachClientTrainingSessionQuery} from '@/api/generated';
 import {buildExerciseGroups, type ExerciseGroup, formatLoad, getAdherenceSummary} from '@/clients/lib/session';
@@ -100,10 +101,8 @@ export default function SessionDetail() {
             <Page.Title>Workout session</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );
@@ -127,7 +126,7 @@ export default function SessionDetail() {
             Client
           </Button>
         </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <Alert status="danger">
             <Alert.Indicator />
             <Alert.Content>
@@ -167,7 +166,7 @@ export default function SessionDetail() {
           Client
         </Button>
       </Page.Toolbar>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <div className="max-w-lg">
           <div className="pb-4">
             <div className="flex min-w-0 items-center gap-2">

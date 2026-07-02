@@ -1,10 +1,11 @@
-import {Avatar, Button, Separator, Spinner, Typography} from '@heroui/react';
+import {Avatar, Button, Separator, Typography} from '@heroui/react';
 import {ChevronRight} from 'lucide-react';
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {clearTokens} from '@/api/authStorage';
@@ -226,9 +227,7 @@ export default function Settings() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

@@ -33,7 +33,7 @@ export function PinnedWeekBar({planId}: PinnedWeekBarProps) {
   const projection = buildScheduleProjection(scheduleMap);
 
   return (
-    <div className="sticky top-0 z-10">
+    <div className="sticky top-0 z-10 bg-background">
       {/* Bar */}
       <button
         className="flex w-full items-center justify-between gap-2 bg-surface border-b border-border px-4 py-2 text-left transition-colors hover:bg-surface-hover"

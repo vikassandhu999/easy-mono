@@ -1,8 +1,12 @@
 import {Button, Fieldset, Spinner} from '@heroui/react';
 
 // The single submit/cancel row for every form. Owns the action-row gap (gap-3)
-// and the pending pattern (spinner + present-participle label). FormLayout's
-// gap-8 provides the separation above it, so no top margin here.
+// and the pending pattern. FormLayout's gap-8 provides the separation above it,
+// so no top margin here.
+//
+// Pending state overlays the spinner on the (invisible) label instead of
+// swapping children, so the button's width never changes mid-submit — no
+// layout shift. submittingLabel is announced to screen readers only.
 
 type FormActionsProps = {
   isSubmitting?: boolean;
@@ -22,20 +26,20 @@ export function FormActions({
   return (
     <Fieldset.Actions className="flex gap-3">
       <Button
+        className="relative"
         isPending={isSubmitting}
         type="submit"
       >
+        <span className={isSubmitting ? 'invisible' : undefined}>{submitLabel}</span>
         {isSubmitting ? (
-          <>
+          <span className="absolute inset-0 flex items-center justify-center">
             <Spinner
               color="current"
               size="sm"
             />
-            {submittingLabel}
-          </>
-        ) : (
-          submitLabel
-        )}
+            <span className="sr-only">{submittingLabel}</span>
+          </span>
+        ) : null}
       </Button>
       <Button
         onPress={onCancel}

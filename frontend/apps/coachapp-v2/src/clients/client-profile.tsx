@@ -5,13 +5,14 @@
  * {...existing, key: value} to avoid wiping answers not shown here.
  */
 import {formatIsoDateOnly} from '@easy/utils';
-import {Button, Label, ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
+import {Button, Label, ListBox, Select, Typography, toast} from '@heroui/react';
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {
@@ -197,7 +198,7 @@ function ClientProfileEditor({
               isPending={isSaving}
               onPress={handleSave}
             >
-              {isSaving ? 'Saving profile' : 'Save profile'}
+              Save profile
             </Button>
             <Button
               onPress={goBack}
@@ -225,9 +226,7 @@ export default function ClientProfilePage() {
       <Page>
         <ProfileHeader goBack={goBack} />
         <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

@@ -4,7 +4,9 @@ import {ArrowLeft, ChevronRight, ClipboardList, Dumbbell, MessageCircle, Pencil,
 import {useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
+import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
@@ -278,10 +280,8 @@ export default function ClientDetail() {
             <Page.Title>Client</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-20">
-            <Spinner color="accent" />
-          </div>
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );
@@ -305,7 +305,7 @@ export default function ClientDetail() {
             Clients
           </Button>
         </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <Alert status="danger">
             <Alert.Indicator />
             <Alert.Content>
@@ -330,15 +330,7 @@ export default function ClientDetail() {
       <Page.Header className="py-4 sm:py-8 items-center w-full max-w-6xl">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
-            <Button
-              aria-label="Back"
-              onPress={goBack}
-              size="md"
-              variant="ghost"
-              isIconOnly
-            >
-              <ArrowLeft size={20} />
-            </Button>
+            <BackButton onPress={goBack} />
             <Page.Title>{name}</Page.Title>
           </div>
         </Page.TitleGroup>
@@ -354,10 +346,10 @@ export default function ClientDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className={'px-4 pb-6 md:px-6 lg:px-8'}>
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <div className="max-w-6xl space-y-4">
           {/* Hero — flat profile card */}
-          <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-3">
                 <Avatar

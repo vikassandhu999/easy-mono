@@ -108,6 +108,12 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // Rename handlers
   // ---------------------------------------------------------------------------
 
+  const startEditing = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); // don't toggle accordion
+    setEditingName(true);
+    setTimeout(() => nameInputRef.current?.select(), 0);
+  }, []);
+
   const commitRename = useCallback(async () => {
     const trimmed = nameValue.trim();
     if (!trimmed || trimmed === meal.name) {
@@ -273,96 +279,115 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         open ? 'border-accent ring-1 ring-accent/60 shadow-[0_0_18px_rgba(108,140,255,0.13)]' : 'border-border'
       }`}
     >
-      {/* Header — the toggle is a real button; total badge and menu are
-          SIBLINGS of it, so no stop-propagation wrappers are needed. Rename
-          lives in the menu (double-click was undiscoverable and touch-hostile). */}
-      <div className="flex items-center gap-2 px-3 py-2.5">
-        {editingName ? (
-          <>
-            <span className="shrink-0 text-muted">
-              <ChevronDown size={16} />
-            </span>
+      {/* Header — acts as accordion toggle (whole row, like WorkoutCard) */}
+      <div
+        aria-expanded={open}
+        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none"
+        onClick={editingName ? undefined : onToggle}
+        onKeyDown={(e) => {
+          if (!editingName && (e.key === 'Enter' || e.key === ' ')) {
+            onToggle();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      >
+        {/* Chevron */}
+        <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
+
+        {/* Name — inline-edit or plain text */}
+        <div className="min-w-0 flex-1">
+          {editingName ? (
             <input
               ref={nameInputRef}
               // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
               autoFocus
-              className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
+              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
               onBlur={() => {
                 commitRename().catch(() => undefined);
               }}
               onChange={(e) => setNameValue(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               onKeyDown={handleNameKeyDown}
               value={nameValue}
             />
-          </>
-        ) : (
-          <button
-            aria-expanded={open}
-            className="flex min-w-0 flex-1 items-center gap-2 text-left"
-            onClick={onToggle}
-            type="button"
-          >
-            <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
-            <span className="min-w-0 truncate text-sm font-semibold text-foreground">{meal.name}</span>
-          </button>
-        )}
+          ) : (
+            // biome-ignore lint/a11y/noNoninteractiveElementInteractions: double-click to rename is a progressive enhancement on a display label; primary rename is in the dropdown menu
+            // biome-ignore lint/a11y/noStaticElementInteractions: same as above
+            <span
+              className="block truncate text-sm font-semibold text-foreground"
+              onDoubleClick={startEditing}
+              title="Double-click to rename"
+            >
+              {meal.name}
+            </span>
+          )}
+        </div>
 
         {/* Meal total badge */}
         {mealTotal ? (
           <span className={`shrink-0 text-xs ${open ? 'text-accent' : 'text-muted'}`}>{mealTotal}</span>
         ) : null}
 
-        <Dropdown>
-          <Button
-            aria-label="Meal options"
-            className="h-9 w-9 min-w-9"
-            isIconOnly
-            size="sm"
-            variant="ghost"
-          >
-            <MoreHorizontal size={15} />
-          </Button>
-          <Dropdown.Popover>
-            {/* Drive selection via the menu so it fires on pointer AND keyboard
-                activation — RAC routes Enter/Space through onAction, not the
-                item's onPress (same pattern as plan-actions.tsx). */}
-            <Dropdown.Menu
-              onAction={(key) => {
-                if (key === 'rename-meal') {
-                  setEditingName(true);
-                  setTimeout(() => nameInputRef.current?.select(), 0);
-                  if (!open) {
-                    onToggle();
-                  }
-                } else if (key === 'delete-meal') {
-                  handleDelete().catch(() => undefined);
-                }
-              }}
+        {/* Meal options menu — stop propagation so clicks don't toggle the accordion */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown; role is on the Button inside */}
+        {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: same as above */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <Dropdown>
+            <Button
+              aria-label="Meal options"
+              className="h-9 w-9 min-w-9"
+              isIconOnly
+              size="sm"
+              variant="ghost"
             >
-              <Dropdown.Section>
-                <Dropdown.Item
-                  id="rename-meal"
-                  textValue="Rename"
-                >
-                  <Label>Rename</Label>
-                </Dropdown.Item>
-              </Dropdown.Section>
-              <Separator />
-              <Dropdown.Section>
-                <Dropdown.Item
-                  id="delete-meal"
-                  textValue="Delete"
-                  variant="danger"
-                >
-                  <div className="flex items-center gap-2">
-                    <TrashIcon className="size-4 shrink-0 text-danger" />
-                    <Label>Delete meal</Label>
-                  </div>
-                </Dropdown.Item>
-              </Dropdown.Section>
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
+              <MoreHorizontal size={15} />
+            </Button>
+            <Dropdown.Popover>
+              {/* Drive selection via the menu so it fires on pointer AND keyboard
+                  activation — RAC routes Enter/Space through onAction, not the
+                  item's onPress (same pattern as plan-actions.tsx). */}
+              <Dropdown.Menu
+                onAction={(key) => {
+                  if (key === 'rename-meal') {
+                    setEditingName(true);
+                    setTimeout(() => nameInputRef.current?.select(), 0);
+                    if (!open) {
+                      onToggle();
+                    }
+                  } else if (key === 'delete-meal') {
+                    handleDelete().catch(() => undefined);
+                  }
+                }}
+              >
+                <Dropdown.Section>
+                  <Dropdown.Item
+                    id="rename-meal"
+                    textValue="Rename"
+                  >
+                    <Label>Rename</Label>
+                  </Dropdown.Item>
+                </Dropdown.Section>
+                <Separator />
+                <Dropdown.Section>
+                  <Dropdown.Item
+                    id="delete-meal"
+                    textValue="Delete"
+                    variant="danger"
+                  >
+                    <div className="flex items-center gap-2">
+                      <TrashIcon className="size-4 shrink-0 text-danger" />
+                      <Label>Delete meal</Label>
+                    </div>
+                  </Dropdown.Item>
+                </Dropdown.Section>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
       </div>
 
       {/* Body — meal items + add button */}

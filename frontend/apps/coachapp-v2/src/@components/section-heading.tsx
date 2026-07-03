@@ -2,6 +2,6 @@
 // form sections — those use Fieldset.Legend). One uppercase-muted token instead
 // of ad-hoc span / Typography / text-[9px] / text-[10px] variants.
 
-export default function SectionHeading({title}: {title: string}) {
-  return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">{title}</h3>;
+export default function SectionHeading({title, className = 'mb-3'}: {title: string; className?: string}) {
+  return <h3 className={`text-xs font-semibold uppercase tracking-wider text-muted ${className}`}>{title}</h3>;
 }

@@ -64,23 +64,27 @@ export default function TrainingPlanDetail() {
 
   return (
     <Page>
-      {/* Nav bar — back + plan actions */}
-      <Page.Header className="py-3 items-center">
-        <Button
-          className="-ml-3"
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Back
-        </Button>
-        <div className="flex gap-2">
-          <PlanAddToClient plan={plan} />
-          <PlanActions
-            onDeleted={() => goBack()}
-            plan={plan}
-          />
+      {/* Nav bar — back + plan actions. Inner wrapper (not Page.Header itself)
+          carries max-w-2xl so it aligns with the content column below —
+          Page.Header's own padding would otherwise eat into that width. */}
+      <Page.Header className="py-3!">
+        <div className="flex w-full max-w-2xl items-center justify-between gap-3">
+          <Button
+            className="-ml-3"
+            onPress={goBack}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+          <div className="flex gap-2">
+            <PlanAddToClient plan={plan} />
+            <PlanActions
+              onDeleted={() => goBack()}
+              plan={plan}
+            />
+          </div>
         </div>
       </Page.Header>
 

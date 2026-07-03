@@ -111,6 +111,21 @@ export function PlanActions({plan, onDeleted}: Props) {
                   <Label>Edit details</Label>
                 </div>
               </Dropdown.Item>
+
+              {plan.status === 'active' ? (
+                <Dropdown.Item
+                  id="archive-plan"
+                  isDisabled={blocking}
+                  textValue="Archive"
+                >
+                  <div className="flex items-start justify-center pt-px">
+                    <ArchiveIcon className="size-4 shrink-0 text-muted" />
+                  </div>
+                  <div className="flex flex-col">
+                    <Label>Archive</Label>
+                  </div>
+                </Dropdown.Item>
+              ) : null}
             </Dropdown.Section>
             <Dropdown.Section>
               <Dropdown.Item
@@ -126,20 +141,6 @@ export function PlanActions({plan, onDeleted}: Props) {
                 </div>
               </Dropdown.Item>
             </Dropdown.Section>
-            {plan.status === 'active' ? (
-              <Dropdown.Item
-                id="archive-plan"
-                isDisabled={blocking}
-                textValue="Archive"
-              >
-                <div className="flex items-start justify-center pt-px">
-                  <ArchiveIcon className="size-4 shrink-0 text-muted" />
-                </div>
-                <div className="flex flex-col">
-                  <Label>Archive</Label>
-                </div>
-              </Dropdown.Item>
-            ) : null}
             <Separator />
             <Dropdown.Section>
               <Dropdown.Item

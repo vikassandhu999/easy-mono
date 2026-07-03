@@ -586,7 +586,10 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       {/* Day label + overridden badge (customize mode) */}
       {mode === 'customize' ? (
         <div className="mb-2 flex items-center gap-2">
-          <SectionHeading title={selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)} />
+          <SectionHeading
+            className="mb-0"
+            title={selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}
+          />
           {selectedDayCustom ? (
             <span className="rounded border border-warning/50 px-1.5 py-0.5 text-[11px] font-medium text-warning">
               Custom
@@ -629,7 +632,10 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
       {/* Week overview grid */}
       <div className="mt-4">
         <div className="mb-1 flex items-center justify-between">
-          <SectionHeading title="Week overview" />
+          <SectionHeading
+            className="mb-0"
+            title="Week overview"
+          />
           <span className="text-[11px] text-muted">read-only · tap to edit a day</span>
         </div>
 

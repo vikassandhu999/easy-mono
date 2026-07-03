@@ -85,7 +85,7 @@ export default function ListProspects() {
                 const count = f.id === 'all' ? undefined : summary?.[f.id as ProspectStatus];
                 return (
                   <Tabs.Tab
-                    className="w-auto! h-9 whitespace-nowrap data-[selected=true]:bg-segment data-[selected=true]:text-segment-foreground data-[selected=true]:shadow-sm"
+                    className="w-auto! h-8 whitespace-nowrap data-[selected=true]:bg-segment data-[selected=true]:text-segment-foreground data-[selected=true]:shadow-sm sm:h-6"
                     id={f.id}
                     key={f.id}
                   >

@@ -95,7 +95,10 @@ export function PlanHeader({plan}: PlanHeaderProps) {
     <div className="w-full py-4">
       {/* Section caption + saving indicator */}
       <div className="flex items-center gap-2">
-        <SectionHeading title="Plan details" />
+        <SectionHeading
+          className="mb-0"
+          title="Plan details"
+        />
         {isSaving && (
           <Spinner
             color="accent"

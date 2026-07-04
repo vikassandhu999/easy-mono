@@ -1,3 +1,4 @@
+import {getInitials} from '@easy/utils';
 import {Avatar, Collection, Description, Label, ListBox, Typography} from '@heroui/react';
 import {ChevronRight, Dumbbell, Globe, type LucideIcon, UserPlus, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
@@ -18,10 +19,6 @@ function greeting(): string {
     return 'Good afternoon';
   }
   return 'Good evening';
-}
-
-function initials(first?: null | string, last?: null | string): string {
-  return `${first?.[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase() || '?';
 }
 
 function StatCell({label, onClick, value}: {label: string; onClick: () => void; value: number}) {
@@ -216,7 +213,9 @@ export default function Dashboard() {
                               textValue={fullName}
                             >
                               <Avatar size="sm">
-                                <Avatar.Fallback>{initials(client.first_name, client.last_name)}</Avatar.Fallback>
+                                <Avatar.Fallback>
+                                  {getInitials(client.first_name, client.last_name) || '?'}
+                                </Avatar.Fallback>
                               </Avatar>
                               <div className="flex min-w-0 flex-col">
                                 <Label className="truncate">{fullName}</Label>

@@ -228,7 +228,6 @@ export default function RecipeForm({
             label="Cooked weight (g)"
             minValue={0}
             name="cooked_weight_g"
-            step={1}
           />
         </Fieldset.Group>
       </Fieldset>

@@ -34,7 +34,7 @@ export type CoachFoodsFilters = Pick<ListFoodsApiArg, 'search'>;
 /** Filter params — offset/limit are handled by the infinite query machinery. */
 export type CoachRecipesFilters = Pick<ListRecipesApiArg, 'search'>;
 
-export const nutritionFoodsApi = api.injectEndpoints({
+const nutritionFoodsApi = api.injectEndpoints({
   endpoints: (build) => ({
     coachFoods: build.infiniteQuery<FoodListResponse, CoachFoodsFilters | void, number>({
       query: ({queryArg, pageParam}) => ({

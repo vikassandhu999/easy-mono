@@ -1,10 +1,10 @@
-export type AuthTokens = {
+type AuthTokens = {
   access_token: string;
   refresh_token: string;
   expires_in: number;
 };
 
-export const AUTH_STORAGE_KEYS = {
+const AUTH_STORAGE_KEYS = {
   accessToken: 'coachapp.accessToken',
   refreshToken: 'coachapp.refreshToken',
   expiresAt: 'coachapp.expiresAt',

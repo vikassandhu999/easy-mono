@@ -7,6 +7,7 @@ import {formatIsoDateOnly} from '@easy/utils';
 import {Chip, Spinner, Typography} from '@heroui/react';
 import {ChevronDown, ChevronUp} from 'lucide-react';
 import {useState} from 'react';
+import SectionHeading from '@/@components/section-heading';
 
 import {
   ASSIGNMENT_STATUS_LABELS,
@@ -161,14 +162,7 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-      <Typography
-        className="mb-3 uppercase tracking-wider"
-        color="muted"
-        type="body-xs"
-        weight="semibold"
-      >
-        Check-ins
-      </Typography>
+      <SectionHeading title="Check-ins" />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-6">

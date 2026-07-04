@@ -25,7 +25,7 @@ export type UpdateProfileRequest = {
   whatsapp_number?: string;
 };
 
-export const profileApi = api.injectEndpoints({
+const profileApi = api.injectEndpoints({
   // Hand-managed endpoints (cache tags, precise types) that share names with
   // the generated client — override makes these authoritative regardless of
   // import order.

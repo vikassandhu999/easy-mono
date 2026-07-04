@@ -34,6 +34,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.assert.ts"]
+  "include": ["src"]
 }

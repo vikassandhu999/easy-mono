@@ -1,3 +1,4 @@
+import {getInitials} from '@easy/utils';
 import {Avatar, Button, Separator, Typography} from '@heroui/react';
 import {ChevronRight} from 'lucide-react';
 import {useCallback} from 'react';
@@ -24,7 +25,7 @@ function ProfileSection({
   profile: CoachProfile;
 }) {
   const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
-  const initials = `${profile.first_name?.[0] ?? ''}${profile.last_name?.[0] ?? ''}`.toUpperCase();
+  const initials = getInitials(profile.first_name, profile.last_name);
 
   const handleNameSave = useCallback(
     async (value: string) => {

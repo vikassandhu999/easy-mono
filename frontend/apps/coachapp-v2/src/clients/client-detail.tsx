@@ -1,4 +1,4 @@
-import {formatIsoDateOnly} from '@easy/utils';
+import {formatIsoDateOnly, getInitials} from '@easy/utils';
 import {Alert, Avatar, Button, Chip, Spinner, TextArea, Typography, toast} from '@heroui/react';
 import {ArrowLeft, ChevronRight, ClipboardList, Dumbbell, MessageCircle, Pencil, Phone, Utensils} from 'lucide-react';
 import {useState} from 'react';
@@ -7,6 +7,7 @@ import {Link, useNavigate, useParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
+import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
@@ -25,19 +26,6 @@ import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_CHIP_COLOR, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
-
-function SectionHeading({title}: {title: string}) {
-  return (
-    <Typography
-      className="mb-3 uppercase tracking-wider"
-      color="muted"
-      type="body-xs"
-      weight="semibold"
-    >
-      {title}
-    </Typography>
-  );
-}
 
 /** Compact assigned-plan window: "Jun 26 – Aug 21, 2026" (drops the repeated
  *  year), "From …" / "Until …" for open-ended, or null when unscheduled. */
@@ -323,7 +311,7 @@ export default function ClientDetail() {
   const statusColor = STATUS_CHIP_COLOR[client.status] ?? 'default';
 
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
-  const initials = `${client.first_name?.[0] ?? ''}${client.last_name?.[0] ?? ''}`.toUpperCase();
+  const initials = getInitials(client.first_name, client.last_name);
 
   return (
     <Page>

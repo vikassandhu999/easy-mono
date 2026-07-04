@@ -63,7 +63,7 @@ export function isFilterableType(type: ProfileFieldType): boolean {
 }
 
 /** Empty = "no answer"; we drop the key rather than storing an empty value. */
-export function isEmptyProfileValue(value: ProfileFieldValue | undefined): boolean {
+function isEmptyProfileValue(value: ProfileFieldValue | undefined): boolean {
   if (value == null || value === '') {
     return true;
   }

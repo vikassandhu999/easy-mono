@@ -6,6 +6,12 @@
  * An assigned day can be expanded (read-only) to show its exercises.
  * Cache: tag:false — we use optimistic updateQueryData after each PUT.
  */
+import {
+  TRAINING_DAY_SHORT_LABELS as DAY_ABBREV,
+  TRAINING_DAY_LABELS as DAY_LABELS,
+  type TrainingWeekday as DayKey,
+  TRAINING_WEEKDAYS as ORDERED_DAYS,
+} from '@easy/utils';
 import {ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
 import {ChevronDown, ChevronRight} from 'lucide-react';
 import {useState} from 'react';
@@ -16,33 +22,6 @@ import {
   useSetTrainingPlanDayScheduleMutation,
 } from '@/api/generated';
 import {useAppDispatch} from '@/store';
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-export const ORDERED_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-export type DayKey = (typeof ORDERED_DAYS)[number];
-
-export const DAY_LABELS: Record<DayKey, string> = {
-  monday: 'Monday',
-  tuesday: 'Tuesday',
-  wednesday: 'Wednesday',
-  thursday: 'Thursday',
-  friday: 'Friday',
-  saturday: 'Saturday',
-  sunday: 'Sunday',
-};
-
-export const DAY_ABBREV: Record<DayKey, string> = {
-  monday: 'Mon',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-  thursday: 'Thu',
-  friday: 'Fri',
-  saturday: 'Sat',
-  sunday: 'Sun',
-};
 
 const REST_KEY = '__rest__';
 

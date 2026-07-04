@@ -53,7 +53,7 @@ export default function ClientStatStrip({clientId}: {clientId: string}) {
 
   const adherence = useMemo(() => {
     const summaries = computeDailyNutritionSummaries(logsData?.data ?? []);
-    const macrosGoal = resolveNutritionMacrosGoal({fallback: null, plans: nutritionData?.data});
+    const macrosGoal = resolveNutritionMacrosGoal({plans: nutritionData?.data});
     const planned = getPlannedDailyCalories(macrosGoal);
     const percents = summaries
       .filter((s) => s.total_entries > 0)

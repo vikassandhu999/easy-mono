@@ -13,9 +13,6 @@ type FormNumberFieldProps<T extends FieldValues> = BaseFormFieldProps<T> & {
   inputProps?: ComponentProps<typeof NumberInput>['inputProps'];
   isRequired?: boolean;
   minValue?: number;
-  // Accepted for call-site compatibility with the old NumberField API; a text
-  // input has no stepper, so it is intentionally unused.
-  step?: number;
   onFieldBlur?: () => void;
   onValueChange?: (value: number | undefined) => void;
 };

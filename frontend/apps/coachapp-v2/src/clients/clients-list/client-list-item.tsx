@@ -1,6 +1,5 @@
-import {formatIsoDateShort, formatTimeAgo} from '@easy/utils';
+import {formatIsoDateShort, formatTimeAgo, getInitials} from '@easy/utils';
 import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
-import {cn} from '@heroui/styles';
 import {MessageCircle} from 'lucide-react';
 
 import type {Client, ClientStatus} from '@/api/clients';
@@ -12,19 +11,9 @@ const STATUS_CONFIG: Record<ClientStatus, {color: 'default' | 'success'; label: 
   pending: {color: 'default', label: 'Pending'},
 };
 
-export default function ClientListItem({
-  className,
-  client,
-  showIndicator = false,
-  showQuickActions = true,
-}: {
-  className?: string;
-  client: Client;
-  showIndicator?: boolean;
-  showQuickActions?: boolean;
-}) {
+export default function ClientListItem({client}: {client: Client}) {
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
-  const initials = `${client.first_name?.[0] ?? ''}${client.last_name?.[0] ?? ''}`.toUpperCase();
+  const initials = getInitials(client.first_name, client.last_name);
 
   let subtitle = client.email ?? client.phone ?? client.status;
   if (client.status === 'active') {
@@ -39,7 +28,7 @@ export default function ClientListItem({
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit px-4 py-3 sm:px-8', className)}
+      className="min-h-fit px-4 py-3 sm:px-8"
       id={client.id}
       textValue={name}
     >
@@ -51,7 +40,7 @@ export default function ClientListItem({
         <Description className="truncate">{subtitle}</Description>
       </div>
       <div className="ms-auto flex shrink-0 items-center gap-2">
-        {showQuickActions && whatsapp ? (
+        {whatsapp ? (
           <a
             aria-label={`Message ${name} on WhatsApp`}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted transition-colors hover:bg-default-soft hover:text-success active:bg-default-soft"
@@ -71,7 +60,6 @@ export default function ClientListItem({
         >
           {status.label}
         </Chip>
-        {showIndicator && <ListBox.ItemIndicator />}
       </div>
     </ListBox.Item>
   );

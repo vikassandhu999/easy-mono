@@ -22,7 +22,7 @@ export type CoachNutritionPlansFilters = Pick<ListNutritionPlansApiArg, 'status'
   search?: string;
 };
 
-export const nutritionPlansListApi = api.injectEndpoints({
+const nutritionPlansListApi = api.injectEndpoints({
   endpoints: (build) => ({
     coachNutritionPlans: build.infiniteQuery<NutritionPlanListResponse, CoachNutritionPlansFilters | void, number>({
       query: ({queryArg, pageParam}) => ({

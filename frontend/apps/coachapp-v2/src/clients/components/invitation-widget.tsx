@@ -3,6 +3,7 @@ import {ClipboardCopy, Mail, MessageCircle, Send, Trash2} from 'lucide-react';
 
 import {type Client, useResendClientInviteMutation, useRevokeInvitationMutation} from '@/api/clients';
 import {getApiErrorMessage} from '@/api/shared';
+import {getWhatsAppUrl} from '@/clients/lib/invite-client';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -20,23 +21,6 @@ function formatInvitationExpiresIn(expiresAt: string): string {
     return 'today';
   }
   return `in ${days} days`;
-}
-
-function buildInvitationWhatsAppUrl({
-  firstName,
-  inviteUrl,
-  phone,
-}: {
-  firstName: null | string;
-  inviteUrl: string;
-  phone: null | string;
-}): string {
-  const message = firstName
-    ? `Hi ${firstName}, I've set up your coaching profile. Tap this link to get started: ${inviteUrl}`
-    : `I've set up your coaching profile. Tap this link to get started: ${inviteUrl}`;
-  const encoded = encodeURIComponent(message);
-  const cleanPhone = phone?.replace(/\D/g, '');
-  return cleanPhone ? `https://wa.me/${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
 }
 
 interface InvitationWidgetProps {
@@ -124,7 +108,7 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
     }
   };
 
-  const whatsappUrl = buildInvitationWhatsAppUrl({phone: client.phone, firstName, inviteUrl});
+  const whatsappUrl = getWhatsAppUrl(client.phone ?? undefined, firstName ?? '', inviteUrl);
   const expiresIn = client.invitation_expires_at ? formatInvitationExpiresIn(client.invitation_expires_at) : null;
   const headingName = firstName ?? 'This client';
 

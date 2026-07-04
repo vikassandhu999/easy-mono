@@ -5,6 +5,7 @@ import {Users} from 'lucide-react';
 import {useCallback, useDeferredValue, useMemo, useState} from 'react';
 
 import {type Client, useListClientsQuery} from '@/api/clients';
+import {getFullName} from '@/clients/lib/invite-client';
 
 type ClientPickerProps = {
   onSelect: (client: Client) => void;
@@ -15,10 +16,6 @@ type ClientPickerProps = {
   isDisabled?: boolean;
   autoFocus?: boolean;
 };
-
-function getFullName(firstName: null | string, lastName: null | string): string {
-  return [firstName, lastName].filter(Boolean).join(' ') || 'No name';
-}
 
 // Shared component because nutrition plans and training plans both assign/copy
 // plans to clients. After selecting a client the selection is cleared and the
@@ -110,7 +107,7 @@ export default function ClientPicker({
               <ListBox.Item
                 id={client.id}
                 key={client.id}
-                textValue={getFullName(client.first_name, client.last_name)}
+                textValue={getFullName(client.first_name, client.last_name) || 'No name'}
               >
                 <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
                   <Users
@@ -119,7 +116,7 @@ export default function ClientPicker({
                   />
                 </div>
                 <div className="flex min-w-0 flex-col">
-                  <Label className="truncate">{getFullName(client.first_name, client.last_name)}</Label>
+                  <Label className="truncate">{getFullName(client.first_name, client.last_name) || 'No name'}</Label>
                   <Description className="truncate">{client.email}</Description>
                 </div>
                 <ListBox.ItemIndicator />

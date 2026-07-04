@@ -22,7 +22,7 @@ export type CoachTrainingPlansFilters = Pick<ListTrainingPlansApiArg, 'status'> 
   search?: string;
 };
 
-export const trainingPlansListApi = api.injectEndpoints({
+const trainingPlansListApi = api.injectEndpoints({
   endpoints: (build) => ({
     coachTrainingPlans: build.infiniteQuery<TrainingPlanListResponse, CoachTrainingPlansFilters | void, number>({
       query: ({queryArg, pageParam}) => ({

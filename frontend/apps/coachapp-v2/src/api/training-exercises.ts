@@ -22,7 +22,7 @@ const PAGE_SIZE = 20;
 /** Filter params — offset/limit are handled by the infinite query machinery. */
 export type CoachTrainingExercisesFilters = Pick<ListCoachExercisesApiArg, 'search' | 'muscleIds' | 'equipmentIds'>;
 
-export const trainingExercisesApi = api.injectEndpoints({
+const trainingExercisesApi = api.injectEndpoints({
   endpoints: (build) => ({
     coachTrainingExercises: build.infiniteQuery<
       TrainingExerciseListResponse,

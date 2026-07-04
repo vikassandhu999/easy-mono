@@ -1,5 +1,4 @@
 export type ApiResponse<T> = {data: T};
-export type ApiListResponse<T> = {data: T[]; count: number};
 
 /**
  * RTK Query `providesTags` for a list query: one tag per row plus a list-level
@@ -21,20 +20,8 @@ export const pageTags = <T extends string>(
     ? [...result.pages.flatMap((page) => page.data.map((entry) => ({type, id: entry.id}))), {type, id: listId}]
     : [{type, id: listId}];
 
-/** Cache-tag id namespacing a `Meal`/`PlanItem` to its nutrition plan. */
-export const getPlanScopedId = (planId: string) => `PLAN_${planId}`;
-
 export function omitUndefined<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
-}
-
-export function pickDefined<T extends Record<string, unknown>, K extends keyof T>(
-  value: T,
-  keys: readonly K[],
-): Partial<Pick<T, K>> {
-  return Object.fromEntries(keys.flatMap((key) => (value[key] === undefined ? [] : [[key, value[key]]]))) as Partial<
-    Pick<T, K>
-  >;
 }
 
 export function toOptionalText(value: string | undefined): string | undefined {
@@ -60,10 +47,6 @@ export type ErrorResponse = {
   error_code: string;
   error_message: string;
   error_detail?: null | Record<string, unknown>;
-};
-
-export type ValidationErrorResponse = {
-  errors: Record<string, string[]>;
 };
 
 /**
@@ -136,12 +119,12 @@ export const getValidationErrors = (error: unknown): null | Record<string, strin
   return null;
 };
 
-export type FormErrorResult = {
+type FormErrorResult = {
   formError: string;
   fieldErrors: null | Record<string, string[]>;
 };
 
-export const handleFormError = (error: unknown, fallbackMessage: string): FormErrorResult => {
+const handleFormError = (error: unknown, fallbackMessage: string): FormErrorResult => {
   const fieldErrors = getValidationErrors(error);
   const errorMessage =
     error && typeof error === 'object' && 'data' in error

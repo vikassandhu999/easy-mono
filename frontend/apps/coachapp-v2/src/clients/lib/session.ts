@@ -124,7 +124,7 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
 export function getAdherenceSummary(
   session: TrainingSession,
   groups: ExerciseGroup[],
-): {added: number; completed: number; replaced: number; skipped: number; totalPlanned: number; totalSets: number} {
+): {added: number; completed: number; skipped: number; totalPlanned: number; totalSets: number} {
   const totalPlanned = getPlannedSnapshot(session)?.exercises?.length ?? 0;
   let completed = 0;
   let skipped = 0;
@@ -142,6 +142,5 @@ export function getAdherenceSummary(
     }
   }
 
-  // `replaced` is no longer derivable from the kebab session contract.
-  return {added, completed, replaced: 0, skipped, totalPlanned, totalSets};
+  return {added, completed, skipped, totalPlanned, totalSets};
 }

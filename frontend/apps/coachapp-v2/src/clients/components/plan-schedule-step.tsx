@@ -26,8 +26,6 @@ interface Props {
   clientName: string;
   /** End date is mandatory (training); nutrition allows open-ended. */
   requireEnd: boolean;
-  initialStart?: string | null;
-  initialEnd?: string | null;
   isSubmitting: boolean;
   errorMessage?: string | null;
   onBack: () => void;
@@ -59,16 +57,14 @@ export default function PlanScheduleStep({
   planMeta,
   clientName,
   requireEnd,
-  initialStart,
-  initialEnd,
   isSubmitting,
   errorMessage,
   onBack,
   onConfirm,
 }: Props) {
-  const defaultStart = initialStart ?? today(getLocalTimeZone()).toString();
+  const defaultStart = today(getLocalTimeZone()).toString();
   const [start, setStart] = useState<string>(defaultStart);
-  const [end, setEnd] = useState<string | null>(initialEnd ?? (requireEnd ? addWeeks(defaultStart, 8) : null));
+  const [end, setEnd] = useState<string | null>(requireEnd ? addWeeks(defaultStart, 8) : null);
 
   const Icon = kind === 'nutrition' ? Utensils : Dumbbell;
   const iconWrap = kind === 'nutrition' ? 'bg-success/10 text-success' : 'bg-accent-soft text-accent';

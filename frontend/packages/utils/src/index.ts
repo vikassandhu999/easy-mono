@@ -220,6 +220,9 @@ export class Result<T> {
   }
 }
 
+export const getInitials = (firstName?: null | string, lastName?: null | string): string =>
+  `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
+
 export * from './date';
 export * from './format-start-end';
 export * from './nutrition';

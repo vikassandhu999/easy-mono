@@ -3,7 +3,6 @@ import {Button, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
 import SectionHeading from '@/@components/section-heading';
 import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/generated';
-import type {Macros} from '@/api/shared';
 import ClientNutritionDetail from '@/clients/components/client-nutrition-detail';
 import {
   ADHERENCE_STYLES,
@@ -27,13 +26,7 @@ const BAR_BG: Record<AdherenceLevel, string> = {
   future: 'bg-default',
 };
 
-export default function ClientNutritionAdherence({
-  clientId,
-  macrosGoal: macrosGoalProp,
-}: {
-  clientId: string;
-  macrosGoal?: Macros | null;
-}) {
+export default function ClientNutritionAdherence({clientId}: {clientId: string}) {
   const {from, to} = useMemo(() => getCurrentWeekRange(), []);
   // No backend summary route — fetch the meal log list and aggregate client-side.
   const {data: logsData, isLoading} = useListCoachMealLogsQuery({clientId, from, to});
@@ -42,10 +35,7 @@ export default function ClientNutritionAdherence({
 
   const summaries = useMemo(() => computeDailyNutritionSummaries(logsData?.data ?? []), [logsData]);
 
-  const macrosGoal = useMemo(
-    () => resolveNutritionMacrosGoal({fallback: macrosGoalProp, plans: plansData?.data}),
-    [macrosGoalProp, plansData],
-  );
+  const macrosGoal = useMemo(() => resolveNutritionMacrosGoal({plans: plansData?.data}), [plansData]);
 
   const plannedCalories = useMemo(() => getPlannedDailyCalories(macrosGoal), [macrosGoal]);
 

@@ -99,7 +99,6 @@ function IngredientFieldsForm({
         minValue={0}
         name="amount"
         onValueChange={(value) => onChange('amount', value ?? '')}
-        step={0.1}
       />
       <FormTextField
         control={form.control}
@@ -116,7 +115,6 @@ function IngredientFieldsForm({
         minValue={0.1}
         name="weight_g"
         onValueChange={(value) => onChange('weight_g', value ?? '')}
-        step={0.1}
       />
     </Form>
   );

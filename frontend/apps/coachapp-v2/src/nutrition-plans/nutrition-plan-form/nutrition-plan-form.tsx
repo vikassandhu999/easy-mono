@@ -98,11 +98,11 @@ type NutritionPlanFormProps = {
 };
 
 const MACRO_FIELDS = [
-  {label: 'Calories', name: 'calories', step: undefined},
-  {label: 'Protein (g)', name: 'protein_g', step: 0.1},
-  {label: 'Carbs (g)', name: 'carbs_g', step: 0.1},
-  {label: 'Fat (g)', name: 'fats_g', step: 0.1},
-  {label: 'Fiber (g)', name: 'fiber_g', step: 0.1},
+  {label: 'Calories', name: 'calories'},
+  {label: 'Protein (g)', name: 'protein_g'},
+  {label: 'Carbs (g)', name: 'carbs_g'},
+  {label: 'Fat (g)', name: 'fats_g'},
+  {label: 'Fiber (g)', name: 'fiber_g'},
 ] as const;
 
 export default function NutritionPlanForm({
@@ -156,7 +156,6 @@ export default function NutritionPlanForm({
                 key={fieldConfig.name}
                 minValue={0}
                 name={fieldConfig.name}
-                step={fieldConfig.step}
               />
             ))}
           </FieldRow>

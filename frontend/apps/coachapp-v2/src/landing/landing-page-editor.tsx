@@ -5,6 +5,7 @@ import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
+import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {
   draftToRequest,
@@ -21,7 +22,6 @@ import {
 } from '@/api/landing-page';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {getApiErrorMessage, getValidationErrors} from '@/api/shared';
-import SectionHeading from '@/settings/components/section-heading';
 
 const MAX_PROGRAMS = 3;
 const MAX_QUESTIONS = 5;
@@ -553,10 +553,7 @@ function ProgramsEditor({programs, onChange}: {programs: ProgramDraft[]; onChang
           className="self-start"
           isDisabled={programs.length >= MAX_PROGRAMS}
           onPress={() =>
-            onChange([
-              ...programs,
-              {key: key(), name: '', audience: '', promise: '', description: '', price_display: ''},
-            ])
+            onChange([...programs, {key: key(), name: '', audience: '', description: '', price_display: ''}])
           }
           size="sm"
           variant="ghost"

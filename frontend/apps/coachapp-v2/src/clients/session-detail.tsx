@@ -241,15 +241,6 @@ export default function SessionDetail() {
 
           {snapshot ? (
             <div className="flex flex-wrap gap-2 pb-4">
-              {adherence.replaced > 0 ? (
-                <Chip
-                  color="default"
-                  size="sm"
-                  variant="soft"
-                >
-                  {adherence.replaced} replaced
-                </Chip>
-              ) : null}
               {adherence.skipped > 0 ? (
                 <Chip
                   color="default"

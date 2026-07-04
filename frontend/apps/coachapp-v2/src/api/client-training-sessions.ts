@@ -24,7 +24,7 @@ const PAGE_SIZE = 20;
 /** Arg for the infinite session list — `clientId` is required; `from`/`to` are optional date filters. */
 export type CoachClientTrainingSessionsArg = Pick<ListCoachClientTrainingSessionsApiArg, 'clientId' | 'from' | 'to'>;
 
-export const clientTrainingSessionsApi = api.injectEndpoints({
+const clientTrainingSessionsApi = api.injectEndpoints({
   endpoints: (build) => ({
     coachClientTrainingSessions: build.infiniteQuery<
       TrainingSessionListResponse,

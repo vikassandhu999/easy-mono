@@ -151,13 +151,13 @@ type FoodFormProps = {
 
 type MacroFieldName = 'calories_per_100g' | 'carbs_g' | 'fats_g' | 'fiber_g' | 'protein_g' | 'sugar_g';
 
-const MACRO_FIELDS: {label: string; name: MacroFieldName; step?: number}[] = [
+const MACRO_FIELDS: {label: string; name: MacroFieldName}[] = [
   {label: 'Calories', name: 'calories_per_100g'},
-  {label: 'Protein (g)', name: 'protein_g', step: 0.1},
-  {label: 'Carbs (g)', name: 'carbs_g', step: 0.1},
-  {label: 'Fat (g)', name: 'fats_g', step: 0.1},
-  {label: 'Fiber (g)', name: 'fiber_g', step: 0.1},
-  {label: 'Sugar (g)', name: 'sugar_g', step: 0.1},
+  {label: 'Protein (g)', name: 'protein_g'},
+  {label: 'Carbs (g)', name: 'carbs_g'},
+  {label: 'Fat (g)', name: 'fats_g'},
+  {label: 'Fiber (g)', name: 'fiber_g'},
+  {label: 'Sugar (g)', name: 'sugar_g'},
 ];
 
 export default function FoodForm({
@@ -261,7 +261,6 @@ export default function FoodForm({
                 label={fieldConfig.label}
                 minValue={0}
                 name={fieldConfig.name}
-                step={fieldConfig.step}
               />
             ))}
           </FieldRow>

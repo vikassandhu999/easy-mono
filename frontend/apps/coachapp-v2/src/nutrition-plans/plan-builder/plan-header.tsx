@@ -230,7 +230,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           minValue={0}
           name="calories"
           onFieldBlur={() => handleBlur('calories')}
-          step={1}
         />
         <FormNumberField
           control={control}
@@ -238,7 +237,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           minValue={0}
           name="protein_g"
           onFieldBlur={() => handleBlur('protein_g')}
-          step={0.1}
         />
         <FormNumberField
           control={control}
@@ -246,7 +244,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           minValue={0}
           name="carbs_g"
           onFieldBlur={() => handleBlur('carbs_g')}
-          step={0.1}
         />
         <FormNumberField
           control={control}
@@ -254,7 +251,6 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           minValue={0}
           name="fats_g"
           onFieldBlur={() => handleBlur('fats_g')}
-          step={0.1}
         />
       </div>
     </div>

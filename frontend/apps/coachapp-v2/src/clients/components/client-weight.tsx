@@ -6,23 +6,11 @@
 import {formatIsoDateShort} from '@easy/utils';
 import {Spinner, Typography} from '@heroui/react';
 
+import SectionHeading from '@/@components/section-heading';
 import {useListClientWeightEntriesQuery, type WeightEntry} from '@/api/generated';
 import WeightChart from '@/clients/components/weight-chart';
 
 type WeightGoal = {unit?: null | string; value?: null | number};
-
-function SectionHeading({title}: {title: string}) {
-  return (
-    <Typography
-      className="mb-3 uppercase tracking-wider"
-      color="muted"
-      type="body-xs"
-      weight="semibold"
-    >
-      {title}
-    </Typography>
-  );
-}
 
 export default function ClientWeight({clientId}: {clientId: string}) {
   const {data, isLoading} = useListClientWeightEntriesQuery({clientId});

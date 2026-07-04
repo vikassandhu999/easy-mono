@@ -12,7 +12,6 @@ export type ProgramDraft = {
   key: string;
   name: string;
   audience: string;
-  promise: string;
   description: string;
   price_display: string;
 };
@@ -67,7 +66,7 @@ export function emptyLandingDraft(): LandingDraft {
       type: q.type,
       options: [],
     })),
-    programs: [{key: key(), name: '', audience: '', promise: '', description: '', price_display: ''}],
+    programs: [{key: key(), name: '', audience: '', description: '', price_display: ''}],
   };
 }
 
@@ -94,7 +93,6 @@ export function landingToDraft(page: LandingPage): LandingDraft {
       key: key(),
       name: p.name,
       audience: p.audience ?? '',
-      promise: p.promise ?? '',
       description: p.description ?? '',
       price_display: p.price_display ?? '',
     })),
@@ -131,7 +129,6 @@ export function draftToRequest(draft: LandingDraft): LandingPageUpsertRequest {
       .map((p) => ({
         name: trimmed(p.name),
         audience: orNull(p.audience),
-        promise: orNull(p.promise),
         description: orNull(p.description),
         price_display: orNull(p.price_display),
       })),

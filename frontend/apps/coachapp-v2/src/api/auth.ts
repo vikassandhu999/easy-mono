@@ -28,7 +28,7 @@ export type AuthTokenResponse = {
   scope: string;
 };
 
-export const authApi = api.injectEndpoints({
+const authApi = api.injectEndpoints({
   endpoints: (build) => ({
     verifyOtp: build.mutation<AuthTokenResponse, VerifyOtpRequest>({
       query: (body) => ({

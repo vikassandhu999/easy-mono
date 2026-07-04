@@ -1,6 +1,6 @@
 # CoachApp v2 Agent Instructions
 
-Use this file as the app contract. If it conflicts with older README text, trust this file and the live source.
+Use this file as the app contract.
 
 ## Stack And Commands
 
@@ -9,15 +9,6 @@ Use this file as the app contract. If it conflicts with older README text, trust
 - Build/type-check: `pnpm -C apps/coachapp-v2 build`.
 - Lint/format: `pnpm -C apps/coachapp-v2 lint`. This runs Biome with `--write`, so expect file changes.
 - There is no app test suite configured. For code changes, use build plus focused manual/browser verification when behavior or UI changed.
-
-## Working Style
-
-- Start from the code in front of you. Read the owning files before making architectural or UI claims.
-- Keep the diff small. Every changed line should trace to the user's request.
-- Prefer boring, direct code over clever abstractions. Do not add flexibility, configuration, or shared helpers for a single use.
-- State assumptions when they matter. Ask only when ambiguity changes the behavior, data contract, or UX.
-- Clean up only the unused code your change created. Mention unrelated dead code; do not remove it.
-- Use comments sparingly, only for non-obvious why. No section-divider comments, JSX labels, or JSDoc for internal props/helpers.
 
 ## Source Layout
 
@@ -37,7 +28,6 @@ Use this file as the app contract. If it conflicts with older README text, trust
 ## Names, Types, And Imports
 
 - Screen and component files use kebab-case: `list-clients.tsx`, `client-card.tsx`.
-- API endpoint files use camelCase for existing compound domains: `nutritionPlans.ts`, `trainingPlans.ts`.
 - Use direct `@/...` imports. Do not add new barrel files or re-export surfaces.
 - Do not duplicate existing shapes. Derive types from API/domain types with `Pick`, `Omit`, `Partial`, indexed access, or local zod inference when the meaning is the same.
 - Component files should stay shallow: imports, props type, component, and form schema/type/hook if the file owns a form. If helpers or constants grow, move them to the owning `lib`, `domain`, or mapper file.
@@ -45,7 +35,8 @@ Use this file as the app contract. If it conflicts with older README text, trust
 ## Data And API
 
 - Use RTK Query hooks for server data. Do not fetch in `useEffect`.
-- Add endpoints to the matching `src/api/{domain}.ts`; create a new file only for a new API domain.
+- The API layer is generated: `src/api/generated.ts` comes from the backend OpenAPI spec via `just gen-api` and is always overwritten — never hand-edit it. Regeneration and migration rules live in `frontend/AGENTS.md` § API Clients.
+- Before writing an endpoint, check `@/api/generated` — it probably already exists. Hand-written `src/api/*.ts` files only enhance or wrap generated endpoints (tags, normalization, narrowed types).
 - Keep API response normalization in the owning `src/api/{domain}.ts` file. Keep form/request conversion beside the owning form or feature.
 - Use `.unwrap()` for mutations that need navigation or form error handling.
 - Surface API errors through existing helpers: `applyFormErrors` or `getApiErrorMessage` from `@/api/shared`.
@@ -71,7 +62,7 @@ Use this file as the app contract. If it conflicts with older README text, trust
   await updateFoo({id, body}).unwrap();
   goBack();
   ```
-- Header Back and form Cancel should use the same destination semantics for the screen. Current create screens may use either `goBack(fallback)` or a normal list-route navigation; preserve the local pattern unless changing it is the task.
+- Header Back and form Cancel both use `goBack(fallback)` with the same fallback — never a hardcoded list-route navigation.
 - Exceptions are rare: in-place confirmations, live-preview editors, and multi-step flows where the next step must remain reachable through browser Back.
 
 ## Forms
@@ -110,8 +101,6 @@ Use this file as the app contract. If it conflicts with older README text, trust
 
 ## Verification
 
-- Docs-only changes: proofread the rendered Markdown/diff; no build required.
 - TypeScript or data-flow changes: run `pnpm -C apps/coachapp-v2 build`.
 - UI changes: run the app and verify the touched flow at 375px and desktop width.
 - If you run `pnpm -C apps/coachapp-v2 lint`, review its writes before finalizing.
-- Never claim something passes unless the command or manual check was run in this checkout.

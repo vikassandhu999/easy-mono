@@ -29,9 +29,14 @@ setup:
     cd frontend && pnpm install
     cd backend && mix deps.get
 
-# lint frontend
+# lint frontend + recurring-mistakes greps
 lint:
     cd frontend && pnpm lint
+    ./scripts/check-rm.sh
+
+# mechanical checks from docs/agents/recurring-mistakes.md
+check-rm:
+    ./scripts/check-rm.sh
 
 # build all frontend apps
 build:

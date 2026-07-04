@@ -7,11 +7,18 @@ violation, the job isn't done when the instance is fixed — add (or update) the
 **How to use**
 - Before finishing any change, skim the entries for the area you touched.
 - When you find a NEW recurring mistake, add an entry: the rule, why, and **how it's
-  enforced**. Prefer a mechanical check (credo / biome / a test) — that's the only thing
-  that *guarantees* it won't recur. Doc-only entries are the weakest rung; promote them to
-  a check when feasible.
+  enforced**. Prefer a mechanical check (credo / biome / `scripts/check-rm.sh` / a test) —
+  that's the only thing that *guarantees* it won't recur.
 - One-off incomplete features (a screen not built yet) do NOT belong here — only mistakes
   that an agent could plausibly make *again*.
+
+**Lifecycle** — this file is bounded, not append-only:
+- **Graduate**: once an entry gets a mechanical check, shrink it to one line naming the
+  check. The check is the rule; the prose is redundant.
+- **Promote**: if a rule turns out to be standing contract ("how we build X"), move it
+  into the owning `AGENTS.md` and leave a one-line pointer here. The ledger holds
+  mistake-shaped residue, not the contract.
+- **Retire**: delete entries whose subject no longer exists. Git remembers.
 
 Severity of the rule isn't the point; recurrence is.
 
@@ -38,11 +45,7 @@ entity with `OpenApiSpex.TestAssertions.assert_schema(entity, "SchemaTitle",
 EasyWeb.ApiSpec.spec())` (see `schedule_controller_test.exs`) — add one when touching a
 view that lacks it. Review alone is not enough.
 
-### RM-003 — Keep function nesting ≤ 2 (credo)
-`Repo.transaction(fn -> case ... end)` and nested `with`/`if` trip credo's
-nesting-depth check. Extract the inner branch into a named private helper. Hit in
-`upsert_landing_page`, `enroll_prospect`, `Coach.update_profile`.
-**Enforced by:** `mix credo` (run it on touched files — it's in `mix precommit`).
+### RM-003 — Keep function nesting ≤ 2. **Enforced by:** `mix credo` (in `mix precommit`). Extract inner branches into named private helpers.
 
 ### RM-004 — OpenApiSpex spec is cached in the running dev server
 Editing a schema while `phx.server` runs returns 422 "Unexpected field" on the new field —
@@ -85,22 +88,15 @@ final OpenAPI route list for both coach and client scopes, then update generated
 **Enforced by:** generated OpenAPI path diff / `just gen-api` plus route tests for both roles.
 
 ### RM-010 — Public context functions are Ctx-first
-Backend plans and implementations must follow the convention used by modules like
-`Easy.Exercises`: public context functions take `%Easy.Ctx{} = ctx` as their first argument,
-not separate `business_id` / `user_id` arguments threaded through every call. The session had
-to correct plans after they proposed separate identity params. **Enforced by:** backend
-conventions review (`backend/AGENTS.md`) and `mix precommit` after backend changes.
+Public context functions take `%Easy.Ctx{} = ctx` as their first argument (see
+`Easy.Exercises`), not separate `business_id` / `user_id` arguments threaded through every
+call. **Enforced by:** backend conventions review (`backend/AGENTS.md`) and `mix precommit`.
 
 ---
 
 ## Frontend
 
-### RM-101 — No dead HeroUI v2 Tailwind tokens
-`primary` / `divider` / `content1..4` / `foreground-NNN` are **dead no-ops** under
-`@heroui/styles@3.x`. Use only `accent` / `border` / `surface` / `surface-hover` /
-`muted` / `success` / `warning` / `danger` / `background`. **Enforced by:** grep both apps'
-`src` for `(text|bg|border|divide)-(primary|divider|content[1-4]|foreground-[0-9]{2,3})`
-before finishing — must be 0.
+### RM-101 — No dead HeroUI v2 Tailwind tokens (`primary`/`divider`/`content1..4`/`foreground-NNN`). **Enforced by:** `just check-rm`.
 
 ### RM-102 — Use the ROUTES constant, never a hardcoded path string
 `navigate('/settings/client-profile-fields')` → `navigate(ROUTES.SETTINGS_PROFILE_FIELDS)`.
@@ -114,16 +110,9 @@ delete an "unreachable" screen before checking it isn't the only surface for som
 the plan-edit screens were the only place a plan's `description` could be edited.
 **Enforced by:** review + this doc.
 
-### RM-104 — Stable React keys for editable / reorderable lists
-Never `key={index}` for a list whose rows can be added/removed/reordered — removing a middle
-row misattributes inputs. Carry an ephemeral `key: crypto.randomUUID()` on each draft row,
-separate from any persisted id (see the proof-points / fit-points editors).
-**Enforced by:** biome `lint/suspicious/noArrayIndexKey`.
+### RM-104 — Stable React keys for editable/reorderable lists (never `key={index}`; ephemeral `crypto.randomUUID()` on draft rows). **Enforced by:** biome `lint/suspicious/noArrayIndexKey`.
 
-### RM-105 — Run biome + tsc before finishing FE work
-`pnpm exec biome check --write <files>` and `pnpm --filter <app> exec tsc --noEmit`.
-The trailing biome step in `just gen-api` errors on the generated file by design — that's
-expected, not a regression. **Enforced by:** biome + tsc.
+### RM-105 — Run biome + tsc before finishing FE work. The trailing biome error in `just gen-api` on the generated file is expected. **Enforced by:** biome + tsc.
 
 ### RM-106 — Never use `as unknown` to read fields absent from the generated contract
 If generated types do not expose a field, the runtime response probably does not either. The
@@ -131,7 +120,9 @@ training builder read `exercise.tracking_type` via `(exercise as unknown as ...)
 embedded exercise schema/view omitted `tracking_type`, so the UI always defaulted to
 weight+reps and broke duration/distance exercises. Fix the backend JSON view + OpenApiSpex
 schema, regenerate clients, then consume the typed field. **Enforced by:** avoid contract-bypass
-casts in app code; grep for `as unknown as` on API response objects during review.
+casts in app code; grep for `as unknown as` on API response objects during review. (Known
+remaining instances: `food-detail.tsx` tags, `amount-sheet.tsx` food/recipe — fix via contract,
+then this can become a `check-rm` rule.)
 
 ### RM-107 — Field-driving logic must have one shared source of truth
 The set row guessed displayed fields by null-checking values while the set sheet used
@@ -145,11 +136,7 @@ before autosave. Letting an invalid optimistic cache write roll back with a gene
 looks broken and hides the real constraint. **Enforced by:** mirror OpenApiSpex min/max in form
 input attributes and save handlers for edited numeric fields.
 
-### RM-109 — No literal brand colors in UI classes/styles
-Hardcoded values like `#6c8cff` bypass the theme and drift from HeroUI tokens. Use semantic
-tokens (`border-accent`, `focus:border-accent`, etc.) instead. Hit in builder accent-rule
-borders and focus styles. **Enforced by:** grep app `src` for `#[0-9a-fA-F]{3,8}` before
-finishing UI work; any remaining literals need a deliberate exception.
+### RM-109 — No literal brand colors in UI classes/styles (semantic tokens only). **Enforced by:** `just check-rm` (coachapp; widen to clientapp once its hex debt is cleaned).
 
 ### RM-110 — Verify HeroUI component semantics against app usage before "fixing" them
 Audit agents flagged `<Label>` / `<Description>` in menu/list item text as suspicious, but the
@@ -160,60 +147,26 @@ check before changing shared UI primitives.
 
 ### RM-111 — Spec audits must quote exact spec text, never inferred requirements
 One training audit escalated a judgment call by inventing a sentence that did not exist in the
-spec ("builder must handle not-yet-persisted → persisted plan id transition"). Findings must
-cite concrete spec lines and distinguish literal requirements from interpretations. **Enforced
-by:** adversarial verification: grep/read the cited spec text before filing or fixing a drift
-finding.
+spec. Findings must cite concrete spec lines and distinguish literal requirements from
+interpretations. **Enforced by:** adversarial verification: grep/read the cited spec text
+before filing or fixing a drift finding.
 
-### RM-112 — Pickers must use the app's responsive overlay pattern
-Do not ship desktop-only or centered-modal pickers for coachapp assignment/search flows. The
-client-detail redesign first built assignment as a centered modal and weak mobile pass; it had
-to be rebuilt to match the spec and app pattern: anchored `Popover` under the trigger on
-desktop, bottom `KeyboardSheet` on mobile, with surface-agnostic content shared between both.
-Mirror `plan-assign-control.tsx` / `food-picker-control.tsx`: one content component, one
-responsive wrapper selected by pointer/width. **Enforced by:** for any new picker, verify both
-desktop and mobile surfaces exist, and test at a narrow viewport before finishing.
+### RM-112 — Pickers use the responsive overlay pattern. **Promoted to** `coachapp-v2/AGENTS.md` §Canonical Components.
 
-### RM-113 — Preserve standard coachapp page alignment and section structure
-Do not let redesigned detail pages float centered, stretch oddly, or use ad-hoc separators that
-break the app rhythm. Client-detail was initially centered (`mx-auto`), under-used desktop
-space, and had floaty section dividers; it was corrected to the standard coachapp pattern:
-left-aligned max-width content, responsive grid, uppercase section headings, and carded
-sections that stack cleanly on mobile. Before shipping a page redesign, compare against nearby
-coachapp list/detail/create/edit screens for header placement, width cap, section casing,
-action spacing, and mobile stacking. **Enforced by:** visual check at desktop + mobile widths
-and code review for `mx-auto` / full-width stretches / leading separators in page shells.
+### RM-113 — Standard coachapp page alignment/section structure. **Promoted to** `coachapp-v2/AGENTS.md` §Page Anatomy.
 
 ### RM-114 — Do not let legacy components drive builder architecture
 Existing code is app-fit reference only, not proof of quality. The plan builders needed an
 explicit correction: build to the validated spec/mockups and clean architecture, not by copying
-legacy builder structure. Reuse only primitives that are actually good (`KeyboardSheet`, shared
-accordion patterns, generated hooks); otherwise rebuild the component properly. **Enforced by:**
-implementation prompts/reviews must include a "legacy-mimicry" check against the spec.
+legacy builder structure. Reuse only primitives that are actually good; otherwise rebuild the
+component properly. **Enforced by:** implementation prompts/reviews must include a
+"legacy-mimicry" check against the spec.
 
-### RM-115 — Coachapp headers and form action spacing follow the reference screen
-Exercise create/edit/detail screens established the canonical simple page header: icon back
-arrow in the header/title group, no labeled back button in `Page.Toolbar`. Food, recipe,
-nutrition-plan, training-plan, and client edit screens drifted and had to be corrected. Their
-form action bars also had tighter spacing until they copied the exercise form's
-`<Fieldset.Actions className="mt-4 flex gap-4">`. **Enforced by:** when adding/editing a
-coachapp create/edit/detail page, compare header + bottom actions against the exercise page.
+### RM-115 — Headers/form actions follow the exercise reference screen. **Promoted to** `coachapp-v2/AGENTS.md` §Page Anatomy.
 
-### RM-116 — Prefer idiomatic HeroUI v3 primitives over raw HTML controls
-Recipe/ingredient redesign initially used raw `<button>`, `<p>`, and `<span>` controls where
-HeroUI v3 had the right primitives (`Disclosure`, `ToggleButtonGroup`, `ListBox`, `Chip`,
-`NumberField`, `DateField`). Raw controls caused typography, spacing, and interaction drift.
-Use raw HTML only for deliberate low-level layout, not for controls HeroUI already provides.
-**Enforced by:** before custom controls, check installed HeroUI exports/types and nearby app
-usage; biome/tsc after converting.
+### RM-116 — HeroUI v3 primitives over raw HTML controls. **Promoted to** `coachapp-v2/AGENTS.md` §Page Anatomy.
 
-### RM-117 — Do not ship permanent edit forms as the primary detail experience
-The coaching profile module drifted into a stack of bordered edit sections, leaving empty
-desktop space and reading as a form dump. The app pattern is detail view + edit flow (recipe,
-client, exercise, etc.), not every module as always-editable boxes. When building a module,
-decide whether the primary screen is a designed read/detail surface with explicit edit affordances.
-**Enforced by:** design review asks "is this a detail surface or just a permanent form?" before
-shipping new module screens.
+### RM-117 — Detail surface, not permanent edit forms. **Promoted to** `coachapp-v2/AGENTS.md` §Page Anatomy.
 
 ### RM-118 — Mutation and delete flows must invalidate/refetch every visible list/detail
 Coachapp screen validation found an app-wide delete-staleness bug across five deletable
@@ -223,81 +176,26 @@ visible consumer. **Enforced by:** after create/update/delete, test list, detail
 states in the browser; review generated hook tags or manual invalidation.
 
 ### RM-119 — Do not finish blind visual redesigns without live verification
-Several redesigns were implemented while the browser bridge was unavailable, then needed user
-screenshots and follow-up fixes (mobile hero wrapping, cramped SetSheet header, ingredient row
-spacing, nutrition adherence overflow). For UI/layout changes, typecheck/build is not enough:
-verify live at desktop and mobile widths, or explicitly mark the visual path unverified and do
-not call it done. **Enforced by:** final UI report must say which viewports were visually checked
-and which states remain unverified.
+For UI/layout changes, typecheck/build is not enough: verify live at desktop and mobile widths,
+or explicitly mark the visual path unverified and do not call it done. **Enforced by:** final UI
+report must say which viewports were visually checked and which states remain unverified.
 
 ### RM-120 — Shared form wrappers must not mount uncontrolled
 Optional form values can start as `undefined`, but shared HeroUI wrappers must still pass a
 controlled value to the underlying input. Coachapp macro fields passed `field.value` directly
-through `FormNumberField`, so empty optional numbers mounted uncontrolled and filling them
-emitted uncontrolled-to-controlled warnings across food, recipe, and nutrition forms. Normalize
-empty values in the shared wrapper, not each caller. **Enforced by:** browser console check on
-empty optional form fields after build; add a component test when coachapp has a frontend test
-runner.
+through `FormNumberField`, so empty optional numbers mounted uncontrolled. Normalize empty
+values in the shared wrapper, not each caller. **Enforced by:** browser console check on empty
+optional form fields after build; add a component test when coachapp has a frontend test runner.
 
-### RM-121 — Don't use react-aria NumberField for text-entry numbers; use a plain decimal input
-HeroUI/react-aria `NumberField` is controlled by the *numeric* value and re-pushes a reformatted
-string on every keystroke. On mobile soft keyboards that races with the virtual keyboard and
-drops characters after ~2 digits, so coaches couldn't type full macro/serving values (looked fine
-on desktop because a physical keyboard wins the race). Use a plain `<input inputMode="decimal">`
-that holds its own string and parses up to a number — the shared `@/@components/number-input`
-`NumberInput` primitive (and `FormNumberField`, which delegates to it). Do NOT reach back for
-`NumberField` when adding a numeric field. **Enforced by:** `NumberInput` is the one numeric-entry
-component; grep for new `<NumberField` in coachapp should come back empty.
+### RM-121 — No react-aria `NumberField` for numeric entry (races mobile soft keyboards; use `NumberInput`). **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
 
-### RM-122 — Build coachapp forms from the shared form primitives, not ad-hoc markup
-Coachapp forms drifted into 42 "(optional)" labels, label-restating descriptions, copy-pasted
-"mt-4 flex gap-4" submit rows, and ArrowLeft back buttons at 3 sizes. There is now ONE canonical
-pattern via shared components: `FormLayout` (width + section gap), `FormActions`, `FieldRow`,
-`FormTextField`/`FormNumberField`/`FormSelectField`/`FormTextAreaField`, `BackButton`, `ErrorState`,
-`SectionHeading` (all under `@/@components`). Rules: labels sentence case, units as `(g)`, NEVER
-`(optional)`/`(required)` in a label (optional is implicit; required = `isRequired` asterisk on the
-wrapper); descriptions only when they add real info; sections are `Fieldset` + `Legend`; header
-parity (same `BackButton` + `Title`) across loading/error/loaded. Don't hand-roll a `<Form>`,
-submit row, or header back button. **Enforced by:** grep must stay empty — `rg '\(optional\)|\(required\)' -g '*.tsx' apps/coachapp-v2/src` (labels) and no new `<Form ` / raw `ArrowLeft` back buttons in form/detail headers; visual check at mobile + desktop widths.
+### RM-122 — Forms from shared primitives; no `(optional)`/`(required)` labels. **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
 
-### RM-123 — Browse lists use BrowseListBox; don't hand-roll list loading/error/empty
-`prospects/list-prospects.tsx` re-implemented a raw `ListBox` + `Collection` with its own `isLoading`
-Spinner, `isError` block, and `renderEmptyState`, drifting from the six other browse lists (and missing
-the skeleton loading they get for free). There is ONE list shell: `BrowseListBox`
-(`@/@components/browse-list-box`) — it bakes in skeleton loading (`ListSkeleton`), the error+Retry
-treatment, the empty state, and infinite load-more. For any browse/search list render
-`<BrowseListBox items renderItem emptyState isLoading isError onRetry fetchNextPage skeletonAvatar? />`;
-for a flat (non-paginated) query pass `fetchNextPage={() => undefined}`. Page-level fetch errors use the
-shared `ErrorState` card — never a hand-inlined `border-danger/20 bg-danger/5` danger box (those are a
-copy of `ErrorState`'s markup). Sub-panel/inline load errors say "Couldn't load X", not "Failed to load X".
-**Enforced by:** no new `renderEmptyState=` for a browse list outside `browse-list-box.tsx`; new
-page-level danger boxes go through `ErrorState`; `rg 'Failed to load' -g '*.tsx' apps/coachapp-v2/src`
-stays empty.
+### RM-123 — Browse lists use `BrowseListBox`; errors via `ErrorState` / "Couldn't load X". **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
 
-### RM-124 — Don't stack an inline `transform: translateX` with a Tailwind `-translate-x-*` (v4 uses the `translate` property)
-Tailwind v4 emits translate utilities as the CSS `translate` property, NOT `transform`. So a
-`-translate-x-1/2` class and an inline `style={{transform: 'translateX(-50%)'}}` on the same element
-BOTH apply and STACK — it shifts a full -100% of its width instead of -50%. In `keyboard-sheet.tsx`
-this centered every builder sheet (amount/set/food+exercise picker/search picker) at `left:-62px`,
-clipping it off the left edge at ≥768px (i.e. every coach on a tablet/laptop; phones <768 were fine
-because the utility doesn't apply there). Verified via `getComputedStyle`: `translate: -50%` AND
-`transform: matrix(...-256...)` simultaneously. Rule: pick ONE mechanism per axis. If a Tailwind
-translate utility centers an element, the inline `transform` must not touch that axis — animate the
-other axis only (here: `translateY` for the slide; X-centering left to `md:-translate-x-1/2`).
-**Enforced by:** no element carries both a `-translate-x` utility and an inline `transform`/`translate`
-on the same axis; `rg 'translateX\(-?50%\)|translate\(-50%' -g '*.tsx' apps/coachapp-v2/src` stays empty.
+### RM-124 — Never stack inline `translateX` with a Tailwind `-translate-x-*` (v4 emits the `translate` property, so both apply and the offsets ADD — one mechanism per axis). **Enforced by:** `just check-rm`.
 
-### RM-125 — Loading and pending states must not change layout
-Two recurring shift bugs: (a) pending buttons swapped children (`{isSubmitting ? <Spinner/>+label2 : label1}`)
-so the button resized mid-submit on every form; (b) detail/settings pages showed a CENTERED full-page
-Spinner that jumped to the real top-aligned layout when data landed. Rules: pending buttons keep a
-constant-width child — overlay the spinner on an `invisible` copy of the same label (see
-`form-actions.tsx`), never swap label text for a different-length one; first-load of a page/list renders
-a layout-approximating skeleton, not a centered spinner — `ListSkeleton` for browse lists (baked into
-`BrowseListBox`), `PageSkeleton` for detail/settings pages (keep the real `Page.Header` for parity).
-**Enforced by:** `rg 'justify-center py-20' -g '*.tsx' apps/coachapp-v2/src` stays empty (the old
-centered-spinner idiom); no ternary inside a `<Button>` that swaps between two different label strings
-on a pending flag.
+### RM-125 — Loading/pending states must not change layout (skeletons not centered spinners; constant-width pending buttons). **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
 
 ---
 
@@ -318,13 +216,12 @@ non-local origin with the var unset. Keep both when adding a new deployable FE.
 When a framework, contract file, or command is replaced (Ash → Ecto, `docs/api_contract.yaml`
 → OpenApiSpex schemas), grep every `*.md` for the old name and fix each hit in the same
 change. Instance: the 2026-07-04 docs audit found "Ash" and `api_contract.yaml` still
-described as current in `README.md`, `AGENTS.md`, `backend/README.md`, and
-`docs/onboarding.md` weeks after the switch — agents reading those docs inherit the stale
-picture. Run `grep -rn --include='*.md' <old-name> .` before finishing any stack/contract
-rename.
-**Enforced by:** convention (grep step above); no mechanical check yet.
+described as current in four docs weeks after the switch. Run
+`grep -rn --include='*.md' <old-name> .` before finishing any stack/contract rename.
+**Enforced by:** convention; the `/repo-cleanup` skill greps known offenders each run.
 
 ---
 
 _Add new entries above their section's divider. Keep each to: the rule, the instance, and
-how it's enforced._
+how it's enforced. Apply the lifecycle: graduate to `scripts/check-rm.sh`, promote to the
+owning `AGENTS.md`, retire when the subject dies._

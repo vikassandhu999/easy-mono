@@ -80,6 +80,24 @@ Use this file as the app contract.
   ```
 - Prefer existing form-field wrappers in `src/@components/form-fields/` for common fields.
 
+## Canonical Components
+
+One shared primitive per job — never hand-roll these (graduated from the recurring-mistakes ledger; the greppable ones are enforced by `just check-rm`):
+
+- **Numeric entry**: `NumberInput` from `@/@components/number-input` (or `FormNumberField`). Never react-aria `NumberField` — it races mobile soft keyboards and drops digits.
+- **Forms**: `FormLayout`, `FormActions`, `FieldRow`, `FormTextField`/`FormNumberField`/`FormSelectField`/`FormTextAreaField`, `BackButton`, `SectionHeading` (all under `@/@components`). Labels sentence case, units as `(g)`, never `(optional)`/`(required)` in a label — optional is implicit, required = `isRequired`. Sections are `Fieldset` + `Legend`. Header parity (`BackButton` + `Title`) across loading/error/loaded.
+- **Browse/search lists**: `BrowseListBox` (`@/@components/browse-list-box`) — bakes in skeleton loading, error+Retry, empty state, infinite load-more. Flat queries pass `fetchNextPage={() => undefined}`.
+- **Errors**: page-level fetch errors use the shared `ErrorState` card; inline load errors say "Couldn't load X", never "Failed to load X".
+- **Loading**: first-load renders a layout-approximating skeleton (`ListSkeleton` via BrowseListBox, `PageSkeleton` for detail/settings with the real `Page.Header`), never a centered spinner. Pending buttons keep constant width — overlay the spinner on an `invisible` copy of the label (see `form-actions.tsx`), never swap label text.
+- **Pickers**: one content component, one responsive wrapper — anchored `Popover` on desktop, `KeyboardSheet` on mobile (mirror `plan-assign-control.tsx` / `food-picker-control.tsx`). Never desktop-only or centered-modal pickers.
+
+## Page Anatomy
+
+- The exercise create/edit/detail screens are the reference: icon back arrow in the header/title group (no labeled back button in `Page.Toolbar`), form actions as `<Fieldset.Actions className="mt-4 flex gap-4">`. Compare any new create/edit/detail page against them.
+- Standard page shape: left-aligned max-width content, responsive grid, uppercase section headings, carded sections that stack on mobile. No `mx-auto`-centered detail pages, full-width stretches, or floaty separators.
+- A module's primary screen is a designed detail/read surface with explicit edit affordances — not a stack of permanently-editable form sections.
+- Prefer HeroUI v3 primitives (`Disclosure`, `ToggleButtonGroup`, `ListBox`, `Chip`, `DateField`, …) over raw HTML controls; raw HTML only for deliberate low-level layout.
+
 ## UI Rules
 
 - Build mobile-first. The app must work at 375px and at 1280px.

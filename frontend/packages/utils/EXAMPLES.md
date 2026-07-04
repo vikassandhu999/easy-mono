@@ -113,7 +113,7 @@ if (result.isError) {
 
 ```typescript
 import { useState } from 'react';
-import { getApiErrorMessage, isAuthError, ApiErrorCode } from '@easy/utils';
+import { AppError } from '@easy/utils';
 
 function LoginForm() {
   const [error, setError] = useState<string | null>(null);
@@ -123,12 +123,11 @@ function LoginForm() {
       const response = await api.post('/api/auth/login', { email, password });
       // Handle success
     } catch (err) {
-      // Get user-friendly error message
-      const message = getApiErrorMessage(err);
-      setError(message);
+      const appError = AppError.fromAxiosError(err);
+      setError(appError.message);
       
       // Handle specific error types
-      if (isAuthError(err)) {
+      if (appError.isAuthError()) {
         // Clear stored tokens
         localStorage.removeItem('token');
       }
@@ -147,7 +146,7 @@ function LoginForm() {
 ## Example 6: RTK Query Integration
 
 ```typescript
-import { getApiErrorMessage, getApiErrorCode, ApiErrorCode } from '@easy/utils';
+import { AppError } from '@easy/utils';
 import { createApi } from '@reduxjs/toolkit/query/react';
 
 export const authApi = createApi({
@@ -161,9 +160,10 @@ export const authApi = createApi({
         data: credentials,
       }),
       transformErrorResponse: (error) => {
+        const appError = AppError.fromAxiosError(error);
         return {
-          message: getApiErrorMessage(error),
-          code: getApiErrorCode(error),
+          message: appError.message,
+          code: appError.code,
         };
       },
     }),

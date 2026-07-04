@@ -312,5 +312,19 @@ non-local origin with the var unset. Keep both when adding a new deployable FE.
 
 ---
 
+## Docs
+
+### RM-301 — Retiring an architecture-level artifact means grepping the docs for it
+When a framework, contract file, or command is replaced (Ash → Ecto, `docs/api_contract.yaml`
+→ OpenApiSpex schemas), grep every `*.md` for the old name and fix each hit in the same
+change. Instance: the 2026-07-04 docs audit found "Ash" and `api_contract.yaml` still
+described as current in `README.md`, `AGENTS.md`, `backend/README.md`, and
+`docs/onboarding.md` weeks after the switch — agents reading those docs inherit the stale
+picture. Run `grep -rn --include='*.md' <old-name> .` before finishing any stack/contract
+rename.
+**Enforced by:** convention (grep step above); no mechanical check yet.
+
+---
+
 _Add new entries above their section's divider. Keep each to: the rule, the instance, and
 how it's enforced._

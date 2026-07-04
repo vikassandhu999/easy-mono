@@ -603,8 +603,6 @@ Keep Swagger UI usable. If it cannot explain and try the API, fix the spec.
 
 The generated OpenAPI spec is the source of truth.
 
-Do not update `docs/api_contract.yaml` or `docs/api_contract.yml` as part of normal endpoint work. Treat those files as legacy/static artifacts unless explicitly asked to edit them.
-
 When endpoint behavior changes, update OpenApiSpex operations, request schemas, response schemas, and validation so generated OpenAPI and Swagger UI match Phoenix behavior.
 
 ## Testing

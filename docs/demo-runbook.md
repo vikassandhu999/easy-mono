@@ -10,7 +10,7 @@ Order matters: **Phase 1 first** — email is the gate and the Resend DNS is the
 ## Phase 1 — Backend live + email (the gate) 🔴
 
 ```bash
-cd backend && just deploy        # builds + runs release_command = bin/migrate
+just deploy                      # from repo root; builds + runs release_command = bin/migrate
                                  # → migrations + priv/repo/seeds.exs (system library) run automatically
 fly secrets list                 # confirm the required secrets below exist
 curl -fsS https://easy-backend.fly.dev/api/health && echo OK

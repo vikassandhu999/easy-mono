@@ -165,7 +165,7 @@ if (error.isRateLimitError()) {
 ## Usage in React Components
 
 ```typescript
-import { getApiErrorMessage, isAuthError, ApiErrorCode } from '@easy/utils';
+import { AppError } from '@easy/utils';
 
 function MyComponent() {
   const [error, setError] = useState<unknown>(null);
@@ -176,12 +176,11 @@ function MyComponent() {
     } catch (err) {
       setError(err);
       
-      // Get user-friendly message
-      const message = getApiErrorMessage(err);
-      toast.error(message);
+      const appError = AppError.fromAxiosError(err);
+      toast.error(appError.message);
       
       // Handle specific errors
-      if (isAuthError(err)) {
+      if (appError.isAuthError()) {
         navigate('/login');
       }
     }

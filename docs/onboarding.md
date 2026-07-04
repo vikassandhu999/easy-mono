@@ -15,7 +15,7 @@ Coaches author; clients execute and log. A client never creates a plan.
 
 ## Where the code lives
 
-* `backend/` is an Elixir/Phoenix API built on Ash. Domain logic lives in `backend/lib/easy`, grouped by domain (`identity`, `orgs`, `clients`, `training`, `nutrition`, `fitness`). The web layer is `backend/lib/easy_web`.
+* `backend/` is an Elixir/Phoenix API built on Ecto, organized around a `Ctx`-first context pattern (see `backend/AGENTS.md`). Domain logic lives in `backend/lib/easy`, grouped by domain (`identity`, `orgs`, `clients`, `training`, `nutrition`, `fitness`). The web layer is `backend/lib/easy_web`.
 * `frontend/apps/coachapp-v2` is the coach web app (React 19, Vite, Redux Toolkit + RTK Query, HeroUI, Tailwind).
 * `frontend/apps/clientapp-v2` is the client app, built as a PWA and wrapped with Capacitor for iOS and Android.
 * `frontend/apps/website` is the Next.js marketing site.

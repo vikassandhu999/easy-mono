@@ -118,17 +118,17 @@ error.getRetryAfter()                      // Get retry seconds
 ## Integration with React
 
 ```typescript
-import { getApiErrorMessage, isAuthError } from '@easy/utils';
+import { AppError } from '@easy/utils';
 
 function MyComponent() {
   const handleSubmit = async () => {
     try {
       await api.post('/endpoint', data);
     } catch (err) {
-      const message = getApiErrorMessage(err);
-      toast.error(message);
-      
-      if (isAuthError(err)) {
+      const appError = AppError.fromAxiosError(err);
+      toast.error(appError.message);
+
+      if (appError.isAuthError()) {
         navigate('/login');
       }
     }

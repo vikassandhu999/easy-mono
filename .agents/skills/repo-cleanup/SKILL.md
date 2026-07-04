@@ -1,6 +1,6 @@
 ---
 name: repo-cleanup
-description: Periodic hygiene pass over easy-mono's docs and agent context — finds stale/drifted markdown, finished plans, dated QA artifacts, dangling references, and local scratch cruft, then reports and applies fixes. Use when the user says "repo cleanup", "clean the repo", "docs audit", "find stale docs", or invokes /repo-cleanup.
+description: Periodic hygiene pass over easy-mono — stale/drifted docs, finished plans, dated QA artifacts, dangling references, local scratch cruft, plus a code-cruft sweep paired with ponytail-audit (over-engineering, unused deps, orphan files). Reports first, then applies fixes. Use when the user says "repo cleanup", "clean the repo", "docs audit", "find stale docs", or invokes /repo-cleanup.
 ---
 
 # Repo Cleanup
@@ -49,8 +49,20 @@ One source of truth per level; check each `AGENTS.md` against these:
 - Gitignored scratch from past agent runs (`.superpowers/`, stale worktrees): list sizes, delete on confirmation.
 - Untracked files that are neither ignored nor intended: surface, don't guess.
 
-## 6. Close the loop
+## 6. Code cruft (paired with ponytail-audit)
+
+Run the over-engineering audit alongside the docs pass — invoke the `ponytail:ponytail-audit` skill and fold its ranked delete/simplify list into the same report. On top of it, run the repo-specific mechanical checks it doesn't cover:
+
+- **Unused backend deps**: `cd backend && mix deps.unlock --check-unused`.
+- **Unused frontend deps**: for each app/package, grep `dependencies` names against `src/` imports; flag any with zero hits.
+- **Orphan source files**: files under `src/` no other file imports (screens must be reachable via `router.tsx` — RM-103). Sample per app; don't boil the ocean.
+- **Dead exports in shared packages**: exports from `frontend/packages/*` that no app imports — shared-package surface is a public contract, so shrinking it is a win.
+- **`ponytail:` debt comments**: harvest via the `ponytail:ponytail-debt` skill; stale ones (ceiling no longer relevant) get deleted, real ones stay tracked.
+
+Code deletions are riskier than doc deletions: each one needs the app's build to pass (`pnpm -C apps/<app> build` / `mix precommit`) before it goes in the commit.
+
+## 7. Close the loop
 
 - New recurring mistake discovered → add an RM entry to `docs/agents/recurring-mistakes.md` (per its footer format), with a mechanical check when feasible.
-- Apply everything as one commit: `docs: cleanup pass — <summary>`.
+- Apply as two commits: `docs: cleanup pass — <summary>` and, if any, `chore: code cruft — <summary>` (so a code revert never drags the docs pass with it).
 - Report ends with: files deleted/archived/edited counts, issues filed, and anything deliberately left alone (with the reason).

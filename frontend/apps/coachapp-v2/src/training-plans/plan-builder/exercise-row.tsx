@@ -8,9 +8,9 @@
  * "+ set" appends a default working set via PATCH planned_sets, then opens
  * the SetSheet on the new set.
  */
-import {toast} from '@heroui/react';
 import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import {useRef, useState} from 'react';
+import {toastMutationError} from '@/@components/mutation-toast';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
 import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
@@ -60,7 +60,7 @@ function makeDefaultSet(): TrainingPlanPlannedSet {
 
 export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, onMove, onRemove}: ExerciseRowProps) {
   const dispatch = useAppDispatch();
-  const [updateElement] = useUpdateWorkoutElementMutation();
+  const [updateElement, {isLoading: isSavingSets}] = useUpdateWorkoutElementMutation();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeSetIndex, setActiveSetIndex] = useState(0);
@@ -68,9 +68,13 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
   // Ref for the active set row button — used as the desktop popover anchor
   const activeSetButtonRef = useRef<HTMLButtonElement | null>(null);
   const setButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const addSetButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const openSet = (index: number) => {
-    activeSetButtonRef.current = setButtonRefs.current[index] ?? null;
+    // A just-added set has no rendered row yet (openSet fires before the cache
+    // write re-renders), so fall back to the "+ Add set" button — otherwise the
+    // desktop SetSheet loses its anchor and drops to a bottom sheet.
+    activeSetButtonRef.current = setButtonRefs.current[index] ?? addSetButtonRef.current ?? null;
     setActiveSetIndex(index);
     setSheetOpen(true);
   };
@@ -108,8 +112,8 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
         }),
       );
       openSet(newIndex);
-    } catch {
-      toast.danger("Couldn't add set");
+    } catch (e) {
+      toastMutationError(e, "Couldn't add set");
     }
   };
 
@@ -132,9 +136,9 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
         id: workoutExercise.id,
         trainingWorkoutExerciseRequest: {planned_sets: updatedSets},
       }).unwrap();
-    } catch {
+    } catch (e) {
       cachePatch.undo();
-      toast.danger("Couldn't remove set");
+      toastMutationError(e, "Couldn't remove set");
     }
   };
 
@@ -197,13 +201,16 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           />
         ))}
 
-        {/* + set */}
+        {/* + Add set — disabled while a sets PATCH is in flight: a double-click
+            would build two payloads from the same base and lose one add */}
         <button
-          className="mt-1 -ml-2 inline-flex min-h-9 items-center px-2 py-1 text-xs text-accent hover:text-accent/80 transition-colors"
+          ref={addSetButtonRef}
+          className="mt-1 -ml-2 inline-flex min-h-9 items-center px-2 py-1 text-xs text-accent hover:text-accent/80 transition-colors disabled:opacity-50"
+          disabled={isSavingSets}
           onClick={handleAddSet}
           type="button"
         >
-          + set
+          + Add set
         </button>
       </div>
 

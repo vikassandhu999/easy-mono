@@ -9,9 +9,10 @@
  * updates the listWorkouts cache directly so set rows reflect the change
  * immediately (optimistic update pattern).
  */
-import {Popover, toast} from '@heroui/react';
+import {Popover} from '@heroui/react';
 import {ChevronDown, ChevronLeft, ChevronRight} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {toastMutationError} from '@/@components/mutation-toast';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
 import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
@@ -182,9 +183,9 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           id: workoutExercise.id,
           trainingWorkoutExerciseRequest: {planned_sets: updatedSets},
         }).unwrap();
-      } catch {
+      } catch (e) {
         cachePatch.undo();
-        toast.danger("Couldn't save set");
+        toastMutationError(e, "Couldn't save set");
       }
     },
     [workoutExercise, setIndex, updateElement, dispatch, planId],
@@ -220,12 +221,17 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
     }
   }, [executeSave]);
 
+  // Flush on UNMOUNT ONLY, via a ref: flushPendingSave's identity changes after
+  // every save (executeSave closes over workoutExercise, which our own cache
+  // writes rewrite), so depending on it would fire the cleanup mid-session and
+  // defeat the debounce (same bug amount-sheet fixed with flushRef).
+  const flushRef = useRef(flushPendingSave);
+  flushRef.current = flushPendingSave;
   useEffect(() => {
     return () => {
-      // Fire on unmount — don't just discard
-      flushPendingSave().catch(() => undefined);
+      flushRef.current().catch(() => undefined);
     };
-  }, [flushPendingSave]);
+  }, []);
 
   const handleSetType = (v: SetType) => {
     setSetType(v);
@@ -259,8 +265,15 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
   };
   const handleDuration = (v: string) => {
     setDurationSeconds(v);
+    if (v === '') {
+      scheduleSave({duration_seconds: null});
+      return;
+    }
     const num = Number.parseInt(v, 10);
-    scheduleSave({duration_seconds: Number.isNaN(num) ? null : num});
+    // Unparseable text must not save null — that wipes the stored value.
+    if (!Number.isNaN(num)) {
+      scheduleSave({duration_seconds: num});
+    }
   };
   const handleDistanceValue = (v: string) => {
     setDistanceValue(v);
@@ -272,8 +285,15 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
   };
   const handleRestSeconds = (v: string) => {
     setRestSeconds(v);
+    if (v === '') {
+      scheduleSave({rest_seconds: null});
+      return;
+    }
     const num = Number.parseInt(v, 10);
-    scheduleSave({rest_seconds: Number.isNaN(num) ? null : num});
+    // Unparseable text must not save null — that wipes the stored value.
+    if (!Number.isNaN(num)) {
+      scheduleSave({rest_seconds: num});
+    }
   };
   const handleNotes = (v: string) => {
     setNotes(v);
@@ -368,6 +388,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
             <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
               <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Reps</div>
               <input
+                aria-label="Reps"
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="text"
                 onChange={(e) => handleReps(e.target.value)}
@@ -382,6 +403,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
             <div className="flex-1 rounded-lg border border-accent/40 bg-accent/5 px-2 pb-2 pt-1.5 text-center">
               <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Weight</div>
               <input
+                aria-label="Weight"
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="decimal"
                 onChange={(e) => handleLoadValue(e.target.value)}
@@ -413,6 +435,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
             <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
               <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">RPE</div>
               <input
+                aria-label="RPE"
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="decimal"
                 onChange={(e) => handleRpe(e.target.value)}
@@ -427,6 +450,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
             <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
               <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Secs</div>
               <input
+                aria-label="Duration in seconds"
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="numeric"
                 onChange={(e) => handleDuration(e.target.value)}
@@ -441,6 +465,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
             <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
               <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Dist</div>
               <input
+                aria-label="Distance"
                 className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
                 inputMode="decimal"
                 onChange={(e) => handleDistanceValue(e.target.value)}
@@ -557,10 +582,10 @@ export function SetSheet({workoutExercise, setIndex, planId, open, onClose, onPr
         }}
       >
         <Popover.Content
-          className="w-80 rounded-xl border border-border bg-surface p-0 shadow-xl"
+          className="w-96 rounded-xl border border-border bg-surface p-0 shadow-xl"
           triggerRef={triggerRef}
         >
-          <Popover.Dialog className="outline-none">
+          <Popover.Dialog className="max-h-[70vh] overflow-y-auto px-4 py-3 outline-none">
             <SetSheetContent {...contentProps} />
           </Popover.Dialog>
         </Popover.Content>

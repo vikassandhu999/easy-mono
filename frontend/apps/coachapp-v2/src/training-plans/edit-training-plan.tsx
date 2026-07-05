@@ -5,8 +5,9 @@ import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/generated';
+import {coachApi, useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
+import {useAppDispatch} from '@/store';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
   trainingPlanToFormValues,
@@ -31,6 +32,7 @@ function EditTrainingPlanHeader({description, goBack}: {description?: string; go
 }
 
 function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
+  const dispatch = useAppDispatch();
   const goBack = useGoBack(backPath);
   const {data} = useGetTrainingPlanQuery({id: planId});
   const [updatePlan, {isLoading: isUpdating}] = useUpdateTrainingPlanMutation();
@@ -43,7 +45,16 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
   const onSubmit = async (formData: TrainingPlanFormValues) => {
     try {
-      await updatePlan({id: planId, trainingPlanUpdateRequest: trainingPlanToUpdateRequest(formData)}).unwrap();
+      const result = await updatePlan({
+        id: planId,
+        trainingPlanUpdateRequest: trainingPlanToUpdateRequest(formData),
+      }).unwrap();
+      // tag:false — sync the cached detail so the builder shows the new values.
+      dispatch(
+        coachApi.util.updateQueryData('getTrainingPlan', {id: planId}, (draft) => {
+          draft.data = result.data;
+        }),
+      );
       goBack();
     } catch (err) {
       applyFormErrors(err, "Training plan wasn't updated. Check the details and try again", form.setError);

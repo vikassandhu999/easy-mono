@@ -28,9 +28,11 @@
  */
 
 import {computeMacrosFromSnapshot} from '@easy/utils';
+import {Popover} from '@heroui/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Food, Recipe} from '@/api/generated';
 import {
   coachApi,
@@ -61,6 +63,8 @@ export interface AmountSheetProps {
   onClose: () => void;
   /** Remove the item from the meal (edit mode only). Surfaces the delete the row no longer renders. */
   onDelete?: () => void;
+  /** Desktop popover anchor — the meal-item row (edit) or "+ Add…" button (create). */
+  anchorEl?: HTMLElement | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -692,7 +696,13 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 // ---------------------------------------------------------------------------
 
 export function AmountSheet(props: AmountSheetProps) {
-  const {open, onClose, existingItem, planId, mealId, onDelete} = props;
+  const {open, onClose, existingItem, planId, mealId, onDelete, anchorEl} = props;
+  const isDesktop = useIsDesktop();
+
+  // Stable ref object pointing at the anchor — react-aria's Popover reads
+  // `triggerRef` on Content (same wiring as SetSheet).
+  const triggerRef = useRef<HTMLElement | null>(null);
+  triggerRef.current = anchorEl ?? null;
 
   // Resolve food/recipe from props.
   // In edit mode, existingItem.food/recipe are legacy-typed (HydratedMealItem
@@ -703,22 +713,44 @@ export function AmountSheet(props: AmountSheetProps) {
   const food = (props.food ?? (existingItem?.food as unknown as Food) ?? null) as Food | null;
   const recipe = (props.recipe ?? (existingItem?.recipe as unknown as Recipe) ?? null) as Recipe | null;
 
+  const content = open ? (
+    <AmountSheetContent
+      existingItem={existingItem}
+      food={food}
+      mealId={mealId}
+      onClose={onClose}
+      onDelete={onDelete}
+      planId={planId}
+      recipe={recipe}
+    />
+  ) : null;
+
+  if (isDesktop && anchorEl) {
+    return (
+      <Popover
+        isOpen={open}
+        onOpenChange={(v) => {
+          if (!v) {
+            onClose();
+          }
+        }}
+      >
+        <Popover.Content
+          className="w-96 rounded-xl border border-border bg-surface p-0 shadow-xl"
+          triggerRef={triggerRef}
+        >
+          <Popover.Dialog className="max-h-[70vh] overflow-y-auto px-4 py-3 outline-none">{content}</Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+    );
+  }
+
   return (
     <KeyboardSheet
       onClose={onClose}
       open={open}
     >
-      {open ? (
-        <AmountSheetContent
-          existingItem={existingItem}
-          food={food}
-          mealId={mealId}
-          onClose={onClose}
-          onDelete={onDelete}
-          planId={planId}
-          recipe={recipe}
-        />
-      ) : null}
+      {content}
     </KeyboardSheet>
   );
 }

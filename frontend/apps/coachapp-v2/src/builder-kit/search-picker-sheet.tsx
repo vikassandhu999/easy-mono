@@ -12,11 +12,15 @@
  *   to prevent redundant fetches and is cleaned up on unmount / prop changes.
  * - Layout matches `04-picker-and-set-sheet.html`: grip → title/close → search →
  *   filter chips (h-scroll) → item list → "+ Create" row → confirm dock (footer).
+ * - Responsive container (canonical picker rule): anchored Popover on desktop
+ *   when the caller passes `anchorEl`, KeyboardSheet otherwise — same split as
+ *   SetSheet / food-picker-control.
  */
 
-import {Button, Input, Spinner} from '@heroui/react';
+import {Button, Popover, SearchField, Spinner} from '@heroui/react';
 import {type ReactNode, useCallback, useEffect, useRef} from 'react';
 
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {KeyboardSheet} from './keyboard-sheet';
 
 // ---------------------------------------------------------------------------
@@ -73,6 +77,11 @@ export interface SearchPickerSheetProps<T> {
   loading?: boolean;
   onLoadMore?: () => void;
   hasMore?: boolean;
+
+  // --- Responsive container ---
+  /** Desktop only: the element the popover anchors to (usually the "+ Add …"
+   *  button that opened the picker). Absent → bottom sheet on all widths. */
+  anchorEl?: HTMLElement | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -99,7 +108,15 @@ export function SearchPickerSheet<T>({
   loading = false,
   onLoadMore,
   hasMore = false,
+  anchorEl,
 }: SearchPickerSheetProps<T>) {
+  const isDesktop = useIsDesktop();
+
+  // Stable ref object pointing at the trigger element — react-aria's Popover
+  // reads `triggerRef` on Content (same wiring as SetSheet).
+  const triggerRef = useRef<HTMLElement | null>(null);
+  triggerRef.current = anchorEl ?? null;
+
   // Ref to the sentinel div at the bottom of the item list.
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   // Ref to the IntersectionObserver so we can clean it up.
@@ -165,28 +182,33 @@ export function SearchPickerSheet<T>({
     </Button>
   );
 
-  return (
-    <KeyboardSheet
-      footer={dockButton}
-      onClose={onClose}
-      open={open}
-      title={title}
-    >
+  // Body shared by both containers. The sticky search header relies on an
+  // overflow-y-auto ancestor with px-4 padding — both containers provide it.
+  const body = (
+    <>
       {/* Search + filters pinned to the top of the sheet's scroll area so they
            stay reachable as the item list scrolls. -mx-4/px-4 cancels the parent
            content padding; bg-surface matches the panel so scrolled rows don't
            show through. */}
-      <div className="sticky top-0 z-10 -mx-4 bg-surface px-4 pb-2">
-        {/* Search input — autofocus when sheet opens */}
-        <Input
+      {/* pt-2 keeps the field's focus ring clear of the scroll container's top
+          edge — without it the ring clips against the title row when sticky. */}
+      <div className="sticky top-0 z-10 -mx-4 bg-surface px-4 pb-2 pt-2">
+        {/* Search input — canonical SearchField (icon + clear button), autofocus
+            when the picker opens. Same composition as plan-assign-content. */}
+        <SearchField
           aria-label={`Search ${title}`}
           autoFocus
           className="mb-2"
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search…"
+          onChange={onSearchChange}
           value={search}
           variant="secondary"
-        />
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Search…" />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
 
         {/* Filter chips — scrollable pill row, or an equal-flex segmented control */}
         {filters && filters.length > 0 ? (
@@ -276,6 +298,53 @@ export function SearchPickerSheet<T>({
           </div>
         ) : null}
       </div>
+    </>
+  );
+
+  if (isDesktop && anchorEl) {
+    return (
+      <Popover
+        isOpen={open}
+        onOpenChange={(v) => {
+          if (!v) {
+            onClose();
+          }
+        }}
+      >
+        <Popover.Content
+          className="w-96 rounded-xl border border-border bg-surface p-0 shadow-xl"
+          triggerRef={triggerRef}
+          placement={'right'}
+        >
+          <Popover.Dialog className="flex max-h-[70vh] flex-col outline-none p-0">
+            {/* Title row — KeyboardSheet renders its own; the popover needs one */}
+            <div className="flex items-center justify-between px-4 pb-1 pt-3">
+              <span className="text-sm font-semibold text-foreground">{title}</span>
+              <button
+                aria-label="Close"
+                className="-mr-2 flex min-h-9 min-w-9 items-center justify-center rounded-md text-muted hover:text-foreground transition-colors"
+                onClick={onClose}
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">{body}</div>
+            <div className="border-t border-separator bg-background px-4 py-3">{dockButton}</div>
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+    );
+  }
+
+  return (
+    <KeyboardSheet
+      footer={dockButton}
+      onClose={onClose}
+      open={open}
+      title={title}
+    >
+      {body}
     </KeyboardSheet>
   );
 }

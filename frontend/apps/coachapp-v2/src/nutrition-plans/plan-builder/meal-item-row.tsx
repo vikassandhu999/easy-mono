@@ -14,6 +14,7 @@
  * from generated (which lacks food/recipe) so we can include those fields.
  */
 
+import {forwardRef} from 'react';
 import type {Food, Recipe} from '@/api/generated';
 
 // ---------------------------------------------------------------------------
@@ -50,7 +51,9 @@ function formatAmount(item: HydratedMealItem): string {
     return `${item.weight_g}g`;
   }
   if (item.amount != null) {
-    const plural = item.unit === 'serving' && item.amount !== 1 ? 's' : '';
+    // ponytail: naive "+s" pluralization — fine for serving/slice/piece-style
+    // units (skips ones already ending in s); revisit if an irregular plural ships
+    const plural = item.unit && item.amount !== 1 && !item.unit.endsWith('s') ? 's' : '';
     const unitStr = item.unit ? ` ${item.unit}${plural}` : '';
     return `${item.amount}${unitStr}`;
   }
@@ -91,16 +94,20 @@ export interface MealItemRowProps {
   onTap: () => void;
 }
 
-export function MealItemRow({item, onTap}: MealItemRowProps) {
+export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(function MealItemRow({item, onTap}, ref) {
   const name = item.name ?? item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
   const amount = formatAmount(item);
   const macro = formatMacroContribution(item.nutrition);
 
   return (
-    // 2px accent rule on the row itself; single 10px indent, content-driven height
-    <div className="mt-1.75 flex items-start justify-between border-l-2 border-accent pl-2.5">
-      {/* Main tap target — name + amount stacked */}
+    // 2px accent rule on the row itself; single 10px indent, content-driven height.
+    // pr-2.5 keeps the macro column off the card's right border — without it a
+    // long (truncated) name makes the kcal figures sit flush against the edge.
+    <div className="mt-1.75 flex items-start justify-between border-l-2 border-accent pl-2.5 pr-2.5">
+      {/* Main tap target — name + amount stacked. Ref exposes the button as the
+          desktop anchor for the edit-mode AmountSheet popover. */}
       <button
+        ref={ref}
         className="min-w-0 flex-1 py-1.75 text-left transition-colors hover:opacity-80"
         onClick={onTap}
         type="button"
@@ -123,4 +130,4 @@ export function MealItemRow({item, onTap}: MealItemRowProps) {
       ) : null}
     </div>
   );
-}
+});

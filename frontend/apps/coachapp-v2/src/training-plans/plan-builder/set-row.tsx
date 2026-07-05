@@ -39,8 +39,9 @@ function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | nu
   if (fields.showReps && set.reps !== null && set.reps !== undefined) {
     const load = fields.showLoad ? formatLoad(set) : null;
     parts.push(load ? `${set.reps} × ${load}` : `${set.reps} reps`);
-  } else if (fields.showLoad && !fields.showReps) {
-    // Load tracked without reps (weight_duration, weight_distance)
+  } else if (fields.showLoad) {
+    // Load without reps — either reps aren't tracked (weight_duration,
+    // weight_distance) or they're simply blank; still show the weight.
     const load = formatLoad(set);
     if (load) {
       parts.push(load);
@@ -69,7 +70,10 @@ export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow
   ref,
 ) {
   return (
-    <div className="flex items-center gap-2 py-2">
+    // Without the remove button (single set) the summary text is the last
+    // element — pr-2.5 keeps it off the card's right border, matching the
+    // optical inset the X button's hit area provides when it is rendered.
+    <div className={`flex items-center gap-2 py-2${canRemove ? '' : ' pr-2.5'}`}>
       {/* Tap the summary to edit this set in the SetSheet */}
       <button
         ref={ref}

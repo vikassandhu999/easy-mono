@@ -16,6 +16,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import DateInput from '@/@components/date-input';
 import {FormTextField} from '@/@components/form-fields';
+import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import type {TrainingPlan} from '@/api/generated';
 import {coachApi, useUpdateTrainingPlanMutation} from '@/api/generated';
@@ -64,15 +65,23 @@ export function PlanHeader({plan}: PlanHeaderProps) {
     );
     try {
       await updatePlan({id: plan.id, trainingPlanUpdateRequest: {name}}).unwrap();
-    } catch {
+    } catch (e) {
       patch.undo();
-      toast.danger("Couldn't save changes");
+      toastMutationError(e, "Couldn't save changes");
     }
   };
 
   // Autosave a single date (optimistic). value is ISO "YYYY-MM-DD" or null.
   const saveDate = async (field: 'start_date' | 'end_date', value: string | null) => {
     if ((plan[field] ?? null) === value) {
+      return;
+    }
+    // End before start would violate the backend's daterange constraint (a hard
+    // Postgres error on assigned plans) — reject it with a clear message instead.
+    const start = field === 'start_date' ? value : (plan.start_date ?? null);
+    const end = field === 'end_date' ? value : (plan.end_date ?? null);
+    if (start && end && end < start) {
+      toast.danger('End date must be on or after the start date');
       return;
     }
     const body = field === 'start_date' ? {start_date: value} : {end_date: value};
@@ -83,9 +92,9 @@ export function PlanHeader({plan}: PlanHeaderProps) {
     );
     try {
       await updatePlan({id: plan.id, trainingPlanUpdateRequest: body}).unwrap();
-    } catch {
+    } catch (e) {
       patch.undo();
-      toast.danger("Couldn't save changes");
+      toastMutationError(e, "Couldn't save changes");
     }
   };
 
@@ -147,9 +156,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
             />
           </div>
         </div>
-      ) : (
-        <p className="text-xs text-muted">Start and end dates apply once the plan is assigned to a client.</p>
-      )}
+      ) : null}
     </div>
   );
 }

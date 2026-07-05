@@ -5,7 +5,7 @@ import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/generated';
+import {coachApi, useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
@@ -13,8 +13,10 @@ import NutritionPlanForm, {
   nutritionPlanToUpdateRequest,
   useNutritionPlanForm,
 } from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
+import {useAppDispatch} from '@/store';
 
 export default function EditNutritionPlan() {
+  const dispatch = useAppDispatch();
   const {id} = useParams<{id: string}>();
   const {data, isError, isLoading: isFetching} = useGetNutritionPlanQuery({id: id!});
   const [updatePlan, {isLoading: isUpdating}] = useUpdateNutritionPlanMutation();
@@ -65,7 +67,19 @@ export default function EditNutritionPlan() {
 
   const onSubmit = async (formData: NutritionPlanFormValues) => {
     try {
-      await updatePlan({nutritionPlanRequest: nutritionPlanToUpdateRequest(formData), id: id!}).unwrap();
+      const result = await updatePlan({nutritionPlanRequest: nutritionPlanToUpdateRequest(formData), id: id!}).unwrap();
+      // tag:false — sync the cached detail so the builder shows the new values.
+      // meals/schedule_entries are optional on the update response — keep the
+      // hydrated ones from the detail fetch rather than wiping them.
+      dispatch(
+        coachApi.util.updateQueryData('getNutritionPlan', {id: id!}, (draft) => {
+          draft.data = {
+            ...result.data,
+            meals: result.data.meals ?? draft.data.meals,
+            schedule_entries: result.data.schedule_entries ?? draft.data.schedule_entries,
+          };
+        }),
+      );
       goBack();
     } catch (err) {
       applyFormErrors(err, "Nutrition plan wasn't updated. Check the details and try again", form.setError);

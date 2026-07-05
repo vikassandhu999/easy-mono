@@ -59,9 +59,9 @@ export function PlanActionsMenu({
         deleteAlertState.close();
         onDeleted();
       })
-      .catch((e: {message?: string}) => {
+      .catch((e: unknown) => {
         deleteAlertState.close();
-        toast.danger("Couldn't delete plan", {timeout: 1500, description: e?.message});
+        toastMutationError(e, "Couldn't delete plan");
       });
 
   return (

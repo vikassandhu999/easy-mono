@@ -21,6 +21,7 @@ import {useGetNutritionPlanQuery} from '@/api/generated';
 import {MealsList} from './meals-list';
 import {NutritionSchedule} from './nutrition-schedule';
 import {NutritionPlanActions} from './plan-actions';
+import {PlanAddToClient} from './plan-add-to-client';
 import {PlanHeader} from './plan-header';
 
 export default function NutritionPlanBuilder() {
@@ -64,10 +65,13 @@ export default function NutritionPlanBuilder() {
       <Page.Header className="py-3!">
         <div className="flex w-full max-w-2xl items-center justify-between gap-3">
           <BackButton onPress={goBack} />
-          <NutritionPlanActions
-            onDeleted={() => goBack()}
-            plan={plan}
-          />
+          <div className="flex gap-2">
+            <PlanAddToClient plan={plan} />
+            <NutritionPlanActions
+              onDeleted={() => goBack()}
+              plan={plan}
+            />
+          </div>
         </div>
       </Page.Header>
 

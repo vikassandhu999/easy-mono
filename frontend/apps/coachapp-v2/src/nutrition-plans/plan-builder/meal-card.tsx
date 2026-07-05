@@ -95,14 +95,17 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
     }
   }, [meal.name, editingName]);
 
-  // Picker + amount-sheet state
+  // Picker + amount-sheet state — desktop popovers anchor to the "+ Add food
+  // or recipe" button (picker + create-mode amounts) or the tapped item row.
   const [pickerOpen, setPickerOpen] = useState(false);
+  const addItemButtonRef = useRef<HTMLButtonElement | null>(null);
   // Queue of picked food/recipe items waiting to be amount-edited in sequence
   const [amountQueue, setAmountQueue] = useState<FoodOrRecipe[]>([]);
   const [currentAmountItem, setCurrentAmountItem] = useState<FoodOrRecipe | null>(null);
 
   // Edit-mode amount sheet state
   const [editingItem, setEditingItem] = useState<HydratedMealItem | null>(null);
+  const itemRowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // ---------------------------------------------------------------------------
   // Rename handlers
@@ -187,7 +190,6 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
       refetch().catch(() => undefined);
       refetchSchedule().catch(() => undefined);
     } catch (e) {
-      console.error('[meal-delete] rejected:', e);
       patch.undo();
       schedulePatch.undo();
       toastMutationError(e, "Couldn't delete meal");
@@ -274,11 +276,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // ---------------------------------------------------------------------------
 
   return (
-    <div
-      className={`rounded-xl border bg-surface overflow-hidden ${
-        open ? 'border-accent ring-1 ring-accent/60 shadow-[0_0_18px_rgba(108,140,255,0.13)]' : 'border-border'
-      }`}
-    >
+    <div className="rounded-xl border border-border bg-surface overflow-hidden">
       {/* Header — acts as accordion toggle (whole row, like WorkoutCard) */}
       <div
         aria-expanded={open}
@@ -325,9 +323,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         </div>
 
         {/* Meal total badge */}
-        {mealTotal ? (
-          <span className={`shrink-0 text-xs ${open ? 'text-accent' : 'text-muted'}`}>{mealTotal}</span>
-        ) : null}
+        {mealTotal ? <span className="shrink-0 text-xs text-muted">{mealTotal}</span> : null}
 
         {/* Meal options menu — stop propagation so clicks don't toggle the accordion */}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown; role is on the Button inside */}
@@ -404,6 +400,9 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
             items.map((item) => (
               <MealItemRow
                 key={item.id}
+                ref={(el) => {
+                  itemRowRefs.current[item.id] = el;
+                }}
                 item={item}
                 onTap={() => setEditingItem(item)}
               />
@@ -412,6 +411,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
           <div className="pl-2.5">
             <button
+              ref={addItemButtonRef}
               className="mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
               onClick={() => setPickerOpen(true)}
               type="button"
@@ -437,6 +437,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
       {/* Food/recipe picker sheet */}
       <FoodRecipePickerSheet
+        anchorEl={addItemButtonRef.current}
         mealName={meal.name}
         onClose={() => setPickerOpen(false)}
         onPick={handlePick}
@@ -447,6 +448,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
           current item so each queued food/recipe remounts with fresh state
           instead of carrying the previous item's grams/serving selection. */}
       <AmountSheet
+        anchorEl={addItemButtonRef.current}
         food={amountFood}
         key={currentAmountItem?.id}
         mealId={meal.id}
@@ -458,6 +460,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
 
       {/* Amount sheet — edit mode */}
       <AmountSheet
+        anchorEl={editingItem ? itemRowRefs.current[editingItem.id] : null}
         existingItem={editingItem ?? undefined}
         mealId={meal.id}
         onClose={() => setEditingItem(null)}

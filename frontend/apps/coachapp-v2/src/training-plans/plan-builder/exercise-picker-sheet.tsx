@@ -15,7 +15,8 @@
  *   - selected exercise ids Set (multi-select)
  */
 import {Chip} from '@heroui/react';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
+import {toastMutationError} from '@/@components/mutation-toast';
 
 import type {TrainingExercise} from '@/api/generated';
 import {useListEquipmentQuery, useListMusclesQuery} from '@/api/generated';
@@ -32,6 +33,8 @@ interface ExercisePickerSheetProps {
   open: boolean;
   onClose: () => void;
   onAdd: (exercises: TrainingExercise[]) => void;
+  /** Desktop popover anchor — the "+ Add exercise" button. */
+  anchorEl?: HTMLElement | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +71,7 @@ function trackingTypeBadgeLabel(trackingType: string | null): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetProps) {
+export function ExercisePickerSheet({open, onClose, onAdd, anchorEl}: ExercisePickerSheetProps) {
   // --- Search ---
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
@@ -185,8 +188,15 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
     onClose();
   }, [selectedExercises, onAdd, onClose]);
 
+  // In-flight guard — a double-tap on the create row must not POST twice.
+  const creatingRef = useRef(false);
+
   const handleCreateNoMatch = useCallback(
     async (query: string) => {
+      if (creatingRef.current) {
+        return;
+      }
+      creatingRef.current = true;
       try {
         const result = await createExercise({
           trainingExerciseCreateRequest: {name: query},
@@ -199,8 +209,11 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
         setSearch('');
         setActiveMuscleIds(new Set());
         setActiveEquipmentIds(new Set());
-      } catch {
-        // Creation failed — leave search text so the user can retry
+      } catch (e) {
+        // Leave search text so the user can retry
+        toastMutationError(e, "Couldn't create exercise");
+      } finally {
+        creatingRef.current = false;
       }
     },
     [createExercise],
@@ -258,6 +271,7 @@ export function ExercisePickerSheet({open, onClose, onAdd}: ExercisePickerSheetP
 
   return (
     <SearchPickerSheet<TrainingExercise>
+      anchorEl={anchorEl}
       confirmLabel={(n) => (n === 0 ? 'Add exercises' : `Add ${n} exercise${n === 1 ? '' : 's'}`)}
       filters={filters}
       hasMore={hasNextPage ?? false}

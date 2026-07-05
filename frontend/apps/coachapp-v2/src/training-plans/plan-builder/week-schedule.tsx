@@ -7,14 +7,14 @@
  * Cache: tag:false — we use optimistic updateQueryData after each PUT.
  */
 import {
-  TRAINING_DAY_SHORT_LABELS as DAY_ABBREV,
   TRAINING_DAY_LABELS as DAY_LABELS,
   type TrainingWeekday as DayKey,
   TRAINING_WEEKDAYS as ORDERED_DAYS,
 } from '@easy/utils';
-import {ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
+import {ListBox, Select, Skeleton, Typography} from '@heroui/react';
 import {ChevronDown, ChevronRight} from 'lucide-react';
 import {useState} from 'react';
+import {toastMutationError} from '@/@components/mutation-toast';
 import {
   coachApi,
   useGetTrainingPlanScheduleQuery,
@@ -45,17 +45,6 @@ export function buildOrderedDayRows(
   }));
 }
 
-/** Build the condensed projection string: "Mon Push Day · Tue Rest · ..." */
-export function buildScheduleProjection(
-  scheduleMap: Record<string, {workout_name?: string | null; training_workout_id?: string | null}>,
-): string {
-  return ORDERED_DAYS.map((day) => {
-    const entry = scheduleMap[day];
-    const label = entry?.training_workout_id && entry?.workout_name ? entry.workout_name : 'Rest';
-    return `${DAY_ABBREV[day]} ${label}`;
-  }).join(' · ');
-}
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -75,7 +64,11 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
     isLoading: scheduleLoading,
     isError: scheduleError,
   } = useGetTrainingPlanScheduleQuery({planId});
-  const {data: workoutsData, isLoading: workoutsLoading} = useListWorkoutsQuery({planId, limit: 100});
+  const {
+    data: workoutsData,
+    isLoading: workoutsLoading,
+    isError: workoutsError,
+  } = useListWorkoutsQuery({planId, limit: 100});
   const [setDaySchedule] = useSetTrainingPlanDayScheduleMutation();
 
   // Track which days are expanded (read-only exercise list)
@@ -133,28 +126,43 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
         day,
         trainingDayScheduleRequest: {training_workout_id: workoutId},
       }).unwrap();
-    } catch {
+    } catch (e) {
       patch.undo();
-      toast.danger("Couldn't save changes");
+      toastMutationError(e, "Couldn't save changes");
     }
   };
 
   if (scheduleLoading || workoutsLoading) {
+    // Layout-approximating skeleton (RM-125: no centered spinner) — 7 day rows.
     return (
-      <div className="flex items-center justify-center py-8">
-        <Spinner
-          color="accent"
-          size="sm"
-        />
+      <div className="flex flex-col gap-1">
+        {ORDERED_DAYS.map((day) => (
+          <Skeleton
+            className="h-[54px] w-full rounded-lg"
+            key={day}
+          />
+        ))}
       </div>
     );
   }
 
-  if (scheduleError) {
+  if (scheduleError || workoutsError) {
     return (
       <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
         Couldn't load schedule.
       </div>
+    );
+  }
+
+  if (workouts.length === 0) {
+    // No workouts → every select would be a dead-end Rest-only picker.
+    return (
+      <Typography
+        color="muted"
+        type="body-sm"
+      >
+        Add workouts above, then assign them to days here.
+      </Typography>
     );
   }
 
@@ -220,7 +228,8 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
               {/* Expand toggle — only when a workout is assigned */}
               {hasWorkout ? (
                 <button
-                  aria-label={isExpanded ? 'Collapse exercises' : 'Expand exercises'}
+                  aria-expanded={isExpanded}
+                  aria-label={`Exercises for ${DAY_LABELS[day]}`}
                   className="shrink-0 -mr-1 flex min-h-9 min-w-9 items-center justify-center text-muted hover:text-foreground transition-colors"
                   onClick={() => toggleExpand(day)}
                   type="button"

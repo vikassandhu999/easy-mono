@@ -12,11 +12,12 @@
  * Header badge shows: "Target 2100 · 180P 200C 60F" (only set targets shown).
  */
 
-import {Spinner, toast} from '@heroui/react';
+import {Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField, FormTextField} from '@/@components/form-fields';
+import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import type {NutritionPlan} from '@/api/generated';
 import {coachApi, useUpdateNutritionPlanMutation} from '@/api/generated';
@@ -53,7 +54,9 @@ function planToFormValues(plan: NutritionPlan): PlanHeaderFormValues {
 // ---------------------------------------------------------------------------
 
 function TargetSummary({plan}: {plan: NutritionPlan}) {
-  const kcalPart = plan.target_calories != null ? String(plan.target_calories) : '';
+  // Same vocabulary as the meal-card badge ("164 kcal · 8P/30C/2F") so the
+  // header target and the meal totals read as the same kind of number.
+  const kcalPart = plan.target_calories != null ? `${plan.target_calories} kcal` : '';
 
   const macroParts: string[] = [];
   if (plan.target_protein_g != null) {
@@ -66,13 +69,17 @@ function TargetSummary({plan}: {plan: NutritionPlan}) {
     macroParts.push(`${plan.target_fat_g}F`);
   }
 
-  const summary = [kcalPart, macroParts.join(' ')].filter(Boolean).join(' · ');
+  const summary = [kcalPart, macroParts.join('/')].filter(Boolean).join(' · ');
 
   if (summary.length === 0) {
     return <span className="text-xs text-muted">No targets set</span>;
   }
 
-  return <span className="text-xs font-medium text-muted">Target {summary}</span>;
+  return (
+    <span className="text-xs text-muted">
+      Daily target: <span className="font-medium text-foreground">{summary}</span>
+    </span>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -185,9 +192,9 @@ export function PlanHeader({plan}: PlanHeaderProps) {
           ...body,
         },
       }).unwrap();
-    } catch {
+    } catch (e) {
       patch.undo();
-      toast.danger("Couldn't save changes");
+      toastMutationError(e, "Couldn't save changes");
     }
   };
 
@@ -222,36 +229,39 @@ export function PlanHeader({plan}: PlanHeaderProps) {
         onFieldBlur={() => handleBlur('name')}
       />
 
-      {/* Macro targets — two-column grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FormNumberField
-          control={control}
-          label="Calories"
-          minValue={0}
-          name="calories"
-          onFieldBlur={() => handleBlur('calories')}
-        />
-        <FormNumberField
-          control={control}
-          label="Protein (g)"
-          minValue={0}
-          name="protein_g"
-          onFieldBlur={() => handleBlur('protein_g')}
-        />
-        <FormNumberField
-          control={control}
-          label="Carbs (g)"
-          minValue={0}
-          name="carbs_g"
-          onFieldBlur={() => handleBlur('carbs_g')}
-        />
-        <FormNumberField
-          control={control}
-          label="Fat (g)"
-          minValue={0}
-          name="fats_g"
-          onFieldBlur={() => handleBlur('fats_g')}
-        />
+      {/* Macro targets — labelled group, two-column grid */}
+      <div>
+        <p className="mb-2 text-xs font-medium text-muted">Daily targets</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <FormNumberField
+            control={control}
+            label="Calories"
+            minValue={0}
+            name="calories"
+            onFieldBlur={() => handleBlur('calories')}
+          />
+          <FormNumberField
+            control={control}
+            label="Protein (g)"
+            minValue={0}
+            name="protein_g"
+            onFieldBlur={() => handleBlur('protein_g')}
+          />
+          <FormNumberField
+            control={control}
+            label="Carbs (g)"
+            minValue={0}
+            name="carbs_g"
+            onFieldBlur={() => handleBlur('carbs_g')}
+          />
+          <FormNumberField
+            control={control}
+            label="Fat (g)"
+            minValue={0}
+            name="fats_g"
+            onFieldBlur={() => handleBlur('fats_g')}
+          />
+        </div>
       </div>
     </div>
   );

@@ -57,6 +57,17 @@ const UNASSIGNED_KEY = '__unassigned__';
 /** Sentinel key shown (disabled) when a slot's meal differs across days. */
 const VARIES_KEY = '__varies__';
 
+// Short slot labels for the narrow week-grid label column ("Dinne" from a
+// blind slice read as a typo; these stay readable at 56px).
+const SLOT_SHORT_LABELS: Record<string, string> = {
+  afternoon_snack: 'PM snack',
+  breakfast: 'Bfast',
+  dinner: 'Dinner',
+  evening_snack: 'Eve snack',
+  lunch: 'Lunch',
+  morning_snack: 'AM snack',
+};
+
 // Day abbreviations for the week grid header (single char)
 const DAY_SINGLE: Record<string, string> = {
   friday: 'F',
@@ -615,16 +626,10 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
         }
       />
 
-      {/* Daily total bar */}
+      {/* Daily total bar — day scope is already shown by the tabs/heading above */}
       <DayTotalBar
         isOverridden={selectedDayCustom}
-        label={
-          mode === 'customize'
-            ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)} vs target`
-            : anyVaries
-              ? 'Typical day vs target'
-              : 'Daily total vs target'
-        }
+        label="Planned vs target"
         targetCalories={plan?.target_calories}
         totals={totals}
       />
@@ -642,7 +647,7 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
         <div className="rounded-lg border border-border">
           {/* Grid: 8 cols — 1 label + 7 days. Fits the viewport (no horizontal
               scroll — it clipped weekend days on phones); meal names truncate. */}
-          <div className="grid grid-cols-[44px_repeat(7,1fr)] text-[10px]">
+          <div className="grid grid-cols-[56px_repeat(7,1fr)] text-[10px]">
             {/* Header row */}
             <div className="border-b border-r border-border bg-surface-secondary px-1 py-1.5" />
             {WEEKDAYS.map((day) => {
@@ -669,8 +674,9 @@ export function NutritionSchedule({planId}: NutritionScheduleProps) {
                 <div
                   className={`${rowBorder} border-r border-border bg-surface-secondary px-1 py-1.5 text-left text-[10px] text-muted`}
                   key={`label-${slot}`}
+                  title={MEAL_SLOT_LABELS[slot] ?? slot}
                 >
-                  {(MEAL_SLOT_LABELS[slot] ?? slot).slice(0, 5)}
+                  {SLOT_SHORT_LABELS[slot] ?? MEAL_SLOT_LABELS[slot] ?? slot}
                 </div>,
                 /* Day cells */
                 ...WEEKDAYS.map((day) => {

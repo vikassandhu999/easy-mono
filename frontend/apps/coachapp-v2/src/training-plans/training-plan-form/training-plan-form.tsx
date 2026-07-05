@@ -2,32 +2,28 @@ import {ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FieldRow, FormActions, FormLayout, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {FormActions, FormLayout, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {TrainingPlan, TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '@/api/generated';
 import {omitUndefined, toNullableText, toOptionalText} from '@/api/shared';
 
+// No date fields here: start/end dates only apply once a plan is assigned to a
+// client, and the builder's PlanHeader owns editing them (canonical DateInput).
 export const schema = z.object({
   description: z.string().optional(),
-  end_date: z.string().optional(),
   name: z.string().min(1, 'Enter plan name'),
-  start_date: z.string().optional(),
 });
 
 export type TrainingPlanFormValues = z.infer<typeof schema>;
 
 export const TRAINING_PLAN_FORM_DEFAULTS: TrainingPlanFormValues = {
   description: '',
-  end_date: '',
   name: '',
-  start_date: '',
 };
 
 export function trainingPlanToFormValues(plan: TrainingPlan): TrainingPlanFormValues {
   return {
     description: plan.description ?? '',
-    end_date: plan.end_date ?? '',
     name: plan.name,
-    start_date: plan.start_date ?? '',
   };
 }
 
@@ -35,17 +31,15 @@ export function trainingPlanToCreateRequest(values: TrainingPlanFormValues): Tra
   return omitUndefined({
     name: values.name,
     description: toOptionalText(values.description),
-    start_date: values.start_date || undefined,
-    end_date: values.end_date || undefined,
   });
 }
 
+// Dates are deliberately absent — including them here would wipe an assigned
+// plan's dates on every "Save changes".
 export function trainingPlanToUpdateRequest(values: TrainingPlanFormValues): TrainingPlanUpdateRequest {
   return {
     name: values.name,
     description: toNullableText(values.description),
-    start_date: values.start_date || null,
-    end_date: values.end_date || null,
   };
 }
 
@@ -102,30 +96,6 @@ export default function TrainingPlanForm({
             name="description"
             textAreaProps={{placeholder: 'Goals, training split, or coaching notes', rows: 2}}
           />
-        </Fieldset.Group>
-      </Fieldset>
-
-      <Fieldset>
-        <Fieldset.Legend>Schedule</Fieldset.Legend>
-
-        <Fieldset.Group>
-          <FieldRow>
-            <FormTextField
-              control={control}
-              fullWidth
-              label="Start date"
-              name="start_date"
-              type="date"
-            />
-
-            <FormTextField
-              control={control}
-              fullWidth
-              label="End date"
-              name="end_date"
-              type="date"
-            />
-          </FieldRow>
         </Fieldset.Group>
       </Fieldset>
 

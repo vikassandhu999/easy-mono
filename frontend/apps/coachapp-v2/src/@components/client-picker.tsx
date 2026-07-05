@@ -1,130 +1,79 @@
-import type {Key} from '@heroui/react';
-
-import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
+import {Description, Label, SearchField, Spinner, Typography} from '@heroui/react';
 import {Users} from 'lucide-react';
-import {useCallback, useDeferredValue, useMemo, useState} from 'react';
+import {useDeferredValue, useState} from 'react';
 
 import {type Client, useListClientsQuery} from '@/api/clients';
 import {getFullName} from '@/clients/lib/invite-client';
 
-type ClientPickerProps = {
+type ClientPickerContentProps = {
   onSelect: (client: Client) => void;
-  label?: string;
-  description?: string;
-  placeholder?: string;
-  excludeIds?: string[];
-  isDisabled?: boolean;
-  autoFocus?: boolean;
 };
 
-// Shared component because nutrition plans and training plans both assign/copy
-// plans to clients. After selecting a client the selection is cleared and the
-// full Client object is passed to onSelect.
-export default function ClientPicker({
-  onSelect,
-  label,
-  description,
-  placeholder = 'Search clients...',
-  excludeIds = [],
-  isDisabled = false,
-  autoFocus = false,
-}: ClientPickerProps) {
-  const [searchInput, setSearchInput] = useState('');
-  const deferredSearch = useDeferredValue(searchInput);
-  const shouldQuery = deferredSearch.length >= 1;
+/**
+ * Body of the client picker — search + result rows. Rendered inside an anchored
+ * Popover (desktop) or KeyboardSheet (mobile) by the caller (plan-add-to-client),
+ * mirroring the food-picker-content / plan-assign-content pattern.
+ */
+export default function ClientPickerContent({onSelect}: ClientPickerContentProps) {
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  const shouldQuery = deferredSearch.trim().length >= 1;
 
-  const {data, isFetching} = useListClientsQuery(shouldQuery ? {search: deferredSearch, limit: 10} : undefined, {
-    skip: !shouldQuery,
-  });
-
-  const clients = useMemo(() => data?.data ?? [], [data]);
-
-  const handleChange = useCallback(
-    (key: Key | Key[] | null) => {
-      if (key == null) {
-        return;
-      }
-      const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) {
-        return;
-      }
-      const client = clients.find((c) => c.id === id);
-      if (client) {
-        onSelect(client);
-        setSearchInput('');
-      }
-    },
-    [onSelect, clients],
-  );
+  const {data, isFetching} = useListClientsQuery({search: deferredSearch, limit: 10}, {skip: !shouldQuery});
+  const clients = data?.data ?? [];
 
   return (
-    <Autocomplete
-      allowsEmptyCollection
-      className="w-full"
-      defaultOpen={autoFocus}
-      disabledKeys={excludeIds}
-      isDisabled={isDisabled}
-      onChange={handleChange}
-      placeholder={placeholder}
-      selectionMode="single"
-      value={null}
-    >
-      {label && <Label>{label}</Label>}
-      <Autocomplete.Trigger>
-        <Autocomplete.Value />
-        <Autocomplete.Indicator />
-      </Autocomplete.Trigger>
-      {description && <Description>{description}</Description>}
-      <Autocomplete.Popover>
-        <Autocomplete.Filter
-          inputValue={searchInput}
-          onInputChange={setSearchInput}
+    <div className="flex w-full flex-col gap-2">
+      <SearchField
+        aria-label="Search clients"
+        autoFocus
+        onChange={setSearch}
+        value={search}
+        variant="secondary"
+      >
+        <SearchField.Group>
+          <SearchField.SearchIcon />
+          <SearchField.Input placeholder="Search clients…" />
+          <SearchField.ClearButton />
+        </SearchField.Group>
+      </SearchField>
+
+      {isFetching ? (
+        <div className="flex justify-center py-6">
+          <Spinner size="sm" />
+        </div>
+      ) : !shouldQuery || clients.length === 0 ? (
+        <Typography
+          align="center"
+          className="py-6"
+          color="muted"
+          type="body-sm"
         >
-          <SearchField
-            autoFocus={autoFocus}
-            className="sticky top-0 z-10"
-            name="client-search"
-            variant="secondary"
-          >
-            <SearchField.Group>
-              <SearchField.SearchIcon />
-              <SearchField.Input placeholder="Search clients..." />
-              <Spinner
-                className={`absolute right-2 top-1/2 -translate-y-1/2 ${isFetching ? '' : 'pointer-events-none opacity-0'}`}
-                size="sm"
-              />
-              <SearchField.ClearButton className={isFetching ? 'pointer-events-none opacity-0' : ''} />
-            </SearchField.Group>
-          </SearchField>
-          <ListBox
-            className="max-h-[280px] overflow-y-auto"
-            items={clients}
-            renderEmptyState={() => (
-              <EmptyState>{shouldQuery ? 'No clients found' : 'Type to search clients'}</EmptyState>
-            )}
-          >
-            {(client: Client) => (
-              <ListBox.Item
-                id={client.id}
-                key={client.id}
-                textValue={getFullName(client.first_name, client.last_name) || 'No name'}
-              >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
-                  <Users
-                    className="text-muted"
-                    size={14}
-                  />
-                </div>
-                <div className="flex min-w-0 flex-col">
-                  <Label className="truncate">{getFullName(client.first_name, client.last_name) || 'No name'}</Label>
-                  <Description className="truncate">{client.email}</Description>
-                </div>
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            )}
-          </ListBox>
-        </Autocomplete.Filter>
-      </Autocomplete.Popover>
-    </Autocomplete>
+          {shouldQuery ? 'No clients found' : 'Type to search clients'}
+        </Typography>
+      ) : (
+        <div className="flex max-h-[280px] flex-col overflow-y-auto">
+          {clients.map((client) => (
+            <button
+              className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-secondary"
+              key={client.id}
+              onClick={() => onSelect(client)}
+              type="button"
+            >
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
+                <Users
+                  className="text-muted"
+                  size={14}
+                />
+              </div>
+              <div className="flex min-w-0 flex-col">
+                <Label className="truncate">{getFullName(client.first_name, client.last_name) || 'No name'}</Label>
+                <Description className="truncate">{client.email}</Description>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

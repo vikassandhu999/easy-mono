@@ -6,4 +6,4 @@ dist
 .nx/workspace-data
 llm_samples
 
-astro
+astro*.tsbuildinfo

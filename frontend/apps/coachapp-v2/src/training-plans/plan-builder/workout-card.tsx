@@ -7,9 +7,10 @@
  * Width discipline: WorkoutCard adds no horizontal padding inside the body —
  * ExerciseRow already owns its own 10px indent + 2px accent rule.
  */
-import {Button, Dropdown, Label, Separator, Typography, toast} from '@heroui/react';
+import {Button, Dropdown, Label, Separator, Typography} from '@heroui/react';
 import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {toastMutationError} from '@/@components/mutation-toast';
 import type {TrainingExercise, TrainingPlanWorkout} from '@/api/generated';
 import {
   coachApi,
@@ -59,8 +60,9 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     }
   }, [workout.name, editingName]);
 
-  // Exercise picker sheet
+  // Exercise picker sheet — anchor the desktop popover to the "+ Add exercise" button
   const [pickerOpen, setPickerOpen] = useState(false);
+  const addExerciseButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // ---------------------------------------------------------------------------
   // Rename handlers
@@ -93,10 +95,10 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
         id: workout.id,
         trainingWorkoutUpdateRequest: {name: trimmed},
       }).unwrap();
-    } catch {
+    } catch (e) {
       patch.undo();
       setNameValue(workout.name);
-      toast.danger("Couldn't save changes");
+      toastMutationError(e, "Couldn't save changes");
     }
   }, [nameValue, workout.id, workout.name, planId, updateWorkout, dispatch]);
 
@@ -117,18 +119,32 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
   // ---------------------------------------------------------------------------
 
   const handleDelete = useCallback(async () => {
+    const patch = dispatch(
+      coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
+        const idx = draft.data.findIndex((x) => x.id === workout.id);
+        if (idx !== -1) {
+          draft.data.splice(idx, 1);
+        }
+      }),
+    );
+    // The backend cascades schedule entries with the workout — mirror that in
+    // the schedule cache, or the day rows keep pointing at a workout that no
+    // longer exists (ghost assignments in the week schedule).
+    const schedulePatch = dispatch(
+      coachApi.util.updateQueryData('getTrainingPlanSchedule', {planId}, (draft) => {
+        for (const [day, entry] of Object.entries(draft.data ?? {})) {
+          if (entry?.training_workout_id === workout.id) {
+            draft.data[day] = {...entry, training_workout_id: null, workout_name: null};
+          }
+        }
+      }),
+    );
     try {
       await deleteWorkout({id: workout.id}).unwrap();
-      dispatch(
-        coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
-          const idx = draft.data.findIndex((x) => x.id === workout.id);
-          if (idx !== -1) {
-            draft.data.splice(idx, 1);
-          }
-        }),
-      );
-    } catch {
-      toast.danger("Couldn't delete workout");
+    } catch (e) {
+      patch.undo();
+      schedulePatch.undo();
+      toastMutationError(e, "Couldn't delete workout");
     }
   }, [workout.id, planId, deleteWorkout, dispatch]);
 
@@ -171,8 +187,8 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
               }
             }),
           );
-        } catch {
-          toast.danger("Couldn't add exercise");
+        } catch (e) {
+          toastMutationError(e, "Couldn't add exercise");
         }
       }
     },
@@ -195,9 +211,9 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
       );
       try {
         await deleteWorkoutElement({id: elementId}).unwrap();
-      } catch {
+      } catch (e) {
         patch.undo();
-        toast.danger("Couldn't remove exercise");
+        toastMutationError(e, "Couldn't remove exercise");
       }
     },
     [workout.id, planId, deleteWorkoutElement, dispatch],
@@ -235,9 +251,9 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
           workoutId: workout.id,
           trainingWorkoutReorderRequest: {element_ids: elementIds},
         }).unwrap();
-      } catch {
+      } catch (e) {
         patch.undo();
-        toast.danger("Couldn't reorder exercises");
+        toastMutationError(e, "Couldn't reorder exercises");
       }
     },
     [workout.id, workout.workout_elements, planId, reorderWorkoutElements, dispatch],
@@ -301,7 +317,9 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
         </div>
 
         {/* Exercise count badge */}
-        <span className="shrink-0 text-xs text-muted">{exerciseCount} ex</span>
+        <span className="shrink-0 text-xs text-muted">
+          {exerciseCount} {exerciseCount === 1 ? 'exercise' : 'exercises'}
+        </span>
 
         {/* Workout options menu — stop propagation so clicks don't toggle the accordion */}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown; role is on the Button inside */}
@@ -393,6 +411,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
 
           <div className="pl-2.5">
             <button
+              ref={addExerciseButtonRef}
               className="mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
               onClick={() => setPickerOpen(true)}
               type="button"
@@ -405,6 +424,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
 
       {/* Exercise picker sheet */}
       <ExercisePickerSheet
+        anchorEl={addExerciseButtonRef.current}
         onAdd={(exercises) => {
           handleAddExercises(exercises).catch(() => undefined);
         }}

@@ -1,50 +1,51 @@
-import {Button, toast} from '@heroui/react';
-import {UserPlus} from 'lucide-react';
-import {useState} from 'react';
+import {toast} from '@heroui/react';
 
-import ClientPicker from '@/@components/client-picker';
-import {type TrainingPlan, useAssignTrainingPlanMutation} from '@/api/generated';
+import {toastMutationError} from '@/@components/mutation-toast';
+import {PlanAddToClientControl} from '@/@components/plan-add-to-client';
+import type {Client} from '@/api/clients';
+import {coachApi, type TrainingPlan, useAssignTrainingPlanMutation} from '@/api/generated';
+import {useAppDispatch} from '@/store';
 
 export type Props = {
   plan: TrainingPlan;
 };
 
 export function PlanAddToClient({plan}: Props) {
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [assignTraining] = useAssignTrainingPlanMutation();
+  const dispatch = useAppDispatch();
+  const [assignTraining, {isLoading: isAssigning}] = useAssignTrainingPlanMutation();
+
+  // Already assigned — nothing to add to.
+  if (plan.client_id) {
+    return null;
+  }
+
+  const assign = async (client: Client) => {
+    try {
+      const result = await assignTraining({
+        id: plan.id,
+        trainingPlanAssignRequest: {client_id: client.id},
+      }).unwrap();
+      // tag:false — reflect the assignment in the cached detail so the
+      // header/date fields update without a reload. Assign may return a copy
+      // (new id) — only patch when it's the same plan.
+      if (result.data.id === plan.id) {
+        dispatch(
+          coachApi.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
+            draft.data = result.data;
+          }),
+        );
+      }
+      toast.success(`"${plan.name}" assigned`);
+    } catch (e) {
+      toastMutationError(e, "Training plan wasn't assigned");
+    }
+  };
 
   return (
-    <div className="relative">
-      <Button
-        aria-label={`Add ${plan.name} to client`}
-        onPress={() => setIsPickerOpen((open) => !open)}
-        size={'sm'}
-        variant="secondary"
-      >
-        <UserPlus size={18} />
-        Add to client
-      </Button>
-      {isPickerOpen ? (
-        <div className="absolute right-0 top-full z-30 mt-2 w-72 max-w-[calc(100vw-1rem)] rounded-lg border border-border bg-surface p-3 shadow-lg">
-          <ClientPicker
-            autoFocus
-            excludeIds={plan.client_id ? [plan.client_id] : undefined}
-            onSelect={async (client) => {
-              try {
-                await assignTraining({
-                  id: plan.id,
-                  trainingPlanAssignRequest: {client_id: client.id},
-                }).unwrap();
-                toast.success(`"${plan.name}" assigned`);
-                setIsPickerOpen(false);
-              } catch {
-                toast.danger("Training plan wasn't assigned");
-              }
-            }}
-            placeholder="Search clients"
-          />
-        </div>
-      ) : null}
-    </div>
+    <PlanAddToClientControl
+      isAssigning={isAssigning}
+      onAssign={assign}
+      planName={plan.name}
+    />
   );
 }

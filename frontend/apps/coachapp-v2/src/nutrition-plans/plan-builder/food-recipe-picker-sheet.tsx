@@ -16,8 +16,9 @@
  *   onPick   — called with the array of selected Food | Recipe objects
  */
 
-import {Chip, toast} from '@heroui/react';
-import {useCallback, useMemo, useState} from 'react';
+import {Chip} from '@heroui/react';
+import {useCallback, useMemo, useRef, useState} from 'react';
+import {toastMutationError} from '@/@components/mutation-toast';
 
 import type {Food, Recipe} from '@/api/generated';
 import {
@@ -46,6 +47,8 @@ interface FoodRecipePickerSheetProps {
   onClose: () => void;
   /** Called with the full array of picked Food | Recipe objects. */
   onPick: (items: FoodOrRecipe[]) => void;
+  /** Desktop popover anchor — the "+ Add food or recipe" button. */
+  anchorEl?: HTMLElement | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -98,7 +101,7 @@ export function isRecipe(item: FoodOrRecipe): item is Recipe {
 // Component
 // ---------------------------------------------------------------------------
 
-export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRecipePickerSheetProps) {
+export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl}: FoodRecipePickerSheetProps) {
   // --- Tab state ---
   const [activeTab, setActiveTab] = useState<ActiveTab>('foods');
 
@@ -134,7 +137,10 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRec
   const recipes = useMemo(() => recipePages?.pages.flatMap((page) => page.data) ?? [], [recipePages]);
 
   const items: FoodOrRecipe[] = activeTab === 'foods' ? foods : recipes;
-  const loading = activeTab === 'foods' ? foodsFetching : recipesFetching;
+  // Include the debounce window so typed-but-not-yet-queried search shows the
+  // loading state instead of a flash of stale "no results" (matches the
+  // training exercise picker).
+  const loading = (activeTab === 'foods' ? foodsFetching : recipesFetching) || search !== debouncedSearch;
   const hasMore = activeTab === 'foods' ? (foodsHasNext ?? false) : (recipesHasNext ?? false);
   const fetchNextPage = activeTab === 'foods' ? foodsFetchNext : recipesFetchNext;
 
@@ -196,8 +202,15 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRec
     onClose();
   }, [selectedItems, onPick, onClose]);
 
+  // In-flight guard — a double-tap on the create row must not POST twice.
+  const creatingRef = useRef(false);
+
   const handleCreateNoMatch = useCallback(
     async (query: string) => {
+      if (creatingRef.current) {
+        return;
+      }
+      creatingRef.current = true;
       try {
         const result = await createFood({
           foodRequest: {name: query},
@@ -208,9 +221,11 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRec
         setSelectedItems((prev) => new Map([...prev, [newFood.id, newFood]]));
         setSearch('');
         setActiveTab('foods');
-      } catch {
+      } catch (e) {
         // Creation failed — leave search text so the user can retry
-        toast.danger("Couldn't create food. Try again.");
+        toastMutationError(e, "Couldn't create food");
+      } finally {
+        creatingRef.current = false;
       }
     },
     [createFood],
@@ -269,6 +284,7 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick}: FoodRec
 
   return (
     <SearchPickerSheet<FoodOrRecipe>
+      anchorEl={anchorEl}
       confirmLabel={(n) => (n === 0 ? 'Add items' : `Add ${n} item${n === 1 ? '' : 's'}`)}
       filters={filters}
       filtersLayout="segmented"

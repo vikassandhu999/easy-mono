@@ -1,6 +1,5 @@
-import {Button} from '@heroui/react';
-import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
+import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
@@ -8,7 +7,6 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetTrainingPlanQuery} from '@/api/generated';
 
-import {PinnedWeekBar} from './pinned-week-bar';
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
 import {PlanHeader} from './plan-header';
@@ -23,10 +21,8 @@ export default function TrainingPlanDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2">
-          <Page.TitleGroup>
-            <Page.Title>Training Plan</Page.Title>
-          </Page.TitleGroup>
+        <Page.Header className="py-3! items-center">
+          <BackButton onPress={goBack} />
         </Page.Header>
         <Page.Content>
           <PageSkeleton />
@@ -38,22 +34,10 @@ export default function TrainingPlanDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2">
-          <Page.TitleGroup>
-            <Page.Title>Training Plan</Page.Title>
-          </Page.TitleGroup>
-          <Page.Actions>
-            <Button
-              onPress={goBack}
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </Button>
-          </Page.Actions>
+        <Page.Header className="py-3! items-center">
+          <BackButton onPress={goBack} />
         </Page.Header>
-        <Page.Content>
+        <Page.Content className="px-4 pt-4 md:px-6 lg:px-8">
           <ErrorState message="Couldn't load training plan. It may not exist or you don't have access." />
         </Page.Content>
       </Page>
@@ -69,15 +53,7 @@ export default function TrainingPlanDetail() {
           Page.Header's own padding would otherwise eat into that width. */}
       <Page.Header className="py-3!">
         <div className="flex w-full max-w-2xl items-center justify-between gap-3">
-          <Button
-            className="-ml-3"
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </Button>
+          <BackButton onPress={goBack} />
           <div className="flex gap-2">
             <PlanAddToClient plan={plan} />
             <PlanActions
@@ -94,13 +70,10 @@ export default function TrainingPlanDetail() {
           {/* 1. Plan header: inline name + dates → autosave */}
           <PlanHeader plan={plan} />
 
-          {/* 2. Pinned week bar: sticky below header */}
-          <PinnedWeekBar planId={plan.id} />
-
-          {/* 3. Workout list: accordion, add workout, empty state */}
+          {/* 2. Workout list: accordion, add workout, empty state */}
           <WorkoutList planId={plan.id} />
 
-          {/* 4. Week schedule: day → workout assignment */}
+          {/* 3. Week schedule: day → workout assignment */}
           <WeekSchedule planId={plan.id} />
         </div>
       </Page.Content>

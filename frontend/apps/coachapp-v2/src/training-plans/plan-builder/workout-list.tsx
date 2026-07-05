@@ -9,7 +9,8 @@
  * optimistic updateQueryData so the list reflects changes immediately without
  * a round-trip.
  */
-import {Button, Spinner, Typography} from '@heroui/react';
+import {Button, Skeleton, Typography} from '@heroui/react';
+import {toastMutationError} from '@/@components/mutation-toast';
 import {coachApi, useCreateWorkoutMutation, useListWorkoutsQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
@@ -42,7 +43,10 @@ export function WorkoutList({planId}: WorkoutListProps) {
   // ---------------------------------------------------------------------------
 
   const handleAddWorkout = async () => {
-    const name = `Workout ${workouts.length + 1}`;
+    // Next number after the highest existing "Workout N" — length+1 duplicates
+    // names after a delete.
+    const nextNum = workouts.reduce((n, w) => Math.max(n, Number(/^Workout (\d+)$/.exec(w.name)?.[1] ?? 0)), 0) + 1;
+    const name = `Workout ${nextNum}`;
     try {
       const result = await createWorkout({
         planId,
@@ -57,8 +61,9 @@ export function WorkoutList({planId}: WorkoutListProps) {
       );
       // Auto-open the newly created workout
       toggle(newWorkout.id);
-    } catch {
-      // Create failed — nothing to roll back
+    } catch (e) {
+      // Create failed — nothing to roll back (optimistic push only runs on success)
+      toastMutationError(e, "Couldn't add workout");
     }
   };
 
@@ -91,13 +96,15 @@ export function WorkoutList({planId}: WorkoutListProps) {
         ) : null}
       </div>
 
-      {/* Loading */}
+      {/* Loading — layout-approximating skeleton (RM-125: no centered spinner) */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Spinner
-            color="accent"
-            size="sm"
-          />
+        <div className="flex flex-col gap-2">
+          {[0, 1].map((i) => (
+            <Skeleton
+              className="h-11 w-full rounded-xl"
+              key={i}
+            />
+          ))}
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">

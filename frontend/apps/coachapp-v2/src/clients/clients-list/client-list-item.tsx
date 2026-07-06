@@ -2,15 +2,8 @@ import {formatIsoDateShort, formatTimeAgo, getInitials} from '@easy/utils';
 import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
 import {MessageCircle} from 'lucide-react';
 
-import type {Client, ClientStatus} from '@/api/clients';
-
-const STATUS_CONFIG: Record<ClientStatus, {color: 'default' | 'success'; label: string}> = {
-  active: {color: 'success', label: 'Active'},
-  archived: {color: 'default', label: 'Archived'},
-  awaiting_seat: {color: 'default', label: 'Awaiting seat'},
-  inactive: {color: 'default', label: 'Inactive'},
-  pending: {color: 'default', label: 'Pending'},
-};
+import type {Client} from '@/api/clients';
+import {STATUS_DISPLAY} from '@/clients/lib/client';
 
 export default function ClientListItem({client}: {client: Client}) {
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
@@ -24,7 +17,7 @@ export default function ClientListItem({client}: {client: Client}) {
     subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
   }
 
-  const status = STATUS_CONFIG[client.status];
+  const status = STATUS_DISPLAY[client.status];
   const whatsapp = client.phone?.replace(/\D/g, '');
 
   return (

@@ -18,7 +18,7 @@ export function AddSeatsDialog({onDone}: {onDone?: () => void}) {
   const price = data?.data.monthly_seat_price_inr;
 
   const buy = async (close: () => void) => {
-    const seatsToAdd = seats ?? 0;
+    const seatsToAdd = Math.floor(seats ?? 0);
     if (seatsToAdd < 1) {
       return;
     }

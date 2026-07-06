@@ -7,6 +7,7 @@ import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {type BillingSummary, getSeatLimitError} from '@/api/billing';
 import {type Client, useInviteClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 import InviteClientForm, {
@@ -16,6 +17,52 @@ import InviteClientForm, {
   useInviteClientForm,
 } from '@/clients/client-invite-form/invite-client-form';
 import {getFullName, getWhatsAppUrl} from '@/clients/lib/invite-client';
+import {AddSeatsDialog} from '@/settings/add-seats-dialog';
+
+function SeatLimitBlocked({
+  onBack,
+  onDone,
+  seatSummary,
+}: {
+  onBack: () => void;
+  onDone: () => void;
+  seatSummary: BillingSummary;
+}) {
+  return (
+    <Card className="max-w-lg">
+      <Card.Content className="flex flex-col gap-4">
+        <div>
+          <Typography type="h5">No seats available</Typography>
+          <Typography
+            className="mt-1"
+            color="muted"
+            type="body-sm"
+          >
+            Used seats: active clients + pending invites — {seatSummary.used_seats} / {seatSummary.seat_limit}
+          </Typography>
+        </div>
+        {seatSummary.is_owner ? (
+          <AddSeatsDialog onDone={onDone} />
+        ) : (
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            Ask the owner to add seats.
+          </Typography>
+        )}
+        <div>
+          <Button
+            onPress={onBack}
+            variant="secondary"
+          >
+            Back
+          </Button>
+        </div>
+      </Card.Content>
+    </Card>
+  );
+}
 
 function InviteConfirmation({client, onInviteAnother}: {client: Client; onInviteAnother: () => void}) {
   const navigate = useNavigate();
@@ -124,6 +171,7 @@ export default function InviteClient() {
   const goBack = useGoBack(ROUTES.CLIENTS);
   const [inviteClient, {isLoading}] = useInviteClientMutation();
   const [inviteResult, setInviteResult] = useState<Client | null>(null);
+  const [seatLimit, setSeatLimit] = useState<BillingSummary | null>(null);
 
   const form = useInviteClientForm();
 
@@ -132,6 +180,11 @@ export default function InviteClient() {
       const result = await inviteClient(inviteClientToRequest(data)).unwrap();
       setInviteResult(result.data);
     } catch (err) {
+      const limit = getSeatLimitError(err);
+      if (limit) {
+        setSeatLimit(limit.seatSummary);
+        return;
+      }
       applyFormErrors(
         err,
         "Client wasn't invited. Check the details and try again",
@@ -162,6 +215,12 @@ export default function InviteClient() {
           <InviteConfirmation
             client={inviteResult}
             onInviteAnother={handleInviteAnother}
+          />
+        ) : seatLimit ? (
+          <SeatLimitBlocked
+            onBack={() => setSeatLimit(null)}
+            onDone={() => setSeatLimit(null)}
+            seatSummary={seatLimit}
           />
         ) : (
           <InviteClientForm

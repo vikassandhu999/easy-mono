@@ -6,12 +6,13 @@ type TrainingPlanStatus = TrainingPlan['status'];
 
 export type PlanStatus = NutritionPlanStatus | TrainingPlanStatus;
 
-export const STATUS_CHIP_COLOR: Record<ClientStatus, 'default' | 'success'> = {
-  active: 'success',
-  pending: 'default',
-  awaiting_seat: 'default',
-  inactive: 'default',
-  archived: 'default',
+// Single source of truth for client status → chip color/label (RM-107).
+export const STATUS_DISPLAY: Record<ClientStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
+  active: {color: 'success', label: 'Active'},
+  pending: {color: 'default', label: 'Pending'},
+  awaiting_seat: {color: 'warning', label: 'Joined, waiting for a seat.'},
+  inactive: {color: 'default', label: 'Inactive'},
+  archived: {color: 'default', label: 'Archived'},
 };
 
 export const PLAN_STATUS_MAP: Record<PlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {

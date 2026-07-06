@@ -10,6 +10,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useGetBillingQuery} from '@/api/billing';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {
   type ClientTrainingPlan,
@@ -25,7 +26,8 @@ import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
-import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_CHIP_COLOR, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
+import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_DISPLAY, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
+import {AddSeatsDialog} from '@/settings/add-seats-dialog';
 
 /** Compact assigned-plan window: "Jun 26 – Aug 21, 2026" (drops the repeated
  *  year), "From …" / "Until …" for open-ended, or null when unscheduled. */
@@ -259,6 +261,7 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CLIENTS);
   const {data, isError, isLoading} = useGetClientQuery(id!);
+  const {data: billingData} = useGetBillingQuery();
 
   if (isLoading) {
     return (
@@ -308,7 +311,8 @@ export default function ClientDetail() {
 
   const client = data.data;
   const isPending = client.status === 'pending';
-  const statusColor = STATUS_CHIP_COLOR[client.status] ?? 'default';
+  const isAwaitingSeat = client.status === 'awaiting_seat';
+  const status = STATUS_DISPLAY[client.status];
 
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
   const initials = getInitials(client.first_name, client.last_name);
@@ -355,11 +359,11 @@ export default function ClientDetail() {
                       {name}
                     </Typography>
                     <Chip
-                      color={statusColor}
+                      color={status.color}
                       size="sm"
                       variant="soft"
                     >
-                      {client.status}
+                      {status.label}
                     </Chip>
                   </div>
                   {client.phone ? (
@@ -372,6 +376,20 @@ export default function ClientDetail() {
                       <Phone size={14} />
                       {client.phone}
                     </Typography>
+                  ) : null}
+                  {isAwaitingSeat ? (
+                    <div className="mt-2">
+                      {billingData?.data.is_owner ? (
+                        <AddSeatsDialog />
+                      ) : (
+                        <Typography
+                          color="muted"
+                          type="body-sm"
+                        >
+                          Ask the owner to add seats.
+                        </Typography>
+                      )}
+                    </div>
                   ) : null}
                 </div>
               </div>

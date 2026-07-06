@@ -1,11 +1,11 @@
-import { Button, Popover } from '@heroui/react';
-import { UserPlus } from 'lucide-react';
-import { useRef, useState } from 'react';
+import {Button, Popover} from '@heroui/react';
+import {UserPlus} from 'lucide-react';
+import {useRef, useState} from 'react';
 
 import ClientPickerContent from '@/@components/client-picker';
-import { useIsDesktop } from '@/@hooks/use-is-desktop';
-import type { Client } from '@/api/clients';
-import { KeyboardSheet } from '@/builder-kit/keyboard-sheet';
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
+import type {Client} from '@/api/clients';
+import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 
 export type PlanAddToClientControlProps = {
   planName: string;

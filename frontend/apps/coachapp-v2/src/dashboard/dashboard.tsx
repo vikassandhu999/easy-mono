@@ -1,6 +1,7 @@
 import {getInitials} from '@easy/utils';
 import {Avatar, Collection, Description, Label, ListBox, Typography} from '@heroui/react';
-import {ChevronRight, Dumbbell, Globe, type LucideIcon, UserPlus, UtensilsCrossed} from 'lucide-react';
+import {ChevronRight, Dumbbell, Globe, type LucideIcon, Sparkles, UserPlus, UtensilsCrossed} from 'lucide-react';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
@@ -9,6 +10,9 @@ import {ROUTES} from '@/@config/routes';
 import {type Client, useListClientsQuery} from '@/api/clients';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {type Prospect, useListProspectsQuery} from '@/api/prospects';
+import {GettingStartedCard, useGettingStarted} from '@/dashboard/getting-started-card';
+
+const GETTING_STARTED_DISMISSED = 'coachapp:getting-started-dismissed';
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -56,6 +60,18 @@ export default function Dashboard() {
   const {data: clientsData, isError: clientsError} = useListClientsQuery({limit: 5, status: 'pending'});
   const {data: prospectsData, isError: prospectsError} = useListProspectsQuery({limit: 5, status: 'new'});
 
+  const {steps, doneCount, loading: gsLoading} = useGettingStarted();
+  const [gsDismissed, setGsDismissed] = useState(() => localStorage.getItem(GETTING_STARTED_DISMISSED) === '1');
+  const gsIncomplete = !gsLoading && doneCount < steps.length;
+  const dismissGettingStarted = () => {
+    localStorage.setItem(GETTING_STARTED_DISMISSED, '1');
+    setGsDismissed(true);
+  };
+  const restoreGettingStarted = () => {
+    localStorage.removeItem(GETTING_STARTED_DISMISSED);
+    setGsDismissed(false);
+  };
+
   if (profileLoading) {
     return (
       <Page>
@@ -83,10 +99,30 @@ export default function Dashboard() {
           <Page.Title>{name ? `${greeting()}, ${name}` : greeting()}</Page.Title>
           {profile?.business.name ? <Page.Description>{profile.business.name}</Page.Description> : null}
         </Page.TitleGroup>
+        {gsIncomplete && gsDismissed ? (
+          <Page.Actions>
+            <button
+              className="flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface-hover"
+              onClick={restoreGettingStarted}
+              type="button"
+            >
+              <Sparkles size={15} />
+              Get set up · {doneCount}/{steps.length}
+            </button>
+          </Page.Actions>
+        ) : null}
       </Page.Header>
 
       <Page.Content className="px-4 pb-8 md:px-6 lg:px-8">
         <div className="flex max-w-2xl flex-col gap-8 pt-6">
+          {gsIncomplete && !gsDismissed ? (
+            <GettingStartedCard
+              doneCount={doneCount}
+              onDismiss={dismissGettingStarted}
+              steps={steps}
+            />
+          ) : null}
+
           {/* Stats */}
           <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">

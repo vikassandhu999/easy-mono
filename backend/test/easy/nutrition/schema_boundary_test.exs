@@ -8,7 +8,6 @@ defmodule Easy.Nutrition.SchemaBoundaryTest do
     "lib/easy/nutrition/meal_item.ex",
     "lib/easy/nutrition/meal_log.ex",
     "lib/easy/nutrition/plan.ex",
-    "lib/easy/nutrition/schedule_entry.ex",
     "lib/easy/nutrition/recipe.ex",
     "lib/easy/nutrition/recipe_ingredient.ex",
     "lib/easy/nutrition/serving_size.ex"

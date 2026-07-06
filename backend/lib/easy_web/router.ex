@@ -152,9 +152,6 @@ defmodule EasyWeb.Router do
     post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
     get "/nutrition-plans/:plan_id/meals", MealController, :index
     post "/nutrition-plans/:plan_id/meals", MealController, :create
-    get "/nutrition-plans/:plan_id/schedule", ScheduleController, :show
-    put "/nutrition-plans/:plan_id/schedule", ScheduleController, :update_all
-    put "/nutrition-plans/:plan_id/schedule/:day", ScheduleController, :update
     get "/nutrition-meals/:id", MealController, :show
     patch "/nutrition-meals/:id", MealController, :update
     delete "/nutrition-meals/:id", MealController, :delete

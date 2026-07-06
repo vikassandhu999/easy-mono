@@ -4,7 +4,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.ScheduleEntry
 
   @spec show(map()) :: map()
   def show(%{plan: plan}) do
@@ -43,7 +42,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
     summary_data(plan)
     |> Map.merge(%{
       meals: meals_data(plan.meals),
-      schedule_entries: schedule_entries_data(plan.plan_items),
       days: days_data(plan.days),
       weekday_assignments: assignments_data(plan.weekday_assignments)
     })
@@ -121,26 +119,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
   defp meal_item_name(%MealItem{food: %{name: name}}), do: name
   defp meal_item_name(%MealItem{recipe: %{name: name}}), do: name
   defp meal_item_name(_), do: nil
-
-  defp schedule_entries_data(entries) when is_list(entries) do
-    Enum.map(entries, &schedule_entry_data/1)
-  end
-
-  defp schedule_entries_data(_), do: []
-
-  defp schedule_entry_data(%ScheduleEntry{} = entry) do
-    %{
-      id: entry.id,
-      day_of_week: entry.day_of_week,
-      meal_slot: entry.meal_slot,
-      nutrition_meal_id: entry.nutrition_meal_id,
-      nutrition_plan_id: entry.nutrition_plan_id,
-      inserted_at: entry.inserted_at,
-      updated_at: entry.updated_at
-    }
-  end
-
-  defp schedule_entry_data(_), do: nil
 
   defp client_data(%Client{} = client) do
     %{

@@ -34,9 +34,8 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
       assert hd(data)["id"] != nil
-      # Index response should not include meals/schedule_entries
+      # Index response should not include meals
       refute Map.has_key?(hd(data), "meals")
-      refute Map.has_key?(hd(data), "schedule_entries")
     end
 
     test "returns empty list when no plans assigned", ctx do
@@ -71,7 +70,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
   end
 
   describe "GET /v1/client/nutrition-plans/:id" do
-    test "returns plan with meals and schedule_entries", ctx do
+    test "returns plan with meals", ctx do
       plan =
         insert(:plan,
           creator: ctx.coach,
@@ -88,17 +87,10 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         food: insert(:food, creator: ctx.coach, business: ctx.business)
       )
 
-      insert(:schedule_entry,
-        plan: plan,
-        meal: meal,
-        business: ctx.business
-      )
-
       conn = get(ctx.conn, "/v1/client/nutrition-plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert length(data["meals"]) == 1
-      assert length(data["schedule_entries"]) == 1
 
       # Meal items include food detail
       meal_data = hd(data["meals"])

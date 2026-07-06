@@ -8,7 +8,6 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
     "lib/easy_web/controllers/clients/recipe_controller.ex",
     "lib/easy_web/controllers/coaches/meal_controller.ex",
     "lib/easy_web/controllers/coaches/meal_item_controller.ex",
-    "lib/easy_web/controllers/coaches/schedule_controller.ex",
     "lib/easy_web/controllers/coaches/nutrition_plan_controller.ex",
     "lib/easy_web/controllers/clients/nutrition_plan_controller.ex",
     "lib/easy_web/controllers/coaches/meal_log_controller.ex",
@@ -49,7 +48,7 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
       refute source =~ "alias Easy.Nutrition.MealLogging", path
 
       refute source =~
-               ~r/\b(Food|Recipe|Meal|MealItem|ScheduleEntry)\.(create|update|delete)\(/,
+               ~r/\b(Food|Recipe|Meal|MealItem)\.(create|update|delete)\(/,
              path
     end
   end

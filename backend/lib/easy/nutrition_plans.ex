@@ -7,7 +7,6 @@ defmodule Easy.NutritionPlans do
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanDay
-  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.WeekdayAssignment
   alias Easy.Orgs.Coach
   alias Easy.Repo
@@ -153,71 +152,6 @@ defmodule Easy.NutritionPlans do
     with {:ok, coach} <- get_coach(ctx),
          {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
       duplicate(plan, coach.id)
-    end
-  end
-
-  @spec get_schedule(Ctx.t(), String.t()) ::
-          {:ok, %{optional(String.t()) => %{optional(String.t()) => ScheduleEntry.t()}}}
-          | {:error, :not_found}
-  def get_schedule(%Ctx{} = ctx, plan_id) do
-    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
-      {:ok, grouped_schedule(ctx.business_id, plan.id)}
-    end
-  end
-
-  @doc """
-  Atomically replace the plan's ENTIRE weekly schedule (desired state).
-  Days/slots omitted from `days` are cleared. All-or-nothing — unlike seven
-  per-day PUTs, a failure can't leave the week half-written.
-  """
-  @spec set_schedule(Ctx.t(), String.t(), map()) ::
-          {:ok, %{optional(String.t()) => %{optional(String.t()) => ScheduleEntry.t()}}}
-          | {:error, :not_found | :invalid_day | Ecto.Changeset.t()}
-  def set_schedule(%Ctx{} = ctx, plan_id, days) when is_map(days) do
-    with {:ok, plan} <- get_plan(ctx.business_id, plan_id),
-         :ok <- validate_schedule_days(Map.keys(days)) do
-      Repo.transaction(fn ->
-        ScheduleEntry
-        |> ScheduleEntry.for_business(ctx.business_id)
-        |> ScheduleEntry.for_plan(plan.id)
-        |> Repo.delete_all()
-
-        Enum.each(days, fn {day, slots} ->
-          Enum.each(slots || %{}, fn {slot, slot_value} ->
-            insert_schedule_entry!(ctx.business_id, plan.id, to_string(day), to_string(slot), slot_value[:meal_id])
-          end)
-        end)
-
-        grouped_schedule(ctx.business_id, plan.id)
-      end)
-    end
-  end
-
-  @spec set_day_schedule(Ctx.t(), String.t(), String.t(), map()) ::
-          {:ok, %{optional(String.t()) => ScheduleEntry.t()}}
-          | {:error, :not_found | :invalid_day | Ecto.Changeset.t()}
-  def set_day_schedule(%Ctx{} = ctx, plan_id, day, slots) when is_map(slots) do
-    with {:ok, plan} <- get_plan(ctx.business_id, plan_id),
-         :ok <- validate_schedule_day(day) do
-      Repo.transaction(fn ->
-        ScheduleEntry
-        |> ScheduleEntry.for_business(ctx.business_id)
-        |> ScheduleEntry.for_plan(plan.id)
-        |> ScheduleEntry.for_day(day)
-        |> Repo.delete_all()
-
-        Enum.each(slots, fn {slot, slot_value} ->
-          insert_schedule_entry!(ctx.business_id, plan.id, day, to_string(slot), slot_value[:meal_id])
-        end)
-
-        ScheduleEntry
-        |> ScheduleEntry.for_business(ctx.business_id)
-        |> ScheduleEntry.for_plan(plan.id)
-        |> ScheduleEntry.for_day(day)
-        |> ScheduleEntry.include_meal(ctx.business_id)
-        |> Repo.all()
-        |> Map.new(fn entry -> {to_string(entry.meal_slot), entry} end)
-      end)
     end
   end
 
@@ -382,41 +316,8 @@ defmodule Easy.NutritionPlans do
   end
 
   defp validate_schedule_day(day) do
-    valid_days = Enum.map(ScheduleEntry.days(), &Atom.to_string/1)
+    valid_days = Enum.map(WeekdayAssignment.days(), &Atom.to_string/1)
     if day in valid_days, do: :ok, else: {:error, :invalid_day}
-  end
-
-  defp validate_schedule_days(days) do
-    Enum.find_value(days, :ok, fn day ->
-      case validate_schedule_day(to_string(day)) do
-        :ok -> nil
-        error -> error
-      end
-    end)
-  end
-
-  # Insert one schedule entry inside a transaction; rolls back on failure.
-  defp insert_schedule_entry!(business_id, plan_id, day, slot, meal_id) do
-    attrs = %{"day_of_week" => day, "meal_slot" => slot, "nutrition_meal_id" => meal_id}
-
-    with {:ok, :valid} <- ensure_meal_for_plan(plan_id, business_id, meal_id),
-         {:ok, _entry} <- ScheduleEntry.insert_changeset(business_id, plan_id, attrs) |> Repo.insert() do
-      :ok
-    else
-      {:error, reason} -> Repo.rollback(reason)
-    end
-  end
-
-  defp grouped_schedule(business_id, plan_id) do
-    ScheduleEntry
-    |> ScheduleEntry.for_business(business_id)
-    |> ScheduleEntry.for_plan(plan_id)
-    |> ScheduleEntry.include_meal(business_id)
-    |> Repo.all()
-    |> Enum.group_by(&to_string(&1.day_of_week))
-    |> Map.new(fn {day, entries} ->
-      {day, Map.new(entries, fn entry -> {to_string(entry.meal_slot), entry} end)}
-    end)
   end
 
   # Private
@@ -620,12 +521,9 @@ defmodule Easy.NutritionPlans do
         |> Meal.by_position()
         |> preload(meal_items: ^MealItem.for_business(MealItem, plan.business_id))
 
-      plan_item_query = ScheduleEntry.for_business(ScheduleEntry, plan.business_id)
-
       plan =
         Repo.preload(plan,
           meals: meal_query,
-          plan_items: plan_item_query,
           days: PlanDay.include_day_meals(PlanDay.by_position(), plan.business_id),
           weekday_assignments: WeekdayAssignment.for_business(WeekdayAssignment, plan.business_id)
         )
@@ -652,19 +550,9 @@ defmodule Easy.NutritionPlans do
       with {:ok, new_plan} <- Repo.insert(changeset),
            {:ok, meal_map} <-
              copy_meals(plan.meals, new_plan.id, new_plan.business_id, creator_id),
-           {:ok, _} <-
-             copy_schedule_entries(
-               plan.plan_items,
-               new_plan.id,
-               new_plan.business_id,
-               meal_map
-             ),
            {:ok, day_map} <- copy_days(plan.days, new_plan, meal_map),
            :ok <- copy_assignments(plan.weekday_assignments, new_plan, day_map) do
-        Repo.preload(new_plan,
-          meals: Meal.include_items(Meal, new_plan.business_id),
-          plan_items: ScheduleEntry.include_meal(ScheduleEntry, new_plan.business_id)
-        )
+        Repo.preload(new_plan, meals: Meal.include_items(Meal, new_plan.business_id))
       else
         {:error, reason} -> Repo.rollback(reason)
       end
@@ -702,28 +590,6 @@ defmodule Easy.NutritionPlans do
       case MealItem.insert_changeset(new_meal_id, business_id, attrs) |> Repo.insert() do
         {:ok, new_item} -> {:cont, {:ok, [new_item | acc]}}
         {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-  end
-
-  defp copy_schedule_entries(entries, new_plan_id, business_id, meal_map) do
-    Enum.reduce_while(entries, {:ok, []}, fn entry, {:ok, acc} ->
-      new_meal = Map.get(meal_map, entry.nutrition_meal_id)
-
-      if is_nil(new_meal) do
-        {:halt, {:error, :meal_not_found_in_plan}}
-      else
-        attrs = %{
-          day_of_week: entry.day_of_week,
-          meal_slot: entry.meal_slot,
-          nutrition_meal_id: new_meal.id
-        }
-
-        case ScheduleEntry.insert_changeset(business_id, new_plan_id, attrs)
-             |> Repo.insert() do
-          {:ok, new_entry} -> {:cont, {:ok, [new_entry | acc]}}
-          {:error, reason} -> {:halt, {:error, reason}}
-        end
       end
     end)
   end

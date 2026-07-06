@@ -371,14 +371,6 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         weight_g: 100
       )
 
-      insert(:schedule_entry,
-        plan: plan,
-        meal: meal,
-        business: ctx.business,
-        day_of_week: "tuesday",
-        meal_slot: "breakfast"
-      )
-
       post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-meal", %{
         "date" => "2026-03-25",
         "meal_slot" => "breakfast",
@@ -389,8 +381,6 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       conn = get(ctx.conn, "/v1/client/nutrition-meal-logs", %{"date" => "2026-03-25"})
       assert %{"data" => [meal_log]} = json_response(conn, 200)
       assert meal_log["meal_slot"] == "breakfast"
-      # Snapshot should be present since plan+plan_item exists for Tuesday
-      # (2026-03-25 is a Wednesday, so snapshot depends on weekday matching)
     end
 
     test "returns error for non-existent meal_id", ctx do

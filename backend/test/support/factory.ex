@@ -22,7 +22,6 @@ defmodule Easy.Factory do
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanDay
-  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Nutrition.WeekdayAssignment
@@ -365,26 +364,6 @@ defmodule Easy.Factory do
     %{
       "name" => sequence(:meal_attr_name, &"New Meal #{&1}"),
       "default_meal_slot" => "lunch"
-    }
-  end
-
-  def schedule_entry_factory do
-    plan = build(:plan)
-    meal = build(:meal, plan: plan, creator: plan.creator)
-
-    %ScheduleEntry{
-      day_of_week: "monday",
-      meal_slot: "breakfast",
-      business: plan.business,
-      plan: plan,
-      meal: meal
-    }
-  end
-
-  def schedule_entry_attrs_factory do
-    %{
-      "day_of_week" => "monday",
-      "meal_slot" => "breakfast"
     }
   end
 

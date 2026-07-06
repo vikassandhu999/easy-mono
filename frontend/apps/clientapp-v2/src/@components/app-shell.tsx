@@ -3,7 +3,10 @@ import {ClipboardCheck, Dumbbell, Settings, TrendingUp, UtensilsCrossed} from 'l
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 
+import {AwaitingSeatScreen} from '@/@components/awaiting-seat-screen';
+import SplashScreen from '@/@components/splash-screen';
 import {ROUTES} from '@/@config/routes';
+import {useGetClientProfileQuery} from '@/api/profile';
 
 const ICON_SIZE = 22;
 
@@ -58,6 +61,19 @@ export default function AppShell() {
   const location = useLocation();
   const isFullScreen = FULL_SCREEN_PATHS.has(location.pathname);
   const showTabBar = !isFullScreen && BOTTOM_NAV_PATHS.has(location.pathname);
+  const {data: profile, isLoading: isProfileLoading} = useGetClientProfileQuery();
+
+  // Block until we know the client's seat status — don't flash the blocked
+  // screen (or the tab bar) before the profile query resolves.
+  if (isProfileLoading) {
+    return <SplashScreen />;
+  }
+
+  // Coach hasn't activated a paid seat for this client yet: no plans,
+  // logging, or workflows — blocks ALL shell routes.
+  if (profile?.data.status === 'awaiting_seat') {
+    return <AwaitingSeatScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-background">

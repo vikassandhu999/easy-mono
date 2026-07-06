@@ -85,6 +85,10 @@ defmodule EasyWeb.Router do
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
 
+    get "/billing", BillingController, :show
+    post "/billing/checkout", BillingController, :checkout
+    post "/billing/cancel", BillingController, :cancel
+
     # Landing funnel
     get "/landing-page", LandingPageController, :show
     put "/landing-page", LandingPageController, :update

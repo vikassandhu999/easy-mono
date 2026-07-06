@@ -20,6 +20,44 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Easy.Error.unauthorized()})
   end
 
+  def call(conn, {:error, :not_owner}) do
+    call(conn, {:error, Easy.Error.unauthorized("Only the business owner can manage billing.")})
+  end
+
+  def call(conn, {:error, :no_subscription}) do
+    call(
+      conn,
+      {:error, Easy.Error.unprocessable(%{fields: %{subscription: ["there is no active subscription to cancel"]}})}
+    )
+  end
+
+  def call(conn, {:error, :razorpay_error}) do
+    call(
+      conn,
+      {:error,
+       Easy.Error.new(
+         :razorpay_error,
+         "The payment provider request failed. Please try again.",
+         %{},
+         :bad_gateway
+       )}
+    )
+  end
+
+  def call(conn, {:error, :seat_limit_reached}) do
+    seat_summary = Easy.Billing.seat_summary(conn.assigns.ctx)
+
+    conn
+    |> put_status(:conflict)
+    |> json(%{
+      error_code: "seat_limit_reached",
+      error_message: "No seats available",
+      error_detail: %{},
+      seat_summary: seat_summary
+    })
+    |> halt()
+  end
+
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     call(conn, {:error, Easy.Error.unprocessable(changeset)})
   end

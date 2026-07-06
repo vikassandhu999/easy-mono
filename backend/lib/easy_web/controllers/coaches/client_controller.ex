@@ -10,7 +10,8 @@ defmodule EasyWeb.Coaches.ClientController do
     ClientListResponse,
     ClientResponse,
     ClientUpdateRequest,
-    ErrorResponse
+    ErrorResponse,
+    SeatLimitError
   }
 
   plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:invite, :update]
@@ -26,7 +27,7 @@ defmodule EasyWeb.Coaches.ClientController do
     responses: [
       created: {"Client invited", "application/json", ClientResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      conflict: {"Conflict", "application/json", ErrorResponse},
+      conflict: {"Seat limit reached", "application/json", SeatLimitError},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
@@ -72,6 +73,7 @@ defmodule EasyWeb.Coaches.ClientController do
       ok: {"Client updated", "application/json", ClientResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Seat limit reached", "application/json", SeatLimitError},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 

@@ -3178,6 +3178,7 @@
         "properties": {
           "seats_to_add": {
             "example": 3,
+            "maximum": 100,
             "minimum": 1,
             "type": "integer",
             "x-struct": null,

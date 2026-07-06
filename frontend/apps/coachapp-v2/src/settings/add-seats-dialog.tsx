@@ -35,6 +35,9 @@ export function AddSeatsDialog({onDone}: {onDone?: () => void}) {
             close();
             onDone?.();
           },
+          onDismiss: () => {
+            toast.info('Checkout cancelled — no charge was made.');
+          },
         });
       } else {
         toast.success(`Added ${seatsToAdd} seat${seatsToAdd > 1 ? 's' : ''}`);

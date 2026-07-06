@@ -23,7 +23,7 @@ function loadScript(): Promise<void> {
     script.onload = () => resolve();
     script.onerror = () => {
       script.remove();
-      reject(new Error('Failed to load Razorpay checkout'));
+      reject(new Error("Couldn't load Razorpay checkout"));
     };
     document.body.appendChild(script);
   });

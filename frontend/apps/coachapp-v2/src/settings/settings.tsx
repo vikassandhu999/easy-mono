@@ -135,6 +135,36 @@ function AcquisitionSection() {
   );
 }
 
+function BillingSection() {
+  const navigate = useNavigate();
+  return (
+    <section className="mt-6">
+      <SectionHeading title="Billing" />
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <button
+          className="flex min-h-11 w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-surface-hover"
+          onClick={() => navigate(ROUTES.SETTINGS_BILLING)}
+          type="button"
+        >
+          <div className="min-w-0 flex-1">
+            <Typography type="body-sm">Billing</Typography>
+            <Typography
+              color="muted"
+              type="body-xs"
+            >
+              Seats, plan status, and payment activity
+            </Typography>
+          </div>
+          <ChevronRight
+            className="shrink-0 text-muted"
+            size={18}
+          />
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function ClientProfileSection() {
   const navigate = useNavigate();
   return (
@@ -275,6 +305,7 @@ export default function Settings() {
             profile={profile}
           />
           <AcquisitionSection />
+          <BillingSection />
           <ClientProfileSection />
           <AccountSection email={profile.email} />
 

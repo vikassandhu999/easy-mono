@@ -42,4 +42,5 @@ export const ROUTES = {
   SETTINGS: '/settings',
   SETTINGS_PROFILE_FIELDS: '/settings/client-profile-fields',
   SETTINGS_LANDING_PAGE: '/settings/landing-page',
+  SETTINGS_BILLING: '/settings/billing',
 } as const;

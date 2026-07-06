@@ -1,7 +1,7 @@
 import {api} from '@/api/base';
 import type {BillingCheckoutRequest, BillingCheckoutResponse, BillingResponse, BillingSummary} from '@/api/generated';
 
-export type {BillingSummary} from '@/api/generated';
+export type {BillingEvent, BillingSummary} from '@/api/generated';
 
 const billingApi = api.injectEndpoints({
   // Hand-managed endpoints (cache tags, precise types) that share names with

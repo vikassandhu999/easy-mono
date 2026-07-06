@@ -1,4 +1,4 @@
-import {Toast} from '@heroui/react';
+import {Button, Toast} from '@heroui/react';
 import {ClipboardCheck, Dumbbell, Settings, TrendingUp, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
@@ -61,12 +61,36 @@ export default function AppShell() {
   const location = useLocation();
   const isFullScreen = FULL_SCREEN_PATHS.has(location.pathname);
   const showTabBar = !isFullScreen && BOTTOM_NAV_PATHS.has(location.pathname);
-  const {data: profile, isLoading: isProfileLoading} = useGetClientProfileQuery();
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    refetch: refetchProfile,
+  } = useGetClientProfileQuery();
 
   // Block until we know the client's seat status — don't flash the blocked
   // screen (or the tab bar) before the profile query resolves.
   if (isProfileLoading) {
     return <SplashScreen />;
+  }
+
+  // Errored with no cached profile — don't fall through to the full app;
+  // a genuinely awaiting_seat client on a flaky network must not see the shell.
+  if (isProfileError && !profile) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background px-6 text-center">
+        <h1 className="text-xl font-semibold text-foreground">Couldn't load your profile</h1>
+        <p className="text-sm text-muted">Check your connection and try again.</p>
+        <Button
+          className="mt-4"
+          onPress={refetchProfile}
+          size="sm"
+          variant="ghost"
+        >
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   // Coach hasn't activated a paid seat for this client yet: no plans,

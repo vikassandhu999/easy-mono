@@ -9,12 +9,14 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     ErrorResponse,
     FoodLogEntryListResponse,
     FoodLogEntryRequest,
-    FoodLogEntryResponse
+    FoodLogEntryResponse,
+    NutritionMealLogResponse,
+    NutritionSwitchOptionRequest
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :log_meal, :log_day]
+       when action in [:create, :update, :log_meal, :log_day, :switch_option]
 
   tags ["client food log entries"]
 
@@ -48,6 +50,18 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     responses: [
       created: {"Food log entries", "application/json", FoodLogEntryListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :switch_option,
+    summary: "Switch the chosen meal option for a planned slot",
+    operation_id: "switchNutritionMealOption",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Switch option request", "application/json", NutritionSwitchOptionRequest, required: true},
+    responses: [
+      ok: {"Meal log", "application/json", NutritionMealLogResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
@@ -118,6 +132,13 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
       conn
       |> put_status(:created)
       |> render(:bulk, food_log_entries: entries)
+    end
+  end
+
+  @spec switch_option(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def switch_option(conn, _params) do
+    with {:ok, meal_log} <- MealLogs.switch_client_meal_option(conn.assigns.ctx, conn.body_params) do
+      render(conn, :switched, meal_log: meal_log)
     end
   end
 end

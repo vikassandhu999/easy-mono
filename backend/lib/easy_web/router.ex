@@ -163,6 +163,14 @@ defmodule EasyWeb.Router do
     patch "/nutrition-meal-items/:id", MealItemController, :update
     delete "/nutrition-meal-items/:id", MealItemController, :delete
 
+    post "/nutrition-plans/:plan_id/days", PlanDayController, :create
+    patch "/nutrition-days/:id", PlanDayController, :update
+    delete "/nutrition-days/:id", PlanDayController, :delete
+    put "/nutrition-plans/:plan_id/weekday-assignments", PlanDayController, :assign_weekday
+    post "/nutrition-days/:day_id/options", PlanDayController, :add_option
+    delete "/nutrition-day-meals/:id", PlanDayController, :remove_option
+    post "/nutrition-day-meals/:id/make-default", PlanDayController, :make_default
+
     get "/training-exercises", ExerciseController, :index
     post "/training-exercises", ExerciseController, :create
     get "/training-exercises/:id", ExerciseController, :show
@@ -261,6 +269,7 @@ defmodule EasyWeb.Router do
     post "/nutrition-food-log-entries", FoodLogEntryController, :create
     post "/nutrition-food-log-entries/log-meal", FoodLogEntryController, :log_meal
     post "/nutrition-food-log-entries/log-day", FoodLogEntryController, :log_day
+    post "/nutrition-food-log-entries/switch-option", FoodLogEntryController, :switch_option
     patch "/nutrition-food-log-entries/:id", FoodLogEntryController, :update
     delete "/nutrition-food-log-entries/:id", FoodLogEntryController, :delete
 

@@ -1,5 +1,6 @@
 defmodule EasyWeb.Clients.FoodLogEntryJSON do
   alias Easy.Nutrition.FoodLogEntry
+  alias EasyWeb.Clients.MealLogJSON
 
   @spec show(map()) :: map()
   def show(%{food_log_entry: entry}) do
@@ -9,6 +10,11 @@ defmodule EasyWeb.Clients.FoodLogEntryJSON do
   @spec bulk(map()) :: map()
   def bulk(%{food_log_entries: entries}) do
     %{data: Enum.map(entries, &data/1)}
+  end
+
+  @spec switched(map()) :: map()
+  def switched(%{meal_log: meal_log}) do
+    %{data: MealLogJSON.data(meal_log)}
   end
 
   defp data(%FoodLogEntry{} = e) do

@@ -7,7 +7,8 @@ defmodule EasyWeb.Clients.MealLogJSON do
     %{data: Enum.map(meal_logs, &data/1)}
   end
 
-  defp data(%MealLog{} = ml) do
+  @spec data(MealLog.t()) :: map()
+  def data(%MealLog{} = ml) do
     %{
       id: ml.id,
       date: ml.date,

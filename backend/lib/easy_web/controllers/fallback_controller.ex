@@ -80,6 +80,28 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  def call(conn, {:error, :last_day}) do
+    conn
+    |> put_status(:conflict)
+    |> json(%{
+      error_code: "last_day",
+      error_message: "A plan must keep at least one day.",
+      error_detail: %{}
+    })
+    |> halt()
+  end
+
+  def call(conn, {:error, :max_options}) do
+    conn
+    |> put_status(:conflict)
+    |> json(%{
+      error_code: "max_options",
+      error_message: "A meal slot can hold at most 3 options.",
+      error_detail: %{}
+    })
+    |> halt()
+  end
+
   def call(conn, {:error, :read_only_source}) do
     call(
       conn,

@@ -107,9 +107,32 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     summary_data(plan)
     |> Map.merge(%{
       meals: meals_data(plan.meals),
-      schedule_entries: schedule_entries_data(plan.plan_items)
+      schedule_entries: schedule_entries_data(plan.plan_items),
+      days: days_data(plan.days),
+      weekday_assignments: assignments_data(plan.weekday_assignments)
     })
   end
+
+  defp days_data(days) when is_list(days), do: Enum.map(days, &day_data/1)
+  defp days_data(_), do: []
+
+  defp day_data(day) do
+    %{
+      id: day.id,
+      name: day.name,
+      position: day.position,
+      day_meals:
+        Enum.map(day.day_meals, fn dm ->
+          %{id: dm.id, meal_slot: dm.meal_slot, position: dm.position, nutrition_meal_id: dm.nutrition_meal_id}
+        end)
+    }
+  end
+
+  defp assignments_data(assignments) when is_list(assignments) do
+    Map.new(assignments, fn wa -> {to_string(wa.day_of_week), wa.nutrition_plan_day_id} end)
+  end
+
+  defp assignments_data(_), do: %{}
 
   defp meals_data(meals) when is_list(meals), do: Enum.map(meals, &meal_data/1)
   defp meals_data(_), do: []

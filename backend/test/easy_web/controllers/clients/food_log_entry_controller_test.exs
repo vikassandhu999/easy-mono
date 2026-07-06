@@ -516,4 +516,60 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       assert json_response(conn, 404)
     end
   end
+
+  describe "POST /v1/client/nutrition-food-log-entries/switch-option" do
+    test "switches the chosen option and clears planned entries", ctx do
+      plan = insert(:plan, creator: ctx.coach, business: ctx.business, client_id: ctx.client.id)
+      meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business, name: "Oatmeal")
+
+      insert(:meal_item,
+        meal: meal,
+        business: ctx.business,
+        food: ctx.food,
+        amount: 100,
+        unit: "g",
+        weight_g: 100
+      )
+
+      other_meal =
+        insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business, name: "Eggs")
+
+      insert(:meal_item,
+        meal: other_meal,
+        business: ctx.business,
+        food: ctx.food,
+        amount: 50,
+        unit: "g",
+        weight_g: 50
+      )
+
+      post(ctx.conn, "/v1/client/nutrition-food-log-entries/log-meal", %{
+        "date" => "2026-03-25",
+        "meal_slot" => "breakfast",
+        "meal_id" => meal.id
+      })
+
+      conn =
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/switch-option", %{
+          "date" => "2026-03-25",
+          "meal_slot" => "breakfast",
+          "meal_id" => other_meal.id
+        })
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["meal_slot"] == "breakfast"
+      assert data["food_log_entries"] == []
+    end
+
+    test "returns 404 for unknown meal", ctx do
+      conn =
+        post(ctx.conn, "/v1/client/nutrition-food-log-entries/switch-option", %{
+          "date" => "2026-03-25",
+          "meal_slot" => "breakfast",
+          "meal_id" => Ecto.UUID.generate()
+        })
+
+      assert json_response(conn, 404)
+    end
+  end
 end

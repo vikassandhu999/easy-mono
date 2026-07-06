@@ -133,6 +133,34 @@ defmodule Easy.Nutrition.MealLogTest do
                })
     end
 
+    test "create_client_food_log_entry with an explicit meal_id returns not_found for another client's meal" do
+      %{client_ctx: client_ctx, client: client, business: business, creator: creator} = build_scenario()
+
+      coach_ctx = %Ctx{business_id: business.id, user_id: creator.user_id}
+      {:ok, other_template} = NutritionPlans.create_plan(coach_ctx, %{"name" => "Other Template"})
+      other_client = insert(:client, business: business, creator: creator)
+
+      {:ok, other_assigned_plan} =
+        NutritionPlans.assign_plan_to_client(coach_ctx, other_client.id, other_template.id, %{})
+
+      other_meal =
+        insert(:meal, plan: other_assigned_plan, creator: creator, business: business, name: "Other Client's Meal")
+
+      assert {:error, :not_found} =
+               MealLogs.create_client_food_log_entry(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 meal_id: other_meal.id,
+                 food_name: "Toast",
+                 amount: 1.0,
+                 unit: "slice",
+                 weight_g: 30.0,
+                 source: :unplanned
+               })
+
+      refute Repo.get_by(MealLog, client_id: client.id, date: @date, meal_slot: "breakfast")
+    end
+
     test "log_client_day logs the pinned option for a slot, falling back to the default for others" do
       %{client_ctx: client_ctx, plan: plan, eggs: eggs} = build_scenario()
 

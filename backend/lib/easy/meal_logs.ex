@@ -154,12 +154,6 @@ defmodule Easy.MealLogs do
         |> where([e], e.source in [:planned, :replacement])
         |> Repo.delete_all()
 
-        {:ok, meal_log} =
-          meal_log
-          |> change(nutrition_meal_id: meal_id, planned_snapshot: snapshot)
-          |> put_change(:planned_calories, snapshot && (snapshot[:total_calories] || 0.0) * 1.0)
-          |> Repo.update()
-
         case recalculate_logged_calories(meal_log) do
           {:ok, _} ->
             MealLog
@@ -237,10 +231,16 @@ defmodule Easy.MealLogs do
   defp log_entry(business_id, client_id, attrs) do
     date = parse_date(attrs)
     meal_slot = attrs[:meal_slot]
+    explicit_meal_id = attrs[:meal_id]
 
     with {:ok, date} <- require_date(date) do
       Repo.transaction(fn ->
-        meal_id = resolve_slot_meal_id(business_id, client_id, date, meal_slot, attrs[:meal_id])
+        if not is_nil(explicit_meal_id) and
+             is_nil(load_meal_with_items(business_id, client_id, explicit_meal_id)) do
+          Repo.rollback(:not_found)
+        end
+
+        meal_id = resolve_slot_meal_id(business_id, client_id, date, meal_slot, explicit_meal_id)
         snapshot = build_planned_snapshot(business_id, meal_id)
 
         if not is_nil(meal_id) and is_nil(snapshot), do: Repo.rollback(:not_found)

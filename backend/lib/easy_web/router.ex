@@ -63,6 +63,13 @@ defmodule EasyWeb.Router do
     post "/landing-pages/:slug/applications", LandingPageController, :apply
   end
 
+  # Unauthenticated Razorpay webhook: verified by HMAC signature over the raw body, not auth.
+  scope "/v1/webhooks", EasyWeb do
+    pipe_through :api
+
+    post "/razorpay", WebhookController, :razorpay
+  end
+
   scope "/v1/businesses", EasyWeb do
     pipe_through :require_user
     post "/", BusinessController, :create

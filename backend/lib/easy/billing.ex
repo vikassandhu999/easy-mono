@@ -1,7 +1,7 @@
 defmodule Easy.Billing do
   import Ecto.Query
 
-  alias Easy.Billing.{BusinessBilling, Event}
+  alias Easy.Billing.{BusinessBilling, Event, WebhookReceipt}
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Orgs.Business
@@ -139,6 +139,20 @@ defmodule Easy.Billing do
     end
   end
 
+  @spec handle_razorpay_webhook(binary(), String.t() | nil, String.t() | nil) ::
+          :ok | {:error, :invalid_webhook_signature} | {:error, :duplicate_webhook}
+  def handle_razorpay_webhook(raw_body, signature, event_id) do
+    with true <- Razorpay.valid_webhook_signature?(raw_body, signature),
+         {:ok, params} <- Jason.decode(raw_body),
+         :ok <- claim_receipt(event_id || fallback_event_id(raw_body), params["event"]) do
+      apply_webhook_event(params)
+    else
+      false -> {:error, :invalid_webhook_signature}
+      {:error, %Jason.DecodeError{}} -> {:error, :invalid_webhook_signature}
+      {:error, :duplicate_webhook} -> {:error, :duplicate_webhook}
+    end
+  end
+
   defp create_checkout(ctx, billing, target_quantity) do
     with {:ok, subscription} <- Razorpay.create_subscription(target_quantity) do
       billing
@@ -214,4 +228,116 @@ defmodule Easy.Billing do
   defp seat_price_inr do
     Application.get_env(:easy, Easy.Razorpay)[:seat_price_inr]
   end
+
+  # --- Razorpay webhook: dedupe + event application ---
+
+  defp claim_receipt(event_id, event_type) do
+    {count, _} =
+      Repo.insert_all(
+        WebhookReceipt,
+        [
+          %{
+            id: Ecto.UUID.generate(),
+            razorpay_event_id: event_id,
+            event_type: event_type || "unknown",
+            processed_at: DateTime.utc_now(:second),
+            inserted_at: DateTime.utc_now(:second)
+          }
+        ],
+        on_conflict: :nothing,
+        conflict_target: [:razorpay_event_id]
+      )
+
+    if count == 1, do: :ok, else: {:error, :duplicate_webhook}
+  end
+
+  defp fallback_event_id(raw_body), do: "sha:" <> Base.encode16(:crypto.hash(:sha256, raw_body), case: :lower)
+
+  # --- event application; out-of-order guard: only transitions valid for local state ---
+
+  defp apply_webhook_event(%{"event" => "subscription.charged", "payload" => payload}) do
+    subscription = payload["subscription"]["entity"]
+    payment = payload["payment"]["entity"]
+
+    with_billing(subscription["id"], fn billing ->
+      quantity = subscription["quantity"] || billing.paid_seats
+
+      billing
+      |> BusinessBilling.changeset(%{
+        paid_seats: quantity,
+        status: :active,
+        current_period_end: subscription["current_end"] && DateTime.from_unix!(subscription["current_end"])
+      })
+      |> Repo.update!()
+
+      record_event(billing.business_id, :payment_succeeded, %{
+        amount_paid: payment["amount"] && div(payment["amount"], 100),
+        currency: payment["currency"]
+      })
+
+      record_seat_change(billing, quantity)
+      activate_awaiting_clients(billing.business_id)
+      :ok
+    end)
+  end
+
+  defp apply_webhook_event(%{"event" => event, "payload" => payload})
+       when event in ["subscription.pending", "subscription.halted"] do
+    with_billing(payload["subscription"]["entity"]["id"], fn billing ->
+      if billing.status in [:active, :cancel_at_period_end] do
+        billing |> BusinessBilling.changeset(%{status: :past_due}) |> Repo.update!()
+        record_event(billing.business_id, :payment_failed)
+      end
+
+      :ok
+    end)
+  end
+
+  defp apply_webhook_event(%{"event" => "subscription.cancelled", "payload" => payload}) do
+    with_billing(payload["subscription"]["entity"]["id"], fn billing ->
+      if billing.status != :cancelled do
+        billing |> BusinessBilling.changeset(%{status: :cancelled, paid_seats: 0}) |> Repo.update!()
+        record_event(billing.business_id, :subscription_cancelled)
+      end
+
+      :ok
+    end)
+  end
+
+  defp apply_webhook_event(%{"event" => "subscription.updated", "payload" => payload}) do
+    subscription = payload["subscription"]["entity"]
+
+    with_billing(subscription["id"], fn billing ->
+      if billing.status in [:active, :past_due, :cancel_at_period_end] and is_integer(subscription["quantity"]) do
+        record_seat_change(billing, subscription["quantity"])
+
+        billing
+        |> BusinessBilling.changeset(%{paid_seats: subscription["quantity"]})
+        |> Repo.update!()
+
+        activate_awaiting_clients(billing.business_id)
+      end
+
+      :ok
+    end)
+  end
+
+  # unrecognized events: receipt already stored, just ack
+  defp apply_webhook_event(_params), do: :ok
+
+  defp with_billing(nil, _fun), do: :ok
+
+  defp with_billing(subscription_id, fun) do
+    case Repo.get_by(BusinessBilling, razorpay_subscription_id: subscription_id) do
+      nil -> :ok
+      billing -> fun.(billing)
+    end
+  end
+
+  defp record_seat_change(%BusinessBilling{paid_seats: old, business_id: business_id}, new) when new != old do
+    kind = if new > old, do: :seats_added, else: :seats_removed
+    record_event(business_id, kind, %{seat_delta: abs(new - old)})
+  end
+
+  defp record_seat_change(_billing, _new), do: :ok
 end

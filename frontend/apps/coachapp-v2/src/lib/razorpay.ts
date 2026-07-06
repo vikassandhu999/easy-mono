@@ -21,7 +21,10 @@ function loadScript(): Promise<void> {
     const script = document.createElement('script');
     script.src = SCRIPT_URL;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load Razorpay checkout'));
+    script.onerror = () => {
+      script.remove();
+      reject(new Error('Failed to load Razorpay checkout'));
+    };
     document.body.appendChild(script);
   });
 }

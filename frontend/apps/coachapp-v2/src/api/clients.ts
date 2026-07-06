@@ -62,10 +62,12 @@ export type ClientUpdateRequest = {
  * Valid status transitions per the spec's invariants table. Returns the set of
  * statuses the coach can transition to from the given current status.
  *
- *   pending  → (none) — only exits via accept-invite or revoke
- *   active   → inactive | archived
- *   inactive → active | archived
- *   archived → active | inactive
+ *   pending        → (none) — only exits via accept-invite or revoke
+ *   active         → inactive | archived
+ *   inactive       → active | archived
+ *   archived       → active | inactive
+ *   awaiting_seat  → archived — activation is system-driven (a seat freeing
+ *                    up), so the coach can only archive manually, not activate
  *
  * Nothing can return to `pending` — once a Client has been linked to a User,
  * that link is permanent.
@@ -73,7 +75,15 @@ export type ClientUpdateRequest = {
 export function allowedStatusesFor(current: ClientStatus): AllowedUpdateStatus[] {
   // pending only exits via accept-invite or revoke; every other status can move
   // freely among active/inactive/archived.
-  return current === 'pending' ? [] : ['active', 'inactive', 'archived'];
+  if (current === 'pending') {
+    return [];
+  }
+  // awaiting_seat can only be archived manually; activation happens
+  // automatically when a seat frees up.
+  if (current === 'awaiting_seat') {
+    return ['archived'];
+  }
+  return ['active', 'inactive', 'archived'];
 }
 
 export type ClientSummary = {

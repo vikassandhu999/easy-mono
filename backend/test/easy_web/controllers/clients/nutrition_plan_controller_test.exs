@@ -157,12 +157,21 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       today = Date.utc_today()
       day = Easy.Utils.weekday_name(today)
 
-      insert(:schedule_entry,
+      plan_day = insert(:plan_day, plan: plan, business: ctx.business, name: "Everyday", position: 0)
+
+      insert(:weekday_assignment,
         plan: plan,
+        plan_day: plan_day,
+        business: ctx.business,
+        day_of_week: day
+      )
+
+      insert(:day_meal,
+        plan_day: plan_day,
         meal: meal,
         business: ctx.business,
-        day_of_week: day,
-        meal_slot: "breakfast"
+        meal_slot: "breakfast",
+        position: 0
       )
 
       conn = get(ctx.conn, "/v1/client/nutrition-plans/today")
@@ -170,14 +179,19 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert data["date"] == Date.to_iso8601(today)
       assert data["day"] == day
       assert data["plan_id"] == plan.id
-      assert length(data["meals"]) == 1
+      assert length(data["slots"]) == 1
 
-      meal_data = hd(data["meals"])
-      assert meal_data["meal_slot"] == "breakfast"
-      assert meal_data["meal_name"] == "Breakfast"
-      assert length(meal_data["items"]) == 1
+      slot_data = hd(data["slots"])
+      assert slot_data["meal_slot"] == "breakfast"
+      assert slot_data["chosen_meal_id"] == nil
+      assert length(slot_data["options"]) == 1
 
-      item = hd(meal_data["items"])
+      option = hd(slot_data["options"])
+      assert option["meal_name"] == "Breakfast"
+      assert option["position"] == 0
+      assert length(option["items"]) == 1
+
+      item = hd(option["items"])
       assert item["food_name"] == "Oats"
       assert item["amount"] == 100.0
     end
@@ -195,7 +209,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert json_response(conn, 404)
     end
 
-    test "returns empty meals for a day with no plan_items", ctx do
+    test "returns empty slots for a day with no day/weekday assignment", ctx do
       insert(:plan,
         creator: ctx.coach,
         business: ctx.business,
@@ -203,10 +217,10 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         status: :active
       )
 
-      # No plan_items for today's day
+      # No plan day / weekday assignment for today's day
       conn = get(ctx.conn, "/v1/client/nutrition-plans/today")
       assert %{"data" => data} = json_response(conn, 200)
-      assert data["meals"] == []
+      assert data["slots"] == []
     end
 
     test "accepts optional date param", ctx do
@@ -220,13 +234,21 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
 
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)
 
-      # Monday plan item
-      insert(:schedule_entry,
+      plan_day = insert(:plan_day, plan: plan, business: ctx.business, name: "Everyday", position: 0)
+
+      insert(:weekday_assignment,
         plan: plan,
+        plan_day: plan_day,
+        business: ctx.business,
+        day_of_week: "monday"
+      )
+
+      insert(:day_meal,
+        plan_day: plan_day,
         meal: meal,
         business: ctx.business,
-        day_of_week: "monday",
-        meal_slot: "lunch"
+        meal_slot: "lunch",
+        position: 0
       )
 
       # Query for a known Monday
@@ -234,7 +256,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["date"] == "2026-03-30"
       assert data["day"] == "monday"
-      assert length(data["meals"]) == 1
+      assert length(data["slots"]) == 1
     end
 
     test "respects plan date range", ctx do

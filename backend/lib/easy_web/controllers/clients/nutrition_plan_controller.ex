@@ -87,9 +87,9 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   def today(conn, params) do
     date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
 
-    with {:ok, %{plan: plan, plan_items: plan_items, day: day}} <-
+    with {:ok, %{plan: plan, slots: slots, chosen: chosen, day: day}} <-
            Plans.get_client_active_plan_day(conn.assigns.ctx, date) do
-      render(conn, :today, plan: plan, plan_items: plan_items, date: date, day: day)
+      render(conn, :today, plan: plan, slots: slots, chosen: chosen, date: date, day: day)
     end
   end
 end

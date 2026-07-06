@@ -18,28 +18,34 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
   end
 
   @spec today(map()) :: map()
-  def today(%{plan: plan, plan_items: plan_items, date: date, day: day}) do
-    meals =
-      Enum.map(plan_items, fn pi ->
-        %{
-          meal_slot: pi.meal_slot,
-          meal_id: pi.nutrition_meal_id,
-          meal_name: if(Ecto.assoc_loaded?(pi.meal), do: pi.meal.name, else: nil),
-          items: today_meal_items(pi)
-        }
-      end)
-
+  def today(%{plan: plan, slots: slots, chosen: chosen, date: date, day: day}) do
     %{
       data: %{
         date: date,
         day: day,
         plan_id: plan.id,
-        meals: meals
+        slots:
+          Enum.map(slots, fn %{meal_slot: slot, options: options} ->
+            %{
+              meal_slot: slot,
+              chosen_meal_id: Map.get(chosen, to_string(slot)),
+              options: Enum.map(options, &option_data/1)
+            }
+          end)
       }
     }
   end
 
-  defp today_meal_items(%ScheduleEntry{meal: %Meal{meal_items: items}}) when is_list(items) do
+  defp option_data(day_meal) do
+    %{
+      meal_id: day_meal.nutrition_meal_id,
+      meal_name: if(Ecto.assoc_loaded?(day_meal.meal), do: day_meal.meal.name, else: nil),
+      position: day_meal.position,
+      items: today_meal_items(day_meal.meal)
+    }
+  end
+
+  defp today_meal_items(%Meal{meal_items: items}) when is_list(items) do
     Enum.map(items, &today_item_data/1)
   end
 

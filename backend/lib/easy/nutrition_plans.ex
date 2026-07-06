@@ -14,6 +14,8 @@ defmodule Easy.NutritionPlans do
   import Ecto.Changeset
   import Ecto.Query
 
+  @max_options_per_slot 3
+
   @spec get_plan_full(Ctx.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
   def get_plan_full(%Ctx{} = ctx, plan_id) do
     Plan
@@ -93,7 +95,14 @@ defmodule Easy.NutritionPlans do
   end
 
   @spec get_client_active_plan_day(Ctx.t(), Date.t()) ::
-          {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [ScheduleEntry.t()]}}
+          {:ok,
+           %{
+             date: Date.t(),
+             day: String.t(),
+             plan: Plan.t(),
+             slots: [%{meal_slot: atom(), options: [DayMeal.t()]}],
+             chosen: %{optional(String.t()) => String.t()}
+           }}
           | {:error, :not_found}
   def get_client_active_plan_day(%Ctx{} = ctx, date) do
     with {:ok, client} <- get_client(ctx) do
@@ -211,6 +220,166 @@ defmodule Easy.NutritionPlans do
     end
   end
 
+  @spec create_plan_day(Ctx.t(), String.t(), map()) ::
+          {:ok, PlanDay.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def create_plan_day(%Ctx{} = ctx, plan_id, attrs) do
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+      position = (max_day_position(plan.id) || -1) + 1
+      name = attrs["name"] || attrs[:name] || "Day #{position + 1}"
+
+      PlanDay.insert_changeset(ctx.business_id, plan.id, %{"name" => name, "position" => position})
+      |> Repo.insert()
+    end
+  end
+
+  @spec update_plan_day(Ctx.t(), String.t(), map()) ::
+          {:ok, PlanDay.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def update_plan_day(%Ctx{} = ctx, day_id, attrs) do
+    with {:ok, day} <- get_plan_day(ctx.business_id, day_id) do
+      day |> PlanDay.update_changeset(attrs) |> Repo.update()
+    end
+  end
+
+  @spec delete_plan_day(Ctx.t(), String.t()) ::
+          {:ok, PlanDay.t()} | {:error, :not_found | :last_day | Ecto.Changeset.t()}
+  def delete_plan_day(%Ctx{} = ctx, day_id) do
+    with {:ok, day} <- get_plan_day(ctx.business_id, day_id) do
+      fallback =
+        PlanDay
+        |> PlanDay.for_business(ctx.business_id)
+        |> PlanDay.for_plan(day.nutrition_plan_id)
+        |> PlanDay.by_position()
+        |> where([d], d.id != ^day.id)
+        |> limit(1)
+        |> Repo.one()
+
+      case fallback do
+        nil ->
+          {:error, :last_day}
+
+        fallback ->
+          Repo.transaction(fn ->
+            WeekdayAssignment
+            |> WeekdayAssignment.for_business(ctx.business_id)
+            |> WeekdayAssignment.for_plan(day.nutrition_plan_id)
+            |> where([wa], wa.nutrition_plan_day_id == ^day.id)
+            |> Repo.update_all(set: [nutrition_plan_day_id: fallback.id])
+
+            case Repo.delete(day) do
+              {:ok, deleted} -> deleted
+              {:error, reason} -> Repo.rollback(reason)
+            end
+          end)
+      end
+    end
+  end
+
+  @spec assign_weekday(Ctx.t(), String.t(), map()) ::
+          {:ok, WeekdayAssignment.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def assign_weekday(%Ctx{} = ctx, plan_id, attrs) do
+    day_id = attrs["nutrition_plan_day_id"] || attrs[:nutrition_plan_day_id]
+    weekday = to_string(attrs["day_of_week"] || attrs[:day_of_week])
+
+    with {:ok, plan} <- get_plan(ctx.business_id, plan_id),
+         {:ok, day} <- get_plan_day(ctx.business_id, day_id),
+         :ok <- ensure_day_in_plan(day, plan.id),
+         :ok <- validate_schedule_day(weekday) do
+      existing =
+        WeekdayAssignment
+        |> WeekdayAssignment.for_business(ctx.business_id)
+        |> WeekdayAssignment.for_plan(plan.id)
+        |> WeekdayAssignment.for_day(weekday)
+        |> Repo.one()
+
+      case existing do
+        nil ->
+          WeekdayAssignment.insert_changeset(ctx.business_id, plan.id, day.id, %{"day_of_week" => weekday})
+          |> Repo.insert()
+
+        wa ->
+          wa |> change(nutrition_plan_day_id: day.id) |> Repo.update()
+      end
+    end
+  end
+
+  @spec add_slot_option(Ctx.t(), String.t(), map()) ::
+          {:ok, DayMeal.t()} | {:error, :not_found | :max_options | Ecto.Changeset.t()}
+  def add_slot_option(%Ctx{} = ctx, day_id, attrs) do
+    meal_id = attrs["nutrition_meal_id"] || attrs[:nutrition_meal_id]
+    slot = to_string(attrs["meal_slot"] || attrs[:meal_slot])
+
+    with {:ok, day} <- get_plan_day(ctx.business_id, day_id),
+         {:ok, :valid} <- ensure_meal_for_plan(day.nutrition_plan_id, ctx.business_id, meal_id) do
+      existing =
+        DayMeal
+        |> DayMeal.for_business(ctx.business_id)
+        |> DayMeal.for_plan_day(day.id)
+        |> DayMeal.for_meal_slot(slot)
+        |> Repo.aggregate(:count, :id)
+
+      if existing >= @max_options_per_slot do
+        {:error, :max_options}
+      else
+        DayMeal.insert_changeset(ctx.business_id, day.id, %{
+          "meal_slot" => slot,
+          "position" => existing,
+          "nutrition_meal_id" => meal_id
+        })
+        |> Repo.insert()
+      end
+    end
+  end
+
+  @spec remove_slot_option(Ctx.t(), String.t()) ::
+          {:ok, DayMeal.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def remove_slot_option(%Ctx{} = ctx, day_meal_id) do
+    with {:ok, dm} <- get_day_meal(ctx.business_id, day_meal_id) do
+      Repo.transaction(fn ->
+        case Repo.delete(dm) do
+          {:ok, deleted} ->
+            compact_slot_positions(ctx.business_id, dm.nutrition_plan_day_id, dm.meal_slot)
+            deleted
+
+          {:error, reason} ->
+            Repo.rollback(reason)
+        end
+      end)
+    end
+  end
+
+  @spec make_default_option(Ctx.t(), String.t()) ::
+          {:ok, DayMeal.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def make_default_option(%Ctx{} = ctx, day_meal_id) do
+    with {:ok, dm} <- get_day_meal(ctx.business_id, day_meal_id) do
+      Repo.transaction(fn ->
+        siblings =
+          DayMeal
+          |> DayMeal.for_business(ctx.business_id)
+          |> DayMeal.for_plan_day(dm.nutrition_plan_day_id)
+          |> DayMeal.for_meal_slot(dm.meal_slot)
+          |> DayMeal.by_slot_position()
+          |> Repo.all()
+
+        reordered = [dm.id | siblings |> Enum.map(& &1.id) |> Enum.reject(&(&1 == dm.id))]
+
+        # two-phase renumber: bump out of the unique index's way, then set final
+        reordered
+        |> Enum.with_index()
+        |> Enum.each(fn {id, idx} ->
+          from(x in DayMeal, where: x.id == ^id) |> Repo.update_all(set: [position: idx + 100])
+        end)
+
+        reordered
+        |> Enum.with_index()
+        |> Enum.each(fn {id, idx} ->
+          from(x in DayMeal, where: x.id == ^id) |> Repo.update_all(set: [position: idx])
+        end)
+
+        Repo.get(DayMeal, dm.id)
+      end)
+    end
+  end
+
   defp validate_schedule_day(day) do
     valid_days = Enum.map(ScheduleEntry.days(), &Atom.to_string/1)
     if day in valid_days, do: :ok, else: {:error, :invalid_day}
@@ -258,24 +427,79 @@ defmodule Easy.NutritionPlans do
     |> ok_or_not_found()
   end
 
+  defp compact_slot_positions(business_id, day_id, slot) do
+    DayMeal
+    |> DayMeal.for_business(business_id)
+    |> DayMeal.for_plan_day(day_id)
+    |> DayMeal.for_meal_slot(slot)
+    |> DayMeal.by_slot_position()
+    |> Repo.all()
+    |> Enum.with_index()
+    |> Enum.each(fn {row, idx} ->
+      if row.position != idx do
+        from(x in DayMeal, where: x.id == ^row.id) |> Repo.update_all(set: [position: idx])
+      end
+    end)
+  end
+
+  defp max_day_position(plan_id) do
+    PlanDay |> PlanDay.for_plan(plan_id) |> Repo.aggregate(:max, :position)
+  end
+
+  defp get_plan_day(_business_id, nil), do: {:error, :not_found}
+
+  defp get_plan_day(business_id, day_id) do
+    PlanDay |> PlanDay.for_business(business_id) |> Repo.get(day_id) |> ok_or_not_found()
+  end
+
+  defp get_day_meal(business_id, day_meal_id) do
+    DayMeal |> DayMeal.for_business(business_id) |> Repo.get(day_meal_id) |> ok_or_not_found()
+  end
+
+  defp ensure_day_in_plan(%PlanDay{nutrition_plan_id: plan_id}, plan_id), do: :ok
+  defp ensure_day_in_plan(_, _), do: {:error, :not_found}
+
   defp get_active_plan_day(business_id, client_id, date) do
     case active_plan(business_id, client_id, date) do
       nil ->
         {:error, :not_found}
 
       plan ->
-        day = Easy.Utils.weekday_name(date)
+        day_name = Easy.Utils.weekday_name(date)
 
-        plan_items =
-          ScheduleEntry
-          |> ScheduleEntry.for_plan(plan.id)
-          |> ScheduleEntry.for_business(business_id)
-          |> ScheduleEntry.for_day(day)
-          |> preload(meal: ^Meal.include_items(Meal, business_id))
-          |> Repo.all()
+        assignment =
+          WeekdayAssignment
+          |> WeekdayAssignment.for_business(business_id)
+          |> WeekdayAssignment.for_plan(plan.id)
+          |> WeekdayAssignment.for_day(day_name)
+          |> Repo.one()
 
-        {:ok, %{plan: plan, plan_items: plan_items, date: date, day: day}}
+        slots =
+          case assignment do
+            nil ->
+              []
+
+            wa ->
+              DayMeal
+              |> DayMeal.for_business(business_id)
+              |> DayMeal.for_plan_day(wa.nutrition_plan_day_id)
+              |> DayMeal.by_slot_position()
+              |> preload(meal: ^Meal.include_items(Meal, business_id))
+              |> Repo.all()
+              |> Enum.group_by(& &1.meal_slot)
+              |> Enum.map(fn {slot, options} ->
+                %{meal_slot: slot, options: Enum.sort_by(options, & &1.position)}
+              end)
+              |> Enum.sort_by(fn %{meal_slot: slot} -> slot_order(slot) end)
+          end
+
+        # chosen option pinning lands with the meal-log column (next task)
+        {:ok, %{plan: plan, slots: slots, chosen: %{}, date: date, day: day_name}}
     end
+  end
+
+  defp slot_order(slot) do
+    Enum.find_index(DayMeal.meal_slots(), &(&1 == slot)) || length(DayMeal.meal_slots())
   end
 
   defp create_plan_for(business_id, creator_id, attrs) do

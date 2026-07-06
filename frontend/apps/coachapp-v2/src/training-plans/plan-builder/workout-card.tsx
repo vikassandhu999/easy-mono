@@ -132,7 +132,10 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     // longer exists (ghost assignments in the week schedule).
     const schedulePatch = dispatch(
       coachApi.util.updateQueryData('getTrainingPlanSchedule', {planId}, (draft) => {
-        for (const [day, entry] of Object.entries(draft.data ?? {})) {
+        if (!draft.data) {
+          return;
+        }
+        for (const [day, entry] of Object.entries(draft.data)) {
           if (entry?.training_workout_id === workout.id) {
             draft.data[day] = {...entry, training_workout_id: null, workout_name: null};
           }

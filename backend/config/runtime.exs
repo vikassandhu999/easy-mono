@@ -22,13 +22,15 @@ config :easy, :email,
   },
   app_url: System.get_env("APP_URL") || "http://localhost:4000"
 
-# Razorpay configuration for all environments (dev fallbacks; prod requires real secrets, see below)
-config :easy, Easy.Razorpay,
-  key_id: System.get_env("RAZORPAY_KEY_ID", "rzp_test_dev"),
-  key_secret: System.get_env("RAZORPAY_KEY_SECRET", "dev_secret"),
-  webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET", "dev_webhook_secret"),
-  plan_id: System.get_env("RAZORPAY_PLAN_ID", "plan_dev"),
-  seat_price_inr: String.to_integer(System.get_env("BILLING_SEAT_PRICE_INR", "499"))
+# Razorpay configuration for dev/prod (tests use test.exs config)
+if config_env() != :test do
+  config :easy, Easy.Razorpay,
+    key_id: System.get_env("RAZORPAY_KEY_ID", "rzp_test_dev"),
+    key_secret: System.get_env("RAZORPAY_KEY_SECRET", "dev_secret"),
+    webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET", "dev_webhook_secret"),
+    plan_id: System.get_env("RAZORPAY_PLAN_ID", "plan_dev"),
+    seat_price_inr: String.to_integer(System.get_env("BILLING_SEAT_PRICE_INR", "499"))
+end
 
 # ## Using releases
 #

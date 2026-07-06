@@ -3,6 +3,7 @@ defmodule Easy.Nutrition.MealLog do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.FoodLogEntry
+  alias Easy.Nutrition.Meal
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -22,6 +23,7 @@ defmodule Easy.Nutrition.MealLog do
 
     belongs_to(:client, Client)
     belongs_to(:business, Orgs.Business)
+    belongs_to(:meal, Meal, foreign_key: :nutrition_meal_id)
 
     has_many(:food_log_entries, FoodLogEntry, foreign_key: :nutrition_meal_log_id)
 

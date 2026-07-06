@@ -4,6 +4,7 @@ defmodule Easy.NutritionPlans do
   alias Easy.Nutrition.DayMeal
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
+  alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanDay
   alias Easy.Nutrition.ScheduleEntry
@@ -493,9 +494,18 @@ defmodule Easy.NutritionPlans do
               |> Enum.sort_by(fn %{meal_slot: slot} -> slot_order(slot) end)
           end
 
-        # chosen option pinning lands with the meal-log column (next task)
-        {:ok, %{plan: plan, slots: slots, chosen: %{}, date: date, day: day_name}}
+        {:ok, %{plan: plan, slots: slots, chosen: chosen_options(business_id, client_id, date), date: date, day: day_name}}
     end
+  end
+
+  defp chosen_options(business_id, client_id, date) do
+    MealLog
+    |> MealLog.for_client(business_id, client_id)
+    |> MealLog.for_date(date)
+    |> where([ml], not is_nil(ml.nutrition_meal_id))
+    |> select([ml], {ml.meal_slot, ml.nutrition_meal_id})
+    |> Repo.all()
+    |> Map.new(fn {slot, meal_id} -> {to_string(slot), meal_id} end)
   end
 
   defp slot_order(slot) do

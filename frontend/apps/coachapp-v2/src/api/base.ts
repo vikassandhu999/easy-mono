@@ -96,6 +96,7 @@ export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
   tagTypes: [
+    'Billing',
     'Client',
     'ClientProfile',
     'CoachProfile',

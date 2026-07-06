@@ -219,6 +219,9 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.acceptInviteRequest,
       }),
     }),
+    cancelBilling: build.mutation<CancelBillingApiResponse, CancelBillingApiArg>({
+      query: () => ({url: `/v1/coach/billing/cancel`, method: 'POST'}),
+    }),
     getTrainingPlanSchedule: build.query<GetTrainingPlanScheduleApiResponse, GetTrainingPlanScheduleApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/training-plans/${queryArg.planId}/schedule`,
@@ -312,6 +315,9 @@ const injectedRtkApi = api.injectEndpoints({
         method: 'POST',
         body: queryArg.nutritionPlanAssignRequest,
       }),
+    }),
+    getBilling: build.query<GetBillingApiResponse, GetBillingApiArg>({
+      query: () => ({url: `/v1/coach/billing`}),
     }),
     inviteClient: build.mutation<InviteClientApiResponse, InviteClientApiArg>({
       query: (queryArg) => ({
@@ -611,6 +617,13 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/landing-page`,
         method: 'PUT',
         body: queryArg.landingPageUpsertRequest,
+      }),
+    }),
+    checkoutBilling: build.mutation<CheckoutBillingApiResponse, CheckoutBillingApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/billing/checkout`,
+        method: 'POST',
+        body: queryArg.billingCheckoutRequest,
       }),
     }),
     listFormSubmissions: build.query<ListFormSubmissionsApiResponse, ListFormSubmissionsApiArg>({
@@ -954,6 +967,8 @@ export type AcceptInviteApiArg = {
   /** Accept invite request */
   acceptInviteRequest: AcceptInviteRequest;
 };
+export type CancelBillingApiResponse = /** status 200 Billing */ BillingResponse;
+export type CancelBillingApiArg = void;
 export type GetTrainingPlanScheduleApiResponse = /** status 200 Schedule */ TrainingScheduleResponse;
 export type GetTrainingPlanScheduleApiArg = {
   planId: string;
@@ -1043,6 +1058,8 @@ export type AssignNutritionPlanApiArg = {
   /** Nutrition plan assign request */
   nutritionPlanAssignRequest: NutritionPlanAssignRequest;
 };
+export type GetBillingApiResponse = /** status 200 Billing */ BillingResponse;
+export type GetBillingApiArg = void;
 export type InviteClientApiResponse = /** status 201 Client invited */ ClientResponse;
 export type InviteClientApiArg = {
   /** Client invite request */
@@ -1330,6 +1347,11 @@ export type SaveLandingPageApiArg = {
   /** Landing page upsert request */
   landingPageUpsertRequest: LandingPageUpsertRequest;
 };
+export type CheckoutBillingApiResponse = /** status 200 Checkout result */ BillingCheckoutResponse;
+export type CheckoutBillingApiArg = {
+  /** Checkout request */
+  billingCheckoutRequest: BillingCheckoutRequest;
+};
 export type ListFormSubmissionsApiResponse = /** status 200 Form submissions */ ClientProfileFormSubmissionListResponse;
 export type ListFormSubmissionsApiArg = {
   /** Form assignment id */
@@ -1596,11 +1618,49 @@ export type Client = {
   last_name: string | null;
   notes: string | null;
   phone: string | null;
-  status: 'active' | 'pending' | 'inactive' | 'archived';
+  status: 'active' | 'pending' | 'inactive' | 'archived' | 'awaiting_seat';
   updated_at: string;
 };
 export type ClientResponse = {
   data: Client;
+};
+export type BillingEvent = {
+  /** INR (rupees) */
+  amount_paid?: number | null;
+  currency?: string | null;
+  id: string;
+  kind:
+    | 'seats_added'
+    | 'seats_removed'
+    | 'payment_succeeded'
+    | 'payment_failed'
+    | 'cancellation_scheduled'
+    | 'subscription_cancelled';
+  occurred_at: string;
+  seat_delta?: number | null;
+};
+export type BillingSummary = {
+  available_seats: number;
+  awaiting_seat_count: number;
+  current_period_end: string | null;
+  free_seats: number;
+  is_owner: boolean;
+  monthly_seat_price_inr: number;
+  paid_seats: number;
+  recent_events?: BillingEvent[] | null;
+  seat_limit: number;
+  status: 'free' | 'active' | 'past_due' | 'cancel_at_period_end' | 'cancelled';
+  /** active clients + pending invites */
+  used_seats: number;
+};
+export type SeatLimitError = {
+  error_code: string;
+  error_detail?: {
+    [key: string]: any;
+  };
+  error_message: string;
+  seat_summary: BillingSummary;
+  [key: string]: any;
 };
 export type ClientUpdateRequest = {
   email?: string | null;
@@ -2084,6 +2144,9 @@ export type AcceptInviteRequest = {
   email: string;
   invitation_token: string;
 };
+export type BillingResponse = {
+  data: BillingSummary;
+};
 export type TrainingScheduleResponse = {
   data?: {
     [key: string]: TrainingScheduleEntry;
@@ -2346,6 +2409,7 @@ export type ClientProfileFormTemplateRequest = {
 export type ClientSummary = {
   active: number;
   archived: number;
+  awaiting_seat: number;
   inactive: number;
   pending: number;
 };
@@ -2530,6 +2594,21 @@ export type LandingPageUpsertRequest = {
   status: 'draft' | 'published';
   subheadline?: string | null;
   template: 'proof_first' | 'problem_fit' | 'coach_story';
+};
+export type BillingCheckoutPayload = {
+  key_id: string;
+  subscription_id: string;
+};
+export type BillingCheckoutResult = {
+  action: 'checkout' | 'updated';
+  billing: BillingSummary;
+  checkout: BillingCheckoutPayload | null;
+};
+export type BillingCheckoutResponse = {
+  data: BillingCheckoutResult;
+};
+export type BillingCheckoutRequest = {
+  seats_to_add: number;
 };
 export type ClientProfileFormSubmission = {
   answers: {
@@ -2785,6 +2864,7 @@ export const {
   useListProspectsQuery,
   useLazyListProspectsQuery,
   useAcceptInviteMutation,
+  useCancelBillingMutation,
   useGetTrainingPlanScheduleQuery,
   useLazyGetTrainingPlanScheduleQuery,
   useAssignFormTemplateMutation,
@@ -2804,6 +2884,8 @@ export const {
   useGetNutritionFoodImpactQuery,
   useLazyGetNutritionFoodImpactQuery,
   useAssignNutritionPlanMutation,
+  useGetBillingQuery,
+  useLazyGetBillingQuery,
   useInviteClientMutation,
   useCreateWorkoutElementMutation,
   useVerifyAuthMutation,
@@ -2863,6 +2945,7 @@ export const {
   useGetLandingPageQuery,
   useLazyGetLandingPageQuery,
   useSaveLandingPageMutation,
+  useCheckoutBillingMutation,
   useListFormSubmissionsQuery,
   useLazyListFormSubmissionsQuery,
   useListCoachThreadsQuery,

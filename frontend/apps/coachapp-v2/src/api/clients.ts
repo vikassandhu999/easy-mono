@@ -3,7 +3,7 @@ import {ApiResponse, listTags, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 50;
 
-export type ClientStatus = 'active' | 'archived' | 'inactive' | 'pending';
+export type ClientStatus = 'active' | 'archived' | 'awaiting_seat' | 'inactive' | 'pending';
 
 export type Client = {
   id: string;
@@ -114,7 +114,10 @@ const clientsApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: [{type: 'Client', id: 'LIST'}],
+      invalidatesTags: [
+        {type: 'Client', id: 'LIST'},
+        {type: 'Billing', id: 'SUMMARY'},
+      ],
     }),
     getClient: build.query<ApiResponse<Client>, string>({
       query: (id) => `/v1/coach/clients/${id}`,
@@ -168,6 +171,7 @@ const clientsApi = api.injectEndpoints({
       invalidatesTags: (_, __, id) => [
         {type: 'Client', id},
         {type: 'Client', id: 'LIST'},
+        {type: 'Billing', id: 'SUMMARY'},
       ],
     }),
     updateClient: build.mutation<ApiResponse<Client>, {body: ClientUpdateRequest; id: string}>({
@@ -179,6 +183,7 @@ const clientsApi = api.injectEndpoints({
       invalidatesTags: (_, __, {id}) => [
         {type: 'Client', id},
         {type: 'Client', id: 'LIST'},
+        {type: 'Billing', id: 'SUMMARY'},
       ],
     }),
   }),

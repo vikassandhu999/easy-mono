@@ -7,6 +7,7 @@ import type {Client, ClientStatus} from '@/api/clients';
 const STATUS_CONFIG: Record<ClientStatus, {color: 'default' | 'success'; label: string}> = {
   active: {color: 'success', label: 'Active'},
   archived: {color: 'default', label: 'Archived'},
+  awaiting_seat: {color: 'default', label: 'Awaiting seat'},
   inactive: {color: 'default', label: 'Inactive'},
   pending: {color: 'default', label: 'Pending'},
 };

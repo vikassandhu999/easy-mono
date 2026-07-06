@@ -9,6 +9,7 @@ export type PlanStatus = NutritionPlanStatus | TrainingPlanStatus;
 export const STATUS_CHIP_COLOR: Record<ClientStatus, 'default' | 'success'> = {
   active: 'success',
   pending: 'default',
+  awaiting_seat: 'default',
   inactive: 'default',
   archived: 'default',
 };

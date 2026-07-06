@@ -777,6 +777,21 @@
         "x-struct": null,
         "x-validate": null
       },
+      "BillingCheckoutResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BillingCheckoutResult"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "BillingCheckoutResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.BillingCheckoutResponse",
+        "x-validate": null
+      },
       "FoodImpactResponse": {
         "properties": {
           "data": {
@@ -2324,6 +2339,68 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Food",
         "x-validate": null
       },
+      "BillingEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "amount_paid": {
+            "description": "INR (rupees)",
+            "example": 1497,
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "currency": {
+            "example": "INR",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "kind": {
+            "enum": [
+              "seats_added",
+              "seats_removed",
+              "payment_succeeded",
+              "payment_failed",
+              "cancellation_scheduled",
+              "subscription_cancelled"
+            ],
+            "example": "seats_added",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "seat_delta": {
+            "example": 3,
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "occurred_at"
+        ],
+        "title": "BillingEvent",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "FoodListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3096,6 +3173,25 @@
         "x-struct": null,
         "x-validate": null
       },
+      "BillingCheckoutRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "seats_to_add": {
+            "example": 3,
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "seats_to_add"
+        ],
+        "title": "BillingCheckoutRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TokenRequest": {
         "additionalProperties": false,
         "example": {
@@ -3401,6 +3497,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "awaiting_seat": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "inactive": {
             "minimum": 0,
             "type": "integer",
@@ -3418,7 +3520,8 @@
           "active",
           "pending",
           "inactive",
-          "archived"
+          "archived",
+          "awaiting_seat"
         ],
         "title": "ClientSummary",
         "type": "object",
@@ -4565,6 +4668,104 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileField",
         "x-validate": null
       },
+      "BillingSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "available_seats": {
+            "example": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "awaiting_seat_count": {
+            "example": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "current_period_end": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "free_seats": {
+            "example": 2,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "is_owner": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "monthly_seat_price_inr": {
+            "example": 499,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "paid_seats": {
+            "example": 3,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "recent_events": {
+            "items": {
+              "$ref": "#/components/schemas/BillingEvent"
+            },
+            "nullable": true,
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "seat_limit": {
+            "example": 5,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "free",
+              "active",
+              "past_due",
+              "cancel_at_period_end",
+              "cancelled"
+            ],
+            "example": "free",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "used_seats": {
+            "description": "active clients + pending invites",
+            "example": 4,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "status",
+          "free_seats",
+          "paid_seats",
+          "seat_limit",
+          "used_seats",
+          "available_seats",
+          "awaiting_seat_count",
+          "monthly_seat_price_inr",
+          "current_period_end",
+          "is_owner"
+        ],
+        "title": "BillingSummary",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TrainingExerciseRelation": {
         "additionalProperties": false,
         "properties": {
@@ -5098,7 +5299,8 @@
               "active",
               "pending",
               "inactive",
-              "archived"
+              "archived",
+              "awaiting_seat"
             ],
             "type": "string",
             "x-struct": null,
@@ -6039,6 +6241,41 @@
         "title": "ClientListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientListResponse",
+        "x-validate": null
+      },
+      "SeatLimitError": {
+        "additionalProperties": true,
+        "properties": {
+          "error_code": {
+            "example": "seat_limit_reached",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "error_detail": {
+            "additionalProperties": true,
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "error_message": {
+            "example": "No seats available",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "seat_summary": {
+            "$ref": "#/components/schemas/BillingSummary"
+          }
+        },
+        "required": [
+          "error_code",
+          "error_message",
+          "seat_summary"
+        ],
+        "title": "SeatLimitError",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "TrainingPerformedSetResponse": {
@@ -7472,6 +7709,31 @@
         "x-struct": null,
         "x-validate": null
       },
+      "BillingCheckoutPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "key_id": {
+            "example": "rzp_test_key",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "subscription_id": {
+            "example": "sub_123",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "key_id",
+          "subscription_id"
+        ],
+        "title": "BillingCheckoutPayload",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "PublicLandingPageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -8120,6 +8382,21 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingSession",
         "x-validate": null
       },
+      "BillingResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BillingSummary"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "BillingResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.BillingResponse",
+        "x-validate": null
+      },
       "RecipeImpactResponse": {
         "properties": {
           "data": {
@@ -8501,6 +8778,43 @@
         "title": "NutritionPlan",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlan",
+        "x-validate": null
+      },
+      "BillingCheckoutResult": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "checkout",
+              "updated"
+            ],
+            "example": "checkout",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "billing": {
+            "$ref": "#/components/schemas/BillingSummary"
+          },
+          "checkout": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingCheckoutPayload"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "action",
+          "checkout",
+          "billing"
+        ],
+        "title": "BillingCheckoutResult",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "NutritionDayScheduleRequest": {
@@ -9302,6 +9616,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatLimitError"
+                }
+              }
+            },
+            "description": "Seat limit reached"
           },
           "422": {
             "content": {
@@ -11856,6 +12180,65 @@
         ]
       }
     },
+    "/v1/coach/billing/cancel": {
+      "post": {
+        "callbacks": {},
+        "description": "Owner-only: schedules the subscription to cancel at the end of the current period.",
+        "operationId": "cancelBilling",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingResponse"
+                }
+              }
+            },
+            "description": "Billing"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Payment provider error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Schedule cancellation",
+        "tags": [
+          "coach billing"
+        ]
+      }
+    },
     "/v1/coach/training-plans/{plan_id}/schedule": {
       "get": {
         "callbacks": {},
@@ -13337,6 +13720,45 @@
         ]
       }
     },
+    "/v1/coach/billing": {
+      "get": {
+        "callbacks": {},
+        "description": "Loads the seat summary and recent billing events for the authenticated business.",
+        "operationId": "getBilling",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingResponse"
+                }
+              }
+            },
+            "description": "Billing"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get billing and seat summary",
+        "tags": [
+          "coach billing"
+        ]
+      }
+    },
     "/v1/client/form-assignments/{id}": {
       "get": {
         "callbacks": {},
@@ -13440,11 +13862,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/SeatLimitError"
                 }
               }
             },
-            "description": "Conflict"
+            "description": "Seat limit reached"
           },
           "422": {
             "content": {
@@ -17249,6 +17671,76 @@
         ]
       }
     },
+    "/v1/coach/billing/checkout": {
+      "post": {
+        "callbacks": {},
+        "description": "Owner-only: starts or updates a Razorpay subscription for additional seats.",
+        "operationId": "checkoutBilling",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingCheckoutRequest"
+              }
+            }
+          },
+          "description": "Checkout request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingCheckoutResponse"
+                }
+              }
+            },
+            "description": "Checkout result"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Payment provider error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Buy seats",
+        "tags": [
+          "coach billing"
+        ]
+      }
+    },
     "/v1/coach/form-assignments/{id}/submissions": {
       "get": {
         "callbacks": {},
@@ -18383,6 +18875,44 @@
         "summary": "Create recipe",
         "tags": [
           "coach recipes"
+        ]
+      }
+    },
+    "/v1/webhooks/razorpay": {
+      "post": {
+        "callbacks": {},
+        "description": "Receives Razorpay subscription/payment webhook events. Verified by HMAC signature over the raw request body. No authentication.",
+        "operationId": "razorpayWebhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              }
+            },
+            "description": "Acknowledged"
+          },
+          "401": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              }
+            },
+            "description": "Invalid signature"
+          }
+        },
+        "summary": "Razorpay webhook",
+        "tags": [
+          "billing"
         ]
       }
     },

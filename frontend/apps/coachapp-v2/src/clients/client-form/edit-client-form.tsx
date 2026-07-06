@@ -40,7 +40,7 @@ export function clientToEditFormValues(client: Client): EditClientFormValues {
     last_name: client.last_name ?? '',
     notes: client.notes ?? '',
     phone: client.phone ?? '',
-    status: client.status === 'pending' ? undefined : client.status,
+    status: client.status === 'pending' || client.status === 'awaiting_seat' ? undefined : client.status,
   };
 }
 

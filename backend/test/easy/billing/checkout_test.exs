@@ -87,6 +87,21 @@ defmodule Easy.Billing.CheckoutTest do
     assert {:error, :no_subscription} = Billing.cancel(ctx_for(business))
   end
 
+  test "checkout with a stale subscription id on a free (never-paid) business starts a fresh checkout" do
+    stub_razorpay()
+    business = insert(:business)
+    insert(:business_billing, business: business, paid_seats: 0, status: :free, razorpay_subscription_id: "sub_stale")
+
+    assert {:ok, %{action: :checkout, checkout: checkout, billing: billing}} =
+             Billing.checkout(ctx_for(business), 3)
+
+    assert checkout.subscription_id == "sub_new"
+    assert billing.paid_seats == 0
+    assert Billing.billing_for(business.id).razorpay_subscription_id == "sub_new"
+    refute Enum.any?(Billing.recent_events(ctx_for(business)), &(&1.kind == :seats_added))
+    assert Billing.seat_summary(ctx_for(business)).awaiting_seat_count == 0
+  end
+
   test "razorpay failure surfaces as :razorpay_error and changes nothing" do
     Req.Test.stub(Easy.Razorpay, fn conn -> Req.Test.transport_error(conn, :econnrefused) end)
     business = insert(:business)

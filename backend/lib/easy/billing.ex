@@ -119,9 +119,12 @@ defmodule Easy.Billing do
       billing = billing_for(business_id)
       target_quantity = billing.paid_seats + seats_to_add
 
-      case billing.razorpay_subscription_id do
-        nil -> create_checkout(ctx, billing, target_quantity)
-        subscription_id -> update_quantity(ctx, billing, subscription_id, target_quantity, seats_to_add)
+      if billing.status in [:active, :past_due, :cancel_at_period_end] do
+        update_quantity(ctx, billing, billing.razorpay_subscription_id, target_quantity, seats_to_add)
+      else
+        # :free or :cancelled — any existing subscription id is stale (never paid, or
+        # already cancelled). Start a fresh Razorpay subscription rather than reviving it.
+        create_checkout(ctx, billing, target_quantity)
       end
     end
   end
@@ -143,12 +146,26 @@ defmodule Easy.Billing do
           :ok | {:error, :invalid_webhook_signature} | {:error, :duplicate_webhook}
   def handle_razorpay_webhook(raw_body, signature, event_id) do
     with true <- Razorpay.valid_webhook_signature?(raw_body, signature),
-         {:ok, params} <- Jason.decode(raw_body),
-         :ok <- claim_receipt(event_id || fallback_event_id(raw_body), params["event"]) do
-      apply_webhook_event(params)
+         {:ok, params} <- Jason.decode(raw_body) do
+      claim_and_apply(event_id || fallback_event_id(raw_body), params)
     else
       false -> {:error, :invalid_webhook_signature}
       {:error, %Jason.DecodeError{}} -> {:error, :invalid_webhook_signature}
+    end
+  end
+
+  # Claiming the receipt and applying the event are both DB-only, so wrap them in one
+  # transaction: if apply_webhook_event crashes on a malformed payload, the receipt claim
+  # rolls back too and the (unmodified) retry is not silently deduped and dropped.
+  defp claim_and_apply(event_id, params) do
+    Repo.transaction(fn ->
+      case claim_receipt(event_id, params["event"]) do
+        :ok -> apply_webhook_event(params)
+        {:error, :duplicate_webhook} -> Repo.rollback(:duplicate_webhook)
+      end
+    end)
+    |> case do
+      {:ok, :ok} -> :ok
       {:error, :duplicate_webhook} -> {:error, :duplicate_webhook}
     end
   end
@@ -256,17 +273,20 @@ defmodule Easy.Billing do
   # --- event application; out-of-order guard: only transitions valid for local state ---
 
   defp apply_webhook_event(%{"event" => "subscription.charged", "payload" => payload}) do
-    subscription = payload["subscription"]["entity"]
-    payment = payload["payment"]["entity"]
+    subscription = subscription_entity(payload)
+    payment = payment_entity(payload)
 
     with_billing(subscription["id"], fn billing ->
       quantity = subscription["quantity"] || billing.paid_seats
+      # preserve a cancellation already scheduled by the owner; a charge on the
+      # current cycle doesn't undo it
+      status = if billing.status == :cancel_at_period_end, do: :cancel_at_period_end, else: :active
 
       billing
       |> BusinessBilling.changeset(%{
         paid_seats: quantity,
-        status: :active,
-        current_period_end: subscription["current_end"] && DateTime.from_unix!(subscription["current_end"])
+        status: status,
+        current_period_end: safe_unix(subscription["current_end"])
       })
       |> Repo.update!()
 
@@ -283,7 +303,7 @@ defmodule Easy.Billing do
 
   defp apply_webhook_event(%{"event" => event, "payload" => payload})
        when event in ["subscription.pending", "subscription.halted"] do
-    with_billing(payload["subscription"]["entity"]["id"], fn billing ->
+    with_billing(subscription_entity(payload)["id"], fn billing ->
       if billing.status in [:active, :cancel_at_period_end] do
         billing |> BusinessBilling.changeset(%{status: :past_due}) |> Repo.update!()
         record_event(billing.business_id, :payment_failed)
@@ -294,7 +314,7 @@ defmodule Easy.Billing do
   end
 
   defp apply_webhook_event(%{"event" => "subscription.cancelled", "payload" => payload}) do
-    with_billing(payload["subscription"]["entity"]["id"], fn billing ->
+    with_billing(subscription_entity(payload)["id"], fn billing ->
       if billing.status != :cancelled do
         billing |> BusinessBilling.changeset(%{status: :cancelled, paid_seats: 0}) |> Repo.update!()
         record_event(billing.business_id, :subscription_cancelled)
@@ -305,7 +325,7 @@ defmodule Easy.Billing do
   end
 
   defp apply_webhook_event(%{"event" => "subscription.updated", "payload" => payload}) do
-    subscription = payload["subscription"]["entity"]
+    subscription = subscription_entity(payload)
 
     with_billing(subscription["id"], fn billing ->
       if billing.status in [:active, :past_due, :cancel_at_period_end] and is_integer(subscription["quantity"]) do
@@ -324,6 +344,23 @@ defmodule Easy.Billing do
 
   # unrecognized events: receipt already stored, just ack
   defp apply_webhook_event(_params), do: :ok
+
+  # tolerates a missing/malformed "subscription"/"entity" map — returns %{} so callers'
+  # bracket access (e.g. subscription["id"]) safely yields nil instead of crashing
+  defp subscription_entity(%{"subscription" => %{"entity" => entity}}) when is_map(entity), do: entity
+  defp subscription_entity(_payload), do: %{}
+
+  defp payment_entity(%{"payment" => %{"entity" => entity}}) when is_map(entity), do: entity
+  defp payment_entity(_payload), do: %{}
+
+  defp safe_unix(ts) when is_integer(ts) do
+    case DateTime.from_unix(ts) do
+      {:ok, dt} -> dt
+      {:error, _} -> nil
+    end
+  end
+
+  defp safe_unix(_ts), do: nil
 
   defp with_billing(nil, _fun), do: :ok
 

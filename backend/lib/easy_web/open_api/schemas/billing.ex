@@ -88,7 +88,7 @@ defmodule EasyWeb.OpenApi.Schemas.BillingCheckoutRequest do
       title: "BillingCheckoutRequest",
       type: :object,
       additionalProperties: false,
-      properties: %{seats_to_add: %Schema{type: :integer, minimum: 1, example: 3}},
+      properties: %{seats_to_add: %Schema{type: :integer, minimum: 1, maximum: 100, example: 3}},
       required: [:seats_to_add]
     },
     struct?: false

@@ -88,6 +88,13 @@ if config_env() == :prod do
       Set it to the shared secret used for signing JWTs.
       """
 
+  razorpay_key_id =
+    System.get_env("RAZORPAY_KEY_ID") ||
+      raise """
+      environment variable RAZORPAY_KEY_ID is missing.
+      Set it to the Razorpay API key id.
+      """
+
   razorpay_key_secret =
     System.get_env("RAZORPAY_KEY_SECRET") ||
       raise """
@@ -102,10 +109,19 @@ if config_env() == :prod do
       Set it to the Razorpay webhook signing secret.
       """
 
-  # In prod the Razorpay secrets must come from the environment, never the dev fallback.
+  razorpay_plan_id =
+    System.get_env("RAZORPAY_PLAN_ID") ||
+      raise """
+      environment variable RAZORPAY_PLAN_ID is missing.
+      Set it to the Razorpay plan id for seat subscriptions.
+      """
+
+  # In prod the Razorpay config must come from the environment, never the dev fallback.
   config :easy, Easy.Razorpay,
+    key_id: razorpay_key_id,
     key_secret: razorpay_key_secret,
-    webhook_secret: razorpay_webhook_secret
+    webhook_secret: razorpay_webhook_secret,
+    plan_id: razorpay_plan_id
 
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")

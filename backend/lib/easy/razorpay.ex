@@ -23,6 +23,7 @@ defmodule Easy.Razorpay do
   end
 
   def valid_webhook_signature?(_raw_body, nil), do: false
+  def valid_webhook_signature?(nil, _signature), do: false
 
   def valid_webhook_signature?(raw_body, signature) do
     expected =

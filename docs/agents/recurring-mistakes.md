@@ -92,6 +92,16 @@ Public context functions take `%Easy.Ctx{} = ctx` as their first argument (see
 `Easy.Exercises`), not separate `business_id` / `user_id` arguments threaded through every
 call. **Enforced by:** backend conventions review (`backend/AGENTS.md`) and `mix precommit`.
 
+### RM-011 — External-payment checkout flows must branch on local payment STATE, not the presence of an external resource id
+`Billing.checkout/2` picked create-vs-update by whether a `razorpay_subscription_id` was
+present, not by whether that subscription had ever been paid. Dismissing the Razorpay modal
+left `status: :free` with a dangling subscription id, so the next checkout took the update
+path — a 502 dead-end, or an optimistic `paid_seats` bump on a subscription that was never
+paid. Branch on `billing.status in [:active, :past_due, :cancel_at_period_end]`; treat any
+subscription id on `:free`/`:cancelled` as stale and start a fresh subscription. Instance:
+found in the billing/seats feature final review. **Enforced by:** regression test in
+`test/easy/billing/checkout_test.exs` (stale-subscription-id-on-:free case) + review.
+
 ---
 
 ## Frontend

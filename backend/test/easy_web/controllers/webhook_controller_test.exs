@@ -117,6 +117,35 @@ defmodule EasyWeb.WebhookControllerTest do
     assert conn.status == 200
   end
 
+  test "a payload missing the subscription entity is acked 200 and writes no billing state", %{
+    conn: conn,
+    business: business
+  } do
+    conn =
+      post_webhook(conn, %{
+        "event" => "subscription.charged",
+        "payload" => %{"payment" => %{"entity" => %{"amount" => 100, "currency" => "INR"}}}
+      })
+
+    assert conn.status == 200
+    billing = Billing.billing_for(business.id)
+    assert billing.status == :free
+    assert billing.paid_seats == 0
+    assert events_for(business.id) == []
+  end
+
+  test "a charge while cancellation is scheduled keeps cancel_at_period_end", %{conn: conn, business: business} do
+    Billing.billing_for(business.id)
+    |> Ecto.Changeset.change(status: :cancel_at_period_end)
+    |> Repo.update!()
+
+    post_webhook(conn, charged_payload("sub_wh", 3, 149_700))
+
+    billing = Billing.billing_for(business.id)
+    assert billing.status == :cancel_at_period_end
+    assert billing.paid_seats == 3
+  end
+
   defp events_for(business_id) do
     Repo.all(from(e in Easy.Billing.Event, where: e.business_id == ^business_id))
   end

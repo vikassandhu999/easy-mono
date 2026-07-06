@@ -1,10 +1,13 @@
 defmodule Easy.NutritionPlans do
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.Nutrition.DayMeal
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
+  alias Easy.Nutrition.PlanDay
   alias Easy.Nutrition.ScheduleEntry
+  alias Easy.Nutrition.WeekdayAssignment
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
@@ -276,9 +279,28 @@ defmodule Easy.NutritionPlans do
   end
 
   defp create_plan_for(business_id, creator_id, attrs) do
-    business_id
-    |> Plan.insert_changeset(creator_id, attrs)
-    |> Repo.insert()
+    Repo.transaction(fn ->
+      with {:ok, plan} <- business_id |> Plan.insert_changeset(creator_id, attrs) |> Repo.insert(),
+           {:ok, _day} <- seed_everyday(plan) do
+        plan
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp seed_everyday(plan) do
+    with {:ok, day} <-
+           PlanDay.insert_changeset(plan.business_id, plan.id, %{"name" => "Everyday", "position" => 0})
+           |> Repo.insert() do
+      Enum.each(WeekdayAssignment.days(), fn weekday ->
+        {:ok, _} =
+          WeekdayAssignment.insert_changeset(plan.business_id, plan.id, day.id, %{"day_of_week" => weekday})
+          |> Repo.insert()
+      end)
+
+      {:ok, day}
+    end
   end
 
   defp assign_to_client(plan, client_id, creator_id, attrs) do
@@ -365,7 +387,14 @@ defmodule Easy.NutritionPlans do
         |> preload(meal_items: ^MealItem.for_business(MealItem, plan.business_id))
 
       plan_item_query = ScheduleEntry.for_business(ScheduleEntry, plan.business_id)
-      plan = Repo.preload(plan, meals: meal_query, plan_items: plan_item_query)
+
+      plan =
+        Repo.preload(plan,
+          meals: meal_query,
+          plan_items: plan_item_query,
+          days: PlanDay.include_day_meals(PlanDay.by_position(), plan.business_id),
+          weekday_assignments: WeekdayAssignment.for_business(WeekdayAssignment, plan.business_id)
+        )
 
       attrs = %{
         name: Keyword.get(opts, :name, plan.name),
@@ -395,7 +424,9 @@ defmodule Easy.NutritionPlans do
                new_plan.id,
                new_plan.business_id,
                meal_map
-             ) do
+             ),
+           {:ok, day_map} <- copy_days(plan.days, new_plan, meal_map),
+           :ok <- copy_assignments(plan.weekday_assignments, new_plan, day_map) do
         Repo.preload(new_plan,
           meals: Meal.include_items(Meal, new_plan.business_id),
           plan_items: ScheduleEntry.include_meal(ScheduleEntry, new_plan.business_id)
@@ -459,6 +490,57 @@ defmodule Easy.NutritionPlans do
           {:ok, new_entry} -> {:cont, {:ok, [new_entry | acc]}}
           {:error, reason} -> {:halt, {:error, reason}}
         end
+      end
+    end)
+  end
+
+  defp copy_days(days, new_plan, meal_map) do
+    Enum.reduce_while(days, {:ok, %{}}, fn day, {:ok, acc} ->
+      with {:ok, new_day} <-
+             PlanDay.insert_changeset(new_plan.business_id, new_plan.id, %{
+               "name" => day.name,
+               "position" => day.position
+             })
+             |> Repo.insert(),
+           :ok <- copy_day_meals(day.day_meals, new_day, meal_map) do
+        {:cont, {:ok, Map.put(acc, day.id, new_day)}}
+      else
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp copy_day_meals(day_meals, new_day, meal_map) do
+    Enum.reduce_while(day_meals, :ok, fn dm, :ok ->
+      case Map.get(meal_map, dm.nutrition_meal_id) do
+        nil ->
+          {:halt, {:error, :meal_not_found_in_plan}}
+
+        new_meal ->
+          attrs = %{"meal_slot" => to_string(dm.meal_slot), "position" => dm.position, "nutrition_meal_id" => new_meal.id}
+
+          case DayMeal.insert_changeset(new_day.business_id, new_day.id, attrs) |> Repo.insert() do
+            {:ok, _} -> {:cont, :ok}
+            {:error, reason} -> {:halt, {:error, reason}}
+          end
+      end
+    end)
+  end
+
+  defp copy_assignments(assignments, new_plan, day_map) do
+    Enum.reduce_while(assignments, :ok, fn wa, :ok ->
+      case Map.get(day_map, wa.nutrition_plan_day_id) do
+        nil ->
+          {:halt, {:error, :day_not_found_in_plan}}
+
+        new_day ->
+          case WeekdayAssignment.insert_changeset(new_plan.business_id, new_plan.id, new_day.id, %{
+                 "day_of_week" => to_string(wa.day_of_week)
+               })
+               |> Repo.insert() do
+            {:ok, _} -> {:cont, :ok}
+            {:error, reason} -> {:halt, {:error, reason}}
+          end
       end
     end)
   end

@@ -14,15 +14,18 @@ defmodule Easy.Factory do
   alias Easy.Identity.UserSession
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
+  alias Easy.Nutrition.DayMeal
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
+  alias Easy.Nutrition.PlanDay
   alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
+  alias Easy.Nutrition.WeekdayAssignment
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingMuscle
@@ -309,8 +312,12 @@ defmodule Easy.Factory do
   end
 
   def plan_factory do
-    business = build(:business)
-    creator = build(:coach, business: business)
+    # `business` is persisted (not merely built) because it's referenced from two
+    # belongs_to paths below (plan.business and plan.creator.business) — see
+    # client_factory's comment for why an unsaved struct shared across two paths
+    # gets cascade-inserted twice, tripping unique constraints.
+    business = insert(:business)
+    creator = insert(:coach, business: business)
 
     %Plan{
       name: sequence(:plan_name, &"Plan #{&1}"),
@@ -378,6 +385,41 @@ defmodule Easy.Factory do
     %{
       "day_of_week" => "monday",
       "meal_slot" => "breakfast"
+    }
+  end
+
+  def plan_day_factory do
+    plan = build(:plan)
+
+    %PlanDay{
+      name: "Everyday",
+      position: sequence(:plan_day_position, & &1),
+      business: plan.business,
+      plan: plan
+    }
+  end
+
+  def day_meal_factory do
+    day = build(:plan_day)
+    meal = build(:meal, plan: day.plan, creator: day.plan.creator)
+
+    %DayMeal{
+      meal_slot: "breakfast",
+      position: 0,
+      business: day.plan.business,
+      plan_day: day,
+      meal: meal
+    }
+  end
+
+  def weekday_assignment_factory do
+    day = build(:plan_day)
+
+    %WeekdayAssignment{
+      day_of_week: "monday",
+      business: day.plan.business,
+      plan: day.plan,
+      plan_day: day
     }
   end
 

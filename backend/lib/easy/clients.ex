@@ -2,6 +2,7 @@ defmodule Easy.Clients do
   import Ecto.Changeset
   import Ecto.Query
 
+  alias Easy.Billing
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Identity.User
@@ -71,7 +72,8 @@ defmodule Easy.Clients do
 
   @spec invite_client(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, any()}
   def invite_client(%Ctx{} = ctx, invite_attrs) do
-    with {:ok, coach} <- get_coach(ctx),
+    with :ok <- Billing.ensure_seat_available(ctx),
+         {:ok, coach} <- get_coach(ctx),
          :ok <- validate_not_self_invite(coach, invite_attrs),
          :ok <- validate_email_has_no_active_client(invite_attrs),
          {:ok, client} <- create_invitation(coach, invite_attrs),
@@ -84,6 +86,7 @@ defmodule Easy.Clients do
           {:ok, Client.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_client(%Ctx{} = ctx, client_id, attrs) do
     with {:ok, client} <- get_client_with_preloads(ctx, client_id),
+         :ok <- ensure_reactivation_capacity(ctx, client, attrs),
          {:ok, updated_client} <- client |> Client.update_changeset(attrs) |> Repo.update() do
       preload_client(updated_client)
     end
@@ -180,9 +183,23 @@ defmodule Easy.Clients do
     if user_has_active_client_elsewhere?(user_id, business_id) do
       {:error, :already_active_elsewhere}
     else
-      do_atomic_accept(client_id, user_id, accepted_email)
+      do_atomic_accept(client_id, business_id, user_id, accepted_email)
     end
   end
+
+  # Seat-gate reactivation only: inactive/archived -> active at the seat limit
+  # is blocked; every other status transition and every non-status update
+  # passes through untouched.
+  defp ensure_reactivation_capacity(ctx, %Client{status: current}, attrs)
+       when current in [:inactive, :archived] do
+    if to_string(attrs[:status] || attrs["status"]) == "active" do
+      Billing.ensure_seat_available(ctx)
+    else
+      :ok
+    end
+  end
+
+  defp ensure_reactivation_capacity(_ctx, _client, _attrs), do: :ok
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}
@@ -436,8 +453,9 @@ defmodule Easy.Clients do
     |> Repo.exists?()
   end
 
-  defp do_atomic_accept(client_id, user_id, accepted_email) do
+  defp do_atomic_accept(client_id, business_id, user_id, accepted_email) do
     now = DateTime.utc_now(:second)
+    target_status = if Billing.over_capacity?(business_id), do: :awaiting_seat, else: :active
 
     query =
       from(c in Client,
@@ -448,7 +466,7 @@ defmodule Easy.Clients do
     case Repo.update_all(query,
            set: [
              user_id: user_id,
-             status: :active,
+             status: target_status,
              email: accepted_email,
              updated_at: now
            ]

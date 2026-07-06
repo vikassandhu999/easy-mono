@@ -51,6 +51,42 @@ defmodule Easy.Billing do
     if owner?(ctx), do: :ok, else: {:error, :not_owner}
   end
 
+  # pending -> active does not change used_seats (pending already counts),
+  # so "no capacity at accept" means usage already exceeds the limit
+  # (seats were reduced since the invite).
+  @spec over_capacity?(Ecto.UUID.t()) :: boolean()
+  def over_capacity?(business_id) do
+    billing = billing_for(business_id)
+    used_seats(business_id) > billing.free_seats + billing.paid_seats
+  end
+
+  @spec activate_awaiting_clients(Ecto.UUID.t()) :: {:ok, non_neg_integer()}
+  def activate_awaiting_clients(business_id) do
+    billing = billing_for(business_id)
+    available = billing.free_seats + billing.paid_seats - used_seats(business_id)
+
+    if available > 0 do
+      ids =
+        Repo.all(
+          from c in Client,
+            where: c.business_id == ^business_id and c.status == ^:awaiting_seat,
+            order_by: [asc: c.inserted_at, asc: c.id],
+            limit: ^available,
+            select: c.id
+        )
+
+      {count, _} =
+        Repo.update_all(
+          from(c in Client, where: c.id in ^ids and c.status == ^:awaiting_seat),
+          set: [status: :active, updated_at: DateTime.utc_now(:second)]
+        )
+
+      {:ok, count}
+    else
+      {:ok, 0}
+    end
+  end
+
   @spec record_event(Ecto.UUID.t(), atom(), map()) :: Event.t()
   def record_event(business_id, kind, attrs \\ %{}) do
     Repo.insert!(%Event{

@@ -90,6 +90,7 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
       body = json_response(conn, 409)
       assert body["seat_summary"]["used_seats"] == 2
       assert body["seat_summary"]["available_seats"] == 0
+      assert_schema(body["seat_summary"], "BillingSummary", EasyWeb.ApiSpec.spec())
     end
   end
 

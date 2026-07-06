@@ -71,8 +71,7 @@ defmodule EasyWeb.OpenApi.Schemas.BillingSummary do
         :awaiting_seat_count,
         :monthly_seat_price_inr,
         :current_period_end,
-        :is_owner,
-        :recent_events
+        :is_owner
       ]
     },
     struct?: false

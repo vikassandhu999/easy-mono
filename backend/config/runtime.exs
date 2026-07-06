@@ -22,6 +22,14 @@ config :easy, :email,
   },
   app_url: System.get_env("APP_URL") || "http://localhost:4000"
 
+# Razorpay configuration for all environments (dev fallbacks; prod requires real secrets, see below)
+config :easy, Easy.Razorpay,
+  key_id: System.get_env("RAZORPAY_KEY_ID", "rzp_test_dev"),
+  key_secret: System.get_env("RAZORPAY_KEY_SECRET", "dev_secret"),
+  webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET", "dev_webhook_secret"),
+  plan_id: System.get_env("RAZORPAY_PLAN_ID", "plan_dev"),
+  seat_price_inr: String.to_integer(System.get_env("BILLING_SEAT_PRICE_INR", "499"))
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server
@@ -77,6 +85,25 @@ if config_env() == :prod do
       environment variable JWT_SECRET is missing.
       Set it to the shared secret used for signing JWTs.
       """
+
+  razorpay_key_secret =
+    System.get_env("RAZORPAY_KEY_SECRET") ||
+      raise """
+      environment variable RAZORPAY_KEY_SECRET is missing.
+      Set it to the Razorpay API key secret.
+      """
+
+  razorpay_webhook_secret =
+    System.get_env("RAZORPAY_WEBHOOK_SECRET") ||
+      raise """
+      environment variable RAZORPAY_WEBHOOK_SECRET is missing.
+      Set it to the Razorpay webhook signing secret.
+      """
+
+  # In prod the Razorpay secrets must come from the environment, never the dev fallback.
+  config :easy, Easy.Razorpay,
+    key_secret: razorpay_key_secret,
+    webhook_secret: razorpay_webhook_secret
 
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")

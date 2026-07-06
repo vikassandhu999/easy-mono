@@ -34,3 +34,11 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Cookie configuration for tests - disable Secure flag for HTTP
 config :easy, EasyWeb.CookieHelper, secure: false
+
+config :easy, Easy.Razorpay,
+  key_id: "rzp_test_key",
+  key_secret: "test_secret",
+  webhook_secret: "test_webhook_secret",
+  plan_id: "plan_test",
+  seat_price_inr: 499,
+  req_options: [plug: {Req.Test, Easy.Razorpay}]

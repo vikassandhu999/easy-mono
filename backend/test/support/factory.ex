@@ -1,6 +1,7 @@
 defmodule Easy.Factory do
   use ExMachina.Ecto, repo: Easy.Repo
 
+  alias Easy.Billing.BusinessBilling
   alias Easy.ClientProfiles.ClientProfile
   alias Easy.ClientProfiles.FormAssignment
   alias Easy.ClientProfiles.FormSubmission
@@ -46,6 +47,15 @@ defmodule Easy.Factory do
       name: sequence(:business_name, &"Business #{&1}"),
       handle: sequence(:handle, &"biz-#{&1}"),
       owner: build(:user)
+    }
+  end
+
+  def business_billing_factory do
+    %BusinessBilling{
+      business: build(:business),
+      free_seats: 2,
+      paid_seats: 0,
+      status: :free
     }
   end
 

@@ -68,8 +68,12 @@ defmodule Easy.Factory do
   end
 
   def client_factory do
+    # `business` is persisted (not merely built) because it's referenced from
+    # two belongs_to paths below (client.business and client.creator.business).
+    # An unsaved struct shared across two paths gets cascade-inserted twice by
+    # Ecto, tripping the businesses/users unique constraints.
     business =
-      build(:business,
+      insert(:business,
         owner: build(:user, email: sequence(:business_owner_email, &"business-owner-#{&1}@test.com"))
       )
 

@@ -207,12 +207,13 @@ defmodule Easy.Clients do
           active: count(fragment("CASE WHEN ? = 'active' THEN 1 END", c.status)),
           pending: count(fragment("CASE WHEN ? = 'pending' THEN 1 END", c.status)),
           inactive: count(fragment("CASE WHEN ? = 'inactive' THEN 1 END", c.status)),
-          archived: count(fragment("CASE WHEN ? = 'archived' THEN 1 END", c.status))
+          archived: count(fragment("CASE WHEN ? = 'archived' THEN 1 END", c.status)),
+          awaiting_seat: count(fragment("CASE WHEN ? = 'awaiting_seat' THEN 1 END", c.status))
         }
       )
       |> Repo.one()
 
-    counts || %{active: 0, pending: 0, inactive: 0, archived: 0}
+    counts || %{active: 0, pending: 0, inactive: 0, archived: 0, awaiting_seat: 0}
   end
 
   defp normalize_profile_filter(profile_filter) when is_map(profile_filter) do

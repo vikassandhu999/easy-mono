@@ -79,7 +79,10 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
           notes: %Schema{type: :string, nullable: true},
           goal_weight_value: %Schema{type: :number, nullable: true},
           goal_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"], nullable: true},
-          status: %Schema{type: :string, enum: ["active", "pending", "inactive", "archived"]},
+          status: %Schema{
+            type: :string,
+            enum: ["active", "pending", "inactive", "archived", "awaiting_seat"]
+          },
           invite_url: %Schema{type: :string, nullable: true},
           invitation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
           invitation_expires_at: %Schema{type: :string, format: :"date-time", nullable: true}
@@ -118,9 +121,10 @@ defmodule EasyWeb.OpenApi.Schemas.ClientSummary do
       active: %Schema{type: :integer, minimum: 0},
       pending: %Schema{type: :integer, minimum: 0},
       inactive: %Schema{type: :integer, minimum: 0},
-      archived: %Schema{type: :integer, minimum: 0}
+      archived: %Schema{type: :integer, minimum: 0},
+      awaiting_seat: %Schema{type: :integer, minimum: 0}
     },
-    required: [:active, :pending, :inactive, :archived]
+    required: [:active, :pending, :inactive, :archived, :awaiting_seat]
   })
 end
 

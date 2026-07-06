@@ -12,7 +12,7 @@ defmodule Easy.Clients.Client do
 
   @type t :: %__MODULE__{}
 
-  @statuses [:active, :pending, :inactive, :archived]
+  @statuses [:active, :pending, :inactive, :archived, :awaiting_seat]
   @invitation_validity_days 30
 
   schema "clients" do
@@ -54,10 +54,13 @@ defmodule Easy.Clients.Client do
   # Allowed manual status transitions (coach-driven).
   # pending -> active is reserved for accept_invite/3 (the accept flow) only.
   # Nothing may return to pending once a Client has been linked to a User.
+  # Coaches may archive a waiting client; ONLY the system activates one
+  # (via Billing.activate_awaiting_clients update_all, which bypasses this changeset).
   @allowed_status_transitions %{
     active: [:inactive, :archived],
     inactive: [:active, :archived],
-    archived: [:active, :inactive]
+    archived: [:active, :inactive],
+    awaiting_seat: [:archived]
   }
 
   # Changesets

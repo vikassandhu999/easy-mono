@@ -15,7 +15,7 @@ defmodule Easy.ClientProfilesTest do
     test "client factory creator belongs to the same business" do
       client = build(:client)
 
-      assert client.business.__meta__.state == :built
+      assert client.business.__meta__.state == :loaded
       assert client.creator.business == client.business
     end
 

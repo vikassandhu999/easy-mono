@@ -1,3 +1,10 @@
+unless Code.ensure_loaded?(Easy.Repo.Migrations.CreateNutritionPlanDays) do
+  Code.require_file(
+    "../../priv/repo/migrations/20260706120000_create_nutrition_plan_days.exs",
+    __DIR__
+  )
+end
+
 defmodule Easy.NutritionPlanDaysTest do
   use Easy.DataCase, async: true
 
@@ -99,5 +106,55 @@ defmodule Easy.NutritionPlanDaysTest do
 
   defp params_for_plan do
     %{"name" => "Cut plan", "status" => "active"}
+  end
+
+  describe "group_weekdays/1" do
+    alias Easy.Repo.Migrations.CreateNutritionPlanDays, as: Migration
+
+    test "uniform 7-day schedule groups into one Everyday day" do
+      entries =
+        Enum.map(
+          ~w(monday tuesday wednesday thursday friday saturday sunday),
+          &[&1, "breakfast", "meal-1"]
+        )
+
+      assert [{"Everyday", 0, sig, days}] = Migration.group_weekdays(entries)
+      assert sig == [{"breakfast", "meal-1"}]
+      assert Enum.sort(days) == Enum.sort(~w(monday tuesday wednesday thursday friday saturday sunday))
+    end
+
+    test "5 weekdays with one schedule plus 2 empty weekdays merge into one Everyday day" do
+      entries =
+        Enum.map(
+          ~w(monday tuesday wednesday thursday friday),
+          &[&1, "breakfast", "meal-1"]
+        )
+
+      assert [{"Everyday", 0, sig, days}] = Migration.group_weekdays(entries)
+      assert sig == [{"breakfast", "meal-1"}]
+      assert Enum.sort(days) == Enum.sort(~w(monday tuesday wednesday thursday friday saturday sunday))
+    end
+
+    test "two distinct signatures split into Day 1 and Day 2 covering all weekdays" do
+      group_a = ~w(monday tuesday wednesday thursday)
+      group_b = ~w(friday saturday sunday)
+
+      entries =
+        Enum.map(group_a, &[&1, "breakfast", "meal-1"]) ++
+          Enum.map(group_b, &[&1, "breakfast", "meal-2"])
+
+      assert [{"Day 1", 0, sig_a, days_a}, {"Day 2", 1, sig_b, days_b}] =
+               Migration.group_weekdays(entries)
+
+      assert sig_a == [{"breakfast", "meal-1"}]
+      assert sig_b == [{"breakfast", "meal-2"}]
+      assert Enum.sort(days_a) == Enum.sort(group_a)
+      assert Enum.sort(days_b) == Enum.sort(group_b)
+    end
+
+    test "no entries at all yields one Everyday day with all 7 weekdays and no meals" do
+      assert [{"Everyday", 0, [], days}] = Migration.group_weekdays([])
+      assert Enum.sort(days) == Enum.sort(~w(monday tuesday wednesday thursday friday saturday sunday))
+    end
   end
 end

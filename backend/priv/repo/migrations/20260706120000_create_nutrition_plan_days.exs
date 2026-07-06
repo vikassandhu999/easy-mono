@@ -77,10 +77,55 @@ defmodule Easy.Repo.Migrations.CreateNutritionPlanDays do
 
   @weekdays ~w(monday tuesday wednesday thursday friday saturday sunday)
 
+  @type meal_slot :: {String.t(), String.t()}
+
   # Group each plan's weekdays by identical (slot -> meal_id) signature.
   # One group -> a single "Everyday" day; N groups -> "Day 1".."Day N".
   # Weekdays with no entries join the largest group. Plans with no entries
   # get one "Everyday" day owning all 7 weekdays.
+  @spec group_weekdays([[String.t()]]) ::
+          [{String.t(), non_neg_integer(), [meal_slot()], [String.t()]}]
+  def group_weekdays(entries) do
+    by_day = Enum.group_by(entries, fn [day, _slot, _meal] -> day end)
+
+    signature = fn day ->
+      by_day
+      |> Map.get(day, [])
+      |> Enum.map(fn [_d, slot, meal] -> {slot, meal} end)
+      |> Enum.sort()
+    end
+
+    groups =
+      @weekdays
+      |> Enum.group_by(signature)
+      |> Enum.sort_by(fn {_sig, days} -> -length(days) end)
+
+    {empty_group, non_empty_groups} = Enum.split_with(groups, fn {sig, _days} -> sig == [] end)
+
+    empty_days =
+      case empty_group do
+        [{[], days}] -> days
+        [] -> []
+      end
+
+    groups =
+      case non_empty_groups do
+        [] ->
+          [{[], @weekdays}]
+
+        [{sig, days} | rest] ->
+          [{sig, days ++ empty_days} | rest]
+          |> Enum.sort_by(fn {_sig, days} -> -length(days) end)
+      end
+
+    groups
+    |> Enum.with_index()
+    |> Enum.map(fn {{sig, days}, idx} ->
+      name = if length(groups) == 1, do: "Everyday", else: "Day #{idx + 1}"
+      {name, idx, sig, days}
+    end)
+  end
+
   defp backfill do
     %{rows: plans} =
       repo().query!("SELECT id, business_id FROM nutrition_plans", [])
@@ -92,35 +137,9 @@ defmodule Easy.Repo.Migrations.CreateNutritionPlanDays do
           [plan_id]
         )
 
-      by_day = Enum.group_by(entries, fn [day, _slot, _meal] -> day end)
+      groups = group_weekdays(entries)
 
-      signature = fn day ->
-        by_day
-        |> Map.get(day, [])
-        |> Enum.map(fn [_d, slot, meal] -> {slot, meal} end)
-        |> Enum.sort()
-      end
-
-      groups =
-        @weekdays
-        |> Enum.group_by(signature)
-        |> Enum.sort_by(fn {_sig, days} -> -length(days) end)
-
-      groups =
-        case groups do
-          [{[], empty_days} | [{sig, days} | rest]] ->
-            # merge empty weekdays into the largest non-empty group
-            [{sig, days ++ empty_days} | rest]
-
-          other ->
-            other
-        end
-
-      groups
-      |> Enum.with_index()
-      |> Enum.each(fn {{sig, days}, idx} ->
-        name = if length(groups) == 1, do: "Everyday", else: "Day #{idx + 1}"
-
+      Enum.each(groups, fn {name, idx, sig, days} ->
         %{rows: [[day_id]]} =
           repo().query!(
             """

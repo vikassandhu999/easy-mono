@@ -5,6 +5,7 @@ defmodule Easy.Billing do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Orgs.Business
+  alias Easy.Razorpay
   alias Easy.Repo
 
   @used_statuses [:active, :pending]
@@ -108,6 +109,77 @@ defmodule Easy.Billing do
         order_by: [desc: e.occurred_at, desc: e.id],
         limit: 10
     )
+  end
+
+  @spec checkout(Ctx.t(), pos_integer()) ::
+          {:ok, map()} | {:error, :not_owner} | {:error, :razorpay_error}
+  def checkout(%Ctx{business_id: business_id} = ctx, seats_to_add)
+      when is_integer(seats_to_add) and seats_to_add > 0 do
+    with :ok <- ensure_owner(ctx) do
+      billing = billing_for(business_id)
+      target_quantity = billing.paid_seats + seats_to_add
+
+      case billing.razorpay_subscription_id do
+        nil -> create_checkout(ctx, billing, target_quantity)
+        subscription_id -> update_quantity(ctx, billing, subscription_id, target_quantity, seats_to_add)
+      end
+    end
+  end
+
+  @spec cancel(Ctx.t()) ::
+          {:ok, map()} | {:error, :not_owner} | {:error, :no_subscription} | {:error, :razorpay_error}
+  def cancel(%Ctx{business_id: business_id} = ctx) do
+    with :ok <- ensure_owner(ctx) do
+      billing = billing_for(business_id)
+
+      case billing.razorpay_subscription_id do
+        nil -> {:error, :no_subscription}
+        subscription_id -> do_cancel(ctx, billing, subscription_id)
+      end
+    end
+  end
+
+  defp create_checkout(ctx, billing, target_quantity) do
+    with {:ok, subscription} <- Razorpay.create_subscription(target_quantity) do
+      billing
+      |> BusinessBilling.changeset(%{
+        razorpay_subscription_id: subscription["id"],
+        razorpay_plan_id: subscription["plan_id"]
+      })
+      |> Repo.update!()
+
+      # paid_seats stays 0 until the webhook confirms payment
+      {:ok,
+       %{
+         action: :checkout,
+         checkout: %{key_id: Razorpay.key_id(), subscription_id: subscription["id"]},
+         billing: seat_summary(ctx)
+       }}
+    end
+  end
+
+  defp update_quantity(ctx, billing, subscription_id, target_quantity, seats_to_add) do
+    with {:ok, _} <- Razorpay.update_subscription_quantity(subscription_id, target_quantity) do
+      billing
+      |> BusinessBilling.changeset(%{paid_seats: target_quantity})
+      |> Repo.update!()
+
+      record_event(billing.business_id, :seats_added, %{seat_delta: seats_to_add})
+      activate_awaiting_clients(billing.business_id)
+
+      {:ok, %{action: :updated, billing: seat_summary(ctx)}}
+    end
+  end
+
+  defp do_cancel(ctx, billing, subscription_id) do
+    with {:ok, _} <- Razorpay.cancel_subscription_at_period_end(subscription_id) do
+      billing
+      |> BusinessBilling.changeset(%{status: :cancel_at_period_end})
+      |> Repo.update!()
+
+      record_event(billing.business_id, :cancellation_scheduled)
+      {:ok, seat_summary(ctx)}
+    end
   end
 
   defp create_default_billing(business_id) do

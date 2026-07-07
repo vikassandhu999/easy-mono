@@ -1,9 +1,9 @@
-import {X} from 'lucide-react';
-import {forwardRef} from 'react';
+import { X } from 'lucide-react';
+import { forwardRef } from 'react';
 
-import type {TrainingPlanPlannedSet} from '@/api/generated';
+import type { TrainingPlanPlannedSet } from '@/api/generated';
 
-import {fieldsForTrackingType} from './tracking-fields';
+import { fieldsForTrackingType } from './tracking-fields';
 
 interface SetRowProps {
   set: TrainingPlanPlannedSet;
@@ -66,14 +66,14 @@ function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | nu
 }
 
 export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow(
-  {set, index, trackingType, onTap, onRemove, canRemove},
+  { set, index, trackingType, onTap, onRemove, canRemove },
   ref,
 ) {
   return (
     // Without the remove button (single set) the summary text is the last
     // element — pr-2.5 keeps it off the card's right border, matching the
     // optical inset the X button's hit area provides when it is rendered.
-    <div className={`flex items-center gap-2 py-2${canRemove ? '' : ' pr-2.5'}`}>
+    <div className={`flex items-center gap-2 ${canRemove ? '' : ' pr-2.5'}`}>
       {/* Tap the summary to edit this set in the SetSheet */}
       <button
         ref={ref}

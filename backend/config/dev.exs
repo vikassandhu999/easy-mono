@@ -62,3 +62,17 @@ config :easy,
 
 # Fixed OTP in dev — every login code is 123456, no email-reading needed.
 config :easy, fixed_otp: "123456"
+
+# Razorpay dev defaults (safe dummies). Real test-mode keys go in
+# config/dev.secret.exs (gitignored) — see that file's header for the shape.
+# Env vars (RAZORPAY_*) still override both via runtime.exs.
+config :easy, Easy.Razorpay,
+  key_id: "rzp_test_dev",
+  key_secret: "dev_secret",
+  webhook_secret: "dev_webhook_secret",
+  plan_id: "plan_dev",
+  seat_price_inr: 499
+
+if File.exists?(Path.expand("dev.secret.exs", __DIR__)) do
+  import_config "dev.secret.exs"
+end

@@ -22,14 +22,24 @@ config :easy, :email,
   },
   app_url: System.get_env("APP_URL") || "http://localhost:4000"
 
-# Razorpay configuration for dev/prod (tests use test.exs config)
-if config_env() != :test do
-  config :easy, Easy.Razorpay,
-    key_id: System.get_env("RAZORPAY_KEY_ID", "rzp_test_dev"),
-    key_secret: System.get_env("RAZORPAY_KEY_SECRET", "dev_secret"),
-    webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET", "dev_webhook_secret"),
-    plan_id: System.get_env("RAZORPAY_PLAN_ID", "plan_dev"),
-    seat_price_inr: String.to_integer(System.get_env("BILLING_SEAT_PRICE_INR", "499"))
+# Razorpay in dev: defaults live in config/dev.exs (+ gitignored config/dev.secret.exs);
+# env vars override only when actually set. Prod is configured below with hard raises.
+if config_env() == :dev do
+  razorpay_overrides =
+    [
+      key_id: System.get_env("RAZORPAY_KEY_ID"),
+      key_secret: System.get_env("RAZORPAY_KEY_SECRET"),
+      webhook_secret: System.get_env("RAZORPAY_WEBHOOK_SECRET"),
+      plan_id: System.get_env("RAZORPAY_PLAN_ID"),
+      seat_price_inr:
+        System.get_env("BILLING_SEAT_PRICE_INR") &&
+          String.to_integer(System.get_env("BILLING_SEAT_PRICE_INR"))
+    ]
+    |> Enum.filter(fn {_key, value} -> value end)
+
+  if razorpay_overrides != [] do
+    config :easy, Easy.Razorpay, razorpay_overrides
+  end
 end
 
 # ## Using releases
@@ -121,7 +131,8 @@ if config_env() == :prod do
     key_id: razorpay_key_id,
     key_secret: razorpay_key_secret,
     webhook_secret: razorpay_webhook_secret,
-    plan_id: razorpay_plan_id
+    plan_id: razorpay_plan_id,
+    seat_price_inr: String.to_integer(System.get_env("BILLING_SEAT_PRICE_INR", "499"))
 
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")

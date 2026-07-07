@@ -349,6 +349,9 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.nutritionPlanAssignRequest,
       }),
     }),
+    syncBilling: build.mutation<SyncBillingApiResponse, SyncBillingApiArg>({
+      query: () => ({url: `/v1/coach/billing/sync`, method: 'POST'}),
+    }),
     getBilling: build.query<GetBillingApiResponse, GetBillingApiArg>({
       query: () => ({url: `/v1/coach/billing`}),
     }),
@@ -1109,6 +1112,8 @@ export type AssignNutritionPlanApiArg = {
   /** Nutrition plan assign request */
   nutritionPlanAssignRequest: NutritionPlanAssignRequest;
 };
+export type SyncBillingApiResponse = /** status 200 Billing */ BillingResponse;
+export type SyncBillingApiArg = void;
 export type GetBillingApiResponse = /** status 200 Billing */ BillingResponse;
 export type GetBillingApiArg = void;
 export type InviteClientApiResponse = /** status 201 Client invited */ ClientResponse;
@@ -2933,6 +2938,7 @@ export const {
   useGetNutritionFoodImpactQuery,
   useLazyGetNutritionFoodImpactQuery,
   useAssignNutritionPlanMutation,
+  useSyncBillingMutation,
   useGetBillingQuery,
   useLazyGetBillingQuery,
   useInviteClientMutation,

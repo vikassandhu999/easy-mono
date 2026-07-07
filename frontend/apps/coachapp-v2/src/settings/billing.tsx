@@ -7,7 +7,8 @@
  */
 
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
+import {AlertDialog, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
+import {useEffect, useRef, useState} from 'react';
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
@@ -15,9 +16,94 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {type BillingEvent, type BillingSummary, useCancelBillingMutation, useGetBillingQuery} from '@/api/billing';
+import {
+  type BillingEvent,
+  type BillingSummary,
+  useCancelBillingMutation,
+  useGetBillingQuery,
+  useSyncBillingMutation,
+} from '@/api/billing';
 import {getApiErrorMessage} from '@/api/shared';
 import {AddSeatsDialog} from '@/settings/add-seats-dialog';
+
+const SYNC_POLL_INTERVAL_MS = 5_000;
+const SYNC_POLL_BUDGET_MS = 30_000;
+
+/** True once the summary reflects a landed purchase relative to the pre-checkout snapshot. */
+function purchaseLanded(summary: BillingSummary, snapshot: BillingSummary): boolean {
+  return summary.paid_seats > snapshot.paid_seats || summary.status === 'active';
+}
+
+/**
+ * Tracks the post-checkout pending-activation state: fires an immediate
+ * sync, then retries every ~5s up to a ~30s budget until the summary shows
+ * the purchase landed. After the budget, stops polling and leaves the
+ * "slow copy" banner state for the caller to render.
+ */
+function useActivationSync() {
+  const [syncBilling] = useSyncBillingMutation();
+  const [pending, setPending] = useState<{snapshot: BillingSummary; timedOut: boolean} | null>(null);
+  const timersRef = useRef<{interval?: ReturnType<typeof setInterval>; timeout?: ReturnType<typeof setTimeout>}>({});
+
+  const stopPolling = () => {
+    if (timersRef.current.interval) {
+      clearInterval(timersRef.current.interval);
+    }
+    if (timersRef.current.timeout) {
+      clearTimeout(timersRef.current.timeout);
+    }
+    timersRef.current = {};
+  };
+
+  useEffect(() => stopPolling, []);
+
+  const attemptSync = async (snapshot: BillingSummary) => {
+    try {
+      const result = await syncBilling().unwrap();
+      if (purchaseLanded(result.data, snapshot)) {
+        stopPolling();
+        setPending(null);
+      }
+    } catch {
+      // keep polling; the banner already communicates the pending state
+    }
+  };
+
+  const start = (snapshot: BillingSummary) => {
+    stopPolling();
+    setPending({snapshot, timedOut: false});
+    attemptSync(snapshot);
+    timersRef.current.interval = setInterval(() => attemptSync(snapshot), SYNC_POLL_INTERVAL_MS);
+    timersRef.current.timeout = setTimeout(() => {
+      if (timersRef.current.interval) {
+        clearInterval(timersRef.current.interval);
+      }
+      setPending((prev) => (prev ? {...prev, timedOut: true} : prev));
+    }, SYNC_POLL_BUDGET_MS);
+  };
+
+  return {pending, start};
+}
+
+function ActivatingBanner({timedOut}: {timedOut: boolean}) {
+  if (timedOut) {
+    return (
+      <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 p-4">
+        <Typography type="body-sm">
+          This is taking longer than usual. Your payment is safe — seats activate automatically. Check again in a
+          minute.
+        </Typography>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-surface p-4">
+      <Spinner size="sm" />
+      <Typography type="body-sm">Payment received. Activating your seats…</Typography>
+    </div>
+  );
+}
 
 const STATUS_LABEL: Record<BillingSummary['status'], string> = {
   free: 'Free plan',
@@ -172,7 +258,15 @@ function CancelButton({billing}: {billing: BillingSummary}) {
   );
 }
 
-function ActionsSection({billing, onDone}: {billing: BillingSummary; onDone: () => void}) {
+function ActionsSection({
+  billing,
+  onDone,
+  onActivating,
+}: {
+  billing: BillingSummary;
+  onDone: () => void;
+  onActivating: (snapshot: BillingSummary) => void;
+}) {
   if (!billing.is_owner) {
     return (
       <section className="mt-6">
@@ -193,7 +287,10 @@ function ActionsSection({billing, onDone}: {billing: BillingSummary; onDone: () 
     <section className="mt-6">
       <SectionHeading title="Actions" />
       <div className="flex flex-wrap items-center gap-3">
-        <AddSeatsDialog onDone={onDone} />
+        <AddSeatsDialog
+          onActivating={onActivating}
+          onDone={onDone}
+        />
         {canCancel ? <CancelButton billing={billing} /> : null}
       </div>
     </section>
@@ -238,6 +335,7 @@ function ActivitySection({events}: {events: BillingEvent[]}) {
 export default function Billing() {
   const goBack = useGoBack(ROUTES.SETTINGS);
   const {data, isError, isLoading, refetch} = useGetBillingQuery();
+  const {pending, start: startActivating} = useActivationSync();
 
   const header = (
     <Page.Header>
@@ -290,12 +388,14 @@ export default function Billing() {
       {header}
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
         <div className="max-w-lg">
+          {pending ? <ActivatingBanner timedOut={pending.timedOut} /> : null}
           <section>
             <SectionHeading title="Seat usage" />
             <SeatUsageCard billing={billing} />
           </section>
           <ActionsSection
             billing={billing}
+            onActivating={startActivating}
             onDone={refetch}
           />
           <ActivitySection events={events} />

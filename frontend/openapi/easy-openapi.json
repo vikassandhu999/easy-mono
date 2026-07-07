@@ -14124,6 +14124,65 @@
         ]
       }
     },
+    "/v1/coach/billing/sync": {
+      "post": {
+        "callbacks": {},
+        "description": "Owner-only: fetches the subscription from Razorpay and applies the same transition the webhook would.",
+        "operationId": "syncBilling",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingResponse"
+                }
+              }
+            },
+            "description": "Billing"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Payment provider error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Reconcile billing with Razorpay",
+        "tags": [
+          "coach billing"
+        ]
+      }
+    },
     "/v1/coach/billing": {
       "get": {
         "callbacks": {},

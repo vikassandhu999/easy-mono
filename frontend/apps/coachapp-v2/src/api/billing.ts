@@ -28,6 +28,10 @@ const billingApi = api.injectEndpoints({
       query: () => ({url: '/v1/coach/billing/cancel', method: 'POST'}),
       invalidatesTags: [{type: 'Billing', id: 'SUMMARY'}],
     }),
+    syncBilling: build.mutation<BillingResponse, void>({
+      query: () => ({url: '/v1/coach/billing/sync', method: 'POST'}),
+      invalidatesTags: [{type: 'Billing', id: 'SUMMARY'}],
+    }),
   }),
 });
 
@@ -35,6 +39,7 @@ export const {
   useGetBillingQuery,
   useCheckoutBillingMutation: useCheckoutSeatsMutation,
   useCancelBillingMutation,
+  useSyncBillingMutation,
 } = billingApi;
 
 /** Extract the seat summary from a 409 seat_limit_reached error, or null. */

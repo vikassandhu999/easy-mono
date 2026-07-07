@@ -7,11 +7,23 @@
 import {AlertDialog, Button, toast} from '@heroui/react';
 import {useState} from 'react';
 import {NumberInput} from '@/@components/number-input';
-import {useCheckoutSeatsMutation, useGetBillingQuery} from '@/api/billing';
+import {type BillingSummary, useCheckoutSeatsMutation, useGetBillingQuery} from '@/api/billing';
 import {getApiErrorMessage} from '@/api/shared';
 import {openRazorpayCheckout} from '@/lib/razorpay';
 
-export function AddSeatsDialog({onDone}: {onDone?: () => void}) {
+export function AddSeatsDialog({
+  onDone,
+  onActivating,
+}: {
+  onDone?: () => void;
+  /**
+   * Called instead of the default toast/refetch when checkout requires
+   * payment confirmation (the modal path) — receives the pre-checkout
+   * billing snapshot. The caller owns the pending-activation UI (Billing
+   * page). When omitted, falls back to the default toast + refetch.
+   */
+  onActivating?: (snapshot: BillingSummary) => void;
+}) {
   const [seats, setSeats] = useState<number | undefined>(1);
   const [checkout, {isLoading}] = useCheckoutSeatsMutation();
   const {data, refetch} = useGetBillingQuery();
@@ -22,6 +34,7 @@ export function AddSeatsDialog({onDone}: {onDone?: () => void}) {
     if (seatsToAdd < 1) {
       return;
     }
+    const snapshot = data?.data;
     try {
       const result = await checkout({seats_to_add: seatsToAdd}).unwrap();
       if (result.data.action === 'checkout' && result.data.checkout) {
@@ -29,11 +42,15 @@ export function AddSeatsDialog({onDone}: {onDone?: () => void}) {
           keyId: result.data.checkout.key_id,
           subscriptionId: result.data.checkout.subscription_id,
           onSuccess: () => {
-            // webhook confirms payment; refetch picks up state when it lands
-            toast.success('Payment received. Seats will activate shortly.');
-            refetch();
             close();
-            onDone?.();
+            if (onActivating && snapshot) {
+              onActivating(snapshot);
+            } else {
+              // no pending-activation UI wired up here; fall back to a toast
+              toast.success('Payment received. Seats will activate shortly.');
+              refetch();
+              onDone?.();
+            }
           },
           onDismiss: () => {
             toast.info('Checkout cancelled — no charge was made.');

@@ -73,6 +73,12 @@ config :easy, Easy.Razorpay,
   plan_id: "plan_dev",
   seat_price_inr: 499
 
+config :easy, Easy.Razorpay,
+  key_id: "rzp_test_TASOVXlFUzkEEH",
+  key_secret: "F2JbFeYuamb3MqzxxVqoMn7D",
+  plan_id: "plan_TASTEwKz6D6kGu",
+  webhook_secret: "LuXHIpP3sqmYQBQACPOB94huCh/KyylCIl4dR5+kkHLuNQNJt1vrfK13NBW8sHMw"
+
 if File.exists?(Path.expand("dev.secret.exs", __DIR__)) do
   import_config "dev.secret.exs"
 end

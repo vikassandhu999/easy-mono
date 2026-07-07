@@ -88,9 +88,12 @@ Coaches currently always have a `user_id` and no email/status. Add:
   row per user, mechanically (see access-control section).
 - Owner's coach row (from signup) is `:active` with `user_id` set — untouched.
 
-Invite token: reuse the existing **`one_time_tokens`** table
-(`token_type: "coach_invite"`, `relates_to` = coach id) rather than adding token
-columns — consistent with the OTP infra already in place.
+Invite token: mirror the client-invite pattern exactly — the link token lives on
+the row (`coaches.invitation_token` + `invitation_sent_at`, 30-day validity),
+and the existing **`one_time_tokens`** OTP-acceptance machinery
+(`:invitation_acceptance`, hash binds otp+email+token so client/coach tokens
+can't collide) handles the email-ownership proof. This is the proven flow in
+`Easy.Identity.Invitations`; only the resolve and finalize steps differ.
 
 ## Access-control architecture
 
@@ -197,7 +200,8 @@ Invite trainer, resend/revoke invite, deactivate trainer, reassign a client's
 - **Team settings page (owner-only):** list trainers with status, invite form,
   pending-invite rows with resend/revoke, deactivate action.
 - **Trainer accept-invite screen:** email + OTP, mirroring client accept.
-- **Client create/edit:** assigned-coach picker (owner); read-only for trainers.
+- **Client create/edit:** assigned-coach picker, owner-only; trainers see no
+  picker (their clients are implicitly their own).
 - **Client list/detail:** already filtered server-side; trainers simply see fewer.
 - Copy: sentence case, "Couldn't load…" never "Failed to load…".
 

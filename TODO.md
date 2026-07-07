@@ -1,0 +1,6 @@
+- change name.
+- add messaging.
+- add access control for trainers.
+- pending queries.
+- make app more playful.
+- client subscription management.

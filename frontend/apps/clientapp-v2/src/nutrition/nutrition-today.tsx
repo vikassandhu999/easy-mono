@@ -5,7 +5,7 @@
  */
 import {formatMacroValue} from '@easy/utils';
 import {Spinner, toast} from '@heroui/react';
-import {Check, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
+import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
@@ -14,6 +14,7 @@ import {
   asTodayPlan,
   type FoodLogEntry,
   plannedItemCalories,
+  type TodayPlanOption,
   useCreateFoodLogEntryMutation,
   useDeleteFoodLogEntryMutation,
   useGetTodayNutritionPlanQuery,
@@ -21,10 +22,12 @@ import {
   useListClientNutritionPlansQuery,
   useLogDayMutation,
   useLogMealMutation,
+  useSwitchNutritionMealOptionMutation,
 } from '@/api/nutrition';
 import AmountSheet, {type SheetTarget} from '@/nutrition/components/amount-sheet';
 import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
 import MacroHero from '@/nutrition/components/macro-hero';
+import OptionSheet from '@/nutrition/components/option-sheet';
 import {
   adherence,
   buildSlots,
@@ -93,13 +96,18 @@ export default function NutritionToday() {
   const [deleteEntry] = useDeleteFoodLogEntryMutation();
   const [logMeal, {isLoading: loggingMeal}] = useLogMealMutation();
   const [logDay, {isLoading: loggingDay}] = useLogDayMutation();
+  const [switchOption, {isLoading: switchingOption}] = useSwitchNutritionMealOptionMutation();
   const [sheet, setSheet] = useState<null | SheetTarget>(null);
   const [pickerMode, setPickerMode] = useState<'add' | 'replace' | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<null | SheetTarget>(null);
+  // local, unsaved option picks (slot → meal_id) — cleared once the server confirms a switch
+  const [selections, setSelections] = useState<Record<string, string>>({});
+  const [optionSheetSlot, setOptionSheetSlot] = useState<null | string>(null);
+  const [confirmSwitch, setConfirmSwitch] = useState<null | {option: TodayPlanOption; slot: SlotView}>(null);
 
   const plan = asTodayPlan(todayResp);
   const mealLogs = logsResp?.data ?? [];
-  const slots = buildSlots(plan, mealLogs);
+  const slots = buildSlots(plan, mealLogs, selections);
   const consumed = dayTotals(mealLogs);
   const targets = planTargets(plansResp?.data[0]);
 
@@ -230,6 +238,38 @@ export default function NutritionToday() {
     }
   };
 
+  const selectOption = (slot: SlotView, option: TodayPlanOption) => {
+    setOptionSheetSlot(null);
+    if (option.meal_id === slot.activeMealId) {
+      return;
+    }
+    if (!slot.hasLog) {
+      setSelections((prev) => ({...prev, [slot.slot]: option.meal_id}));
+      return;
+    }
+    setConfirmSwitch({option, slot});
+  };
+
+  const confirmSwitchOption = async () => {
+    if (!confirmSwitch) {
+      return;
+    }
+    const {option, slot} = confirmSwitch;
+    try {
+      await switchOption({
+        nutritionSwitchOptionRequest: {date, meal_id: option.meal_id, meal_slot: slot.slot},
+      }).unwrap();
+      setSelections((prev) => {
+        const next = {...prev};
+        delete next[slot.slot];
+        return next;
+      });
+      setConfirmSwitch(null);
+    } catch {
+      toast.danger("Couldn't switch options. Try again.");
+    }
+  };
+
   const anyUnlogged = slots.some((s) => s.planned.some((p) => !p.logged));
   // Past-day adherence verdict (the today plan endpoint 404s with no plan, which is the
   // empty state — only the meal-logs query erroring is a real failure to surface).
@@ -312,8 +352,24 @@ export default function NutritionToday() {
             className="mb-2.5 rounded-xl border border-border bg-surface p-3"
             key={slot.slot}
           >
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-semibold">{slot.label}</span>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="text-xs font-semibold">{slot.label}</span>
+                {slot.options.length > 1 ? (
+                  <button
+                    className="flex min-w-0 items-center gap-0.5 rounded-md px-1 py-0.5 text-[10px] font-medium text-accent active:opacity-70 disabled:opacity-50"
+                    disabled={isFuture}
+                    onClick={() => setOptionSheetSlot(slot.slot)}
+                    type="button"
+                  >
+                    <span className="max-w-24 truncate">
+                      {slot.options.find((o) => o.meal_id === slot.activeMealId)?.meal_name ?? 'Option'}
+                    </span>
+                    <span className="shrink-0 text-muted">· {slot.options.length - 1} more</span>
+                    <ChevronDown className="shrink-0" size={11} />
+                  </button>
+                ) : null}
+              </div>
               {slot.allPlannedLogged ? (
                 <span className="text-[11px] text-[#7f8cff]">{Math.round(slot.loggedCalories)} · ✓ logged</span>
               ) : slot.mealId && !isFuture ? (
@@ -453,6 +509,53 @@ export default function NutritionToday() {
           onReplace={onReplace}
           target={sheet}
         />
+      ) : null}
+
+      {optionSheetSlot
+        ? (() => {
+            const slot = slots.find((s) => s.slot === optionSheetSlot);
+            return slot ? (
+              <OptionSheet
+                activeMealId={slot.activeMealId}
+                onClose={() => setOptionSheetSlot(null)}
+                onSelect={(option) => selectOption(slot, option)}
+                options={slot.options}
+                slotLabel={slot.label}
+              />
+            ) : null;
+          })()
+        : null}
+
+      {confirmSwitch ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
+          <div
+            aria-label="Confirm switch"
+            aria-modal="true"
+            className="w-full max-w-xs rounded-2xl border border-border bg-surface p-4"
+            role="alertdialog"
+          >
+            <p className="mb-1 text-sm font-semibold">Switch option?</p>
+            <p className="mb-4 text-xs text-muted">Switching clears what you've logged for this meal</p>
+            <div className="flex gap-2">
+              <button
+                className="flex-1 rounded-lg border border-border py-2 text-xs font-semibold text-muted active:bg-surface-secondary disabled:opacity-50"
+                disabled={switchingOption}
+                onClick={() => setConfirmSwitch(null)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="flex-1 rounded-lg bg-accent py-2 text-xs font-semibold text-accent-foreground active:opacity-90 disabled:opacity-50"
+                disabled={switchingOption}
+                onClick={confirmSwitchOption}
+                type="button"
+              >
+                Switch
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

@@ -15,6 +15,7 @@ import {
   useListClientNutritionPlansQuery,
   useLogDayMutation,
   useLogMealMutation,
+  useSwitchNutritionMealOptionMutation,
   useUpdateFoodLogEntryMutation,
 } from '@/api/generated';
 
@@ -38,6 +39,7 @@ export {
   useListClientNutritionPlansQuery,
   useLogDayMutation,
   useLogMealMutation,
+  useSwitchNutritionMealOptionMutation,
   useUpdateFoodLogEntryMutation,
 };
 
@@ -56,17 +58,22 @@ export type TodayPlanItem = {
   unit: null | string;
   weight_g: null | number;
 };
-export type TodayPlanMeal = {
+export type TodayPlanOption = {
   items: TodayPlanItem[];
   meal_id: string;
-  meal_name: string;
+  meal_name: null | string;
+  position: number;
+};
+export type TodayPlanSlot = {
+  chosen_meal_id: null | string;
   meal_slot: string;
+  options: TodayPlanOption[];
 };
 export type TodayPlan = {
   date: string;
   day: string;
-  meals: TodayPlanMeal[];
   plan_id: string;
+  slots: TodayPlanSlot[];
 };
 
 export function asTodayPlan(resp: undefined | {data?: unknown}): null | TodayPlan {
@@ -100,6 +107,12 @@ clientApi.enhanceEndpoints({
     listClientNutritionPlans: {providesTags: [{id: 'LIST', type: 'NutritionPlan'}]},
     logDay: {invalidatesTags: [{id: 'LIST', type: 'MealLog'}]},
     logMeal: {invalidatesTags: [{id: 'LIST', type: 'MealLog'}]},
+    switchNutritionMealOption: {
+      invalidatesTags: [
+        {id: 'LIST', type: 'MealLog'},
+        {id: 'TODAY', type: 'NutritionPlan'},
+      ],
+    },
     updateFoodLogEntry: {invalidatesTags: [{id: 'LIST', type: 'MealLog'}]},
   },
 });

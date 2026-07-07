@@ -13,6 +13,7 @@ import {
   plannedItemCalories,
   type TodayPlan,
   type TodayPlanItem,
+  type TodayPlanOption,
 } from '@/api/nutrition';
 
 // Sum the frozen macros off logged entries (generated FoodLogEntry macro fields are
@@ -38,6 +39,7 @@ export type PlannedRow = {
 };
 
 export type SlotView = {
+  activeMealId: null | string;
   allPlannedLogged: boolean;
   // off-plan entries (source unplanned / no planned index)
   extras: FoodLogEntry[];
@@ -45,18 +47,45 @@ export type SlotView = {
   label: string;
   loggedCalories: number;
   mealId: null | string;
+  options: TodayPlanOption[];
   planned: PlannedRow[];
   plannedCalories: number;
   slot: string;
 };
 
-export function buildSlots(today: null | TodayPlan, mealLogs: MealLog[]): SlotView[] {
+// Active option per slot: local selection (unsaved switch) > server chosen_meal_id >
+// the default option (position 0, first in the ordered list).
+function activeOption(
+  slot: {chosen_meal_id: null | string; options: TodayPlanOption[]},
+  selection: string | undefined,
+): TodayPlanOption | null {
+  if (selection) {
+    const picked = slot.options.find((o) => o.meal_id === selection);
+    if (picked) {
+      return picked;
+    }
+  }
+  if (slot.chosen_meal_id) {
+    const chosen = slot.options.find((o) => o.meal_id === slot.chosen_meal_id);
+    if (chosen) {
+      return chosen;
+    }
+  }
+  return slot.options[0] ?? null;
+}
+
+export function buildSlots(
+  today: null | TodayPlan,
+  mealLogs: MealLog[],
+  selections: Record<string, string> = {},
+): SlotView[] {
   const logBySlot = new Map(mealLogs.map((ml) => [ml.meal_slot, ml]));
-  const plannedBySlot = new Map((today?.meals ?? []).map((m) => [m.meal_slot, m]));
+  const plannedBySlot = new Map((today?.slots ?? []).map((s) => [s.meal_slot, s]));
   const slots = MEAL_SLOTS.filter((s) => plannedBySlot.has(s) || logBySlot.has(s));
 
   return slots.map((slot) => {
-    const meal = plannedBySlot.get(slot) ?? null;
+    const planSlot = plannedBySlot.get(slot) ?? null;
+    const option = planSlot ? activeOption(planSlot, selections[slot]) : null;
     const ml = logBySlot.get(slot) ?? null;
     const entries = ml?.food_log_entries ?? [];
 
@@ -70,23 +99,29 @@ export function buildSlots(today: null | TodayPlan, mealLogs: MealLog[]): SlotVi
       }
     }
 
-    const planned: PlannedRow[] = (meal?.items ?? []).map((item) => {
+    const planned: PlannedRow[] = (option?.items ?? []).map((item) => {
       const logged = byIndex.get(item.position) ?? null;
       return {item, logged, position: item.position, replaced: logged?.source === 'replacement'};
     });
 
     return {
+      activeMealId: option?.meal_id ?? null,
       allPlannedLogged: planned.length > 0 && planned.every((p) => p.logged),
       extras,
       hasLog: entries.length > 0,
       label: MEAL_SLOT_LABELS[slot] ?? slot,
       loggedCalories: ml?.logged_calories ?? macroSum(entries).calories,
-      mealId: meal?.meal_id ?? null,
+      mealId: option?.meal_id ?? null,
+      options: planSlot?.options ?? [],
       planned,
-      plannedCalories: (meal?.items ?? []).reduce((s, it) => s + (plannedItemCalories(it) ?? 0), 0),
+      plannedCalories: (option?.items ?? []).reduce((s, it) => s + (plannedItemCalories(it) ?? 0), 0),
       slot,
     };
   });
+}
+
+export function optionCalories(option: TodayPlanOption): number {
+  return option.items.reduce((s, it) => s + (plannedItemCalories(it) ?? 0), 0);
 }
 
 export function dayTotals(mealLogs: MealLog[]): MacroTotals {

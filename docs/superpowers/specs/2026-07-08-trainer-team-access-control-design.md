@@ -69,6 +69,10 @@ Accounts" + pricing; Everfit "Permission Settings / Add a sub-coach".
 - New column: `add :assigned_coach_id, references(:coaches, type: :binary_id, on_delete: :nilify_all)`, nullable, indexed `(business_id, assigned_coach_id)`.
 - **Backfill:** every existing client → the business owner's `coaches` row.
 - On create/invite, defaults to the acting coach (or an owner-chosen coach).
+- **Public write paths have no acting coach:** the landing-funnel inquiry
+  (`create_inquiry`, `/v1/public` — no ctx) must default `assigned_coach_id` to
+  the **owner's coach row**, not leave it nil. Audit every `Client` insert path
+  (`invite_client`, `create_inquiry`) for an explicit assignment.
 
 ### `coaches` — invitation + lifecycle columns (mirrors the client-invite pattern)
 Coaches currently always have a `user_id` and no email/status. Add:
@@ -78,7 +82,10 @@ Coaches currently always have a `user_id` and no email/status. Add:
   `:active` (existing/owner rows are `:active`).
 - `user_id` becomes **nullable** — an invited-but-not-accepted trainer has no user yet.
 - `add :invited_by_id, references(:coaches)` — provenance (nullable).
-- Unique index `(business_id, email)` so the same trainer isn't invited twice.
+- Unique index on `(business_id, lower(email))`, partial `WHERE email IS NOT NULL`
+  (all existing coach rows have nil email), so the same trainer isn't invited twice.
+- Unique index on `(user_id)`, partial `WHERE user_id IS NOT NULL` — one coach
+  row per user, mechanically (see access-control section).
 - Owner's coach row (from signup) is `:active` with `user_id` set — untouched.
 
 Invite token: reuse the existing **`one_time_tokens`** table
@@ -89,16 +96,39 @@ columns — consistent with the OTP infra already in place.
 
 ### Actor identity in `Ctx`
 `Ctx` today is `{business_id, user_id}`. Client visibility needs the acting
-**coach id** and whether the actor is the **owner**. Resolve these once in the
-`Authenticate` plug (owner check is `business.owner_id == user_id`; coach id via
-`Coach.for_business |> for_user`) and carry them on `Ctx`:
+**coach id** and whether the actor is the **owner**. Carry them on `Ctx`:
 
 ```
 %Ctx{business_id, user_id, coach_id, owner?: boolean}
 ```
 
-`coach_id`/`owner?` are set from server-trusted lookups, never from client input.
-(Client-role and guest requests leave `coach_id = nil`, `owner? = false`.)
+**Resolve at session creation, not per request.** No plug touches the DB today —
+`Authenticate` is pure JWT decode. `SessionFactory.validate_role(:coach, user)`
+already queries the DB once at login/refresh to stamp `role`/`business_id` into
+the token; extend it to also resolve the user's **active** coach row id and
+`business.owner_id == user.id`, and embed `coach_id` + `is_owner` in the JWT
+claims. `Authenticate` builds the full `Ctx` from claims. Staleness window =
+access-token lifetime — identical to what `role`/`business_id` already accept,
+and deactivation revokes sessions so refresh re-resolves. Server-trusted only,
+never from client input. Client-role and guest requests carry
+`coach_id = nil`, `owner? = false`.
+
+**Coach resolution must filter `status: :active`** (in `validate_role` /
+`get_business_for_coach`). Without this, a deactivated trainer simply logs in
+again — session revocation alone does not lock anyone out.
+
+**One coach row per user, enforced:** unique index on `coaches(user_id)`
+(partial, `WHERE user_id IS NOT NULL`), and the accept flow rejects an invite
+when the user already has a coach row (at any business) — otherwise
+`get_one_for_coach`'s `limit: 1` resolves a nondeterministic business at login.
+
+**Fail-closed property:** a nil `assigned_coach_id` matches no trainer in
+`visible_to` — the client is visible only to the owner, never leaked.
+
+**Test impact (plan must budget for it):** existing tests build
+`Ctx.new(business.id, owner_id)` and would fail closed (empty roster) once
+visibility lands. Add a shared test helper (e.g. `owner_ctx(business)` /
+`trainer_ctx(coach)`) in the first backend task and sweep call sites with it.
 
 ### The one chokepoint
 Add a schema query builder + a context guard, and route every client-scoped path
@@ -152,6 +182,9 @@ Invite trainer, resend/revoke invite, deactivate trainer, reassign a client's
 - `Coaches.deactivate_trainer(ctx, coach_id)`: set `status: :inactive`, revoke the
   trainer's sessions, and **reassign their clients to the owner** so no client is
   left invisible/orphaned. Owner can then redistribute. (No hard delete.)
+- Known bounded window: access tokens are stateless JWTs, so an already-issued
+  token stays valid until expiry; revocation bites at refresh, and fresh logins
+  are blocked by the `status: :active` filter in coach resolution.
 
 ## Login / tenancy notes
 - A user is a trainer at **one** business (matches `get_business_for_coach`

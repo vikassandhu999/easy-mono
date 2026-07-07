@@ -154,11 +154,24 @@ defmodule Easy.Billing do
 
         subscription_id ->
           with {:ok, subscription} <- Razorpay.get_subscription(subscription_id) do
-            apply_subscription_state(billing, subscription)
+            sync_apply(subscription_id, subscription)
             {:ok, seat_summary(ctx)}
           end
       end
     end
+  end
+
+  # Lock the billing row so a webhook applying the same charge concurrently can't
+  # double-record a seats_added event: whichever commits first wins, the second
+  # re-reads the updated paid_seats and record_seat_change no-ops. The transaction
+  # opens AFTER the Razorpay fetch (in sync_billing) so no lock is held over HTTP I/O.
+  defp sync_apply(subscription_id, subscription) do
+    Repo.transaction(fn ->
+      case lock_billing(subscription_id) do
+        nil -> :ok
+        billing -> apply_subscription_state(billing, subscription)
+      end
+    end)
   end
 
   @spec handle_razorpay_webhook(binary(), String.t() | nil, String.t() | nil) ::
@@ -417,11 +430,21 @@ defmodule Easy.Billing do
 
   defp with_billing(nil, _fun), do: :ok
 
+  # Runs inside claim_and_apply's transaction, so the FOR UPDATE lock serializes
+  # webhook application against a concurrent sync (see sync_billing).
   defp with_billing(subscription_id, fun) do
-    case Repo.get_by(BusinessBilling, razorpay_subscription_id: subscription_id) do
+    case lock_billing(subscription_id) do
       nil -> :ok
       billing -> fun.(billing)
     end
+  end
+
+  defp lock_billing(subscription_id) do
+    Repo.one(
+      from b in BusinessBilling,
+        where: b.razorpay_subscription_id == ^subscription_id,
+        lock: "FOR UPDATE"
+    )
   end
 
   defp record_seat_change(%BusinessBilling{paid_seats: old, business_id: business_id}, new) when new != old do

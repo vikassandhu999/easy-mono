@@ -42,6 +42,7 @@ defmodule EasyWeb.Coaches.BillingController do
     responses: [
       ok: {"Checkout result", "application/json", BillingCheckoutResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      forbidden: {"Not the business owner", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse},
       bad_gateway: {"Payment provider error", "application/json", ErrorResponse}
     ]
@@ -69,6 +70,7 @@ defmodule EasyWeb.Coaches.BillingController do
     responses: [
       ok: {"Billing", "application/json", BillingResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      forbidden: {"Not the business owner", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse},
       bad_gateway: {"Payment provider error", "application/json", ErrorResponse}
     ]
@@ -88,6 +90,7 @@ defmodule EasyWeb.Coaches.BillingController do
     responses: [
       ok: {"Billing", "application/json", BillingResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      forbidden: {"Not the business owner", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse},
       bad_gateway: {"Payment provider error", "application/json", ErrorResponse}
     ]

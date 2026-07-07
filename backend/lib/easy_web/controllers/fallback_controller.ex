@@ -27,7 +27,7 @@ defmodule EasyWeb.FallbackController do
   def call(conn, {:error, :no_subscription}) do
     call(
       conn,
-      {:error, Easy.Error.unprocessable(%{fields: %{subscription: ["there is no active subscription to cancel"]}})}
+      {:error, Easy.Error.unprocessable(%{fields: %{subscription: ["there is no active subscription"]}})}
     )
   end
 

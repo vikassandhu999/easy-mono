@@ -14,6 +14,7 @@ import {openRazorpayCheckout} from '@/lib/razorpay';
 export function AddSeatsDialog({
   onDone,
   onActivating,
+  isTriggerDisabled,
 }: {
   onDone?: () => void;
   /**
@@ -23,6 +24,12 @@ export function AddSeatsDialog({
    * page). When omitted, falls back to the default toast + refetch.
    */
   onActivating?: (snapshot: BillingSummary) => void;
+  /**
+   * Disables the "Add seats" trigger without hiding it — used while a prior
+   * checkout is still activating, so a second checkout can't overwrite the
+   * pending subscription and strand the first payment's webhook.
+   */
+  isTriggerDisabled?: boolean;
 }) {
   const [seats, setSeats] = useState<number | undefined>(1);
   const [checkout, {isLoading}] = useCheckoutSeatsMutation();
@@ -68,7 +75,12 @@ export function AddSeatsDialog({
 
   return (
     <AlertDialog>
-      <Button variant="secondary">Add seats</Button>
+      <Button
+        isDisabled={isTriggerDisabled}
+        variant="secondary"
+      >
+        Add seats
+      </Button>
       <AlertDialog.Backdrop isDismissable={!isLoading}>
         <AlertDialog.Container>
           <AlertDialog.Dialog className="sm:max-w-[400px]">

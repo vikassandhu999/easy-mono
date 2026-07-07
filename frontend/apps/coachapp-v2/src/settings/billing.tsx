@@ -262,10 +262,12 @@ function ActionsSection({
   billing,
   onDone,
   onActivating,
+  isAddSeatsDisabled,
 }: {
   billing: BillingSummary;
   onDone: () => void;
   onActivating: (snapshot: BillingSummary) => void;
+  isAddSeatsDisabled: boolean;
 }) {
   if (!billing.is_owner) {
     return (
@@ -288,6 +290,7 @@ function ActionsSection({
       <SectionHeading title="Actions" />
       <div className="flex flex-wrap items-center gap-3">
         <AddSeatsDialog
+          isTriggerDisabled={isAddSeatsDisabled}
           onActivating={onActivating}
           onDone={onDone}
         />
@@ -395,6 +398,7 @@ export default function Billing() {
           </section>
           <ActionsSection
             billing={billing}
+            isAddSeatsDisabled={pending !== null && !pending.timedOut}
             onActivating={startActivating}
             onDone={refetch}
           />

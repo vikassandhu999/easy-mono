@@ -44,6 +44,9 @@ export type SlotView = {
   // off-plan entries (source unplanned / no planned index)
   extras: FoodLogEntry[];
   hasLog: boolean;
+  // true only if a planned/replacement entry is logged for this slot — switching options
+  // only destroys these (off-plan extras survive a switch), so this gates the confirm dialog
+  hasPlannedLog: boolean;
   label: string;
   loggedCalories: number;
   mealId: null | string;
@@ -109,6 +112,7 @@ export function buildSlots(
       allPlannedLogged: planned.length > 0 && planned.every((p) => p.logged),
       extras,
       hasLog: entries.length > 0,
+      hasPlannedLog: planned.some((p) => p.logged != null),
       label: MEAL_SLOT_LABELS[slot] ?? slot,
       loggedCalories: ml?.logged_calories ?? macroSum(entries).calories,
       mealId: option?.meal_id ?? null,

@@ -6,7 +6,7 @@
 import {formatMacroValue} from '@easy/utils';
 import {Spinner, toast} from '@heroui/react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -112,6 +112,13 @@ export default function NutritionToday() {
   const targets = planTargets(plansResp?.data[0]);
 
   const setDate = (d: string) => setParams(d === today ? {} : {date: d}, {replace: true});
+
+  // A plan's meal_id recurs weekly, so an unsaved option pick must not survive a date change
+  // (it would silently apply to the same slot on a different day).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: date is the reset trigger, not read in the body
+  useEffect(() => {
+    setSelections({});
+  }, [date]);
 
   const logPlanned = async (slot: SlotView, row: PlannedRow) => {
     try {
@@ -243,7 +250,7 @@ export default function NutritionToday() {
     if (option.meal_id === slot.activeMealId) {
       return;
     }
-    if (!slot.hasLog) {
+    if (!slot.hasPlannedLog) {
       setSelections((prev) => ({...prev, [slot.slot]: option.meal_id}));
       return;
     }
@@ -528,6 +535,13 @@ export default function NutritionToday() {
 
       {confirmSwitch ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss, the dialog has real controls */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop dismiss, the dialog has real controls */}
+          {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: backdrop dismiss, the dialog has real controls */}
+          <div
+            className="absolute inset-0"
+            onClick={() => setConfirmSwitch(null)}
+          />
           <div
             aria-label="Confirm switch"
             aria-modal="true"

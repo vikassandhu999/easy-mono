@@ -7,6 +7,19 @@ defmodule Easy.BillingTest do
 
   defp ctx_for(business), do: Ctx.new(business.id, business.owner_id)
 
+  describe "grant_free_seats/2" do
+    test "bumps free seats (creating the billing row) and the summary reflects it" do
+      business = insert(:business)
+
+      Billing.grant_free_seats(business.id, 10)
+
+      summary = Billing.seat_summary(ctx_for(business))
+      assert summary.free_seats == 10
+      assert summary.seat_limit == 10
+      assert summary.available_seats == 10
+    end
+  end
+
   describe "seat_summary/1" do
     test "a new business has two free seats and no billing row yet" do
       business = insert(:business)

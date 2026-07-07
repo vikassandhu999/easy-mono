@@ -16,6 +16,17 @@ defmodule Easy.Billing do
       create_default_billing(business_id)
   end
 
+  # Console-only admin op for comping testing users extra free seats. No route/controller
+  # exposes this; every request path reads billing.free_seats unchanged, and no other write
+  # path touches free_seats, so the bump is durable. Idempotent — safe to re-run.
+  @spec grant_free_seats(Ecto.UUID.t(), non_neg_integer()) :: BusinessBilling.t()
+  def grant_free_seats(business_id, free_seats) do
+    business_id
+    |> billing_for()
+    |> BusinessBilling.changeset(%{free_seats: free_seats})
+    |> Repo.update!()
+  end
+
   @spec seat_summary(Ctx.t()) :: map()
   def seat_summary(%Ctx{business_id: business_id} = ctx) do
     billing = billing_for(business_id)

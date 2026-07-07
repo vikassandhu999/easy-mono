@@ -67,6 +67,15 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.prospectEnrollRequest,
       }),
     }),
+    assignNutritionPlanWeekday: build.mutation<AssignNutritionPlanWeekdayApiResponse, AssignNutritionPlanWeekdayApiArg>(
+      {
+        query: (queryArg) => ({
+          url: `/v1/coach/nutrition-plans/${queryArg.planId}/weekday-assignments`,
+          method: 'PUT',
+          body: queryArg.nutritionWeekdayAssignRequest,
+        }),
+      },
+    ),
     getCoachProfile: build.query<GetCoachProfileApiResponse, GetCoachProfileApiArg>({
       query: () => ({url: `/v1/coach/me`}),
     }),
@@ -212,6 +221,20 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    addNutritionSlotOption: build.mutation<AddNutritionSlotOptionApiResponse, AddNutritionSlotOptionApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/nutrition-days/${queryArg.dayId}/options`,
+        method: 'POST',
+        body: queryArg.nutritionSlotOptionCreateRequest,
+      }),
+    }),
+    createNutritionPlanDay: build.mutation<CreateNutritionPlanDayApiResponse, CreateNutritionPlanDayApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/nutrition-plans/${queryArg.planId}/days`,
+        method: 'POST',
+        body: queryArg.nutritionPlanDayCreateRequest,
+      }),
+    }),
     acceptInvite: build.mutation<AcceptInviteApiResponse, AcceptInviteApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/accept-invite`,
@@ -232,6 +255,15 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/form-templates/${queryArg.id}/assign`,
         method: 'POST',
         body: queryArg.clientProfileFormAssignmentAssignRequest,
+      }),
+    }),
+    makeNutritionSlotOptionDefault: build.mutation<
+      MakeNutritionSlotOptionDefaultApiResponse,
+      MakeNutritionSlotOptionDefaultApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/v1/coach/nutrition-day-meals/${queryArg.id}/make-default`,
+        method: 'POST',
       }),
     }),
     copyNutritionFood: build.mutation<CopyNutritionFoodApiResponse, CopyNutritionFoodApiArg>({
@@ -263,6 +295,19 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.clientProfileFormAssignmentUpdateRequest,
       }),
     }),
+    deleteNutritionPlanDay: build.mutation<DeleteNutritionPlanDayApiResponse, DeleteNutritionPlanDayApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/nutrition-days/${queryArg.id}`,
+        method: 'DELETE',
+      }),
+    }),
+    updateNutritionPlanDay: build.mutation<UpdateNutritionPlanDayApiResponse, UpdateNutritionPlanDayApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/nutrition-days/${queryArg.id}`,
+        method: 'PATCH',
+        body: queryArg.nutritionPlanDayUpdateRequest,
+      }),
+    }),
     duplicateTrainingPlan: build.mutation<DuplicateTrainingPlanApiResponse, DuplicateTrainingPlanApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/training-plans/${queryArg.id}/duplicate`,
@@ -283,18 +328,6 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/nutrition-plans/${queryArg.planId}/meals`,
         method: 'POST',
         body: queryArg.nutritionMealRequest,
-      }),
-    }),
-    getNutritionPlanSchedule: build.query<GetNutritionPlanScheduleApiResponse, GetNutritionPlanScheduleApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/coach/nutrition-plans/${queryArg.planId}/schedule`,
-      }),
-    }),
-    setNutritionPlanSchedule: build.mutation<SetNutritionPlanScheduleApiResponse, SetNutritionPlanScheduleApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/coach/nutrition-plans/${queryArg.planId}/schedule`,
-        method: 'PUT',
-        body: queryArg.nutritionScheduleRequest,
       }),
     }),
     createCoachThreadMessage: build.mutation<CreateCoachThreadMessageApiResponse, CreateCoachThreadMessageApiArg>({
@@ -460,21 +493,17 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
-    setNutritionPlanDaySchedule: build.mutation<
-      SetNutritionPlanDayScheduleApiResponse,
-      SetNutritionPlanDayScheduleApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/v1/coach/nutrition-plans/${queryArg.planId}/schedule/${queryArg.day}`,
-        method: 'PUT',
-        body: queryArg.nutritionDayScheduleRequest,
-      }),
-    }),
     assignTrainingPlan: build.mutation<AssignTrainingPlanApiResponse, AssignTrainingPlanApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/training-plans/${queryArg.id}/assign`,
         method: 'POST',
         body: queryArg.trainingPlanAssignRequest,
+      }),
+    }),
+    removeNutritionSlotOption: build.mutation<RemoveNutritionSlotOptionApiResponse, RemoveNutritionSlotOptionApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/nutrition-day-meals/${queryArg.id}`,
+        method: 'DELETE',
       }),
     }),
     listFormTemplates: build.query<ListFormTemplatesApiResponse, ListFormTemplatesApiArg>({
@@ -838,6 +867,12 @@ export type EnrollProspectApiArg = {
   /** Enroll request */
   prospectEnrollRequest: ProspectEnrollRequest;
 };
+export type AssignNutritionPlanWeekdayApiResponse = /** status 200 Assignment */ NutritionWeekdayAssignmentResponse;
+export type AssignNutritionPlanWeekdayApiArg = {
+  planId: string;
+  /** Weekday assignment */
+  nutritionWeekdayAssignRequest: NutritionWeekdayAssignRequest;
+};
 export type GetCoachProfileApiResponse = /** status 200 Coach profile */ CoachProfileResponse;
 export type GetCoachProfileApiArg = void;
 export type UpdateCoachProfileApiResponse = /** status 200 Coach profile updated */ CoachProfileResponse;
@@ -962,6 +997,18 @@ export type ListProspectsApiArg = {
   /** Page size (max 100) */
   limit?: number;
 };
+export type AddNutritionSlotOptionApiResponse = /** status 201 Option */ NutritionDayMealResponse;
+export type AddNutritionSlotOptionApiArg = {
+  dayId: string;
+  /** Option */
+  nutritionSlotOptionCreateRequest: NutritionSlotOptionCreateRequest;
+};
+export type CreateNutritionPlanDayApiResponse = /** status 201 Day */ NutritionPlanDayResponse;
+export type CreateNutritionPlanDayApiArg = {
+  planId: string;
+  /** Day */
+  nutritionPlanDayCreateRequest: NutritionPlanDayCreateRequest;
+};
 export type AcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
 export type AcceptInviteApiArg = {
   /** Accept invite request */
@@ -980,6 +1027,10 @@ export type AssignFormTemplateApiArg = {
   id: string;
   /** Form assignment request */
   clientProfileFormAssignmentAssignRequest: ClientProfileFormAssignmentAssignRequest;
+};
+export type MakeNutritionSlotOptionDefaultApiResponse = /** status 200 Option */ NutritionDayMealResponse;
+export type MakeNutritionSlotOptionDefaultApiArg = {
+  id: string;
 };
 export type CopyNutritionFoodApiResponse = /** status 201 Food */ FoodResponse;
 export type CopyNutritionFoodApiArg = {
@@ -1009,6 +1060,16 @@ export type UpdateFormAssignmentApiArg = {
   /** Form assignment update request */
   clientProfileFormAssignmentUpdateRequest: ClientProfileFormAssignmentUpdateRequest;
 };
+export type DeleteNutritionPlanDayApiResponse = unknown;
+export type DeleteNutritionPlanDayApiArg = {
+  id: string;
+};
+export type UpdateNutritionPlanDayApiResponse = /** status 200 Day */ NutritionPlanDayResponse;
+export type UpdateNutritionPlanDayApiArg = {
+  id: string;
+  /** Day */
+  nutritionPlanDayUpdateRequest: NutritionPlanDayUpdateRequest;
+};
 export type DuplicateTrainingPlanApiResponse = /** status 201 Training plan duplicated */ TrainingPlanResponse;
 export type DuplicateTrainingPlanApiArg = {
   /** Training plan id */
@@ -1029,16 +1090,6 @@ export type CreateMealApiArg = {
   planId: string;
   /** Meal request */
   nutritionMealRequest: NutritionMealRequest;
-};
-export type GetNutritionPlanScheduleApiResponse = /** status 200 Schedule */ NutritionScheduleResponse;
-export type GetNutritionPlanScheduleApiArg = {
-  planId: string;
-};
-export type SetNutritionPlanScheduleApiResponse = /** status 200 Schedule */ NutritionScheduleResponse;
-export type SetNutritionPlanScheduleApiArg = {
-  planId: string;
-  /** Weekly schedule */
-  nutritionScheduleRequest: NutritionScheduleRequest;
 };
 export type CreateCoachThreadMessageApiResponse = /** status 201 Message */ ThreadMessageResponse;
 export type CreateCoachThreadMessageApiArg = {
@@ -1188,19 +1239,16 @@ export type ListClientWeightEntriesApiArg = {
   /** Only entries since this date */
   since?: string;
 };
-export type SetNutritionPlanDayScheduleApiResponse = /** status 200 Updated day */ NutritionScheduleDayResponse;
-export type SetNutritionPlanDayScheduleApiArg = {
-  planId: string;
-  day: string;
-  /** Day schedule */
-  nutritionDayScheduleRequest: NutritionDayScheduleRequest;
-};
 export type AssignTrainingPlanApiResponse = /** status 201 Training plan assigned */ TrainingPlanResponse;
 export type AssignTrainingPlanApiArg = {
   /** Training plan id */
   id: string;
   /** Training plan assign request */
   trainingPlanAssignRequest: TrainingPlanAssignRequest;
+};
+export type RemoveNutritionSlotOptionApiResponse = unknown;
+export type RemoveNutritionSlotOptionApiArg = {
+  id: string;
 };
 export type ListFormTemplatesApiResponse = /** status 200 Form templates */ ClientProfileFormTemplateListResponse;
 export type ListFormTemplatesApiArg = void;
@@ -1751,6 +1799,15 @@ export type ProspectEnrollRequest = {
   last_name?: string | null;
   phone?: string | null;
 };
+export type NutritionWeekdayAssignmentResponse = {
+  data?: {
+    [key: string]: any;
+  };
+};
+export type NutritionWeekdayAssignRequest = {
+  day_of_week: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  nutrition_plan_day_id: string;
+};
 export type CoachProfileBusiness = {
   id: string;
   name: string;
@@ -1930,28 +1987,21 @@ export type NutritionMeal = {
   nutrition_plan_id?: string | null;
   updated_at: string;
 };
-export type NutritionScheduleEntry = {
-  day_of_week: string;
-  id: string;
-  inserted_at: string;
-  meal_slot: string;
-  nutrition_meal_id: string;
-  nutrition_plan_id?: string | null;
-  updated_at: string;
-};
 export type NutritionPlan = {
   client?: {
     [key: string]: any;
   } | null;
   client_id?: string | null;
   creator_id?: string | null;
+  days?: {
+    [key: string]: any;
+  }[];
   description: string | null;
   end_date: string | null;
   id: string;
   inserted_at: string;
   meals?: NutritionMeal[];
   name: string;
-  schedule_entries?: NutritionScheduleEntry[];
   source_template_id?: string | null;
   start_date: string | null;
   status: 'active' | 'archived';
@@ -1962,6 +2012,9 @@ export type NutritionPlan = {
   target_fiber_g?: number | null;
   target_protein_g?: number | null;
   updated_at: string;
+  weekday_assignments?: {
+    [key: string]: any;
+  };
 };
 export type NutritionPlanListResponse = {
   count: number;
@@ -2137,6 +2190,28 @@ export type ProspectListResponse = {
     won?: number;
   };
 };
+export type NutritionDayMealResponse = {
+  data?: {
+    [key: string]: any;
+  };
+};
+export type NutritionSlotOptionCreateRequest = {
+  meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
+  nutrition_meal_id: string;
+};
+export type NutritionPlanDayResponse = {
+  data?: {
+    day_meals?: {
+      [key: string]: any;
+    }[];
+    id?: string;
+    name?: string;
+    position?: number;
+  };
+};
+export type NutritionPlanDayCreateRequest = {
+  name?: string | null;
+};
 export type MessageResponse = {
   message: string;
 };
@@ -2217,6 +2292,9 @@ export type ClientProfileFormAssignmentUpdateRequest = {
   priority?: 'high' | 'normal';
   status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
 };
+export type NutritionPlanDayUpdateRequest = {
+  name: string;
+};
 export type NutritionMealListResponse = {
   count: number;
   data: NutritionMeal[];
@@ -2228,33 +2306,6 @@ export type NutritionMealRequest = {
   default_meal_slot?: ('breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack') | null;
   name: string;
   notes?: string | null;
-};
-export type NutritionScheduleResponse = {
-  data?: {
-    [key: string]: {
-      [key: string]: NutritionScheduleEntry;
-    };
-  };
-};
-export type NutritionScheduleSlot = {
-  meal_id: string;
-};
-export type NutritionDayScheduleRequest = {
-  afternoon_snack?: NutritionScheduleSlot;
-  breakfast?: NutritionScheduleSlot;
-  dinner?: NutritionScheduleSlot;
-  evening_snack?: NutritionScheduleSlot;
-  lunch?: NutritionScheduleSlot;
-  morning_snack?: NutritionScheduleSlot;
-};
-export type NutritionScheduleRequest = {
-  friday?: NutritionDayScheduleRequest;
-  monday?: NutritionDayScheduleRequest;
-  saturday?: NutritionDayScheduleRequest;
-  sunday?: NutritionDayScheduleRequest;
-  thursday?: NutritionDayScheduleRequest;
-  tuesday?: NutritionDayScheduleRequest;
-  wednesday?: NutritionDayScheduleRequest;
 };
 export type ThreadMessage = {
   author_id?: string | null;
@@ -2380,11 +2431,6 @@ export type WeightEntryListResponse = {
   } | null;
   summary: {
     [key: string]: any;
-  };
-};
-export type NutritionScheduleDayResponse = {
-  data?: {
-    [key: string]: NutritionScheduleEntry;
   };
 };
 export type TrainingPlanAssignRequest = {
@@ -2830,6 +2876,7 @@ export const {
   useLazyGetCoachingClientProfileQuery,
   useUpdateCoachingClientProfileMutation,
   useEnrollProspectMutation,
+  useAssignNutritionPlanWeekdayMutation,
   useGetCoachProfileQuery,
   useLazyGetCoachProfileQuery,
   useUpdateCoachProfileMutation,
@@ -2863,23 +2910,25 @@ export const {
   useCreateAuthTokenMutation,
   useListProspectsQuery,
   useLazyListProspectsQuery,
+  useAddNutritionSlotOptionMutation,
+  useCreateNutritionPlanDayMutation,
   useAcceptInviteMutation,
   useCancelBillingMutation,
   useGetTrainingPlanScheduleQuery,
   useLazyGetTrainingPlanScheduleQuery,
   useAssignFormTemplateMutation,
+  useMakeNutritionSlotOptionDefaultMutation,
   useCopyNutritionFoodMutation,
   useListWorkoutsQuery,
   useLazyListWorkoutsQuery,
   useCreateWorkoutMutation,
   useUpdateFormAssignmentMutation,
+  useDeleteNutritionPlanDayMutation,
+  useUpdateNutritionPlanDayMutation,
   useDuplicateTrainingPlanMutation,
   useListMealsQuery,
   useLazyListMealsQuery,
   useCreateMealMutation,
-  useGetNutritionPlanScheduleQuery,
-  useLazyGetNutritionPlanScheduleQuery,
-  useSetNutritionPlanScheduleMutation,
   useCreateCoachThreadMessageMutation,
   useGetNutritionFoodImpactQuery,
   useLazyGetNutritionFoodImpactQuery,
@@ -2914,8 +2963,8 @@ export const {
   useUpdateWorkoutMutation,
   useListClientWeightEntriesQuery,
   useLazyListClientWeightEntriesQuery,
-  useSetNutritionPlanDayScheduleMutation,
   useAssignTrainingPlanMutation,
+  useRemoveNutritionSlotOptionMutation,
   useListFormTemplatesQuery,
   useLazyListFormTemplatesQuery,
   useCreateFormTemplateMutation,

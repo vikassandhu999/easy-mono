@@ -2,9 +2,9 @@
  * NutritionPlanBuilder — assembled nutrition plan builder screen.
  *
  * Layout A — single centred column, max-w-2xl:
- *   1. PlanHeader     — inline name + macro targets + autosave
- *   2. MealsList      — meal cards + items + amount sheet
- *   3. NutritionSchedule — weekly schedule
+ *   1. PlanHeader — inline name + macro targets + autosave
+ *   2. MealsList  — meal cards + items + amount sheet
+ *   3. PlanDays   — day tabs, weekday strip, per-slot meal options
  *
  * Mirrors training `src/training-plans/plan-builder/plan-builder.tsx`.
  */
@@ -19,9 +19,9 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery} from '@/api/generated';
 
 import {MealsList} from './meals-list';
-import {NutritionSchedule} from './nutrition-schedule';
 import {NutritionPlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
+import {PlanDays} from './plan-days';
 import {PlanHeader} from './plan-header';
 
 export default function NutritionPlanBuilder() {
@@ -84,8 +84,8 @@ export default function NutritionPlanBuilder() {
           {/* 2. Meals library: meal cards + items + amount sheet */}
           <MealsList planId={plan.id} />
 
-          {/* 3. Weekly schedule: day templates + schedule grid */}
-          <NutritionSchedule planId={plan.id} />
+          {/* 3. Days: day tabs, weekday strip, per-slot meal options */}
+          <PlanDays plan={plan} />
         </div>
       </Page.Content>
     </Page>

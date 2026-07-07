@@ -69,14 +69,15 @@ export default function EditNutritionPlan() {
     try {
       const result = await updatePlan({nutritionPlanRequest: nutritionPlanToUpdateRequest(formData), id: id!}).unwrap();
       // tag:false — sync the cached detail so the builder shows the new values.
-      // meals/schedule_entries are optional on the update response — keep the
-      // hydrated ones from the detail fetch rather than wiping them.
+      // meals/days/weekday_assignments are optional on the update response —
+      // keep the hydrated ones from the detail fetch rather than wiping them.
       dispatch(
         coachApi.util.updateQueryData('getNutritionPlan', {id: id!}, (draft) => {
           draft.data = {
             ...result.data,
             meals: result.data.meals ?? draft.data.meals,
-            schedule_entries: result.data.schedule_entries ?? draft.data.schedule_entries,
+            days: result.data.days ?? draft.data.days,
+            weekday_assignments: result.data.weekday_assignments ?? draft.data.weekday_assignments,
           };
         }),
       );

@@ -10,12 +10,21 @@ import {toast} from '@heroui/react';
 
 // ponytail: inline error_code check instead of @easy/error-parser — the dep
 // isn't wired into this app and pnpm wants a full reinstall to add it.
-function isNotFound(error: unknown): boolean {
+
+/** Pull `error_code` off an RTK Query error, or undefined if the shape doesn't match. */
+export function getErrorCode(error: unknown): string | undefined {
   if (typeof error !== 'object' || error === null || !('data' in error)) {
-    return false;
+    return undefined;
   }
   const data = (error as {data?: unknown}).data;
-  return typeof data === 'object' && data !== null && (data as {error_code?: string}).error_code === 'not_found';
+  if (typeof data !== 'object' || data === null) {
+    return undefined;
+  }
+  return (data as {error_code?: string}).error_code;
+}
+
+function isNotFound(error: unknown): boolean {
+  return getErrorCode(error) === 'not_found';
 }
 
 export function toastMutationError(error: unknown, fallback: string): void {

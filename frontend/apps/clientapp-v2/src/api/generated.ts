@@ -90,6 +90,13 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/public/landing-pages/${queryArg.slug}`,
       }),
     }),
+    switchNutritionMealOption: build.mutation<SwitchNutritionMealOptionApiResponse, SwitchNutritionMealOptionApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/client/nutrition-food-log-entries/switch-option`,
+        method: 'POST',
+        body: queryArg.nutritionSwitchOptionRequest,
+      }),
+    }),
     createAuthToken: build.mutation<CreateAuthTokenApiResponse, CreateAuthTokenApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/token`,
@@ -413,6 +420,11 @@ export type GetPublicLandingPageApiResponse = /** status 200 Landing page */ Pub
 export type GetPublicLandingPageApiArg = {
   /** Landing page slug */
   slug: string;
+};
+export type SwitchNutritionMealOptionApiResponse = /** status 200 Meal log */ NutritionMealLogResponse;
+export type SwitchNutritionMealOptionApiArg = {
+  /** Switch option request */
+  nutritionSwitchOptionRequest: NutritionSwitchOptionRequest;
 };
 export type CreateAuthTokenApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type CreateAuthTokenApiArg = {
@@ -881,28 +893,21 @@ export type NutritionMeal = {
   nutrition_plan_id?: string | null;
   updated_at: string;
 };
-export type NutritionScheduleEntry = {
-  day_of_week: string;
-  id: string;
-  inserted_at: string;
-  meal_slot: string;
-  nutrition_meal_id: string;
-  nutrition_plan_id?: string | null;
-  updated_at: string;
-};
 export type NutritionPlan = {
   client?: {
     [key: string]: any;
   } | null;
   client_id?: string | null;
   creator_id?: string | null;
+  days?: {
+    [key: string]: any;
+  }[];
   description: string | null;
   end_date: string | null;
   id: string;
   inserted_at: string;
   meals?: NutritionMeal[];
   name: string;
-  schedule_entries?: NutritionScheduleEntry[];
   source_template_id?: string | null;
   start_date: string | null;
   status: 'active' | 'archived';
@@ -913,6 +918,9 @@ export type NutritionPlan = {
   target_fiber_g?: number | null;
   target_protein_g?: number | null;
   updated_at: string;
+  weekday_assignments?: {
+    [key: string]: any;
+  };
 };
 export type NutritionPlanListResponse = {
   count: number;
@@ -952,6 +960,16 @@ export type PublicLandingPage = {
 };
 export type PublicLandingPageResponse = {
   data: PublicLandingPage;
+};
+export type NutritionMealLogResponse = {
+  data?: {
+    [key: string]: any;
+  };
+};
+export type NutritionSwitchOptionRequest = {
+  date: string;
+  meal_id: string;
+  meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
 };
 export type AuthTokenResponse = {
   access_token: string;
@@ -1413,6 +1431,7 @@ export const {
   useLazyListClientNutritionPlansQuery,
   useGetPublicLandingPageQuery,
   useLazyGetPublicLandingPageQuery,
+  useSwitchNutritionMealOptionMutation,
   useCreateAuthTokenMutation,
   useListClientRecipesQuery,
   useLazyListClientRecipesQuery,

@@ -20,11 +20,9 @@ import {toastMutationError} from '@/@components/mutation-toast';
 import type {NutritionMeal} from '@/api/generated';
 import {
   coachApi,
-  NutritionScheduleEntry,
   useDeleteMealItemMutation,
   useDeleteMealMutation,
   useGetNutritionPlanQuery,
-  useGetNutritionPlanScheduleQuery,
   useUpdateMealMutation,
 } from '@/api/generated';
 import {useAppDispatch} from '@/store';
@@ -34,6 +32,7 @@ import type {FoodOrRecipe} from './food-recipe-picker-sheet';
 import {FoodRecipePickerSheet, isRecipe} from './food-recipe-picker-sheet';
 import type {HydratedMealItem} from './meal-item-row';
 import {MealItemRow} from './meal-item-row';
+import type {NutritionPlanDay} from './plan-days';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,8 +79,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   const [updateMeal] = useUpdateMealMutation();
   const [deleteMeal] = useDeleteMealMutation();
   const [deleteMealItem] = useDeleteMealItemMutation();
-  const {refetch} = useGetNutritionPlanQuery({id: planId});
-  const {data: scheduleData, refetch: refetchSchedule} = useGetNutritionPlanScheduleQuery({planId});
+  const {data: planData, refetch} = useGetNutritionPlanQuery({id: planId});
 
   // Inline rename state
   const [editingName, setEditingName] = useState(false);
@@ -171,30 +169,30 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         }
       }),
     );
-    // The backend cascades schedule entries with the meal — mirror that in the
-    // schedule cache, or the slots keep pointing at a meal that no longer
-    // exists (blank "Select an item" selects, ghost grid cells).
-    const schedulePatch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlanSchedule', {planId}, (draft) => {
-        for (const slots of Object.values(draft.data ?? {})) {
-          for (const [slot, entry] of Object.entries(slots ?? {})) {
-            if (entry.nutrition_meal_id === meal.id) {
-              delete slots[slot];
-            }
+    // The backend cascades day_meals with the meal (FK on_delete: :delete_all)
+    // — mirror that in the days cache, or a slot keeps pointing at an option
+    // whose meal no longer exists.
+    const dayMealsPatch = dispatch(
+      coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
+        for (const day of draft.data.days ?? []) {
+          const dayMeals = (day as {day_meals?: {nutrition_meal_id?: string}[]}).day_meals;
+          if (!dayMeals) {
+            continue;
           }
+          const remaining = dayMeals.filter((dm) => dm.nutrition_meal_id !== meal.id);
+          (day as {day_meals?: unknown}).day_meals = remaining;
         }
       }),
     );
     try {
       await deleteMeal({id: meal.id}).unwrap();
       refetch().catch(() => undefined);
-      refetchSchedule().catch(() => undefined);
     } catch (e) {
       patch.undo();
-      schedulePatch.undo();
+      dayMealsPatch.undo();
       toastMutationError(e, "Couldn't delete meal");
     }
-  }, [meal.id, planId, deleteMeal, dispatch, refetch, refetchSchedule]);
+  }, [meal.id, planId, deleteMeal, dispatch, refetch]);
 
   // ---------------------------------------------------------------------------
   // Delete meal item
@@ -257,12 +255,12 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   const items = meal.meal_items as HydratedMealItem[];
 
   // Shared-meal warning: a meal is a reusable entity, so editing it updates
-  // everywhere it's assigned. Count how many schedule slots/days reference this
-  // meal; warn when it's used in 2+ places. Counted from the schedule query
-  // cache (not plan.schedule_entries) so schedule edits keep the count fresh.
-  const scheduleMap = (scheduleData?.data ?? {}) as Record<string, Record<string, NutritionScheduleEntry>>;
-  const assignmentCount = Object.values(scheduleMap).reduce(
-    (n, slots) => n + Object.values(slots ?? {}).filter((entry) => entry.nutrition_meal_id === meal.id).length,
+  // everywhere it's assigned. Count how many day slot-options across the plan's
+  // days reference this meal; warn when it's used in 2+ places. Read straight
+  // off the getNutritionPlan cache (via planData) so day edits keep it fresh.
+  const days = (planData?.data.days ?? []) as unknown as NutritionPlanDay[];
+  const assignmentCount = days.reduce(
+    (n, day) => n + (day.day_meals ?? []).filter((dm) => dm.nutrition_meal_id === meal.id).length,
     0,
   );
   const isShared = assignmentCount >= 2;

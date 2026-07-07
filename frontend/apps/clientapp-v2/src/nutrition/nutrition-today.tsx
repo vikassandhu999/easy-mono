@@ -410,12 +410,12 @@ export default function NutritionToday() {
                     onPress={() => (logged ? removeEntry(logged) : logPlanned(slot, row))}
                   />
                   <button
-                    className="flex flex-1 items-center justify-between gap-2 text-left"
+                    className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
                     disabled={isFuture}
                     onClick={() => openSheet(slot, row)}
                     type="button"
                   >
-                    <span className={`flex-1 truncate ${logged ? 'text-[#7c8]' : ''}`}>
+                    <span className={`min-w-0 flex-1 truncate ${logged ? 'text-[#7c8]' : ''}`}>
                       {name}
                       {row.replaced ? (
                         <span className="ml-1.5 rounded border border-[#34506e] px-1 py-px text-[9px] text-[#9fb0ff]">
@@ -440,12 +440,12 @@ export default function NutritionToday() {
                   onPress={() => removeEntry(entry)}
                 />
                 <button
-                  className="flex flex-1 items-center justify-between gap-2 text-left"
+                  className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
                   disabled={isFuture}
                   onClick={() => openExtraSheet(slot, entry)}
                   type="button"
                 >
-                  <span className="flex-1 truncate text-[#7c8]">
+                  <span className="min-w-0 flex-1 truncate text-[#7c8]">
                     {entry.food_name ?? 'Food'}
                     <span className="ml-1.5 rounded border border-[#7d5a2f] px-1 py-px text-[9px] text-warning">
                       off-plan

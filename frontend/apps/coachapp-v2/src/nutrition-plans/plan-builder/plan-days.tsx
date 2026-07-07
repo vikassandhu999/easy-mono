@@ -6,9 +6,10 @@
  * default option). A weekday -> day map assigns Mon..Sun to one of the days.
  *
  * Single day: no tabs, no weekday strip, no day name — just the six slot
- * groups. Multiple days: day tabs + "Add day", a weekday strip (M T W T F S S)
- * under the tabs assigning the active day to weekdays, and inline rename /
- * delete for the active day.
+ * groups. "Add day" always lives in the section header, in both modes.
+ * Multiple days: day tabs, a weekday strip (M T W T F S S) under the tabs
+ * assigning the active day to weekdays, and inline rename / delete for the
+ * active day.
  *
  * The generated `days` / `weekday_assignments` fields on NutritionPlan are
  * loosely typed (`additionalProperties: true` on the backend schema — see
@@ -561,11 +562,21 @@ export function PlanDays({plan}: PlanDaysProps) {
           className="mb-0"
           title="Days"
         />
+        <Button
+          isPending={creatingDay}
+          onPress={() => {
+            handleAddDay().catch(() => undefined);
+          }}
+          size="sm"
+          variant="ghost"
+        >
+          + Add day
+        </Button>
       </div>
 
       {days.length > 1 ? (
         <>
-          {/* Day tabs + add day */}
+          {/* Day tabs */}
           <div className="mb-3 flex items-center gap-2">
             <Tabs
               aria-label="Plan days"
@@ -587,16 +598,6 @@ export function PlanDays({plan}: PlanDaysProps) {
                 </Tabs.List>
               </Tabs.ListContainer>
             </Tabs>
-            <Button
-              isPending={creatingDay}
-              onPress={() => {
-                handleAddDay().catch(() => undefined);
-              }}
-              size="sm"
-              variant="ghost"
-            >
-              + Add day
-            </Button>
           </div>
 
           {/* Weekday strip */}

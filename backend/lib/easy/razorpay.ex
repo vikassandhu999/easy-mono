@@ -14,6 +14,10 @@ defmodule Easy.Razorpay do
     request(:post, "/subscriptions", json: %{plan_id: config(:plan_id), quantity: quantity, total_count: @total_count, customer_notify: 1})
   end
 
+  def get_subscription(subscription_id) do
+    request(:get, "/subscriptions/#{subscription_id}", [])
+  end
+
   def update_subscription_quantity(subscription_id, quantity) do
     request(:patch, "/subscriptions/#{subscription_id}", json: %{quantity: quantity, schedule_change_at: "now"})
   end

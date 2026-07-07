@@ -80,6 +80,28 @@ defmodule EasyWeb.Coaches.BillingController do
     end
   end
 
+  operation :sync,
+    summary: "Reconcile billing with Razorpay",
+    description: "Owner-only: fetches the subscription from Razorpay and applies the same transition the webhook would.",
+    operation_id: "syncBilling",
+    security: [%{"bearerAuth" => []}],
+    responses: [
+      ok: {"Billing", "application/json", BillingResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse},
+      bad_gateway: {"Payment provider error", "application/json", ErrorResponse}
+    ]
+
+  @spec sync(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def sync(conn, _params) do
+    ctx = conn.assigns.ctx
+
+    with {:ok, summary} <- Billing.sync_billing(ctx) do
+      summary = Map.put(summary, :recent_events, Billing.recent_events(ctx))
+      json(conn, %{data: render_summary(summary)})
+    end
+  end
+
   defp render_summary(summary) do
     case Map.get(summary, :recent_events) do
       nil -> Map.put(summary, :recent_events, nil)

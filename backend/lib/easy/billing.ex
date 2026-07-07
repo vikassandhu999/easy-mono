@@ -142,6 +142,25 @@ defmodule Easy.Billing do
     end
   end
 
+  @spec sync_billing(Ctx.t()) ::
+          {:ok, map()} | {:error, :not_owner | :no_subscription | :razorpay_error}
+  def sync_billing(%Ctx{business_id: business_id} = ctx) do
+    with :ok <- ensure_owner(ctx) do
+      billing = billing_for(business_id)
+
+      case billing.razorpay_subscription_id do
+        nil ->
+          {:error, :no_subscription}
+
+        subscription_id ->
+          with {:ok, subscription} <- Razorpay.get_subscription(subscription_id) do
+            apply_subscription_state(billing, subscription)
+            {:ok, seat_summary(ctx)}
+          end
+      end
+    end
+  end
+
   @spec handle_razorpay_webhook(binary(), String.t() | nil, String.t() | nil) ::
           :ok | {:error, :invalid_webhook_signature} | {:error, :duplicate_webhook}
   def handle_razorpay_webhook(raw_body, signature, event_id) do
@@ -277,26 +296,13 @@ defmodule Easy.Billing do
     payment = payment_entity(payload)
 
     with_billing(subscription["id"], fn billing ->
-      quantity = subscription["quantity"] || billing.paid_seats
-      # preserve a cancellation already scheduled by the owner; a charge on the
-      # current cycle doesn't undo it
-      status = if billing.status == :cancel_at_period_end, do: :cancel_at_period_end, else: :active
-
-      billing
-      |> BusinessBilling.changeset(%{
-        paid_seats: quantity,
-        status: status,
-        current_period_end: safe_unix(subscription["current_end"])
-      })
-      |> Repo.update!()
+      apply_charged_transition(billing, subscription)
 
       record_event(billing.business_id, :payment_succeeded, %{
         amount_paid: payment["amount"] && div(payment["amount"], 100),
         currency: payment["currency"]
       })
 
-      record_seat_change(billing, quantity)
-      activate_awaiting_clients(billing.business_id)
       :ok
     end)
   end
@@ -304,22 +310,14 @@ defmodule Easy.Billing do
   defp apply_webhook_event(%{"event" => event, "payload" => payload})
        when event in ["subscription.pending", "subscription.halted"] do
     with_billing(subscription_entity(payload)["id"], fn billing ->
-      if billing.status in [:active, :cancel_at_period_end] do
-        billing |> BusinessBilling.changeset(%{status: :past_due}) |> Repo.update!()
-        record_event(billing.business_id, :payment_failed)
-      end
-
+      apply_past_due_transition(billing)
       :ok
     end)
   end
 
   defp apply_webhook_event(%{"event" => "subscription.cancelled", "payload" => payload}) do
     with_billing(subscription_entity(payload)["id"], fn billing ->
-      if billing.status != :cancelled do
-        billing |> BusinessBilling.changeset(%{status: :cancelled, paid_seats: 0}) |> Repo.update!()
-        record_event(billing.business_id, :subscription_cancelled)
-      end
-
+      apply_cancelled_transition(billing)
       :ok
     end)
   end
@@ -361,6 +359,61 @@ defmodule Easy.Billing do
   end
 
   defp safe_unix(_ts), do: nil
+
+  # --- Razorpay sync-on-demand: applies the same transitions the webhook does,
+  # from the bare subscription entity ("status" at top level, not payload-wrapped).
+
+  @spec apply_subscription_state(BusinessBilling.t(), map()) :: :ok
+  defp apply_subscription_state(billing, subscription) do
+    case subscription["status"] do
+      status when status in ["active", "authenticated"] ->
+        apply_charged_transition(billing, subscription)
+        :ok
+
+      status when status in ["halted", "pending"] ->
+        apply_past_due_transition(billing)
+        :ok
+
+      status when status in ["cancelled", "completed"] ->
+        apply_cancelled_transition(billing)
+        :ok
+
+      _other ->
+        :ok
+    end
+  end
+
+  defp apply_charged_transition(billing, subscription) do
+    quantity = subscription["quantity"] || billing.paid_seats
+    # preserve a cancellation already scheduled by the owner; a charge on the
+    # current cycle doesn't undo it
+    status = if billing.status == :cancel_at_period_end, do: :cancel_at_period_end, else: :active
+
+    billing
+    |> BusinessBilling.changeset(%{
+      paid_seats: quantity,
+      status: status,
+      current_period_end: safe_unix(subscription["current_end"])
+    })
+    |> Repo.update!()
+
+    record_seat_change(billing, quantity)
+    activate_awaiting_clients(billing.business_id)
+  end
+
+  defp apply_past_due_transition(billing) do
+    if billing.status in [:active, :cancel_at_period_end] do
+      billing |> BusinessBilling.changeset(%{status: :past_due}) |> Repo.update!()
+      record_event(billing.business_id, :payment_failed)
+    end
+  end
+
+  defp apply_cancelled_transition(billing) do
+    if billing.status != :cancelled do
+      billing |> BusinessBilling.changeset(%{status: :cancelled, paid_seats: 0}) |> Repo.update!()
+      record_event(billing.business_id, :subscription_cancelled)
+    end
+  end
 
   defp with_billing(nil, _fun), do: :ok
 

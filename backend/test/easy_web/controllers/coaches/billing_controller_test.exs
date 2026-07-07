@@ -77,6 +77,45 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
     end
   end
 
+  describe "POST /v1/coach/billing/sync" do
+    test "reconciles from Razorpay and renders the summary", %{conn: conn, business: business} do
+      insert(:business_billing,
+        business: business,
+        status: :free,
+        paid_seats: 0,
+        razorpay_subscription_id: "sub_sync"
+      )
+
+      Req.Test.stub(Easy.Razorpay, fn req_conn ->
+        Req.Test.json(req_conn, %{
+          "id" => "sub_sync",
+          "status" => "active",
+          "quantity" => 3,
+          "current_end" => 1_790_000_000
+        })
+      end)
+
+      conn = post(conn, "/v1/coach/billing/sync")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "active"
+      assert data["paid_seats"] == 3
+      assert_schema(data, "BillingSummary", EasyWeb.ApiSpec.spec())
+    end
+
+    test "non-owner coach gets 403", %{business: business} do
+      other_coach = insert(:coach, business: business)
+
+      conn =
+        build_conn()
+        |> authenticate_coach(other_coach)
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/coach/billing/sync")
+
+      assert json_response(conn, 403)
+    end
+  end
+
   describe "seat-limit conflict on invite" do
     test "invite at the limit returns 409 with the seat summary", %{conn: conn, business: business} do
       insert(:client, business: business, status: :active)

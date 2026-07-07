@@ -65,6 +65,8 @@ defmodule Easy.Factory do
     %Coach{
       first_name: "Test",
       last_name: "Coach",
+      email: sequence(:coach_email, &"coach-#{&1}@test.com"),
+      status: :active,
       user: build(:user),
       business: build(:business)
     }
@@ -80,17 +82,18 @@ defmodule Easy.Factory do
   end
 
   def client_factory do
-    # `business` is persisted (not merely built) because it's referenced from
-    # two belongs_to paths below (client.business and client.creator.business).
-    # An unsaved struct shared across two paths gets cascade-inserted twice by
-    # Ecto, tripping the businesses/users unique constraints.
+    # `business` and `creator` are persisted (not merely built) because each is
+    # referenced from two belongs_to paths below (client.business/client.creator.business,
+    # and client.creator/client.assigned_coach). An unsaved struct shared across two
+    # paths gets cascade-inserted twice by Ecto, tripping the businesses/users/coaches
+    # unique constraints.
     business =
       insert(:business,
         owner: build(:user, email: sequence(:business_owner_email, &"business-owner-#{&1}@test.com"))
       )
 
     creator =
-      build(:coach,
+      insert(:coach,
         business: business,
         user: build(:user, email: sequence(:coach_user_email, &"coach-user-#{&1}@test.com"))
       )
@@ -104,7 +107,8 @@ defmodule Easy.Factory do
       status: :active,
       user: build(:user, email: sequence(:client_user_email, &"client-user-#{&1}@test.com")),
       business: business,
-      creator: creator
+      creator: creator,
+      assigned_coach: creator
     }
   end
 

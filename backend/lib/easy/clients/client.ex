@@ -33,6 +33,7 @@ defmodule Easy.Clients.Client do
     belongs_to :user, Easy.Identity.User
     belongs_to :business, Orgs.Business
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
+    belongs_to :assigned_coach, Orgs.Coach, foreign_key: :assigned_coach_id
 
     timestamps(type: :utc_datetime)
   end

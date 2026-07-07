@@ -16,6 +16,11 @@ defmodule Easy.Orgs.Coach do
     field :first_name, :string
     field :last_name, :string
     field :phone, :string
+    field :email, :string
+    field :status, Ecto.Enum, values: [:invited, :active, :inactive], default: :active
+    field :invitation_token, :string
+    field :invitation_sent_at, :utc_datetime
+    field :invited_by_id, :binary_id
 
     belongs_to :user, Easy.Identity.User
     belongs_to :business, Business
@@ -37,11 +42,52 @@ defmodule Easy.Orgs.Coach do
     |> cast(attrs, [:first_name, :last_name, :phone])
   end
 
+  @spec invite_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def invite_changeset(business_id, invited_by_id, attrs) do
+    %__MODULE__{}
+    |> cast(attrs, [:email, :first_name, :last_name])
+    |> update_change(:email, &downcase/1)
+    |> validate_required([:email])
+    |> validate_format(
+      :email,
+      ~r/^[\w.!#$%&'*+=?^`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
+    )
+    |> put_change(:business_id, business_id)
+    |> put_change(:invited_by_id, invited_by_id)
+    |> put_change(:status, :invited)
+    |> put_change(:invitation_token, generate_token())
+    |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
+    |> unique_constraint(:email, name: :coaches_business_id_lower_email_index)
+    |> unique_constraint(:user_id)
+  end
+
+  @spec accept_changeset(t(), String.t()) :: Ecto.Changeset.t()
+  def accept_changeset(coach, user_id) do
+    coach
+    |> change()
+    |> put_change(:user_id, user_id)
+    |> put_change(:status, :active)
+    |> put_change(:invitation_token, nil)
+    |> unique_constraint(:user_id)
+  end
+
+  defp downcase(nil), do: nil
+  defp downcase(email), do: String.downcase(email)
+
+  defp generate_token do
+    :crypto.strong_rand_bytes(24) |> Base.url_encode64(padding: false)
+  end
+
   # Queries
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(c in query, where: c.business_id == ^business_id)
+  end
+
+  @spec active(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def active(query \\ __MODULE__) do
+    from(c in query, where: c.status == :active)
   end
 
   @spec for_user(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

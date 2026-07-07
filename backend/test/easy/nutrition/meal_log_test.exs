@@ -117,6 +117,24 @@ defmodule Easy.Nutrition.MealLogTest do
       assert switched.logged_calories == 108.0
     end
 
+    test "switch_client_meal_option to the already-pinned option leaves entries intact" do
+      %{client_ctx: client_ctx, oats: oats} = build_scenario()
+
+      {:ok, _entries} =
+        MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      assert {:ok, switched} =
+               MealLogs.switch_client_meal_option(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 meal_id: oats.id
+               })
+
+      assert switched.nutrition_meal_id == oats.id
+      assert length(switched.food_log_entries) == 1
+      assert Enum.map(switched.food_log_entries, & &1.source) == [:planned]
+    end
+
     test "switch_client_meal_option returns not_found for a meal outside the client's plan" do
       %{client_ctx: client_ctx, oats: oats, business: business, creator: creator} = build_scenario()
 
@@ -237,13 +255,13 @@ defmodule Easy.Nutrition.MealLogTest do
       insert(:food, creator: plan.creator, business: plan.business, name: "Banana", calories_per_100g: 90.0)
 
     {:ok, _} =
-      NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "breakfast", "nutrition_meal_id" => oats.id})
+      NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: oats.id})
 
     {:ok, _} =
-      NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "breakfast", "nutrition_meal_id" => eggs.id})
+      NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: eggs.id})
 
     {:ok, _} =
-      NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "lunch", "nutrition_meal_id" => rice.id})
+      NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "lunch", nutrition_meal_id: rice.id})
 
     %{
       ctx: ctx,

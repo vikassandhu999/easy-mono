@@ -118,7 +118,7 @@ defmodule Easy.NutritionPlanDaysTest do
     end
 
     test "create_plan_day appends at next position", %{ctx: ctx, plan: plan} do
-      {:ok, d2} = NutritionPlans.create_plan_day(ctx, plan.id, %{"name" => "Training day"})
+      {:ok, d2} = NutritionPlans.create_plan_day(ctx, plan.id, %{name: "Training day"})
       assert d2.position == 1
     end
 
@@ -127,12 +127,12 @@ defmodule Easy.NutritionPlanDaysTest do
     end
 
     test "delete_plan_day reassigns weekdays to remaining day", %{ctx: ctx, plan: plan, day: day} do
-      {:ok, d2} = NutritionPlans.create_plan_day(ctx, plan.id, %{"name" => "Training day"})
+      {:ok, d2} = NutritionPlans.create_plan_day(ctx, plan.id, %{name: "Training day"})
 
       {:ok, _} =
         NutritionPlans.assign_weekday(ctx, plan.id, %{
-          "day_of_week" => "monday",
-          "nutrition_plan_day_id" => d2.id
+          day_of_week: "monday",
+          nutrition_plan_day_id: d2.id
         })
 
       {:ok, _} = NutritionPlans.delete_plan_day(ctx, d2.id)
@@ -143,12 +143,12 @@ defmodule Easy.NutritionPlanDaysTest do
     end
 
     test "assign_weekday moves one weekday", %{ctx: ctx, plan: plan} do
-      {:ok, d2} = NutritionPlans.create_plan_day(ctx, plan.id, %{"name" => "T"})
+      {:ok, d2} = NutritionPlans.create_plan_day(ctx, plan.id, %{name: "T"})
 
       {:ok, wa} =
         NutritionPlans.assign_weekday(ctx, plan.id, %{
-          "day_of_week" => "friday",
-          "nutrition_plan_day_id" => d2.id
+          day_of_week: "friday",
+          nutrition_plan_day_id: d2.id
         })
 
       assert wa.nutrition_plan_day_id == d2.id
@@ -177,33 +177,33 @@ defmodule Easy.NutritionPlanDaysTest do
     end
 
     test "add_slot_option appends and caps at 3", %{ctx: ctx, day: day, meals: [m1, m2, m3, m4]} do
-      {:ok, o1} = NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "breakfast", "nutrition_meal_id" => m1.id})
-      {:ok, o2} = NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "breakfast", "nutrition_meal_id" => m2.id})
-      {:ok, _o3} = NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "breakfast", "nutrition_meal_id" => m3.id})
+      {:ok, o1} = NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: m1.id})
+      {:ok, o2} = NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: m2.id})
+      {:ok, _o3} = NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: m3.id})
       assert o1.position == 0
       assert o2.position == 1
 
       assert {:error, :max_options} =
-               NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "breakfast", "nutrition_meal_id" => m4.id})
+               NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: m4.id})
     end
 
     test "meal from another plan is rejected", %{ctx: ctx, day: day} do
       other_plan_meal = insert(:meal)
 
       assert {:error, :not_found} =
-               NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "lunch", "nutrition_meal_id" => other_plan_meal.id})
+               NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "lunch", nutrition_meal_id: other_plan_meal.id})
     end
 
     test "remove_slot_option compacts positions", %{ctx: ctx, day: day, meals: [m1, m2, _m3, _m4]} do
-      {:ok, o1} = NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "dinner", "nutrition_meal_id" => m1.id})
-      {:ok, o2} = NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "dinner", "nutrition_meal_id" => m2.id})
+      {:ok, o1} = NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "dinner", nutrition_meal_id: m1.id})
+      {:ok, o2} = NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "dinner", nutrition_meal_id: m2.id})
       {:ok, _} = NutritionPlans.remove_slot_option(ctx, o1.id)
       assert Repo.get(DayMeal, o2.id).position == 0
     end
 
     test "make_default_option moves to position 0", %{ctx: ctx, day: day, meals: [m1, m2, _m3, _m4]} do
-      {:ok, o1} = NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "lunch", "nutrition_meal_id" => m1.id})
-      {:ok, o2} = NutritionPlans.add_slot_option(ctx, day.id, %{"meal_slot" => "lunch", "nutrition_meal_id" => m2.id})
+      {:ok, o1} = NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "lunch", nutrition_meal_id: m1.id})
+      {:ok, o2} = NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "lunch", nutrition_meal_id: m2.id})
       {:ok, _} = NutritionPlans.make_default_option(ctx, o2.id)
       assert Repo.get(DayMeal, o2.id).position == 0
       assert Repo.get(DayMeal, o1.id).position == 1
@@ -223,14 +223,14 @@ defmodule Easy.NutritionPlanDaysTest do
 
       {:ok, _} =
         NutritionPlans.add_slot_option(ctx, template_day.id, %{
-          "meal_slot" => "breakfast",
-          "nutrition_meal_id" => m1.id
+          meal_slot: "breakfast",
+          nutrition_meal_id: m1.id
         })
 
       {:ok, _} =
         NutritionPlans.add_slot_option(ctx, template_day.id, %{
-          "meal_slot" => "breakfast",
-          "nutrition_meal_id" => m2.id
+          meal_slot: "breakfast",
+          nutrition_meal_id: m2.id
         })
 
       client = insert(:client, business: plan.business)

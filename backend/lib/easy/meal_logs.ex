@@ -140,35 +140,45 @@ defmodule Easy.MealLogs do
     with {:ok, client} <- get_client(ctx),
          {:ok, date} <- parse_required_date(to_string_date(attrs[:date])),
          meal when not is_nil(meal) <- load_meal_with_items(ctx.business_id, client.id, meal_id) do
-      snapshot = build_planned_snapshot(ctx.business_id, meal_id)
+      case get_existing_meal_log(ctx.business_id, client.id, date, meal_slot) do
+        %MealLog{nutrition_meal_id: existing_meal_id} = existing when existing_meal_id == meal_id ->
+          {:ok, Repo.preload(existing, food_log_entries: FoodLogEntry.by_position())}
 
-      Repo.transaction(fn ->
-        meal_log =
-          case find_or_create_meal_log(ctx.business_id, client.id, date, meal_slot, snapshot, meal_id) do
-            {:ok, ml} -> ml
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        FoodLogEntry
-        |> FoodLogEntry.for_meal_log(meal_log.id)
-        |> where([e], e.source in [:planned, :replacement])
-        |> Repo.delete_all()
-
-        case recalculate_logged_calories(meal_log) do
-          {:ok, _} ->
-            MealLog
-            |> MealLog.for_client(ctx.business_id, client.id)
-            |> MealLog.include_entries()
-            |> Repo.get(meal_log.id)
-
-          {:error, reason} ->
-            Repo.rollback(reason)
-        end
-      end)
+        _ ->
+          do_switch_meal_option(ctx, client.id, date, meal_slot, meal_id)
+      end
     else
       nil -> {:error, :not_found}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp do_switch_meal_option(ctx, client_id, date, meal_slot, meal_id) do
+    snapshot = build_planned_snapshot(ctx.business_id, meal_id)
+
+    Repo.transaction(fn ->
+      meal_log =
+        case find_or_create_meal_log(ctx.business_id, client_id, date, meal_slot, snapshot, meal_id) do
+          {:ok, ml} -> ml
+          {:error, reason} -> Repo.rollback(reason)
+        end
+
+      FoodLogEntry
+      |> FoodLogEntry.for_meal_log(meal_log.id)
+      |> where([e], e.source in [:planned, :replacement])
+      |> Repo.delete_all()
+
+      case recalculate_logged_calories(meal_log) do
+        {:ok, _} ->
+          MealLog
+          |> MealLog.for_client(ctx.business_id, client_id)
+          |> MealLog.include_entries()
+          |> Repo.get(meal_log.id)
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
   end
 
   # ---------------------------------------------------------------------------

@@ -160,7 +160,7 @@ defmodule Easy.NutritionPlans do
   def create_plan_day(%Ctx{} = ctx, plan_id, attrs) do
     with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
       position = (max_day_position(plan.id) || -1) + 1
-      name = attrs["name"] || attrs[:name] || "Day #{position + 1}"
+      name = attrs[:name] || "Day #{position + 1}"
 
       PlanDay.insert_changeset(ctx.business_id, plan.id, %{"name" => name, "position" => position})
       |> Repo.insert()
@@ -212,8 +212,8 @@ defmodule Easy.NutritionPlans do
   @spec assign_weekday(Ctx.t(), String.t(), map()) ::
           {:ok, WeekdayAssignment.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def assign_weekday(%Ctx{} = ctx, plan_id, attrs) do
-    day_id = attrs["nutrition_plan_day_id"] || attrs[:nutrition_plan_day_id]
-    weekday = to_string(attrs["day_of_week"] || attrs[:day_of_week])
+    day_id = attrs[:nutrition_plan_day_id]
+    weekday = to_string(attrs[:day_of_week])
 
     with {:ok, plan} <- get_plan(ctx.business_id, plan_id),
          {:ok, day} <- get_plan_day(ctx.business_id, day_id),
@@ -240,8 +240,8 @@ defmodule Easy.NutritionPlans do
   @spec add_slot_option(Ctx.t(), String.t(), map()) ::
           {:ok, DayMeal.t()} | {:error, :not_found | :max_options | Ecto.Changeset.t()}
   def add_slot_option(%Ctx{} = ctx, day_id, attrs) do
-    meal_id = attrs["nutrition_meal_id"] || attrs[:nutrition_meal_id]
-    slot = to_string(attrs["meal_slot"] || attrs[:meal_slot])
+    meal_id = attrs[:nutrition_meal_id]
+    slot = to_string(attrs[:meal_slot])
 
     with {:ok, day} <- get_plan_day(ctx.business_id, day_id),
          {:ok, :valid} <- ensure_meal_for_plan(day.nutrition_plan_id, ctx.business_id, meal_id) do

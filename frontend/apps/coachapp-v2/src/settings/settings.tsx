@@ -13,6 +13,7 @@ import {clearTokens} from '@/api/authStorage';
 import {coachApi} from '@/api/generated';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
 import EditableRow from '@/settings/components/editable-row';
+import TeamSection from '@/settings/team';
 import {store} from '@/store';
 
 function ProfileSection({
@@ -306,6 +307,7 @@ export default function Settings() {
           />
           <AcquisitionSection />
           <BillingSection />
+          <TeamSection />
           <ClientProfileSection />
           <AccountSection email={profile.email} />
 

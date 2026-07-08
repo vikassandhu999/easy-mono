@@ -10,6 +10,7 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {type BillingSummary, getSeatLimitError} from '@/api/billing';
 import {type Client, useInviteClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
+import {useReassignClientMutation} from '@/api/team';
 import InviteClientForm, {
   INVITE_CLIENT_FORM_FIELDS,
   type InviteClientFormValues,
@@ -170,6 +171,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 export default function InviteClient() {
   const goBack = useGoBack(ROUTES.CLIENTS);
   const [inviteClient, {isLoading}] = useInviteClientMutation();
+  const [reassignClient] = useReassignClientMutation();
   const [inviteResult, setInviteResult] = useState<Client | null>(null);
   const [seatLimit, setSeatLimit] = useState<BillingSummary | null>(null);
 
@@ -178,6 +180,18 @@ export default function InviteClient() {
   const onSubmit = async (data: InviteClientFormValues) => {
     try {
       const result = await inviteClient(inviteClientToRequest(data)).unwrap();
+      // The invite always creates the client under the acting coach. Only
+      // reassign when the owner explicitly picked a different trainer.
+      if (data.assigned_trainer_id) {
+        try {
+          await reassignClient({
+            clientId: result.data.id,
+            body: {coach_id: data.assigned_trainer_id},
+          }).unwrap();
+        } catch {
+          toast.danger('Client was invited, but assigning the trainer failed. Reassign it from the client page.');
+        }
+      }
       setInviteResult(result.data);
     } catch (err) {
       const limit = getSeatLimitError(err);

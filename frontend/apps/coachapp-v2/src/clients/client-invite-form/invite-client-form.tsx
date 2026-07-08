@@ -1,14 +1,17 @@
-import {Description, ErrorMessage, Fieldset} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset, ListBox} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormActions, FormLayout, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {FormActions, FormLayout, FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {useGetBillingQuery} from '@/api/billing';
 import type {ClientInviteRequest} from '@/api/clients';
 import {toOptionalText} from '@/api/shared';
+import {type TeamMember, useGetTeamQuery} from '@/api/team';
 import {splitName} from '@/clients/lib/invite-client';
 
 export const inviteClientFormSchema = z
   .object({
+    assigned_trainer_id: z.string().optional(),
     email: z.string().email('Enter a valid email').or(z.literal('')).optional(),
     name: z.string().min(1, 'Enter client name'),
     notes: z.string().optional(),
@@ -30,6 +33,10 @@ export type InviteClientFormValues = z.infer<typeof inviteClientFormSchema>;
 
 export const INVITE_CLIENT_FORM_FIELDS = ['email', 'name', 'notes', 'phone'] as const;
 
+function memberName(member: TeamMember): string {
+  return [member.first_name, member.last_name].filter(Boolean).join(' ') || member.email || 'Trainer';
+}
+
 export function inviteClientToRequest(values: InviteClientFormValues): ClientInviteRequest {
   const {firstName, lastName} = splitName(values.name);
   return {
@@ -44,6 +51,7 @@ export function inviteClientToRequest(values: InviteClientFormValues): ClientInv
 export function useInviteClientForm() {
   return useForm<InviteClientFormValues>({
     defaultValues: {
+      assigned_trainer_id: undefined,
       email: '',
       name: '',
       notes: '',
@@ -66,6 +74,11 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
     formState: {errors},
     handleSubmit,
   } = form;
+
+  const {data: billing} = useGetBillingQuery();
+  const isOwner = billing?.data.is_owner ?? false;
+  const {data: team} = useGetTeamQuery(undefined, {skip: !isOwner});
+  const activeTrainers = (team?.data ?? []).filter((member) => member.status === 'active');
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
@@ -100,6 +113,26 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
             name="phone"
             type="tel"
           />
+
+          {isOwner && activeTrainers.length > 0 ? (
+            <FormSelectField
+              control={control}
+              description="Leave blank to keep yourself assigned."
+              label="Assigned trainer"
+              name="assigned_trainer_id"
+            >
+              {activeTrainers.map((member) => (
+                <ListBox.Item
+                  id={member.id}
+                  key={member.id}
+                  textValue={memberName(member)}
+                >
+                  {memberName(member)}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </FormSelectField>
+          ) : null}
 
           <FormTextAreaField
             control={control}

@@ -92,6 +92,13 @@ const injectedRtkApi = api.injectEndpoints({
         method: 'POST',
       }),
     }),
+    inviteTrainer: build.mutation<InviteTrainerApiResponse, InviteTrainerApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/team/invite`,
+        method: 'POST',
+        body: queryArg.trainerInviteRequest,
+      }),
+    }),
     listCoachClientTrainingSessions: build.query<
       ListCoachClientTrainingSessionsApiResponse,
       ListCoachClientTrainingSessionsApiArg
@@ -119,6 +126,12 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/clients/${queryArg.clientId}/training-sessions/${queryArg.id}`,
       }),
     }),
+    deactivateTrainer: build.mutation<DeactivateTrainerApiResponse, DeactivateTrainerApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/team/${queryArg.id}/deactivate`,
+        method: 'POST',
+      }),
+    }),
     listCoachClientTrainingPlans: build.query<
       ListCoachClientTrainingPlansApiResponse,
       ListCoachClientTrainingPlansApiArg
@@ -138,6 +151,12 @@ const injectedRtkApi = api.injectEndpoints({
     >({
       query: (queryArg) => ({
         url: `/v1/coach/clients/${queryArg.clientId}/form-assignments`,
+      }),
+    }),
+    resendTrainerInvite: build.mutation<ResendTrainerInviteApiResponse, ResendTrainerInviteApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/team/${queryArg.id}/resend-invite`,
+        method: 'POST',
       }),
     }),
     showInvitation: build.query<ShowInvitationApiResponse, ShowInvitationApiArg>({
@@ -330,6 +349,13 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.nutritionMealRequest,
       }),
     }),
+    reassignClient: build.mutation<ReassignClientApiResponse, ReassignClientApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/clients/${queryArg.id}/reassign`,
+        method: 'POST',
+        body: queryArg.reassignClientRequest,
+      }),
+    }),
     createCoachThreadMessage: build.mutation<CreateCoachThreadMessageApiResponse, CreateCoachThreadMessageApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/threads/${queryArg.threadId}/messages`,
@@ -340,6 +366,13 @@ const injectedRtkApi = api.injectEndpoints({
     getNutritionFoodImpact: build.query<GetNutritionFoodImpactApiResponse, GetNutritionFoodImpactApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/nutrition-foods/${queryArg.id}/impact`,
+      }),
+    }),
+    trainerAcceptInvite: build.mutation<TrainerAcceptInviteApiResponse, TrainerAcceptInviteApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/auth/trainer-accept-invite`,
+        method: 'POST',
+        body: queryArg.trainerAcceptInviteRequest,
       }),
     }),
     assignNutritionPlan: build.mutation<AssignNutritionPlanApiResponse, AssignNutritionPlanApiArg>({
@@ -452,6 +485,12 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    revokeTrainerInvite: build.mutation<RevokeTrainerInviteApiResponse, RevokeTrainerInviteApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/team/${queryArg.id}`,
+        method: 'DELETE',
+      }),
+    }),
     deleteMeal: build.mutation<DeleteMealApiResponse, DeleteMealApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/nutrition-meals/${queryArg.id}`,
@@ -496,6 +535,9 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    getTeam: build.query<GetTeamApiResponse, GetTeamApiArg>({
+      query: () => ({url: `/v1/coach/team`}),
+    }),
     assignTrainingPlan: build.mutation<AssignTrainingPlanApiResponse, AssignTrainingPlanApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/training-plans/${queryArg.id}/assign`,
@@ -507,6 +549,11 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/v1/coach/nutrition-day-meals/${queryArg.id}`,
         method: 'DELETE',
+      }),
+    }),
+    showTrainerInvitation: build.query<ShowTrainerInvitationApiResponse, ShowTrainerInvitationApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/auth/trainer-invitations/${queryArg.token}`,
       }),
     }),
     listFormTemplates: build.query<ListFormTemplatesApiResponse, ListFormTemplatesApiArg>({
@@ -700,6 +747,13 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.clientProfileFormTemplateUpdateRequest,
       }),
     }),
+    trainerAcceptInviteVerify: build.mutation<TrainerAcceptInviteVerifyApiResponse, TrainerAcceptInviteVerifyApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/auth/trainer-accept-invite/verify`,
+        method: 'POST',
+        body: queryArg.trainerAcceptInviteVerifyRequest,
+      }),
+    }),
     signup: build.mutation<SignupApiResponse, SignupApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/signup`,
@@ -888,6 +942,11 @@ export type ResendClientInviteApiArg = {
   /** Client id */
   id: string;
 };
+export type InviteTrainerApiResponse = /** status 200 Trainer invited */ TeamMemberResponse;
+export type InviteTrainerApiArg = {
+  /** Trainer invite request */
+  trainerInviteRequest: TrainerInviteRequest;
+};
 export type ListCoachClientTrainingSessionsApiResponse =
   /** status 200 Training sessions */ TrainingSessionListResponse;
 export type ListCoachClientTrainingSessionsApiArg = {
@@ -912,6 +971,11 @@ export type GetCoachClientTrainingSessionApiArg = {
   /** Training session id */
   id: string;
 };
+export type DeactivateTrainerApiResponse = /** status 200 Trainer deactivated */ TeamMemberResponse;
+export type DeactivateTrainerApiArg = {
+  /** Coach id */
+  id: string;
+};
 export type ListCoachClientTrainingPlansApiResponse = /** status 200 Training plans */ ClientTrainingPlanListResponse;
 export type ListCoachClientTrainingPlansApiArg = {
   /** Client id */
@@ -928,6 +992,11 @@ export type ListClientFormAssignmentsForCoachApiResponse =
 export type ListClientFormAssignmentsForCoachApiArg = {
   /** Client id */
   clientId: string;
+};
+export type ResendTrainerInviteApiResponse = /** status 200 Trainer */ TeamMemberResponse;
+export type ResendTrainerInviteApiArg = {
+  /** Coach id */
+  id: string;
 };
 export type ShowInvitationApiResponse = /** status 200 Invitation preview */ InvitationPreviewResponse;
 export type ShowInvitationApiArg = {
@@ -1094,6 +1163,13 @@ export type CreateMealApiArg = {
   /** Meal request */
   nutritionMealRequest: NutritionMealRequest;
 };
+export type ReassignClientApiResponse = /** status 200 Client reassigned */ ClientResponse;
+export type ReassignClientApiArg = {
+  /** Client id */
+  id: string;
+  /** Reassign client request */
+  reassignClientRequest: ReassignClientRequest;
+};
 export type CreateCoachThreadMessageApiResponse = /** status 201 Message */ ThreadMessageResponse;
 export type CreateCoachThreadMessageApiArg = {
   /** Thread id */
@@ -1104,6 +1180,11 @@ export type CreateCoachThreadMessageApiArg = {
 export type GetNutritionFoodImpactApiResponse = /** status 200 Impact */ FoodImpactResponse;
 export type GetNutritionFoodImpactApiArg = {
   id: string;
+};
+export type TrainerAcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
+export type TrainerAcceptInviteApiArg = {
+  /** Trainer accept invite request */
+  trainerAcceptInviteRequest: TrainerAcceptInviteRequest;
 };
 export type AssignNutritionPlanApiResponse = /** status 201 Nutrition plan assigned */ NutritionPlanResponse;
 export type AssignNutritionPlanApiArg = {
@@ -1203,6 +1284,11 @@ export type ListMusclesApiArg = {
   /** Case-insensitive muscle name search */
   search?: string;
 };
+export type RevokeTrainerInviteApiResponse = /** status 200 Trainer invitation revoked */ TeamMemberResponse;
+export type RevokeTrainerInviteApiArg = {
+  /** Coach id */
+  id: string;
+};
 export type DeleteMealApiResponse = unknown;
 export type DeleteMealApiArg = {
   /** Meal id */
@@ -1244,6 +1330,8 @@ export type ListClientWeightEntriesApiArg = {
   /** Only entries since this date */
   since?: string;
 };
+export type GetTeamApiResponse = /** status 200 Team */ TeamResponse;
+export type GetTeamApiArg = void;
 export type AssignTrainingPlanApiResponse = /** status 201 Training plan assigned */ TrainingPlanResponse;
 export type AssignTrainingPlanApiArg = {
   /** Training plan id */
@@ -1254,6 +1342,12 @@ export type AssignTrainingPlanApiArg = {
 export type RemoveNutritionSlotOptionApiResponse = unknown;
 export type RemoveNutritionSlotOptionApiArg = {
   id: string;
+};
+export type ShowTrainerInvitationApiResponse =
+  /** status 200 Trainer invitation preview */ TrainerInvitationPreviewResponse;
+export type ShowTrainerInvitationApiArg = {
+  /** Trainer invitation token */
+  token: string;
 };
 export type ListFormTemplatesApiResponse = /** status 200 Form templates */ ClientProfileFormTemplateListResponse;
 export type ListFormTemplatesApiArg = void;
@@ -1449,6 +1543,11 @@ export type UpdateFormTemplateApiArg = {
   id: string;
   /** Form template update request */
   clientProfileFormTemplateUpdateRequest: ClientProfileFormTemplateUpdateRequest;
+};
+export type TrainerAcceptInviteVerifyApiResponse = /** status 200 Auth token */ AuthTokenResponse;
+export type TrainerAcceptInviteVerifyApiArg = {
+  /** Trainer accept invite verification request */
+  trainerAcceptInviteVerifyRequest: TrainerAcceptInviteVerifyRequest;
 };
 export type SignupApiResponse = /** status 201 Signup */ SignupResponse;
 export type SignupApiArg = {
@@ -1836,6 +1935,23 @@ export type CoachProfileUpdateRequest = {
   last_name?: string | null;
   phone?: string | null;
   whatsapp_number?: string | null;
+};
+export type TeamMember = {
+  email: string | null;
+  first_name: string | null;
+  id: string;
+  invitation_sent_at: string | null;
+  is_owner: boolean;
+  last_name: string | null;
+  status: 'invited' | 'active' | 'inactive';
+};
+export type TeamMemberResponse = {
+  data: TeamMember;
+};
+export type TrainerInviteRequest = {
+  email: string;
+  first_name?: string | null;
+  last_name?: string | null;
 };
 export type TrainingPerformedSet = {
   completed: boolean;
@@ -2312,6 +2428,9 @@ export type NutritionMealRequest = {
   name: string;
   notes?: string | null;
 };
+export type ReassignClientRequest = {
+  coach_id: string;
+};
 export type ThreadMessage = {
   author_id?: string | null;
   author_type: 'coach' | 'client' | 'system';
@@ -2345,6 +2464,10 @@ export type FoodImpactResponse = {
       name?: string;
     }[];
   };
+};
+export type TrainerAcceptInviteRequest = {
+  email: string;
+  invitation_token: string;
 };
 export type NutritionPlanAssignRequest = {
   client_id: string;
@@ -2438,10 +2561,20 @@ export type WeightEntryListResponse = {
     [key: string]: any;
   };
 };
+export type TeamResponse = {
+  data: TeamMember[];
+};
 export type TrainingPlanAssignRequest = {
   client_id: string;
   end_date?: string | null;
   start_date?: string | null;
+};
+export type TrainerInvitationPreviewResponse = {
+  data: {
+    business_name: string;
+    email?: string | null;
+    first_name?: string | null;
+  };
 };
 export type ClientProfileFormTemplateListResponse = {
   data: ClientProfileFormTemplate[];
@@ -2712,6 +2845,11 @@ export type ClientProfileFormTemplateUpdateRequest = {
   }[];
   status?: 'active' | 'archived';
 };
+export type TrainerAcceptInviteVerifyRequest = {
+  email: string;
+  invitation_token: string;
+  otp: string;
+};
 export type SignupResponse = {
   confirmation_sent_at: string | null;
   email: string;
@@ -2886,15 +3024,18 @@ export const {
   useLazyGetCoachProfileQuery,
   useUpdateCoachProfileMutation,
   useResendClientInviteMutation,
+  useInviteTrainerMutation,
   useListCoachClientTrainingSessionsQuery,
   useLazyListCoachClientTrainingSessionsQuery,
   useSubmitApplicationMutation,
   useGetCoachClientTrainingSessionQuery,
   useLazyGetCoachClientTrainingSessionQuery,
+  useDeactivateTrainerMutation,
   useListCoachClientTrainingPlansQuery,
   useLazyListCoachClientTrainingPlansQuery,
   useListClientFormAssignmentsForCoachQuery,
   useLazyListClientFormAssignmentsForCoachQuery,
+  useResendTrainerInviteMutation,
   useShowInvitationQuery,
   useLazyShowInvitationQuery,
   useListNutritionPlansQuery,
@@ -2934,9 +3075,11 @@ export const {
   useListMealsQuery,
   useLazyListMealsQuery,
   useCreateMealMutation,
+  useReassignClientMutation,
   useCreateCoachThreadMessageMutation,
   useGetNutritionFoodImpactQuery,
   useLazyGetNutritionFoodImpactQuery,
+  useTrainerAcceptInviteMutation,
   useAssignNutritionPlanMutation,
   useSyncBillingMutation,
   useGetBillingQuery,
@@ -2959,6 +3102,7 @@ export const {
   useCreateBusinessMutation,
   useListMusclesQuery,
   useLazyListMusclesQuery,
+  useRevokeTrainerInviteMutation,
   useDeleteMealMutation,
   useGetMealQuery,
   useLazyGetMealQuery,
@@ -2969,8 +3113,12 @@ export const {
   useUpdateWorkoutMutation,
   useListClientWeightEntriesQuery,
   useLazyListClientWeightEntriesQuery,
+  useGetTeamQuery,
+  useLazyGetTeamQuery,
   useAssignTrainingPlanMutation,
   useRemoveNutritionSlotOptionMutation,
+  useShowTrainerInvitationQuery,
+  useLazyShowTrainerInvitationQuery,
   useListFormTemplatesQuery,
   useLazyListFormTemplatesQuery,
   useCreateFormTemplateMutation,
@@ -3012,6 +3160,7 @@ export const {
   useGetFormTemplateQuery,
   useLazyGetFormTemplateQuery,
   useUpdateFormTemplateMutation,
+  useTrainerAcceptInviteVerifyMutation,
   useSignupMutation,
   useListCoachMealLogsQuery,
   useLazyListCoachMealLogsQuery,

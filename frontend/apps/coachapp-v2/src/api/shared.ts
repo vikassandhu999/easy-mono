@@ -141,6 +141,14 @@ export const getApiErrorMessage = (error: unknown, fallback: string): string => 
   return fallback;
 };
 
+export const getApiErrorCode = (error: unknown): null | string => {
+  if (error && typeof error === 'object' && 'data' in error) {
+    const data = (error as {data?: ErrorResponse}).data;
+    return data?.error_code ?? null;
+  }
+  return null;
+};
+
 /**
  * Bridges server errors into react-hook-form's setError.
  * - Field errors whose name matches a form field → setError('fieldName', {message})

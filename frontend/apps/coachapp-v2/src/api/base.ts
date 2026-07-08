@@ -116,6 +116,7 @@ export const api = createApi({
     'ProfileField',
     'Prospect',
     'Recipe',
+    'Team',
     'TrainingExercise',
     'TrainingPlan',
     'TrainingPlanItem',

@@ -154,6 +154,13 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/client/nutrition-recipes/${queryArg.id}`,
       }),
     }),
+    trainerAcceptInvite: build.mutation<TrainerAcceptInviteApiResponse, TrainerAcceptInviteApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/auth/trainer-accept-invite`,
+        method: 'POST',
+        body: queryArg.trainerAcceptInviteRequest,
+      }),
+    }),
     getClientCoachingProfile: build.query<GetClientCoachingProfileApiResponse, GetClientCoachingProfileApiArg>({
       query: () => ({url: `/v1/client/profile`}),
     }),
@@ -252,6 +259,11 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/client/nutrition-foods/${queryArg.id}`,
       }),
     }),
+    showTrainerInvitation: build.query<ShowTrainerInvitationApiResponse, ShowTrainerInvitationApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/auth/trainer-invitations/${queryArg.token}`,
+      }),
+    }),
     listWeightEntries: build.query<ListWeightEntriesApiResponse, ListWeightEntriesApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/weight_entries`,
@@ -304,6 +316,13 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/client/nutrition-food-log-entries`,
         method: 'POST',
         body: queryArg.foodLogEntryRequest,
+      }),
+    }),
+    trainerAcceptInviteVerify: build.mutation<TrainerAcceptInviteVerifyApiResponse, TrainerAcceptInviteVerifyApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/auth/trainer-accept-invite/verify`,
+        method: 'POST',
+        body: queryArg.trainerAcceptInviteVerifyRequest,
       }),
     }),
     signup: build.mutation<SignupApiResponse, SignupApiArg>({
@@ -476,6 +495,11 @@ export type GetClientRecipeApiArg = {
   /** Recipe id */
   id: string;
 };
+export type TrainerAcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
+export type TrainerAcceptInviteApiArg = {
+  /** Trainer accept invite request */
+  trainerAcceptInviteRequest: TrainerAcceptInviteRequest;
+};
 export type GetClientCoachingProfileApiResponse =
   /** status 200 Client coaching profile */ ClientCoachingProfileResponse;
 export type GetClientCoachingProfileApiArg = void;
@@ -559,6 +583,12 @@ export type GetClientFoodApiArg = {
   /** Food id */
   id: string;
 };
+export type ShowTrainerInvitationApiResponse =
+  /** status 200 Trainer invitation preview */ TrainerInvitationPreviewResponse;
+export type ShowTrainerInvitationApiArg = {
+  /** Trainer invitation token */
+  token: string;
+};
 export type ListWeightEntriesApiResponse = /** status 200 Weight entries */ WeightEntryListResponse;
 export type ListWeightEntriesApiArg = {
   /** Only entries since this date */
@@ -599,6 +629,11 @@ export type CreateFoodLogEntryApiResponse = /** status 201 Food log entry create
 export type CreateFoodLogEntryApiArg = {
   /** Food log entry request */
   foodLogEntryRequest: FoodLogEntryRequest;
+};
+export type TrainerAcceptInviteVerifyApiResponse = /** status 200 Auth token */ AuthTokenResponse;
+export type TrainerAcceptInviteVerifyApiArg = {
+  /** Trainer accept invite verification request */
+  trainerAcceptInviteVerifyRequest: TrainerAcceptInviteVerifyRequest;
 };
 export type SignupApiResponse = /** status 201 Signup */ SignupResponse;
 export type SignupApiArg = {
@@ -1224,6 +1259,10 @@ export type TrainingPerformedSetRequest = {
 export type RecipeResponse = {
   data: Recipe;
 };
+export type TrainerAcceptInviteRequest = {
+  email: string;
+  invitation_token: string;
+};
 export type ClientCoachingProfile = {
   client_id: string;
   general: {
@@ -1322,6 +1361,13 @@ export type TrainingSessionUpdateRequest = {
 export type FoodResponse = {
   data: Food;
 };
+export type TrainerInvitationPreviewResponse = {
+  data: {
+    business_name: string;
+    email?: string | null;
+    first_name?: string | null;
+  };
+};
 export type WeightEntry = {
   date: string;
   id: string;
@@ -1385,6 +1431,11 @@ export type ThreadMessageRequest = {
   body: string;
   kind?: string;
 };
+export type TrainerAcceptInviteVerifyRequest = {
+  email: string;
+  invitation_token: string;
+  otp: string;
+};
 export type SignupResponse = {
   confirmation_sent_at: string | null;
   email: string;
@@ -1446,6 +1497,7 @@ export const {
   useCreateClientPerformedSetMutation,
   useGetClientRecipeQuery,
   useLazyGetClientRecipeQuery,
+  useTrainerAcceptInviteMutation,
   useGetClientCoachingProfileQuery,
   useLazyGetClientCoachingProfileQuery,
   useUpdateClientCoachingProfileMutation,
@@ -1470,6 +1522,8 @@ export const {
   useLazyGetClientTrainingPlanQuery,
   useGetClientFoodQuery,
   useLazyGetClientFoodQuery,
+  useShowTrainerInvitationQuery,
+  useLazyShowTrainerInvitationQuery,
   useListWeightEntriesQuery,
   useLazyListWeightEntriesQuery,
   useCreateWeightEntryMutation,
@@ -1480,6 +1534,7 @@ export const {
   useLazyListClientMealLogsQuery,
   useCreateClientThreadMessageMutation,
   useCreateFoodLogEntryMutation,
+  useTrainerAcceptInviteVerifyMutation,
   useSignupMutation,
   useDeleteWeightEntryMutation,
   useListClientExercisesQuery,

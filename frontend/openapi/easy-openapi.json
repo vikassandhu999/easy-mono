@@ -2,6 +2,26 @@
   "components": {
     "responses": {},
     "schemas": {
+      "TeamResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TeamMember"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "TeamResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TeamResponse",
+        "x-validate": null
+      },
       "Thread": {
         "additionalProperties": false,
         "properties": {
@@ -541,6 +561,21 @@
         "title": "WeightEntry",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntry",
+        "x-validate": null
+      },
+      "TeamMemberResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TeamMember"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "TeamMemberResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TeamMemberResponse",
         "x-validate": null
       },
       "LandingPage": {
@@ -1822,6 +1857,71 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanListResponse",
         "x-validate": null
       },
+      "TeamMember": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "first_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "invitation_sent_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "is_owner": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "enum": [
+              "invited",
+              "active",
+              "inactive"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "first_name",
+          "last_name",
+          "email",
+          "status",
+          "is_owner",
+          "invitation_sent_at"
+        ],
+        "title": "TeamMember",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "NutritionMeal": {
         "additionalProperties": false,
         "properties": {
@@ -3044,6 +3144,41 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectProgram",
         "x-validate": null
       },
+      "TrainerInviteRequest": {
+        "additionalProperties": false,
+        "example": {
+          "email": "trainer@example.com",
+          "first_name": "Tara",
+          "last_name": "Trainer"
+        },
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "first_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "TrainerInviteRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "ClientProfileUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -3252,6 +3387,47 @@
         "title": "FoodRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "TrainerInvitationPreviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": false,
+            "properties": {
+              "business_name": {
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "email": {
+                "format": "email",
+                "nullable": true,
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "first_name": {
+                "nullable": true,
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "business_name"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "TrainerInvitationPreviewResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainerInvitationPreviewResponse",
         "x-validate": null
       },
       "ClientProfileFormSubmissionResponse": {
@@ -5483,6 +5659,41 @@
         "title": "NutritionPlanDayResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanDayResponse",
+        "x-validate": null
+      },
+      "TrainerAcceptInviteVerifyRequest": {
+        "additionalProperties": false,
+        "example": {
+          "email": "trainer@example.com",
+          "invitation_token": "invite-token",
+          "otp": "123456"
+        },
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "invitation_token": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "otp": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "invitation_token",
+          "email",
+          "otp"
+        ],
+        "title": "TrainerAcceptInviteVerifyRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "TrainingPlanClient": {
@@ -8948,6 +9159,34 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RecipeResponse",
         "x-validate": null
       },
+      "TrainerAcceptInviteRequest": {
+        "additionalProperties": false,
+        "example": {
+          "email": "trainer@example.com",
+          "invitation_token": "invite-token"
+        },
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "invitation_token": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "invitation_token",
+          "email"
+        ],
+        "title": "TrainerAcceptInviteRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "InvitationPreviewResponse": {
         "additionalProperties": false,
         "properties": {
@@ -9056,6 +9295,27 @@
         "title": "CoachProfile",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachProfile",
+        "x-validate": null
+      },
+      "ReassignClientRequest": {
+        "additionalProperties": false,
+        "example": {
+          "coach_id": "b2d2b1b0-1234-4a2b-9c3d-abcdef123456"
+        },
+        "properties": {
+          "coach_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "coach_id"
+        ],
+        "title": "ReassignClientRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "ThreadMessageRequest": {
@@ -10452,6 +10712,76 @@
         ]
       }
     },
+    "/v1/coach/team/invite": {
+      "post": {
+        "callbacks": {},
+        "description": "Owner-only: invites a trainer to join the authenticated business.",
+        "operationId": "inviteTrainer",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainerInviteRequest"
+              }
+            }
+          },
+          "description": "Trainer invite request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponse"
+                }
+              }
+            },
+            "description": "Trainer invited"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Invite trainer",
+        "tags": [
+          "coach team"
+        ]
+      }
+    },
     "/v1/coach/clients/{client_id}/training-sessions": {
       "get": {
         "callbacks": {},
@@ -10780,6 +11110,87 @@
         ]
       }
     },
+    "/v1/coach/team/{id}/deactivate": {
+      "post": {
+        "callbacks": {},
+        "description": "Owner-only: deactivates an active trainer and reassigns their clients to the owner.",
+        "operationId": "deactivateTrainer",
+        "parameters": [
+          {
+            "description": "Coach id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponse"
+                }
+              }
+            },
+            "description": "Trainer deactivated"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Deactivate trainer",
+        "tags": [
+          "coach team"
+        ]
+      }
+    },
     "/v1/coach/clients/{client_id}/training-plans": {
       "get": {
         "callbacks": {},
@@ -11050,6 +11461,87 @@
         "summary": "Start a thread",
         "tags": [
           "client threads"
+        ]
+      }
+    },
+    "/v1/coach/team/{id}/resend-invite": {
+      "post": {
+        "callbacks": {},
+        "description": "Owner-only: refreshes and resends a pending trainer invitation.",
+        "operationId": "resendTrainerInvite",
+        "parameters": [
+          {
+            "description": "Coach id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponse"
+                }
+              }
+            },
+            "description": "Trainer"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Resend trainer invitation",
+        "tags": [
+          "coach team"
         ]
       }
     },
@@ -12547,6 +13039,16 @@
             },
             "description": "Unauthorized"
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -13573,6 +14075,98 @@
         ]
       }
     },
+    "/v1/coach/clients/{id}/reassign": {
+      "post": {
+        "callbacks": {},
+        "description": "Owner-only: reassigns a client to a different active trainer on the team.",
+        "operationId": "reassignClient",
+        "parameters": [
+          {
+            "description": "Client id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignClientRequest"
+              }
+            }
+          },
+          "description": "Reassign client request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            },
+            "description": "Client reassigned"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Reassign client",
+        "tags": [
+          "coach clients"
+        ]
+      }
+    },
     "/v1/client/nutrition-recipes/{id}": {
       "get": {
         "callbacks": {},
@@ -13762,6 +14356,71 @@
         "summary": "Show plans/templates affected by a food",
         "tags": [
           "coach foods"
+        ]
+      }
+    },
+    "/v1/auth/trainer-accept-invite": {
+      "post": {
+        "callbacks": {},
+        "description": "Starts trainer invitation acceptance by sending an OTP to the invited email.",
+        "operationId": "trainerAcceptInvite",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainerAcceptInviteRequest"
+              }
+            }
+          },
+          "description": "Trainer accept invite request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "OTP sent"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invitation not found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invitation unavailable"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "summary": "Accept trainer invitation",
+        "tags": [
+          "auth"
         ]
       }
     },
@@ -14150,6 +14809,16 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
           },
           "422": {
             "content": {
@@ -15706,6 +16375,87 @@
         ]
       }
     },
+    "/v1/coach/team/{id}": {
+      "delete": {
+        "callbacks": {},
+        "description": "Owner-only: deletes a pending trainer invitation.",
+        "operationId": "revokeTrainerInvite",
+        "parameters": [
+          {
+            "description": "Coach id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponse"
+                }
+              }
+            },
+            "description": "Trainer invitation revoked"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Revoke trainer invitation",
+        "tags": [
+          "coach team"
+        ]
+      }
+    },
     "/v1/coach/nutrition-meals/{id}": {
       "delete": {
         "callbacks": {},
@@ -16285,6 +17035,65 @@
         ]
       }
     },
+    "/v1/coach/team": {
+      "get": {
+        "callbacks": {},
+        "description": "Owner-only: lists every trainer on the authenticated business, invited or active.",
+        "operationId": "getTeam",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            },
+            "description": "Team"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List team",
+        "tags": [
+          "coach team"
+        ]
+      }
+    },
     "/v1/coach/training-plans/{id}/assign": {
       "post": {
         "callbacks": {},
@@ -16417,6 +17226,62 @@
         "summary": "Remove a meal option from a plan day's slot",
         "tags": [
           "coach nutrition plan days"
+        ]
+      }
+    },
+    "/v1/auth/trainer-invitations/{token}": {
+      "get": {
+        "callbacks": {},
+        "description": "Returns invitation state and prefill details for a trainer invitation token.",
+        "operationId": "showTrainerInvitation",
+        "parameters": [
+          {
+            "description": "Trainer invitation token",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainerInvitationPreviewResponse"
+                }
+              }
+            },
+            "description": "Trainer invitation preview"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invitation not found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invitation unavailable"
+          }
+        },
+        "summary": "Preview trainer invitation",
+        "tags": [
+          "auth"
         ]
       }
     },
@@ -18133,6 +18998,16 @@
             },
             "description": "Unauthorized"
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not the business owner"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -18860,6 +19735,91 @@
         "summary": "Create food log entry",
         "tags": [
           "client food log entries"
+        ]
+      }
+    },
+    "/v1/auth/trainer-accept-invite/verify": {
+      "post": {
+        "callbacks": {},
+        "description": "Verifies a trainer invitation OTP, links or creates the user, and returns auth tokens.",
+        "operationId": "trainerAcceptInviteVerify",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainerAcceptInviteVerifyRequest"
+              }
+            }
+          },
+          "description": "Trainer accept invite verification request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            },
+            "description": "Auth token"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid OTP"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invitation not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Already a coach elsewhere"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invitation or OTP expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "summary": "Verify trainer invitation OTP",
+        "tags": [
+          "auth"
         ]
       }
     },

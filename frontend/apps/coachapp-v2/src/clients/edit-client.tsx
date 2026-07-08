@@ -1,3 +1,4 @@
+import {toast} from '@heroui/react';
 import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
@@ -6,7 +7,8 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
-import {applyFormErrors} from '@/api/shared';
+import {applyFormErrors, getApiErrorMessage} from '@/api/shared';
+import {useReassignClientMutation} from '@/api/team';
 import EditClientForm, {
   clientToEditFormValues,
   EDIT_CLIENT_FORM_FIELDS,
@@ -22,6 +24,7 @@ export default function EditClient() {
 
   const {data, isError, isLoading: isFetching} = useGetClientQuery(id!);
   const [updateClient, {isLoading: isUpdating}] = useUpdateClientMutation();
+  const [reassignClient] = useReassignClientMutation();
   const client = data?.data;
 
   const form = useEditClientForm({
@@ -70,6 +73,16 @@ export default function EditClient() {
         body: editClientToUpdateRequest(formData),
         id: id!,
       }).unwrap();
+      if (formData.assigned_trainer_id) {
+        try {
+          await reassignClient({
+            clientId: id!,
+            body: {coach_id: formData.assigned_trainer_id},
+          }).unwrap();
+        } catch (reassignErr) {
+          toast.danger(getApiErrorMessage(reassignErr, 'Client was saved, but reassigning the trainer failed.'));
+        }
+      }
       goBack();
     } catch (err) {
       applyFormErrors(

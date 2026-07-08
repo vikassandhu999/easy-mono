@@ -4,9 +4,11 @@ import AppShell from '@/@components/app-shell';
 import {ROUTES} from '@/@config/routes';
 import {withAuth} from '@/@hoc/with-auth';
 import {withNotAuth} from '@/@hoc/with-not-auth';
+import AcceptInvite from '@/auth/accept-invite';
 import Login from '@/auth/login';
 import RegisterBusiness from '@/auth/register-business';
 import Signup from '@/auth/signup';
+import VerifyInviteOtp from '@/auth/verify-invite-otp';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
 import VerifySignupOtp from '@/auth/verify-signup-otp';
 import CreateCheckin from '@/checkins/create-checkin';
@@ -60,6 +62,8 @@ export const router = createBrowserRouter([
   {path: ROUTES.SIGNUP, Component: SignupScreen},
   {path: ROUTES.VERIFY_LOGIN_OTP, Component: VerifyLoginOtp},
   {path: ROUTES.VERIFY_SIGNUP_OTP, Component: VerifySignupOtp},
+  {path: ROUTES.ACCEPT_INVITE, Component: AcceptInvite},
+  {path: ROUTES.VERIFY_INVITE_OTP, Component: VerifyInviteOtp},
 
   // Onboarding (protected, no shell)
   {path: ROUTES.REGISTER_BUSINESS, Component: RegisterBusinessScreen},

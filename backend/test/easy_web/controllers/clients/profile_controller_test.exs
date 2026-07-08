@@ -42,6 +42,54 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
              } = data["coach"]
     end
 
+    test "returns assigned coach's info when business has multiple coaches" do
+      business = insert(:business)
+      owner_coach = insert(:coach, business: business)
+      assigned_coach = insert(:coach, business: business, first_name: "Assigned", last_name: "Coach")
+
+      user = insert(:user, email_confirmed_at: DateTime.utc_now(:second))
+
+      client =
+        insert(:client,
+          business: business,
+          creator: owner_coach,
+          assigned_coach: assigned_coach,
+          user: user,
+          status: :active
+        )
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> get("/v1/client/me")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["coach"]["first_name"] == "Assigned"
+      assert data["coach"]["last_name"] == "Coach"
+    end
+
+    test "returns nil coach when client has no assigned coach" do
+      coach = insert(:coach)
+      user = insert(:user, email_confirmed_at: DateTime.utc_now(:second))
+
+      client =
+        insert(:client,
+          business: coach.business,
+          creator: coach,
+          assigned_coach: nil,
+          user: user,
+          status: :active
+        )
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> get("/v1/client/me")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["coach"] == nil
+    end
+
     test "returns 403 without auth token" do
       conn = build_conn() |> get("/v1/client/me")
       assert json_response(conn, 403)

@@ -142,11 +142,7 @@ defmodule Easy.Clients do
           {:ok, %{client: Client.t(), coach: Orgs.Coach.t() | nil}} | {:error, :not_found}
   def get_client_account_profile(%Ctx{} = ctx) do
     with {:ok, client} <- get_client_account(ctx) do
-      coach =
-        Orgs.Coach
-        |> Orgs.Coach.for_business(ctx.business_id)
-        |> Orgs.Coach.include_preloads(ctx.business_id)
-        |> Repo.one()
+      coach = get_assigned_coach(ctx.business_id, client.assigned_coach_id)
 
       {:ok, %{client: client, coach: coach}}
     end
@@ -244,6 +240,15 @@ defmodule Easy.Clients do
     |> Orgs.Coach.include_preloads(ctx.business_id)
     |> Repo.one()
     |> ok_or_not_found()
+  end
+
+  defp get_assigned_coach(_business_id, nil), do: nil
+
+  defp get_assigned_coach(business_id, coach_id) do
+    Orgs.Coach
+    |> Orgs.Coach.for_business(business_id)
+    |> Orgs.Coach.include_preloads(business_id)
+    |> Repo.get(coach_id)
   end
 
   defp summary(query) do

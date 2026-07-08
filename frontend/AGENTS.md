@@ -10,7 +10,7 @@ This is the frontend-workspace contract: what applies to all apps and packages. 
   - `apps/clientapp-v2`: client PWA and Capacitor shell, React 19 + Vite, port 1314.
   - `apps/website`: marketing site, Next.js 16, port 3000.
 - Shared packages:
-  - `packages/ui`, `packages/hooks`, `packages/utils`, `packages/chat`, `packages/websocket`.
+  - `packages/ui`, `packages/hooks`, `packages/utils`.
   - `packages/error-parser`, `packages/typings`.
 
 ## Commands

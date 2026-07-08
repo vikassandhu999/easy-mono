@@ -154,7 +154,7 @@ defmodule Easy.Nutrition.MealLogTest do
     test "create_client_food_log_entry with an explicit meal_id returns not_found for another client's meal" do
       %{client_ctx: client_ctx, client: client, business: business, creator: creator} = build_scenario()
 
-      coach_ctx = %Ctx{business_id: business.id, user_id: creator.user_id}
+      coach_ctx = Ctx.new(business.id, creator.user_id, creator.id, false)
       {:ok, other_template} = NutritionPlans.create_plan(coach_ctx, %{"name" => "Other Template"})
       other_client = insert(:client, business: business, creator: creator)
 
@@ -196,7 +196,7 @@ defmodule Easy.Nutrition.MealLogTest do
   end
 
   defp ctx_for(plan) do
-    %Ctx{business_id: plan.business_id, user_id: plan.creator.user_id}
+    Ctx.new(plan.business_id, plan.creator.user_id, plan.creator.id, false)
   end
 
   defp build_scenario do
@@ -204,7 +204,7 @@ defmodule Easy.Nutrition.MealLogTest do
     ctx = ctx_for(plan)
 
     {:ok, template} = NutritionPlans.create_plan(ctx, %{"name" => "Template"})
-    client = insert(:client, business: plan.business)
+    client = insert(:client, business: plan.business, assigned_coach: plan.creator)
     client_ctx = %Ctx{business_id: plan.business_id, user_id: client.user_id}
     {:ok, assigned_plan} = NutritionPlans.assign_plan_to_client(ctx, client.id, template.id, %{})
 

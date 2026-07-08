@@ -1,4 +1,5 @@
 defmodule Easy.NutritionPlans do
+  alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Nutrition.DayMeal
@@ -18,11 +19,16 @@ defmodule Easy.NutritionPlans do
 
   @spec get_plan_full(Ctx.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
   def get_plan_full(%Ctx{} = ctx, plan_id) do
-    Plan
-    |> Plan.for_business(ctx.business_id)
-    |> Plan.include_full(ctx.business_id)
-    |> Repo.get(plan_id)
-    |> ok_or_not_found()
+    plan =
+      Plan
+      |> Plan.for_business(ctx.business_id)
+      |> Plan.include_full(ctx.business_id)
+      |> Repo.get(plan_id)
+
+    with {:ok, plan} <- ok_or_not_found(plan),
+         :ok <- Clients.authorize_client_id(ctx, plan.client_id) do
+      {:ok, plan}
+    end
   end
 
   @spec get_client_plan_full(Ctx.t(), String.t()) ::
@@ -79,7 +85,7 @@ defmodule Easy.NutritionPlans do
     limit = min(Keyword.get(opts, :limit, 20), 100)
     status = Keyword.get(opts, :status)
 
-    with {:ok, _client} <- fetch_client(ctx.business_id, client_id) do
+    with {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
       base =
         Plan
         |> Plan.for_business(ctx.business_id)
@@ -121,7 +127,7 @@ defmodule Easy.NutritionPlans do
   @spec update_plan(Ctx.t(), String.t(), map()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan(%Ctx{} = ctx, plan_id, attrs) do
-    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+    with {:ok, plan} <- get_plan(ctx, plan_id) do
       plan
       |> Plan.update_changeset(attrs)
       |> Repo.update()
@@ -131,7 +137,7 @@ defmodule Easy.NutritionPlans do
   @spec delete_plan(Ctx.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan(%Ctx{} = ctx, plan_id) do
-    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+    with {:ok, plan} <- get_plan(ctx, plan_id) do
       Repo.delete(plan)
     end
   end
@@ -140,8 +146,8 @@ defmodule Easy.NutritionPlans do
           {:ok, Plan.t()} | {:error, any()}
   def assign_plan_to_client(%Ctx{} = ctx, client_id, plan_id, attrs) do
     with {:ok, coach} <- get_coach(ctx),
-         {:ok, plan} <- get_plan(ctx.business_id, plan_id),
-         {:ok, _client} <- fetch_client(ctx.business_id, client_id) do
+         {:ok, plan} <- get_plan(ctx, plan_id),
+         {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
       assign_to_client(plan, client_id, coach.id, attrs)
     end
   end
@@ -150,7 +156,7 @@ defmodule Easy.NutritionPlans do
           {:ok, Plan.t()} | {:error, any()}
   def duplicate_plan(%Ctx{} = ctx, plan_id) do
     with {:ok, coach} <- get_coach(ctx),
-         {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+         {:ok, plan} <- get_plan(ctx, plan_id) do
       duplicate(plan, coach.id)
     end
   end
@@ -158,7 +164,7 @@ defmodule Easy.NutritionPlans do
   @spec create_plan_day(Ctx.t(), String.t(), map()) ::
           {:ok, PlanDay.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_day(%Ctx{} = ctx, plan_id, attrs) do
-    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+    with {:ok, plan} <- get_plan(ctx, plan_id) do
       position = (max_day_position(plan.id) || -1) + 1
       name = attrs[:name] || "Day #{position + 1}"
 
@@ -170,7 +176,7 @@ defmodule Easy.NutritionPlans do
   @spec update_plan_day(Ctx.t(), String.t(), map()) ::
           {:ok, PlanDay.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan_day(%Ctx{} = ctx, day_id, attrs) do
-    with {:ok, day} <- get_plan_day(ctx.business_id, day_id) do
+    with {:ok, day} <- get_plan_day(ctx, day_id) do
       day |> PlanDay.update_changeset(attrs) |> Repo.update()
     end
   end
@@ -178,7 +184,7 @@ defmodule Easy.NutritionPlans do
   @spec delete_plan_day(Ctx.t(), String.t()) ::
           {:ok, PlanDay.t()} | {:error, :not_found | :last_day | Ecto.Changeset.t()}
   def delete_plan_day(%Ctx{} = ctx, day_id) do
-    with {:ok, day} <- get_plan_day(ctx.business_id, day_id) do
+    with {:ok, day} <- get_plan_day(ctx, day_id) do
       fallback =
         PlanDay
         |> PlanDay.for_business(ctx.business_id)
@@ -215,8 +221,8 @@ defmodule Easy.NutritionPlans do
     day_id = attrs[:nutrition_plan_day_id]
     weekday = to_string(attrs[:day_of_week])
 
-    with {:ok, plan} <- get_plan(ctx.business_id, plan_id),
-         {:ok, day} <- get_plan_day(ctx.business_id, day_id),
+    with {:ok, plan} <- get_plan(ctx, plan_id),
+         {:ok, day} <- get_plan_day(ctx, day_id),
          :ok <- ensure_day_in_plan(day, plan.id),
          :ok <- validate_schedule_day(weekday) do
       existing =
@@ -243,7 +249,7 @@ defmodule Easy.NutritionPlans do
     meal_id = attrs[:nutrition_meal_id]
     slot = to_string(attrs[:meal_slot])
 
-    with {:ok, day} <- get_plan_day(ctx.business_id, day_id),
+    with {:ok, day} <- get_plan_day(ctx, day_id),
          {:ok, :valid} <- ensure_meal_for_plan(day.nutrition_plan_id, ctx.business_id, meal_id) do
       existing =
         DayMeal
@@ -268,7 +274,7 @@ defmodule Easy.NutritionPlans do
   @spec remove_slot_option(Ctx.t(), String.t()) ::
           {:ok, DayMeal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def remove_slot_option(%Ctx{} = ctx, day_meal_id) do
-    with {:ok, dm} <- get_day_meal(ctx.business_id, day_meal_id) do
+    with {:ok, dm} <- get_day_meal(ctx, day_meal_id) do
       Repo.transaction(fn ->
         case Repo.delete(dm) do
           {:ok, deleted} ->
@@ -285,7 +291,7 @@ defmodule Easy.NutritionPlans do
   @spec make_default_option(Ctx.t(), String.t()) ::
           {:ok, DayMeal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def make_default_option(%Ctx{} = ctx, day_meal_id) do
-    with {:ok, dm} <- get_day_meal(ctx.business_id, day_meal_id) do
+    with {:ok, dm} <- get_day_meal(ctx, day_meal_id) do
       Repo.transaction(fn ->
         siblings =
           DayMeal
@@ -322,11 +328,16 @@ defmodule Easy.NutritionPlans do
 
   # Private
 
-  defp get_plan(business_id, plan_id) do
-    Plan
-    |> Plan.for_business(business_id)
-    |> Repo.get(plan_id)
-    |> ok_or_not_found()
+  defp get_plan(%Ctx{} = ctx, plan_id) do
+    plan =
+      Plan
+      |> Plan.for_business(ctx.business_id)
+      |> Repo.get(plan_id)
+
+    with {:ok, plan} <- ok_or_not_found(plan),
+         :ok <- Clients.authorize_client_id(ctx, plan.client_id) do
+      {:ok, plan}
+    end
   end
 
   defp compact_slot_positions(business_id, day_id, slot) do
@@ -348,14 +359,24 @@ defmodule Easy.NutritionPlans do
     PlanDay |> PlanDay.for_plan(plan_id) |> Repo.aggregate(:max, :position)
   end
 
-  defp get_plan_day(_business_id, nil), do: {:error, :not_found}
+  defp get_plan_day(%Ctx{}, nil), do: {:error, :not_found}
 
-  defp get_plan_day(business_id, day_id) do
-    PlanDay |> PlanDay.for_business(business_id) |> Repo.get(day_id) |> ok_or_not_found()
+  defp get_plan_day(%Ctx{} = ctx, day_id) do
+    day = PlanDay |> PlanDay.for_business(ctx.business_id) |> Repo.get(day_id)
+
+    with {:ok, day} <- ok_or_not_found(day),
+         {:ok, _plan} <- get_plan(ctx, day.nutrition_plan_id) do
+      {:ok, day}
+    end
   end
 
-  defp get_day_meal(business_id, day_meal_id) do
-    DayMeal |> DayMeal.for_business(business_id) |> Repo.get(day_meal_id) |> ok_or_not_found()
+  defp get_day_meal(%Ctx{} = ctx, day_meal_id) do
+    dm = DayMeal |> DayMeal.for_business(ctx.business_id) |> Repo.get(day_meal_id)
+
+    with {:ok, dm} <- ok_or_not_found(dm),
+         {:ok, _day} <- get_plan_day(ctx, dm.nutrition_plan_day_id) do
+      {:ok, dm}
+    end
   end
 
   defp ensure_day_in_plan(%PlanDay{nutrition_plan_id: plan_id}, plan_id), do: :ok
@@ -476,16 +497,6 @@ defmodule Easy.NutritionPlans do
     |> Plan.newest()
     |> limit(1)
     |> Repo.one()
-  end
-
-  defp fetch_client(_business_id, nil), do: {:error, :not_found}
-  defp fetch_client(_business_id, ""), do: {:error, :not_found}
-
-  defp fetch_client(business_id, client_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Repo.get(client_id)
-    |> ok_or_not_found()
   end
 
   defp get_client(%Ctx{} = ctx) do

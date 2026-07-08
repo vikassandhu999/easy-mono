@@ -16,7 +16,7 @@ defmodule Easy.NutritionPlanDaysTest do
 
   defp ctx_for(plan) do
     coach = plan.creator
-    %Easy.Ctx{business_id: plan.business_id, user_id: coach.user_id}
+    Easy.Ctx.new(plan.business_id, coach.user_id, coach.id, false)
   end
 
   describe "create_plan/2 seeds day structure" do
@@ -233,7 +233,7 @@ defmodule Easy.NutritionPlanDaysTest do
           nutrition_meal_id: m2.id
         })
 
-      client = insert(:client, business: plan.business)
+      client = insert(:client, business: plan.business, assigned_coach: plan.creator)
       client_ctx = %Easy.Ctx{business_id: plan.business_id, user_id: client.user_id}
 
       {:ok, assigned_plan} =

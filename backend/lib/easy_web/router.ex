@@ -216,14 +216,6 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/training-sessions", WorkoutSessionController, :index
     get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
 
-    # Threads
-    get "/threads", ThreadController, :index
-    get "/threads/:id", ThreadController, :show
-    patch "/threads/:id", ThreadController, :update
-    post "/threads/:thread_id/messages", ThreadMessageController, :create
-    get "/clients/:client_id/threads", ThreadController, :client_threads
-    post "/clients/:client_id/threads", ThreadController, :create
-
     # Meal logs (view client nutrition data — read-only)
     get "/clients/:client_id/nutrition-meal-logs", MealLogController, :index
   end
@@ -286,11 +278,5 @@ defmodule EasyWeb.Router do
     get "/weight_entries", WeightEntryController, :index
     post "/weight_entries", WeightEntryController, :create
     delete "/weight_entries/:id", WeightEntryController, :delete
-
-    # Threads
-    get "/threads", ThreadController, :index
-    post "/threads", ThreadController, :create
-    get "/threads/:id", ThreadController, :show
-    post "/threads/:thread_id/messages", ThreadMessageController, :create
   end
 end

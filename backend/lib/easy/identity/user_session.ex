@@ -21,6 +21,8 @@ defmodule Easy.Identity.UserSession do
     field :refreshed_at, :utc_datetime
 
     field :business_id, :binary_id
+    field :coach_id, :binary_id
+    field :is_owner, :boolean, default: false
     field :role, Ecto.Enum, values: @roles
 
     belongs_to :user, Easy.Identity.User
@@ -38,7 +40,9 @@ defmodule Easy.Identity.UserSession do
       :revoked_at,
       :refresh_token,
       :refreshed_at,
-      :role
+      :role,
+      :coach_id,
+      :is_owner
     ])
     |> put_change(:user_id, user_id)
     |> put_change(:business_id, business_id)
@@ -49,7 +53,7 @@ defmodule Easy.Identity.UserSession do
   @spec refresh_changeset(t(), binary() | nil, map()) :: Ecto.Changeset.t()
   def refresh_changeset(%__MODULE__{} = session, business_id, attrs) do
     session
-    |> cast(attrs, [:ip, :user_agent, :refreshed_at, :role])
+    |> cast(attrs, [:ip, :user_agent, :refreshed_at, :role, :coach_id, :is_owner])
     |> put_change(:business_id, business_id)
     |> put_change(:refreshed_at, DateTime.utc_now(:second))
   end

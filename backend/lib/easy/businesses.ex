@@ -19,7 +19,7 @@ defmodule Easy.Businesses do
       from(
         b in Orgs.Business,
         join: c in Orgs.Coach,
-        on: c.business_id == b.id,
+        on: c.business_id == b.id and c.status == :active,
         where: c.user_id == ^user.id,
         limit: 1
       )

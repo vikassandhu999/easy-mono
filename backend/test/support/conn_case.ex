@@ -21,6 +21,9 @@ defmodule Easy.ConnCase do
 
   @spec authenticate_coach(Plug.Conn.t(), Easy.Orgs.Coach.t()) :: Plug.Conn.t()
   def authenticate_coach(conn, coach) do
+    business = Easy.Repo.get!(Easy.Orgs.Business, coach.business_id)
+    is_owner = business.owner_id == coach.user_id
+
     token =
       Joken.generate_and_sign!(
         Easy.Identity.Token.token_config(),
@@ -28,7 +31,9 @@ defmodule Easy.ConnCase do
           user_id: coach.user_id,
           session_id: Ecto.UUID.generate(),
           role: "coach",
-          business_id: coach.business_id
+          business_id: coach.business_id,
+          coach_id: coach.id,
+          is_owner: is_owner
         },
         Easy.Identity.Token.signer()
       )

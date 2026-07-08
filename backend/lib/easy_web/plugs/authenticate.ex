@@ -21,7 +21,10 @@ defmodule EasyWeb.Plugs.Authenticate do
         business_id: claims["business_id"],
         session_id: claims["session_id"]
       })
-      |> assign(:ctx, Ctx.new(claims["business_id"], claims["user_id"]))
+      |> assign(
+        :ctx,
+        Ctx.new(claims["business_id"], claims["user_id"], claims["coach_id"], claims["is_owner"] == true)
+      )
     else
       {:error, reason} ->
         Logger.warning("Authentication failed: #{inspect(reason)}")

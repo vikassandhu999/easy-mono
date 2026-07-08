@@ -1,11 +1,14 @@
 defmodule Easy.Identity.SessionFactory do
   alias Easy.Clients.Client
+  alias Easy.Coaches
   alias Easy.Error
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
   alias Easy.Identity.UserSessions
   alias Easy.Orgs
+  alias Easy.Orgs.Coach
   alias Easy.Repo
+  import Ecto.Query
 
   @type session_opts :: %{
           required(:ip) => String.t() | nil,
@@ -67,9 +70,12 @@ defmodule Easy.Identity.SessionFactory do
 
   @spec validate_role(atom(), User.t()) :: {:ok, map()} | {:error, any()}
   def validate_role(:coach, user) do
-    case Orgs.get_business_for_coach(user) do
-      %Orgs.Business{id: business_id} ->
-        {:ok, %{role: :coach, business_id: business_id}}
+    case Coaches.get_active_coach_for_user(user.id) do
+      %Coach{} = coach ->
+        is_owner =
+          Repo.exists?(from b in Orgs.Business, where: b.id == ^coach.business_id and b.owner_id == ^user.id)
+
+        {:ok, %{role: :coach, business_id: coach.business_id, coach_id: coach.id, is_owner: is_owner}}
 
       nil ->
         {:error, Error.unauthorized("User is not associated with any business")}

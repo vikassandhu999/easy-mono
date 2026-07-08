@@ -21,6 +21,12 @@ defmodule Easy.Coaches do
     Coach.fetch(ctx.business_id, ctx.user_id)
   end
 
+  # pre-auth login gate: no ctx yet — resolves ONLY the active coach row for a user
+  @spec get_active_coach_for_user(String.t()) :: Coach.t() | nil
+  def get_active_coach_for_user(user_id) do
+    Coach.for_user(user_id) |> Coach.active() |> Repo.one()
+  end
+
   @spec update(Coach.t(), map()) :: {:ok, Coach.t()} | {:error, Ecto.Changeset.t()}
   def update(coach, attrs) do
     coach

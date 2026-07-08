@@ -27,7 +27,9 @@ defmodule Easy.Identity.Token do
           "user_id" => user.id,
           "session_id" => session.id,
           "role" => session.role,
-          "business_id" => session.business_id
+          "business_id" => session.business_id,
+          "coach_id" => session.coach_id,
+          "is_owner" => session.is_owner
         },
         signer()
       )

@@ -151,4 +151,81 @@ defmodule Easy.ThreadsTest do
       assert Enum.map(loaded.messages, & &1.body) == ["first", "second"]
     end
   end
+
+  describe "client visibility (trainer-team access control)" do
+    alias Easy.Threads
+
+    setup do
+      business = insert(:business)
+      insert(:coach, business: business, user: business.owner)
+      trainer_a = insert(:coach, business: business)
+      trainer_b = insert(:coach, business: business)
+      client_b = insert(:client, business: business, creator: trainer_b, assigned_coach: trainer_b)
+      thread_b = insert(:thread, business: business, client: client_b, created_by_id: trainer_b.id)
+
+      %{
+        business: business,
+        trainer_a: trainer_a,
+        trainer_b: trainer_b,
+        client_b: client_b,
+        thread_b: thread_b
+      }
+    end
+
+    test "list_threads_for_client returns :not_found for a client assigned to another trainer", %{
+      trainer_a: trainer_a,
+      client_b: client_b
+    } do
+      assert {:error, :not_found} = Threads.list_threads_for_client(trainer_ctx(trainer_a), client_b.id)
+    end
+
+    test "create_thread_for_client returns :not_found for a client assigned to another trainer", %{
+      trainer_a: trainer_a,
+      client_b: client_b
+    } do
+      assert {:error, :not_found} =
+               Threads.create_thread_for_client(trainer_ctx(trainer_a), client_b.id, %{
+                 "module" => "general",
+                 "title" => "Hi"
+               })
+    end
+
+    test "get_thread returns :not_found for a thread whose client belongs to another trainer", %{
+      trainer_a: trainer_a,
+      thread_b: thread_b
+    } do
+      assert {:error, :not_found} = Threads.get_thread(trainer_ctx(trainer_a), thread_b.id)
+    end
+
+    test "update_thread returns :not_found for a thread whose client belongs to another trainer", %{
+      trainer_a: trainer_a,
+      thread_b: thread_b
+    } do
+      assert {:error, :not_found} =
+               Threads.update_thread(trainer_ctx(trainer_a), thread_b.id, %{"status" => "archived"})
+    end
+
+    test "add_message returns :not_found for a thread whose client belongs to another trainer", %{
+      trainer_a: trainer_a,
+      thread_b: thread_b
+    } do
+      assert {:error, :not_found} =
+               Threads.add_message(trainer_ctx(trainer_a), thread_b.id, %{"body" => "hi"})
+    end
+
+    test "owner ctx succeeds on all of them", %{business: business, client_b: client_b, thread_b: thread_b} do
+      ctx = owner_ctx(business)
+
+      assert {:ok, %{count: _, threads: _}} = Threads.list_threads_for_client(ctx, client_b.id)
+
+      assert {:ok, _thread} =
+               Threads.create_thread_for_client(ctx, client_b.id, %{"module" => "general", "title" => "Hi"})
+
+      assert {:ok, %{id: id}} = Threads.get_thread(ctx, thread_b.id)
+      assert id == thread_b.id
+
+      assert {:ok, _} = Threads.update_thread(ctx, thread_b.id, %{"status" => "archived"})
+      assert {:ok, _} = Threads.add_message(ctx, thread_b.id, %{"body" => "hi"})
+    end
+  end
 end

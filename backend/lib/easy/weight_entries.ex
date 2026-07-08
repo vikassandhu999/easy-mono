@@ -64,18 +64,21 @@ defmodule Easy.WeightEntries do
 
   @spec adherence(Ctx.t(), String.t(), keyword()) ::
           {:ok, %{logged_days: non_neg_integer(), window_days: pos_integer()}}
+          | {:error, :not_found}
   def adherence(%Ctx{} = ctx, client_id, opts \\ []) do
-    window_days = Keyword.get(opts, :window_days, 30)
-    start_date = Date.add(Date.utc_today(), 1 - window_days)
+    with {:ok, _client} <- get_client_by_id(ctx, client_id) do
+      window_days = Keyword.get(opts, :window_days, 30)
+      start_date = Date.add(Date.utc_today(), 1 - window_days)
 
-    logged_days =
-      WeightEntry
-      |> WeightEntry.for_client(ctx.business_id, client_id)
-      |> WeightEntry.since(start_date)
-      |> distinct(:date)
-      |> Repo.aggregate(:count, :id)
+      logged_days =
+        WeightEntry
+        |> WeightEntry.for_client(ctx.business_id, client_id)
+        |> WeightEntry.since(start_date)
+        |> distinct(:date)
+        |> Repo.aggregate(:count, :id)
 
-    {:ok, %{logged_days: logged_days, window_days: window_days}}
+      {:ok, %{logged_days: logged_days, window_days: window_days}}
+    end
   end
 
   # ---------------------------------------------------------------------------
@@ -113,10 +116,13 @@ defmodule Easy.WeightEntries do
     |> ok_or_not_found()
   end
 
-  # Resolves a client by explicit id, scoped to the business (Case-2 coach path).
+  # Resolves a client by explicit id, scoped to the business and visible to the
+  # acting coach (Case-2 coach path) — both callers (list_entries_for_client and
+  # adherence) inherit the trainer-team visibility guard from here.
   defp get_client_by_id(%Ctx{} = ctx, client_id) do
     Client
     |> Client.for_business(ctx.business_id)
+    |> Client.visible_to(ctx)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end

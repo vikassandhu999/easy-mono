@@ -268,7 +268,7 @@ defmodule Easy.ClientProfilesTest do
     test "assign_form_template_to_client forces template purpose and assigned status" do
       client = insert_client()
       template = insert(:form_template, business: client.business, purpose: "weekly_check_in")
-      ctx = client_ctx(client)
+      ctx = owner_ctx(client.business)
       completed_at = DateTime.utc_now(:second)
 
       assert {:ok, assignment} =
@@ -313,7 +313,7 @@ defmodule Easy.ClientProfilesTest do
           form_template: other_template
         )
 
-      ctx = client_ctx(client)
+      ctx = owner_ctx(client.business)
 
       assert {:ok, []} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
 
@@ -634,6 +634,84 @@ defmodule Easy.ClientProfilesTest do
         )
 
       assert good.valid?
+    end
+  end
+
+  describe "client visibility (trainer-team access control)" do
+    setup do
+      business = insert(:business)
+      insert(:coach, business: business, user: business.owner)
+      trainer_a = insert(:coach, business: business)
+      trainer_b = insert(:coach, business: business)
+      client_b = insert(:client, business: business, creator: trainer_b, assigned_coach: trainer_b)
+      template = insert(:form_template, business: business)
+      assignment_b = insert(:form_assignment, business: business, client: client_b, form_template: template)
+
+      %{
+        business: business,
+        trainer_a: trainer_a,
+        client_b: client_b,
+        template: template,
+        assignment_b: assignment_b
+      }
+    end
+
+    test "assign_form_template_to_client returns :not_found for a client assigned to another trainer", %{
+      trainer_a: trainer_a,
+      client_b: client_b,
+      template: template
+    } do
+      assert {:error, :not_found} =
+               ClientProfiles.assign_form_template_to_client(trainer_ctx(trainer_a), client_b.id, template.id, %{})
+    end
+
+    test "list_form_assignments_for_client returns :not_found for a client assigned to another trainer", %{
+      trainer_a: trainer_a,
+      client_b: client_b
+    } do
+      assert {:error, :not_found} =
+               ClientProfiles.list_form_assignments_for_client(trainer_ctx(trainer_a), client_b.id)
+    end
+
+    test "get_form_assignment_for_client returns :not_found for a client assigned to another trainer", %{
+      trainer_a: trainer_a,
+      client_b: client_b,
+      assignment_b: assignment_b
+    } do
+      assert {:error, :not_found} =
+               ClientProfiles.get_form_assignment_for_client(trainer_ctx(trainer_a), client_b.id, assignment_b.id)
+    end
+
+    test "get_or_create_profile_for_client returns :not_found for a client assigned to another trainer", %{
+      trainer_a: trainer_a,
+      client_b: client_b
+    } do
+      assert {:error, :not_found} =
+               ClientProfiles.get_or_create_profile_for_client(trainer_ctx(trainer_a), client_b.id)
+    end
+
+    test "update_profile_for_client returns :not_found for a client assigned to another trainer", %{
+      trainer_a: trainer_a,
+      client_b: client_b
+    } do
+      assert {:error, :not_found} =
+               ClientProfiles.update_profile_for_client(trainer_ctx(trainer_a), client_b.id, %{})
+    end
+
+    test "owner ctx succeeds on all of them", %{
+      business: business,
+      client_b: client_b,
+      template: template,
+      assignment_b: assignment_b
+    } do
+      ctx = owner_ctx(business)
+
+      assert {:ok, _assignment} = ClientProfiles.assign_form_template_to_client(ctx, client_b.id, template.id, %{})
+      assert {:ok, _assignments} = ClientProfiles.list_form_assignments_for_client(ctx, client_b.id)
+      assert {:ok, %{id: id}} = ClientProfiles.get_form_assignment_for_client(ctx, client_b.id, assignment_b.id)
+      assert id == assignment_b.id
+      assert {:ok, _profile} = ClientProfiles.get_or_create_profile_for_client(ctx, client_b.id)
+      assert {:ok, _profile} = ClientProfiles.update_profile_for_client(ctx, client_b.id, %{})
     end
   end
 

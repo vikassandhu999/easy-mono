@@ -57,11 +57,16 @@ defmodule Easy.Threads do
 
   @spec get_thread(Ctx.t(), String.t()) :: {:ok, Thread.t()} | {:error, :not_found}
   def get_thread(%Ctx{} = ctx, thread_id) do
-    Thread
-    |> Thread.for_business(ctx.business_id)
-    |> Thread.include_messages()
-    |> Repo.get(thread_id)
-    |> ok_or_not_found()
+    thread =
+      Thread
+      |> Thread.for_business(ctx.business_id)
+      |> Thread.include_messages()
+      |> Repo.get(thread_id)
+
+    with {:ok, thread} <- ok_or_not_found(thread),
+         :ok <- Clients.authorize_client_id(ctx, thread.client_id) do
+      {:ok, thread}
+    end
   end
 
   @spec get_client_thread(Ctx.t(), String.t()) :: {:ok, Thread.t()} | {:error, :not_found}
@@ -99,7 +104,7 @@ defmodule Easy.Threads do
   @spec update_thread(Ctx.t(), String.t(), map()) ::
           {:ok, Thread.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_thread(%Ctx{} = ctx, thread_id, attrs) do
-    with {:ok, thread} <- get_thread_bare(ctx.business_id, thread_id) do
+    with {:ok, thread} <- get_thread_bare(ctx, thread_id) do
       thread
       |> Thread.update_changeset(attrs)
       |> Repo.update()
@@ -110,7 +115,7 @@ defmodule Easy.Threads do
           {:ok, ThreadMessage.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def add_message(%Ctx{} = ctx, thread_id, attrs) do
     with {:ok, coach} <- get_coach(ctx.business_id, ctx.user_id),
-         {:ok, thread} <- get_thread_bare(ctx.business_id, thread_id) do
+         {:ok, thread} <- get_thread_bare(ctx, thread_id) do
       add_message_to_thread(thread, %{type: "coach", id: coach.id}, attrs)
     end
   end
@@ -153,11 +158,16 @@ defmodule Easy.Threads do
   defp maybe_for_client(query, _business_id, nil), do: query
   defp maybe_for_client(query, business_id, client_id), do: Thread.for_client(query, business_id, client_id)
 
-  defp get_thread_bare(business_id, thread_id) do
-    Thread
-    |> Thread.for_business(business_id)
-    |> Repo.get(thread_id)
-    |> ok_or_not_found()
+  defp get_thread_bare(%Ctx{} = ctx, thread_id) do
+    thread =
+      Thread
+      |> Thread.for_business(ctx.business_id)
+      |> Repo.get(thread_id)
+
+    with {:ok, thread} <- ok_or_not_found(thread),
+         :ok <- Clients.authorize_client_id(ctx, thread.client_id) do
+      {:ok, thread}
+    end
   end
 
   defp get_client_thread_bare(business_id, client_id, thread_id) do

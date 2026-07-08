@@ -5,6 +5,7 @@ defmodule Easy.ClientProfiles do
   alias Easy.ClientProfiles.FormTemplate
   alias Easy.ClientProfiles.ProfileFieldDefinition
   alias Easy.ClientProfiles.ProfileFieldValue
+  alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Repo
@@ -46,6 +47,27 @@ defmodule Easy.ClientProfiles do
       profile
       |> ClientProfile.update_changeset(attrs)
       |> Repo.update()
+    end
+  end
+
+  # Case-2 wrappers (coach controller, client_id trusted from the URL path only).
+  # get_or_create_profile/2 and update_profile/3 stay unguarded because they are
+  # also called internally on a Case-3 client's own already-resolved client_id
+  # (update_client_profile_sections, apply_profile_mapping!), where ctx is a
+  # client-role Ctx that Client.visible_to/2 would reject outright.
+  @spec get_or_create_profile_for_client(Ctx.t(), String.t()) ::
+          {:ok, ClientProfile.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def get_or_create_profile_for_client(%Ctx{} = ctx, client_id) do
+    with :ok <- Clients.authorize_client_id(ctx, client_id) do
+      get_or_create_profile(ctx, client_id)
+    end
+  end
+
+  @spec update_profile_for_client(Ctx.t(), String.t(), map()) ::
+          {:ok, ClientProfile.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def update_profile_for_client(%Ctx{} = ctx, client_id, attrs) do
+    with :ok <- Clients.authorize_client_id(ctx, client_id) do
+      update_profile(ctx, client_id, attrs)
     end
   end
 
@@ -193,7 +215,7 @@ defmodule Easy.ClientProfiles do
           {:ok, FormAssignment.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def assign_form_template_to_client(%Ctx{} = ctx, client_id, template_id, attrs) do
     with {:ok, template} <- get_form_template(ctx, template_id),
-         {:ok, client} <- fetch_client(ctx.business_id, client_id) do
+         {:ok, client} <- Clients.authorize_client(ctx, client_id) do
       attrs = %{
         "priority" => Map.get(attrs, :priority, "normal"),
         "due_date" => Map.get(attrs, :due_date),
@@ -213,7 +235,7 @@ defmodule Easy.ClientProfiles do
   @spec list_form_assignments_for_client(Ctx.t(), String.t()) ::
           {:ok, [FormAssignment.t()]} | {:error, :not_found}
   def list_form_assignments_for_client(%Ctx{} = ctx, client_id) do
-    with {:ok, _client} <- fetch_client(ctx.business_id, client_id) do
+    with {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
       assignments =
         FormAssignment
         |> FormAssignment.for_client(ctx.business_id, client_id)
@@ -267,11 +289,13 @@ defmodule Easy.ClientProfiles do
   @spec get_form_assignment_for_client(Ctx.t(), String.t(), String.t()) ::
           {:ok, FormAssignment.t()} | {:error, :not_found}
   def get_form_assignment_for_client(%Ctx{} = ctx, client_id, assignment_id) do
-    FormAssignment
-    |> FormAssignment.for_client(ctx.business_id, client_id)
-    |> include_form_template(ctx.business_id)
-    |> Repo.get(assignment_id)
-    |> ok_or_not_found()
+    with :ok <- Clients.authorize_client_id(ctx, client_id) do
+      FormAssignment
+      |> FormAssignment.for_client(ctx.business_id, client_id)
+      |> include_form_template(ctx.business_id)
+      |> Repo.get(assignment_id)
+      |> ok_or_not_found()
+    end
   end
 
   @spec get_client_form_assignment(Ctx.t(), String.t()) ::

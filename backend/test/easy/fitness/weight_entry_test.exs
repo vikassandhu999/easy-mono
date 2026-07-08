@@ -1,7 +1,6 @@
 defmodule Easy.Fitness.WeightEntryTest do
   use Easy.DataCase
 
-  alias Easy.Ctx
   alias Easy.Error
   alias Easy.Fitness.WeightEntry
   alias Easy.WeightEntries
@@ -128,7 +127,7 @@ defmodule Easy.Fitness.WeightEntryTest do
     test "counts entries in the last 30 days" do
       client = insert_client()
       today = Date.utc_today()
-      ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
+      ctx = trainer_ctx(client.creator)
 
       insert_weight_entry(client: client, date: today)
       insert_weight_entry(client: client, date: Date.add(today, -10))
@@ -141,7 +140,7 @@ defmodule Easy.Fitness.WeightEntryTest do
     test "counts an upserted date only once" do
       client = insert_client()
       today = Date.utc_today()
-      ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
+      ctx = trainer_ctx(client.creator)
 
       {:ok, _first} =
         WeightEntries.upsert(client.business_id, client.id, %{

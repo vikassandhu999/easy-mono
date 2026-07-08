@@ -1,4 +1,5 @@
 defmodule Easy.MealLogs do
+  alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Nutrition.DayMeal
@@ -30,7 +31,7 @@ defmodule Easy.MealLogs do
     from_date = Keyword.get(opts, :from)
     to_date = Keyword.get(opts, :to)
 
-    with {:ok, _client} <- get_client_by_id(ctx, client_id) do
+    with {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
       meal_logs =
         MealLog
         |> MealLog.for_client(ctx.business_id, client_id)
@@ -687,14 +688,6 @@ defmodule Easy.MealLogs do
     |> Client.for_business(ctx.business_id)
     |> Client.for_user(ctx.user_id)
     |> Repo.one()
-    |> ok_or_not_found()
-  end
-
-  # Resolves a client by explicit id, scoped to the business (coach path / Case-2).
-  defp get_client_by_id(%Ctx{} = ctx, client_id) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 

@@ -49,7 +49,7 @@ defmodule EasyWeb.Coaches.ClientProfileController do
   def show(conn, %{"client_id" => client_id}) do
     ctx = conn.assigns.ctx
 
-    with {:ok, profile} <- ClientProfiles.get_or_create_profile(ctx, client_id) do
+    with {:ok, profile} <- ClientProfiles.get_or_create_profile_for_client(ctx, client_id) do
       render(conn, :show, profile: profile)
     end
   end
@@ -59,7 +59,7 @@ defmodule EasyWeb.Coaches.ClientProfileController do
     ctx = conn.assigns.ctx
     client_id = conn.path_params["client_id"]
 
-    with {:ok, profile} <- ClientProfiles.update_profile(ctx, client_id, conn.body_params) do
+    with {:ok, profile} <- ClientProfiles.update_profile_for_client(ctx, client_id, conn.body_params) do
       render(conn, :show, profile: profile)
     end
   end

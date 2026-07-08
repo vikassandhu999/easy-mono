@@ -1,4 +1,5 @@
 defmodule Easy.Sessions do
+  alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Repo
@@ -17,30 +18,34 @@ defmodule Easy.Sessions do
   # ---------------------------------------------------------------------------
 
   @spec list_sessions_for_client(Ctx.t(), String.t(), keyword()) ::
-          {:ok, [TrainingSession.t()]}
+          {:ok, [TrainingSession.t()]} | {:error, :not_found}
   def list_sessions_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
-    from = Keyword.get(opts, :from)
-    to = Keyword.get(opts, :to)
+    with :ok <- Clients.authorize_client_id(ctx, client_id) do
+      from = Keyword.get(opts, :from)
+      to = Keyword.get(opts, :to)
 
-    sessions =
-      TrainingSession
-      |> TrainingSession.for_client(ctx.business_id, client_id)
-      |> maybe_for_date_range(from, to)
-      |> TrainingSession.newest()
-      |> TrainingSession.include_sets(ctx.business_id)
-      |> Repo.all()
+      sessions =
+        TrainingSession
+        |> TrainingSession.for_client(ctx.business_id, client_id)
+        |> maybe_for_date_range(from, to)
+        |> TrainingSession.newest()
+        |> TrainingSession.include_sets(ctx.business_id)
+        |> Repo.all()
 
-    {:ok, sessions}
+      {:ok, sessions}
+    end
   end
 
   @spec get_session_for_client(Ctx.t(), String.t(), String.t()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found}
   def get_session_for_client(%Ctx{} = ctx, client_id, session_id) do
-    TrainingSession
-    |> TrainingSession.for_client(ctx.business_id, client_id)
-    |> TrainingSession.include_sets(ctx.business_id)
-    |> Repo.get(session_id)
-    |> ok_or_not_found()
+    with :ok <- Clients.authorize_client_id(ctx, client_id) do
+      TrainingSession
+      |> TrainingSession.for_client(ctx.business_id, client_id)
+      |> TrainingSession.include_sets(ctx.business_id)
+      |> Repo.get(session_id)
+      |> ok_or_not_found()
+    end
   end
 
   # ---------------------------------------------------------------------------

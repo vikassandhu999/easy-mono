@@ -574,7 +574,7 @@ defmodule Easy.ClientProfilesTest do
     test "update_form_assignment stamps and clears completed_at to match status" do
       client = insert_client()
       template = insert(:form_template, business: client.business)
-      ctx = client_ctx(client)
+      ctx = trainer_ctx(client.creator)
 
       assignment =
         insert(:form_assignment, business: client.business, client: client, form_template: template)
@@ -698,6 +698,20 @@ defmodule Easy.ClientProfilesTest do
                ClientProfiles.update_profile_for_client(trainer_ctx(trainer_a), client_b.id, %{})
     end
 
+    test "update_form_assignment returns :not_found for an assignment belonging to another trainer's client",
+         %{trainer_a: trainer_a, assignment_b: assignment_b} do
+      assert {:error, :not_found} =
+               ClientProfiles.update_form_assignment(trainer_ctx(trainer_a), assignment_b.id, %{
+                 "priority" => "high"
+               })
+    end
+
+    test "list_form_submissions returns :not_found for an assignment belonging to another trainer's client",
+         %{trainer_a: trainer_a, assignment_b: assignment_b} do
+      assert {:error, :not_found} =
+               ClientProfiles.list_form_submissions(trainer_ctx(trainer_a), assignment_b.id)
+    end
+
     test "owner ctx succeeds on all of them", %{
       business: business,
       client_b: client_b,
@@ -712,6 +726,8 @@ defmodule Easy.ClientProfilesTest do
       assert id == assignment_b.id
       assert {:ok, _profile} = ClientProfiles.get_or_create_profile_for_client(ctx, client_b.id)
       assert {:ok, _profile} = ClientProfiles.update_profile_for_client(ctx, client_b.id, %{})
+      assert {:ok, _updated} = ClientProfiles.update_form_assignment(ctx, assignment_b.id, %{"priority" => "high"})
+      assert {:ok, _submissions} = ClientProfiles.list_form_submissions(ctx, assignment_b.id)
     end
   end
 

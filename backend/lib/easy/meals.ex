@@ -1,4 +1,5 @@
 defmodule Easy.Meals do
+  alias Easy.Clients
   alias Easy.Ctx
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Meal
@@ -13,11 +14,13 @@ defmodule Easy.Meals do
 
   @spec get_meal_with_items(Ctx.t(), String.t()) :: {:ok, Meal.t()} | {:error, :not_found}
   def get_meal_with_items(%Ctx{} = ctx, meal_id) do
-    Meal
-    |> Meal.for_business(ctx.business_id)
-    |> preload(meal_items: ^MealItem.include_food_and_recipe(MealItem, ctx.business_id))
-    |> Repo.get(meal_id)
-    |> ok_or_not_found()
+    with {:ok, _meal} <- get_meal(ctx, meal_id) do
+      Meal
+      |> Meal.for_business(ctx.business_id)
+      |> preload(meal_items: ^MealItem.include_food_and_recipe(MealItem, ctx.business_id))
+      |> Repo.get(meal_id)
+      |> ok_or_not_found()
+    end
   end
 
   @spec list_meals(Ctx.t(), String.t(), keyword()) ::
@@ -26,7 +29,7 @@ defmodule Easy.Meals do
     offset = opts |> Keyword.get(:offset, 0) |> max(0)
     limit = opts |> Keyword.get(:limit, 20) |> min(100) |> max(1)
 
-    with {:ok, plan} <- get_plan(ctx.business_id, plan_id) do
+    with {:ok, plan} <- get_plan(ctx, plan_id) do
       base = Meal |> Meal.for_business(ctx.business_id) |> Meal.for_plan(plan.id)
 
       {:ok,
@@ -46,7 +49,7 @@ defmodule Easy.Meals do
           {:ok, Meal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_meal(%Ctx{} = ctx, plan_id, attrs) do
     with {:ok, coach} <- get_coach(ctx),
-         {:ok, plan} <- get_plan(ctx.business_id, plan_id),
+         {:ok, plan} <- get_plan(ctx, plan_id),
          {:ok, meal} <-
            Meal.insert_changeset(ctx.business_id, coach.id, plan.id, attrs)
            |> Repo.insert() do
@@ -57,7 +60,7 @@ defmodule Easy.Meals do
   @spec update_meal(Ctx.t(), String.t(), map()) ::
           {:ok, Meal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_meal(%Ctx{} = ctx, meal_id, attrs) do
-    with {:ok, meal} <- get_meal(ctx.business_id, meal_id),
+    with {:ok, meal} <- get_meal(ctx, meal_id),
          {:ok, updated} <-
            meal
            |> Meal.update_changeset(attrs)
@@ -69,7 +72,7 @@ defmodule Easy.Meals do
   @spec delete_meal(Ctx.t(), String.t()) ::
           {:ok, Meal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_meal(%Ctx{} = ctx, meal_id) do
-    with {:ok, meal} <- get_meal(ctx.business_id, meal_id) do
+    with {:ok, meal} <- get_meal(ctx, meal_id) do
       Repo.delete(meal)
     end
   end
@@ -77,7 +80,7 @@ defmodule Easy.Meals do
   @spec create_meal_item(Ctx.t(), String.t(), map()) ::
           {:ok, MealItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_meal_item(%Ctx{} = ctx, meal_id, attrs) do
-    with {:ok, meal} <- get_meal(ctx.business_id, meal_id),
+    with {:ok, meal} <- get_meal(ctx, meal_id),
          {:ok, :valid} <- ensure_food_or_recipe(attrs, ctx.business_id) do
       changeset = MealItem.insert_changeset(meal.id, ctx.business_id, attrs)
       position_given? = Map.has_key?(attrs, :position)
@@ -96,7 +99,7 @@ defmodule Easy.Meals do
   @spec update_meal_item(Ctx.t(), String.t(), map()) ::
           {:ok, MealItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_meal_item(%Ctx{} = ctx, meal_item_id, attrs) do
-    with {:ok, meal_item} <- get_meal_item(ctx.business_id, meal_item_id),
+    with {:ok, meal_item} <- get_meal_item(ctx, meal_item_id),
          {:ok, :valid} <- ensure_food_or_recipe(attrs, ctx.business_id) do
       meal_item
       |> MealItem.update_changeset(attrs)
@@ -107,30 +110,45 @@ defmodule Easy.Meals do
   @spec delete_meal_item(Ctx.t(), String.t()) ::
           {:ok, MealItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_meal_item(%Ctx{} = ctx, meal_item_id) do
-    with {:ok, meal_item} <- get_meal_item(ctx.business_id, meal_item_id) do
+    with {:ok, meal_item} <- get_meal_item(ctx, meal_item_id) do
       Repo.delete(meal_item)
     end
   end
 
-  defp get_meal(business_id, meal_id) do
-    Meal
-    |> Meal.for_business(business_id)
-    |> Repo.get(meal_id)
-    |> ok_or_not_found()
+  defp get_meal(%Ctx{} = ctx, meal_id) do
+    meal =
+      Meal
+      |> Meal.for_business(ctx.business_id)
+      |> Repo.get(meal_id)
+
+    with {:ok, meal} <- ok_or_not_found(meal),
+         {:ok, _plan} <- get_plan(ctx, meal.nutrition_plan_id) do
+      {:ok, meal}
+    end
   end
 
-  defp get_meal_item(business_id, meal_item_id) do
-    MealItem
-    |> MealItem.for_business(business_id)
-    |> Repo.get(meal_item_id)
-    |> ok_or_not_found()
+  defp get_meal_item(%Ctx{} = ctx, meal_item_id) do
+    meal_item =
+      MealItem
+      |> MealItem.for_business(ctx.business_id)
+      |> Repo.get(meal_item_id)
+
+    with {:ok, meal_item} <- ok_or_not_found(meal_item),
+         {:ok, _meal} <- get_meal(ctx, meal_item.nutrition_meal_id) do
+      {:ok, meal_item}
+    end
   end
 
-  defp get_plan(business_id, plan_id) do
-    Plan
-    |> Plan.for_business(business_id)
-    |> Repo.get(plan_id)
-    |> ok_or_not_found()
+  defp get_plan(%Ctx{} = ctx, plan_id) do
+    plan =
+      Plan
+      |> Plan.for_business(ctx.business_id)
+      |> Repo.get(plan_id)
+
+    with {:ok, plan} <- ok_or_not_found(plan),
+         :ok <- Clients.authorize_client_id(ctx, plan.client_id) do
+      {:ok, plan}
+    end
   end
 
   defp get_coach(%Ctx{} = ctx) do

@@ -265,7 +265,8 @@ defmodule Easy.ClientProfiles do
   @spec update_form_assignment(Ctx.t(), String.t(), map()) ::
           {:ok, FormAssignment.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_form_assignment(%Ctx{} = ctx, assignment_id, attrs) do
-    with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id) do
+    with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id),
+         :ok <- Clients.authorize_client_id(ctx, assignment.client_id) do
       assignment
       |> FormAssignment.update_changeset(attrs)
       |> Repo.update()
@@ -275,7 +276,8 @@ defmodule Easy.ClientProfiles do
   @spec list_form_submissions(Ctx.t(), String.t()) ::
           {:ok, [FormSubmission.t()]} | {:error, :not_found}
   def list_form_submissions(%Ctx{} = ctx, assignment_id) do
-    with {:ok, _assignment} <- get_form_assignment(ctx.business_id, assignment_id) do
+    with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id),
+         :ok <- Clients.authorize_client_id(ctx, assignment.client_id) do
       submissions =
         FormSubmission
         |> FormSubmission.for_assignment(ctx.business_id, assignment_id)

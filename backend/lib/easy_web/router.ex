@@ -218,6 +218,14 @@ defmodule EasyWeb.Router do
 
     # Meal logs (view client nutrition data — read-only)
     get "/clients/:client_id/nutrition-meal-logs", MealLogController, :index
+
+    # Chat
+    get "/conversations", ConversationController, :index
+    get "/conversations/:id", ConversationController, :show
+    get "/conversations/:id/messages", ConversationController, :messages
+    post "/conversations/:id/messages", ConversationController, :create_message
+    post "/conversations/:id/read", ConversationController, :mark_read
+    get "/clients/:client_id/conversation", ConversationController, :show_for_client
   end
 
   scope "/v1/client", EasyWeb.Clients do
@@ -278,5 +286,11 @@ defmodule EasyWeb.Router do
     get "/weight_entries", WeightEntryController, :index
     post "/weight_entries", WeightEntryController, :create
     delete "/weight_entries/:id", WeightEntryController, :delete
+
+    # Chat
+    get "/conversation", ConversationController, :show
+    get "/conversation/messages", ConversationController, :messages
+    post "/conversation/messages", ConversationController, :create_message
+    post "/conversation/read", ConversationController, :mark_read
   end
 end

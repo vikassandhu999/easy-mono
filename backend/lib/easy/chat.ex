@@ -52,7 +52,7 @@ defmodule Easy.Chat do
   @spec get_or_create_conversation_for_client(Ctx.t(), String.t()) ::
           {:ok, Conversation.t()} | {:error, :not_found}
   def get_or_create_conversation_for_client(%Ctx{} = ctx, client_id) do
-    with {:ok, client} <- get_client_in_business(ctx, client_id) do
+    with {:ok, client} <- Clients.get_client(ctx, client_id) do
       upsert_conversation(ctx.business_id, client.id, :coach)
     end
   end
@@ -217,19 +217,6 @@ defmodule Easy.Chat do
   end
 
   defp constrain_to_visible_clients(query, %Ctx{}), do: query
-
-  # Case-2 authorization for get-or-create is tenant scope only (per AGENTS.md
-  # §A2): any coach in the business may lazily open a conversation with any
-  # client in the business. Coach-assignment visibility is enforced separately
-  # on the read/write path (get_conversation -> authorize_client_id), so a
-  # coach who isn't the assigned coach can create the conversation but can't
-  # list, read, or send on it afterward.
-  defp get_client_in_business(%Ctx{} = ctx, client_id) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Repo.get(client_id)
-    |> ok_or_not_found()
-  end
 
   defp get_client_account(%Ctx{} = ctx) do
     Client

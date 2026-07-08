@@ -43,6 +43,9 @@ defmodule Easy.ChatTest do
     alias Easy.Ctx
 
     defp coach_ctx(coach), do: trainer_ctx(coach)
+    # Easy.DataCase already imports owner_ctx/1 (for a %Business{}), so this
+    # owner-privileged ctx built from a coach row gets its own name.
+    defp owner_coach_ctx(coach), do: Easy.Ctx.new(coach.business_id, coach.user_id, coach.id, true)
     defp client_ctx(client), do: Ctx.new(client.business_id, client.user_id)
 
     setup do
@@ -119,11 +122,16 @@ defmodule Easy.ChatTest do
       assert {:error, :not_found} = Chat.get_conversation(trainer_ctx(trainer), hidden.id)
 
       assigned = insert(:client, business: coach.business, creator: coach, assigned_coach: trainer)
-      {:ok, conv} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), assigned.id)
+      {:ok, conv} = Chat.get_or_create_conversation_for_client(owner_coach_ctx(coach), assigned.id)
 
       assert {:ok, %{count: 1, conversations: [visible]}} = Chat.list_conversations(trainer_ctx(trainer))
       assert visible.id == conv.id
       assert {:ok, _} = Chat.get_conversation(trainer_ctx(trainer), conv.id)
+    end
+
+    test "get_or_create 404s for an unassigned trainer", %{coach: coach, client: client} do
+      trainer = insert(:coach, business: coach.business)
+      assert {:error, :not_found} = Chat.get_or_create_conversation_for_client(trainer_ctx(trainer), client.id)
     end
 
     test "send broadcasts to conversation and inbox topics", %{coach: coach, client: client} do

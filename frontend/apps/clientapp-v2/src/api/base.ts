@@ -121,7 +121,9 @@ export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
   tagTypes: [
+    'ChatMessage',
     'ClientProfile',
+    'Conversation',
     'Exercise',
     'Food',
     'FormAssignment',

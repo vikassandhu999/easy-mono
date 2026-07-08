@@ -20,101 +20,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TeamResponse",
         "x-validate": null
       },
-      "Thread": {
-        "additionalProperties": false,
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "created_by_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "created_by_type": {
-            "enum": ["coach", "client", "system"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "inserted_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "last_message_at": {
-            "format": "date-time",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "last_message_preview": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "module": {
-            "enum": ["nutrition", "training", "fitness", "profile", "general"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "priority": {
-            "enum": ["normal", "attention"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "status": {
-            "enum": ["open", "resolved", "archived"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "subject_ref": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "subject_type": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "title": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": ["id", "client_id", "module", "status", "priority", "inserted_at", "updated_at"],
-        "title": "Thread",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Thread",
-        "x-validate": null
-      },
       "TrainingExerciseListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -332,6 +237,51 @@
         "title": "NutritionPlanDayUpdateRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "ChatMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "sender_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "sender_type": {
+            "enum": ["coach", "client"],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": ["id", "conversation_id", "sender_type", "sender_id", "body", "inserted_at"],
+        "title": "ChatMessage",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessage",
         "x-validate": null
       },
       "NutritionMealResponse": {
@@ -2641,19 +2591,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "ThreadResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/Thread"
-          }
-        },
-        "required": ["data"],
-        "title": "ThreadResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ThreadResponse",
-        "x-validate": null
-      },
       "ClientProfileFormTemplateUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -3187,6 +3124,19 @@
         "x-struct": null,
         "x-validate": null
       },
+      "ChatMessageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ChatMessage"
+          }
+        },
+        "required": ["data"],
+        "title": "ChatMessageResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessageResponse",
+        "x-validate": null
+      },
       "TrainingWorkoutExerciseArrayResponse": {
         "properties": {
           "data": {
@@ -3549,35 +3499,6 @@
         "title": "ProspectEnrollResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ProspectEnrollResponse",
-        "x-validate": null
-      },
-      "ThreadUpdateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "status": "resolved"
-        },
-        "properties": {
-          "priority": {
-            "enum": ["normal", "attention"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "status": {
-            "enum": ["open", "resolved", "archived"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "title": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "ThreadUpdateRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "LandingPageUpsertRequest": {
@@ -3995,48 +3916,6 @@
         "title": "ClientProfileFormAssignmentListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentListResponse",
-        "x-validate": null
-      },
-      "CoachThreadCreateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "module": "nutrition",
-          "title": "Weekly check-in"
-        },
-        "properties": {
-          "module": {
-            "enum": ["nutrition", "training", "fitness", "profile", "general"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "priority": {
-            "enum": ["normal", "attention"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "subject_ref": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "subject_type": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "title": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": ["module"],
-        "title": "CoachThreadCreateRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "CoachProfileUpdateRequest": {
@@ -4489,6 +4368,64 @@
         "x-struct": null,
         "x-validate": null
       },
+      "Conversation": {
+        "additionalProperties": false,
+        "properties": {
+          "client_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "client_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_message_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_message_preview": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "unread_count": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": ["id", "client_id", "unread_count", "inserted_at", "updated_at"],
+        "title": "Conversation",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Conversation",
+        "x-validate": null
+      },
       "TrainingExerciseRelation": {
         "additionalProperties": false,
         "properties": {
@@ -4540,30 +4477,6 @@
         "title": "TrainingWorkoutReorderRequest",
         "type": "object",
         "x-struct": null,
-        "x-validate": null
-      },
-      "ThreadListResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "count": {
-            "minimum": 0,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/Thread"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": ["data", "count"],
-        "title": "ThreadListResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ThreadListResponse",
         "x-validate": null
       },
       "RecipeRequest": {
@@ -5012,6 +4925,26 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealItemResponse",
         "x-validate": null
       },
+      "ChatMessageCreateRequest": {
+        "additionalProperties": false,
+        "example": {
+          "body": "Sounds good, see you Monday!"
+        },
+        "properties": {
+          "body": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": ["body"],
+        "title": "ChatMessageCreateRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "RecipeListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5132,122 +5065,6 @@
         "title": "TrainingPlanClient",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanClient",
-        "x-validate": null
-      },
-      "ThreadMessageResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ThreadMessage"
-          }
-        },
-        "required": ["data"],
-        "title": "ThreadMessageResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ThreadMessageResponse",
-        "x-validate": null
-      },
-      "ThreadWithMessages": {
-        "additionalProperties": false,
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "created_by_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "created_by_type": {
-            "enum": ["coach", "client", "system"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "inserted_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "last_message_at": {
-            "format": "date-time",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "last_message_preview": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "messages": {
-            "items": {
-              "$ref": "#/components/schemas/ThreadMessage"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "module": {
-            "enum": ["nutrition", "training", "fitness", "profile", "general"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "priority": {
-            "enum": ["normal", "attention"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "status": {
-            "enum": ["open", "resolved", "archived"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "subject_ref": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "subject_type": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "title": {
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": ["id", "client_id", "module", "status", "priority", "inserted_at", "updated_at"],
-        "title": "ThreadWithMessages",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ThreadWithMessages",
         "x-validate": null
       },
       "TrainingPlanItem": {
@@ -5980,6 +5797,30 @@
         "x-struct": null,
         "x-validate": null
       },
+      "ConversationListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Conversation"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": ["data", "count"],
+        "title": "ConversationListResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ConversationListResponse",
+        "x-validate": null
+      },
       "ClientTrainingPlanResponse": {
         "additionalProperties": false,
         "properties": {
@@ -6362,6 +6203,19 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateResponse",
         "x-validate": null
       },
+      "ConversationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Conversation"
+          }
+        },
+        "required": ["data"],
+        "title": "ConversationResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ConversationResponse",
+        "x-validate": null
+      },
       "ProspectUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -6583,42 +6437,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodLogEntry",
         "x-validate": null
       },
-      "ClientThreadCreateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "module": "general",
-          "title": "Question about my plan"
-        },
-        "properties": {
-          "module": {
-            "enum": ["nutrition", "training", "fitness", "profile", "general"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "subject_ref": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "subject_type": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "title": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": ["module"],
-        "title": "ClientThreadCreateRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "TrainingMuscleListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -6702,6 +6520,30 @@
         "title": "TrainingSessionRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "ChatMessagesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "description": "Ascending by inserted_at",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "has_more": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": ["data", "has_more"],
+        "title": "ChatMessagesResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessagesResponse",
         "x-validate": null
       },
       "BusinessRequest": {
@@ -7249,69 +7091,6 @@
         "title": "WeightEntryListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntryListResponse",
-        "x-validate": null
-      },
-      "ThreadMessage": {
-        "additionalProperties": false,
-        "properties": {
-          "author_id": {
-            "format": "uuid",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "author_type": {
-            "enum": ["coach", "client", "system"],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "body": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "inserted_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "kind": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "metadata": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "thread_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": ["id", "thread_id", "author_type", "body", "kind", "inserted_at", "updated_at"],
-        "title": "ThreadMessage",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ThreadMessage",
         "x-validate": null
       },
       "ClientProfileResponse": {
@@ -7969,19 +7748,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Prospect",
         "x-validate": null
       },
-      "ThreadDetailResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ThreadWithMessages"
-          }
-        },
-        "required": ["data"],
-        "title": "ThreadDetailResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ThreadDetailResponse",
-        "x-validate": null
-      },
       "ProspectClient": {
         "additionalProperties": false,
         "properties": {
@@ -8380,29 +8146,6 @@
         },
         "required": ["coach_id"],
         "title": "ReassignClientRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
-      "ThreadMessageRequest": {
-        "additionalProperties": false,
-        "example": {
-          "body": "Sounds good, thanks!"
-        },
-        "properties": {
-          "body": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "kind": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": ["body"],
-        "title": "ThreadMessageRequest",
         "type": "object",
         "x-struct": null,
         "x-validate": null
@@ -10344,117 +10087,6 @@
         "tags": ["coach form assignments"]
       }
     },
-    "/v1/client/threads": {
-      "get": {
-        "callbacks": {},
-        "operationId": "listClientThreads",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadListResponse"
-                }
-              }
-            },
-            "description": "Threads"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "List my threads",
-        "tags": ["client threads"]
-      },
-      "post": {
-        "callbacks": {},
-        "operationId": "createClientThread",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientThreadCreateRequest"
-              }
-            }
-          },
-          "description": "Thread",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponse"
-                }
-              }
-            },
-            "description": "Thread"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Start a thread",
-        "tags": ["client threads"]
-      }
-    },
     "/v1/coach/team/{id}/resend-invite": {
       "post": {
         "callbacks": {},
@@ -11154,141 +10786,6 @@
         "tags": ["client food log entries"]
       }
     },
-    "/v1/coach/clients/{client_id}/threads": {
-      "get": {
-        "callbacks": {},
-        "operationId": "listCoachClientThreads",
-        "parameters": [
-          {
-            "description": "Client id",
-            "in": "path",
-            "name": "client_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadListResponse"
-                }
-              }
-            },
-            "description": "Threads"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "List a client's threads",
-        "tags": ["coach threads"]
-      },
-      "post": {
-        "callbacks": {},
-        "operationId": "createCoachThread",
-        "parameters": [
-          {
-            "description": "Client id",
-            "in": "path",
-            "name": "client_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CoachThreadCreateRequest"
-              }
-            }
-          },
-          "description": "Thread",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponse"
-                }
-              }
-            },
-            "description": "Thread"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Create a thread",
-        "tags": ["coach threads"]
-      }
-    },
     "/v1/coach/nutrition-meals/{meal_id}/items": {
       "post": {
         "callbacks": {},
@@ -11367,6 +10864,65 @@
         ],
         "summary": "Create meal item",
         "tags": ["coach meal items"]
+      }
+    },
+    "/v1/coach/conversations": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listCoachConversations",
+        "parameters": [
+          {
+            "description": "Offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Limit (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationListResponse"
+                }
+              }
+            },
+            "description": "Conversations"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List conversations (inbox)",
+        "tags": ["coach conversations"]
       }
     },
     "/v1/auth/token": {
@@ -11564,6 +11120,110 @@
         "tags": ["coach prospects"]
       }
     },
+    "/v1/client/conversation/read": {
+      "post": {
+        "callbacks": {},
+        "operationId": "markClientConversationRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
+              }
+            },
+            "description": "Conversation"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark my conversation read",
+        "tags": ["client conversation"]
+      }
+    },
+    "/v1/coach/conversations/{id}": {
+      "get": {
+        "callbacks": {},
+        "operationId": "getCoachConversation",
+        "parameters": [
+          {
+            "description": "Conversation id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
+              }
+            },
+            "description": "Conversation"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get a conversation",
+        "tags": ["coach conversations"]
+      }
+    },
     "/v1/coach/nutrition-days/{day_id}/options": {
       "post": {
         "callbacks": {},
@@ -11759,6 +11419,64 @@
         "tags": ["client food log entries"]
       }
     },
+    "/v1/coach/clients/{client_id}/conversation": {
+      "get": {
+        "callbacks": {},
+        "operationId": "getCoachClientConversation",
+        "parameters": [
+          {
+            "description": "Client id",
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
+              }
+            },
+            "description": "Conversation"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get (or create) a client's conversation",
+        "tags": ["coach conversations"]
+      }
+    },
     "/v1/coach/nutrition-plans/{plan_id}/days": {
       "post": {
         "callbacks": {},
@@ -11889,64 +11607,6 @@
         },
         "summary": "Accept invitation",
         "tags": ["auth"]
-      }
-    },
-    "/v1/client/threads/{id}": {
-      "get": {
-        "callbacks": {},
-        "operationId": "getClientThread",
-        "parameters": [
-          {
-            "description": "Thread id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadDetailResponse"
-                }
-              }
-            },
-            "description": "Thread"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Get one of my threads",
-        "tags": ["client threads"]
       }
     },
     "/v1/coach/billing/cancel": {
@@ -13131,85 +12791,6 @@
         "tags": ["client recipes"]
       }
     },
-    "/v1/coach/threads/{thread_id}/messages": {
-      "post": {
-        "callbacks": {},
-        "operationId": "createCoachThreadMessage",
-        "parameters": [
-          {
-            "description": "Thread id",
-            "in": "path",
-            "name": "thread_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ThreadMessageRequest"
-              }
-            }
-          },
-          "description": "Message",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadMessageResponse"
-                }
-              }
-            },
-            "description": "Message"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Post a message to a thread",
-        "tags": ["coach threads"]
-      }
-    },
     "/v1/coach/nutrition-foods/{id}/impact": {
       "get": {
         "callbacks": {},
@@ -13256,6 +12837,163 @@
         ],
         "summary": "Show plans/templates affected by a food",
         "tags": ["coach foods"]
+      }
+    },
+    "/v1/coach/conversations/{id}/messages": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listCoachConversationMessages",
+        "parameters": [
+          {
+            "description": "Conversation id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Message id cursor — return messages older than this",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Page size (default 50, max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessagesResponse"
+                }
+              }
+            },
+            "description": "Messages"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List messages (cursor-paginated, ascending)",
+        "tags": ["coach conversations"]
+      },
+      "post": {
+        "callbacks": {},
+        "operationId": "createCoachConversationMessage",
+        "parameters": [
+          {
+            "description": "Conversation id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageCreateRequest"
+              }
+            }
+          },
+          "description": "Message",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessageResponse"
+                }
+              }
+            },
+            "description": "Message"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Send a message",
+        "tags": ["coach conversations"]
       }
     },
     "/v1/auth/trainer-accept-invite": {
@@ -13732,6 +13470,64 @@
         ],
         "summary": "Reconcile billing with Razorpay",
         "tags": ["coach billing"]
+      }
+    },
+    "/v1/coach/conversations/{id}/read": {
+      "post": {
+        "callbacks": {},
+        "operationId": "markCoachConversationRead",
+        "parameters": [
+          {
+            "description": "Conversation id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
+              }
+            },
+            "description": "Conversation"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark the conversation read (coach side)",
+        "tags": ["coach conversations"]
       }
     },
     "/v1/coach/billing": {
@@ -15208,6 +15004,140 @@
         "tags": ["coach muscles"]
       }
     },
+    "/v1/client/conversation/messages": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listClientConversationMessages",
+        "parameters": [
+          {
+            "description": "Message id cursor — return messages older than this",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Page size (default 50, max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessagesResponse"
+                }
+              }
+            },
+            "description": "Messages"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List my messages (cursor-paginated, ascending)",
+        "tags": ["client conversation"]
+      },
+      "post": {
+        "callbacks": {},
+        "operationId": "createClientConversationMessage",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageCreateRequest"
+              }
+            }
+          },
+          "description": "Message",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessageResponse"
+                }
+              }
+            },
+            "description": "Message"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Send a message to my coach team",
+        "tags": ["client conversation"]
+      }
+    },
     "/v1/coach/team/{id}": {
       "delete": {
         "callbacks": {},
@@ -15787,6 +15717,52 @@
         ],
         "summary": "List client weight entries",
         "tags": ["coach client weight entries"]
+      }
+    },
+    "/v1/client/conversation": {
+      "get": {
+        "callbacks": {},
+        "operationId": "getClientConversation",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
+              }
+            },
+            "description": "Conversation"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get (or create) my conversation",
+        "tags": ["client conversation"]
       }
     },
     "/v1/client/nutrition-foods/{id}": {
@@ -17847,87 +17823,6 @@
         "tags": ["coach form assignments"]
       }
     },
-    "/v1/coach/threads": {
-      "get": {
-        "callbacks": {},
-        "operationId": "listCoachThreads",
-        "parameters": [
-          {
-            "description": "Client filter",
-            "in": "query",
-            "name": "client_id",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          },
-          {
-            "description": "Module filter",
-            "in": "query",
-            "name": "module",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          },
-          {
-            "description": "Status filter",
-            "in": "query",
-            "name": "status",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          },
-          {
-            "description": "Priority filter",
-            "in": "query",
-            "name": "priority",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadListResponse"
-                }
-              }
-            },
-            "description": "Threads"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "List threads",
-        "tags": ["coach threads"]
-      }
-    },
     "/v1/client/nutrition-meal-logs": {
       "get": {
         "callbacks": {},
@@ -17996,220 +17891,6 @@
         ],
         "summary": "List client meal logs",
         "tags": ["client meal logs"]
-      }
-    },
-    "/v1/client/threads/{thread_id}/messages": {
-      "post": {
-        "callbacks": {},
-        "operationId": "createClientThreadMessage",
-        "parameters": [
-          {
-            "description": "Thread id",
-            "in": "path",
-            "name": "thread_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ThreadMessageRequest"
-              }
-            }
-          },
-          "description": "Message",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadMessageResponse"
-                }
-              }
-            },
-            "description": "Message"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Post a message to my thread",
-        "tags": ["client threads"]
-      }
-    },
-    "/v1/coach/threads/{id}": {
-      "get": {
-        "callbacks": {},
-        "operationId": "getCoachThread",
-        "parameters": [
-          {
-            "description": "Thread id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadDetailResponse"
-                }
-              }
-            },
-            "description": "Thread"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Get a thread with messages",
-        "tags": ["coach threads"]
-      },
-      "patch": {
-        "callbacks": {},
-        "operationId": "updateCoachThread",
-        "parameters": [
-          {
-            "description": "Thread id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ThreadUpdateRequest"
-              }
-            }
-          },
-          "description": "Thread update",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponse"
-                }
-              }
-            },
-            "description": "Thread"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update a thread",
-        "tags": ["coach threads"]
       }
     },
     "/v1/coach/form-templates/{id}": {

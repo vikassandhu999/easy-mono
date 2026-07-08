@@ -97,9 +97,11 @@ export const api = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: [
     'Billing',
+    'ChatMessage',
     'Client',
     'ClientProfile',
     'CoachProfile',
+    'Conversation',
     'Equipment',
     'Exercise',
     'Food',

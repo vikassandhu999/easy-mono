@@ -140,6 +140,42 @@ defmodule Easy.ThreadsTest do
       assert only.id == open.id
     end
 
+    test "list_threads only shows the trainer's own assigned clients' threads" do
+      business = insert(:business)
+      trainer_a = insert(:coach, business: business)
+      trainer_b = insert(:coach, business: business)
+      client_a = insert(:client, business: business, creator: trainer_a, assigned_coach: trainer_a)
+      client_b = insert(:client, business: business, creator: trainer_b, assigned_coach: trainer_b)
+      thread_a = insert(:thread, business: business, client: client_a, created_by_id: trainer_a.id)
+      insert(:thread, business: business, client: client_b, created_by_id: trainer_b.id)
+
+      assert {:ok, %{count: 1, threads: [only]}} = Threads.list_threads(coach_ctx(trainer_a))
+      assert only.id == thread_a.id
+    end
+
+    test "list_threads with client_id for another trainer's client returns empty, not that client's threads" do
+      business = insert(:business)
+      trainer_a = insert(:coach, business: business)
+      trainer_b = insert(:coach, business: business)
+      client_b = insert(:client, business: business, creator: trainer_b, assigned_coach: trainer_b)
+      insert(:thread, business: business, client: client_b, created_by_id: trainer_b.id)
+
+      assert {:ok, %{count: 0, threads: []}} =
+               Threads.list_threads(coach_ctx(trainer_a), client_id: client_b.id)
+    end
+
+    test "list_threads for the owner still sees all business threads" do
+      business = insert(:business)
+      trainer_a = insert(:coach, business: business)
+      trainer_b = insert(:coach, business: business)
+      client_a = insert(:client, business: business, creator: trainer_a, assigned_coach: trainer_a)
+      client_b = insert(:client, business: business, creator: trainer_b, assigned_coach: trainer_b)
+      insert(:thread, business: business, client: client_a, created_by_id: trainer_a.id)
+      insert(:thread, business: business, client: client_b, created_by_id: trainer_b.id)
+
+      assert {:ok, %{count: 2}} = Threads.list_threads(owner_ctx(business))
+    end
+
     test "get_thread preloads messages ordered by insertion" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach)

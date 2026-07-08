@@ -22,6 +22,7 @@ defmodule Easy.Threads do
     base =
       Thread
       |> Thread.for_business(ctx.business_id)
+      |> constrain_to_visible_clients(ctx)
       |> maybe_for_client(ctx.business_id, Keyword.get(opts, :client_id))
       |> Thread.for_module(Utils.safe_to_atom(Keyword.get(opts, :module), @thread_modules))
       |> Thread.for_status(Utils.safe_to_atom(Keyword.get(opts, :status), @thread_statuses))
@@ -157,6 +158,25 @@ defmodule Easy.Threads do
 
   defp maybe_for_client(query, _business_id, nil), do: query
   defp maybe_for_client(query, business_id, client_id), do: Thread.for_client(query, business_id, client_id)
+
+  # Coach inbox listings (bare or client-filtered) must only surface threads
+  # for clients the caller can see: owner -> all, trainer -> assigned only.
+  # Client-role callers (list_client_threads) have no coach identity — they
+  # already self-scope via maybe_for_client(client_id: their own id), so this
+  # is a no-op for them rather than an incorrect blanket deny.
+  defp constrain_to_visible_clients(query, %Ctx{owner?: true}), do: query
+
+  defp constrain_to_visible_clients(query, %Ctx{coach_id: coach_id} = ctx) when not is_nil(coach_id) do
+    visible_client_ids =
+      Client
+      |> Client.for_business(ctx.business_id)
+      |> Client.visible_to(ctx)
+      |> select([c], c.id)
+
+    where(query, [t], t.client_id in subquery(visible_client_ids))
+  end
+
+  defp constrain_to_visible_clients(query, %Ctx{}), do: query
 
   defp get_thread_bare(%Ctx{} = ctx, thread_id) do
     thread =

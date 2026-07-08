@@ -8,9 +8,9 @@ import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
 import {useLookupInvitationQuery} from '@/api/auth';
-import {useAcceptInviteMutation} from '@/api/generated';
 import {clearTokens, getAccessToken} from '@/api/authStorage';
 import {api} from '@/api/base';
+import {useAcceptInviteMutation} from '@/api/generated';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 

@@ -1,5 +1,6 @@
 defmodule Easy.Identity.Invitations do
   alias Easy.Clients
+  alias Easy.Coaches
   alias Easy.Identity.AuthTokens
   alias Easy.Identity.Errors
   alias Easy.Identity.Mailer, as: Mailer
@@ -76,6 +77,95 @@ defmodule Easy.Identity.Invitations do
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
+  end
+
+  @spec accept_trainer_invite(map()) :: {:ok, :otp_sent} | {:error, any()}
+  def accept_trainer_invite(%{"invitation_token" => token, "email" => email})
+      when is_binary(email) and email != "" do
+    otp = OtpGenerator.generate()
+
+    # See accept_invite/1's comment: no pre-flight "is this email already a coach"
+    # check here on purpose — that invariant is enforced atomically at verify time.
+    result =
+      Repo.transaction(fn ->
+        with {:ok, _coach} <- Coaches.resolve_invitation_token(token),
+             :ok <- rotate_invitation_otp(email),
+             {:ok, _} <- OneTimeTokens.create_invitation_acceptance_token(otp, email, token) do
+          :ok
+        else
+          {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
+          {:error, :used} -> Repo.rollback(Errors.invitation_used())
+          {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+    case result do
+      {:ok, :ok} ->
+        Mailer.send_invitation_otp(email, otp)
+        {:ok, :otp_sent}
+
+      {:error, _} = err ->
+        err
+    end
+  end
+
+  @spec verify_accept_trainer_invite(map(), %{
+          ip: String.t(),
+          user_agent: String.t()
+        }) :: {:ok, AuthTokens.auth_token()} | {:error, any()}
+  def verify_accept_trainer_invite(
+        %{"invitation_token" => token, "email" => email, "otp" => otp},
+        session_opts
+      )
+      when is_binary(email) and email != "" and is_binary(otp) and otp != "" do
+    token_hash = OneTimeTokens.invitation_acceptance_hash(otp, email, token)
+
+    Repo.transaction(fn ->
+      with {:ok, ott} <- OneTimeTokens.get_by_hash(token_hash, :invitation_acceptance),
+           :ok <- validate_invitation_ott_fresh(ott),
+           {:ok, coach} <- Coaches.resolve_invitation_token(token),
+           {:ok, user} <- find_or_create_confirmed_coach_user(coach, email),
+           {:ok, _coach} <- Coaches.accept_invite(coach, user.id),
+           {:ok, _} <- OneTimeTokens.delete(ott),
+           {:ok, session} <-
+             SessionFactory.create_session(user, Map.merge(session_opts, %{role: :coach})) do
+        AuthTokens.build(user, session)
+      else
+        {:error, :token_not_found} -> Repo.rollback(Errors.invalid_otp())
+        {:error, :otp_expired} -> Repo.rollback(Errors.otp_expired())
+        {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
+        {:error, :used} -> Repo.rollback(Errors.invitation_used())
+        {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
+        {:error, :race_lost} -> Repo.rollback(Errors.invitation_used())
+        {:error, :already_a_coach} -> Repo.rollback(Errors.already_a_coach())
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp find_or_create_confirmed_coach_user(coach, email) do
+    case Users.get_by_email(email) do
+      {:ok, user} ->
+        if User.is_email_confirmed?(user) do
+          {:ok, user}
+        else
+          Users.confirm_user_email(user)
+        end
+
+      {:error, _} ->
+        user_attrs = %{
+          "email" => email,
+          "first_name" => coach.first_name || "",
+          "last_name" => coach.last_name || "",
+          "confirmation_sent_at" => DateTime.utc_now(:second)
+        }
+
+        with {:ok, user} <- Users.create(user_attrs),
+             {:ok, confirmed} <- Users.confirm_user_email(user) do
+          {:ok, confirmed}
+        end
+    end
   end
 
   defp rotate_invitation_otp(email) do

@@ -9,6 +9,8 @@ defmodule Easy.Orgs.Coach do
 
   @type t() :: %__MODULE__{}
 
+  @invitation_validity_days 30
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
@@ -71,6 +73,14 @@ defmodule Easy.Orgs.Coach do
     |> unique_constraint(:user_id)
   end
 
+  @spec resend_invite_changeset(t()) :: Ecto.Changeset.t()
+  def resend_invite_changeset(coach) do
+    coach
+    |> change()
+    |> put_change(:invitation_token, generate_token())
+    |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
+  end
+
   defp downcase(nil), do: nil
   defp downcase(email), do: String.downcase(email)
 
@@ -98,6 +108,19 @@ defmodule Easy.Orgs.Coach do
   @spec include_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_preloads(query \\ __MODULE__, _business_id) do
     from(c in query, preload: [:user, :business])
+  end
+
+  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def newest(query \\ __MODULE__) do
+    from(c in query, order_by: [desc: c.inserted_at, desc: c.id])
+  end
+
+  @spec invitation_expired?(t()) :: boolean()
+  def invitation_expired?(%__MODULE__{invitation_sent_at: nil}), do: false
+
+  def invitation_expired?(%__MODULE__{invitation_sent_at: sent_at}) do
+    expires_at = DateTime.add(sent_at, @invitation_validity_days, :day)
+    DateTime.compare(DateTime.utc_now(), expires_at) == :gt
   end
 
   # Actions

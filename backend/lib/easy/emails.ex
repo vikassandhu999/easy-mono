@@ -36,6 +36,17 @@ defmodule Easy.Emails do
     |> html_body(client_invitation_html(coach_name, business_name, invitation_url))
   end
 
+  def trainer_invitation_email(email, invitation_token, business_name) do
+    invitation_url = build_trainer_invitation_url(invitation_token)
+
+    new()
+    |> to(email)
+    |> from(from_email())
+    |> subject("You've been invited to join #{business_name} on Coach Easy")
+    |> text_body(trainer_invitation_text(business_name, invitation_url))
+    |> html_body(trainer_invitation_html(business_name, invitation_url))
+  end
+
   # Private functions for text templates
 
   defp otp_verification_text(code) do
@@ -73,6 +84,25 @@ defmodule Easy.Emails do
     Hello!
 
     #{coach_name} has invited you to join #{business_name} on Coach Easy.
+
+    To accept this invitation and create your account, please click the link below:
+
+    #{invitation_url}
+
+    This invitation will expire in 30 days.
+
+    If you didn't expect this invitation, you can safely ignore this email.
+
+    ---
+    Coach Easy
+    """
+  end
+
+  defp trainer_invitation_text(business_name, invitation_url) do
+    """
+    Hello!
+
+    You've been invited to join #{business_name} as a trainer on Coach Easy.
 
     To accept this invitation and create your account, please click the link below:
 
@@ -207,10 +237,61 @@ defmodule Easy.Emails do
     """
   end
 
+  defp trainer_invitation_html(business_name, invitation_url) do
+    """
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>You've been invited</title>
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
+        <h1 style="color: #2563eb; margin-top: 0;">You've Been Invited!</h1>
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          You've been invited to join <strong>#{business_name}</strong> as a trainer on Coach Easy.
+        </p>
+
+        <div style="text-align: center; margin: 40px 0;">
+          <a href="#{invitation_url}" style="background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Accept Invitation</a>
+        </div>
+
+        <p style="font-size: 14px; color: #666; margin-top: 30px;">
+          Or copy and paste this link into your browser:
+        </p>
+        <p style="font-size: 12px; color: #2563eb; word-break: break-all; background-color: #f1f5f9; padding: 10px; border-radius: 4px;">
+          #{invitation_url}
+        </p>
+
+        <p style="font-size: 14px; color: #666; margin-top: 30px;">
+          <strong>This invitation will expire in 30 days.</strong>
+        </p>
+
+        <p style="font-size: 14px; color: #666; margin-top: 20px;">
+          If you didn't expect this invitation, you can safely ignore this email.
+        </p>
+      </div>
+
+      <div style="text-align: center; color: #999; font-size: 12px; margin-top: 30px;">
+        <p>Coach Easy</p>
+      </div>
+    </body>
+    </html>
+    """
+  end
+
   # Invitation links open the CLIENT app's /invite/:token route — use the client
   # frontend URL (same base as Client.build_invite_url), NOT the backend app_url.
   defp build_invitation_url(token) do
     base_url = Application.get_env(:easy, :client_frontend_url, "http://localhost:1314")
     "#{base_url}/invite/#{token}"
+  end
+
+  # Trainer invitation links open the COACH app's /accept-invite route — use the
+  # coach frontend URL (:easy, :frontend_url), NOT the client frontend URL.
+  defp build_trainer_invitation_url(token) do
+    base_url = Application.get_env(:easy, :frontend_url, "http://localhost:2020")
+    "#{base_url}/accept-invite?token=#{token}"
   end
 end

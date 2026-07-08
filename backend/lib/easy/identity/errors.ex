@@ -41,6 +41,16 @@ defmodule Easy.Identity.Errors do
     )
   end
 
+  @spec already_a_coach() :: Error.t()
+  def already_a_coach do
+    Error.new(
+      :already_a_coach,
+      "This email is already associated with a coach account on another team.",
+      %{},
+      :conflict
+    )
+  end
+
   @spec invalid_otp() :: Error.t()
   def invalid_otp do
     Error.new(

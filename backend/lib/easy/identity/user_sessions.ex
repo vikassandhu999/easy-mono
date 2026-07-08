@@ -1,4 +1,6 @@
 defmodule Easy.Identity.UserSessions do
+  import Ecto.Query
+
   alias Easy.Identity.UserSession
   alias Easy.Identity.User
   alias Easy.Repo
@@ -35,6 +37,12 @@ defmodule Easy.Identity.UserSessions do
     session
     |> UserSession.refresh_changeset(business_id, attrs)
     |> Repo.update!()
+  end
+
+  @spec revoke_all_for_user(String.t()) :: {non_neg_integer(), nil}
+  def revoke_all_for_user(user_id) do
+    from(s in UserSession, where: s.user_id == ^user_id and is_nil(s.revoked_at))
+    |> Repo.update_all(set: [revoked_at: DateTime.utc_now(:second)])
   end
 
   @spec generate_refresh_token() :: String.t()

@@ -37,4 +37,106 @@ defmodule Easy.ChatTest do
       refute cs.valid?
     end
   end
+
+  describe "Easy.Chat context" do
+    alias Easy.Chat
+    alias Easy.Ctx
+
+    defp coach_ctx(coach), do: trainer_ctx(coach)
+    defp client_ctx(client), do: Ctx.new(client.business_id, client.user_id)
+
+    setup do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach)
+      %{coach: coach, client: client}
+    end
+
+    test "get_or_create_conversation_for_client is idempotent", %{coach: coach, client: client} do
+      assert {:ok, a} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      assert {:ok, b} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      assert a.id == b.id
+      assert a.unread_count == 0
+      assert a.client.id == client.id
+    end
+
+    test "404s for a client in another business", %{coach: coach} do
+      other_coach = insert(:coach)
+      other = insert(:client, business: other_coach.business, creator: other_coach)
+      assert {:error, :not_found} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), other.id)
+    end
+
+    test "send/list round-trip with cursor pagination", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+
+      for i <- 1..5 do
+        {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "m#{i}"})
+      end
+
+      assert {:ok, %{messages: page1, has_more: true}} =
+               Chat.list_messages(coach_ctx(coach), conversation.id, limit: 3)
+
+      assert Enum.map(page1, & &1.body) == ["m3", "m4", "m5"]
+
+      oldest_loaded = List.first(page1)
+
+      assert {:ok, %{messages: page2, has_more: false}} =
+               Chat.list_messages(coach_ctx(coach), conversation.id, limit: 3, before: oldest_loaded.id)
+
+      assert Enum.map(page2, & &1.body) == ["m1", "m2"]
+    end
+
+    test "send_message bumps preview and unread for the client", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "hello there"})
+
+      assert {:ok, client_view} = Chat.get_client_conversation(client_ctx(client))
+      assert client_view.last_message_preview == "hello there"
+      assert client_view.unread_count == 1
+    end
+
+    test "mark_client_read zeroes the client's unread", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "hi"})
+
+      assert {:ok, _} = Chat.mark_client_read(client_ctx(client))
+      assert {:ok, %{unread_count: 0}} = Chat.get_client_conversation(client_ctx(client))
+    end
+
+    test "client sends create the conversation lazily and set coach unread", %{coach: coach, client: client} do
+      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{"body" => "help"})
+      assert message.sender_type == :client
+
+      assert {:ok, %{count: 1, conversations: [conversation]}} = Chat.list_conversations(coach_ctx(coach))
+      assert conversation.unread_count == 1
+      assert conversation.last_message_preview == "help"
+    end
+
+    test "trainer only sees conversations for visible clients", %{coach: coach, client: client} do
+      {:ok, hidden} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+
+      trainer = insert(:coach, business: coach.business)
+      assert {:ok, %{count: 0, conversations: []}} = Chat.list_conversations(trainer_ctx(trainer))
+      assert {:error, :not_found} = Chat.get_conversation(trainer_ctx(trainer), hidden.id)
+
+      assigned = insert(:client, business: coach.business, creator: coach, assigned_coach: trainer)
+      {:ok, conv} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), assigned.id)
+
+      assert {:ok, %{count: 1, conversations: [visible]}} = Chat.list_conversations(trainer_ctx(trainer))
+      assert visible.id == conv.id
+      assert {:ok, _} = Chat.get_conversation(trainer_ctx(trainer), conv.id)
+    end
+
+    test "send broadcasts to conversation and inbox topics", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      Phoenix.PubSub.subscribe(Easy.PubSub, "conversation:#{conversation.id}")
+      Phoenix.PubSub.subscribe(Easy.PubSub, "inbox:business:#{coach.business_id}")
+
+      {:ok, message} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "ping"})
+
+      assert_receive {:chat_message_created, %{id: message_id}}
+      assert message_id == message.id
+      assert_receive {:conversation_updated, conversation_id}
+      assert conversation_id == conversation.id
+    end
+  end
 end

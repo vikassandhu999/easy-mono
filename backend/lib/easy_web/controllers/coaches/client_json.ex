@@ -22,6 +22,7 @@ defmodule EasyWeb.Coaches.ClientJSON do
       goal_weight_value: client.goal_weight_value,
       goal_weight_unit: client.goal_weight_unit,
       status: client.status,
+      assigned_coach_id: client.assigned_coach_id,
       invite_url: Client.build_invite_url(client),
       invitation_sent_at: pending_only(client, client.invitation_sent_at),
       invitation_expires_at: pending_only(client, Client.invitation_expires_at(client)),

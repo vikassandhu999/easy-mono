@@ -188,6 +188,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["goal_weight_value"] == nil
       assert data["goal_weight_unit"] == nil
       assert data["status"] == "active"
+      assert data["assigned_coach_id"] == coach.id
       assert data["inserted_at"]
       assert data["updated_at"]
 
@@ -1234,6 +1235,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       conn = post(owner_conn, "/v1/coach/clients/#{client.id}/reassign", %{"coach_id" => other_trainer.id})
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == client.id
+      assert data["assigned_coach_id"] == other_trainer.id
 
       updated = Easy.Repo.get!(Easy.Clients.Client, client.id)
       assert updated.assigned_coach_id == other_trainer.id

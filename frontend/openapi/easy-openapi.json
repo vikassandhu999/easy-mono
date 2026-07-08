@@ -5459,6 +5459,13 @@
       "Client": {
         "additionalProperties": false,
         "properties": {
+          "assigned_coach_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "email": {
             "format": "email",
             "nullable": true,

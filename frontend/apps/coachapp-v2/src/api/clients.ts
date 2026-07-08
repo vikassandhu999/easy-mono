@@ -18,6 +18,8 @@ export type Client = {
   phone: null | string;
   notes: null | string;
   status: ClientStatus;
+  /** The trainer this client is currently assigned to. */
+  assigned_coach_id: null | string;
   /** Present only for pending clients. */
   invite_url: null | string;
   /**

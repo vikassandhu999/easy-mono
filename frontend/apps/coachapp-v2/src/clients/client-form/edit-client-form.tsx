@@ -42,10 +42,7 @@ function memberName(member: TeamMember): string {
 
 export function clientToEditFormValues(client: Client): EditClientFormValues {
   return {
-    // Task 7's Client response doesn't expose the currently assigned coach,
-    // so the picker starts unselected — "changed" means the coach explicitly
-    // picked someone, which is exactly when we fire reassignClient on save.
-    assigned_trainer_id: undefined,
+    assigned_trainer_id: client.assigned_coach_id ?? undefined,
     email: client.email ?? '',
     first_name: client.first_name ?? '',
     last_name: client.last_name ?? '',

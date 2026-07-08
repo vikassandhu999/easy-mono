@@ -1758,6 +1758,7 @@ export type TrainingDayScheduleRequest = {
   training_workout_id?: string | null;
 };
 export type Client = {
+  assigned_coach_id?: string | null;
   email: string | null;
   first_name: string | null;
   goal_weight_unit: ('kg' | 'lbs') | null;

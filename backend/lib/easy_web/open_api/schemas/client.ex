@@ -83,6 +83,7 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
             type: :string,
             enum: ["active", "pending", "inactive", "archived", "awaiting_seat"]
           },
+          assigned_coach_id: %Schema{type: :string, format: :uuid, nullable: true},
           invite_url: %Schema{type: :string, nullable: true},
           invitation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
           invitation_expires_at: %Schema{type: :string, format: :"date-time", nullable: true}

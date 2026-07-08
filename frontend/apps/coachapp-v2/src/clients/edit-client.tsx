@@ -67,13 +67,15 @@ export default function EditClient() {
     );
   }
 
+  const initialTrainerId = client.assigned_coach_id ?? undefined;
+
   const onSubmit = async (formData: EditClientFormValues) => {
     try {
       await updateClient({
         body: editClientToUpdateRequest(formData),
         id: id!,
       }).unwrap();
-      if (formData.assigned_trainer_id) {
+      if (formData.assigned_trainer_id && formData.assigned_trainer_id !== initialTrainerId) {
         try {
           await reassignClient({
             clientId: id!,

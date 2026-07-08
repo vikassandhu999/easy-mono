@@ -72,6 +72,29 @@ defmodule EasyWeb.OpenApi.Schemas.InvitationPreviewResponse do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.TrainerInvitationPreviewResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{
+        type: :object,
+        additionalProperties: false,
+        properties: %{
+          business_name: %Schema{type: :string},
+          email: %Schema{type: :string, format: :email, nullable: true},
+          first_name: %Schema{type: :string, nullable: true}
+        },
+        required: [:business_name]
+      },
+      "TrainerInvitationPreviewResponse"
+    )
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.AcceptInviteRequest do
   require OpenApiSpex
 
@@ -115,6 +138,56 @@ defmodule EasyWeb.OpenApi.Schemas.AcceptInviteVerifyRequest do
       example: %{
         "invitation_token" => "invite-token",
         "email" => "client@example.com",
+        "otp" => "123456"
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainerAcceptInviteRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "TrainerAcceptInviteRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        invitation_token: %Schema{type: :string},
+        email: %Schema{type: :string, format: :email}
+      },
+      required: [:invitation_token, :email],
+      example: %{
+        "invitation_token" => "invite-token",
+        "email" => "trainer@example.com"
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.TrainerAcceptInviteVerifyRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "TrainerAcceptInviteVerifyRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        invitation_token: %Schema{type: :string},
+        email: %Schema{type: :string, format: :email},
+        otp: %Schema{type: :string}
+      },
+      required: [:invitation_token, :email, :otp],
+      example: %{
+        "invitation_token" => "invite-token",
+        "email" => "trainer@example.com",
         "otp" => "123456"
       }
     },

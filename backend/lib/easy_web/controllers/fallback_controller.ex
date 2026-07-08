@@ -31,6 +31,36 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  def call(conn, {:error, :already_on_team}) do
+    call(
+      conn,
+      {:error, Easy.Error.unprocessable(%{fields: %{email: ["is already on this team"]}})}
+    )
+  end
+
+  def call(conn, {:error, :cannot_deactivate_owner}) do
+    call(
+      conn,
+      {:error, Easy.Error.unprocessable(%{fields: %{coach: ["the owner cannot be deactivated"]}})}
+    )
+  end
+
+  # Bare invitation-resolution atoms only ever reach the fallback via
+  # Coaches.invitation_preview/1 (the public trainer-invitation preview), which does
+  # NOT fold them into a %{state: ...} body the way Clients.invitation_preview/1 does.
+  # Reuse Identity.Errors so both invitation flows render identical error semantics.
+  def call(conn, {:error, :invalid}) do
+    call(conn, {:error, Easy.Identity.Errors.invitation_invalid()})
+  end
+
+  def call(conn, {:error, :used}) do
+    call(conn, {:error, Easy.Identity.Errors.invitation_used()})
+  end
+
+  def call(conn, {:error, :expired}) do
+    call(conn, {:error, Easy.Identity.Errors.invitation_expired()})
+  end
+
   def call(conn, {:error, :no_subscription}) do
     call(
       conn,

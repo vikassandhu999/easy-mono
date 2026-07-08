@@ -52,6 +52,10 @@ defmodule EasyWeb.Router do
     post "/otp", AuthController, :otp
     post "/verify", AuthController, :verify
     post "/token", AuthController, :token
+
+    get "/trainer-invitations/:token", AuthController, :show_trainer_invitation
+    post "/trainer-accept-invite", AuthController, :trainer_accept_invite
+    post "/trainer-accept-invite/verify", AuthController, :trainer_accept_invite_verify
   end
 
   # Unauthenticated public landing funnel: anonymous prospects render a coach's published
@@ -104,6 +108,13 @@ defmodule EasyWeb.Router do
     patch "/clients/:id", ClientController, :update
     delete "/clients/:id", ClientController, :delete
     get "/clients", ClientController, :index
+    post "/clients/:id/reassign", ClientController, :reassign
+
+    get "/team", TeamController, :index
+    post "/team/invite", TeamController, :invite
+    post "/team/:id/resend-invite", TeamController, :resend_invite
+    delete "/team/:id", TeamController, :revoke_invite
+    post "/team/:id/deactivate", TeamController, :deactivate
 
     get "/clients/:client_id/profile", ClientProfileController, :show
     patch "/clients/:client_id/profile", ClientProfileController, :update

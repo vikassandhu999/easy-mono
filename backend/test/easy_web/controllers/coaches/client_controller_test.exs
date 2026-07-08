@@ -1210,4 +1210,55 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert json_response(conn, 403)
     end
   end
+
+  describe "POST /v1/coach/clients/:id/reassign" do
+    setup do
+      owner_user = insert(:user)
+      business = insert(:business, owner: owner_user)
+      owner_coach = insert(:coach, user: owner_user, business: business)
+
+      owner_conn =
+        build_conn() |> authenticate_coach(owner_coach) |> put_req_header("content-type", "application/json")
+
+      %{owner_conn: owner_conn, owner_coach: owner_coach, reassign_business: business}
+    end
+
+    test "owner reassigns a client to another active trainer", %{
+      owner_conn: owner_conn,
+      owner_coach: owner_coach,
+      reassign_business: business
+    } do
+      other_trainer = insert(:coach, business: business, status: :active)
+      client = insert(:client, business: business, assigned_coach: owner_coach)
+
+      conn = post(owner_conn, "/v1/coach/clients/#{client.id}/reassign", %{"coach_id" => other_trainer.id})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == client.id
+
+      updated = Easy.Repo.get!(Easy.Clients.Client, client.id)
+      assert updated.assigned_coach_id == other_trainer.id
+    end
+
+    test "non-owner trainer gets 403", %{conn: conn, business: business} do
+      other_trainer = insert(:coach, business: business, status: :active)
+      client = insert(:client, business: business)
+
+      conn = post(conn, "/v1/coach/clients/#{client.id}/reassign", %{"coach_id" => other_trainer.id})
+      assert json_response(conn, 403)
+    end
+
+    test "returns 422 when the target trainer is not active", %{
+      owner_conn: owner_conn,
+      owner_coach: owner_coach,
+      reassign_business: business
+    } do
+      inactive_trainer = insert(:coach, business: business, status: :inactive)
+      client = insert(:client, business: business, assigned_coach: owner_coach)
+
+      conn =
+        post(owner_conn, "/v1/coach/clients/#{client.id}/reassign", %{"coach_id" => inactive_trainer.id})
+
+      assert json_response(conn, 422)
+    end
+  end
 end

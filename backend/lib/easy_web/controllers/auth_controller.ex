@@ -1,6 +1,8 @@
 defmodule EasyWeb.AuthController do
   alias Easy.Clients
+  alias Easy.Coaches
   alias Easy.Identity
+  alias Easy.Identity.Invitations
   alias Easy.Utils
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
@@ -18,6 +20,9 @@ defmodule EasyWeb.AuthController do
     SignupRequest,
     SignupResponse,
     TokenRequest,
+    TrainerAcceptInviteRequest,
+    TrainerAcceptInviteVerifyRequest,
+    TrainerInvitationPreviewResponse,
     VerifyRequest
   }
 
@@ -67,6 +72,45 @@ defmodule EasyWeb.AuthController do
     responses: [
       ok: {"Auth token", "application/json", AuthTokenResponse},
       conflict: {"Already active elsewhere", "application/json", ErrorResponse},
+      gone: {"Invitation or OTP expired", "application/json", ErrorResponse},
+      not_found: {"Invitation not found", "application/json", ErrorResponse},
+      unauthorized: {"Invalid OTP", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show_trainer_invitation,
+    summary: "Preview trainer invitation",
+    description: "Returns invitation state and prefill details for a trainer invitation token.",
+    operation_id: "showTrainerInvitation",
+    parameters: [
+      Operation.parameter(:token, :path, :string, "Trainer invitation token")
+    ],
+    responses: [
+      ok: {"Trainer invitation preview", "application/json", TrainerInvitationPreviewResponse},
+      not_found: {"Invitation not found", "application/json", ErrorResponse},
+      gone: {"Invitation unavailable", "application/json", ErrorResponse}
+    ]
+
+  operation :trainer_accept_invite,
+    summary: "Accept trainer invitation",
+    description: "Starts trainer invitation acceptance by sending an OTP to the invited email.",
+    operation_id: "trainerAcceptInvite",
+    request_body: {"Trainer accept invite request", "application/json", TrainerAcceptInviteRequest, required: true},
+    responses: [
+      ok: {"OTP sent", "application/json", MessageResponse},
+      gone: {"Invitation unavailable", "application/json", ErrorResponse},
+      not_found: {"Invitation not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :trainer_accept_invite_verify,
+    summary: "Verify trainer invitation OTP",
+    description: "Verifies a trainer invitation OTP, links or creates the user, and returns auth tokens.",
+    operation_id: "trainerAcceptInviteVerify",
+    request_body: {"Trainer accept invite verification request", "application/json", TrainerAcceptInviteVerifyRequest, required: true},
+    responses: [
+      ok: {"Auth token", "application/json", AuthTokenResponse},
+      conflict: {"Already a coach elsewhere", "application/json", ErrorResponse},
       gone: {"Invitation or OTP expired", "application/json", ErrorResponse},
       not_found: {"Invitation not found", "application/json", ErrorResponse},
       unauthorized: {"Invalid OTP", "application/json", ErrorResponse},
@@ -151,6 +195,38 @@ defmodule EasyWeb.AuthController do
   def show_invitation(conn, %{"token" => token}) do
     with {:ok, body} <- Clients.invitation_preview(token) do
       conn |> put_status(200) |> json(%{data: body})
+    end
+  end
+
+  @spec show_trainer_invitation(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def show_trainer_invitation(conn, %{"token" => token}) do
+    with {:ok, body} <- Coaches.invitation_preview(token) do
+      conn |> put_status(200) |> json(%{data: body})
+    end
+  end
+
+  @spec trainer_accept_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def trainer_accept_invite(conn, %{"invitation_token" => _, "email" => _} = params) do
+    with {:ok, :otp_sent} <- Invitations.accept_trainer_invite(params) do
+      conn
+      |> put_status(200)
+      |> json(%{message: "OTP sent to the provided email."})
+    end
+  end
+
+  @spec trainer_accept_invite_verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def trainer_accept_invite_verify(
+        conn,
+        %{"invitation_token" => _, "email" => _, "otp" => _} = params
+      ) do
+    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
+    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
+
+    with {:ok, auth_token} <-
+           Invitations.verify_accept_trainer_invite(params, %{ip: ip, user_agent: user_agent}) do
+      conn
+      |> put_status(200)
+      |> json(auth_token)
     end
   end
 

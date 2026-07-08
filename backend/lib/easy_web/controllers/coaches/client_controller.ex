@@ -11,10 +11,12 @@ defmodule EasyWeb.Coaches.ClientController do
     ClientResponse,
     ClientUpdateRequest,
     ErrorResponse,
+    ReassignClientRequest,
     SeatLimitError
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:invite, :update]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:invite, :update, :reassign]
 
   tags ["coach clients"]
 
@@ -88,6 +90,23 @@ defmodule EasyWeb.Coaches.ClientController do
     responses: [
       no_content: "Client invitation revoked",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :reassign,
+    summary: "Reassign client",
+    description: "Owner-only: reassigns a client to a different active trainer on the team.",
+    operation_id: "reassignClient",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Client id")
+    ],
+    request_body: {"Reassign client request", "application/json", ReassignClientRequest, required: true},
+    responses: [
+      ok: {"Client reassigned", "application/json", ClientResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      forbidden: {"Not the business owner", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
@@ -178,6 +197,16 @@ defmodule EasyWeb.Coaches.ClientController do
 
     with {:ok, updated_client} <- Clients.resend_invitation(conn.assigns.ctx, client_id) do
       render(conn, :show, client: updated_client)
+    end
+  end
+
+  @spec reassign(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def reassign(conn, _params) do
+    client_id = conn.path_params["id"]
+    %{coach_id: coach_id} = conn.body_params
+
+    with {:ok, client} <- Clients.reassign_client(conn.assigns.ctx, client_id, coach_id) do
+      render(conn, :show, client: client)
     end
   end
 

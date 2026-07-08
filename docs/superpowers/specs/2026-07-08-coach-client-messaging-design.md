@@ -43,7 +43,9 @@ reply). Realtime delivery via Phoenix Channels; messages are plain text in v1.
 **`conversations`**
 - `business_id` (tenant FK), `client_id` (FK), unique index on the pair
 - `last_message_at`, `last_message_preview`
-- `coach_last_read_message_id`, `client_last_read_message_id`
+- `coach_last_read_at`, `client_last_read_at` (timestamp cursors — message-id
+  cursors don't order-compare with UUIDv4 ids and would resolve back to
+  timestamps anyway)
 - Created lazily on first open or first message.
 - Read state is two cursors on the row, not a read-state table. Shared inbox
   means any coach reading marks the conversation read for the whole team —
@@ -63,8 +65,9 @@ reply). Realtime delivery via Phoenix Channels; messages are plain text in v1.
 - `send_message(ctx, conversation_id, attrs)` — inserts message, bumps
   `last_message_at`/`last_message_preview` in the same transaction, then
   broadcasts (see Realtime).
-- `mark_read(ctx, conversation_id, message_id)` — advances the caller's cursor
-  (never backwards).
+- `mark_read(ctx, conversation_id)` — sets the caller's read cursor to now
+  (monotonic by construction; called only while the conversation is on screen,
+  which shows everything loaded).
 
 ### HTTP API (OpenApiSpex, standard resource pattern)
 

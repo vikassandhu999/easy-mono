@@ -298,8 +298,9 @@ defmodule Easy.Chat.Conversation do
       select_merge: %{
         unread_count:
           fragment(
-            "(SELECT count(*)::int FROM chat_messages m WHERE m.conversation_id = ? AND m.sender_type = 'client' AND m.inserted_at > COALESCE(?, '-infinity'))",
+            "(SELECT count(*)::int FROM chat_messages m WHERE m.conversation_id = ? AND m.sender_type = 'client' AND (? IS NULL OR m.inserted_at > ?))",
             c.id,
+            c.coach_last_read_at,
             c.coach_last_read_at
           )
       }
@@ -312,8 +313,9 @@ defmodule Easy.Chat.Conversation do
       select_merge: %{
         unread_count:
           fragment(
-            "(SELECT count(*)::int FROM chat_messages m WHERE m.conversation_id = ? AND m.sender_type = 'coach' AND m.inserted_at > COALESCE(?, '-infinity'))",
+            "(SELECT count(*)::int FROM chat_messages m WHERE m.conversation_id = ? AND m.sender_type = 'coach' AND (? IS NULL OR m.inserted_at > ?))",
             c.id,
+            c.client_last_read_at,
             c.client_last_read_at
           )
       }
@@ -1122,7 +1124,8 @@ defmodule EasyWeb.Coaches.ConversationController do
     ErrorResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create_message]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create_message, :mark_read]
 
   tags ["coach conversations"]
 
@@ -1342,7 +1345,8 @@ defmodule EasyWeb.Clients.ConversationController do
     ErrorResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create_message]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create_message, :mark_read]
 
   tags ["client conversation"]
 
@@ -1828,11 +1832,13 @@ end
 
 - [ ] **Step 5: Prod check_origin**
 
-In `backend/config/runtime.exs`, inside the `if config_env() == :prod do` block where `EasyWeb.Endpoint` is configured, add `check_origin` sourced from the same origins env CORS uses:
+In `backend/config/runtime.exs`, inside the `if config_env() == :prod do` block where `EasyWeb.Endpoint` is configured, add `check_origin` sourced from the same origins env CORS uses. The repo treats an unset/empty `CORS_ALLOWED_ORIGINS` as permissive (see `EasyWeb.Cors`), so an empty list must map to `check_origin: false`, not `[]` (which would reject every browser socket):
 
 ```elixir
+  socket_origins = String.split(System.get_env("CORS_ALLOWED_ORIGINS") || "", ",", trim: true)
+
   config :easy, EasyWeb.Endpoint,
-    check_origin: String.split(System.get_env("CORS_ALLOWED_ORIGINS") || "", ",", trim: true)
+    check_origin: if(socket_origins == [], do: false, else: socket_origins)
 ```
 
 (Merge into the existing `config :easy, EasyWeb.Endpoint, ...` call for prod rather than adding a duplicate block if one already exists there.)
@@ -2331,7 +2337,7 @@ export default function ConversationView({
         <TextArea
           aria-label="Message"
           className="flex-1"
-          onChange={setBody}
+          onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -2355,8 +2361,6 @@ export default function ConversationView({
   );
 }
 ```
-
-(HeroUI `TextArea` prop shapes vary by version — if `onChange` passes an event rather than the value, adapt to `(e) => setBody(e.target.value)`; check an existing `TextArea` usage such as `client-detail.tsx`.)
 
 - [ ] **Step 3: Inbox page**
 
@@ -2828,7 +2832,7 @@ export default function CoachChat() {
         <TextArea
           aria-label="Message"
           className="flex-1"
-          onChange={setBody}
+          onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -2853,7 +2857,7 @@ export default function CoachChat() {
 }
 ```
 
-(HeroUI `TextArea` prop shapes vary by version — if `onChange` passes an event rather than the value, adapt to `(e) => setBody(e.target.value)`; clientapp is on HeroUI 3.0.2, check an existing usage.)
+(`onChange` uses the DOM event shape — same as the `TextArea` in coachapp's `client-detail.tsx`.)
 
 - [ ] **Step 4: Verify in the running app**
 

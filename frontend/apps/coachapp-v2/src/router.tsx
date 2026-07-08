@@ -32,6 +32,9 @@ import FoodDetail from '@/foods/food-detail';
 import ListFoods from '@/foods/list-foods';
 import LandingPageEditor from '@/landing/landing-page-editor';
 import Library from '@/library/library';
+import ClientConversation from '@/messages/client-conversation';
+import ConversationPage from '@/messages/conversation-page';
+import MessagesInbox from '@/messages/messages-inbox';
 import CreateNutritionPlan from '@/nutrition-plans/create-nutrition-plan';
 import EditNutritionPlan from '@/nutrition-plans/edit-nutrition-plan';
 import ListNutritionPlans from '@/nutrition-plans/list-nutrition-plans';
@@ -81,6 +84,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.CLIENT_PROFILE, Component: ClientProfilePage},
       {path: ROUTES.CLIENT_DETAIL, Component: ClientDetail},
       {path: ROUTES.EDIT_CLIENT, Component: EditClient},
+      {path: ROUTES.CLIENT_MESSAGES, Component: ClientConversation},
       {path: ROUTES.LIBRARY, Component: Library},
       {path: ROUTES.EXERCISES, Component: ListExercises},
       {path: ROUTES.CREATE_EXERCISE, Component: CreateExercise},
@@ -112,6 +116,8 @@ export const router = createBrowserRouter([
       {path: ROUTES.SETTINGS_PROFILE_FIELDS, Component: ProfileFields},
       {path: ROUTES.SETTINGS_LANDING_PAGE, Component: LandingPageEditor},
       {path: ROUTES.SETTINGS_BILLING, Component: Billing},
+      {path: ROUTES.MESSAGES, Component: MessagesInbox},
+      {path: ROUTES.CONVERSATION, Component: ConversationPage},
     ],
   },
 

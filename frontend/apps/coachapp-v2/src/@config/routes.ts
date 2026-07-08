@@ -45,4 +45,7 @@ export const ROUTES = {
   SETTINGS_PROFILE_FIELDS: '/settings/client-profile-fields',
   SETTINGS_LANDING_PAGE: '/settings/landing-page',
   SETTINGS_BILLING: '/settings/billing',
+  MESSAGES: '/messages',
+  CONVERSATION: '/messages/:id',
+  CLIENT_MESSAGES: '/clients/:id/messages',
 } as const;

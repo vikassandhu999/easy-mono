@@ -631,4 +631,24 @@ defmodule Easy.Factory do
       "source" => "planned"
     }
   end
+
+  def conversation_factory do
+    client = build(:client)
+
+    %Easy.Chat.Conversation{
+      business: client.business,
+      client: client
+    }
+  end
+
+  def chat_message_factory do
+    conversation = build(:conversation)
+
+    %Easy.Chat.Message{
+      body: sequence(:chat_message_body, &"Message #{&1}"),
+      sender_type: :coach,
+      sender_id: Ecto.UUID.generate(),
+      conversation: conversation
+    }
+  end
 end

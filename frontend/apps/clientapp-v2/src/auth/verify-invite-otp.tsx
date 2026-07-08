@@ -8,8 +8,8 @@ import {FormOtpField} from '@/@components/form-otp-field';
 
 import {ROUTES} from '@/@config/routes';
 import {useAcceptInviteVerifyMutation} from '@/api/auth';
-import {useAcceptInviteMutation} from '@/api/generated';
 import {setTokens} from '@/api/authStorage';
+import {useAcceptInviteMutation} from '@/api/generated';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 

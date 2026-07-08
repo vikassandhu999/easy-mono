@@ -7,8 +7,8 @@ import {FormOtpField} from '@/@components/form-otp-field';
 
 import {ROUTES} from '@/@config/routes';
 import {useExchangeTokenMutation} from '@/api/auth';
-import {useSendOtpMutation} from '@/api/generated';
 import {setTokens} from '@/api/authStorage';
+import {useSendOtpMutation} from '@/api/generated';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 

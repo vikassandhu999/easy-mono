@@ -1,7 +1,7 @@
-import { Surface, Typography } from '@heroui/react';
-import { cn } from '@heroui/styles';
-import type { ReactNode, UIEvent } from 'react';
-import { useState } from 'react';
+import {Surface, Typography} from '@heroui/react';
+import {cn} from '@heroui/styles';
+import type {ReactNode, UIEvent} from 'react';
+import {useState} from 'react';
 
 interface PageProps {
   children: ReactNode;
@@ -18,7 +18,7 @@ interface PageDescriptionProps {
   className?: string;
 }
 
-function PageRoot({ children, className }: PageProps) {
+function PageRoot({children, className}: PageProps) {
   const [isScrolled, setIsScrolled] = useState(false);
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
@@ -41,7 +41,7 @@ function PageRoot({ children, className }: PageProps) {
   );
 }
 
-function PageHeader({ children, className }: PageProps) {
+function PageHeader({children, className}: PageProps) {
   return (
     <div
       className={cn(
@@ -54,11 +54,11 @@ function PageHeader({ children, className }: PageProps) {
   );
 }
 
-function PageTitleGroup({ children, className }: PageProps) {
+function PageTitleGroup({children, className}: PageProps) {
   return <div className={cn('min-w-0 flex-1', className)}>{children}</div>;
 }
 
-function PageTitle({ children, className }: PageTitleProps) {
+function PageTitle({children, className}: PageTitleProps) {
   return (
     <Typography
       className={cn('min-w-0 truncate', className)}
@@ -69,7 +69,7 @@ function PageTitle({ children, className }: PageTitleProps) {
   );
 }
 
-function PageDescription({ children, className }: PageDescriptionProps) {
+function PageDescription({children, className}: PageDescriptionProps) {
   return (
     <Typography
       className={cn('mt-1', className)}
@@ -81,15 +81,15 @@ function PageDescription({ children, className }: PageDescriptionProps) {
   );
 }
 
-function PageActions({ children, className }: PageProps) {
+function PageActions({children, className}: PageProps) {
   return <div className={cn('flex shrink-0 items-center gap-2', className)}>{children}</div>;
 }
 
-function PageToolbar({ children, className }: PageProps) {
+function PageToolbar({children, className}: PageProps) {
   return <div className={cn('mb-6 shrink-0 px-4 md:px-6 lg:px-8', className)}>{children}</div>;
 }
 
-function PageContent({ children, className }: PageProps) {
+function PageContent({children, className}: PageProps) {
   return <div className={cn('flex min-h-0 flex-1 flex-col', className)}>{children}</div>;
 }
 

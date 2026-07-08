@@ -1,9 +1,9 @@
-import { X } from 'lucide-react';
-import { forwardRef } from 'react';
+import {X} from 'lucide-react';
+import {forwardRef} from 'react';
 
-import type { TrainingPlanPlannedSet } from '@/api/generated';
+import type {TrainingPlanPlannedSet} from '@/api/generated';
 
-import { fieldsForTrackingType } from './tracking-fields';
+import {fieldsForTrackingType} from './tracking-fields';
 
 interface SetRowProps {
   set: TrainingPlanPlannedSet;
@@ -66,7 +66,7 @@ function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | nu
 }
 
 export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow(
-  { set, index, trackingType, onTap, onRemove, canRemove },
+  {set, index, trackingType, onTap, onRemove, canRemove},
   ref,
 ) {
   return (

@@ -3,4 +3,9 @@
 - add access control for trainers.
 - pending queries.
 - make app more playful.
-- client subscription management.
+- client subscription management -> just track the subscription dates, should deactive client on subscription end. client state -> onboarding -> planning -> coaching.
+- intake form improve -> default fields only.
+- monthly reports -> new this month, left this month, subscrition ending, approval rating.
+- notifications.
+- sticky notes.
+- adherence alerts -> clients who missed logging or are not responding.

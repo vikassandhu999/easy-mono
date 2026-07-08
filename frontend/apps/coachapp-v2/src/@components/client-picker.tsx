@@ -1,9 +1,9 @@
-import { Description, Label, SearchField, Spinner, Typography } from '@heroui/react';
-import { Users } from 'lucide-react';
-import { useDeferredValue, useState } from 'react';
+import {Description, Label, SearchField, Spinner, Typography} from '@heroui/react';
+import {Users} from 'lucide-react';
+import {useDeferredValue, useState} from 'react';
 
-import { type Client, useListClientsQuery } from '@/api/clients';
-import { getFullName } from '@/clients/lib/invite-client';
+import {type Client, useListClientsQuery} from '@/api/clients';
+import {getFullName} from '@/clients/lib/invite-client';
 
 type ClientPickerContentProps = {
   onSelect: (client: Client) => void;
@@ -14,12 +14,12 @@ type ClientPickerContentProps = {
  * Popover (desktop) or KeyboardSheet (mobile) by the caller (plan-add-to-client),
  * mirroring the food-picker-content / plan-assign-content pattern.
  */
-export default function ClientPickerContent({ onSelect }: ClientPickerContentProps) {
+export default function ClientPickerContent({onSelect}: ClientPickerContentProps) {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const shouldQuery = deferredSearch.trim().length >= 1;
 
-  const { data, isFetching } = useListClientsQuery({ search: deferredSearch, limit: 10 }, { skip: !shouldQuery });
+  const {data, isFetching} = useListClientsQuery({search: deferredSearch, limit: 10}, {skip: !shouldQuery});
   const clients = data?.data ?? [];
 
   return (

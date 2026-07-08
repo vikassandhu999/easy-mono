@@ -53,7 +53,12 @@ export default function OptionSheet({
                 type="button"
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  {active ? <Check className="shrink-0 text-accent" size={15} /> : null}
+                  {active ? (
+                    <Check
+                      className="shrink-0 text-accent"
+                      size={15}
+                    />
+                  ) : null}
                   <span className="truncate font-medium">{option.meal_name ?? 'Option'}</span>
                 </span>
                 <span className="shrink-0 text-xs text-muted">{Math.round(optionCalories(option))} kcal</span>

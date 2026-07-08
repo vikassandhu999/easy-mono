@@ -373,7 +373,10 @@ export default function NutritionToday() {
                       {slot.options.find((o) => o.meal_id === slot.activeMealId)?.meal_name ?? 'Option'}
                     </span>
                     <span className="shrink-0 text-muted">· {slot.options.length - 1} more</span>
-                    <ChevronDown className="shrink-0" size={11} />
+                    <ChevronDown
+                      className="shrink-0"
+                      size={11}
+                    />
                   </button>
                 ) : null}
               </div>

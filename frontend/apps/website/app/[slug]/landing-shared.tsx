@@ -95,7 +95,17 @@ export function QuestionField({question, value, onChange, inputStyle, labelColor
   if (question.type === 'long_text') {
     return (
       <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-        <span style={{fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: labelColor}}>{label}</span>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: labelColor,
+          }}
+        >
+          {label}
+        </span>
         <textarea
           onChange={(e) => onChange(e.target.value)}
           placeholder="Your answer…"
@@ -109,7 +119,17 @@ export function QuestionField({question, value, onChange, inputStyle, labelColor
   if (question.type === 'single_select') {
     return (
       <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-        <span style={{fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: labelColor}}>{label}</span>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: labelColor,
+          }}
+        >
+          {label}
+        </span>
         <select
           onChange={(e) => onChange(e.target.value)}
           style={inputStyle}
@@ -130,7 +150,11 @@ export function QuestionField({question, value, onChange, inputStyle, labelColor
   }
   return (
     <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-      <span style={{fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: labelColor}}>{label}</span>
+      <span
+        style={{fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: labelColor}}
+      >
+        {label}
+      </span>
       <input
         onChange={(e) => onChange(e.target.value)}
         placeholder="Your answer…"
@@ -169,12 +193,32 @@ export function Nav({businessName, accentBg, navBg, navBorder, logoColor, ctaCol
         justifyContent: 'space-between',
       }}
     >
-      <span style={{fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 900, fontSize: 18, letterSpacing: '0.04em', textTransform: 'uppercase', color: logoColor}}>
+      <span
+        style={{
+          fontFamily: "'Roboto Condensed', sans-serif",
+          fontWeight: 900,
+          fontSize: 18,
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+          color: logoColor,
+        }}
+      >
         {businessName}
       </span>
       <button
         onClick={onApply}
-        style={{background: accentBg, color: ctaColor, fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 20px', border: 'none', cursor: 'pointer'}}
+        style={{
+          background: accentBg,
+          color: ctaColor,
+          fontFamily: "'Roboto Condensed', sans-serif",
+          fontWeight: 700,
+          fontSize: 13,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          padding: '9px 20px',
+          border: 'none',
+          cursor: 'pointer',
+        }}
         type="button"
       >
         Apply Now
@@ -192,7 +236,10 @@ interface ApplyFormProps {
 }
 
 export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
-  const {values, answers, error, submitting, result, set, setAnswer, handleSubmit} = useApplyForm(page, selectedProgramId);
+  const {values, answers, error, submitting, result, set, setAnswer, handleSubmit} = useApplyForm(
+    page,
+    selectedProgramId,
+  );
 
   const inputStyle: React.CSSProperties = {
     padding: '12px 14px',
@@ -231,7 +278,17 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
         >
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
             <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-              <label style={{fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.labelColor}}>Full name</label>
+              <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: theme.labelColor,
+                }}
+              >
+                Full name
+              </label>
               <input
                 onChange={(e) => set({name: e.target.value})}
                 placeholder="Your name"
@@ -240,7 +297,17 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
               />
             </div>
             <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-              <label style={{fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.labelColor}}>Phone</label>
+              <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: theme.labelColor,
+                }}
+              >
+                Phone
+              </label>
               <input
                 inputMode="tel"
                 onChange={(e) => set({phone: e.target.value})}
@@ -250,7 +317,17 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
               />
             </div>
             <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-              <label style={{fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.labelColor}}>Email</label>
+              <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: theme.labelColor,
+                }}
+              >
+                Email
+              </label>
               <input
                 inputMode="email"
                 onChange={(e) => set({email: e.target.value})}
@@ -260,7 +337,17 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
               />
             </div>
             <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-              <label style={{fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.labelColor}}>Instagram (optional)</label>
+              <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: theme.labelColor,
+                }}
+              >
+                Instagram (optional)
+              </label>
               <input
                 onChange={(e) => set({instagram: e.target.value})}
                 placeholder="@yourhandle"
@@ -291,12 +378,26 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
 
           <button
             disabled={submitting}
-            style={{padding: '17px 0', background: theme.btnBg, color: '#fff', fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 15, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1}}
+            style={{
+              padding: '17px 0',
+              background: theme.btnBg,
+              color: '#fff',
+              fontFamily: "'Roboto Condensed', sans-serif",
+              fontWeight: 700,
+              fontSize: 15,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              border: 'none',
+              cursor: 'pointer',
+              opacity: submitting ? 0.6 : 1,
+            }}
             type="submit"
           >
             {submitting ? 'Submitting…' : 'Submit Application'}
           </button>
-          <p style={{fontSize: 12, textAlign: 'center', color: theme.noteColor}}>🔒 Your info stays private. No payment now.</p>
+          <p style={{fontSize: 12, textAlign: 'center', color: theme.noteColor}}>
+            🔒 Your info stays private. No payment now.
+          </p>
         </form>
       </div>
     </section>
@@ -336,13 +437,32 @@ export function Success({result, answers, page}: SuccessProps) {
       <h2 style={{fontSize: 22, fontWeight: 700, color: '#1a3a24', marginBottom: 8}}>Application received ✓</h2>
       <p style={{fontSize: 15, color: '#4a7a5a'}}>Your coach will review this and get back to you within 24 hours.</p>
       {wa ? (
-        <div style={{marginTop: 24, background: '#fff', border: '1px solid #a7d4b8', borderRadius: 10, padding: '20px 20px'}}>
+        <div
+          style={{
+            marginTop: 24,
+            background: '#fff',
+            border: '1px solid #a7d4b8',
+            borderRadius: 10,
+            padding: '20px 20px',
+          }}
+        >
           <p style={{fontSize: 14, fontWeight: 600, marginBottom: 4}}>Recommended next step</p>
-          <p style={{fontSize: 14, color: '#6b7280', marginBottom: 16}}>Send your summary on WhatsApp so the coach can reply faster.</p>
+          <p style={{fontSize: 14, color: '#6b7280', marginBottom: 16}}>
+            Send your summary on WhatsApp so the coach can reply faster.
+          </p>
           <a
             href={wa}
             rel="noopener noreferrer"
-            style={{display: 'inline-block', background: '#25D366', color: '#fff', padding: '11px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none'}}
+            style={{
+              display: 'inline-block',
+              background: '#25D366',
+              color: '#fff',
+              padding: '11px 24px',
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
             target="_blank"
           >
             Send on WhatsApp
@@ -386,7 +506,19 @@ export function StickyBar({show, onApply, accentBg, barBg, textColor}: StickyBar
       <span style={{fontSize: 13, color: textColor}}>Ready to apply?</span>
       <button
         onClick={onApply}
-        style={{background: accentBg, color: '#fff', fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '10px 22px', border: 'none', cursor: 'pointer', borderRadius: 8}}
+        style={{
+          background: accentBg,
+          color: '#fff',
+          fontFamily: "'Roboto Condensed', sans-serif",
+          fontWeight: 700,
+          fontSize: 13,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          padding: '10px 22px',
+          border: 'none',
+          cursor: 'pointer',
+          borderRadius: 8,
+        }}
         type="button"
       >
         Apply Now

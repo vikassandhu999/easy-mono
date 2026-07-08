@@ -21,12 +21,6 @@ defmodule Easy.Orgs do
     end)
   end
 
-  # pre-auth onboarding: no ctx yet — used during session creation to resolve the tenant
-  @spec get_business_for_coach(User.t()) :: Business.t() | nil
-  def get_business_for_coach(user) do
-    Businesses.get_one_for_coach(user)
-  end
-
   @spec get_business(Ctx.t()) :: {:ok, Business.t()} | {:error, Easy.Error.t()}
   def get_business(%Ctx{} = ctx) do
     Businesses.get_one(ctx.business_id)

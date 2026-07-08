@@ -2,7 +2,6 @@ defmodule Easy.Businesses do
   alias Easy.Identity
   alias Easy.Orgs
   alias Easy.Repo
-  import Ecto.Query
 
   @spec create(Identity.User.t(), map()) ::
           {:ok, Orgs.Business.t()} | {:error, Ecto.Changeset.t()}
@@ -10,20 +9,6 @@ defmodule Easy.Businesses do
     attrs
     |> Orgs.Business.insert_changeset(user)
     |> Repo.insert()
-  end
-
-  @spec get_one_for_coach(Identity.User.t()) ::
-          Orgs.Business.t()
-  def get_one_for_coach(user) do
-    Easy.Repo.one(
-      from(
-        b in Orgs.Business,
-        join: c in Orgs.Coach,
-        on: c.business_id == b.id and c.status == :active,
-        where: c.user_id == ^user.id,
-        limit: 1
-      )
-    )
   end
 
   def get_one(business_id) do

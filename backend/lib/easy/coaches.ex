@@ -219,8 +219,14 @@ defmodule Easy.Coaches do
 
   defp get_deactivatable_coach(%Ctx{} = ctx, coach_id) do
     case Coach |> Coach.for_business(ctx.business_id) |> Repo.get(coach_id) do
-      nil -> {:error, :not_found}
-      coach -> if coach.id == ctx.coach_id, do: {:error, :cannot_deactivate_owner}, else: {:ok, coach}
+      nil ->
+        {:error, :not_found}
+
+      %Coach{status: :active} = coach ->
+        if coach.id == ctx.coach_id, do: {:error, :cannot_deactivate_owner}, else: {:ok, coach}
+
+      %Coach{} ->
+        {:error, :not_found}
     end
   end
 

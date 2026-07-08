@@ -102,6 +102,23 @@ subscription id on `:free`/`:cancelled` as stale and start a fresh subscription.
 found in the billing/seats feature final review. **Enforced by:** regression test in
 `test/easy/billing/checkout_test.exs` (stale-subscription-id-on-:free case) + review.
 
+### RM-012 — Access-control sweeps are route-driven, not module-driven
+An enforcement sweep that walks a named file list or greps for a naming pattern
+(`_for_client(`/`_to_client(`) will miss sub-resource contexts that live outside that list.
+The trainer-team access-control branch swept Tasks 4–5's module list and missed
+`Easy.Meals` and `Easy.Workouts` entirely — both take sub-resource ids (`meal_id`,
+`meal_item_id`, `workout_id`, `element_id`) resolved through a private ungated `get_plan/2`,
+so a trainer kept indefinite read/write access to a reassigned-away client's plan content.
+The only sweep that catches this: enumerate every route in the actor's router scope (e.g.
+`scope "/coach"` in `router.ex`), and for each one trace its controller action to the
+context call it makes, then verify that call's authorization chain reaches
+`Clients.authorize_client_id/2` (or an equivalent client-ownership check) before returning
+data. Do not treat a context's own file list, or a grep for an authorization-looking
+function-name suffix, as exhaustive — a new sub-resource context can reach client-owned
+rows without ever calling a function named `_for_client`. **Enforced by:** review checklist
+addition — any access-boundary review must include a full router-route enumeration for the
+actor scope under review, not just a module/file sweep.
+
 ---
 
 ## Frontend

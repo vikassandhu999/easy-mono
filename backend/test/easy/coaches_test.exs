@@ -221,6 +221,29 @@ defmodule Easy.CoachesTest do
 
       assert {:error, :not_found} = Coaches.deactivate_trainer(ctx, other_coach.id)
     end
+
+    test "returns :not_found for an :invited row instead of bricking the invite" do
+      business = insert(:business)
+      ctx = owner_ctx_with_coach(business)
+      invited = invited_coach(business, %{email: "invitee@test.com"})
+
+      assert {:error, :not_found} = Coaches.deactivate_trainer(ctx, invited.id)
+      assert Repo.get!(Coach, invited.id).status == :invited
+
+      assert {:ok, _} = Coaches.revoke_invite(ctx, invited.id)
+      refute Repo.get(Coach, invited.id)
+
+      assert {:ok, _reinvited} =
+               Coaches.invite_trainer(ctx, %{email: "invitee@test.com", first_name: "A", last_name: "B"})
+    end
+
+    test "returns :not_found for an :inactive row" do
+      business = insert(:business)
+      ctx = owner_ctx_with_coach(business)
+      inactive = insert(:coach, business: business, status: :inactive)
+
+      assert {:error, :not_found} = Coaches.deactivate_trainer(ctx, inactive.id)
+    end
   end
 
   describe "resolve_invitation_token/1" do

@@ -12,6 +12,7 @@ import FillCheckin from '@/checkins/fill-checkin';
 import ListCheckins from '@/checkins/list-checkins';
 import SessionDetail from '@/history/session-detail';
 import WorkoutHistory from '@/history/workout-history';
+import CoachChat from '@/messages/coach-chat';
 import NutritionHistory from '@/nutrition/nutrition-history';
 import NutritionToday from '@/nutrition/nutrition-today';
 import ProgressHome from '@/progress/progress-home';
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.PROGRESS, Component: ProgressHome},
       {path: ROUTES.CHECKINS, Component: ListCheckins},
       {path: ROUTES.CHECKIN_FILL, Component: FillCheckin},
+      {path: ROUTES.MESSAGES, Component: CoachChat},
       {path: ROUTES.WORKOUT_ACTIVE, Component: ActiveWorkout},
       {path: ROUTES.WORKOUT_HISTORY, Component: WorkoutHistory},
       {path: ROUTES.SESSION_DETAIL, Component: SessionDetail},

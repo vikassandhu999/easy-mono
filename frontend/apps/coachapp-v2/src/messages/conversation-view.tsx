@@ -62,10 +62,22 @@ export default function ConversationView({
   const messages = [...(data?.pages ?? [])].reverse().flatMap((page) => page.data);
   const lastMessageId = messages[messages.length - 1]?.id;
 
-  useChannelEvent(`conversation:${conversationId}`, 'message_new', (payload) => {
-    dispatch(appendMessageAction(conversationId, payload as ChatMessage));
-    dispatch(api.util.invalidateTags([{type: 'Conversation', id: 'LIST'}]));
-  });
+  useChannelEvent(
+    `conversation:${conversationId}`,
+    'message_new',
+    (payload) => {
+      dispatch(appendMessageAction(conversationId, payload as ChatMessage));
+      dispatch(api.util.invalidateTags([{type: 'Conversation', id: 'LIST'}]));
+    },
+    // Refetch anything missed while the socket was down (fires on every rejoin).
+    () =>
+      dispatch(
+        api.util.invalidateTags([
+          {type: 'ChatMessage', id: conversationId},
+          {type: 'Conversation', id: 'LIST'},
+        ]),
+      ),
+  );
 
   // Everything currently loaded is on screen → advance the read cursor.
   useEffect(() => {
@@ -94,6 +106,7 @@ export default function ConversationView({
     <div className="flex h-dvh flex-col">
       <header className="flex min-h-14 items-center gap-3 border-b border-border px-4">
         <Link
+          aria-label="Back"
           className="grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-hover"
           to={backTo}
         >

@@ -12,6 +12,7 @@ import {ROUTES} from '@/@config/routes';
 import {clearTokens} from '@/api/authStorage';
 import {coachApi} from '@/api/generated';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
+import {disconnectSocket} from '@/api/socket';
 import EditableRow from '@/settings/components/editable-row';
 import TeamSection from '@/settings/team';
 import {store} from '@/store';
@@ -246,6 +247,7 @@ export default function Settings() {
 
   const handleLogout = useCallback(() => {
     clearTokens();
+    disconnectSocket();
     store.dispatch(coachApi.util.resetApiState());
     navigate('/login', {replace: true});
   }, [navigate]);

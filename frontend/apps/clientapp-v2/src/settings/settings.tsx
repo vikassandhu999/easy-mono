@@ -12,6 +12,7 @@ import {
   useGetClientProfileQuery,
   useUpdateClientProfileMutation,
 } from '@/api/profile';
+import {disconnectSocket} from '@/api/socket';
 import EditableRow from '@/settings/components/editable-row';
 import {store} from '@/store';
 
@@ -172,6 +173,7 @@ export default function Settings() {
 
   const handleLogout = useCallback(() => {
     clearTokens();
+    disconnectSocket();
     store.dispatch(api.util.resetApiState());
     navigate('/login');
   }, [navigate]);

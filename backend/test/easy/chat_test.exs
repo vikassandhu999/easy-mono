@@ -105,6 +105,16 @@ defmodule Easy.ChatTest do
       assert {:ok, %{unread_count: 0}} = Chat.get_client_conversation(client_ctx(client))
     end
 
+    test "mark_read stamps the cursor at the newest message, not now", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      {:ok, _} = Chat.send_client_message(client_ctx(client), %{"body" => "hi"})
+
+      assert {:ok, _} = Chat.mark_read(coach_ctx(coach), conversation.id)
+
+      reloaded = Easy.Repo.get!(Easy.Chat.Conversation, conversation.id)
+      assert reloaded.coach_last_read_at == reloaded.last_message_at
+    end
+
     test "client sends create the conversation lazily and set coach unread", %{coach: coach, client: client} do
       assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{"body" => "help"})
       assert message.sender_type == :client

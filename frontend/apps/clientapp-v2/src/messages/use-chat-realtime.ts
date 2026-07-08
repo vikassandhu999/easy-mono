@@ -10,8 +10,20 @@ export function useChatRealtime() {
   const {data} = useGetClientConversationQuery();
   const conversationId = data?.data.id ?? null;
 
-  useChannelEvent(conversationId ? `conversation:${conversationId}` : null, 'message_new', (payload) => {
-    dispatch(appendClientMessageAction(payload as ChatMessage));
-    dispatch(api.util.invalidateTags([{type: 'Conversation', id: 'LIST'}]));
-  });
+  useChannelEvent(
+    conversationId ? `conversation:${conversationId}` : null,
+    'message_new',
+    (payload) => {
+      dispatch(appendClientMessageAction(payload as ChatMessage));
+      dispatch(api.util.invalidateTags([{type: 'Conversation', id: 'LIST'}]));
+    },
+    // Refetch anything missed while the socket was down (fires on every rejoin).
+    () =>
+      dispatch(
+        api.util.invalidateTags([
+          {type: 'ChatMessage', id: 'MINE'},
+          {type: 'Conversation', id: 'LIST'},
+        ]),
+      ),
+  );
 }

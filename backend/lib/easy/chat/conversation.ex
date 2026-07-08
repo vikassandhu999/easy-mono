@@ -48,7 +48,7 @@ defmodule Easy.Chat.Conversation do
 
   @spec recent(Ecto.Queryable.t()) :: Ecto.Query.t()
   def recent(query \\ __MODULE__),
-    do: from(c in query, order_by: [desc_nulls_last: c.last_message_at, desc: c.inserted_at])
+    do: from(c in query, order_by: [desc_nulls_last: c.last_message_at, desc: c.inserted_at, desc: c.id])
 
   @spec include_client(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__), do: from(c in query, preload: [:client])

@@ -1,6 +1,7 @@
 import {BaseQueryFn, createApi, FetchArgs, FetchBaseQueryError, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
 
 import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
+import {disconnectSocket} from '@/api/socket';
 
 /**
  * Auth-only paths that should never be preserved as a post-login redirect.
@@ -98,6 +99,7 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
 
       if (isServerError) {
         clearTokens();
+        disconnectSocket();
         redirectToLoginExpired();
       }
       return refreshResult as {error: FetchBaseQueryError};
@@ -111,6 +113,7 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
     // bounce a legitimately-signed-in user to /login.
     if (result.error.status === 401) {
       clearTokens();
+      disconnectSocket();
       redirectToLoginExpired();
     }
   }

@@ -161,6 +161,7 @@ defmodule Easy.Chat do
           {:ok, message} ->
             Conversation
             |> where([c], c.id == ^conversation.id)
+            |> where([c], is_nil(c.last_message_at) or c.last_message_at <= ^message.inserted_at)
             |> Repo.update_all(
               set: [
                 last_message_at: message.inserted_at,
@@ -193,13 +194,15 @@ defmodule Easy.Chat do
   end
 
   defp advance_read_cursor(conversation, field) do
-    now = DateTime.utc_now()
+    {1, [updated]} =
+      from(c in Conversation,
+        where: c.id == ^conversation.id,
+        update: [set: [{^field, c.last_message_at}]],
+        select: c
+      )
+      |> Repo.update_all([])
 
-    Conversation
-    |> where([c], c.id == ^conversation.id)
-    |> Repo.update_all(set: [{field, now}])
-
-    {:ok, conversation |> Map.put(field, now) |> Map.put(:unread_count, 0)}
+    {:ok, conversation |> Map.put(field, Map.get(updated, field)) |> Map.put(:unread_count, 0)}
   end
 
   # Coach inbox listings must only surface conversations for clients the caller
@@ -216,7 +219,9 @@ defmodule Easy.Chat do
     where(query, [c], c.client_id in subquery(visible_client_ids))
   end
 
-  defp constrain_to_visible_clients(query, %Ctx{}), do: query
+  # Fail closed: coach routes always provide owner? or coach_id. A ctx with
+  # neither is malformed and must see nothing.
+  defp constrain_to_visible_clients(query, %Ctx{}), do: where(query, false)
 
   defp get_client_account(%Ctx{} = ctx) do
     Client

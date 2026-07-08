@@ -1,7 +1,7 @@
 defmodule Easy.Billing.SeatEnforcementTest do
   use Easy.DataCase, async: true
 
-  alias Easy.{Billing, Clients, Ctx}
+  alias Easy.{Billing, Clients}
   alias Easy.Clients.Client
   alias Easy.Repo
 
@@ -9,10 +9,14 @@ defmodule Easy.Billing.SeatEnforcementTest do
   import Ecto.Query
 
   # invite_client/2 looks up a Coach for ctx.user_id in ctx.business_id, so the
-  # ctx actor must be a coach on the business, not just its owner.
+  # ctx actor must be a coach on the business — the owner's own coach row, so
+  # visible_to also sees every client in the business regardless of assignment.
   defp ctx_for(business) do
-    coach = insert(:coach, business: business)
-    Ctx.new(business.id, coach.user_id)
+    unless Repo.get_by(Easy.Orgs.Coach, business_id: business.id, user_id: business.owner_id) do
+      insert(:coach, business: business, user: business.owner)
+    end
+
+    owner_ctx(business)
   end
 
   defp fill_free_seats(business) do

@@ -219,6 +219,16 @@ defmodule Easy.Clients.Client do
     from(c in query, where: c.business_id == ^business_id)
   end
 
+  @spec visible_to(Ecto.Queryable.t(), Easy.Ctx.t()) :: Ecto.Query.t()
+  def visible_to(query \\ __MODULE__, ctx)
+  def visible_to(query, %Easy.Ctx{owner?: true}), do: query
+
+  def visible_to(query, %Easy.Ctx{coach_id: coach_id}) when not is_nil(coach_id) do
+    from(c in query, where: c.assigned_coach_id == ^coach_id)
+  end
+
+  def visible_to(query, %Easy.Ctx{}), do: from(c in query, where: false)
+
   @spec accepted(Ecto.Queryable.t()) :: Ecto.Query.t()
   def accepted(query \\ __MODULE__) do
     from(c in query, where: c.status == :active)

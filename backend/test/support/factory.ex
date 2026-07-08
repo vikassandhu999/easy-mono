@@ -81,22 +81,28 @@ defmodule Easy.Factory do
     }
   end
 
-  def client_factory do
+  # Arity-1 so an overridden `creator:` also becomes the `assigned_coach:` default —
+  # ExMachina only merges attrs over the arity-0 return value, which would leave
+  # assigned_coach pointing at this factory's own throwaway coach instead of the
+  # caller's override.
+  def client_factory(attrs) do
     # `business` and `creator` are persisted (not merely built) because each is
     # referenced from two belongs_to paths below (client.business/client.creator.business,
     # and client.creator/client.assigned_coach). An unsaved struct shared across two
     # paths gets cascade-inserted twice by Ecto, tripping the businesses/users/coaches
     # unique constraints.
     business =
-      insert(:business,
-        owner: build(:user, email: sequence(:business_owner_email, &"business-owner-#{&1}@test.com"))
-      )
+      attrs[:business] ||
+        insert(:business,
+          owner: build(:user, email: sequence(:business_owner_email, &"business-owner-#{&1}@test.com"))
+        )
 
     creator =
-      insert(:coach,
-        business: business,
-        user: build(:user, email: sequence(:coach_user_email, &"coach-user-#{&1}@test.com"))
-      )
+      attrs[:creator] ||
+        insert(:coach,
+          business: business,
+          user: build(:user, email: sequence(:coach_user_email, &"coach-user-#{&1}@test.com"))
+        )
 
     %Client{
       email: sequence(:client_email, &"client-#{&1}@test.com"),
@@ -110,6 +116,7 @@ defmodule Easy.Factory do
       creator: creator,
       assigned_coach: creator
     }
+    |> merge_attributes(attrs)
   end
 
   def client_attrs_factory do

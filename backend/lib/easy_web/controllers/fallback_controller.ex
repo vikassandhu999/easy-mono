@@ -24,6 +24,13 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Easy.Error.unauthorized("Only the business owner can manage billing.")})
   end
 
+  def call(conn, {:error, :coach_not_active}) do
+    call(
+      conn,
+      {:error, Easy.Error.unprocessable("The selected trainer is not active on this team.")}
+    )
+  end
+
   def call(conn, {:error, :no_subscription}) do
     call(
       conn,

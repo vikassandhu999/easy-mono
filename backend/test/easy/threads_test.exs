@@ -59,7 +59,7 @@ defmodule Easy.ThreadsTest do
     alias Easy.Ctx
     alias Easy.Threads
 
-    defp coach_ctx(coach), do: Ctx.new(coach.business_id, coach.user_id)
+    defp coach_ctx(coach), do: trainer_ctx(coach)
     defp client_ctx(client), do: Ctx.new(client.business_id, client.user_id)
 
     test "create_thread_for_client sets coach as creator and scopes to the client" do

@@ -12,21 +12,48 @@ defmodule Easy.Clients do
   @profile_filter_sections ["general", "nutrition", "training", "lifestyle"]
 
   @spec get_client(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
-  def get_client(%Ctx{} = ctx, client_id) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Repo.get(client_id)
-    |> ok_or_not_found()
-  end
+  def get_client(%Ctx{} = ctx, client_id), do: authorize_client(ctx, client_id)
 
   @spec get_client_with_preloads(Ctx.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found}
   def get_client_with_preloads(%Ctx{} = ctx, client_id) do
     Client
     |> Client.for_business(ctx.business_id)
+    |> Client.visible_to(ctx)
     |> Client.include_preloads(ctx.business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
+  end
+
+  # The chokepoint every client-scoped authorization check routes through: a coach
+  # only sees clients assigned to them, the owner sees every client in the business.
+  @spec authorize_client(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
+  def authorize_client(%Ctx{} = ctx, client_id) do
+    Client
+    |> Client.for_business(ctx.business_id)
+    |> Client.visible_to(ctx)
+    |> Repo.get(client_id)
+    |> ok_or_not_found()
+  end
+
+  @spec authorize_client_id(Ctx.t(), String.t() | nil) :: :ok | {:error, :not_found}
+  def authorize_client_id(_ctx, nil), do: :ok
+
+  def authorize_client_id(%Ctx{} = ctx, client_id) do
+    with {:ok, _client} <- authorize_client(ctx, client_id), do: :ok
+  end
+
+  @spec reassign_client(Ctx.t(), String.t(), String.t()) ::
+          {:ok, Client.t()} | {:error, :not_owner | :not_found | :coach_not_active}
+  def reassign_client(%Ctx{} = ctx, client_id, coach_id) do
+    with :ok <- ensure_owner(ctx),
+         {:ok, coach} <- get_active_coach(ctx, coach_id),
+         {:ok, client} <- authorize_client(ctx, client_id) do
+      client
+      |> change()
+      |> put_change(:assigned_coach_id, coach.id)
+      |> Repo.update()
+    end
   end
 
   @spec get_client_account(Ctx.t()) :: {:ok, Client.t()} | {:error, :not_found}
@@ -52,6 +79,7 @@ defmodule Easy.Clients do
       base =
         Client
         |> Client.for_business(ctx.business_id)
+        |> Client.visible_to(ctx)
         |> Client.search(search)
         |> Client.for_status(status)
         |> apply_profile_filters(ctx.business_id, filters)
@@ -59,7 +87,7 @@ defmodule Easy.Clients do
       {:ok,
        %{
          count: Repo.aggregate(base, :count, :id),
-         summary: summary(Client |> Client.for_business(ctx.business_id)),
+         summary: summary(Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)),
          clients:
            base
            |> Client.newest()
@@ -138,6 +166,7 @@ defmodule Easy.Clients do
   def create_inquiry(%Ctx{} = ctx, attrs) do
     ctx.business_id
     |> Client.inquiry_changeset(attrs)
+    |> put_change(:assigned_coach_id, owner_coach_id(ctx.business_id))
     |> Repo.insert()
   end
 
@@ -361,7 +390,42 @@ defmodule Easy.Clients do
   defp create_invitation(coach, invite_attrs) do
     coach
     |> Client.invite_changeset(invite_attrs)
+    |> put_change(:assigned_coach_id, coach.id)
     |> Repo.insert()
+  end
+
+  defp ensure_owner(%Ctx{owner?: true}), do: :ok
+  defp ensure_owner(%Ctx{}), do: {:error, :not_owner}
+
+  defp get_active_coach(%Ctx{} = ctx, coach_id) do
+    Orgs.Coach
+    |> Orgs.Coach.for_business(ctx.business_id)
+    |> Orgs.Coach.active()
+    |> Repo.get(coach_id)
+    |> case do
+      nil -> {:error, :coach_not_active}
+      coach -> {:ok, coach}
+    end
+  end
+
+  # Public inquiry funnel has no acting coach, so the new client defaults to the
+  # business owner's coach row. Fails closed (nil) if the owner has no coach row —
+  # the owner still sees every client via visible_to's owner? clause regardless.
+  defp owner_coach_id(business_id) do
+    case Repo.get(Orgs.Business, business_id) do
+      nil ->
+        nil
+
+      business ->
+        Orgs.Coach
+        |> Orgs.Coach.for_business(business_id)
+        |> Orgs.Coach.for_user(business.owner_id)
+        |> Repo.one()
+        |> case do
+          nil -> nil
+          coach -> coach.id
+        end
+    end
   end
 
   defp maybe_send_invitation_email(%Client{email: nil}, _coach), do: :ok

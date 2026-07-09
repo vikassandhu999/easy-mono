@@ -33,8 +33,6 @@ defmodule Easy.Factory do
   alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingWorkoutExercise, as: WorkoutElement
   alias Easy.Training.TrainingSession
-  alias Easy.Threads.Thread
-  alias Easy.Threads.ThreadMessage
 
   def user_factory do
     %User{
@@ -634,33 +632,23 @@ defmodule Easy.Factory do
     }
   end
 
-  def thread_factory do
+  def conversation_factory do
     client = build(:client)
 
-    %Thread{
-      module: :general,
-      subject_type: "general",
-      subject_ref: %{},
-      title: sequence(:thread_title, &"Thread #{&1}"),
-      status: :open,
-      priority: :normal,
-      created_by_type: "coach",
-      created_by_id: client.creator.id,
+    %Easy.Chat.Conversation{
       business: client.business,
       client: client
     }
   end
 
-  def thread_message_factory do
-    thread = build(:thread)
+  def chat_message_factory do
+    conversation = build(:conversation)
 
-    %ThreadMessage{
-      body: sequence(:thread_message_body, &"Message #{&1}"),
-      kind: "message",
-      author_type: :coach,
-      author_id: thread.created_by_id,
-      metadata: %{},
-      thread: thread
+    %Easy.Chat.Message{
+      body: sequence(:chat_message_body, &"Message #{&1}"),
+      sender_type: :coach,
+      sender_id: Ecto.UUID.generate(),
+      conversation: conversation
     }
   end
 end

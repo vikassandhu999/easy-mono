@@ -10,7 +10,7 @@ This is the frontend-workspace contract: what applies to all apps and packages. 
   - `apps/clientapp-v2`: client PWA and Capacitor shell, React 19 + Vite, port 1314.
   - `apps/website`: marketing site, Next.js 16, port 3000.
 - Shared packages:
-  - `packages/ui`, `packages/hooks`, `packages/utils`, `packages/chat`, `packages/websocket`.
+  - `packages/ui`, `packages/hooks`, `packages/utils`.
   - `packages/error-parser`, `packages/typings`.
 
 ## Commands
@@ -87,7 +87,7 @@ Codegen runs with `tag: false`, so generated endpoints have NO `providesTags`/`i
 
 `@rtk-query/codegen-openapi` cannot generate RTK Query `build.infiniteQuery`. The paginated list endpoints MUST remain hand-written `build.infiniteQuery`:
 
-- **coachapp:** exercises, foods, recipes, clients, workout-sessions, nutrition-plans, training-plans
-- **clientapp:** client exercises, client workout-sessions
+- **coachapp:** exercises, foods, recipes, clients, workout-sessions, nutrition-plans, training-plans, conversation messages (cursor `before`, in `src/api/conversations.ts`)
+- **clientapp:** client exercises, client workout-sessions, conversation messages (cursor `before`, in `src/api/conversation.ts`)
 
 When migrating those, keep the hand-written infinite endpoint but refactor it to import generated TYPES (e.g. `ListFoodsApiArg` / `ListFoodsApiResponse` from `generated.ts`) instead of hand-maintaining `ApiListResponse<X>` / `ListXFilters`. The generated standard query and the hand-written infinite endpoint have different names and coexist cleanly.

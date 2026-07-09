@@ -216,16 +216,16 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/training-sessions", WorkoutSessionController, :index
     get "/clients/:client_id/training-sessions/:id", WorkoutSessionController, :show
 
-    # Threads
-    get "/threads", ThreadController, :index
-    get "/threads/:id", ThreadController, :show
-    patch "/threads/:id", ThreadController, :update
-    post "/threads/:thread_id/messages", ThreadMessageController, :create
-    get "/clients/:client_id/threads", ThreadController, :client_threads
-    post "/clients/:client_id/threads", ThreadController, :create
-
     # Meal logs (view client nutrition data — read-only)
     get "/clients/:client_id/nutrition-meal-logs", MealLogController, :index
+
+    # Chat
+    get "/conversations", ConversationController, :index
+    get "/conversations/:id", ConversationController, :show
+    get "/conversations/:id/messages", ConversationController, :messages
+    post "/conversations/:id/messages", ConversationController, :create_message
+    post "/conversations/:id/read", ConversationController, :mark_read
+    get "/clients/:client_id/conversation", ConversationController, :show_for_client
   end
 
   scope "/v1/client", EasyWeb.Clients do
@@ -287,10 +287,10 @@ defmodule EasyWeb.Router do
     post "/weight_entries", WeightEntryController, :create
     delete "/weight_entries/:id", WeightEntryController, :delete
 
-    # Threads
-    get "/threads", ThreadController, :index
-    post "/threads", ThreadController, :create
-    get "/threads/:id", ThreadController, :show
-    post "/threads/:thread_id/messages", ThreadMessageController, :create
+    # Chat
+    get "/conversation", ConversationController, :show
+    get "/conversation/messages", ConversationController, :messages
+    post "/conversation/messages", ConversationController, :create_message
+    post "/conversation/read", ConversationController, :mark_read
   end
 end

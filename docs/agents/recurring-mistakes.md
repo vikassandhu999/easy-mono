@@ -119,6 +119,18 @@ rows without ever calling a function named `_for_client`. **Enforced by:** revie
 addition — any access-boundary review must include a full router-route enumeration for the
 actor scope under review, not just a module/file sweep.
 
+### RM-013 — Authorization helper skeletons must be written fail-closed
+Plan/skeleton code for an authorization or visibility helper is faithfully transcribed by
+implementers, so a permissive catch-all in the reference implementation ships as a real
+security hole. The coach-client-messaging branch inherited a fail-open final clause
+(`defp constrain_to_visible_clients(query, %Ctx{}), do: query`) from its plan, meaning a
+malformed ctx with neither `owner?` nor `coach_id` would see every conversation; separately,
+a visibility check on that branch was once weakened just to satisfy a wrong test. Prevention:
+every authorization/visibility helper skeleton ends in a deny-by-default clause (`where(query,
+false)`, `{:error, :forbidden}`, `[]`), and the accompanying tests assert the deny path — never
+relax a guard to make a test pass; fix the test. **Enforced by:** review — the last clause of any
+authz/visibility helper must deny, and its test suite must cover the unmatched-actor case.
+
 ---
 
 ## Frontend

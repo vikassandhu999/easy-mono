@@ -151,7 +151,10 @@ if config_env() == :prod do
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
-    secret_key_base: secret_key_base
+    secret_key_base: secret_key_base,
+    # Governs the socket's Origin check, reusing the same CORS_ALLOWED_ORIGINS env
+    # var and empty-means-permissive semantics as EasyWeb.Cors.
+    check_origin: if(cors_origins == [], do: false, else: cors_origins)
 
   # In prod the JWT secret must come from the environment, never the dev fallback.
   config :easy, jwt_secret: jwt_secret

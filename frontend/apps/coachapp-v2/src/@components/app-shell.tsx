@@ -9,6 +9,7 @@ import {
   FolderOpen,
   Inbox,
   LayoutDashboard,
+  MessageCircle,
   Settings,
   Users,
   UtensilsCrossed,
@@ -19,8 +20,12 @@ import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom'
 
 import {useInstallPrompt} from '@/@components/use-install-prompt';
 import {ROUTES} from '@/@config/routes';
+import {useChannelEvent} from '@/@hooks/use-channel-event';
+import {api} from '@/api/base';
 import {useListClientsQuery} from '@/api/clients';
+import {useListCoachConversationsQuery} from '@/api/conversations';
 import {useListProspectsQuery} from '@/api/prospects';
+import {useAppDispatch} from '@/store';
 
 const ICON_SIZE = 20;
 
@@ -56,6 +61,12 @@ const SIDEBAR_TOP: NavItem[] = [
     icon: <Inbox size={ICON_SIZE} />,
     label: 'Prospects',
     path: ROUTES.PROSPECTS,
+  },
+  {
+    badge: <UnreadMessagesBadge />,
+    icon: <MessageCircle size={ICON_SIZE} />,
+    label: 'Messages',
+    path: ROUTES.MESSAGES,
   },
 ];
 
@@ -125,6 +136,12 @@ const BOTTOM_NAV: NavItem[] = [
     path: ROUTES.PROSPECTS,
   },
   {
+    badge: <UnreadMessagesBadge />,
+    icon: <MessageCircle size={ICON_SIZE} />,
+    label: 'Messages',
+    path: ROUTES.MESSAGES,
+  },
+  {
     icon: <FolderOpen size={ICON_SIZE} />,
     label: 'Library',
     path: ROUTES.LIBRARY,
@@ -175,6 +192,23 @@ function PendingClientBadge() {
 function NewProspectBadge() {
   const {data} = useListProspectsQuery({limit: 0});
   const count = data?.summary?.new ?? 0;
+  if (count === 0) {
+    return null;
+  }
+  return (
+    <Chip
+      color="accent"
+      size="sm"
+    >
+      {count > 99 ? '99+' : count}
+    </Chip>
+  );
+}
+
+function UnreadMessagesBadge() {
+  // ponytail: totals the first 100 conversations; matches the inbox page cap.
+  const {data} = useListCoachConversationsQuery({limit: 100});
+  const count = (data?.data ?? []).reduce((sum, c) => sum + c.unread_count, 0);
   if (count === 0) {
     return null;
   }
@@ -261,6 +295,11 @@ export default function AppShell() {
   const location = useLocation();
   const showBottomNav = BOTTOM_NAV_PATHS.has(location.pathname);
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
+  const dispatch = useAppDispatch();
+  useChannelEvent('inbox', 'conversation_updated', () => {
+    // Payload is id-only; refetch over HTTP where visibility is enforced.
+    dispatch(api.util.invalidateTags([{type: 'Conversation', id: 'LIST'}]));
+  });
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">

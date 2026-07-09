@@ -443,6 +443,32 @@ export default function ClientDetail() {
               {isPending ? null : <ClientWeight clientId={client.id} />}
               <Link
                 className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover sm:p-5"
+                to={`/clients/${client.id}/messages`}
+              >
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                  <MessageCircle size={16} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Typography
+                    type="body-sm"
+                    weight="semibold"
+                  >
+                    Messages
+                  </Typography>
+                  <Typography
+                    color="muted"
+                    type="body-xs"
+                  >
+                    Chat with this client
+                  </Typography>
+                </div>
+                <ChevronRight
+                  className="shrink-0 text-muted"
+                  size={18}
+                />
+              </Link>
+              <Link
+                className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover sm:p-5"
                 to={`/clients/${client.id}/profile`}
               >
                 <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">

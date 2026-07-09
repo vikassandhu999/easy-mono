@@ -2,6 +2,7 @@ import {toast} from '@heroui/react';
 import {BaseQueryFn, createApi, FetchArgs, FetchBaseQueryError, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
 
 import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
+import {disconnectSocket} from '@/api/socket';
 
 let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
@@ -35,6 +36,7 @@ const REFRESH_THRESHOLD_MS = 60_000;
 
 const forceLogout = () => {
   clearTokens();
+  disconnectSocket();
   toast.danger('Session expired. Please sign in again.');
   if (typeof window !== 'undefined') {
     window.location.assign('/login');
@@ -97,9 +99,11 @@ export const api = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: [
     'Billing',
+    'ChatMessage',
     'Client',
     'ClientProfile',
     'CoachProfile',
+    'Conversation',
     'Equipment',
     'Exercise',
     'Food',

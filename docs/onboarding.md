@@ -81,7 +81,7 @@ Both React apps call the API through RTK Query against `/v1/...`, with a Bearer 
 
 Generated OpenAPI is the source of truth for routes and shapes. The backend also serves generated OpenAPI at `/api/openapi` and Swagger UI at `/swaggerui`.
 
-`frontend/packages/websocket` provides a reconnecting `WebSocketClient`, and `frontend/packages/chat` provides a Lexical-based chat UI. Neither is wired into the MVP routes; they exist for the planned coach-client chat.
+Coach-client chat is implemented in `frontend/apps/coachapp-v2/src/messages` and `frontend/apps/clientapp-v2/src/messages`, backed by the official `phoenix` npm client over Phoenix Channels (no bespoke websocket/chat packages).
 
 ## A day in the life of the data
 

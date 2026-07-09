@@ -1,12 +1,14 @@
 import {Button, Toast} from '@heroui/react';
-import {ClipboardCheck, Dumbbell, Settings, TrendingUp, UtensilsCrossed} from 'lucide-react';
+import {ClipboardCheck, Dumbbell, MessageCircle, Settings, TrendingUp, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 
 import {AwaitingSeatScreen} from '@/@components/awaiting-seat-screen';
 import SplashScreen from '@/@components/splash-screen';
 import {ROUTES} from '@/@config/routes';
+import {useGetClientConversationQuery} from '@/api/conversation';
 import {useGetClientProfileQuery} from '@/api/profile';
+import {useChatRealtime} from '@/messages/use-chat-realtime';
 
 const ICON_SIZE = 22;
 
@@ -17,12 +19,26 @@ interface NavItem {
   path: string;
 }
 
+function UnreadBadge() {
+  const {data} = useGetClientConversationQuery();
+  const count = data?.data.unread_count ?? 0;
+  if (count === 0) {
+    return null;
+  }
+  return (
+    <span className="absolute right-1/2 top-1 grid min-w-4 -translate-x-2 place-items-center rounded-full bg-accent px-1 text-[9px] font-semibold text-accent-foreground">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
 // Mobile tab bar — the only nav. Client app is mobile-only (Capacitor); no desktop sidebar.
 const BOTTOM_NAV: NavItem[] = [
   {icon: <Dumbbell size={ICON_SIZE} />, label: 'Training', path: ROUTES.TRAINING},
   {icon: <UtensilsCrossed size={ICON_SIZE} />, label: 'Nutrition', path: ROUTES.NUTRITION},
   {icon: <TrendingUp size={ICON_SIZE} />, label: 'Progress', path: ROUTES.PROGRESS},
   {icon: <ClipboardCheck size={ICON_SIZE} />, label: 'Check-ins', path: ROUTES.CHECKINS},
+  {badge: <UnreadBadge />, icon: <MessageCircle size={ICON_SIZE} />, label: 'Coach', path: ROUTES.MESSAGES},
   {icon: <Settings size={ICON_SIZE} />, label: 'Settings', path: ROUTES.SETTINGS},
 ];
 
@@ -67,6 +83,8 @@ export default function AppShell() {
     isError: isProfileError,
     refetch: refetchProfile,
   } = useGetClientProfileQuery();
+
+  useChatRealtime();
 
   // Block until we know the client's seat status — don't flash the blocked
   // screen (or the tab bar) before the profile query resolves.

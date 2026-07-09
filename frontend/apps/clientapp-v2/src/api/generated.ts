@@ -57,16 +57,6 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.publicApplicationRequest,
       }),
     }),
-    listClientThreads: build.query<ListClientThreadsApiResponse, ListClientThreadsApiArg>({
-      query: () => ({url: `/v1/client/threads`}),
-    }),
-    createClientThread: build.mutation<CreateClientThreadApiResponse, CreateClientThreadApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/client/threads`,
-        method: 'POST',
-        body: queryArg.clientThreadCreateRequest,
-      }),
-    }),
     showInvitation: build.query<ShowInvitationApiResponse, ShowInvitationApiArg>({
       query: (queryArg) => ({url: `/v1/auth/invitations/${queryArg.token}`}),
     }),
@@ -114,6 +104,11 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    markClientConversationRead: build.mutation<MarkClientConversationReadApiResponse, MarkClientConversationReadApiArg>(
+      {
+        query: () => ({url: `/v1/client/conversation/read`, method: 'POST'}),
+      },
+    ),
     getClientTrainingPlanToday: build.query<GetClientTrainingPlanTodayApiResponse, GetClientTrainingPlanTodayApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-plans/today`,
@@ -135,9 +130,6 @@ const injectedRtkApi = api.injectEndpoints({
         method: 'POST',
         body: queryArg.acceptInviteRequest,
       }),
-    }),
-    getClientThread: build.query<GetClientThreadApiResponse, GetClientThreadApiArg>({
-      query: (queryArg) => ({url: `/v1/client/threads/${queryArg.id}`}),
     }),
     listClientFormAssignments: build.query<ListClientFormAssignmentsApiResponse, ListClientFormAssignmentsApiArg>({
       query: () => ({url: `/v1/client/form-assignments`}),
@@ -249,10 +241,35 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.trainingSessionUpdateRequest,
       }),
     }),
+    listClientConversationMessages: build.query<
+      ListClientConversationMessagesApiResponse,
+      ListClientConversationMessagesApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/v1/client/conversation/messages`,
+        params: {
+          before: queryArg.before,
+          limit: queryArg.limit,
+        },
+      }),
+    }),
+    createClientConversationMessage: build.mutation<
+      CreateClientConversationMessageApiResponse,
+      CreateClientConversationMessageApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/v1/client/conversation/messages`,
+        method: 'POST',
+        body: queryArg.chatMessageCreateRequest,
+      }),
+    }),
     getClientTrainingPlan: build.query<GetClientTrainingPlanApiResponse, GetClientTrainingPlanApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-plans/${queryArg.id}`,
       }),
+    }),
+    getClientConversation: build.query<GetClientConversationApiResponse, GetClientConversationApiArg>({
+      query: () => ({url: `/v1/client/conversation`}),
     }),
     getClientFood: build.query<GetClientFoodApiResponse, GetClientFoodApiArg>({
       query: (queryArg) => ({
@@ -302,13 +319,6 @@ const injectedRtkApi = api.injectEndpoints({
           from: queryArg['from'],
           to: queryArg.to,
         },
-      }),
-    }),
-    createClientThreadMessage: build.mutation<CreateClientThreadMessageApiResponse, CreateClientThreadMessageApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/client/threads/${queryArg.threadId}/messages`,
-        method: 'POST',
-        body: queryArg.threadMessageRequest,
       }),
     }),
     createFoodLogEntry: build.mutation<CreateFoodLogEntryApiResponse, CreateFoodLogEntryApiArg>({
@@ -409,13 +419,6 @@ export type SubmitApplicationApiArg = {
   /** Application request */
   publicApplicationRequest: PublicApplicationRequest;
 };
-export type ListClientThreadsApiResponse = /** status 200 Threads */ ThreadListResponse;
-export type ListClientThreadsApiArg = void;
-export type CreateClientThreadApiResponse = /** status 201 Thread */ ThreadResponse;
-export type CreateClientThreadApiArg = {
-  /** Thread */
-  clientThreadCreateRequest: ClientThreadCreateRequest;
-};
 export type ShowInvitationApiResponse = /** status 200 Invitation preview */ InvitationPreviewResponse;
 export type ShowInvitationApiArg = {
   /** Invitation token */
@@ -459,6 +462,8 @@ export type ListClientRecipesApiArg = {
   /** Case-insensitive recipe search */
   search?: string;
 };
+export type MarkClientConversationReadApiResponse = /** status 200 Conversation */ ConversationResponse;
+export type MarkClientConversationReadApiArg = void;
 export type GetClientTrainingPlanTodayApiResponse =
   /** status 200 Today's training plan day */ ClientTrainingPlanResponse;
 export type GetClientTrainingPlanTodayApiArg = {
@@ -474,11 +479,6 @@ export type AcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse
 export type AcceptInviteApiArg = {
   /** Accept invite request */
   acceptInviteRequest: AcceptInviteRequest;
-};
-export type GetClientThreadApiResponse = /** status 200 Thread */ ThreadDetailResponse;
-export type GetClientThreadApiArg = {
-  /** Thread id */
-  id: string;
 };
 export type ListClientFormAssignmentsApiResponse =
   /** status 200 Form assignments */ ClientProfileFormAssignmentListResponse;
@@ -573,11 +573,25 @@ export type UpdateClientTrainingSessionApiArg = {
   /** Training session update request */
   trainingSessionUpdateRequest: TrainingSessionUpdateRequest;
 };
+export type ListClientConversationMessagesApiResponse = /** status 200 Messages */ ChatMessagesResponse;
+export type ListClientConversationMessagesApiArg = {
+  /** Message id cursor — return messages older than this */
+  before?: string;
+  /** Page size (default 50, max 100) */
+  limit?: number;
+};
+export type CreateClientConversationMessageApiResponse = /** status 201 Message */ ChatMessageResponse;
+export type CreateClientConversationMessageApiArg = {
+  /** Message */
+  chatMessageCreateRequest: ChatMessageCreateRequest;
+};
 export type GetClientTrainingPlanApiResponse = /** status 200 Training plan */ ClientTrainingPlanResponse;
 export type GetClientTrainingPlanApiArg = {
   /** Training plan id */
   id: string;
 };
+export type GetClientConversationApiResponse = /** status 200 Conversation */ ConversationResponse;
+export type GetClientConversationApiArg = void;
 export type GetClientFoodApiResponse = /** status 200 Food */ FoodResponse;
 export type GetClientFoodApiArg = {
   /** Food id */
@@ -617,13 +631,6 @@ export type ListClientMealLogsApiArg = {
   from?: string;
   /** End date */
   to?: string;
-};
-export type CreateClientThreadMessageApiResponse = /** status 201 Message */ ThreadMessageResponse;
-export type CreateClientThreadMessageApiArg = {
-  /** Thread id */
-  threadId: string;
-  /** Message */
-  threadMessageRequest: ThreadMessageRequest;
 };
 export type CreateFoodLogEntryApiResponse = /** status 201 Food log entry created */ FoodLogEntryResponse;
 export type CreateFoodLogEntryApiArg = {
@@ -824,39 +831,6 @@ export type PublicApplicationRequest = {
   landing_program_id?: string | null;
   name: string;
   phone?: string | null;
-};
-export type Thread = {
-  client_id: string;
-  created_by_id?: string | null;
-  created_by_type?: 'coach' | 'client' | 'system';
-  id: string;
-  inserted_at: string;
-  last_message_at?: string | null;
-  last_message_preview?: string | null;
-  module: 'nutrition' | 'training' | 'fitness' | 'profile' | 'general';
-  priority: 'normal' | 'attention';
-  status: 'open' | 'resolved' | 'archived';
-  subject_ref?: {
-    [key: string]: any;
-  };
-  subject_type?: string;
-  title?: string | null;
-  updated_at: string;
-};
-export type ThreadListResponse = {
-  count: number;
-  data: Thread[];
-};
-export type ThreadResponse = {
-  data: Thread;
-};
-export type ClientThreadCreateRequest = {
-  module: 'nutrition' | 'training' | 'fitness' | 'profile' | 'general';
-  subject_ref?: {
-    [key: string]: any;
-  };
-  subject_type?: string;
-  title?: string;
 };
 export type InvitationPreviewResponse = {
   data: {
@@ -1111,6 +1085,19 @@ export type RecipeListResponse = {
   count: number;
   data: Recipe[];
 };
+export type Conversation = {
+  client_id: string;
+  client_name?: string | null;
+  id: string;
+  inserted_at: string;
+  last_message_at?: string | null;
+  last_message_preview?: string | null;
+  unread_count: number;
+  updated_at: string;
+};
+export type ConversationResponse = {
+  data: Conversation;
+};
 export type TrainingPlanItem = {
   creator_id?: string;
   day_of_week: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -1174,41 +1161,6 @@ export type MessageResponse = {
 export type AcceptInviteRequest = {
   email: string;
   invitation_token: string;
-};
-export type ThreadMessage = {
-  author_id?: string | null;
-  author_type: 'coach' | 'client' | 'system';
-  body: string;
-  id: string;
-  inserted_at: string;
-  kind: string;
-  metadata?: {
-    [key: string]: any;
-  };
-  thread_id: string;
-  updated_at: string;
-};
-export type ThreadWithMessages = {
-  client_id: string;
-  created_by_id?: string | null;
-  created_by_type?: 'coach' | 'client' | 'system';
-  id: string;
-  inserted_at: string;
-  last_message_at?: string | null;
-  last_message_preview?: string | null;
-  messages?: ThreadMessage[];
-  module: 'nutrition' | 'training' | 'fitness' | 'profile' | 'general';
-  priority: 'normal' | 'attention';
-  status: 'open' | 'resolved' | 'archived';
-  subject_ref?: {
-    [key: string]: any;
-  };
-  subject_type?: string;
-  title?: string | null;
-  updated_at: string;
-};
-export type ThreadDetailResponse = {
-  data: ThreadWithMessages;
 };
 export type ClientProfileFormTemplate = {
   id: string;
@@ -1358,6 +1310,25 @@ export type TrainingSessionUpdateRequest = {
   soreness_rating?: number;
   state?: 'completed' | 'discarded';
 };
+export type ChatMessage = {
+  body: string;
+  conversation_id: string;
+  id: string;
+  inserted_at: string;
+  sender_id: string;
+  sender_type: 'coach' | 'client';
+};
+export type ChatMessagesResponse = {
+  /** Ascending by inserted_at */
+  data: ChatMessage[];
+  has_more: boolean;
+};
+export type ChatMessageResponse = {
+  data: ChatMessage;
+};
+export type ChatMessageCreateRequest = {
+  body: string;
+};
 export type FoodResponse = {
   data: Food;
 };
@@ -1424,13 +1395,6 @@ export type MealLog = {
 export type MealLogListResponse = {
   data: MealLog[];
 };
-export type ThreadMessageResponse = {
-  data: ThreadMessage;
-};
-export type ThreadMessageRequest = {
-  body: string;
-  kind?: string;
-};
 export type TrainerAcceptInviteVerifyRequest = {
   email: string;
   invitation_token: string;
@@ -1471,9 +1435,6 @@ export const {
   useLazyListClientTrainingSessionsQuery,
   useCreateClientTrainingSessionMutation,
   useSubmitApplicationMutation,
-  useListClientThreadsQuery,
-  useLazyListClientThreadsQuery,
-  useCreateClientThreadMutation,
   useShowInvitationQuery,
   useLazyShowInvitationQuery,
   useGetClientExerciseQuery,
@@ -1486,12 +1447,11 @@ export const {
   useCreateAuthTokenMutation,
   useListClientRecipesQuery,
   useLazyListClientRecipesQuery,
+  useMarkClientConversationReadMutation,
   useGetClientTrainingPlanTodayQuery,
   useLazyGetClientTrainingPlanTodayQuery,
   useLogDayMutation,
   useAcceptInviteMutation,
-  useGetClientThreadQuery,
-  useLazyGetClientThreadQuery,
   useListClientFormAssignmentsQuery,
   useLazyListClientFormAssignmentsQuery,
   useCreateClientPerformedSetMutation,
@@ -1518,8 +1478,13 @@ export const {
   useGetClientTrainingSessionQuery,
   useLazyGetClientTrainingSessionQuery,
   useUpdateClientTrainingSessionMutation,
+  useListClientConversationMessagesQuery,
+  useLazyListClientConversationMessagesQuery,
+  useCreateClientConversationMessageMutation,
   useGetClientTrainingPlanQuery,
   useLazyGetClientTrainingPlanQuery,
+  useGetClientConversationQuery,
+  useLazyGetClientConversationQuery,
   useGetClientFoodQuery,
   useLazyGetClientFoodQuery,
   useShowTrainerInvitationQuery,
@@ -1532,7 +1497,6 @@ export const {
   useLazyGetTodayNutritionPlanQuery,
   useListClientMealLogsQuery,
   useLazyListClientMealLogsQuery,
-  useCreateClientThreadMessageMutation,
   useCreateFoodLogEntryMutation,
   useTrainerAcceptInviteVerifyMutation,
   useSignupMutation,

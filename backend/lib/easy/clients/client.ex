@@ -31,6 +31,9 @@ defmodule Easy.Clients.Client do
     field :inactive_reason, Ecto.Enum, values: @inactive_reasons
     field :subscription_started_on, :date
     field :subscription_ends_on, :date
+    field :intake_incomplete, :boolean, virtual: true, default: false
+    field :needs_plan, :boolean, virtual: true, default: false
+    field :expiring_soon, :boolean, virtual: true, default: false
 
     # Invitation
     field :invitation_token, :string

@@ -3,13 +3,17 @@ defmodule Easy.Clients do
   import Ecto.Query
 
   alias Easy.Billing
+  alias Easy.ClientProfiles.FormAssignment
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Identity.User
+  alias Easy.Nutrition.Plan
   alias Easy.Orgs
   alias Easy.Repo
+  alias Easy.Training.TrainingPlan
 
   @profile_filter_sections ["general", "nutrition", "training", "lifestyle"]
+  @expiring_soon_days 7
 
   @spec get_client(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
   def get_client(%Ctx{} = ctx, client_id), do: authorize_client(ctx, client_id)
@@ -22,7 +26,13 @@ defmodule Easy.Clients do
     |> Client.visible_to(ctx)
     |> Client.include_preloads(ctx.business_id)
     |> Repo.get(client_id)
-    |> ok_or_not_found()
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      client ->
+        {:ok, client |> List.wrap() |> put_attention_flags(ctx.business_id) |> hd()}
+    end
   end
 
   # The chokepoint every client-scoped authorization check routes through: a coach
@@ -96,6 +106,7 @@ defmodule Easy.Clients do
            |> Easy.Utils.paginate(offset, limit)
            |> Client.include_preloads(ctx.business_id)
            |> Repo.all()
+           |> put_attention_flags(ctx.business_id)
        }}
     end
   end
@@ -239,6 +250,51 @@ defmodule Easy.Clients do
   end
 
   defp ensure_reactivation_capacity(_ctx, _client, _attrs), do: :ok
+
+  defp put_attention_flags(clients, business_id) when is_list(clients) do
+    ids = Enum.map(clients, & &1.id)
+
+    intake_open =
+      from(fa in FormAssignment,
+        where:
+          fa.business_id == ^business_id and fa.client_id in ^ids and
+            fa.purpose == :intake and fa.status in [:assigned, :in_progress],
+        select: fa.client_id
+      )
+      |> Repo.all()
+      |> MapSet.new()
+
+    with_training =
+      from(tp in TrainingPlan,
+        where: tp.business_id == ^business_id and tp.client_id in ^ids and tp.status == :active,
+        select: tp.client_id
+      )
+      |> Repo.all()
+      |> MapSet.new()
+
+    with_nutrition =
+      from(np in Plan,
+        where: np.business_id == ^business_id and np.client_id in ^ids and np.status == :active,
+        select: np.client_id
+      )
+      |> Repo.all()
+      |> MapSet.new()
+
+    today = Date.utc_today()
+    horizon = Date.add(today, @expiring_soon_days)
+
+    Enum.map(clients, fn client ->
+      %{
+        client
+        | intake_incomplete: client.id in intake_open,
+          needs_plan: client.id not in with_training and client.id not in with_nutrition,
+          expiring_soon:
+            client.status == :active and not is_nil(client.subscription_ends_on) and
+              Date.compare(client.subscription_ends_on, today) != :lt and
+              Date.compare(client.subscription_ends_on, horizon) != :gt
+      }
+    end)
+  end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

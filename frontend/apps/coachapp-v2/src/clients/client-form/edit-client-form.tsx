@@ -21,6 +21,11 @@ const STATUS_LABELS: Record<AllowedUpdateStatus, string> = {
   inactive: 'Inactive',
 };
 
+const STAGE_LABELS: Record<NonNullable<Client['stage']>, string> = {
+  onboarding: 'Onboarding',
+  coaching: 'Coaching',
+};
+
 export const editClientFormSchema = z.object({
   assigned_trainer_id: z.string().optional(),
   email: z.string().email('Enter a valid email').or(z.literal('')).optional(),
@@ -28,12 +33,25 @@ export const editClientFormSchema = z.object({
   last_name: z.string().optional(),
   notes: z.string().optional(),
   phone: z.string().optional(),
+  stage: z.enum(['onboarding', 'coaching']).optional(),
   status: z.enum(['active', 'inactive']).optional(),
+  subscription_ends_on: z.string().optional(),
+  subscription_started_on: z.string().optional(),
 });
 
 export type EditClientFormValues = z.infer<typeof editClientFormSchema>;
 
-export const EDIT_CLIENT_FORM_FIELDS = ['email', 'first_name', 'last_name', 'notes', 'phone', 'status'] as const;
+export const EDIT_CLIENT_FORM_FIELDS = [
+  'email',
+  'first_name',
+  'last_name',
+  'notes',
+  'phone',
+  'stage',
+  'status',
+  'subscription_ends_on',
+  'subscription_started_on',
+] as const;
 
 function memberName(member: TeamMember): string {
   return [member.first_name, member.last_name].filter(Boolean).join(' ') || member.email || 'Trainer';
@@ -47,7 +65,10 @@ export function clientToEditFormValues(client: Client): EditClientFormValues {
     last_name: client.last_name ?? '',
     notes: client.notes ?? '',
     phone: client.phone ?? '',
+    stage: client.stage,
     status: client.status === 'pending' ? undefined : client.status,
+    subscription_ends_on: client.subscription_ends_on ?? '',
+    subscription_started_on: client.subscription_started_on ?? '',
   };
 }
 
@@ -58,7 +79,10 @@ export function editClientToUpdateRequest(values: EditClientFormValues): ClientU
     last_name: toOptionalText(values.last_name),
     notes: toNullableText(values.notes),
     phone: toNullableText(values.phone),
+    stage: values.stage,
     status: values.status as AllowedUpdateStatus | undefined,
+    subscription_ends_on: toNullableText(values.subscription_ends_on),
+    subscription_started_on: toNullableText(values.subscription_started_on),
   };
 }
 
@@ -162,6 +186,25 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
             </FormSelectField>
           )}
 
+          {client.status === 'active' ? (
+            <FormSelectField
+              control={control}
+              label="Stage"
+              name="stage"
+            >
+              {(Object.keys(STAGE_LABELS) as (keyof typeof STAGE_LABELS)[]).map((value) => (
+                <ListBox.Item
+                  id={value}
+                  key={value}
+                  textValue={STAGE_LABELS[value]}
+                >
+                  {STAGE_LABELS[value]}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </FormSelectField>
+          ) : null}
+
           <FormTextAreaField
             control={control}
             fullWidth
@@ -169,6 +212,30 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
             name="notes"
             textAreaProps={{rows: 3}}
           />
+        </Fieldset.Group>
+      </Fieldset>
+
+      <Fieldset>
+        <Fieldset.Legend>Subscription</Fieldset.Legend>
+        <Fieldset.Group>
+          <FieldRow>
+            <FormTextField
+              control={control}
+              fullWidth
+              inputProps={{type: 'date'}}
+              label="Subscription start"
+              name="subscription_started_on"
+              type="date"
+            />
+            <FormTextField
+              control={control}
+              fullWidth
+              inputProps={{type: 'date'}}
+              label="Subscription end"
+              name="subscription_ends_on"
+              type="date"
+            />
+          </FieldRow>
         </Fieldset.Group>
       </Fieldset>
 

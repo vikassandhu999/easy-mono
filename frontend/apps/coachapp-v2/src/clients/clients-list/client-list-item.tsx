@@ -5,7 +5,7 @@ import {MessageCircle} from 'lucide-react';
 import type {Client} from '@/api/clients';
 import {INACTIVE_REASON_LABEL, STATUS_DISPLAY, stageChip} from '@/clients/lib/client';
 
-function RowChips({client}: {client: Client}) {
+export function RowChips({client}: {client: Client}) {
   if (client.status === 'active') {
     const stage = stageChip(client);
     return (

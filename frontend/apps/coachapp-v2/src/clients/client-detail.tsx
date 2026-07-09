@@ -19,6 +19,7 @@ import {
   useListCoachClientTrainingPlansQuery,
 } from '@/api/generated';
 import {toNullableText} from '@/api/shared';
+import {RowChips} from '@/clients/clients-list/client-list-item';
 import ClientCheckins from '@/clients/components/client-checkins';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientStatStrip from '@/clients/components/client-stat-strip';
@@ -26,7 +27,7 @@ import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
-import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_DISPLAY, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
+import {getWhatsAppUrl, PLAN_STATUS_MAP, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
 import {AddSeatsDialog} from '@/settings/add-seats-dialog';
 
 /** Compact assigned-plan window: "Jun 26 – Aug 21, 2026" (drops the repeated
@@ -312,7 +313,6 @@ export default function ClientDetail() {
   const client = data.data;
   const isPending = client.status === 'pending';
   const isAwaitingSeat = client.status === 'inactive' && client.inactive_reason === 'awaiting_seat';
-  const status = STATUS_DISPLAY[client.status];
 
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
   const initials = getInitials(client.first_name, client.last_name);
@@ -358,13 +358,7 @@ export default function ClientDetail() {
                     >
                       {name}
                     </Typography>
-                    <Chip
-                      color={status.color}
-                      size="sm"
-                      variant="soft"
-                    >
-                      {status.label}
-                    </Chip>
+                    <RowChips client={client} />
                   </div>
                   {client.phone ? (
                     <Typography
@@ -439,6 +433,55 @@ export default function ClientDetail() {
               />
             </div>
             <div className="space-y-4">
+              <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+                <SectionHeading title="Subscription" />
+                {client.subscription_started_on || client.subscription_ends_on ? (
+                  <div className="flex flex-col gap-1">
+                    {client.subscription_started_on ? (
+                      <Typography
+                        color="muted"
+                        type="body-sm"
+                      >
+                        Started {formatIsoDateOnly(client.subscription_started_on)}
+                      </Typography>
+                    ) : null}
+                    {client.subscription_ends_on ? (
+                      <Typography
+                        color="muted"
+                        type="body-sm"
+                      >
+                        Ends {formatIsoDateOnly(client.subscription_ends_on)}
+                      </Typography>
+                    ) : null}
+                  </div>
+                ) : (
+                  <Typography
+                    color="muted"
+                    type="body-sm"
+                  >
+                    No subscription dates
+                  </Typography>
+                )}
+                {client.expiring_soon ? (
+                  <Chip
+                    className="mt-2"
+                    color="warning"
+                    size="sm"
+                    variant="soft"
+                  >
+                    Expiring soon
+                  </Chip>
+                ) : null}
+                {client.inactive_reason === 'subscription_expired' ? (
+                  <Button
+                    className="mt-3 w-full"
+                    onPress={() => navigate(`/clients/${client.id}/edit`)}
+                    size="sm"
+                  >
+                    Extend subscription
+                  </Button>
+                ) : null}
+              </div>
               {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
               {isPending ? null : <ClientWeight clientId={client.id} />}
               <Link

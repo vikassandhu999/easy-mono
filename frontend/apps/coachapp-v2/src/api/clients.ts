@@ -67,7 +67,10 @@ export type ClientUpdateRequest = {
   last_name?: string;
   notes?: null | string;
   phone?: null | string;
+  stage?: GeneratedClient['stage'];
   status?: AllowedUpdateStatus;
+  subscription_ends_on?: null | string;
+  subscription_started_on?: null | string;
 };
 
 /**

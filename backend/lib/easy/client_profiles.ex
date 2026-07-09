@@ -528,7 +528,7 @@ defmodule Easy.ClientProfiles do
     FormTemplate
     |> FormTemplate.for_business(ctx.business_id)
     |> where([t], t.purpose == :intake and t.status == :active)
-    |> order_by([t], asc: t.inserted_at)
+    |> order_by([t], asc: t.inserted_at, asc: t.id)
     |> limit(1)
     |> Repo.one()
     |> case do

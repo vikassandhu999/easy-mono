@@ -74,6 +74,19 @@ defmodule Easy.Billing.SeatEnforcementTest do
     assert {:ok, _} = Clients.update_client(ctx_for(business), client.id, %{first_name: "New"})
   end
 
+  test "update return recomputes virtual attention flags (expiring_soon)" do
+    business = insert(:business)
+    client = insert(:client, business: business, status: :active, subscription_ends_on: nil)
+
+    ends_on = Date.add(Date.utc_today(), 3)
+
+    assert {:ok, updated} =
+             Clients.update_client(ctx_for(business), client.id, %{subscription_ends_on: ends_on})
+
+    assert updated.subscription_ends_on == ends_on
+    assert updated.expiring_soon == true
+  end
+
   test "accept-invite becomes active when capacity exists" do
     business = insert(:business)
     {:ok, invited} = Clients.invite_client(ctx_for(business), params_for(:client_attrs))

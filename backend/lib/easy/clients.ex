@@ -129,8 +129,11 @@ defmodule Easy.Clients do
   def update_client(%Ctx{} = ctx, client_id, attrs) do
     with {:ok, client} <- get_client_with_preloads(ctx, client_id),
          :ok <- ensure_reactivation_capacity(ctx, client, attrs),
-         {:ok, updated_client} <- client |> Client.update_changeset(attrs) |> Repo.update() do
-      preload_client(updated_client)
+         {:ok, updated_client} <- client |> Client.update_changeset(attrs) |> Repo.update(),
+         {:ok, preloaded} <- preload_client(updated_client) do
+      # Attention flags are virtual: recompute post-update so the mutation response
+      # carries the same derived shape as GET/list, not stale defaults.
+      {:ok, preloaded |> List.wrap() |> put_attention_flags(ctx.business_id) |> hd()}
     end
   end
 
@@ -546,7 +549,7 @@ defmodule Easy.Clients do
   defp delete_pending_invitation(%Client{}) do
     {:error,
      Easy.Error.unprocessable(%{
-       status: ["only pending invitations can be revoked; archive the client instead"]
+       status: ["only pending invitations can be revoked; deactivate the client instead"]
      })}
   end
 

@@ -1,6 +1,8 @@
 defmodule EasyWeb.Coaches.ClientControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   setup do
     coach = insert(:coach)
     conn = build_conn() |> authenticate_coach(coach) |> put_req_header("content-type", "application/json")
@@ -179,6 +181,10 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
       conn = get(conn, "/v1/coach/clients/#{client.id}")
       assert %{"data" => data} = json_response(conn, 200)
+
+      # RM-002: rendered entity matches the OpenApiSpex schema (contract-tests the
+      # 7 lifecycle fields: status, stage, inactive_reason, subscription dates, flags).
+      assert_schema(data, "Client", EasyWeb.ApiSpec.spec())
 
       assert data["id"] == client.id
       assert data["email"] == "vikas@test.com"
@@ -699,6 +705,9 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
       conn = get(conn, "/v1/coach/clients")
       assert %{"data" => clients, "count" => 3, "summary" => summary} = json_response(conn, 200)
+
+      # RM-002: every listed entity matches the OpenApiSpex Client schema.
+      Enum.each(clients, &assert_schema(&1, "Client", EasyWeb.ApiSpec.spec()))
 
       assert length(clients) == 3
       assert summary["active"] == 1

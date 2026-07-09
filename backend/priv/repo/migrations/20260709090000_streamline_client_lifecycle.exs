@@ -20,6 +20,11 @@ defmodule Easy.Repo.Migrations.StreamlineClientLifecycle do
     """
 
     execute """
+    UPDATE clients SET inactive_reason = 'manual'
+    WHERE status = 'inactive' AND inactive_reason IS NULL
+    """
+
+    execute """
     UPDATE clients SET stage = 'coaching'
     WHERE EXISTS (SELECT 1 FROM training_plans tp WHERE tp.client_id = clients.id)
        OR EXISTS (SELECT 1 FROM nutrition_plans np WHERE np.client_id = clients.id)

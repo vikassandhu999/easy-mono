@@ -1,7 +1,8 @@
 defmodule Easy.BillingTest do
   use Easy.DataCase, async: true
 
-  alias Easy.{Billing, Ctx}
+  alias Easy.{Billing, Ctx, Repo}
+  alias Easy.Clients.Client
 
   import Easy.Factory
 
@@ -43,11 +44,10 @@ defmodule Easy.BillingTest do
       assert Billing.seat_summary(ctx_for(business)).used_seats == 2
     end
 
-    test "awaiting_seat, inactive, and archived clients do not count" do
+    test "awaiting_seat and manually inactive clients do not count" do
       business = insert(:business)
-      insert(:client, business: business, status: :awaiting_seat)
-      insert(:client, business: business, status: :inactive)
-      insert(:client, business: business, status: :archived)
+      insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
+      insert(:client, business: business, status: :inactive, inactive_reason: :manual)
 
       summary = Billing.seat_summary(ctx_for(business))
 
@@ -60,6 +60,21 @@ defmodule Easy.BillingTest do
       other_user = insert(:user)
 
       refute Billing.seat_summary(Ctx.new(business.id, other_user.id)).is_owner
+    end
+  end
+
+  describe "activate_awaiting_clients/1" do
+    test "activate_awaiting_clients only touches awaiting_seat-reason rows" do
+      business = insert(:business)
+      insert(:business_billing, business: business, free_seats: 5, paid_seats: 0)
+      waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
+      paused = insert(:client, business: business, status: :inactive, inactive_reason: :manual)
+
+      assert {:ok, 1} = Billing.activate_awaiting_clients(business.id)
+
+      assert Repo.get!(Client, waiting.id).status == :active
+      assert Repo.get!(Client, waiting.id).inactive_reason == nil
+      assert Repo.get!(Client, paused.id).status == :inactive
     end
   end
 

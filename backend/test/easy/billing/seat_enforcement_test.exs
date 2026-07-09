@@ -89,17 +89,17 @@ defmodule Easy.Billing.SeatEnforcementTest do
     fill_free_seats(business)
     user = insert(:user)
 
-    assert {:ok, %{status: :awaiting_seat}} =
+    assert {:ok, %{status: :inactive, inactive_reason: :awaiting_seat}} =
              Clients.accept_invite(invited, user.id, invited.email)
   end
 
   test "activate_awaiting_clients activates the oldest awaiting_seat clients up to capacity" do
     business = insert(:business)
 
-    oldest = insert(:client, business: business, status: :awaiting_seat)
+    oldest = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
     set_inserted_at(oldest, ~U[2026-01-01 00:00:00Z])
 
-    newer = insert(:client, business: business, status: :awaiting_seat)
+    newer = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
     set_inserted_at(newer, ~U[2026-02-01 00:00:00Z])
 
     insert(:client, business: business, status: :active)
@@ -107,7 +107,9 @@ defmodule Easy.Billing.SeatEnforcementTest do
 
     assert {:ok, 1} = Billing.activate_awaiting_clients(business.id)
     assert Repo.get!(Client, oldest.id).status == :active
-    assert Repo.get!(Client, newer.id).status == :awaiting_seat
+    assert Repo.get!(Client, oldest.id).inactive_reason == nil
+    assert Repo.get!(Client, newer.id).status == :inactive
+    assert Repo.get!(Client, newer.id).inactive_reason == :awaiting_seat
   end
 
   test "existing active clients stay active after payment failure or cancellation" do

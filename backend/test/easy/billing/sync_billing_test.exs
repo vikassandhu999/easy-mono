@@ -31,7 +31,7 @@ defmodule Easy.Billing.SyncBillingTest do
       razorpay_subscription_id: "sub_sync"
     )
 
-    waiting = insert(:client, business: business, status: :awaiting_seat)
+    waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
 
     stub_get("sub_sync", %{
       "id" => "sub_sync",
@@ -54,6 +54,7 @@ defmodule Easy.Billing.SyncBillingTest do
     refute :payment_succeeded in kinds
 
     assert Repo.get!(Client, waiting.id).status == :active
+    assert Repo.get!(Client, waiting.id).inactive_reason == nil
   end
 
   test "cancel_at_period_end is preserved when active/authenticated status arrives" do

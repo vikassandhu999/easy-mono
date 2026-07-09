@@ -63,11 +63,12 @@ defmodule Easy.Billing.CheckoutTest do
     insert(:client, business: business, status: :active)
     insert(:client, business: business, status: :active)
     insert(:client, business: business, status: :active)
-    waiting = insert(:client, business: business, status: :awaiting_seat)
+    waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
 
     {:ok, _} = Billing.checkout(ctx_for(business), 1)
 
     assert Repo.get!(Easy.Clients.Client, waiting.id).status == :active
+    assert Repo.get!(Easy.Clients.Client, waiting.id).inactive_reason == nil
   end
 
   test "cancel schedules cancellation at period end and keeps paid seats" do

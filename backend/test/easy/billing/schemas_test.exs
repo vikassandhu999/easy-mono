@@ -2,6 +2,7 @@ defmodule Easy.Billing.SchemasTest do
   use Easy.DataCase, async: true
 
   alias Easy.Billing.{BusinessBilling, Event, WebhookReceipt}
+  alias Easy.Clients.Client
   alias Easy.Repo
 
   import Easy.Factory
@@ -47,14 +48,16 @@ defmodule Easy.Billing.SchemasTest do
     assert event.kind == :seats_added
   end
 
-  test "client status enum includes awaiting_seat" do
-    assert :awaiting_seat in Ecto.Enum.values(Easy.Clients.Client, :status)
+  test "client inactive_reason enum includes awaiting_seat" do
+    assert :awaiting_seat in Ecto.Enum.values(Client, :inactive_reason)
   end
 
-  test "awaiting_seat client may be archived but not manually activated" do
-    client = insert(:client, status: :awaiting_seat)
+  test "awaiting_seat client is inactive and can be reactivated through update changeset" do
+    client = insert(:client, status: :inactive, inactive_reason: :awaiting_seat)
+    changeset = Client.update_changeset(client, %{status: :active})
 
-    assert Easy.Clients.Client.update_changeset(client, %{status: :archived}).valid?
-    refute Easy.Clients.Client.update_changeset(client, %{status: :active}).valid?
+    assert changeset.valid?
+    assert Ecto.Changeset.get_change(changeset, :status) == :active
+    assert Ecto.Changeset.get_change(changeset, :inactive_reason) == nil
   end
 end

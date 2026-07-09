@@ -72,11 +72,12 @@ defmodule EasyWeb.WebhookControllerTest do
   test "payment success activates awaiting_seat clients", %{conn: conn, business: business} do
     insert(:client, business: business, status: :active)
     insert(:client, business: business, status: :active)
-    waiting = insert(:client, business: business, status: :awaiting_seat)
+    waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
 
     post_webhook(conn, charged_payload("sub_wh", 2, 99_800))
 
     assert Repo.get!(Client, waiting.id).status == :active
+    assert Repo.get!(Client, waiting.id).inactive_reason == nil
   end
 
   test "payment failure sets past_due", %{conn: conn, business: business} do

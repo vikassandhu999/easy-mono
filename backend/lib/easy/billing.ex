@@ -40,7 +40,7 @@ defmodule Easy.Billing do
       seat_limit: limit,
       used_seats: used,
       available_seats: limit - used,
-      awaiting_seat_count: count_status(business_id, :awaiting_seat),
+      awaiting_seat_count: count_awaiting_seat(business_id),
       monthly_seat_price_inr: seat_price_inr(),
       current_period_end: billing.current_period_end,
       is_owner: owner?(ctx)
@@ -81,7 +81,9 @@ defmodule Easy.Billing do
       ids =
         Repo.all(
           from c in Client,
-            where: c.business_id == ^business_id and c.status == ^:awaiting_seat,
+            where:
+              c.business_id == ^business_id and c.status == :inactive and
+                c.inactive_reason == :awaiting_seat,
             order_by: [asc: c.inserted_at, asc: c.id],
             limit: ^available,
             select: c.id
@@ -89,8 +91,12 @@ defmodule Easy.Billing do
 
       {count, _} =
         Repo.update_all(
-          from(c in Client, where: c.id in ^ids and c.status == ^:awaiting_seat),
-          set: [status: :active, updated_at: DateTime.utc_now(:second)]
+          from(c in Client,
+            where:
+              c.business_id == ^business_id and c.id in ^ids and c.status == :inactive and
+                c.inactive_reason == :awaiting_seat
+          ),
+          set: [status: :active, inactive_reason: nil, updated_at: DateTime.utc_now(:second)]
         )
 
       {:ok, count}
@@ -273,10 +279,12 @@ defmodule Easy.Billing do
     )
   end
 
-  defp count_status(business_id, status) do
+  defp count_awaiting_seat(business_id) do
     Repo.one(
       from c in Client,
-        where: c.business_id == ^business_id and c.status == ^status,
+        where:
+          c.business_id == ^business_id and c.status == :inactive and
+            c.inactive_reason == :awaiting_seat,
         select: count(c.id)
     )
   end

@@ -26,6 +26,7 @@ import {
   useListClientTrainingPlansQuery,
   useListClientTrainingSessionsQuery,
 } from '@/api/training';
+import IntakeCard from '@/checkins/intake-card';
 
 function workoutForDay(plan: ClientTrainingPlan, day: TrainingWeekday): TrainingPlanWorkout | null {
   const item = plan.plan_items.find((i) => i.day_of_week === day);
@@ -171,6 +172,8 @@ export default function TrainingHome() {
       description={TRAINING_DAY_LABELS[today]}
       title={greeting}
     >
+      <IntakeCard />
+
       {activeSession ? (
         <ResumeBanner
           onResume={() => navigate(ROUTES.WORKOUT_ACTIVE)}

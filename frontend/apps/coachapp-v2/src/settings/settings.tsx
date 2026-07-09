@@ -167,36 +167,6 @@ function BillingSection() {
   );
 }
 
-function ClientProfileSection() {
-  const navigate = useNavigate();
-  return (
-    <section className="mt-6">
-      <SectionHeading title="Client profiles" />
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
-        <button
-          className="flex min-h-11 w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-surface-hover"
-          onClick={() => navigate(ROUTES.SETTINGS_PROFILE_FIELDS)}
-          type="button"
-        >
-          <div className="min-w-0 flex-1">
-            <Typography type="body-sm">Profile fields</Typography>
-            <Typography
-              color="muted"
-              type="body-xs"
-            >
-              Define the intake questions on each client's profile
-            </Typography>
-          </div>
-          <ChevronRight
-            className="shrink-0 text-muted"
-            size={18}
-          />
-        </button>
-      </div>
-    </section>
-  );
-}
-
 function AccountSection({email}: {email: string}) {
   return (
     <section className="mt-6">
@@ -310,7 +280,6 @@ export default function Settings() {
           <AcquisitionSection />
           <BillingSection />
           <TeamSection />
-          <ClientProfileSection />
           <AccountSection email={profile.email} />
 
           <div className="py-4">

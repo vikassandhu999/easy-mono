@@ -31,6 +31,72 @@ import ProfileFieldInput from '@/clients/components/profile-field-input';
 
 type IntakeStatus = CoachingClientProfile['intake_status'];
 
+// Core intake sections carry the answers mapped from the client's intake
+// submission (flat snake_case-keyed maps). Rendered read-only, in intake order,
+// above any custom profile fields.
+const CORE_SECTIONS: {key: 'general' | 'lifestyle' | 'nutrition' | 'training'; label: string}[] = [
+  {key: 'general', label: 'General'},
+  {key: 'training', label: 'Training'},
+  {key: 'nutrition', label: 'Nutrition'},
+  {key: 'lifestyle', label: 'Lifestyle'},
+];
+
+function humanizeKey(key: string): string {
+  const spaced = key.replace(/_/g, ' ').trim();
+  return spaced ? spaced.charAt(0).toUpperCase() + spaced.slice(1) : key;
+}
+
+function formatAnswer(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map((v) => humanizeKey(String(v))).join(', ');
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  return String(value);
+}
+
+function CoreIntakeSections({profile}: {profile: CoachingClientProfile}) {
+  const sections = CORE_SECTIONS.map((section) => {
+    const map = profile[section.key] ?? {};
+    return {...section, entries: Object.entries(map)};
+  }).filter((section) => section.entries.length > 0);
+
+  if (sections.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      {sections.map((section) => (
+        <section key={section.key}>
+          <SectionHeading title={section.label} />
+          <dl className="divide-y divide-border rounded-xl border border-border bg-surface">
+            {section.entries.map(([key, value]) => (
+              <div
+                className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:gap-4"
+                key={key}
+              >
+                <dt className="sm:w-2/5 sm:shrink-0">
+                  <Typography
+                    color="muted"
+                    type="body-sm"
+                  >
+                    {humanizeKey(key)}
+                  </Typography>
+                </dt>
+                <dd className="min-w-0 flex-1">
+                  <Typography type="body-sm">{formatAnswer(value)}</Typography>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
+    </>
+  );
+}
+
 const INTAKE_STATUS_LABELS: Record<IntakeStatus, string> = {
   assigned: 'Assigned',
   completed: 'Completed',
@@ -147,6 +213,8 @@ function ClientProfileEditor({
               </Typography>
             ) : null}
           </div>
+
+          <CoreIntakeSections profile={profile} />
 
           {hasFields ? (
             PROFILE_SECTIONS.map((section) => {

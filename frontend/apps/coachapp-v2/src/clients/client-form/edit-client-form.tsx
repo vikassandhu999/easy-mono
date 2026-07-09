@@ -1,5 +1,6 @@
 import {ErrorMessage, Fieldset, ListBox, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import type {FormEvent} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
@@ -105,13 +106,25 @@ type EditClientFormProps = {
 export default function EditClientForm({client, form, isSubmitting, onCancel, onSubmit}: EditClientFormProps) {
   const {control, handleSubmit} = form;
 
+  // Server-set errors (e.g. a 422 pinned on `status`) survive across submits and
+  // would otherwise block re-submission until the errored field is touched. Clear
+  // them first; zod re-validates every field and applyFormErrors re-pins any that
+  // still fail on the server.
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    form.clearErrors();
+    return handleSubmit(onSubmit)(e);
+  };
+
   const {data: billing} = useGetBillingQuery();
   const isOwner = billing?.data.is_owner ?? false;
   const {data: team} = useGetTeamQuery(undefined, {skip: !isOwner});
   const activeTrainers = (team?.data ?? []).filter((member) => member.status === 'active');
 
   return (
-    <FormLayout onSubmit={handleSubmit(onSubmit)}>
+    <FormLayout
+      onSubmit={submit}
+      validationBehavior="aria"
+    >
       <Fieldset>
         <Fieldset.Group>
           <FieldRow>

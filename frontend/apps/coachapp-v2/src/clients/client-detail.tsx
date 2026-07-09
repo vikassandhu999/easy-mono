@@ -328,7 +328,7 @@ export default function ClientDetail() {
         </Page.TitleGroup>
         <Page.Actions>
           <Button
-            onPress={() => navigate(`/clients/${client.id}/edit`)}
+            onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
             size="sm"
             variant="secondary"
           >
@@ -476,7 +476,7 @@ export default function ClientDetail() {
                   {client.inactive_reason === 'subscription_expired' ? (
                     <Button
                       className="mt-3 min-h-11 w-full"
-                      onPress={() => navigate(`/clients/${client.id}/edit`)}
+                      onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
                     >
                       Extend subscription
                     </Button>

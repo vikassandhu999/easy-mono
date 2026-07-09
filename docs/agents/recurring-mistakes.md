@@ -236,6 +236,17 @@ optional form fields after build; add a component test when coachapp has a front
 
 ### RM-125 — Loading/pending states must not change layout (skeletons not centered spinners; constant-width pending buttons). **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
 
+### RM-126 — Server field errors + HeroUI native form validation deadlock resubmits
+`applyFormErrors`/`setError` on a field inside a HeroUI `Form` sets a native `customError`,
+and HeroUI's default `validationBehavior` then blocks the browser submit event BEFORE
+react-hook-form's `onSubmit` (and any `clearErrors`) can run — the form dead-ends until the
+errored field is manually touched. Instance: client edit form after the reactivation-guard
+422 (2026-07-09); Save silently did nothing after the coach fixed the date. Any form that
+surfaces server errors via `setError` needs `validationBehavior="aria"` (passthrough on
+`FormLayout`) plus `form.clearErrors()` before `handleSubmit` in its submit wrapper.
+**Enforced by:** convention for now; graduate to `check-rm` (grep forms using
+`applyFormErrors` without `validationBehavior="aria"`) if it recurs.
+
 ---
 
 ## Deploy / ops

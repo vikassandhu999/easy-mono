@@ -12,7 +12,9 @@ defmodule Easy.Clients.Client do
 
   @type t :: %__MODULE__{}
 
-  @statuses [:active, :pending, :inactive, :archived, :awaiting_seat]
+  @statuses [:pending, :active, :inactive]
+  @stages [:onboarding, :coaching]
+  @inactive_reasons [:manual, :subscription_expired, :awaiting_seat]
   @invitation_validity_days 30
 
   schema "clients" do
@@ -25,6 +27,10 @@ defmodule Easy.Clients.Client do
     field :goal_weight_unit, Ecto.Enum, values: [:kg, :lbs]
 
     field :status, Ecto.Enum, values: @statuses
+    field :stage, Ecto.Enum, values: @stages, default: :onboarding
+    field :inactive_reason, Ecto.Enum, values: @inactive_reasons
+    field :subscription_started_on, :date
+    field :subscription_ends_on, :date
 
     # Invitation
     field :invitation_token, :string
@@ -47,7 +53,10 @@ defmodule Easy.Clients.Client do
     :notes,
     :goal_weight_value,
     :goal_weight_unit,
-    :status
+    :status,
+    :stage,
+    :subscription_started_on,
+    :subscription_ends_on
   ]
   @self_update_cast_fields [:first_name, :last_name, :phone]
   @inquiry_cast_fields [:email, :first_name, :last_name, :phone]
@@ -55,13 +64,11 @@ defmodule Easy.Clients.Client do
   # Allowed manual status transitions (coach-driven).
   # pending -> active is reserved for accept_invite/3 (the accept flow) only.
   # Nothing may return to pending once a Client has been linked to a User.
-  # Coaches may archive a waiting client; ONLY the system activates one
-  # (via Billing.activate_awaiting_clients update_all, which bypasses this changeset).
+  # System-driven exceptions use update_all and bypass this changeset:
+  # Billing.activate_awaiting_clients and SubscriptionSweeper.sweep.
   @allowed_status_transitions %{
-    active: [:inactive, :archived],
-    inactive: [:active, :archived],
-    archived: [:active, :inactive],
-    awaiting_seat: [:archived]
+    active: [:inactive],
+    inactive: [:active]
   }
 
   # Changesets
@@ -88,6 +95,10 @@ defmodule Easy.Clients.Client do
     |> validate_goal_weight_paired()
     |> validate_number(:goal_weight_value, greater_than: 0, less_than: 1000)
     |> validate_status_transition(client.status)
+    |> validate_subscription_dates()
+    |> validate_stage_change()
+    |> validate_reactivation_dates(client.status)
+    |> put_inactive_reason()
     |> unique_constraint(:email, name: :clients_business_id_email_index)
   end
 
@@ -157,6 +168,54 @@ defmodule Easy.Clients.Client do
         else
           add_error(changeset, :status, "invalid status transition")
         end
+    end
+  end
+
+  defp validate_subscription_dates(changeset) do
+    started = get_field(changeset, :subscription_started_on)
+    ends = get_field(changeset, :subscription_ends_on)
+
+    if started && ends && Date.compare(ends, started) == :lt do
+      add_error(changeset, :subscription_ends_on, "must be on or after the start date")
+    else
+      changeset
+    end
+  end
+
+  defp validate_stage_change(changeset) do
+    case get_change(changeset, :stage) do
+      nil ->
+        changeset
+
+      _stage ->
+        if get_field(changeset, :status) == :active do
+          changeset
+        else
+          add_error(changeset, :stage, "can only change for active clients")
+        end
+    end
+  end
+
+  # Reactivating a client whose subscription already ended would be undone by the
+  # next sweep — force the coach to extend or clear the dates in the same update.
+  defp validate_reactivation_dates(changeset, current_status) do
+    ends = get_field(changeset, :subscription_ends_on)
+
+    reactivating? = get_change(changeset, :status) == :active and current_status == :inactive
+    expired? = not is_nil(ends) and Date.compare(ends, Date.utc_today()) == :lt
+
+    if reactivating? and expired? do
+      add_error(changeset, :status, "subscription has ended; extend or clear the dates first")
+    else
+      changeset
+    end
+  end
+
+  defp put_inactive_reason(changeset) do
+    case get_change(changeset, :status) do
+      :inactive -> put_change(changeset, :inactive_reason, :manual)
+      :active -> put_change(changeset, :inactive_reason, nil)
+      _ -> changeset
     end
   end
 

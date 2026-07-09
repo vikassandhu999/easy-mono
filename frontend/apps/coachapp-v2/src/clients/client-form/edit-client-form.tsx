@@ -1,8 +1,9 @@
-import {ErrorMessage, Fieldset, ListBox} from '@heroui/react';
+import {ErrorMessage, Fieldset, ListBox, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
+import DateInput from '@/@components/date-input';
 import {
   FieldRow,
   FormActions,
@@ -219,21 +220,47 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
         <Fieldset.Legend>Subscription</Fieldset.Legend>
         <Fieldset.Group>
           <FieldRow>
-            <FormTextField
+            <Controller
               control={control}
-              fullWidth
-              inputProps={{type: 'date'}}
-              label="Subscription start"
               name="subscription_started_on"
-              type="date"
+              render={({field, fieldState}) => (
+                <div className="w-full">
+                  <DateInput
+                    label="Subscription start"
+                    onChange={(iso) => field.onChange(iso ?? '')}
+                    value={field.value || null}
+                  />
+                  {fieldState.error ? (
+                    <Typography
+                      className="mt-1 text-danger"
+                      type="body-xs"
+                    >
+                      {fieldState.error.message}
+                    </Typography>
+                  ) : null}
+                </div>
+              )}
             />
-            <FormTextField
+            <Controller
               control={control}
-              fullWidth
-              inputProps={{type: 'date'}}
-              label="Subscription end"
               name="subscription_ends_on"
-              type="date"
+              render={({field, fieldState}) => (
+                <div className="w-full">
+                  <DateInput
+                    label="Subscription end"
+                    onChange={(iso) => field.onChange(iso ?? '')}
+                    value={field.value || null}
+                  />
+                  {fieldState.error ? (
+                    <Typography
+                      className="mt-1 text-danger"
+                      type="body-xs"
+                    >
+                      {fieldState.error.message}
+                    </Typography>
+                  ) : null}
+                </div>
+              )}
             />
           </FieldRow>
         </Fieldset.Group>

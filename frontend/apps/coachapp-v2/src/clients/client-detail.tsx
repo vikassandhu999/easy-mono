@@ -433,55 +433,56 @@ export default function ClientDetail() {
               />
             </div>
             <div className="space-y-4">
-              <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-                <SectionHeading title="Subscription" />
-                {client.subscription_started_on || client.subscription_ends_on ? (
-                  <div className="flex flex-col gap-1">
-                    {client.subscription_started_on ? (
-                      <Typography
-                        color="muted"
-                        type="body-sm"
-                      >
-                        Started {formatIsoDateOnly(client.subscription_started_on)}
-                      </Typography>
-                    ) : null}
-                    {client.subscription_ends_on ? (
-                      <Typography
-                        color="muted"
-                        type="body-sm"
-                      >
-                        Ends {formatIsoDateOnly(client.subscription_ends_on)}
-                      </Typography>
-                    ) : null}
-                  </div>
-                ) : (
-                  <Typography
-                    color="muted"
-                    type="body-sm"
-                  >
-                    No subscription dates
-                  </Typography>
-                )}
-                {client.expiring_soon ? (
-                  <Chip
-                    className="mt-2"
-                    color="warning"
-                    size="sm"
-                    variant="soft"
-                  >
-                    Expiring soon
-                  </Chip>
-                ) : null}
-                {client.inactive_reason === 'subscription_expired' ? (
-                  <Button
-                    className="mt-3 w-full"
-                    onPress={() => navigate(`/clients/${client.id}/edit`)}
-                    size="sm"
-                  >
-                    Extend subscription
-                  </Button>
-                ) : null}
-              </div>
+              {isPending ? null : (
+                <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+                  <SectionHeading title="Subscription" />
+                  {client.subscription_started_on || client.subscription_ends_on ? (
+                    <div className="flex flex-col gap-1">
+                      {client.subscription_started_on ? (
+                        <Typography
+                          color="muted"
+                          type="body-sm"
+                        >
+                          Started {formatIsoDateOnly(client.subscription_started_on)}
+                        </Typography>
+                      ) : null}
+                      {client.subscription_ends_on ? (
+                        <Typography
+                          color="muted"
+                          type="body-sm"
+                        >
+                          Ends {formatIsoDateOnly(client.subscription_ends_on)}
+                        </Typography>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <Typography
+                      color="muted"
+                      type="body-sm"
+                    >
+                      No subscription dates
+                    </Typography>
+                  )}
+                  {client.expiring_soon ? (
+                    <Chip
+                      className="mt-2"
+                      color="warning"
+                      size="sm"
+                      variant="soft"
+                    >
+                      Expiring soon
+                    </Chip>
+                  ) : null}
+                  {client.inactive_reason === 'subscription_expired' ? (
+                    <Button
+                      className="mt-3 min-h-11 w-full"
+                      onPress={() => navigate(`/clients/${client.id}/edit`)}
+                    >
+                      Extend subscription
+                    </Button>
+                  ) : null}
+                </div>
+              )}
               {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
               {isPending ? null : <ClientWeight clientId={client.id} />}
               <Link

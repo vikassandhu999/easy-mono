@@ -8,9 +8,9 @@ Spec: `docs/superpowers/specs/2026-07-08-coach-client-messaging-design.md` · SD
 
 ### Security / correctness
 
-- [ ] **Revoke live websockets on deactivation/reassignment** (also filed as Linear COA-124).
+- [ ] **Revoke live websockets on deactivation/reassignment** (was Linear COA-124, canceled — this file governs).
   Sockets outlive the 5-min JWT; deactivating a client/trainer or reassigning does not kill joined channels — pushes keep flowing until the socket drops. Fix: `EasyWeb.Endpoint.broadcast("user_socket:#{user_id}", "disconnect", %{})` from the lifecycle context fns (`UserSocket.id/1` already returns that topic). Channel test: deactivated trainer stops receiving pushes.
-- [ ] **Prod `check_origin` fail-loud** (also filed as Linear COA-125).
+- [ ] **Prod `check_origin` fail-loud** (was Linear COA-125, canceled — this file governs).
   Unset `CORS_ALLOWED_ORIGINS` → `check_origin: false` in prod (silent CSWSH exposure). Raise in `runtime.exs` prod branch when unset. Related: token rides the socket query string — fine at 5-min TTL, revisit together if TTL grows.
 
 ### Product-scope (decide before building)

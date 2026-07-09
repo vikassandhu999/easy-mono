@@ -46,6 +46,27 @@ defmodule Easy.Clients.ReadBoundaryTest do
   end
 
   describe "visibility (Client.visible_to/2 via get_client and list_clients)" do
+    test "summary counts exactly three statuses" do
+      business = insert(:business)
+      insert(:client, business: business, status: :active)
+      insert(:client, business: business, status: :pending, user: nil)
+      insert(:client, business: business, status: :inactive, inactive_reason: :manual)
+      ctx = owner_ctx(business)
+
+      assert {:ok, %{summary: summary}} = Clients.list_clients(ctx)
+      assert summary == %{active: 1, pending: 1, inactive: 1}
+    end
+
+    test "filters clients by stage" do
+      business = insert(:business)
+      onboarding = insert(:client, business: business, stage: :onboarding)
+      insert(:client, business: business, stage: :coaching)
+      ctx = owner_ctx(business)
+
+      assert {:ok, %{count: 1, clients: [client]}} = Clients.list_clients(ctx, stage: :onboarding)
+      assert client.id == onboarding.id
+    end
+
     test "owner sees every client in the business" do
       business = insert(:business)
       trainer = insert(:coach, business: business)
@@ -97,6 +118,19 @@ defmodule Easy.Clients.ReadBoundaryTest do
       assert {:ok, %{id: id}} = Clients.get_client(owner_ctx(business), unassigned.id)
       assert id == unassigned.id
       assert {:error, :not_found} = Clients.get_client(trainer_ctx(trainer), unassigned.id)
+    end
+  end
+
+  describe "accept_invite/3" do
+    test "accepting an invite over capacity lands inactive with awaiting_seat reason" do
+      business = insert(:business)
+      insert(:business_billing, business: business, free_seats: 0, paid_seats: 0)
+      client = insert(:client, business: business, status: :pending, user: nil)
+      user = insert(:user)
+
+      assert {:ok, updated} = Clients.accept_invite(client, user.id, user.email)
+      assert updated.status == :inactive
+      assert updated.inactive_reason == :awaiting_seat
     end
   end
 

@@ -89,18 +89,19 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert json_response(conn, 422)
     end
 
-    test "allows invite when email belongs to an archived client elsewhere", %{conn: conn} do
+    test "allows invite when email belongs to an awaiting-seat inactive client elsewhere", %{conn: conn} do
       other_coach = insert(:coach)
-      existing_user = insert(:user, email: "archived@email.com")
+      existing_user = insert(:user, email: "awaiting-seat@email.com")
 
       insert(:client,
         creator: other_coach,
         business: other_coach.business,
         user: existing_user,
-        status: :archived
+        status: :inactive,
+        inactive_reason: :awaiting_seat
       )
 
-      attrs = %{"email" => "archived@email.com", "first_name" => "Archived"}
+      attrs = %{"email" => "awaiting-seat@email.com", "first_name" => "Awaiting"}
       conn = post(conn, "/v1/coach/clients/invite", attrs)
 
       assert %{"data" => data} = json_response(conn, 201)
@@ -334,7 +335,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       coach: coach,
       business: business
     } do
-      for status <- [:active, :inactive, :archived] do
+      for status <- [:active, :inactive] do
         client =
           insert(:client,
             creator: coach,
@@ -356,7 +357,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       coach: coach,
       business: business
     } do
-      for status <- [:active, :pending, :inactive, :archived] do
+      for status <- [:active, :pending, :inactive] do
         client = insert(:client, creator: coach, business: business, status: status)
 
         conn = get(conn, "/v1/coach/clients/#{client.id}")
@@ -520,12 +521,15 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert reloaded.goal_weight_unit == nil
     end
 
-    test "updates status to archived", %{conn: conn, coach: coach, business: business} do
+    test "deactivating stamps inactive reason manual", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business, status: :active)
 
-      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "archived"})
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "inactive"})
       assert %{"data" => data} = json_response(conn, 200)
-      assert data["status"] == "archived"
+      assert data["status"] == "inactive"
+
+      reloaded = Easy.Repo.get!(Easy.Clients.Client, client.id)
+      assert reloaded.inactive_reason == :manual
     end
 
     test "updates status to inactive", %{conn: conn, coach: coach, business: business} do
@@ -556,7 +560,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert json_response(conn, 422)
     end
 
-    test "rejects pending -> archived", %{conn: conn, coach: coach, business: business} do
+    test "rejects archived as an invalid status", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business, status: :pending)
 
       conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "archived"})
@@ -577,13 +581,6 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert json_response(conn, 422)
     end
 
-    test "rejects archived -> pending", %{conn: conn, coach: coach, business: business} do
-      client = insert(:client, creator: coach, business: business, status: :archived)
-
-      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "pending"})
-      assert json_response(conn, 422)
-    end
-
     test "allows inactive -> active", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business, status: :inactive)
 
@@ -592,24 +589,25 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["status"] == "active"
     end
 
-    test "allows archived -> active (re-engage)", %{
+    test "allows awaiting-seat inactive -> active and clears inactive reason", %{
       conn: conn,
       coach: coach,
       business: business
     } do
-      client = insert(:client, creator: coach, business: business, status: :archived)
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          status: :inactive,
+          inactive_reason: :awaiting_seat
+        )
 
       conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "active"})
       assert %{"data" => data} = json_response(conn, 200)
       assert data["status"] == "active"
-    end
 
-    test "allows archived -> inactive", %{conn: conn, coach: coach, business: business} do
-      client = insert(:client, creator: coach, business: business, status: :archived)
-
-      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "inactive"})
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["status"] == "inactive"
+      reloaded = Easy.Repo.get!(Easy.Clients.Client, client.id)
+      assert reloaded.inactive_reason == nil
     end
 
     test "rejects invalid status", %{conn: conn, coach: coach, business: business} do
@@ -676,15 +674,15 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
       attrs = %{
         "phone" => "+91 98765 43210",
-        "notes" => "archived due to inactivity",
-        "status" => "archived"
+        "notes" => "inactive due to inactivity",
+        "status" => "inactive"
       }
 
       conn = patch(conn, "/v1/coach/clients/#{client.id}", attrs)
       assert %{"data" => data} = json_response(conn, 200)
       assert data["phone"] == "+91 98765 43210"
-      assert data["notes"] == "archived due to inactivity"
-      assert data["status"] == "archived"
+      assert data["notes"] == "inactive due to inactivity"
+      assert data["status"] == "inactive"
     end
 
     test "returns 404 for non-existent client", %{conn: conn} do
@@ -706,7 +704,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert summary["active"] == 1
       assert summary["pending"] == 1
       assert summary["inactive"] == 1
-      assert summary["archived"] == 0
+      assert Map.keys(summary) |> Enum.sort() == ["active", "inactive", "pending"]
     end
 
     test "paginates results with offset and limit", %{
@@ -744,7 +742,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert summary["active"] == 0
       assert summary["pending"] == 0
       assert summary["inactive"] == 0
-      assert summary["archived"] == 0
+      assert Map.keys(summary) |> Enum.sort() == ["active", "inactive", "pending"]
     end
 
     test "filters by search term", %{conn: conn, coach: coach, business: business} do
@@ -1041,25 +1039,14 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert client["status"] == "inactive"
     end
 
-    test "filters by archived status", %{conn: conn, coach: coach, business: business} do
-      insert(:client, status: :active, creator: coach, business: business)
-      archived = insert(:client, status: :archived, creator: coach, business: business)
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "archived"})
-      assert %{"data" => [client], "count" => 1} = json_response(conn, 200)
-      assert client["id"] == archived.id
-      assert client["status"] == "archived"
-    end
-
     test "no filter returns all statuses", %{conn: conn, coach: coach, business: business} do
       insert(:client, status: :active, creator: coach, business: business)
       insert(:client, status: :pending, creator: coach, business: business)
       insert(:client, status: :inactive, creator: coach, business: business)
-      insert(:client, status: :archived, creator: coach, business: business)
 
       conn = get(conn, "/v1/coach/clients")
-      assert %{"data" => clients, "count" => 4} = json_response(conn, 200)
-      assert length(clients) == 4
+      assert %{"data" => clients, "count" => 3} = json_response(conn, 200)
+      assert length(clients) == 3
     end
 
     test "summary counts all statuses correctly", %{conn: conn, coach: coach, business: business} do
@@ -1067,15 +1054,13 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       insert(:client, status: :active, creator: coach, business: business)
       insert(:client, status: :pending, creator: coach, business: business)
       insert(:client, status: :inactive, creator: coach, business: business)
-      insert(:client, status: :archived, creator: coach, business: business)
-      insert(:client, status: :archived, creator: coach, business: business)
 
       conn = get(conn, "/v1/coach/clients")
       assert %{"summary" => summary} = json_response(conn, 200)
       assert summary["active"] == 2
       assert summary["pending"] == 1
       assert summary["inactive"] == 1
-      assert summary["archived"] == 2
+      assert Map.keys(summary) |> Enum.sort() == ["active", "inactive", "pending"]
     end
 
     test "summary is unaffected by status filter", %{
@@ -1174,7 +1159,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       coach: coach,
       business: business
     } do
-      for status <- [:active, :inactive, :archived] do
+      for status <- [:active, :inactive] do
         client = insert(:client, creator: coach, business: business, status: status)
 
         conn = delete(conn, "/v1/coach/clients/#{client.id}")

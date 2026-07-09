@@ -71,6 +71,7 @@ defmodule Easy.Clients do
   def list_clients(%Ctx{} = ctx, opts \\ []) do
     search = Keyword.get(opts, :search, "")
     status = Keyword.get(opts, :status)
+    stage = Keyword.get(opts, :stage)
     profile_filter = Keyword.get(opts, :profile_filter, %{})
     offset = max(Keyword.get(opts, :offset, 0), 0)
     limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
@@ -82,6 +83,7 @@ defmodule Easy.Clients do
         |> Client.visible_to(ctx)
         |> Client.search(search)
         |> Client.for_status(status)
+        |> Client.for_stage(stage)
         |> apply_profile_filters(ctx.business_id, filters)
 
       {:ok,
@@ -212,11 +214,11 @@ defmodule Easy.Clients do
     end
   end
 
-  # Seat-gate reactivation only: inactive/archived -> active at the seat limit
+  # Seat-gate reactivation only: inactive -> active at the seat limit
   # is blocked; every other status transition and every non-status update
   # passes through untouched.
   defp ensure_reactivation_capacity(ctx, %Client{status: current}, attrs)
-       when current in [:inactive, :archived] do
+       when current == :inactive do
     if to_string(attrs[:status] || attrs["status"]) == "active" do
       Billing.ensure_seat_available(ctx)
     else
@@ -257,14 +259,12 @@ defmodule Easy.Clients do
         select: %{
           active: count(fragment("CASE WHEN ? = 'active' THEN 1 END", c.status)),
           pending: count(fragment("CASE WHEN ? = 'pending' THEN 1 END", c.status)),
-          inactive: count(fragment("CASE WHEN ? = 'inactive' THEN 1 END", c.status)),
-          archived: count(fragment("CASE WHEN ? = 'archived' THEN 1 END", c.status)),
-          awaiting_seat: count(fragment("CASE WHEN ? = 'awaiting_seat' THEN 1 END", c.status))
+          inactive: count(fragment("CASE WHEN ? = 'inactive' THEN 1 END", c.status))
         }
       )
       |> Repo.one()
 
-    counts || %{active: 0, pending: 0, inactive: 0, archived: 0, awaiting_seat: 0}
+    counts || %{active: 0, pending: 0, inactive: 0}
   end
 
   defp normalize_profile_filter(profile_filter) when is_map(profile_filter) do
@@ -524,7 +524,11 @@ defmodule Easy.Clients do
 
   defp do_atomic_accept(client_id, business_id, user_id, accepted_email) do
     now = DateTime.utc_now(:second)
-    target_status = if Billing.over_capacity?(business_id), do: :awaiting_seat, else: :active
+
+    {target_status, target_reason} =
+      if Billing.over_capacity?(business_id),
+        do: {:inactive, :awaiting_seat},
+        else: {:active, nil}
 
     query =
       from(c in Client,
@@ -536,6 +540,7 @@ defmodule Easy.Clients do
            set: [
              user_id: user_id,
              status: target_status,
+             inactive_reason: target_reason,
              email: accepted_email,
              updated_at: now
            ]

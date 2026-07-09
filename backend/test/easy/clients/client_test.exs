@@ -11,6 +11,23 @@ defmodule Easy.Clients.ClientTest do
     end
   end
 
+  describe "for_stage/2" do
+    test "filters clients by stage" do
+      business = insert(:business)
+      insert(:client, business: business, stage: :onboarding)
+      coaching = insert(:client, business: business, stage: :coaching)
+
+      ids =
+        Client
+        |> Client.for_business(business.id)
+        |> Client.for_stage(:coaching)
+        |> Repo.all()
+        |> Enum.map(& &1.id)
+
+      assert ids == [coaching.id]
+    end
+  end
+
   describe "streamlined lifecycle changeset rules" do
     test "archived is no longer a valid status" do
       client = %Client{status: :active}

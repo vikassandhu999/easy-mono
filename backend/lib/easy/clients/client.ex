@@ -321,6 +321,12 @@ defmodule Easy.Clients.Client do
     from(c in query, where: c.status == ^status)
   end
 
+  @spec for_stage(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
+  def for_stage(query \\ __MODULE__, stage)
+  def for_stage(query, nil), do: query
+  def for_stage(query, ""), do: query
+  def for_stage(query, stage), do: from(c in query, where: c.stage == ^stage)
+
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(c in query, order_by: [desc: c.inserted_at, desc: c.id])

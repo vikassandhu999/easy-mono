@@ -29,6 +29,25 @@ defmodule EasyWeb.Clients.ClientProfileControllerTest do
       assert data["lifestyle"] == %{}
       assert data["intake_status"] == "assigned"
     end
+
+    test "locks inactive clients out of the client API" do
+      coach = insert(:coach)
+
+      client =
+        insert(:client,
+          business: coach.business,
+          creator: coach,
+          status: :inactive,
+          inactive_reason: :subscription_expired
+        )
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> get("/v1/client/profile")
+
+      assert %{"error_code" => "client_inactive"} = json_response(conn, 403)
+    end
   end
 
   describe "PATCH /v1/client/profile" do

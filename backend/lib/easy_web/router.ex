@@ -24,6 +24,7 @@ defmodule EasyWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec, module: EasyWeb.ApiSpec
     plug EasyWeb.Plugs.Authenticate
     plug EasyWeb.Plugs.EnsureRole, role: :client
+    plug EasyWeb.Plugs.EnsureActiveClient
   end
 
   scope "/api", EasyWeb do

@@ -8,6 +8,7 @@ defmodule Easy.ClientProfiles do
   alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.DefaultIntake
   alias Easy.Repo
 
   import Ecto.Query
@@ -170,6 +171,14 @@ defmodule Easy.ClientProfiles do
     ctx.business_id
     |> FormTemplate.insert_changeset(attrs)
     |> Repo.insert()
+  end
+
+  @spec assign_default_intake_to_client(Ctx.t(), String.t()) ::
+          {:ok, FormAssignment.t()} | {:error, term()}
+  def assign_default_intake_to_client(%Ctx{} = ctx, client_id) do
+    with {:ok, template} <- get_or_create_default_intake_template(ctx) do
+      assign_form_template_to_client(ctx, client_id, template.id, %{})
+    end
   end
 
   @spec get_form_template(Ctx.t(), String.t()) :: {:ok, FormTemplate.t()} | {:error, :not_found}
@@ -349,10 +358,33 @@ defmodule Easy.ClientProfiles do
         case assignment
              |> FormAssignment.complete_changeset(submitted_at)
              |> Repo.update() do
-          {:ok, _assignment} -> submission
-          {:error, reason} -> Repo.rollback(reason)
+          {:ok, _assignment} ->
+            if assignment.purpose == :intake do
+              sync_intake_completed!(ctx, client.id, submitted_at)
+            end
+
+            submission
+
+          {:error, reason} ->
+            Repo.rollback(reason)
         end
       end)
+    end
+  end
+
+  defp sync_intake_completed!(ctx, client_id, submitted_at) do
+    case get_or_create_profile(ctx, client_id) do
+      {:ok, profile} ->
+        profile
+        |> Ecto.Changeset.change(intake_status: :completed, intake_completed_at: submitted_at)
+        |> Repo.update()
+        |> case do
+          {:ok, _} -> :ok
+          {:error, reason} -> Repo.rollback(reason)
+        end
+
+      {:error, reason} ->
+        Repo.rollback(reason)
     end
   end
 
@@ -490,6 +522,27 @@ defmodule Easy.ClientProfiles do
     |> where([f], f.key == ^key and is_nil(f.archived_at))
     |> Repo.one()
     |> ok_or_not_found()
+  end
+
+  defp get_or_create_default_intake_template(%Ctx{} = ctx) do
+    FormTemplate
+    |> FormTemplate.for_business(ctx.business_id)
+    |> where([t], t.purpose == :intake and t.status == :active)
+    |> order_by([t], asc: t.inserted_at)
+    |> limit(1)
+    |> Repo.one()
+    |> case do
+      nil ->
+        create_form_template(ctx, %{
+          "name" => "Intake",
+          "purpose" => "intake",
+          "status" => "active",
+          "sections" => DefaultIntake.sections()
+        })
+
+      template ->
+        {:ok, template}
+    end
   end
 
   defp get_form_assignment(business_id, assignment_id) do

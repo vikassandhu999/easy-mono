@@ -480,6 +480,44 @@ defmodule Easy.ClientProfilesTest do
     end
   end
 
+  describe "assign_default_intake_to_client/2" do
+    test "creates the template once per business and assigns it" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+
+      assert {:ok, assignment} = ClientProfiles.assign_default_intake_to_client(ctx, client.id)
+      assert assignment.purpose == :intake
+      assert assignment.status == :assigned
+
+      client2 = insert(:client, business: client.business, status: :active)
+
+      assert {:ok, assignment2} =
+               ClientProfiles.assign_default_intake_to_client(ctx, client2.id)
+
+      assert assignment2.form_template_id == assignment.form_template_id
+      assert Repo.aggregate(FormTemplate, :count) == 1
+    end
+  end
+
+  describe "intake submission completes intake_status" do
+    test "submitting an intake assignment marks the profile intake completed" do
+      client = insert_client()
+      coach_ctx = owner_ctx(client.business)
+      {:ok, assignment} = ClientProfiles.assign_default_intake_to_client(coach_ctx, client.id)
+
+      ctx = client_ctx(client)
+      answers = %{"primary-goal" => "Lose weight", "typical-day" => "Rice and dal"}
+
+      assert {:ok, _submission} =
+               ClientProfiles.submit_client_form_assignment(ctx, assignment.id, %{answers: answers})
+
+      {:ok, profile} = ClientProfiles.get_or_create_profile(coach_ctx, client.id)
+      assert profile.intake_status == :completed
+      assert profile.intake_completed_at
+      assert profile.general["primary_goal"] == "Lose weight"
+    end
+  end
+
   describe "tenant isolation and write-path guards" do
     test "upsert_profile_field_value rejects a field from another business" do
       client = insert_client()

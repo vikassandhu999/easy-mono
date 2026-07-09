@@ -118,6 +118,7 @@ defmodule Easy.Clients do
          :ok <- validate_not_self_invite(coach, invite_attrs),
          :ok <- validate_email_has_no_active_client(invite_attrs),
          {:ok, client} <- create_invitation(coach, invite_attrs),
+         {:ok, _assignment} <- Easy.ClientProfiles.assign_default_intake_to_client(ctx, client.id),
          :ok <- maybe_send_invitation_email(client, coach) do
       {:ok, client}
     end

@@ -187,11 +187,15 @@ defmodule Easy.TrainingPlans do
         end_date: Map.get(attrs, :end_date)
       }
 
-      clone_plan(plan, clone_attrs,
-        creator_id: coach.id,
-        client_id: client_id,
-        source_template_id: plan.id
-      )
+      with {:ok, assigned} <-
+             clone_plan(plan, clone_attrs,
+               creator_id: coach.id,
+               client_id: client_id,
+               source_template_id: plan.id
+             ) do
+        :ok = Clients.advance_stage_to_coaching(ctx, client_id)
+        {:ok, assigned}
+      end
     end
   end
 

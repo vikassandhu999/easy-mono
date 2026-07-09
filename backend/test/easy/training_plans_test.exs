@@ -1,6 +1,7 @@
 defmodule Easy.TrainingPlansTest do
   use Easy.DataCase, async: true
 
+  alias Easy.Clients.Client
   alias Easy.TrainingPlans
 
   describe "client visibility (trainer-team access control)" do
@@ -67,6 +68,44 @@ defmodule Easy.TrainingPlansTest do
 
       assert {:ok, %{id: id}} = TrainingPlans.get_plan_full(ctx, assigned_plan.id)
       assert id == assigned_plan.id
+    end
+
+    test "assigning a plan advances an onboarding client to coaching", %{
+      business: business,
+      trainer_a: trainer_a,
+      template_a: template_a
+    } do
+      ctx = owner_ctx(business)
+
+      client =
+        insert(:client,
+          business: business,
+          creator: trainer_a,
+          assigned_coach: trainer_a,
+          stage: :onboarding
+        )
+
+      assert {:ok, _assigned} = TrainingPlans.assign_plan_to_client(ctx, client.id, template_a.id, %{})
+      assert Repo.get!(Client, client.id).stage == :coaching
+    end
+
+    test "assigning a plan leaves a coaching client's stage alone", %{
+      business: business,
+      trainer_a: trainer_a,
+      template_a: template_a
+    } do
+      ctx = owner_ctx(business)
+
+      client =
+        insert(:client,
+          business: business,
+          creator: trainer_a,
+          assigned_coach: trainer_a,
+          stage: :coaching
+        )
+
+      assert {:ok, _assigned} = TrainingPlans.assign_plan_to_client(ctx, client.id, template_a.id, %{})
+      assert Repo.get!(Client, client.id).stage == :coaching
     end
 
     test "a template plan (client_id nil) is fully visible to every trainer — shared library", %{

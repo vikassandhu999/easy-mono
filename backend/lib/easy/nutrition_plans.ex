@@ -148,7 +148,10 @@ defmodule Easy.NutritionPlans do
     with {:ok, coach} <- get_coach(ctx),
          {:ok, plan} <- get_plan(ctx, plan_id),
          {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
-      assign_to_client(plan, client_id, coach.id, attrs)
+      with {:ok, assigned} <- assign_to_client(plan, client_id, coach.id, attrs) do
+        :ok = Clients.advance_stage_to_coaching(ctx, client_id)
+        {:ok, assigned}
+      end
     end
   end
 

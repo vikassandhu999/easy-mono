@@ -122,6 +122,18 @@ defmodule Easy.Clients do
     end
   end
 
+  # System-driven half of the stage lifecycle: the first assigned plan is the
+  # moment coaching starts. Manual overrides go through update_client.
+  @spec advance_stage_to_coaching(Ctx.t(), String.t()) :: :ok
+  def advance_stage_to_coaching(%Ctx{} = ctx, client_id) do
+    Client
+    |> Client.for_business(ctx.business_id)
+    |> where([c], c.id == ^client_id and c.stage == :onboarding)
+    |> Repo.update_all(set: [stage: :coaching, updated_at: DateTime.utc_now(:second)])
+
+    :ok
+  end
+
   @spec revoke_invitation(Ctx.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
   def revoke_invitation(%Ctx{} = ctx, client_id) do

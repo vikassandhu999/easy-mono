@@ -613,6 +613,7 @@ const injectedRtkApi = api.injectEndpoints({
           limit: queryArg.limit,
           search: queryArg.search,
           status: queryArg.status,
+          stage: queryArg.stage,
           profile_filter: queryArg.profileFilter,
         },
       }),
@@ -1401,7 +1402,9 @@ export type ListClientsApiArg = {
   /** Case-insensitive client search */
   search?: string;
   /** Only clients with this status */
-  status?: 'active' | 'pending' | 'inactive' | 'archived';
+  status?: 'active' | 'pending' | 'inactive';
+  /** Only clients with this stage */
+  stage?: 'onboarding' | 'coaching';
   /** Nested profile filters using deepObject syntax. Example: profile_filter[nutrition][goal]=fat_loss or profile_filter[custom][meal_prep_ability]=high. Values may be scalar or repeated list values; list values match any selected value. */
   profileFilter?: {
     custom?: {
@@ -1761,18 +1764,25 @@ export type TrainingDayScheduleRequest = {
 export type Client = {
   assigned_coach_id?: string | null;
   email: string | null;
+  expiring_soon: boolean;
   first_name: string | null;
   goal_weight_unit: ('kg' | 'lbs') | null;
   goal_weight_value: number | null;
   id: string;
+  inactive_reason: ('manual' | 'subscription_expired' | 'awaiting_seat') | null;
   inserted_at: string;
+  intake_incomplete: boolean;
   invitation_expires_at: string | null;
   invitation_sent_at: string | null;
   invite_url: string | null;
   last_name: string | null;
+  needs_plan: boolean;
   notes: string | null;
   phone: string | null;
-  status: 'active' | 'pending' | 'inactive' | 'archived' | 'awaiting_seat';
+  stage: 'onboarding' | 'coaching';
+  status: 'active' | 'pending' | 'inactive';
+  subscription_ends_on: string | null;
+  subscription_started_on: string | null;
   updated_at: string;
 };
 export type ClientResponse = {
@@ -1824,7 +1834,10 @@ export type ClientUpdateRequest = {
   last_name?: string | null;
   notes?: string | null;
   phone?: string | null;
-  status?: 'active' | 'inactive' | 'archived';
+  stage?: ('onboarding' | 'coaching') | null;
+  status?: 'active' | 'inactive';
+  subscription_ends_on?: string | null;
+  subscription_started_on?: string | null;
 };
 export type CoachingClientProfile = {
   business_id: string;
@@ -2576,8 +2589,6 @@ export type ClientProfileFormTemplateRequest = {
 };
 export type ClientSummary = {
   active: number;
-  archived: number;
-  awaiting_seat: number;
   inactive: number;
   pending: number;
 };

@@ -123,8 +123,15 @@ defmodule EasyWeb.Coaches.ClientController do
       Operation.parameter(
         :status,
         :query,
-        %Schema{type: :string, enum: ["active", "pending", "inactive", "archived"]},
+        %Schema{type: :string, enum: ["active", "pending", "inactive"]},
         "Only clients with this status",
+        required: false
+      ),
+      Operation.parameter(
+        :stage,
+        :query,
+        %Schema{type: :string, enum: ["onboarding", "coaching"]},
+        "Only clients with this stage",
         required: false
       ),
       Operation.parameter(
@@ -217,6 +224,7 @@ defmodule EasyWeb.Coaches.ClientController do
       offset: parse_integer(params, "offset", 0),
       limit: parse_integer(params, "limit", 10),
       status: Map.get(params, "status"),
+      stage: Map.get(params, "stage"),
       profile_filter: Map.get(params, "profile_filter", %{})
     ]
 

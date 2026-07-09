@@ -45,7 +45,10 @@ defmodule EasyWeb.OpenApi.Schemas.ClientUpdateRequest do
         notes: %Schema{type: :string, nullable: true},
         goal_weight_value: %Schema{type: :number, nullable: true},
         goal_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"], nullable: true},
-        status: %Schema{type: :string, enum: ["active", "inactive", "archived"]}
+        status: %Schema{type: :string, enum: ["active", "inactive"]},
+        stage: %Schema{type: :string, enum: ["onboarding", "coaching"], nullable: true},
+        subscription_started_on: %Schema{type: :string, format: :date, nullable: true},
+        subscription_ends_on: %Schema{type: :string, format: :date, nullable: true}
       },
       example: %{
         "first_name" => "Jamie",
@@ -79,10 +82,18 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
           notes: %Schema{type: :string, nullable: true},
           goal_weight_value: %Schema{type: :number, nullable: true},
           goal_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"], nullable: true},
-          status: %Schema{
+          status: %Schema{type: :string, enum: ["active", "pending", "inactive"]},
+          stage: %Schema{type: :string, enum: ["onboarding", "coaching"]},
+          inactive_reason: %Schema{
             type: :string,
-            enum: ["active", "pending", "inactive", "archived", "awaiting_seat"]
+            enum: ["manual", "subscription_expired", "awaiting_seat"],
+            nullable: true
           },
+          subscription_started_on: %Schema{type: :string, format: :date, nullable: true},
+          subscription_ends_on: %Schema{type: :string, format: :date, nullable: true},
+          intake_incomplete: %Schema{type: :boolean},
+          needs_plan: %Schema{type: :boolean},
+          expiring_soon: %Schema{type: :boolean},
           assigned_coach_id: %Schema{type: :string, format: :uuid, nullable: true},
           invite_url: %Schema{type: :string, nullable: true},
           invitation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
@@ -100,6 +111,13 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
       :goal_weight_value,
       :goal_weight_unit,
       :status,
+      :stage,
+      :inactive_reason,
+      :subscription_started_on,
+      :subscription_ends_on,
+      :intake_incomplete,
+      :needs_plan,
+      :expiring_soon,
       :invite_url,
       :invitation_sent_at,
       :invitation_expires_at,
@@ -121,11 +139,9 @@ defmodule EasyWeb.OpenApi.Schemas.ClientSummary do
     properties: %{
       active: %Schema{type: :integer, minimum: 0},
       pending: %Schema{type: :integer, minimum: 0},
-      inactive: %Schema{type: :integer, minimum: 0},
-      archived: %Schema{type: :integer, minimum: 0},
-      awaiting_seat: %Schema{type: :integer, minimum: 0}
+      inactive: %Schema{type: :integer, minimum: 0}
     },
-    required: [:active, :pending, :inactive, :archived, :awaiting_seat]
+    required: [:active, :pending, :inactive]
   })
 end
 

@@ -24,9 +24,8 @@ type FilterOption = {
 const FILTER_OPTIONS: FilterOption[] = [
   {id: 'all', label: 'All', filter: {}},
   {id: 'active', label: 'Active', filter: {status: 'active'}, summaryKey: 'active'},
-  {id: 'pending', label: 'Pending', filter: {status: 'pending'}, summaryKey: 'pending'},
+  {id: 'invited', label: 'Invited', filter: {status: 'pending'}, summaryKey: 'pending'},
   {id: 'inactive', label: 'Inactive', filter: {status: 'inactive'}, summaryKey: 'inactive'},
-  {id: 'archived', label: 'Archived', filter: {status: 'archived'}, summaryKey: 'archived'},
 ];
 
 function getOptionLabel(option: FilterOption, summary: ClientSummary | undefined): string {

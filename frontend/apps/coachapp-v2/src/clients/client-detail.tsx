@@ -311,7 +311,7 @@ export default function ClientDetail() {
 
   const client = data.data;
   const isPending = client.status === 'pending';
-  const isAwaitingSeat = client.status === 'awaiting_seat';
+  const isAwaitingSeat = client.status === 'inactive' && client.inactive_reason === 'awaiting_seat';
   const status = STATUS_DISPLAY[client.status];
 
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');

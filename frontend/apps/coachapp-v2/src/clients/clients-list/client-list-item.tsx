@@ -3,7 +3,78 @@ import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
 import {MessageCircle} from 'lucide-react';
 
 import type {Client} from '@/api/clients';
-import {STATUS_DISPLAY} from '@/clients/lib/client';
+import {INACTIVE_REASON_LABEL, STATUS_DISPLAY, stageChip} from '@/clients/lib/client';
+
+function RowChips({client}: {client: Client}) {
+  if (client.status === 'active') {
+    const stage = stageChip(client);
+    return (
+      <>
+        {client.stage === 'coaching' && client.intake_incomplete ? (
+          <Chip
+            color="warning"
+            size="sm"
+            variant="soft"
+          >
+            Intake incomplete
+          </Chip>
+        ) : null}
+        {client.stage === 'coaching' && client.needs_plan ? (
+          <Chip
+            color="warning"
+            size="sm"
+            variant="soft"
+          >
+            Needs plan
+          </Chip>
+        ) : null}
+        {client.expiring_soon ? (
+          <Chip
+            color="warning"
+            size="sm"
+            variant="soft"
+          >
+            Expiring soon
+          </Chip>
+        ) : null}
+        <Chip
+          color={stage.color}
+          size="sm"
+          variant="soft"
+        >
+          {stage.label}
+        </Chip>
+      </>
+    );
+  }
+
+  if (client.status === 'inactive') {
+    const label =
+      client.inactive_reason === 'subscription_expired' && client.subscription_ends_on
+        ? `Subscription ended ${formatIsoDateShort(client.subscription_ends_on)}`
+        : (INACTIVE_REASON_LABEL[client.inactive_reason ?? 'manual'] ?? 'Inactive');
+    return (
+      <Chip
+        color="default"
+        size="sm"
+        variant="soft"
+      >
+        {label}
+      </Chip>
+    );
+  }
+
+  const status = STATUS_DISPLAY[client.status];
+  return (
+    <Chip
+      color={status.color}
+      size="sm"
+      variant="soft"
+    >
+      {status.label}
+    </Chip>
+  );
+}
 
 export default function ClientListItem({client}: {client: Client}) {
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
@@ -17,7 +88,6 @@ export default function ClientListItem({client}: {client: Client}) {
     subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
   }
 
-  const status = STATUS_DISPLAY[client.status];
   const whatsapp = client.phone?.replace(/\D/g, '');
 
   return (
@@ -47,13 +117,7 @@ export default function ClientListItem({client}: {client: Client}) {
             <MessageCircle size={16} />
           </a>
         ) : null}
-        <Chip
-          color={status.color}
-          size="sm"
-          variant="soft"
-        >
-          {status.label}
-        </Chip>
+        <RowChips client={client} />
       </div>
     </ListBox.Item>
   );

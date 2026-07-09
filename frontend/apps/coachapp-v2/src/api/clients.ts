@@ -1,9 +1,10 @@
 import {api} from '@/api/base';
+import type {Client as GeneratedClient} from '@/api/generated';
 import {ApiResponse, listTags, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 50;
 
-export type ClientStatus = 'active' | 'archived' | 'awaiting_seat' | 'inactive' | 'pending';
+export type ClientStatus = GeneratedClient['status'];
 
 export type Client = {
   id: string;
@@ -18,6 +19,15 @@ export type Client = {
   phone: null | string;
   notes: null | string;
   status: ClientStatus;
+  /** 'onboarding' until the client's first plan assignment auto-advances it to 'coaching'. */
+  stage: GeneratedClient['stage'];
+  /** Populated only when status is 'inactive'. */
+  inactive_reason: GeneratedClient['inactive_reason'];
+  subscription_started_on: null | string;
+  subscription_ends_on: null | string;
+  intake_incomplete: boolean;
+  needs_plan: boolean;
+  expiring_soon: boolean;
   /** The trainer this client is currently assigned to. */
   assigned_coach_id: null | string;
   /** Present only for pending clients. */
@@ -47,9 +57,9 @@ export type ClientInviteRequest = {
  * Status values the coach can set via PATCH. `pending` is intentionally absent:
  *   - The only transition into `pending` is creating an invitation.
  *   - The only transition out of `pending` is the client accepting (server-driven).
- *   - All other transitions happen among active/inactive/archived.
+ *   - All other transitions happen between active/inactive.
  */
-export type AllowedUpdateStatus = 'active' | 'archived' | 'inactive';
+export type AllowedUpdateStatus = Exclude<ClientStatus, 'pending'>;
 
 export type ClientUpdateRequest = {
   email?: null | string;
@@ -61,36 +71,25 @@ export type ClientUpdateRequest = {
 };
 
 /**
- * Valid status transitions per the spec's invariants table. Returns the set of
- * statuses the coach can transition to from the given current status.
+ * Valid status transitions. Returns the set of statuses the coach can
+ * transition to from the given current status.
  *
- *   pending        → (none) — only exits via accept-invite or revoke
- *   active         → inactive | archived
- *   inactive       → active | archived
- *   archived       → active | inactive
- *   awaiting_seat  → archived — activation is system-driven (a seat freeing
- *                    up), so the coach can only archive manually, not activate
+ *   pending  → (none) — only exits via accept-invite or revoke
+ *   active   → inactive
+ *   inactive → active
  *
  * Nothing can return to `pending` — once a Client has been linked to a User,
  * that link is permanent.
  */
-export function allowedStatusesFor(current: ClientStatus): AllowedUpdateStatus[] {
-  // pending only exits via accept-invite or revoke; every other status can move
-  // freely among active/inactive/archived.
-  if (current === 'pending') {
+export function allowedStatusesFor(status: ClientStatus): AllowedUpdateStatus[] {
+  if (status === 'pending') {
     return [];
   }
-  // awaiting_seat can only be archived manually; activation happens
-  // automatically when a seat frees up.
-  if (current === 'awaiting_seat') {
-    return ['archived'];
-  }
-  return ['active', 'inactive', 'archived'];
+  return ['active', 'inactive'];
 }
 
 export type ClientSummary = {
   active: number;
-  archived: number;
   inactive: number;
   pending: number;
 };
@@ -173,7 +172,7 @@ const clientsApi = api.injectEndpoints({
      * client's invite URL becomes invalid immediately.
      *
      * Returns 422 if the client is not pending — use updateClient with
-     * status: 'archived' instead for non-pending clients.
+     * status: 'inactive' instead for non-pending clients.
      */
     revokeInvitation: build.mutation<void, string>({
       query: (id) => ({

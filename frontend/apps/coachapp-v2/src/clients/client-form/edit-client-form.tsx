@@ -18,7 +18,6 @@ import {type TeamMember, useGetTeamQuery} from '@/api/team';
 
 const STATUS_LABELS: Record<AllowedUpdateStatus, string> = {
   active: 'Active',
-  archived: 'Archived',
   inactive: 'Inactive',
 };
 
@@ -29,7 +28,7 @@ export const editClientFormSchema = z.object({
   last_name: z.string().optional(),
   notes: z.string().optional(),
   phone: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'archived']).optional(),
+  status: z.enum(['active', 'inactive']).optional(),
 });
 
 export type EditClientFormValues = z.infer<typeof editClientFormSchema>;
@@ -48,7 +47,7 @@ export function clientToEditFormValues(client: Client): EditClientFormValues {
     last_name: client.last_name ?? '',
     notes: client.notes ?? '',
     phone: client.phone ?? '',
-    status: client.status === 'pending' || client.status === 'awaiting_seat' ? undefined : client.status,
+    status: client.status === 'pending' ? undefined : client.status,
   };
 }
 

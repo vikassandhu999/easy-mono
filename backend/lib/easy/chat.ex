@@ -206,17 +206,12 @@ defmodule Easy.Chat do
   end
 
   # Coach inbox listings must only surface conversations for clients the caller
-  # can see: owner -> all, trainer -> assigned only.
+  # can see: owner -> all, trainer -> assigned only. The join predicate mirrors
+  # Client.visible_to/2 — keep them in sync if visibility semantics change.
   defp constrain_to_visible_clients(query, %Ctx{owner?: true}), do: query
 
-  defp constrain_to_visible_clients(query, %Ctx{coach_id: coach_id} = ctx) when not is_nil(coach_id) do
-    visible_client_ids =
-      Client
-      |> Client.for_business(ctx.business_id)
-      |> Client.visible_to(ctx)
-      |> select([c], c.id)
-
-    where(query, [c], c.client_id in subquery(visible_client_ids))
+  defp constrain_to_visible_clients(query, %Ctx{coach_id: coach_id}) when not is_nil(coach_id) do
+    join(query, :inner, [c], cl in Client, on: cl.id == c.client_id and cl.assigned_coach_id == ^coach_id)
   end
 
   # Fail closed: coach routes always provide owner? or coach_id. A ctx with

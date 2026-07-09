@@ -1,6 +1,6 @@
 - change name.
-- add messaging.
-- add access control for trainers.
+- add messaging. x
+- add access control for trainers. x
 - pending queries.
 - make app more playful.
 - client subscription management -> just track the subscription dates, should deactive client on subscription end. client state -> onboarding -> planning -> coaching.

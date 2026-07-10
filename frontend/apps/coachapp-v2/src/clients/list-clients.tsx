@@ -1,7 +1,7 @@
 import type {Key} from '@heroui/react';
 
 import {Button, SearchField, Tabs} from '@heroui/react';
-import {Plus} from 'lucide-react';
+import {Plus, TriangleAlert} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -49,7 +49,10 @@ export default function ListClients() {
 
   const deferredSearch = useDeferredValue(search);
   const activeStatus = FILTER_OPTIONS.find((o) => o.id === activeFilter)?.filter.status;
-  const {clients, fetchNextPage, isLoading} = useClientsSearch({search: deferredSearch, status: activeStatus});
+  const {clients, fetchNextPage, isError, isFetchingNextPage, isLoading, refetch} = useClientsSearch({
+    search: deferredSearch,
+    status: activeStatus,
+  });
 
   // limit: 0 returns the summary aggregate with no rows — the backend clamps to min(max(limit, 0), 100).
   const {data: summaryData} = useListClientsQuery({limit: 0});
@@ -73,88 +76,127 @@ export default function ListClients() {
   const totalCount = summaryData?.count ?? '...';
   const activeCount = summaryData?.summary.active ?? '...';
   const hasFilter = !!deferredSearch || activeFilter !== 'all';
+  const showEmptyState = !isLoading && !isFetchingNextPage && !isError && clients.length === 0;
+  // ponytail: counts attention flags among loaded rows only (backend caps pages at 100);
+  // add a summary-level attention count if rosters outgrow that.
+  const attentionCount = clients.filter(
+    (client) => client.intake_incomplete || client.needs_plan || client.expiring_soon,
+  ).length;
 
   return (
     <Page className="bg-surface">
-      <Page.Header className="items-end gap-4 px-4 pt-6 pb-0 md:px-8 md:pt-8 lg:px-10">
+      <Page.Header className="items-end gap-6 px-[18px] pt-2 pb-0! md:px-10 md:pt-[34px] lg:px-10 lg:pt-[34px]">
         <Page.TitleGroup>
-          <p className="mb-2 text-xs font-semibold tracking-wider text-accent uppercase">Your roster</p>
-          <Page.Title className="font-grotesk text-4xl leading-none tracking-normal">Clients</Page.Title>
-          <p className="mt-3 text-sm text-muted">
-            <span className="font-semibold text-foreground">{totalCount}</span> total ·{' '}
-            <span className="font-semibold text-success-soft-foreground">{activeCount}</span> active
+          <p className="mb-[5px] text-[11px] font-semibold tracking-[0.08em] text-focus uppercase md:mb-2 md:text-xs">
+            Your roster
           </p>
+          <Page.Title className="font-grotesk text-[26px]! leading-none! font-bold! tracking-[-0.02em]! md:text-[34px]!">
+            Clients
+          </Page.Title>
+          <Page.Description className="mt-[11px] hidden leading-[21px] md:block">
+            <span className="font-bold text-foreground">{totalCount}</span> total ·{' '}
+            <span className="font-bold text-success">{activeCount}</span> active · showing{' '}
+            <span className="font-bold text-foreground">{clients.length}</span>
+          </Page.Description>
         </Page.TitleGroup>
-        <Page.Actions>
+        <Page.Actions className="gap-0 md:gap-2.5">
+          {attentionCount > 0 ? (
+            <span className="hidden min-h-11 items-center gap-[9px] rounded-[13px] border-[1.5px]! border-danger-soft bg-danger-soft/50 px-[15px] py-[11px] text-[13px] font-bold text-danger md:flex">
+              <TriangleAlert
+                size={17}
+                strokeWidth={2.2}
+              />
+              {attentionCount} need attention
+            </span>
+          ) : null}
           <Button
-            className="min-h-11 bg-accent px-4 font-semibold text-accent-foreground hover:bg-accent-hover"
+            className="h-11 min-h-11 w-11 min-w-11 justify-end! rounded-[12px]! bg-transparent! p-0! text-[13.5px] text-accent-foreground! hover:bg-transparent! md:w-auto md:min-w-0 md:justify-center! md:rounded-[13px]! md:bg-accent! md:px-[18px]! md:py-3! md:hover:bg-accent!"
             onPress={() => navigate(ROUTES.INVITE_CLIENT)}
+            variant="primary"
           >
-            <Plus size={16} />
-            Invite
+            <span
+              aria-hidden
+              className="grid size-10 place-items-center rounded-[12px] bg-accent md:contents"
+            >
+              <Plus
+                className="size-[18px]! md:size-[17px]!"
+                size={17}
+                strokeWidth={2.4}
+              />
+            </span>
+            <span className="sr-only md:not-sr-only">Invite</span>
           </Button>
         </Page.Actions>
       </Page.Header>
-      <Page.Toolbar className="sticky top-0 z-10 flex flex-col gap-3 border-b border-surface-secondary bg-surface px-4 pt-6 pb-4 md:px-8 lg:flex-row lg:items-center lg:px-10">
-        <SearchField
-          aria-label="Search clients"
-          className="w-full lg:max-w-70"
-          onChange={setSearch}
-          value={search}
-          variant={'secondary'}
-        >
-          <SearchField.Group>
-            <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search clients" />
-            <SearchField.ClearButton />
-          </SearchField.Group>
-        </SearchField>
-        <Tabs
-          aria-label="Filter clients by status"
-          className="min-w-0 flex-1"
-          onSelectionChange={setActiveFilter}
-          selectedKey={activeFilter}
-        >
-          <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
-            <Tabs.List className="w-max! min-w-max gap-2 bg-transparent p-0">
-              {FILTER_OPTIONS.map((option) => (
-                <Tabs.Tab
-                  className="group h-9 w-auto! gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-semibold text-muted data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
-                  id={option.id}
-                  key={option.id}
-                >
-                  {option.label}
-                  <span className="rounded-full bg-surface-secondary px-1.5 py-0.5 text-xs font-bold text-muted group-data-[selected=true]:bg-accent-foreground/15 group-data-[selected=true]:text-accent-foreground">
-                    {getOptionCount(option, summaryData)}
-                  </span>
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-          </Tabs.ListContainer>
-        </Tabs>
-      </Page.Toolbar>
-      <Page.Content className="px-4 pb-8 md:px-8 lg:px-10">
-        <BrowseListBox
-          ariaLabel="Clients"
-          className="flex-1 overflow-hidden rounded-2xl border-[1.5px] border-separator bg-surface p-0"
-          emptyState={
-            <ClientEmptyState
-              hasFilter={hasFilter}
-              onClearFilters={clearFilters}
-            />
-          }
-          fetchNextPage={fetchNextPage}
-          isLoading={isLoading}
-          items={clients}
-          onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
-          renderItem={(client) => (
-            <ClientListItem
-              client={client}
-              unreadCount={unreadByClientId.get(client.id) ?? 0}
-            />
-          )}
-          skeletonAvatar
-        />
+      <Page.Content className="px-[18px] pb-6 md:px-10 md:pb-10">
+        <div className="flex min-h-0 flex-1 flex-col pt-4 md:pt-[22px]">
+          <div className="mb-4 flex flex-col gap-3.5 sm:mb-[18px] sm:flex-row sm:items-center">
+            <SearchField
+              aria-label="Search clients"
+              className="w-full sm:w-[280px] sm:shrink-0"
+              onChange={setSearch}
+              value={search}
+              variant="secondary"
+            >
+              <SearchField.Group className="h-11 min-h-11 gap-[9px] rounded-[12px] border-[1.5px]! border-separator bg-surface">
+                <SearchField.SearchIcon className="size-4 shrink-0 text-field-placeholder sm:size-[17px]" />
+                <SearchField.Input
+                  className="p-0 text-[13.5px] text-foreground placeholder:text-field-placeholder sm:text-sm"
+                  placeholder="Search clients"
+                />
+                <SearchField.ClearButton />
+              </SearchField.Group>
+            </SearchField>
+            <Tabs
+              aria-label="Filter clients by status"
+              className="min-w-0 flex-1"
+              onSelectionChange={setActiveFilter}
+              selectedKey={activeFilter}
+            >
+              <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
+                <Tabs.List className="w-max! min-w-max gap-[7px] bg-transparent p-0 sm:gap-2">
+                  {FILTER_OPTIONS.map((option) => (
+                    <Tabs.Tab
+                      className="group h-8 min-w-fit gap-1.5 whitespace-nowrap rounded-[9px] bg-surface-secondary px-[13px] text-[12.5px] font-semibold text-muted data-[selected=true]:bg-accent! data-[selected=true]:text-accent-foreground! sm:h-9 sm:gap-[7px] sm:rounded-[10px] sm:px-[15px] sm:text-[13px]"
+                      id={option.id}
+                      key={option.id}
+                    >
+                      {option.label}
+                      <span className="min-w-[15px] rounded-full bg-border px-[5px] text-center text-[10.5px] leading-[15px] font-bold text-muted group-data-[selected=true]:bg-accent-foreground/[0.22]! group-data-[selected=true]:text-accent-foreground! sm:min-w-4 sm:px-1.5 sm:text-[11px] sm:leading-4">
+                        {getOptionCount(option, summaryData)}
+                      </span>
+                    </Tabs.Tab>
+                  ))}
+                </Tabs.List>
+              </Tabs.ListContainer>
+            </Tabs>
+          </div>
+          <BrowseListBox
+            ariaLabel="Clients"
+            className={`flex-1 overflow-hidden rounded-[16px] bg-surface p-0 sm:rounded-[18px] ${
+              showEmptyState ? 'border-0!' : 'border-[1.5px]! border-separator'
+            }`}
+            emptyState={
+              <ClientEmptyState
+                hasFilter={hasFilter}
+                onClearFilters={clearFilters}
+              />
+            }
+            fetchNextPage={fetchNextPage}
+            isError={isError}
+            isLoading={isLoading || isFetchingNextPage}
+            items={clients}
+            onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
+            onRetry={refetch}
+            renderItem={(client) => (
+              <ClientListItem
+                client={client}
+                unreadCount={unreadByClientId.get(client.id) ?? 0}
+              />
+            )}
+            skeletonAvatar
+          />
+        </div>
       </Page.Content>
     </Page>
   );

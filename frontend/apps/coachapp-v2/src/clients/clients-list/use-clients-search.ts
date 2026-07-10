@@ -20,6 +20,9 @@ export default function useClientsSearch({search, status, enabled = true}: Clien
   return {
     clients,
     fetchNextPage: list.fetchNextPage,
+    isError: list.isError,
+    isFetchingNextPage: list.isFetchingNextPage,
     isLoading: list.isLoading,
+    refetch: list.refetch,
   };
 }

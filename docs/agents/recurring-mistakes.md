@@ -236,6 +236,26 @@ optional form fields after build; add a component test when coachapp has a front
 
 ### RM-125 — Loading/pending states must not change layout (skeletons not centered spinners; constant-width pending buttons). **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
 
+### RM-127 — `bg-foreground`/`text-background` is not a "dark cell"; it inverts with the theme
+Both tokens flip between light and dark themes, so a cell painted `bg-foreground text-background`
+renders dark-on-light in one theme and light-on-dark in the other — the opposite of the intent.
+`--accent` is authored dark in BOTH theme blocks, so `bg-accent` + `text-accent-foreground` is the
+only stable "always dark surface" pair. Instance: the 2026-07-09 dashboard bento shipped four
+inverting cells (needs-attention, quick-actions, subscription avatar, featured avatar).
+**Enforced by:** `just check-rm`.
+
+### RM-128 — Status colors are not body-copy colors; use `*-soft-foreground` for colored text
+On `--surface` the status tokens fail WCAG AA for normal text: `danger` 4.15:1, `success` 3.30:1,
+`link` 3.23:1, `warning` 3.19:1 (AA needs 4.5:1). HeroUI ships `--danger-soft-foreground` and
+friends — `color-mix(<color>, --foreground)` — precisely for readable colored copy; they measure
+7.1–7.5:1 on surface and 5.8–6.4:1 on their own `*-soft` tint. Use `text-danger`/`text-warning`
+for icons, borders, and large numerals only; use `text-<status>-soft-foreground` (over
+`bg-<status>-soft`) for any sentence, label, or chip text. Instance: the 2026-07-09 dashboard
+bento used `text-danger`/`text-warning` for 12px copy. Corollary: `--link` itself must be an
+AA-passing blue (#0072D6, 4.80:1), not the brand #0091FF (3.23:1) — keep the brighter blue on
+`--focus`, where the 3:1 non-text threshold applies.
+**Enforced by:** `just check-rm`.
+
 ### RM-126 — Server field errors + HeroUI native form validation deadlock resubmits
 `applyFormErrors`/`setError` on a field inside a HeroUI `Form` sets a native `customError`,
 and HeroUI's default `validationBehavior` then blocks the browser submit event BEFORE

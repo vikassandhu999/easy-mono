@@ -1,23 +1,24 @@
 ---
 name: codex-implementation
-description: Ask Codex CLI (gpt-5.5) to implement scoped code changes in the current repository, then have Claude inspect the resulting diff and verification. This is how gpt-5.5 is invoked for implementation work. Use when the user asks Claude to delegate implementation to Codex or gpt-5.5, when the model-selection rubric routes the work to gpt-5.5, or when a bounded task would benefit from another coding agent producing a patch.
+description: Delegate substantive repository implementation to Codex CLI, using gpt-5.6-sol by default, then have Claude orchestrate scope checks and the handoff. Use whenever Claude needs code, tests, migrations, debugging fixes, refactors, documentation tied to implementation, or other repository changes. Claude scopes, dispatches, monitors, and reports; Codex investigates, edits, verifies, and reviews the implementation.
 ---
 
 # Codex Implementation
 
-Use Codex as a separate implementation agent for bounded code changes. Claude remains responsible for scoping the task, reviewing the diff, running or checking verification, and explaining the final result.
+Delegate substantial implementation work to Codex. Keep Claude limited to scoping, prompt construction, dispatch, monitoring, obvious scope checks, and user communication.
 
-Use this when the user asks for Codex or delegation, or when a bounded task would benefit from a parallel implementation agent producing a patch. Do not let Codex commit, push, deploy, or edit global config unless the user explicitly asked for that.
+Do not let Codex commit, push, deploy, edit global configuration, or perform other external state changes unless the user explicitly authorizes that action.
 
 ## Workflow
 
-1. Pin the current state with `git status --short` and note any user changes already present.
-2. Define the implementation scope: files or behavior to change, files to avoid, constraints, and verification commands.
-3. Create a temporary artifact directory for Codex's report.
-4. Run `codex exec` with repo write access.
-5. After Codex exits, inspect `git status` and `git diff`.
-6. Run the cheapest reliable verification yourself when practical.
-7. Report what Codex changed, what Claude verified, and any remaining risks.
+1. Pin the current state with `git status --short` and note pre-existing user changes.
+2. Define the goal, acceptance criteria, constraints, files or behavior to avoid, and verification expectations.
+3. Create a temporary artifact directory for the prompt and final report.
+4. Run Codex with `gpt-5.6-sol` and repository write access.
+5. Have Codex inspect the code, implement the change, run the relevant verification, and report changed files, results, failures, and risks.
+6. After Codex exits, inspect its report plus targeted `git status` and `git diff` output only far enough to confirm scope and detect unrelated edits.
+7. Send implementation defects, missing verification, or unclear behavior back to Codex. Use `codex-review` for a substantive independent review when warranted.
+8. Report what Codex changed, what it verified, and any remaining risks or blockers.
 
 Use this command shape:
 
@@ -28,33 +29,38 @@ PROMPT="$ARTIFACT_DIR/prompt.md"
 
 # Write a self-contained prompt to $PROMPT, then run:
 codex exec \
+  -m gpt-5.6-sol \
   -C "$PWD" \
   --add-dir "$ARTIFACT_DIR" \
   -s workspace-write \
   -o "$REPORT" \
-  "$(cat "$PROMPT")"
+  - < "$PROMPT"
 ```
 
-Use `-s workspace-write` by default. Use `-s danger-full-access` only when the implementation truly needs access outside the repo, app launch automation, simulator work, package manager global state, or other machine-level operations.
+Use `-s workspace-write` by default. Use `-s danger-full-access` only when the task genuinely needs access outside the repository, app launch automation, simulator work, package-manager global state, or other machine-level operations, and only with the required approval.
+
+Use `gpt-5.5` only when the repository's model-routing instructions or the user explicitly call for a cheaper mechanical pass. Use `gpt-5.6-sol` for ambiguous, complex, user-facing, or quality-sensitive implementation.
 
 ## Prompt Requirements
 
 Tell Codex:
-- The exact implementation goal and acceptance criteria.
-- The repo path and current branch context if relevant.
-- Which existing patterns, files, or tests to inspect first.
-- Files or behavior that must not be changed.
-- That it must preserve unrelated user changes.
-- That it must not commit, push, deploy, or edit global config.
-- Which verification commands to run, or to explain why they were skipped.
-- To write a concise final report with files changed, verification, and unresolved questions.
 
-Keep the task bounded. If the requested work bundles several substantial changes, split into separate Codex runs or ask the user to choose the first scope.
+- The exact implementation goal and acceptance criteria.
+- The repository path and current branch context when relevant.
+- Which repository instructions, existing patterns, files, and tests to inspect first.
+- Which files or behavior must not change.
+- Which user changes already exist and must be preserved.
+- Not to commit, push, deploy, edit global configuration, or broaden external state without explicit authorization.
+- To investigate, implement, and run the best proportional verification itself.
+- To explain skipped or failed verification and attempt safe in-scope fixes.
+- To produce a concise final report with files changed, behavioral results, verification, failures, and unresolved risks.
+
+Split multiple independent substantial changes into separate Codex runs. Run them sequentially when they share a checkout or depend on one another. Use isolated worktrees for parallel implementation workers.
 
 ## Example Prompt
 
 ```text
-You are implementing a scoped change for Claude.
+Implement this change in the current repository.
 
 Repository: /absolute/path/to/repo
 Artifact directory: /tmp/codex-implementation.xxxxxx
@@ -63,27 +69,29 @@ Goal:
 - Add keyboard navigation to the command palette.
 
 Acceptance criteria:
-- ArrowUp and ArrowDown move the highlighted item
-- Enter selects the highlighted item
-- Escape closes the palette
+- ArrowUp and ArrowDown move the highlighted item.
+- Enter selects the highlighted item.
+- Escape closes the palette.
 - Existing mouse behavior keeps working.
 
 Constraints:
-- Follow existing component and test patterns.
+- Follow the repository instructions and existing component and test patterns.
+- Preserve unrelated user changes.
+- Do not commit, push, deploy, or edit global configuration.
 
 Verification:
-- Run the focused component tests if available.
+- Run focused component tests when available.
 - Otherwise run the nearest relevant typecheck or test command and explain the choice.
 
 Report:
-- Files changed
-- Behavioral summary
-- Verification run and result
-- Anything blocked or uncertain
+- Files changed.
+- Behavioral summary.
+- Verification commands and results.
+- Anything blocked or uncertain.
 ```
 
-## Review After Codex
+## After Codex
 
-Always inspect Codex's diff before telling the user the work is done. Revert only Codex-created mistakes when you are sure they are not user changes. If Codex leaves the repo in a worse state or changes unrelated files, stop and report the issue with the diff summary.
+Inspect the final report and targeted diff/status for scope, not as a substitute for Codex's implementation or review. Ask Codex to correct defects or justify suspicious changes. Revert only Codex-created mistakes when they are clearly distinguishable from user changes and reverting is safe.
 
-If `codex` is not installed or the command fails, report the error and offer to implement the change directly instead.
+If the command fails, retry once when the failure is transient or correctable; otherwise report the blocker. Do not fall back to a Claude-authored substantive implementation.

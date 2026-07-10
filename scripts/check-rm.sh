@@ -10,7 +10,7 @@ check() { # check <rm-id> <description> <rg-pattern> <path>...
   local id="$1" desc="$2" pattern="$3"
   shift 3
   local hits
-  hits=$(rg -n -g '*.tsx' -g '*.ts' -g '!**/generated.ts' "$pattern" "$@")
+  hits=$(rg -n --pcre2 -g '*.tsx' -g '*.ts' -g '!**/generated.ts' "$pattern" "$@")
   if [ -n "$hits" ]; then
     echo "FAIL $id — $desc (see docs/agents/recurring-mistakes.md)"
     echo "$hits" | head -10
@@ -30,6 +30,16 @@ check RM-109 "literal hex colors in UI (use semantic tokens)" \
 
 check RM-121 "react-aria NumberField for numeric entry (use @/@components/number-input)" \
   '<NumberField' "$COACH"
+
+# Only bg-foreground / text-background invert. border-foreground is a legitimate border color.
+check RM-127 "theme-inverting dark cell (use bg-accent + text-accent-foreground)" \
+  '(^|[ :"'"'"'\`])(bg-foreground|text-background)([ "'"'"'\`/]|$)' "$COACH"
+
+# Status colors as body copy. Icons legitimately use text-danger/text-warning (non-text needs
+# only 3:1), so this fires only when a status color sits on an element that also carries a
+# text-size class — i.e. it is painting actual copy.
+check RM-128 "status color on sized text (use text-<status>-soft-foreground for copy)" \
+  '(?=.*\btext-(xs|sm|base|lg|xl)\b)(?=.*\btext-(danger|warning|success)[ "'"'"'\`])' "$COACH"
 
 check RM-122 "(optional)/(required) in form labels (optional is implicit; required = isRequired)" \
   '\(optional\)|\(required\)' "$COACH"

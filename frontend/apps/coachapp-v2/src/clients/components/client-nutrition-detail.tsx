@@ -1,5 +1,5 @@
 import {formatDateDisplay} from '@easy/utils';
-import {Button, Spinner, Table} from '@heroui/react';
+import {Button, Skeleton} from '@heroui/react';
 import {ArrowLeft, Check, Minus, Plus, RefreshCw} from 'lucide-react';
 import {useMemo} from 'react';
 
@@ -73,110 +73,71 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
       </div>
 
       {hasSnapshot && comparison.length > 0 ? (
-        <Table>
-          <Table.ScrollContainer>
-            <Table.Content aria-label="Planned vs eaten foods">
-              <Table.Header>
-                <Table.Column isRowHeader>Food</Table.Column>
-                <Table.Column className="text-right">Plan</Table.Column>
-                <Table.Column className="text-right">Done</Table.Column>
-                <Table.Column>{''}</Table.Column>
-              </Table.Header>
-              <Table.Body>
-                {comparison.map((item, index) => (
-                  <Table.Row
-                    className={item.type === 'skipped' ? 'border-dashed opacity-50' : ''}
-                    id={index}
-                    key={index}
-                  >
-                    <Table.Cell className="truncate">
-                      {item.type === 'replaced' && item.entry ? (
-                        <div>
-                          <p className="truncate text-muted line-through">{item.planned.food_name}</p>
-                          <p className="truncate">{item.entry.food_name}</p>
-                        </div>
-                      ) : (
-                        <span className={item.type === 'skipped' ? 'text-muted' : ''}>{item.planned.food_name}</span>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell className="text-right text-muted">
-                      {item.planned.amount}
-                      {item.planned.unit}
-                    </Table.Cell>
-                    <Table.Cell className="text-right">
-                      {item.entry ? (
-                        <span>
-                          {item.entry.amount}
-                          {item.entry.unit}
-                        </span>
-                      ) : (
-                        <span className="text-muted">&mdash;</span>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell className="text-center">
-                      <StatusIcon type={item.type} />
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table.Content>
-          </Table.ScrollContainer>
-        </Table>
+        <div className="flex flex-col gap-2">
+          {comparison.map((item) => (
+            <div
+              className={`flex min-h-11 items-center gap-3 rounded-2xl border-[1.5px] border-separator px-3 py-2 ${
+                item.type === 'skipped' ? 'border-dashed opacity-60' : ''
+              }`}
+              key={`${mealLog.id}-${item.planned.food_name}-${item.planned.amount}-${item.planned.unit}`}
+            >
+              <div className="min-w-0 flex-1">
+                {item.type === 'replaced' && item.entry ? (
+                  <>
+                    <p className="truncate text-sm text-muted line-through">{item.planned.food_name}</p>
+                    <p className="truncate text-sm font-semibold">{item.entry.food_name}</p>
+                  </>
+                ) : (
+                  <p className={`truncate text-sm font-semibold ${item.type === 'skipped' ? 'text-muted' : ''}`}>
+                    {item.planned.food_name}
+                  </p>
+                )}
+                <p className="text-xs text-muted">
+                  Plan {item.planned.amount}
+                  {item.planned.unit} · Done {item.entry ? `${item.entry.amount}${item.entry.unit}` : '—'}
+                </p>
+              </div>
+              <StatusIcon type={item.type} />
+            </div>
+          ))}
+        </div>
       ) : !hasSnapshot ? (
-        // No plan — show flat entry list
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full table-fixed text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface-secondary text-xs text-muted">
-                <th className="w-auto px-3 py-1.5 text-left font-medium">Food</th>
-                <th className="w-16 px-3 py-1.5 text-right font-medium">Amount</th>
-                <th className="w-14 px-3 py-1.5 text-right font-medium">Cal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mealLog.food_log_entries.map((entry) => (
-                <tr
-                  className="border-b border-border last:border-b-0"
-                  key={entry.id}
-                >
-                  <td className="truncate px-3 py-2">{entry.food_name}</td>
-                  <td className="px-3 py-2 text-right text-muted">
-                    {entry.amount != null ? `${entry.amount}${entry.unit ?? 'g'}` : ''}
-                  </td>
-                  <td className="px-3 py-2 text-right">{Math.round(entry.calories ?? 0)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex flex-col gap-2">
+          {mealLog.food_log_entries.map((entry) => (
+            <div
+              className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border-[1.5px] border-separator px-3 py-2"
+              key={entry.id}
+            >
+              <p className="min-w-0 truncate text-sm font-semibold">{entry.food_name}</p>
+              <p className="shrink-0 text-xs text-muted">
+                {entry.amount != null ? `${entry.amount}${entry.unit ?? 'g'}` : ''}
+                {` · ${Math.round(entry.calories ?? 0)} cal`}
+              </p>
+            </div>
+          ))}
         </div>
       ) : null}
 
       {unplanned.length > 0 ? (
-        <div className="mt-2 overflow-hidden rounded-lg border border-dashed border-border">
-          <table className="w-full table-fixed text-sm">
-            <tbody>
-              {unplanned.map((entry) => (
-                <tr
-                  className="border-b border-border last:border-b-0"
-                  key={entry.id}
-                >
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <Plus
-                        className="shrink-0 text-muted"
-                        size={12}
-                      />
-                      <span className="truncate text-muted">{entry.food_name}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-right text-muted">
-                    {entry.amount != null ? `${entry.amount}${entry.unit ?? 'g'}` : ''}
-                  </td>
-                  <td className="px-3 py-2 text-right">{Math.round(entry.calories ?? 0)} cal</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mt-2 flex flex-col gap-2">
+          {unplanned.map((entry) => (
+            <div
+              className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-dashed border-border px-3 py-2"
+              key={entry.id}
+            >
+              <div className="min-w-0 flex items-center gap-1.5">
+                <Plus
+                  className="shrink-0 text-muted"
+                  size={12}
+                />
+                <span className="truncate text-sm text-muted">{entry.food_name}</span>
+              </div>
+              <span className="shrink-0 text-xs text-muted">
+                {entry.amount != null ? `${entry.amount}${entry.unit ?? 'g'} · ` : ''}
+                {Math.round(entry.calories ?? 0)} cal
+              </span>
+            </div>
+          ))}
         </div>
       ) : null}
     </section>
@@ -214,8 +175,10 @@ export default function ClientNutritionDetail({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Spinner size="sm" />
+      <div className="space-y-3 py-2">
+        <Skeleton className="h-14 rounded-2xl" />
+        <Skeleton className="h-14 rounded-2xl" />
+        <Skeleton className="h-14 rounded-2xl" />
       </div>
     );
   }

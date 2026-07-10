@@ -123,7 +123,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 
           <div className="flex flex-wrap gap-2">
             <a
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border-[1.5px] border-separator px-3 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft"
               href={getWhatsAppUrl(client.phone ?? undefined, fullName, inviteUrl)}
               rel="noopener noreferrer"
               target="_blank"

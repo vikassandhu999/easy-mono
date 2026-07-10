@@ -157,10 +157,10 @@ function SidebarNavItem({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+        `relative flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm transition-colors ${
           isActive
-            ? 'bg-accent/10 font-semibold text-accent before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-full before:bg-accent'
-            : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
+            ? 'bg-link font-semibold text-white'
+            : 'font-medium text-accent-foreground/60 hover:bg-accent-foreground/10 hover:text-accent-foreground active:bg-accent-foreground/10'
         }`
       }
       to={item.path}
@@ -230,10 +230,10 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
   return (
     <div>
       <Button
-        className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+        className={`flex min-h-11 w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm transition-colors ${
           isGroupActive && !open
-            ? 'bg-accent/10 font-semibold text-accent'
-            : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
+            ? 'bg-link font-semibold text-white'
+            : 'font-medium text-accent-foreground/60 hover:bg-accent-foreground/10 hover:text-accent-foreground active:bg-accent-foreground/10'
         }`}
         fullWidth
         onPress={() => setOpen((prev) => !prev)}
@@ -244,14 +244,14 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
         <ChevronRight className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : ''}`} />
       </Button>
       {open ? (
-        <div className="ml-3 mt-1 space-y-0.5 border-l border-border pl-3">
+        <div className="ml-3 mt-1 space-y-0.5 border-l border-accent-foreground/15 pl-3">
           {group.items.map((item) => (
             <NavLink
               className={({isActive}) =>
-                `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                `flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-2 text-sm transition-colors ${
                   isActive
-                    ? 'bg-accent/10 font-semibold text-accent'
-                    : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
+                    ? 'bg-link font-semibold text-white'
+                    : 'font-medium text-accent-foreground/60 hover:bg-accent-foreground/10 hover:text-accent-foreground active:bg-accent-foreground/10'
                 }`
               }
               key={item.path}
@@ -306,7 +306,7 @@ export default function AppShell() {
       {/* Global toast renderer — queued via toast() from @heroui/react */}
       <Toast.Provider placement="bottom end" />
 
-      <aside className="hidden border-r border-border bg-surface lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <aside className="hidden bg-accent text-accent-foreground/70 lg:fixed lg:inset-y-0 lg:flex lg:w-59 lg:flex-col">
         <div className="flex h-16 items-center px-6">
           <img
             alt="CoachEasy"
@@ -360,7 +360,7 @@ export default function AppShell() {
 
       {/* Main content — only add bottom padding when bottom nav is visible */}
       <main
-        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-64 ${showBottomNav ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4rem+env(safe-area-inset-bottom))]') : ''}`}
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-59 ${showBottomNav ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4rem+env(safe-area-inset-bottom))]') : ''}`}
       >
         <Outlet />
       </main>

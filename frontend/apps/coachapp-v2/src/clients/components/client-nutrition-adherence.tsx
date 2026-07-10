@@ -1,159 +1,304 @@
-import {formatWeekday, getCurrentWeekRange, getDateForWeekdayIndex} from '@easy/utils';
-import {Button, Spinner} from '@heroui/react';
+import {Fieldset, Skeleton, Typography, toast} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
+import {Pencil, Utensils} from 'lucide-react';
 import {useMemo, useState} from 'react';
-import SectionHeading from '@/@components/section-heading';
-import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/generated';
-import ClientNutritionDetail from '@/clients/components/client-nutrition-detail';
+import {useForm} from 'react-hook-form';
+import {Link} from 'react-router-dom';
+import {z} from 'zod';
+
+import {FieldRow, FormActions, FormLayout, FormNumberField} from '@/@components/form-fields';
+import {ROUTES} from '@/@config/routes';
+import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
+import {useListCoachClientNutritionPlansQuery, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
+import {applyFormErrors, omitUndefined} from '@/api/shared';
+import {PLAN_STATUS_MAP, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
 import {
-  ADHERENCE_STYLES,
-  type AdherenceLevel,
-  buildRecentNutritionDaySubtitle,
-  computeDailyNutritionSummaries,
-  getAdherenceLevel,
-  getDayPercent,
-  getPlannedDailyCalories,
-  resolveNutritionMacrosGoal,
-} from '@/domain/client-nutrition';
+  formatAssignedDate,
+  formatNumber,
+  getProgramProgress,
+  softStatusClass,
+} from '@/clients/lib/client-detail-metrics';
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const macroSchema = z.object({
+  target_calories: z.number().min(0, 'Use 0 or higher').optional(),
+  target_carbs_g: z.number().min(0, 'Use 0 or higher').optional(),
+  target_fat_g: z.number().min(0, 'Use 0 or higher').optional(),
+  target_protein_g: z.number().min(0, 'Use 0 or higher').optional(),
+});
 
-/** Bar fill per adherence level (height encodes the day's %). */
-const BAR_BG: Record<AdherenceLevel, string> = {
-  high: 'bg-success',
-  medium: 'bg-warning',
-  low: 'bg-danger',
-  none: 'bg-default',
-  future: 'bg-default',
-};
+type MacroFormValues = z.infer<typeof macroSchema>;
 
-export default function ClientNutritionAdherence({clientId}: {clientId: string}) {
-  const {from, to} = useMemo(() => getCurrentWeekRange(), []);
-  // No backend summary route — fetch the meal log list and aggregate client-side.
-  const {data: logsData, isLoading} = useListCoachMealLogsQuery({clientId, from, to});
-  const {data: plansData} = useListCoachClientNutritionPlansQuery({clientId});
-  const [selectedDate, setSelectedDate] = useState<null | string>(null);
+const MACRO_FIELDS = [
+  {label: 'Calories', name: 'target_calories', unit: 'kcal'},
+  {label: 'Protein (g)', name: 'target_protein_g', unit: 'g'},
+  {label: 'Carbs (g)', name: 'target_carbs_g', unit: 'g'},
+  {label: 'Fat (g)', name: 'target_fat_g', unit: 'g'},
+] as const;
 
-  const summaries = useMemo(() => computeDailyNutritionSummaries(logsData?.data ?? []), [logsData]);
+function selectCurrentPlan(plans: NutritionPlan[]): NutritionPlan | null {
+  return (
+    [...plans].sort((a, b) => {
+      if (a.status !== b.status) {
+        return a.status === 'active' ? -1 : 1;
+      }
+      return (b.start_date ?? b.inserted_at).localeCompare(a.start_date ?? a.inserted_at);
+    })[0] ?? null
+  );
+}
 
-  const macrosGoal = useMemo(() => resolveNutritionMacrosGoal({plans: plansData?.data}), [plansData]);
+function defaultsFor(plan: NutritionPlan): MacroFormValues {
+  return {
+    target_calories: plan.target_calories ?? undefined,
+    target_carbs_g: plan.target_carbs_g ?? undefined,
+    target_fat_g: plan.target_fat_g ?? undefined,
+    target_protein_g: plan.target_protein_g ?? undefined,
+  };
+}
 
-  const plannedCalories = useMemo(() => getPlannedDailyCalories(macrosGoal), [macrosGoal]);
+function updateRequest(plan: NutritionPlan, values: MacroFormValues): NutritionPlanRequest {
+  return omitUndefined({
+    description: plan.description ?? null,
+    end_date: plan.end_date,
+    name: plan.name,
+    start_date: plan.start_date,
+    status: plan.status,
+    tags: plan.tags,
+    target_calories: values.target_calories,
+    target_carbs_g: values.target_carbs_g,
+    target_fat_g: values.target_fat_g,
+    target_fiber_g: plan.target_fiber_g,
+    target_protein_g: values.target_protein_g,
+  });
+}
 
-  // Build per-day data
-  const days = useMemo(() => {
-    return WEEKDAYS.map((label, index) => {
-      const dateStr = getDateForWeekdayIndex(index);
-      const summary = summaries.find((s) => s.date === dateStr);
-      const level = getAdherenceLevel(summary, dateStr, plannedCalories);
-      const style = ADHERENCE_STYLES[level];
-      const percent = getDayPercent(summary, plannedCalories);
+function ProgramSegments({percent, totalWeeks}: {percent: null | number; totalWeeks: null | number}) {
+  const count = Math.min(12, Math.max(4, totalWeeks ?? 8));
+  const filled = percent == null ? 0 : Math.round((percent / 100) * count);
+  return (
+    <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-12">
+      {Array.from({length: count}, (_, index) => (
+        <span
+          aria-hidden
+          className={`h-2 rounded-full ${index < filled ? 'bg-accent' : 'bg-surface-secondary'}`}
+          key={`nutrition-progress-${index + 1}`}
+        />
+      ))}
+    </div>
+  );
+}
 
-      return {dateStr, label, level, percent, style, summary};
-    });
-  }, [summaries, plannedCalories]);
+function MacroEditor({onClose, plan}: {onClose: () => void; plan: NutritionPlan}) {
+  const [updatePlan, {isLoading}] = useUpdateNutritionPlanMutation();
+  const form = useForm<MacroFormValues>({
+    defaultValues: defaultsFor(plan),
+    resolver: zodResolver(macroSchema),
+  });
 
-  // Weekly average across logged days (the big headline %).
-  const weekAvg = useMemo(() => {
-    const percents = days.map((d) => d.percent).filter((p): p is number => p != null);
-    if (percents.length === 0) {
-      return null;
+  const handleSubmit = async (values: MacroFormValues) => {
+    try {
+      await updatePlan({id: plan.id, nutritionPlanRequest: updateRequest(plan, values)}).unwrap();
+      toast.success('Macro targets saved');
+      onClose();
+    } catch (error) {
+      applyFormErrors(
+        error,
+        "Macro targets weren't saved. Check the values and try again.",
+        form.setError,
+        MACRO_FIELDS.map((field) => field.name),
+      );
     }
-    return Math.round(percents.reduce((sum, p) => sum + p, 0) / percents.length);
-  }, [days]);
-
-  const handleDayTap = (dateStr: string, level: AdherenceLevel) => {
-    if (level === 'future') {
-      return;
-    }
-    setSelectedDate((prev) => (prev === dateStr ? null : dateStr));
   };
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-      <SectionHeading title="Nutrition" />
+    <div className="mt-5 rounded-3xl border-[1.5px] border-separator bg-surface-secondary p-4">
+      <FormLayout
+        className="max-w-none gap-5"
+        onSubmit={form.handleSubmit(handleSubmit)}
+        validationBehavior="aria"
+      >
+        <Fieldset>
+          <Fieldset.Legend>Macro targets</Fieldset.Legend>
+          <Fieldset.Group>
+            <FieldRow>
+              {MACRO_FIELDS.map((field) => (
+                <FormNumberField
+                  control={form.control}
+                  fullWidth
+                  key={field.name}
+                  label={field.label}
+                  minValue={0}
+                  name={field.name}
+                />
+              ))}
+            </FieldRow>
+          </Fieldset.Group>
+        </Fieldset>
+
+        {form.formState.errors.root ? (
+          <Typography
+            className="text-danger-soft-foreground"
+            type="body-sm"
+          >
+            {form.formState.errors.root.message}
+          </Typography>
+        ) : null}
+
+        <FormActions
+          isSubmitting={isLoading}
+          onCancel={onClose}
+          submitLabel="Save targets"
+          submittingLabel="Saving targets"
+        />
+      </FormLayout>
+    </div>
+  );
+}
+
+export default function ClientNutritionAdherence({clientId}: {clientId: string}) {
+  const [editing, setEditing] = useState(false);
+  const {data, isError, isLoading} = useListCoachClientNutritionPlansQuery({clientId});
+  const plan = useMemo(() => selectCurrentPlan(data?.data ?? []), [data]);
+  const progress = plan ? getProgramProgress(plan) : null;
+  const status = plan ? (PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS) : null;
+
+  return (
+    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-grotesk text-xl font-bold">Nutrition plan</h2>
+          <Typography
+            className="mt-1"
+            color="muted"
+            type="body-sm"
+          >
+            {plan ? `${formatAssignedDate(plan.start_date)} · ${plan.status}` : 'No assigned plan'}
+          </Typography>
+        </div>
+        {plan ? (
+          <button
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-separator bg-surface px-4 text-sm font-bold transition-colors hover:bg-surface-hover"
+            onClick={() => setEditing((value) => !value)}
+            type="button"
+          >
+            <Pencil size={15} />
+            Edit plan
+          </button>
+        ) : null}
+      </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-4">
-          <Spinner size="sm" />
+        <div className="space-y-4">
+          <Skeleton className="h-32 rounded-3xl" />
+          <Skeleton className="h-28 rounded-3xl" />
         </div>
-      ) : (
+      ) : isError ? (
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Couldn&apos;t load nutrition plan.
+        </Typography>
+      ) : plan ? (
         <>
-          <div className="mb-3 flex items-end justify-between">
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-2xl font-semibold">{weekAvg == null ? '\u2014' : weekAvg}</span>
-              {weekAvg != null ? <span className="text-base text-muted">%</span> : null}
-            </div>
-            <span className="text-xs text-muted">this week</span>
-          </div>
-
-          {/* Weekly bar chart \u2014 bars are flex-1 so they fit any width; height = day %. */}
-          <div className="flex items-end gap-1.5">
-            {days.map((day) => {
-              const height = day.percent != null ? Math.max(8, Math.min(100, day.percent)) : 6;
-              const isSelected = selectedDate === day.dateStr;
-              return (
-                <button
-                  className="flex flex-1 flex-col items-center gap-1.5"
-                  disabled={day.level === 'future'}
-                  key={day.dateStr}
-                  onClick={() => handleDayTap(day.dateStr, day.level)}
-                  type="button"
+          <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+            <div className="flex items-center gap-3">
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+                <Utensils size={20} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <Typography
+                  truncate
+                  type="body-sm"
+                  weight="bold"
                 >
-                  <span className="flex h-16 w-full items-end">
-                    <span
-                      className={`w-full rounded-md transition-all ${BAR_BG[day.level]} ${
-                        isSelected ? 'ring-2 ring-accent ring-offset-1 ring-offset-background' : ''
-                      }`}
-                      style={{height: `${height}%`}}
-                    />
-                  </span>
-                  <span className="text-[10px] text-muted">{day.label.charAt(0)}</span>
-                </button>
-              );
-            })}
+                  {plan.name}
+                </Typography>
+                <Typography
+                  className="mt-0.5"
+                  color="muted"
+                  truncate
+                  type="body-xs"
+                >
+                  {formatNumber(plan.target_calories)} kcal daily
+                </Typography>
+              </div>
+              {status ? (
+                <span className={`rounded-full px-3 py-1 text-xs font-bold ${softStatusClass(plan.status)}`}>
+                  {status.label}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {MACRO_FIELDS.map((field) => {
+                const value = plan[field.name];
+                return (
+                  <div
+                    className="rounded-2xl border-[1.5px] border-separator px-3 py-3 text-center"
+                    key={field.name}
+                  >
+                    <div className="font-grotesk text-xl font-bold">{formatNumber(value)}</div>
+                    <Typography
+                      className="mt-0.5"
+                      color="muted"
+                      type="body-xs"
+                    >
+                      {field.unit}
+                    </Typography>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {!selectedDate && summaries.length > 0 ? (
-            <div className="mt-4 flex flex-col gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Recent days</p>
-              {[...summaries]
-                .filter((s) => s.total_entries > 0)
-                .sort((a, b) => b.date.localeCompare(a.date))
-                .map((summary) => {
-                  return (
-                    <Button
-                      className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-border px-3 py-2 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover"
-                      key={summary.date}
-                      onPress={() => setSelectedDate(summary.date)}
-                      variant="ghost"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">
-                          {formatWeekday(summary.date)}
-                          <span className="ml-1 font-normal text-muted">
-                            {Math.round(summary.logged_calories)}
-                            {summary.planned_calories > 0 ? ` / ${Math.round(summary.planned_calories)} cal` : ' cal'}
-                          </span>
-                        </p>
-                        <p className="text-xs text-muted">{buildRecentNutritionDaySubtitle(summary)}</p>
-                      </div>
-                    </Button>
-                  );
-                })}
+          <div className="mt-4 rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <Typography
+                type="body-sm"
+                weight="semibold"
+              >
+                Program completion
+              </Typography>
+              <Typography
+                className="text-accent"
+                type="body-xs"
+                weight="bold"
+              >
+                {progress?.weekLabel}
+              </Typography>
             </div>
+            <ProgramSegments
+              percent={progress?.percent ?? null}
+              totalWeeks={progress?.totalWeeks ?? null}
+            />
+            <div className="mt-3 flex flex-col gap-1 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+              <span>{progress?.percent == null ? 'Completion unavailable' : `${progress.percent}% complete`}</span>
+              <span>{progress?.endsLabel}</span>
+            </div>
+          </div>
+
+          {editing ? (
+            <MacroEditor
+              onClose={() => setEditing(false)}
+              plan={plan}
+            />
           ) : null}
 
-          {selectedDate ? (
-            <div className="mt-4 rounded-xl border border-border bg-surface p-4">
-              <ClientNutritionDetail
-                clientId={clientId}
-                date={selectedDate}
-                onBack={() => setSelectedDate(null)}
-              />
-            </div>
-          ) : null}
+          <Link
+            className="mt-4 inline-flex min-h-11 items-center rounded-2xl px-3 text-sm font-semibold text-muted transition-colors hover:bg-surface-hover"
+            to={ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)}
+          >
+            Open in builder
+          </Link>
         </>
+      ) : (
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          No nutrition plan assigned yet.
+        </Typography>
       )}
-    </div>
+    </section>
   );
 }

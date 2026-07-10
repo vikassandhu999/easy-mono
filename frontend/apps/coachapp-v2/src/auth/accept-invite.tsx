@@ -223,10 +223,10 @@ function WelcomeForm({
             type="email"
             {...register('email')}
           />
-          {errors.email ? <p className="text-xs text-danger">{errors.email.message}</p> : null}
+          {errors.email ? <p className="text-xs text-danger-soft-foreground">{errors.email.message}</p> : null}
         </div>
 
-        {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
+        {errors.root ? <p className="text-sm text-danger-soft-foreground">{errors.root.message}</p> : null}
 
         <Button
           fullWidth

@@ -172,7 +172,7 @@ export default function VerifyInviteOtp() {
           label="Login code"
           name="otp"
         />
-        {errors.otp ? <p className="text-xs text-danger">{errors.otp.message}</p> : null}
+        {errors.otp ? <p className="text-xs text-danger-soft-foreground">{errors.otp.message}</p> : null}
 
         {errors.root ? (
           <Alert status="danger">

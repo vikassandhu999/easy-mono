@@ -45,7 +45,7 @@ export default function AssignSurface({label, popoverClassName = '', children}: 
           }}
         >
           <Popover.Content
-            className={`w-104 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface shadow-xl ${popoverClassName}`}
+            className={`w-104 max-w-[calc(100vw-2rem)] rounded-2xl border-[1.5px] border-separator bg-surface shadow-xl ${popoverClassName}`}
             triggerRef={triggerRef}
           >
             <Popover.Dialog className="outline-none">{open ? children(close) : null}</Popover.Dialog>

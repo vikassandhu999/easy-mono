@@ -105,7 +105,7 @@ export function MealsList({planId}: MealsListProps) {
       {/* Loading is handled by the page-level PageSkeleton (parent gates on
           the same getNutritionPlan query), so no loading branch here. */}
       {isError ? (
-        <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger-soft-foreground">
           Couldn't load meals.
         </div>
       ) : meals.length === 0 ? (

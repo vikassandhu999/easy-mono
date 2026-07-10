@@ -1,129 +1,214 @@
 /**
- * ClientWeight — read-only weight-review card for the client-detail page. Current
- * weight + change vs the client's optional goal, a trend chart, and recent entries.
- * Reads the coach weight endpoint (GET /v1/coach/clients/:id/weight_entries).
+ * Progress report card. Reads the coach weight endpoint and renders current
+ * weight, total change, and a day/week/month bucketed reduction chart.
  */
-import {formatIsoDateShort} from '@easy/utils';
-import {Spinner, Typography} from '@heroui/react';
+import {formatIsoDateShort, parseIsoDateToDate} from '@easy/utils';
+import {Skeleton, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
+import {useMemo, useState} from 'react';
 
-import SectionHeading from '@/@components/section-heading';
-import {useListClientWeightEntriesQuery, type WeightEntry} from '@/api/generated';
-import WeightChart from '@/clients/components/weight-chart';
+import {useListClientWeightEntriesQuery} from '@/api/clients';
+import type {WeightEntry} from '@/api/generated';
+import WeightChart, {type WeightChartPoint} from '@/clients/components/weight-chart';
+import {formatNumber} from '@/clients/lib/client-detail-metrics';
 
-type WeightGoal = {unit?: null | string; value?: null | number};
+type Range = 'days' | 'months' | 'weeks';
+
+const RANGE_LABEL: Record<Range, string> = {
+  days: 'Daily',
+  months: 'Monthly',
+  weeks: 'Weekly',
+};
+
+const RANGE_OPTIONS: {id: Range; label: string}[] = [
+  {id: 'days', label: 'Days'},
+  {id: 'weeks', label: 'Weeks'},
+  {id: 'months', label: 'Months'},
+];
+
+function bucketKey(entry: WeightEntry, range: Range): string {
+  const date = parseIsoDateToDate(entry.date);
+  if (range === 'months') {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }
+  if (range === 'weeks') {
+    const day = date.getDay() || 7;
+    const monday = new Date(date);
+    monday.setDate(date.getDate() - day + 1);
+    return monday.toISOString().slice(0, 10);
+  }
+  return entry.date;
+}
+
+function bucketLabel(key: string, range: Range): string {
+  if (range === 'months') {
+    return formatIsoDateShort(`${key}-01`, undefined, {day: undefined});
+  }
+  return formatIsoDateShort(key);
+}
+
+function bucketEntries(entries: WeightEntry[], range: Range): WeightChartPoint[] {
+  const sorted = [...entries].sort(
+    (a, b) => a.date.localeCompare(b.date) || a.inserted_at.localeCompare(b.inserted_at),
+  );
+  const buckets = new Map<string, WeightEntry>();
+  for (const entry of sorted) {
+    buckets.set(bucketKey(entry, range), entry);
+  }
+
+  return [...buckets.entries()]
+    .map(([key, entry]) => ({
+      id: `${range}-${key}-${entry.id}`,
+      label: bucketLabel(key, range),
+      unit: entry.unit,
+      value: entry.value,
+    }))
+    .slice(-7);
+}
+
+function StatBox({label, tone, unit, value}: {label: string; value: string; tone?: 'success'; unit?: string}) {
+  return (
+    <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+      <Typography
+        className="text-[11px] font-semibold"
+        color="muted"
+      >
+        {label}
+      </Typography>
+      <div className={`mt-1 font-grotesk text-2xl font-bold ${tone === 'success' ? 'text-success' : ''}`}>
+        {value}
+        {unit ? <span className="ml-1 text-sm font-semibold text-muted">{unit}</span> : null}
+      </div>
+    </div>
+  );
+}
 
 export default function ClientWeight({clientId}: {clientId: string}) {
-  const {data, isLoading} = useListClientWeightEntriesQuery({clientId});
+  const [range, setRange] = useState<Range>('weeks');
+  const {data, isError, isLoading} = useListClientWeightEntriesQuery({clientId});
 
   const entries: WeightEntry[] = data?.entries ?? [];
-  const byNewest = [...entries].sort((a, b) => b.date.localeCompare(a.date));
+  const byNewest = useMemo(
+    () => [...entries].sort((a, b) => b.date.localeCompare(a.date) || b.inserted_at.localeCompare(a.inserted_at)),
+    [entries],
+  );
   const latest = byNewest[0];
   const earliest = byNewest[byNewest.length - 1];
-  const unit = latest?.unit ?? 'kg';
-  const goal = (data?.goal ?? null) as WeightGoal | null;
-  const change = latest && earliest && latest.id !== earliest.id ? latest.value - earliest.value : null;
-  // colour the change by whether it moves toward the client's goal (if one is set)
-  const towardGoal =
-    goal?.value != null && latest && earliest
-      ? Math.abs(latest.value - goal.value) < Math.abs(earliest.value - goal.value)
-      : null;
-  const changeColor = towardGoal == null ? 'text-muted' : towardGoal ? 'text-success' : 'text-warning';
-  const goalDelta = goal?.value != null && latest ? Math.abs(latest.value - goal.value) : null;
+  const unit = latest?.unit ?? earliest?.unit ?? 'kg';
+  const totalLost = latest && earliest ? earliest.value - latest.value : null;
+  const points = useMemo(() => bucketEntries(entries, range), [entries, range]);
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-      <SectionHeading title="Weight" />
+    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+      <div className="mb-5">
+        <h2 className="font-grotesk text-xl font-bold">Progress report</h2>
+        <Typography
+          className="mt-1"
+          color="muted"
+          type="body-sm"
+        >
+          {earliest ? `Since ${formatIsoDateShort(earliest.date)} · ${RANGE_LABEL[range]} view` : 'Weight trend'}
+        </Typography>
+      </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-6">
-          <Spinner size="sm" />
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className="h-24 rounded-3xl" />
+            <Skeleton className="h-24 rounded-3xl" />
+          </div>
+          <Skeleton className="h-72 rounded-3xl" />
         </div>
+      ) : isError ? (
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Couldn&apos;t load weight entries.
+        </Typography>
       ) : entries.length === 0 ? (
         <Typography
           color="muted"
           type="body-sm"
         >
-          No weight logged yet
+          No weight logged yet.
         </Typography>
       ) : (
         <>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <Typography type="h5">
-                {latest?.value}
-                <span className="ml-1 text-sm font-medium text-muted">{unit}</span>
-              </Typography>
-              {change != null && earliest ? (
-                <Typography
-                  className={`mt-0.5 ${changeColor}`}
-                  type="body-xs"
-                >
-                  {change > 0 ? '▲' : change < 0 ? '▼' : '→'} {Math.abs(change).toFixed(1)} {unit} since{' '}
-                  {formatIsoDateShort(earliest.date)}
-                </Typography>
-              ) : null}
-            </div>
-            {goal?.value != null ? (
-              <div className="text-right">
-                <Typography
-                  className="text-[11px]"
-                  color="muted"
-                >
-                  Goal
-                </Typography>
-                <Typography
-                  type="body-sm"
-                  weight="semibold"
-                >
-                  {goal.value} {goal.unit ?? unit}
-                </Typography>
-                {goalDelta != null ? (
-                  <Typography
-                    className="text-[11px]"
-                    color="muted"
-                  >
-                    {goalDelta.toFixed(1)} to go
-                  </Typography>
-                ) : null}
-              </div>
-            ) : null}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <StatBox
+              label="Current weight"
+              unit={unit}
+              value={formatNumber(latest?.value)}
+            />
+            <StatBox
+              label="Total lost"
+              tone={totalLost != null && totalLost > 0 ? 'success' : undefined}
+              unit={unit}
+              value={totalLost == null ? '—' : formatNumber(totalLost)}
+            />
           </div>
 
-          {entries.length >= 2 ? (
-            <div className="mt-3">
-              <WeightChart
-                entries={entries}
-                goal={goal?.value ?? null}
-              />
-            </div>
-          ) : null}
-
-          <div className="mt-3 flex flex-col gap-1.5">
-            {byNewest.slice(0, 5).map((e) => (
-              <div
-                className="flex items-center justify-between gap-3 rounded-lg bg-surface-secondary px-3 py-2"
-                key={e.id}
-              >
+          <div className="mt-5 rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
                 <Typography
                   type="body-sm"
                   weight="semibold"
                 >
-                  {e.value} {e.unit}
+                  Weight reduction
                 </Typography>
                 <Typography
-                  className="min-w-0 text-right"
+                  className="mt-0.5"
                   color="muted"
-                  truncate
                   type="body-xs"
                 >
-                  {formatIsoDateShort(e.date)}
-                  {e.note ? ` · ${e.note}` : ''}
+                  {earliest && latest
+                    ? `${formatNumber(earliest.value)} -> ${formatNumber(latest.value)} ${unit} · ${RANGE_LABEL[range]}`
+                    : RANGE_LABEL[range]}
                 </Typography>
               </div>
-            ))}
+              <ToggleButtonGroup
+                aria-label="Weight chart range"
+                className="flex flex-wrap gap-1 rounded-xl bg-surface-secondary p-1"
+                isDetached
+                onSelectionChange={(keys) => {
+                  const next = [...keys][0];
+                  if (next) {
+                    setRange(next as Range);
+                  }
+                }}
+                selectedKeys={[range]}
+                selectionMode="single"
+                size="sm"
+              >
+                {RANGE_OPTIONS.map((option) => (
+                  <ToggleButton
+                    className="min-h-9 px-3 text-xs font-bold"
+                    id={option.id}
+                    key={option.id}
+                  >
+                    {option.label}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </div>
+
+            <div className="mt-3">
+              {points.length >= 2 ? (
+                <WeightChart points={points} />
+              ) : (
+                <Typography
+                  className="py-10"
+                  color="muted"
+                  type="body-sm"
+                >
+                  Add another entry to show the trend.
+                </Typography>
+              )}
+            </div>
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }

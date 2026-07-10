@@ -1,180 +1,28 @@
 import {formatIsoDateOnly, getInitials} from '@easy/utils';
-import {Alert, Avatar, Button, Chip, Spinner, TextArea, Typography, toast} from '@heroui/react';
-import {ArrowLeft, ChevronRight, ClipboardList, Dumbbell, MessageCircle, Pencil, Phone, Utensils} from 'lucide-react';
+import {Alert, Avatar, Button, TextArea, Typography, toast} from '@heroui/react';
+import {ArrowLeft, MessageCircle, Pencil, Phone} from 'lucide-react';
 import {useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
-import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetBillingQuery} from '@/api/billing';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
-import {
-  type ClientTrainingPlan,
-  type NutritionPlan,
-  useListCoachClientNutritionPlansQuery,
-  useListCoachClientTrainingPlansQuery,
-} from '@/api/generated';
 import {toNullableText} from '@/api/shared';
 import {RowChips} from '@/clients/clients-list/client-list-item';
 import ClientCheckins from '@/clients/components/client-checkins';
+import ClientDetailCard from '@/clients/components/client-detail-card';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientStatStrip from '@/clients/components/client-stat-strip';
+import ClientTrainerCard from '@/clients/components/client-trainer-card';
 import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
-import PlanAssignControl from '@/clients/components/plan-assign-control';
-import {getWhatsAppUrl, PLAN_STATUS_MAP, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
+import {getWhatsAppUrl} from '@/clients/lib/client';
 import {AddSeatsDialog} from '@/settings/add-seats-dialog';
-
-/** Compact assigned-plan window: "Jun 26 – Aug 21, 2026" (drops the repeated
- *  year), "From …" / "Until …" for open-ended, or null when unscheduled. */
-function formatPlanSchedule(start: string | null, end: string | null): string | null {
-  if (start && end) {
-    const startLabel = formatIsoDateOnly(start);
-    const endLabel = formatIsoDateOnly(end);
-    return start.slice(0, 4) === end.slice(0, 4)
-      ? `${startLabel.replace(/, \d{4}$/, '')} – ${endLabel}`
-      : `${startLabel} – ${endLabel}`;
-  }
-  if (start) {
-    return `From ${formatIsoDateOnly(start)}`;
-  }
-  if (end) {
-    return `Until ${formatIsoDateOnly(end)}`;
-  }
-  return null;
-}
-
-function ClientPlans({clientId, clientName}: {clientId: string; clientName: string}) {
-  const {data: nutritionData, isLoading: isLoadingNutrition} = useListCoachClientNutritionPlansQuery({clientId});
-  const {data: trainingData, isLoading: isLoadingTraining} = useListCoachClientTrainingPlansQuery({clientId});
-
-  const nutritionPlans = nutritionData?.data ?? [];
-  const trainingPlans = trainingData?.data ?? [];
-  const isLoading = isLoadingNutrition || isLoadingTraining;
-  const hasPlans = nutritionPlans.length > 0 || trainingPlans.length > 0;
-
-  return (
-    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-      <SectionHeading title="Plans" />
-
-      {isLoading ? (
-        <div className="flex items-center justify-center py-6">
-          <Spinner size="sm" />
-        </div>
-      ) : (
-        <>
-          {hasPlans ? (
-            <div className="flex flex-col gap-2">
-              {nutritionPlans.map((plan: NutritionPlan) => {
-                const planStatus = PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS;
-                const schedule = formatPlanSchedule(plan.start_date, plan.end_date);
-                return (
-                  <Link
-                    className="flex min-h-11 items-center gap-3 rounded-xl bg-surface-secondary p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
-                    key={plan.id}
-                    to={`/library/nutrition-plans/${plan.id}`}
-                  >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-success/10 text-success">
-                      <Utensils size={16} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <Typography
-                        truncate
-                        type="body-sm"
-                        weight="semibold"
-                      >
-                        {plan.name}
-                      </Typography>
-                      <Typography
-                        color="muted"
-                        type="body-xs"
-                      >
-                        Nutrition{schedule ? ` · ${schedule}` : ''}
-                      </Typography>
-                    </div>
-                    <Chip
-                      color={planStatus.color}
-                      size="sm"
-                      variant="soft"
-                    >
-                      {planStatus.label}
-                    </Chip>
-                  </Link>
-                );
-              })}
-              {trainingPlans.map((plan: ClientTrainingPlan) => {
-                const planStatus = PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS;
-                const workoutCount = plan.workouts.length;
-                const schedule = formatPlanSchedule(plan.start_date, plan.end_date);
-                return (
-                  <Link
-                    className="flex min-h-11 items-center gap-3 rounded-xl bg-surface-secondary p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover"
-                    key={plan.id}
-                    to={`/library/training-plans/${plan.id}`}
-                  >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
-                      <Dumbbell size={16} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <Typography
-                        truncate
-                        type="body-sm"
-                        weight="semibold"
-                      >
-                        {plan.name}
-                      </Typography>
-                      <Typography
-                        color="muted"
-                        type="body-xs"
-                      >
-                        Training{workoutCount > 0 ? ` · ${workoutCount} workout${workoutCount !== 1 ? 's' : ''}` : ''}
-                        {schedule ? ` · ${schedule}` : ''}
-                      </Typography>
-                    </div>
-                    <Chip
-                      color={planStatus.color}
-                      size="sm"
-                      variant="soft"
-                    >
-                      {planStatus.label}
-                    </Chip>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              No plans assigned yet
-            </Typography>
-          )}
-
-          <div className="mt-2 flex gap-2">
-            <PlanAssignControl
-              clientId={clientId}
-              clientName={clientName}
-              kind="nutrition"
-              label="+ Nutrition plan"
-            />
-            <PlanAssignControl
-              clientId={clientId}
-              clientName={clientName}
-              kind="training"
-              label="+ Training plan"
-            />
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: null | string}) {
   const [isEditing, setIsEditing] = useState(false);
@@ -227,7 +75,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
 
   return (
     <div
-      className="-mx-2 cursor-pointer rounded-lg p-2 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+      className="-mx-2 cursor-pointer rounded-xl p-2 transition-colors hover:bg-surface-hover active:bg-surface-hover"
       onClick={startEditing}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -339,9 +187,8 @@ export default function ClientDetail() {
       </Page.Header>
 
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-        <div className="max-w-6xl space-y-4">
-          {/* Hero — flat profile card */}
-          <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+        <div className="max-w-6xl space-y-5">
+          <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-3">
                 <Avatar
@@ -390,7 +237,7 @@ export default function ClientDetail() {
               {client.phone ? (
                 <div className="flex gap-2 sm:ml-auto sm:shrink-0">
                   <a
-                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success/10 px-4 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20 sm:flex-none"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-success-soft px-4 py-2 text-sm font-medium text-success-soft-foreground transition-colors hover:bg-success-soft-hover active:bg-success-soft-hover sm:flex-none"
                     href={getWhatsAppUrl(client.phone)}
                     rel="noopener noreferrer"
                     target="_blank"
@@ -399,7 +246,7 @@ export default function ClientDetail() {
                     WhatsApp
                   </a>
                   <a
-                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft sm:flex-none"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-separator px-4 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft sm:flex-none"
                     href={`tel:${client.phone}`}
                   >
                     <Phone size={16} />
@@ -419,77 +266,25 @@ export default function ClientDetail() {
             <ClientStatStrip clientId={client.id} />
           )}
 
-          <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
-            <div className="space-y-4 lg:col-span-2">
-              <ClientPlans
-                clientId={client.id}
-                clientName={name}
-              />
-              {/* Nutrition adherence only makes sense once the client logs — hidden while pending. */}
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+            <div className="space-y-5">
+              {isPending ? null : <ClientWeight clientId={client.id} />}
               {isPending ? null : <ClientNutritionAdherence clientId={client.id} />}
+              {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
               <ClientCheckins
                 clientId={client.id}
                 clientName={name}
               />
+              <ClientDetailCard client={client} />
             </div>
-            <div className="space-y-4">
-              {isPending ? null : (
-                <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-                  <SectionHeading title="Subscription" />
-                  {client.subscription_started_on || client.subscription_ends_on ? (
-                    <div className="flex flex-col gap-1">
-                      {client.subscription_started_on ? (
-                        <Typography
-                          color="muted"
-                          type="body-sm"
-                        >
-                          Started {formatIsoDateOnly(client.subscription_started_on)}
-                        </Typography>
-                      ) : null}
-                      {client.subscription_ends_on ? (
-                        <Typography
-                          color="muted"
-                          type="body-sm"
-                        >
-                          Ends {formatIsoDateOnly(client.subscription_ends_on)}
-                        </Typography>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <Typography
-                      color="muted"
-                      type="body-sm"
-                    >
-                      No subscription dates
-                    </Typography>
-                  )}
-                  {client.expiring_soon ? (
-                    <Chip
-                      className="mt-2"
-                      color="warning"
-                      size="sm"
-                      variant="soft"
-                    >
-                      Expiring soon
-                    </Chip>
-                  ) : null}
-                  {client.inactive_reason === 'subscription_expired' ? (
-                    <Button
-                      className="mt-3 min-h-11 w-full"
-                      onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
-                    >
-                      Extend subscription
-                    </Button>
-                  ) : null}
-                </div>
-              )}
-              {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
-              {isPending ? null : <ClientWeight clientId={client.id} />}
+
+            <div className="space-y-5">
+              <ClientTrainerCard client={client} />
               <Link
-                className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover sm:p-5"
-                to={`/clients/${client.id}/messages`}
+                className="flex min-h-11 items-center gap-3 rounded-3xl border-[1.5px] border-separator bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                to={ROUTES.CLIENT_MESSAGES.replace(':id', client.id)}
               >
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
                   <MessageCircle size={16} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -506,39 +301,18 @@ export default function ClientDetail() {
                     Chat with this client
                   </Typography>
                 </div>
-                <ChevronRight
-                  className="shrink-0 text-muted"
-                  size={18}
-                />
               </Link>
-              <Link
-                className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover sm:p-5"
-                to={`/clients/${client.id}/profile`}
-              >
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
-                  <ClipboardList size={16} />
-                </span>
-                <div className="min-w-0 flex-1">
+              <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+                <div className="mb-3">
+                  <h2 className="font-grotesk text-xl font-bold">Notes</h2>
                   <Typography
-                    type="body-sm"
-                    weight="semibold"
-                  >
-                    Profile
-                  </Typography>
-                  <Typography
+                    className="mt-1"
                     color="muted"
-                    type="body-xs"
+                    type="body-sm"
                   >
-                    Intake &amp; coaching details
+                    Private coach notes
                   </Typography>
                 </div>
-                <ChevronRight
-                  className="shrink-0 text-muted"
-                  size={18}
-                />
-              </Link>
-              <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-                <SectionHeading title="Notes" />
                 <InlineNotes
                   clientId={client.id}
                   initialNotes={client.notes}

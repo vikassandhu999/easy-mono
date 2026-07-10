@@ -64,7 +64,7 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
   // client and no hint why.
   if (!inviteUrl) {
     return (
-      <div className="rounded-xl border border-danger/20 bg-danger/5 p-4">
+      <div className="rounded-2xl border border-danger/20 bg-danger-soft p-4">
         <Typography
           className="text-danger"
           type="body-sm"
@@ -115,7 +115,7 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
   const resendDisabled = !client.email || isResending;
 
   return (
-    <div className="rounded-xl border border-border bg-surface px-6 py-8">
+    <div className="rounded-2xl border-[1.5px] border-separator bg-surface px-6 py-8">
       <div className="flex flex-col items-center text-center">
         <span className="mb-4 grid size-12 place-items-center rounded-full bg-accent-soft text-accent">
           <Send size={22} />
@@ -132,7 +132,7 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
 
         <div className="mt-5 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">
           <a
-            className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success/10 px-4 text-sm font-medium text-success transition-colors hover:bg-success/20 active:bg-success/20"
+            className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-success-soft px-4 text-sm font-medium text-success-soft-foreground transition-colors hover:bg-success-soft-hover active:bg-success-soft-hover"
             href={whatsappUrl}
             rel="noopener noreferrer"
             target="_blank"

@@ -15,24 +15,17 @@ import {Typography} from '@heroui/react';
 import {useMemo} from 'react';
 
 import {useCoachClientTrainingSessionsInfiniteQuery} from '@/api/client-training-sessions';
-import {
-  useListCoachClientNutritionPlansQuery,
-  useListCoachClientTrainingPlansQuery,
-  useListCoachMealLogsQuery,
-} from '@/api/generated';
-import {
-  computeDailyNutritionSummaries,
-  getDayPercent,
-  getPlannedDailyCalories,
-  resolveNutritionMacrosGoal,
-} from '@/domain/client-nutrition';
+import {useListCoachMealLogsQuery} from '@/api/generated';
+import {useListCoachClientNutritionPlansQuery} from '@/api/nutrition-plans-list';
+import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
+import {computeDailyNutritionSummaries, getDayPercent} from '@/domain/client-nutrition';
 
 function Stat({label, value}: {label: string; value: string}) {
   return (
-    <div className="px-3 py-3 text-center">
-      <Typography type="h5">{value}</Typography>
+    <div className="rounded-3xl border-[1.5px] border-separator bg-surface px-3 py-4 text-center">
+      <div className="font-grotesk text-2xl font-bold">{value}</div>
       <Typography
-        className="text-[11px]"
+        className="mt-1 text-[11px] font-semibold"
         color="muted"
       >
         {label}
@@ -53,8 +46,7 @@ export default function ClientStatStrip({clientId}: {clientId: string}) {
 
   const adherence = useMemo(() => {
     const summaries = computeDailyNutritionSummaries(logsData?.data ?? []);
-    const macrosGoal = resolveNutritionMacrosGoal({plans: nutritionData?.data});
-    const planned = getPlannedDailyCalories(macrosGoal);
+    const planned = nutritionData?.data?.find((plan) => plan.status === 'active')?.target_calories ?? 0;
     const percents = summaries
       .filter((s) => s.total_entries > 0)
       .map((s) => getDayPercent(s, planned))
@@ -66,7 +58,7 @@ export default function ClientStatStrip({clientId}: {clientId: string}) {
   }, [logsData, nutritionData]);
 
   return (
-    <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="grid grid-cols-3 gap-3">
       <Stat
         label="Adherence"
         value={adherence == null ? '—' : `${adherence}%`}

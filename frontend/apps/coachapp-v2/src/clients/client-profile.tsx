@@ -71,7 +71,7 @@ function CoreIntakeSections({profile}: {profile: CoachingClientProfile}) {
       {sections.map((section) => (
         <section key={section.key}>
           <SectionHeading title={section.label} />
-          <dl className="divide-y divide-border rounded-xl border border-border bg-surface">
+          <dl className="divide-y divide-surface-secondary rounded-2xl border-[1.5px] border-separator bg-surface">
             {section.entries.map(([key, value]) => (
               <div
                 className="flex flex-col gap-0.5 px-4 py-3 sm:flex-row sm:gap-4"
@@ -243,7 +243,7 @@ function ClientProfileEditor({
               );
             })
           ) : (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center">
+            <div className="rounded-2xl border border-dashed border-border p-8 text-center">
               <Typography
                 color="muted"
                 type="body-sm"

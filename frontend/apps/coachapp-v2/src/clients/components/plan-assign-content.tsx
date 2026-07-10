@@ -85,7 +85,7 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
   const assigning = isNutrition ? assigningNutrition : assigningTraining;
 
   const Icon = isNutrition ? Utensils : Dumbbell;
-  const iconWrap = isNutrition ? 'bg-success/10 text-success' : 'bg-accent-soft text-accent';
+  const iconWrap = isNutrition ? 'bg-success-soft text-success' : 'bg-accent-soft text-accent';
   const title = isNutrition ? 'Assign nutrition plan' : 'Assign training plan';
 
   const handlePick = (plan: NutritionPlan | TrainingPlan) => {
@@ -132,7 +132,7 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
         </Typography>
         <button
           aria-label="Close"
-          className="grid size-9 place-items-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="grid size-9 place-items-center rounded-xl text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={onClose}
           type="button"
         >
@@ -180,12 +180,12 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
             <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
               {items.map((plan) => (
                 <button
-                  className="group flex items-center gap-3 rounded-xl p-2.5 text-left hover:bg-surface-hover"
+                  className="group flex items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-surface-hover"
                   key={plan.id}
                   onClick={() => handlePick(plan)}
                   type="button"
                 >
-                  <span className={`grid size-9 shrink-0 place-items-center rounded-lg ${iconWrap}`}>
+                  <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${iconWrap}`}>
                     <Icon size={16} />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -214,11 +214,11 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
           )}
 
           <button
-            className="flex w-full items-center gap-2 rounded-xl border border-border p-2.5 text-sm font-medium hover:bg-surface-hover"
+            className="flex w-full items-center gap-2 rounded-2xl border-[1.5px] border-separator p-2.5 text-sm font-medium hover:bg-surface-hover"
             onClick={() => navigate(isNutrition ? ROUTES.CREATE_NUTRITION_PLAN : ROUTES.CREATE_TRAINING_PLAN)}
             type="button"
           >
-            <span className="grid size-6 place-items-center rounded-md bg-accent-soft text-accent">
+            <span className="grid size-6 place-items-center rounded-xl bg-accent-soft text-accent">
               <Plus size={14} />
             </span>
             Create a new {isNutrition ? 'nutrition' : 'training'} plan

@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import type {Client as GeneratedClient} from '@/api/generated';
+import {coachApi, type Client as GeneratedClient} from '@/api/generated';
 import {ApiResponse, listTags, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 50;
@@ -19,6 +19,8 @@ export type Client = {
   phone: null | string;
   notes: null | string;
   status: ClientStatus;
+  goal_weight_unit: GeneratedClient['goal_weight_unit'];
+  goal_weight_value: GeneratedClient['goal_weight_value'];
   /** 'onboarding' until the client's first plan assignment auto-advances it to 'coaching'. */
   stage: GeneratedClient['stage'];
   /** Populated only when status is 'inactive'. */
@@ -212,3 +214,5 @@ export const {
   useRevokeInvitationMutation,
   useUpdateClientMutation,
 } = clientsApi;
+
+export const {useListClientWeightEntriesQuery} = coachApi;

@@ -67,7 +67,7 @@ export default function PlanScheduleStep({
   const [end, setEnd] = useState<string | null>(requireEnd ? addWeeks(defaultStart, 8) : null);
 
   const Icon = kind === 'nutrition' ? Utensils : Dumbbell;
-  const iconWrap = kind === 'nutrition' ? 'bg-success/10 text-success' : 'bg-accent-soft text-accent';
+  const iconWrap = kind === 'nutrition' ? 'bg-success-soft text-success' : 'bg-accent-soft text-accent';
 
   const startSet = Boolean(start);
   const endValid = endNotBeforeStart(start, end);
@@ -87,8 +87,8 @@ export default function PlanScheduleStep({
       </button>
 
       {/* Selected plan summary */}
-      <div className="flex items-center gap-3 rounded-xl border border-border p-3">
-        <span className={`grid size-10 shrink-0 place-items-center rounded-lg ${iconWrap}`}>
+      <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-separator p-3">
+        <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${iconWrap}`}>
           <Icon size={18} />
         </span>
         <div className="min-w-0">
@@ -138,7 +138,7 @@ export default function PlanScheduleStep({
                 const on = activeDuration === w;
                 return (
                   <button
-                    className={`min-h-10 rounded-lg border px-3 py-2 text-xs font-medium ${
+                    className={`min-h-10 rounded-xl border px-3 py-2 text-xs font-medium ${
                       on
                         ? 'border-accent bg-accent-soft text-accent'
                         : 'border-border text-muted hover:bg-surface-hover'
@@ -176,7 +176,7 @@ export default function PlanScheduleStep({
           </>
         ) : (
           <button
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border px-3 py-2.5 text-sm text-muted hover:bg-surface-hover"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border px-3 py-2.5 text-sm text-muted hover:bg-surface-hover"
             onClick={() => setEnd(addWeeks(start, 8))}
             type="button"
           >
@@ -194,7 +194,7 @@ export default function PlanScheduleStep({
       </div>
 
       {errorMessage ? (
-        <div className="rounded-lg border border-danger/20 bg-danger/5 p-3">
+        <div className="rounded-xl border border-danger/20 bg-danger-soft p-3">
           <Typography
             className="text-danger"
             type="body-sm"

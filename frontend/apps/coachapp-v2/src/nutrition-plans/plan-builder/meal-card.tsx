@@ -388,7 +388,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
       {open ? (
         <div className="border-t border-border pb-3 pt-1">
           {isShared ? (
-            <div className="mx-2.5 mt-2 mb-1 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
+            <div className="mx-2.5 mt-2 mb-1 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning-soft-foreground">
               Used in {assignmentCount} places — changes apply everywhere
             </div>
           ) : null}

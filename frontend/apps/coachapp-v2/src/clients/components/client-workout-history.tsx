@@ -1,134 +1,252 @@
-import {formatSessionDate, SESSION_STATE_CHIP} from '@easy/utils';
-import {Chip, ListBox, Spinner} from '@heroui/react';
-import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
+import {formatSessionDate, getCurrentWeekRange, SESSION_STATE_CHIP} from '@easy/utils';
+import {Chip, ListBox, Skeleton, Typography} from '@heroui/react';
+import {Check, Dumbbell} from 'lucide-react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
-import SectionHeading from '@/@components/section-heading';
-import type {TrainingSession} from '@/api/generated';
+import {useCoachClientTrainingSessionsInfiniteQuery} from '@/api/client-training-sessions';
+import type {ClientTrainingPlan, TrainingSession} from '@/api/generated';
+import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
+import {PLAN_STATUS_MAP, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
+import {formatAssignedDate, getProgramProgress, softStatusClass} from '@/clients/lib/client-detail-metrics';
+import {buildWorkoutSessionSubtitle, getWorkoutSessionTitle} from '@/domain/workout-sessions';
 
-import {useListCoachClientTrainingSessionsQuery} from '@/api/generated';
-import {buildWorkoutSessionSubtitle, getPlannedSnapshot, getWorkoutSessionTitle} from '@/domain/workout-sessions';
-
-const PREVIEW_LIMIT = 7;
-
-const SESSION_CARD_CLASS =
-  'flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:bg-surface-hover active:bg-surface-hover';
-
-function SessionCardContent({session}: {session: TrainingSession}) {
-  const title = getWorkoutSessionTitle(session);
-  const dateStr = formatSessionDate(session.started_at);
-  const subtitle = buildWorkoutSessionSubtitle(session);
-  const stateChip = SESSION_STATE_CHIP[session.state];
-
+function selectCurrentPlan(plans: ClientTrainingPlan[]): ClientTrainingPlan | null {
   return (
-    <>
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-secondary">
-        {getPlannedSnapshot(session) ? (
-          <Dumbbell
-            className="text-muted"
-            size={16}
-          />
-        ) : (
-          <Activity
-            className="text-muted"
-            size={16}
-          />
-        )}
+    [...plans].sort((a, b) => {
+      if (a.status !== b.status) {
+        return a.status === 'active' ? -1 : 1;
+      }
+      return (b.start_date ?? b.inserted_at).localeCompare(a.start_date ?? a.inserted_at);
+    })[0] ?? null
+  );
+}
+
+function daysPerWeek(plan: ClientTrainingPlan): number {
+  const scheduledDays = new Set(plan.plan_items.map((item) => item.day_of_week));
+  return scheduledDays.size || plan.workouts.length;
+}
+
+function SessionStrip({completed, total}: {completed: number; total: number}) {
+  const count = Math.max(total, completed, 1);
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <Typography
+          type="body-sm"
+          weight="semibold"
+        >
+          This week
+        </Typography>
+        <Typography
+          color="muted"
+          type="body-xs"
+        >
+          {completed} of {total} done
+        </Typography>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{title}</p>
-        {subtitle ? <p className="mt-0.5 truncate text-xs text-muted">{subtitle}</p> : null}
-        <div className="mt-1 flex items-center gap-2">
-          {stateChip ? (
-            <Chip
-              color={stateChip.color}
-              size="sm"
-              variant="soft"
+      <div className="grid grid-cols-4 gap-2">
+        {Array.from({length: count}, (_, index) => {
+          const done = index < completed;
+          return (
+            <span
+              className={`flex min-h-11 items-center justify-center rounded-2xl border ${
+                done
+                  ? 'border-success-soft bg-success-soft text-success-soft-foreground'
+                  : 'border-dashed border-border text-muted'
+              }`}
+              key={`training-session-${index + 1}`}
             >
-              {stateChip.label}
-            </Chip>
-          ) : null}
-          {session.soreness_rating ? (
-            <span className="text-xs text-muted">Effort: {session.soreness_rating}/5</span>
-          ) : null}
-        </div>
+              {done ? <Check size={16} /> : index + 1}
+            </span>
+          );
+        })}
       </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="text-xs text-muted">{dateStr}</span>
-        <ChevronRight
-          className="text-muted"
-          size={16}
-        />
-      </div>
-    </>
+    </div>
   );
 }
 
-/** Link-card variant — used in the plain-list preview on the client detail page. */
-export function SessionCard({clientId, session}: {clientId: string; session: TrainingSession}) {
+function ProgramSegments({percent, totalWeeks}: {percent: null | number; totalWeeks: null | number}) {
+  const count = Math.min(12, Math.max(4, totalWeeks ?? 8));
+  const filled = percent == null ? 0 : Math.round((percent / 100) * count);
   return (
-    <Link
-      className={SESSION_CARD_CLASS}
-      to={`/clients/${clientId}/sessions/${session.id}`}
-    >
-      <SessionCardContent session={session} />
-    </Link>
+    <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-12">
+      {Array.from({length: count}, (_, index) => (
+        <span
+          aria-hidden
+          className={`h-2 rounded-full ${index < filled ? 'bg-accent' : 'bg-surface-secondary'}`}
+          key={`training-progress-${index + 1}`}
+        />
+      ))}
+    </div>
   );
 }
 
-/** ListBox.Item variant — used in the infinite workout-history list; navigation is handled by the parent ListBox's onAction. */
 export function SessionListItem({session}: {session: TrainingSession}) {
+  const stateChip = SESSION_STATE_CHIP[session.state];
+  const subtitle = buildWorkoutSessionSubtitle(session);
+
   return (
     <ListBox.Item
-      className={`${SESSION_CARD_CLASS} active:scale-100! data-[pressed=true]:scale-100!`}
+      className="flex min-h-11 items-center gap-3 rounded-2xl border-[1.5px] border-separator bg-surface p-3 transition-colors hover:bg-surface-hover active:scale-100! active:bg-surface-hover data-[pressed=true]:scale-100!"
       id={session.id}
       textValue={getWorkoutSessionTitle(session)}
     >
-      <SessionCardContent session={session} />
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
+        <Dumbbell size={16} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <Typography
+          truncate
+          type="body-sm"
+          weight="semibold"
+        >
+          {getWorkoutSessionTitle(session)}
+        </Typography>
+        {subtitle ? (
+          <Typography
+            color="muted"
+            truncate
+            type="body-xs"
+          >
+            {subtitle}
+          </Typography>
+        ) : null}
+      </span>
+      {stateChip ? (
+        <Chip
+          color={stateChip.color}
+          size="sm"
+          variant="soft"
+        >
+          {stateChip.label}
+        </Chip>
+      ) : null}
+      <Typography
+        className="shrink-0"
+        color="muted"
+        type="body-xs"
+      >
+        {formatSessionDate(session.started_at)}
+      </Typography>
     </ListBox.Item>
   );
 }
 
 export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
-  // The client-scoped sessions endpoint returns the full list (no limit param);
-  // slice to the preview length client-side.
-  const {data, isLoading} = useListCoachClientTrainingSessionsQuery({clientId});
-
-  const allSessions = data?.data ?? [];
-  const totalCount = data?.count ?? allSessions.length;
-  const sessions = allSessions.slice(0, PREVIEW_LIMIT);
-  const hasMore = totalCount > PREVIEW_LIMIT;
+  const {from, to} = useMemo(() => getCurrentWeekRange(), []);
+  const {data, isError, isLoading} = useListCoachClientTrainingPlansQuery({clientId});
+  const sessionsQuery = useCoachClientTrainingSessionsInfiniteQuery({clientId, from, to});
+  const plan = useMemo(() => selectCurrentPlan(data?.data ?? []), [data]);
+  const progress = plan ? getProgramProgress(plan) : null;
+  const plannedDays = plan ? daysPerWeek(plan) : 0;
+  const sessions = sessionsQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const completed = sessions.filter((session) => session.state === 'completed').length;
+  const status = plan ? (PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS) : null;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-      <SectionHeading title="Workout History" />
+    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-grotesk text-xl font-bold">Training plan</h2>
+          <Typography
+            className="mt-1"
+            color="muted"
+            type="body-sm"
+          >
+            {plan ? `${formatAssignedDate(plan.start_date)} · ${plannedDays} days/week` : 'No assigned plan'}
+          </Typography>
+        </div>
+        {plan ? (
+          <Link
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-sm font-bold text-accent-foreground transition-opacity hover:opacity-90"
+            to={`/library/training-plans/${plan.id}`}
+          >
+            Edit plan
+          </Link>
+        ) : null}
+      </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-6">
-          <Spinner size="sm" />
-        </div>
-      ) : sessions.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {sessions.map((session) => (
-            <SessionCard
-              clientId={clientId}
-              key={session.id}
-              session={session}
+        <Skeleton className="h-72 rounded-3xl" />
+      ) : isError ? (
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Couldn&apos;t load training plan.
+        </Typography>
+      ) : plan ? (
+        <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+          <div className="mb-4 flex items-center gap-3 border-b border-surface-secondary pb-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+              <Dumbbell size={20} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <Typography
+                truncate
+                type="body-sm"
+                weight="bold"
+              >
+                {plan.name}
+              </Typography>
+              <Typography
+                className="mt-0.5"
+                color="muted"
+                truncate
+                type="body-xs"
+              >
+                {progress?.weekLabel} · {plannedDays} days/week
+              </Typography>
+            </div>
+            {status ? (
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${softStatusClass(plan.status)}`}>
+                {status.label}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="border-b border-surface-secondary pb-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <Typography
+                type="body-sm"
+                weight="semibold"
+              >
+                Program completion
+              </Typography>
+              <Typography
+                className="text-accent"
+                type="body-xs"
+                weight="bold"
+              >
+                {progress?.weekLabel}
+              </Typography>
+            </div>
+            <ProgramSegments
+              percent={progress?.percent ?? null}
+              totalWeeks={progress?.totalWeeks ?? null}
             />
-          ))}
-          {hasMore ? (
-            <Link
-              className="mt-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-default-soft active:bg-default-soft"
-              to={`/clients/${clientId}/workout-history`}
-            >
-              View all workouts
-              <ChevronRight size={14} />
-            </Link>
-          ) : null}
+            <div className="mt-3 flex flex-col gap-1 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+              <span>{progress?.percent == null ? 'Completion unavailable' : `${progress.percent}% complete`}</span>
+              <span>{progress?.endsLabel}</span>
+            </div>
+          </div>
+
+          <div className="pt-4">
+            <SessionStrip
+              completed={completed}
+              total={plannedDays}
+            />
+          </div>
         </div>
       ) : (
-        <p className="text-sm text-muted">No workouts logged yet.</p>
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          No training plan assigned yet.
+        </Typography>
       )}
-    </div>
+    </section>
   );
 }

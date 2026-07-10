@@ -265,7 +265,7 @@ export default function SessionDetail() {
           <Separator />
 
           {groups.length > 0 ? (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-surface-secondary">
               {groups.map((group) => (
                 <ExerciseGroupSection
                   group={group}

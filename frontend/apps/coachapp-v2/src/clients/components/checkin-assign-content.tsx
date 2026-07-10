@@ -57,7 +57,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
         </Typography>
         <button
           aria-label="Close"
-          className="grid size-9 place-items-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="grid size-9 place-items-center rounded-xl text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={onClose}
           type="button"
         >
@@ -129,7 +129,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
             <div className="flex gap-2">
               {(['normal', 'high'] as Priority[]).map((p) => (
                 <button
-                  className={`min-h-10 rounded-lg border px-3 py-1.5 text-xs font-medium capitalize ${
+                  className={`min-h-10 rounded-xl border px-3 py-1.5 text-xs font-medium capitalize ${
                     priority === p
                       ? 'border-accent bg-accent-soft text-accent'
                       : 'border-border text-muted hover:bg-surface-hover'

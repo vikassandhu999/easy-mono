@@ -669,7 +669,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
             <span className="text-[11px] text-muted">Changes save automatically</span>
             {onDelete ? (
               <button
-                className="text-xs font-medium text-danger transition-colors hover:text-danger/80"
+                className="text-xs font-medium text-danger-soft-foreground transition-colors hover:text-danger-soft-foreground/80"
                 onClick={() => {
                   // Cancel any pending debounced save — the item is being removed.
                   if (saveTimerRef.current) {

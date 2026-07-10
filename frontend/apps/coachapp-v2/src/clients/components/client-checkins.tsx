@@ -1,13 +1,10 @@
 /**
- * Client detail "Check-ins" section: the client's assigned check-ins with
- * status, plus an inline responses view (the coach submissions endpoint) and an
- * assign control.
+ * Client detail "Client check-in" card. Shows the next assigned check-in and
+ * the latest client submission, rendered from the stored question snapshot.
  */
 import {formatIsoDateOnly} from '@easy/utils';
-import {Chip, Spinner, Typography} from '@heroui/react';
-import {ChevronDown, ChevronUp} from 'lucide-react';
-import {useState} from 'react';
-import SectionHeading from '@/@components/section-heading';
+import {Skeleton, Typography} from '@heroui/react';
+import {CalendarCheck} from 'lucide-react';
 
 import {
   ASSIGNMENT_STATUS_LABELS,
@@ -17,12 +14,8 @@ import {
 } from '@/api/checkins';
 import CheckinAssignControl from '@/clients/components/checkin-assign-control';
 
-const STATUS_COLOR: Record<string, 'accent' | 'default' | 'success' | 'warning'> = {
-  assigned: 'default',
-  completed: 'success',
-  dismissed: 'default',
-  in_progress: 'warning',
-};
+type SnapshotQuestion = {id?: string; label?: string};
+type SnapshotSection = {questions?: SnapshotQuestion[]; title?: string};
 
 function formatAnswer(value: unknown): string {
   if (value == null || value === '') {
@@ -32,32 +25,65 @@ function formatAnswer(value: unknown): string {
     return value ? 'Yes' : 'No';
   }
   if (Array.isArray(value)) {
-    return value.length > 0 ? value.join(', ') : '—';
+    return value.length > 0 ? value.map(String).join(', ') : '—';
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
   }
   return String(value);
 }
 
-type SnapshotQuestion = {id?: string; label?: string};
-type SnapshotSection = {questions?: SnapshotQuestion[]; title?: string};
+function selectNextDue(assignments: ClientProfileFormAssignment[]): ClientProfileFormAssignment | null {
+  const upcoming = assignments.filter((assignment) => !['completed', 'dismissed'].includes(assignment.status));
+  return (
+    upcoming.sort((a, b) => (a.due_date ?? '9999-12-31').localeCompare(b.due_date ?? '9999-12-31'))[0] ??
+    assignments.sort((a, b) => (b.due_date ?? b.inserted_at).localeCompare(a.due_date ?? a.inserted_at))[0] ??
+    null
+  );
+}
 
-function CheckinResponses({assignmentId}: {assignmentId: string}) {
-  const {data, isLoading} = useListFormSubmissionsQuery({id: assignmentId});
-  const submission = data?.data?.[0];
+function selectLatestCompleted(assignments: ClientProfileFormAssignment[]): ClientProfileFormAssignment | null {
+  return (
+    assignments
+      .filter((assignment) => assignment.completed_at || assignment.status === 'completed')
+      .sort((a, b) => (b.completed_at ?? b.updated_at).localeCompare(a.completed_at ?? a.updated_at))[0] ?? null
+  );
+}
+
+function statusClass(status: ClientProfileFormAssignment['status']): string {
+  if (status === 'completed') {
+    return 'bg-success-soft text-success-soft-foreground';
+  }
+  if (status === 'in_progress') {
+    return 'bg-warning-soft text-warning-soft-foreground';
+  }
+  return 'bg-default-soft text-default-soft-foreground';
+}
+
+function SubmissionAnswers({assignment}: {assignment: ClientProfileFormAssignment | null}) {
+  const {data, isLoading} = useListFormSubmissionsQuery({id: assignment?.id ?? ''}, {skip: !assignment});
+  const submission = data?.data?.[0] ?? null;
+
+  if (!assignment) {
+    return (
+      <Typography
+        color="muted"
+        type="body-sm"
+      >
+        No completed check-ins yet.
+      </Typography>
+    );
+  }
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-3">
-        <Spinner size="sm" />
-      </div>
-    );
+    return <Skeleton className="h-32 rounded-3xl" />;
   }
 
   if (!submission) {
     return (
       <Typography
-        className="py-2"
         color="muted"
-        type="body-xs"
+        type="body-sm"
       >
         No response yet.
       </Typography>
@@ -66,132 +92,147 @@ function CheckinResponses({assignmentId}: {assignmentId: string}) {
 
   const sections = (submission.question_snapshot ?? []) as SnapshotSection[];
   const answers = submission.answers as Record<string, unknown>;
+  const questions = sections.flatMap((section) =>
+    (section.questions ?? []).map((question) => ({
+      id: `${section.title ?? 'section'}-${question.id ?? question.label ?? 'question'}`,
+      label: question.label ?? question.id ?? 'Question',
+      value: question.id ? answers[question.id] : undefined,
+    })),
+  );
 
   return (
-    <div className="flex flex-col gap-2 pt-1">
-      {sections.flatMap((section, si) =>
-        (section.questions ?? []).map((q, qi) => (
-          <div key={`${si}-${q.id ?? qi}`}>
-            <Typography
-              color="muted"
-              type="body-xs"
-            >
-              {q.label ?? q.id}
-            </Typography>
-            <Typography
-              className="break-words"
-              type="body-sm"
-            >
-              {formatAnswer(q.id ? answers[q.id] : undefined)}
-            </Typography>
-          </div>
-        )),
-      )}
+    <div>
       <Typography
-        className="pt-1"
+        className="mb-3"
         color="muted"
         type="body-xs"
+        weight="bold"
       >
         Submitted {formatIsoDateOnly(submission.submitted_at)}
       </Typography>
-    </div>
-  );
-}
-
-function AssignmentRow({assignment}: {assignment: ClientProfileFormAssignment}) {
-  const [open, setOpen] = useState(false);
-  const name = assignment.form_template?.name ?? 'Check-in';
-  const due = assignment.due_date ? `Due ${formatIsoDateOnly(assignment.due_date)}` : null;
-
-  return (
-    <div className="rounded-xl bg-surface-secondary">
-      <button
-        aria-expanded={open}
-        className="flex min-h-11 w-full items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-surface-hover"
-        onClick={() => setOpen((v) => !v)}
-        type="button"
-      >
-        <div className="min-w-0 flex-1">
-          <Typography
-            truncate
-            type="body-sm"
-            weight="semibold"
-          >
-            {name}
-          </Typography>
-          {due ? (
-            <Typography
-              color="muted"
-              type="body-xs"
+      {questions.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {questions.map((question) => (
+            <div
+              className="rounded-3xl border-[1.5px] border-separator bg-surface p-4"
+              key={question.id}
             >
-              {due}
-            </Typography>
-          ) : null}
+              <Typography
+                color="muted"
+                type="body-xs"
+                weight="semibold"
+              >
+                {question.label}
+              </Typography>
+              <Typography
+                className="mt-1 break-words font-grotesk text-xl font-bold"
+                type="body-sm"
+              >
+                {formatAnswer(question.value)}
+              </Typography>
+            </div>
+          ))}
         </div>
-        <Chip
-          color={STATUS_COLOR[assignment.status] ?? 'default'}
-          size="sm"
-          variant="soft"
-        >
-          {ASSIGNMENT_STATUS_LABELS[assignment.status] ?? assignment.status}
-        </Chip>
-        {open ? (
-          <ChevronUp
-            className="shrink-0 text-muted"
-            size={15}
-          />
-        ) : (
-          <ChevronDown
-            className="shrink-0 text-muted"
-            size={15}
-          />
-        )}
-      </button>
-      {open ? (
-        <div className="border-t border-border px-3 pb-3">
-          <CheckinResponses assignmentId={assignment.id} />
+      ) : (
+        <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+          <Typography
+            className="break-words"
+            type="body-sm"
+          >
+            {formatAnswer(answers)}
+          </Typography>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
 
 export default function ClientCheckins({clientId, clientName}: {clientId: string; clientName: string}) {
-  const {data, isLoading} = useListClientFormAssignmentsForCoachQuery({clientId});
+  const {data, isError, isLoading} = useListClientFormAssignmentsForCoachQuery({clientId});
   const assignments = data?.data ?? [];
+  const nextDue = selectNextDue(assignments);
+  const latestCompleted = selectLatestCompleted(assignments);
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
-      <SectionHeading title="Check-ins" />
+    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-grotesk text-xl font-bold">Client check-in</h2>
+          <Typography
+            className="mt-1"
+            color="muted"
+            type="body-sm"
+          >
+            {nextDue?.form_template?.name ?? 'Assigned check-ins'}
+          </Typography>
+        </div>
+        {nextDue ? (
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass(nextDue.status)}`}>
+            {ASSIGNMENT_STATUS_LABELS[nextDue.status] ?? nextDue.status}
+          </span>
+        ) : null}
+      </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-6">
-          <Spinner size="sm" />
+        <div className="space-y-4">
+          <Skeleton className="h-20 rounded-3xl" />
+          <Skeleton className="h-40 rounded-3xl" />
         </div>
+      ) : isError ? (
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Couldn&apos;t load check-ins.
+        </Typography>
       ) : assignments.length === 0 ? (
         <Typography
           color="muted"
           type="body-sm"
         >
-          No check-ins assigned yet
+          No check-ins assigned yet.
         </Typography>
       ) : (
-        <div className="flex flex-col gap-2">
-          {assignments.map((assignment) => (
-            <AssignmentRow
-              assignment={assignment}
-              key={assignment.id}
-            />
-          ))}
-        </div>
+        <>
+          <div className="mb-5 flex items-center gap-3 rounded-3xl border border-accent/30 bg-accent-soft p-4">
+            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
+              <CalendarCheck size={19} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <Typography
+                type="body-sm"
+                weight="bold"
+              >
+                Next check-in due
+              </Typography>
+              <Typography
+                className="mt-0.5 text-accent"
+                type="body-xs"
+                weight="semibold"
+              >
+                {nextDue?.due_date ? formatIsoDateOnly(nextDue.due_date) : 'No due date set'}
+              </Typography>
+            </div>
+          </div>
+
+          <Typography
+            className="mb-3 uppercase tracking-wider"
+            color="muted"
+            type="body-xs"
+            weight="bold"
+          >
+            Latest submission
+          </Typography>
+          <SubmissionAnswers assignment={latestCompleted} />
+        </>
       )}
 
-      <div className="mt-2">
+      <div className="mt-4">
         <CheckinAssignControl
           clientId={clientId}
           clientName={clientName}
         />
       </div>
-    </div>
+    </section>
   );
 }

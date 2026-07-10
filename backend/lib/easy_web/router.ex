@@ -82,6 +82,7 @@ defmodule EasyWeb.Router do
     pipe_through :require_coach
     get "/me", BusinessController, :show
     patch "/me", BusinessController, :update
+    patch "/me/dashboard-setup", BusinessController, :update_dashboard_setup
   end
 
   scope "/v1/coach", EasyWeb.Coaches do

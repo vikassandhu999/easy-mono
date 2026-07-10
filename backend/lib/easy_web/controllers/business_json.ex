@@ -12,6 +12,8 @@ defmodule EasyWeb.BusinessJSON do
       name: business.name,
       handle: business.handle,
       about: business.about,
+      dashboard_setup_hidden_at: business.dashboard_setup_hidden_at,
+      dashboard_setup_hidden_reason: business.dashboard_setup_hidden_reason,
       inserted_at: business.inserted_at,
       updated_at: business.updated_at
     }

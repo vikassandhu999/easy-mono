@@ -1,4 +1,5 @@
 import {api} from '@/api/base';
+import {coachApi} from '@/api/generated';
 import {ApiResponse} from '@/api/shared';
 
 export type CoachProfileBusiness = {
@@ -6,6 +7,8 @@ export type CoachProfileBusiness = {
   name: string;
   slug: string;
   whatsapp_number: null | string;
+  dashboard_setup_hidden_at: null | string;
+  dashboard_setup_hidden_reason: 'completed' | 'dismissed' | null;
 };
 
 export type CoachProfile = {
@@ -14,6 +17,7 @@ export type CoachProfile = {
   last_name: null | string;
   email: string;
   phone: null | string;
+  is_owner: boolean;
   business: CoachProfileBusiness;
 };
 
@@ -47,3 +51,11 @@ const profileApi = api.injectEndpoints({
 });
 
 export const {useGetCoachProfileQuery, useUpdateCoachProfileMutation} = profileApi;
+
+coachApi.enhanceEndpoints({
+  endpoints: {
+    updateDashboardSetup: {invalidatesTags: [{type: 'CoachProfile', id: 'ME'}]},
+  },
+});
+
+export const {useUpdateDashboardSetupMutation} = coachApi;

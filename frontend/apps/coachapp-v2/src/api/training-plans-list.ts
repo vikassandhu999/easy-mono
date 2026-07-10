@@ -50,6 +50,7 @@ const trainingPlansListApi = api.injectEndpoints({
 });
 
 export const {useCoachTrainingPlansInfiniteQuery} = trainingPlansListApi;
+export const {useListCoachClientTrainingPlansQuery, useListTrainingPlansQuery} = coachApi;
 
 // The builder keeps its own detail (getTrainingPlan) fresh via optimistic
 // updateQueryData, but nothing refreshes the plan LIST after a rename/status
@@ -57,12 +58,19 @@ export const {useCoachTrainingPlansInfiniteQuery} = trainingPlansListApi;
 // invalidate just the LIST tag (not the detail, which the builder owns).
 coachApi.enhanceEndpoints({
   endpoints: {
+    listTrainingPlans: {providesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
+    createTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
     updateTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
     // Duplicate is tag:false — invalidate the list so the copy shows on return.
     duplicateTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
     // The client's assigned-plans list + assign mutation are tag:false; wire a
     // shared CLIENT-LIST tag so assigning refreshes the list (and the stat strip).
     listCoachClientTrainingPlans: {providesTags: [{type: 'TrainingPlan', id: 'CLIENT-LIST'}]},
-    assignTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'CLIENT-LIST'}]},
+    assignTrainingPlan: {
+      invalidatesTags: [
+        {type: 'TrainingPlan', id: 'CLIENT-LIST'},
+        {type: 'Client', id: 'LIST'},
+      ],
+    },
   },
 });

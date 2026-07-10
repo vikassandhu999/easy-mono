@@ -51,19 +51,34 @@ const nutritionPlansListApi = api.injectEndpoints({
 });
 
 export const {useCoachNutritionPlansInfiniteQuery} = nutritionPlansListApi;
+export const {useListCoachClientNutritionPlansQuery, useListNutritionPlansQuery, useUpdateNutritionPlanMutation} =
+  coachApi;
 
 // The builder keeps its own detail (getNutritionPlan) fresh via optimistic
 // updateQueryData, but nothing refreshes the plan LIST after a rename/status
 // change — so the list shows stale names. updateNutritionPlan is tag:false;
-// invalidate just the LIST tag (not the detail, which the builder owns).
+// invalidate the LIST tag (not the detail, which the builder owns) plus
+// CLIENT-LIST, since the client detail card edits macro targets through it.
 coachApi.enhanceEndpoints({
   endpoints: {
-    updateNutritionPlan: {invalidatesTags: [{type: 'NutritionPlan', id: 'LIST'}]},
+    listNutritionPlans: {providesTags: [{type: 'NutritionPlan', id: 'LIST'}]},
+    createNutritionPlan: {invalidatesTags: [{type: 'NutritionPlan', id: 'LIST'}]},
+    updateNutritionPlan: {
+      invalidatesTags: [
+        {type: 'NutritionPlan', id: 'LIST'},
+        {type: 'NutritionPlan', id: 'CLIENT-LIST'},
+      ],
+    },
     // Duplicate is tag:false — invalidate the list so the copy shows on return.
     duplicateNutritionPlan: {invalidatesTags: [{type: 'NutritionPlan', id: 'LIST'}]},
     // The client's assigned-plans list + assign mutation are tag:false; wire a
     // shared CLIENT-LIST tag so assigning refreshes the list (and the stat strip).
     listCoachClientNutritionPlans: {providesTags: [{type: 'NutritionPlan', id: 'CLIENT-LIST'}]},
-    assignNutritionPlan: {invalidatesTags: [{type: 'NutritionPlan', id: 'CLIENT-LIST'}]},
+    assignNutritionPlan: {
+      invalidatesTags: [
+        {type: 'NutritionPlan', id: 'CLIENT-LIST'},
+        {type: 'Client', id: 'LIST'},
+      ],
+    },
   },
 });

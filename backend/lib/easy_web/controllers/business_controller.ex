@@ -4,9 +4,18 @@ defmodule EasyWeb.BusinessController do
 
   alias Easy.Identity.Users
   alias Easy.Orgs
-  alias EasyWeb.OpenApi.Schemas.{BusinessRequest, BusinessResponse, BusinessUpdateRequest, ErrorResponse}
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+  alias EasyWeb.OpenApi.Schemas.{
+    BusinessRequest,
+    BusinessResponse,
+    BusinessUpdateRequest,
+    DashboardSetupUpdateRequest,
+    ErrorResponse
+  }
+
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true]
+       when action in [:create, :update, :update_dashboard_setup]
 
   tags ["businesses"]
 
@@ -46,6 +55,20 @@ defmodule EasyWeb.BusinessController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :update_dashboard_setup,
+    summary: "Update dashboard setup state",
+    description: "Stores or clears the business owner's dashboard setup terminal state.",
+    operation_id: "updateDashboardSetup",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Dashboard setup update request", "application/json", DashboardSetupUpdateRequest, required: true},
+    responses: [
+      ok: {"Business updated", "application/json", BusinessResponse},
+      forbidden: {"Owner access required", "application/json", ErrorResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
     # pre-auth onboarding path: ctx.user_id exists but business not yet created
@@ -69,6 +92,16 @@ defmodule EasyWeb.BusinessController do
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
     with {:ok, business} <- Orgs.update_business(conn.assigns.ctx, conn.body_params) do
+      conn
+      |> put_status(:ok)
+      |> render(:show, business: business)
+    end
+  end
+
+  @spec update_dashboard_setup(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_dashboard_setup(conn, _params) do
+    with {:ok, business} <-
+           Orgs.update_dashboard_setup(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:ok)
       |> render(:show, business: business)

@@ -2998,6 +2998,23 @@
             "x-struct": null,
             "x-validate": null
           },
+          "dashboard_setup_hidden_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "dashboard_setup_hidden_reason": {
+            "enum": [
+              "dismissed",
+              "completed"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "handle": {
             "type": "string",
             "x-struct": null,
@@ -3032,6 +3049,8 @@
           "name",
           "handle",
           "about",
+          "dashboard_setup_hidden_at",
+          "dashboard_setup_hidden_reason",
           "inserted_at",
           "updated_at"
         ],
@@ -6107,6 +6126,23 @@
       "CoachProfileBusiness": {
         "additionalProperties": false,
         "properties": {
+          "dashboard_setup_hidden_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "dashboard_setup_hidden_reason": {
+            "enum": [
+              "dismissed",
+              "completed"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "id": {
             "format": "uuid",
             "type": "string",
@@ -6134,7 +6170,9 @@
           "id",
           "name",
           "slug",
-          "whatsapp_number"
+          "whatsapp_number",
+          "dashboard_setup_hidden_at",
+          "dashboard_setup_hidden_reason"
         ],
         "title": "CoachProfileBusiness",
         "type": "object",
@@ -8844,6 +8882,31 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlan",
         "x-validate": null
       },
+      "DashboardSetupUpdateRequest": {
+        "additionalProperties": false,
+        "example": {
+          "dashboard_setup_hidden_reason": "dismissed"
+        },
+        "properties": {
+          "dashboard_setup_hidden_reason": {
+            "enum": [
+              "dismissed",
+              "completed"
+            ],
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "dashboard_setup_hidden_reason"
+        ],
+        "title": "DashboardSetupUpdateRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "BillingCheckoutResult": {
         "additionalProperties": false,
         "properties": {
@@ -9038,6 +9101,11 @@
             "x-struct": null,
             "x-validate": null
           },
+          "is_owner": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
           "last_name": {
             "nullable": true,
             "type": "string",
@@ -9057,6 +9125,7 @@
           "last_name",
           "email",
           "phone",
+          "is_owner",
           "business"
         ],
         "title": "CoachProfile",
@@ -18615,6 +18684,86 @@
         "summary": "Update exercise",
         "tags": [
           "coach exercises"
+        ]
+      }
+    },
+    "/v1/businesses/me/dashboard-setup": {
+      "patch": {
+        "callbacks": {},
+        "description": "Stores or clears the business owner's dashboard setup terminal state.",
+        "operationId": "updateDashboardSetup",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardSetupUpdateRequest"
+              }
+            }
+          },
+          "description": "Dashboard setup update request",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessResponse"
+                }
+              }
+            },
+            "description": "Business updated"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Owner access required"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update dashboard setup state",
+        "tags": [
+          "businesses"
         ]
       }
     },

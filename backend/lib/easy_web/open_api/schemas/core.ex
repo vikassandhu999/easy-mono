@@ -67,9 +67,35 @@ defmodule EasyWeb.OpenApi.Schemas.BusinessUpdateRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.DashboardSetupUpdateRequest do
+  require OpenApiSpex
+
+  alias Easy.Orgs.Business, as: BusinessSchema
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "DashboardSetupUpdateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        dashboard_setup_hidden_reason: %Schema{
+          type: :string,
+          enum: Enum.map(BusinessSchema.dashboard_setup_hidden_reasons(), &Atom.to_string/1),
+          nullable: true
+        }
+      },
+      required: [:dashboard_setup_hidden_reason],
+      example: %{"dashboard_setup_hidden_reason" => "dismissed"}
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.Business do
   require OpenApiSpex
 
+  alias Easy.Orgs.Business, as: BusinessSchema
   alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
 
@@ -83,11 +109,30 @@ defmodule EasyWeb.OpenApi.Schemas.Business do
           id: %Schema{type: :string, format: :uuid},
           name: %Schema{type: :string},
           handle: %Schema{type: :string},
-          about: %Schema{type: :string, nullable: true}
+          about: %Schema{type: :string, nullable: true},
+          dashboard_setup_hidden_at: %Schema{
+            type: :string,
+            format: :"date-time",
+            nullable: true
+          },
+          dashboard_setup_hidden_reason: %Schema{
+            type: :string,
+            enum: Enum.map(BusinessSchema.dashboard_setup_hidden_reasons(), &Atom.to_string/1),
+            nullable: true
+          }
         },
         Shared.timestamps()
       ),
-    required: [:id, :name, :handle, :about, :inserted_at, :updated_at]
+    required: [
+      :id,
+      :name,
+      :handle,
+      :about,
+      :dashboard_setup_hidden_at,
+      :dashboard_setup_hidden_reason,
+      :inserted_at,
+      :updated_at
+    ]
   })
 end
 
@@ -130,6 +175,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.CoachProfileBusiness do
   require OpenApiSpex
 
+  alias Easy.Orgs.Business, as: BusinessSchema
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -140,9 +186,26 @@ defmodule EasyWeb.OpenApi.Schemas.CoachProfileBusiness do
       id: %Schema{type: :string, format: :uuid},
       name: %Schema{type: :string},
       slug: %Schema{type: :string},
-      whatsapp_number: %Schema{type: :string, nullable: true}
+      whatsapp_number: %Schema{type: :string, nullable: true},
+      dashboard_setup_hidden_at: %Schema{
+        type: :string,
+        format: :"date-time",
+        nullable: true
+      },
+      dashboard_setup_hidden_reason: %Schema{
+        type: :string,
+        enum: Enum.map(BusinessSchema.dashboard_setup_hidden_reasons(), &Atom.to_string/1),
+        nullable: true
+      }
     },
-    required: [:id, :name, :slug, :whatsapp_number]
+    required: [
+      :id,
+      :name,
+      :slug,
+      :whatsapp_number,
+      :dashboard_setup_hidden_at,
+      :dashboard_setup_hidden_reason
+    ]
   })
 end
 
@@ -162,9 +225,10 @@ defmodule EasyWeb.OpenApi.Schemas.CoachProfile do
       last_name: %Schema{type: :string, nullable: true},
       email: %Schema{type: :string, format: :email},
       phone: %Schema{type: :string, nullable: true},
+      is_owner: %Schema{type: :boolean},
       business: CoachProfileBusiness
     },
-    required: [:id, :first_name, :last_name, :email, :phone, :business]
+    required: [:id, :first_name, :last_name, :email, :phone, :is_owner, :business]
   })
 end
 

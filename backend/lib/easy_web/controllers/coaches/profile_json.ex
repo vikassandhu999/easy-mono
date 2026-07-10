@@ -14,6 +14,7 @@ defmodule EasyWeb.Coaches.ProfileJSON do
       last_name: coach.last_name,
       email: coach.user.email,
       phone: coach.phone,
+      is_owner: coach.business.owner_id == coach.user_id,
       business: business(coach.business)
     }
   end
@@ -23,7 +24,9 @@ defmodule EasyWeb.Coaches.ProfileJSON do
       id: business.id,
       name: business.name,
       slug: business.handle,
-      whatsapp_number: business.whatsapp_number
+      whatsapp_number: business.whatsapp_number,
+      dashboard_setup_hidden_at: business.dashboard_setup_hidden_at,
+      dashboard_setup_hidden_reason: business.dashboard_setup_hidden_reason
     }
   end
 end

@@ -698,6 +698,13 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.trainingExerciseUpdateRequest,
       }),
     }),
+    updateDashboardSetup: build.mutation<UpdateDashboardSetupApiResponse, UpdateDashboardSetupApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/businesses/me/dashboard-setup`,
+        method: 'PATCH',
+        body: queryArg.dashboardSetupUpdateRequest,
+      }),
+    }),
     getNutritionRecipeImpact: build.query<GetNutritionRecipeImpactApiResponse, GetNutritionRecipeImpactApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/nutrition-recipes/${queryArg.id}/impact`,
@@ -1501,6 +1508,11 @@ export type UpdateExerciseApiArg = {
   /** Exercise update request */
   trainingExerciseUpdateRequest: TrainingExerciseUpdateRequest;
 };
+export type UpdateDashboardSetupApiResponse = /** status 200 Business updated */ BusinessResponse;
+export type UpdateDashboardSetupApiArg = {
+  /** Dashboard setup update request */
+  dashboardSetupUpdateRequest: DashboardSetupUpdateRequest;
+};
 export type GetNutritionRecipeImpactApiResponse = /** status 200 Impact */ RecipeImpactResponse;
 export type GetNutritionRecipeImpactApiArg = {
   id: string;
@@ -1928,6 +1940,8 @@ export type NutritionWeekdayAssignRequest = {
   nutrition_plan_day_id: string;
 };
 export type CoachProfileBusiness = {
+  dashboard_setup_hidden_at: string | null;
+  dashboard_setup_hidden_reason: ('dismissed' | 'completed') | null;
   id: string;
   name: string;
   slug: string;
@@ -1938,6 +1952,7 @@ export type CoachProfile = {
   email: string;
   first_name: string | null;
   id: string;
+  is_owner: boolean;
   last_name: string | null;
   phone: string | null;
 };
@@ -2200,6 +2215,8 @@ export type ClientProfileFieldRequest = {
 };
 export type Business = {
   about: string | null;
+  dashboard_setup_hidden_at: string | null;
+  dashboard_setup_hidden_reason: ('dismissed' | 'completed') | null;
   handle: string;
   id: string;
   inserted_at: string;
@@ -2659,6 +2676,9 @@ export type TrainingExerciseUpdateRequest = {
   muscle_ids?: string[];
   name?: string;
 };
+export type DashboardSetupUpdateRequest = {
+  dashboard_setup_hidden_reason: ('dismissed' | 'completed') | null;
+};
 export type RecipeImpactResponse = {
   data?: {
     active_client_plans?: {
@@ -3115,6 +3135,7 @@ export const {
   useGetExerciseQuery,
   useLazyGetExerciseQuery,
   useUpdateExerciseMutation,
+  useUpdateDashboardSetupMutation,
   useGetNutritionRecipeImpactQuery,
   useLazyGetNutritionRecipeImpactQuery,
   useDuplicateNutritionPlanMutation,

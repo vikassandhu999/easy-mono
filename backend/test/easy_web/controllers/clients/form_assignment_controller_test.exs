@@ -221,6 +221,34 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       refute Repo.get_by(ProfileFieldValue, client_id: client.id, profile_field_definition_id: field.id)
     end
 
+    test "does not submit missed assignments" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: coach.business, purpose: :check_in)
+
+      assignment =
+        insert(:form_assignment,
+          business: coach.business,
+          client: client,
+          form_template: template,
+          purpose: :check_in,
+          status: :missed
+        )
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_client(client)
+        |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{
+          "answers" => %{"meal_prep_ability" => "high"}
+        })
+
+      assert %{"error_detail" => %{"fields" => %{"status" => ["cannot be submitted"]}}} =
+               json_response(conn, 422)
+
+      refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
+    end
+
     test "returns 422 for invalid profile mappings" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, user: insert(:user))

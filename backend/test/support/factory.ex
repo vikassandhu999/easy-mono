@@ -2,8 +2,8 @@ defmodule Easy.Factory do
   use ExMachina.Ecto, repo: Easy.Repo
 
   alias Easy.Billing.BusinessBilling
-  alias Easy.ClientProfiles.ClientProfile
   alias Easy.ClientProfiles.CheckInSchedule
+  alias Easy.ClientProfiles.ClientProfile
   alias Easy.ClientProfiles.FormAssignment
   alias Easy.ClientProfiles.FormSubmission
   alias Easy.ClientProfiles.FormTemplate

@@ -1,4 +1,5 @@
 defmodule Easy.ClientProfiles do
+  alias Easy.ClientProfiles.CheckInSchedule
   alias Easy.ClientProfiles.ClientProfile
   alias Easy.ClientProfiles.FormAssignment
   alias Easy.ClientProfiles.FormSubmission
@@ -287,6 +288,62 @@ defmodule Easy.ClientProfiles do
     end
   end
 
+  @spec list_check_in_schedules_for_client(Ctx.t(), String.t()) ::
+          {:ok, [CheckInSchedule.t()]} | {:error, :not_found}
+  def list_check_in_schedules_for_client(%Ctx{} = ctx, client_id) do
+    with :ok <- Clients.authorize_client_id(ctx, client_id) do
+      schedules =
+        CheckInSchedule
+        |> CheckInSchedule.for_client(ctx.business_id, client_id)
+        |> CheckInSchedule.include_template(ctx.business_id)
+        |> order_by([schedule], asc: schedule.next_due_on, asc: schedule.id)
+        |> Repo.all()
+
+      {:ok, schedules}
+    end
+  end
+
+  @spec create_check_in_schedule_for_client(Ctx.t(), String.t(), map()) ::
+          {:ok, CheckInSchedule.t()}
+          | {:error, :not_found | :invalid_check_in_template | Ecto.Changeset.t()}
+  def create_check_in_schedule_for_client(
+        %Ctx{} = ctx,
+        client_id,
+        %{form_template_id: template_id} = attrs
+      ) do
+    with :ok <- Clients.authorize_client_id(ctx, client_id),
+         {:ok, client} <- fetch_client(ctx.business_id, client_id),
+         {:ok, template} <- get_form_template(ctx, template_id),
+         :ok <- ensure_check_in_template(template) do
+      Repo.transaction(fn -> create_check_in_schedule_transaction(ctx, client, template, attrs) end)
+    end
+  end
+
+  @spec update_check_in_schedule(Ctx.t(), String.t(), map()) ::
+          {:ok, CheckInSchedule.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def update_check_in_schedule(%Ctx{} = ctx, schedule_id, attrs) do
+    with {:ok, schedule} <- get_check_in_schedule(ctx.business_id, schedule_id),
+         :ok <- Clients.authorize_client_id(ctx, schedule.client_id) do
+      schedule |> CheckInSchedule.update_changeset(attrs) |> Repo.update()
+    end
+  end
+
+  @spec delete_check_in_schedule(Ctx.t(), String.t()) ::
+          {:ok, CheckInSchedule.t()} | {:error, :not_found | :schedule_has_assignments | Ecto.Changeset.t()}
+  def delete_check_in_schedule(%Ctx{} = ctx, schedule_id) do
+    with {:ok, schedule} <- get_check_in_schedule(ctx.business_id, schedule_id),
+         :ok <- Clients.authorize_client_id(ctx, schedule.client_id),
+         false <- schedule_has_assignments?(ctx.business_id, schedule.id) || {:error, :schedule_has_assignments} do
+      Repo.delete(schedule)
+    end
+  end
+
+  @spec generate_due_check_ins(Date.t()) :: {non_neg_integer(), non_neg_integer()}
+  def generate_due_check_ins(today) do
+    due_schedules(today)
+    |> Enum.reduce({0, 0}, &generate_due_check_in(&1, today, &2))
+  end
+
   @spec list_form_submissions(Ctx.t(), String.t()) ::
           {:ok, [FormSubmission.t()]} | {:error, :not_found}
   def list_form_submissions(%Ctx{} = ctx, assignment_id) do
@@ -442,6 +499,135 @@ defmodule Easy.ClientProfiles do
     end
   end
 
+  defp create_check_in_schedule_transaction(ctx, client, template, attrs) do
+    schedule =
+      case ctx.business_id |> CheckInSchedule.insert_changeset(client.id, template.id, attrs) |> Repo.insert() do
+        {:ok, schedule} -> schedule
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+
+    if Date.compare(schedule.next_due_on, Date.utc_today()) in [:lt, :eq] do
+      process_due_schedule(schedule, client, template, Date.utc_today())
+    end
+
+    Repo.get(CheckInSchedule, schedule.id)
+  end
+
+  defp generate_due_check_in(schedule_id, today, counts) do
+    case Repo.transaction(fn -> generate_due_check_in_transaction(schedule_id, today) end) do
+      {:ok, :generated} -> increment_count(counts, 0)
+      {:ok, :inactive} -> increment_count(counts, 1)
+      {:ok, :noop} -> counts
+      {:error, _reason} -> counts
+    end
+  end
+
+  defp generate_due_check_in_transaction(schedule_id, today) do
+    schedule =
+      CheckInSchedule
+      |> where([schedule], schedule.id == ^schedule_id)
+      |> lock("FOR UPDATE")
+      |> Repo.one()
+
+    process_locked_schedule(schedule, today)
+  end
+
+  defp process_locked_schedule(%CheckInSchedule{active: true} = schedule, today) do
+    if Date.compare(schedule.next_due_on, today) in [:lt, :eq] do
+      with {:ok, client} <- fetch_client(schedule.business_id, schedule.client_id),
+           {:ok, template} <- fetch_form_template(schedule.business_id, schedule.form_template_id) do
+        process_due_schedule(schedule, client, template, today)
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    else
+      :noop
+    end
+  end
+
+  defp process_locked_schedule(_schedule, _today), do: :noop
+
+  defp process_due_schedule(schedule, %Client{status: :active} = client, template, today) do
+    now = DateTime.utc_now(:second)
+
+    schedule.business_id
+    |> FormAssignment.for_schedule(schedule.id)
+    |> FormAssignment.open()
+    |> Repo.update_all(set: [status: :missed, completed_at: nil, updated_at: now])
+
+    attrs = %{purpose: :check_in, status: :assigned, due_date: schedule.next_due_on}
+
+    case FormAssignment.insert_scheduled_changeset(
+           schedule.business_id,
+           client.id,
+           template.id,
+           schedule.id,
+           attrs
+         )
+         |> Repo.insert() do
+      {:ok, _assignment} ->
+        advance_schedule(schedule, today)
+        :generated
+
+      {:error, changeset} ->
+        Repo.rollback(changeset)
+    end
+  end
+
+  defp process_due_schedule(schedule, _inactive_client, _template, today) do
+    advance_schedule(schedule, today)
+    :inactive
+  end
+
+  defp advance_schedule(schedule, today) do
+    {next_due_on, active} = advance_beyond_today(schedule, today)
+
+    case schedule |> CheckInSchedule.update_changeset(%{next_due_on: next_due_on, active: active}) |> Repo.update() do
+      {:ok, updated} -> updated
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp advance_beyond_today(%CheckInSchedule{frequency: :once} = schedule, _today),
+    do: CheckInSchedule.advance(schedule)
+
+  defp advance_beyond_today(schedule, today) do
+    {next_due_on, active} = CheckInSchedule.advance(schedule)
+
+    if Date.compare(next_due_on, today) == :gt do
+      {next_due_on, active}
+    else
+      advance_beyond_today(%{schedule | next_due_on: next_due_on}, today)
+    end
+  end
+
+  defp due_schedules(today) do
+    CheckInSchedule
+    |> CheckInSchedule.active()
+    |> CheckInSchedule.due_on_or_before(today)
+    |> select([schedule], schedule.id)
+    |> Repo.all()
+  end
+
+  defp increment_count({generated, inactive}, 0), do: {generated + 1, inactive}
+  defp increment_count({generated, inactive}, 1), do: {generated, inactive + 1}
+
+  defp ensure_check_in_template(%FormTemplate{purpose: :check_in}), do: :ok
+  defp ensure_check_in_template(_template), do: {:error, :invalid_check_in_template}
+
+  defp get_check_in_schedule(business_id, schedule_id) do
+    CheckInSchedule
+    |> CheckInSchedule.for_business(business_id)
+    |> Repo.get(schedule_id)
+    |> ok_or_not_found()
+  end
+
+  defp schedule_has_assignments?(business_id, schedule_id) do
+    business_id
+    |> FormAssignment.for_schedule(schedule_id)
+    |> Repo.exists?()
+  end
+
   # Defensive against malformed stored templates: a non-list `questions` or a non-map question
   # is skipped rather than crashing the submission transaction (which would surface as a 500).
   # New templates can't reach here malformed — FormTemplate changesets validate structure.
@@ -556,6 +742,13 @@ defmodule Easy.ClientProfiles do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
+    |> ok_or_not_found()
+  end
+
+  defp fetch_form_template(business_id, template_id) do
+    FormTemplate
+    |> FormTemplate.for_business(business_id)
+    |> Repo.get(template_id)
     |> ok_or_not_found()
   end
 

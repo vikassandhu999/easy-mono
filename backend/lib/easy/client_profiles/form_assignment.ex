@@ -52,6 +52,14 @@ defmodule Easy.ClientProfiles.FormAssignment do
     |> foreign_key_constraint(:form_template_id, name: :form_assignments_template_business_id_fkey)
   end
 
+  @spec insert_scheduled_changeset(String.t(), String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_scheduled_changeset(business_id, client_id, form_template_id, check_in_schedule_id, attrs) do
+    business_id
+    |> insert_changeset(client_id, form_template_id, attrs)
+    |> put_change(:check_in_schedule_id, check_in_schedule_id)
+    |> foreign_key_constraint(:check_in_schedule_id, name: :form_assignments_schedule_business_id_fkey)
+  end
+
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(assignment, attrs) do
     assignment
@@ -100,4 +108,12 @@ defmodule Easy.ClientProfiles.FormAssignment do
   def for_client(query \\ __MODULE__, business_id, client_id) do
     from(a in query, where: a.business_id == ^business_id and a.client_id == ^client_id)
   end
+
+  @spec for_schedule(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_schedule(query \\ __MODULE__, business_id, schedule_id) do
+    from(a in query, where: a.business_id == ^business_id and a.check_in_schedule_id == ^schedule_id)
+  end
+
+  @spec open(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def open(query \\ __MODULE__), do: from(a in query, where: a.status in [:assigned, :in_progress])
 end

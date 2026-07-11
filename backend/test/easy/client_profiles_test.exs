@@ -816,6 +816,103 @@ defmodule Easy.ClientProfilesTest do
     end
   end
 
+  describe "check-in schedule generation" do
+    test "due-today once schedule immediately creates one occurrence and deactivates" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business, purpose: :check_in)
+      ctx = owner_ctx(client.business)
+
+      assert {:ok, schedule} =
+               ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+                 form_template_id: template.id,
+                 frequency: :once,
+                 next_due_on: ~D[2026-07-11]
+               })
+
+      refute schedule.active
+      assert {:ok, [assignment]} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
+      assert assignment.check_in_schedule_id == schedule.id
+      assert assignment.due_date == ~D[2026-07-11]
+      assert assignment.status == :assigned
+    end
+
+    test "future schedule waits and a due recurring schedule advances" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business, purpose: :check_in)
+      ctx = owner_ctx(client.business)
+
+      assert {:ok, future} =
+               ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+                 form_template_id: template.id,
+                 frequency: :weekly,
+                 next_due_on: ~D[2026-07-18]
+               })
+
+      assert future.next_due_on == ~D[2026-07-18]
+      assert {:ok, []} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
+
+      assert {1, 0} = ClientProfiles.generate_due_check_ins(~D[2026-07-18])
+      assert Repo.reload(future).next_due_on == ~D[2026-07-25]
+    end
+
+    test "new occurrence marks the previous open occurrence missed" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business, purpose: :check_in)
+      ctx = owner_ctx(client.business)
+
+      assert {:ok, schedule} =
+               ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+                 form_template_id: template.id,
+                 frequency: :weekly,
+                 next_due_on: ~D[2026-07-11]
+               })
+
+      [first] = Repo.all(FormAssignment.for_schedule(client.business_id, schedule.id))
+      assert {1, 0} = ClientProfiles.generate_due_check_ins(~D[2026-07-18])
+      assert Repo.reload(first).status == :missed
+      assert Repo.aggregate(FormAssignment.for_schedule(client.business_id, schedule.id), :count) == 2
+    end
+
+    test "inactive clients advance without generating backlog" do
+      client = insert_client() |> Ecto.Changeset.change(status: :inactive) |> Repo.update!()
+      template = insert(:form_template, business: client.business, purpose: :check_in)
+
+      schedule =
+        insert(:check_in_schedule,
+          business: client.business,
+          client: client,
+          form_template: template,
+          frequency: :weekly,
+          next_due_on: ~D[2026-06-20]
+        )
+
+      assert {0, 1} = ClientProfiles.generate_due_check_ins(~D[2026-07-11])
+      assert Repo.reload(schedule).next_due_on == ~D[2026-07-18]
+      assert Repo.aggregate(FormAssignment.for_schedule(client.business_id, schedule.id), :count) == 0
+    end
+
+    test "rejects intake templates and cross-tenant clients" do
+      client = insert_client()
+      other_client = insert_client()
+      intake = insert(:form_template, business: client.business, purpose: :intake)
+      ctx = owner_ctx(client.business)
+
+      assert {:error, :invalid_check_in_template} =
+               ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+                 form_template_id: intake.id,
+                 frequency: :weekly,
+                 next_due_on: ~D[2026-07-11]
+               })
+
+      assert {:error, :not_found} =
+               ClientProfiles.create_check_in_schedule_for_client(ctx, other_client.id, %{
+                 form_template_id: intake.id,
+                 frequency: :weekly,
+                 next_due_on: ~D[2026-07-11]
+               })
+    end
+  end
+
   describe "validate_answers/2" do
     @sections [
       %{

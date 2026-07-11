@@ -697,6 +697,60 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
     end
   end
 
+  describe "GET /v1/coach/clients/attention" do
+    test "returns active attention clients through the attention contract", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      attention_client = insert(:client, creator: coach, business: business, status: :active)
+
+      clear_client = insert(:client, creator: coach, business: business, status: :active)
+      insert(:training_plan, business: business, client: clear_client, status: :active)
+
+      insert(:client, creator: coach, business: business, status: :pending, user: nil)
+
+      conn = get(conn, "/v1/coach/clients/attention?offset=0&limit=1")
+      response = json_response(conn, 200)
+
+      assert %{"count" => 1, "data" => [client]} = response
+      assert client["id"] == attention_client.id
+      assert client["needs_plan"]
+      assert_schema(client, "Client", EasyWeb.ApiSpec.spec())
+      assert_schema(response, "ClientAttentionListResponse", EasyWeb.ApiSpec.spec())
+    end
+
+    test "returns an empty response when no active client needs attention", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      clear_client = insert(:client, creator: coach, business: business, status: :active)
+      insert(:training_plan, business: business, client: clear_client, status: :active)
+
+      conn = get(conn, "/v1/coach/clients/attention")
+
+      assert %{"count" => 0, "data" => []} = json_response(conn, 200)
+    end
+
+    test "counts before applying the requested limit", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      insert(:client, creator: coach, business: business, status: :active)
+
+      conn = get(conn, "/v1/coach/clients/attention?limit=0")
+
+      assert %{"count" => 1, "data" => []} = json_response(conn, 200)
+    end
+
+    test "requires coach authentication" do
+      conn = build_conn() |> get("/v1/coach/clients/attention")
+      assert json_response(conn, 403)
+    end
+  end
+
   describe "GET /v1/coach/clients" do
     test "returns paginated list with summary", %{conn: conn, coach: coach, business: business} do
       insert(:client, creator: coach, business: business, status: :active)

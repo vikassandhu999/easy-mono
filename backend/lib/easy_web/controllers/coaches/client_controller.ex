@@ -6,6 +6,7 @@ defmodule EasyWeb.Coaches.ClientController do
   alias OpenApiSpex.{Operation, Schema}
 
   alias EasyWeb.OpenApi.Schemas.{
+    ClientAttentionListResponse,
     ClientInviteRequest,
     ClientListResponse,
     ClientResponse,
@@ -161,6 +162,20 @@ defmodule EasyWeb.Coaches.ClientController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
+  operation :attention,
+    summary: "List clients needing attention",
+    description: "Lists visible active clients with intake, plan, or subscription attention flags.",
+    operation_id: "listAttentionClients",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of clients to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum clients to return", required: false)
+    ],
+    responses: [
+      ok: {"Attention clients", "application/json", ClientAttentionListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
+
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def invite(conn, _params) do
     ctx = conn.assigns.ctx
@@ -215,6 +230,19 @@ defmodule EasyWeb.Coaches.ClientController do
 
     with {:ok, client} <- Clients.reassign_client(conn.assigns.ctx, client_id, coach_id) do
       render(conn, :show, client: client)
+    end
+  end
+
+  @spec attention(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def attention(conn, params) do
+    opts = [
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 20)
+    ]
+
+    with {:ok, %{clients: clients, count: count}} <-
+           Clients.list_attention_clients(conn.assigns.ctx, opts) do
+      render(conn, :attention, clients: clients, count: count)
     end
   end
 

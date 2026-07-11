@@ -153,6 +153,24 @@ defmodule EasyWeb.OpenApi.Schemas.ClientResponse do
   OpenApiSpex.schema(Shared.data_response(Client, "ClientResponse"))
 end
 
+defmodule EasyWeb.OpenApi.Schemas.ClientAttentionListResponse do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Client
+
+  OpenApiSpex.schema(%{
+    title: "ClientAttentionListResponse",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      data: %Schema{type: :array, items: Client},
+      count: %Schema{type: :integer, minimum: 0}
+    },
+    required: [:data, :count]
+  })
+end
+
 defmodule EasyWeb.OpenApi.Schemas.ClientListResponse do
   require OpenApiSpex
 

@@ -20,6 +20,10 @@ Target flow: invite → intake (already works) → coach sets a cadence once →
 
 All changes stay inside the existing forms domain. No dedicated check-in entity is introduced; a check-in remains a `FormAssignment`.
 
+### 2.0 Purpose collapse
+
+`form_templates.purpose` and `form_assignments.purpose` shrink from `intake | weekly_check_in | nutrition_update | training_update | custom` to **`intake | check_in`**. A migration remaps existing rows (`weekly_check_in`, `nutrition_update`, `training_update`, `custom` → `check_in`) and tightens the CHECK constraints. `intake` keeps its special pipeline (auto-assign on invite, `intake_incomplete` flag, profile `intake_status` sync); everything else is a check-in. There is no third kind. The builder's purpose select disappears — coach-created templates are always `check_in`; the single intake template is curated code.
+
 ### 2.1 New table: `check_in_schedules`
 
 | Field | Type | Notes |
@@ -27,11 +31,13 @@ All changes stay inside the existing forms domain. No dedicated check-in entity 
 | `business_id` | FK | composite tenant FK, `with: [business_id: :business_id]` like siblings |
 | `client_id` | FK | |
 | `form_template_id` | FK, `:restrict` | same delete-guard semantics as assignments |
-| `frequency` | enum `weekly \| biweekly \| monthly` | CHECK constraint mirrors enum |
+| `frequency` | enum `once \| weekly \| biweekly \| monthly` | CHECK constraint mirrors enum |
 | `next_due_on` | date | the anchor; advanced by frequency on each generation |
 | `active` | boolean, default true | pause = `active: false`; no soft delete |
 
 Unique partial index on `(client_id, form_template_id) WHERE active` — one active cadence per client per template. `next_due_on` doubles as the anchor day, so there is no weekday/day-of-month math: weekly adds 7 days, biweekly 14, monthly adds one calendar month (clamped to month end).
+
+A one-time check-in is a schedule with `frequency: once` — same table, same generation path as recurring. After its occurrence is generated the schedule flips to `active: false`. This replaces manual one-off assignment: the coach assigns exclusively through schedules, so `POST /form-templates/:id/assign` is retired (intake auto-assign stays an internal context function creating the assignment directly).
 
 ### 2.2 `form_assignments` additions
 
@@ -41,7 +47,7 @@ Unique partial index on `(client_id, form_template_id) WHERE active` — one act
 
 ### 2.3 `form_submissions` additions
 
-* `reviewed_at` (utc_datetime), `reviewed_by_id` (coach user id). Unreviewed check-in = submission with `reviewed_at IS NULL` whose assignment purpose is `weekly_check_in`. That predicate IS the review queue; no queue table.
+* `reviewed_at` (utc_datetime), `reviewed_by_id` (coach user id). Unreviewed check-in = submission with `reviewed_at IS NULL` whose assignment purpose is `check_in`. That predicate IS the review queue; no queue table. (Intake submissions skip the queue — the profile card is where intake lands.)
 
 ### 2.4 New question types
 
@@ -71,12 +77,14 @@ Storage is Tigris (S3-compatible, native on Fly) via presigned URLs: client asks
 
 Extends the existing nightly sweep (same pattern as the subscription-expiry sweep). Two jobs, both idempotent:
 
-1. **Generate occurrences.** For each active schedule with `next_due_on <= today` where the client is `active`: mark the previous still-open occurrence of this schedule `:missed` (if any), insert a new `FormAssignment` (purpose from template, `due_date = next_due_on`, `check_in_schedule_id` set), advance `next_due_on` by frequency, send the due-day email, stamp `due_reminder_sent_at`. For schedules of `inactive` clients the sweep advances `next_due_on` without creating an assignment or sending email — the schedule stays active and resumes naturally when the client returns, with no backlog.
+1. **Generate occurrences.** For each active schedule with `next_due_on <= today` where the client is `active`: mark the previous still-open occurrence of this schedule `:missed` (if any), insert a new `FormAssignment` (purpose from template, `due_date = next_due_on`, `check_in_schedule_id` set), advance `next_due_on` by frequency (for `once`, set `active: false` instead), send the due-day email, stamp `due_reminder_sent_at`. For schedules of `inactive` clients the sweep advances `next_due_on` without creating an assignment or sending email — the schedule stays active and resumes naturally when the client returns, with no backlog.
+
+   The same generation function runs at schedule creation when `next_due_on <= today`, so "due today" (including every one-time assignment the coach fires off on the spot) reaches the client immediately instead of waiting for the nightly run.
 2. **Overdue nudge.** For each open assignment with a `due_date` 2+ days past and `overdue_reminder_sent_at IS NULL`: send one overdue email, stamp it. One overdue email per occurrence, ever.
 
 Both emails go through the existing Swoosh mailer (`Easy.Emails`). Copy is one line plus a deep link into the clientapp check-in.
 
-Late submission is allowed: an overdue assignment stays submittable until the sweep marks it `:missed` (which only happens when the next occurrence is due). `:missed` and `:dismissed` are the two non-submittable terminal states.
+Late submission is allowed: an overdue assignment stays submittable until the sweep marks it `:missed` (which only happens when the next occurrence is due). `:missed` and `:dismissed` are the two non-submittable terminal states. Occurrences of a `once` schedule have no next occurrence, so nothing auto-marks them missed — they stay Overdue and submittable until the client submits or the coach dismisses.
 
 ## 4. Backend API
 
@@ -84,7 +92,7 @@ Kebab routes, Ctx-first context functions, OpenApiSpex schemas updated alongside
 
 Coach scope:
 
-* `GET/POST /clients/:client_id/check-in-schedules`, `PATCH/DELETE /check-in-schedules/:id` (PATCH covers frequency, next_due_on, active; DELETE is for schedules never used — pausing is the normal off switch)
+* `GET/POST /clients/:client_id/check-in-schedules`, `PATCH/DELETE /check-in-schedules/:id` (PATCH covers frequency, next_due_on, active; DELETE is for schedules never used — pausing is the normal off switch). Creating a schedule is the only way a coach assigns a form; `POST /form-templates/:id/assign` is removed.
 * `GET /check-ins/review-queue` — unreviewed check-in submissions across all the coach's clients, newest first, with client summary embedded
 * `POST /form-submissions/:id/review` — stamps `reviewed_at`/`reviewed_by_id`; idempotent
 * Existing `PATCH /form-assignments/:id` already covers due-date/status edits; the coach UI starts using it (§5)
@@ -104,8 +112,9 @@ Intake hygiene: `update_form_assignment/3` syncs `client_profiles.intake_status`
 
 ## 5. Coach UI (coachapp-v2)
 
-* **Client detail.** The assign popover gains a "Repeats" section: frequency select + first due date → creates a schedule instead of a one-off. The check-in card shows cadence ("Weekly · next due Sun Jul 13"), pause/resume, and history as a list of occurrences with `Completed / Missed / Due` chips. Below it, trends: a weight sparkline from `weight_entries` and per-rating-question mini trends built client-side from the submissions list (stable question ids). The card also exposes edit-due-date and dismiss on an open assignment (the existing PATCH, finally surfaced).
-* **Review queue.** The Check-ins library page gains a "To review" tab: unreviewed submissions across clients, newest first. Opening one shows the full answers (photos rendered inline via presigned GETs), the client's trend strip, and two actions: **Mark reviewed** and **Reply in chat**. Reply deep-links to the existing conversation with a prefilled quote line ("Re: check-in Jul 11 — "); sending the message does not mark the submission reviewed, the button does.
+* **Forms library.** The Library nav item is renamed from "Check-ins" to **"Forms"** and lists every template with a type chip: **Intake** (the one curated template, visible and editable here — question snapshots keep past submissions safe) or **Check-in** (everything else). The builder loses its purpose select; new templates are always check-ins. Type filter chips at the top.
+* **Client detail.** The assign control always creates a schedule: template + "Repeats" (`Once / Weekly / Biweekly / Monthly`) + first due date. The check-in card shows cadence ("Weekly · next due Sun Jul 13"), pause/resume, and history as a list of occurrences with `Completed / Missed / Due` chips. Below it, trends: a weight sparkline from `weight_entries` and per-rating-question mini trends built client-side from the submissions list (stable question ids). The card also exposes edit-due-date and dismiss on an open assignment (the existing PATCH, finally surfaced).
+* **Review queue.** The Forms page gains a "To review" tab: unreviewed submissions across clients, newest first. Opening one shows the full answers (photos rendered inline via presigned GETs), the client's trend strip, and two actions: **Mark reviewed** and **Reply in chat**. Reply deep-links to the existing conversation with a prefilled quote line ("Re: check-in Jul 11 — "); sending the message does not mark the submission reviewed, the button does.
 * **Dashboard.** A "N check-ins to review" card linking to the queue (same derived predicate; no new endpoint beyond the queue list).
 
 ## 6. Client UI (clientapp-v2)
@@ -119,7 +128,7 @@ Intake hygiene: `update_form_assignment/3` syncs `client_profiles.intake_status`
 Each phase ships independently, in order:
 
 1. **Hygiene.** Backend `required` enforcement + answer-shape validation, intake_status sync on dismiss/reopen, coach edit/dismiss UI on open assignments.
-2. **Cadence.** `check_in_schedules`, sweep jobs, `:missed` status, reminder emails, client due/overdue/missed states, coach schedule UI.
+2. **Cadence.** Purpose collapse to `intake | check_in` (+ remap migration), `check_in_schedules` incl. `once`, sweep jobs + immediate generation on create, `:missed` status, reminder emails, client due/overdue/missed states, coach Forms library rename + schedule-based assign, retire the assign endpoint.
 3. **Review loop.** `reviewed_*` fields, review endpoint + queue endpoint, coach queue tab + dashboard card, chat deep-link reply, client "Reviewed ✓".
 4. **Ratings + weight.** Two question types, submit-path side effects, builder support, client renderers, trends on client detail.
 5. **Photos.** `attachments` + Tigris presign plumbing, photo question type, builder + client picker, inline rendering in review.
@@ -131,4 +140,5 @@ Each phase ships independently, in order:
 * Intake content changes; intake stays soft-required and never blocks
 * Body measurements beyond weight; photo comparison/side-by-side views
 * Timezone-aware sweep scheduling (inherits whatever the existing nightly sweep does)
-* Un-hiding the custom form builder for coaches (its nav removal from the lifecycle spec stands; the builder itself gains the new question types since the same component powers the check-in builder)
+* A third form kind — `custom` and the update purposes are gone; everything a coach builds is a check-in
+* Renaming the clientapp "Check-ins" tab — client-facing vocabulary stays "check-in" even though the coach library is "Forms"

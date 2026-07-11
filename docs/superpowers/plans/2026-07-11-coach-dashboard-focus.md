@@ -294,31 +294,27 @@ Expected: no whitespace errors; only intentional implementation or verification 
 **Files:**
 
 * Modify: `frontend/apps/coachapp-v2/src/dashboard/dashboard.tsx`
-* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/stat-cell.tsx`
-* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/won-lost-stat-cell.tsx`
-* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/needs-attention-cell.tsx`
-* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/recent-activity-cell.tsx`
-* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/subscriptions-ending-cell.tsx`
-* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/quick-actions-row.tsx`
+* Create: `frontend/apps/coachapp-v2/src/dashboard/mobile-dashboard.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/@components/app-shell.tsx`
 
 **Interfaces:**
 
-* Adds optional `className?: string` composition slots to `StatCell` and `WonLostStatCell`.
-* Preserves the desktop four-metric bento at `sm` and wider.
+* Adds a mobile-only dashboard renderer that consumes the same query results as the desktop bento.
+* Preserves the desktop component markup at `sm` and wider.
 * Preserves the owner setup guide above mobile metrics as an approved deviation.
 
-- [ ] **Step 1: Add composition slots to metric cards**
+- [ ] **Step 1: Add the dedicated mobile renderer**
 
-Use `cn` from `@heroui/styles` to merge page-supplied responsive classes with each metric card's base classes. Do not add a theme token or a mobile-only duplicate component.
+Render compact mobile stat, won/lost, conversation, subscription, and attention sections in `mobile-dashboard.tsx`. Reuse API types, client/date formatting helpers, semantic tokens, and route constants. Do not render global search, upcoming appointments, renewal actions, or mock data.
 
-- [ ] **Step 2: Apply mobile metric visibility and spans**
+- [ ] **Step 2: Separate desktop and mobile composition**
 
-Pass `hidden sm:flex` to pending invites. Pass `col-span-2 sm:col-span-1` to won/lost. Active clients and new prospects remain one column each. Hide the header invite action below `md`.
+Render `MobileDashboard` below `sm` and the unchanged bento grid at `sm` and wider. Keep one `DashboardSetupCell` instance above both renderers. Use a two-line mobile greeting without the business summary or invite action.
 
-- [ ] **Step 3: Apply the mobile section order**
+- [ ] **Step 3: Match the dashboard mobile navigation surface**
 
-Use responsive order utilities so recent activity precedes subscriptions and attention below `sm`, then reset every section to the desktop source order at `sm`. Hide quick actions below `sm`.
+Apply the mockup's dark bottom-navigation surface only at `/dashboard`. Preserve the app's navigation items, routes, active state, 44px targets, and safe-area behavior.
 
 - [ ] **Step 4: Verify desktop and mobile**
 
-Run build, dashboard-only Biome, and `just check-rm`. Use Insider at 375px to confirm two 159px top metrics, a full-width won/lost card, then activity, subscriptions, and attention. Restore 1920px and confirm the four-column desktop metric row and two-column bento remain unchanged.
+Run build, focused Biome for the dashboard and app shell, and `just check-rm`. Use Insider at 375px to confirm the compact mobile geometry, section order, absence of desktop card chrome, dark bottom navigation, and no overflow. Restore 1920px and confirm the four-column desktop metric row and two-column bento remain unchanged.

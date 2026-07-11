@@ -267,19 +267,25 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
   );
 }
 
-function BottomNavItem({item}: {item: NavItem}) {
+function BottomNavItem({dark = false, item}: {dark?: boolean; item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
         `relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-1 rounded-lg px-2 text-[10px] ${
-          isActive ? 'bg-accent/10 font-semibold text-accent' : 'font-medium text-muted'
+          dark
+            ? isActive
+              ? 'bg-accent-foreground/10 font-semibold text-link'
+              : 'font-medium text-accent-foreground/55'
+            : isActive
+              ? 'bg-accent/10 font-semibold text-accent'
+              : 'font-medium text-muted'
         }`
       }
       to={item.path}
     >
       {({isActive}) => (
         <>
-          {isActive && <span className="absolute top-0.5 h-1 w-5 rounded-full bg-accent" />}
+          {isActive && <span className={`absolute top-0.5 h-1 w-5 rounded-full ${dark ? 'bg-link' : 'bg-accent'}`} />}
           <span className={isActive ? 'mt-1' : ''}>{item.icon}</span>
           <span>{item.label}</span>
         </>
@@ -294,6 +300,7 @@ const BOTTOM_NAV_PATHS = new Set(BOTTOM_NAV.map((item) => item.path));
 export default function AppShell() {
   const location = useLocation();
   const showBottomNav = BOTTOM_NAV_PATHS.has(location.pathname);
+  const darkBottomNav = location.pathname === ROUTES.DASHBOARD;
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
   const dispatch = useAppDispatch();
   useChannelEvent('inbox', 'conversation_updated', () => {
@@ -396,9 +403,14 @@ export default function AppShell() {
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showBottomNav ? (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex min-h-16 items-center justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)] lg:hidden">
+        <nav
+          className={`fixed inset-x-0 bottom-0 z-40 flex min-h-16 items-center justify-around border-t pb-[env(safe-area-inset-bottom)] lg:hidden ${
+            darkBottomNav ? 'border-accent bg-accent' : 'border-border bg-background'
+          }`}
+        >
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
+              dark={darkBottomNav}
               item={item}
               key={item.path}
             />

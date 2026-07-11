@@ -69,9 +69,7 @@ export function formatRelativeTime(value: null | string | undefined): string {
 }
 
 export function formatDashboardDate(date = new Date()): string {
-  return new Intl.DateTimeFormat('en', {
-    day: 'numeric',
-    month: 'long',
-    weekday: 'long',
-  }).format(date);
+  const weekday = new Intl.DateTimeFormat('en', {weekday: 'long'}).format(date);
+  const calendarDate = new Intl.DateTimeFormat('en', {day: 'numeric', month: 'long'}).format(date);
+  return `${weekday} · ${calendarDate}`;
 }

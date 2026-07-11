@@ -59,7 +59,7 @@ export function RecentActivityCell({conversations, isError}: {conversations: Con
   const [featured, ...rest] = sorted.slice(0, 4);
 
   return (
-    <section className="order-1 col-span-2 flex min-h-80 flex-col rounded-3xl border-[1.5px] border-separator bg-surface p-5 sm:order-none sm:col-span-2 sm:row-span-2">
+    <section className="col-span-2 flex min-h-80 flex-col rounded-3xl border-[1.5px] border-separator bg-surface p-5 sm:col-span-2 sm:row-span-2">
       <div className="mb-4 flex items-center gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-link/15 text-link">
           <MessageCircle size={20} />

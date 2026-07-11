@@ -46,9 +46,11 @@ The quick-action row keeps the supported destinations: invite client, training p
 
 At desktop width, content stays left-aligned inside the application's maximum dashboard width. Metrics form a four-column row, the two main cards form a two-column bento, and subscriptions and quick actions span the dashboard width.
 
-At 375px, the dashboard uses the mockup's distinct mobile composition rather than a direct collapse of the desktop bento. The header contains the date and greeting without the desktop invite action. Active clients and new prospects form a two-column row, followed by a full-width won/lost card. Recent conversations, subscriptions ending, and client attention follow in that order. The desktop pending-invites metric and quick-action row are hidden on mobile.
+At 375px, the dashboard uses a dedicated rendering of the mockup's `MOBILE FRAME B`, not responsive variants of the desktop bento cards. The header contains a date eyebrow and a two-line greeting without the business summary or desktop invite action. Active clients and new prospects use compact two-column stat cards, followed by a compact full-width won/lost split card.
 
-The owner setup guide remains above the mobile metrics. This approved deviation preserves the persisted setup workflow, which has no equivalent surface in the mobile mockup. The app shell's mobile navigation remains fixed and content retains enough bottom padding to avoid overlap.
+Recent conversations, subscriptions ending, and client attention use the mobile reference's section-heading and row treatment without desktop card headers, icon blocks, minimum heights, or bento backgrounds. The dashboard route uses the reference's dark mobile bottom-navigation surface while preserving the application's real navigation destinations and labels. The desktop pending-invites metric and quick-action row are absent from the mobile renderer.
+
+The owner setup guide remains above the mobile metrics. This approved deviation preserves the persisted setup workflow, which has no equivalent surface in the mobile mockup. Global search and upcoming appointments are omitted because the application has no supporting contract. The app shell's mobile navigation remains fixed and content retains enough bottom padding to avoid overlap.
 
 ## Data and state handling
 

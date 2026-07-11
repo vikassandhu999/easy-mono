@@ -17,6 +17,7 @@ import {SubscriptionsEndingCell} from '@/dashboard/components/subscriptions-endi
 import {WonLostStatCell} from '@/dashboard/components/won-lost-stat-cell';
 import {DashboardSetupCell} from '@/dashboard/dashboard-setup-cell';
 import {compareDateStrings, formatDashboardDate, isInCurrentCalendarMonth} from '@/dashboard/lib/date-format';
+import {MobileDashboard} from '@/dashboard/mobile-dashboard';
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -76,13 +77,26 @@ export default function Dashboard() {
 
   return (
     <Page className="bg-surface">
-      <Page.Header className="flex-col items-stretch gap-4 pb-0 md:flex-row md:items-end">
+      <Page.Header className="flex-col items-stretch gap-4 px-[1.125rem] pt-2 pb-0 sm:px-6 sm:pt-6 md:flex-row md:items-end lg:px-8 lg:pt-8">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-link">{formatDashboardDate()}</p>
-          <h1 className="mt-2 font-grotesk text-[1.75rem] font-bold leading-none tracking-tight md:text-[2.375rem]">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-link sm:text-xs">
+            {formatDashboardDate()}
+          </p>
+          <h1 className="mt-1.5 font-grotesk text-[1.625rem] font-bold leading-[1.05] tracking-tight sm:hidden">
+            {name ? (
+              <>
+                {greeting()},
+                <br />
+                {name}.
+              </>
+            ) : (
+              `${greeting()}.`
+            )}
+          </h1>
+          <h1 className="mt-2 hidden font-grotesk text-[2.375rem] font-bold leading-none tracking-tight sm:block">
             {name ? `${greeting()}, ${name}.` : `${greeting()}.`}
           </h1>
-          {dashboardSummary ? <p className="mt-3 text-sm text-muted">{dashboardSummary}</p> : null}
+          {dashboardSummary ? <p className="mt-3 hidden text-sm text-muted sm:block">{dashboardSummary}</p> : null}
         </div>
         <Button
           className="hidden min-h-11 md:flex md:w-auto"
@@ -94,15 +108,28 @@ export default function Dashboard() {
         </Button>
       </Page.Header>
 
-      <Page.Content className="px-4 pb-8 md:px-6 lg:px-8">
-        <div className="flex max-w-5xl flex-col gap-6 pt-6">
-          {/* 4 columns + 14px gap mirrors the mockup's bento; mobile keeps the compact two-up metrics. */}
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
-            {profile?.is_owner ? (
-              <DashboardSetupCell hiddenReason={profile.business.dashboard_setup_hidden_reason} />
-            ) : null}
+      <Page.Content className="px-[1.125rem] pb-8 sm:px-6 lg:px-8">
+        <div className="flex max-w-5xl flex-col gap-4 pt-4 sm:gap-6 sm:pt-6">
+          {profile?.is_owner ? (
+            <DashboardSetupCell hiddenReason={profile.business.dashboard_setup_hidden_reason} />
+          ) : null}
+
+          <MobileDashboard
+            activeClients={clientsError ? null : (clientSummary?.active ?? 0)}
+            attentionClients={clientsNeedingAttention}
+            clientsError={clientsError}
+            conversations={conversationsData?.data ?? []}
+            conversationsError={conversationsError}
+            lostProspects={prospectSummary?.lost}
+            newProspects={prospectsError ? null : newProspectCount}
+            prospectsError={prospectsError}
+            subscriptionsEnding={subscriptionsEndingThisMonth}
+            wonProspects={prospectSummary?.won}
+          />
+
+          {/* Desktop bento remains independent from the dedicated Mobile Frame B renderer. */}
+          <div className="hidden grid-cols-4 gap-3.5 sm:grid">
             <StatCell
-              className="hidden sm:flex"
               errorLabel={clientsError ? "Couldn't load clients" : undefined}
               icon={Users}
               label="Active clients"
@@ -127,7 +154,6 @@ export default function Dashboard() {
               value={prospectsError ? null : newProspectCount}
             />
             <WonLostStatCell
-              className="col-span-2 sm:col-span-1"
               isError={prospectsError}
               lost={prospectSummary?.lost}
               onPress={() => navigate(ROUTES.PROSPECTS)}

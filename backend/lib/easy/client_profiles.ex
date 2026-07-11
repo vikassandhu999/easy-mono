@@ -10,6 +10,8 @@ defmodule Easy.ClientProfiles do
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.DefaultIntake
+  alias Easy.Fitness.WeightEntry
+  alias Easy.Orgs.Business
   alias Easy.Repo
 
   import Ecto.Query
@@ -479,6 +481,7 @@ defmodule Easy.ClientProfiles do
     }
 
     submission = insert_submission!(ctx.business_id, client.id, assignment.id, attrs)
+    append_weight_entries!(ctx.business_id, client, template.sections, answers, submission)
     apply_profile_mappings!(ctx, client.id, template.sections, answers, submission)
     complete_assignment!(ctx, client.id, assignment, submission, submitted_at)
   end
@@ -496,6 +499,47 @@ defmodule Easy.ClientProfiles do
       {:ok, submission} -> submission
       {:error, reason} -> Repo.rollback(reason)
     end
+  end
+
+  defp append_weight_entries!(business_id, client, sections, answers, submission) do
+    weight_answers =
+      for %{"questions" => questions} <- List.wrap(sections),
+          %{"id" => id, "type" => "weight"} <- List.wrap(questions),
+          value = Map.get(answers, id),
+          not is_nil(value),
+          do: value
+
+    case weight_answers do
+      [] ->
+        :ok
+
+      values ->
+        unit = weight_unit(business_id, client)
+        date = DateTime.to_date(submission.submitted_at)
+
+        Enum.each(values, &insert_submission_weight!(business_id, client.id, submission.id, date, unit, &1))
+    end
+  end
+
+  defp insert_submission_weight!(business_id, client_id, submission_id, date, unit, value) do
+    attrs = %{date: date, value: value, unit: unit, form_submission_id: submission_id}
+
+    case business_id |> WeightEntry.insert_changeset(client_id, attrs) |> Repo.insert() do
+      {:ok, _entry} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp weight_unit(business_id, client) do
+    latest_unit =
+      WeightEntry
+      |> WeightEntry.for_client(business_id, client.id)
+      |> WeightEntry.newest()
+      |> select([entry], entry.unit)
+      |> limit(1)
+      |> Repo.one()
+
+    latest_unit || client.goal_weight_unit || Repo.get!(Business, business_id).default_weight_unit
   end
 
   defp complete_assignment!(ctx, client_id, assignment, submission, submitted_at) do

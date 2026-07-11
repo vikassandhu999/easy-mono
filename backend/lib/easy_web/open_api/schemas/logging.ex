@@ -170,9 +170,10 @@ defmodule EasyWeb.OpenApi.Schemas.WeightEntry do
       value: %Schema{type: :number},
       unit: %Schema{type: :string, enum: ["kg", "lbs"]},
       note: %Schema{type: :string, nullable: true},
+      form_submission_id: %Schema{type: :string, format: :uuid, nullable: true},
       inserted_at: %Schema{type: :string, format: :"date-time"}
     },
-    required: [:id, :date, :value, :unit, :note, :inserted_at]
+    required: [:id, :date, :value, :unit, :note, :form_submission_id, :inserted_at]
   })
 end
 

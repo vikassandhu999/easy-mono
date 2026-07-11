@@ -1,6 +1,7 @@
 defmodule Easy.Fitness.WeightEntry do
   use Ecto.Schema
 
+  alias Easy.ClientProfiles.FormSubmission
   alias Easy.Clients.Client
   alias Easy.Orgs
 
@@ -13,7 +14,7 @@ defmodule Easy.Fitness.WeightEntry do
   @foreign_key_type :binary_id
 
   @units [:kg, :lbs]
-  @cast_fields [:date, :value, :unit, :note]
+  @cast_fields [:date, :value, :unit, :note, :form_submission_id]
 
   schema "weight_entries" do
     field :date, :date
@@ -23,6 +24,7 @@ defmodule Easy.Fitness.WeightEntry do
 
     belongs_to :client, Client
     belongs_to :business, Orgs.Business
+    belongs_to :form_submission, FormSubmission
 
     timestamps(type: :utc_datetime)
   end
@@ -45,6 +47,9 @@ defmodule Easy.Fitness.WeightEntry do
     )
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:form_submission_id,
+      name: :weight_entries_submission_client_business_id_fkey
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -72,6 +77,14 @@ defmodule Easy.Fitness.WeightEntry do
     from(e in query, where: e.date == ^date)
   end
 
+  @spec self_logged(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def self_logged(query \\ __MODULE__), do: from(e in query, where: is_nil(e.form_submission_id))
+
+  @spec for_submission(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_submission(query \\ __MODULE__, submission_id) do
+    from(e in query, where: e.form_submission_id == ^submission_id)
+  end
+
   @spec since(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
   def since(query \\ __MODULE__, date) do
     from(e in query, where: e.date >= ^date)
@@ -84,7 +97,7 @@ defmodule Easy.Fitness.WeightEntry do
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(e in query, order_by: [desc: e.date, desc: e.id])
+    from(e in query, order_by: [desc: e.date, desc: e.inserted_at, desc: e.id])
   end
 
   defp validate_not_future(field, %Date{} = date) do

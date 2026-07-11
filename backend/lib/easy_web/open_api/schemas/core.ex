@@ -30,7 +30,8 @@ defmodule EasyWeb.OpenApi.Schemas.BusinessRequest do
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
         handle: %Schema{type: :string, maxLength: 255},
-        about: %Schema{type: :string, nullable: true}
+        about: %Schema{type: :string, nullable: true},
+        default_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"]}
       },
       required: [:name, :handle],
       example: %{
@@ -56,7 +57,8 @@ defmodule EasyWeb.OpenApi.Schemas.BusinessUpdateRequest do
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
         handle: %Schema{type: :string, maxLength: 255},
-        about: %Schema{type: :string, nullable: true}
+        about: %Schema{type: :string, nullable: true},
+        default_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"]}
       },
       example: %{
         "name" => "Strong Coaching",
@@ -110,6 +112,7 @@ defmodule EasyWeb.OpenApi.Schemas.Business do
           name: %Schema{type: :string},
           handle: %Schema{type: :string},
           about: %Schema{type: :string, nullable: true},
+          default_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"]},
           dashboard_setup_hidden_at: %Schema{
             type: :string,
             format: :"date-time",
@@ -128,6 +131,7 @@ defmodule EasyWeb.OpenApi.Schemas.Business do
       :name,
       :handle,
       :about,
+      :default_weight_unit,
       :dashboard_setup_hidden_at,
       :dashboard_setup_hidden_reason,
       :inserted_at,

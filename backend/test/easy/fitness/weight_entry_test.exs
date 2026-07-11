@@ -224,6 +224,32 @@ defmodule Easy.Fitness.WeightEntryTest do
       assert updated.note == "updated"
     end
 
+    test "self logging ignores a submission-backed entry on the same date" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business)
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+      submission = insert(:form_submission, business: client.business, client: client, form_assignment: assignment)
+
+      derived =
+        insert_weight_entry(
+          client: client,
+          date: ~D[2026-04-22],
+          value: Decimal.new("92.10"),
+          form_submission_id: submission.id
+        )
+
+      assert {:ok, self_log} =
+               WeightEntries.upsert_client_weight_entry(client_ctx(client), %{
+                 date: "2026-04-22",
+                 value: "91.40",
+                 unit: "kg"
+               })
+
+      refute self_log.id == derived.id
+      assert is_nil(self_log.form_submission_id)
+      assert Repo.get!(WeightEntry, derived.id)
+    end
+
     test "returns validation error for invalid date" do
       client = insert_client()
 

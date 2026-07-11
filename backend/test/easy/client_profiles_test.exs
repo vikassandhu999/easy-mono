@@ -10,6 +10,7 @@ defmodule Easy.ClientProfilesTest do
   alias Easy.ClientProfiles.ProfileFieldDefinition
   alias Easy.ClientProfiles.ProfileFieldValue
   alias Easy.Ctx
+  alias Easy.Fitness.WeightEntry
   alias Easy.Repo
 
   describe "client profile schemas" do
@@ -453,6 +454,90 @@ defmodule Easy.ClientProfilesTest do
       assert value.updated_by_type == :client
       assert value.updated_from_submission_id == submission.id
       assert Repo.get!(FormAssignment, assignment.id).status == :completed
+    end
+
+    test "appends provenance-bearing weight entries using the newest unit" do
+      client = insert_client()
+      today = Date.utc_today()
+
+      insert(:weight_entry,
+        business: client.business,
+        client: client,
+        date: Date.add(today, -1),
+        unit: :lbs
+      )
+
+      self_log =
+        insert(:weight_entry,
+          business: client.business,
+          client: client,
+          date: today,
+          value: Decimal.new("180.00"),
+          unit: :lbs
+        )
+
+      template =
+        insert(:form_template,
+          business: client.business,
+          sections: [
+            %{
+              "title" => "Body",
+              "questions" => [
+                %{"id" => "weight", "label" => "Weight", "type" => "weight"},
+                %{"id" => "weight-2", "label" => "Second reading", "type" => "weight"}
+              ]
+            }
+          ]
+        )
+
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+
+      assert {:ok, submission} =
+               ClientProfiles.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+                 answers: %{"weight" => 179.4, "weight-2" => 179.2}
+               })
+
+      derived =
+        WeightEntry
+        |> WeightEntry.for_submission(submission.id)
+        |> Repo.all()
+
+      assert length(derived) == 2
+      assert Enum.all?(derived, &(&1.form_submission_id == submission.id and &1.unit == :lbs and &1.date == today))
+      assert Repo.get!(WeightEntry, self_log.id)
+    end
+
+    test "falls back from client goal unit to the business default" do
+      for {goal_unit, default_unit, expected} <- [{:lbs, :kg, :lbs}, {nil, :lbs, :lbs}] do
+        business = insert(:business, default_weight_unit: default_unit)
+        creator = insert(:coach, business: business)
+
+        client =
+          insert(:client,
+            business: business,
+            creator: creator,
+            user: insert(:user),
+            goal_weight_unit: goal_unit
+          )
+
+        template =
+          insert(:form_template,
+            business: business,
+            sections: [
+              %{"title" => "Body", "questions" => [%{"id" => "weight", "label" => "Weight", "type" => "weight"}]}
+            ]
+          )
+
+        assignment = insert(:form_assignment, business: business, client: client, form_template: template)
+
+        assert {:ok, submission} =
+                 ClientProfiles.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+                   answers: %{"weight" => 81.2}
+                 })
+
+        entry = Repo.get_by!(WeightEntry, form_submission_id: submission.id)
+        assert entry.unit == expected
+      end
     end
 
     test "malformed core profile mappings roll back submission and profile writes" do

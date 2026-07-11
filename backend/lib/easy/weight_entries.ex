@@ -141,6 +141,7 @@ defmodule Easy.WeightEntries do
   defp existing_entry(business_id, client_id, date) do
     WeightEntry
     |> WeightEntry.for_client(business_id, client_id)
+    |> WeightEntry.self_logged()
     |> WeightEntry.on_date(date)
     |> Repo.one()
   end
@@ -178,6 +179,7 @@ defmodule Easy.WeightEntries do
     |> maybe_put(:value, attrs[:value])
     |> maybe_put(:unit, attrs[:unit])
     |> maybe_put(:note, attrs[:note])
+    |> maybe_put(:form_submission_id, attrs[:form_submission_id])
   end
 
   defp maybe_put(map, _key, nil), do: map

@@ -16,6 +16,7 @@ defmodule Easy.Orgs.Business do
     field :about, :string
     field :whatsapp_number, :string
     field :dashboard_setup_hidden_at, :utc_datetime
+    field :default_weight_unit, Ecto.Enum, values: [:kg, :lbs], default: :kg
 
     field :dashboard_setup_hidden_reason, Ecto.Enum, values: @dashboard_setup_hidden_reasons
 
@@ -27,7 +28,7 @@ defmodule Easy.Orgs.Business do
   @spec insert_changeset(User.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(user, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:name, :handle, :about])
+    |> cast(attrs, [:name, :handle, :about, :default_weight_unit])
     |> validate_required([:name, :handle])
     |> unique_constraint(:handle)
     |> put_assoc(:owner, user)
@@ -36,7 +37,8 @@ defmodule Easy.Orgs.Business do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(business, attrs) do
     business
-    |> cast(attrs, [:name, :about, :whatsapp_number, :dashboard_setup_hidden_reason])
+    |> cast(attrs, [:name, :about, :whatsapp_number, :dashboard_setup_hidden_reason, :default_weight_unit])
+    |> check_constraint(:default_weight_unit, name: :businesses_default_weight_unit_check)
     |> check_constraint(:dashboard_setup_hidden_reason,
       name: :businesses_dashboard_setup_hidden_reason_check
     )

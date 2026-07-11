@@ -72,4 +72,14 @@ defmodule EasyWeb.BusinessControllerTest do
       assert_schema(data, "CoachProfile", EasyWeb.ApiSpec.spec())
     end
   end
+
+  describe "PATCH /v1/businesses/me" do
+    test "updates the default weight unit", %{owner_conn: conn} do
+      conn = patch(conn, "/v1/businesses/me", %{"default_weight_unit" => "lbs"})
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["default_weight_unit"] == "lbs"
+      assert_schema(data, "Business", EasyWeb.ApiSpec.spec())
+    end
+  end
 end

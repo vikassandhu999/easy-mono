@@ -25,6 +25,7 @@ defmodule EasyWeb.Clients.WeightEntryJSON do
       value: entry.value,
       unit: entry.unit,
       note: entry.note,
+      form_submission_id: entry.form_submission_id,
       inserted_at: entry.inserted_at
     }
   end

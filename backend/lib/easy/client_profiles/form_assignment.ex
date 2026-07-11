@@ -25,6 +25,7 @@ defmodule Easy.ClientProfiles.FormAssignment do
     field :completed_at, :utc_datetime
     field :due_reminder_sent_at, :utc_datetime
     field :overdue_reminder_sent_at, :utc_datetime
+    field :latest_submission_reviewed_at, :utc_datetime, virtual: true
 
     belongs_to :business, Orgs.Business
     belongs_to :client, Client

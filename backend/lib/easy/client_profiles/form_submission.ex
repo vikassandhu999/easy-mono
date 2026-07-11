@@ -3,6 +3,8 @@ defmodule Easy.ClientProfiles.FormSubmission do
 
   alias Easy.ClientProfiles.FormAssignment
   alias Easy.Clients.Client
+  alias Easy.Ctx
+  alias Easy.Identity.User
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -21,10 +23,12 @@ defmodule Easy.ClientProfiles.FormSubmission do
     field :submitted_by_type, Ecto.Enum, values: @actors
     field :submitted_by_id, :binary_id
     field :submitted_at, :utc_datetime
+    field :reviewed_at, :utc_datetime
 
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
     belongs_to :form_assignment, FormAssignment
+    belongs_to :reviewed_by, User
 
     timestamps(type: :utc_datetime, updated_at: false)
   end
@@ -85,6 +89,53 @@ defmodule Easy.ClientProfiles.FormSubmission do
   @spec for_assignment(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_assignment(query \\ __MODULE__, business_id, assignment_id) do
     from(s in query, where: s.business_id == ^business_id and s.form_assignment_id == ^assignment_id)
+  end
+
+  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business(query \\ __MODULE__, business_id) do
+    from(s in query, where: s.business_id == ^business_id)
+  end
+
+  @spec unreviewed(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def unreviewed(query \\ __MODULE__), do: from(s in query, where: is_nil(s.reviewed_at))
+
+  @spec for_check_ins(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def for_check_ins(query \\ __MODULE__) do
+    from(s in query,
+      join: assignment in FormAssignment,
+      as: :review_assignment,
+      on:
+        assignment.id == s.form_assignment_id and assignment.business_id == s.business_id and
+          assignment.purpose == :check_in
+    )
+  end
+
+  @spec for_visible_clients(Ecto.Queryable.t(), Ctx.t()) :: Ecto.Query.t()
+  def for_visible_clients(query \\ __MODULE__, %Ctx{} = ctx) do
+    visible_clients = Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)
+
+    from(s in query,
+      join: client in ^visible_clients,
+      as: :review_client,
+      on: client.id == s.client_id and client.business_id == s.business_id
+    )
+  end
+
+  @spec include_review_context(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_review_context(query \\ __MODULE__, business_id) do
+    from([s, review_assignment: assignment, review_client: client] in query,
+      join: template in Easy.ClientProfiles.FormTemplate,
+      on: template.id == assignment.form_template_id and template.business_id == ^business_id,
+      preload: [client: client, form_assignment: {assignment, form_template: template}]
+    )
+  end
+
+  @spec review_changeset(t(), String.t(), DateTime.t()) :: Ecto.Changeset.t()
+  def review_changeset(submission, reviewed_by_id, reviewed_at) do
+    submission
+    |> change(reviewed_by_id: reviewed_by_id, reviewed_at: reviewed_at)
+    |> validate_required([:reviewed_by_id, :reviewed_at])
+    |> foreign_key_constraint(:reviewed_by_id)
   end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()

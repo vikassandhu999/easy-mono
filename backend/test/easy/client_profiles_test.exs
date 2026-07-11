@@ -913,6 +913,173 @@ defmodule Easy.ClientProfilesTest do
     end
   end
 
+  describe "check-in review loop" do
+    test "lists only unreviewed check-in submissions newest first with review context" do
+      business = insert(:business)
+      coach = insert(:coach, business: business, user: business.owner)
+      client = insert(:client, business: business, creator: coach, assigned_coach: coach)
+      check_in_template = insert(:form_template, business: business, purpose: :check_in)
+      intake_template = insert(:form_template, business: business, purpose: :intake)
+
+      older_assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: check_in_template,
+          purpose: :check_in,
+          status: :completed
+        )
+
+      newer_assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: check_in_template,
+          purpose: :check_in,
+          status: :completed
+        )
+
+      intake_assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: intake_template,
+          purpose: :intake,
+          status: :completed
+        )
+
+      older =
+        insert(:form_submission,
+          business: business,
+          client: client,
+          form_assignment: older_assignment,
+          submitted_at: ~U[2026-07-10 09:00:00Z]
+        )
+
+      newer =
+        insert(:form_submission,
+          business: business,
+          client: client,
+          form_assignment: newer_assignment,
+          submitted_at: ~U[2026-07-11 09:00:00Z]
+        )
+
+      insert(:form_submission,
+        business: business,
+        client: client,
+        form_assignment: intake_assignment,
+        submitted_at: ~U[2026-07-11 10:00:00Z]
+      )
+
+      reviewed_assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: check_in_template,
+          purpose: :check_in,
+          status: :completed
+        )
+
+      insert(:form_submission,
+        business: business,
+        client: client,
+        form_assignment: reviewed_assignment,
+        reviewed_at: ~U[2026-07-11 11:00:00Z],
+        reviewed_by_id: business.owner_id
+      )
+
+      assert {:ok, [listed_newer, listed_older]} =
+               ClientProfiles.list_unreviewed_check_in_submissions(owner_ctx(business))
+
+      assert [listed_newer.id, listed_older.id] == [newer.id, older.id]
+      assert listed_newer.client.id == client.id
+      assert listed_newer.form_assignment.id == newer_assignment.id
+      assert listed_newer.form_assignment.form_template.id == check_in_template.id
+    end
+
+    test "queue is limited to clients visible to the trainer" do
+      business = insert(:business)
+      trainer_a = insert(:coach, business: business)
+      trainer_b = insert(:coach, business: business)
+      template = insert(:form_template, business: business, purpose: :check_in)
+
+      visible_client = insert(:client, business: business, creator: trainer_a, assigned_coach: trainer_a)
+      hidden_client = insert(:client, business: business, creator: trainer_b, assigned_coach: trainer_b)
+
+      visible_assignment =
+        insert(:form_assignment,
+          business: business,
+          client: visible_client,
+          form_template: template,
+          purpose: :check_in,
+          status: :completed
+        )
+
+      hidden_assignment =
+        insert(:form_assignment,
+          business: business,
+          client: hidden_client,
+          form_template: template,
+          purpose: :check_in,
+          status: :completed
+        )
+
+      visible =
+        insert(:form_submission,
+          business: business,
+          client: visible_client,
+          form_assignment: visible_assignment
+        )
+
+      insert(:form_submission, business: business, client: hidden_client, form_assignment: hidden_assignment)
+
+      assert {:ok, [submission]} =
+               ClientProfiles.list_unreviewed_check_in_submissions(trainer_ctx(trainer_a))
+
+      assert submission.id == visible.id
+    end
+
+    test "review is idempotent and exposes the review on client assignments" do
+      business = insert(:business)
+      coach = insert(:coach, business: business, user: business.owner)
+      client = insert(:client, business: business, creator: coach, assigned_coach: coach)
+      template = insert(:form_template, business: business, purpose: :check_in)
+
+      assignment =
+        insert(:form_assignment,
+          business: business,
+          client: client,
+          form_template: template,
+          purpose: :check_in,
+          status: :completed
+        )
+
+      submission = insert(:form_submission, business: business, client: client, form_assignment: assignment)
+      ctx = owner_ctx(business)
+
+      assert {:ok, reviewed} = ClientProfiles.review_form_submission(ctx, submission.id)
+      assert reviewed.reviewed_at
+      assert reviewed.reviewed_by_id == business.owner_id
+
+      assert {:ok, reviewed_again} = ClientProfiles.review_form_submission(ctx, submission.id)
+      assert reviewed_again.reviewed_at == reviewed.reviewed_at
+      assert reviewed_again.reviewed_by_id == reviewed.reviewed_by_id
+
+      assert {:ok, [listed_assignment]} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
+      assert listed_assignment.latest_submission_reviewed_at == reviewed.reviewed_at
+    end
+
+    test "review returns not found across tenant boundaries" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business)
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+      submission = insert(:form_submission, business: client.business, client: client, form_assignment: assignment)
+
+      assert {:error, :not_found} =
+               ClientProfiles.review_form_submission(owner_ctx(insert(:business)), submission.id)
+    end
+  end
+
   describe "validate_answers/2" do
     @sections [
       %{

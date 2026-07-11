@@ -257,8 +257,10 @@ defmodule Easy.ClientProfiles do
         FormAssignment
         |> FormAssignment.for_client(ctx.business_id, client_id)
         |> include_form_template(ctx.business_id)
+        |> include_submission_reviews(ctx.business_id)
         |> order_by([a, _t], asc: a.inserted_at)
         |> Repo.all()
+        |> put_latest_submission_reviews()
 
       {:ok, assignments}
     end
@@ -272,8 +274,10 @@ defmodule Easy.ClientProfiles do
         FormAssignment
         |> FormAssignment.for_client(ctx.business_id, client.id)
         |> include_form_template(ctx.business_id)
+        |> include_submission_reviews(ctx.business_id)
         |> order_by([a, _t], asc: a.inserted_at)
         |> Repo.all()
+        |> put_latest_submission_reviews()
 
       {:ok, assignments}
     end
@@ -392,6 +396,30 @@ defmodule Easy.ClientProfiles do
     end
   end
 
+  @spec list_unreviewed_check_in_submissions(Ctx.t()) :: {:ok, [FormSubmission.t()]}
+  def list_unreviewed_check_in_submissions(%Ctx{} = ctx) do
+    submissions =
+      FormSubmission
+      |> FormSubmission.for_business(ctx.business_id)
+      |> FormSubmission.unreviewed()
+      |> FormSubmission.for_check_ins()
+      |> FormSubmission.for_visible_clients(ctx)
+      |> FormSubmission.include_review_context(ctx.business_id)
+      |> FormSubmission.newest()
+      |> Repo.all()
+
+    {:ok, submissions}
+  end
+
+  @spec review_form_submission(Ctx.t(), String.t()) ::
+          {:ok, FormSubmission.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def review_form_submission(%Ctx{} = ctx, submission_id) do
+    with {:ok, submission} <- get_form_submission(ctx.business_id, submission_id),
+         :ok <- Clients.authorize_client_id(ctx, submission.client_id) do
+      review_form_submission_once(submission, ctx.user_id)
+    end
+  end
+
   @spec get_form_assignment_for_client(Ctx.t(), String.t(), String.t()) ::
           {:ok, FormAssignment.t()} | {:error, :not_found}
   def get_form_assignment_for_client(%Ctx{} = ctx, client_id, assignment_id) do
@@ -411,7 +439,9 @@ defmodule Easy.ClientProfiles do
       FormAssignment
       |> FormAssignment.for_client(ctx.business_id, client.id)
       |> include_form_template(ctx.business_id)
+      |> include_submission_reviews(ctx.business_id)
       |> Repo.get(assignment_id)
+      |> put_latest_submission_review()
       |> ok_or_not_found()
     end
   end
@@ -884,6 +914,21 @@ defmodule Easy.ClientProfiles do
     |> ok_or_not_found()
   end
 
+  defp get_form_submission(business_id, submission_id) do
+    FormSubmission
+    |> FormSubmission.for_business(business_id)
+    |> Repo.get(submission_id)
+    |> ok_or_not_found()
+  end
+
+  defp review_form_submission_once(%FormSubmission{reviewed_at: nil} = submission, user_id) do
+    submission
+    |> FormSubmission.review_changeset(user_id, DateTime.utc_now(:second))
+    |> Repo.update()
+  end
+
+  defp review_form_submission_once(%FormSubmission{} = submission, _user_id), do: {:ok, submission}
+
   defp form_template_has_assignments?(business_id, template_id) do
     FormAssignment
     |> FormAssignment.for_business(business_id)
@@ -896,6 +941,29 @@ defmodule Easy.ClientProfiles do
     |> join(:inner, [a], t in FormTemplate, on: t.id == a.form_template_id and t.business_id == ^business_id)
     |> preload([_a, t], form_template: t)
   end
+
+  defp include_submission_reviews(query, business_id) do
+    submissions =
+      FormSubmission
+      |> FormSubmission.for_business(business_id)
+      |> FormSubmission.newest()
+
+    preload(query, form_submissions: ^submissions)
+  end
+
+  defp put_latest_submission_reviews(assignments), do: Enum.map(assignments, &put_latest_submission_review/1)
+
+  defp put_latest_submission_review(nil), do: nil
+
+  defp put_latest_submission_review(%FormAssignment{form_submissions: submissions} = assignment)
+       when is_list(submissions) do
+    %{assignment | latest_submission_reviewed_at: submissions |> List.first() |> submission_reviewed_at()}
+  end
+
+  defp put_latest_submission_review(%FormAssignment{} = assignment), do: assignment
+
+  defp submission_reviewed_at(nil), do: nil
+  defp submission_reviewed_at(submission), do: submission.reviewed_at
 
   defp safe_actor_atom(type) when is_atom(type), do: type
   defp safe_actor_atom("coach"), do: :coach

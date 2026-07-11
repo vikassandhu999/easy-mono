@@ -13,6 +13,7 @@ import {
   useListFormSubmissionsQuery,
 } from '@/api/checkins';
 import CheckinAssignControl from '@/clients/components/checkin-assign-control';
+import CheckinAssignmentActions from '@/clients/components/checkin-assignment-actions';
 
 type SnapshotQuestion = {id?: string; label?: string};
 type SnapshotSection = {questions?: SnapshotQuestion[]; title?: string};
@@ -35,11 +36,7 @@ function formatAnswer(value: unknown): string {
 
 function selectNextDue(assignments: ClientProfileFormAssignment[]): ClientProfileFormAssignment | null {
   const upcoming = assignments.filter((assignment) => !['completed', 'dismissed'].includes(assignment.status));
-  return (
-    upcoming.sort((a, b) => (a.due_date ?? '9999-12-31').localeCompare(b.due_date ?? '9999-12-31'))[0] ??
-    assignments.sort((a, b) => (b.due_date ?? b.inserted_at).localeCompare(a.due_date ?? a.inserted_at))[0] ??
-    null
-  );
+  return upcoming.sort((a, b) => (a.due_date ?? '9999-12-31').localeCompare(b.due_date ?? '9999-12-31'))[0] ?? null;
 }
 
 function selectLatestCompleted(assignments: ClientProfileFormAssignment[]): ClientProfileFormAssignment | null {
@@ -194,26 +191,31 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
         </Typography>
       ) : (
         <>
-          <div className="mb-5 flex items-center gap-3 rounded-3xl border border-accent/30 bg-accent-soft p-4">
-            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
-              <CalendarCheck size={19} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <Typography
-                type="body-sm"
-                weight="bold"
-              >
-                Next check-in due
-              </Typography>
-              <Typography
-                className="mt-0.5 text-accent"
-                type="body-xs"
-                weight="semibold"
-              >
-                {nextDue?.due_date ? formatIsoDateOnly(nextDue.due_date) : 'No due date set'}
-              </Typography>
+          {nextDue ? (
+            <div className="mb-5 rounded-3xl border border-accent/30 bg-accent-soft p-4">
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
+                  <CalendarCheck size={19} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Typography
+                    type="body-sm"
+                    weight="bold"
+                  >
+                    Next check-in due
+                  </Typography>
+                  <Typography
+                    className="mt-0.5 text-accent"
+                    type="body-xs"
+                    weight="semibold"
+                  >
+                    {nextDue.due_date ? formatIsoDateOnly(nextDue.due_date) : 'No due date set'}
+                  </Typography>
+                </div>
+              </div>
+              <CheckinAssignmentActions assignment={nextDue} />
             </div>
-          </div>
+          ) : null}
 
           <Typography
             className="mb-3 uppercase tracking-wider"

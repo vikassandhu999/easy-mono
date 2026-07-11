@@ -283,16 +283,7 @@ defmodule Easy.ClientProfiles do
   def update_form_assignment(%Ctx{} = ctx, assignment_id, attrs) do
     with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id),
          :ok <- Clients.authorize_client_id(ctx, assignment.client_id) do
-      Repo.transaction(fn ->
-        case assignment |> FormAssignment.update_changeset(attrs) |> Repo.update() do
-          {:ok, updated} ->
-            sync_intake_status!(ctx, updated)
-            updated
-
-          {:error, changeset} ->
-            Repo.rollback(changeset)
-        end
-      end)
+      Repo.transaction(fn -> update_form_assignment_transaction(ctx, assignment, attrs) end)
     end
   end
 
@@ -439,6 +430,17 @@ defmodule Easy.ClientProfiles do
   end
 
   defp sync_intake_status!(_ctx, _assignment), do: :ok
+
+  defp update_form_assignment_transaction(ctx, assignment, attrs) do
+    case assignment |> FormAssignment.update_changeset(attrs) |> Repo.update() do
+      {:ok, updated} ->
+        sync_intake_status!(ctx, updated)
+        updated
+
+      {:error, changeset} ->
+        Repo.rollback(changeset)
+    end
+  end
 
   # Defensive against malformed stored templates: a non-list `questions` or a non-map question
   # is skipped rather than crashing the submission transaction (which would surface as a 500).

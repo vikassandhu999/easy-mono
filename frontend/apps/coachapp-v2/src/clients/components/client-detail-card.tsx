@@ -118,7 +118,7 @@ export default function ClientDetailCard({client}: {client: Client}) {
           to={ROUTES.CLIENT_PROFILE.replace(':id', client.id)}
         >
           <Pencil size={15} />
-          Edit
+          Edit profile
         </Link>
       </div>
 

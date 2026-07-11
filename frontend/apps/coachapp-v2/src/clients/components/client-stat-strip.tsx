@@ -22,8 +22,8 @@ import {computeDailyNutritionSummaries, getDayPercent} from '@/domain/client-nut
 
 function Stat({label, value}: {label: string; value: string}) {
   return (
-    <div className="rounded-3xl border-[1.5px] border-separator bg-surface px-3 py-4 text-center">
-      <div className="font-grotesk text-2xl font-bold">{value}</div>
+    <div className="rounded-[14px] border border-separator bg-surface px-3 py-3 text-center">
+      <div className="font-grotesk text-xl font-bold">{value}</div>
       <Typography
         className="mt-1 text-[11px] font-semibold"
         color="muted"
@@ -58,7 +58,7 @@ export default function ClientStatStrip({clientId}: {clientId: string}) {
   }, [logsData, nutritionData]);
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-2 md:gap-3">
       <Stat
         label="Adherence"
         value={adherence == null ? '—' : `${adherence}%`}

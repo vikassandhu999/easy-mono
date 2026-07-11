@@ -109,7 +109,11 @@ export default function ConversationView({
 
   return (
     <div className={`flex flex-col ${embedded ? 'h-full' : 'h-dvh'}`}>
-      {embedded ? null : (
+      {embedded ? (
+        <header className="hidden min-h-[49px] items-center border-b border-separator bg-surface px-5 text-[13px] font-bold lg:flex">
+          Conversation
+        </header>
+      ) : (
         <header className="flex min-h-14 items-center gap-3 border-b border-border px-4">
           <Link
             aria-label="Back"

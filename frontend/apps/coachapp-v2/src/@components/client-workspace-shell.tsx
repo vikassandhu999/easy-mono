@@ -1,6 +1,6 @@
-import {getInitials} from '@easy/utils';
-import {Avatar, Skeleton, Typography} from '@heroui/react';
-import {CircleUserRound, ClipboardCheck, Dumbbell, LineChart, MessageCircle, Utensils} from 'lucide-react';
+import {formatIsoDateShort, getInitials} from '@easy/utils';
+import {Avatar, Skeleton} from '@heroui/react';
+import {ChevronLeft, CircleUserRound, ClipboardCheck, Dumbbell, LineChart, MessageCircle, Utensils} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 
@@ -8,8 +8,8 @@ import {BackButton} from '@/@components/back-button';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {Client} from '@/api/clients';
-import {RowChips} from '@/clients/clients-list/client-list-item';
 import {getClientName} from '@/clients/lib/client';
+import {formatStatusLabel} from '@/clients/lib/client-detail-metrics';
 import {
   CLIENT_WORKSPACE_TABS,
   type ClientWorkspaceTab,
@@ -24,6 +24,16 @@ const TAB_ICON: Record<ClientWorkspaceTab, ReactNode> = {
   'check-in': <ClipboardCheck size={18} />,
   detail: <CircleUserRound size={18} />,
 };
+
+function clientStatus(client: Client): string {
+  if (client.status === 'active') {
+    return `Active · since ${formatIsoDateShort(client.inserted_at)}`;
+  }
+  if (client.status === 'pending') {
+    return 'Invitation pending';
+  }
+  return client.inactive_reason ? formatStatusLabel(client.inactive_reason) : 'Inactive';
+}
 
 function WorkspaceLink({
   active,
@@ -61,29 +71,33 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
   const detailPath = ROUTES.CLIENT_DETAIL.replace(':id', client.id);
   const inChat = location.pathname === chatPath;
   const handleBack = () => (inChat ? navigate(detailPath, {replace: true}) : goBack());
+  const status = clientStatus(client);
 
   return (
     <div className="flex h-full min-h-0 w-full bg-surface">
       <aside className="hidden w-[274px] shrink-0 flex-col border-r border-separator bg-surface lg:flex">
-        <div className="border-b border-separator p-5">
+        <div className="border-b border-separator px-4 pt-4 pb-3.5">
+          <Link
+            className="mb-3 inline-flex min-h-8 items-center gap-1 text-xs font-bold text-link transition-opacity hover:opacity-70"
+            to={ROUTES.CLIENTS}
+          >
+            <ChevronLeft size={14} />
+            All clients
+          </Link>
           <div className="flex items-center gap-3">
             <Avatar
-              className="size-11 shrink-0"
+              className="size-[52px] shrink-0 rounded-[15px]!"
               color="accent"
             >
-              <Avatar.Fallback className="text-sm font-bold">{initials}</Avatar.Fallback>
+              <Avatar.Fallback className="rounded-[15px]! text-[17px] font-bold">{initials}</Avatar.Fallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <Typography
-                truncate
-                type="body-sm"
-                weight="bold"
+              <p className="truncate font-grotesk text-base font-bold text-foreground">{name}</p>
+              <p
+                className={`mt-1 truncate text-[11px] font-semibold ${client.status === 'active' ? 'text-success' : 'text-muted'}`}
               >
-                {name}
-              </Typography>
-              <div className="mt-1">
-                <RowChips client={client} />
-              </div>
+                {status}
+              </p>
             </div>
           </div>
         </div>
@@ -97,14 +111,24 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
             Chat
           </WorkspaceLink>
           {CLIENT_WORKSPACE_TABS.map((tab) => (
-            <WorkspaceLink
-              active={!inChat && activeTab === tab.id}
-              key={tab.id}
-              to={clientWorkspaceTabPath(client.id, tab.id)}
-            >
-              {TAB_ICON[tab.id]}
-              {tab.label}
-            </WorkspaceLink>
+            <div key={tab.id}>
+              {tab.id === 'check-in' ? (
+                <>
+                  <div className="mx-2 my-2 h-px bg-surface-secondary" />
+                  <p className="px-3 pb-1.5 text-[10.5px] font-bold tracking-[0.06em] text-field-placeholder uppercase">
+                    Check-ins
+                  </p>
+                </>
+              ) : null}
+              {tab.id === 'detail' ? <div className="mx-2 my-2 h-px bg-surface-secondary" /> : null}
+              <WorkspaceLink
+                active={!inChat && activeTab === tab.id}
+                to={clientWorkspaceTabPath(client.id, tab.id)}
+              >
+                {TAB_ICON[tab.id]}
+                {tab.label}
+              </WorkspaceLink>
+            </div>
           ))}
         </nav>
       </aside>
@@ -117,22 +141,18 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
               onPress={handleBack}
             />
             <Avatar
-              className="size-10 shrink-0"
+              className="size-10 shrink-0 rounded-[12px]!"
               color="accent"
             >
-              <Avatar.Fallback className="text-xs font-bold">{initials}</Avatar.Fallback>
+              <Avatar.Fallback className="rounded-[12px]! text-[13px] font-bold">{initials}</Avatar.Fallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <Typography
-                truncate
-                type="body-sm"
-                weight="bold"
+              <p className="truncate font-grotesk text-[15px] font-bold text-foreground">{name}</p>
+              <p
+                className={`truncate text-[11px] font-semibold ${client.status === 'active' ? 'text-success' : 'text-muted'}`}
               >
-                {name}
-              </Typography>
-              <div className="mt-0.5">
-                <RowChips client={client} />
-              </div>
+                {status}
+              </p>
             </div>
             <Link
               aria-label="Chat"
@@ -167,18 +187,27 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
   );
 }
 
-export function ClientWorkspaceFallback({children}: {children: ReactNode}) {
-  const goBack = useGoBack(ROUTES.CLIENTS);
+export function ClientWorkspaceFallback({backTo = ROUTES.CLIENTS, children}: {backTo?: string; children: ReactNode}) {
+  const goBack = useGoBack(backTo);
 
   return (
     <div className="flex h-full min-h-0 w-full bg-surface">
       <aside className="hidden w-[274px] shrink-0 flex-col border-r border-separator bg-surface lg:flex">
-        <div className="flex items-center gap-3 border-b border-separator p-5">
-          <BackButton onPress={goBack} />
-          <Skeleton className="size-11 shrink-0 rounded-2xl" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-4 w-28 rounded-full" />
-            <Skeleton className="h-4 w-20 rounded-full" />
+        <div className="border-b border-separator px-4 pt-4 pb-3.5">
+          <button
+            className="mb-3 inline-flex min-h-8 items-center gap-1 text-xs font-bold text-link"
+            onClick={goBack}
+            type="button"
+          >
+            <ChevronLeft size={14} />
+            All clients
+          </button>
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-[52px] shrink-0 rounded-[15px]" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-28 rounded-full" />
+              <Skeleton className="h-3 w-20 rounded-full" />
+            </div>
           </div>
         </div>
         <div className="space-y-2 p-3">

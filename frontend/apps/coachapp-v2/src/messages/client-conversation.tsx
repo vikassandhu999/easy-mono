@@ -13,10 +13,11 @@ export default function ClientConversation() {
   const [searchParams] = useSearchParams();
   const clientQuery = useGetClientQuery(id!, {skip: !id});
   const conversationQuery = useGetCoachClientConversationQuery({clientId: id!}, {skip: !id});
+  const detailPath = ROUTES.CLIENT_DETAIL.replace(':id', id!);
 
   if (clientQuery.isLoading) {
     return (
-      <ClientWorkspaceFallback>
+      <ClientWorkspaceFallback backTo={detailPath}>
         <div className="h-full overflow-y-auto p-5 lg:p-8">
           <PageSkeleton />
         </div>
@@ -26,7 +27,7 @@ export default function ClientConversation() {
 
   if (clientQuery.isError || !clientQuery.data) {
     return (
-      <ClientWorkspaceFallback>
+      <ClientWorkspaceFallback backTo={detailPath}>
         <div className="p-5 lg:p-8">
           <ErrorState message="Client couldn't load. They may not exist, or you may not have access." />
         </div>
@@ -48,7 +49,7 @@ export default function ClientConversation() {
         </div>
       ) : (
         <ConversationView
-          backTo={ROUTES.CLIENT_DETAIL.replace(':id', id!)}
+          backTo={detailPath}
           conversationId={conversationQuery.data.data.id}
           embedded
           initialBody={searchParams.get('prefill') ?? ''}

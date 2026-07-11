@@ -167,6 +167,99 @@ defmodule Easy.Clients.ReadBoundaryTest do
     end
   end
 
+  describe "list_attention_clients/2" do
+    test "returns active attention clients once in priority order" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+
+      intake =
+        insert(:client,
+          business: business,
+          status: :active,
+          stage: :onboarding,
+          subscription_ends_on: Date.add(Date.utc_today(), 3)
+        )
+
+      template = insert(:form_template, business: business, purpose: :intake)
+
+      insert(:form_assignment,
+        business: business,
+        client: intake,
+        form_template: template,
+        purpose: :intake,
+        status: :assigned
+      )
+
+      insert(:training_plan, business: business, client: intake, status: :active)
+
+      needs_plan = insert(:client, business: business, status: :active, stage: :coaching)
+
+      expiring =
+        insert(:client,
+          business: business,
+          status: :active,
+          stage: :coaching,
+          subscription_ends_on: Date.add(Date.utc_today(), 3)
+        )
+
+      insert(:training_plan, business: business, client: expiring, status: :active)
+
+      assert {:ok, %{count: 3, clients: clients}} = Clients.list_attention_clients(ctx)
+      assert Enum.map(clients, & &1.id) == [intake.id, needs_plan.id, expiring.id]
+
+      assert %{intake_incomplete: true, needs_plan: false, expiring_soon: true} =
+               Enum.find(clients, &(&1.id == intake.id))
+
+      assert %{needs_plan: true} = Enum.find(clients, &(&1.id == needs_plan.id))
+      assert %{expiring_soon: true} = Enum.find(clients, &(&1.id == expiring.id))
+    end
+
+    test "includes both active stages and excludes pending and inactive clients" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+
+      onboarding = insert(:client, business: business, status: :active, stage: :onboarding)
+      coaching = insert(:client, business: business, status: :active, stage: :coaching)
+      insert(:client, business: business, status: :pending, user: nil)
+      insert(:client, business: business, status: :inactive, inactive_reason: :manual)
+
+      assert {:ok, %{count: 2, clients: clients}} = Clients.list_attention_clients(ctx)
+      assert MapSet.new(Enum.map(clients, & &1.id)) == MapSet.new([onboarding.id, coaching.id])
+    end
+
+    test "counts eligible clients before pagination" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+
+      for _ <- 1..3, do: insert(:client, business: business, status: :active)
+
+      assert {:ok, %{count: 3, clients: [_client]}} =
+               Clients.list_attention_clients(ctx, offset: 0, limit: 1)
+    end
+
+    test "applies coach visibility and tenant isolation" do
+      business = insert(:business)
+      trainer = insert(:coach, business: business)
+      other_trainer = insert(:coach, business: business)
+
+      mine = insert(:client, business: business, status: :active, assigned_coach: trainer)
+      theirs = insert(:client, business: business, status: :active, assigned_coach: other_trainer)
+      unassigned = insert(:client, business: business, status: :active, assigned_coach: nil)
+      insert(:client, business: insert(:business), status: :active)
+
+      assert {:ok, %{count: 1, clients: [%{id: mine_id}]}} =
+               Clients.list_attention_clients(trainer_ctx(trainer))
+
+      assert mine_id == mine.id
+
+      assert {:ok, %{count: 3, clients: owner_clients}} =
+               Clients.list_attention_clients(owner_ctx(business))
+
+      assert MapSet.new(Enum.map(owner_clients, & &1.id)) ==
+               MapSet.new([mine.id, theirs.id, unassigned.id])
+    end
+  end
+
   describe "accept_invite/3" do
     test "accepting an invite over capacity lands inactive with awaiting_seat reason" do
       business = insert(:business)

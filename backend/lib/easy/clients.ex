@@ -111,6 +111,32 @@ defmodule Easy.Clients do
     end
   end
 
+  @spec list_attention_clients(Ctx.t(), keyword()) ::
+          {:ok, %{clients: [Client.t()], count: non_neg_integer()}}
+  def list_attention_clients(%Ctx{} = ctx, opts \\ []) do
+    offset = max(Keyword.get(opts, :offset, 0), 0)
+    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
+
+    base =
+      Client
+      |> Client.for_business(ctx.business_id)
+      |> Client.visible_to(ctx)
+      |> Client.accepted()
+      |> attention_clients(ctx.business_id)
+
+    {:ok,
+     %{
+       count: Repo.aggregate(base, :count, :id),
+       clients:
+         base
+         |> order_attention_clients(ctx.business_id)
+         |> Easy.Utils.paginate(offset, limit)
+         |> Client.include_preloads(ctx.business_id)
+         |> Repo.all()
+         |> put_attention_flags_for_clients(ctx.business_id)
+     }}
+  end
+
   @spec invite_client(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, any()}
   def invite_client(%Ctx{} = ctx, invite_attrs) do
     with :ok <- Billing.ensure_seat_available(ctx),
@@ -255,6 +281,80 @@ defmodule Easy.Clients do
   end
 
   defp ensure_reactivation_capacity(_ctx, _client, _attrs), do: :ok
+
+  defp attention_clients(query, business_id) do
+    {open_intake, active_training, active_nutrition} = attention_subqueries(business_id)
+    today = Date.utc_today()
+    horizon = Date.add(today, @expiring_soon_days)
+
+    from c in query,
+      as: :attention_client,
+      where:
+        exists(subquery(open_intake)) or
+          (not exists(subquery(active_training)) and not exists(subquery(active_nutrition))) or
+          (not is_nil(c.subscription_ends_on) and c.subscription_ends_on >= ^today and
+             c.subscription_ends_on <= ^horizon)
+  end
+
+  defp order_attention_clients(query, business_id) do
+    from [attention_client: c] in query,
+      order_by: [
+        asc:
+          fragment(
+            """
+            CASE
+              WHEN EXISTS (
+                SELECT 1 FROM form_assignments fa
+                WHERE fa.business_id = ? AND fa.client_id = ?
+                  AND fa.purpose = 'intake' AND fa.status IN ('assigned', 'in_progress')
+              ) THEN 1
+              WHEN NOT EXISTS (
+                SELECT 1 FROM training_plans tp
+                WHERE tp.business_id = ? AND tp.client_id = ? AND tp.status = 'active'
+              ) AND NOT EXISTS (
+                SELECT 1 FROM nutrition_plans np
+                WHERE np.business_id = ? AND np.client_id = ? AND np.status = 'active'
+              ) THEN 2
+              ELSE 3
+            END
+            """,
+            type(^business_id, :binary_id),
+            c.id,
+            type(^business_id, :binary_id),
+            c.id,
+            type(^business_id, :binary_id),
+            c.id
+          ),
+        desc: c.inserted_at,
+        desc: c.id
+      ]
+  end
+
+  defp attention_subqueries(business_id) do
+    open_intake =
+      from fa in FormAssignment,
+        where:
+          fa.business_id == ^business_id and
+            fa.client_id == parent_as(:attention_client).id and
+            fa.purpose == :intake and fa.status in [:assigned, :in_progress],
+        select: 1
+
+    active_training =
+      from tp in TrainingPlan,
+        where:
+          tp.business_id == ^business_id and
+            tp.client_id == parent_as(:attention_client).id and tp.status == :active,
+        select: 1
+
+    active_nutrition =
+      from np in Plan,
+        where:
+          np.business_id == ^business_id and
+            np.client_id == parent_as(:attention_client).id and np.status == :active,
+        select: 1
+
+    {open_intake, active_training, active_nutrition}
+  end
 
   defp put_attention_flags_for_clients(clients, business_id) do
     ids = Enum.map(clients, & &1.id)

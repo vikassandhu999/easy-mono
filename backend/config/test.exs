@@ -26,6 +26,13 @@ config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Test
 config :easy, start_subscription_sweeper: false
 config :easy, start_check_in_sweeper: false
 
+config :easy, Easy.Storage,
+  endpoint: "https://storage.example.test",
+  region: "auto",
+  bucket: "easy-test",
+  access_key_id: "test-access-key",
+  secret_access_key: "test-secret-key"
+
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 

@@ -63,6 +63,13 @@ config :easy,
 # Fixed OTP in dev — every login code is 123456, no email-reading needed.
 config :easy, fixed_otp: "123456"
 
+config :easy, Easy.Storage,
+  endpoint: "https://t3.storage.dev",
+  region: "auto",
+  bucket: "easy-dev-placeholder",
+  access_key_id: "dev-access-key",
+  secret_access_key: "dev-secret-key"
+
 # Razorpay dev defaults (safe dummies). Real test-mode keys go in
 # config/dev.secret.exs (gitignored) — see that file's header for the shape.
 # Env vars (RAZORPAY_*) still override both via runtime.exs.

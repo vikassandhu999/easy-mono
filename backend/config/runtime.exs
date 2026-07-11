@@ -56,6 +56,33 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  storage_endpoint =
+    System.get_env("AWS_ENDPOINT_URL_S3") ||
+      raise "AWS_ENDPOINT_URL_S3 is missing. Provision private Tigris storage with fly storage create."
+
+  storage_region =
+    System.get_env("AWS_REGION") ||
+      raise "AWS_REGION is missing. Tigris uses AWS_REGION=auto."
+
+  storage_bucket =
+    System.get_env("BUCKET_NAME") ||
+      raise "BUCKET_NAME is missing. Provision private Tigris storage with fly storage create."
+
+  storage_access_key =
+    System.get_env("AWS_ACCESS_KEY_ID") ||
+      raise "AWS_ACCESS_KEY_ID is missing. Provision private Tigris storage with fly storage create."
+
+  storage_secret_key =
+    System.get_env("AWS_SECRET_ACCESS_KEY") ||
+      raise "AWS_SECRET_ACCESS_KEY is missing. Provision private Tigris storage with fly storage create."
+
+  config :easy, Easy.Storage,
+    endpoint: storage_endpoint,
+    region: storage_region,
+    bucket: storage_bucket,
+    access_key_id: storage_access_key,
+    secret_access_key: storage_secret_key
+
   cors_origins =
     System.get_env("CORS_ALLOWED_ORIGINS", "")
     |> String.split(",", trim: true)

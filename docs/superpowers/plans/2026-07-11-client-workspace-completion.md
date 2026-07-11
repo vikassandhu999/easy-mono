@@ -33,7 +33,7 @@
 * Consumes: `useIsDesktop(): boolean`, `ROUTES.CLIENT_DETAIL`, `ROUTES.CLIENT_MESSAGES`, and `BrowseListBox.onAction(key)`.
 * Produces: desktop list rows that open `/clients/:id/messages` and mobile list rows that open `/clients/:id`.
 
-- [ ] **Step 1: Record the committed baseline**
+- [x] **Step 1: Record the committed baseline**
 
 Run:
 
@@ -43,7 +43,7 @@ rg -n "onAction=.*CLIENT_DETAIL|useIsDesktop" frontend/apps/coachapp-v2/src/clie
 
 Expected: the list action always uses `CLIENT_DETAIL`, and `useIsDesktop` is absent.
 
-- [ ] **Step 2: Route row selection by viewport**
+- [x] **Step 2: Route row selection by viewport**
 
 Import `useIsDesktop`, read it once in `ListClients`, and replace the inline action with one handler:
 
@@ -58,7 +58,7 @@ function openClient(key: Key) {
 
 Pass `onAction={openClient}` to `BrowseListBox`. Keep the explicit message icon linked to `CLIENT_MESSAGES` and leave the attention popover's detail navigation unchanged.
 
-- [ ] **Step 3: Run the focused static check**
+- [x] **Step 3: Run the focused static check**
 
 Run from `frontend/`:
 
@@ -69,7 +69,7 @@ pnpm -C apps/coachapp-v2 build
 
 Expected: both commands exit 0. Existing HeroUI CSS-minification and bundle-size warnings may remain.
 
-- [ ] **Step 4: Commit the responsive entry**
+- [x] **Step 4: Commit the responsive entry**
 
 ```sh
 git add frontend/apps/coachapp-v2/src/clients/list-clients.tsx
@@ -91,7 +91,7 @@ git commit -m "fix(coachapp): route client workspace by viewport"
 * Consumes: `Client`, `CLIENT_WORKSPACE_TABS`, `clientWorkspaceTabPath`, `ROUTES.CLIENT_MESSAGES`, `useGoBack`, and the existing compact `AppShell` mode.
 * Produces: one shared desktop/mobile shell with compact desktop navigation, no mobile global navigation, route-backed tabs, and route-aware Back behavior.
 
-- [ ] **Step 1: Freeze the supported tab contract**
+- [x] **Step 1: Freeze the supported tab contract**
 
 Keep the route helper's tab type and order exactly:
 
@@ -109,7 +109,7 @@ export const CLIENT_WORKSPACE_TABS = [
 
 Do not add trainer, trainer-check-in, subscription, or media tab IDs.
 
-- [ ] **Step 2: Match the desktop client navigation**
+- [x] **Step 2: Match the desktop client navigation**
 
 Keep the 274px column and add the reference hierarchy:
 
@@ -121,17 +121,17 @@ Keep the 274px column and add the reference hierarchy:
 
 Use existing semantic tokens and the current `WorkspaceLink`; do not add a menu for pause, cancellation, or removal.
 
-- [ ] **Step 3: Match the mobile workspace header**
+- [x] **Step 3: Match the mobile workspace header**
 
 Keep one 64px identity header with Back, 40px avatar, client name/status, and the Chat action. Keep the horizontally scrollable supported tab strip below it. On the Chat route, hide the tab strip; Back returns to `/clients/:id`. On a content tab, Back uses `useGoBack(ROUTES.CLIENTS)`.
 
 Do not render a bottom navigation inside `ClientWorkspaceShell`; confirm `AppShell.BOTTOM_NAV_PATHS` still contains only top-level routes.
 
-- [ ] **Step 4: Keep workspace fallbacks structurally stable**
+- [x] **Step 4: Keep workspace fallbacks structurally stable**
 
 Make `ClientWorkspaceFallback` use the same desktop widths, mobile header height, surface colors, and overflow ownership as the loaded shell. Keep a Back control in loading and error states.
 
-- [ ] **Step 5: Run focused checks**
+- [x] **Step 5: Run focused checks**
 
 Run from `frontend/`:
 
@@ -150,15 +150,17 @@ Expected: both commands exit 0.
 
 * Modify: `frontend/apps/coachapp-v2/src/clients/client-detail.tsx`
 * Modify: `frontend/apps/coachapp-v2/src/messages/conversation-view.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/messages/client-conversation.tsx`
 * Modify: `frontend/apps/coachapp-v2/src/clients/components/client-stat-strip.tsx`
-* Reuse unchanged: `client-weight.tsx`, `client-nutrition-adherence.tsx`, `client-workout-history.tsx`, `client-checkins.tsx`, `client-detail-card.tsx`, `client-trainer-card.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/clients/components/client-detail-card.tsx`
+* Reuse unchanged: `client-weight.tsx`, `client-nutrition-adherence.tsx`, `client-workout-history.tsx`, `client-checkins.tsx`, `client-trainer-card.tsx`
 
 **Interfaces:**
 
 * Consumes: the existing backend-backed client section components and `ConversationView({embedded: true})`.
 * Produces: Progress, Nutrition, Training, Client check-in, Detail, and Chat panels inside the shared workspace.
 
-- [ ] **Step 1: Keep one content owner per tab**
+- [x] **Step 1: Keep one content owner per tab**
 
 Retain the current conditional composition:
 
@@ -173,11 +175,11 @@ chat      -> ClientConversation + embedded ConversationView
 
 Keep the awaiting-seat notice above tab content. Do not create local copies of section queries or response types.
 
-- [ ] **Step 2: Remove duplicate Detail actions**
+- [x] **Step 2: Remove duplicate Detail actions**
 
 Keep `ClientDetailCard`'s profile Edit action and one `Edit client` link for client/subscription fields. Label the actions by destination so profile editing and client/subscription editing are not presented as the same operation. Keep trainer reassignment and inline notes in the Detail tab.
 
-- [ ] **Step 3: Finish embedded Chat composition**
+- [x] **Step 3: Finish embedded Chat composition**
 
 When `embedded` is true, render a desktop-only 49px header above messages:
 
@@ -189,7 +191,7 @@ When `embedded` is true, render a desktop-only 49px header above messages:
 
 Keep message loading, older-message pagination, sending, Enter-to-send, read tracking, and WebSocket updates unchanged. Do not add the mockup's Media segment.
 
-- [ ] **Step 4: Tighten only the repeated stat strip geometry**
+- [x] **Step 4: Tighten only the repeated stat strip geometry**
 
 Change the existing stat cards to the reference's compact geometry:
 
@@ -202,7 +204,7 @@ Change the existing stat cards to the reference's compact geometry:
 
 Use `grid grid-cols-3 gap-2 md:gap-3` for the strip. Do not add body-fat, total-lost, streak, or health-marker values because the API does not provide them.
 
-- [ ] **Step 5: Run focused checks and commit**
+- [x] **Step 5: Run focused checks and commit**
 
 Run from `frontend/`:
 
@@ -236,6 +238,8 @@ git commit -m "fix(coachapp): complete client workspace"
 
 - [ ] **Step 1: Verify desktop at 1280px**
 
+Not run: no browser session is available to Insider, and the local browser controller was rejected by the environment security review.
+
 Exercise this sequence with a real active client:
 
 1. Open `/clients` and select the row body.
@@ -245,6 +249,8 @@ Exercise this sequence with a real active client:
 5. Confirm `All clients` returns to `/clients` and browser Back returns to the route that opened the workspace.
 
 - [ ] **Step 2: Verify mobile at 392px**
+
+Not run for the same browser availability reason.
 
 Exercise this sequence:
 
@@ -256,9 +262,11 @@ Exercise this sequence:
 
 - [ ] **Step 3: Verify supported states**
 
+Not run for the same browser availability reason. No production mock data or diagnostic route was added.
+
 Check one reachable example of loading, first-query error, pending invitation, inactive client, awaiting-seat client, empty messages, and section-level empty/error UI. If seeded data cannot reach a state, report it as untested rather than adding mock production behavior.
 
-- [ ] **Step 4: Run final repository gates**
+- [x] **Step 4: Run final repository gates**
 
 Run:
 
@@ -272,7 +280,7 @@ git status --short
 
 Expected: Biome, build, `check-rm`, and `diff --check` exit 0. `git status --short` contains only deliberate plan progress and the user's untouched `frontend/apps/coachapp-v2/.claude/` directory.
 
-- [ ] **Step 5: Commit plan progress**
+- [x] **Step 5: Commit plan progress**
 
 ```sh
 git add docs/superpowers/plans/2026-07-11-client-workspace-completion.md

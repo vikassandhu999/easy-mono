@@ -299,29 +299,98 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateListResponse do
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: ClientProfileFormTemplate}, "ClientProfileFormTemplateListResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentAssignRequest do
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleRequest do
   require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "ClientProfileFormAssignmentAssignRequest",
+      title: "ClientProfileCheckInScheduleRequest",
       type: :object,
       additionalProperties: false,
       properties: %{
-        client_id: %Schema{type: :string, format: :uuid},
-        priority: %Schema{type: :string, enum: Common.priorities()},
-        due_date: %Schema{type: :string, format: :date, nullable: true}
+        form_template_id: %Schema{type: :string, format: :uuid},
+        frequency: %Schema{type: :string, enum: ~w(once weekly biweekly monthly)},
+        next_due_on: %Schema{type: :string, format: :date}
       },
-      required: [:client_id],
-      example: %{
-        "client_id" => "00000000-0000-0000-0000-000000000000",
-        "priority" => "high"
+      required: [:form_template_id, :frequency, :next_due_on]
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleUpdateRequest do
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "ClientProfileCheckInScheduleUpdateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        frequency: %Schema{type: :string, enum: ~w(once weekly biweekly monthly)},
+        next_due_on: %Schema{type: :string, format: :date},
+        active: %Schema{type: :boolean}
       }
     },
     struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileCheckInSchedule do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileCheckInSchedule",
+    type: :object,
+    additionalProperties: false,
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          client_id: %Schema{type: :string, format: :uuid},
+          form_template_id: %Schema{type: :string, format: :uuid},
+          frequency: %Schema{type: :string, enum: ~w(once weekly biweekly monthly)},
+          next_due_on: %Schema{type: :string, format: :date},
+          active: %Schema{type: :boolean},
+          form_template: ClientProfileFormTemplate
+        },
+        Shared.timestamps()
+      ),
+    required: [
+      :id,
+      :client_id,
+      :form_template_id,
+      :frequency,
+      :next_due_on,
+      :active,
+      :form_template,
+      :inserted_at,
+      :updated_at
+    ]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleResponse do
+  require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileCheckInSchedule, Shared}
+  OpenApiSpex.schema(Shared.data_response(ClientProfileCheckInSchedule, "ClientProfileCheckInScheduleResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleListResponse do
+  require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileCheckInSchedule, Shared}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{type: :array, items: ClientProfileCheckInSchedule},
+      "ClientProfileCheckInScheduleListResponse"
+    )
   )
 end
 
@@ -372,6 +441,8 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
           status: %Schema{type: :string, enum: Common.assignment_statuses()},
           due_date: %Schema{type: :string, format: :date, nullable: true},
           completed_at: %Schema{type: :string, format: :"date-time", nullable: true},
+          due_reminder_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
+          overdue_reminder_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
           form_template: ClientProfileFormTemplate
         },
         Shared.timestamps()
@@ -380,11 +451,14 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
       :id,
       :client_id,
       :form_template_id,
+      :check_in_schedule_id,
       :purpose,
       :priority,
       :status,
       :due_date,
       :completed_at,
+      :due_reminder_sent_at,
+      :overdue_reminder_sent_at,
       :form_template,
       :inserted_at,
       :updated_at

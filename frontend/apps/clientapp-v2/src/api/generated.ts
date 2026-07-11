@@ -1163,7 +1163,7 @@ export type ClientProfileFormTemplate = {
   id: string;
   inserted_at: string;
   name: string;
-  purpose: 'intake' | 'weekly_check_in' | 'nutrition_update' | 'training_update' | 'custom';
+  purpose: 'intake' | 'check_in';
   sections: {
     [key: string]: any;
   }[];
@@ -1174,13 +1174,15 @@ export type ClientProfileFormAssignment = {
   client_id: string;
   completed_at: string | null;
   due_date: string | null;
+  due_reminder_sent_at: string | null;
   form_template: ClientProfileFormTemplate;
   form_template_id: string;
   id: string;
   inserted_at: string;
+  overdue_reminder_sent_at: string | null;
   priority: 'high' | 'normal';
-  purpose: 'intake' | 'weekly_check_in' | 'nutrition_update' | 'training_update' | 'custom';
-  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
+  purpose: 'intake' | 'check_in';
+  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
   updated_at: string;
 };
 export type ClientProfileFormAssignmentListResponse = {
@@ -1220,7 +1222,7 @@ export type ClientCoachingProfile = {
   id: string;
   inserted_at: string;
   intake_completed_at: string | null;
-  intake_status: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
+  intake_status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
   lifestyle: {
     [key: string]: any;
   };

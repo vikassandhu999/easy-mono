@@ -29,6 +29,19 @@ const injectedRtkApi = api.injectEndpoints({
         }),
       },
     ),
+    deleteCheckInSchedule: build.mutation<DeleteCheckInScheduleApiResponse, DeleteCheckInScheduleApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/check-in-schedules/${queryArg.id}`,
+        method: 'DELETE',
+      }),
+    }),
+    updateCheckInSchedule: build.mutation<UpdateCheckInScheduleApiResponse, UpdateCheckInScheduleApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/check-in-schedules/${queryArg.id}`,
+        method: 'PATCH',
+        body: queryArg.clientProfileCheckInScheduleUpdateRequest,
+      }),
+    }),
     deleteClient: build.mutation<DeleteClientApiResponse, DeleteClientApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/clients/${queryArg.id}`,
@@ -272,13 +285,6 @@ const injectedRtkApi = api.injectEndpoints({
     getTrainingPlanSchedule: build.query<GetTrainingPlanScheduleApiResponse, GetTrainingPlanScheduleApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/training-plans/${queryArg.planId}/schedule`,
-      }),
-    }),
-    assignFormTemplate: build.mutation<AssignFormTemplateApiResponse, AssignFormTemplateApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/coach/form-templates/${queryArg.id}/assign`,
-        method: 'POST',
-        body: queryArg.clientProfileFormAssignmentAssignRequest,
       }),
     }),
     makeNutritionSlotOptionDefault: build.mutation<
@@ -580,6 +586,21 @@ const injectedRtkApi = api.injectEndpoints({
     showTrainerInvitation: build.query<ShowTrainerInvitationApiResponse, ShowTrainerInvitationApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/trainer-invitations/${queryArg.token}`,
+      }),
+    }),
+    listCheckInSchedulesForClient: build.query<
+      ListCheckInSchedulesForClientApiResponse,
+      ListCheckInSchedulesForClientApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/v1/coach/clients/${queryArg.clientId}/check-in-schedules`,
+      }),
+    }),
+    createCheckInSchedule: build.mutation<CreateCheckInScheduleApiResponse, CreateCheckInScheduleApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/clients/${queryArg.clientId}/check-in-schedules`,
+        method: 'POST',
+        body: queryArg.clientProfileCheckInScheduleRequest,
       }),
     }),
     listFormTemplates: build.query<ListFormTemplatesApiResponse, ListFormTemplatesApiArg>({
@@ -909,6 +930,18 @@ export type SetTrainingPlanDayScheduleApiArg = {
   /** Day schedule */
   trainingDayScheduleRequest: TrainingDayScheduleRequest;
 };
+export type DeleteCheckInScheduleApiResponse = unknown;
+export type DeleteCheckInScheduleApiArg = {
+  /** Schedule id */
+  id: string;
+};
+export type UpdateCheckInScheduleApiResponse = /** status 200 Schedule */ ClientProfileCheckInScheduleResponse;
+export type UpdateCheckInScheduleApiArg = {
+  /** Schedule id */
+  id: string;
+  /** Schedule */
+  clientProfileCheckInScheduleUpdateRequest: ClientProfileCheckInScheduleUpdateRequest;
+};
 export type DeleteClientApiResponse = unknown;
 export type DeleteClientApiArg = {
   /** Client id */
@@ -1118,14 +1151,6 @@ export type CancelBillingApiArg = void;
 export type GetTrainingPlanScheduleApiResponse = /** status 200 Schedule */ TrainingScheduleResponse;
 export type GetTrainingPlanScheduleApiArg = {
   planId: string;
-};
-export type AssignFormTemplateApiResponse =
-  /** status 201 Form assignment created */ ClientProfileFormAssignmentResponse;
-export type AssignFormTemplateApiArg = {
-  /** Form template id */
-  id: string;
-  /** Form assignment request */
-  clientProfileFormAssignmentAssignRequest: ClientProfileFormAssignmentAssignRequest;
 };
 export type MakeNutritionSlotOptionDefaultApiResponse = /** status 200 Option */ NutritionDayMealResponse;
 export type MakeNutritionSlotOptionDefaultApiArg = {
@@ -1389,6 +1414,19 @@ export type ShowTrainerInvitationApiResponse =
 export type ShowTrainerInvitationApiArg = {
   /** Trainer invitation token */
   token: string;
+};
+export type ListCheckInSchedulesForClientApiResponse =
+  /** status 200 Schedules */ ClientProfileCheckInScheduleListResponse;
+export type ListCheckInSchedulesForClientApiArg = {
+  /** Client id */
+  clientId: string;
+};
+export type CreateCheckInScheduleApiResponse = /** status 201 Schedule */ ClientProfileCheckInScheduleResponse;
+export type CreateCheckInScheduleApiArg = {
+  /** Client id */
+  clientId: string;
+  /** Schedule */
+  clientProfileCheckInScheduleRequest: ClientProfileCheckInScheduleRequest;
 };
 export type ListFormTemplatesApiResponse = /** status 200 Form templates */ ClientProfileFormTemplateListResponse;
 export type ListFormTemplatesApiArg = void;
@@ -1789,6 +1827,36 @@ export type TrainingScheduleDayResponse = {
 export type TrainingDayScheduleRequest = {
   training_workout_id?: string | null;
 };
+export type ClientProfileFormTemplate = {
+  id: string;
+  inserted_at: string;
+  name: string;
+  purpose: 'intake' | 'check_in';
+  sections: {
+    [key: string]: any;
+  }[];
+  status: 'active' | 'archived';
+  updated_at: string;
+};
+export type ClientProfileCheckInSchedule = {
+  active: boolean;
+  client_id: string;
+  form_template: ClientProfileFormTemplate;
+  form_template_id: string;
+  frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
+  id: string;
+  inserted_at: string;
+  next_due_on: string;
+  updated_at: string;
+};
+export type ClientProfileCheckInScheduleResponse = {
+  data: ClientProfileCheckInSchedule;
+};
+export type ClientProfileCheckInScheduleUpdateRequest = {
+  active?: boolean;
+  frequency?: 'once' | 'weekly' | 'biweekly' | 'monthly';
+  next_due_on?: string;
+};
 export type Client = {
   assigned_coach_id?: string | null;
   email: string | null;
@@ -1875,7 +1943,7 @@ export type CoachingClientProfile = {
   id: string;
   inserted_at: string;
   intake_completed_at: string | null;
-  intake_status: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
+  intake_status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
   lifestyle: {
     [key: string]: any;
   };
@@ -1895,7 +1963,7 @@ export type CoachingClientProfileRequest = {
     [key: string]: any;
   };
   intake_completed_at?: string | null;
-  intake_status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
+  intake_status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
   lifestyle?: {
     [key: string]: any;
   };
@@ -2079,28 +2147,19 @@ export type ClientTrainingPlanListResponse = {
   count: number;
   data: ClientTrainingPlan[];
 };
-export type ClientProfileFormTemplate = {
-  id: string;
-  inserted_at: string;
-  name: string;
-  purpose: 'intake' | 'weekly_check_in' | 'nutrition_update' | 'training_update' | 'custom';
-  sections: {
-    [key: string]: any;
-  }[];
-  status: 'active' | 'archived';
-  updated_at: string;
-};
 export type ClientProfileFormAssignment = {
   client_id: string;
   completed_at: string | null;
   due_date: string | null;
+  due_reminder_sent_at: string | null;
   form_template: ClientProfileFormTemplate;
   form_template_id: string;
   id: string;
   inserted_at: string;
+  overdue_reminder_sent_at: string | null;
   priority: 'high' | 'normal';
-  purpose: 'intake' | 'weekly_check_in' | 'nutrition_update' | 'training_update' | 'custom';
-  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
+  purpose: 'intake' | 'check_in';
+  status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
   updated_at: string;
 };
 export type ClientProfileFormAssignmentListResponse = {
@@ -2375,14 +2434,6 @@ export type TrainingScheduleResponse = {
     [key: string]: TrainingScheduleEntry;
   };
 };
-export type ClientProfileFormAssignmentResponse = {
-  data: ClientProfileFormAssignment;
-};
-export type ClientProfileFormAssignmentAssignRequest = {
-  client_id: string;
-  due_date?: string | null;
-  priority?: 'high' | 'normal';
-};
 export type FoodServingSize = {
   amount: number;
   is_default: boolean;
@@ -2435,10 +2486,13 @@ export type TrainingWorkoutRequest = {
   name: string;
   notes?: string | null;
 };
+export type ClientProfileFormAssignmentResponse = {
+  data: ClientProfileFormAssignment;
+};
 export type ClientProfileFormAssignmentUpdateRequest = {
   due_date?: string | null;
   priority?: 'high' | 'normal';
-  status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed';
+  status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
 };
 export type NutritionPlanDayUpdateRequest = {
   name: string;
@@ -2599,6 +2653,14 @@ export type TrainerInvitationPreviewResponse = {
     first_name?: string | null;
   };
 };
+export type ClientProfileCheckInScheduleListResponse = {
+  data: ClientProfileCheckInSchedule[];
+};
+export type ClientProfileCheckInScheduleRequest = {
+  form_template_id: string;
+  frequency: 'once' | 'weekly' | 'biweekly' | 'monthly';
+  next_due_on: string;
+};
 export type ClientProfileFormTemplateListResponse = {
   data: ClientProfileFormTemplate[];
 };
@@ -2607,7 +2669,7 @@ export type ClientProfileFormTemplateResponse = {
 };
 export type ClientProfileFormTemplateRequest = {
   name: string;
-  purpose: 'intake' | 'weekly_check_in' | 'nutrition_update' | 'training_update' | 'custom';
+  purpose: 'intake' | 'check_in';
   sections: {
     [key: string]: any;
   }[];
@@ -2836,7 +2898,7 @@ export type ClientProfileFormSubmissionListResponse = {
 };
 export type ClientProfileFormTemplateUpdateRequest = {
   name?: string;
-  purpose?: 'intake' | 'weekly_check_in' | 'nutrition_update' | 'training_update' | 'custom';
+  purpose?: 'intake' | 'check_in';
   sections?: {
     [key: string]: any;
   }[];
@@ -3012,6 +3074,8 @@ export const {
   useLazyListTrainingPlansQuery,
   useCreateTrainingPlanMutation,
   useSetTrainingPlanDayScheduleMutation,
+  useDeleteCheckInScheduleMutation,
+  useUpdateCheckInScheduleMutation,
   useDeleteClientMutation,
   useGetClientQuery,
   useLazyGetClientQuery,
@@ -3066,7 +3130,6 @@ export const {
   useCancelBillingMutation,
   useGetTrainingPlanScheduleQuery,
   useLazyGetTrainingPlanScheduleQuery,
-  useAssignFormTemplateMutation,
   useMakeNutritionSlotOptionDefaultMutation,
   useCopyNutritionFoodMutation,
   useListWorkoutsQuery,
@@ -3126,6 +3189,9 @@ export const {
   useRemoveNutritionSlotOptionMutation,
   useShowTrainerInvitationQuery,
   useLazyShowTrainerInvitationQuery,
+  useListCheckInSchedulesForClientQuery,
+  useLazyListCheckInSchedulesForClientQuery,
+  useCreateCheckInScheduleMutation,
   useListFormTemplatesQuery,
   useLazyListFormTemplatesQuery,
   useCreateFormTemplateMutation,

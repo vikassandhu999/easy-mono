@@ -6,8 +6,6 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
-    ClientProfileFormAssignmentAssignRequest,
-    ClientProfileFormAssignmentResponse,
     ClientProfileFormTemplateListResponse,
     ClientProfileFormTemplateRequest,
     ClientProfileFormTemplateResponse,
@@ -16,7 +14,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true] when action in [:create, :update, :delete, :assign]
+       [json_render_error_v2: true] when action in [:create, :update, :delete]
 
   tags ["coach form templates"]
 
@@ -81,20 +79,6 @@ defmodule EasyWeb.Coaches.FormTemplateController do
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
-  operation :assign,
-    summary: "Assign form template",
-    description: "Assigns a form template to a client in the authenticated coach business.",
-    operation_id: "assignFormTemplate",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Form template id")],
-    request_body: {"Form assignment request", "application/json", ClientProfileFormAssignmentAssignRequest, required: true},
-    responses: [
-      created: {"Form assignment created", "application/json", ClientProfileFormAssignmentResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     ctx = conn.assigns.ctx
@@ -141,21 +125,6 @@ defmodule EasyWeb.Coaches.FormTemplateController do
 
     with {:ok, _template} <- ClientProfiles.delete_form_template(ctx, id) do
       send_resp(conn, :no_content, "")
-    end
-  end
-
-  @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def assign(conn, _params) do
-    ctx = conn.assigns.ctx
-    id = conn.path_params["id"]
-    client_id = conn.body_params[:client_id]
-
-    with {:ok, assignment} <-
-           ClientProfiles.assign_form_template_to_client(ctx, client_id, id, conn.body_params) do
-      conn
-      |> put_status(:created)
-      |> put_view(json: EasyWeb.Coaches.FormAssignmentJSON)
-      |> render(:show, assignment: assignment)
     end
   end
 end

@@ -2,12 +2,12 @@ defmodule Easy.Repo.Migrations.AddCheckInSchedules do
   use Ecto.Migration
 
   def up do
-    execute("UPDATE form_templates SET purpose = 'check_in' WHERE purpose <> 'intake'")
-    execute("UPDATE form_assignments SET purpose = 'check_in' WHERE purpose <> 'intake'")
-
     drop constraint(:form_templates, :form_templates_purpose_check)
     drop constraint(:form_assignments, :form_assignments_purpose_check)
     drop constraint(:form_assignments, :form_assignments_status_check)
+
+    execute("UPDATE form_templates SET purpose = 'check_in' WHERE purpose <> 'intake'")
+    execute("UPDATE form_assignments SET purpose = 'check_in' WHERE purpose <> 'intake'")
 
     create constraint(:form_templates, :form_templates_purpose_check,
              check: "purpose in ('intake','check_in')"
@@ -91,13 +91,13 @@ defmodule Easy.Repo.Migrations.AddCheckInSchedules do
 
     drop table(:check_in_schedules)
 
-    execute("UPDATE form_assignments SET status = 'dismissed' WHERE status = 'missed'")
-    execute("UPDATE form_templates SET purpose = 'weekly_check_in' WHERE purpose = 'check_in'")
-    execute("UPDATE form_assignments SET purpose = 'weekly_check_in' WHERE purpose = 'check_in'")
-
     drop constraint(:form_templates, :form_templates_purpose_check)
     drop constraint(:form_assignments, :form_assignments_purpose_check)
     drop constraint(:form_assignments, :form_assignments_status_check)
+
+    execute("UPDATE form_assignments SET status = 'dismissed' WHERE status = 'missed'")
+    execute("UPDATE form_templates SET purpose = 'weekly_check_in' WHERE purpose = 'check_in'")
+    execute("UPDATE form_assignments SET purpose = 'weekly_check_in' WHERE purpose = 'check_in'")
 
     create constraint(:form_templates, :form_templates_purpose_check,
              check:

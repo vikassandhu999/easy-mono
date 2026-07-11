@@ -324,7 +324,10 @@ defmodule Easy.ClientProfiles do
   def update_check_in_schedule(%Ctx{} = ctx, schedule_id, attrs) do
     with {:ok, schedule} <- get_check_in_schedule(ctx.business_id, schedule_id),
          :ok <- Clients.authorize_client_id(ctx, schedule.client_id) do
-      schedule |> CheckInSchedule.update_changeset(attrs) |> Repo.update()
+      case schedule |> CheckInSchedule.update_changeset(attrs) |> Repo.update() do
+        {:ok, updated} -> {:ok, reload_check_in_schedule(updated)}
+        {:error, changeset} -> {:error, changeset}
+      end
     end
   end
 
@@ -333,7 +336,7 @@ defmodule Easy.ClientProfiles do
   def delete_check_in_schedule(%Ctx{} = ctx, schedule_id) do
     with {:ok, schedule} <- get_check_in_schedule(ctx.business_id, schedule_id),
          :ok <- Clients.authorize_client_id(ctx, schedule.client_id),
-         false <- schedule_has_assignments?(ctx.business_id, schedule.id) || {:error, :schedule_has_assignments} do
+         :ok <- ensure_schedule_unused(ctx.business_id, schedule.id) do
       Repo.delete(schedule)
     end
   end
@@ -540,7 +543,7 @@ defmodule Easy.ClientProfiles do
       process_due_schedule(schedule, client, template, Date.utc_today())
     end
 
-    Repo.get(CheckInSchedule, schedule.id)
+    reload_check_in_schedule(schedule)
   end
 
   defp generate_due_check_in(schedule_id, today, counts) do
@@ -696,10 +699,23 @@ defmodule Easy.ClientProfiles do
     |> ok_or_not_found()
   end
 
+  defp reload_check_in_schedule(schedule) do
+    CheckInSchedule
+    |> CheckInSchedule.for_business(schedule.business_id)
+    |> CheckInSchedule.include_template(schedule.business_id)
+    |> Repo.get(schedule.id)
+  end
+
   defp schedule_has_assignments?(business_id, schedule_id) do
     business_id
     |> FormAssignment.for_schedule(schedule_id)
     |> Repo.exists?()
+  end
+
+  defp ensure_schedule_unused(business_id, schedule_id) do
+    if schedule_has_assignments?(business_id, schedule_id),
+      do: {:error, :schedule_has_assignments},
+      else: :ok
   end
 
   # Defensive against malformed stored templates: a non-list `questions` or a non-map question

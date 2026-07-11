@@ -200,6 +200,14 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["has assignments"]}})})
   end
 
+  def call(conn, {:error, :schedule_has_assignments}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{schedule: ["has assignments"]}})})
+  end
+
+  def call(conn, {:error, :invalid_check_in_template}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{form_template_id: ["must be a check-in template"]}})})
+  end
+
   def call(conn, {:error, :invalid_answers}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["is invalid"]}})})
   end

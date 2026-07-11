@@ -498,6 +498,43 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.WeightEntry",
         "x-validate": null
       },
+      "ClientProfileCheckInScheduleRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "form_template_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "frequency": {
+            "enum": [
+              "once",
+              "weekly",
+              "biweekly",
+              "monthly"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "next_due_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "form_template_id",
+          "frequency",
+          "next_due_on"
+        ],
+        "title": "ClientProfileCheckInScheduleRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TeamMemberResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1566,7 +1603,8 @@
               "assigned",
               "in_progress",
               "completed",
-              "dismissed"
+              "dismissed",
+              "missed"
             ],
             "type": "string",
             "x-struct": null,
@@ -2242,6 +2280,26 @@
         "title": "MealLog",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MealLog",
+        "x-validate": null
+      },
+      "ClientProfileCheckInScheduleListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ClientProfileCheckInSchedule"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ClientProfileCheckInScheduleListResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleListResponse",
         "x-validate": null
       },
       "NutritionWeekdayAssignmentResponse": {
@@ -2925,10 +2983,7 @@
           "purpose": {
             "enum": [
               "intake",
-              "weekly_check_in",
-              "nutrition_update",
-              "training_update",
-              "custom"
+              "check_in"
             ],
             "type": "string",
             "x-struct": null,
@@ -3084,6 +3139,81 @@
         "title": "Business",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.Business",
+        "x-validate": null
+      },
+      "ClientProfileCheckInSchedule": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "client_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "form_template": {
+            "$ref": "#/components/schemas/ClientProfileFormTemplate"
+          },
+          "form_template_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "frequency": {
+            "enum": [
+              "once",
+              "weekly",
+              "biweekly",
+              "monthly"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "next_due_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "client_id",
+          "form_template_id",
+          "frequency",
+          "next_due_on",
+          "active",
+          "form_template",
+          "inserted_at",
+          "updated_at"
+        ],
+        "title": "ClientProfileCheckInSchedule",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileCheckInSchedule",
         "x-validate": null
       },
       "ProspectProgram": {
@@ -3870,10 +4000,7 @@
           "purpose": {
             "enum": [
               "intake",
-              "weekly_check_in",
-              "nutrition_update",
-              "training_update",
-              "custom"
+              "check_in"
             ],
             "type": "string",
             "x-struct": null,
@@ -4632,6 +4759,52 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientCoachingProfileResponse",
         "x-validate": null
       },
+      "ClientProfileCheckInScheduleUpdateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "frequency": {
+            "enum": [
+              "once",
+              "weekly",
+              "biweekly",
+              "monthly"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "next_due_on": {
+            "format": "date",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "ClientProfileCheckInScheduleUpdateRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
+      "ClientProfileCheckInScheduleResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ClientProfileCheckInSchedule"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ClientProfileCheckInScheduleResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleResponse",
+        "x-validate": null
+      },
       "ClientCoachingProfile": {
         "additionalProperties": false,
         "properties": {
@@ -4671,7 +4844,8 @@
               "assigned",
               "in_progress",
               "completed",
-              "dismissed"
+              "dismissed",
+              "missed"
             ],
             "type": "string",
             "x-struct": null,
@@ -5330,7 +5504,8 @@
               "assigned",
               "in_progress",
               "completed",
-              "dismissed"
+              "dismissed",
+              "missed"
             ],
             "type": "string",
             "x-struct": null,
@@ -6494,44 +6669,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPerformedSetResponse",
         "x-validate": null
       },
-      "ClientProfileFormAssignmentAssignRequest": {
-        "additionalProperties": false,
-        "example": {
-          "client_id": "00000000-0000-0000-0000-000000000000",
-          "priority": "high"
-        },
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "due_date": {
-            "format": "date",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "priority": {
-            "enum": [
-              "high",
-              "normal"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "client_id"
-        ],
-        "title": "ClientProfileFormAssignmentAssignRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "MealLogListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -6969,6 +7106,13 @@
             "x-struct": null,
             "x-validate": null
           },
+          "due_reminder_sent_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "form_template": {
             "$ref": "#/components/schemas/ClientProfileFormTemplate"
           },
@@ -6990,6 +7134,13 @@
             "x-struct": null,
             "x-validate": null
           },
+          "overdue_reminder_sent_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "priority": {
             "enum": [
               "high",
@@ -7002,10 +7153,7 @@
           "purpose": {
             "enum": [
               "intake",
-              "weekly_check_in",
-              "nutrition_update",
-              "training_update",
-              "custom"
+              "check_in"
             ],
             "type": "string",
             "x-struct": null,
@@ -7016,7 +7164,8 @@
               "assigned",
               "in_progress",
               "completed",
-              "dismissed"
+              "dismissed",
+              "missed"
             ],
             "type": "string",
             "x-struct": null,
@@ -7033,11 +7182,14 @@
           "id",
           "client_id",
           "form_template_id",
+          "check_in_schedule_id",
           "purpose",
           "priority",
           "status",
           "due_date",
           "completed_at",
+          "due_reminder_sent_at",
+          "overdue_reminder_sent_at",
           "form_template",
           "inserted_at",
           "updated_at"
@@ -7507,7 +7659,8 @@
               "assigned",
               "in_progress",
               "completed",
-              "dismissed"
+              "dismissed",
+              "missed"
             ],
             "type": "string",
             "x-struct": null,
@@ -8060,10 +8213,7 @@
           "purpose": {
             "enum": [
               "intake",
-              "weekly_check_in",
-              "nutrition_update",
-              "training_update",
-              "custom"
+              "check_in"
             ],
             "type": "string",
             "x-struct": null,
@@ -9590,6 +9740,128 @@
         "summary": "Set a day's workout (desired state)",
         "tags": [
           "coach training schedule"
+        ]
+      }
+    },
+    "/v1/coach/check-in-schedules/{id}": {
+      "delete": {
+        "callbacks": {},
+        "operationId": "deleteCheckInSchedule",
+        "parameters": [
+          {
+            "description": "Schedule id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Schedule deleted"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Schedule has assignments"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete unused check-in schedule",
+        "tags": [
+          "coach check-in schedules"
+        ]
+      },
+      "patch": {
+        "callbacks": {},
+        "operationId": "updateCheckInSchedule",
+        "parameters": [
+          {
+            "description": "Schedule id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientProfileCheckInScheduleUpdateRequest"
+              }
+            }
+          },
+          "description": "Schedule",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProfileCheckInScheduleResponse"
+                }
+              }
+            },
+            "description": "Schedule"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update check-in schedule",
+        "tags": [
+          "coach check-in schedules"
         ]
       }
     },
@@ -12912,88 +13184,6 @@
         "summary": "Get a training plan's weekly schedule",
         "tags": [
           "coach training schedule"
-        ]
-      }
-    },
-    "/v1/coach/form-templates/{id}/assign": {
-      "post": {
-        "callbacks": {},
-        "description": "Assigns a form template to a client in the authenticated coach business.",
-        "operationId": "assignFormTemplate",
-        "parameters": [
-          {
-            "description": "Form template id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientProfileFormAssignmentAssignRequest"
-              }
-            }
-          },
-          "description": "Form assignment request",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientProfileFormAssignmentResponse"
-                }
-              }
-            },
-            "description": "Form assignment created"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Assign form template",
-        "tags": [
-          "coach form templates"
         ]
       }
     },
@@ -17382,6 +17572,125 @@
         "summary": "Preview trainer invitation",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/v1/coach/clients/{client_id}/check-in-schedules": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listCheckInSchedulesForClient",
+        "parameters": [
+          {
+            "description": "Client id",
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProfileCheckInScheduleListResponse"
+                }
+              }
+            },
+            "description": "Schedules"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List client check-in schedules",
+        "tags": [
+          "coach check-in schedules"
+        ]
+      },
+      "post": {
+        "callbacks": {},
+        "operationId": "createCheckInSchedule",
+        "parameters": [
+          {
+            "description": "Client id",
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientProfileCheckInScheduleRequest"
+              }
+            }
+          },
+          "description": "Schedule",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProfileCheckInScheduleResponse"
+                }
+              }
+            },
+            "description": "Schedule"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create client check-in schedule",
+        "tags": [
+          "coach check-in schedules"
         ]
       }
     },

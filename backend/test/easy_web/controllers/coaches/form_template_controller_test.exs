@@ -128,61 +128,6 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
     end
   end
 
-  describe "POST /v1/coach/form-templates/:id/assign" do
-    test "assigns a template to a client", %{conn: conn, coach: coach} do
-      client = insert(:client, business: coach.business, creator: coach)
-      template = insert(:form_template, business: coach.business)
-
-      conn =
-        post(conn, "/v1/coach/form-templates/#{template.id}/assign", %{
-          "client_id" => client.id,
-          "priority" => "high"
-        })
-
-      assert %{"data" => data} = json_response(conn, 201)
-      assert data["client_id"] == client.id
-      assert data["form_template_id"] == template.id
-      assert data["purpose"] == "check_in"
-      assert data["priority"] == "high"
-      assert data["status"] == "assigned"
-    end
-
-    test "forces purpose and status from template", %{conn: conn, coach: coach} do
-      client = insert(:client, business: coach.business, creator: coach)
-      template = insert(:form_template, business: coach.business, purpose: "check_in")
-
-      conn =
-        post(conn, "/v1/coach/form-templates/#{template.id}/assign", %{
-          "client_id" => client.id,
-          "priority" => "high"
-        })
-
-      assert %{"data" => data} = json_response(conn, 201)
-      assert data["purpose"] == "check_in"
-      assert data["status"] == "assigned"
-      assert data["completed_at"] == nil
-
-      assignment = Repo.get!(FormAssignment, data["id"])
-      assert assignment.purpose == :check_in
-      assert assignment.status == :assigned
-      assert assignment.completed_at == nil
-    end
-
-    test "does not assign to another business's client", %{conn: conn, business: business} do
-      other_coach = insert(:coach)
-      client = insert(:client, business: other_coach.business, creator: other_coach, user: insert(:user))
-      template = insert(:form_template, business: business)
-
-      conn =
-        post(conn, "/v1/coach/form-templates/#{template.id}/assign", %{
-          "client_id" => client.id,
-          "priority" => "high"
-        })
-
-      assert json_response(conn, 404)
-    end
-  end
-
   describe "GET /v1/coach/clients/:client_id/form-assignments" do
     test "lists assigned forms for a client", %{conn: conn, coach: coach} do
       client = insert(:client, business: coach.business, creator: coach)

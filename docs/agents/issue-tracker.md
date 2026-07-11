@@ -12,8 +12,8 @@ Issues and PRDs for this repo live in **Linear**, accessed via the **Linear MCP 
 ## Target team / project
 
 - **Team:** `Coach Easy` (key `COA`, id `649203d5-67fe-402f-9b6d-7584ff23b32c`)
-- **Project:** `easy-dev` (id `dd4d6d5c-3e66-48ac-84c5-444b6caa5e66`,
-  https://linear.app/coacheasy/project/productdevelopment-bb1883284876)
+- **Project:** `coacheasydevelopment-1accf50fd495`
+  (https://linear.app/coacheasy/project/coacheasydevelopment-1accf50fd495)
 
 ## Conventions
 

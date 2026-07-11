@@ -236,6 +236,19 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{profile_mapping: ["is invalid"]}})})
   end
 
+  def call(conn, {:error, :storage_unavailable}) do
+    call(
+      conn,
+      {:error,
+       Error.new(
+         :storage_unavailable,
+         "Photo storage is temporarily unavailable. Please try again.",
+         %{},
+         :service_unavailable
+       )}
+    )
+  end
+
   def call(conn, {:error, :active_session_exists}) do
     call(
       conn,

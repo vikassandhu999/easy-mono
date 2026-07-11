@@ -1,6 +1,7 @@
 defmodule Easy.Factory do
   use ExMachina.Ecto, repo: Easy.Repo
 
+  alias Easy.Attachments.Attachment
   alias Easy.Billing.BusinessBilling
   alias Easy.ClientProfiles.CheckInSchedule
   alias Easy.ClientProfiles.ClientProfile
@@ -247,6 +248,22 @@ defmodule Easy.Factory do
       value: Decimal.new("91.40"),
       unit: :kg,
       note: nil,
+      client: client,
+      business: client.business
+    }
+  end
+
+  def attachment_factory do
+    client = build(:client)
+
+    %Attachment{
+      id: Ecto.UUID.generate(),
+      uploaded_by_type: :client,
+      uploaded_by_id: client.id,
+      storage_key: sequence(:attachment_storage_key, &"test/attachment-#{&1}.jpg"),
+      content_type: "image/jpeg",
+      byte_size: 1_024,
+      purpose: :check_in_photo,
       client: client,
       business: client.business
     }

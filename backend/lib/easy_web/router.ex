@@ -244,6 +244,8 @@ defmodule EasyWeb.Router do
     get "/profile", ClientProfileController, :show
     patch "/profile", ClientProfileController, :update
 
+    post "/uploads", UploadController, :create
+
     get "/form-assignments", FormAssignmentController, :index
     get "/form-assignments/:id", FormAssignmentController, :show
     post "/form-assignments/:id/submit", FormAssignmentController, :submit

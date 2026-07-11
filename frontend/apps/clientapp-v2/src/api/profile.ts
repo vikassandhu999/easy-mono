@@ -11,11 +11,14 @@ export type ClientCoach = {
 };
 
 export type ClientProfile = {
+  default_weight_unit: 'kg' | 'lbs';
   id: string;
   first_name: null | string;
   last_name: null | string;
   email: null | string;
   phone: null | string;
+  goal_weight_unit: 'kg' | 'lbs' | null;
+  goal_weight_value: null | number;
   status: string;
   coach: ClientCoach;
 };

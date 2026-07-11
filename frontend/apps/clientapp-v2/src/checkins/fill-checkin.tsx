@@ -11,6 +11,7 @@ import {
   useGetClientFormAssignmentQuery,
   useSubmitClientFormAssignmentMutation,
 } from '@/api/checkins';
+import {useGetClientProfileQuery} from '@/api/profile';
 import CheckinField, {type AnswerValue, type CheckinQuestion} from '@/checkins/checkin-field';
 
 type Section = {questions?: CheckinQuestion[]; title?: string};
@@ -41,16 +42,28 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
   const navigate = useNavigate();
   const goBack = () => navigate(ROUTES.CHECKINS);
   const [submit, {isLoading}] = useSubmitClientFormAssignmentMutation();
+  const {data: profileData} = useGetClientProfileQuery();
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [error, setError] = useState<null | string>(null);
 
   const sections = (assignment.form_template?.sections ?? []) as Section[];
   const questions = sections.flatMap((s) => s.questions ?? []);
+  const weightUnit = profileData?.data.goal_weight_unit ?? profileData?.data.default_weight_unit ?? 'kg';
 
   const handleSubmit = async () => {
     const missing = questions.some((q) => q.required && isEmpty(answers[q.id]));
     if (missing) {
       setError('Please answer all required questions.');
+      return;
+    }
+    const invalidWeight = questions.some((question) => {
+      const value = answers[question.id];
+      return (
+        question.type === 'weight' && !isEmpty(value) && (typeof value !== 'number' || value <= 0 || value >= 1000)
+      );
+    });
+    if (invalidWeight) {
+      setError('Enter a weight greater than 0 and below 1000.');
       return;
     }
     setError(null);
@@ -88,6 +101,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
                     onChange={(value) => setAnswers((prev) => ({...prev, [question.id]: value}))}
                     question={question}
                     value={answers[question.id] ?? null}
+                    weightUnit={weightUnit}
                   />
                 ))}
               </div>

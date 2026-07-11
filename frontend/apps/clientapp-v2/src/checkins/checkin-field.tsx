@@ -38,11 +38,13 @@ function FieldLabel({children, required}: {children: string; required?: boolean}
 export default function CheckinField({
   question,
   value,
+  weightUnit = 'kg',
   onChange,
 }: {
   onChange: (value: AnswerValue) => void;
   question: CheckinQuestion;
   value: AnswerValue;
+  weightUnit?: 'kg' | 'lbs';
 }) {
   const labelId = useId();
   const options = question.options ?? [];
@@ -119,6 +121,53 @@ export default function CheckinField({
           <FieldLabel required={question.required}>{question.label}</FieldLabel>
           <NumberField.Group>
             <NumberField.Input />
+          </NumberField.Group>
+        </NumberField>
+      );
+
+    case 'rating':
+      return (
+        <div>
+          <FieldLabel required={question.required}>{question.label}</FieldLabel>
+          <div
+            aria-label={question.label}
+            className="flex gap-2"
+            role="radiogroup"
+          >
+            {[1, 2, 3, 4, 5].map((rating) => (
+              <button
+                aria-checked={value === rating}
+                aria-label={`${rating} out of 5`}
+                className={`grid size-11 place-items-center rounded-full border-2 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+                  value === rating
+                    ? 'border-accent bg-accent text-accent-foreground'
+                    : 'border-border bg-surface text-muted hover:border-accent'
+                }`}
+                key={rating}
+                onClick={() => onChange(rating)}
+                role="radio"
+                type="button"
+              >
+                {rating}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'weight':
+      return (
+        <NumberField
+          maxValue={999.99}
+          minValue={0.01}
+          onChange={(v) => onChange(Number.isNaN(v) ? null : v)}
+          value={typeof value === 'number' ? value : undefined}
+          variant="secondary"
+        >
+          <FieldLabel required={question.required}>{question.label}</FieldLabel>
+          <NumberField.Group>
+            <NumberField.Input />
+            <span className="pr-3 text-sm font-semibold text-muted">{weightUnit}</span>
           </NumberField.Group>
         </NumberField>
       );

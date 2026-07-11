@@ -283,9 +283,16 @@ defmodule Easy.ClientProfiles do
   def update_form_assignment(%Ctx{} = ctx, assignment_id, attrs) do
     with {:ok, assignment} <- get_form_assignment(ctx.business_id, assignment_id),
          :ok <- Clients.authorize_client_id(ctx, assignment.client_id) do
-      assignment
-      |> FormAssignment.update_changeset(attrs)
-      |> Repo.update()
+      Repo.transaction(fn ->
+        case assignment |> FormAssignment.update_changeset(attrs) |> Repo.update() do
+          {:ok, updated} ->
+            sync_intake_status!(ctx, updated)
+            updated
+
+          {:error, changeset} ->
+            Repo.rollback(changeset)
+        end
+      end)
     end
   end
 
@@ -411,6 +418,27 @@ defmodule Easy.ClientProfiles do
         Repo.rollback(reason)
     end
   end
+
+  defp sync_intake_status!(ctx, %FormAssignment{purpose: :intake} = assignment) do
+    case get_or_create_profile(ctx, assignment.client_id) do
+      {:ok, profile} ->
+        profile
+        |> Ecto.Changeset.change(
+          intake_status: assignment.status,
+          intake_completed_at: assignment.completed_at
+        )
+        |> Repo.update()
+        |> case do
+          {:ok, _profile} -> :ok
+          {:error, reason} -> Repo.rollback(reason)
+        end
+
+      {:error, reason} ->
+        Repo.rollback(reason)
+    end
+  end
+
+  defp sync_intake_status!(_ctx, _assignment), do: :ok
 
   # Defensive against malformed stored templates: a non-list `questions` or a non-map question
   # is skipped rather than crashing the submission transaction (which would surface as a 500).

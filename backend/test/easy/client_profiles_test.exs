@@ -674,6 +674,83 @@ defmodule Easy.ClientProfilesTest do
     end
   end
 
+  describe "update_form_assignment/3 intake sync" do
+    test "dismissing an intake assignment sets profile intake_status to dismissed" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+      template = insert(:form_template, business: client.business, purpose: :intake)
+
+      assignment =
+        insert(:form_assignment,
+          business: client.business,
+          client: client,
+          form_template: template,
+          purpose: :intake,
+          status: :assigned
+        )
+
+      assert {:ok, %{status: :dismissed}} =
+               ClientProfiles.update_form_assignment(ctx, assignment.id, %{status: :dismissed})
+
+      assert {:ok, profile} = ClientProfiles.get_or_create_profile(ctx, client.id)
+      assert profile.intake_status == :dismissed
+      assert profile.intake_completed_at == nil
+    end
+
+    test "reopening a completed intake assignment resets profile intake_status" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+      template = insert(:form_template, business: client.business, purpose: :intake)
+      completed_at = DateTime.utc_now(:second)
+
+      assignment =
+        insert(:form_assignment,
+          business: client.business,
+          client: client,
+          form_template: template,
+          purpose: :intake,
+          status: :completed,
+          completed_at: completed_at
+        )
+
+      assert {:ok, _profile} =
+               ClientProfiles.update_profile(ctx, client.id, %{
+                 intake_status: :completed,
+                 intake_completed_at: completed_at
+               })
+
+      assert {:ok, %{status: :assigned}} =
+               ClientProfiles.update_form_assignment(ctx, assignment.id, %{status: :assigned})
+
+      assert {:ok, profile} = ClientProfiles.get_or_create_profile(ctx, client.id)
+      assert profile.intake_status == :assigned
+      assert profile.intake_completed_at == nil
+    end
+
+    test "updating a non-intake assignment does not touch the profile" do
+      client = insert_client()
+      ctx = owner_ctx(client.business)
+      template = insert(:form_template, business: client.business, purpose: :weekly_check_in)
+
+      assignment =
+        insert(:form_assignment,
+          business: client.business,
+          client: client,
+          form_template: template,
+          purpose: :weekly_check_in
+        )
+
+      {:ok, profile_before} = ClientProfiles.get_or_create_profile(ctx, client.id)
+
+      assert {:ok, _assignment} =
+               ClientProfiles.update_form_assignment(ctx, assignment.id, %{status: :dismissed})
+
+      {:ok, profile_after} = ClientProfiles.get_or_create_profile(ctx, client.id)
+      assert profile_after.intake_status == profile_before.intake_status
+      assert profile_after.updated_at == profile_before.updated_at
+    end
+  end
+
   describe "validate_answers/2" do
     @sections [
       %{

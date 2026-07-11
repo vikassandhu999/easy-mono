@@ -94,6 +94,8 @@ export type TemplateDraft = {
   sections: SectionDraft[];
 };
 
+type QuestionRequest = ClientProfileFormTemplateRequest['sections'][number]['questions'][number];
+
 function uid(): string {
   return crypto.randomUUID();
 }
@@ -179,7 +181,7 @@ export function draftToRequest(draft: TemplateDraft): ClientProfileFormTemplateR
     questions: section.questions.map((q) => {
       const id = q.id || uniqueId(q.label, taken);
       taken.add(id);
-      const question: Record<string, unknown> = {id, label: q.label, type: q.type, required: q.required};
+      const question: QuestionRequest = {id, label: q.label, type: q.type, required: q.required};
       if (SELECT_TYPES.includes(q.type)) {
         question.options = q.options;
       }

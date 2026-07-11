@@ -1849,6 +1849,18 @@ export type ClientProfileFormTemplate = {
   name: string;
   purpose: 'intake' | 'check_in';
   sections: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      [key: string]: any;
+    }[];
+    title?: string;
     [key: string]: any;
   }[];
   status: 'active' | 'archived';
@@ -2309,6 +2321,7 @@ export type Business = {
   about: string | null;
   dashboard_setup_hidden_at: string | null;
   dashboard_setup_hidden_reason: ('dismissed' | 'completed') | null;
+  default_weight_unit: 'kg' | 'lbs';
   handle: string;
   id: string;
   inserted_at: string;
@@ -2320,6 +2333,7 @@ export type BusinessResponse = {
 };
 export type BusinessUpdateRequest = {
   about?: string | null;
+  default_weight_unit?: 'kg' | 'lbs';
   handle?: string;
   name?: string;
 };
@@ -2621,6 +2635,7 @@ export type ProspectUpdateRequest = {
 };
 export type BusinessRequest = {
   about?: string | null;
+  default_weight_unit?: 'kg' | 'lbs';
   handle: string;
   name: string;
 };
@@ -2632,6 +2647,18 @@ export type ClientProfileFormSubmission = {
   id: string;
   inserted_at: string;
   question_snapshot: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      [key: string]: any;
+    }[];
+    title?: string;
     [key: string]: any;
   }[];
   reviewed_at: string | null;
@@ -2656,6 +2683,7 @@ export type TrainingWorkoutUpdateRequest = {
 };
 export type WeightEntry = {
   date: string;
+  form_submission_id: string | null;
   id: string;
   inserted_at: string;
   note: string | null;
@@ -2707,6 +2735,18 @@ export type ClientProfileFormTemplateRequest = {
   name: string;
   purpose: 'intake' | 'check_in';
   sections: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      [key: string]: any;
+    }[];
+    title?: string;
     [key: string]: any;
   }[];
   status?: 'active' | 'archived';
@@ -2802,6 +2842,18 @@ export type ClientProfileReviewQueueItem = {
   id: string;
   inserted_at: string;
   question_snapshot: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      [key: string]: any;
+    }[];
+    title?: string;
     [key: string]: any;
   }[];
   reviewed_at: string | null;
@@ -2949,6 +3001,18 @@ export type ClientProfileFormTemplateUpdateRequest = {
   name?: string;
   purpose?: 'intake' | 'check_in';
   sections?: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      [key: string]: any;
+    }[];
+    title?: string;
     [key: string]: any;
   }[];
   status?: 'active' | 'archived';

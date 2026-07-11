@@ -726,6 +726,18 @@ export type ClientProfileFormSubmission = {
   id: string;
   inserted_at: string;
   question_snapshot: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      [key: string]: any;
+    }[];
+    title?: string;
     [key: string]: any;
   }[];
   reviewed_at: string | null;
@@ -1167,6 +1179,18 @@ export type ClientProfileFormTemplate = {
   name: string;
   purpose: 'intake' | 'check_in';
   sections: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      [key: string]: any;
+    }[];
+    title?: string;
     [key: string]: any;
   }[];
   status: 'active' | 'archived';
@@ -1282,6 +1306,7 @@ export type ClientProfileCoach = {
 };
 export type ClientProfile = {
   coach: ClientProfileCoach | null;
+  default_weight_unit: 'kg' | 'lbs';
   email: string | null;
   first_name: string | null;
   goal_weight_unit: string | null;
@@ -1341,6 +1366,7 @@ export type TrainerInvitationPreviewResponse = {
 };
 export type WeightEntry = {
   date: string;
+  form_submission_id: string | null;
   id: string;
   inserted_at: string;
   note: string | null;

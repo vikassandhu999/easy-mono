@@ -542,7 +542,14 @@ defmodule Easy.ClientProfiles do
       |> limit(1)
       |> Repo.one()
 
-    latest_unit || client.goal_weight_unit || Repo.get!(Business, business_id).default_weight_unit
+    latest_unit || client.goal_weight_unit || default_weight_unit!(business_id)
+  end
+
+  defp default_weight_unit!(business_id) do
+    case Repo.get(Business, business_id) do
+      %Business{default_weight_unit: unit} -> unit
+      nil -> Repo.rollback(:not_found)
+    end
   end
 
   defp complete_assignment!(ctx, client_id, assignment, submission, submitted_at) do

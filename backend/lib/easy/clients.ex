@@ -203,11 +203,14 @@ defmodule Easy.Clients do
            }}
           | {:error, :not_found}
   def get_client_account_profile(%Ctx{} = ctx) do
-    with {:ok, client} <- get_client_account(ctx) do
+    with {:ok, client} <- get_client_account(ctx),
+         %Orgs.Business{} = business <- Repo.get(Orgs.Business, ctx.business_id) do
       coach = get_assigned_coach(ctx.business_id, client.assigned_coach_id)
-      business = Repo.get!(Orgs.Business, ctx.business_id)
 
       {:ok, %{client: client, coach: coach, default_weight_unit: business.default_weight_unit}}
+    else
+      nil -> {:error, :not_found}
+      error -> error
     end
   end
 

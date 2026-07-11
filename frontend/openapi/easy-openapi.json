@@ -452,6 +452,13 @@
             "x-struct": null,
             "x-validate": null
           },
+          "form_submission_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "id": {
             "format": "uuid",
             "type": "string",
@@ -491,6 +498,7 @@
           "value",
           "unit",
           "note",
+          "form_submission_id",
           "inserted_at"
         ],
         "title": "WeightEntry",
@@ -909,6 +917,15 @@
         "properties": {
           "about": {
             "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "default_weight_unit": {
+            "enum": [
+              "kg",
+              "lbs"
+            ],
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -3031,6 +3048,81 @@
           "sections": {
             "items": {
               "additionalProperties": true,
+              "properties": {
+                "questions": {
+                  "items": {
+                    "additionalProperties": true,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "label": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "options": {
+                        "items": {
+                          "type": "string",
+                          "x-struct": null,
+                          "x-validate": null
+                        },
+                        "type": "array",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "profile_mapping": {
+                        "additionalProperties": true,
+                        "nullable": true,
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "type": {
+                        "enum": [
+                          "text",
+                          "number",
+                          "boolean",
+                          "date",
+                          "select",
+                          "multi_select",
+                          "rating",
+                          "weight"
+                        ],
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "label",
+                      "type"
+                    ],
+                    "type": "object",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "title": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "required": [
+                "questions"
+              ],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -3090,6 +3182,81 @@
           "question_snapshot": {
             "items": {
               "additionalProperties": true,
+              "properties": {
+                "questions": {
+                  "items": {
+                    "additionalProperties": true,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "label": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "options": {
+                        "items": {
+                          "type": "string",
+                          "x-struct": null,
+                          "x-validate": null
+                        },
+                        "type": "array",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "profile_mapping": {
+                        "additionalProperties": true,
+                        "nullable": true,
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "type": {
+                        "enum": [
+                          "text",
+                          "number",
+                          "boolean",
+                          "date",
+                          "select",
+                          "multi_select",
+                          "rating",
+                          "weight"
+                        ],
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "label",
+                      "type"
+                    ],
+                    "type": "object",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "title": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "required": [
+                "questions"
+              ],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -3229,6 +3396,15 @@
             "x-struct": null,
             "x-validate": null
           },
+          "default_weight_unit": {
+            "enum": [
+              "kg",
+              "lbs"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "handle": {
             "type": "string",
             "x-struct": null,
@@ -3263,6 +3439,7 @@
           "name",
           "handle",
           "about",
+          "default_weight_unit",
           "dashboard_setup_hidden_at",
           "dashboard_setup_hidden_reason",
           "inserted_at",
@@ -3993,6 +4170,15 @@
             "x-struct": null,
             "x-validate": null
           },
+          "default_weight_unit": {
+            "enum": [
+              "kg",
+              "lbs"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "email": {
             "format": "email",
             "nullable": true,
@@ -4050,6 +4236,7 @@
           "phone",
           "goal_weight_value",
           "goal_weight_unit",
+          "default_weight_unit",
           "status",
           "coach"
         ],
@@ -4141,6 +4328,81 @@
           "sections": {
             "items": {
               "additionalProperties": true,
+              "properties": {
+                "questions": {
+                  "items": {
+                    "additionalProperties": true,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "label": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "options": {
+                        "items": {
+                          "type": "string",
+                          "x-struct": null,
+                          "x-validate": null
+                        },
+                        "type": "array",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "profile_mapping": {
+                        "additionalProperties": true,
+                        "nullable": true,
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "type": {
+                        "enum": [
+                          "text",
+                          "number",
+                          "boolean",
+                          "date",
+                          "select",
+                          "multi_select",
+                          "rating",
+                          "weight"
+                        ],
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "label",
+                      "type"
+                    ],
+                    "type": "object",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "title": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "required": [
+                "questions"
+              ],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -7765,6 +8027,15 @@
             "x-struct": null,
             "x-validate": null
           },
+          "default_weight_unit": {
+            "enum": [
+              "kg",
+              "lbs"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "handle": {
             "maxLength": 255,
             "type": "string",
@@ -8389,6 +8660,81 @@
           "sections": {
             "items": {
               "additionalProperties": true,
+              "properties": {
+                "questions": {
+                  "items": {
+                    "additionalProperties": true,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "label": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "options": {
+                        "items": {
+                          "type": "string",
+                          "x-struct": null,
+                          "x-validate": null
+                        },
+                        "type": "array",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "profile_mapping": {
+                        "additionalProperties": true,
+                        "nullable": true,
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "type": {
+                        "enum": [
+                          "text",
+                          "number",
+                          "boolean",
+                          "date",
+                          "select",
+                          "multi_select",
+                          "rating",
+                          "weight"
+                        ],
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "label",
+                      "type"
+                    ],
+                    "type": "object",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "title": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "required": [
+                "questions"
+              ],
               "type": "object",
               "x-struct": null,
               "x-validate": null
@@ -9569,6 +9915,81 @@
           "question_snapshot": {
             "items": {
               "additionalProperties": true,
+              "properties": {
+                "questions": {
+                  "items": {
+                    "additionalProperties": true,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "label": {
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "options": {
+                        "items": {
+                          "type": "string",
+                          "x-struct": null,
+                          "x-validate": null
+                        },
+                        "type": "array",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "profile_mapping": {
+                        "additionalProperties": true,
+                        "nullable": true,
+                        "type": "object",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "x-struct": null,
+                        "x-validate": null
+                      },
+                      "type": {
+                        "enum": [
+                          "text",
+                          "number",
+                          "boolean",
+                          "date",
+                          "select",
+                          "multi_select",
+                          "rating",
+                          "weight"
+                        ],
+                        "type": "string",
+                        "x-struct": null,
+                        "x-validate": null
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "label",
+                      "type"
+                    ],
+                    "type": "object",
+                    "x-struct": null,
+                    "x-validate": null
+                  },
+                  "type": "array",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "title": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              },
+              "required": [
+                "questions"
+              ],
               "type": "object",
               "x-struct": null,
               "x-validate": null

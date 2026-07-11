@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter", sans-serif; background: #EEF1F5; color: #18181B; -webkit-font-smoothing: antialiased; }
+  a { color: #0091FF; text-decoration: none; font-weight: 600; }
+  a:hover { color: #0072D6; }
+  .nb-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  .nb-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+  .nb-scroll::-webkit-scrollbar-thumb { background: rgba(24,24,27,.18); border-radius: 99px; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes modalPop { from { opacity: 0; transform: translateY(22px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes growUp { from { transform: scaleY(.001); opacity: .3; } to { transform: scaleY(1); opacity: 1; } }
+  @keyframes growRight { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes drawIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes popDot { from { opacity: 0; transform: translate(-50%,-50%) scale(0); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+  @keyframes ringSweep { from { stroke-dashoffset: var(--circ); } to { stroke-dashoffset: var(--off); } }
+  @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  @keyframes sheetDrop { from { opacity: 0; transform: translateY(-8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+</style>
+</helmet>
+<div ref="{{ root }}" style="min-height:100%; padding:56px 64px 96px;">
+
+  <section style="margin-bottom:60px;">
+    <header style="max-width:780px; margin:0 auto 44px; text-align:center; animation:fadeUp .5s both;">
+      <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:#18181B; color:#fff; font-size:12px; font-weight:600; margin-bottom:20px;">
+        <span style="width:7px; height:7px; border-radius:50%; background:#0091FF;"></span>
+        Analytics &amp; Reports · Focus direction
+      </div>
+      <h1 style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; letter-spacing:-.02em; margin:0 0 12px;">Analytics &amp; Reports</h1>
+      <p style="font-size:16px; line-height:1.6; color:#52525B; margin:0;">The whole business in one calm view — revenue, clients, retention, trainers and the lead pipeline. Toggle the period, read the trends, and open any report as a shareable document.</p>
+    </header>
+
+    <div style="display:flex; justify-content:center;">
+      <div id="1a" style="display:flex; flex-direction:column; gap:22px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; background:#18181B; color:#fff; font-weight:800; font-size:15px; font-family:'Space Grotesk',sans-serif;">1a</span>
+          <div>
+            <div style="font-size:19px; font-weight:800; letter-spacing:-.01em;">Analytics — Focus</div>
+            <div style="font-size:13px; color:#71717A;">Business intelligence · charts · exportable reports</div>
+          </div>
+        </div>
+
+        <!-- DESKTOP WINDOW -->
+        <div style="width:1240px; border-radius:22px; overflow:hidden; background:#fff; border:1px solid #E4E7EC; box-shadow:0 40px 80px -28px rgba(24,24,27,.32), 0 12px 28px -12px rgba(24,24,27,.16);">
+          <div style="height:40px; display:flex; align-items:center; gap:8px; padding:0 16px; background:#18181B; border-bottom:1px solid #26262A;">
+            <span style="width:11px;height:11px;border-radius:50%;background:#FF5F57;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#FEBC2E;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#28C840;"></span>
+            <div style="flex:1; text-align:center; font-size:12px; font-weight:500; color:#71717A;">app.coachez.com/analytics</div>
+          </div>
+          <div style="display:flex; height:900px; position:relative;">
+
+            <!-- SIDEBAR -->
+            <aside style="width:236px; flex-shrink:0; background:#18181B; color:#A1A1AA; display:flex; flex-direction:column; padding:0 14px;">
+              <div style="height:66px; display:flex; align-items:center; padding-left:8px;">
+                <span style="display:inline-flex; align-items:center; gap:9px;"><img src="assets/icon-192.png" alt="coachez" style="height:26px; width:26px; border-radius:7px;"><span style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; letter-spacing:-.02em; color:#fff;">coachez</span></span>
+              </div>
+              <nav style="display:flex; flex-direction:column; gap:3px; flex:1;">
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>Dashboard</div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span style="flex:1;">Clients</span><span style="background:#26262B; color:#A1A1AA; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">118</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span style="flex:1;">Prospects</span><span style="background:#26262B; color:#A1A1AA; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">31</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M6.5 6.5h11M6.5 17.5h11M4 6.5h.01M4 17.5h.01M20 6.5h.01M20 17.5h.01M9 12h6"></path><rect x="2" y="9" width="4" height="6" rx="1"></rect><rect x="18" y="9" width="4" height="6" rx="1"></rect></svg><span style="flex:1;">Trainers</span><span style="background:#26262B; color:#A1A1AA; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">6</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path></svg><span style="flex:1;">Builder</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; background:#0091FF; color:#fff; font-weight:600; font-size:14px; font-family:'Space Grotesk',sans-serif;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex:1;">Analytics &amp; Reports</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg><span style="flex:1;">Payments &amp; Revenue</span></div>
+                <div style="flex:1;"></div>
+                <div style="height:1px; background:#2A2A2E; margin:0 0 8px;"></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; margin-bottom:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="12" cy="12" r="3"></circle><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"></path></svg>Settings</div>
+              </nav>
+            </aside>
+
+            <!-- CONTENT -->
+            <main style="flex:1; display:flex; flex-direction:column; background:#F7F8FA; overflow:hidden; position:relative;">
+
+              <!-- TOP BAR -->
+              <div style="flex-shrink:0; background:#fff; border-bottom:1px solid #ECEEF2; padding:22px 30px 20px; animation:fadeUp .5s both .04s;">
+                <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px;">
+                  <div style="min-width:0;">
+                    <h1 style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; letter-spacing:-.03em; margin:0; line-height:1;">Overview</h1>
+                    <div style="font-size:13px; color:#8A8A8E; margin-top:9px;">{{ periodSub }} · <b style="color:#18181B; font-weight:600;">Updated today, 9:41 AM</b></div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                    <div style="display:flex; background:#F2F2F7; border-radius:10px; padding:3px;">
+                      <sc-for list="{{ tfTabs }}" as="t" hint-placeholder-count="3">
+                        <span onClick="{{ t.onClick }}" style="padding:7px 15px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer; transition:all .18s; {{ t.style }}">{{ t.label }}</span>
+                      </sc-for>
+                    </div>
+                    <div onClick="{{ exportAll }}" style="display:flex; align-items:center; gap:7px; background:#18181B; color:#fff; padding:9px 15px; border-radius:10px; font-size:12.5px; font-weight:600; cursor:pointer;" style-hover="opacity:.85;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Export</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="nb-scroll" style="flex:1; overflow-y:auto; padding:24px 30px 40px;">
+
+                <!-- KPI ROW -->
+                <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px;">
+                  <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                    <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; padding:16px 16px 14px; animation:fadeUp .5s both; {{ k.delay }}">
+                      <div style="display:flex; align-items:center; justify-content:space-between;">
+                        <span style="font-size:12px; font-weight:600; color:#8A8A8E;">{{ k.label }}</span>
+                        <span style="display:inline-flex; align-items:center; gap:2px; font-size:11px; font-weight:700; color:{{ k.deltaColor }}; background:{{ k.deltaBg }}; padding:2px 7px; border-radius:99px;">{{ k.delta }}</span>
+                      </div>
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:27px; font-weight:700; letter-spacing:-.02em; margin-top:8px;">{{ k.value }}</div>
+                      <div style="position:relative; height:34px; margin-top:6px;">
+                        <svg width="100%" height="34" viewBox="0 0 120 40" preserveAspectRatio="none" style="display:block; animation:drawIn .9s ease both .2s;">
+                          <path d="{{ k.spark.area }}" fill="{{ k.fill }}"></path>
+                          <path d="{{ k.spark.line }}" fill="none" stroke="{{ k.accent }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <!-- ROW: REVENUE (wide) + RETENTION DONUT -->
+                <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-top:14px;">
+                  <div style="background:#fff; border:1px solid #ECEEF2; border-radius:18px; padding:20px 22px; animation:fadeUp .5s both .18s;">
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:6px;">
+                      <div>
+                        <div style="font-size:13.5px; font-weight:700; letter-spacing:-.01em;">Revenue trend</div>
+                        <div style="font-size:12px; color:#8A8A8E; margin-top:3px;">{{ rev.revLabel }} across {{ periodSub }}</div>
+                      </div>
+                      <div style="display:flex; gap:16px;">
+                        <div style="text-align:right;"><div style="font-size:10.5px; font-weight:600; color:#8A8A8E; text-transform:uppercase; letter-spacing:.04em;">ARPU</div><div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; margin-top:2px;">{{ rev.arpu }}</div></div>
+                        <div style="text-align:right;"><div style="font-size:10.5px; font-weight:600; color:#8A8A8E; text-transform:uppercase; letter-spacing:.04em;">Est. LTV</div><div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; margin-top:2px;">{{ rev.ltv }}</div></div>
+                        <div style="text-align:right;"><div style="font-size:10.5px; font-weight:600; color:#8A8A8E; text-transform:uppercase; letter-spacing:.04em;">Total</div><div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; margin-top:2px; color:#0091FF;">{{ rev.total }}</div></div>
+                      </div>
+                    </div>
+                    <div style="position:relative; height:230px; margin-top:8px;">
+                      <div style="position:absolute; inset:0 0 22px 0; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div style="height:1px; background:#F1F4F8;"></div><div style="height:1px; background:#F1F4F8;"></div><div style="height:1px; background:#F1F4F8;"></div><div style="height:1px; background:#F1F4F8;"></div>
+                      </div>
+                      <svg width="100%" height="208" viewBox="0 0 600 220" preserveAspectRatio="none" style="display:block; position:absolute; inset:0; animation:drawIn 1s ease both .3s;">
+                        <defs><linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0091FF" stop-opacity="0.24"></stop><stop offset="1" stop-color="#0091FF" stop-opacity="0"></stop></linearGradient></defs>
+                        <path d="{{ rev.area }}" fill="url(#revGrad)"></path>
+                        <path d="{{ rev.line }}" fill="none" stroke="#0091FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                      </svg>
+                      <sc-for list="{{ rev.pts }}" as="p" hint-placeholder-count="6">
+                        <div style="position:absolute; left:{{ p.leftPct }}%; top:{{ p.topPct }}%; width:9px; height:9px; border-radius:50%; background:#fff; border:2.5px solid #0091FF; transform:translate(-50%,-50%); animation:popDot .4s both; {{ p.delay }}"></div>
+                        <div style="position:absolute; left:{{ p.leftPct }}%; top:{{ p.topPct }}%; transform:translate(-50%,-150%); font-size:10.5px; font-weight:700; color:#18181B; white-space:nowrap; animation:fadeUp .5s both; {{ p.delay }}">{{ p.label }}</div>
+                      </sc-for>
+                      <sc-for list="{{ rev.axis }}" as="a" hint-placeholder-count="6">
+                        <div style="position:absolute; left:{{ a.leftPct }}%; bottom:0; transform:translateX(-50%); font-size:11px; font-weight:500; color:#A1A1AA;">{{ a.label }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                  <!-- RETENTION DONUT -->
+                  <div style="background:#fff; border:1px solid #ECEEF2; border-radius:18px; padding:20px 22px; display:flex; flex-direction:column; animation:fadeUp .5s both .22s;">
+                    <div style="font-size:13.5px; font-weight:700; letter-spacing:-.01em;">Retention &amp; churn</div>
+                    <div style="font-size:12px; color:#8A8A8E; margin-top:3px;">Client base health</div>
+                    <div style="position:relative; flex:1; display:flex; align-items:center; justify-content:center; min-height:150px;">
+                      <svg width="168" height="168" viewBox="0 0 140 140" style="transform:rotate(-90deg);">
+                        <circle cx="70" cy="70" r="52" fill="none" stroke="#F1F4F8" stroke-width="15"></circle>
+                        <circle cx="70" cy="70" r="52" fill="none" stroke="#16A34A" stroke-width="15" stroke-linecap="round" stroke-dasharray="{{ donut.circ }}" stroke-dashoffset="{{ donut.off }}" style="--circ:{{ donut.circ }}; --off:{{ donut.off }}; animation:ringSweep 1.1s cubic-bezier(.4,0,.2,1) both .3s;"></circle>
+                      </svg>
+                      <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        <div style="font-family:'Space Grotesk',sans-serif; font-size:30px; font-weight:700; letter-spacing:-.02em;">{{ donut.retention }}%</div>
+                        <div style="font-size:11px; font-weight:600; color:#8A8A8E;">retained</div>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:6px;">
+                      <div style="flex:1; background:#F0FAF4; border-radius:11px; padding:9px 11px;"><div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#16A34A;"><span style="width:7px;height:7px;border-radius:50%;background:#16A34A;"></span>Retained</div><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; margin-top:3px;">{{ donut.retention }}%</div></div>
+                      <div style="flex:1; background:#FEF2F2; border-radius:11px; padding:9px 11px;"><div style="display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#EF4444;"><span style="width:7px;height:7px;border-radius:50%;background:#EF4444;"></span>Churn</div><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; margin-top:3px;">{{ donut.churn }}%</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ROW: CLIENT GROWTH + GOALS + FUNNEL -->
+                <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:14px; margin-top:14px;">
+                  <!-- GROWTH BARS -->
+                  <div style="background:#fff; border:1px solid #ECEEF2; border-radius:18px; padding:20px 22px; animation:fadeUp .5s both .26s;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                      <div><div style="font-size:13.5px; font-weight:700;">Client growth</div><div style="font-size:12px; color:#8A8A8E; margin-top:3px;">New vs churned</div></div>
+                      <div style="display:flex; gap:12px;">
+                        <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#71717A;"><span style="width:9px;height:9px;border-radius:3px;background:#0091FF;"></span>New</span>
+                        <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#71717A;"><span style="width:9px;height:9px;border-radius:3px;background:#F3A6A6;"></span>Churned</span>
+                      </div>
+                    </div>
+                    <div style="display:flex; align-items:flex-end; justify-content:space-around; gap:8px; height:170px; margin-top:14px;">
+                      <sc-for list="{{ growth }}" as="g" hint-placeholder-count="6">
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%;">
+                          <div style="flex:1; display:flex; align-items:flex-end; gap:4px; width:100%; justify-content:center;">
+                            <div title="{{ g.newV }} new" style="width:14px; border-radius:5px 5px 0 0; background:linear-gradient(#33A7FF,#0091FF); height:{{ g.newH }}%; transform-origin:bottom; animation:growUp .7s cubic-bezier(.4,0,.2,1) both; {{ g.delay }}"></div>
+                            <div title="{{ g.chV }} churned" style="width:14px; border-radius:5px 5px 0 0; background:#F3A6A6; height:{{ g.chH }}%; transform-origin:bottom; animation:growUp .7s cubic-bezier(.4,0,.2,1) both; {{ g.delay2 }}"></div>
+                          </div>
+                          <div style="font-size:10.5px; font-weight:500; color:#A1A1AA;">{{ g.label }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                  <!-- GOALS -->
+                  <div style="background:#fff; border:1px solid #ECEEF2; border-radius:18px; padding:20px 22px; animation:fadeUp .5s both .3s;">
+                    <div style="font-size:13.5px; font-weight:700;">Goal completion</div>
+                    <div style="font-size:12px; color:#8A8A8E; margin-top:3px;">Avg progress by goal type</div>
+                    <div style="display:flex; flex-direction:column; gap:15px; margin-top:18px;">
+                      <sc-for list="{{ goals }}" as="g" hint-placeholder-count="4">
+                        <div>
+                          <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span style="font-weight:600; color:#3F3F46;">{{ g.label }}</span><span style="font-family:'Space Grotesk',sans-serif; font-weight:700;">{{ g.pct }}%</span></div>
+                          <div style="height:8px; border-radius:99px; background:#F1F4F8; overflow:hidden;"><div style="height:100%; width:{{ g.pct }}%; border-radius:99px; background:{{ g.color }}; transform-origin:left; animation:growRight .9s cubic-bezier(.4,0,.2,1) both; {{ g.delay }}"></div></div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                  <!-- FUNNEL -->
+                  <div style="background:#fff; border:1px solid #ECEEF2; border-radius:18px; padding:20px 22px; animation:fadeUp .5s both .34s;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;"><div><div style="font-size:13.5px; font-weight:700;">Lead pipeline</div><div style="font-size:12px; color:#8A8A8E; margin-top:3px;">Stage conversion</div></div><span style="font-size:11px; font-weight:700; color:#16A34A; background:#F0FAF4; padding:3px 9px; border-radius:99px;">{{ funnelWin }} win</span></div>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:18px;">
+                      <sc-for list="{{ funnel }}" as="f" hint-placeholder-count="4">
+                        <div>
+                          <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:5px;"><span style="font-weight:600; color:#3F3F46;">{{ f.label }}</span><span style="color:#8A8A8E;"><b style="color:#18181B; font-family:'Space Grotesk',sans-serif;">{{ f.count }}</b> · {{ f.conv }}%</span></div>
+                          <div style="height:26px; border-radius:8px; background:#F1F4F8; overflow:hidden;"><div style="height:100%; width:{{ f.widthPct }}%; border-radius:8px; background:{{ f.color }}; transform-origin:left; animation:growRight .8s cubic-bezier(.4,0,.2,1) both; {{ f.delay }}"></div></div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ROW: TRAINER LEADERBOARD + HEATMAP -->
+                <div style="display:grid; grid-template-columns:1.35fr 1fr; gap:14px; margin-top:14px;">
+                  <!-- LEADERBOARD -->
+                  <div style="background:#fff; border:1px solid #ECEEF2; border-radius:18px; padding:20px 22px; animation:fadeUp .5s both .38s;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;"><div><div style="font-size:13.5px; font-weight:700;">Trainer leaderboard</div><div style="font-size:12px; color:#8A8A8E; margin-top:3px;">Ranked by client load &amp; revenue</div></div><span style="font-size:11px; font-weight:600; color:#8A8A8E;">Clients · Rating · Retention · Rev</span></div>
+                    <div style="display:flex; flex-direction:column; gap:3px;">
+                      <sc-for list="{{ trainers }}" as="t" hint-placeholder-count="6">
+                        <div style="display:flex; align-items:center; gap:12px; padding:9px 8px; border-radius:11px; animation:fadeUp .5s both; {{ t.delay }}" style-hover="background:#F7F8FA;">
+                          <span style="width:22px; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:700; color:{{ t.rankColor }};">{{ t.rank }}</span>
+                          <span style="width:34px; height:34px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; color:#fff; background:#18181B;">{{ t.initials }}</span>
+                          <div style="flex:1; min-width:0;">
+                            <div style="font-size:13px; font-weight:600;">{{ t.name }}</div>
+                            <div style="height:5px; border-radius:99px; background:#F1F4F8; overflow:hidden; margin-top:5px; max-width:160px;"><div style="height:100%; width:{{ t.barPct }}%; border-radius:99px; background:#0091FF; transform-origin:left; animation:growRight .9s cubic-bezier(.4,0,.2,1) both; {{ t.delay }}"></div></div>
+                          </div>
+                          <span style="font-size:12.5px; font-weight:600; color:#3F3F46; width:26px; text-align:right;">{{ t.clients }}</span>
+                          <span style="display:inline-flex; align-items:center; gap:3px; font-size:12px; font-weight:700; width:40px; justify-content:flex-end;"><svg viewBox="0 0 24 24" fill="#F5A623" stroke="none" width="12" height="12"><path d="m12 2 3 6.5 7 .6-5.3 4.6 1.6 6.8L12 17.5 5.7 20.5l1.6-6.8L2 9.1l7-.6z"/></svg>{{ t.rating }}</span>
+                          <span style="font-size:12px; font-weight:600; color:#16A34A; width:38px; text-align:right;">{{ t.retention }}%</span>
+                          <span style="font-family:'Space Grotesk',sans-serif; font-size:12.5px; font-weight:700; width:46px; text-align:right;">{{ t.revenue }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                  <!-- HEATMAP -->
+                  <div style="background:#fff; border:1px solid #ECEEF2; border-radius:18px; padding:20px 22px; animation:fadeUp .5s both .42s;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;"><div><div style="font-size:13.5px; font-weight:700;">Activity heatmap</div><div style="font-size:12px; color:#8A8A8E; margin-top:3px;">Sessions logged by weekday</div></div>
+                      <div style="display:flex; align-items:center; gap:5px; font-size:10.5px; color:#A1A1AA;">Less<span style="width:11px;height:11px;border-radius:3px;background:#EEF2F6;"></span><span style="width:11px;height:11px;border-radius:3px;background:#CFE6FB;"></span><span style="width:11px;height:11px;border-radius:3px;background:#9BCBF5;"></span><span style="width:11px;height:11px;border-radius:3px;background:#5FA8EE;"></span><span style="width:11px;height:11px;border-radius:3px;background:#2C86E0;"></span>More</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:5px; margin-top:16px;">
+                      <sc-for list="{{ heat }}" as="row" hint-placeholder-count="7">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                          <span style="width:26px; font-size:10.5px; font-weight:600; color:#A1A1AA;">{{ row.day }}</span>
+                          <div style="flex:1; display:flex; gap:5px;">
+                            <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="12">
+                              <div style="flex:1; aspect-ratio:1; border-radius:4px; background:{{ c.color }};"></div>
+                            </sc-for>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px; padding-top:14px; border-top:1px solid #F1F4F8;">
+                      <div><div style="font-size:11px; color:#8A8A8E;">Peak day</div><div style="font-size:13px; font-weight:700; margin-top:2px;">Wednesday</div></div>
+                      <div style="text-align:right;"><div style="font-size:11px; color:#8A8A8E;">Sessions total</div><div style="font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; margin-top:2px; color:#0091FF;">{{ sessionsTotal }}</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- REPORTS -->
+                <div style="background:#fff; border:1px solid #ECEEF2; border-radius:18px; padding:20px 22px; margin-top:14px; animation:fadeUp .5s both .46s;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <div><div style="font-size:13.5px; font-weight:700;">Reports</div><div style="font-size:12px; color:#8A8A8E; margin-top:3px;">Generated documents — open to view, share or download</div></div>
+                    <div onClick="{{ exportAll }}" style="display:flex; align-items:center; gap:6px; border:1px solid #E4E7EC; padding:8px 13px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; color:#3F3F46;" style-hover="background:#F7F8FA;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M5 12h14M12 5v14"/></svg>Build custom report</div>
+                  </div>
+                  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+                    <sc-for list="{{ reports }}" as="r" hint-placeholder-count="6">
+                      <div onClick="{{ r.onOpen }}" style="border:1px solid #ECEEF2; border-radius:14px; padding:15px; cursor:pointer; transition:transform .16s, box-shadow .16s, border-color .16s; animation:fadeUp .5s both; {{ r.delay }}" style-hover="transform:translateY(-2px); box-shadow:0 16px 32px -18px rgba(24,24,27,.32); border-color:#DDE3EA;">
+                        <div style="display:flex; align-items:center; gap:11px;">
+                          <span style="width:40px; height:40px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:{{ r.bg }}; color:{{ r.color }};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></span>
+                          <div style="flex:1; min-width:0;">
+                            <div style="font-size:13px; font-weight:700; letter-spacing:-.01em;">{{ r.title }}</div>
+                            <div style="font-size:11.5px; color:#8A8A8E; margin-top:2px;">{{ r.range }}</div>
+                          </div>
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:13px; padding-top:12px; border-top:1px solid #F4F6F8;">
+                          <span style="font-size:10.5px; font-weight:700; color:{{ r.color }}; background:{{ r.bg }}; padding:2px 8px; border-radius:99px;">{{ r.type }}</span>
+                          <span style="font-size:11px; color:#A1A1AA; font-weight:600;">{{ r.fmt }}</span>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- REPORT DETAIL WINDOW -->
+              <sc-if value="{{ rw.open }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ closeReport }}" style="position:absolute; inset:0; z-index:60; background:rgba(24,24,27,.28); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); display:flex; align-items:center; justify-content:center; padding:40px; animation:backdropIn .3s both;">
+                  <div onClick="{{ stop }}" style="width:760px; max-height:calc(100% - 20px); display:flex; flex-direction:column; background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 50px 100px -30px rgba(24,24,27,.5); animation:modalPop .4s cubic-bezier(.34,1.4,.5,1) both;">
+                    <!-- frosted titlebar -->
+                    <div style="flex-shrink:0; position:relative; z-index:5; display:flex; align-items:center; gap:12px; padding:14px 18px; background:rgba(247,248,250,.86); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-bottom:1px solid #ECEEF2;">
+                      <span style="width:9px; height:9px; border-radius:50%; background:#28C840;"></span>
+                      <span style="font-size:12.5px; font-weight:600; color:#52525B;">{{ rw.type }} report</span>
+                      <div style="flex:1;"></div>
+                      <div style="position:relative;">
+                        <div onClick="{{ toggleShare }}" style="display:flex; align-items:center; gap:7px; background:#fff; border:1px solid #E4E7EC; padding:7px 14px; border-radius:9px; font-size:12.5px; font-weight:600; cursor:pointer; color:#18181B;" style-hover="background:#F7F8FA;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>Share</div>
+                        <sc-if value="{{ shareOpen }}" hint-placeholder-val="{{ false }}">
+                          <div style="position:absolute; top:42px; right:0; width:230px; background:#fff; border-radius:14px; box-shadow:0 24px 60px -18px rgba(24,24,27,.4); border:1px solid #EEF1F5; padding:7px; z-index:20; animation:sheetDrop .22s ease both;">
+                            <div style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#A1A1AA; padding:6px 10px 5px;">Share this report</div>
+                            <sc-for list="{{ shareItems }}" as="s" hint-placeholder-count="4">
+                              <div onClick="{{ s.onClick }}" style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:10px; cursor:pointer;" style-hover="background:#F7F8FA;">
+                                <span style="width:30px; height:30px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:{{ s.bg }}; color:{{ s.fg }};" innerHTML="{{ s.icon }}"></span>
+                                <div><div style="font-size:12.5px; font-weight:600;">{{ s.label }}</div><div style="font-size:11px; color:#A1A1AA;">{{ s.sub }}</div></div>
+                              </div>
+                            </sc-for>
+                          </div>
+                        </sc-if>
+                      </div>
+                      <div onClick="{{ closeReport }}" style="width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#71717A;" style-hover="background:#ECEEF2;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+                    </div>
+
+                    <!-- report body -->
+                    <div class="nb-scroll" style="overflow-y:auto; padding:28px 34px 34px;">
+                      <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="width:46px; height:46px; border-radius:13px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:{{ rw.bg }}; color:{{ rw.color }};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA;">coachez · {{ rw.range }}</div><h2 style="font-family:'Space Grotesk',sans-serif; font-size:23px; font-weight:700; letter-spacing:-.025em; margin:2px 0 0;">{{ rw.title }}</h2></div>
+                      </div>
+                      <p style="font-size:13.5px; line-height:1.55; color:#52525B; margin:14px 0 0;">{{ rw.desc }}</p>
+
+                      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:11px; margin-top:20px;">
+                        <sc-for list="{{ rw.kpis }}" as="k" hint-placeholder-count="3">
+                          <div style="background:#F7F8FA; border-radius:13px; padding:14px;"><div style="font-size:11px; font-weight:600; color:#8A8A8E;">{{ k.k }}</div><div style="font-family:'Space Grotesk',sans-serif; font-size:21px; font-weight:700; letter-spacing:-.02em; margin-top:5px;">{{ k.v }}</div></div>
+                        </sc-for>
+                      </div>
+
+                      <!-- chart (series reports) -->
+                      <sc-if value="{{ rw.hasChart }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:22px; border:1px solid #ECEEF2; border-radius:14px; padding:18px;">
+                          <div style="font-size:12.5px; font-weight:700; margin-bottom:12px;">Trend across {{ periodSub }}</div>
+                          <div style="position:relative; height:180px;">
+                            <svg width="100%" height="164" viewBox="0 0 600 200" preserveAspectRatio="none" style="display:block; position:absolute; inset:0; animation:drawIn 1s ease both .2s;">
+                              <defs><linearGradient id="rwGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0091FF" stop-opacity="0.2"></stop><stop offset="1" stop-color="#0091FF" stop-opacity="0"></stop></linearGradient></defs>
+                              <path d="{{ rw.chart.area }}" fill="url(#rwGrad)"></path>
+                              <path d="{{ rw.chart.line }}" fill="none" stroke="#0091FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+                            </svg>
+                            <sc-for list="{{ rw.chart.pts }}" as="p" hint-placeholder-count="6">
+                              <div style="position:absolute; left:{{ p.leftPct }}%; top:{{ p.topPct }}%; width:8px; height:8px; border-radius:50%; background:#fff; border:2.5px solid #0091FF; transform:translate(-50%,-50%);"></div>
+                            </sc-for>
+                            <sc-for list="{{ rw.axis }}" as="a" hint-placeholder-count="6">
+                              <div style="position:absolute; left:{{ a.leftPct }}%; bottom:0; transform:translateX(-50%); font-size:10.5px; font-weight:500; color:#A1A1AA;">{{ a.label }}</div>
+                            </sc-for>
+                          </div>
+                        </div>
+                      </sc-if>
+
+                      <!-- trainer table -->
+                      <sc-if value="{{ rw.isTrainers }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:22px; border:1px solid #ECEEF2; border-radius:14px; overflow:hidden;">
+                          <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; background:#F7F8FA; font-size:11px; font-weight:700; color:#8A8A8E; text-transform:uppercase; letter-spacing:.04em;"><span style="flex:1;">Trainer</span><span style="width:60px; text-align:right;">Clients</span><span style="width:60px; text-align:right;">Rating</span><span style="width:70px; text-align:right;">Retention</span><span style="width:64px; text-align:right;">Revenue</span></div>
+                          <sc-for list="{{ trainers }}" as="t" hint-placeholder-count="6">
+                            <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; border-top:1px solid #F1F4F8; font-size:13px;"><span style="flex:1; font-weight:600;">{{ t.name }}</span><span style="width:60px; text-align:right;">{{ t.clients }}</span><span style="width:60px; text-align:right; font-weight:600;">{{ t.rating }}</span><span style="width:70px; text-align:right; color:#16A34A; font-weight:600;">{{ t.retention }}%</span><span style="width:64px; text-align:right; font-family:'Space Grotesk',sans-serif; font-weight:700;">{{ t.revenue }}</span></div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+
+                      <!-- funnel table -->
+                      <sc-if value="{{ rw.isFunnel }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:22px; display:flex; flex-direction:column; gap:11px;">
+                          <sc-for list="{{ funnel }}" as="f" hint-placeholder-count="4">
+                            <div><div style="display:flex; align-items:center; justify-content:space-between; font-size:12.5px; margin-bottom:6px;"><span style="font-weight:600;">{{ f.label }}</span><span style="color:#8A8A8E;"><b style="color:#18181B; font-family:'Space Grotesk',sans-serif;">{{ f.count }}</b> leads · {{ f.conv }}% conv</span></div><div style="height:22px; border-radius:8px; background:#F1F4F8; overflow:hidden;"><div style="height:100%; width:{{ f.widthPct }}%; border-radius:8px; background:{{ f.color }};"></div></div></div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+
+                      <!-- series data table -->
+                      <sc-if value="{{ rw.hasChart }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:22px; border:1px solid #ECEEF2; border-radius:14px; overflow:hidden;">
+                          <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; background:#F7F8FA; font-size:11px; font-weight:700; color:#8A8A8E; text-transform:uppercase; letter-spacing:.04em;"><span style="flex:1;">Period</span><span style="width:110px; text-align:right;">{{ rw.colLabel }}</span><span style="width:90px; text-align:right;">Change</span></div>
+                          <sc-for list="{{ rw.rows }}" as="r" hint-placeholder-count="6">
+                            <div style="display:flex; align-items:center; gap:12px; padding:11px 16px; border-top:1px solid #F1F4F8; font-size:13px;"><span style="flex:1; font-weight:600;">{{ r.c1 }}</span><span style="width:110px; text-align:right; font-family:'Space Grotesk',sans-serif; font-weight:700;">{{ r.c2 }}</span><span style="width:90px; text-align:right; font-weight:600; color:{{ r.c3color }};">{{ r.c3 }}</span></div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+
+                      <!-- download bar -->
+                      <div style="display:flex; align-items:center; gap:10px; margin-top:24px;">
+                        <div onClick="{{ download }}" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; background:#0091FF; color:#fff; padding:12px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;" style-hover="opacity:.9;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Download {{ rw.fmt }}</div>
+                        <div onClick="{{ closeReport }}" style="padding:12px 20px; border:1px solid #E4E7EC; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; color:#3F3F46;" style-hover="background:#F7F8FA;">Close</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <!-- TOAST -->
+              <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute; bottom:34px; left:50%; z-index:80; transform:translateX(-50%); background:#18181B; color:#fff; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:600; box-shadow:0 20px 40px -14px rgba(24,24,27,.5); animation:toastIn .3s cubic-bezier(.34,1.4,.5,1) both; display:flex; align-items:center; gap:9px;"><svg viewBox="0 0 24 24" fill="none" stroke="#28C840" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20 6 9 17l-5-5"/></svg>{{ toast }}</div>
+              </sc-if>
+
+            </main>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tf: 'monthly', openReport: null, shareOpen: false, toast: null };
+
+  DATA = {
+    monthly: { axis: ['Feb','Mar','Apr','May','Jun','Jul'], sub: 'last 6 months', revLabel: 'MRR', unit: 'mo',
+      revenue: [18200,19800,21500,22400,24100,26300], newC: [6,8,7,9,11,12], churn: [2,3,2,3,2,3],
+      active: [84,89,94,100,109,118], sessions: [210,234,248,262,288,312], adherence: [82,84,81,86,88,91], retention: [94,93,95,95,96,96] },
+    quarterly: { axis: ['Q3 24','Q4 24','Q1 25','Q2 25'], sub: 'last 4 quarters', revLabel: 'Revenue', unit: 'qtr',
+      revenue: [156000,171000,192000,214000], newC: [19,24,27,32], churn: [8,7,9,8],
+      active: [78,92,105,118], sessions: [640,712,798,862], adherence: [80,83,85,89], retention: [92,93,95,96] },
+    yearly: { axis: ['2022','2023','2024','2025'], sub: 'last 4 years', revLabel: 'Revenue', unit: 'yr',
+      revenue: [420000,610000,790000,940000], newC: [64,88,104,121], churn: [30,34,38,33],
+      active: [42,68,92,118], sessions: [2100,2680,3120,3460], adherence: [76,80,84,89], retention: [88,90,93,96] },
+  };
+
+  TRAINERS = [
+    { name: 'Maya Chen', clients: 24, rating: 4.9, retention: 97, revenue: 8400 },
+    { name: 'Diego Santos', clients: 21, rating: 4.8, retention: 95, revenue: 7100 },
+    { name: 'Priya Nair', clients: 19, rating: 4.9, retention: 96, revenue: 6800 },
+    { name: 'Marcus Lee', clients: 17, rating: 4.7, retention: 92, revenue: 5900 },
+    { name: 'Aisha Khan', clients: 15, rating: 4.8, retention: 94, revenue: 5200 },
+    { name: 'Tom Becker', clients: 12, rating: 4.6, retention: 90, revenue: 4100 },
+  ];
+
+  GOALS = [
+    { label: 'Fat loss', pct: 68, color: '#0091FF' },
+    { label: 'Muscle gain', pct: 74, color: '#16A34A' },
+    { label: 'Strength', pct: 81, color: '#F59E0B' },
+    { label: 'Endurance', pct: 63, color: '#8B7CF6' },
+  ];
+
+  FUNNEL = [
+    { label: 'New leads', count: 142, color: '#0091FF' },
+    { label: 'Contacted', count: 98, color: '#3B9AF0' },
+    { label: 'Trial', count: 54, color: '#14B8A6' },
+    { label: 'Won', count: 31, color: '#16A34A' },
+  ];
+
+  REPORTS = [
+    { id: 'r1', title: 'Monthly Business Summary', range: 'July 2025', type: 'Business', fmt: 'PDF', color: '#0091FF', bg: '#EAF4FF', metric: 'revenue', desc: 'A complete snapshot of the month — recurring revenue, new signups, churn and retention across the client base.' },
+    { id: 'r2', title: 'Revenue & Payments', range: 'Q2 2025', type: 'Finance', fmt: 'PDF · CSV', color: '#16A34A', bg: '#EDFaF1', metric: 'revenue', desc: 'Gross revenue, refunds and net payouts by period, with average revenue per user and lifetime value.' },
+    { id: 'r3', title: 'Client Progress Report', range: 'July 2025', type: 'Clients', fmt: 'PDF', color: '#8B7CF6', bg: '#F1EEFE', metric: 'adherence', desc: 'Goal completion, check-in adherence and progress trends across every active client.' },
+    { id: 'r4', title: 'Trainer Performance', range: 'Q2 2025', type: 'Team', fmt: 'PDF', color: '#F59E0B', bg: '#FEF6E7', metric: 'trainers', desc: 'Client load, ratings, retention and revenue contribution for each trainer on the team.' },
+    { id: 'r5', title: 'Retention & Churn', range: 'H1 2025', type: 'Clients', fmt: 'PDF', color: '#EF4444', bg: '#FEECEC', metric: 'retention', desc: 'Retention rate over time, churn breakdown and the cohort of at-risk clients to re-engage.' },
+    { id: 'r6', title: 'Lead Pipeline Report', range: 'July 2025', type: 'Growth', fmt: 'CSV', color: '#14B8A6', bg: '#E7F8F5', metric: 'funnel', desc: 'Lead sources, stage-by-stage conversion and overall win rate for the acquisition funnel.' },
+  ];
+
+  _money(v) {
+    if (v >= 1000) { const k = v / 1000; return '$' + (k >= 100 ? Math.round(k) : k.toFixed(1)) + 'k'; }
+    return '$' + Math.round(v);
+  }
+
+  _line(series, W, H, pT, pB) {
+    const n = series.length, mn = Math.min(...series), mx = Math.max(...series);
+    const pd = (mx - mn) * 0.18 || 1, lo = mn - pd, hi = mx + pd, pL = 8, pR = 8;
+    const xs = (i) => pL + i * (W - pL - pR) / (n - 1);
+    const ys = (v) => pT + (1 - (v - lo) / (hi - lo)) * (H - pT - pB);
+    let line = '';
+    series.forEach((v, i) => { line += (i ? 'L' : 'M') + xs(i).toFixed(1) + ' ' + ys(v).toFixed(1) + ' '; });
+    const area = line + 'L ' + xs(n - 1).toFixed(1) + ' ' + (H - pB) + ' L ' + xs(0).toFixed(1) + ' ' + (H - pB) + ' Z';
+    const pts = series.map((v, i) => ({ leftPct: +(xs(i) / W * 100).toFixed(2), topPct: +(ys(v) / H * 100).toFixed(2), val: v }));
+    return { line: line.trim(), area, pts };
+  }
+
+  _icon(name) {
+    const I = {
+      whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.2-.7.1-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6.1-.3-.2-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2z"/></svg>',
+      message: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      email: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>',
+      link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>',
+    };
+    return I[name];
+  }
+
+  setTf = (tf) => this.setState({ tf });
+  openReport = (id) => this.setState({ openReport: id, shareOpen: false });
+  closeReport = () => this.setState({ openReport: null, shareOpen: false });
+  toggleShare = (e) => { if (e) e.stopPropagation(); this.setState((s) => ({ shareOpen: !s.shareOpen })); };
+  stop = (e) => { if (e) e.stopPropagation(); };
+  _flash = (msg) => { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), 1900); };
+  doShare = (label) => { this.setState({ shareOpen: false }); this._flash('Shared via ' + label); };
+  download = () => this._flash('Report downloaded');
+  exportAll = () => this._flash('Export started');
+
+  renderVals() {
+    const tf = this.state.tf;
+    const d = this.DATA[tf];
+    const n = d.revenue.length;
+    const sum = (a) => a.reduce((x, y) => x + y, 0);
+
+    const tfTabs = [['monthly', 'Monthly'], ['quarterly', 'Quarterly'], ['yearly', 'Yearly']].map(([k, label]) => ({
+      label, onClick: () => this.setTf(k),
+      style: tf === k ? 'background:#fff; color:#18181B; box-shadow:0 1px 3px rgba(24,24,27,.12);' : 'color:#8A8A8E;',
+    }));
+
+    const mkKpi = (series, label, fmt, accent, fill) => {
+      const last = series[n - 1], prev = series[n - 2];
+      const dl = prev ? (last - prev) / prev * 100 : 0;
+      const up = dl >= 0;
+      return {
+        label, value: fmt(last), delta: (up ? '+' : '') + dl.toFixed(1) + '%', up,
+        deltaColor: up ? '#16A34A' : '#EF4444', deltaBg: up ? '#F0FAF4' : '#FEF2F2',
+        accent, fill, spark: this._line(series, 120, 40, 6, 8),
+      };
+    };
+    const kpis = [
+      mkKpi(d.revenue, d.revLabel, this._money.bind(this), '#0091FF', 'rgba(0,145,255,.1)'),
+      mkKpi(d.active, 'Active clients', (v) => v, '#16A34A', 'rgba(22,163,74,.1)'),
+      mkKpi(d.retention, 'Retention', (v) => v + '%', '#8B7CF6', 'rgba(139,124,246,.12)'),
+      mkKpi(d.adherence, 'Check-in adherence', (v) => v + '%', '#14B8A6', 'rgba(20,184,166,.12)'),
+    ].map((k, i) => ({ ...k, delay: 'animation-delay:' + (0.06 * i + 0.06) + 's;' }));
+
+    const revC = this._line(d.revenue, 600, 220, 18, 26);
+    const arpu = d.revenue[n - 1] / d.active[n - 1];
+    const churnRate = d.churn[n - 1] / d.active[n - 1];
+    const ltv = arpu / (churnRate || 0.03);
+    const rev = {
+      revLabel: d.revLabel, line: revC.line, area: revC.area,
+      pts: revC.pts.map((p, i) => ({ ...p, label: this._money(p.val), delay: 'animation-delay:' + (0.4 + i * 0.07) + 's;' })),
+      axis: revC.pts.map((p, i) => ({ leftPct: p.leftPct, label: d.axis[i] })),
+      arpu: this._money(arpu), ltv: this._money(ltv), total: this._money(sum(d.revenue)),
+    };
+
+    const ret = d.retention[n - 1];
+    const circ = 2 * Math.PI * 52;
+    const donut = { retention: ret, churn: 100 - ret, circ: +circ.toFixed(1), off: +(circ * (1 - ret / 100)).toFixed(1) };
+
+    const mxG = Math.max(...d.newC, ...d.churn);
+    const growth = d.axis.map((a, i) => ({
+      label: a, newV: d.newC[i], chV: d.churn[i],
+      newH: +(d.newC[i] / mxG * 100).toFixed(1), chH: +(d.churn[i] / mxG * 100).toFixed(1),
+      delay: 'animation-delay:' + (0.3 + i * 0.06) + 's;', delay2: 'animation-delay:' + (0.34 + i * 0.06) + 's;',
+    }));
+
+    const goals = this.GOALS.map((g, i) => ({ ...g, delay: 'animation-delay:' + (0.34 + i * 0.07) + 's;' }));
+
+    const f0 = this.FUNNEL[0].count;
+    const funnel = this.FUNNEL.map((f, i, arr) => ({
+      ...f, widthPct: Math.round(f.count / f0 * 100),
+      conv: i ? Math.round(f.count / arr[i - 1].count * 100) : 100,
+      delay: 'animation-delay:' + (0.36 + i * 0.06) + 's;',
+    }));
+    const funnelWin = Math.round(this.FUNNEL[3].count / f0 * 100) + '%';
+
+    const mxC = Math.max(...this.TRAINERS.map((t) => t.clients));
+    const rankColors = ['#F5A623', '#9AA0A6', '#CD7F32'];
+    const trainers = this.TRAINERS.map((t, i) => ({
+      ...t, rank: i + 1, rankColor: rankColors[i] || '#C7CBD1',
+      initials: t.name.split(' ').map((w) => w[0]).join(''),
+      barPct: +(t.clients / mxC * 100).toFixed(1), revenue: this._money(t.revenue),
+      delay: 'animation-delay:' + (0.4 + i * 0.05) + 's;',
+    }));
+
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const palette = ['#EEF2F6', '#CFE6FB', '#9BCBF5', '#5FA8EE', '#2C86E0'];
+    const heat = days.map((dy, r) => ({
+      day: dy,
+      cells: Array.from({ length: 12 }, (_, c) => {
+        let it = Math.round((Math.sin(r * 0.9 + c * 0.55) + Math.cos(c * 0.7 + r * 0.3) + 2) / 4 * 4);
+        if (r >= 5) it = Math.max(0, it - 1);
+        it = Math.max(0, Math.min(4, it));
+        return { color: palette[it] };
+      }),
+    }));
+
+    const reports = this.REPORTS.map((r, i) => ({ ...r, onOpen: () => this.openReport(r.id), delay: 'animation-delay:' + (0.46 + i * 0.05) + 's;' }));
+
+    const shareItems = [
+      { label: 'WhatsApp', sub: 'Send to client chat', icon: this._icon('whatsapp'), bg: '#E7F8EC', fg: '#25D366', onClick: () => this.doShare('WhatsApp') },
+      { label: 'Messages', sub: 'Text message', icon: this._icon('message'), bg: '#E9F1FF', fg: '#0A84FF', onClick: () => this.doShare('Messages') },
+      { label: 'Email', sub: 'Send as attachment', icon: this._icon('email'), bg: '#F1EEFE', fg: '#8B7CF6', onClick: () => this.doShare('Email') },
+      { label: 'Copy link', sub: 'Shareable URL', icon: this._icon('link'), bg: '#F2F2F7', fg: '#71717A', onClick: () => this.doShare('link') },
+    ];
+
+    // report window
+    let rw = { open: false };
+    const r = this.state.openReport ? this.REPORTS.find((x) => x.id === this.state.openReport) : null;
+    if (r) {
+      const isTrainers = r.metric === 'trainers', isFunnel = r.metric === 'funnel';
+      const hasChart = !isTrainers && !isFunnel;
+      const series = r.metric === 'retention' ? d.retention : r.metric === 'adherence' ? d.adherence : d.revenue;
+      const isPct = r.metric === 'retention' || r.metric === 'adherence';
+      const fmt = isPct ? (x) => x + '%' : this._money.bind(this);
+      const ch = this._line(series, 600, 200, 16, 24);
+      let kpiChips;
+      if (isTrainers) {
+        kpiChips = [{ k: 'Trainers', v: '6' }, { k: 'Avg rating', v: '4.78' }, { k: 'Avg retention', v: '94%' }];
+      } else if (isFunnel) {
+        kpiChips = [{ k: 'New leads', v: '142' }, { k: 'Won', v: '31' }, { k: 'Win rate', v: funnelWin }];
+      } else if (isPct) {
+        kpiChips = [{ k: 'Current', v: series[n - 1] + '%' }, { k: 'Average', v: Math.round(sum(series) / n) + '%' }, { k: r.metric === 'retention' ? 'Churn' : 'Missed', v: (100 - series[n - 1]) + '%' }];
+      } else {
+        kpiChips = [{ k: 'Total', v: this._money(sum(series)) }, { k: 'Avg / ' + d.unit, v: this._money(sum(series) / n) }, { k: 'Growth', v: '+' + Math.round((series[n - 1] - series[0]) / series[0] * 100) + '%' }];
+      }
+      const rows = d.axis.map((a, i) => {
+        const diff = i ? series[i] - series[i - 1] : 0;
+        return { c1: a, c2: fmt(series[i]), c3: i ? (diff >= 0 ? '+' : '') + (isPct ? diff + '%' : this._money(Math.abs(diff)).replace('$', diff < 0 ? '-$' : '$')) : '—', c3color: !i ? '#A1A1AA' : diff >= 0 ? '#16A34A' : '#EF4444' };
+      });
+      rw = {
+        open: true, title: r.title, range: r.range, type: r.type, fmt: r.fmt, color: r.color, bg: r.bg, desc: r.desc,
+        kpis: kpiChips, hasChart, isTrainers, isFunnel, chart: ch,
+        axis: ch.pts.map((p, i) => ({ leftPct: p.leftPct, label: d.axis[i] })),
+        rows, colLabel: isPct ? 'Value' : d.revLabel,
+      };
+    }
+
+    return {
+      root: this.root, periodSub: d.sub, tfTabs, kpis, rev, donut, growth, goals, funnel, funnelWin,
+      trainers, heat, reports, sessionsTotal: sum(d.sessions).toLocaleString(),
+      rw, shareOpen: this.state.shareOpen, shareItems, toast: this.state.toast,
+      setTf: this.setTf, closeReport: this.closeReport, toggleShare: this.toggleShare, stop: this.stop,
+      download: this.download, exportAll: this.exportAll,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -6,6 +6,15 @@
 <script src="./support.js"></script>
 </head>
 <body>
+<template id="__bundler_thumbnail" data-bg-color="#18181B">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#18181B"/>
+    <rect x="360" y="250" width="480" height="300" rx="28" fill="#0091FF"/>
+    <circle cx="600" cy="360" r="52" fill="#fff"/>
+    <rect x="470" y="450" width="260" height="20" rx="10" fill="#fff" opacity="0.9"/>
+    <rect x="510" y="490" width="180" height="16" rx="8" fill="#fff" opacity="0.55"/>
+  </svg>
+</template>
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,167 +34,6 @@
 </style>
 </helmet>
 <div ref="{{ root }}" style="min-height:100%; padding:56px 64px 96px;">
-
-  <!-- ================= TURN 3 — PROSPECTS PAGE (FOCUS) ================= -->
-  <section style="margin-bottom:92px;">
-    <header style="max-width:760px; margin:0 auto 44px; text-align:center; animation:fadeUp .5s both;">
-      <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:#18181B; color:#fff; font-size:12px; font-weight:600; margin-bottom:20px;">
-        <span style="width:7px; height:7px; border-radius:50%; background:#0091FF;"></span>
-        Prospects · Focus direction
-      </div>
-      <h1 style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; letter-spacing:-.02em; margin:0 0 12px;">The Prospects page</h1>
-      <p style="font-size:16px; line-height:1.6; color:#52525B; margin:0;">A lead pipeline in the <a href="#1b">1b — Focus</a> language. Move leads from new to won at a glance — switch between <b>Pipeline</b> and <b>List</b> views; both desktop and phone update together.</p>
-    </header>
-
-    <div style="display:flex; justify-content:center;">
-      <div id="3a" style="display:flex; flex-direction:column; gap:22px;">
-        <div style="display:flex; align-items:center; gap:14px;">
-          <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; background:#18181B; color:#fff; font-weight:800; font-size:15px; font-family:'Space Grotesk',sans-serif;">3a</span>
-          <div>
-            <div style="font-size:19px; font-weight:800; letter-spacing:-.01em;">Prospects — Focus</div>
-            <div style="font-size:13px; color:#71717A;">Lead pipeline · kanban + list · live view toggle</div>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:36px; align-items:flex-start;">
-          <!-- DESKTOP WINDOW -->
-          <div style="width:1160px; border-radius:22px; overflow:hidden; background:#fff; border:1px solid #E4E7EC; box-shadow:0 40px 80px -28px rgba(24,24,27,.32), 0 12px 28px -12px rgba(24,24,27,.16);">
-            <div style="height:40px; display:flex; align-items:center; gap:8px; padding:0 16px; background:#18181B; border-bottom:1px solid #26262A;">
-              <span style="width:11px;height:11px;border-radius:50%;background:#FF5F57;"></span>
-              <span style="width:11px;height:11px;border-radius:50%;background:#FEBC2E;"></span>
-              <span style="width:11px;height:11px;border-radius:50%;background:#28C840;"></span>
-              <div style="flex:1; text-align:center; font-size:12px; font-weight:500; color:#71717A;">app.coachez.com/prospects</div>
-            </div>
-            <div style="display:flex; height:764px;">
-              <!-- SIDEBAR (Prospects active) -->
-              <aside style="width:236px; flex-shrink:0; background:#18181B; color:#A1A1AA; display:flex; flex-direction:column; padding:0 14px;">
-                <div style="height:66px; display:flex; align-items:center; padding-left:8px;">
-                  <span style="display:inline-flex; align-items:center; gap:9px;"><img src="assets/icon-192.png" alt="coachez" style="height:26px; width:26px; border-radius:7px;"><span style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; letter-spacing:-.02em; color:#fff;">coachez</span></span>
-                </div>
-                <nav style="display:flex; flex-direction:column; gap:3px; flex:1;">
-                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</div>
-                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="flex:1;">Clients</span><span style="background:#26262B; color:#A1A1AA; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">3</span></div>
-                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; background:#0091FF; color:#fff; font-weight:600; font-size:14px; font-family:'Space Grotesk',sans-serif;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span style="flex:1;">Prospects</span><span style="background:rgba(255,255,255,.22); color:#fff; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">5</span></div>
-                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer; transition:background .14s, color .14s;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M6.5 6.5h11M6.5 17.5h11M4 6.5h.01M4 17.5h.01M20 6.5h.01M20 17.5h.01M9 12h6"/><rect x="2" y="9" width="4" height="6" rx="1"/><rect x="18" y="9" width="4" height="6" rx="1"/></svg><span style="flex:1;">Trainers</span><span style="background:#26262B; color:#A1A1AA; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">6</span></div>
-                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="flex:1;">Builder</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div>
-                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer; transition:background .14s, color .14s;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span style="flex:1;">Analytics &amp; Reports</span></div>
-                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer; transition:background .14s, color .14s;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span style="flex:1;">Payments &amp; Revenue</span></div>
-                  <div style="flex:1;"></div>
-                  <div style="height:1px; background:#2A2A2E; margin:0 0 8px;"></div>
-                  <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; margin-bottom:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg>Settings</div>
-                </nav>
-              </aside>
-
-              <!-- CONTENT -->
-              <main style="flex:1; display:flex; flex-direction:column; background:#fff; overflow:hidden;">
-                <div style="padding:34px 40px 0; animation:fadeUp .5s both .04s;">
-                  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px;">
-                    <div>
-                      <div style="font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#0091FF; margin-bottom:8px;">Lead pipeline</div>
-                      <h1 style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; letter-spacing:-.02em; margin:0; line-height:1;">Prospects</h1>
-                      <p style="font-size:14px; color:#71717A; margin:11px 0 0;"><b style="color:#18181B;" data-countup="5">5</b> in pipeline · <b style="color:#16A34A;">2 in trial</b> · <b style="color:#0091FF;">$1.2k</b> potential MRR</p>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                      <div style="display:flex; background:#F1F4F8; border-radius:11px; padding:3px;">
-                        <span onClick="{{ onPvPipeline }}" style="padding:8px 15px; border-radius:9px; font-size:13px; font-weight:700; cursor:pointer; {{ segPipeline }}">Pipeline</span>
-                        <span onClick="{{ onPvList }}" style="padding:8px 15px; border-radius:9px; font-size:13px; font-weight:700; cursor:pointer; {{ segList }}">List</span>
-                      </div>
-                      <div style="display:flex; align-items:center; gap:8px; background:#18181B; color:#fff; padding:11px 17px; border-radius:13px; font-size:13px; font-weight:700; cursor:pointer; transition:transform .16s;" style-hover="transform:translateY(-1px);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M5 12h14M12 5v14"/></svg>Add prospect</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- PIPELINE VIEW -->
-                <sc-if value="{{ pvPipeline }}" hint-placeholder-val="{{ true }}">
-                  <div class="nb-scroll" style="flex:1; overflow-y:auto; padding:22px 40px 40px;">
-                    <div style="display:flex; gap:14px; align-items:flex-start;">
-                      <sc-for list="{{ pStages }}" as="st" hint-placeholder-count="4">
-                        <div style="flex:1; min-width:0; background:#F7F8FA; border-radius:16px; padding:12px;">
-                          <div style="display:flex; align-items:center; gap:8px; padding:4px 6px 12px;">
-                            <span style="width:9px; height:9px; border-radius:50%; background:{{ st.color }};"></span>
-                            <span style="font-size:12.5px; font-weight:700; letter-spacing:.02em; color:#18181B;">{{ st.label }}</span>
-                            <span style="font-size:11px; font-weight:700; color:#71717A; background:#fff; padding:1px 8px; border-radius:99px;">{{ st.count }}</span>
-                          </div>
-                          <div style="display:flex; flex-direction:column; gap:9px;">
-                            <sc-for list="{{ st.cards }}" as="c" hint-placeholder-count="2">
-                              <div style="background:#fff; border:1.5px solid #ECEEF2; border-radius:13px; padding:13px; cursor:pointer; transition:border-color .16s, transform .16s, box-shadow .16s;" style-hover="border-color:#0091FF; transform:translateY(-2px); box-shadow:0 12px 24px -14px rgba(24,24,27,.3);">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                  <span style="width:36px; height:36px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; background:{{ c.avatarBg }};">{{ c.initials }}</span>
-                                  <div style="flex:1; min-width:0;"><div style="font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.name }}</div><div style="font-size:11px; color:#71717A; margin-top:1px;">{{ c.source }}</div></div>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:6px; margin-top:11px;"><span style="font-size:10.5px; font-weight:600; color:{{ c.goalFg }}; background:{{ c.goalBg }}; padding:3px 9px; border-radius:99px;">{{ c.goal }}</span></div>
-                                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:11px; padding-top:11px; border-top:1px solid #F4F6F8;"><span style="font-size:11px; color:#A1A1AA;">{{ c.age }}</span><span style="font-size:12px; font-weight:700; color:#18181B;">{{ c.value }}</span></div>
-                              </div>
-                            </sc-for>
-                            <sc-if value="{{ st.empty }}" hint-placeholder-val="{{ false }}"><div style="text-align:center; font-size:11.5px; color:#A1A1AA; padding:14px 0;">No leads here</div></sc-if>
-                          </div>
-                        </div>
-                      </sc-for>
-                    </div>
-                  </div>
-                </sc-if>
-
-                <!-- LIST VIEW -->
-                <sc-if value="{{ pvList }}" hint-placeholder-val="{{ false }}">
-                  <div class="nb-scroll" style="flex:1; overflow-y:auto; padding:22px 40px 40px;">
-                    <div style="display:flex; align-items:center; gap:12px; padding:0 4px 10px; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#A1A1AA;">
-                      <span style="width:36px; flex-shrink:0;"></span><span style="flex:1;">Name</span><span style="width:130px;">Source</span><span style="width:130px;">Stage</span><span style="width:90px; text-align:right;">Value</span>
-                    </div>
-                    <div style="border:1.5px solid #ECEEF2; border-radius:16px; overflow:hidden;">
-                      <sc-for list="{{ pList }}" as="c" hint-placeholder-count="5">
-                        <div style="display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:1px solid #F1F4F8; cursor:pointer;" style-hover="background:#FAFBFC;">
-                          <span style="width:36px; height:36px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; background:{{ c.avatarBg }};">{{ c.initials }}</span>
-                          <div style="flex:1; min-width:0;"><div style="font-size:13.5px; font-weight:600;">{{ c.name }}</div><div style="font-size:11px; color:#71717A;">{{ c.goal }}</div></div>
-                          <span style="width:130px; font-size:12.5px; color:#52525B;">{{ c.source }}</span>
-                          <span style="width:130px;"><span style="font-size:11px; font-weight:700; color:{{ c.stageFg }}; background:{{ c.stageBg }}; padding:3px 10px; border-radius:99px;">{{ c.stageLabel }}</span></span>
-                          <span style="width:90px; text-align:right; font-size:13px; font-weight:700; color:#18181B;">{{ c.value }}</span>
-                        </div>
-                      </sc-for>
-                    </div>
-                  </div>
-                </sc-if>
-              </main>
-            </div>
-          </div>
-
-          <!-- MOBILE FRAME -->
-          <div style="width:392px; flex-shrink:0; border-radius:46px; background:#101012; padding:11px; box-shadow:0 40px 80px -28px rgba(24,24,27,.4);">
-            <div style="border-radius:36px; overflow:hidden; background:#fff; height:812px; position:relative;">
-              <div style="height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 26px; font-size:14px; font-weight:600;"><span>9:41</span><svg viewBox="0 0 24 24" width="16" height="16" fill="#18181B"><path d="M2 20h4v-8H2v8zm6 0h4V8H8v12zm6 0h4V4h-4v16zm6 0h2V2h-2v18z"/></svg></div>
-              <div style="padding:6px 20px 12px;">
-                <div style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#0091FF; margin-bottom:5px;">Lead pipeline</div>
-                <div style="display:flex; align-items:center; justify-content:space-between;"><h1 style="font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:700; letter-spacing:-.02em; margin:0;">Prospects</h1><span style="width:34px; height:34px; border-radius:10px; background:#18181B; color:#fff; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 12h14M12 5v14"/></svg></span></div>
-                <div style="display:flex; gap:8px; margin-top:12px;"><span style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:12px; padding:9px 2px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;">5</div><div style="font-size:9.5px; color:#71717A;">in pipeline</div></span><span style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:12px; padding:9px 2px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; color:#16A34A;">2</div><div style="font-size:9.5px; color:#71717A;">in trial</div></span><span style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:12px; padding:9px 2px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; color:#0091FF;">34%</div><div style="font-size:9.5px; color:#71717A;">convert</div></span></div>
-              </div>
-              <div class="nb-scroll" style="padding:2px 20px 20px; overflow-y:auto; height:calc(812px - 48px - 128px);">
-                <sc-for list="{{ pStages }}" as="st" hint-placeholder-count="4">
-                  <div style="margin-bottom:18px;">
-                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:9px;"><span style="width:9px; height:9px; border-radius:50%; background:{{ st.color }};"></span><span style="font-size:12px; font-weight:700; color:#18181B;">{{ st.label }}</span><span style="font-size:10.5px; font-weight:700; color:#71717A; background:#F1F4F8; padding:1px 8px; border-radius:99px;">{{ st.count }}</span></div>
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-                      <sc-for list="{{ st.cards }}" as="c" hint-placeholder-count="2">
-                        <div style="border:1.5px solid #ECEEF2; border-radius:13px; padding:12px; display:flex; align-items:center; gap:11px;">
-                          <span style="width:38px; height:38px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; background:{{ c.avatarBg }};">{{ c.initials }}</span>
-                          <div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">{{ c.name }}</div><div style="font-size:10.5px; color:#71717A; margin-top:1px;">{{ c.source }} · {{ c.goal }}</div></div>
-                          <span style="font-size:12px; font-weight:700; color:#18181B; white-space:nowrap;">{{ c.value }}</span>
-                        </div>
-                      </sc-for>
-                    </div>
-                  </div>
-                </sc-for>
-              </div>
-              <div style="position:absolute; bottom:0; left:0; right:0; height:74px; background:#18181B; display:flex; align-items:flex-start; justify-content:space-around; padding-top:10px;">
-                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px;">Home</span></div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font-size:10px;">Clients</span></div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span style="font-size:10px; font-weight:600;">Prospects</span></div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="font-size:10px;">Builder</span></div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg><span style="font-size:10px;">Settings</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- ================= TURN 2 — CLIENTS PAGE (FOCUS) ================= -->
   <section style="margin-bottom:92px;">
@@ -259,7 +107,7 @@
                   </div>
                   <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
-                    <span style="flex:1;">Builder</span>
+                    <span style="flex:1;">Library</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg>
                   </div>
                   <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer; transition:background .14s, color .14s;" style-hover="background:#26262B; color:#E4E4E7;">
@@ -422,7 +270,6 @@
                     <div onClick="{{ onTabTrainerCi }}" style="display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .14s; {{ msTrainerCi }}" style-hover="background:#F1F4F8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span style="flex:1;">Trainer check-in</span></div>
                     <div style="height:1px; background:#F1F4F8; margin:10px 8px;"></div>
                     <div onClick="{{ onTabDetail }}" style="display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .14s; {{ msDetail }}" style-hover="background:#F1F4F8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span style="flex:1;">Detail</span></div>
-                    <div onClick="{{ onTabSubscription }}" style="display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .14s; {{ msSubscription }}" style-hover="background:#F1F4F8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span style="flex:1;">Subscription</span></div>
                   </div>
                 </div>
 
@@ -734,49 +581,6 @@
                       </div>
                     </div>
                   </sc-if>
-
-                  <!-- SUBSCRIPTION -->
-                  <sc-if value="{{ tabSubscription }}" hint-placeholder-val="{{ false }}">
-                    <div class="nb-scroll" style="flex:1; overflow-y:auto; padding:26px 30px;">
-                      <h2 style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; margin:0 0 4px;">Subscription</h2>
-                      <p style="font-size:13px; color:#71717A; margin:0 0 20px;">Membership term, billing &amp; lifecycle</p>
-                      <div style="border:1.5px solid #ECEEF2; border-radius:18px; padding:22px; background:#fff; margin-bottom:16px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px;"><div style="display:flex; align-items:center; gap:13px;"><span style="width:46px; height:46px; border-radius:13px; background:#E9F5FF; color:#0091FF; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><div><div style="font-size:15.5px; font-weight:700;">{{ subPlan }}</div><div style="font-size:12.5px; color:#71717A; margin-top:1px;">{{ subPrice }}</div></div></div><span style="font-size:11.5px; font-weight:700; color:{{ subStatusFg }}; background:{{ subStatusBg }}; padding:5px 12px; border-radius:99px;">{{ subStatusLabel }}</span></div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;"><span style="font-size:12.5px; font-weight:700;">Current term</span><span style="font-size:12px; color:#71717A;">{{ subRemainingLabel }}</span></div>
-                        <div style="height:9px; border-radius:99px; background:#F1F4F8; overflow:hidden;"><div style="height:100%; width:{{ subPct }}; border-radius:99px; background:#0091FF;"></div></div>
-                        <div style="font-size:11.5px; color:#71717A; margin-top:8px;">{{ subElapsedLabel }} elapsed</div>
-                      </div>
-                      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;">
-                        <div style="border:1.5px solid #ECEEF2; border-radius:16px; padding:16px; background:#fff;"><div style="font-size:11px; color:#71717A; font-weight:600;">Start date</div><div style="font-size:14px; font-weight:700; margin-top:6px;">{{ subStart }}</div></div>
-                        <div style="border:1.5px solid #ECEEF2; border-radius:16px; padding:16px; background:#fff;"><div style="font-size:11px; color:#71717A; font-weight:600;">End date</div><div style="font-size:14px; font-weight:700; margin-top:6px;">{{ subEnd }}</div></div>
-                        <div style="border:1.5px solid #ECEEF2; border-radius:16px; padding:16px; background:#fff;"><div style="font-size:11px; color:#71717A; font-weight:600;">Next billing</div><div style="font-size:14px; font-weight:700; margin-top:6px;">{{ subNextBilling }}</div></div>
-                      </div>
-                      <div style="position:relative; margin-bottom:22px;">
-                        <div onClick="{{ toggleSubExtend }}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; border:1.5px solid #ECEEF2; border-radius:16px; padding:15px 18px; background:#fff; cursor:pointer;" style-hover="border-color:#0091FF;">
-                          <div style="display:flex; align-items:center; gap:11px;"><span style="width:36px; height:36px; border-radius:10px; background:#F1F4F8; color:#18181B; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg></span><div><div style="font-size:13.5px; font-weight:700;">Extend subscription</div><div style="font-size:11.5px; color:#71717A;">Push the end date forward</div></div></div>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" width="17" height="17"><path d="m6 9 6 6 6-6"/></svg>
-                        </div>
-                        <sc-if value="{{ subExtendOpen }}" hint-placeholder-val="{{ false }}">
-                          <div style="position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:30; background:#fff; border:1px solid #ECEEF2; border-radius:16px; padding:16px; box-shadow:0 24px 60px -18px rgba(24,24,27,.3); animation:fadeUp .18s both;">
-                            <div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#71717A; margin-bottom:10px;">Quick extend</div>
-                            <div style="display:flex; gap:8px; margin-bottom:14px;">
-                              <span onClick="{{ onExtend1 }}" style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:11px; padding:11px 0; font-size:13px; font-weight:700; cursor:pointer;" style-hover="border-color:#0091FF; color:#0091FF;">+1 month</span>
-                              <span onClick="{{ onExtend3 }}" style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:11px; padding:11px 0; font-size:13px; font-weight:700; cursor:pointer;" style-hover="border-color:#0091FF; color:#0091FF;">+3 months</span>
-                              <span onClick="{{ onExtend6 }}" style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:11px; padding:11px 0; font-size:13px; font-weight:700; cursor:pointer;" style-hover="border-color:#0091FF; color:#0091FF;">+6 months</span>
-                            </div>
-                            <div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#71717A; margin-bottom:8px;">Or set a date</div>
-                            <input type="date" value="{{ subEndInput }}" onChange="{{ setSubEnd }}" style="width:100%; border:1.5px solid #E4E7EC; border-radius:11px; padding:10px 12px; font-family:inherit; font-size:13px; color:#18181B; outline:none; box-sizing:border-box;" style-focus="border-color:#0091FF;">
-                          </div>
-                        </sc-if>
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin-bottom:10px;">Manage</div>
-                      <div style="display:flex; flex-direction:column; gap:9px;">
-                        <div onClick="{{ pauseSub }}" style="display:flex; align-items:center; gap:11px; border:1.5px solid #ECEEF2; border-radius:14px; padding:14px 16px; background:#fff; cursor:pointer;" style-hover="border-color:#D97706;"><span style="width:34px; height:34px; border-radius:10px; background:#FEF3E2; color:#D97706; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></span><span style="flex:1; font-size:13.5px; font-weight:700;">{{ pauseSubLabel }}</span></div>
-                        <div onClick="{{ cancelSub }}" style="display:flex; align-items:center; gap:11px; border:1.5px solid #FCE1E8; border-radius:14px; padding:14px 16px; background:#fff; cursor:pointer;" style-hover="border-color:#F31260;"><span style="width:34px; height:34px; border-radius:10px; background:#FEECF0; color:#F31260; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:700; color:#F31260;">Cancel subscription</div><div style="font-size:11.5px; color:#71717A;">Stops billing at end of term</div></div></div>
-                        <div onClick="{{ removeSub }}" style="display:flex; align-items:center; gap:11px; border:1.5px solid #FCE1E8; border-radius:14px; padding:14px 16px; background:#fff; cursor:pointer;" style-hover="border-color:#F31260;"><span style="width:34px; height:34px; border-radius:10px; background:#FEECF0; color:#F31260; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span><div style="flex:1;"><div style="font-size:13.5px; font-weight:700; color:#F31260;">Remove client</div><div style="font-size:11.5px; color:#71717A;">Deletes access &amp; all data</div></div></div>
-                      </div>
-                    </div>
-                  </sc-if>
                 </div>
               </main>
               </sc-if>
@@ -852,7 +656,7 @@
                 <sc-if value="{{ cHasRows }}" hint-placeholder-val="{{ true }}">
                   <div style="border:1.5px solid #ECEEF2; border-radius:16px; overflow:hidden;">
                     <sc-for list="{{ rows }}" as="c" hint-placeholder-count="7">
-                      <div onClick="{{ c.onOpenMobile }}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid #F1F4F8; cursor:pointer; transition:background .14s; {{ c.rowBg }}" style-hover="background:#F7F8FA;">
+                      <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid #F1F4F8; {{ c.rowBg }}">
                         <span onClick="{{ c.onPin }}" style="width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; color:{{ c.starColor }};"><svg viewBox="0 0 24 24" fill="{{ c.starFill }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m12 2 3 6.9 7.5.6-5.7 4.9 1.8 7.3L12 17.8 5.4 21.7l1.8-7.3L1.5 9.5 9 8.9z"/></svg></span>
                         <span style="width:38px; height:38px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; background:#18181B;">{{ c.initials }}</span>
                         <div style="min-width:0; flex:1;"><div style="display:flex; align-items:center; gap:5px;"><span style="font-size:13.5px; font-weight:600;">{{ c.name }}</span><sc-if value="{{ c.pinned }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" fill="#F59E0B" width="11" height="11"><path d="m12 2 3 6.9 7.5.6-5.7 4.9 1.8 7.3L12 17.8 5.4 21.7l1.8-7.3L1.5 9.5 9 8.9z"/></svg></sc-if></div><div style="font-size:11.5px; color:#71717A; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.sub }}</div></div>
@@ -870,314 +674,11 @@
                   </div>
                 </sc-if>
               </div>
-              <sc-if value="{{ inChat }}" hint-placeholder-val="{{ false }}">
-                <div style="position:absolute; top:48px; left:0; right:0; bottom:74px; background:#F7F8FA; display:flex; flex-direction:column; animation:fadeUp .28s both; z-index:20;">
-                  <!-- header -->
-                  <div style="flex-shrink:0; background:#fff; border-bottom:1px solid #ECEEF2; padding:12px 14px 12px;">
-                    <div style="display:flex; align-items:center; gap:11px;">
-                      <span onClick="{{ closeChat }}" style="width:34px; height:34px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:#F1F4F8; cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="m15 18-6-6 6-6"/></svg></span>
-                      <span style="width:40px; height:40px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:#fff; background:#18181B;">{{ chatInitials }}</span>
-                      <div style="min-width:0; flex:1;">
-                        <div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; letter-spacing:-.01em;">{{ chatName }}</div>
-                        <div style="font-size:11.5px; font-weight:600; color:{{ clientStatusFg }};">{{ clientStatusLabel }}</div>
-                      </div>
-                      <span onClick="{{ openMobileChat }}" style="position:relative; width:38px; height:38px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; border-radius:11px; background:#0091FF; color:#fff; cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><sc-if value="{{ chatHasUnread }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:-3px; right:-3px; min-width:17px; height:17px; padding:0 4px; border-radius:99px; background:#F31260; color:#fff; font-size:10px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; border:2px solid #fff;">{{ chatUnread }}</span></sc-if></span>
-                    </div>
-                    <div style="display:flex; gap:7px; overflow-x:auto; margin-top:12px; padding-bottom:2px;">
-                      <button onClick="{{ onTabProgress }}" style="flex-shrink:0; height:30px; padding:0 12px; border:none; border-radius:9px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ msProgress }}">Progress</button>
-                      <button onClick="{{ onTabNutrition }}" style="flex-shrink:0; height:30px; padding:0 12px; border:none; border-radius:9px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ msNutrition }}">Nutrition</button>
-                      <button onClick="{{ onTabTraining }}" style="flex-shrink:0; height:30px; padding:0 12px; border:none; border-radius:9px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ msTraining }}">Training</button>
-                      <button onClick="{{ onTabTrainer }}" style="flex-shrink:0; height:30px; padding:0 12px; border:none; border-radius:9px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ msTrainer }}">Trainer</button>
-                      <button onClick="{{ onTabClientCi }}" style="flex-shrink:0; height:30px; padding:0 12px; border:none; border-radius:9px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ msClientCi }}">Client check-in</button>
-                      <button onClick="{{ onTabTrainerCi }}" style="flex-shrink:0; height:30px; padding:0 12px; border:none; border-radius:9px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ msTrainerCi }}">Trainer check-in</button>
-                      <button onClick="{{ onTabDetail }}" style="flex-shrink:0; height:30px; padding:0 12px; border:none; border-radius:9px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ msDetail }}">Detail</button>
-                      <button onClick="{{ onTabSubscription }}" style="flex-shrink:0; height:30px; padding:0 12px; border:none; border-radius:9px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ msSubscription }}">Subscription</button>
-                    </div>
-                  </div>
-                  <!-- content -->
-                  <div style="flex:1; overflow-y:auto; padding:16px 14px 22px;">
-                    <sc-if value="{{ tabProgress }}" hint-placeholder-val="{{ true }}">
-                      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;">
-                        <div style="border:1px solid #ECEEF2; border-radius:14px; padding:12px; background:#fff;"><div style="font-size:10.5px; color:#71717A; font-weight:600;">Current</div><div style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; margin-top:4px;">84.2<span style="font-size:11px; color:#71717A;"> kg</span></div></div>
-                        <div style="border:1px solid #ECEEF2; border-radius:14px; padding:12px; background:#fff;"><div style="font-size:10.5px; color:#71717A; font-weight:600;">Total lost</div><div style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; margin-top:4px; color:#16A34A;">−7.8<span style="font-size:11px;"> kg</span></div></div>
-                        <div style="border:1px solid #ECEEF2; border-radius:14px; padding:12px; background:#fff;"><div style="font-size:10.5px; color:#71717A; font-weight:600;">Body fat</div><div style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; margin-top:4px; color:#0091FF;">18<span style="font-size:11px;">%</span></div></div>
-                      </div>
-                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; padding:16px;">
-                        <div style="margin-bottom:10px;"><div style="font-size:13px; font-weight:700;">Weight reduction</div><div style="font-size:11px; color:#71717A; margin-top:1px;">92.0 → 84.2 kg · {{ progressRangeLabel }}</div></div>
-                        <div style="display:flex; background:#F1F4F8; border-radius:9px; padding:3px; margin-bottom:6px;">
-                          <span onClick="{{ onRangeDays }}" style="flex:1; text-align:center; padding:5px 0; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; {{ segDays }}">Days</span>
-                          <span onClick="{{ onRangeWeeks }}" style="flex:1; text-align:center; padding:5px 0; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; {{ segWeeks }}">Weeks</span>
-                          <span onClick="{{ onRangeMonths }}" style="flex:1; text-align:center; padding:5px 0; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; {{ segMonths }}">Months</span>
-                        </div>
-                        <div style="position:relative; height:180px; margin-top:10px;">
-                          <div style="position:absolute; left:34px; right:6px; top:0; bottom:22px;">
-                            <sc-for list="{{ yTicks }}" as="t" hint-placeholder-count="4">
-                              <div style="position:absolute; left:0; right:0; top:{{ t.topPct }}; transform:translateY(-50%); display:flex; align-items:center;"><span style="position:absolute; left:-32px; width:28px; text-align:right; font-size:9px; color:#A1A1AA; font-weight:600;">{{ t.val }}</span><span style="width:100%; height:1px; background:#F4F6F8;"></span></div>
-                            </sc-for>
-                            <svg viewBox="0 0 520 160" preserveAspectRatio="none" width="100%" height="100%" style="display:block;">
-                              <path d="{{ wArea }}" fill="rgba(0,145,255,.10)"></path>
-                              <polyline points="{{ wPoints }}" fill="none" stroke="#0091FF" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"></polyline>
-                            </svg>
-                            <sc-for list="{{ chartPoints }}" as="p" hint-placeholder-count="6"><div style="position:absolute; left:{{ p.leftPct }}; top:{{ p.topPct }}; width:8px; height:8px; border-radius:50%; background:#fff; border:2px solid #0091FF; transform:translate(-50%,-50%);"></div></sc-for>
-                            <sc-for list="{{ chartPoints }}" as="p" hint-placeholder-count="6"><div style="position:absolute; left:{{ p.leftPct }}; top:{{ p.topPct }}; transform:translate(-50%,-165%); font-size:9.5px; font-weight:700; color:#18181B; white-space:nowrap;">{{ p.val }}</div></sc-for>
-                            <sc-for list="{{ chartPoints }}" as="p" hint-placeholder-count="6"><div style="position:absolute; left:{{ p.leftPct }}; top:100%; transform:translate(-50%,6px); font-size:9.5px; font-weight:600; color:#71717A; white-space:nowrap;">{{ p.label }}</div></sc-for>
-                          </div>
-                        </div>
-                      </div>
-                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; padding:16px; margin-top:14px;">
-                        <div style="font-size:13px; font-weight:700; margin-bottom:14px;">Muscle visibility &amp; composition</div>
-                        <div style="display:flex; flex-direction:column; gap:13px;">
-                          <sc-for list="{{ muscleBars }}" as="mb" hint-placeholder-count="4">
-                            <div><div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;"><span style="font-size:12.5px; color:#3F3F46;">{{ mb.label }}</span><span style="font-size:11.5px; font-weight:700; color:{{ mb.fg }};">{{ mb.tag }}</span></div><div style="height:8px; border-radius:99px; background:#F1F4F8; overflow:hidden;"><div style="height:100%; border-radius:99px; background:{{ mb.fg }}; width:{{ mb.w }};"></div></div></div>
-                          </sc-for>
-                        </div>
-                      </div>
-                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; padding:16px; margin-top:14px;">
-                        <div style="font-size:13px; font-weight:700; margin-bottom:12px;">Health markers</div>
-                        <div style="display:flex; flex-direction:column; gap:10px;">
-                          <sc-for list="{{ healthItems }}" as="h" hint-placeholder-count="4">
-                            <div style="display:flex; align-items:center; gap:11px; padding:10px 12px; border:1.5px solid #F1F4F8; border-radius:12px;">
-                              <span style="width:28px; height:28px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:{{ h.fg }}; background:{{ h.bg }};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg></span>
-                              <div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:600;">{{ h.label }}</div><div style="font-size:11px; color:#71717A;">{{ h.detail }}</div></div>
-                              <span style="flex-shrink:0; font-size:10.5px; font-weight:700; color:{{ h.fg }}; background:{{ h.bg }}; padding:3px 9px; border-radius:99px; white-space:nowrap;">{{ h.tag }}</span>
-                            </div>
-                          </sc-for>
-                        </div>
-                      </div>
-                      <div style="border:1.5px solid rgba(0,145,255,.28); background:rgba(0,145,255,.04); border-radius:16px; padding:16px; margin-top:14px;">
-                        <div style="font-size:13px; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:8px;"><span style="color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 2 15 8.5 22 9.3l-5 4.6 1.3 6.9L12 17.8 5.7 20.8 7 13.9l-5-4.6 7-.8z"/></svg></span>Key progress points</div>
-                        <div style="display:flex; flex-direction:column; gap:9px;">
-                          <sc-for list="{{ progressPoints }}" as="p" hint-placeholder-count="4">
-                            <div style="display:flex; align-items:flex-start; gap:9px;"><span style="width:6px; height:6px; border-radius:50%; background:#0091FF; margin-top:6px; flex-shrink:0;"></span><span style="font-size:12.5px; line-height:1.5; color:#3F3F46;">{{ p }}</span></div>
-                          </sc-for>
-                        </div>
-                      </div>
-                    </sc-if>
-                    <sc-if value="{{ tabNutrition }}" hint-placeholder-val="{{ false }}">
-                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; padding:16px;">
-                        <div style="display:flex; align-items:center; gap:11px; margin-bottom:14px;"><span style="width:38px; height:38px; border-radius:11px; background:#E9F5FF; color:#0091FF; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M3 2v7c0 1.1.9 2 2 2h1v11M6 2v9M8 2v9M17 2v20M21 15V9a4 4 0 0 0-4-4"/></svg></span><div style="min-width:0;"><div style="font-size:14px; font-weight:700;">12-Week Shred — Phase 1</div><div style="font-size:11.5px; color:#71717A;">{{ nKcal }} kcal daily · 3 meals + 1 snack</div></div></div>
-                        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;">
-                          <div style="text-align:center; border:1px solid #ECEEF2; border-radius:11px; padding:10px 2px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;">{{ nKcal }}</div><div style="font-size:10px; color:#71717A; margin-top:2px;">kcal</div></div>
-                          <div style="text-align:center; border:1px solid #ECEEF2; border-radius:11px; padding:10px 2px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; color:#0091FF;">{{ nProtein }}</div><div style="font-size:10px; color:#71717A; margin-top:2px;">protein</div></div>
-                          <div style="text-align:center; border:1px solid #ECEEF2; border-radius:11px; padding:10px 2px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; color:#D97706;">{{ nCarbs }}</div><div style="font-size:10px; color:#71717A; margin-top:2px;">carbs</div></div>
-                          <div style="text-align:center; border:1px solid #ECEEF2; border-radius:11px; padding:10px 2px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; color:#16A34A;">{{ nFat }}</div><div style="font-size:10px; color:#71717A; margin-top:2px;">fat</div></div>
-                        </div>
-                      </div>
-                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; padding:16px; margin-top:14px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;"><div style="font-size:13px; font-weight:700;">Program completion</div><span style="font-size:11.5px; font-weight:700; color:#0091FF;">Week 8 of 12</span></div>
-                        <div style="height:9px; border-radius:99px; background:#F1F4F8; overflow:hidden;"><div style="height:100%; width:67%; border-radius:99px; background:#0091FF;"></div></div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:9px;"><span style="font-size:11.5px; color:#71717A;">67% complete · 4 weeks left</span><span style="font-size:11.5px; color:#71717A;">Ends Apr 28</span></div>
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:18px 0 10px;">Plan history</div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; overflow:hidden;">
-                        <sc-for list="{{ nutritionHistory }}" as="p" hint-placeholder-count="4">
-                          <div style="display:flex; align-items:center; gap:11px; padding:12px 13px; border-bottom:1px solid #F1F4F8;">
-                            <span style="width:32px; height:32px; flex-shrink:0; border-radius:9px; display:flex; align-items:center; justify-content:center; color:{{ p.iconFg }}; background:{{ p.iconBg }};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M3 2v7c0 1.1.9 2 2 2h1v11M6 2v9M8 2v9M17 2v20M21 15V9a4 4 0 0 0-4-4"/></svg></span>
-                            <div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:600;">{{ p.name }}</div><div style="font-size:11px; color:#71717A;">{{ p.dates }} · {{ p.kcal }} · {{ p.adherence }}</div></div>
-                            <span style="flex-shrink:0; font-size:10px; font-weight:700; padding:3px 8px; border-radius:99px; color:{{ p.tagFg }}; background:{{ p.tagBg }};">{{ p.tag }}</span>
-                          </div>
-                        </sc-for>
-                      </div>
-                    </sc-if>
-                    <sc-if value="{{ tabTraining }}" hint-placeholder-val="{{ false }}">
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#0091FF; margin:0 0 10px;">Current plan</div>
-                      <div style="border:1px solid #ECEEF2; border-radius:16px; padding:16px; background:#fff; margin-bottom:14px;">
-                        <div style="display:flex; align-items:center; gap:11px; margin-bottom:13px; padding-bottom:13px; border-bottom:1px solid #F1F4F8;"><span style="width:38px; height:38px; border-radius:11px; background:#E9F5FF; color:#0091FF; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M6 7v10M4 9v6M18 7v10M20 9v6M7 12h10"/></svg></span><div style="flex:1; min-width:0;"><div style="font-size:13.5px; font-weight:700;">Upper/Lower Hypertrophy — Block C</div><div style="font-size:11px; color:#71717A;">Week 6 of 8 · 4 days/week</div></div><span style="flex-shrink:0; font-size:10.5px; font-weight:700; color:#16A34A; background:#E9F9EF; padding:3px 9px; border-radius:99px;">Active</span></div>
-                        <div style="margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid #F1F4F8;">
-                          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;"><div style="font-size:12.5px; font-weight:700;">Program completion</div><span style="font-size:11px; font-weight:700; color:#0091FF;">Week 6 of 8</span></div>
-                          <div style="height:9px; border-radius:99px; background:#F1F4F8; overflow:hidden;"><div style="height:100%; width:75%; border-radius:99px; background:#0091FF;"></div></div>
-                          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;"><span style="font-size:11px; color:#71717A;">75% complete · 2 weeks left</span><span style="font-size:11px; color:#71717A;">Ends Jul 27</span></div>
-                        </div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:11px;"><div style="font-size:12.5px; font-weight:700;">This week</div><span style="font-size:10.5px; font-weight:700; color:#16A34A; background:#E9F9EF; padding:3px 9px; border-radius:99px;">3 of 4 done</span></div>
-                        <div style="display:flex; flex-direction:column; gap:8px;">
-                          <div style="display:flex; align-items:center; gap:11px; padding:10px 12px; border:1px solid #ECEEF2; border-radius:11px;"><span style="width:26px; height:26px; border-radius:8px; background:#E9F9EF; color:#16A34A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="13" height="13"><path d="M20 6 9 17l-5-5"/></svg></span><span style="flex:1; font-size:12.5px; font-weight:600;">Upper A · Push focus</span><span style="font-size:11px; color:#71717A;">Mon</span></div>
-                          <div style="display:flex; align-items:center; gap:11px; padding:10px 12px; border:1px solid #ECEEF2; border-radius:11px;"><span style="width:26px; height:26px; border-radius:8px; background:#E9F9EF; color:#16A34A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="13" height="13"><path d="M20 6 9 17l-5-5"/></svg></span><span style="flex:1; font-size:12.5px; font-weight:600;">Lower A · Squat focus</span><span style="font-size:11px; color:#71717A;">Tue</span></div>
-                          <div style="display:flex; align-items:center; gap:11px; padding:10px 12px; border:1px solid #ECEEF2; border-radius:11px;"><span style="width:26px; height:26px; border-radius:8px; background:#E9F9EF; color:#16A34A; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="13" height="13"><path d="M20 6 9 17l-5-5"/></svg></span><span style="flex:1; font-size:12.5px; font-weight:600;">Upper B · Pull focus</span><span style="font-size:11px; color:#71717A;">Thu</span></div>
-                          <div style="display:flex; align-items:center; gap:11px; padding:10px 12px; border:1px dashed #E4E7EC; border-radius:11px;"><span style="width:26px; height:26px; border-radius:8px; border:2px solid #D4D4D8; flex-shrink:0;"></span><span style="flex:1; font-size:12.5px; font-weight:600; color:#71717A;">Lower B · Deadlift focus</span><span style="font-size:11px; color:#0091FF; font-weight:700;">Fri</span></div>
-                        </div>
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:0 0 10px;">Plan history</div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; overflow:hidden;">
-                        <sc-for list="{{ trainingHistory }}" as="p" hint-placeholder-count="4">
-                          <div style="display:flex; align-items:center; gap:11px; padding:12px 13px; border-bottom:1px solid #F1F4F8;">
-                            <span style="width:32px; height:32px; flex-shrink:0; border-radius:9px; display:flex; align-items:center; justify-content:center; color:{{ p.iconFg }}; background:{{ p.iconBg }};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M6 7v10M4 9v6M18 7v10M20 9v6M7 12h10"/></svg></span>
-                            <div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:600;">{{ p.name }}</div><div style="font-size:11px; color:#71717A;">{{ p.dates }} · {{ p.weeks }} · {{ p.adherence }}</div></div>
-                            <span style="flex-shrink:0; font-size:10px; font-weight:700; padding:3px 8px; border-radius:99px; color:{{ p.tagFg }}; background:{{ p.tagBg }};">{{ p.tag }}</span>
-                          </div>
-                        </sc-for>
-                      </div>
-                    </sc-if>
-                    <sc-if value="{{ tabTrainer }}" hint-placeholder-val="{{ false }}">
-                      <div style="border:1px solid #ECEEF2; border-radius:16px; padding:18px; background:#fff; margin-bottom:14px;">
-                        <div style="display:flex; align-items:center; gap:13px;"><span style="width:54px; height:54px; flex-shrink:0; border-radius:16px; background:#18181B; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px;">{{ trainerInitials }}</span><div style="flex:1; min-width:0;"><div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700;">{{ trainerName }}</div><div style="font-size:11.5px; color:#71717A; margin-top:2px;">{{ trainerSpecialty }}</div></div><span style="flex-shrink:0; font-size:10.5px; font-weight:700; color:#16A34A; background:#E9F9EF; padding:4px 10px; border-radius:99px;">Active</span></div>
-                        <div style="display:flex; gap:8px; margin-top:16px;"><div style="flex:1; text-align:center; border:1px solid #ECEEF2; border-radius:11px; padding:11px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;">{{ trainerClients }}</div><div style="font-size:10px; color:#71717A; margin-top:2px;">clients</div></div><div style="flex:1; text-align:center; border:1px solid #ECEEF2; border-radius:11px; padding:11px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;">{{ trainerRating }}</div><div style="font-size:10px; color:#71717A; margin-top:2px;">rating</div></div><div style="flex:1; text-align:center; border:1px solid #ECEEF2; border-radius:11px; padding:11px;"><div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;">{{ trainerTenure }}</div><div style="font-size:10px; color:#71717A; margin-top:2px;">tenure</div></div></div>
-                        <div style="display:flex; gap:8px; margin-top:14px;"><div style="flex:1; text-align:center; background:#F1F4F8; color:#18181B; padding:11px; border-radius:11px; font-size:12.5px; font-weight:600; cursor:pointer;">Message</div><div onClick="{{ openTrainerChange }}" style="flex:1; text-align:center; background:#18181B; color:#fff; padding:11px; border-radius:11px; font-size:12.5px; font-weight:700; cursor:pointer;">Change trainer</div></div>
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:0 0 10px;">Trainer history</div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; overflow:hidden;">
-                        <sc-for list="{{ trainerHistory }}" as="t" hint-placeholder-count="2">
-                          <div style="display:flex; align-items:center; gap:11px; padding:12px 13px; border-bottom:1px solid #F1F4F8;">
-                            <span style="width:34px; height:34px; flex-shrink:0; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; color:#fff; background:{{ t.avatarBg }};">{{ t.initials }}</span>
-                            <div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:600;">{{ t.name }}</div><div style="font-size:11px; color:#71717A;">{{ t.role }} · {{ t.dates }}</div></div>
-                            <span style="flex-shrink:0; font-size:10px; font-weight:700; padding:3px 8px; border-radius:99px; color:{{ t.tagFg }}; background:{{ t.tagBg }};">{{ t.tag }}</span>
-                          </div>
-                        </sc-for>
-                      </div>
-                    </sc-if>
-                    <sc-if value="{{ tabClientCi }}" hint-placeholder-val="{{ false }}">
-                      <div style="display:flex; align-items:center; gap:11px; padding:12px 14px; border:1.5px solid rgba(0,145,255,.28); background:rgba(0,145,255,.05); border-radius:14px; margin-bottom:16px;">
-                        <span style="width:34px; height:34px; border-radius:10px; background:#0091FF; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-                        <div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:700;">Next check-in due</div><div style="font-size:11.5px; color:#0091FF;">Sunday, Jul 13 · in 4 days</div></div>
-                        <span style="font-size:11px; font-weight:700; color:#0091FF; cursor:pointer; white-space:nowrap;">Remind</span>
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:0 0 10px;">Latest submission</div>
-                      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:14px;">
-                        <div style="border:1px solid #ECEEF2; border-radius:14px; padding:14px; background:#fff;"><div style="font-size:11px; color:#71717A; font-weight:600;">Weight</div><div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; margin-top:4px;">84.2 kg <span style="font-size:11px; color:#16A34A; font-weight:700;">−0.6</span></div></div>
-                        <div style="border:1px solid #ECEEF2; border-radius:14px; padding:14px; background:#fff;"><div style="font-size:11px; color:#71717A; font-weight:600;">Avg. sleep</div><div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; margin-top:4px;">7.4 h</div></div>
-                        <div style="border:1px solid #ECEEF2; border-radius:14px; padding:14px; background:#fff;"><div style="font-size:11px; color:#71717A; font-weight:600;">Avg. steps</div><div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; margin-top:4px;">11,400</div></div>
-                        <div style="border:1px solid #ECEEF2; border-radius:14px; padding:14px; background:#fff;"><div style="font-size:11px; color:#71717A; font-weight:600;">Mood / energy</div><div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; margin-top:4px;">8 / 10</div></div>
-                      </div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; padding:14px; background:#fff; margin-bottom:14px;"><div style="font-size:11px; font-weight:700; color:#71717A; margin-bottom:6px;">Client note</div><p style="font-size:12.5px; line-height:1.55; color:#3F3F46; margin:0;">"Great week — energy was high and I hit all my sessions. Struggled a bit with weekend meals but back on track. Wrist felt fine on presses."</p></div>
-                      <div style="display:flex; gap:8px; margin-bottom:18px;"><div style="flex:1; text-align:center; background:#0091FF; color:#fff; padding:11px; border-radius:11px; font-size:12.5px; font-weight:700; cursor:pointer;">Review &amp; respond</div><div style="text-align:center; border:1px solid #ECEEF2; color:#52525B; padding:11px 15px; border-radius:11px; font-size:12.5px; font-weight:600; cursor:pointer;">History</div></div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:0 0 10px;">Check-in history</div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; overflow:hidden;">
-                        <sc-for list="{{ clientCiHistory }}" as="c" hint-placeholder-count="4">
-                          <div style="display:flex; align-items:center; gap:11px; padding:12px 13px; border-bottom:1px solid #F1F4F8;">
-                            <span style="width:32px; height:32px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#16A34A; background:#E9F9EF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M20 6 9 17l-5-5"/></svg></span>
-                            <div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:600;">{{ c.date }}</div><div style="font-size:11px; color:#71717A;">{{ c.detail }}</div></div>
-                            <span style="flex-shrink:0; font-size:12px; font-weight:700; color:{{ c.deltaFg }};">{{ c.weight }}</span>
-                          </div>
-                        </sc-for>
-                      </div>
-                    </sc-if>
-                    <sc-if value="{{ tabTrainerCi }}" hint-placeholder-val="{{ false }}">
-                      <div style="display:flex; align-items:center; gap:11px; padding:12px 14px; border:1.5px solid #FCE3BF; background:#FEF9F0; border-radius:14px; margin-bottom:16px;">
-                        <span style="width:34px; height:34px; border-radius:10px; background:#D97706; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
-                        <div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:700;">Next review due</div><div style="font-size:11.5px; color:#D97706;">Thursday, Jul 10 · tomorrow</div></div>
-                        <span style="font-size:11px; font-weight:700; color:#D97706; cursor:pointer; white-space:nowrap;">Start</span>
-                      </div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; padding:14px; background:#fff; margin-bottom:14px;">
-                        <div style="font-size:12.5px; font-weight:700; margin-bottom:9px;">Last review · 1 week ago</div>
-                        <p style="font-size:12.5px; line-height:1.55; color:#3F3F46; margin:0 0 12px;">"Progressing well on lower body. Bumped squat to 100kg and increased daily protein target by 15g. Keep an eye on weekend adherence."</p>
-                        <div style="display:flex; align-items:center; gap:9px; padding-top:12px; border-top:1px solid #F1F4F8;"><span style="width:28px; height:28px; border-radius:8px; background:#18181B; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700;">JK</span><span style="font-size:11.5px; color:#71717A;">Reviewed by <b style="color:#18181B;">Jordan Kim</b></span></div>
-                      </div>
-                      <div style="border:1.5px dashed #CDE7FF; border-radius:14px; padding:14px; background:#F7FBFF; margin-bottom:18px;">
-                        <div style="font-size:12.5px; font-weight:700; margin-bottom:9px;">This week's review</div>
-                        <textarea placeholder="Add your notes on training, nutrition, and adjustments…" style="width:100%; min-height:80px; resize:none; border:1.5px solid #E4E7EC; border-radius:11px; padding:11px; font-family:inherit; font-size:12.5px; color:#18181B; outline:none; background:#fff; box-sizing:border-box;" style-focus="border-color:#0091FF;"></textarea>
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:11px;"><label style="display:flex; align-items:center; gap:7px; font-size:11.5px; color:#52525B; cursor:pointer;"><span style="width:17px; height:17px; border-radius:6px; border:1.5px solid #C4C4CC; display:inline-block;"></span>Share with client</label><div style="background:#18181B; color:#fff; padding:9px 16px; border-radius:11px; font-size:12.5px; font-weight:700; cursor:pointer;">Submit</div></div>
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:0 0 10px;">Review history</div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; overflow:hidden;">
-                        <sc-for list="{{ trainerCiHistory }}" as="c" hint-placeholder-count="4">
-                          <div style="display:flex; align-items:flex-start; gap:11px; padding:12px 13px; border-bottom:1px solid #F1F4F8;">
-                            <span style="width:28px; height:28px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:#fff; background:#18181B;">JK</span>
-                            <div style="flex:1; min-width:0;"><div style="font-size:12px; font-weight:600;">{{ c.date }}</div><div style="font-size:11px; color:#71717A; margin-top:2px; line-height:1.45;">{{ c.note }}</div></div>
-                            <sc-if value="{{ c.shared }}" hint-placeholder-val="{{ false }}"><span style="flex-shrink:0; font-size:10px; font-weight:700; color:#0091FF; background:#E9F5FF; padding:2px 8px; border-radius:99px; white-space:nowrap;">Shared</span></sc-if>
-                          </div>
-                        </sc-for>
-                      </div>
-                    </sc-if>
-                    <sc-if value="{{ tabDetail }}" hint-placeholder-val="{{ false }}">
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#0091FF; margin:0 0 10px;">Goal</div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; padding:14px; background:#fff; margin-bottom:16px;">
-                        <div style="font-size:13.5px; font-weight:700; margin-bottom:4px;">Lose 10 kg &amp; build strength</div>
-                        <p style="font-size:12px; line-height:1.55; color:#71717A; margin:0;">Cut to ~82 kg by September while holding onto muscle. Wants to hit a 100 kg squat and improve energy for weekend hikes.</p>
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:0 0 10px;">Personal</div>
-                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:14px; overflow:hidden; margin-bottom:16px;">
-                        <sc-for list="{{ detailPersonal }}" as="d" hint-placeholder-count="6">
-                          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 14px; border-bottom:1px solid #F1F4F8;"><span style="font-size:12.5px; color:#71717A;">{{ d.k }}</span><span style="font-size:13px; font-weight:600;">{{ d.v }}</span></div>
-                        </sc-for>
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:0 0 10px;">Membership</div>
-                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:14px; overflow:hidden;">
-                        <sc-for list="{{ detailMembership }}" as="d" hint-placeholder-count="4">
-                          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 14px; border-bottom:1px solid #F1F4F8;"><span style="font-size:12.5px; color:#71717A;">{{ d.k }}</span><span style="font-size:13px; font-weight:600;">{{ d.v }}</span></div>
-                        </sc-for>
-                      </div>
-                    </sc-if>
-                    <sc-if value="{{ tabSubscription }}" hint-placeholder-val="{{ false }}">
-                      <div style="border:1px solid #ECEEF2; border-radius:16px; padding:16px; background:#fff; margin-bottom:14px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px;"><div style="display:flex; align-items:center; gap:11px;"><span style="width:40px; height:40px; border-radius:11px; background:#E9F5FF; color:#0091FF; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><div style="min-width:0;"><div style="font-size:14px; font-weight:700;">{{ subPlan }}</div><div style="font-size:11.5px; color:#71717A;">{{ subPrice }}</div></div></div><span style="flex-shrink:0; font-size:10.5px; font-weight:700; color:{{ subStatusFg }}; background:{{ subStatusBg }}; padding:4px 10px; border-radius:99px;">{{ subStatusLabel }}</span></div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;"><span style="font-size:12px; font-weight:700;">Current term</span><span style="font-size:11px; color:#71717A;">{{ subRemainingLabel }}</span></div>
-                        <div style="height:8px; border-radius:99px; background:#F1F4F8; overflow:hidden;"><div style="height:100%; width:{{ subPct }}; border-radius:99px; background:#0091FF;"></div></div>
-                        <div style="font-size:11px; color:#71717A; margin-top:7px;">{{ subElapsedLabel }} elapsed</div>
-                      </div>
-                      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;">
-                        <div style="border:1px solid #ECEEF2; border-radius:13px; padding:12px; background:#fff;"><div style="font-size:10px; color:#71717A; font-weight:600;">Start</div><div style="font-size:12px; font-weight:700; margin-top:4px;">{{ subStart }}</div></div>
-                        <div style="border:1px solid #ECEEF2; border-radius:13px; padding:12px; background:#fff;"><div style="font-size:10px; color:#71717A; font-weight:600;">End</div><div style="font-size:12px; font-weight:700; margin-top:4px;">{{ subEnd }}</div></div>
-                        <div style="border:1px solid #ECEEF2; border-radius:13px; padding:12px; background:#fff;"><div style="font-size:10px; color:#71717A; font-weight:600;">Next bill</div><div style="font-size:12px; font-weight:700; margin-top:4px;">{{ subNextBilling }}</div></div>
-                      </div>
-                      <div style="border:1px solid #ECEEF2; border-radius:14px; padding:14px; background:#fff; margin-bottom:18px;">
-                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;"><span style="width:32px; height:32px; border-radius:9px; background:#F1F4F8; color:#18181B; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg></span><div style="font-size:13px; font-weight:700;">Extend subscription</div></div>
-                        <div style="display:flex; gap:7px; margin-bottom:12px;">
-                          <span onClick="{{ onExtend1 }}" style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:10px; padding:10px 0; font-size:12.5px; font-weight:700; cursor:pointer;">+1 mo</span>
-                          <span onClick="{{ onExtend3 }}" style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:10px; padding:10px 0; font-size:12.5px; font-weight:700; cursor:pointer;">+3 mo</span>
-                          <span onClick="{{ onExtend6 }}" style="flex:1; text-align:center; border:1.5px solid #ECEEF2; border-radius:10px; padding:10px 0; font-size:12.5px; font-weight:700; cursor:pointer;">+6 mo</span>
-                        </div>
-                        <input type="date" value="{{ subEndInput }}" onChange="{{ setSubEnd }}" style="width:100%; border:1.5px solid #E4E7EC; border-radius:10px; padding:10px 12px; font-family:inherit; font-size:12.5px; color:#18181B; outline:none; box-sizing:border-box;" style-focus="border-color:#0091FF;">
-                      </div>
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin:0 0 10px;">Manage</div>
-                      <div style="display:flex; flex-direction:column; gap:8px;">
-                        <div onClick="{{ pauseSub }}" style="display:flex; align-items:center; gap:10px; border:1px solid #ECEEF2; border-radius:12px; padding:12px 14px; background:#fff; cursor:pointer;"><span style="width:30px; height:30px; border-radius:9px; background:#FEF3E2; color:#D97706; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></span><span style="flex:1; font-size:13px; font-weight:700;">{{ pauseSubLabel }}</span></div>
-                        <div onClick="{{ cancelSub }}" style="display:flex; align-items:center; gap:10px; border:1px solid #FCE1E8; border-radius:12px; padding:12px 14px; background:#fff; cursor:pointer;"><span style="width:30px; height:30px; border-radius:9px; background:#FEECF0; color:#F31260; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg></span><div style="flex:1;"><div style="font-size:13px; font-weight:700; color:#F31260;">Cancel subscription</div><div style="font-size:11px; color:#71717A;">Stops billing at term end</div></div></div>
-                        <div onClick="{{ removeSub }}" style="display:flex; align-items:center; gap:10px; border:1px solid #FCE1E8; border-radius:12px; padding:12px 14px; background:#fff; cursor:pointer;"><span style="width:30px; height:30px; border-radius:9px; background:#FEECF0; color:#F31260; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span><div style="flex:1;"><div style="font-size:13px; font-weight:700; color:#F31260;">Remove client</div><div style="font-size:11px; color:#71717A;">Deletes access &amp; data</div></div></div>
-                      </div>
-                    </sc-if>
-                  </div>
-                </div>
-              </sc-if>
-              <sc-if value="{{ mobileChatOpen }}" hint-placeholder-val="{{ false }}">
-                <div style="position:absolute; top:48px; left:0; right:0; bottom:0; background:#F7F8FA; display:flex; flex-direction:column; animation:fadeUp .26s both; z-index:40;">
-                  <div style="flex-shrink:0; background:#fff; border-bottom:1px solid #ECEEF2; padding:11px 14px;">
-                    <div style="display:flex; align-items:center; gap:11px;">
-                      <span onClick="{{ closeMobileChat }}" style="width:34px; height:34px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:#F1F4F8; cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="m15 18-6-6 6-6"/></svg></span>
-                      <span style="width:38px; height:38px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; background:#18181B;">{{ chatInitials }}</span>
-                      <div style="min-width:0; flex:1;">
-                        <div style="font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; letter-spacing:-.01em;">{{ chatName }}</div>
-                        <div style="font-size:11px; font-weight:600; color:#16A34A;">Online now</div>
-                      </div>
-                    </div>
-                    <div style="display:flex; gap:6px; background:#F1F4F8; border-radius:10px; padding:3px; margin-top:11px;">
-                      <button onClick="{{ onChatMessages }}" style="flex:1; height:30px; border:none; border-radius:8px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ segMessages }}">Messages</button>
-                      <button onClick="{{ onChatMedia }}" style="flex:1; height:30px; border:none; border-radius:8px; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; {{ segMedia }}">Media</button>
-                    </div>
-                  </div>
-                  <sc-if value="{{ chatViewMessages }}" hint-placeholder-val="{{ true }}">
-                    <div style="flex:1; overflow-y:auto; padding:16px 14px; display:flex; flex-direction:column; gap:10px;">
-                      <sc-for list="{{ chatMessages }}" as="m" hint-placeholder-count="6">
-                        <div style="display:flex; justify-content:{{ m.rowJustify }};">
-                          <div style="max-width:80%; padding:9px 12px; font-size:13px; line-height:1.45; {{ m.bubbleStyle }}">{{ m.text }}<div style="font-size:10px; margin-top:4px; color:{{ m.metaColor }};">{{ m.time }}</div></div>
-                        </div>
-                      </sc-for>
-                    </div>
-                    <div style="flex-shrink:0; background:#fff; border-top:1px solid #ECEEF2; padding:10px 12px; display:flex; align-items:center; gap:9px;">
-                      <div style="flex:1; display:flex; align-items:center; gap:8px; border:1.5px solid #ECEEF2; border-radius:12px; padding:9px 13px;">
-                        <input placeholder="Message {{ chatName }}…" style="border:none; outline:none; background:transparent; font-family:inherit; font-size:13px; flex:1; min-width:0;">
-                      </div>
-                      <span style="width:40px; height:40px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; background:#0091FF; color:#fff; cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></span>
-                    </div>
-                  </sc-if>
-                  <sc-if value="{{ chatViewMedia }}" hint-placeholder-val="{{ false }}">
-                    <div style="flex:1; overflow-y:auto; padding:16px 14px;">
-                      <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#71717A; margin-bottom:11px;">Shared media · {{ chatMediaCount }}</div>
-                      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
-                        <sc-for list="{{ chatMedia }}" as="mm" hint-placeholder-count="9">
-                          <div style="position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:{{ mm.bg }}; display:flex; align-items:flex-end; padding:7px;">
-                            <sc-if value="{{ mm.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:7px; right:7px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,.45); color:#fff; display:inline-flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10"><path d="M8 5v14l11-7z"/></svg></span></sc-if>
-                            <span style="font-size:9.5px; font-weight:600; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.4); line-height:1.2;">{{ mm.label }}</span>
-                          </div>
-                        </sc-for>
-                      </div>
-                    </div>
-                  </sc-if>
-                </div>
-              </sc-if>
               <div style="position:absolute; bottom:0; left:0; right:0; height:74px; background:#18181B; display:flex; align-items:flex-start; justify-content:space-around; padding-top:10px;">
                 <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px;">Home</span></div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font-size:10px; font-weight:600;">Clients</span></div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span style="font-size:10px;">Prospects</span></div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="font-size:10px;">Builder</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="font-size:10px;">Library</span></div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg><span style="font-size:10px;">Settings</span></div>
               </div>
             </div>
@@ -1246,7 +747,7 @@
                 </div>
                 <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px;">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
-                  <span style="flex:1;">Builder</span>
+                  <span style="flex:1;">Library</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer; transition:background .14s, color .14s;" style-hover="background:#26262B; color:#E4E4E7;">
@@ -1626,7 +1127,7 @@
               <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px; font-weight:600;">Home</span></div>
               <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span style="font-size:10px;">Clients</span></div>
               <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span style="font-size:10px;">Prospects</span></div>
-              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="font-size:10px;">Builder</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg><span style="font-size:10px;">Library</span></div>
               <div style="display:flex; flex-direction:column; align-items:center; gap:3px; color:#71717A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="21" height="21"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"/></svg><span style="font-size:10px;">Settings</span></div>
             </div>
           </div>
@@ -1651,9 +1152,6 @@ class Component extends DCLogic {
     statModal: null,
     statSearch: '',
     chatClient: null,
-    mobileChatOpen: false,
-    subEndMs: new Date(2026, 7, 3).getTime(),
-    subExtendOpen: false,
     clientTab: 'chat',
     chatView: 'messages',
     progressRange: 'months',
@@ -1663,7 +1161,6 @@ class Component extends DCLogic {
     trainerId: 1,
     clientMenuOpen: false,
     clientStatus: 'active',
-    prospectView: 'pipeline',
     notesOpen: false,
     notesBottom: 130,
     activeNoteId: null,
@@ -1919,7 +1416,7 @@ class Component extends DCLogic {
           pinned, notPinned: !pinned, onPin: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.togglePin(c.id); },
           rowBg: pinned ? 'background:#FFFCF5;' : '', starColor: pinned ? '#D97706' : '#C4C4CC', starFill: pinned ? '#F59E0B' : 'none',
           hasUnread: c.wa && c.unread > 0, unread: c.unread,
-          onClick: () => this.openChat(c.id), onOpenMobile: () => this.openClientMobile(c.id)};
+          onClick: () => this.openChat(c.id)};
       });
     rows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
     const defs = [
@@ -1940,10 +1437,7 @@ class Component extends DCLogic {
   }
 
   openChat = (id) => this.setState({chatClient: id, clientTab: 'chat', chatView: 'messages', clientStatus: 'active', clientMenuOpen: false});
-  openClientMobile = (id) => this.setState({chatClient: id, clientTab: 'progress', chatView: 'messages', clientStatus: 'active', clientMenuOpen: false, mobileChatOpen: false});
-  openMobileChat = () => this.setState({mobileChatOpen: true, chatView: 'messages'});
-  closeMobileChat = () => this.setState({mobileChatOpen: false});
-  closeChat = () => this.setState({chatClient: null, clientMenuOpen: false, mobileChatOpen: false});
+  closeChat = () => this.setState({chatClient: null, clientMenuOpen: false});
   toggleClientMenu = () => this.setState((s) => ({clientMenuOpen: !s.clientMenuOpen}));
   closeClientMenu = () => this.setState({clientMenuOpen: false});
   pauseClient = () => this.setState((s) => ({clientStatus: s.clientStatus === 'paused' ? 'active' : 'paused', clientMenuOpen: false}));
@@ -1951,10 +1445,6 @@ class Component extends DCLogic {
   removeClient = () => this.setState({chatClient: null, clientMenuOpen: false});
   setClientTab = (t) => this.setState({clientTab: t});
   setChatView = (v) => this.setState({chatView: v});
-  toggleSubExtend = () => this.setState((s) => ({subExtendOpen: !s.subExtendOpen}));
-  extendSub = (months) => this.setState((s) => { const d = new Date(s.subEndMs); d.setMonth(d.getMonth() + months); return {subEndMs: d.getTime(), subExtendOpen: false}; });
-  setSubEnd = (e) => { const v = e.target.value; if (!v) return; const d = new Date(v + 'T00:00:00'); if (!isNaN(d.getTime())) this.setState({subEndMs: d.getTime(), subExtendOpen: false}); };
-  resumeClient = () => this.setState({clientStatus: 'active', clientMenuOpen: false});
   setProgressRange = (r) => this.setState({progressRange: r});
   openNutriEdit = () => this.setState({nutriEditOpen: true});
   closeNutriEdit = () => this.setState({nutriEditOpen: false});
@@ -1965,51 +1455,6 @@ class Component extends DCLogic {
   openTrainerChange = () => this.setState({trainerChangeOpen: true});
   closeTrainerChange = () => this.setState({trainerChangeOpen: false});
   pickTrainer = (id) => this.setState({trainerId: id});
-  setProspectView = (v) => this.setState({prospectView: v});
-
-  prospectVals() {
-    const goalColor = {
-      'Fat loss': {fg: '#0091FF', bg: '#E9F5FF'},
-      'Muscle gain': {fg: '#16A34A', bg: '#E9F9EF'},
-      'General fitness': {fg: '#52525B', bg: '#F1F4F8'},
-      'Strength': {fg: '#D97706', bg: '#FEF3E2'},
-      'Marathon prep': {fg: '#7C3AED', bg: '#F1EAFE'},
-    };
-    const leads = [
-      {initials: 'SB', name: 'Sarah Blake', source: 'Instagram', goal: 'Fat loss', age: '1 day', value: '$120/mo', stage: 'new', avatarBg: '#18181B'},
-      {initials: 'DT', name: 'Diego Torres', source: 'Referral', goal: 'Muscle gain', age: '3 days', value: '$120/mo', stage: 'contacted', avatarBg: '#0091FF'},
-      {initials: 'EW', name: 'Emma Wilson', source: 'Website', goal: 'General fitness', age: '5 days', value: '$90/mo', stage: 'contacted', avatarBg: '#16A34A'},
-      {initials: 'RP', name: 'Raj Patel', source: 'Referral', goal: 'Strength', age: '2 days', value: '$150/mo', stage: 'trial', avatarBg: '#D97706'},
-      {initials: 'NK', name: 'Nina Kovac', source: 'Instagram', goal: 'Marathon prep', age: '6 days', value: '$150/mo', stage: 'trial', avatarBg: '#7C3AED'},
-      {initials: 'MC', name: 'Maya Chen', source: 'Referral', goal: 'Fat loss', age: 'Won Jul 2', value: '$120/mo', stage: 'won', avatarBg: '#18181B'},
-      {initials: 'LP', name: 'Leo Park', source: 'Website', goal: 'Strength', age: 'Won Jun 28', value: '$300/qtr', stage: 'won', avatarBg: '#0091FF'},
-    ];
-    const stageMeta = {
-      new: {label: 'New leads', color: '#0091FF', fg: '#0091FF', bg: '#E9F5FF'},
-      contacted: {label: 'Contacted', color: '#D97706', fg: '#D97706', bg: '#FEF3E2'},
-      trial: {label: 'Trial', color: '#7C3AED', fg: '#7C3AED', bg: '#F1EAFE'},
-      won: {label: 'Won', color: '#16A34A', fg: '#16A34A', bg: '#E9F9EF'},
-    };
-    const decorate = (c) => ({
-      ...c,
-      goalFg: (goalColor[c.goal] || goalColor['General fitness']).fg,
-      goalBg: (goalColor[c.goal] || goalColor['General fitness']).bg,
-      stageLabel: stageMeta[c.stage].label, stageFg: stageMeta[c.stage].fg, stageBg: stageMeta[c.stage].bg,
-    });
-    const order = ['new', 'contacted', 'trial', 'won'];
-    const pStages = order.map((k) => {
-      const cards = leads.filter((l) => l.stage === k).map(decorate);
-      return {key: k, label: stageMeta[k].label, color: stageMeta[k].color, count: cards.length, cards, empty: cards.length === 0};
-    });
-    const v = this.state.prospectView;
-    return {
-      pStages, pList: leads.map(decorate),
-      pvPipeline: v === 'pipeline', pvList: v === 'list',
-      onPvPipeline: () => this.setProspectView('pipeline'), onPvList: () => this.setProspectView('list'),
-      segPipeline: v === 'pipeline' ? 'background:#fff; color:#18181B; box-shadow:0 1px 3px rgba(24,24,27,.15);' : 'background:transparent; color:#71717A;',
-      segList: v === 'list' ? 'background:#fff; color:#18181B; box-shadow:0 1px 3px rgba(24,24,27,.15);' : 'background:transparent; color:#71717A;',
-    };
-  }
 
   trainerVals() {
     const trainers = [
@@ -2057,41 +1502,6 @@ class Component extends DCLogic {
       segDays: range === 'days' ? 'background:#fff; color:#18181B; box-shadow:0 1px 3px rgba(24,24,27,.15);' : 'background:transparent; color:#71717A;',
       segWeeks: range === 'weeks' ? 'background:#fff; color:#18181B; box-shadow:0 1px 3px rgba(24,24,27,.15);' : 'background:transparent; color:#71717A;',
       segMonths: range === 'months' ? 'background:#fff; color:#18181B; box-shadow:0 1px 3px rgba(24,24,27,.15);' : 'background:transparent; color:#71717A;',
-    };
-  }
-
-  subVals() {
-    const status = this.state.clientStatus || 'active';
-    const start = new Date(2025, 1, 3);
-    const end = new Date(this.state.subEndMs);
-    const now = new Date(2026, 6, 11);
-    const fmt = (d) => d.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
-    const day = 86400000;
-    const totalDays = Math.max(1, Math.round((end - start) / day));
-    const elapsed = Math.min(totalDays, Math.max(0, Math.round((now - start) / day)));
-    const remaining = Math.max(0, Math.round((end - now) / day));
-    const pct = Math.min(100, Math.max(0, Math.round(elapsed / totalDays * 100)));
-    const nextBill = new Date(now.getFullYear(), now.getMonth() + 1, 3);
-    const map = {
-      active: {label: 'Active', fg: '#16A34A', bg: '#E9F9EF'},
-      paused: {label: 'Paused', fg: '#D97706', bg: '#FEF3E2'},
-      cancelled: {label: 'Cancelled', fg: '#F31260', bg: '#FEECF0'},
-    };
-    const s = map[status] || map.active;
-    const iso = new Date(this.state.subEndMs);
-    const isoStr = iso.getFullYear() + '-' + String(iso.getMonth() + 1).padStart(2, '0') + '-' + String(iso.getDate()).padStart(2, '0');
-    return {
-      subStatus: status, subStatusLabel: s.label, subStatusFg: s.fg, subStatusBg: s.bg,
-      subActive: status !== 'cancelled', subCancelled: status === 'cancelled',
-      subPlan: 'Premium coaching', subPrice: '$120 / month',
-      subStart: fmt(start), subEnd: fmt(end), subNextBilling: status === 'active' ? fmt(nextBill) + ' · $120' : '—',
-      subPct: pct + '%', subElapsedLabel: elapsed + ' of ' + totalDays + ' days', subRemainingLabel: remaining + ' days left',
-      subExtendOpen: this.state.subExtendOpen, toggleSubExtend: this.toggleSubExtend,
-      onExtend1: () => this.extendSub(1), onExtend3: () => this.extendSub(3), onExtend6: () => this.extendSub(6),
-      setSubEnd: this.setSubEnd, subEndInput: isoStr,
-      pauseSubLabel: status === 'paused' ? 'Resume subscription' : 'Pause subscription',
-      pauseSub: status === 'paused' ? this.resumeClient : this.pauseClient,
-      cancelSub: this.cancelClient, removeSub: this.removeClient,
     };
   }
 
@@ -2155,15 +1565,12 @@ class Component extends DCLogic {
         {label: 'Front · wk 1', bg: 'linear-gradient(135deg,#94A3B8,#475569)', isPhoto: true, isVideo: false},
       ],
       openChat: this.openChat, closeChat: this.closeChat,
-      mobileChatOpen: this.state.mobileChatOpen, openMobileChat: this.openMobileChat, closeMobileChat: this.closeMobileChat,
       onTabChat: () => this.setClientTab('chat'), onTabProgress: () => this.setClientTab('progress'),
       onTabNutrition: () => this.setClientTab('nutrition'), onTabTraining: () => this.setClientTab('training'),
       onTabTrainer: () => this.setClientTab('trainer'), onTabClientCi: () => this.setClientTab('clientci'), onTabTrainerCi: () => this.setClientTab('trainerci'),
       onTabDetail: () => this.setClientTab('detail'),
-      onTabSubscription: () => this.setClientTab('subscription'),
-      tabChat: tab === 'chat', tabProgress: tab === 'progress', tabNutrition: tab === 'nutrition', tabTraining: tab === 'training', tabTrainer: tab === 'trainer', tabClientCi: tab === 'clientci', tabTrainerCi: tab === 'trainerci', tabDetail: tab === 'detail', tabSubscription: tab === 'subscription',
-      msChat: ms('chat'), msProgress: ms('progress'), msNutrition: ms('nutrition'), msTraining: ms('training'), msTrainer: ms('trainer'), msClientCi: ms('clientci'), msTrainerCi: ms('trainerci'), msDetail: ms('detail'), msSubscription: ms('subscription'),
-      ...this.subVals(),
+      tabChat: tab === 'chat', tabProgress: tab === 'progress', tabNutrition: tab === 'nutrition', tabTraining: tab === 'training', tabTrainer: tab === 'trainer', tabClientCi: tab === 'clientci', tabTrainerCi: tab === 'trainerci', tabDetail: tab === 'detail',
+      msChat: ms('chat'), msProgress: ms('progress'), msNutrition: ms('nutrition'), msTraining: ms('training'), msTrainer: ms('trainer'), msClientCi: ms('clientci'), msTrainerCi: ms('trainerci'), msDetail: ms('detail'),
       detailPersonal: [
         {k: 'Age', v: '34'},
         {k: 'Height', v: '178 cm'},
@@ -2273,7 +1680,6 @@ class Component extends DCLogic {
     return {
       rows: c.rows, tabs: c.tabs, cShown: c.shown,
       cHasRows: c.rows.length > 0, cNoRows: c.rows.length === 0,
-      ...this.prospectVals(),
       onSearch: this.onSearch, resetFilters: this.resetFilters,
       ...this.chatVals(),
       root: this.rootRef,

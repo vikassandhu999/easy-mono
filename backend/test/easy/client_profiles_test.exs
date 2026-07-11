@@ -672,6 +672,81 @@ defmodule Easy.ClientProfilesTest do
     end
   end
 
+  describe "validate_answers/2" do
+    @sections [
+      %{
+        "title" => "Week",
+        "questions" => [
+          %{"id" => "win", "label" => "Biggest win", "type" => "text", "required" => true},
+          %{"id" => "weight", "label" => "Weight", "type" => "number", "required" => false},
+          %{"id" => "slept-well", "label" => "Slept well?", "type" => "boolean", "required" => false},
+          %{"id" => "start-date", "label" => "Start date", "type" => "date", "required" => false},
+          %{
+            "id" => "mood",
+            "label" => "Mood",
+            "type" => "select",
+            "required" => false,
+            "options" => ["Good", "Bad"]
+          },
+          %{
+            "id" => "focus",
+            "label" => "Focus areas",
+            "type" => "multi_select",
+            "required" => false,
+            "options" => ["Training", "Nutrition"]
+          }
+        ]
+      }
+    ]
+
+    test "accepts valid answers of every type" do
+      answers = %{
+        "win" => "Hit a PR",
+        "weight" => 81.4,
+        "slept-well" => true,
+        "start-date" => "2026-07-11",
+        "mood" => "Good",
+        "focus" => ["Training", "Nutrition"]
+      }
+
+      assert :ok = FormSubmission.validate_answers(@sections, answers)
+    end
+
+    test "accepts omitted and blank optional answers" do
+      assert :ok = FormSubmission.validate_answers(@sections, %{"win" => "x", "mood" => "", "focus" => []})
+    end
+
+    test "rejects a missing required answer" do
+      assert {:error, :missing_required_answers} = FormSubmission.validate_answers(@sections, %{"weight" => 80})
+      assert {:error, :missing_required_answers} = FormSubmission.validate_answers(@sections, %{"win" => ""})
+    end
+
+    test "rejects answers keyed by unknown question ids" do
+      assert {:error, :unknown_answer_keys} =
+               FormSubmission.validate_answers(@sections, %{"win" => "x", "hacked" => "boom"})
+    end
+
+    test "rejects wrong value types and out-of-options values" do
+      for bad <- [
+            %{"win" => 42},
+            %{"win" => "x", "weight" => "eighty"},
+            %{"win" => "x", "slept-well" => "yes"},
+            %{"win" => "x", "start-date" => "not-a-date"},
+            %{"win" => "x", "mood" => "Elated"},
+            %{"win" => "x", "focus" => ["Training", "Sleep"]},
+            %{"win" => "x", "focus" => "Training"}
+          ] do
+        assert {:error, :invalid_answer_values} = FormSubmission.validate_answers(@sections, bad),
+               "expected rejection for #{inspect(bad)}"
+      end
+    end
+
+    test "skips malformed sections and questions without crashing" do
+      sections = [%{"title" => "no questions key"}, %{"questions" => "not-a-list"}, %{"questions" => ["junk"]}]
+      assert :ok = FormSubmission.validate_answers(sections, %{})
+    end
+  end
+
   describe "client visibility (trainer-team access control)" do
     setup do
       business = insert(:business)

@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import {type ReactNode, useState} from 'react';
-import {matchPath, NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
+import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 
 import {useInstallPrompt} from '@/@components/use-install-prompt';
 import {ROUTES} from '@/@config/routes';
@@ -25,6 +25,7 @@ import {api} from '@/api/base';
 import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import {useListProspectsQuery} from '@/api/prospects';
+import {isClientWorkspacePath} from '@/clients/lib/client-workspace';
 import {useAppDispatch} from '@/store';
 
 const ICON_SIZE = 20;
@@ -338,13 +339,6 @@ function CompactSidebar() {
         </NavLink>
       </nav>
     </aside>
-  );
-}
-
-function isClientWorkspacePath(pathname: string) {
-  return Boolean(
-    matchPath({end: true, path: ROUTES.CLIENT_DETAIL}, pathname) ||
-      matchPath({end: true, path: ROUTES.CLIENT_MESSAGES}, pathname),
   );
 }
 

@@ -32,7 +32,7 @@ The first workspace view is Progress at every viewport. Chat remains a separate 
 
 ## Module seam
 
-Add a feature-local `ClientWorkspaceShell` module under `src/clients/components/`. Its interface accepts a client and children.
+Add `ClientWorkspaceShell` under `src/@components/` because both client Detail and the Messages feature use it. Its interface accepts a client and children. Keep workspace route and tab helpers under `src/clients/lib/`.
 
 The shell owns:
 

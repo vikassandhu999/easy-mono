@@ -1,13 +1,12 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {Alert, Button, TextArea, Typography, toast} from '@heroui/react';
-import {ArrowLeft, Pencil} from 'lucide-react';
+import {Button, TextArea, Typography, toast} from '@heroui/react';
+import {Pencil} from 'lucide-react';
 import {useState} from 'react';
 import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-
-import {Page} from '@/@components/page';
+import ClientWorkspaceShell, {ClientWorkspaceFallback} from '@/@components/client-workspace-shell';
+import {ErrorState} from '@/@components/error-state';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetBillingQuery} from '@/api/billing';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {toNullableText} from '@/api/shared';
@@ -18,9 +17,10 @@ import ClientStatStrip from '@/clients/components/client-stat-strip';
 import ClientTrainerCard from '@/clients/components/client-trainer-card';
 import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
-import ClientWorkspaceShell, {getClientWorkspaceTab} from '@/clients/components/client-workspace-shell';
 import InvitationWidget from '@/clients/components/invitation-widget';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
+import {getClientName} from '@/clients/lib/client';
+import {getClientWorkspaceTab} from '@/clients/lib/client-workspace';
 import {AddSeatsDialog} from '@/settings/add-seats-dialog';
 
 function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: null | string}) {
@@ -108,66 +108,44 @@ export default function ClientDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const goBack = useGoBack(ROUTES.CLIENTS);
   const {data, isError, isLoading} = useGetClientQuery(id!);
   const {data: billingData} = useGetBillingQuery();
 
   if (isLoading) {
     return (
-      <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
-            <Page.Title>Client</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <ClientWorkspaceFallback>
+        <div className="h-full overflow-y-auto p-5 lg:p-8">
           <PageSkeleton />
-        </Page.Content>
-      </Page>
+        </div>
+      </ClientWorkspaceFallback>
     );
   }
 
   if (isError || !data) {
     return (
-      <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
-            <Page.Title>Client</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Clients
-          </Button>
-        </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-          <Alert status="danger">
-            <Alert.Indicator />
-            <Alert.Content>
-              <Alert.Title>Client couldn&apos;t load</Alert.Title>
-              <Alert.Description>They may not exist, or you may not have access</Alert.Description>
-            </Alert.Content>
-          </Alert>
-        </Page.Content>
-      </Page>
+      <ClientWorkspaceFallback>
+        <div className="p-5 lg:p-8">
+          <ErrorState message="Client couldn't load. They may not exist, or you may not have access." />
+        </div>
+      </ClientWorkspaceFallback>
     );
   }
 
   const client = data.data;
   const isPending = client.status === 'pending';
   const isAwaitingSeat = client.status === 'inactive' && client.inactive_reason === 'awaiting_seat';
-  const name = [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email || 'Client';
+  const name = getClientName(client);
   const activeTab = getClientWorkspaceTab(searchParams);
 
   return (
     <ClientWorkspaceShell client={client}>
       <div className="h-full overflow-y-auto px-4 py-5 md:px-6 lg:px-8 lg:py-7">
-        <div className="mx-auto max-w-5xl space-y-5">
+        <div className="max-w-5xl space-y-5">
+          {isAwaitingSeat ? (
+            <div className="rounded-3xl border border-warning-soft bg-warning-soft p-4 text-warning-soft-foreground">
+              {billingData?.data.is_owner ? <AddSeatsDialog /> : 'Ask the owner to add seats.'}
+            </div>
+          ) : null}
           {activeTab === 'progress' ? (
             isPending ? (
               <InvitationWidget
@@ -228,11 +206,6 @@ export default function ClientDetail() {
                   Edit client
                 </Link>
               </div>
-              {isAwaitingSeat ? (
-                <div className="rounded-3xl border border-warning-soft bg-warning-soft p-4 text-warning-soft-foreground">
-                  {billingData?.data.is_owner ? <AddSeatsDialog /> : 'Ask the owner to add seats.'}
-                </div>
-              ) : null}
               <ClientDetailCard client={client} />
               <ClientTrainerCard client={client} />
               <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">

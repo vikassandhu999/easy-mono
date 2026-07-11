@@ -42,11 +42,13 @@ function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
 export default function ConversationView({
   backTo,
   conversationId,
+  embedded = false,
   initialBody = '',
   title,
 }: {
   backTo: string;
   conversationId: string;
+  embedded?: boolean;
   initialBody?: string;
   title: string;
 }) {
@@ -106,23 +108,25 @@ export default function ConversationView({
   };
 
   return (
-    <div className="flex h-dvh flex-col">
-      <header className="flex min-h-14 items-center gap-3 border-b border-border px-4">
-        <Link
-          aria-label="Back"
-          className="grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-hover"
-          to={backTo}
-        >
-          <ArrowLeft size={18} />
-        </Link>
-        <Typography
-          truncate
-          type="body-sm"
-          weight="semibold"
-        >
-          {title}
-        </Typography>
-      </header>
+    <div className={`flex flex-col ${embedded ? 'h-full' : 'h-dvh'}`}>
+      {embedded ? null : (
+        <header className="flex min-h-14 items-center gap-3 border-b border-border px-4">
+          <Link
+            aria-label="Back"
+            className="grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-hover"
+            to={backTo}
+          >
+            <ArrowLeft size={18} />
+          </Link>
+          <Typography
+            truncate
+            type="body-sm"
+            weight="semibold"
+          >
+            {title}
+          </Typography>
+        </header>
+      )}
 
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {isLoading ? (

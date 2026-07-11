@@ -40,3 +40,7 @@ Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `
 ### Domain docs
 
 Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root cover the whole monorepo. See `docs/agents/domain.md`.
+
+### Dev OTPs
+
+In Dev mode otp for any login/signup is always 123456.

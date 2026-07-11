@@ -24,6 +24,7 @@ defmodule Easy.ClientProfiles.FormSubmission do
     field :submitted_by_id, :binary_id
     field :submitted_at, :utc_datetime
     field :reviewed_at, :utc_datetime
+    field :attachments, {:array, :map}, virtual: true, default: []
 
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
@@ -175,8 +176,16 @@ defmodule Easy.ClientProfiles.FormSubmission do
   defp valid_value?("weight", value, _question),
     do: is_number(value) and value > 0 and value < 1000
 
+  defp valid_value?("photo", value, _question) do
+    is_list(value) and value != [] and length(value) <= 4 and length(Enum.uniq(value)) == length(value) and
+      Enum.all?(value, &valid_uuid?/1)
+  end
+
   defp valid_value?(_type, _value, _question), do: false
 
   defp question_options(%{"options" => options}) when is_list(options), do: options
   defp question_options(_question), do: []
+
+  defp valid_uuid?(value) when is_binary(value), do: match?({:ok, _uuid}, Ecto.UUID.cast(value))
+  defp valid_uuid?(_value), do: false
 end

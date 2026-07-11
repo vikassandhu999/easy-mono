@@ -259,7 +259,7 @@ defmodule Easy.Factory do
     %Attachment{
       id: Ecto.UUID.generate(),
       uploaded_by_type: :client,
-      uploaded_by_id: client.id,
+      uploaded_by_id: Ecto.UUID.generate(),
       storage_key: sequence(:attachment_storage_key, &"test/attachment-#{&1}.jpg"),
       content_type: "image/jpeg",
       byte_size: 1_024,

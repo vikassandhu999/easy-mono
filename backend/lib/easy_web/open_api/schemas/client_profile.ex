@@ -3,7 +3,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
 
   def sections, do: ~w(general nutrition training lifestyle)
   def field_types, do: ~w(text number boolean date select multi_select)
-  def question_types, do: field_types() ++ ~w(rating weight)
+  def question_types, do: field_types() ++ ~w(rating weight photo)
   def form_purposes, do: ~w(intake check_in)
   def template_statuses, do: ~w(active archived)
   def assignment_statuses, do: ~w(assigned in_progress completed dismissed missed)
@@ -610,10 +610,40 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileSubmissionAttachment do
+  require OpenApiSpex
+
+  alias Easy.Attachments.Attachment
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileSubmissionAttachment",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      content_type: %Schema{type: :string, enum: Attachment.content_types()},
+      byte_size: %Schema{type: :integer},
+      purpose: %Schema{type: :string, enum: ["check_in_photo"]},
+      read_url: %Schema{type: :string, format: :uri, nullable: true},
+      read_url_expires_at: %Schema{type: :string, format: :"date-time", nullable: true}
+    },
+    required: [
+      :id,
+      :content_type,
+      :byte_size,
+      :purpose,
+      :read_url,
+      :read_url_expires_at
+    ]
+  })
+end
+
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
   require OpenApiSpex
 
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias EasyWeb.OpenApi.Schemas.ClientProfileSubmissionAttachment
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -629,6 +659,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
       submitted_at: %Schema{type: :string, format: :"date-time"},
       reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},
       reviewed_by_id: %Schema{type: :string, format: :uuid, nullable: true},
+      attachments: %Schema{type: :array, items: ClientProfileSubmissionAttachment},
       inserted_at: %Schema{type: :string, format: :"date-time"}
     },
     required: [
@@ -640,6 +671,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
       :submitted_at,
       :reviewed_at,
       :reviewed_by_id,
+      :attachments,
       :inserted_at
     ]
   })
@@ -668,7 +700,8 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem do
 
   alias EasyWeb.OpenApi.Schemas.{
     ClientProfileFormAssignment,
-    ClientProfileReviewClient
+    ClientProfileReviewClient,
+    ClientProfileSubmissionAttachment
   }
 
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
@@ -687,6 +720,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem do
       submitted_at: %Schema{type: :string, format: :"date-time"},
       reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},
       reviewed_by_id: %Schema{type: :string, format: :uuid, nullable: true},
+      attachments: %Schema{type: :array, items: ClientProfileSubmissionAttachment},
       inserted_at: %Schema{type: :string, format: :"date-time"},
       client: ClientProfileReviewClient,
       form_assignment: ClientProfileFormAssignment
@@ -700,6 +734,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem do
       :submitted_at,
       :reviewed_at,
       :reviewed_by_id,
+      :attachments,
       :inserted_at,
       :client,
       :form_assignment

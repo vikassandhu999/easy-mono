@@ -1,4 +1,5 @@
 defmodule Easy.ClientProfiles do
+  alias Easy.Attachments.Attachment
   alias Easy.ClientProfiles.CheckInSchedule
   alias Easy.ClientProfiles.ClientProfile
   alias Easy.ClientProfiles.FormAssignment
@@ -14,6 +15,7 @@ defmodule Easy.ClientProfiles do
   alias Easy.Fitness.WeightEntry
   alias Easy.Orgs.Business
   alias Easy.Repo
+  alias Easy.Storage
 
   import Ecto.Query
 
@@ -396,6 +398,7 @@ defmodule Easy.ClientProfiles do
         |> FormSubmission.for_assignment(ctx.business_id, assignment_id)
         |> FormSubmission.newest()
         |> Repo.all()
+        |> attach_submission_attachments(ctx.business_id)
 
       {:ok, submissions}
     end
@@ -412,6 +415,7 @@ defmodule Easy.ClientProfiles do
       |> FormSubmission.include_review_context(ctx.business_id)
       |> FormSubmission.newest()
       |> Repo.all()
+      |> attach_submission_attachments(ctx.business_id)
 
     {:ok, submissions}
   end
@@ -421,7 +425,10 @@ defmodule Easy.ClientProfiles do
   def review_form_submission(%Ctx{} = ctx, submission_id) do
     with {:ok, submission} <- get_form_submission(ctx.business_id, submission_id),
          :ok <- Clients.authorize_client_id(ctx, submission.client_id) do
-      review_form_submission_once(submission, ctx.user_id)
+      case review_form_submission_once(submission, ctx.user_id) do
+        {:ok, reviewed} -> {:ok, attach_submission_attachment(ctx.business_id, reviewed)}
+        error -> error
+      end
     end
   end
 
@@ -468,8 +475,16 @@ defmodule Easy.ClientProfiles do
          {:ok, client} <- get_client(ctx),
          {:ok, assignment} <- get_client_form_assignment(ctx, assignment_id),
          :ok <- ensure_assignment_submittable(assignment),
-         :ok <- FormSubmission.validate_answers(assignment.form_template.sections, answers) do
-      Repo.transaction(fn -> submit_assignment!(ctx, client, assignment, answers) end)
+         :ok <- FormSubmission.validate_answers(assignment.form_template.sections, answers),
+         :ok <- validate_photo_attachments(ctx.business_id, client.id, assignment.form_template.sections, answers) do
+      submit_assignment_transaction(ctx, client, assignment, answers)
+    end
+  end
+
+  defp submit_assignment_transaction(ctx, client, assignment, answers) do
+    case Repo.transaction(fn -> submit_assignment!(ctx, client, assignment, answers) end) do
+      {:ok, submission} -> {:ok, attach_submission_attachment(ctx.business_id, submission)}
+      error -> error
     end
   end
 
@@ -550,6 +565,71 @@ defmodule Easy.ClientProfiles do
       %Business{default_weight_unit: unit} -> unit
       nil -> Repo.rollback(:not_found)
     end
+  end
+
+  defp validate_photo_attachments(business_id, client_id, sections, answers) do
+    ids = photo_attachment_ids(sections, answers)
+
+    owned_count =
+      Attachment
+      |> Attachment.for_client(business_id, client_id)
+      |> Attachment.for_purpose(:check_in_photo)
+      |> Attachment.with_ids(ids)
+      |> Repo.aggregate(:count, :id)
+
+    if owned_count == length(ids), do: :ok, else: {:error, :invalid_answer_values}
+  end
+
+  defp attach_submission_attachment(business_id, submission) do
+    [attached] = attach_submission_attachments([submission], business_id)
+    attached
+  end
+
+  defp attach_submission_attachments(submissions, business_id) do
+    ids = submissions |> Enum.flat_map(&photo_attachment_ids(&1.question_snapshot, &1.answers)) |> Enum.uniq()
+
+    attachments_by_client_and_id =
+      Attachment
+      |> Attachment.for_business(business_id)
+      |> Attachment.for_purpose(:check_in_photo)
+      |> Attachment.with_ids(ids)
+      |> Repo.all()
+      |> Map.new(&{{&1.client_id, &1.id}, attachment_read_data(&1)})
+
+    Enum.map(submissions, fn submission ->
+      attachments =
+        submission.question_snapshot
+        |> photo_attachment_ids(submission.answers)
+        |> Enum.map(&Map.get(attachments_by_client_and_id, {submission.client_id, &1}))
+        |> Enum.reject(&is_nil/1)
+
+      %{submission | attachments: attachments}
+    end)
+  end
+
+  defp attachment_read_data(attachment) do
+    signed =
+      case Storage.presign_get(attachment.storage_key) do
+        {:ok, value} -> value
+        {:error, _reason} -> %{url: nil, expires_at: nil}
+      end
+
+    %{
+      id: attachment.id,
+      content_type: attachment.content_type,
+      byte_size: attachment.byte_size,
+      purpose: attachment.purpose,
+      read_url: signed.url,
+      read_url_expires_at: signed.expires_at
+    }
+  end
+
+  defp photo_attachment_ids(sections, answers) do
+    for %{"questions" => questions} <- List.wrap(sections),
+        %{"id" => id, "type" => "photo"} <- List.wrap(questions),
+        attachment_ids when is_list(attachment_ids) <- [Map.get(answers, id, [])],
+        attachment_id <- attachment_ids,
+        do: attachment_id
   end
 
   defp complete_assignment!(ctx, client_id, assignment, submission, submitted_at) do

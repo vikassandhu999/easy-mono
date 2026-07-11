@@ -12,7 +12,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
   @purposes [:intake, :check_in]
   @statuses [:active, :archived]
   @core_sections ["general", "nutrition", "training", "lifestyle"]
-  @question_types ~w(text number boolean date select multi_select rating weight)
+  @question_types ~w(text number boolean date select multi_select rating weight photo)
 
   @type t :: %__MODULE__{}
 

@@ -540,6 +540,76 @@ defmodule Easy.ClientProfilesTest do
       end
     end
 
+    test "accepts owned photo attachments and returns signed read metadata" do
+      client = insert_client()
+
+      attachments =
+        for index <- 1..2 do
+          insert(:attachment,
+            business: client.business,
+            client: client,
+            uploaded_by_id: client.id,
+            storage_key: "tests/#{client.id}/photo-#{index}.jpg"
+          )
+        end
+
+      template =
+        insert(:form_template,
+          business: client.business,
+          sections: [
+            %{
+              "title" => "Photos",
+              "questions" => [%{"id" => "photos", "label" => "Progress photos", "type" => "photo"}]
+            }
+          ]
+        )
+
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+      ids = Enum.map(attachments, & &1.id)
+
+      assert {:ok, submission} =
+               ClientProfiles.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+                 answers: %{"photos" => ids}
+               })
+
+      assert Enum.map(submission.attachments, & &1.id) == ids
+      assert Enum.all?(submission.attachments, &(&1.read_url =~ "storage.example.test/easy-test/"))
+      refute inspect(submission.attachments) =~ "storage_key"
+
+      assert {:ok, [listed]} = ClientProfiles.list_form_submissions(owner_ctx(client.business), assignment.id)
+      assert Enum.map(listed.attachments, & &1.id) == ids
+    end
+
+    test "rejects photo attachments outside the submitting client" do
+      client = insert_client()
+      other_client = insert(:client, business: client.business, creator: client.creator)
+
+      foreign_attachment =
+        insert(:attachment,
+          business: client.business,
+          client: other_client,
+          uploaded_by_id: other_client.id
+        )
+
+      template =
+        insert(:form_template,
+          business: client.business,
+          sections: [
+            %{"title" => "Photos", "questions" => [%{"id" => "photos", "label" => "Photos", "type" => "photo"}]}
+          ]
+        )
+
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+
+      assert {:error, :invalid_answer_values} =
+               ClientProfiles.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+                 answers: %{"photos" => [foreign_attachment.id]}
+               })
+
+      refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
+      assert Repo.get!(FormAssignment, assignment.id).status == :assigned
+    end
+
     test "malformed core profile mappings roll back submission and profile writes" do
       for mapping <- [
             %{"kind" => "core", "section" => "nutrition", "field" => nil},
@@ -1261,7 +1331,8 @@ defmodule Easy.ClientProfilesTest do
             "options" => ["Training", "Nutrition"]
           },
           %{"id" => "energy", "label" => "Energy", "type" => "rating", "required" => false},
-          %{"id" => "body-weight", "label" => "Body weight", "type" => "weight", "required" => false}
+          %{"id" => "body-weight", "label" => "Body weight", "type" => "weight", "required" => false},
+          %{"id" => "photos", "label" => "Photos", "type" => "photo", "required" => false}
         ]
       }
     ]
@@ -1275,7 +1346,8 @@ defmodule Easy.ClientProfilesTest do
         "mood" => "Good",
         "focus" => ["Training", "Nutrition"],
         "energy" => 4,
-        "body-weight" => 81.4
+        "body-weight" => 81.4,
+        "photos" => [Ecto.UUID.generate(), Ecto.UUID.generate()]
       }
 
       assert :ok = FormSubmission.validate_answers(@sections, answers)
@@ -1310,7 +1382,11 @@ defmodule Easy.ClientProfilesTest do
             %{"win" => "x", "body-weight" => 0},
             %{"win" => "x", "body-weight" => -1},
             %{"win" => "x", "body-weight" => 1000},
-            %{"win" => "x", "body-weight" => "81.4"}
+            %{"win" => "x", "body-weight" => "81.4"},
+            %{"win" => "x", "photos" => "photo-id"},
+            %{"win" => "x", "photos" => ["not-a-uuid"]},
+            %{"win" => "x", "photos" => List.duplicate(Ecto.UUID.generate(), 2)},
+            %{"win" => "x", "photos" => Enum.map(1..5, fn _ -> Ecto.UUID.generate() end)}
           ] do
         assert {:error, :invalid_answer_values} = FormSubmission.validate_answers(@sections, bad),
                "expected rejection for #{inspect(bad)}"

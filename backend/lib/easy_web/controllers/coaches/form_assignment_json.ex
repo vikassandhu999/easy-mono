@@ -54,6 +54,7 @@ defmodule EasyWeb.Coaches.FormAssignmentJSON do
       submitted_at: submission.submitted_at,
       reviewed_at: submission.reviewed_at,
       reviewed_by_id: submission.reviewed_by_id,
+      attachments: submission.attachments,
       inserted_at: submission.inserted_at
     }
   end

@@ -3,9 +3,11 @@
 - add access control for trainers. x
 - pending queries.
 - make app more playful.
-- client subscription management -> just track the subscription dates, should deactive client on subscription end. client state -> onboarding -> planning -> coaching.
-- intake form improve -> default fields only.
+- client subscription management -> just track the subscription dates, should deactive client on subscription end. client state -> onboarding -> planning -> coaching. x
+- intake form improve -> default fields only. x
 - monthly reports -> new this month, left this month, subscrition ending, approval rating.
-- notifications.
+- notifications (push).
 - sticky notes.
-- adherence alerts -> clients who missed logging or are not responding.
+- adherence alerts -> clients who missed logging or are not responding. 
+- push notifications
+- capacitor app for client.

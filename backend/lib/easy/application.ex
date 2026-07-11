@@ -9,7 +9,7 @@ defmodule Easy.Application do
         Easy.Repo,
         {Phoenix.PubSub, name: Easy.PubSub},
         {Task.Supervisor, name: Easy.TaskSupervisor}
-      ] ++ sweeper_child() ++ [EasyWeb.Endpoint]
+      ] ++ sweeper_children() ++ [EasyWeb.Endpoint]
 
     opts = [strategy: :one_for_one, name: Easy.Supervisor]
     Supervisor.start_link(children, opts)
@@ -22,9 +22,13 @@ defmodule Easy.Application do
     :ok
   end
 
-  defp sweeper_child do
-    if Application.get_env(:easy, :start_subscription_sweeper, true),
-      do: [Easy.SubscriptionSweeper],
-      else: []
+  defp sweeper_children do
+    []
+    |> maybe_add_sweeper(:start_subscription_sweeper, Easy.SubscriptionSweeper)
+    |> maybe_add_sweeper(:start_check_in_sweeper, Easy.CheckInSweeper)
+  end
+
+  defp maybe_add_sweeper(children, config_key, module) do
+    if Application.get_env(:easy, config_key, true), do: children ++ [module], else: children
   end
 end

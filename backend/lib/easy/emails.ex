@@ -51,7 +51,36 @@ defmodule Easy.Emails do
     |> html_body(trainer_invitation_html(business_name, invitation_url))
   end
 
+  @spec check_in_due_email(String.t(), String.t(), String.t()) :: Swoosh.Email.t()
+  def check_in_due_email(email, client_name, assignment_id) do
+    url = check_in_url(assignment_id)
+
+    new()
+    |> to(email)
+    |> from(from_email())
+    |> subject("Your check-in is due")
+    |> text_body("Hi #{client_name}, your check-in is due today: #{url}")
+    |> html_body("<p>Hi #{client_name}, your check-in is due today: <a href=\"#{url}\">Open check-in</a></p>")
+  end
+
+  @spec check_in_overdue_email(String.t(), String.t(), String.t()) :: Swoosh.Email.t()
+  def check_in_overdue_email(email, client_name, assignment_id) do
+    url = check_in_url(assignment_id)
+
+    new()
+    |> to(email)
+    |> from(from_email())
+    |> subject("Your check-in is overdue")
+    |> text_body("Hi #{client_name}, your check-in is overdue: #{url}")
+    |> html_body("<p>Hi #{client_name}, your check-in is overdue: <a href=\"#{url}\">Open check-in</a></p>")
+  end
+
   # Private functions for text templates
+
+  defp check_in_url(assignment_id) do
+    base_url = Application.get_env(:easy, :client_frontend_url, "http://localhost:1314")
+    "#{base_url}/check-ins/#{assignment_id}"
+  end
 
   defp otp_verification_text(code) do
     """

@@ -24,6 +24,7 @@ config :easy, EasyWeb.Endpoint,
 config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Test
 
 config :easy, start_subscription_sweeper: false
+config :easy, start_check_in_sweeper: false
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false

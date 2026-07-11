@@ -344,6 +344,36 @@ defmodule Easy.ClientProfiles do
     |> Enum.reduce({0, 0}, &generate_due_check_in(&1, today, &2))
   end
 
+  @spec send_due_check_in_reminders(Date.t()) :: {non_neg_integer(), non_neg_integer()}
+  def send_due_check_in_reminders(today) do
+    FormAssignment
+    |> FormAssignment.open()
+    |> where(
+      [assignment],
+      assignment.purpose == :check_in and assignment.due_date == ^today and
+        is_nil(assignment.due_reminder_sent_at)
+    )
+    |> include_assignment_client()
+    |> Repo.all()
+    |> send_check_in_reminders(:due)
+  end
+
+  @spec send_overdue_check_in_reminders(Date.t()) :: {non_neg_integer(), non_neg_integer()}
+  def send_overdue_check_in_reminders(today) do
+    cutoff = Date.add(today, -2)
+
+    FormAssignment
+    |> FormAssignment.open()
+    |> where(
+      [assignment],
+      assignment.purpose == :check_in and assignment.due_date <= ^cutoff and
+        is_nil(assignment.overdue_reminder_sent_at)
+    )
+    |> include_assignment_client()
+    |> Repo.all()
+    |> send_check_in_reminders(:overdue)
+  end
+
   @spec list_form_submissions(Ctx.t(), String.t()) ::
           {:ok, [FormSubmission.t()]} | {:error, :not_found}
   def list_form_submissions(%Ctx{} = ctx, assignment_id) do
@@ -520,6 +550,50 @@ defmodule Easy.ClientProfiles do
       {:ok, :noop} -> counts
       {:error, _reason} -> counts
     end
+  end
+
+  defp send_check_in_reminders(assignments, reminder_type) do
+    Enum.reduce(assignments, {0, 0}, &send_check_in_reminder(&1, reminder_type, &2))
+  end
+
+  defp send_check_in_reminder(%FormAssignment{client: %Client{email: email}} = assignment, type, counts)
+       when is_binary(email) do
+    name = [assignment.client.first_name, assignment.client.last_name] |> Enum.filter(&is_binary/1) |> Enum.join(" ")
+    email_message = reminder_email(type, email, name, assignment.id)
+
+    case Easy.MailerDelivery.deliver_sync(email_message, metadata: %{assignment_id: assignment.id}) do
+      {:ok, _response} ->
+        stamp_reminder(assignment, type)
+        increment_count(counts, 0)
+
+      {:error, _reason} ->
+        increment_count(counts, 1)
+    end
+  end
+
+  defp send_check_in_reminder(_assignment, _type, counts), do: increment_count(counts, 1)
+
+  defp reminder_email(:due, email, name, assignment_id),
+    do: Easy.Emails.check_in_due_email(email, name, assignment_id)
+
+  defp reminder_email(:overdue, email, name, assignment_id),
+    do: Easy.Emails.check_in_overdue_email(email, name, assignment_id)
+
+  defp stamp_reminder(assignment, type) do
+    field = if type == :due, do: :due_reminder_sent_at, else: :overdue_reminder_sent_at
+
+    case assignment |> Ecto.Changeset.change([{field, DateTime.utc_now(:second)}]) |> Repo.update() do
+      {:ok, _assignment} -> :ok
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp include_assignment_client(query) do
+    from(assignment in query,
+      join: client in Client,
+      on: client.id == assignment.client_id and client.business_id == assignment.business_id,
+      preload: [client: client]
+    )
   end
 
   defp generate_due_check_in_transaction(schedule_id, today) do

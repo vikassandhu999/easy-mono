@@ -7,7 +7,6 @@
  * reuse ProfileFieldType / FIELD_TYPE_LABELS from client-profile.ts.
  */
 
-import {type ProfileFieldType} from '@/api/client-profile';
 import {type ClientProfileFormTemplateRequest, coachApi} from '@/api/generated';
 
 export type {
@@ -54,6 +53,19 @@ export const ASSIGNMENT_STATUS_LABELS: Record<string, string> = {
   missed: 'Missed',
 };
 
+export type FormQuestionType = 'boolean' | 'date' | 'multi_select' | 'number' | 'rating' | 'select' | 'text' | 'weight';
+
+export const FORM_QUESTION_TYPE_LABELS: Record<FormQuestionType, string> = {
+  boolean: 'Yes / No',
+  date: 'Date',
+  multi_select: 'Multi-select',
+  number: 'Number',
+  rating: 'Rating (1–5)',
+  select: 'Select',
+  text: 'Text',
+  weight: 'Weight',
+};
+
 // ---------------------------------------------------------------------------
 // Builder draft <-> API mappers
 // ---------------------------------------------------------------------------
@@ -67,7 +79,7 @@ export type QuestionDraft = {
   label: string;
   options: string[];
   required: boolean;
-  type: ProfileFieldType;
+  type: FormQuestionType;
 };
 
 export type SectionDraft = {
@@ -120,7 +132,7 @@ function uniqueId(label: string, taken: Set<string>): string {
   return `${base}_${i}`;
 }
 
-const SELECT_TYPES: ProfileFieldType[] = ['select', 'multi_select'];
+const SELECT_TYPES: FormQuestionType[] = ['select', 'multi_select'];
 
 /** Parse a stored template (sections are loose JSON) into an editable draft. */
 export function templateToDraft(template: {
@@ -143,7 +155,7 @@ export function templateToDraft(template: {
           label: typeof q.label === 'string' ? q.label : '',
           options: Array.isArray(q.options) ? (q.options as string[]) : [],
           required: q.required === true,
-          type: (q.type as ProfileFieldType) ?? 'text',
+          type: (q.type as FormQuestionType) ?? 'text',
         };
       }),
     })),

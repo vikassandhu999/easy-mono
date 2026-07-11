@@ -20,15 +20,25 @@ import {
 import {ArrowDown, ArrowUp, Plus, Trash2} from 'lucide-react';
 import {useState} from 'react';
 import {FieldRow, FormActions, FormLayout} from '@/@components/form-fields';
-import {newQuestion, newSection, type QuestionDraft, type SectionDraft, type TemplateDraft} from '@/api/checkins';
-import {FIELD_TYPE_LABELS, type ProfileFieldType, useListProfileFieldsQuery} from '@/api/client-profile';
+import {
+  FORM_QUESTION_TYPE_LABELS,
+  type FormQuestionType,
+  newQuestion,
+  newSection,
+  type QuestionDraft,
+  type SectionDraft,
+  type TemplateDraft,
+} from '@/api/checkins';
+import {type ProfileFieldType, useListProfileFieldsQuery} from '@/api/client-profile';
+import {QUESTION_PRESETS} from '@/checkins/question-presets';
 
-const FIELD_TYPES = Object.keys(FIELD_TYPE_LABELS) as ProfileFieldType[];
+const FIELD_TYPES = Object.keys(FORM_QUESTION_TYPE_LABELS) as FormQuestionType[];
 const NONE = '__none__';
 
 interface ProfileFieldOption {
   key: string;
   label: string;
+  type: ProfileFieldType;
 }
 
 function QuestionEditor({
@@ -49,6 +59,7 @@ function QuestionEditor({
   question: QuestionDraft;
 }) {
   const showOptions = question.type === 'select' || question.type === 'multi_select';
+  const compatibleProfileFields = profileFields.filter((field) => field.type === question.type);
 
   return (
     <div className="rounded-lg border border-border bg-surface-secondary p-3">
@@ -104,7 +115,14 @@ function QuestionEditor({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Select
-            onChange={(key) => key && onChange({type: key as ProfileFieldType})}
+            onChange={(key) => {
+              if (!key) {
+                return;
+              }
+              const type = key as FormQuestionType;
+              const mappedField = profileFields.find((field) => field.key === question.fieldKey);
+              onChange({type, fieldKey: mappedField?.type === type ? question.fieldKey : null});
+            }}
             value={question.type}
             variant="secondary"
           >
@@ -119,9 +137,9 @@ function QuestionEditor({
                   <ListBox.Item
                     id={t}
                     key={t}
-                    textValue={FIELD_TYPE_LABELS[t]}
+                    textValue={FORM_QUESTION_TYPE_LABELS[t]}
                   >
-                    {FIELD_TYPE_LABELS[t]}
+                    {FORM_QUESTION_TYPE_LABELS[t]}
                     <ListBox.ItemIndicator />
                   </ListBox.Item>
                 ))}
@@ -165,7 +183,7 @@ function QuestionEditor({
           </TextField>
         ) : null}
 
-        {profileFields.length > 0 ? (
+        {compatibleProfileFields.length > 0 ? (
           <Select
             onChange={(key) => onChange({fieldKey: !key || key === NONE ? null : String(key)})}
             value={question.fieldKey ?? NONE}
@@ -185,7 +203,7 @@ function QuestionEditor({
                   Don't save
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
-                {profileFields.map((f) => (
+                {compatibleProfileFields.map((f) => (
                   <ListBox.Item
                     id={f.key}
                     key={f.key}
@@ -241,6 +259,20 @@ function SectionEditor({
     onChange({...section, questions});
   };
 
+  const addPreset = (presetKey: string) => {
+    const preset = QUESTION_PRESETS.find((item) => item.key === presetKey);
+    if (!preset) {
+      return;
+    }
+    onChange({
+      ...section,
+      questions: [
+        ...section.questions,
+        {...newQuestion(), label: preset.label, required: preset.required, type: preset.type},
+      ],
+    });
+  };
+
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-3 flex items-center gap-2">
@@ -281,15 +313,43 @@ function SectionEditor({
         ))}
       </div>
 
-      <Button
-        className="mt-3"
-        onPress={() => onChange({...section, questions: [...section.questions, newQuestion()]})}
-        size="sm"
-        variant="ghost"
-      >
-        <Plus size={16} />
-        Add question
-      </Button>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <Button
+          onPress={() => onChange({...section, questions: [...section.questions, newQuestion()]})}
+          size="sm"
+          variant="ghost"
+        >
+          <Plus size={16} />
+          Add question
+        </Button>
+        <Select
+          className="w-full sm:max-w-72"
+          onChange={(key) => key && addPreset(String(key))}
+          placeholder="Choose a common question"
+          value={null}
+          variant="secondary"
+        >
+          <Label>Add common question</Label>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {QUESTION_PRESETS.map((preset) => (
+                <ListBox.Item
+                  id={preset.key}
+                  key={preset.key}
+                  textValue={`${preset.category}: ${preset.label}`}
+                >
+                  <span className="text-muted">{preset.category}</span> · {preset.label}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      </div>
     </div>
   );
 }
@@ -314,7 +374,11 @@ export default function CheckinBuilder({
   const [draft, setDraft] = useState<TemplateDraft>(initialDraft);
   const [error, setError] = useState<null | string>(null);
   const {data: fieldsData} = useListProfileFieldsQuery();
-  const profileFields: ProfileFieldOption[] = (fieldsData?.data ?? []).map((f) => ({key: f.key, label: f.label}));
+  const profileFields: ProfileFieldOption[] = (fieldsData?.data ?? []).map((f) => ({
+    key: f.key,
+    label: f.label,
+    type: f.field_type,
+  }));
 
   const setSection = (index: number, section: SectionDraft) => {
     setDraft((d) => ({...d, sections: d.sections.map((s, i) => (i === index ? section : s))}));

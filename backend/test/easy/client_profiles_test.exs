@@ -356,6 +356,7 @@ defmodule Easy.ClientProfilesTest do
                   "id" => "meal_prep_ability",
                   "label" => "Meal prep ability",
                   "type" => "select",
+                  "options" => ["low", "medium", "high"],
                   "profile_mapping" => %{
                     "kind" => "custom_field",
                     "field_key" => "meal_prep_ability"
@@ -452,6 +453,7 @@ defmodule Easy.ClientProfilesTest do
                     "id" => "meal_prep_ability",
                     "label" => "Meal prep ability",
                     "type" => "select",
+                    "options" => ["low", "medium", "high"],
                     "profile_mapping" => mapping
                   }
                 ]
@@ -503,7 +505,7 @@ defmodule Easy.ClientProfilesTest do
       {:ok, assignment} = ClientProfiles.assign_default_intake_to_client(coach_ctx, client.id)
 
       ctx = client_ctx(client)
-      answers = %{"primary-goal" => "Lose weight", "typical-day" => "Rice and dal"}
+      answers = valid_required_answers(Easy.DefaultIntake.sections())
 
       assert {:ok, _submission} =
                ClientProfiles.submit_client_form_assignment(ctx, assignment.id, %{answers: answers})
@@ -850,5 +852,23 @@ defmodule Easy.ClientProfilesTest do
 
   defp client_ctx(client) do
     %Ctx{business_id: client.business_id, user_id: client.user_id}
+  end
+
+  defp valid_required_answers(sections) do
+    for %{"questions" => questions} <- sections,
+        %{"id" => id, "required" => true, "type" => type} = question <- questions,
+        into: %{} do
+      value =
+        case type do
+          "text" -> "Rice and dal"
+          "number" -> 1
+          "boolean" -> true
+          "date" -> "2026-07-11"
+          "select" -> hd(question["options"])
+          "multi_select" -> [hd(question["options"])]
+        end
+
+      {id, value}
+    end
   end
 end

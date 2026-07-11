@@ -147,7 +147,7 @@ Client scope:
 
 Submit-path changes (in `submit_assignment!/4`):
 
-* **Enforce `required`.** Reject submission with a per-question error map when a required question in the template snapshot has no answer. Trust-boundary fix; ships first.
+* **Enforce `required`.** Reject submission with a bare-atom 422 (`:missing_required_answers` / `:invalid_answer_values` / `:unknown_answer_keys`) when answers don't satisfy the template snapshot — per-question detail stays client-side, matching the backend's bare-atom error convention. Trust-boundary fix; ships first.
 * Validate answer shapes per question type (rating in 1..5, photo ids exist and belong to this client, weight is a positive number).
 * Weight side effect: append `weight_entries` row inside the same transaction.
 

@@ -334,6 +334,9 @@ defmodule Easy.ClientProfiles do
              :not_found
              | :invalid_answers
              | :answers_required
+             | :unknown_answer_keys
+             | :missing_required_answers
+             | :invalid_answer_values
              | :assignment_not_submittable
              | :invalid_profile_mapping
              | Ecto.Changeset.t()}
@@ -341,7 +344,8 @@ defmodule Easy.ClientProfiles do
     with {:ok, answers} <- answers_from_attrs(attrs),
          {:ok, client} <- get_client(ctx),
          {:ok, assignment} <- get_client_form_assignment(ctx, assignment_id),
-         :ok <- ensure_assignment_submittable(assignment) do
+         :ok <- ensure_assignment_submittable(assignment),
+         :ok <- FormSubmission.validate_answers(assignment.form_template.sections, answers) do
       Repo.transaction(fn -> submit_assignment!(ctx, client, assignment, answers) end)
     end
   end

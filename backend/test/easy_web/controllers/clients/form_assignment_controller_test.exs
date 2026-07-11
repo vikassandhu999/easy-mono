@@ -156,6 +156,41 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
     end
 
+    test "rejects submission missing a required answer" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: coach.business)
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_client(client)
+        |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{"answers" => %{}})
+
+      assert %{"error_detail" => %{"fields" => %{"answers" => [_message]}}} = json_response(conn, 422)
+      refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
+    end
+
+    test "rejects submission with unknown answer keys" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      insert(:profile_field_definition, business: coach.business, key: "meal_prep_ability")
+      template = insert(:form_template, business: coach.business)
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> authenticate_client(client)
+        |> post("/v1/client/form-assignments/#{assignment.id}/submit", %{
+          "answers" => %{"meal_prep_ability" => "high", "not-a-question" => "boom"}
+        })
+
+      assert %{"error_detail" => %{"fields" => %{"answers" => [_message]}}} = json_response(conn, 422)
+      refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
+    end
+
     test "does not resubmit completed assignments" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, user: insert(:user))

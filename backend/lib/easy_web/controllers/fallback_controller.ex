@@ -204,6 +204,18 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["is invalid"]}})})
   end
 
+  def call(conn, {:error, :unknown_answer_keys}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["reference unknown questions"]}})})
+  end
+
+  def call(conn, {:error, :missing_required_answers}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["required questions are missing answers"]}})})
+  end
+
+  def call(conn, {:error, :invalid_answer_values}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["contain invalid values"]}})})
+  end
+
   def call(conn, {:error, :answers_required}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["can't be blank"]}})})
   end

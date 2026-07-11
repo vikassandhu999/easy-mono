@@ -11,8 +11,8 @@ defmodule Easy.ClientProfiles.FormAssignment do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @purposes [:intake, :weekly_check_in, :nutrition_update, :training_update, :custom]
-  @assignment_statuses [:assigned, :in_progress, :completed, :dismissed]
+  @purposes [:intake, :check_in]
+  @assignment_statuses [:assigned, :in_progress, :completed, :dismissed, :missed]
   @priorities [:high, :normal]
 
   @type t :: %__MODULE__{}
@@ -23,10 +23,13 @@ defmodule Easy.ClientProfiles.FormAssignment do
     field :status, Ecto.Enum, values: @assignment_statuses, default: :assigned
     field :due_date, :date
     field :completed_at, :utc_datetime
+    field :due_reminder_sent_at, :utc_datetime
+    field :overdue_reminder_sent_at, :utc_datetime
 
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
     belongs_to :form_template, FormTemplate
+    belongs_to :check_in_schedule, Easy.ClientProfiles.CheckInSchedule
 
     has_many :form_submissions, Easy.ClientProfiles.FormSubmission
 

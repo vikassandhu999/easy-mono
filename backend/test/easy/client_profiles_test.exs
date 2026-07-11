@@ -2,6 +2,7 @@ defmodule Easy.ClientProfilesTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.ClientProfiles
+  alias Easy.ClientProfiles.CheckInSchedule
   alias Easy.ClientProfiles.ClientProfile
   alias Easy.ClientProfiles.FormAssignment
   alias Easy.ClientProfiles.FormSubmission
@@ -12,6 +13,70 @@ defmodule Easy.ClientProfilesTest do
   alias Easy.Repo
 
   describe "client profile schemas" do
+    test "uses the collapsed form purpose vocabulary" do
+      business = insert(:business)
+
+      assert FormTemplate.insert_changeset(business.id, %{
+               "name" => "Weekly check-in",
+               "purpose" => "check_in",
+               "sections" => [],
+               "status" => "active"
+             }).valid?
+
+      refute FormTemplate.insert_changeset(business.id, %{
+               "name" => "Legacy weekly check-in",
+               "purpose" => "weekly_check_in",
+               "sections" => [],
+               "status" => "active"
+             }).valid?
+    end
+
+    test "advances check-in schedule frequencies" do
+      assert {~D[2026-07-11], false} =
+               CheckInSchedule.advance(%CheckInSchedule{frequency: :once, next_due_on: ~D[2026-07-11]})
+
+      assert {~D[2026-07-18], true} =
+               CheckInSchedule.advance(%CheckInSchedule{frequency: :weekly, next_due_on: ~D[2026-07-11]})
+
+      assert {~D[2026-07-25], true} =
+               CheckInSchedule.advance(%CheckInSchedule{frequency: :biweekly, next_due_on: ~D[2026-07-11]})
+
+      assert {~D[2026-02-28], true} =
+               CheckInSchedule.advance(%CheckInSchedule{frequency: :monthly, next_due_on: ~D[2026-01-31]})
+    end
+
+    test "allows only one active schedule per client and template" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business, purpose: :check_in)
+
+      attrs = %{frequency: :weekly, next_due_on: ~D[2026-07-11]}
+
+      assert {:ok, _schedule} =
+               client.business_id
+               |> CheckInSchedule.insert_changeset(client.id, template.id, attrs)
+               |> Repo.insert()
+
+      assert {:error, changeset} =
+               client.business_id
+               |> CheckInSchedule.insert_changeset(client.id, template.id, attrs)
+               |> Repo.insert()
+
+      assert "has already been taken" in errors_on(changeset).client_id
+    end
+
+    test "accepts missed form assignments" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business, purpose: :check_in)
+
+      changeset =
+        FormAssignment.insert_changeset(client.business_id, client.id, template.id, %{
+          purpose: :check_in,
+          status: :missed
+        })
+
+      assert changeset.valid?
+    end
+
     test "client factory creator belongs to the same business" do
       client = build(:client)
 
@@ -267,7 +332,7 @@ defmodule Easy.ClientProfilesTest do
 
     test "assign_form_template_to_client forces template purpose and assigned status" do
       client = insert_client()
-      template = insert(:form_template, business: client.business, purpose: "weekly_check_in")
+      template = insert(:form_template, business: client.business, purpose: "check_in")
       ctx = owner_ctx(client.business)
       completed_at = DateTime.utc_now(:second)
 
@@ -280,7 +345,7 @@ defmodule Easy.ClientProfilesTest do
                  completed_at: completed_at
                })
 
-      assert assignment.purpose == :weekly_check_in
+      assert assignment.purpose == :check_in
       assert assignment.priority == :high
       assert assignment.status == :assigned
       assert assignment.due_date == ~D[2026-06-30]
@@ -730,14 +795,14 @@ defmodule Easy.ClientProfilesTest do
     test "updating a non-intake assignment does not touch the profile" do
       client = insert_client()
       ctx = owner_ctx(client.business)
-      template = insert(:form_template, business: client.business, purpose: :weekly_check_in)
+      template = insert(:form_template, business: client.business, purpose: :check_in)
 
       assignment =
         insert(:form_assignment,
           business: client.business,
           client: client,
           form_template: template,
-          purpose: :weekly_check_in
+          purpose: :check_in
         )
 
       {:ok, profile_before} = ClientProfiles.get_or_create_profile(ctx, client.id)

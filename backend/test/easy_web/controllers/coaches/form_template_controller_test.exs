@@ -142,14 +142,14 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
       assert data["client_id"] == client.id
       assert data["form_template_id"] == template.id
-      assert data["purpose"] == "intake"
+      assert data["purpose"] == "check_in"
       assert data["priority"] == "high"
       assert data["status"] == "assigned"
     end
 
     test "forces purpose and status from template", %{conn: conn, coach: coach} do
       client = insert(:client, business: coach.business, creator: coach)
-      template = insert(:form_template, business: coach.business, purpose: "weekly_check_in")
+      template = insert(:form_template, business: coach.business, purpose: "check_in")
 
       conn =
         post(conn, "/v1/coach/form-templates/#{template.id}/assign", %{
@@ -158,12 +158,12 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
         })
 
       assert %{"data" => data} = json_response(conn, 201)
-      assert data["purpose"] == "weekly_check_in"
+      assert data["purpose"] == "check_in"
       assert data["status"] == "assigned"
       assert data["completed_at"] == nil
 
       assignment = Repo.get!(FormAssignment, data["id"])
-      assert assignment.purpose == :weekly_check_in
+      assert assignment.purpose == :check_in
       assert assignment.status == :assigned
       assert assignment.completed_at == nil
     end
@@ -225,18 +225,18 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert data["id"] == assignment.id
       assert data["priority"] == "normal"
       assert data["status"] == "in_progress"
-      assert data["purpose"] == "intake"
+      assert data["purpose"] == "check_in"
       assert data["completed_at"] == nil
       assert data["form_template"]["id"] == template.id
 
       updated = Repo.get!(FormAssignment, assignment.id)
-      assert updated.purpose == :intake
+      assert updated.purpose == :check_in
       assert updated.completed_at == nil
     end
 
     test "does not update purpose (schema enforces allowed fields only)", %{conn: conn, coach: coach} do
       client = insert(:client, business: coach.business, creator: coach)
-      template = insert(:form_template, business: coach.business, purpose: "weekly_check_in")
+      template = insert(:form_template, business: coach.business, purpose: "check_in")
       assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
 
       conn =
@@ -246,11 +246,11 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["priority"] == "normal"
-      assert data["purpose"] == "intake"
+      assert data["purpose"] == "check_in"
       assert data["completed_at"] == nil
 
       updated = Repo.get!(FormAssignment, assignment.id)
-      assert updated.purpose == :intake
+      assert updated.purpose == :check_in
       assert updated.completed_at == nil
     end
 

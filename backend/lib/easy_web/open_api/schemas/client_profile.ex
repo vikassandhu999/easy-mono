@@ -3,9 +3,9 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
 
   def sections, do: ~w(general nutrition training lifestyle)
   def field_types, do: ~w(text number boolean date select multi_select)
-  def form_purposes, do: ~w(intake weekly_check_in nutrition_update training_update custom)
+  def form_purposes, do: ~w(intake check_in)
   def template_statuses, do: ~w(active archived)
-  def assignment_statuses, do: ~w(assigned in_progress completed dismissed)
+  def assignment_statuses, do: ~w(assigned in_progress completed dismissed missed)
   def priorities, do: ~w(high normal)
   def submitted_by_types, do: ~w(coach client system)
   def section_schema, do: %Schema{type: :object, additionalProperties: true}

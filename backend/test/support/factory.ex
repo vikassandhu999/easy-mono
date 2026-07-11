@@ -3,6 +3,7 @@ defmodule Easy.Factory do
 
   alias Easy.Billing.BusinessBilling
   alias Easy.ClientProfiles.ClientProfile
+  alias Easy.ClientProfiles.CheckInSchedule
   alias Easy.ClientProfiles.FormAssignment
   alias Easy.ClientProfiles.FormSubmission
   alias Easy.ClientProfiles.FormTemplate
@@ -170,8 +171,8 @@ defmodule Easy.Factory do
   def form_template_factory do
     %FormTemplate{
       business: build(:business),
-      name: sequence(:form_template_name, &"Intake #{&1}"),
-      purpose: "intake",
+      name: sequence(:form_template_name, &"Check-in #{&1}"),
+      purpose: "check_in",
       sections: [
         %{
           "title" => "Nutrition",
@@ -195,6 +196,20 @@ defmodule Easy.Factory do
     }
   end
 
+  def check_in_schedule_factory do
+    client = build(:client)
+    template = build(:form_template, business: client.business)
+
+    %CheckInSchedule{
+      business: client.business,
+      client: client,
+      form_template: template,
+      frequency: :weekly,
+      next_due_on: Date.utc_today(),
+      active: true
+    }
+  end
+
   def form_assignment_factory do
     client = build(:client)
     template = build(:form_template, business: client.business)
@@ -203,7 +218,7 @@ defmodule Easy.Factory do
       business: client.business,
       client: client,
       form_template: template,
-      purpose: "intake",
+      purpose: "check_in",
       priority: "high",
       status: "assigned"
     }

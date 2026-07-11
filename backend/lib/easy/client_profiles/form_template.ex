@@ -9,7 +9,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @purposes [:intake, :weekly_check_in, :nutrition_update, :training_update, :custom]
+  @purposes [:intake, :check_in]
   @statuses [:active, :archived]
   @core_sections ["general", "nutrition", "training", "lifestyle"]
 

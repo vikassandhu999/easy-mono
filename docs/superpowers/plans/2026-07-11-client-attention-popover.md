@@ -32,13 +32,13 @@
 * Consumes: `useListAttentionClientsQuery({offset: 0, limit: 20}, {skip})`, `useLazyListAttentionClientsQuery()`, `useIsDesktop()`, `ROUTES.CLIENT_DETAIL`, and the generated `Client` type.
 * Produces: `ClientAttentionPopover(): ReactNode`, a self-contained desktop header action.
 
-- [ ] **Step 1: Capture the missing-interaction baseline**
+- [x] **Step 1: Capture the missing-interaction baseline**
 
 At a desktop clients-list preview, capture the header before implementation. Verify the attention element is a non-interactive `span`, its total comes from loaded roster rows, and no popup opens when clicked.
 
 Expected baseline: click produces no overlay and the source contains `clients.filter(client => client.intake_incomplete || client.needs_plan || client.expiring_soon)`.
 
-- [ ] **Step 2: Add endpoint state and pagination helpers**
+- [x] **Step 2: Add endpoint state and pagination helpers**
 
 Create the component with unconditional hooks and mobile query skipping:
 
@@ -66,7 +66,7 @@ export default function ClientAttentionPopover() {
 
 Merge the first page and appended pages by client ID while preserving first occurrence order. Reset appended rows and the next-page error whenever the first-page `data` object changes. `loadMore` calls the lazy query with `{offset: loadedClients.length, limit: PAGE_SIZE}` and `preferCacheValue: true`, appends unique results, and retains loaded rows when the request fails.
 
-- [ ] **Step 3: Build the trigger, popup, and rows**
+- [x] **Step 3: Build the trigger, popup, and rows**
 
 Render nothing when `!isDesktop`, `isError`, or the loaded count is zero. During first-page loading, render a desktop-only disabled `Skeleton` pill with the same 44px height as the trigger.
 
@@ -93,11 +93,11 @@ The content is 340px wide with a bordered, rounded, shadowed surface. Add the re
 
 When `loadedClients.length < data.count`, render a footer button. It reads `Load more`, uses HeroUI pending state during the request, and changes to `Retry` after failure. Outside click and Escape use HeroUI Popover dismissal.
 
-- [ ] **Step 4: Integrate the component**
+- [x] **Step 4: Integrate the component**
 
 In `list-clients.tsx`, add `<ClientAttentionPopover />` before Invite. Remove `TriangleAlert`, the loaded-row `attentionCount`, and its `span`. Keep `useMemo` because unread conversation mapping still uses it.
 
-- [ ] **Step 5: Run focused static checks**
+- [x] **Step 5: Run focused static checks**
 
 From `frontend/` run:
 
@@ -123,11 +123,11 @@ Expected: focused source checks and the production build exit 0. Record the know
 * Consumes: `ClientAttentionPopover` from Task 1 and RTK Query cache seeding through the app store.
 * Produces: desktop screenshots and interaction evidence without shipping mock data or a public preview route.
 
-- [ ] **Step 1: Add a disposable populated preview**
+- [x] **Step 1: Add a disposable populated preview**
 
 Create a public preview route that seeds the `listAttentionClients` RTK Query cache for `{offset: 0, limit: 20}` with 20 active clients and `count: 21`, then seeds `{offset: 20, limit: 20}` with the final client. Cover all three attention reasons in the first rows. When the preview URL contains `?fail=1`, omit the second-page seed so the unauthenticated diagnostic request exercises the retry state. Render a desktop header containing `ClientAttentionPopover`. The preview route is diagnostic code and must not be committed.
 
-- [ ] **Step 2: Exercise desktop behavior**
+- [x] **Step 2: Exercise desktop behavior**
 
 At 1280px, verify:
 
@@ -140,11 +140,11 @@ At 1280px, verify:
 
 Capture the populated open state and inspect popup geometry. Use the seeded second page to verify `Load more`, then use `?fail=1` to verify `Retry` without losing loaded rows.
 
-- [ ] **Step 3: Exercise mobile absence**
+- [x] **Step 3: Exercise mobile absence**
 
 At 392px, verify the attention trigger and popup are absent. Inspect network or RTK state to confirm the attention query is skipped.
 
-- [ ] **Step 4: Remove diagnostics and run repository gates**
+- [x] **Step 4: Remove diagnostics and run repository gates**
 
 Delete the preview file and remove its router import and route. Confirm no `__client-attention-preview` text remains. From the repository root run:
 
@@ -155,7 +155,7 @@ git diff --check
 
 Expected: both commands exit 0.
 
-- [ ] **Step 5: Audit and commit**
+- [x] **Step 5: Audit and commit**
 
 Confirm the diff contains only the production popover, clients-list integration, and plan progress. Confirm no mobile UI, mock clients, public route, or nudge action remains.
 

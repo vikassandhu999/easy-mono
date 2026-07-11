@@ -1,7 +1,7 @@
 import type {Key} from '@heroui/react';
 
 import {Button, SearchField, Tabs} from '@heroui/react';
-import {Plus, TriangleAlert} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -10,7 +10,7 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {type ClientSummary, type ListClientsFilters, useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
-
+import ClientAttentionPopover from './clients-list/client-attention-popover';
 import ClientEmptyState from './clients-list/client-empty-state';
 import ClientListItem from './clients-list/client-list-item';
 import useClientsSearch from './clients-list/use-clients-search';
@@ -77,12 +77,6 @@ export default function ListClients() {
   const activeCount = summaryData?.summary.active ?? '...';
   const hasFilter = !!deferredSearch || activeFilter !== 'all';
   const showEmptyState = !isLoading && !isFetchingNextPage && !isError && clients.length === 0;
-  // ponytail: counts attention flags among loaded rows only (backend caps pages at 100);
-  // add a summary-level attention count if rosters outgrow that.
-  const attentionCount = clients.filter(
-    (client) => client.intake_incomplete || client.needs_plan || client.expiring_soon,
-  ).length;
-
   return (
     <Page className="bg-surface">
       <Page.Header className="items-end gap-6 px-[18px] pt-2 pb-0! md:px-10 md:pt-[34px] lg:px-10 lg:pt-[34px]">
@@ -100,15 +94,7 @@ export default function ListClients() {
           </Page.Description>
         </Page.TitleGroup>
         <Page.Actions className="gap-0 md:gap-2.5">
-          {attentionCount > 0 ? (
-            <span className="hidden min-h-11 items-center gap-[9px] rounded-[13px] border-[1.5px]! border-danger-soft bg-danger-soft/50 px-[15px] py-[11px] text-[13px] font-bold text-danger md:flex">
-              <TriangleAlert
-                size={17}
-                strokeWidth={2.2}
-              />
-              {attentionCount} need attention
-            </span>
-          ) : null}
+          <ClientAttentionPopover />
           <Button
             className="h-11 min-h-11 w-11 min-w-11 justify-end! rounded-[12px]! bg-transparent! p-0! text-[13.5px] text-accent-foreground! hover:bg-transparent! md:w-auto md:min-w-0 md:justify-center! md:rounded-[13px]! md:bg-accent! md:px-[18px]! md:py-3! md:hover:bg-accent!"
             onPress={() => navigate(ROUTES.INVITE_CLIENT)}

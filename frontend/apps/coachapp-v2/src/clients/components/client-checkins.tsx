@@ -17,6 +17,7 @@ import {
 } from '@/api/checkins';
 import CheckinAssignControl from '@/clients/components/checkin-assign-control';
 import CheckinAssignmentActions from '@/clients/components/checkin-assignment-actions';
+import CheckinTrends from '@/clients/components/checkin-trends';
 
 type SnapshotQuestion = {id?: string; label?: string};
 type SnapshotSection = {questions?: SnapshotQuestion[]; title?: string};
@@ -323,6 +324,8 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
               </div>
             </div>
           ) : null}
+
+          <CheckinTrends assignments={assignments} />
 
           <Typography
             className="mb-3 uppercase tracking-wider"

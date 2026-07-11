@@ -1,5 +1,5 @@
 /**
- * Check-in template builder: name + purpose + titled sections of typed questions.
+ * Form template builder: name + titled sections of typed questions.
  * Question types are the six profile-field types; a question can optionally map
  * its answer onto an existing profile field (custom-field mapping). Draft state
  * lives here; the create/edit wrappers own the mutation.
@@ -20,16 +20,7 @@ import {
 import {ArrowDown, ArrowUp, Plus, Trash2} from 'lucide-react';
 import {useState} from 'react';
 import {FieldRow, FormActions, FormLayout} from '@/@components/form-fields';
-import {
-  type FormPurpose,
-  newQuestion,
-  newSection,
-  PURPOSE_LABELS,
-  PURPOSES,
-  type QuestionDraft,
-  type SectionDraft,
-  type TemplateDraft,
-} from '@/api/checkins';
+import {newQuestion, newSection, type QuestionDraft, type SectionDraft, type TemplateDraft} from '@/api/checkins';
 import {FIELD_TYPE_LABELS, type ProfileFieldType, useListProfileFieldsQuery} from '@/api/client-profile';
 
 const FIELD_TYPES = Object.keys(FIELD_TYPE_LABELS) as ProfileFieldType[];
@@ -371,31 +362,6 @@ export default function CheckinBuilder({
             <Label>Name</Label>
             <Input placeholder="e.g. Weekly check-in" />
           </TextField>
-          <Select
-            onChange={(key) => key && setDraft((d) => ({...d, purpose: key as FormPurpose}))}
-            value={draft.purpose}
-            variant="secondary"
-          >
-            <Label>Purpose</Label>
-            <Select.Trigger>
-              <Select.Value />
-              <Select.Indicator />
-            </Select.Trigger>
-            <Select.Popover>
-              <ListBox>
-                {PURPOSES.map((p) => (
-                  <ListBox.Item
-                    id={p}
-                    key={p}
-                    textValue={PURPOSE_LABELS[p]}
-                  >
-                    {PURPOSE_LABELS[p]}
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                ))}
-              </ListBox>
-            </Select.Popover>
-          </Select>
         </FieldRow>
       </Fieldset>
 

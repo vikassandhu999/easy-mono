@@ -15,11 +15,13 @@ export default function CreateCheckin() {
 
   const onSubmit = async (draft: TemplateDraft) => {
     try {
-      await createTemplate({clientProfileFormTemplateRequest: draftToRequest(draft)}).unwrap();
-      toast.success('Check-in created');
+      await createTemplate({
+        clientProfileFormTemplateRequest: draftToRequest({...draft, purpose: 'check_in'}),
+      }).unwrap();
+      toast.success('Form created');
       navigate(ROUTES.CHECKINS, {replace: true});
     } catch {
-      toast.danger("Check-in wasn't created. Try again.");
+      toast.danger("Form wasn't created. Try again.");
     }
   };
 
@@ -29,9 +31,9 @@ export default function CreateCheckin() {
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
             <BackButton onPress={goBack} />
-            <Page.Title>Create check-in</Page.Title>
+            <Page.Title>Create form</Page.Title>
           </div>
-          <Page.Description>Build an intake or check-in form to assign to clients</Page.Description>
+          <Page.Description>Build a check-in form to schedule for clients</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
@@ -40,8 +42,8 @@ export default function CreateCheckin() {
           isSubmitting={isLoading}
           onCancel={goBack}
           onSubmit={onSubmit}
-          submitLabel="Create check-in"
-          submittingLabel="Creating check-in"
+          submitLabel="Create form"
+          submittingLabel="Creating form"
         />
       </Page.Content>
     </Page>

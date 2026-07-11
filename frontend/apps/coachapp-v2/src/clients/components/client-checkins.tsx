@@ -3,14 +3,17 @@
  * the latest client submission, rendered from the stored question snapshot.
  */
 import {formatIsoDateOnly} from '@easy/utils';
-import {Skeleton, Typography} from '@heroui/react';
+import {Button, Skeleton, Typography, toast} from '@heroui/react';
 import {CalendarCheck} from 'lucide-react';
 
 import {
   ASSIGNMENT_STATUS_LABELS,
+  type ClientProfileCheckInSchedule,
   type ClientProfileFormAssignment,
+  useListCheckInSchedulesForClientQuery,
   useListClientFormAssignmentsForCoachQuery,
   useListFormSubmissionsQuery,
+  useUpdateCheckInScheduleMutation,
 } from '@/api/checkins';
 import CheckinAssignControl from '@/clients/components/checkin-assign-control';
 import CheckinAssignmentActions from '@/clients/components/checkin-assignment-actions';
@@ -35,7 +38,9 @@ function formatAnswer(value: unknown): string {
 }
 
 function selectNextDue(assignments: ClientProfileFormAssignment[]): ClientProfileFormAssignment | null {
-  const upcoming = assignments.filter((assignment) => !['completed', 'dismissed'].includes(assignment.status));
+  const upcoming = assignments.filter(
+    (assignment) => !['completed', 'dismissed', 'missed'].includes(assignment.status),
+  );
   return upcoming.sort((a, b) => (a.due_date ?? '9999-12-31').localeCompare(b.due_date ?? '9999-12-31'))[0] ?? null;
 }
 
@@ -54,7 +59,80 @@ function statusClass(status: ClientProfileFormAssignment['status']): string {
   if (status === 'in_progress') {
     return 'bg-warning-soft text-warning-soft-foreground';
   }
+  if (status === 'missed') {
+    return 'bg-danger-soft text-danger-soft-foreground';
+  }
   return 'bg-default-soft text-default-soft-foreground';
+}
+
+const FREQUENCY_LABELS: Record<ClientProfileCheckInSchedule['frequency'], string> = {
+  biweekly: 'Every 2 weeks',
+  monthly: 'Monthly',
+  once: 'Once',
+  weekly: 'Weekly',
+};
+
+function ScheduleRows({schedules}: {schedules: ClientProfileCheckInSchedule[]}) {
+  const [updateSchedule, {isLoading}] = useUpdateCheckInScheduleMutation();
+
+  const toggleSchedule = async (schedule: ClientProfileCheckInSchedule) => {
+    try {
+      await updateSchedule({
+        id: schedule.id,
+        clientProfileCheckInScheduleUpdateRequest: {active: !schedule.active},
+      }).unwrap();
+      toast.success(schedule.active ? 'Schedule paused' : 'Schedule resumed');
+    } catch {
+      toast.danger("Schedule wasn't updated. Try again.");
+    }
+  };
+
+  if (schedules.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-5 space-y-2">
+      <Typography
+        className="uppercase tracking-wider"
+        color="muted"
+        type="body-xs"
+        weight="bold"
+      >
+        Cadence
+      </Typography>
+      {schedules.map((schedule) => (
+        <div
+          className="flex min-h-11 items-center gap-3 rounded-2xl border border-border bg-surface-secondary p-3"
+          key={schedule.id}
+        >
+          <div className="min-w-0 flex-1">
+            <Typography
+              truncate
+              type="body-sm"
+              weight="semibold"
+            >
+              {schedule.form_template.name}
+            </Typography>
+            <Typography
+              color="muted"
+              type="body-xs"
+            >
+              {FREQUENCY_LABELS[schedule.frequency]} · next {formatIsoDateOnly(schedule.next_due_on)}
+            </Typography>
+          </div>
+          <Button
+            isDisabled={isLoading || (schedule.frequency === 'once' && !schedule.active)}
+            onPress={() => toggleSchedule(schedule)}
+            size="sm"
+            variant="ghost"
+          >
+            {schedule.active ? 'Pause' : 'Resume'}
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function SubmissionAnswers({assignment}: {assignment: ClientProfileFormAssignment | null}) {
@@ -146,9 +224,12 @@ function SubmissionAnswers({assignment}: {assignment: ClientProfileFormAssignmen
 
 export default function ClientCheckins({clientId, clientName}: {clientId: string; clientName: string}) {
   const {data, isError, isLoading} = useListClientFormAssignmentsForCoachQuery({clientId});
+  const {data: schedulesData, isLoading: schedulesLoading} = useListCheckInSchedulesForClientQuery({clientId});
   const assignments = data?.data ?? [];
   const nextDue = selectNextDue(assignments);
   const latestCompleted = selectLatestCompleted(assignments);
+  const schedules = schedulesData?.data ?? [];
+  const history = [...assignments].sort((a, b) => b.inserted_at.localeCompare(a.inserted_at)).slice(0, 6);
 
   return (
     <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
@@ -170,7 +251,7 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
         ) : null}
       </div>
 
-      {isLoading ? (
+      {isLoading || schedulesLoading ? (
         <div className="space-y-4">
           <Skeleton className="h-20 rounded-3xl" />
           <Skeleton className="h-40 rounded-3xl" />
@@ -191,6 +272,7 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
         </Typography>
       ) : (
         <>
+          <ScheduleRows schedules={schedules} />
           {nextDue ? (
             <div className="mb-5 rounded-3xl border border-accent/30 bg-accent-soft p-4">
               <div className="flex items-center gap-3">
@@ -214,6 +296,31 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
                 </div>
               </div>
               <CheckinAssignmentActions assignment={nextDue} />
+            </div>
+          ) : null}
+
+          {history.length > 0 ? (
+            <div className="mb-5">
+              <Typography
+                className="mb-2 uppercase tracking-wider"
+                color="muted"
+                type="body-xs"
+                weight="bold"
+              >
+                Occurrence history
+              </Typography>
+              <div className="flex flex-wrap gap-2">
+                {history.map((assignment) => (
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass(assignment.status)}`}
+                    key={assignment.id}
+                  >
+                    {assignment.status === 'assigned' || assignment.status === 'in_progress'
+                      ? 'Due'
+                      : (ASSIGNMENT_STATUS_LABELS[assignment.status] ?? assignment.status)}
+                  </span>
+                ))}
+              </div>
             </div>
           ) : null}
 

@@ -14,7 +14,7 @@ export default function CheckinAssignControl({clientId, clientName}: Props) {
       label={
         <>
           <Plus size={16} />
-          Assign check-in
+          Schedule check-in
         </>
       }
       popoverClassName="p-4"

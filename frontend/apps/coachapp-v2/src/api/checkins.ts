@@ -11,33 +11,34 @@ import {type ProfileFieldType} from '@/api/client-profile';
 import {type ClientProfileFormTemplateRequest, coachApi} from '@/api/generated';
 
 export type {
+  ClientProfileCheckInSchedule,
+  ClientProfileCheckInScheduleRequest,
   ClientProfileFormAssignment,
-  ClientProfileFormAssignmentAssignRequest,
   ClientProfileFormSubmission,
   ClientProfileFormTemplate,
   ClientProfileFormTemplateRequest,
 } from '@/api/generated';
 
 export const {
-  useAssignFormTemplateMutation,
+  useCreateCheckInScheduleMutation,
   useCreateFormTemplateMutation,
+  useDeleteCheckInScheduleMutation,
   useDeleteFormTemplateMutation,
   useGetFormTemplateQuery,
   useListClientFormAssignmentsForCoachQuery,
+  useListCheckInSchedulesForClientQuery,
   useListFormSubmissionsQuery,
   useListFormTemplatesQuery,
   useUpdateFormAssignmentMutation,
+  useUpdateCheckInScheduleMutation,
   useUpdateFormTemplateMutation,
 } = coachApi;
 
-export type FormPurpose = 'custom' | 'intake' | 'nutrition_update' | 'training_update' | 'weekly_check_in';
+export type FormPurpose = 'check_in' | 'intake';
 
 export const PURPOSE_LABELS: Record<FormPurpose, string> = {
-  custom: 'Custom',
+  check_in: 'Check-in',
   intake: 'Intake',
-  nutrition_update: 'Nutrition update',
-  training_update: 'Training update',
-  weekly_check_in: 'Weekly check-in',
 };
 
 export const PURPOSES = Object.keys(PURPOSE_LABELS) as FormPurpose[];
@@ -47,6 +48,7 @@ export const ASSIGNMENT_STATUS_LABELS: Record<string, string> = {
   completed: 'Completed',
   dismissed: 'Dismissed',
   in_progress: 'In progress',
+  missed: 'Missed',
 };
 
 // ---------------------------------------------------------------------------
@@ -90,7 +92,7 @@ export function newSection(title = ''): SectionDraft {
 }
 
 export function emptyTemplateDraft(): TemplateDraft {
-  return {name: '', purpose: 'weekly_check_in', sections: [newSection('Check-in')]};
+  return {name: '', purpose: 'check_in', sections: [newSection('Check-in')]};
 }
 
 function slugify(label: string): string {
@@ -178,13 +180,20 @@ export function draftToRequest(draft: TemplateDraft): ClientProfileFormTemplateR
 
 coachApi.enhanceEndpoints({
   endpoints: {
-    assignFormTemplate: {
-      invalidatesTags: (_r, _e, {clientProfileFormAssignmentAssignRequest}) => [
-        {type: 'FormAssignment', id: clientProfileFormAssignmentAssignRequest.client_id},
+    createCheckInSchedule: {
+      invalidatesTags: (_r, _e, {clientId}) => [
+        {type: 'CheckInSchedule', id: clientId},
+        {type: 'FormAssignment', id: clientId},
       ],
     },
     createFormTemplate: {invalidatesTags: [{type: 'FormTemplate', id: 'LIST'}]},
     deleteFormTemplate: {invalidatesTags: [{type: 'FormTemplate', id: 'LIST'}]},
+    deleteCheckInSchedule: {
+      invalidatesTags: [
+        {type: 'CheckInSchedule', id: 'LIST'},
+        {type: 'FormAssignment', id: 'LIST'},
+      ],
+    },
     getFormTemplate: {providesTags: (_r, _e, {id}) => [{type: 'FormTemplate', id}]},
     listClientFormAssignmentsForCoach: {
       providesTags: (_r, _e, {clientId}) => [
@@ -192,11 +201,23 @@ coachApi.enhanceEndpoints({
         {type: 'FormAssignment', id: 'LIST'},
       ],
     },
+    listCheckInSchedulesForClient: {
+      providesTags: (_r, _e, {clientId}) => [
+        {type: 'CheckInSchedule', id: clientId},
+        {type: 'CheckInSchedule', id: 'LIST'},
+      ],
+    },
     listFormSubmissions: {providesTags: (_r, _e, {id}) => [{type: 'FormSubmission', id}]},
     listFormTemplates: {providesTags: [{type: 'FormTemplate', id: 'LIST'}]},
     // Update only knows the assignment id, not its client, so refresh all
     // assignment lists via the shared LIST tag.
     updateFormAssignment: {invalidatesTags: [{type: 'FormAssignment', id: 'LIST'}]},
+    updateCheckInSchedule: {
+      invalidatesTags: [
+        {type: 'CheckInSchedule', id: 'LIST'},
+        {type: 'FormAssignment', id: 'LIST'},
+      ],
+    },
     updateFormTemplate: {
       invalidatesTags: (_r, _e, {id}) => [
         {type: 'FormTemplate', id},

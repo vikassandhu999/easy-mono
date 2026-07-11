@@ -32,10 +32,10 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
         id: template.id,
         clientProfileFormTemplateUpdateRequest: draftToRequest(draft),
       }).unwrap();
-      toast.success('Check-in saved');
+      toast.success('Form saved');
       navigate(ROUTES.CHECKINS, {replace: true});
     } catch {
-      toast.danger("Check-in wasn't saved. Try again.");
+      toast.danger("Form wasn't saved. Try again.");
     }
   };
 
@@ -56,7 +56,7 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
             <BackButton onPress={goBack} />
-            <Page.Title>Edit check-in</Page.Title>
+            <Page.Title>Edit form</Page.Title>
           </div>
           <Page.Description>{template.name}</Page.Description>
         </Page.TitleGroup>
@@ -92,12 +92,12 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>Delete check-in?</AlertDialog.Heading>
+              <AlertDialog.Heading>Delete form?</AlertDialog.Heading>
             </AlertDialog.Header>
             <AlertDialog.Body>
               <Typography>
-                This will permanently delete <strong>{template.name}</strong>. Check-ins already assigned to clients
-                block deletion.
+                This will permanently delete <strong>{template.name}</strong>. Forms with schedule or assignment history
+                cannot be deleted.
               </Typography>
             </AlertDialog.Body>
             <AlertDialog.Footer>
@@ -135,7 +135,7 @@ export default function EditCheckin() {
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
-              <Page.Title>Edit check-in</Page.Title>
+              <Page.Title>Edit form</Page.Title>
             </div>
           </Page.TitleGroup>
         </Page.Header>
@@ -153,7 +153,7 @@ export default function EditCheckin() {
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
-              <Page.Title>Edit check-in</Page.Title>
+              <Page.Title>Edit form</Page.Title>
             </div>
           </Page.TitleGroup>
         </Page.Header>

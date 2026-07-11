@@ -108,6 +108,7 @@ export const api = createApi({
     'Exercise',
     'Food',
     'FormAssignment',
+    'CheckInSchedule',
     'FormSubmission',
     'FormTemplate',
     'LandingPage',

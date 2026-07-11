@@ -102,6 +102,7 @@ const INTAKE_STATUS_LABELS: Record<IntakeStatus, string> = {
   completed: 'Completed',
   dismissed: 'Dismissed',
   in_progress: 'In progress',
+  missed: 'Missed',
 };
 
 const INTAKE_STATUSES = Object.keys(INTAKE_STATUS_LABELS) as IntakeStatus[];

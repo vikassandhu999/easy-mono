@@ -101,7 +101,7 @@ const LIBRARY_GROUP: NavGroup = {
     },
     {
       icon: <ClipboardCheck size={ICON_SIZE} />,
-      label: 'Check-ins',
+      label: 'Forms',
       path: ROUTES.CHECKINS,
     },
   ],

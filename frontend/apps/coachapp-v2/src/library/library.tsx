@@ -38,7 +38,7 @@ const SECTIONS: LibrarySection[] = [
   },
   {
     description: 'Build check-in & intake forms',
-    label: 'Check-ins',
+    label: 'Forms',
     path: ROUTES.CHECKINS,
   },
 ];

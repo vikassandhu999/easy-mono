@@ -1,5 +1,6 @@
-import {Button, Chip, Typography} from '@heroui/react';
+import {Button, Chip, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {ClipboardCheck, Plus} from 'lucide-react';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
@@ -22,6 +23,8 @@ export default function ListCheckins() {
   const goBack = useGoBack(ROUTES.LIBRARY);
   const {data, isError, isLoading, refetch} = useListFormTemplatesQuery();
   const templates = data?.data ?? [];
+  const [purpose, setPurpose] = useState<'all' | 'check_in' | 'intake'>('all');
+  const visibleTemplates = purpose === 'all' ? templates : templates.filter((template) => template.purpose === purpose);
 
   return (
     <Page>
@@ -31,7 +34,7 @@ export default function ListCheckins() {
             className="lg:hidden"
             onPress={goBack}
           />
-          <Page.Title>Check-ins</Page.Title>
+          <Page.Title>Forms</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
           <Button
@@ -64,15 +67,33 @@ export default function ListCheckins() {
           </div>
         ) : templates.length === 0 ? (
           <ListEmptyState
-            createLabel="Create check-in"
+            createLabel="Create form"
             createRoute={ROUTES.CREATE_CHECKIN}
-            emptyDescription="Build an intake or weekly check-in to send your clients."
+            emptyDescription="Build intake and check-in forms for your clients."
             hasFilter={false}
-            nounPlural="check-ins"
+            nounPlural="forms"
           />
         ) : (
-          <div className="mt-4 flex max-w-2xl flex-col gap-2">
-            {templates.map((template) => {
+          <div className="mt-4 flex max-w-2xl flex-col gap-3">
+            <ToggleButtonGroup
+              aria-label="Filter forms by type"
+              className="flex flex-wrap gap-1 rounded-xl bg-surface-secondary p-1 self-start"
+              isDetached
+              onSelectionChange={(keys) => {
+                const next = [...keys][0];
+                if (next) {
+                  setPurpose(next as typeof purpose);
+                }
+              }}
+              selectedKeys={[purpose]}
+              selectionMode="single"
+              size="sm"
+            >
+              <ToggleButton id="all">All</ToggleButton>
+              <ToggleButton id="intake">Intake</ToggleButton>
+              <ToggleButton id="check_in">Check-in</ToggleButton>
+            </ToggleButtonGroup>
+            {visibleTemplates.map((template) => {
               const count = questionCount(template);
               return (
                 <button
@@ -108,6 +129,15 @@ export default function ListCheckins() {
                 </button>
               );
             })}
+            {visibleTemplates.length === 0 ? (
+              <Typography
+                className="py-10 text-center"
+                color="muted"
+                type="body-sm"
+              >
+                No {PURPOSE_LABELS[purpose as 'check_in' | 'intake'].toLowerCase()} forms yet.
+              </Typography>
+            ) : null}
           </div>
         )}
       </Page.Content>

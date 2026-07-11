@@ -1,6 +1,6 @@
 /**
- * Body of the check-in assign surface: pick a template, optional due date +
- * priority, then assign to the client. Rendered inside the popover (desktop) or
+ * Body of the check-in schedule surface: pick a template, repeat cadence, and
+ * first due date. Rendered inside the popover (desktop) or
  * KeyboardSheet (mobile) by CheckinAssignControl.
  */
 import {Button, Label, ListBox, Select, Spinner, Typography, toast} from '@heroui/react';
@@ -10,7 +10,11 @@ import {useNavigate} from 'react-router-dom';
 
 import DateInput from '@/@components/date-input';
 import {ROUTES} from '@/@config/routes';
-import {PURPOSE_LABELS, useAssignFormTemplateMutation, useListFormTemplatesQuery} from '@/api/checkins';
+import {
+  type ClientProfileCheckInScheduleRequest,
+  useCreateCheckInScheduleMutation,
+  useListFormTemplatesQuery,
+} from '@/api/checkins';
 
 interface Props {
   clientId: string;
@@ -18,31 +22,38 @@ interface Props {
   onClose: () => void;
 }
 
-type Priority = 'high' | 'normal';
+type Frequency = ClientProfileCheckInScheduleRequest['frequency'];
+
+const FREQUENCY_LABELS: Record<Frequency, string> = {
+  biweekly: 'Biweekly',
+  monthly: 'Monthly',
+  once: 'Once',
+  weekly: 'Weekly',
+};
 
 export default function CheckinAssignContent({clientId, clientName, onClose}: Props) {
   const navigate = useNavigate();
   const {data, isLoading} = useListFormTemplatesQuery();
-  const [assign, {isLoading: isAssigning}] = useAssignFormTemplateMutation();
-  const templates = data?.data ?? [];
+  const [createSchedule, {isLoading: isCreating}] = useCreateCheckInScheduleMutation();
+  const templates = (data?.data ?? []).filter((template) => template.purpose === 'check_in');
 
   const [templateId, setTemplateId] = useState<null | string>(null);
   const [dueDate, setDueDate] = useState<null | string>(null);
-  const [priority, setPriority] = useState<Priority>('normal');
+  const [frequency, setFrequency] = useState<Frequency>('weekly');
 
   const handleAssign = async () => {
-    if (!templateId) {
+    if (!templateId || !dueDate) {
       return;
     }
     try {
-      await assign({
-        id: templateId,
-        clientProfileFormAssignmentAssignRequest: {client_id: clientId, due_date: dueDate, priority},
+      await createSchedule({
+        clientId,
+        clientProfileCheckInScheduleRequest: {form_template_id: templateId, frequency, next_due_on: dueDate},
       }).unwrap();
-      toast.success('Check-in assigned');
+      toast.success('Check-in scheduled');
       onClose();
     } catch {
-      toast.danger("Check-in wasn't assigned. Try again.");
+      toast.danger("Check-in wasn't scheduled. Try again.");
     }
   };
 
@@ -53,7 +64,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
           type="body-sm"
           weight="semibold"
         >
-          Assign check-in
+          Schedule check-in
         </Typography>
         <button
           aria-label="Close"
@@ -75,7 +86,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
             color="muted"
             type="body-sm"
           >
-            No check-ins yet. Build one in the library first.
+            No check-in forms yet. Build one in Forms first.
           </Typography>
           <Button
             className="mt-3"
@@ -85,7 +96,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
             size="sm"
             variant="secondary"
           >
-            Create check-in
+            Create form
           </Button>
         </div>
       ) : (
@@ -110,7 +121,6 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
                     textValue={t.name}
                   >
                     {t.name}
-                    <span className="ml-2 text-muted text-xs">{PURPOSE_LABELS[t.purpose] ?? t.purpose}</span>
                     <ListBox.ItemIndicator />
                   </ListBox.Item>
                 ))}
@@ -119,38 +129,45 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
           </Select>
 
           <DateInput
-            label="Due date"
+            isRequired
+            label="First due date"
             onChange={setDueDate}
             value={dueDate}
           />
 
-          <div>
-            <Label className="mb-1.5 block text-sm font-medium">Priority</Label>
-            <div className="flex gap-2">
-              {(['normal', 'high'] as Priority[]).map((p) => (
-                <button
-                  className={`min-h-10 rounded-xl border px-3 py-1.5 text-xs font-medium capitalize ${
-                    priority === p
-                      ? 'border-accent bg-accent-soft text-accent'
-                      : 'border-border text-muted hover:bg-surface-hover'
-                  }`}
-                  key={p}
-                  onClick={() => setPriority(p)}
-                  type="button"
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
+          <Select
+            onChange={(key) => key && setFrequency(key as Frequency)}
+            value={frequency}
+            variant="secondary"
+          >
+            <Label>Repeat</Label>
+            <Select.Trigger>
+              <Select.Value />
+              <Select.Indicator />
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox>
+                {(Object.keys(FREQUENCY_LABELS) as Frequency[]).map((value) => (
+                  <ListBox.Item
+                    id={value}
+                    key={value}
+                    textValue={FREQUENCY_LABELS[value]}
+                  >
+                    {FREQUENCY_LABELS[value]}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </ListBox>
+            </Select.Popover>
+          </Select>
 
           <Button
             className="w-full"
-            isDisabled={!templateId}
-            isPending={isAssigning}
+            isDisabled={!templateId || !dueDate}
+            isPending={isCreating}
             onPress={handleAssign}
           >
-            {isAssigning ? 'Assigning' : `Assign to ${clientName}`}
+            {isCreating ? 'Scheduling' : `Schedule for ${clientName}`}
           </Button>
         </div>
       )}

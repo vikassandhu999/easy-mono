@@ -729,13 +729,49 @@ defmodule Easy.ClientProfilesTest do
           Map.put(base, "sections", [
             %{
               "questions" => [
-                %{"id" => "q1", "profile_mapping" => %{"kind" => "custom_field", "field_key" => "meal_prep"}}
+                %{
+                  "id" => "q1",
+                  "label" => "Meal prep",
+                  "type" => "text",
+                  "profile_mapping" => %{"kind" => "custom_field", "field_key" => "meal_prep"}
+                }
               ]
             }
           ])
         )
 
       assert good.valid?
+    end
+
+    test "form template changeset accepts rating and weight but rejects unknown question types" do
+      business = insert(:business)
+      base = %{"name" => "Weekly", "purpose" => "check_in", "status" => "active"}
+
+      good =
+        FormTemplate.insert_changeset(
+          business.id,
+          Map.put(base, "sections", [
+            %{
+              "questions" => [
+                %{"id" => "energy", "label" => "Energy", "type" => "rating"},
+                %{"id" => "weight", "label" => "Weight", "type" => "weight"}
+              ]
+            }
+          ])
+        )
+
+      assert good.valid?
+
+      bad =
+        FormTemplate.insert_changeset(
+          business.id,
+          Map.put(base, "sections", [
+            %{"questions" => [%{"id" => "energy", "label" => "Energy", "type" => "stars"}]}
+          ])
+        )
+
+      refute bad.valid?
+      assert "has invalid structure" in errors_on(bad).sections
     end
   end
 
@@ -1102,7 +1138,9 @@ defmodule Easy.ClientProfilesTest do
             "type" => "multi_select",
             "required" => false,
             "options" => ["Training", "Nutrition"]
-          }
+          },
+          %{"id" => "energy", "label" => "Energy", "type" => "rating", "required" => false},
+          %{"id" => "body-weight", "label" => "Body weight", "type" => "weight", "required" => false}
         ]
       }
     ]
@@ -1114,7 +1152,9 @@ defmodule Easy.ClientProfilesTest do
         "slept-well" => true,
         "start-date" => "2026-07-11",
         "mood" => "Good",
-        "focus" => ["Training", "Nutrition"]
+        "focus" => ["Training", "Nutrition"],
+        "energy" => 4,
+        "body-weight" => 81.4
       }
 
       assert :ok = FormSubmission.validate_answers(@sections, answers)
@@ -1142,7 +1182,14 @@ defmodule Easy.ClientProfilesTest do
             %{"win" => "x", "start-date" => "not-a-date"},
             %{"win" => "x", "mood" => "Elated"},
             %{"win" => "x", "focus" => ["Training", "Sleep"]},
-            %{"win" => "x", "focus" => "Training"}
+            %{"win" => "x", "focus" => "Training"},
+            %{"win" => "x", "energy" => 0},
+            %{"win" => "x", "energy" => 6},
+            %{"win" => "x", "energy" => 4.5},
+            %{"win" => "x", "body-weight" => 0},
+            %{"win" => "x", "body-weight" => -1},
+            %{"win" => "x", "body-weight" => 1000},
+            %{"win" => "x", "body-weight" => "81.4"}
           ] do
         assert {:error, :invalid_answer_values} = FormSubmission.validate_answers(@sections, bad),
                "expected rejection for #{inspect(bad)}"

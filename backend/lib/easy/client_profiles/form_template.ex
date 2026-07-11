@@ -12,6 +12,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
   @purposes [:intake, :check_in]
   @statuses [:active, :archived]
   @core_sections ["general", "nutrition", "training", "lifestyle"]
+  @question_types ~w(text number boolean date select multi_select rating weight)
 
   @type t :: %__MODULE__{}
 
@@ -81,13 +82,36 @@ defmodule Easy.ClientProfiles.FormTemplate do
   defp valid_section?(_), do: false
 
   defp valid_question?(%{} = question) do
+    valid_question_identity?(question) and
+      valid_question_options?(question) and
+      valid_required_flag?(question) and
+      valid_question_mapping?(question)
+  end
+
+  defp valid_question?(_), do: false
+
+  defp valid_question_identity?(%{"id" => id, "label" => label, "type" => type}) do
+    is_binary(id) and id != "" and is_binary(label) and label != "" and type in @question_types
+  end
+
+  defp valid_question_identity?(_question), do: false
+
+  defp valid_question_options?(%{"type" => type, "options" => options})
+       when type in ["select", "multi_select"],
+       do: options != [] and is_list(options) and Enum.all?(options, &(is_binary(&1) and &1 != ""))
+
+  defp valid_question_options?(%{"type" => type}) when type in ["select", "multi_select"], do: false
+  defp valid_question_options?(_question), do: true
+
+  defp valid_required_flag?(%{"required" => required}), do: is_boolean(required)
+  defp valid_required_flag?(_question), do: true
+
+  defp valid_question_mapping?(question) do
     case Map.get(question, "profile_mapping") do
       nil -> true
       mapping -> valid_mapping?(mapping)
     end
   end
-
-  defp valid_question?(_), do: false
 
   defp valid_mapping?(%{"kind" => "core", "section" => section, "field" => field})
        when is_binary(field) and field != "",

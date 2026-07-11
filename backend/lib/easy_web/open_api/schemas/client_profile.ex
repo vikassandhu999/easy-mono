@@ -3,12 +3,41 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
 
   def sections, do: ~w(general nutrition training lifestyle)
   def field_types, do: ~w(text number boolean date select multi_select)
+  def question_types, do: field_types() ++ ~w(rating weight)
   def form_purposes, do: ~w(intake check_in)
   def template_statuses, do: ~w(active archived)
   def assignment_statuses, do: ~w(assigned in_progress completed dismissed missed)
   def priorities, do: ~w(high normal)
   def submitted_by_types, do: ~w(coach client system)
   def section_schema, do: %Schema{type: :object, additionalProperties: true}
+
+  def question_schema do
+    %Schema{
+      type: :object,
+      additionalProperties: true,
+      properties: %{
+        id: %Schema{type: :string},
+        label: %Schema{type: :string},
+        type: %Schema{type: :string, enum: question_types()},
+        required: %Schema{type: :boolean},
+        options: %Schema{type: :array, items: %Schema{type: :string}},
+        profile_mapping: %Schema{type: :object, additionalProperties: true, nullable: true}
+      },
+      required: [:id, :label, :type]
+    }
+  end
+
+  def form_section_schema do
+    %Schema{
+      type: :object,
+      additionalProperties: true,
+      properties: %{
+        title: %Schema{type: :string},
+        questions: %Schema{type: :array, items: question_schema()}
+      },
+      required: [:questions]
+    }
+  end
 
   def section_properties,
     do: %{
@@ -209,7 +238,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateRequest do
       properties: %{
         name: %Schema{type: :string},
         purpose: %Schema{type: :string, enum: Common.form_purposes()},
-        sections: %Schema{type: :array, items: Common.section_schema()},
+        sections: %Schema{type: :array, items: Common.form_section_schema()},
         status: %Schema{type: :string, enum: Common.template_statuses()}
       },
       required: [:name, :purpose, :sections],
@@ -244,7 +273,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateUpdateRequest do
       properties: %{
         name: %Schema{type: :string},
         purpose: %Schema{type: :string, enum: Common.form_purposes()},
-        sections: %Schema{type: :array, items: Common.section_schema()},
+        sections: %Schema{type: :array, items: Common.form_section_schema()},
         status: %Schema{type: :string, enum: Common.template_statuses()}
       },
       example: %{
@@ -273,7 +302,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate do
           id: %Schema{type: :string, format: :uuid},
           name: %Schema{type: :string},
           purpose: %Schema{type: :string, enum: Common.form_purposes()},
-          sections: %Schema{type: :array, items: Common.section_schema()},
+          sections: %Schema{type: :array, items: Common.form_section_schema()},
           status: %Schema{type: :string, enum: Common.template_statuses()}
         },
         Shared.timestamps()
@@ -521,7 +550,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
     properties: %{
       id: %Schema{type: :string, format: :uuid},
       form_assignment_id: %Schema{type: :string, format: :uuid},
-      question_snapshot: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
+      question_snapshot: %Schema{type: :array, items: Common.form_section_schema()},
       answers: %Schema{type: :object, additionalProperties: true},
       submitted_by_type: %Schema{type: :string, enum: Common.submitted_by_types()},
       submitted_at: %Schema{type: :string, format: :"date-time"},
@@ -579,7 +608,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem do
     properties: %{
       id: %Schema{type: :string, format: :uuid},
       form_assignment_id: %Schema{type: :string, format: :uuid},
-      question_snapshot: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
+      question_snapshot: %Schema{type: :array, items: Common.form_section_schema()},
       answers: %Schema{type: :object, additionalProperties: true},
       submitted_by_type: %Schema{type: :string, enum: Common.submitted_by_types()},
       submitted_at: %Schema{type: :string, format: :"date-time"},

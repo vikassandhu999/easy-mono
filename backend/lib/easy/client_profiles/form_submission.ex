@@ -170,6 +170,11 @@ defmodule Easy.ClientProfiles.FormSubmission do
     is_list(value) and value != [] and Enum.all?(value, &(is_binary(&1) and &1 in options))
   end
 
+  defp valid_value?("rating", value, _question), do: is_integer(value) and value in 1..5
+
+  defp valid_value?("weight", value, _question),
+    do: is_number(value) and value > 0 and value < 1000
+
   defp valid_value?(_type, _value, _question), do: false
 
   defp question_options(%{"options" => options}) when is_list(options), do: options

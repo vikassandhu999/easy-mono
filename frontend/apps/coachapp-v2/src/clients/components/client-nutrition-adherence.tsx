@@ -11,6 +11,7 @@ import {ROUTES} from '@/@config/routes';
 import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
 import {useListCoachClientNutritionPlansQuery, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
 import {applyFormErrors, omitUndefined} from '@/api/shared';
+import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {PLAN_STATUS_MAP, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
 import {
   formatAssignedDate,
@@ -110,7 +111,7 @@ function MacroEditor({onClose, plan}: {onClose: () => void; plan: NutritionPlan}
   };
 
   return (
-    <div className="mt-5 rounded-3xl border-[1.5px] border-separator bg-surface-secondary p-4">
+    <div className="mt-4 rounded-[16px] border-[1.5px] border-separator bg-surface-secondary p-4 lg:rounded-[18px]">
       <FormLayout
         className="max-w-none gap-5"
         onSubmit={form.handleSubmit(handleSubmit)}
@@ -154,7 +155,7 @@ function MacroEditor({onClose, plan}: {onClose: () => void; plan: NutritionPlan}
   );
 }
 
-export default function ClientNutritionAdherence({clientId}: {clientId: string}) {
+export default function ClientNutritionAdherence({clientId, clientName}: {clientId: string; clientName: string}) {
   const [editing, setEditing] = useState(false);
   const {data, isError, isLoading} = useListCoachClientNutritionPlansQuery({clientId});
   const plan = useMemo(() => selectCurrentPlan(data?.data ?? []), [data]);
@@ -162,8 +163,8 @@ export default function ClientNutritionAdherence({clientId}: {clientId: string})
   const status = plan ? (PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS) : null;
 
   return (
-    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section>
+      <div className="mb-5 hidden flex-col gap-3 lg:flex lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="font-grotesk text-xl font-bold">Nutrition plan</h2>
           <Typography
@@ -176,20 +177,27 @@ export default function ClientNutritionAdherence({clientId}: {clientId: string})
         </div>
         {plan ? (
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-separator bg-surface px-4 text-sm font-bold transition-colors hover:bg-surface-hover"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-separator bg-surface px-4 text-[12.5px] font-bold transition-colors hover:bg-surface-hover"
             onClick={() => setEditing((value) => !value)}
             type="button"
           >
             <Pencil size={15} />
             Edit plan
           </button>
-        ) : null}
+        ) : (
+          <PlanAssignControl
+            clientId={clientId}
+            clientName={clientName}
+            kind="nutrition"
+            label="Assign nutrition plan"
+          />
+        )}
       </div>
 
       {isLoading ? (
         <div className="space-y-4">
-          <Skeleton className="h-32 rounded-3xl" />
-          <Skeleton className="h-28 rounded-3xl" />
+          <Skeleton className="h-32 rounded-[18px]" />
+          <Skeleton className="h-28 rounded-[18px]" />
         </div>
       ) : isError ? (
         <Typography
@@ -200,9 +208,9 @@ export default function ClientNutritionAdherence({clientId}: {clientId: string})
         </Typography>
       ) : plan ? (
         <>
-          <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+          <div className="rounded-[16px] border-[1.5px] border-separator bg-surface p-4 lg:rounded-[18px] lg:p-5">
             <div className="flex items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+              <span className="grid size-10 shrink-0 place-items-center rounded-[11px] bg-accent-soft text-accent lg:size-[42px] lg:rounded-[12px]">
                 <Utensils size={20} />
               </span>
               <div className="min-w-0 flex-1">
@@ -229,15 +237,15 @@ export default function ClientNutritionAdherence({clientId}: {clientId: string})
               ) : null}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="mt-4 grid grid-cols-4 gap-2">
               {MACRO_FIELDS.map((field) => {
                 const value = plan[field.name];
                 return (
                   <div
-                    className="rounded-2xl border-[1.5px] border-separator px-3 py-3 text-center"
+                    className="rounded-[12px] border-[1.5px] border-separator px-3 py-3 text-center"
                     key={field.name}
                   >
-                    <div className="font-grotesk text-xl font-bold">{formatNumber(value)}</div>
+                    <div className="font-grotesk text-[17px] font-bold lg:text-[19px]">{formatNumber(value)}</div>
                     <Typography
                       className="mt-0.5"
                       color="muted"
@@ -251,7 +259,7 @@ export default function ClientNutritionAdherence({clientId}: {clientId: string})
             </div>
           </div>
 
-          <div className="mt-4 rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+          <div className="mt-4 rounded-[16px] border-[1.5px] border-separator bg-surface p-4 lg:rounded-[18px] lg:p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <Typography
                 type="body-sm"
@@ -285,7 +293,7 @@ export default function ClientNutritionAdherence({clientId}: {clientId: string})
           ) : null}
 
           <Link
-            className="mt-4 inline-flex min-h-11 items-center rounded-2xl px-3 text-sm font-semibold text-muted transition-colors hover:bg-surface-hover"
+            className="mt-4 inline-flex min-h-11 items-center rounded-[12px] px-3 text-sm font-semibold text-muted transition-colors hover:bg-surface-hover"
             to={ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)}
           >
             Open in builder

@@ -69,7 +69,7 @@ The global mobile bottom navigation is absent throughout the workspace. This is 
 
 ### Progress
 
-For active clients, compose `ClientStatStrip` and `ClientWeight`. For pending clients, render `InvitationWidget` instead of active-client progress modules. Do not add the mockup's fabricated streaks or progress summaries.
+For active clients, compose `ClientWeight`. It renders the backend-backed current weight, total change, and range chart in the reference hierarchy. For pending clients, render `InvitationWidget` instead of active-client progress modules. Omit body fat, health markers, streaks, and other progress values absent from the API.
 
 ### Nutrition plan
 

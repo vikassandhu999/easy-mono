@@ -67,14 +67,16 @@ function bucketEntries(entries: WeightEntry[], range: Range): WeightChartPoint[]
 
 function StatBox({label, tone, unit, value}: {label: string; value: string; tone?: 'success'; unit?: string}) {
   return (
-    <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+    <div className="rounded-[14px] border-[1.5px] border-separator bg-surface p-3 lg:rounded-[16px] lg:p-4">
       <Typography
         className="text-[11px] font-semibold"
         color="muted"
       >
         {label}
       </Typography>
-      <div className={`mt-1 font-grotesk text-2xl font-bold ${tone === 'success' ? 'text-success' : ''}`}>
+      <div
+        className={`mt-1 font-grotesk text-xl font-bold lg:text-[26px] ${tone === 'success' ? 'text-success-soft-foreground' : ''}`}
+      >
         {value}
         {unit ? <span className="ml-1 text-sm font-semibold text-muted">{unit}</span> : null}
       </div>
@@ -98,8 +100,8 @@ export default function ClientWeight({clientId}: {clientId: string}) {
   const points = useMemo(() => bucketEntries(entries, range), [entries, range]);
 
   return (
-    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
-      <div className="mb-5">
+    <section>
+      <div className="mb-5 hidden lg:block">
         <h2 className="font-grotesk text-xl font-bold">Progress report</h2>
         <Typography
           className="mt-1"
@@ -112,11 +114,11 @@ export default function ClientWeight({clientId}: {clientId: string}) {
 
       {isLoading ? (
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Skeleton className="h-24 rounded-3xl" />
-            <Skeleton className="h-24 rounded-3xl" />
+          <div className="grid grid-cols-2 gap-2 lg:gap-3">
+            <Skeleton className="h-24 rounded-[16px]" />
+            <Skeleton className="h-24 rounded-[16px]" />
           </div>
-          <Skeleton className="h-72 rounded-3xl" />
+          <Skeleton className="h-72 rounded-[18px]" />
         </div>
       ) : isError ? (
         <Typography
@@ -134,7 +136,7 @@ export default function ClientWeight({clientId}: {clientId: string}) {
         </Typography>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2 lg:gap-3">
             <StatBox
               label="Current weight"
               unit={unit}
@@ -148,7 +150,7 @@ export default function ClientWeight({clientId}: {clientId: string}) {
             />
           </div>
 
-          <div className="mt-5 rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+          <div className="mt-4 rounded-[16px] border-[1.5px] border-separator bg-surface p-4 lg:mt-5 lg:rounded-[18px] lg:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <Typography

@@ -4,7 +4,6 @@ import {ChevronLeft, CircleUserRound, ClipboardCheck, Dumbbell, LineChart, Messa
 import type {ReactNode} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 
-import {BackButton} from '@/@components/back-button';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {Client} from '@/api/clients';
@@ -135,11 +134,15 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface-secondary">
         <header className="border-b border-separator bg-surface lg:hidden">
-          <div className="flex min-h-16 items-center gap-3 px-3">
-            <BackButton
-              className="shrink-0"
-              onPress={handleBack}
-            />
+          <div className="flex items-center gap-[11px] px-[14px] py-3">
+            <button
+              aria-label="Back"
+              className="grid size-[34px] shrink-0 place-items-center rounded-[10px] bg-surface-secondary"
+              onClick={handleBack}
+              type="button"
+            >
+              <ChevronLeft size={18} />
+            </button>
             <Avatar
               className="size-10 shrink-0 rounded-[12px]!"
               color="accent"
@@ -156,20 +159,18 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
             </div>
             <Link
               aria-label="Chat"
-              className={`relative grid size-11 shrink-0 place-items-center rounded-xl ${
-                inChat ? 'bg-accent text-accent-foreground' : 'bg-accent-soft text-accent'
-              }`}
+              className="relative grid size-[38px] shrink-0 place-items-center rounded-[11px] bg-accent text-accent-foreground"
               to={chatPath}
             >
               <MessageCircle size={18} />
             </Link>
           </div>
           {!inChat ? (
-            <nav className="scrollbar-hide flex gap-2 overflow-x-auto px-4 pb-3">
+            <nav className="scrollbar-hide flex gap-[7px] overflow-x-auto px-[14px] pb-3">
               {CLIENT_WORKSPACE_TABS.map((tab) => (
                 <Link
-                  className={`flex min-h-11 shrink-0 items-center rounded-xl px-3 text-xs font-semibold ${
-                    activeTab === tab.id ? 'bg-accent text-accent-foreground' : 'bg-surface-secondary text-muted'
+                  className={`flex h-[30px] shrink-0 items-center rounded-[9px] px-3 text-xs font-semibold ${
+                    activeTab === tab.id ? 'bg-accent-soft text-accent' : 'text-foreground'
                   }`}
                   key={tab.id}
                   replace
@@ -220,12 +221,16 @@ export function ClientWorkspaceFallback({backTo = ROUTES.CLIENTS, children}: {ba
         </div>
       </aside>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface-secondary">
-        <header className="flex min-h-16 items-center gap-3 border-b border-separator bg-surface px-3 lg:hidden">
-          <BackButton
-            className="shrink-0"
-            onPress={goBack}
-          />
-          <Skeleton className="size-10 shrink-0 rounded-2xl" />
+        <header className="flex items-center gap-[11px] border-b border-separator bg-surface px-[14px] py-3 lg:hidden">
+          <button
+            aria-label="Back"
+            className="grid size-[34px] shrink-0 place-items-center rounded-[10px] bg-surface-secondary"
+            onClick={goBack}
+            type="button"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <Skeleton className="size-10 shrink-0 rounded-[12px]" />
           <Skeleton className="h-4 w-32 rounded-full" />
         </header>
         <div className="min-h-0 flex-1 overflow-hidden">{children}</div>

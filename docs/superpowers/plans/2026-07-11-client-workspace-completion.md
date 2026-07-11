@@ -151,9 +151,9 @@ Expected: both commands exit 0.
 * Modify: `frontend/apps/coachapp-v2/src/clients/client-detail.tsx`
 * Modify: `frontend/apps/coachapp-v2/src/messages/conversation-view.tsx`
 * Modify: `frontend/apps/coachapp-v2/src/messages/client-conversation.tsx`
-* Modify: `frontend/apps/coachapp-v2/src/clients/components/client-stat-strip.tsx`
+* Delete: `frontend/apps/coachapp-v2/src/clients/components/client-stat-strip.tsx`
 * Modify: `frontend/apps/coachapp-v2/src/clients/components/client-detail-card.tsx`
-* Reuse unchanged: `client-weight.tsx`, `client-nutrition-adherence.tsx`, `client-workout-history.tsx`, `client-checkins.tsx`, `client-trainer-card.tsx`
+* Modify: `client-weight.tsx`, `client-nutrition-adherence.tsx`, `client-workout-history.tsx`, `client-checkins.tsx`, `client-trainer-card.tsx`
 
 **Interfaces:**
 
@@ -165,7 +165,7 @@ Expected: both commands exit 0.
 Retain the current conditional composition:
 
 ```tsx
-progress  -> ClientStatStrip + ClientWeight, or InvitationWidget for pending clients
+progress  -> ClientWeight, or InvitationWidget for pending clients
 nutrition -> PlanAssignControl + ClientNutritionAdherence
 training  -> PlanAssignControl + ClientWorkoutHistory
 check-in  -> ClientCheckins
@@ -191,25 +191,18 @@ When `embedded` is true, render a desktop-only 49px header above messages:
 
 Keep message loading, older-message pagination, sending, Enter-to-send, read tracking, and WebSocket updates unchanged. Do not add the mockup's Media segment.
 
-- [x] **Step 4: Tighten only the repeated stat strip geometry**
+- [x] **Step 4: Remove the redundant stat strip**
 
-Change the existing stat cards to the reference's compact geometry:
+Delete `ClientStatStrip` and its render from `client-detail.tsx`. It puts activity metrics before the Progress heading and duplicates the reference's metric row. Keep the two weight values supplied by `ClientWeight`; do not invent the missing body-fat value.
 
-```tsx
-<div className="rounded-[14px] border border-separator bg-surface px-3 py-3 text-center">
-  <div className="font-grotesk text-xl font-bold">{value}</div>
-  ...
-</div>
-```
-
-Use `grid grid-cols-3 gap-2 md:gap-3` for the strip. Do not add body-fat, total-lost, streak, or health-marker values because the API does not provide them.
+Flatten each supported tab's outer section and keep the reference geometry on its inner cards: 14-16px radius on mobile, 16-18px on desktop, 14px mobile content padding, and 30px desktop content padding.
 
 - [x] **Step 5: Run focused checks and commit**
 
 Run from `frontend/`:
 
 ```sh
-pnpm biome check apps/coachapp-v2/src/clients/client-detail.tsx apps/coachapp-v2/src/messages/conversation-view.tsx apps/coachapp-v2/src/clients/components/client-stat-strip.tsx
+pnpm biome check apps/coachapp-v2/src/clients/client-detail.tsx apps/coachapp-v2/src/messages/conversation-view.tsx apps/coachapp-v2/src/clients/components/client-weight.tsx apps/coachapp-v2/src/clients/components/client-nutrition-adherence.tsx apps/coachapp-v2/src/clients/components/client-workout-history.tsx apps/coachapp-v2/src/clients/components/client-checkins.tsx apps/coachapp-v2/src/clients/components/client-detail-card.tsx apps/coachapp-v2/src/clients/components/client-trainer-card.tsx
 pnpm -C apps/coachapp-v2 build
 ```
 
@@ -218,7 +211,7 @@ Expected: both commands exit 0.
 Commit only the files changed by Tasks 2 and 3:
 
 ```sh
-git add frontend/apps/coachapp-v2/src/@components/client-workspace-shell.tsx frontend/apps/coachapp-v2/src/clients/lib/client-workspace.ts frontend/apps/coachapp-v2/src/clients/client-detail.tsx frontend/apps/coachapp-v2/src/messages/conversation-view.tsx frontend/apps/coachapp-v2/src/clients/components/client-stat-strip.tsx
+git add frontend/apps/coachapp-v2/src/@components/client-workspace-shell.tsx frontend/apps/coachapp-v2/src/clients/lib/client-workspace.ts frontend/apps/coachapp-v2/src/clients/client-detail.tsx frontend/apps/coachapp-v2/src/messages/conversation-view.tsx frontend/apps/coachapp-v2/src/clients/components/client-weight.tsx frontend/apps/coachapp-v2/src/clients/components/client-nutrition-adherence.tsx frontend/apps/coachapp-v2/src/clients/components/client-workout-history.tsx frontend/apps/coachapp-v2/src/clients/components/client-checkins.tsx frontend/apps/coachapp-v2/src/clients/components/client-detail-card.tsx frontend/apps/coachapp-v2/src/clients/components/client-trainer-card.tsx
 git commit -m "fix(coachapp): complete client workspace"
 ```
 
@@ -271,7 +264,7 @@ Check one reachable example of loading, first-query error, pending invitation, i
 Run:
 
 ```sh
-cd frontend && pnpm biome check apps/coachapp-v2/src/clients/list-clients.tsx apps/coachapp-v2/src/@components/client-workspace-shell.tsx apps/coachapp-v2/src/clients/lib/client-workspace.ts apps/coachapp-v2/src/clients/client-detail.tsx apps/coachapp-v2/src/messages/conversation-view.tsx apps/coachapp-v2/src/clients/components/client-stat-strip.tsx
+cd frontend && pnpm biome check apps/coachapp-v2/src/clients/list-clients.tsx apps/coachapp-v2/src/@components/client-workspace-shell.tsx apps/coachapp-v2/src/clients/lib/client-workspace.ts apps/coachapp-v2/src/clients/client-detail.tsx apps/coachapp-v2/src/messages/conversation-view.tsx apps/coachapp-v2/src/clients/components/client-weight.tsx apps/coachapp-v2/src/clients/components/client-nutrition-adherence.tsx apps/coachapp-v2/src/clients/components/client-workout-history.tsx apps/coachapp-v2/src/clients/components/client-checkins.tsx apps/coachapp-v2/src/clients/components/client-detail-card.tsx apps/coachapp-v2/src/clients/components/client-trainer-card.tsx
 pnpm -C apps/coachapp-v2 build
 cd .. && just check-rm
 git diff --check

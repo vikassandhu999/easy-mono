@@ -26,7 +26,7 @@ function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 ${
+        className={`max-w-[80%] rounded-2xl px-3 py-2.5 lg:max-w-[72%] ${
           own ? 'rounded-br-sm bg-accent text-accent-foreground' : 'rounded-bl-sm bg-surface-secondary'
         }`}
       >
@@ -132,7 +132,7 @@ export default function ConversationView({
         </header>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className={`flex-1 overflow-y-auto ${embedded ? 'px-[14px] py-4 lg:px-7 lg:py-6' : 'px-4 py-3'}`}>
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner size="sm" />
@@ -173,7 +173,9 @@ export default function ConversationView({
         )}
       </div>
 
-      <footer className="flex items-end gap-2 border-t border-border p-3">
+      <footer
+        className={`flex items-end gap-2 border-t border-border bg-surface ${embedded ? 'px-3 py-2.5 lg:px-5 lg:py-[14px]' : 'p-3'}`}
+      >
         <TextArea
           aria-label="Message"
           className="flex-1"

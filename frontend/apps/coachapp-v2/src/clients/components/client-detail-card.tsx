@@ -29,16 +29,16 @@ function formatProfileValue(value: unknown): string {
 
 function FieldItem({label, value}: {label: string; value: string}) {
   return (
-    <div className="rounded-2xl border-[1.5px] border-separator bg-surface p-3">
+    <div className="flex items-center justify-between gap-3 border-b border-surface-secondary px-[14px] py-[11px] last:border-b-0 lg:px-[18px] lg:py-[13px]">
       <Typography
+        className="min-w-0"
         color="muted"
-        type="body-xs"
-        weight="semibold"
+        type="body-sm"
       >
         {label}
       </Typography>
       <Typography
-        className="mt-1 break-words"
+        className="min-w-0 text-right break-words"
         type="body-sm"
         weight="semibold"
       >
@@ -101,8 +101,8 @@ export default function ClientDetailCard({client}: {client: Client}) {
   const membership = membershipRows(client);
 
   return (
-    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section>
+      <div className="mb-5 hidden flex-col gap-3 lg:flex lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="font-grotesk text-xl font-bold">Detail</h2>
           <Typography
@@ -113,19 +113,28 @@ export default function ClientDetailCard({client}: {client: Client}) {
             Profile, goals &amp; membership
           </Typography>
         </div>
-        <Link
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-separator bg-surface px-4 text-sm font-bold transition-colors hover:bg-surface-hover"
-          to={ROUTES.CLIENT_PROFILE.replace(':id', client.id)}
-        >
-          <Pencil size={15} />
-          Edit profile
-        </Link>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Link
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-separator bg-surface px-4 text-[12.5px] font-bold transition-colors hover:bg-surface-hover"
+            to={ROUTES.EDIT_CLIENT.replace(':id', client.id)}
+          >
+            <Pencil size={15} />
+            Edit client
+          </Link>
+          <Link
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-separator bg-surface px-4 text-[12.5px] font-bold transition-colors hover:bg-surface-hover"
+            to={ROUTES.CLIENT_PROFILE.replace(':id', client.id)}
+          >
+            <Pencil size={15} />
+            Edit profile
+          </Link>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="space-y-4">
-          <Skeleton className="h-36 rounded-3xl" />
-          <Skeleton className="h-36 rounded-3xl" />
+          <Skeleton className="h-36 rounded-[18px]" />
+          <Skeleton className="h-36 rounded-[18px]" />
         </div>
       ) : isError ? (
         <Typography
@@ -145,7 +154,7 @@ export default function ClientDetailCard({client}: {client: Client}) {
               Personal
             </Typography>
             {rows.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="overflow-hidden rounded-[14px] border-[1.5px] border-separator bg-surface lg:rounded-[18px]">
                 {rows.map((row) => (
                   <FieldItem
                     key={row.id}
@@ -172,7 +181,7 @@ export default function ClientDetailCard({client}: {client: Client}) {
             >
               Membership
             </Typography>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="overflow-hidden rounded-[14px] border-[1.5px] border-separator bg-surface lg:rounded-[18px]">
               {membership.map((row) => (
                 <FieldItem
                   key={row.id}

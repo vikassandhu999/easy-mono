@@ -1,8 +1,7 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {Button, TextArea, Typography, toast} from '@heroui/react';
-import {Pencil} from 'lucide-react';
 import {useState} from 'react';
-import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import ClientWorkspaceShell, {ClientWorkspaceFallback} from '@/@components/client-workspace-shell';
 import {ErrorState} from '@/@components/error-state';
 import {PageSkeleton} from '@/@components/page-skeleton';
@@ -13,12 +12,10 @@ import {toNullableText} from '@/api/shared';
 import ClientCheckins from '@/clients/components/client-checkins';
 import ClientDetailCard from '@/clients/components/client-detail-card';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
-import ClientStatStrip from '@/clients/components/client-stat-strip';
 import ClientTrainerCard from '@/clients/components/client-trainer-card';
 import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
-import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {getClientName} from '@/clients/lib/client';
 import {getClientWorkspaceTab} from '@/clients/lib/client-workspace';
 import {AddSeatsDialog} from '@/settings/add-seats-dialog';
@@ -139,10 +136,10 @@ export default function ClientDetail() {
 
   return (
     <ClientWorkspaceShell client={client}>
-      <div className="h-full overflow-y-auto px-4 py-5 md:px-6 lg:px-8 lg:py-7">
-        <div className="max-w-5xl space-y-5">
+      <div className="h-full overflow-y-auto px-[14px] py-4 lg:px-[30px] lg:py-[26px]">
+        <div className="max-w-none space-y-4">
           {isAwaitingSeat ? (
-            <div className="rounded-3xl border border-warning-soft bg-warning-soft p-4 text-warning-soft-foreground">
+            <div className="rounded-[16px] border border-warning-soft bg-warning-soft p-4 text-warning-soft-foreground">
               {billingData?.data.is_owner ? <AddSeatsDialog /> : 'Ask the owner to add seats.'}
             </div>
           ) : null}
@@ -153,39 +150,22 @@ export default function ClientDetail() {
                 onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
               />
             ) : (
-              <>
-                <ClientStatStrip clientId={client.id} />
-                <ClientWeight clientId={client.id} />
-              </>
+              <ClientWeight clientId={client.id} />
             )
           ) : null}
 
           {activeTab === 'nutrition' ? (
-            <>
-              <div className="flex justify-end">
-                <PlanAssignControl
-                  clientId={client.id}
-                  clientName={name}
-                  kind="nutrition"
-                  label="Assign nutrition plan"
-                />
-              </div>
-              <ClientNutritionAdherence clientId={client.id} />
-            </>
+            <ClientNutritionAdherence
+              clientId={client.id}
+              clientName={name}
+            />
           ) : null}
 
           {activeTab === 'training' ? (
-            <>
-              <div className="flex justify-end">
-                <PlanAssignControl
-                  clientId={client.id}
-                  clientName={name}
-                  kind="training"
-                  label="Assign training plan"
-                />
-              </div>
-              <ClientWorkoutHistory clientId={client.id} />
-            </>
+            <ClientWorkoutHistory
+              clientId={client.id}
+              clientName={name}
+            />
           ) : null}
 
           {activeTab === 'check-in' ? (
@@ -197,18 +177,9 @@ export default function ClientDetail() {
 
           {activeTab === 'detail' ? (
             <>
-              <div className="flex justify-end">
-                <Link
-                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-separator bg-surface px-4 text-sm font-semibold hover:bg-surface-hover"
-                  to={ROUTES.EDIT_CLIENT.replace(':id', client.id)}
-                >
-                  <Pencil size={16} />
-                  Edit client
-                </Link>
-              </div>
               <ClientDetailCard client={client} />
               <ClientTrainerCard client={client} />
-              <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+              <section className="rounded-[16px] border-[1.5px] border-separator bg-surface p-4 lg:rounded-[18px] lg:p-5">
                 <div className="mb-3">
                   <h2 className="font-grotesk text-xl font-bold">Notes</h2>
                   <Typography

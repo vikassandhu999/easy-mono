@@ -135,8 +135,8 @@ export default function ClientTrainerCard({client}: {client: Client}) {
   const assigned = (data?.data ?? []).find((member) => member.id === client.assigned_coach_id) ?? null;
 
   return (
-    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
-      <div className="mb-5">
+    <section>
+      <div className="mb-5 hidden lg:block">
         <h2 className="font-grotesk text-xl font-bold">Assigned trainer</h2>
         <Typography
           className="mt-1"
@@ -148,11 +148,11 @@ export default function ClientTrainerCard({client}: {client: Client}) {
       </div>
 
       {isLoading ? (
-        <Skeleton className="h-28 rounded-3xl" />
+        <Skeleton className="h-28 rounded-[18px]" />
       ) : (
-        <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+        <div className="rounded-[16px] border-[1.5px] border-separator bg-surface p-[18px] lg:rounded-[18px] lg:p-[22px]">
           <div className="flex items-center gap-4">
-            <span className="grid size-14 shrink-0 place-items-center rounded-3xl bg-accent text-lg font-bold text-accent-foreground">
+            <span className="grid size-[54px] shrink-0 place-items-center rounded-[16px] bg-accent text-lg font-bold text-accent-foreground lg:size-[60px] lg:rounded-[17px] lg:text-xl">
               {assigned ? initials(assigned) : <UserRound size={22} />}
             </span>
             <div className="min-w-0 flex-1">

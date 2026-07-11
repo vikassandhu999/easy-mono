@@ -46,14 +46,14 @@ function AttentionClientRow({client, reason}: {client: Client; reason: string}) 
 }
 
 export function NeedsAttentionCell({clients, isError}: {clients: Client[]; isError: boolean}) {
-  const grouped = REASONS.map((reason) => ({
-    ...reason,
-    clients: clients.filter((client) => client[reason.key]),
-  })).filter((group) => group.clients.length > 0);
   const uniqueClientCount = new Set(clients.map((client) => client.id)).size;
+  const previewClients = REASONS.flatMap((reason) =>
+    clients.filter((client) => client[reason.key]).map((client) => ({client, reason: reason.label})),
+  ).filter(({client}, index, rows) => rows.findIndex((row) => row.client.id === client.id) === index);
+  const visibleClients = previewClients.slice(0, 4);
 
   return (
-    <section className="flex min-h-80 flex-col rounded-3xl border border-accent bg-accent p-5 text-accent-foreground sm:col-span-2 sm:row-span-2">
+    <section className="col-span-2 flex min-h-80 flex-col rounded-3xl border border-accent bg-accent p-5 text-accent-foreground sm:col-span-2 sm:row-span-2">
       <div className="mb-4 flex items-center gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-danger-soft text-danger">
           <AlertTriangle size={20} />
@@ -75,28 +75,18 @@ export function NeedsAttentionCell({clients, isError}: {clients: Client[]; isErr
         <div className="flex flex-1 items-center rounded-2xl border border-accent-foreground/10 p-4 text-sm text-accent-foreground/70">
           Couldn't load client attention.
         </div>
-      ) : grouped.length === 0 ? (
+      ) : visibleClients.length === 0 ? (
         <div className="flex flex-1 items-center rounded-2xl border border-accent-foreground/10 p-4 text-sm text-accent-foreground/70">
           No client issues right now.
         </div>
       ) : (
         <div className="flex flex-col">
-          {grouped.map((group) => (
-            <div
-              className="pt-2"
-              key={group.key}
-            >
-              <div className="pb-1 text-xs font-bold uppercase tracking-wider text-accent-foreground/50">
-                {group.label}
-              </div>
-              {group.clients.map((client) => (
-                <AttentionClientRow
-                  client={client}
-                  key={`${group.key}-${client.id}`}
-                  reason={group.label}
-                />
-              ))}
-            </div>
+          {visibleClients.map(({client, reason}) => (
+            <AttentionClientRow
+              client={client}
+              key={client.id}
+              reason={reason}
+            />
           ))}
         </div>
       )}

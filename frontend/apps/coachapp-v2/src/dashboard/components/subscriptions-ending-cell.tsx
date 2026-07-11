@@ -42,8 +42,10 @@ function SubscriptionClientCard({client}: {client: Client}) {
 }
 
 export function SubscriptionsEndingCell({clients, isError}: {clients: Client[]; isError: boolean}) {
+  const visibleClients = clients.slice(0, 4);
+
   return (
-    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5 sm:col-span-4">
+    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-5 sm:col-span-4">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-warning-soft text-warning">
@@ -71,7 +73,7 @@ export function SubscriptionsEndingCell({clients, isError}: {clients: Client[]; 
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-          {clients.map((client) => (
+          {visibleClients.map((client) => (
             <SubscriptionClientCard
               client={client}
               key={client.id}

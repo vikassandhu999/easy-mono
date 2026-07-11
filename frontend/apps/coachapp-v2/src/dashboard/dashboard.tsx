@@ -1,4 +1,5 @@
-import {CirclePause, Clock, Inbox, Users} from 'lucide-react';
+import {Button} from '@heroui/react';
+import {Clock, Inbox, UserPlus, Users} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
@@ -13,8 +14,9 @@ import {QuickActionsRow} from '@/dashboard/components/quick-actions-row';
 import {RecentActivityCell} from '@/dashboard/components/recent-activity-cell';
 import {StatCell} from '@/dashboard/components/stat-cell';
 import {SubscriptionsEndingCell} from '@/dashboard/components/subscriptions-ending-cell';
+import {WonLostStatCell} from '@/dashboard/components/won-lost-stat-cell';
 import {DashboardSetupCell} from '@/dashboard/dashboard-setup-cell';
-import {compareDateStrings, isInCurrentCalendarMonth} from '@/dashboard/lib/date-format';
+import {compareDateStrings, formatDashboardDate, isInCurrentCalendarMonth} from '@/dashboard/lib/date-format';
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -56,6 +58,14 @@ export default function Dashboard() {
   const profile = profileData?.data;
   const name = profile?.first_name?.trim();
   const clientSummary = clientsData?.summary;
+  const prospectSummary = prospectsData?.summary;
+  const newProspectCount = prospectSummary?.new ?? 0;
+  const pendingInviteCount = clientSummary?.pending ?? 0;
+  const attentionSummary =
+    clientsError || prospectsError
+      ? null
+      : `${newProspectCount} new ${newProspectCount === 1 ? 'prospect' : 'prospects'} and ${pendingInviteCount} pending ${pendingInviteCount === 1 ? 'invite' : 'invites'} need you today.`;
+  const dashboardSummary = [profile?.business.name?.trim(), attentionSummary].filter(Boolean).join(' · ');
   const clients = clientsData?.data ?? [];
   const clientsNeedingAttention = clients.filter(
     (client) => client.intake_incomplete || client.needs_plan || client.expiring_soon,
@@ -66,17 +76,28 @@ export default function Dashboard() {
 
   return (
     <Page className="bg-surface">
-      <Page.Header className="pb-0">
-        <Page.TitleGroup>
-          <Page.Title>{name ? `${greeting()}, ${name}` : greeting()}</Page.Title>
-          {profile?.business.name ? <Page.Description>{profile.business.name}</Page.Description> : null}
-        </Page.TitleGroup>
+      <Page.Header className="flex-col items-stretch gap-4 pb-0 md:flex-row md:items-end">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-link">{formatDashboardDate()}</p>
+          <h1 className="mt-2 font-grotesk text-[1.75rem] font-bold leading-none tracking-tight md:text-[2.375rem]">
+            {name ? `${greeting()}, ${name}.` : `${greeting()}.`}
+          </h1>
+          {dashboardSummary ? <p className="mt-3 text-sm text-muted">{dashboardSummary}</p> : null}
+        </div>
+        <Button
+          className="min-h-11 w-full md:w-auto"
+          onPress={() => navigate(ROUTES.INVITE_CLIENT)}
+          variant="primary"
+        >
+          <UserPlus size={17} />
+          Invite a client
+        </Button>
       </Page.Header>
 
       <Page.Content className="px-4 pb-8 md:px-6 lg:px-8">
         <div className="flex max-w-5xl flex-col gap-6 pt-6">
-          {/* 4 columns + 14px gap mirrors the mockup's bento. Cell spans below use the same sm: breakpoint. */}
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-4">
+          {/* 4 columns + 14px gap mirrors the mockup's bento; mobile keeps the compact two-up metrics. */}
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
             {profile?.is_owner ? (
               <DashboardSetupCell hiddenReason={profile.business.dashboard_setup_hidden_reason} />
             ) : null}
@@ -97,20 +118,18 @@ export default function Dashboard() {
               value={clientsError ? null : (clientSummary?.pending ?? 0)}
             />
             <StatCell
-              errorLabel={clientsError ? "Couldn't load clients" : undefined}
-              icon={CirclePause}
-              label="Inactive clients"
-              meta="Paused"
-              onPress={() => navigate(ROUTES.CLIENTS)}
-              value={clientsError ? null : (clientSummary?.inactive ?? 0)}
-            />
-            <StatCell
               errorLabel={prospectsError ? "Couldn't load prospects" : undefined}
               icon={Inbox}
-              label="Prospects"
-              meta="Applications"
+              label="New prospects"
+              meta="Review now"
               onPress={() => navigate(ROUTES.PROSPECTS)}
-              value={prospectsError ? null : (prospectsData?.count ?? 0)}
+              value={prospectsError ? null : newProspectCount}
+            />
+            <WonLostStatCell
+              isError={prospectsError}
+              lost={prospectSummary?.lost}
+              onPress={() => navigate(ROUTES.PROSPECTS)}
+              won={prospectSummary?.won}
             />
 
             <NeedsAttentionCell

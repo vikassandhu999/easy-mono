@@ -97,7 +97,7 @@ function useDashboardSetupProgress(skip: boolean): SetupProgress {
 
 function SetupCellSkeleton({onDismiss}: {onDismiss: () => void}) {
   return (
-    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
+    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
       <div className="flex min-h-11 items-center gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
           <Sparkles size={20} />
@@ -127,7 +127,7 @@ function SetupCellSkeleton({onDismiss}: {onDismiss: () => void}) {
 
 function SetupCellError({onDismiss, onRetry}: {onDismiss: () => void; onRetry: () => void}) {
   return (
-    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
+    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
       <div className="flex min-h-11 items-center gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
           <Sparkles size={20} />
@@ -190,7 +190,7 @@ function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDis
   const progress = `${(doneCount / steps.length) * 100}%`;
 
   return (
-    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
+    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
       <Disclosure>
         <div className="flex items-center gap-2">
           <Disclosure.Trigger className="group flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">

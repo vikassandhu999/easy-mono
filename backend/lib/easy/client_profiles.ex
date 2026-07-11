@@ -9,6 +9,7 @@ defmodule Easy.ClientProfiles do
   alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.DefaultCheckIn
   alias Easy.DefaultIntake
   alias Easy.Fitness.WeightEntry
   alias Easy.Orgs.Business
@@ -166,13 +167,15 @@ defmodule Easy.ClientProfiles do
 
   @spec list_form_templates(Ctx.t()) :: {:ok, [FormTemplate.t()]}
   def list_form_templates(%Ctx{} = ctx) do
-    templates =
-      FormTemplate
-      |> FormTemplate.for_business(ctx.business_id)
-      |> order_by([t], asc: t.inserted_at)
-      |> Repo.all()
+    with {:ok, _template} <- get_or_create_default_check_in_template(ctx) do
+      templates =
+        FormTemplate
+        |> FormTemplate.for_business(ctx.business_id)
+        |> order_by([t], asc: t.inserted_at)
+        |> Repo.all()
 
-    {:ok, templates}
+      {:ok, templates}
+    end
   end
 
   @spec create_form_template(Ctx.t(), map()) ::
@@ -948,6 +951,37 @@ defmodule Easy.ClientProfiles do
       template ->
         {:ok, template}
     end
+  end
+
+  defp get_or_create_default_check_in_template(%Ctx{} = ctx) do
+    case default_check_in_template(ctx.business_id) do
+      nil ->
+        attrs = %{
+          "name" => "Weekly check-in",
+          "purpose" => "check_in",
+          "status" => "active",
+          "sections" => DefaultCheckIn.sections()
+        }
+
+        ctx.business_id
+        |> FormTemplate.insert_system_changeset("weekly_check_in", attrs)
+        |> Repo.insert(
+          on_conflict: :nothing,
+          conflict_target: {:unsafe_fragment, "(business_id, system_key) WHERE system_key IS NOT NULL"}
+        )
+
+        {:ok, default_check_in_template(ctx.business_id)}
+
+      template ->
+        {:ok, template}
+    end
+  end
+
+  defp default_check_in_template(business_id) do
+    FormTemplate
+    |> FormTemplate.for_business(business_id)
+    |> FormTemplate.with_system_key("weekly_check_in")
+    |> Repo.one()
   end
 
   defp get_form_assignment(business_id, assignment_id) do

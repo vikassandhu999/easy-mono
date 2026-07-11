@@ -648,6 +648,42 @@ defmodule Easy.ClientProfilesTest do
     end
   end
 
+  describe "list_form_templates/1 default weekly check-in" do
+    test "creates the curated template once per business and keeps its identity after edits" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+
+      assert {:ok, [template]} = ClientProfiles.list_form_templates(ctx)
+      assert template.name == "Weekly check-in"
+      assert template.purpose == :check_in
+      assert template.system_key == "weekly_check_in"
+
+      questions = Enum.flat_map(template.sections, & &1["questions"])
+      assert length(questions) == 10
+      assert Enum.find(questions, &(&1["id"] == "weight"))["type"] == "weight"
+      assert Enum.count(questions, &(&1["type"] == "rating")) == 6
+
+      assert {:ok, renamed} = ClientProfiles.update_form_template(ctx, template.id, %{"name" => "Friday review"})
+      assert renamed.system_key == "weekly_check_in"
+
+      assert {:ok, [listed_again]} = ClientProfiles.list_form_templates(ctx)
+      assert listed_again.id == template.id
+      assert listed_again.name == "Friday review"
+    end
+
+    test "isolates the default template by business" do
+      first = insert(:business)
+      second = insert(:business)
+
+      assert {:ok, [first_template]} = ClientProfiles.list_form_templates(owner_ctx(first))
+      assert {:ok, [second_template]} = ClientProfiles.list_form_templates(owner_ctx(second))
+
+      refute first_template.id == second_template.id
+      assert first_template.business_id == first.id
+      assert second_template.business_id == second.id
+    end
+  end
+
   describe "intake submission completes intake_status" do
     test "submitting an intake assignment marks the profile intake completed" do
       client = insert_client()

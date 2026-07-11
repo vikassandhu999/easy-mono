@@ -40,8 +40,10 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
 
       conn = get(conn, "/v1/coach/form-templates")
 
-      assert %{"data" => [data]} = json_response(conn, 200)
-      assert data["id"] == template.id
+      assert %{"data" => data} = json_response(conn, 200)
+      assert Enum.any?(data, &(&1["id"] == template.id))
+      assert Enum.any?(data, &(&1["name"] == "Weekly check-in"))
+      assert length(data) == 2
     end
   end
 

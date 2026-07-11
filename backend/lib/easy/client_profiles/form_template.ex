@@ -21,6 +21,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
     field :purpose, Ecto.Enum, values: @purposes
     field :sections, {:array, :map}, default: []
     field :status, Ecto.Enum, values: @statuses, default: :active
+    field :system_key, :string
 
     belongs_to :business, Orgs.Business
     has_many :form_assignments, Easy.ClientProfiles.FormAssignment
@@ -40,6 +41,14 @@ defmodule Easy.ClientProfiles.FormTemplate do
     |> foreign_key_constraint(:business_id)
   end
 
+  @spec insert_system_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_system_changeset(business_id, system_key, attrs) do
+    business_id
+    |> insert_changeset(attrs)
+    |> put_change(:system_key, system_key)
+    |> unique_constraint([:business_id, :system_key])
+  end
+
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(template, attrs) do
     template
@@ -53,6 +62,11 @@ defmodule Easy.ClientProfiles.FormTemplate do
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(t in query, where: t.business_id == ^business_id)
+  end
+
+  @spec with_system_key(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_system_key(query \\ __MODULE__, system_key) do
+    from(t in query, where: t.system_key == ^system_key)
   end
 
   # Rejects template content the submission path can't safely consume: a section's `questions`

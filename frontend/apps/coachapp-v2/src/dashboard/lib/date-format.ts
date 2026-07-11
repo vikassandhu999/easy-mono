@@ -67,3 +67,11 @@ export function formatShortDate(value: null | string | undefined): string {
 export function formatRelativeTime(value: null | string | undefined): string {
   return value ? formatTimeAgo(value) : '';
 }
+
+export function formatDashboardDate(date = new Date()): string {
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'long',
+    weekday: 'long',
+  }).format(date);
+}

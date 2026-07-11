@@ -1,7 +1,7 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {Button, Spinner, toast} from '@heroui/react';
 import {ArrowLeft, CheckCircle2, CircleX} from 'lucide-react';
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
@@ -13,6 +13,7 @@ import {
 } from '@/api/checkins';
 import {useGetClientProfileQuery} from '@/api/profile';
 import CheckinField, {type AnswerValue, type CheckinQuestion} from '@/checkins/checkin-field';
+import type {PhotoUploadState} from '@/checkins/photo-answer-field';
 
 type Section = {questions?: CheckinQuestion[]; title?: string};
 
@@ -45,12 +46,33 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
   const {data: profileData} = useGetClientProfileQuery();
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [error, setError] = useState<null | string>(null);
+  const [photoUploadStates, setPhotoUploadStates] = useState<Record<string, PhotoUploadState>>({});
 
   const sections = (assignment.form_template?.sections ?? []) as Section[];
   const questions = sections.flatMap((s) => s.questions ?? []);
   const weightUnit = profileData?.data.goal_weight_unit ?? profileData?.data.default_weight_unit ?? 'kg';
+  const photoUploadBusy = Object.values(photoUploadStates).some((state) => state.busy);
+  const photoUploadFailed = Object.values(photoUploadStates).some((state) => state.failed);
+
+  const updatePhotoUploadState = useCallback((questionId: string, state: PhotoUploadState) => {
+    setPhotoUploadStates((current) => {
+      const previous = current[questionId];
+      if (previous?.busy === state.busy && previous.failed === state.failed) {
+        return current;
+      }
+      return {...current, [questionId]: state};
+    });
+  }, []);
 
   const handleSubmit = async () => {
+    if (photoUploadBusy) {
+      setError('Wait for your photos to finish uploading.');
+      return;
+    }
+    if (photoUploadFailed) {
+      setError('Remove failed photos before submitting.');
+      return;
+    }
     const missing = questions.some((q) => q.required && isEmpty(answers[q.id]));
     if (missing) {
       setError('Please answer all required questions.');
@@ -102,6 +124,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
                     question={question}
                     value={answers[question.id] ?? null}
                     weightUnit={weightUnit}
+                    onUploadStateChange={(state) => updatePhotoUploadState(question.id, state)}
                   />
                 ))}
               </div>
@@ -111,6 +134,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
           {error ? <p className="text-sm text-danger">{error}</p> : null}
 
           <Button
+            isDisabled={photoUploadBusy || photoUploadFailed}
             isPending={isLoading}
             onPress={handleSubmit}
             variant="primary"

@@ -15,6 +15,7 @@ import {
   ToggleButtonGroup,
 } from '@heroui/react';
 import {useId} from 'react';
+import PhotoAnswerField, {type PhotoUploadState} from '@/checkins/photo-answer-field';
 
 export type CheckinQuestion = {
   id: string;
@@ -39,12 +40,14 @@ export default function CheckinField({
   question,
   value,
   weightUnit = 'kg',
+  onUploadStateChange,
   onChange,
 }: {
   onChange: (value: AnswerValue) => void;
   question: CheckinQuestion;
   value: AnswerValue;
   weightUnit?: 'kg' | 'lbs';
+  onUploadStateChange?: (state: PhotoUploadState) => void;
 }) {
   const labelId = useId();
   const options = question.options ?? [];
@@ -153,6 +156,17 @@ export default function CheckinField({
             ))}
           </div>
         </div>
+      );
+
+    case 'photo':
+      return (
+        <PhotoAnswerField
+          label={question.label}
+          onChange={onChange}
+          onUploadStateChange={onUploadStateChange ?? (() => undefined)}
+          required={question.required}
+          value={Array.isArray(value) ? value : []}
+        />
       );
 
     case 'weight':

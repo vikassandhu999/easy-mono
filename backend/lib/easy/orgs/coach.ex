@@ -5,7 +5,6 @@ defmodule Easy.Orgs.Coach do
   import Ecto.Query
 
   alias Easy.Orgs.Business
-  alias Easy.Repo
 
   @type t() :: %__MODULE__{}
 
@@ -121,56 +120,6 @@ defmodule Easy.Orgs.Coach do
   def invitation_expired?(%__MODULE__{invitation_sent_at: sent_at}) do
     expires_at = DateTime.add(sent_at, @invitation_validity_days, :day)
     DateTime.compare(DateTime.utc_now(), expires_at) == :gt
-  end
-
-  # Actions
-
-  @spec fetch(String.t(), String.t()) :: {:ok, t()} | {:error, Easy.Error.t()}
-  def fetch(business_id, user_id) do
-    case __MODULE__
-         |> for_business(business_id)
-         |> for_user(user_id)
-         |> include_preloads(business_id)
-         |> Repo.one() do
-      nil -> {:error, Easy.Error.not_found("Coach not found")}
-      coach -> {:ok, coach}
-    end
-  end
-
-  @spec update_profile(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update_profile(%__MODULE__{} = coach, params) do
-    coach_attrs = Map.take(params, [:first_name, :last_name, :phone])
-    business_attrs = take_present(params, business_name: :name, whatsapp_number: :whatsapp_number)
-
-    Repo.transaction(fn ->
-      updated_coach = update_or_rollback(update_changeset(coach, coach_attrs))
-      updated_business = update_business_or_rollback(coach.business, business_attrs)
-      %{updated_coach | business: updated_business, user: coach.user}
-    end)
-  end
-
-  defp update_or_rollback(changeset) do
-    case Repo.update(changeset) do
-      {:ok, updated} -> updated
-      {:error, changeset} -> Repo.rollback(changeset)
-    end
-  end
-
-  defp update_business_or_rollback(business, attrs) when attrs == %{}, do: business
-
-  defp update_business_or_rollback(business, attrs),
-    do: update_or_rollback(Business.update_changeset(business, attrs))
-
-  # Only forward business fields the caller actually sent, so a coach-only profile edit
-  # never blanks the business name/whatsapp.
-  defp take_present(params, mapping) do
-    Enum.reduce(mapping, %{}, fn {param_key, column}, acc ->
-      if Map.has_key?(params, param_key) do
-        Map.put(acc, column, params[param_key])
-      else
-        acc
-      end
-    end)
   end
 
   @spec full_name(t()) :: String.t()

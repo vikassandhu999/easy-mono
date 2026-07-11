@@ -24,8 +24,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.RecipeIngredient do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Food
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "RecipeIngredient",
@@ -218,8 +218,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealItem do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "NutritionMealItem",
@@ -287,8 +287,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.NutritionMeal do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{NutritionMealItem, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "NutritionMeal",

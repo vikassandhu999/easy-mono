@@ -53,6 +53,7 @@ defmodule Easy.Nutrition.DayMeal do
   @spec for_meal_slot(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
   def for_meal_slot(query \\ __MODULE__, meal_slot)
   def for_meal_slot(query, nil), do: query
+  def for_meal_slot(query, ""), do: query
   def for_meal_slot(query, meal_slot), do: from(dm in query, where: dm.meal_slot == ^meal_slot)
 
   @spec by_slot_position(Ecto.Queryable.t()) :: Ecto.Query.t()

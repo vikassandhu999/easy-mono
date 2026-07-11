@@ -9,7 +9,6 @@ defmodule EasyWeb.Coaches.ClientProfileJSON do
   defp data(%ClientProfile{} = profile) do
     %{
       id: profile.id,
-      business_id: profile.business_id,
       client_id: profile.client_id,
       general: profile.general,
       nutrition: profile.nutrition,

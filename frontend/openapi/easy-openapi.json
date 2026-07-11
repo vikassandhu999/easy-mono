@@ -3434,7 +3434,6 @@
         "x-validate": null
       },
       "TokenRequest": {
-        "additionalProperties": false,
         "example": {
           "email": "coach@example.com",
           "grant_type": "otp",
@@ -3443,62 +3442,86 @@
         },
         "oneOf": [
           {
+            "additionalProperties": false,
+            "properties": {
+              "grant_type": {
+                "enum": [
+                  "refresh_token"
+                ],
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "refresh_token": {
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "role": {
+                "enum": [
+                  "owner",
+                  "coach",
+                  "client",
+                  "guest"
+                ],
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
             "required": [
               "grant_type",
               "refresh_token"
             ],
+            "type": "object",
             "x-struct": null,
             "x-validate": null
           },
           {
+            "additionalProperties": false,
+            "properties": {
+              "email": {
+                "format": "email",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "grant_type": {
+                "enum": [
+                  "otp"
+                ],
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "otp": {
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "role": {
+                "enum": [
+                  "owner",
+                  "coach",
+                  "client",
+                  "guest"
+                ],
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
             "required": [
               "grant_type",
               "email",
               "otp",
               "role"
             ],
+            "type": "object",
             "x-struct": null,
             "x-validate": null
           }
         ],
-        "properties": {
-          "email": {
-            "format": "email",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "grant_type": {
-            "enum": [
-              "refresh_token",
-              "otp"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "otp": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "refresh_token": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "role": {
-            "enum": [
-              "owner",
-              "coach",
-              "client",
-              "guest"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
         "title": "TokenRequest",
         "type": "object",
         "x-struct": null,
@@ -7421,12 +7444,6 @@
       "CoachingClientProfile": {
         "additionalProperties": false,
         "properties": {
-          "business_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
           "client_id": {
             "format": "uuid",
             "type": "string",
@@ -7496,7 +7513,6 @@
         },
         "required": [
           "id",
-          "business_id",
           "client_id",
           "general",
           "nutrition",
@@ -7513,46 +7529,51 @@
         "x-validate": null
       },
       "VerifyRequest": {
-        "additionalProperties": false,
         "example": {
           "email": "coach@example.com",
           "otp": "123456"
         },
         "oneOf": [
           {
+            "additionalProperties": false,
+            "properties": {
+              "token": {
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
             "required": [
               "token"
             ],
+            "type": "object",
             "x-struct": null,
             "x-validate": null
           },
           {
+            "additionalProperties": false,
+            "properties": {
+              "email": {
+                "format": "email",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "otp": {
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
             "required": [
               "email",
               "otp"
             ],
+            "type": "object",
             "x-struct": null,
             "x-validate": null
           }
         ],
-        "properties": {
-          "email": {
-            "format": "email",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "otp": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "token": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
         "title": "VerifyRequest",
         "type": "object",
         "x-struct": null,
@@ -14998,7 +15019,7 @@
             },
             "description": "Auth token"
           },
-          "401": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
@@ -18303,7 +18324,7 @@
             },
             "description": "Auth token"
           },
-          "401": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
@@ -19609,7 +19630,7 @@
             },
             "description": "Auth token"
           },
-          "401": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {

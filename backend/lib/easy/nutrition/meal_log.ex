@@ -16,7 +16,18 @@ defmodule Easy.Nutrition.MealLog do
 
   schema "nutrition_meal_logs" do
     field(:date, :date)
-    field(:meal_slot, Ecto.Enum, values: [:breakfast, :morning_snack, :lunch, :afternoon_snack, :dinner, :evening_snack])
+
+    field(:meal_slot, Ecto.Enum,
+      values: [
+        :breakfast,
+        :morning_snack,
+        :lunch,
+        :afternoon_snack,
+        :dinner,
+        :evening_snack
+      ]
+    )
+
     field(:planned_snapshot, :map)
     field(:planned_calories, :float)
     field(:logged_calories, :float, default: 0.0)
@@ -67,6 +78,7 @@ defmodule Easy.Nutrition.MealLog do
   @spec for_meal_slot(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
   def for_meal_slot(query \\ __MODULE__, meal_slot)
   def for_meal_slot(query, nil), do: query
+  def for_meal_slot(query, ""), do: query
 
   def for_meal_slot(query, meal_slot) when is_binary(meal_slot) do
     if meal_slot in @valid_meal_slots do

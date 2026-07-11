@@ -60,8 +60,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.ChatMessagesResponse do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ChatMessage
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ChatMessagesResponse",

@@ -30,7 +30,7 @@ defmodule EasyWeb.Endpoint do
   plug(CORSPlug,
     origin: &EasyWeb.Cors.origins/0,
     credentials: true,
-    max_age: 86400,
+    max_age: 86_400,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     headers: [
       "Authorization",

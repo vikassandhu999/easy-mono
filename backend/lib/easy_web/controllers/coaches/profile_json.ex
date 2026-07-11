@@ -1,6 +1,6 @@
 defmodule EasyWeb.Coaches.ProfileJSON do
-  alias Easy.Orgs.Coach
   alias Easy.Orgs.Business
+  alias Easy.Orgs.Coach
 
   @spec show(%{coach: Coach.t()}) :: %{data: map()}
   def show(%{coach: coach}) do

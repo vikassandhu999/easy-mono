@@ -3,13 +3,15 @@ defmodule EasyWeb.WebhookControllerTest do
 
   import Ecto.Query
 
-  alias Easy.Billing
+  alias Easy.Billing.BusinessBilling
   alias Easy.Clients.Client
   alias Easy.Repo
 
   import Easy.Factory
 
   @secret "test_webhook_secret"
+
+  defp billing_for(business_id), do: Repo.get_by!(BusinessBilling, business_id: business_id)
 
   defp sign(body), do: :crypto.mac(:hmac, :sha256, @secret, body) |> Base.encode16(case: :lower)
 
@@ -49,7 +51,7 @@ defmodule EasyWeb.WebhookControllerTest do
     conn = post_webhook(conn, charged_payload("sub_wh", 3, 149_700))
 
     assert conn.status == 200
-    billing = Billing.billing_for(business.id)
+    billing = billing_for(business.id)
     assert billing.paid_seats == 3
     assert billing.status == :active
     assert billing.current_period_end
@@ -90,7 +92,7 @@ defmodule EasyWeb.WebhookControllerTest do
       })
 
     assert conn2.status == 200
-    billing = Billing.billing_for(business.id)
+    billing = billing_for(business.id)
     assert billing.status == :past_due
     assert business.id |> events_for() |> Enum.any?(&(&1.kind == :payment_failed))
   end
@@ -106,7 +108,7 @@ defmodule EasyWeb.WebhookControllerTest do
       })
 
     assert conn2.status == 200
-    billing = Billing.billing_for(business.id)
+    billing = billing_for(business.id)
     assert billing.status == :cancelled
     assert billing.paid_seats == 0
     assert Repo.get!(Client, active.id).status == :active
@@ -129,20 +131,20 @@ defmodule EasyWeb.WebhookControllerTest do
       })
 
     assert conn.status == 200
-    billing = Billing.billing_for(business.id)
+    billing = billing_for(business.id)
     assert billing.status == :free
     assert billing.paid_seats == 0
     assert events_for(business.id) == []
   end
 
   test "a charge while cancellation is scheduled keeps cancel_at_period_end", %{conn: conn, business: business} do
-    Billing.billing_for(business.id)
+    billing_for(business.id)
     |> Ecto.Changeset.change(status: :cancel_at_period_end)
     |> Repo.update!()
 
     post_webhook(conn, charged_payload("sub_wh", 3, 149_700))
 
-    billing = Billing.billing_for(business.id)
+    billing = billing_for(business.id)
     assert billing.status == :cancel_at_period_end
     assert billing.paid_seats == 3
   end

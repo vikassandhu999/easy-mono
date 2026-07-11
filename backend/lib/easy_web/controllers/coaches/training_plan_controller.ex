@@ -2,9 +2,8 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.TrainingPlans, as: Plans
   alias Easy.Training.TrainingPlan
-  alias OpenApiSpex.{Operation, Schema}
+  alias Easy.TrainingPlans, as: Plans
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
@@ -15,7 +14,11 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     TrainingPlanUpdateRequest
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update, :assign]
+  alias OpenApiSpex.{Operation, Schema}
+
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true]
+       when action in [:create, :update, :delete, :assign, :duplicate]
 
   tags ["coach training plans"]
 

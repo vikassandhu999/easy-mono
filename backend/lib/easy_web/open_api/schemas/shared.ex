@@ -1,5 +1,4 @@
 defmodule EasyWeb.OpenApi.Schemas.Shared do
-  @moduledoc false
   # Building blocks shared across OpenAPI schema modules. These return plain
   # maps/`%Schema{}`s that are spliced into `OpenApiSpex.schema(...)` calls, so the
   # generated spec is identical to writing the same shape inline.
@@ -21,16 +20,16 @@ defmodule EasyWeb.OpenApi.Schemas.Shared do
     "high_protein"
   ]
 
-  @doc "Day-of-week enum values, in order."
+  @spec days_of_week() :: [String.t()]
   def days_of_week, do: @days_of_week
 
-  @doc "Allergen enum values, mirroring `Easy.Nutrition.Food`/`Recipe`."
+  @spec allergens() :: [String.t()]
   def allergens, do: @allergens
 
-  @doc "Dietary-tag enum values, mirroring `Easy.Nutrition.Food`/`Recipe`."
+  @spec dietary_tags() :: [String.t()]
   def dietary_tags, do: @dietary_tags
 
-  @doc ~S(A `{id, name, description}` reference object. Pass `example` to attach one.)
+  @spec named_ref(String.t(), map() | nil) :: map()
   def named_ref(title, example \\ nil) do
     base = %{
       title: title,
@@ -47,7 +46,7 @@ defmodule EasyWeb.OpenApi.Schemas.Shared do
     if example, do: Map.put(base, :example, example), else: base
   end
 
-  @doc "`inserted_at`/`updated_at` date-time property pair."
+  @spec timestamps() :: map()
   def timestamps do
     %{
       inserted_at: %Schema{type: :string, format: :"date-time"},
@@ -55,7 +54,7 @@ defmodule EasyWeb.OpenApi.Schemas.Shared do
     }
   end
 
-  @doc ~S(Single-resource wrapper: `%{data: inner}`, required `:data`.)
+  @spec data_response(OpenApiSpex.Schema.t() | map(), String.t()) :: map()
   def data_response(inner, title) do
     %{
       title: title,
@@ -66,7 +65,7 @@ defmodule EasyWeb.OpenApi.Schemas.Shared do
     }
   end
 
-  @doc ~S(List wrapper: `%{data: [inner], count: integer}`, required `:data`/`:count`.)
+  @spec list_response(OpenApiSpex.Schema.t() | map(), String.t()) :: map()
   def list_response(inner, title) do
     %{
       title: title,

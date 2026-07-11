@@ -59,7 +59,11 @@ defmodule Easy.Nutrition.Recipe do
     |> validate_subset(:allergens, @allergens)
     |> validate_subset(:dietary_tags, @dietary_tags)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
-    |> cast_assoc(:recipe_ingredients, with: &RecipeIngredient.changeset/2)
+    |> cast_assoc(:recipe_ingredients,
+      with: fn ingredient, ingredient_attrs ->
+        RecipeIngredient.update_changeset(ingredient, business_id, ingredient_attrs)
+      end
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -69,7 +73,11 @@ defmodule Easy.Nutrition.Recipe do
     |> validate_subset(:allergens, @allergens)
     |> validate_subset(:dietary_tags, @dietary_tags)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
-    |> cast_assoc(:recipe_ingredients, with: &RecipeIngredient.changeset/2)
+    |> cast_assoc(:recipe_ingredients,
+      with: fn ingredient, ingredient_attrs ->
+        RecipeIngredient.update_changeset(ingredient, recipe.business_id, ingredient_attrs)
+      end
+    )
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -85,6 +93,6 @@ defmodule Easy.Nutrition.Recipe do
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(r in query, order_by: [desc: r.inserted_at])
+    from(r in query, order_by: [desc: r.inserted_at, desc: r.id])
   end
 end

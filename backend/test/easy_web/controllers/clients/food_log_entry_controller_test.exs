@@ -83,7 +83,12 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
           cooked_weight_g: 500.0
         )
 
-      insert(:recipe_ingredient, recipe: recipe, food: recipe_food, weight_g: 100.0)
+      insert(:recipe_ingredient,
+        business: ctx.business,
+        recipe: recipe,
+        food: recipe_food,
+        weight_g: 100.0
+      )
 
       attrs = %{
         "date" => "2026-03-25",

@@ -3,6 +3,7 @@ defmodule Easy.Error do
 
   @type t :: %__MODULE__{}
 
+  @spec new(atom() | String.t(), String.t(), map() | nil, atom()) :: t()
   def new(code, message, detail \\ %{}, status \\ :bad_request) do
     %__MODULE__{
       code: code,
@@ -12,6 +13,7 @@ defmodule Easy.Error do
     }
   end
 
+  @spec not_found(String.t(), map()) :: t()
   def not_found(message \\ "The requested resource was not found.", detail_map \\ %{}) do
     new(
       :not_found,
@@ -21,6 +23,7 @@ defmodule Easy.Error do
     )
   end
 
+  @spec unauthorized(String.t()) :: t()
   def unauthorized(message \\ "Insufficient permissions to perform this action.") do
     new(
       :unauthorized,
@@ -30,6 +33,7 @@ defmodule Easy.Error do
     )
   end
 
+  @spec unprocessable(Ecto.Changeset.t() | map() | String.t()) :: t()
   def unprocessable(changeset_or_detail) do
     data =
       case changeset_or_detail do
@@ -66,6 +70,7 @@ defmodule Easy.Error do
     end)
   end
 
+  @spec to_map(t()) :: map()
   def to_map(%__MODULE__{} = error) do
     %{
       code: error.code,

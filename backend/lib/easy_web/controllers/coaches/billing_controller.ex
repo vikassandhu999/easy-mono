@@ -11,7 +11,8 @@ defmodule EasyWeb.Coaches.BillingController do
     ErrorResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:checkout]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:checkout, :cancel, :sync]
 
   tags ["coach billing"]
 
@@ -27,10 +28,9 @@ defmodule EasyWeb.Coaches.BillingController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    ctx = conn.assigns.ctx
-    summary = Map.put(Billing.seat_summary(ctx), :recent_events, Billing.recent_events(ctx))
-
-    json(conn, %{data: render_summary(summary)})
+    with {:ok, summary} <- Billing.get_billing(conn.assigns.ctx) do
+      json(conn, %{data: render_summary(summary)})
+    end
   end
 
   operation :checkout,
@@ -97,10 +97,7 @@ defmodule EasyWeb.Coaches.BillingController do
 
   @spec sync(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def sync(conn, _params) do
-    ctx = conn.assigns.ctx
-
-    with {:ok, summary} <- Billing.sync_billing(ctx) do
-      summary = Map.put(summary, :recent_events, Billing.recent_events(ctx))
+    with {:ok, summary} <- Billing.sync_billing(conn.assigns.ctx) do
       json(conn, %{data: render_summary(summary)})
     end
   end

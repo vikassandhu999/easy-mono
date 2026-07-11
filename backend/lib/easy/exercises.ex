@@ -1,9 +1,9 @@
 defmodule Easy.Exercises do
+  alias Easy.Ctx
   alias Easy.Repo
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingMuscle
-  alias Easy.Ctx
   alias Easy.Utils
 
   import Ecto.Query

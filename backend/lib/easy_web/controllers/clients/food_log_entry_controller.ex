@@ -16,7 +16,7 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :log_meal, :log_day, :switch_option]
+       when action in [:create, :update, :delete, :log_meal, :log_day, :switch_option]
 
   tags ["client food log entries"]
 

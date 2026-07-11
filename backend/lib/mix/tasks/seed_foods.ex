@@ -9,6 +9,6 @@ defmodule Mix.Tasks.SeedFoods do
 
     seeds_path = Path.join(:code.priv_dir(:easy), "repo/seeds/food_seeds.exs")
     Code.eval_file(seeds_path)
-    apply(Easy.Repo.Seeds.Foods, :run, [])
+    Code.eval_string("Easy.Repo.Seeds.Foods.run()")
   end
 end

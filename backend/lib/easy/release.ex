@@ -22,14 +22,15 @@ defmodule Easy.Release do
         {:ok, _, _} =
           Ecto.Migrator.with_repo(repo, fn _repo ->
             seed_file = Path.join([:code.priv_dir(@app), "repo", "seeds.exs"])
-
-            if File.exists?(seed_file) do
-              Code.eval_file(seed_file)
-            end
+            eval_seed_file(seed_file)
           end)
       end
 
     {:ok, results}
+  end
+
+  defp eval_seed_file(seed_file) do
+    if File.exists?(seed_file), do: Code.eval_file(seed_file)
   end
 
   @spec rollback(module(), integer()) :: {:ok, [integer()]}

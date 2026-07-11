@@ -51,18 +51,18 @@ defmodule Easy.Identity.User do
     |> change(%{confirmation_sent_at: DateTime.utc_now(:second)})
   end
 
-  @spec is_confirmation_expired?(t()) :: boolean()
-  def is_confirmation_expired?(%__MODULE__{confirmation_sent_at: nil}), do: true
+  @spec confirmation_expired?(t()) :: boolean()
+  def confirmation_expired?(%__MODULE__{confirmation_sent_at: nil}), do: true
 
-  def is_confirmation_expired?(%__MODULE__{confirmation_sent_at: sent_at}) do
+  def confirmation_expired?(%__MODULE__{confirmation_sent_at: sent_at}) do
     otp_validity_minutes = 10
 
     DateTime.diff(DateTime.utc_now(:second), sent_at, :minute) > otp_validity_minutes
   end
 
-  @spec is_email_confirmed?(t()) :: boolean()
-  def is_email_confirmed?(%__MODULE__{email_confirmed_at: nil}), do: false
-  def is_email_confirmed?(%__MODULE__{email_confirmed_at: _}), do: true
+  @spec email_confirmed?(t()) :: boolean()
+  def email_confirmed?(%__MODULE__{email_confirmed_at: nil}), do: false
+  def email_confirmed?(%__MODULE__{email_confirmed_at: _}), do: true
 
   @spec full_name(t()) :: String.t()
   def full_name(%__MODULE__{first_name: first_name, last_name: last_name}) do

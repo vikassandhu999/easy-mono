@@ -244,16 +244,25 @@ defmodule EasyWeb.OpenApi.Schemas.VerifyRequest do
     %{
       title: "VerifyRequest",
       type: :object,
-      additionalProperties: false,
       oneOf: [
-        %Schema{required: [:token]},
-        %Schema{required: [:email, :otp]}
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: %{
+            token: %Schema{type: :string}
+          },
+          required: [:token]
+        },
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: %{
+            email: %Schema{type: :string, format: :email},
+            otp: %Schema{type: :string}
+          },
+          required: [:email, :otp]
+        }
       ],
-      properties: %{
-        token: %Schema{type: :string},
-        email: %Schema{type: :string, format: :email},
-        otp: %Schema{type: :string}
-      },
       example: %{
         "email" => "coach@example.com",
         "otp" => "123456"
@@ -272,18 +281,29 @@ defmodule EasyWeb.OpenApi.Schemas.TokenRequest do
     %{
       title: "TokenRequest",
       type: :object,
-      additionalProperties: false,
       oneOf: [
-        %Schema{required: [:grant_type, :refresh_token]},
-        %Schema{required: [:grant_type, :email, :otp, :role]}
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: %{
+            grant_type: %Schema{type: :string, enum: ["refresh_token"]},
+            refresh_token: %Schema{type: :string},
+            role: %Schema{type: :string, enum: ["owner", "coach", "client", "guest"]}
+          },
+          required: [:grant_type, :refresh_token]
+        },
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: %{
+            grant_type: %Schema{type: :string, enum: ["otp"]},
+            email: %Schema{type: :string, format: :email},
+            otp: %Schema{type: :string},
+            role: %Schema{type: :string, enum: ["owner", "coach", "client", "guest"]}
+          },
+          required: [:grant_type, :email, :otp, :role]
+        }
       ],
-      properties: %{
-        grant_type: %Schema{type: :string, enum: ["refresh_token", "otp"]},
-        refresh_token: %Schema{type: :string},
-        email: %Schema{type: :string, format: :email},
-        otp: %Schema{type: :string},
-        role: %Schema{type: :string, enum: ["owner", "coach", "client", "guest"]}
-      },
       example: %{
         "grant_type" => "otp",
         "email" => "coach@example.com",

@@ -2,6 +2,7 @@ defmodule Easy.Chat.Message do
   use Ecto.Schema
 
   alias Easy.Chat.Conversation
+  alias Easy.Orgs.Business
 
   import Ecto.Changeset
   import Ecto.Query
@@ -17,24 +18,27 @@ defmodule Easy.Chat.Message do
     field :sender_id, :binary_id
 
     belongs_to :conversation, Conversation
+    belongs_to :business, Business
 
     timestamps(type: :utc_datetime_usec)
   end
 
-  @spec insert_changeset(String.t(), :coach | :client, String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(conversation_id, sender_type, sender_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), :coach | :client, String.t(), map()) ::
+          Ecto.Changeset.t()
+  def insert_changeset(business_id, conversation_id, sender_type, sender_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:body])
+    |> put_change(:business_id, business_id)
     |> put_change(:conversation_id, conversation_id)
     |> put_change(:sender_type, sender_type)
     |> put_change(:sender_id, sender_id)
-    |> validate_required([:body, :conversation_id, :sender_type, :sender_id])
+    |> validate_required([:body, :business_id, :conversation_id, :sender_type, :sender_id])
     |> validate_length(:body, max: 4000)
   end
 
-  @spec for_conversation(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_conversation(query \\ __MODULE__, conversation_id),
-    do: from(m in query, where: m.conversation_id == ^conversation_id)
+  @spec for_conversation(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_conversation(query \\ __MODULE__, business_id, conversation_id),
+    do: from(m in query, where: m.business_id == ^business_id and m.conversation_id == ^conversation_id)
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__), do: from(m in query, order_by: [desc: m.inserted_at, desc: m.id])

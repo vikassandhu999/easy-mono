@@ -3,7 +3,6 @@ defmodule Easy.WeightEntries do
 
   alias Easy.Clients.Client
   alias Easy.Ctx
-  alias Easy.Error
   alias Easy.Fitness.WeightEntry
   alias Easy.Repo
 
@@ -13,18 +12,19 @@ defmodule Easy.WeightEntries do
 
   @spec list_client_weight_entries(Ctx.t(), keyword()) ::
           {:ok, %{client: Client.t(), entries: [WeightEntry.t()]}}
-          | {:error, :not_found | Error.t()}
+          | {:error, :not_found | :invalid_since}
   def list_client_weight_entries(%Ctx{} = ctx, opts \\ []) do
     since = Keyword.get(opts, :since)
 
     with {:ok, client} <- get_client(ctx),
-         {:ok, since_date} <- WeightEntry.parse_since(since) do
+         {:ok, since_date} <- parse_since(since) do
       {:ok, %{client: client, entries: list_entries(ctx.business_id, client.id, since_date)}}
     end
   end
 
   @spec upsert_client_weight_entry(Ctx.t(), map()) ::
-          {:ok, WeightEntry.t()} | {:error, :not_found | Ecto.Changeset.t() | Error.t()}
+          {:ok, WeightEntry.t()}
+          | {:error, :not_found | :date_required | :invalid_date | :future_date | Ecto.Changeset.t()}
   def upsert_client_weight_entry(%Ctx{} = ctx, attrs) do
     with {:ok, client} <- get_client(ctx) do
       upsert(ctx.business_id, client.id, attrs)
@@ -46,12 +46,12 @@ defmodule Easy.WeightEntries do
 
   @spec list_entries_for_client(Ctx.t(), String.t(), keyword()) ::
           {:ok, %{client: Client.t(), entries: [WeightEntry.t()], adherence: map()}}
-          | {:error, :not_found | Error.t()}
+          | {:error, :not_found | :invalid_since}
   def list_entries_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
     since = Keyword.get(opts, :since)
 
     with {:ok, client} <- get_client_by_id(ctx, client_id),
-         {:ok, since_date} <- WeightEntry.parse_since(since),
+         {:ok, since_date} <- parse_since(since),
          {:ok, adh} <- adherence(ctx, client.id) do
       {:ok,
        %{
@@ -81,14 +81,8 @@ defmodule Easy.WeightEntries do
     end
   end
 
-  # ---------------------------------------------------------------------------
-  # Internal upsert (used by public Case-3 fns; not public API)
-  # ---------------------------------------------------------------------------
-
-  @spec upsert(String.t(), String.t(), map()) ::
-          {:ok, WeightEntry.t()} | {:error, Ecto.Changeset.t() | Error.t()}
-  def upsert(business_id, client_id, attrs) do
-    with {:ok, date} <- parse_date(attrs[:date], :date),
+  defp upsert(business_id, client_id, attrs) do
+    with {:ok, date} <- parse_date(attrs[:date]),
          :ok <- ensure_not_future(date) do
       case existing_entry(business_id, client_id, date) do
         nil ->
@@ -99,9 +93,6 @@ defmodule Easy.WeightEntries do
       end
     end
   end
-
-  @spec delete_entry(WeightEntry.t()) :: {:ok, WeightEntry.t()} | {:error, Ecto.Changeset.t()}
-  def delete_entry(entry), do: Repo.delete(entry)
 
   # ---------------------------------------------------------------------------
   # Private
@@ -131,7 +122,7 @@ defmodule Easy.WeightEntries do
     WeightEntry
     |> WeightEntry.for_client(business_id, client_id)
     |> maybe_since(since_date)
-    |> WeightEntry.ordered()
+    |> WeightEntry.oldest()
     |> Repo.all()
   end
 
@@ -162,16 +153,17 @@ defmodule Easy.WeightEntries do
 
       {:error, %{errors: errors} = changeset} ->
         if has_unique_violation?(errors) do
-          case existing_entry(business_id, client_id, date) do
-            nil ->
-              {:error, changeset}
-
-            existing ->
-              WeightEntry.update_changeset(existing, normalize_attrs(attrs)) |> Repo.update()
-          end
+          update_concurrent_entry(business_id, client_id, date, attrs, changeset)
         else
           {:error, changeset}
         end
+    end
+  end
+
+  defp update_concurrent_entry(business_id, client_id, date, attrs, changeset) do
+    case existing_entry(business_id, client_id, date) do
+      nil -> {:error, changeset}
+      existing -> existing |> WeightEntry.update_changeset(normalize_attrs(attrs)) |> Repo.update()
     end
   end
 
@@ -191,28 +183,36 @@ defmodule Easy.WeightEntries do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
-  defp parse_date(nil, field), do: {:error, invalid_date_error(field, "can't be blank")}
-  defp parse_date("", field), do: {:error, invalid_date_error(field, "can't be blank")}
+  defp delete_entry(entry), do: Repo.delete(entry)
 
-  defp parse_date(value, field) do
+  defp parse_since(nil), do: {:ok, nil}
+  defp parse_since(""), do: {:ok, nil}
+
+  defp parse_since(value) do
     case Ecto.Type.cast(:date, value) do
       {:ok, %Date{} = date} -> {:ok, date}
-      _ -> {:error, invalid_date_error(field, "is invalid")}
+      _ -> {:error, :invalid_since}
+    end
+  end
+
+  defp parse_date(nil), do: {:error, :date_required}
+  defp parse_date(""), do: {:error, :date_required}
+
+  defp parse_date(value) do
+    case Ecto.Type.cast(:date, value) do
+      {:ok, %Date{} = date} -> {:ok, date}
+      _ -> {:error, :invalid_date}
     end
   end
 
   defp ensure_not_future(%Date{} = date) do
     if future?(date),
-      do: {:error, invalid_date_error(:date, "cannot be in the future")},
+      do: {:error, :future_date},
       else: :ok
   end
 
   defp future?(%Date{} = date) do
     Date.compare(date, Date.add(Date.utc_today(), 1)) == :gt
-  end
-
-  defp invalid_date_error(field, message) do
-    Error.unprocessable(%{fields: %{field => [message]}})
   end
 
   defp has_unique_violation?(errors) do

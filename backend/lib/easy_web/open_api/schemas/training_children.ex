@@ -47,8 +47,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.TrainingPlanPlannedSet
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -129,8 +129,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingWorkoutExerciseArrayResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutExercise
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "TrainingWorkoutExerciseArrayResponse",
@@ -172,8 +172,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleResponse do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.TrainingScheduleEntry
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "TrainingScheduleResponse",
@@ -184,8 +184,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingScheduleDayResponse do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.TrainingScheduleEntry
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "TrainingScheduleDayResponse",

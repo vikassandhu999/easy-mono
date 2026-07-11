@@ -42,8 +42,7 @@ defmodule EasyWeb.Coaches.ProfileController do
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    with {:ok, coach} <- Coaches.get_coach(conn.assigns.ctx),
-         {:ok, coach} <- Easy.Orgs.Coach.update_profile(coach, conn.body_params) do
+    with {:ok, coach} <- Coaches.update_profile(conn.assigns.ctx, conn.body_params) do
       render(conn, :show, coach: coach)
     end
   end

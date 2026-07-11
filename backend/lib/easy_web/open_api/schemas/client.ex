@@ -64,8 +64,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.Client do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "Client",

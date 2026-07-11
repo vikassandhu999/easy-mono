@@ -1,6 +1,13 @@
 defmodule Easy.ChannelCase do
   use ExUnit.CaseTemplate
 
+  alias Easy.Clients.Client
+  alias Easy.DataCase
+  alias Easy.Identity.Token
+  alias Easy.Orgs.Business
+  alias Easy.Orgs.Coach
+  alias Easy.Repo
+
   using do
     quote do
       import Phoenix.ChannelTest
@@ -12,16 +19,16 @@ defmodule Easy.ChannelCase do
   end
 
   setup tags do
-    Easy.DataCase.setup_sandbox(tags)
+    DataCase.setup_sandbox(tags)
     :ok
   end
 
-  @spec coach_token(Easy.Orgs.Coach.t()) :: String.t()
+  @spec coach_token(Coach.t()) :: String.t()
   def coach_token(coach) do
-    business = Easy.Repo.get!(Easy.Orgs.Business, coach.business_id)
+    business = Repo.get!(Business, coach.business_id)
 
     Joken.generate_and_sign!(
-      Easy.Identity.Token.token_config(),
+      Token.token_config(),
       %{
         user_id: coach.user_id,
         session_id: Ecto.UUID.generate(),
@@ -30,21 +37,21 @@ defmodule Easy.ChannelCase do
         coach_id: coach.id,
         is_owner: business.owner_id == coach.user_id
       },
-      Easy.Identity.Token.signer()
+      Token.signer()
     )
   end
 
-  @spec client_token(Easy.Clients.Client.t()) :: String.t()
+  @spec client_token(Client.t()) :: String.t()
   def client_token(client) do
     Joken.generate_and_sign!(
-      Easy.Identity.Token.token_config(),
+      Token.token_config(),
       %{
         user_id: client.user_id,
         session_id: Ecto.UUID.generate(),
         role: "client",
         business_id: client.business_id
       },
-      Easy.Identity.Token.signer()
+      Token.signer()
     )
   end
 end

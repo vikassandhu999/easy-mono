@@ -88,7 +88,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     } do
       food = insert(:food, creator: coach, business: business)
       recipe = insert(:recipe, creator: coach, business: business)
-      insert(:recipe_ingredient, recipe: recipe, food: food)
+      insert(:recipe_ingredient, business: business, recipe: recipe, food: food)
 
       conn = get(conn, "/v1/coach/nutrition-recipes/#{recipe.id}")
       assert %{"data" => data} = json_response(conn, 200)
@@ -116,7 +116,13 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     test "updates a recipe with valid params", %{conn: conn, coach: coach, business: business} do
       food = insert(:food, creator: coach, business: business, calories_per_100g: 100.0)
       recipe = insert(:recipe, creator: coach, business: business)
-      insert(:recipe_ingredient, recipe: recipe, food: food, weight_g: 200.0)
+
+      insert(:recipe_ingredient,
+        business: business,
+        recipe: recipe,
+        food: food,
+        weight_g: 200.0
+      )
 
       conn = patch(conn, "/v1/coach/nutrition-recipes/#{recipe.id}", %{"name" => "Updated Recipe"})
       assert %{"data" => data} = json_response(conn, 200)
@@ -237,7 +243,13 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
     } do
       food = insert(:food, creator: coach, business: business, calories_per_100g: 100.0)
       recipe = insert(:recipe, creator: coach, business: business, name: "Original Bowl")
-      insert(:recipe_ingredient, recipe: recipe, food: food, weight_g: 200.0)
+
+      insert(:recipe_ingredient,
+        business: business,
+        recipe: recipe,
+        food: food,
+        weight_g: 200.0
+      )
 
       conn = post(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/copy")
       assert %{"data" => data} = json_response(conn, 201)

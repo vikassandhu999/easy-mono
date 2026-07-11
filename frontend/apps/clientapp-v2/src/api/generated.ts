@@ -989,17 +989,14 @@ export type AuthTokenResponse = {
 };
 export type TokenRequest =
   | {
-      email?: string;
-      grant_type: 'refresh_token' | 'otp';
-      otp?: string;
+      grant_type: 'refresh_token';
       refresh_token: string;
       role?: 'owner' | 'coach' | 'client' | 'guest';
     }
   | {
       email: string;
-      grant_type: 'refresh_token' | 'otp';
+      grant_type: 'otp';
       otp: string;
-      refresh_token?: string;
       role: 'owner' | 'coach' | 'client' | 'guest';
     };
 export type FoodServingSize = {
@@ -1265,14 +1262,11 @@ export type ClientProfileFormAssignmentResponse = {
 };
 export type VerifyRequest =
   | {
-      email?: string;
-      otp?: string;
       token: string;
     }
   | {
       email: string;
       otp: string;
-      token?: string;
     };
 export type ClientProfileCoach = {
   business_name: string;

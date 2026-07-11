@@ -2,10 +2,10 @@ defmodule Easy.Training.PlanItemTest do
   use Easy.SchemaCase
 
   alias Easy.Ctx
-  alias Easy.TrainingPlans, as: Plans
   alias Easy.Training.ScheduleEntry, as: PlanItem
+  alias Easy.TrainingPlans, as: Plans
 
-  describe "insert_changeset/4" do
+  describe "insert_changeset/5" do
     test "does not check workout membership against the database" do
       business = insert(:business)
       coach = insert(:coach, business: business)
@@ -14,9 +14,8 @@ defmodule Easy.Training.PlanItemTest do
       workout = insert(:workout, plan: other_plan, creator: coach, business: business)
 
       changeset =
-        PlanItem.insert_changeset(business.id, coach.id, plan.id, %{
-          "day_of_week" => "monday",
-          "training_workout_id" => workout.id
+        PlanItem.insert_changeset(business.id, coach.id, plan.id, workout.id, %{
+          "day_of_week" => "monday"
         })
 
       assert changeset.valid?
@@ -29,9 +28,7 @@ defmodule Easy.Training.PlanItemTest do
       workout = insert(:workout, plan: plan, creator: coach, business: business)
 
       changeset =
-        PlanItem.insert_changeset(business.id, coach.id, plan.id, %{
-          "training_workout_id" => workout.id
-        })
+        PlanItem.insert_changeset(business.id, coach.id, plan.id, workout.id, %{})
 
       assert %{day_of_week: ["can't be blank"]} = errors_on(changeset)
     end
@@ -46,9 +43,7 @@ defmodule Easy.Training.PlanItemTest do
       ctx = Ctx.new(coach.business_id, coach.user_id)
 
       assert {:error, :not_found} =
-               Plans.set_day_schedule(ctx, plan.id, "monday", %{
-                 training_workout_id: workout.id
-               })
+               Plans.set_day_schedule(ctx, plan.id, "monday", workout.id)
     end
 
     test "schedules a workout on a day for the plan" do
@@ -58,9 +53,7 @@ defmodule Easy.Training.PlanItemTest do
       ctx = Ctx.new(coach.business_id, coach.user_id)
 
       assert {:ok, item} =
-               Plans.set_day_schedule(ctx, plan.id, "monday", %{
-                 training_workout_id: workout.id
-               })
+               Plans.set_day_schedule(ctx, plan.id, "monday", workout.id)
 
       assert item.day_of_week == :monday
     end
@@ -73,14 +66,10 @@ defmodule Easy.Training.PlanItemTest do
       ctx = Ctx.new(coach.business_id, coach.user_id)
 
       assert {:ok, _item} =
-               Plans.set_day_schedule(ctx, plan.id, "monday", %{
-                 training_workout_id: workout_a.id
-               })
+               Plans.set_day_schedule(ctx, plan.id, "monday", workout_a.id)
 
       assert {:ok, item} =
-               Plans.set_day_schedule(ctx, plan.id, "monday", %{
-                 training_workout_id: workout_b.id
-               })
+               Plans.set_day_schedule(ctx, plan.id, "monday", workout_b.id)
 
       assert item.training_workout_id == workout_b.id
     end

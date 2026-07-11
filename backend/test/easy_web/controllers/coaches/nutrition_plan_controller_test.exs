@@ -182,7 +182,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
           business: business,
           cooked_weight_g: 400.0,
           recipe_ingredients: [
-            build(:recipe_ingredient, food: food, weight_g: 200.0)
+            build(:recipe_ingredient, business: business, food: food, weight_g: 200.0)
           ]
         )
 
@@ -234,7 +234,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
           name: "Turkey Rice Bowl",
           cooked_weight_g: 400.0,
           recipe_ingredients: [
-            build(:recipe_ingredient, food: food, weight_g: 200.0)
+            build(:recipe_ingredient, business: business, food: food, weight_g: 200.0)
           ]
         )
 

@@ -3,7 +3,6 @@ defmodule EasyWeb.Coaches.TeamController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Coaches
-  alias Easy.Orgs
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -13,7 +12,9 @@ defmodule EasyWeb.Coaches.TeamController do
     TrainerInviteRequest
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:invite]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true]
+       when action in [:invite, :resend_invite, :revoke_invite, :deactivate]
 
   tags ["coach team"]
 
@@ -92,11 +93,8 @@ defmodule EasyWeb.Coaches.TeamController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    ctx = conn.assigns.ctx
-
-    with {:ok, business} <- Orgs.get_business(ctx),
-         {:ok, coaches} <- Coaches.list_team(ctx) do
-      render(conn, :index, coaches: coaches, owner_id: business.owner_id)
+    with {:ok, %{coaches: coaches, owner_id: owner_id}} <- Coaches.list_team(conn.assigns.ctx) do
+      render(conn, :index, coaches: coaches, owner_id: owner_id)
     end
   end
 

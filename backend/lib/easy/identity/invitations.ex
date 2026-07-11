@@ -2,7 +2,6 @@ defmodule Easy.Identity.Invitations do
   alias Easy.Clients
   alias Easy.Coaches
   alias Easy.Identity.AuthTokens
-  alias Easy.Identity.Errors
   alias Easy.Identity.Mailer, as: Mailer
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.OtpGenerator
@@ -28,9 +27,9 @@ defmodule Easy.Identity.Invitations do
              {:ok, _} <- OneTimeTokens.create_invitation_acceptance_token(otp, email, token) do
           :ok
         else
-          {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
-          {:error, :used} -> Repo.rollback(Errors.invitation_used())
-          {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
+          {:error, :invalid} -> Repo.rollback(:invitation_invalid)
+          {:error, :used} -> Repo.rollback(:invitation_used)
+          {:error, :expired} -> Repo.rollback(:invitation_expired)
           {:error, reason} -> Repo.rollback(reason)
         end
       end)
@@ -67,13 +66,13 @@ defmodule Easy.Identity.Invitations do
              SessionFactory.create_session(user, Map.merge(session_opts, %{role: :client})) do
         AuthTokens.build(user, session)
       else
-        {:error, :token_not_found} -> Repo.rollback(Errors.invalid_otp())
-        {:error, :otp_expired} -> Repo.rollback(Errors.otp_expired())
-        {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
-        {:error, :used} -> Repo.rollback(Errors.invitation_used())
-        {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
-        {:error, :race_lost} -> Repo.rollback(Errors.invitation_used())
-        {:error, :already_active_elsewhere} -> Repo.rollback(Errors.already_active_client())
+        {:error, :token_not_found} -> Repo.rollback(:invalid_otp)
+        {:error, :otp_expired} -> Repo.rollback(:otp_expired)
+        {:error, :invalid} -> Repo.rollback(:invitation_invalid)
+        {:error, :used} -> Repo.rollback(:invitation_used)
+        {:error, :expired} -> Repo.rollback(:invitation_expired)
+        {:error, :race_lost} -> Repo.rollback(:invitation_used)
+        {:error, :already_active_elsewhere} -> Repo.rollback(:already_active_client)
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
@@ -93,9 +92,9 @@ defmodule Easy.Identity.Invitations do
              {:ok, _} <- OneTimeTokens.create_invitation_acceptance_token(otp, email, token) do
           :ok
         else
-          {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
-          {:error, :used} -> Repo.rollback(Errors.invitation_used())
-          {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
+          {:error, :invalid} -> Repo.rollback(:invitation_invalid)
+          {:error, :used} -> Repo.rollback(:invitation_used)
+          {:error, :expired} -> Repo.rollback(:invitation_expired)
           {:error, reason} -> Repo.rollback(reason)
         end
       end)
@@ -132,13 +131,13 @@ defmodule Easy.Identity.Invitations do
              SessionFactory.create_session(user, Map.merge(session_opts, %{role: :coach})) do
         AuthTokens.build(user, session)
       else
-        {:error, :token_not_found} -> Repo.rollback(Errors.invalid_otp())
-        {:error, :otp_expired} -> Repo.rollback(Errors.otp_expired())
-        {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
-        {:error, :used} -> Repo.rollback(Errors.invitation_used())
-        {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
-        {:error, :race_lost} -> Repo.rollback(Errors.invitation_used())
-        {:error, :already_a_coach} -> Repo.rollback(Errors.already_a_coach())
+        {:error, :token_not_found} -> Repo.rollback(:invalid_otp)
+        {:error, :otp_expired} -> Repo.rollback(:otp_expired)
+        {:error, :invalid} -> Repo.rollback(:invitation_invalid)
+        {:error, :used} -> Repo.rollback(:invitation_used)
+        {:error, :expired} -> Repo.rollback(:invitation_expired)
+        {:error, :race_lost} -> Repo.rollback(:invitation_used)
+        {:error, :already_a_coach} -> Repo.rollback(:already_a_coach)
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
@@ -147,7 +146,7 @@ defmodule Easy.Identity.Invitations do
   defp find_or_create_confirmed_coach_user(coach, email) do
     case Users.get_by_email(email) do
       {:ok, user} ->
-        if User.is_email_confirmed?(user) do
+        if User.email_confirmed?(user) do
           {:ok, user}
         else
           Users.confirm_user_email(user)
@@ -161,9 +160,8 @@ defmodule Easy.Identity.Invitations do
           "confirmation_sent_at" => DateTime.utc_now(:second)
         }
 
-        with {:ok, user} <- Users.create(user_attrs),
-             {:ok, confirmed} <- Users.confirm_user_email(user) do
-          {:ok, confirmed}
+        with {:ok, user} <- Users.create(user_attrs) do
+          Users.confirm_user_email(user)
         end
     end
   end
@@ -184,7 +182,7 @@ defmodule Easy.Identity.Invitations do
   defp find_or_create_confirmed_user(client, email) do
     case Users.get_by_email(email) do
       {:ok, user} ->
-        if User.is_email_confirmed?(user) do
+        if User.email_confirmed?(user) do
           {:ok, user}
         else
           Users.confirm_user_email(user)
@@ -198,9 +196,8 @@ defmodule Easy.Identity.Invitations do
           "confirmation_sent_at" => DateTime.utc_now(:second)
         }
 
-        with {:ok, user} <- Users.create(user_attrs),
-             {:ok, confirmed} <- Users.confirm_user_email(user) do
-          {:ok, confirmed}
+        with {:ok, user} <- Users.create(user_attrs) do
+          Users.confirm_user_email(user)
         end
     end
   end

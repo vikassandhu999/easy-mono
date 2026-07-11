@@ -57,7 +57,7 @@ defmodule Easy.Training.TrainingPerformedSet do
   ]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(session_id, business_id, attrs) do
+  def insert_changeset(business_id, session_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:training_session_id, session_id)
@@ -69,7 +69,20 @@ defmodule Easy.Training.TrainingPerformedSet do
     )
   end
 
-  @update_fields [:exercise_name, :set_type, :position, :reps, :load_value, :load_unit, :duration_seconds, :distance_value, :distance_unit, :rpe, :completed, :notes]
+  @update_fields [
+    :exercise_name,
+    :set_type,
+    :position,
+    :reps,
+    :load_value,
+    :load_unit,
+    :duration_seconds,
+    :distance_value,
+    :distance_unit,
+    :rpe,
+    :completed,
+    :notes
+  ]
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(performed_set, attrs) do
@@ -89,8 +102,8 @@ defmodule Easy.Training.TrainingPerformedSet do
   def for_business(query \\ __MODULE__, business_id),
     do: from(s in query, where: s.business_id == ^business_id)
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__), do: from(s in query, order_by: [asc: s.position])
+  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def by_position(query \\ __MODULE__), do: from(s in query, order_by: [asc: s.position, asc: s.id])
 
   @spec include_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_exercise(query, business_id) do

@@ -61,11 +61,6 @@ defmodule Easy.MacroCalc do
     end
   end
 
-  @doc """
-  Macros for `amount` servings of a recipe. A recipe's totals cover
-  `servings_count` servings; a recipe without a servings_count is treated as
-  a single serving.
-  """
   @spec for_recipe_servings(Recipe.t(), float() | nil) :: macros()
   def for_recipe_servings(%Recipe{} = recipe, amount) do
     servings =

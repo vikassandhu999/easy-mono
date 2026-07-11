@@ -1,14 +1,14 @@
 defmodule Easy.Coaches do
   import Ecto.Query
 
-  alias Ecto.Changeset
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Identity.User
   alias Easy.Identity.UserSessions
-  alias Easy.Orgs.Coach
   alias Easy.Orgs.Business
+  alias Easy.Orgs.Coach
   alias Easy.Repo
+  alias Ecto.Changeset
 
   # pre-auth onboarding: no ctx yet — runs during signup alongside create_business
   @spec create(User.t(), Business.t()) :: {:ok, Coach.t()} | {:error, any()}
@@ -20,14 +20,33 @@ defmodule Easy.Coaches do
     |> Repo.insert()
   end
 
-  @spec get_coach(Ctx.t()) :: {:ok, Coach.t()} | {:error, Easy.Error.t()}
+  @spec get_coach(Ctx.t()) :: {:ok, Coach.t()} | {:error, :not_found}
   def get_coach(%Ctx{} = ctx) do
-    Coach.fetch(ctx.business_id, ctx.user_id)
+    Coach
+    |> Coach.for_business(ctx.business_id)
+    |> Coach.for_user(ctx.user_id)
+    |> Coach.include_preloads(ctx.business_id)
+    |> Repo.one()
+    |> ok_or_not_found()
+  end
+
+  @spec update_profile(Ctx.t(), map()) :: {:ok, Coach.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def update_profile(%Ctx{} = ctx, attrs) do
+    with {:ok, coach} <- get_coach(ctx) do
+      coach_attrs = Map.take(attrs, [:first_name, :last_name, :phone])
+      business_attrs = take_present(attrs, business_name: :name, whatsapp_number: :whatsapp_number)
+
+      Repo.transaction(fn ->
+        updated_coach = update_or_rollback(Coach.update_changeset(coach, coach_attrs))
+        updated_business = update_business_or_rollback(coach.business, business_attrs)
+        %{updated_coach | business: updated_business, user: coach.user}
+      end)
+    end
   end
 
   # pre-auth login gate: no ctx yet — resolves ONLY the active coach row for a user
-  @spec get_active_coach_for_user(String.t()) :: Coach.t() | nil
-  def get_active_coach_for_user(user_id) do
+  @spec get_active_coach_by_user_id(String.t()) :: Coach.t() | nil
+  def get_active_coach_by_user_id(user_id) do
     Coach.for_user(user_id) |> Coach.active() |> Repo.one()
   end
 
@@ -38,10 +57,15 @@ defmodule Easy.Coaches do
     |> Repo.update()
   end
 
-  @spec list_team(Ctx.t()) :: {:ok, [Coach.t()]} | {:error, :not_owner}
+  @spec list_team(Ctx.t()) ::
+          {:ok, %{coaches: [Coach.t()], owner_id: String.t()}} | {:error, :not_owner}
   def list_team(%Ctx{} = ctx) do
     with :ok <- ensure_owner(ctx) do
-      {:ok, Coach |> Coach.for_business(ctx.business_id) |> Coach.newest() |> Repo.all()}
+      {:ok,
+       %{
+         coaches: Coach |> Coach.for_business(ctx.business_id) |> Coach.newest() |> Repo.all(),
+         owner_id: ctx.user_id
+       }}
     end
   end
 
@@ -93,7 +117,7 @@ defmodule Easy.Coaches do
       Repo.transaction(fn ->
         updated = update_or_rollback(Changeset.change(coach, status: :inactive))
 
-        if coach.user_id, do: UserSessions.revoke_all_for_user(coach.user_id)
+        if coach.user_id, do: UserSessions.revoke_user_sessions(coach.user_id)
 
         reassign_clients_to_owner(ctx, coach.id)
 
@@ -243,6 +267,27 @@ defmodule Easy.Coaches do
       {:error, changeset} -> Repo.rollback(changeset)
     end
   end
+
+  defp update_business_or_rollback(business, attrs) when attrs == %{}, do: business
+
+  defp update_business_or_rollback(business, attrs) do
+    business
+    |> Business.update_changeset(attrs)
+    |> update_or_rollback()
+  end
+
+  defp take_present(params, mapping) do
+    Enum.reduce(mapping, %{}, fn {param_key, column}, acc ->
+      if Map.has_key?(params, param_key) do
+        Map.put(acc, column, params[param_key])
+      else
+        acc
+      end
+    end)
+  end
+
+  defp ok_or_not_found(nil), do: {:error, :not_found}
+  defp ok_or_not_found(value), do: {:ok, value}
 
   defp check_expiry(%Coach{} = coach) do
     if Coach.invitation_expired?(coach) do

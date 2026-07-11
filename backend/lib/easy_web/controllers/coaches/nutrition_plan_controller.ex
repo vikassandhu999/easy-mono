@@ -14,7 +14,9 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     NutritionPlanResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update, :assign]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true]
+       when action in [:create, :update, :delete, :assign, :duplicate]
 
   tags ["coach nutrition plans"]
 
@@ -155,7 +157,9 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => plan_id}) do
+  def delete(conn, _params) do
+    plan_id = conn.path_params["id"]
+
     with {:ok, _deleted} <- Plans.delete_plan(conn.assigns.ctx, plan_id) do
       send_resp(conn, :no_content, "")
     end
@@ -176,7 +180,9 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   end
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def duplicate(conn, %{"id" => plan_id}) do
+  def duplicate(conn, _params) do
+    plan_id = conn.path_params["id"]
+
     with {:ok, new_plan} <- Plans.duplicate_plan(conn.assigns.ctx, plan_id) do
       conn
       |> put_status(:created)

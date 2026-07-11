@@ -1,10 +1,10 @@
 defmodule EasyWeb.Plugs.Authenticate do
   import Plug.Conn
   require Logger
+  alias Easy.Ctx
   alias Easy.Identity.Token
   alias Easy.Utils
   alias EasyWeb.FallbackController
-  alias Easy.Ctx
 
   @allowed_roles ["owner", "coach", "client", "guest"]
 

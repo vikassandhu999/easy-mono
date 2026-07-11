@@ -24,8 +24,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.FoodRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{FoodServingSize, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -73,8 +73,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.FoodUpdateRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{FoodServingSize, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -111,8 +111,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.Food do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{FoodServingSize, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "Food",

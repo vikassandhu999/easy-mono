@@ -12,27 +12,27 @@ defmodule Easy.Factory do
   alias Easy.Fitness.WeightEntry
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
-  alias Easy.Orgs.Business
-  alias Easy.Orgs.Coach
   alias Easy.Nutrition.DayMeal
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.Meal
-  alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.MealItem
+  alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanDay
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Nutrition.WeekdayAssignment
-  alias Easy.Training.TrainingExercise
-  alias Easy.Training.TrainingEquipment
-  alias Easy.Training.TrainingMuscle
+  alias Easy.Orgs.Business
+  alias Easy.Orgs.Coach
   alias Easy.Training.ScheduleEntry, as: TrainingPlanItem
-  alias Easy.Training.TrainingWorkout, as: Workout
+  alias Easy.Training.TrainingEquipment
+  alias Easy.Training.TrainingExercise
+  alias Easy.Training.TrainingMuscle
   alias Easy.Training.TrainingPlan
-  alias Easy.Training.TrainingWorkoutExercise, as: WorkoutElement
   alias Easy.Training.TrainingSession
+  alias Easy.Training.TrainingWorkout, as: Workout
+  alias Easy.Training.TrainingWorkoutExercise, as: WorkoutElement
 
   def user_factory do
     %User{
@@ -74,7 +74,7 @@ defmodule Easy.Factory do
     %UserSession{
       role: :coach,
       refresh_token: sequence(:refresh_token, &"refresh-token-#{&1}"),
-      expires_at: DateTime.add(DateTime.utc_now(:second), 86400, :second),
+      expires_at: DateTime.add(DateTime.utc_now(:second), 86_400, :second),
       user: build(:user)
     }
   end
@@ -648,6 +648,7 @@ defmodule Easy.Factory do
       body: sequence(:chat_message_body, &"Message #{&1}"),
       sender_type: :coach,
       sender_id: Ecto.UUID.generate(),
+      business: conversation.business,
       conversation: conversation
     }
   end

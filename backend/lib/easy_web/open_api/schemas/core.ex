@@ -96,8 +96,8 @@ defmodule EasyWeb.OpenApi.Schemas.Business do
   require OpenApiSpex
 
   alias Easy.Orgs.Business, as: BusinessSchema
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "Business",
@@ -212,8 +212,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.CoachProfile do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.CoachProfileBusiness
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "CoachProfile",
@@ -289,8 +289,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfile do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfileCoach
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ClientProfile",

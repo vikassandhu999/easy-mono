@@ -23,11 +23,30 @@ defmodule Easy.Billing.BusinessBilling do
     timestamps(type: :utc_datetime)
   end
 
+  @spec statuses() :: [atom()]
   def statuses, do: @statuses
 
-  def changeset(billing, attrs) do
+  @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, attrs \\ %{}) do
+    %__MODULE__{}
+    |> cast(attrs, [:free_seats])
+    |> put_change(:business_id, business_id)
+    |> validate_required([:business_id])
+    |> validate_number(:free_seats, greater_than_or_equal_to: 0)
+    |> unique_constraint(:business_id)
+  end
+
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(billing, attrs) do
     billing
-    |> cast(attrs, [:free_seats, :paid_seats, :status, :razorpay_subscription_id, :razorpay_plan_id, :current_period_end])
+    |> cast(attrs, [
+      :free_seats,
+      :paid_seats,
+      :status,
+      :razorpay_subscription_id,
+      :razorpay_plan_id,
+      :current_period_end
+    ])
     |> validate_number(:free_seats, greater_than_or_equal_to: 0)
     |> validate_number(:paid_seats, greater_than_or_equal_to: 0)
   end

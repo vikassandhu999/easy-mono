@@ -121,6 +121,13 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
       insert(:client, business: business, status: :active)
       insert(:client, business: business, status: :active)
 
+      Easy.Repo.insert!(%Easy.Billing.Event{
+        business_id: business.id,
+        kind: :seats_added,
+        seat_delta: 1,
+        occurred_at: DateTime.utc_now(:second)
+      })
+
       conn =
         conn
         |> put_req_header("content-type", "application/json")
@@ -129,6 +136,7 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
       body = json_response(conn, 409)
       assert body["seat_summary"]["used_seats"] == 2
       assert body["seat_summary"]["available_seats"] == 0
+      refute Map.has_key?(body["seat_summary"], "recent_events")
       assert_schema(body["seat_summary"], "BillingSummary", EasyWeb.ApiSpec.spec())
     end
   end

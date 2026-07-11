@@ -1,7 +1,6 @@
 defmodule Easy.Fitness.WeightEntryTest do
   use Easy.DataCase
 
-  alias Easy.Error
   alias Easy.Fitness.WeightEntry
   alias Easy.WeightEntries
 
@@ -114,7 +113,7 @@ defmodule Easy.Fitness.WeightEntryTest do
         WeightEntry
         |> WeightEntry.for_client(coach.business_id, client.id)
         |> WeightEntry.since(~D[2026-04-10])
-        |> WeightEntry.ordered()
+        |> WeightEntry.oldest()
         |> Repo.all()
         |> Enum.map(& &1.id)
 
@@ -143,14 +142,14 @@ defmodule Easy.Fitness.WeightEntryTest do
       ctx = trainer_ctx(client.creator)
 
       {:ok, _first} =
-        WeightEntries.upsert(client.business_id, client.id, %{
+        WeightEntries.upsert_client_weight_entry(client_ctx(client), %{
           date: Date.to_iso8601(today),
           value: "90.00",
           unit: "kg"
         })
 
       {:ok, _second} =
-        WeightEntries.upsert(client.business_id, client.id, %{
+        WeightEntries.upsert_client_weight_entry(client_ctx(client), %{
           date: Date.to_iso8601(today),
           value: "89.50",
           unit: "kg"
@@ -161,25 +160,34 @@ defmodule Easy.Fitness.WeightEntryTest do
     end
   end
 
-  describe "parse_since/1" do
+  describe "list_client_weight_entries/2 since parsing" do
     test "accepts nil, empty, and valid date strings" do
-      assert {:ok, nil} = WeightEntry.parse_since(nil)
-      assert {:ok, nil} = WeightEntry.parse_since("")
-      assert {:ok, ~D[2026-04-01]} = WeightEntry.parse_since("2026-04-01")
+      client = insert_client()
+
+      assert {:ok, %{entries: []}} =
+               WeightEntries.list_client_weight_entries(client_ctx(client), since: nil)
+
+      assert {:ok, %{entries: []}} =
+               WeightEntries.list_client_weight_entries(client_ctx(client), since: "")
+
+      assert {:ok, %{entries: []}} =
+               WeightEntries.list_client_weight_entries(client_ctx(client), since: "2026-04-01")
     end
 
     test "rejects invalid date strings" do
-      assert {:error, %Error{detail: %{fields: %{since: ["is invalid"]}}}} =
-               WeightEntry.parse_since("bad-date")
+      client = insert_client()
+
+      assert {:error, :invalid_since} =
+               WeightEntries.list_client_weight_entries(client_ctx(client), since: "bad-date")
     end
   end
 
-  describe "upsert/3" do
+  describe "upsert_client_weight_entry/2" do
     test "inserts a new entry" do
       client = insert_client()
 
       assert {:ok, entry} =
-               WeightEntries.upsert(client.business_id, client.id, %{
+               WeightEntries.upsert_client_weight_entry(client_ctx(client), %{
                  date: "2026-04-22",
                  value: "91.40",
                  unit: "kg",
@@ -204,7 +212,7 @@ defmodule Easy.Fitness.WeightEntryTest do
         )
 
       assert {:ok, updated} =
-               WeightEntries.upsert(client.business_id, client.id, %{
+               WeightEntries.upsert_client_weight_entry(client_ctx(client), %{
                  date: "2026-04-22",
                  value: "91.40",
                  unit: "kg",
@@ -219,8 +227,8 @@ defmodule Easy.Fitness.WeightEntryTest do
     test "returns validation error for invalid date" do
       client = insert_client()
 
-      assert {:error, %Error{detail: %{fields: %{date: ["is invalid"]}}}} =
-               WeightEntries.upsert(client.business_id, client.id, %{
+      assert {:error, :invalid_date} =
+               WeightEntries.upsert_client_weight_entry(client_ctx(client), %{
                  date: "bad-date",
                  value: 91.4,
                  unit: "kg"
@@ -230,8 +238,8 @@ defmodule Easy.Fitness.WeightEntryTest do
     test "returns validation error for a future date beyond the timezone buffer" do
       client = insert_client()
 
-      assert {:error, %Error{detail: %{fields: %{date: ["cannot be in the future"]}}}} =
-               WeightEntries.upsert(client.business_id, client.id, %{
+      assert {:error, :future_date} =
+               WeightEntries.upsert_client_weight_entry(client_ctx(client), %{
                  date: Date.utc_today() |> Date.add(2) |> Date.to_iso8601(),
                  value: 91.4,
                  unit: "kg"
@@ -239,11 +247,13 @@ defmodule Easy.Fitness.WeightEntryTest do
     end
   end
 
-  describe "delete/1" do
+  describe "delete_client_weight_entry/2" do
     test "deletes the entry" do
       entry = insert_weight_entry()
 
-      assert {:ok, _deleted} = WeightEntries.delete_entry(entry)
+      assert {:ok, _deleted} =
+               WeightEntries.delete_client_weight_entry(client_ctx(entry.client), entry.id)
+
       assert Repo.get(WeightEntry, entry.id) == nil
     end
   end
@@ -252,6 +262,8 @@ defmodule Easy.Fitness.WeightEntryTest do
     coach = insert(:coach)
     insert(:client, creator: coach, business: coach.business, user: insert(:user))
   end
+
+  defp client_ctx(client), do: Easy.Ctx.new(client.business_id, client.user_id)
 
   defp insert_weight_entry(attrs \\ []) do
     client = Keyword.get(attrs, :client) || insert_client()

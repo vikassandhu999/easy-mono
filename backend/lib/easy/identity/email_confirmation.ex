@@ -11,15 +11,16 @@ defmodule Easy.Identity.EmailConfirmation do
     Repo.transaction(fn ->
       with {:ok, token} <- verify_confirmation_hash(token_hash),
            {:ok, user} <- Users.confirm_user_email(token.user),
-           {:ok, _} <- OneTimeTokens.delete(token) do
-        session_attrs = %{
-          ip: opts.ip || "",
-          user_agent: opts.user_agent || "",
-          role: :guest
-        }
-
-        session = UserSessions.create_session!(user, session_attrs)
-
+           {:ok, _} <- OneTimeTokens.delete(token),
+           {:ok, session} <-
+             UserSessions.create_session(
+               user,
+               nil,
+               :guest,
+               nil,
+               false,
+               %{ip: opts.ip || "", user_agent: opts.user_agent || ""}
+             ) do
         AuthTokens.build(user, session)
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -29,7 +30,7 @@ defmodule Easy.Identity.EmailConfirmation do
 
   defp verify_confirmation_hash(token_hash) do
     with {:ok, token} <- OneTimeTokens.get_by_hash(token_hash, :email_confirmation),
-         false <- User.is_confirmation_expired?(token.user) do
+         false <- User.confirmation_expired?(token.user) do
       {:ok, token}
     else
       {:error, :token_not_found} -> {:error, :token_invalid}

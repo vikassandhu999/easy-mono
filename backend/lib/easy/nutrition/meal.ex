@@ -58,9 +58,9 @@ defmodule Easy.Nutrition.Meal do
     from(m in query, where: m.business_id == ^business_id)
   end
 
-  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def by_position(query \\ __MODULE__) do
-    from(m in query, order_by: [asc: m.inserted_at])
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__) do
+    from(m in query, order_by: [asc: m.inserted_at, asc: m.id])
   end
 
   @spec include_items(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

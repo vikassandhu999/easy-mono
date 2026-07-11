@@ -3,10 +3,11 @@ defmodule EasyWeb.Clients.WeightEntryController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.WeightEntries
-  alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, WeightEntryListResponse, WeightEntryRequest, WeightEntryResponse}
+  alias OpenApiSpex.Operation
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create, :delete]
 
   tags ["client weight entries"]
 

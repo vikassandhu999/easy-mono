@@ -3,6 +3,7 @@ defmodule EasyWeb.AuthController do
   alias Easy.Coaches
   alias Easy.Identity
   alias Easy.Identity.Invitations
+  alias Easy.Identity.OneTimeTokens
   alias Easy.Utils
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
@@ -27,6 +28,19 @@ defmodule EasyWeb.AuthController do
   }
 
   @allowed_roles ["owner", "coach", "client", "guest"]
+
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true]
+       when action in [
+              :signup,
+              :accept_invite,
+              :accept_invite_verify,
+              :trainer_accept_invite,
+              :trainer_accept_invite_verify,
+              :otp,
+              :verify,
+              :token
+            ]
 
   tags ["auth"]
 
@@ -72,9 +86,9 @@ defmodule EasyWeb.AuthController do
     responses: [
       ok: {"Auth token", "application/json", AuthTokenResponse},
       conflict: {"Already active elsewhere", "application/json", ErrorResponse},
+      bad_request: {"Invalid OTP", "application/json", ErrorResponse},
       gone: {"Invitation or OTP expired", "application/json", ErrorResponse},
       not_found: {"Invitation not found", "application/json", ErrorResponse},
-      unauthorized: {"Invalid OTP", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
@@ -111,9 +125,9 @@ defmodule EasyWeb.AuthController do
     responses: [
       ok: {"Auth token", "application/json", AuthTokenResponse},
       conflict: {"Already a coach elsewhere", "application/json", ErrorResponse},
+      bad_request: {"Invalid OTP", "application/json", ErrorResponse},
       gone: {"Invitation or OTP expired", "application/json", ErrorResponse},
       not_found: {"Invitation not found", "application/json", ErrorResponse},
-      unauthorized: {"Invalid OTP", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
@@ -135,8 +149,8 @@ defmodule EasyWeb.AuthController do
     request_body: {"Verify request", "application/json", VerifyRequest, required: true},
     responses: [
       ok: {"Auth token", "application/json", AuthTokenResponse},
+      bad_request: {"Invalid token or OTP", "application/json", ErrorResponse},
       gone: {"Token expired", "application/json", ErrorResponse},
-      unauthorized: {"Invalid token or OTP", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
@@ -152,7 +166,9 @@ defmodule EasyWeb.AuthController do
     ]
 
   @spec signup(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def signup(conn, params) do
+  def signup(conn, _params) do
+    params = stringify_keys(conn.body_params)
+
     with {:ok, user} <- Easy.Identity.signup(params) do
       conn
       |> put_status(201)
@@ -167,7 +183,9 @@ defmodule EasyWeb.AuthController do
   end
 
   @spec accept_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def accept_invite(conn, %{"invitation_token" => _, "email" => _} = params) do
+  def accept_invite(conn, _params) do
+    params = stringify_keys(conn.body_params)
+
     with {:ok, :otp_sent} <- Identity.accept_invite(params) do
       conn
       |> put_status(200)
@@ -176,10 +194,8 @@ defmodule EasyWeb.AuthController do
   end
 
   @spec accept_invite_verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def accept_invite_verify(
-        conn,
-        %{"invitation_token" => _, "email" => _, "otp" => _} = params
-      ) do
+  def accept_invite_verify(conn, _params) do
+    params = stringify_keys(conn.body_params)
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
@@ -206,7 +222,9 @@ defmodule EasyWeb.AuthController do
   end
 
   @spec trainer_accept_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def trainer_accept_invite(conn, %{"invitation_token" => _, "email" => _} = params) do
+  def trainer_accept_invite(conn, _params) do
+    params = stringify_keys(conn.body_params)
+
     with {:ok, :otp_sent} <- Invitations.accept_trainer_invite(params) do
       conn
       |> put_status(200)
@@ -215,10 +233,8 @@ defmodule EasyWeb.AuthController do
   end
 
   @spec trainer_accept_invite_verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def trainer_accept_invite_verify(
-        conn,
-        %{"invitation_token" => _, "email" => _, "otp" => _} = params
-      ) do
+  def trainer_accept_invite_verify(conn, _params) do
+    params = stringify_keys(conn.body_params)
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
@@ -231,54 +247,41 @@ defmodule EasyWeb.AuthController do
   end
 
   @spec verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def verify(conn, %{"token" => token_hash}) do
-    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
-    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
-
-    with {:ok, token} <-
-           Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
-      conn
-      |> put_status(200)
-      |> json(token)
-    else
-      {:error, :token_invalid} ->
-        {:error,
-         Easy.Error.new(
-           "token_invalid",
-           "The provided token is invalid, please check and try again"
-         )}
-
-      {:error, :token_expired} ->
-        {:error,
-         Easy.Error.new(
-           "token_expired",
-           "The provided token has expired, please request a new one"
-         )}
+  def verify(conn, _params) do
+    case stringify_keys(conn.body_params) do
+      %{"token" => token_hash} -> verify_token(conn, token_hash)
+      %{"email" => email, "otp" => otp} -> verify_otp(conn, email, otp)
     end
   end
 
-  def verify(conn, %{"email" => email, "otp" => otp}) do
+  defp verify_token(conn, token_hash) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
-    token_hash = Easy.Identity.OneTimeTokens.generate_token_hash(email <> otp)
+    case Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
+      {:ok, token} -> conn |> put_status(200) |> json(token)
+      {:error, :token_invalid} -> {:error, :token_invalid}
+      {:error, :token_expired} -> {:error, :token_expired}
+    end
+  end
 
-    with {:ok, token} <-
-           Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
-      conn
-      |> put_status(200)
-      |> json(token)
-    else
-      {:error, :token_invalid} ->
-        {:error, Easy.Error.new("otp_invalid", "Invalid OTP, please check and try again")}
+  defp verify_otp(conn, email, otp) do
+    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
+    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
-      {:error, :token_expired} ->
-        {:error, Easy.Error.new("otp_expired", "OTP has expired, please request a new one")}
+    token_hash = OneTimeTokens.generate_token_hash(email <> otp)
+
+    case Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
+      {:ok, token} -> conn |> put_status(200) |> json(token)
+      {:error, :token_invalid} -> {:error, :invalid_otp}
+      {:error, :token_expired} -> {:error, :otp_expired}
     end
   end
 
   @spec otp(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def otp(conn, %{"email" => email, "type" => type}) do
+  def otp(conn, _params) do
+    %{"email" => email, "type" => type} = stringify_keys(conn.body_params)
+
     with {:ok, _} <- Easy.Identity.send_otp(email, type) do
       conn
       |> put_status(200)
@@ -287,13 +290,17 @@ defmodule EasyWeb.AuthController do
   end
 
   @spec token(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def token(
-        conn,
-        %{
-          "grant_type" => "refresh_token",
-          "refresh_token" => refresh_token
-        } = params
-      ) do
+  def token(conn, _params) do
+    case stringify_keys(conn.body_params) do
+      %{"grant_type" => "refresh_token", "refresh_token" => refresh_token} = params ->
+        refresh_token(conn, refresh_token, params)
+
+      %{"grant_type" => "otp", "email" => email, "otp" => otp, "role" => role} ->
+        otp_token(conn, email, otp, role)
+    end
+  end
+
+  defp refresh_token(conn, refresh_token, params) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
@@ -311,11 +318,11 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  def token(conn, %{"grant_type" => "otp", "email" => email, "otp" => otp, "role" => role}) do
+  defp otp_token(conn, email, otp, role) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
-    token_hash = Easy.Identity.OneTimeTokens.generate_token_hash(email <> otp)
+    token_hash = OneTimeTokens.generate_token_hash(email <> otp)
 
     opts = %{
       token_hash: token_hash,
@@ -329,5 +336,9 @@ defmodule EasyWeb.AuthController do
       |> put_status(200)
       |> json(auth_token)
     end
+  end
+
+  defp stringify_keys(params) do
+    Map.new(params, fn {key, value} -> {to_string(key), value} end)
   end
 end

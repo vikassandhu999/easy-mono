@@ -38,8 +38,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.FoodLogEntry do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "FoodLogEntry",
@@ -73,8 +73,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.MealLog do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{FoodLogEntry, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "MealLog",
@@ -109,8 +109,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.MealLogListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{MealLog, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: MealLog}, "MealLogListResponse"))
 end
@@ -126,8 +126,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.FoodLogEntryListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{FoodLogEntry, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: FoodLogEntry}, "FoodLogEntryListResponse"))
 end
@@ -179,7 +179,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.WeightEntryResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{WeightEntry, Shared}
+  alias EasyWeb.OpenApi.Schemas.{Shared, WeightEntry}
 
   OpenApiSpex.schema(Shared.data_response(WeightEntry, "WeightEntryResponse"))
 end
@@ -187,8 +187,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.WeightEntryListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.WeightEntry
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "WeightEntryListResponse",

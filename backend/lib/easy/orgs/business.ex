@@ -24,8 +24,8 @@ defmodule Easy.Orgs.Business do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(map(), User.t()) :: Ecto.Changeset.t()
-  def insert_changeset(attrs, user) do
+  @spec insert_changeset(User.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(user, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:name, :handle, :about])
     |> validate_required([:name, :handle])

@@ -2,6 +2,7 @@ defmodule Easy.Application do
   use Application
 
   @impl true
+  @spec start(Application.start_type(), term()) :: Supervisor.on_start()
   def start(_type, _args) do
     children =
       [
@@ -15,6 +16,7 @@ defmodule Easy.Application do
   end
 
   @impl true
+  @spec config_change(keyword(), keyword(), [atom()]) :: :ok
   def config_change(changed, _new, removed) do
     EasyWeb.Endpoint.config_change(changed, removed)
     :ok

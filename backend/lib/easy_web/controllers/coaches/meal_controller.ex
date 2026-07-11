@@ -12,7 +12,8 @@ defmodule EasyWeb.Coaches.MealController do
     NutritionMealResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create, :update, :delete]
 
   tags ["coach meals"]
 
@@ -112,7 +113,9 @@ defmodule EasyWeb.Coaches.MealController do
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => meal_id}) do
+  def delete(conn, _params) do
+    meal_id = conn.path_params["id"]
+
     with {:ok, _deleted} <- Meals.delete_meal(conn.assigns.ctx, meal_id) do
       send_resp(conn, :no_content, "")
     end

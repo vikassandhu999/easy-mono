@@ -88,7 +88,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
 
   @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
   def by_position(query \\ __MODULE__) do
-    from(e in query, order_by: [asc: e.planned_item_index, asc: e.inserted_at])
+    from(e in query, order_by: [asc: e.planned_item_index, asc: e.inserted_at, asc: e.id])
   end
 
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()

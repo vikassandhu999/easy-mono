@@ -1,6 +1,7 @@
 defmodule Easy.Training.TrainingWorkout do
   use Ecto.Schema
   alias Easy.Orgs
+  alias Easy.Training.TrainingWorkoutExercise
   import Ecto.Changeset
   import Ecto.Query
 
@@ -41,16 +42,16 @@ defmodule Easy.Training.TrainingWorkout do
   def for_business(query \\ __MODULE__, business_id),
     do: from(w in query, where: w.business_id == ^business_id)
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__), do: from(w in query, order_by: [asc: w.inserted_at])
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__), do: from(w in query, order_by: [asc: w.inserted_at, asc: w.id])
 
   @spec include_exercises(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_exercises(query, business_id) do
     element_query =
-      Easy.Training.TrainingWorkoutExercise
-      |> Easy.Training.TrainingWorkoutExercise.for_business(business_id)
-      |> Easy.Training.TrainingWorkoutExercise.ordered()
-      |> Easy.Training.TrainingWorkoutExercise.include_exercise(business_id)
+      TrainingWorkoutExercise
+      |> TrainingWorkoutExercise.for_business(business_id)
+      |> TrainingWorkoutExercise.by_position()
+      |> TrainingWorkoutExercise.include_exercise(business_id)
 
     from(w in query, preload: [workout_elements: ^element_query])
   end

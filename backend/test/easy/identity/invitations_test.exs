@@ -42,13 +42,11 @@ defmodule Easy.Identity.InvitationsTest do
     end
 
     test "returns an error for an invalid invitation token" do
-      assert {:error, error} =
+      assert {:error, :invitation_invalid} =
                Invitations.accept_trainer_invite(%{
                  "invitation_token" => "does-not-exist",
                  "email" => "nope@test.com"
                })
-
-      assert error.code == :invitation_invalid
     end
   end
 
@@ -93,7 +91,7 @@ defmodule Easy.Identity.InvitationsTest do
                  "email" => coach.email
                })
 
-      assert {:error, error} =
+      assert {:error, :invalid_otp} =
                Invitations.verify_accept_trainer_invite(
                  %{
                    "invitation_token" => coach.invitation_token,
@@ -102,8 +100,6 @@ defmodule Easy.Identity.InvitationsTest do
                  },
                  @session_opts
                )
-
-      assert error.code == :invalid_otp
     end
 
     test "rejects an expired OTP" do
@@ -119,7 +115,7 @@ defmodule Easy.Identity.InvitationsTest do
       from(t in OneTimeToken, where: t.token_type == ^:invitation_acceptance)
       |> Repo.update_all(set: [inserted_at: NaiveDateTime.add(NaiveDateTime.utc_now(), -700, :second)])
 
-      assert {:error, error} =
+      assert {:error, :otp_expired} =
                Invitations.verify_accept_trainer_invite(
                  %{
                    "invitation_token" => coach.invitation_token,
@@ -128,8 +124,6 @@ defmodule Easy.Identity.InvitationsTest do
                  },
                  @session_opts
                )
-
-      assert error.code == :otp_expired
     end
   end
 end

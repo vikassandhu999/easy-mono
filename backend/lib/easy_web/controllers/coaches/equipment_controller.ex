@@ -3,8 +3,8 @@ defmodule EasyWeb.Coaches.EquipmentController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Exercises
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingEquipmentListResponse}
   alias OpenApiSpex.Operation
-  alias EasyWeb.OpenApi.Schemas.{TrainingEquipmentListResponse, ErrorResponse}
 
   tags ["coach equipment"]
 

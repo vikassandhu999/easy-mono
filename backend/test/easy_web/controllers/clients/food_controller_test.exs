@@ -28,7 +28,7 @@ defmodule EasyWeb.Clients.FoodControllerTest do
 
       conn = get(ctx.conn, "/v1/client/nutrition-foods", %{"search" => "chicken"})
       assert %{"data" => data} = json_response(conn, 200)
-      assert length(data) >= 1
+      assert data != []
       assert Enum.any?(data, &(&1["name"] == "Chicken Breast"))
     end
 

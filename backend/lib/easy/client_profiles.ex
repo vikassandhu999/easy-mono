@@ -13,25 +13,32 @@ defmodule Easy.ClientProfiles do
 
   import Ecto.Query
 
+  @spec get_or_create_client_profile(Ctx.t()) ::
+          {:ok, ClientProfile.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def get_or_create_client_profile(%Ctx{} = ctx) do
+    with {:ok, client} <- get_client(ctx) do
+      get_or_create_profile(ctx, client.id)
+    end
+  end
+
   @spec get_or_create_profile(Ctx.t(), String.t()) ::
           {:ok, ClientProfile.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def get_or_create_profile(%Ctx{} = ctx, client_id) do
     with {:ok, client} <- fetch_client(ctx.business_id, client_id) do
       case fetch_profile(ctx.business_id, client.id) do
         nil ->
-          case ctx.business_id |> ClientProfile.insert_changeset(client.id) |> Repo.insert() do
-            {:ok, profile} ->
-              {:ok, profile}
-
-            # ponytail: a concurrent first-touch won the unique-constraint race; the row
-            # exists now, so honour the get-or-create contract by returning it.
-            {:error, %Ecto.Changeset{}} ->
-              ok_or_not_found(fetch_profile(ctx.business_id, client.id))
-          end
+          insert_profile(ctx.business_id, client.id)
 
         %ClientProfile{} = profile ->
           {:ok, profile}
       end
+    end
+  end
+
+  defp insert_profile(business_id, client_id) do
+    case business_id |> ClientProfile.insert_changeset(client_id) |> Repo.insert() do
+      {:ok, profile} -> {:ok, profile}
+      {:error, %Ecto.Changeset{}} -> ok_or_not_found(fetch_profile(business_id, client_id))
     end
   end
 
@@ -200,11 +207,11 @@ defmodule Easy.ClientProfiles do
   end
 
   @spec delete_form_template(Ctx.t(), String.t()) ::
-          {:ok, FormTemplate.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
+          {:ok, FormTemplate.t()} | {:error, :not_found | :form_template_assigned | Ecto.Changeset.t()}
   def delete_form_template(%Ctx{} = ctx, template_id) do
     with {:ok, template} <- get_form_template(ctx, template_id) do
       if form_template_has_assignments?(ctx.business_id, template.id) do
-        {:error, Easy.Error.unprocessable(%{fields: %{form_template_id: ["has assignments"]}})}
+        {:error, :form_template_assigned}
       else
         # no_assoc_constraint backstops the check above against a TOCTOU race: the FK is
         # :restrict, so an assignment inserted after the check makes Repo.delete return an
@@ -323,54 +330,67 @@ defmodule Easy.ClientProfiles do
 
   @spec submit_client_form_assignment(Ctx.t(), String.t(), map()) ::
           {:ok, FormSubmission.t()}
-          | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
+          | {:error,
+             :not_found
+             | :invalid_answers
+             | :answers_required
+             | :assignment_not_submittable
+             | :invalid_profile_mapping
+             | Ecto.Changeset.t()}
   def submit_client_form_assignment(%Ctx{} = ctx, assignment_id, attrs) do
     with {:ok, answers} <- answers_from_attrs(attrs),
          {:ok, client} <- get_client(ctx),
          {:ok, assignment} <- get_client_form_assignment(ctx, assignment_id),
          :ok <- ensure_assignment_submittable(assignment) do
-      Repo.transaction(fn ->
-        template = assignment.form_template
-        submitted_at = DateTime.utc_now(:second)
-
-        submission_attrs = %{
-          "question_snapshot" => template.sections,
-          "answers" => answers,
-          "submitted_at" => submitted_at
-        }
-
-        submission =
-          case FormSubmission.insert_changeset(
-                 ctx.business_id,
-                 client.id,
-                 assignment.id,
-                 :client,
-                 client.id,
-                 submission_attrs
-               )
-               |> Repo.insert() do
-            {:ok, submission} -> submission
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        apply_profile_mappings!(ctx, client.id, template.sections, answers, submission)
-
-        case assignment
-             |> FormAssignment.complete_changeset(submitted_at)
-             |> Repo.update() do
-          {:ok, _assignment} ->
-            if assignment.purpose == :intake do
-              sync_intake_completed!(ctx, client.id, submitted_at)
-            end
-
-            submission
-
-          {:error, reason} ->
-            Repo.rollback(reason)
-        end
-      end)
+      Repo.transaction(fn -> submit_assignment!(ctx, client, assignment, answers) end)
     end
   end
+
+  defp submit_assignment!(ctx, client, assignment, answers) do
+    template = assignment.form_template
+    submitted_at = DateTime.utc_now(:second)
+
+    attrs = %{
+      "question_snapshot" => template.sections,
+      "answers" => answers,
+      "submitted_at" => submitted_at
+    }
+
+    submission = insert_submission!(ctx.business_id, client.id, assignment.id, attrs)
+    apply_profile_mappings!(ctx, client.id, template.sections, answers, submission)
+    complete_assignment!(ctx, client.id, assignment, submission, submitted_at)
+  end
+
+  defp insert_submission!(business_id, client_id, assignment_id, attrs) do
+    case FormSubmission.insert_changeset(
+           business_id,
+           client_id,
+           assignment_id,
+           :client,
+           client_id,
+           attrs
+         )
+         |> Repo.insert() do
+      {:ok, submission} -> submission
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp complete_assignment!(ctx, client_id, assignment, submission, submitted_at) do
+    case assignment |> FormAssignment.complete_changeset(submitted_at) |> Repo.update() do
+      {:ok, _assignment} ->
+        maybe_sync_intake!(ctx, client_id, assignment.purpose, submitted_at)
+        submission
+
+      {:error, reason} ->
+        Repo.rollback(reason)
+    end
+  end
+
+  defp maybe_sync_intake!(ctx, client_id, :intake, submitted_at),
+    do: sync_intake_completed!(ctx, client_id, submitted_at)
+
+  defp maybe_sync_intake!(_ctx, _client_id, _purpose, _submitted_at), do: :ok
 
   defp sync_intake_completed!(ctx, client_id, submitted_at) do
     case get_or_create_profile(ctx, client_id) do
@@ -392,31 +412,27 @@ defmodule Easy.ClientProfiles do
   # is skipped rather than crashing the submission transaction (which would surface as a 500).
   # New templates can't reach here malformed — FormTemplate changesets validate structure.
   defp apply_profile_mappings!(ctx, client_id, sections, answers, submission) do
-    sections
-    |> List.wrap()
-    |> Enum.each(fn
-      %{} = section ->
-        section
-        |> Map.get("questions", [])
-        |> List.wrap()
-        |> Enum.each(fn
-          %{} = question ->
-            mapping = Map.get(question, "profile_mapping")
-            question_id = Map.get(question, "id")
-            answer = Map.get(answers, question_id)
-
-            if mapping && not is_nil(answer) do
-              apply_profile_mapping!(ctx, client_id, mapping, answer, submission)
-            end
-
-          _other ->
-            :ok
-        end)
-
-      _other ->
-        :ok
-    end)
+    sections |> List.wrap() |> Enum.each(&apply_section_mappings!(&1, ctx, client_id, answers, submission))
   end
+
+  defp apply_section_mappings!(%{} = section, ctx, client_id, answers, submission) do
+    section
+    |> Map.get("questions", [])
+    |> List.wrap()
+    |> Enum.each(&apply_question_mapping!(&1, ctx, client_id, answers, submission))
+  end
+
+  defp apply_section_mappings!(_section, _ctx, _client_id, _answers, _submission), do: :ok
+
+  defp apply_question_mapping!(%{} = question, ctx, client_id, answers, submission) do
+    mapping = Map.get(question, "profile_mapping")
+    answer = Map.get(answers, Map.get(question, "id"))
+
+    if mapping && not is_nil(answer),
+      do: apply_profile_mapping!(ctx, client_id, mapping, answer, submission)
+  end
+
+  defp apply_question_mapping!(_question, _ctx, _client_id, _answers, _submission), do: :ok
 
   defp apply_profile_mapping!(
          ctx,
@@ -475,11 +491,11 @@ defmodule Easy.ClientProfiles do
   defp answers_from_attrs(%{answers: answers}) when is_map(answers), do: {:ok, answers}
 
   defp answers_from_attrs(%{answers: _answers}) do
-    {:error, Easy.Error.unprocessable(%{fields: %{answers: ["is invalid"]}})}
+    {:error, :invalid_answers}
   end
 
   defp answers_from_attrs(_attrs) do
-    {:error, Easy.Error.unprocessable(%{fields: %{answers: ["can't be blank"]}})}
+    {:error, :answers_required}
   end
 
   defp ensure_assignment_submittable(%FormAssignment{status: status}) when status in [:assigned, :in_progress] do
@@ -487,11 +503,11 @@ defmodule Easy.ClientProfiles do
   end
 
   defp ensure_assignment_submittable(_assignment) do
-    {:error, Easy.Error.unprocessable(%{fields: %{status: ["cannot be submitted"]}})}
+    {:error, :assignment_not_submittable}
   end
 
   defp invalid_profile_mapping_error do
-    Easy.Error.unprocessable(%{fields: %{profile_mapping: ["is invalid"]}})
+    :invalid_profile_mapping
   end
 
   defp get_client(%Ctx{} = ctx) do

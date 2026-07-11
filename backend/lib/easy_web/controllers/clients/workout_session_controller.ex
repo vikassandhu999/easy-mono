@@ -3,15 +3,16 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Sessions
-  alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    TrainingSessionUpdateRequest,
     TrainingSessionListResponse,
     TrainingSessionRequest,
-    TrainingSessionResponse
+    TrainingSessionResponse,
+    TrainingSessionUpdateRequest
   }
+
+  alias OpenApiSpex.Operation
 
   plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
 
@@ -79,7 +80,10 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    with {:ok, session} <- Sessions.create_client_session(conn.assigns.ctx, conn.body_params) do
+    workout_id = conn.body_params[:training_workout_id]
+    attrs = Map.delete(conn.body_params, :training_workout_id)
+
+    with {:ok, session} <- Sessions.create_client_session(conn.assigns.ctx, workout_id, attrs) do
       conn
       |> put_status(:created)
       |> render(:show, session: session)

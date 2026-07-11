@@ -37,7 +37,7 @@ defmodule Easy.Meals do
          count: Repo.aggregate(base, :count, :id),
          meals:
            base
-           |> Meal.by_position()
+           |> Meal.oldest()
            |> Easy.Utils.paginate(offset, limit)
            |> preload(meal_items: ^MealItem.include_food_and_recipe(MealItem, ctx.business_id))
            |> Repo.all()
@@ -82,7 +82,7 @@ defmodule Easy.Meals do
   def create_meal_item(%Ctx{} = ctx, meal_id, attrs) do
     with {:ok, meal} <- get_meal(ctx, meal_id),
          {:ok, :valid} <- ensure_food_or_recipe(attrs, ctx.business_id) do
-      changeset = MealItem.insert_changeset(meal.id, ctx.business_id, attrs)
+      changeset = MealItem.insert_changeset(ctx.business_id, meal.id, attrs)
       position_given? = Map.has_key?(attrs, :position)
 
       changeset =

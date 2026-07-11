@@ -4,9 +4,8 @@ defmodule EasyWeb.Coaches.ClientPlanController do
 
   alias Easy.Nutrition.Plan
   alias Easy.NutritionPlans, as: NutritionPlans
-  alias Easy.TrainingPlans, as: TrainingPlans
   alias Easy.Training.TrainingPlan
-  alias OpenApiSpex.{Operation, Schema}
+  alias Easy.TrainingPlans, as: TrainingPlans
 
   alias EasyWeb.Coaches.{NutritionPlanJSON, TrainingPlanJSON}
 
@@ -15,6 +14,8 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     ErrorResponse,
     NutritionPlanListResponse
   }
+
+  alias OpenApiSpex.{Operation, Schema}
 
   tags ["coach client plans"]
 

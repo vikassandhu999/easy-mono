@@ -1,5 +1,5 @@
 defmodule EasyWeb.Coaches.WorkoutJSON do
-  alias Easy.Training.{TrainingExercise, PlannedSet, TrainingWorkout, TrainingWorkoutExercise}
+  alias Easy.Training.{PlannedSet, TrainingExercise, TrainingWorkout, TrainingWorkoutExercise}
 
   @spec show(map()) :: map()
   def show(%{workout: workout}) do

@@ -1,38 +1,43 @@
 defmodule Easy.Orgs do
   import Ecto.Query
 
-  alias Easy.Ctx
-  alias Easy.Orgs.Business
   alias Easy.Coaches
-  alias Easy.Identity.User
+  alias Easy.Ctx
+  alias Easy.Identity.Users
+  alias Easy.Orgs.Business
   alias Easy.Repo
-  alias Easy.Businesses
-
-  # TODO: Add subscriptions and billing later.
 
   # pre-auth onboarding: no ctx yet — runs during signup before a tenant ctx is established
-  @spec create_business(User.t(), map()) :: {:ok, Business.t()} | {:error, Ecto.Changeset.t()}
-  def create_business(user, attrs) do
-    Repo.transaction(fn ->
-      with {:ok, business} <- Businesses.create(user, attrs),
-           {:ok, _} <- Coaches.create(user, business) do
-        business
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+  @spec create_business(Ctx.t(), map()) ::
+          {:ok, Business.t()} | {:error, :user_not_found | Ecto.Changeset.t()}
+  def create_business(%Ctx{} = ctx, attrs) do
+    with {:ok, user} <- Users.get_by_id(ctx.user_id) do
+      Repo.transaction(fn -> create_business_transaction(user, attrs) end)
+    end
   end
 
-  @spec get_business(Ctx.t()) :: {:ok, Business.t()} | {:error, Easy.Error.t()}
+  defp create_business_transaction(user, attrs) do
+    with {:ok, business} <- user |> Business.insert_changeset(attrs) |> Repo.insert(),
+         {:ok, _} <- Coaches.create(user, business) do
+      business
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  @spec get_business(Ctx.t()) :: {:ok, Business.t()} | {:error, :not_found}
   def get_business(%Ctx{} = ctx) do
-    Businesses.get_one(ctx.business_id)
+    ctx.business_id
+    |> then(&Repo.get(Business, &1))
+    |> ok_or_not_found()
   end
 
   @spec update_business(Ctx.t(), map()) :: {:ok, Business.t()} | {:error, any()}
   def update_business(%Ctx{} = ctx, attrs) when is_map(attrs) do
-    with {:ok, business} <- Businesses.get_one(ctx.business_id),
-         {:ok, updated_business} <- Businesses.update(business, attrs) do
-      {:ok, updated_business}
+    with {:ok, business} <- get_business(ctx) do
+      business
+      |> Business.update_changeset(attrs)
+      |> Repo.update()
     end
   end
 
@@ -95,4 +100,7 @@ defmodule Easy.Orgs do
 
   defp dashboard_setup_hidden_at(nil), do: nil
   defp dashboard_setup_hidden_at(_reason), do: DateTime.utc_now(:second)
+
+  defp ok_or_not_found(nil), do: {:error, :not_found}
+  defp ok_or_not_found(value), do: {:ok, value}
 end

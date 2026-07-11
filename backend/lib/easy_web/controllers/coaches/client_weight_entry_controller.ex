@@ -3,8 +3,8 @@ defmodule EasyWeb.Coaches.ClientWeightEntryController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.WeightEntries
-  alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, WeightEntryListResponse}
+  alias OpenApiSpex.Operation
 
   tags ["coach client weight entries"]
 

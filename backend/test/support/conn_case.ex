@@ -1,6 +1,16 @@
 defmodule Easy.ConnCase do
   use ExUnit.CaseTemplate
 
+  alias Easy.Clients.Client
+  alias Easy.DataCase
+  alias Easy.Identity.Token
+  alias Easy.Orgs.Business
+  alias Easy.Orgs.Coach
+  alias Easy.Repo
+  alias Ecto.Adapters.SQL
+  alias Phoenix.ConnTest
+  alias Plug.Conn
+
   using do
     quote do
       @endpoint EasyWeb.Endpoint
@@ -15,18 +25,23 @@ defmodule Easy.ConnCase do
   end
 
   setup tags do
-    Easy.DataCase.setup_sandbox(tags)
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    DataCase.setup_sandbox(tags)
+
+    conn =
+      ConnTest.build_conn()
+      |> Conn.put_req_header("content-type", "application/json")
+
+    {:ok, conn: conn}
   end
 
-  @spec authenticate_coach(Plug.Conn.t(), Easy.Orgs.Coach.t()) :: Plug.Conn.t()
+  @spec authenticate_coach(Conn.t(), Coach.t()) :: Conn.t()
   def authenticate_coach(conn, coach) do
-    business = Easy.Repo.get!(Easy.Orgs.Business, coach.business_id)
+    business = Repo.get!(Business, coach.business_id)
     is_owner = business.owner_id == coach.user_id
 
     token =
       Joken.generate_and_sign!(
-        Easy.Identity.Token.token_config(),
+        Token.token_config(),
         %{
           user_id: coach.user_id,
           session_id: Ecto.UUID.generate(),
@@ -35,27 +50,27 @@ defmodule Easy.ConnCase do
           coach_id: coach.id,
           is_owner: is_owner
         },
-        Easy.Identity.Token.signer()
+        Token.signer()
       )
 
-    Plug.Conn.put_req_header(conn, "authorization", "Bearer #{token}")
+    Conn.put_req_header(conn, "authorization", "Bearer #{token}")
   end
 
-  @spec authenticate_client(Plug.Conn.t(), Easy.Clients.Client.t()) :: Plug.Conn.t()
+  @spec authenticate_client(Conn.t(), Client.t()) :: Conn.t()
   def authenticate_client(conn, client) do
     token =
       Joken.generate_and_sign!(
-        Easy.Identity.Token.token_config(),
+        Token.token_config(),
         %{
           user_id: client.user_id,
           session_id: Ecto.UUID.generate(),
           role: "client",
           business_id: client.business_id
         },
-        Easy.Identity.Token.signer()
+        Token.signer()
       )
 
-    Plug.Conn.put_req_header(conn, "authorization", "Bearer #{token}")
+    Conn.put_req_header(conn, "authorization", "Bearer #{token}")
   end
 
   @spec training_tables_ready?() :: boolean()
@@ -68,8 +83,8 @@ defmodule Easy.ConnCase do
       "workout_sessions"
     ]
 
-    case Ecto.Adapters.SQL.query(
-           Easy.Repo,
+    case SQL.query(
+           Repo,
            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
            []
          ) do

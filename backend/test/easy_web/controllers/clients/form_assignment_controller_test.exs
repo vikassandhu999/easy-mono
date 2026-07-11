@@ -88,8 +88,8 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       assert Repo.get!(FormAssignment, assignment.id).status == :completed
 
       value =
-        Easy.ClientProfiles.ProfileFieldValue
-        |> Easy.ClientProfiles.ProfileFieldValue.for_client(coach.business_id, client.id)
+        ProfileFieldValue
+        |> ProfileFieldValue.for_client(coach.business_id, client.id)
         |> Easy.Repo.one!()
 
       assert value.profile_field_definition_id == field.id
@@ -227,3 +227,5 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
     end
   end
 end
+
+alias Easy.ClientProfiles.ProfileFieldValue

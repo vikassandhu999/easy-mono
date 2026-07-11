@@ -40,8 +40,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSet do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanExercise}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "TrainingPerformedSet",
@@ -132,8 +132,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingSession do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPerformedSet}
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{TrainingPerformedSet, Shared}
 
   OpenApiSpex.schema(%{
     title: "TrainingSession",
@@ -180,7 +180,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{TrainingPerformedSet, Shared}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPerformedSet}
 
   OpenApiSpex.schema(Shared.data_response(TrainingPerformedSet, "TrainingPerformedSetResponse"))
 end

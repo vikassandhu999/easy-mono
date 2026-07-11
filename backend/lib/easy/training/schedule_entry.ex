@@ -1,6 +1,7 @@
 defmodule Easy.Training.ScheduleEntry do
   use Ecto.Schema
   alias Easy.Orgs
+  alias Easy.Training.TrainingWorkout
   import Ecto.Changeset
   import Ecto.Query
 
@@ -24,23 +25,25 @@ defmodule Easy.Training.ScheduleEntry do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, creator_id, plan_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, creator_id, plan_id, workout_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:day_of_week, :training_workout_id])
+    |> cast(attrs, [:day_of_week])
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
     |> put_change(:training_plan_id, plan_id)
+    |> put_change(:training_workout_id, workout_id)
     |> validate_required([:day_of_week, :training_workout_id, :training_plan_id, :business_id])
     |> unique_constraint([:training_plan_id, :day_of_week],
       name: :training_schedule_entries_training_plan_id_day_of_week_index
     )
   end
 
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(entry, attrs) do
+  @spec update_changeset(t(), String.t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(entry, workout_id, attrs) do
     entry
-    |> cast(attrs, [:day_of_week, :training_workout_id])
+    |> cast(attrs, [:day_of_week])
+    |> put_change(:training_workout_id, workout_id)
     |> unique_constraint([:training_plan_id, :day_of_week],
       name: :training_schedule_entries_training_plan_id_day_of_week_index
     )
@@ -57,6 +60,7 @@ defmodule Easy.Training.ScheduleEntry do
   @spec for_day(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
   def for_day(query \\ __MODULE__, day)
   def for_day(query, nil), do: query
+  def for_day(query, ""), do: query
 
   def for_day(query, day) when is_binary(day) do
     case Easy.Utils.safe_to_atom(day, Enum.map(@days, &Atom.to_string/1)) do
@@ -70,9 +74,9 @@ defmodule Easy.Training.ScheduleEntry do
   @spec include_workout(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_workout(query, business_id) do
     workout_query =
-      Easy.Training.TrainingWorkout
-      |> Easy.Training.TrainingWorkout.for_business(business_id)
-      |> Easy.Training.TrainingWorkout.include_exercises(business_id)
+      TrainingWorkout
+      |> TrainingWorkout.for_business(business_id)
+      |> TrainingWorkout.include_exercises(business_id)
 
     from(p in query, preload: [workout: ^workout_query])
   end

@@ -3,8 +3,8 @@ defmodule EasyWeb.Coaches.MealLogController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.MealLogs
-  alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, MealLogListResponse}
+  alias OpenApiSpex.Operation
 
   tags ["coach meal logs"]
 

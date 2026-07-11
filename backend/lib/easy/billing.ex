@@ -10,25 +10,23 @@ defmodule Easy.Billing do
 
   @used_statuses [:active, :pending]
 
-  @spec billing_for(Ecto.UUID.t()) :: BusinessBilling.t()
-  def billing_for(business_id) do
-    Repo.get_by(BusinessBilling, business_id: business_id) ||
-      create_default_billing(business_id)
-  end
-
-  # Console-only admin op for comping testing users extra free seats. No route/controller
-  # exposes this; every request path reads billing.free_seats unchanged, and no other write
-  # path touches free_seats, so the bump is durable. Idempotent — safe to re-run.
-  @spec grant_free_seats(Ecto.UUID.t(), non_neg_integer()) :: BusinessBilling.t()
-  def grant_free_seats(business_id, free_seats) do
-    business_id
+  # Console-only admin op. In IEx:
+  # Easy.Billing.grant_free_seats(Easy.Ctx.new("<business-id>", "<owner-user-id>"), 5)
+  @spec grant_free_seats(Ctx.t(), non_neg_integer()) ::
+          {:ok, BusinessBilling.t()} | {:error, Ecto.Changeset.t()}
+  def grant_free_seats(%Ctx{} = ctx, free_seats) do
+    ctx.business_id
     |> billing_for()
-    |> BusinessBilling.changeset(%{free_seats: free_seats})
-    |> Repo.update!()
+    |> BusinessBilling.update_changeset(%{free_seats: free_seats})
+    |> Repo.update()
   end
 
-  @spec seat_summary(Ctx.t()) :: map()
-  def seat_summary(%Ctx{business_id: business_id} = ctx) do
+  @spec get_billing(Ctx.t()) :: {:ok, map()}
+  def get_billing(%Ctx{} = ctx) do
+    {:ok, ctx |> seat_summary() |> Map.put(:recent_events, recent_events(ctx.business_id))}
+  end
+
+  defp seat_summary(%Ctx{business_id: business_id} = ctx) do
     billing = billing_for(business_id)
     used = used_seats(business_id)
     limit = billing.free_seats + billing.paid_seats
@@ -66,14 +64,27 @@ defmodule Easy.Billing do
   # pending -> active does not change used_seats (pending already counts),
   # so "no capacity at accept" means usage already exceeds the limit
   # (seats were reduced since the invite).
-  @spec over_capacity?(Ecto.UUID.t()) :: boolean()
-  def over_capacity?(business_id) do
+  @spec seat_status_for_invitation(Client.t()) :: {:ok, {:active | :inactive, nil | :awaiting_seat}}
+  def seat_status_for_invitation(%Client{business_id: business_id}) do
+    status =
+      if over_capacity?(business_id),
+        do: {:inactive, :awaiting_seat},
+        else: {:active, nil}
+
+    {:ok, status}
+  end
+
+  defp over_capacity?(business_id) do
     billing = billing_for(business_id)
     used_seats(business_id) > billing.free_seats + billing.paid_seats
   end
 
-  @spec activate_awaiting_clients(Ecto.UUID.t()) :: {:ok, non_neg_integer()}
-  def activate_awaiting_clients(business_id) do
+  @spec activate_awaiting_clients(Ctx.t()) :: {:ok, non_neg_integer()}
+  def activate_awaiting_clients(%Ctx{business_id: business_id}) do
+    activate_awaiting_clients_for_business(business_id)
+  end
+
+  defp activate_awaiting_clients_for_business(business_id) do
     billing = billing_for(business_id)
     available = billing.free_seats + billing.paid_seats - used_seats(business_id)
 
@@ -105,9 +116,8 @@ defmodule Easy.Billing do
     end
   end
 
-  @spec record_event(Ecto.UUID.t(), atom(), map()) :: Event.t()
-  def record_event(business_id, kind, attrs \\ %{}) do
-    Repo.insert!(%Event{
+  defp record_event(business_id, kind, attrs \\ %{}) do
+    Repo.insert(%Event{
       business_id: business_id,
       kind: kind,
       seat_delta: attrs[:seat_delta],
@@ -118,8 +128,7 @@ defmodule Easy.Billing do
     })
   end
 
-  @spec recent_events(Ctx.t()) :: [Event.t()]
-  def recent_events(%Ctx{business_id: business_id}) do
+  defp recent_events(business_id) do
     Repo.all(
       from e in Event,
         where: e.business_id == ^business_id,
@@ -160,7 +169,7 @@ defmodule Easy.Billing do
   end
 
   @spec sync_billing(Ctx.t()) ::
-          {:ok, map()} | {:error, :not_owner | :no_subscription | :razorpay_error}
+          {:ok, map()} | {:error, :not_owner | :no_subscription | :razorpay_error | Ecto.Changeset.t()}
   def sync_billing(%Ctx{business_id: business_id} = ctx) do
     with :ok <- ensure_owner(ctx) do
       billing = billing_for(business_id)
@@ -170,11 +179,15 @@ defmodule Easy.Billing do
           {:error, :no_subscription}
 
         subscription_id ->
-          with {:ok, subscription} <- Razorpay.get_subscription(subscription_id) do
-            sync_apply(subscription_id, subscription)
-            {:ok, seat_summary(ctx)}
-          end
+          sync_subscription(ctx, subscription_id)
       end
+    end
+  end
+
+  defp sync_subscription(ctx, subscription_id) do
+    with {:ok, subscription} <- Razorpay.get_subscription(subscription_id),
+         {:ok, _result} <- sync_apply(subscription_id, subscription) do
+      get_billing(ctx)
     end
   end
 
@@ -220,14 +233,14 @@ defmodule Easy.Billing do
   end
 
   defp create_checkout(ctx, billing, target_quantity) do
-    with {:ok, subscription} <- Razorpay.create_subscription(target_quantity) do
-      billing
-      |> BusinessBilling.changeset(%{
-        razorpay_subscription_id: subscription["id"],
-        razorpay_plan_id: subscription["plan_id"]
-      })
-      |> Repo.update!()
-
+    with {:ok, subscription} <- Razorpay.create_subscription(target_quantity),
+         {:ok, _billing} <-
+           billing
+           |> BusinessBilling.update_changeset(%{
+             razorpay_subscription_id: subscription["id"],
+             razorpay_plan_id: subscription["plan_id"]
+           })
+           |> Repo.update() do
       # paid_seats stays 0 until the webhook confirms payment
       {:ok,
        %{
@@ -239,36 +252,41 @@ defmodule Easy.Billing do
   end
 
   defp update_quantity(ctx, billing, subscription_id, target_quantity, seats_to_add) do
-    with {:ok, _} <- Razorpay.update_subscription_quantity(subscription_id, target_quantity) do
-      billing
-      |> BusinessBilling.changeset(%{paid_seats: target_quantity})
-      |> Repo.update!()
-
-      record_event(billing.business_id, :seats_added, %{seat_delta: seats_to_add})
-      activate_awaiting_clients(billing.business_id)
-
+    with {:ok, _} <- Razorpay.update_subscription_quantity(subscription_id, target_quantity),
+         {:ok, _billing} <-
+           billing
+           |> BusinessBilling.update_changeset(%{paid_seats: target_quantity})
+           |> Repo.update(),
+         {:ok, _event} <- record_event(billing.business_id, :seats_added, %{seat_delta: seats_to_add}),
+         {:ok, _count} <- activate_awaiting_clients_for_business(billing.business_id) do
       {:ok, %{action: :updated, billing: seat_summary(ctx)}}
     end
   end
 
   defp do_cancel(ctx, billing, subscription_id) do
-    with {:ok, _} <- Razorpay.cancel_subscription_at_period_end(subscription_id) do
-      billing
-      |> BusinessBilling.changeset(%{status: :cancel_at_period_end})
-      |> Repo.update!()
-
-      record_event(billing.business_id, :cancellation_scheduled)
+    with {:ok, _} <- Razorpay.cancel_subscription_at_period_end(subscription_id),
+         {:ok, _billing} <-
+           billing
+           |> BusinessBilling.update_changeset(%{status: :cancel_at_period_end})
+           |> Repo.update(),
+         {:ok, _event} <- record_event(billing.business_id, :cancellation_scheduled) do
       {:ok, seat_summary(ctx)}
     end
   end
 
+  defp billing_for(business_id) do
+    Repo.get_by(BusinessBilling, business_id: business_id) || create_default_billing(business_id)
+  end
+
   defp create_default_billing(business_id) do
-    Repo.insert!(%BusinessBilling{business_id: business_id},
+    business_id
+    |> BusinessBilling.insert_changeset()
+    |> Repo.insert(
       on_conflict: :nothing,
       conflict_target: [:business_id]
     )
 
-    Repo.get_by!(BusinessBilling, business_id: business_id)
+    Repo.get_by(BusinessBilling, business_id: business_id)
   end
 
   defp used_seats(business_id) do
@@ -330,7 +348,7 @@ defmodule Easy.Billing do
     with_billing(subscription["id"], fn billing ->
       apply_charged_transition(billing, subscription)
 
-      record_event(billing.business_id, :payment_succeeded, %{
+      record_event_or_rollback(billing.business_id, :payment_succeeded, %{
         amount_paid: payment["amount"] && div(payment["amount"], 100),
         currency: payment["currency"]
       })
@@ -362,10 +380,10 @@ defmodule Easy.Billing do
         record_seat_change(billing, subscription["quantity"])
 
         billing
-        |> BusinessBilling.changeset(%{paid_seats: subscription["quantity"]})
-        |> Repo.update!()
+        |> BusinessBilling.update_changeset(%{paid_seats: subscription["quantity"]})
+        |> persist_or_rollback()
 
-        activate_awaiting_clients(billing.business_id)
+        activate_awaiting_clients_for_business(billing.business_id)
       end
 
       :ok
@@ -422,28 +440,31 @@ defmodule Easy.Billing do
     status = if billing.status == :cancel_at_period_end, do: :cancel_at_period_end, else: :active
 
     billing
-    |> BusinessBilling.changeset(%{
+    |> BusinessBilling.update_changeset(%{
       paid_seats: quantity,
       status: status,
       current_period_end: safe_unix(subscription["current_end"])
     })
-    |> Repo.update!()
+    |> persist_or_rollback()
 
     record_seat_change(billing, quantity)
-    activate_awaiting_clients(billing.business_id)
+    activate_awaiting_clients_for_business(billing.business_id)
   end
 
   defp apply_past_due_transition(billing) do
     if billing.status in [:active, :cancel_at_period_end] do
-      billing |> BusinessBilling.changeset(%{status: :past_due}) |> Repo.update!()
-      record_event(billing.business_id, :payment_failed)
+      billing |> BusinessBilling.update_changeset(%{status: :past_due}) |> persist_or_rollback()
+      record_event_or_rollback(billing.business_id, :payment_failed)
     end
   end
 
   defp apply_cancelled_transition(billing) do
     if billing.status != :cancelled do
-      billing |> BusinessBilling.changeset(%{status: :cancelled, paid_seats: 0}) |> Repo.update!()
-      record_event(billing.business_id, :subscription_cancelled)
+      billing
+      |> BusinessBilling.update_changeset(%{status: :cancelled, paid_seats: 0})
+      |> persist_or_rollback()
+
+      record_event_or_rollback(billing.business_id, :subscription_cancelled)
     end
   end
 
@@ -468,8 +489,22 @@ defmodule Easy.Billing do
 
   defp record_seat_change(%BusinessBilling{paid_seats: old, business_id: business_id}, new) when new != old do
     kind = if new > old, do: :seats_added, else: :seats_removed
-    record_event(business_id, kind, %{seat_delta: abs(new - old)})
+    record_event_or_rollback(business_id, kind, %{seat_delta: abs(new - old)})
   end
 
   defp record_seat_change(_billing, _new), do: :ok
+
+  defp record_event_or_rollback(business_id, kind, attrs \\ %{}) do
+    case record_event(business_id, kind, attrs) do
+      {:ok, _event} -> :ok
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
+
+  defp persist_or_rollback(changeset) do
+    case Repo.update(changeset) do
+      {:ok, value} -> value
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
+  end
 end

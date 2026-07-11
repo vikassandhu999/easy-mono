@@ -2,10 +2,10 @@ defmodule Easy.MealLogs do
   alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.MacroCalc
   alias Easy.Nutrition.DayMeal
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
-  alias Easy.MacroCalc
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
@@ -201,29 +201,45 @@ defmodule Easy.MealLogs do
         {:ok, existing}
 
       nil ->
-        attrs = %{date: date, meal_slot: meal_slot}
-        planned_cal = snapshot && snapshot[:total_calories]
+        insert_meal_log(business_id, client_id, date, meal_slot, snapshot, meal_id)
+    end
+  end
 
-        changeset =
-          MealLog.insert_changeset(business_id, client_id, attrs)
-          |> put_change(:planned_snapshot, snapshot)
-          |> put_change(:planned_calories, planned_cal && planned_cal * 1.0)
-          |> put_change(:nutrition_meal_id, meal_id)
+  defp insert_meal_log(business_id, client_id, date, meal_slot, snapshot, meal_id) do
+    attrs = %{date: date, meal_slot: meal_slot}
+    planned_calories = snapshot && snapshot[:total_calories]
 
-        case Repo.insert(changeset) do
-          {:ok, meal_log} ->
-            {:ok, meal_log}
+    result =
+      MealLog.insert_changeset(business_id, client_id, attrs)
+      |> put_change(:planned_snapshot, snapshot)
+      |> put_change(:planned_calories, planned_calories && planned_calories * 1.0)
+      |> put_change(:nutrition_meal_id, meal_id)
+      |> Repo.insert()
 
-          {:error, %{errors: errors} = changeset} ->
-            if has_unique_violation?(errors) do
-              case get_existing_meal_log(business_id, client_id, date, meal_slot) do
-                %MealLog{} = existing -> {:ok, existing}
-                nil -> {:error, changeset}
-              end
-            else
-              {:error, changeset}
-            end
-        end
+    resolve_meal_log_insert(result, business_id, client_id, date, meal_slot)
+  end
+
+  defp resolve_meal_log_insert({:ok, meal_log}, _business_id, _client_id, _date, _meal_slot),
+    do: {:ok, meal_log}
+
+  defp resolve_meal_log_insert(
+         {:error, %{errors: errors} = changeset},
+         business_id,
+         client_id,
+         date,
+         meal_slot
+       ) do
+    if has_unique_violation?(errors) do
+      existing_meal_log_result(business_id, client_id, date, meal_slot, changeset)
+    else
+      {:error, changeset}
+    end
+  end
+
+  defp existing_meal_log_result(business_id, client_id, date, meal_slot, changeset) do
+    case get_existing_meal_log(business_id, client_id, date, meal_slot) do
+      %MealLog{} = existing -> {:ok, existing}
+      nil -> {:error, changeset}
     end
   end
 
@@ -246,64 +262,67 @@ defmodule Easy.MealLogs do
 
     with {:ok, date} <- require_date(date) do
       Repo.transaction(fn ->
-        if not is_nil(explicit_meal_id) and
-             is_nil(load_meal_with_items(business_id, client_id, explicit_meal_id)) do
-          Repo.rollback(:not_found)
-        end
-
-        meal_id = resolve_slot_meal_id(business_id, client_id, date, meal_slot, explicit_meal_id)
-        snapshot = build_planned_snapshot(business_id, meal_id)
-
-        if not is_nil(meal_id) and is_nil(snapshot), do: Repo.rollback(:not_found)
-
-        meal_log =
-          case find_or_create_meal_log(business_id, client_id, date, meal_slot, snapshot, meal_id) do
-            {:ok, ml} -> ml
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        case create_food_log_entry(meal_log.id, business_id, attrs) do
-          {:ok, entry} ->
-            case recalculate_logged_calories(meal_log) do
-              {:ok, _meal_log} -> entry
-              {:error, reason} -> Repo.rollback(reason)
-            end
-
-          {:error, reason} ->
-            Repo.rollback(reason)
-        end
+        log_entry_transaction(business_id, client_id, date, meal_slot, explicit_meal_id, attrs)
       end)
     end
   end
 
-  defp update_entry(%FoodLogEntry{} = entry, business_id, attrs) do
-    Repo.transaction(fn ->
-      case update_food_log_entry(entry, business_id, attrs) do
-        {:ok, updated} ->
-          case recalculate_entry_meal_log(updated, business_id) do
-            {:ok, _meal_log} -> updated
-            {:error, reason} -> Repo.rollback(reason)
-          end
+  defp log_entry_transaction(business_id, client_id, date, meal_slot, explicit_meal_id, attrs) do
+    validate_explicit_meal!(business_id, client_id, explicit_meal_id)
+    meal_id = resolve_slot_meal_id(business_id, client_id, date, meal_slot, explicit_meal_id)
+    snapshot = build_planned_snapshot(business_id, meal_id)
+    validate_snapshot!(meal_id, snapshot)
+    meal_log = get_or_create_meal_log!(business_id, client_id, date, meal_slot, snapshot, meal_id)
 
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
+    with {:ok, entry} <- create_food_log_entry(meal_log.id, business_id, attrs),
+         {:ok, _meal_log} <- recalculate_logged_calories(meal_log) do
+      entry
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp validate_explicit_meal!(_business_id, _client_id, nil), do: :ok
+
+  defp validate_explicit_meal!(business_id, client_id, meal_id) do
+    if is_nil(load_meal_with_items(business_id, client_id, meal_id)), do: Repo.rollback(:not_found)
+  end
+
+  defp validate_snapshot!(meal_id, snapshot) do
+    if not is_nil(meal_id) and is_nil(snapshot), do: Repo.rollback(:not_found)
+  end
+
+  defp get_or_create_meal_log!(business_id, client_id, date, meal_slot, snapshot, meal_id) do
+    case find_or_create_meal_log(business_id, client_id, date, meal_slot, snapshot, meal_id) do
+      {:ok, meal_log} -> meal_log
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp update_entry(%FoodLogEntry{} = entry, business_id, attrs) do
+    Repo.transaction(fn -> update_entry_transaction(entry, business_id, attrs) end)
+  end
+
+  defp update_entry_transaction(entry, business_id, attrs) do
+    with {:ok, updated} <- update_food_log_entry(entry, business_id, attrs),
+         {:ok, _meal_log} <- recalculate_entry_meal_log(updated, business_id) do
+      updated
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
   end
 
   defp delete_entry(%FoodLogEntry{} = entry, business_id) do
-    Repo.transaction(fn ->
-      case Repo.delete(entry) do
-        {:ok, deleted} ->
-          case recalculate_entry_meal_log(deleted, business_id) do
-            {:ok, _meal_log} -> deleted
-            {:error, reason} -> Repo.rollback(reason)
-          end
+    Repo.transaction(fn -> delete_entry_transaction(entry, business_id) end)
+  end
 
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
+  defp delete_entry_transaction(entry, business_id) do
+    with {:ok, deleted} <- Repo.delete(entry),
+         {:ok, _meal_log} <- recalculate_entry_meal_log(deleted, business_id) do
+      deleted
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
   end
 
   defp log_meal(business_id, client_id, date, meal_slot, meal_id) do
@@ -323,32 +342,35 @@ defmodule Easy.MealLogs do
       nil ->
         {:error, :not_found}
 
-      _ ->
-        wa = weekday_assignment(business_id, plan.id, date)
-
-        slot_meals =
-          case wa do
-            nil ->
-              []
-
-            wa ->
-              DayMeal
-              |> DayMeal.for_business(business_id)
-              |> DayMeal.for_plan_day(wa.nutrition_plan_day_id)
-              |> DayMeal.by_slot_position()
-              |> Repo.all()
-              |> Enum.group_by(& &1.meal_slot)
-              |> Enum.map(fn {slot, [default | _]} ->
-                {slot, pinned_meal_id(business_id, client_id, date, slot) || default.nutrition_meal_id}
-              end)
-          end
-
-        Repo.transaction(fn ->
-          Enum.flat_map(slot_meals, fn {slot, meal_id} ->
-            do_log_meal(business_id, client_id, date, slot, meal_id)
-          end)
-        end)
+      plan ->
+        slot_meals = slot_meals(business_id, client_id, plan.id, date)
+        Repo.transaction(fn -> log_slot_meals(business_id, client_id, date, slot_meals) end)
     end
+  end
+
+  defp slot_meals(business_id, client_id, plan_id, date) do
+    case weekday_assignment(business_id, plan_id, date) do
+      nil ->
+        []
+
+      assignment ->
+        DayMeal
+        |> DayMeal.for_business(business_id)
+        |> DayMeal.for_plan_day(assignment.nutrition_plan_day_id)
+        |> DayMeal.by_slot_position()
+        |> Repo.all()
+        |> Enum.group_by(& &1.meal_slot)
+        |> Enum.map(&slot_meal(&1, business_id, client_id, date))
+    end
+  end
+
+  defp slot_meal({slot, [default | _]}, business_id, client_id, date),
+    do: {slot, pinned_meal_id(business_id, client_id, date, slot) || default.nutrition_meal_id}
+
+  defp log_slot_meals(business_id, client_id, date, slot_meals) do
+    Enum.flat_map(slot_meals, fn {slot, meal_id} ->
+      do_log_meal(business_id, client_id, date, slot, meal_id)
+    end)
   end
 
   # chosen meal for a slot: explicit meal_id > existing pin > default option
@@ -446,23 +468,23 @@ defmodule Easy.MealLogs do
     entries =
       meal.meal_items
       |> Enum.sort_by(& &1.position)
-      |> Enum.reduce([], fn item, acc ->
-        if MapSet.member?(already_logged, item.position) do
-          acc
-        else
-          attrs = build_entry_attrs(item)
-
-          case create_food_log_entry(meal_log.id, business_id, attrs) do
-            {:ok, entry} -> [entry | acc]
-            {:error, reason} -> Repo.rollback(reason)
-          end
-        end
-      end)
+      |> Enum.reduce([], &log_meal_item(&1, &2, already_logged, meal_log.id, business_id))
       |> Enum.reverse()
 
     case recalculate_logged_calories(meal_log) do
       {:ok, _meal_log} -> entries
       {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp log_meal_item(item, acc, already_logged, meal_log_id, business_id) do
+    if MapSet.member?(already_logged, item.position) do
+      acc
+    else
+      case create_food_log_entry(meal_log_id, business_id, build_entry_attrs(item)) do
+        {:ok, entry} -> [entry | acc]
+        {:error, reason} -> Repo.rollback(reason)
+      end
     end
   end
 
@@ -713,18 +735,18 @@ defmodule Easy.MealLogs do
   defp parse_required_date(date_str) when is_binary(date_str) do
     case Date.from_iso8601(date_str) do
       {:ok, _date} = ok -> ok
-      _ -> {:error, Easy.Error.unprocessable(%{fields: %{date: ["is invalid"]}})}
+      _ -> {:error, :invalid_date}
     end
   end
 
   defp parse_required_date(_) do
-    {:error, Easy.Error.unprocessable(%{fields: %{date: ["can't be blank"]}})}
+    {:error, :date_required}
   end
 
   defp require_date(%Date{} = date), do: {:ok, date}
 
   defp require_date(nil),
-    do: {:error, Easy.Error.unprocessable(%{fields: %{date: ["is invalid"]}})}
+    do: {:error, :invalid_date}
 
   defp to_string_date(%Date{} = d), do: Date.to_iso8601(d)
   defp to_string_date(s) when is_binary(s), do: s

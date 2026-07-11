@@ -19,7 +19,7 @@ defmodule Easy.Identity.Users do
   def get_by_email(email) do
     case Repo.get_by(User, email: email) do
       nil ->
-        {:error, Easy.Error.not_found("user_not_found", "User with the provided email does not exist")}
+        {:error, :user_not_found}
 
       user ->
         {:ok, user}
@@ -30,7 +30,7 @@ defmodule Easy.Identity.Users do
   def get_by_id(id) do
     case Repo.get(User, id) do
       nil ->
-        {:error, Easy.Error.not_found("user_not_found", "User with the provided ID does not exist")}
+        {:error, :user_not_found}
 
       user ->
         {:ok, user}

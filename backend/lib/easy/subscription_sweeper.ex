@@ -14,12 +14,14 @@ defmodule Easy.SubscriptionSweeper do
   end
 
   @impl true
+  @spec init(keyword()) :: {:ok, map()}
   def init(_opts) do
     send(self(), :sweep)
     {:ok, %{}}
   end
 
   @impl true
+  @spec handle_info(:sweep, map()) :: {:noreply, map()}
   def handle_info(:sweep, state) do
     sweep()
     Process.send_after(self(), :sweep, @day_ms)

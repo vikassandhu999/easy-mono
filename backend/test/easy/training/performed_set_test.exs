@@ -9,7 +9,7 @@ defmodule Easy.Training.TrainingPerformedSetTest do
       business = insert(:business)
 
       changeset =
-        TrainingPerformedSet.insert_changeset(Ecto.UUID.generate(), business.id, %{
+        TrainingPerformedSet.insert_changeset(business.id, Ecto.UUID.generate(), %{
           "exercise_name" => "Bench Press",
           "set_type" => "working",
           "position" => 0,
@@ -23,7 +23,7 @@ defmodule Easy.Training.TrainingPerformedSetTest do
       business = insert(:business)
 
       changeset =
-        TrainingPerformedSet.insert_changeset(Ecto.UUID.generate(), business.id, %{
+        TrainingPerformedSet.insert_changeset(business.id, Ecto.UUID.generate(), %{
           "set_type" => nil,
           "position" => nil
         })

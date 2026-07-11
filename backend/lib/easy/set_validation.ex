@@ -1,9 +1,4 @@
 defmodule Easy.SetValidation do
-  @moduledoc """
-  Shared changeset validations for planned and performed exercise sets — both
-  carry load_value/load_unit and distance_value/distance_unit with identical rules.
-  """
-
   import Ecto.Changeset
 
   @spec require_load_unit(Ecto.Changeset.t()) :: Ecto.Changeset.t()

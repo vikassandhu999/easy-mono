@@ -3,7 +3,7 @@ defmodule Easy.Training.TrainingSession do
 
   alias Easy.Clients
   alias Easy.Orgs
-  alias Easy.Training.{TrainingWorkout, TrainingPerformedSet, ScheduleEntry}
+  alias Easy.Training.{ScheduleEntry, TrainingPerformedSet, TrainingWorkout}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -40,15 +40,13 @@ defmodule Easy.Training.TrainingSession do
   @update_fields [:ended_at, :state, :soreness_rating, :notes]
   @client_update_fields [:soreness_rating, :notes]
 
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, client_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), String.t() | nil, map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, client_id, workout_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
-    |> put_change(:training_workout_id, Map.get(attrs, :training_workout_id) || Map.get(attrs, "training_workout_id"))
-    |> put_change(:training_schedule_entry_id, Map.get(attrs, :training_schedule_entry_id) || Map.get(attrs, "training_schedule_entry_id"))
-    |> put_change(:planned_snapshot, Map.get(attrs, :planned_snapshot) || Map.get(attrs, "planned_snapshot"))
+    |> put_change(:training_workout_id, workout_id)
     |> put_change(:started_at, DateTime.utc_now() |> DateTime.truncate(:second))
     |> validate_required([:state, :started_at])
     |> validate_length(:notes, max: 5000)
@@ -73,8 +71,8 @@ defmodule Easy.Training.TrainingSession do
     |> validate_end_after_start()
   end
 
-  @spec client_update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def client_update_changeset(session, attrs) do
+  @spec update_changeset(t(), map(), :client) :: Ecto.Changeset.t()
+  def update_changeset(session, attrs, :client) do
     session
     |> cast(attrs, @client_update_fields)
     |> validate_length(:notes, max: 5000)
@@ -105,6 +103,7 @@ defmodule Easy.Training.TrainingSession do
   @spec for_state(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
   def for_state(query \\ __MODULE__, state)
   def for_state(query, nil), do: query
+  def for_state(query, ""), do: query
   def for_state(query, state), do: from(s in query, where: s.state == ^state)
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -122,7 +121,7 @@ defmodule Easy.Training.TrainingSession do
     set_query =
       TrainingPerformedSet
       |> TrainingPerformedSet.for_business(business_id)
-      |> TrainingPerformedSet.ordered()
+      |> TrainingPerformedSet.by_position()
       |> TrainingPerformedSet.include_exercise(business_id)
 
     from(s in query, preload: [performed_sets: ^set_query])

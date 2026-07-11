@@ -36,8 +36,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.BillingSummary do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.BillingEvent
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -118,8 +118,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.BillingCheckoutResult do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{BillingCheckoutPayload, BillingSummary}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -156,8 +156,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.SeatLimitError do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.BillingSummary
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{

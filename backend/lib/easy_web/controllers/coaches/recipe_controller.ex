@@ -13,7 +13,8 @@ defmodule EasyWeb.Coaches.RecipeController do
     RecipeResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create, :update, :delete, :copy]
 
   tags ["coach recipes"]
 
@@ -128,7 +129,9 @@ defmodule EasyWeb.Coaches.RecipeController do
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => recipe_id}) do
+  def delete(conn, _params) do
+    recipe_id = conn.path_params["id"]
+
     with {:ok, _deleted} <- Recipes.delete_recipe(conn.assigns.ctx, recipe_id) do
       send_resp(conn, :no_content, "")
     end
@@ -158,7 +161,9 @@ defmodule EasyWeb.Coaches.RecipeController do
   end
 
   @spec copy(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def copy(conn, %{"id" => id}) do
+  def copy(conn, _params) do
+    id = conn.path_params["id"]
+
     with {:ok, recipe} <- Recipes.copy_recipe(conn.assigns.ctx, id) do
       conn |> put_status(:created) |> render(:show, recipe: recipe)
     end

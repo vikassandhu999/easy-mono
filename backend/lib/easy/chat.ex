@@ -61,7 +61,7 @@ defmodule Easy.Chat do
           {:ok, %{messages: [Message.t()], has_more: boolean()}} | {:error, :not_found}
   def list_messages(%Ctx{} = ctx, conversation_id, opts \\ []) do
     with {:ok, conversation} <- get_conversation(ctx, conversation_id) do
-      {:ok, page_messages(conversation.id, opts)}
+      {:ok, page_messages(ctx.business_id, conversation.id, opts)}
     end
   end
 
@@ -70,7 +70,7 @@ defmodule Easy.Chat do
   def send_message(%Ctx{} = ctx, conversation_id, attrs) do
     with {:ok, coach} <- get_coach(ctx),
          {:ok, conversation} <- get_conversation(ctx, conversation_id) do
-      insert_message(conversation, :coach, coach.id, attrs)
+      insert_message(ctx.business_id, conversation, :coach, coach.id, attrs)
     end
   end
 
@@ -92,7 +92,7 @@ defmodule Easy.Chat do
           {:ok, %{messages: [Message.t()], has_more: boolean()}} | {:error, :not_found}
   def list_client_messages(%Ctx{} = ctx, opts \\ []) do
     with {:ok, conversation} <- get_client_conversation(ctx) do
-      {:ok, page_messages(conversation.id, opts)}
+      {:ok, page_messages(ctx.business_id, conversation.id, opts)}
     end
   end
 
@@ -101,7 +101,7 @@ defmodule Easy.Chat do
   def send_client_message(%Ctx{} = ctx, attrs) do
     with {:ok, client} <- get_client_account(ctx),
          {:ok, conversation} <- upsert_conversation(ctx.business_id, client.id, :client) do
-      insert_message(conversation, :client, client.id, attrs)
+      insert_message(ctx.business_id, conversation, :client, client.id, attrs)
     end
   end
 
@@ -130,13 +130,13 @@ defmodule Easy.Chat do
   defp unread_select(query, :coach), do: Conversation.select_coach_unread(query)
   defp unread_select(query, :client), do: Conversation.select_client_unread(query)
 
-  defp page_messages(conversation_id, opts) do
+  defp page_messages(business_id, conversation_id, opts) do
     limit = min(max(Keyword.get(opts, :limit, 50), 1), 100)
 
     messages =
       Message
-      |> Message.for_conversation(conversation_id)
-      |> maybe_before(conversation_id, Keyword.get(opts, :before))
+      |> Message.for_conversation(business_id, conversation_id)
+      |> maybe_before(business_id, conversation_id, Keyword.get(opts, :before))
       |> Message.newest()
       |> limit(^(limit + 1))
       |> Repo.all()
@@ -145,19 +145,21 @@ defmodule Easy.Chat do
     %{messages: Enum.reverse(page), has_more: rest != []}
   end
 
-  defp maybe_before(query, _conversation_id, nil), do: query
+  defp maybe_before(query, _business_id, _conversation_id, nil), do: query
 
-  defp maybe_before(query, conversation_id, before_id) do
-    case Message |> Message.for_conversation(conversation_id) |> Repo.get(before_id) do
+  defp maybe_before(query, business_id, conversation_id, before_id) do
+    case Message |> Message.for_conversation(business_id, conversation_id) |> Repo.get(before_id) do
       nil -> query
       cursor -> Message.before_message(query, cursor)
     end
   end
 
-  defp insert_message(conversation, sender_type, sender_id, attrs) do
+  defp insert_message(business_id, conversation, sender_type, sender_id, attrs) do
     result =
       Repo.transaction(fn ->
-        case conversation.id |> Message.insert_changeset(sender_type, sender_id, attrs) |> Repo.insert() do
+        case business_id
+             |> Message.insert_changeset(conversation.id, sender_type, sender_id, attrs)
+             |> Repo.insert() do
           {:ok, message} ->
             Conversation
             |> where([c], c.id == ^conversation.id)

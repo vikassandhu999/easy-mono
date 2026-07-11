@@ -1,10 +1,10 @@
 defmodule EasyWeb.Clients.TrainingPlanJSON do
   alias Easy.Training.{
-    TrainingExercise,
     PlannedSet,
     ScheduleEntry,
-    TrainingWorkout,
+    TrainingExercise,
     TrainingPlan,
+    TrainingWorkout,
     TrainingWorkoutExercise
   }
 

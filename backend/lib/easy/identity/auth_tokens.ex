@@ -1,13 +1,12 @@
 defmodule Easy.Identity.AuthTokens do
   require Logger
 
-  alias Easy.Error
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.SessionFactory
   alias Easy.Identity.Token
   alias Easy.Identity.User
-  alias Easy.Identity.UserSession
   alias Easy.Identity.Users
+  alias Easy.Identity.UserSession
   alias Easy.Identity.UserSessions
   alias Easy.Repo
 
@@ -76,14 +75,10 @@ defmodule Easy.Identity.AuthTokens do
 
   @spec validate_email_confirmed(User.t()) :: {:ok, User.t()} | {:error, any()}
   defp validate_email_confirmed(user) do
-    if User.is_email_confirmed?(user) do
+    if User.email_confirmed?(user) do
       {:ok, user}
     else
-      {:error,
-       Error.new(
-         "email_not_confirmed",
-         "The email address is not confirmed, please confirm your email first"
-       )}
+      {:error, :email_not_confirmed}
     end
   end
 end

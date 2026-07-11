@@ -1,7 +1,6 @@
 defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
   use Easy.ConnCase
 
-  alias Easy.Sessions
   alias Easy.Ctx
 
   setup do
@@ -273,6 +272,23 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert data["notes"] == "Felt tired"
       assert data["soreness_rating"] == 3
       assert data["state"] == "active"
+    end
+
+    test "does not persist ended_at without a state transition", ctx do
+      session = insert(:workout_session, client: ctx.client, business: ctx.business, state: :active)
+      ended_at = DateTime.utc_now(:second) |> DateTime.add(60, :second)
+
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(
+          "/v1/client/training-sessions/#{session.id}",
+          Jason.encode!(%{"ended_at" => ended_at})
+        )
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["state"] == "active"
+      assert data["ended_at"] == nil
     end
 
     test "returns 404 for another client's session", ctx do

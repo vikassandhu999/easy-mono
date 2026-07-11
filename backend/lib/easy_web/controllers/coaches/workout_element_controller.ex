@@ -13,7 +13,8 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
     TrainingWorkoutReorderRequest
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update, :reorder]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create, :update, :delete, :reorder]
 
   tags ["coach workout elements"]
 
@@ -100,7 +101,9 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, _params) do
+    id = conn.path_params["id"]
+
     with {:ok, _element} <- Workouts.delete_workout_element(conn.assigns.ctx, id) do
       send_resp(conn, :no_content, "")
     end

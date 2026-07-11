@@ -1,5 +1,4 @@
 defmodule Easy.Identity.Signup do
-  alias Easy.Error
   alias Easy.Identity.Mailer, as: Mailer
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.OtpGenerator
@@ -7,7 +6,6 @@ defmodule Easy.Identity.Signup do
   alias Easy.Identity.Users
   alias Easy.Repo
 
-  # TODO: Add rate limiting to signup
   @spec signup(map()) :: {:ok, User.t()} | {:error, any()}
   def signup(attrs) do
     otp = OtpGenerator.generate()
@@ -52,14 +50,14 @@ defmodule Easy.Identity.Signup do
 
   defp resend_confirmation_otp(changeset, email, otp) do
     with {:ok, user} <- Users.get_by_email(email),
-         false <- User.is_email_confirmed?(user),
+         false <- User.email_confirmed?(user),
          {:ok, user} <- rotate_confirmation_otp(user, otp) do
       Mailer.send_otp(email, otp)
 
       {:ok, user}
     else
       true ->
-        {:error, Error.new("email_already_exists", "An account with this email already exists")}
+        {:error, :email_already_exists}
 
       {:error, _} = err ->
         err
@@ -79,7 +77,7 @@ defmodule Easy.Identity.Signup do
   defp rotate_confirmation_otp(user, otp) do
     Repo.transaction(fn ->
       with {:ok, user} <- Users.touch_confirmation_sent_at(user),
-           _ <- OneTimeTokens.delete_all_for_user_and_type(user, :email_confirmation),
+           _ <- OneTimeTokens.delete_user_tokens(user, :email_confirmation),
            {:ok, _} <- OneTimeTokens.create_token(user, :email_confirmation, otp) do
         user
       else

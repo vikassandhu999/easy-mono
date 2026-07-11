@@ -1852,7 +1852,6 @@ export type ClientUpdateRequest = {
   subscription_started_on?: string | null;
 };
 export type CoachingClientProfile = {
-  business_id: string;
   client_id: string;
   general: {
     [key: string]: any;
@@ -2300,17 +2299,14 @@ export type AuthTokenResponse = {
 };
 export type TokenRequest =
   | {
-      email?: string;
-      grant_type: 'refresh_token' | 'otp';
-      otp?: string;
+      grant_type: 'refresh_token';
       refresh_token: string;
       role?: 'owner' | 'coach' | 'client' | 'guest';
     }
   | {
       email: string;
-      grant_type: 'refresh_token' | 'otp';
+      grant_type: 'otp';
       otp: string;
-      refresh_token?: string;
       role: 'owner' | 'coach' | 'client' | 'guest';
     };
 export type ProspectListResponse = {
@@ -2507,14 +2503,11 @@ export type TrainingWorkoutExerciseRequest = {
 };
 export type VerifyRequest =
   | {
-      email?: string;
-      otp?: string;
       token: string;
     }
   | {
       email: string;
       otp: string;
-      token?: string;
     };
 export type ClientProfileFieldUpdateRequest = {
   field_type?: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select';

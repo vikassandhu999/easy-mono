@@ -3,7 +3,13 @@ defmodule EasyWeb.Coaches.TrainingScheduleController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.TrainingPlans
-  alias EasyWeb.OpenApi.Schemas.{TrainingDayScheduleRequest, TrainingScheduleDayResponse, TrainingScheduleResponse, ErrorResponse}
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    TrainingDayScheduleRequest,
+    TrainingScheduleDayResponse,
+    TrainingScheduleResponse
+  }
 
   plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
 
@@ -46,9 +52,9 @@ defmodule EasyWeb.Coaches.TrainingScheduleController do
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
     %{"plan_id" => plan_id, "day" => day} = conn.path_params
-    attrs = Map.drop(conn.body_params, [:plan_id, :day, "plan_id", "day"])
+    workout_id = conn.body_params[:training_workout_id]
 
-    with {:ok, entry} <- TrainingPlans.set_day_schedule(conn.assigns.ctx, plan_id, day, attrs) do
+    with {:ok, entry} <- TrainingPlans.set_day_schedule(conn.assigns.ctx, plan_id, day, workout_id) do
       render(conn, :day, entry: entry)
     end
   end

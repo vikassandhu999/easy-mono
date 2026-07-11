@@ -3,6 +3,8 @@ defmodule Easy.Nutrition.Plan do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.Meal
+  alias Easy.Nutrition.PlanDay
+  alias Easy.Nutrition.WeekdayAssignment
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -115,6 +117,7 @@ defmodule Easy.Nutrition.Plan do
   @spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
   def for_status(query \\ __MODULE__, status)
   def for_status(query, nil), do: query
+  def for_status(query, ""), do: query
 
   def for_status(query, status) do
     from(p in query, where: p.status == ^status)
@@ -127,7 +130,7 @@ defmodule Easy.Nutrition.Plan do
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(p in query, order_by: [desc: p.inserted_at])
+    from(p in query, order_by: [desc: p.inserted_at, desc: p.id])
   end
 
   @spec active_for_client(Ecto.Queryable.t(), String.t(), Date.t()) :: Ecto.Query.t()
@@ -145,8 +148,8 @@ defmodule Easy.Nutrition.Plan do
     from(p in query,
       preload: [
         meals: ^Meal.include_items(Meal, business_id),
-        days: ^Easy.Nutrition.PlanDay.include_day_meals(Easy.Nutrition.PlanDay.by_position(), business_id),
-        weekday_assignments: ^Easy.Nutrition.WeekdayAssignment.for_business(Easy.Nutrition.WeekdayAssignment, business_id),
+        days: ^PlanDay.include_day_meals(PlanDay.by_position(), business_id),
+        weekday_assignments: ^WeekdayAssignment.for_business(WeekdayAssignment, business_id),
         client: ^Client.for_business(business_id)
       ]
     )

@@ -22,7 +22,7 @@ defmodule EasyWeb.Coaches.ClientProfileControllerTest do
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["client_id"] == client.id
-      assert data["business_id"] == coach.business_id
+      refute Map.has_key?(data, "business_id")
       assert data["general"] == %{}
       assert data["nutrition"] == %{}
       assert data["training"] == %{}
@@ -77,7 +77,7 @@ defmodule EasyWeb.Coaches.ClientProfileControllerTest do
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["client_id"] == client.id
-      assert data["business_id"] == coach.business_id
+      refute Map.has_key?(data, "business_id")
       assert data["general"] == %{"goal" => "strength"}
       assert data["nutrition"] == %{"protein_goal" => "120g"}
       assert data["training"] == %{"experience" => "intermediate"}

@@ -31,7 +31,7 @@ defmodule Easy.Clients do
         {:error, :not_found}
 
       client ->
-        {:ok, client |> List.wrap() |> put_attention_flags(ctx.business_id) |> hd()}
+        {:ok, client |> List.wrap() |> put_attention_flags_for_clients(ctx.business_id) |> hd()}
     end
   end
 
@@ -77,7 +77,7 @@ defmodule Easy.Clients do
 
   @spec list_clients(Ctx.t(), keyword()) ::
           {:ok, %{clients: [Client.t()], count: non_neg_integer(), summary: map()}}
-          | {:error, Easy.Error.t()}
+          | {:error, :invalid_profile_filter}
   def list_clients(%Ctx{} = ctx, opts \\ []) do
     search = Keyword.get(opts, :search, "")
     status = Keyword.get(opts, :status)
@@ -106,7 +106,7 @@ defmodule Easy.Clients do
            |> Easy.Utils.paginate(offset, limit)
            |> Client.include_preloads(ctx.business_id)
            |> Repo.all()
-           |> put_attention_flags(ctx.business_id)
+           |> put_attention_flags_for_clients(ctx.business_id)
        }}
     end
   end
@@ -133,7 +133,7 @@ defmodule Easy.Clients do
          {:ok, preloaded} <- preload_client(updated_client) do
       # Attention flags are virtual: recompute post-update so the mutation response
       # carries the same derived shape as GET/list, not stale defaults.
-      {:ok, preloaded |> List.wrap() |> put_attention_flags(ctx.business_id) |> hd()}
+      {:ok, preloaded |> List.wrap() |> put_attention_flags_for_clients(ctx.business_id) |> hd()}
     end
   end
 
@@ -150,7 +150,7 @@ defmodule Easy.Clients do
   end
 
   @spec revoke_invitation(Ctx.t(), String.t()) ::
-          {:ok, Client.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
+          {:ok, Client.t()} | {:error, :not_found | :invitation_not_pending | Ecto.Changeset.t()}
   def revoke_invitation(%Ctx{} = ctx, client_id) do
     with {:ok, client} <- get_client(ctx, client_id) do
       delete_pending_invitation(client)
@@ -158,7 +158,8 @@ defmodule Easy.Clients do
   end
 
   @spec resend_invitation(Ctx.t(), String.t()) ::
-          {:ok, Client.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
+          {:ok, Client.t()}
+          | {:error, :not_found | :invitation_email_missing | :invitation_not_pending | Ecto.Changeset.t()}
   def resend_invitation(%Ctx{} = ctx, client_id) do
     with {:ok, client} <- get_client(ctx, client_id),
          {:ok, coach} <- get_coach(ctx),
@@ -246,7 +247,7 @@ defmodule Easy.Clients do
   # passes through untouched.
   defp ensure_reactivation_capacity(ctx, %Client{status: current}, attrs)
        when current == :inactive do
-    if to_string(attrs[:status] || attrs["status"]) == "active" do
+    if to_string(attrs[:status] || "") == "active" do
       Billing.ensure_seat_available(ctx)
     else
       :ok
@@ -255,50 +256,58 @@ defmodule Easy.Clients do
 
   defp ensure_reactivation_capacity(_ctx, _client, _attrs), do: :ok
 
-  defp put_attention_flags(clients, business_id) when is_list(clients) do
+  defp put_attention_flags_for_clients(clients, business_id) do
     ids = Enum.map(clients, & &1.id)
+    flags = attention_flag_sets(business_id, ids)
+    Enum.map(clients, &put_attention_flags(&1, flags))
+  end
 
-    intake_open =
-      from(fa in FormAssignment,
-        where:
-          fa.business_id == ^business_id and fa.client_id in ^ids and
-            fa.purpose == :intake and fa.status in [:assigned, :in_progress],
-        select: fa.client_id
-      )
-      |> Repo.all()
-      |> MapSet.new()
+  defp attention_flag_sets(business_id, ids) do
+    %{
+      intake_open:
+        ids_for_query(
+          from(fa in FormAssignment,
+            where:
+              fa.business_id == ^business_id and fa.client_id in ^ids and
+                fa.purpose == :intake and fa.status in [:assigned, :in_progress],
+            select: fa.client_id
+          )
+        ),
+      with_training:
+        ids_for_query(
+          from(tp in TrainingPlan,
+            where: tp.business_id == ^business_id and tp.client_id in ^ids and tp.status == :active,
+            select: tp.client_id
+          )
+        ),
+      with_nutrition:
+        ids_for_query(
+          from(np in Plan,
+            where: np.business_id == ^business_id and np.client_id in ^ids and np.status == :active,
+            select: np.client_id
+          )
+        )
+    }
+  end
 
-    with_training =
-      from(tp in TrainingPlan,
-        where: tp.business_id == ^business_id and tp.client_id in ^ids and tp.status == :active,
-        select: tp.client_id
-      )
-      |> Repo.all()
-      |> MapSet.new()
+  defp ids_for_query(query), do: query |> Repo.all() |> MapSet.new()
 
-    with_nutrition =
-      from(np in Plan,
-        where: np.business_id == ^business_id and np.client_id in ^ids and np.status == :active,
-        select: np.client_id
-      )
-      |> Repo.all()
-      |> MapSet.new()
+  defp put_attention_flags(client, flags) do
+    %{
+      client
+      | intake_incomplete: client.id in flags.intake_open,
+        needs_plan: client.id not in flags.with_training and client.id not in flags.with_nutrition,
+        expiring_soon: expiring_soon?(client)
+    }
+  end
 
+  defp expiring_soon?(%Client{status: :active, subscription_ends_on: %Date{} = ends_on}) do
     today = Date.utc_today()
     horizon = Date.add(today, @expiring_soon_days)
-
-    Enum.map(clients, fn client ->
-      %{
-        client
-        | intake_incomplete: client.id in intake_open,
-          needs_plan: client.id not in with_training and client.id not in with_nutrition,
-          expiring_soon:
-            client.status == :active and not is_nil(client.subscription_ends_on) and
-              Date.compare(client.subscription_ends_on, today) != :lt and
-              Date.compare(client.subscription_ends_on, horizon) != :gt
-      }
-    end)
+    Date.compare(ends_on, today) != :lt and Date.compare(ends_on, horizon) != :gt
   end
+
+  defp expiring_soon?(_client), do: false
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}
@@ -340,16 +349,7 @@ defmodule Easy.Clients do
   end
 
   defp normalize_profile_filter(profile_filter) when is_map(profile_filter) do
-    case Enum.reduce_while(profile_filter, {:ok, []}, fn
-           {"custom", filters}, {:ok, acc} when is_map(filters) ->
-             normalize_filter_fields(filters, acc, fn key, values -> {:custom, key, values} end)
-
-           {section, filters}, {:ok, acc} when section in @profile_filter_sections and is_map(filters) ->
-             normalize_filter_fields(filters, acc, fn key, values -> {:core, section, key, values} end)
-
-           _, _acc ->
-             {:halt, invalid_profile_filter()}
-         end) do
+    case Enum.reduce_while(profile_filter, {:ok, []}, &normalize_profile_section/2) do
       {:ok, filters} -> {:ok, Enum.reverse(filters)}
       error -> error
     end
@@ -357,17 +357,30 @@ defmodule Easy.Clients do
 
   defp normalize_profile_filter(_profile_filter), do: invalid_profile_filter()
 
+  defp normalize_profile_section({"custom", filters}, {:ok, acc}) when is_map(filters),
+    do: normalize_filter_fields(filters, acc, fn key, values -> {:custom, key, values} end)
+
+  defp normalize_profile_section({section, filters}, {:ok, acc})
+       when section in @profile_filter_sections and is_map(filters),
+       do: normalize_filter_fields(filters, acc, &core_filter(section, &1, &2))
+
+  defp normalize_profile_section(_section, _acc), do: {:halt, invalid_profile_filter()}
+
+  defp core_filter(section, key, values), do: {:core, section, key, values}
+
   defp normalize_filter_fields(filters, acc, build_filter) do
-    case Enum.reduce_while(filters, acc, fn {key, value}, acc ->
-           with {:ok, key} <- filter_key(key),
-                {:ok, values} <- filter_values(value) do
-             {:cont, [build_filter.(key, values) | acc]}
-           else
-             :error -> {:halt, :error}
-           end
-         end) do
+    case Enum.reduce_while(filters, acc, &normalize_filter_field(&1, &2, build_filter)) do
       :error -> {:halt, invalid_profile_filter()}
       acc -> {:cont, {:ok, acc}}
+    end
+  end
+
+  defp normalize_filter_field({key, value}, acc, build_filter) do
+    with {:ok, key} <- filter_key(key),
+         {:ok, values} <- filter_values(value) do
+      {:cont, [build_filter.(key, values) | acc]}
+    else
+      :error -> {:halt, :error}
     end
   end
 
@@ -426,12 +439,7 @@ defmodule Easy.Clients do
     do: {:ok, [to_string(value)]}
 
   defp filter_values(values) when is_list(values) do
-    case Enum.reduce_while(values, [], fn value, acc ->
-           case filter_values(value) do
-             {:ok, [normalized]} -> {:cont, [normalized | acc]}
-             :error -> {:halt, :error}
-           end
-         end) do
+    case Enum.reduce_while(values, [], &normalize_filter_value/2) do
       values when is_list(values) and values != [] -> {:ok, Enum.reverse(values)}
       _ -> :error
     end
@@ -439,13 +447,20 @@ defmodule Easy.Clients do
 
   defp filter_values(_value), do: :error
 
+  defp normalize_filter_value(value, acc) do
+    case filter_values(value) do
+      {:ok, [normalized]} -> {:cont, [normalized | acc]}
+      :error -> {:halt, :error}
+    end
+  end
+
   defp invalid_profile_filter do
-    {:error, Easy.Error.unprocessable(%{fields: %{profile_filter: ["is invalid"]}})}
+    {:error, :invalid_profile_filter}
   end
 
   defp validate_not_self_invite(%Orgs.Coach{user: %User{email: coach_email}}, %{email: email})
        when is_binary(coach_email) and is_binary(email) and email != "" and coach_email == email do
-    {:error, Easy.Error.unprocessable(%{email: ["you can't invite yourself as a client"]})}
+    {:error, :self_invite}
   end
 
   defp validate_not_self_invite(_coach, _attrs), do: :ok
@@ -453,10 +468,7 @@ defmodule Easy.Clients do
   defp validate_email_has_no_active_client(%{email: email})
        when is_binary(email) and email != "" do
     if Repo.exists?(Client.active_for_email(email)) do
-      {:error,
-       Easy.Error.unprocessable(%{
-         email: ["is already an active client of another business"]
-       })}
+      {:error, :client_email_taken}
     else
       :ok
     end
@@ -525,10 +537,14 @@ defmodule Easy.Clients do
 
   defp delete_pending_invitation(%Client{status: :pending} = client) do
     Repo.transaction(fn ->
-      from(tp in Easy.Training.TrainingPlan, where: tp.client_id == ^client.id)
+      from(tp in Easy.Training.TrainingPlan,
+        where: tp.business_id == ^client.business_id and tp.client_id == ^client.id
+      )
       |> Repo.delete_all()
 
-      from(np in Easy.Nutrition.Plan, where: np.client_id == ^client.id)
+      from(np in Easy.Nutrition.Plan,
+        where: np.business_id == ^client.business_id and np.client_id == ^client.id
+      )
       |> Repo.delete_all()
 
       delete_changeset =
@@ -547,10 +563,7 @@ defmodule Easy.Clients do
   end
 
   defp delete_pending_invitation(%Client{}) do
-    {:error,
-     Easy.Error.unprocessable(%{
-       status: ["only pending invitations can be revoked; deactivate the client instead"]
-     })}
+    {:error, :invitation_not_pending}
   end
 
   defp resend_client_invitation(%Client{status: :pending, email: email} = client, coach)
@@ -566,15 +579,15 @@ defmodule Easy.Clients do
   end
 
   defp resend_client_invitation(%Client{status: :pending, email: nil}, _coach) do
-    {:error, Easy.Error.unprocessable(%{email: ["client has no email address"]})}
+    {:error, :invitation_email_missing}
   end
 
   defp resend_client_invitation(%Client{status: :pending, email: ""}, _coach) do
-    {:error, Easy.Error.unprocessable(%{email: ["client has no email address"]})}
+    {:error, :invitation_email_missing}
   end
 
   defp resend_client_invitation(%Client{}, _coach) do
-    {:error, Easy.Error.unprocessable(%{status: ["client is not in pending status"]})}
+    {:error, :invitation_not_pending}
   end
 
   defp check_expiry(%Client{} = client) do
@@ -597,28 +610,26 @@ defmodule Easy.Clients do
   defp do_atomic_accept(client_id, business_id, user_id, accepted_email) do
     now = DateTime.utc_now(:second)
 
-    {target_status, target_reason} =
-      if Billing.over_capacity?(business_id),
-        do: {:inactive, :awaiting_seat},
-        else: {:active, nil}
+    with {:ok, {target_status, target_reason}} <-
+           Billing.seat_status_for_invitation(%Client{business_id: business_id}) do
+      query =
+        from(c in Client,
+          where: c.id == ^client_id and c.business_id == ^business_id and c.status == ^:pending,
+          select: c
+        )
 
-    query =
-      from(c in Client,
-        where: c.id == ^client_id and c.status == ^:pending,
-        select: c
-      )
-
-    case Repo.update_all(query,
-           set: [
-             user_id: user_id,
-             status: target_status,
-             inactive_reason: target_reason,
-             email: accepted_email,
-             updated_at: now
-           ]
-         ) do
-      {1, [updated]} -> {:ok, updated}
-      {0, _} -> {:error, :race_lost}
+      case Repo.update_all(query,
+             set: [
+               user_id: user_id,
+               status: target_status,
+               inactive_reason: target_reason,
+               email: accepted_email,
+               updated_at: now
+             ]
+           ) do
+        {1, [updated]} -> {:ok, updated}
+        {0, _} -> {:error, :race_lost}
+      end
     end
   end
 

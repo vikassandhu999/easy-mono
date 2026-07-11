@@ -7,6 +7,7 @@ defmodule Easy.Emails do
       {"Coach Easy", "noreply@coacheasy.app"}
   end
 
+  @spec otp_verification_email(String.t(), String.t()) :: Swoosh.Email.t()
   def otp_verification_email(email, code) do
     new()
     |> to(email)
@@ -16,6 +17,7 @@ defmodule Easy.Emails do
     |> html_body(otp_verification_html(code))
   end
 
+  @spec login_otp_email(String.t(), String.t()) :: Swoosh.Email.t()
   def login_otp_email(email, code) do
     new()
     |> to(email)
@@ -25,6 +27,7 @@ defmodule Easy.Emails do
     |> html_body(login_otp_html(code))
   end
 
+  @spec client_invitation_email(String.t(), String.t(), String.t(), String.t()) :: Swoosh.Email.t()
   def client_invitation_email(email, invitation_token, coach_name, business_name) do
     invitation_url = build_invitation_url(invitation_token)
 
@@ -36,6 +39,7 @@ defmodule Easy.Emails do
     |> html_body(client_invitation_html(coach_name, business_name, invitation_url))
   end
 
+  @spec trainer_invitation_email(String.t(), String.t(), String.t()) :: Swoosh.Email.t()
   def trainer_invitation_email(email, invitation_token, business_name) do
     invitation_url = build_trainer_invitation_url(invitation_token)
 

@@ -215,35 +215,40 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec set_day_schedule(Ctx.t(), String.t(), String.t(), map()) ::
+  @spec set_day_schedule(Ctx.t(), String.t(), String.t(), String.t() | nil) ::
           {:ok, ScheduleEntry.t() | nil} | {:error, :not_found | :invalid_day | Ecto.Changeset.t()}
-  def set_day_schedule(%Ctx{} = ctx, plan_id, day, attrs) when is_map(attrs) do
+  def set_day_schedule(%Ctx{} = ctx, plan_id, day, workout_id) do
     with {:ok, coach} <- get_coach(ctx),
          {:ok, plan} <- get_plan(ctx, plan_id),
          :ok <- validate_schedule_day(day) do
-      workout_id = attrs[:training_workout_id]
-
       Repo.transaction(fn ->
-        ScheduleEntry
-        |> ScheduleEntry.for_business(ctx.business_id)
-        |> ScheduleEntry.for_plan(plan.id)
-        |> ScheduleEntry.for_day(day)
-        |> Repo.delete_all()
-
-        if workout_id do
-          with :ok <- ensure_workout_for_plan(plan.id, ctx.business_id, workout_id),
-               entry_attrs = %{"day_of_week" => day, "training_workout_id" => workout_id},
-               {:ok, entry} <-
-                 ScheduleEntry.insert_changeset(ctx.business_id, coach.id, plan.id, entry_attrs)
-                 |> Repo.insert() do
-            Repo.preload(entry, workout: TrainingWorkout |> TrainingWorkout.for_business(ctx.business_id))
-          else
-            {:error, reason} -> Repo.rollback(reason)
-          end
-        else
-          nil
-        end
+        set_day_schedule!(ctx.business_id, coach.id, plan.id, day, workout_id)
       end)
+    end
+  end
+
+  defp set_day_schedule!(business_id, coach_id, plan_id, day, workout_id) do
+    ScheduleEntry
+    |> ScheduleEntry.for_business(business_id)
+    |> ScheduleEntry.for_plan(plan_id)
+    |> ScheduleEntry.for_day(day)
+    |> Repo.delete_all()
+
+    insert_schedule_entry!(business_id, coach_id, plan_id, day, workout_id)
+  end
+
+  defp insert_schedule_entry!(_business_id, _coach_id, _plan_id, _day, nil), do: nil
+
+  defp insert_schedule_entry!(business_id, coach_id, plan_id, day, workout_id) do
+    with :ok <- ensure_workout_for_plan(plan_id, business_id, workout_id),
+         {:ok, entry} <-
+           ScheduleEntry.insert_changeset(business_id, coach_id, plan_id, workout_id, %{
+             day_of_week: day
+           })
+           |> Repo.insert() do
+      Repo.preload(entry, workout: TrainingWorkout |> TrainingWorkout.for_business(business_id))
+    else
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 
@@ -339,19 +344,18 @@ defmodule Easy.TrainingPlans do
         TrainingPlan.insert_changeset(plan.business_id, creator_id, attrs)
         |> put_relationship_changes(relationship_changes_without_creator)
 
-      case Repo.insert(changeset) do
-        {:ok, new_plan} ->
-          with {:ok, workout_id_map} <- copy_workouts(plan.workouts, new_plan),
-               :ok <- copy_plan_items(plan.plan_items, new_plan, workout_id_map) do
-            reload_plan(new_plan)
-          else
-            {:error, reason} -> Repo.rollback(reason)
-          end
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
+      insert_plan_copy!(changeset, plan)
     end)
+  end
+
+  defp insert_plan_copy!(changeset, plan) do
+    with {:ok, new_plan} <- Repo.insert(changeset),
+         {:ok, workout_id_map} <- copy_workouts(plan.workouts, new_plan),
+         :ok <- copy_plan_items(plan.plan_items, new_plan, workout_id_map) do
+      reload_plan(new_plan)
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
   end
 
   defp put_relationship_changes(changeset, relationship_changes) do
@@ -384,7 +388,11 @@ defmodule Easy.TrainingPlans do
   defp copy_workout_elements(elements, new_workout_id, business_id) do
     Enum.reduce_while(elements, :ok, fn element, :ok ->
       result =
-        TrainingWorkoutExercise.insert_changeset(business_id, new_workout_id, TrainingWorkoutExercise.copy_attrs(element))
+        TrainingWorkoutExercise.insert_changeset(
+          business_id,
+          new_workout_id,
+          TrainingWorkoutExercise.copy_attrs(element)
+        )
         |> Repo.insert()
 
       case result do
@@ -399,13 +407,14 @@ defmodule Easy.TrainingPlans do
       new_workout_id =
         Map.get(workout_id_map, item.training_workout_id, item.training_workout_id)
 
-      attrs = %{
-        "day_of_week" => item.day_of_week,
-        "training_workout_id" => new_workout_id
-      }
-
       result =
-        ScheduleEntry.insert_changeset(new_plan.business_id, item.creator_id, new_plan.id, attrs)
+        ScheduleEntry.insert_changeset(
+          new_plan.business_id,
+          item.creator_id,
+          new_plan.id,
+          new_workout_id,
+          %{day_of_week: item.day_of_week}
+        )
         |> Repo.insert()
 
       case result do

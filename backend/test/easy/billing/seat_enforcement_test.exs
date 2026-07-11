@@ -42,7 +42,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
     insert(:client, business: business, status: :active)
 
     assert {:ok, _client} = Clients.invite_client(ctx_for(business), params_for(:client_attrs))
-    assert Billing.seat_summary(ctx_for(business)).used_seats == 2
+    assert {:ok, %{used_seats: 2}} = Billing.get_billing(ctx_for(business))
 
     assert {:error, :seat_limit_reached} =
              Clients.invite_client(ctx_for(business), params_for(:client_attrs))
@@ -118,7 +118,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
     insert(:client, business: business, status: :active)
     # limit 2, used 1 -> capacity for exactly one
 
-    assert {:ok, 1} = Billing.activate_awaiting_clients(business.id)
+    assert {:ok, 1} = Billing.activate_awaiting_clients(ctx_for(business))
     assert Repo.get!(Client, oldest.id).status == :active
     assert Repo.get!(Client, oldest.id).inactive_reason == nil
     assert Repo.get!(Client, newer.id).status == :inactive

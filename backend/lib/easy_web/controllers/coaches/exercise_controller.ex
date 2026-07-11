@@ -3,20 +3,21 @@ defmodule EasyWeb.Coaches.ExerciseController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Exercises
-  alias OpenApiSpex.{Operation, Schema}
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    TrainingExerciseCreateRequest,
     TrainingExerciseCopyRequest,
+    TrainingExerciseCreateRequest,
     TrainingExerciseListResponse,
-    TrainingExerciseUpdateRequest,
-    TrainingExerciseResponse
+    TrainingExerciseResponse,
+    TrainingExerciseUpdateRequest
   }
+
+  alias OpenApiSpex.{Operation, Schema}
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :copy]
+       when action in [:create, :update, :delete, :copy]
 
   tags ["coach exercises"]
 
@@ -153,7 +154,9 @@ defmodule EasyWeb.Coaches.ExerciseController do
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, _params) do
+    id = conn.path_params["id"]
+
     with {:ok, _deleted} <- Exercises.delete_exercise(conn.assigns.ctx, id) do
       send_resp(conn, :no_content, "")
     end

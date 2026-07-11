@@ -3,8 +3,8 @@ defmodule EasyWeb.Clients.ExerciseController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Exercises
-  alias OpenApiSpex.{Operation, Schema}
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingExerciseListResponse, TrainingExerciseResponse}
+  alias OpenApiSpex.{Operation, Schema}
 
   tags ["client exercises"]
 

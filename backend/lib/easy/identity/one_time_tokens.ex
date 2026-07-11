@@ -36,12 +36,14 @@ defmodule Easy.Identity.OneTimeTokens do
     end
   end
 
+  @spec delete(Identity.OneTimeToken.t()) ::
+          {:ok, Identity.OneTimeToken.t()} | {:error, Ecto.Changeset.t()}
   def delete(token) do
     Repo.delete(token)
   end
 
-  @spec delete_all_for_user_and_type(Identity.User.t(), atom()) :: :ok
-  def delete_all_for_user_and_type(user, token_type) do
+  @spec delete_user_tokens(Identity.User.t(), atom()) :: :ok
+  def delete_user_tokens(user, token_type) do
     Repo.delete_all(
       from(t in Identity.OneTimeToken,
         where: t.user_id == ^user.id and t.token_type == ^token_type

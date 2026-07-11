@@ -22,7 +22,18 @@ defmodule Easy.Training.PlannedSet do
     field :notes, :string
   end
 
-  @fields [:set_type, :reps, :load_value, :load_unit, :duration_seconds, :distance_value, :distance_unit, :rpe, :rest_seconds, :notes]
+  @fields [
+    :set_type,
+    :reps,
+    :load_value,
+    :load_unit,
+    :duration_seconds,
+    :distance_value,
+    :distance_unit,
+    :rpe,
+    :rest_seconds,
+    :notes
+  ]
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(planned_set, attrs) do

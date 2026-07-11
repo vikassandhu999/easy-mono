@@ -1,31 +1,39 @@
 defmodule Easy.Razorpay do
-  @moduledoc """
-  Thin Req boundary for the Razorpay subscriptions API.
-  Normalizes all failures to {:error, :razorpay_error} (details are logged).
-  Docs: https://razorpay.com/docs/api/payments/subscriptions/
-  """
-
   require Logger
 
   # total_count is mandatory for Razorpay subscriptions; 120 monthly cycles = 10y.
   @total_count 120
 
+  @spec create_subscription(pos_integer()) :: {:ok, map()} | {:error, :razorpay_error}
   def create_subscription(quantity) do
-    request(:post, "/subscriptions", json: %{plan_id: config(:plan_id), quantity: quantity, total_count: @total_count, customer_notify: 1})
+    request(:post, "/subscriptions",
+      json: %{
+        plan_id: config(:plan_id),
+        quantity: quantity,
+        total_count: @total_count,
+        customer_notify: 1
+      }
+    )
   end
 
+  @spec get_subscription(String.t()) :: {:ok, map()} | {:error, :razorpay_error}
   def get_subscription(subscription_id) do
     request(:get, "/subscriptions/#{subscription_id}", [])
   end
 
+  @spec update_subscription_quantity(String.t(), pos_integer()) ::
+          {:ok, map()} | {:error, :razorpay_error}
   def update_subscription_quantity(subscription_id, quantity) do
     request(:patch, "/subscriptions/#{subscription_id}", json: %{quantity: quantity, schedule_change_at: "now"})
   end
 
+  @spec cancel_subscription_at_period_end(String.t()) ::
+          {:ok, map()} | {:error, :razorpay_error}
   def cancel_subscription_at_period_end(subscription_id) do
     request(:post, "/subscriptions/#{subscription_id}/cancel", json: %{cancel_at_cycle_end: 1})
   end
 
+  @spec valid_webhook_signature?(binary() | nil, String.t() | nil) :: boolean()
   def valid_webhook_signature?(_raw_body, nil), do: false
   def valid_webhook_signature?(nil, _signature), do: false
 
@@ -37,6 +45,7 @@ defmodule Easy.Razorpay do
     Plug.Crypto.secure_compare(expected, signature)
   end
 
+  @spec key_id() :: String.t() | nil
   def key_id, do: config(:key_id)
 
   defp request(method, path, opts) do

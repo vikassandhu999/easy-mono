@@ -17,7 +17,15 @@ defmodule EasyWeb.Coaches.PlanDayController do
 
   plug OpenApiSpex.Plug.CastAndValidate,
        [json_render_error_v2: true]
-       when action in [:create, :update, :assign_weekday, :add_option]
+       when action in [
+              :create,
+              :update,
+              :delete,
+              :assign_weekday,
+              :add_option,
+              :remove_option,
+              :make_default
+            ]
 
   tags ["coach nutrition plan days"]
 

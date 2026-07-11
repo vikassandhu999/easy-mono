@@ -79,6 +79,8 @@ After `OpenApiSpex.Plug.CastAndValidate`, validated bodies live in `conn.body_pa
 params remain string-keyed in `conn.path_params`. Do not pattern-match old merged controller
 params for write actions after enabling the plug. Also ensure tests send JSON content-type.
 **Enforced by:** controller tests that hit the routed action, not direct context calls.
+`OpenApiRouteCoverageTest` also fails when any write route lacks a controller-local
+`CastAndValidate` plug.
 
 ### RM-009 — Route renames must be verified from the generated OpenAPI surface
 When renaming HTTP paths (e.g. snake_case → kebab-case), checking only the edited route block
@@ -130,6 +132,12 @@ every authorization/visibility helper skeleton ends in a deny-by-default clause 
 false)`, `{:error, :forbidden}`, `[]`), and the accompanying tests assert the deny path — never
 relax a guard to make a test pass; fix the test. **Enforced by:** review — the last clause of any
 authz/visibility helper must deny, and its test suite must cover the unmatched-actor case.
+
+### RM-014 — Tenant-owned child rows carry `business_id` directly
+Do not rely on joining through a parent to recover tenant ownership. Stamp `business_id` from
+`Ctx` in the child changeset, scope child queries by it, and backfill existing rows before making
+the column non-null. Hit in chat messages and recipe ingredients. **Enforced by:** non-null
+foreign keys/indexes plus tenant-isolation context/controller tests.
 
 ---
 

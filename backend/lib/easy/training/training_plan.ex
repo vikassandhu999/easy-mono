@@ -87,6 +87,7 @@ defmodule Easy.Training.TrainingPlan do
     |> foreign_key_constraint(:source_template_id)
   end
 
+  @spec validate_date_range(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   def validate_date_range(changeset) do
     start_date = get_field(changeset, :start_date)
     end_date = get_field(changeset, :end_date)
@@ -127,6 +128,7 @@ defmodule Easy.Training.TrainingPlan do
   @spec for_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
   def for_status(query \\ __MODULE__, status)
   def for_status(query, nil), do: query
+  def for_status(query, ""), do: query
   def for_status(query, status), do: from(t in query, where: t.status == ^status)
 
   @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
@@ -155,7 +157,7 @@ defmodule Easy.Training.TrainingPlan do
     workout_query =
       TrainingWorkout
       |> TrainingWorkout.for_business(business_id)
-      |> TrainingWorkout.ordered()
+      |> TrainingWorkout.oldest()
       |> TrainingWorkout.include_exercises(business_id)
 
     from(t in query, preload: [workouts: ^workout_query])

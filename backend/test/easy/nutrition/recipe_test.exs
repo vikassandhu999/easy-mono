@@ -16,7 +16,9 @@ defmodule Easy.Nutrition.RecipeTest do
           creator: coach,
           allergens: ["dairy"],
           dietary_tags: ["keto"],
-          recipe_ingredients: [build(:recipe_ingredient, food: food)]
+          recipe_ingredients: [
+            build(:recipe_ingredient, business: coach.business, food: food)
+          ]
         )
 
       assert {:ok, copy} = Recipes.copy_recipe(ctx(coach), source.id)

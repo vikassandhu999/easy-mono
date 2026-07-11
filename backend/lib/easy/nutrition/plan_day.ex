@@ -54,7 +54,7 @@ defmodule Easy.Nutrition.PlanDay do
 
   @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
   def by_position(query \\ __MODULE__) do
-    from(d in query, order_by: [asc: d.position])
+    from(d in query, order_by: [asc: d.position, asc: d.id])
   end
 
   @spec include_day_meals(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

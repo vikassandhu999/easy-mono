@@ -55,6 +55,7 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       conversation = insert(:conversation, business: coach.business, client: client)
 
       insert(:chat_message,
+        business: coach.business,
         conversation: conversation,
         sender_type: :client,
         sender_id: client.id,
@@ -95,7 +96,13 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
   describe "POST /v1/coach/conversations/:id/read" do
     test "zeroes unread", %{conn: conn, coach: coach, client: client} do
       conversation = insert(:conversation, business: coach.business, client: client)
-      insert(:chat_message, conversation: conversation, sender_type: :client, sender_id: client.id)
+
+      insert(:chat_message,
+        business: coach.business,
+        conversation: conversation,
+        sender_type: :client,
+        sender_id: client.id
+      )
 
       read_conn = post(conn, "/v1/coach/conversations/#{conversation.id}/read")
       assert %{"data" => %{"unread_count" => 0}} = json_response(read_conn, 200)

@@ -3,8 +3,8 @@ defmodule EasyWeb.Clients.RecipeController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Recipes
-  alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, RecipeListResponse, RecipeResponse}
+  alias OpenApiSpex.Operation
 
   tags ["client recipes"]
 

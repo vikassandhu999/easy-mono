@@ -3,8 +3,8 @@ defmodule EasyWeb.Coaches.MuscleController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Exercises
-  alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingMuscleListResponse}
+  alias OpenApiSpex.Operation
 
   tags ["coach muscles"]
 

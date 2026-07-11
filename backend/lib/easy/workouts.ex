@@ -65,7 +65,7 @@ defmodule Easy.Workouts do
          count: Repo.aggregate(base, :count, :id),
          workouts:
            base
-           |> TrainingWorkout.ordered()
+           |> TrainingWorkout.oldest()
            |> Easy.Utils.paginate(offset, limit)
            |> TrainingWorkout.include_exercises(ctx.business_id)
            |> Repo.all()
@@ -244,7 +244,7 @@ defmodule Easy.Workouts do
     TrainingWorkoutExercise
     |> TrainingWorkoutExercise.for_business(business_id)
     |> TrainingWorkoutExercise.for_workout(workout_id)
-    |> TrainingWorkoutExercise.ordered()
+    |> TrainingWorkoutExercise.by_position()
     |> TrainingWorkoutExercise.include_exercise(business_id)
     |> Repo.all()
   end

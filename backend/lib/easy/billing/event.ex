@@ -6,7 +6,14 @@ defmodule Easy.Billing.Event do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @kinds [:seats_added, :seats_removed, :payment_succeeded, :payment_failed, :cancellation_scheduled, :subscription_cancelled]
+  @kinds [
+    :seats_added,
+    :seats_removed,
+    :payment_succeeded,
+    :payment_failed,
+    :cancellation_scheduled,
+    :subscription_cancelled
+  ]
 
   schema "billing_events" do
     field :kind, Ecto.Enum, values: @kinds
@@ -21,5 +28,6 @@ defmodule Easy.Billing.Event do
     timestamps(type: :utc_datetime, updated_at: false)
   end
 
+  @spec kinds() :: [atom()]
   def kinds, do: @kinds
 end

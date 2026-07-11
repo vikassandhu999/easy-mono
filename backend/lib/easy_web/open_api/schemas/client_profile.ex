@@ -11,14 +11,19 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
   def section_schema, do: %Schema{type: :object, additionalProperties: true}
 
   def section_properties,
-    do: %{general: section_schema(), nutrition: section_schema(), training: section_schema(), lifestyle: section_schema()}
+    do: %{
+      general: section_schema(),
+      nutrition: section_schema(),
+      training: section_schema(),
+      lifestyle: section_schema()
+    }
 end
 
 defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfileRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -72,8 +77,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -105,8 +110,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldUpdateRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -133,9 +138,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileField do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Shared
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ClientProfileField",
@@ -184,8 +189,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{ClientProfileField, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: ClientProfileField}, "ClientProfileFieldListResponse"))
 end
@@ -193,8 +198,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -228,8 +233,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateUpdateRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -254,9 +259,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Shared
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormTemplate",
@@ -288,8 +293,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: ClientProfileFormTemplate}, "ClientProfileFormTemplateListResponse"))
 end
@@ -297,8 +302,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentAssignRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -323,8 +328,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentUpdateRequest do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -348,9 +353,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormAssignment",
@@ -398,8 +403,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{ClientProfileFormAssignment, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: ClientProfileFormAssignment}, "ClientProfileFormAssignmentListResponse"))
 end
@@ -429,8 +434,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ClientProfileFormSubmission",
@@ -468,8 +473,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{ClientProfileFormSubmission, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     Shared.data_response(
@@ -482,9 +487,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfile do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Shared
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "CoachingClientProfile",
@@ -495,7 +500,6 @@ defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfile do
         Map.merge(
           %{
             id: %Schema{type: :string, format: :uuid},
-            business_id: %Schema{type: :string, format: :uuid},
             client_id: %Schema{type: :string, format: :uuid}
           },
           Map.merge(Common.section_properties(), %{
@@ -507,7 +511,6 @@ defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfile do
       ),
     required: [
       :id,
-      :business_id,
       :client_id,
       :general,
       :nutrition,
@@ -524,9 +527,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientCoachingProfile do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Shared
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ClientCoachingProfile",

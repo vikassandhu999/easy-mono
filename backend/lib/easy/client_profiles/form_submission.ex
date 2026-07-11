@@ -62,6 +62,6 @@ defmodule Easy.ClientProfiles.FormSubmission do
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(s in query, order_by: [desc: s.submitted_at])
+    from(s in query, order_by: [desc: s.submitted_at, desc: s.id])
   end
 end

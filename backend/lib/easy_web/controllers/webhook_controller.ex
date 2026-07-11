@@ -4,6 +4,8 @@ defmodule EasyWeb.WebhookController do
 
   alias OpenApiSpex.Schema
 
+  plug OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true
+
   tags ["billing"]
 
   operation :razorpay,

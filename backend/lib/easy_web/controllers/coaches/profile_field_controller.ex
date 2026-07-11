@@ -13,7 +13,8 @@ defmodule EasyWeb.Coaches.ProfileFieldController do
     ErrorResponse
   }
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create, :update, :delete]
 
   tags ["coach profile fields"]
 
@@ -100,8 +101,9 @@ defmodule EasyWeb.Coaches.ProfileFieldController do
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, _params) do
     ctx = conn.assigns.ctx
+    id = conn.path_params["id"]
 
     with {:ok, _field} <- ClientProfiles.archive_profile_field(ctx, id) do
       send_resp(conn, :no_content, "")

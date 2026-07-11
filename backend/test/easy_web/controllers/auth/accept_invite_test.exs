@@ -5,11 +5,17 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
   alias Easy.Identity.OneTimeToken
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.User
+  alias Easy.Identity.Users
   alias Easy.Repo
 
   import Ecto.Query
 
   @valid_token "valid-invite-token-xyz"
+
+  defp json_conn do
+    Phoenix.ConnTest.build_conn()
+    |> put_req_header("content-type", "application/json")
+  end
 
   defp insert_pending_client(opts \\ []) do
     coach = opts[:coach] || insert(:coach)
@@ -31,7 +37,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
   end
 
   defp request_otp(token, email) do
-    build_conn()
+    json_conn()
     |> post("/v1/auth/accept-invite", %{
       "invitation_token" => token,
       "email" => email
@@ -180,7 +186,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       seed_invitation_otp("invited@test.com", @valid_token, "111222")
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "invited@test.com",
@@ -205,7 +211,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       seed_invitation_otp("personal@gmail.com", @valid_token, "222333")
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "personal@gmail.com",
@@ -229,7 +235,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       seed_invitation_otp("existing@test.com", @valid_token, "333444")
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "existing@test.com",
@@ -252,13 +258,13 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       user =
         insert(:user, email: "unconfirmed@test.com", email_confirmed_at: nil)
 
-      refute User.is_email_confirmed?(user)
+      refute User.email_confirmed?(user)
 
       insert_pending_client()
       seed_invitation_otp("unconfirmed@test.com", @valid_token, "444555")
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "unconfirmed@test.com",
@@ -268,7 +274,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       assert json_response(conn, 200)
 
       refreshed = Repo.get!(User, user.id)
-      assert User.is_email_confirmed?(refreshed)
+      assert User.email_confirmed?(refreshed)
     end
 
     test "creates a new confirmed user when the email is unknown" do
@@ -276,7 +282,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       seed_invitation_otp("brand-new@test.com", @valid_token, "555666")
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "brand-new@test.com",
@@ -285,8 +291,8 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
 
       assert json_response(conn, 200)
 
-      {:ok, user} = Easy.Identity.Users.get_by_email("brand-new@test.com")
-      assert User.is_email_confirmed?(user)
+      {:ok, user} = Users.get_by_email("brand-new@test.com")
+      assert User.email_confirmed?(user)
       # Client's name seeds the new User's name.
       assert user.first_name == "Vikas"
       assert user.last_name == "K."
@@ -297,14 +303,14 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       seed_invitation_otp("invited@test.com", @valid_token, "111222")
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "invited@test.com",
           "otp" => "999999"
         })
 
-      assert %{"error_code" => "invalid_otp"} = json_response(conn, 401)
+      assert %{"error_code" => "invalid_otp"} = json_response(conn, 400)
 
       # Client is still pending.
       assert Repo.get!(Client, client.id).status == :pending
@@ -320,7 +326,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       Repo.update_all(from(t in OneTimeToken, where: t.id == ^ott.id), set: [inserted_at: stale])
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "invited@test.com",
@@ -361,14 +367,14 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
 
       # Attempt to verify using token-B
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => "token-B",
           "email" => "dup@test.com",
           "otp" => "777888"
         })
 
-      assert %{"error_code" => "invalid_otp"} = json_response(conn, 401)
+      assert %{"error_code" => "invalid_otp"} = json_response(conn, 400)
     end
 
     test "OTP issued for one email cannot be used with a different email" do
@@ -376,14 +382,14 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       seed_invitation_otp("invited@test.com", @valid_token, "888999")
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "different@test.com",
           "otp" => "888999"
         })
 
-      assert %{"error_code" => "invalid_otp"} = json_response(conn, 401)
+      assert %{"error_code" => "invalid_otp"} = json_response(conn, 400)
     end
 
     test "returns 410 (used) if the invitation was accepted (by someone else) between request and verify" do
@@ -413,7 +419,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
 
       # Now verify tries to proceed — should see the Client is no longer pending.
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => "race-verify-token",
           "email" => "race@test.com",
@@ -445,7 +451,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       )
 
       conn =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "jumpy@test.com",
@@ -460,7 +466,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       seed_invitation_otp("invited@test.com", @valid_token, "141414")
 
       conn1 =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "invited@test.com",
@@ -470,7 +476,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
       assert json_response(conn1, 200)
 
       conn2 =
-        build_conn()
+        json_conn()
         |> post("/v1/auth/accept-invite/verify", %{
           "invitation_token" => @valid_token,
           "email" => "invited@test.com",
@@ -478,7 +484,7 @@ defmodule EasyWeb.Auth.AcceptInviteTest do
         })
 
       # OTP row is gone after success → looks like invalid.
-      assert %{"error_code" => "invalid_otp"} = json_response(conn2, 401)
+      assert %{"error_code" => "invalid_otp"} = json_response(conn2, 400)
     end
   end
 end

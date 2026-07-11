@@ -32,7 +32,7 @@ defmodule Easy.Nutrition.MealItem do
   @cast_fields [:weight_g, :amount, :unit, :position, :recipe_id, :food_id]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(meal_id, business_id, attrs) do
+  def insert_changeset(business_id, meal_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:nutrition_meal_id, meal_id)
@@ -112,7 +112,7 @@ defmodule Easy.Nutrition.MealItem do
 
   @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
   def by_position(query \\ __MODULE__) do
-    from(m in query, order_by: [asc: m.position, asc: m.inserted_at])
+    from(m in query, order_by: [asc: m.position, asc: m.inserted_at, asc: m.id])
   end
 
   @spec include_food_and_recipe(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -132,7 +132,7 @@ defmodule Easy.Nutrition.MealItem do
   def include_food_and_recipe(query, business_id, food_query, recipe_query) do
     from(m in query,
       where: m.business_id == ^business_id,
-      order_by: [asc: m.position, asc: m.inserted_at],
+      order_by: [asc: m.position, asc: m.inserted_at, asc: m.id],
       preload: [food: ^food_query, recipe: ^recipe_query]
     )
   end

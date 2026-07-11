@@ -4,6 +4,7 @@ defmodule Easy.Landing.LandingProgram do
   alias Easy.Orgs
 
   import Ecto.Changeset
+  import Ecto.Query
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -36,5 +37,15 @@ defmodule Easy.Landing.LandingProgram do
     |> validate_required([:business_id, :landing_page_id, :name])
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:landing_page_id, name: :landing_programs_page_business_id_fkey)
+  end
+
+  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business(query \\ __MODULE__, business_id) do
+    from(program in query, where: program.business_id == ^business_id)
+  end
+
+  @spec for_landing_page(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_landing_page(query \\ __MODULE__, landing_page_id) do
+    from(program in query, where: program.landing_page_id == ^landing_page_id)
   end
 end

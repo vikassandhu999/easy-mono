@@ -1,10 +1,6 @@
 defmodule EasyWeb.BusinessIdResponseTest do
   use ExUnit.Case, async: true
 
-  @allowed_json_business_id_lines MapSet.new([
-                                    {"lib/easy_web/controllers/coaches/client_profile_json.ex", "business_id: profile.business_id,"}
-                                  ])
-
   test "JSON response serializers do not expose business_id" do
     offenders =
       ["lib/easy_web/controllers/**/*_json.ex", "lib/easy_web/controllers/response_helpers.ex"]
@@ -19,9 +15,6 @@ defmodule EasyWeb.BusinessIdResponseTest do
           %{file: file, line: String.trim(line), line_number: line_number}
         end)
       end)
-      |> Enum.reject(fn offender ->
-        MapSet.member?(@allowed_json_business_id_lines, {offender.file, offender.line})
-      end)
       |> Enum.map(fn offender -> "#{offender.file}:#{offender.line_number}" end)
 
     assert offenders == []
@@ -32,7 +25,6 @@ defmodule EasyWeb.BusinessIdResponseTest do
       EasyWeb.ApiSpec.spec()
       |> OpenApiSpex.OpenApi.to_map()
       |> business_id_paths()
-      |> Enum.reject(&allowed_open_api_business_id_path?/1)
       |> Enum.map(&format_path/1)
 
     assert offenders == []
@@ -66,29 +58,7 @@ defmodule EasyWeb.BusinessIdResponseTest do
 
   defp business_id_paths(_value, _path), do: []
 
-  defp allowed_open_api_business_id_path?([
-         "components",
-         "schemas",
-         "CoachingClientProfile",
-         "properties",
-         "business_id"
-       ]),
-       do: true
-
-  defp allowed_open_api_business_id_path?([
-         "components",
-         "schemas",
-         "CoachingClientProfile",
-         "required",
-         _index
-       ]),
-       do: true
-
-  defp allowed_open_api_business_id_path?(_path), do: false
-
   defp format_path(path) do
-    path
-    |> Enum.map(&to_string/1)
-    |> Enum.join(".")
+    Enum.map_join(path, ".", &to_string/1)
   end
 end

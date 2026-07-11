@@ -1,7 +1,7 @@
 defmodule Easy.Identity.OneTimeToken do
   use Ecto.Schema
 
-  alias Easy.Identity.{User}
+  alias Easy.Identity.User
 
   import Ecto.Changeset
 

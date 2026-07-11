@@ -2,7 +2,6 @@ defmodule Easy.Fitness.WeightEntry do
   use Ecto.Schema
 
   alias Easy.Clients.Client
-  alias Easy.Error
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -78,35 +77,14 @@ defmodule Easy.Fitness.WeightEntry do
     from(e in query, where: e.date >= ^date)
   end
 
-  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def ordered(query \\ __MODULE__) do
-    from(e in query, order_by: [asc: e.date])
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__) do
+    from(e in query, order_by: [asc: e.date, asc: e.id])
   end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(e in query, order_by: [desc: e.date])
-  end
-
-  # Parsing — domain validation for query params, used by callers that compose
-  # their own queries.
-
-  @spec parse_since(String.t() | Date.t() | nil) ::
-          {:ok, Date.t() | nil} | {:error, Error.t()}
-  def parse_since(nil), do: {:ok, nil}
-  def parse_since(""), do: {:ok, nil}
-  def parse_since(value), do: parse_date(value, :since)
-
-  # Private
-
-  defp parse_date(nil, field), do: {:error, invalid_date_error(field, "can't be blank")}
-  defp parse_date("", field), do: {:error, invalid_date_error(field, "can't be blank")}
-
-  defp parse_date(value, field) do
-    case Ecto.Type.cast(:date, value) do
-      {:ok, %Date{} = date} -> {:ok, date}
-      _ -> {:error, invalid_date_error(field, "is invalid")}
-    end
+    from(e in query, order_by: [desc: e.date, desc: e.id])
   end
 
   defp validate_not_future(field, %Date{} = date) do
@@ -115,9 +93,5 @@ defmodule Easy.Fitness.WeightEntry do
 
   defp future?(%Date{} = date) do
     Date.compare(date, Date.add(Date.utc_today(), 1)) == :gt
-  end
-
-  defp invalid_date_error(field, message) do
-    Error.unprocessable(%{fields: %{field => [message]}})
   end
 end

@@ -16,7 +16,8 @@ defmodule EasyWeb.Coaches.ClientController do
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true] when action in [:invite, :update, :reassign]
+       [json_render_error_v2: true]
+       when action in [:invite, :resend_invite, :update, :delete, :reassign]
 
   tags ["coach clients"]
 

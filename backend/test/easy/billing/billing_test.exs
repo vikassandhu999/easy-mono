@@ -2,19 +2,25 @@ defmodule Easy.BillingTest do
   use Easy.DataCase, async: true
 
   alias Easy.{Billing, Ctx, Repo}
+  alias Easy.Billing.Event
   alias Easy.Clients.Client
 
   import Easy.Factory
 
   defp ctx_for(business), do: Ctx.new(business.id, business.owner_id)
 
+  defp summary(ctx) do
+    {:ok, summary} = Billing.get_billing(ctx)
+    summary
+  end
+
   describe "grant_free_seats/2" do
     test "bumps free seats (creating the billing row) and the summary reflects it" do
       business = insert(:business)
 
-      Billing.grant_free_seats(business.id, 10)
+      assert {:ok, _billing} = Billing.grant_free_seats(ctx_for(business), 10)
 
-      summary = Billing.seat_summary(ctx_for(business))
+      summary = summary(ctx_for(business))
       assert summary.free_seats == 10
       assert summary.seat_limit == 10
       assert summary.available_seats == 10
@@ -25,7 +31,7 @@ defmodule Easy.BillingTest do
     test "a new business has two free seats and no billing row yet" do
       business = insert(:business)
 
-      summary = Billing.seat_summary(ctx_for(business))
+      summary = summary(ctx_for(business))
 
       assert summary.free_seats == 2
       assert summary.paid_seats == 0
@@ -41,7 +47,7 @@ defmodule Easy.BillingTest do
       insert(:client, business: business, status: :active)
       insert(:client, business: business, status: :pending)
 
-      assert Billing.seat_summary(ctx_for(business)).used_seats == 2
+      assert summary(ctx_for(business)).used_seats == 2
     end
 
     test "awaiting_seat and manually inactive clients do not count" do
@@ -49,7 +55,7 @@ defmodule Easy.BillingTest do
       insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
       insert(:client, business: business, status: :inactive, inactive_reason: :manual)
 
-      summary = Billing.seat_summary(ctx_for(business))
+      summary = summary(ctx_for(business))
 
       assert summary.used_seats == 0
       assert summary.awaiting_seat_count == 1
@@ -59,7 +65,7 @@ defmodule Easy.BillingTest do
       business = insert(:business)
       other_user = insert(:user)
 
-      refute Billing.seat_summary(Ctx.new(business.id, other_user.id)).is_owner
+      refute summary(Ctx.new(business.id, other_user.id)).is_owner
     end
   end
 
@@ -70,7 +76,7 @@ defmodule Easy.BillingTest do
       waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
       paused = insert(:client, business: business, status: :inactive, inactive_reason: :manual)
 
-      assert {:ok, 1} = Billing.activate_awaiting_clients(business.id)
+      assert {:ok, 1} = Billing.activate_awaiting_clients(ctx_for(business))
 
       assert Repo.get!(Client, waiting.id).status == :active
       assert Repo.get!(Client, waiting.id).inactive_reason == nil
@@ -115,13 +121,15 @@ defmodule Easy.BillingTest do
       business = insert(:business)
 
       for i <- 1..12 do
-        Billing.record_event(business.id, :seats_added, %{
+        Repo.insert!(%Event{
+          business_id: business.id,
+          kind: :seats_added,
           seat_delta: i,
           occurred_at: DateTime.add(DateTime.utc_now(:second), i, :minute)
         })
       end
 
-      events = Billing.recent_events(ctx_for(business))
+      events = summary(ctx_for(business)).recent_events
 
       assert length(events) == 10
       assert hd(events).seat_delta == 12

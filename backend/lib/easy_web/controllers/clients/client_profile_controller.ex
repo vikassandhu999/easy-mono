@@ -5,7 +5,6 @@ defmodule EasyWeb.Clients.ClientProfileController do
   plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:update]
 
   alias Easy.ClientProfiles
-  alias Easy.Clients
 
   alias EasyWeb.OpenApi.Schemas.{
     ClientCoachingProfileResponse,
@@ -41,10 +40,7 @@ defmodule EasyWeb.Clients.ClientProfileController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
-    ctx = conn.assigns.ctx
-
-    with {:ok, client} <- Clients.get_client_account(ctx),
-         {:ok, profile} <- ClientProfiles.get_or_create_profile(ctx, client.id) do
+    with {:ok, profile} <- ClientProfiles.get_or_create_client_profile(conn.assigns.ctx) do
       render(conn, :show, profile: profile)
     end
   end

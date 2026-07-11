@@ -2,15 +2,16 @@ defmodule Easy.Identity.Token do
   use Joken.Config
 
   alias Easy.Identity
-  alias Easy.Identity
 
   @type claims :: %{required(String.t()) => term()}
 
   @impl true
+  @spec token_config() :: map()
   def token_config do
     default_claims(default_exp: 300, iss: "easy_app", aud: "easy_app")
   end
 
+  @spec signer() :: Joken.Signer.t()
   def signer do
     Joken.Signer.create(
       "HS256",

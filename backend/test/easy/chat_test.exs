@@ -13,16 +13,16 @@ defmodule Easy.ChatTest do
     end
   end
 
-  describe "Message.insert_changeset/4" do
+  describe "Message.insert_changeset/5" do
     test "requires a body" do
-      cs = Message.insert_changeset("conv", :client, "c1", %{})
+      cs = Message.insert_changeset("biz", "conv", :client, "c1", %{})
       refute cs.valid?
       assert "can't be blank" in errors_on(cs).body
     end
 
     test "sets sender from trusted args, not attrs" do
       cs =
-        Message.insert_changeset("conv", :client, "c1", %{
+        Message.insert_changeset("biz", "conv", :client, "c1", %{
           "body" => "hey",
           "sender_type" => "coach",
           "sender_id" => "evil"
@@ -33,7 +33,11 @@ defmodule Easy.ChatTest do
     end
 
     test "rejects an over-long body" do
-      cs = Message.insert_changeset("conv", :coach, "c1", %{"body" => String.duplicate("a", 4001)})
+      cs =
+        Message.insert_changeset("biz", "conv", :coach, "c1", %{
+          "body" => String.duplicate("a", 4001)
+        })
+
       refute cs.valid?
     end
   end

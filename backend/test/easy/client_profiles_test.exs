@@ -293,10 +293,9 @@ defmodule Easy.ClientProfilesTest do
       assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
       ctx = client_ctx(client)
 
-      assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
+      assert {:error, :form_template_assigned} =
                ClientProfiles.delete_form_template(ctx, template.id)
 
-      assert detail == %{fields: %{form_template_id: ["has assignments"]}}
       assert Repo.get!(FormTemplate, template.id)
       assert Repo.get!(FormAssignment, assignment.id)
     end
@@ -423,12 +422,11 @@ defmodule Easy.ClientProfilesTest do
 
         client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
 
-        assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
+        assert {:error, :invalid_profile_mapping} =
                  ClientProfiles.submit_client_form_assignment(client_self_ctx, assignment.id, %{
                    answers: %{"protein_goal" => "120g"}
                  })
 
-        assert detail == %{fields: %{profile_mapping: ["is invalid"]}}
         refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
         refute Repo.get_by(ClientProfile, client_id: client.id)
         assert Repo.get!(FormAssignment, assignment.id).status == :assigned
@@ -466,12 +464,11 @@ defmodule Easy.ClientProfilesTest do
 
         client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
 
-        assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
+        assert {:error, :invalid_profile_mapping} =
                  ClientProfiles.submit_client_form_assignment(client_self_ctx, assignment.id, %{
                    answers: %{"meal_prep_ability" => "high"}
                  })
 
-        assert detail == %{fields: %{profile_mapping: ["is invalid"]}}
         refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
         refute Repo.get_by(ClientProfile, client_id: client.id)
         refute Repo.get_by(ProfileFieldValue, client_id: client.id)

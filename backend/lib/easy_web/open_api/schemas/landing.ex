@@ -63,8 +63,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.LandingPageUpsertRequest do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{Landing.Common, LandingProgramInput}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -105,8 +105,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.ProspectUpdateRequest do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Landing.Common
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
@@ -162,8 +162,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.LandingPage do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{Landing.Common, LandingProgram, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "LandingPage",
@@ -191,8 +191,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.LandingPageResponse do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.LandingPage
+  alias OpenApiSpex.Schema
 
   # `data` is null until the coach first saves a page.
   OpenApiSpex.schema(%{
@@ -237,8 +237,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.Prospect do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{Landing.Common, ProspectClient, ProspectProgram, Shared}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "Prospect",
@@ -271,8 +271,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.ProspectListResponse do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Prospect
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ProspectListResponse",
@@ -298,8 +298,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.ProspectEnrollResponse do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Prospect
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ProspectEnrollResponse",
@@ -324,8 +324,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.PublicLandingPage do
   require OpenApiSpex
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.{Landing.Common, LandingProgram}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "PublicLandingPage",

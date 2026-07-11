@@ -34,7 +34,7 @@ defmodule Easy.Landing do
   @spec upsert_landing_page(Ctx.t(), map()) ::
           {:ok, LandingPage.t()} | {:error, :too_many_programs | Ecto.Changeset.t()}
   def upsert_landing_page(%Ctx{} = ctx, attrs) do
-    programs = Map.get(attrs, :programs) || Map.get(attrs, "programs") || []
+    programs = Map.get(attrs, :programs, [])
 
     if length(programs) > @max_programs do
       {:error, :too_many_programs}
@@ -66,7 +66,10 @@ defmodule Easy.Landing do
   end
 
   defp replace_programs(business_id, page_id, programs) do
-    from(p in LandingProgram, where: p.landing_page_id == ^page_id) |> Repo.delete_all()
+    LandingProgram
+    |> LandingProgram.for_business(business_id)
+    |> LandingProgram.for_landing_page(page_id)
+    |> Repo.delete_all()
 
     programs
     |> Enum.with_index()
@@ -117,7 +120,7 @@ defmodule Easy.Landing do
 
   # A submitted program must belong to this page; an unknown id is dropped to a general apply.
   defp resolve_program(page, attrs) do
-    case Map.get(attrs, :landing_program_id) || Map.get(attrs, "landing_program_id") do
+    case Map.get(attrs, :landing_program_id) do
       nil -> {:ok, nil}
       "" -> {:ok, nil}
       id -> {:ok, if(Enum.any?(page.programs, &(&1.id == id)), do: id, else: nil)}

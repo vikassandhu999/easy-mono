@@ -1,6 +1,6 @@
 defmodule EasyWeb.ApiSpec do
-  alias OpenApiSpex.{Components, Info, OpenApi, Paths, SecurityScheme, Server}
   alias EasyWeb.{Endpoint, Router}
+  alias OpenApiSpex.{Components, Info, OpenApi, Paths, SecurityScheme, Server}
 
   @behaviour OpenApi
 

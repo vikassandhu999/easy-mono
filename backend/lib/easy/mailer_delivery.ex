@@ -2,6 +2,7 @@ defmodule Easy.MailerDelivery do
   require Logger
   alias Easy.Mailer
 
+  @spec deliver_async(Swoosh.Email.t(), keyword()) :: :ok
   def deliver_async(email, opts \\ []) do
     metadata = Keyword.get(opts, :metadata, %{})
     on_error = Keyword.get(opts, :on_error)
@@ -13,6 +14,7 @@ defmodule Easy.MailerDelivery do
     :ok
   end
 
+  @spec deliver_sync(Swoosh.Email.t(), keyword()) :: {:ok, any()} | {:error, any()}
   def deliver_sync(email, opts \\ []) do
     metadata = Keyword.get(opts, :metadata, %{})
 
@@ -67,11 +69,7 @@ defmodule Easy.MailerDelivery do
     recipient = extract_recipient(email)
     subject = email.subject
 
-    Logger.info("Email sent successfully",
-      recipient: recipient,
-      subject: subject,
-      metadata: metadata
-    )
+    Logger.info("Email sent successfully recipient=#{recipient} subject=#{subject} metadata=#{inspect(metadata)}")
   end
 
   defp log_error(email, reason, metadata) do
@@ -114,12 +112,11 @@ defmodule Easy.MailerDelivery do
         address
 
       addresses when is_list(addresses) ->
-        Enum.map(addresses, fn
+        Enum.map_join(addresses, ", ", fn
           {_name, addr} -> addr
           {addr} -> addr
           addr when is_binary(addr) -> addr
         end)
-        |> Enum.join(", ")
 
       _ ->
         "unknown"

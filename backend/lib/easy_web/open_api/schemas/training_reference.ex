@@ -13,8 +13,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingMuscleListResponse do
   require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingMuscle}
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{TrainingMuscle, Shared}
 
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: TrainingMuscle}, "TrainingMuscleListResponse"))
 end
@@ -34,8 +34,8 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingEquipmentListResponse do
   require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingEquipment}
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{TrainingEquipment, Shared}
 
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: TrainingEquipment}, "TrainingEquipmentListResponse"))
 end

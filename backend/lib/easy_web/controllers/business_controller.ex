@@ -2,7 +2,6 @@ defmodule EasyWeb.BusinessController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.Identity.Users
   alias Easy.Orgs
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -71,9 +70,7 @@ defmodule EasyWeb.BusinessController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _params) do
-    # pre-auth onboarding path: ctx.user_id exists but business not yet created
-    with {:ok, user} <- Users.get_by_id(conn.assigns.ctx.user_id),
-         {:ok, business} <- Orgs.create_business(user, conn.body_params) do
+    with {:ok, business} <- Orgs.create_business(conn.assigns.ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, business: business)

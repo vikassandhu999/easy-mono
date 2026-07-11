@@ -12,7 +12,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseCreateRequest do
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
         description: %Schema{type: :string, maxLength: 5000, nullable: true},
-        instructions: %Schema{type: :string, maxLength: 10000, nullable: true},
+        instructions: %Schema{type: :string, maxLength: 10_000, nullable: true},
         mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
         force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
         images: %Schema{type: :array, items: %Schema{type: :string}},
@@ -72,7 +72,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseUpdateRequest do
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
         description: %Schema{type: :string, maxLength: 5000, nullable: true},
-        instructions: %Schema{type: :string, maxLength: 10000, nullable: true},
+        instructions: %Schema{type: :string, maxLength: 10_000, nullable: true},
         mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
         force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
         images: %Schema{type: :array, items: %Schema{type: :string}},
@@ -100,8 +100,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingExercise do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingExerciseRelation}
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.{TrainingExerciseRelation, Shared}
 
   OpenApiSpex.schema(%{
     title: "TrainingExercise",
@@ -169,14 +169,14 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseListResponse do
   require OpenApiSpex
-  alias EasyWeb.OpenApi.Schemas.{TrainingExercise, Shared}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingExercise}
 
   OpenApiSpex.schema(Shared.list_response(TrainingExercise, "TrainingExerciseListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseResponse do
   require OpenApiSpex
-  alias EasyWeb.OpenApi.Schemas.{TrainingExercise, Shared}
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingExercise}
 
   OpenApiSpex.schema(Shared.data_response(TrainingExercise, "TrainingExerciseResponse"))
 end

@@ -2,12 +2,15 @@ defmodule Easy.Billing.SyncBillingTest do
   use Easy.DataCase, async: true
 
   alias Easy.{Billing, Ctx}
+  alias Easy.Billing.BusinessBilling
   alias Easy.Clients.Client
 
   import Easy.Factory
   import Ecto.Query
 
   defp ctx_for(business), do: Ctx.new(business.id, business.owner_id)
+
+  defp billing_for(business_id), do: Repo.get_by!(BusinessBilling, business_id: business_id)
 
   defp stub_get(subscription_id, response) do
     Req.Test.stub(Easy.Razorpay, fn conn ->
@@ -44,7 +47,7 @@ defmodule Easy.Billing.SyncBillingTest do
     assert summary.status == :active
     assert summary.paid_seats == 3
 
-    billing = Billing.billing_for(business.id)
+    billing = billing_for(business.id)
     assert billing.status == :active
     assert billing.paid_seats == 3
     assert billing.current_period_end
@@ -75,7 +78,7 @@ defmodule Easy.Billing.SyncBillingTest do
     })
 
     assert {:ok, _summary} = Billing.sync_billing(ctx_for(business))
-    assert Billing.billing_for(business.id).status == :cancel_at_period_end
+    assert billing_for(business.id).status == :cancel_at_period_end
   end
 
   test "created status is a no-op" do
@@ -110,7 +113,7 @@ defmodule Easy.Billing.SyncBillingTest do
 
     assert {:ok, _summary} = Billing.sync_billing(ctx_for(business))
 
-    billing = Billing.billing_for(business.id)
+    billing = billing_for(business.id)
     assert billing.status == :past_due
 
     kinds = business.id |> events_for() |> Enum.map(& &1.kind)
@@ -139,6 +142,20 @@ defmodule Easy.Billing.SyncBillingTest do
     Req.Test.stub(Easy.Razorpay, fn conn -> Plug.Conn.send_resp(conn, 500, "boom") end)
 
     assert {:error, :razorpay_error} = Billing.sync_billing(ctx_for(business))
+  end
+
+  test "transaction failures are returned instead of stale billing data" do
+    business = insert(:business)
+    insert(:business_billing, business: business, razorpay_subscription_id: "sub_sync")
+
+    stub_get("sub_sync", %{
+      "id" => "sub_sync",
+      "status" => "active",
+      "quantity" => -1
+    })
+
+    assert {:error, %Ecto.Changeset{}} = Billing.sync_billing(ctx_for(business))
+    assert billing_for(business.id).paid_seats == 0
   end
 
   test "sync then the real webhook for the same quantity is idempotent" do
@@ -173,7 +190,7 @@ defmodule Easy.Billing.SyncBillingTest do
 
     assert :ok = Billing.handle_razorpay_webhook(body, signature, "evt_idem_1")
 
-    billing = Billing.billing_for(business.id)
+    billing = billing_for(business.id)
     assert billing.paid_seats == 3
 
     kinds = business.id |> events_for() |> Enum.map(& &1.kind)

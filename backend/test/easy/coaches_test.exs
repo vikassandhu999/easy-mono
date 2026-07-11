@@ -47,7 +47,8 @@ defmodule Easy.CoachesTest do
       from(c in Coach, where: c.id == ^newer.id)
       |> Repo.update_all(set: [inserted_at: ~U[2026-02-01 00:00:00Z]])
 
-      assert {:ok, coaches} = Coaches.list_team(ctx)
+      assert {:ok, %{coaches: coaches, owner_id: owner_id}} = Coaches.list_team(ctx)
+      assert owner_id == ctx.user_id
       ids = Enum.map(coaches, & &1.id)
 
       assert newer.id in ids

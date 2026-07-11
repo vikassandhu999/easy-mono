@@ -1,9 +1,11 @@
 defmodule Easy.Recipes do
   alias Easy.Ctx
   alias Easy.Nutrition.Food
+  alias Easy.Nutrition.Meal
+  alias Easy.Nutrition.MealItem
+  alias Easy.Nutrition.Plan
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
-  alias Easy.Nutrition.{Meal, MealItem, Plan}
   alias Easy.Orgs.Coach
   alias Easy.Repo
 

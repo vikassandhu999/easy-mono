@@ -2,15 +2,16 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.TrainingPlans, as: Plans
   alias Easy.Training.TrainingPlan
-  alias OpenApiSpex.{Operation, Schema}
+  alias Easy.TrainingPlans, as: Plans
 
   alias EasyWeb.OpenApi.Schemas.{
     ClientTrainingPlanListResponse,
     ClientTrainingPlanResponse,
     ErrorResponse
   }
+
+  alias OpenApiSpex.{Operation, Schema}
 
   tags ["client training plans"]
 

@@ -48,6 +48,7 @@ defmodule EasyWeb.Clients.RecipeControllerTest do
       recipe = insert(:recipe, creator: ctx.coach, business: ctx.business, name: "Butter Chicken")
 
       insert(:recipe_ingredient,
+        business: ctx.business,
         recipe: recipe,
         food: food,
         amount: 200,

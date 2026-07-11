@@ -2,10 +2,19 @@ defmodule Easy.Billing.CheckoutTest do
   use Easy.DataCase, async: true
 
   alias Easy.{Billing, Ctx}
+  alias Easy.Billing.BusinessBilling
 
   import Easy.Factory
 
   defp ctx_for(business), do: Ctx.new(business.id, business.owner_id)
+
+  defp billing_for(business_id),
+    do: Repo.get_by(BusinessBilling, business_id: business_id) || %BusinessBilling{}
+
+  defp summary(ctx) do
+    {:ok, summary} = Billing.get_billing(ctx)
+    summary
+  end
 
   defp stub_razorpay do
     Req.Test.stub(Easy.Razorpay, fn conn ->
@@ -41,7 +50,7 @@ defmodule Easy.Billing.CheckoutTest do
     assert checkout.key_id == "rzp_test_key"
     # paid_seats NOT bumped yet — webhook confirms payment
     assert billing.paid_seats == 0
-    assert Billing.billing_for(business.id).razorpay_subscription_id == "sub_new"
+    assert billing_for(business.id).razorpay_subscription_id == "sub_new"
   end
 
   test "checkout with an existing active subscription updates quantity immediately" do
@@ -51,7 +60,7 @@ defmodule Easy.Billing.CheckoutTest do
 
     assert {:ok, %{action: :updated, billing: billing}} = Billing.checkout(ctx_for(business), 1)
     assert billing.paid_seats == 4
-    assert [%{kind: :seats_added, seat_delta: 1} | _] = Billing.recent_events(ctx_for(business))
+    assert [%{kind: :seats_added, seat_delta: 1} | _] = summary(ctx_for(business)).recent_events
   end
 
   test "buying seats activates the oldest awaiting_seat clients" do
@@ -79,7 +88,7 @@ defmodule Easy.Billing.CheckoutTest do
     assert {:ok, billing} = Billing.cancel(ctx_for(business))
     assert billing.status == :cancel_at_period_end
     assert billing.paid_seats == 3
-    assert [%{kind: :cancellation_scheduled} | _] = Billing.recent_events(ctx_for(business))
+    assert [%{kind: :cancellation_scheduled} | _] = summary(ctx_for(business)).recent_events
   end
 
   test "cancel without a subscription is :no_subscription" do
@@ -98,9 +107,9 @@ defmodule Easy.Billing.CheckoutTest do
 
     assert checkout.subscription_id == "sub_new"
     assert billing.paid_seats == 0
-    assert Billing.billing_for(business.id).razorpay_subscription_id == "sub_new"
-    refute Enum.any?(Billing.recent_events(ctx_for(business)), &(&1.kind == :seats_added))
-    assert Billing.seat_summary(ctx_for(business)).awaiting_seat_count == 0
+    assert billing_for(business.id).razorpay_subscription_id == "sub_new"
+    refute Enum.any?(summary(ctx_for(business)).recent_events, &(&1.kind == :seats_added))
+    assert summary(ctx_for(business)).awaiting_seat_count == 0
   end
 
   test "razorpay failure surfaces as :razorpay_error and changes nothing" do
@@ -108,6 +117,6 @@ defmodule Easy.Billing.CheckoutTest do
     business = insert(:business)
 
     assert {:error, :razorpay_error} = Billing.checkout(ctx_for(business), 1)
-    assert Billing.billing_for(business.id).razorpay_subscription_id == nil
+    assert billing_for(business.id).razorpay_subscription_id == nil
   end
 end

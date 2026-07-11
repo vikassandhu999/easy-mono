@@ -3,10 +3,11 @@ defmodule EasyWeb.Clients.PerformedSetController do
   use OpenApiSpex.ControllerSpecs
 
   alias Easy.Sessions
-  alias OpenApiSpex.Operation
   alias EasyWeb.OpenApi.Schemas.{ErrorResponse, TrainingPerformedSetRequest, TrainingPerformedSetResponse}
+  alias OpenApiSpex.Operation
 
-  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create, :update]
+  plug OpenApiSpex.Plug.CastAndValidate,
+       [json_render_error_v2: true] when action in [:create, :update, :delete]
 
   tags ["client performed sets"]
 

@@ -1,10 +1,10 @@
 defmodule Easy.Training.TrainingExercise do
   use Ecto.Schema
 
-  alias Ecto.Changeset
+  alias Easy.Orgs
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingMuscle
-  alias Easy.Orgs
+  alias Ecto.Changeset
 
   import Ecto.Changeset
   import Ecto.Query
@@ -15,7 +15,17 @@ defmodule Easy.Training.TrainingExercise do
   @foreign_key_type :binary_id
 
   @sources [:system, :imported, :custom]
-  @tracking_types [:weight_reps, :bodyweight_reps, :weighted_bodyweight, :assisted_bodyweight, :reps_only, :duration, :weight_duration, :distance_duration, :weight_distance]
+  @tracking_types [
+    :weight_reps,
+    :bodyweight_reps,
+    :weighted_bodyweight,
+    :assisted_bodyweight,
+    :reps_only,
+    :duration,
+    :weight_duration,
+    :distance_duration,
+    :weight_distance
+  ]
   @mechanics [:compound, :isolation, :isometric]
   @forces [:push, :pull, :static]
 
@@ -46,9 +56,25 @@ defmodule Easy.Training.TrainingExercise do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:source, :tracking_type, :name, :description, :instructions, :mechanics, :force, :images, :import_id]
+  @cast_fields [
+    :source,
+    :tracking_type,
+    :name,
+    :description,
+    :instructions,
+    :mechanics,
+    :force,
+    :images,
+    :import_id
+  ]
 
-  @spec insert_changeset(String.t(), String.t() | nil, map(), [TrainingMuscle.t()] | nil, [TrainingEquipment.t()] | nil) :: Changeset.t()
+  @spec insert_changeset(
+          String.t(),
+          String.t() | nil,
+          map(),
+          [TrainingMuscle.t()] | nil,
+          [TrainingEquipment.t()] | nil
+        ) :: Changeset.t()
   def insert_changeset(business_id, coach_id, attrs, muscles \\ nil, equipment \\ nil) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)

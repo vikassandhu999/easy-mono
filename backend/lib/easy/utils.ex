@@ -1,6 +1,7 @@
 defmodule Easy.Utils do
   import Ecto.Query, only: [from: 2]
 
+  @spec parse_boolean(any()) :: boolean() | nil
   def parse_boolean(nil), do: nil
   def parse_boolean(value) when is_boolean(value), do: value
 
@@ -14,12 +15,18 @@ defmodule Easy.Utils do
 
   def parse_boolean(_), do: nil
 
+  @spec safe_to_atom(any(), [String.t()]) :: atom() | nil
   def safe_to_atom(binary, allowed) when is_binary(binary) do
-    if binary in allowed, do: String.to_atom(binary)
+    if binary in allowed do
+      String.to_existing_atom(binary)
+    end
+  rescue
+    ArgumentError -> nil
   end
 
   def safe_to_atom(_, _), do: nil
 
+  @spec safe_date(any()) :: Date.t() | nil
   def safe_date(nil), do: nil
 
   def safe_date(string) when is_binary(string) do

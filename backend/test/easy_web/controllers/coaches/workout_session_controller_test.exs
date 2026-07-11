@@ -42,7 +42,6 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
 
     test "does not expose sessions from another business", %{
       conn: conn,
-      business: business,
       client: client
     } do
       other = insert(:coach)

@@ -29,13 +29,13 @@
 * Consumes: `Client` fields `status`, `stage`, `intake_incomplete`, `needs_plan`, `expiring_soon`, `inactive_reason`, and `subscription_ends_on`.
 * Produces: `MobileRowChips({client}: {client: Client})` for the mobile-only trailing column. `RowChips` remains the desktop complete-badge renderer.
 
-- [ ] **Step 1: Capture the failing mobile fixture**
+- [x] **Step 1: Capture the failing mobile fixture**
 
 Temporarily expose `ClientListItem` in a public diagnostic route with an active client whose `intake_incomplete`, `needs_plan`, and `expiring_soon` fields are all true. Capture the route at 392px. The failing image must show that the badge column displaces the client's name or subtitle. Remove the diagnostic route before committing.
 
 Expected failing evidence: the active row does not display its name while pending and inactive rows do.
 
-- [ ] **Step 2: Add the mobile attention priority helper and renderer**
+- [x] **Step 2: Add the mobile attention priority helper and renderer**
 
 Add a helper with the approved priority:
 
@@ -62,7 +62,7 @@ Render a mobile-only chip column capped at 112px. Active clients show the select
 
 Do not add another `ListBox.Item`, query, or click target.
 
-- [ ] **Step 3: Re-run the mobile fixture**
+- [x] **Step 3: Re-run the mobile fixture**
 
 Capture the same all-flags client at 392px.
 
@@ -75,13 +75,13 @@ Expected passing evidence:
 
 Remove all diagnostic route and fixture code after capture.
 
-- [ ] **Step 4: Compare desktop rendering**
+- [x] **Step 4: Compare desktop rendering**
 
 Capture the same fixture at 1280px.
 
 Expected passing evidence: all three attention badges, the stage badge, WhatsApp action when a phone is present, message action, unread badge, and chevron remain available without changing row navigation.
 
-- [ ] **Step 5: Run focused static checks**
+- [x] **Step 5: Run focused static checks**
 
 From `frontend/` run:
 
@@ -101,7 +101,7 @@ git diff --check
 
 Expected: both exit 0.
 
-- [ ] **Step 6: Review and commit the implementation**
+- [x] **Step 6: Review and commit the implementation**
 
 Confirm `git diff` contains only the clients-list implementation and plan progress, plus the user's unstaged check-ins document. Confirm no diagnostic route or fixture remains.
 

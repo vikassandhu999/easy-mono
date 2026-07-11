@@ -1,18 +1,85 @@
-import { formatIsoDateShort, formatTimeAgo, getInitials } from '@easy/utils';
-import { Avatar, Chip, Description, Label, ListBox } from '@heroui/react';
-import { ChevronRight, MessageCircle, MessagesSquare } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import {formatIsoDateShort, formatTimeAgo, getInitials} from '@easy/utils';
+import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
+import {ChevronRight, MessageCircle, MessagesSquare} from 'lucide-react';
+import {Link} from 'react-router-dom';
 
-import { ROUTES } from '@/@config/routes';
-import type { Client } from '@/api/clients';
-import { getWhatsAppUrl, INACTIVE_REASON_LABEL, STATUS_DISPLAY, stageChip } from '@/clients/lib/client';
+import {ROUTES} from '@/@config/routes';
+import type {Client} from '@/api/clients';
+import {getWhatsAppUrl, INACTIVE_REASON_LABEL, STATUS_DISPLAY, stageChip} from '@/clients/lib/client';
 
 const CHIP_TONE_CLASS =
   '[&.chip--default]:bg-surface-secondary! [&.chip--default]:text-muted! [&.chip--success]:bg-success-soft/50! [&.chip--success]:text-success! [&.chip--warning]:bg-warning-soft/50! [&.chip--warning]:text-warning!';
 const ATTENTION_CHIP_CLASS = `h-auto! min-h-0! max-w-full px-[5px]! py-0.5! text-[10.5px] leading-[15.75px] font-bold! sm:px-2! sm:py-1! sm:text-[11.5px] sm:leading-[17.25px] ${CHIP_TONE_CLASS}`;
 const STATUS_CHIP_CLASS = `h-auto! min-h-0! max-w-full px-1.5! py-0.5! text-[10.5px] leading-[15.75px] font-bold! sm:px-2! sm:py-[3px]! sm:text-[11.5px] sm:leading-[17.25px] ${CHIP_TONE_CLASS}`;
 
-export function RowChips({ client }: { client: Client }) {
+function inactiveStatusLabel(client: Client): string {
+  return client.inactive_reason === 'subscription_expired' && client.subscription_ends_on
+    ? `Subscription ended ${formatIsoDateShort(client.subscription_ends_on)}`
+    : (INACTIVE_REASON_LABEL[client.inactive_reason ?? 'manual'] ?? 'Inactive');
+}
+
+function mobileAttentionLabel(client: Client): string | null {
+  if (client.stage === 'coaching' && client.intake_incomplete) {
+    return 'Intake incomplete';
+  }
+  if (client.stage === 'coaching' && client.needs_plan) {
+    return 'Needs plan';
+  }
+  if (client.expiring_soon) {
+    return 'Expiring soon';
+  }
+  return null;
+}
+
+function MobileRowChips({client}: {client: Client}) {
+  if (client.status === 'active') {
+    const attentionLabel = mobileAttentionLabel(client);
+    const stage = stageChip(client);
+
+    return (
+      <div className="flex w-[112px] min-w-0 flex-col items-end gap-1 sm:hidden">
+        {attentionLabel ? (
+          <Chip
+            className={ATTENTION_CHIP_CLASS}
+            color="warning"
+            size="sm"
+            variant="soft"
+          >
+            <span className="block max-w-[100px] truncate">{attentionLabel}</span>
+          </Chip>
+        ) : null}
+        <Chip
+          className={STATUS_CHIP_CLASS}
+          color={stage.color}
+          size="sm"
+          variant="soft"
+        >
+          <span className="block max-w-[100px] truncate">{stage.label}</span>
+        </Chip>
+      </div>
+    );
+  }
+
+  const status =
+    client.status === 'inactive'
+      ? {color: 'default' as const, label: inactiveStatusLabel(client)}
+      : STATUS_DISPLAY[client.status];
+
+  return (
+    <div className="flex w-[112px] min-w-0 justify-end sm:hidden">
+      <Chip
+        className={STATUS_CHIP_CLASS}
+        color={status.color}
+        size="sm"
+        variant="soft"
+      >
+        <span className="block max-w-[100px] truncate">{status.label}</span>
+      </Chip>
+    </div>
+  );
+}
+
+export function RowChips({client}: {client: Client}) {
   if (client.status === 'active') {
     const stage = stageChip(client);
     return (
@@ -60,10 +127,6 @@ export function RowChips({ client }: { client: Client }) {
   }
 
   if (client.status === 'inactive') {
-    const label =
-      client.inactive_reason === 'subscription_expired' && client.subscription_ends_on
-        ? `Subscription ended ${formatIsoDateShort(client.subscription_ends_on)}`
-        : (INACTIVE_REASON_LABEL[client.inactive_reason ?? 'manual'] ?? 'Inactive');
     return (
       <span className="flex min-w-0">
         <Chip
@@ -72,7 +135,7 @@ export function RowChips({ client }: { client: Client }) {
           size="sm"
           variant="soft"
         >
-          {label}
+          {inactiveStatusLabel(client)}
         </Chip>
       </span>
     );
@@ -97,7 +160,7 @@ function unreadLabel(unreadCount: number): string {
   return unreadCount > 99 ? '99+' : String(unreadCount);
 }
 
-export default function ClientListItem({ client, unreadCount }: { client: Client; unreadCount: number }) {
+export default function ClientListItem({client, unreadCount}: {client: Client; unreadCount: number}) {
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email || 'Client';
   const initials = getInitials(client.first_name, client.last_name);
 
@@ -132,7 +195,10 @@ export default function ClientListItem({ client, unreadCount }: { client: Client
         </div>
         <div className="col-start-3 row-start-1 flex min-w-0 items-center justify-end gap-3.5">
           <div className="min-w-0">
-            <RowChips client={client} />
+            <MobileRowChips client={client} />
+            <div className="hidden min-w-0 sm:block">
+              <RowChips client={client} />
+            </div>
           </div>
           <div className="hidden shrink-0 items-center sm:flex">
             {whatsappUrl ? (

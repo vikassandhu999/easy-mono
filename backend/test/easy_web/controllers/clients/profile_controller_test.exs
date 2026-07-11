@@ -31,6 +31,7 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["phone"] == "+91 98765 43210"
       assert data["goal_weight_value"] == nil
       assert data["goal_weight_unit"] == nil
+      assert data["default_weight_unit"] == "kg"
       assert data["status"] == "active"
       refute Map.has_key?(data, "business_id")
 

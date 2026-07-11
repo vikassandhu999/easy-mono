@@ -195,17 +195,29 @@ defmodule Easy.Clients do
   end
 
   @spec get_client_account_profile(Ctx.t()) ::
-          {:ok, %{client: Client.t(), coach: Orgs.Coach.t() | nil}} | {:error, :not_found}
+          {:ok,
+           %{
+             client: Client.t(),
+             coach: Orgs.Coach.t() | nil,
+             default_weight_unit: :kg | :lbs
+           }}
+          | {:error, :not_found}
   def get_client_account_profile(%Ctx{} = ctx) do
     with {:ok, client} <- get_client_account(ctx) do
       coach = get_assigned_coach(ctx.business_id, client.assigned_coach_id)
+      business = Repo.get!(Orgs.Business, ctx.business_id)
 
-      {:ok, %{client: client, coach: coach}}
+      {:ok, %{client: client, coach: coach, default_weight_unit: business.default_weight_unit}}
     end
   end
 
   @spec update_client_account_profile(Ctx.t(), map()) ::
-          {:ok, %{client: Client.t(), coach: Orgs.Coach.t() | nil}}
+          {:ok,
+           %{
+             client: Client.t(),
+             coach: Orgs.Coach.t() | nil,
+             default_weight_unit: :kg | :lbs
+           }}
           | {:error, :not_found | Ecto.Changeset.t()}
   def update_client_account_profile(%Ctx{} = ctx, attrs) do
     with {:ok, client} <- get_client_account(ctx),

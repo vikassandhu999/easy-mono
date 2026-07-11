@@ -308,6 +308,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile do
       phone: %Schema{type: :string, nullable: true},
       goal_weight_value: %Schema{type: :number, nullable: true},
       goal_weight_unit: %Schema{type: :string, nullable: true},
+      default_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"]},
       status: %Schema{type: :string},
       coach: %Schema{oneOf: [ClientProfileCoach], nullable: true}
     },
@@ -319,6 +320,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile do
       :phone,
       :goal_weight_value,
       :goal_weight_unit,
+      :default_weight_unit,
       :status,
       :coach
     ]

@@ -2,7 +2,7 @@ import {Typography} from '@heroui/react';
 
 import type {ClientProfileReviewQueueItem} from '@/api/checkins';
 
-type SnapshotQuestion = {id?: string; label?: string};
+type SnapshotQuestion = {id?: string; label?: string; type?: string};
 type SnapshotSection = {questions?: SnapshotQuestion[]; title?: string};
 
 function formatAnswer(value: unknown): string {
@@ -23,6 +23,7 @@ function formatAnswer(value: unknown): string {
 
 export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueItem}) {
   const sections = item.question_snapshot as SnapshotSection[];
+  const attachments = new Map(item.attachments.map((attachment) => [attachment.id, attachment]));
 
   return (
     <div className="space-y-5">
@@ -51,13 +52,44 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                 >
                   {question.label ?? question.id ?? 'Question'}
                 </Typography>
-                <Typography
-                  className="mt-1 break-words"
-                  type="body-sm"
-                  weight="semibold"
-                >
-                  {formatAnswer(question.id ? item.answers[question.id] : undefined)}
-                </Typography>
+                {question.type === 'photo' ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {(question.id && Array.isArray(item.answers[question.id]) ? item.answers[question.id] : []).map(
+                      (attachmentId: unknown, photoIndex: number) => {
+                        const attachment = typeof attachmentId === 'string' ? attachments.get(attachmentId) : undefined;
+                        return attachment?.read_url ? (
+                          <a
+                            href={attachment.read_url}
+                            key={attachment.id}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            <img
+                              alt={`${question.label ?? 'Progress photo'} ${photoIndex + 1}`}
+                              className="aspect-[3/4] w-full rounded-xl border border-border object-cover"
+                              src={attachment.read_url}
+                            />
+                          </a>
+                        ) : (
+                          <div
+                            className="grid aspect-[3/4] place-items-center rounded-xl border border-border bg-surface text-center text-muted text-xs"
+                            key={String(attachmentId)}
+                          >
+                            Photo unavailable
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
+                ) : (
+                  <Typography
+                    className="mt-1 break-words"
+                    type="body-sm"
+                    weight="semibold"
+                  >
+                    {formatAnswer(question.id ? item.answers[question.id] : undefined)}
+                  </Typography>
+                )}
               </div>
             ))}
           </div>

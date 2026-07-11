@@ -53,13 +53,23 @@ export const ASSIGNMENT_STATUS_LABELS: Record<string, string> = {
   missed: 'Missed',
 };
 
-export type FormQuestionType = 'boolean' | 'date' | 'multi_select' | 'number' | 'rating' | 'select' | 'text' | 'weight';
+export type FormQuestionType =
+  | 'boolean'
+  | 'date'
+  | 'multi_select'
+  | 'number'
+  | 'photo'
+  | 'rating'
+  | 'select'
+  | 'text'
+  | 'weight';
 
 export const FORM_QUESTION_TYPE_LABELS: Record<FormQuestionType, string> = {
   boolean: 'Yes / No',
   date: 'Date',
   multi_select: 'Multi-select',
   number: 'Number',
+  photo: 'Photo',
   rating: 'Rating (1–5)',
   select: 'Select',
   text: 'Text',

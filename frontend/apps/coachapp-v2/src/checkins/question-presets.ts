@@ -18,6 +18,13 @@ export const QUESTION_PRESETS: QuestionPreset[] = [
   {category: 'Body', key: 'hip', label: 'Hip measurement', required: false, type: 'number'},
   {category: 'Body', key: 'chest', label: 'Chest measurement', required: false, type: 'number'},
   {
+    category: 'Body',
+    key: 'progress-photos',
+    label: 'Progress photos (front/side/back)',
+    required: false,
+    type: 'photo',
+  },
+  {
     category: 'Training',
     key: 'workouts-completed',
     label: 'Workouts completed this week',

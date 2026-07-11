@@ -14,9 +14,9 @@ This spec replaces the page composition from the June 26 client detail design. I
 
 ## Scope
 
-Selecting a client on `/clients` opens a client workspace. The workspace uses the compact global navigation and client-local navigation shown in the Claude Design reference. It rearranges client capabilities that the coach app already supports.
+Selecting a client on `/clients` opens a client workspace. The workspace uses the compact desktop navigation and responsive client navigation shown in the Claude Design reference. It rearranges client capabilities that the coach app already supports.
 
-The first workspace view is Progress at every viewport. Chat remains a separate route.
+The list transition follows the reference: desktop opens Chat and mobile opens Progress. Chat remains a separate route inside the shared workspace shell.
 
 ## Routes and navigation
 
@@ -27,6 +27,8 @@ The first workspace view is Progress at every viewport. Chat remains a separate 
 * `/clients/:id?tab=detail` renders Detail.
 * `/clients/:id/messages` renders Chat in the same workspace chrome.
 * An absent or invalid `tab` value resolves to Progress.
+* Selecting a desktop client row opens `/clients/:id/messages`.
+* Selecting a mobile client row opens `/clients/:id`.
 * Tab changes replace the URL rather than add browser history entries. Refresh keeps the selected tab; browser Back returns to the client list or the route that opened the client.
 * The mobile Chat action navigates to `/clients/:id/messages`. Back from Chat returns to `/clients/:id`.
 
@@ -61,7 +63,7 @@ At mobile width, the app bottom navigation stays hidden as it does on non-top-le
 3. A horizontally scrollable tab strip.
 4. The selected content in one scroll container.
 
-The mobile and desktop routes select the same initial view. This intentionally differs from the mockup's desktop Chat-first transition.
+The global mobile bottom navigation is absent throughout the workspace. This is an approved deviation from the reference. The selected client remains the full mobile context until the coach goes back to the roster.
 
 ## Supported sections
 
@@ -89,7 +91,7 @@ Compose:
 * `ClientTrainerCard` for the assigned trainer and reassignment;
 * `InlineNotes` for coach notes.
 
-Assigned trainer and Subscription are not separate tabs. They are part of Detail.
+Assigned trainer and Subscription are not separate tabs. They are part of Detail. The Detail tab shows subscription status and dates, and uses the client edit flow for supported updates. Do not translate the mockup's pause, cancellation, or removal labels into different backend states.
 
 ### Chat
 
@@ -128,14 +130,16 @@ The `.dc.html` source was inspected for this design. No rendered browser was ava
 
 ## Verification
 
-Verify the list-to-workspace flow at 375px and 1280px:
+Verify the list-to-workspace flow at 392px and 1280px:
 
-* row selection opens Progress;
+* desktop row selection opens Chat;
+* mobile row selection opens Progress;
 * each supported tab renders and refresh preserves it;
 * Chat opens and returns to the workspace;
 * browser Back returns to the source route without cycling through tabs;
 * pending, inactive, awaiting-seat, loading, empty, and error states keep their behavior;
 * the desktop global shell compacts only on workspace routes;
+* the mobile global bottom navigation stays hidden on workspace routes;
 * mobile content has no horizontal page overflow.
 
 Run:

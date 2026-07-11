@@ -767,6 +767,15 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.trainerAcceptInviteVerifyRequest,
       }),
     }),
+    listAttentionClients: build.query<ListAttentionClientsApiResponse, ListAttentionClientsApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/clients/attention`,
+        params: {
+          offset: queryArg.offset,
+          limit: queryArg.limit,
+        },
+      }),
+    }),
     signup: build.mutation<SignupApiResponse, SignupApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/signup`,
@@ -1564,6 +1573,13 @@ export type TrainerAcceptInviteVerifyApiResponse = /** status 200 Auth token */ 
 export type TrainerAcceptInviteVerifyApiArg = {
   /** Trainer accept invite verification request */
   trainerAcceptInviteVerifyRequest: TrainerAcceptInviteVerifyRequest;
+};
+export type ListAttentionClientsApiResponse = /** status 200 Attention clients */ ClientAttentionListResponse;
+export type ListAttentionClientsApiArg = {
+  /** Number of clients to skip */
+  offset?: number;
+  /** Maximum clients to return */
+  limit?: number;
 };
 export type SignupApiResponse = /** status 201 Signup */ SignupResponse;
 export type SignupApiArg = {
@@ -2831,6 +2847,10 @@ export type TrainerAcceptInviteVerifyRequest = {
   invitation_token: string;
   otp: string;
 };
+export type ClientAttentionListResponse = {
+  count: number;
+  data: Client[];
+};
 export type SignupResponse = {
   confirmation_sent_at: string | null;
   email: string;
@@ -3144,6 +3164,8 @@ export const {
   useLazyGetFormTemplateQuery,
   useUpdateFormTemplateMutation,
   useTrainerAcceptInviteVerifyMutation,
+  useListAttentionClientsQuery,
+  useLazyListAttentionClientsQuery,
   useSignupMutation,
   useListCoachMealLogsQuery,
   useLazyListCoachMealLogsQuery,

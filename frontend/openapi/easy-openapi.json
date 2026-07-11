@@ -1662,6 +1662,33 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingScheduleResponse",
         "x-validate": null
       },
+      "ClientAttentionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Client"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "ClientAttentionListResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientAttentionListResponse",
+        "x-validate": null
+      },
       "TrainingSessionResponse": {
         "additionalProperties": false,
         "properties": {
@@ -19684,6 +19711,68 @@
         "summary": "Verify trainer invitation OTP",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/v1/coach/clients/attention": {
+      "get": {
+        "callbacks": {},
+        "description": "Lists visible active clients with intake, plan, or subscription attention flags.",
+        "operationId": "listAttentionClients",
+        "parameters": [
+          {
+            "description": "Number of clients to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Maximum clients to return",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientAttentionListResponse"
+                }
+              }
+            },
+            "description": "Attention clients"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List clients needing attention",
+        "tags": [
+          "coach clients"
         ]
       }
     },

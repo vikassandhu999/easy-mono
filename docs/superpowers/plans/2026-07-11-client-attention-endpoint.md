@@ -32,7 +32,7 @@
 * Consumes: `Client.visible_to/2`, `Client.accepted/1`, `FormAssignment`, `TrainingPlan`, `Easy.Nutrition.Plan`, and `put_attention_flags_for_clients/2`.
 * Produces: `Easy.Clients.list_attention_clients/2 :: {:ok, %{clients: [Client.t()], count: non_neg_integer()}}`.
 
-- [ ] **Step 1: Write failing context tests**
+- [x] **Step 1: Write failing context tests**
 
 Add a `describe "list_attention_clients/2"` block. Build three active clients so each has one highest-priority reason: an intake client with an open intake assignment and an active training plan, a needs-plan client with no active plan, and an expiring client with an active training plan plus `subscription_ends_on: Date.add(Date.utc_today(), 3)`. Assert:
 
@@ -53,7 +53,7 @@ assert {:ok, %{count: 3, clients: [_one]}} =
 
 Add visibility coverage using `trainer_ctx/1`: an assigned trainer sees only assigned attention clients, the owner sees all attention clients in the business, and neither sees another business's clients.
 
-- [ ] **Step 2: Run the context tests to verify failure**
+- [x] **Step 2: Run the context tests to verify failure**
 
 Run from `backend/`:
 
@@ -63,7 +63,7 @@ mix test test/easy/clients/read_boundary_test.exs
 
 Expected: failure because `Easy.Clients.list_attention_clients/2` is undefined.
 
-- [ ] **Step 3: Implement the context interface**
+- [x] **Step 3: Implement the context interface**
 
 Add the public Ctx-first function:
 
@@ -103,7 +103,7 @@ open_intake? or (not active_training? and not active_nutrition?) or expiring_soo
 
 `expiring_soon?` uses `Date.utc_today()` and `Date.add(today, @expiring_soon_days)`. `order_attention_clients/2` uses a SQL `CASE` with the same correlated predicates: intake priority 1, needs-plan priority 2, otherwise expiring priority 3, followed by descending insertion time and ID. Keep the query helpers private to `Easy.Clients`; cross-domain attention logic does not belong in the `Client` schema.
 
-- [ ] **Step 4: Run the context tests to verify success**
+- [x] **Step 4: Run the context tests to verify success**
 
 Run:
 
@@ -113,7 +113,7 @@ mix test test/easy/clients/read_boundary_test.exs
 
 Expected: all tests in the file pass.
 
-- [ ] **Step 5: Commit the read model**
+- [x] **Step 5: Commit the read model**
 
 ```bash
 git add backend/lib/easy/clients.ex backend/test/easy/clients/read_boundary_test.exs
@@ -137,7 +137,7 @@ git commit -m "feat(clients): add attention read model"
 * Consumes: `Clients.list_attention_clients/2` from Task 1 and the shared OpenAPI `Client` schema.
 * Produces: `GET /v1/coach/clients/attention`, operation ID `listAttentionClients`, and `ClientAttentionListResponse`.
 
-- [ ] **Step 1: Write failing controller tests**
+- [x] **Step 1: Write failing controller tests**
 
 Create a `describe "GET /v1/coach/clients/attention"` block. Assert that the route returns only an active attention client, validates the complete rendered entity against the `Client` OpenAPI schema, and validates the whole response against `ClientAttentionListResponse`:
 
@@ -151,7 +151,7 @@ assert_schema(json_response(conn, 200), "ClientAttentionListResponse", EasyWeb.A
 
 Add tests for an empty `200` response, unauthenticated rejection, and route precedence by asserting the request reaches the attention action rather than returning the client-detail not-found response.
 
-- [ ] **Step 2: Run the controller tests to verify failure**
+- [x] **Step 2: Run the controller tests to verify failure**
 
 Run:
 
@@ -161,7 +161,7 @@ mix test test/easy_web/controllers/coaches/client_controller_test.exs
 
 Expected: failure because `/clients/attention` is matched as `:id` or the attention response schema/action is absent.
 
-- [ ] **Step 3: Add the schema, renderer, controller action, and route**
+- [x] **Step 3: Add the schema, renderer, controller action, and route**
 
 Add `EasyWeb.OpenApi.Schemas.ClientAttentionListResponse` next to `ClientListResponse`:
 
@@ -220,7 +220,7 @@ end
 
 Declare `get "/clients/attention", ClientController, :attention` before `get "/clients/:id"`.
 
-- [ ] **Step 4: Run controller and route coverage tests**
+- [x] **Step 4: Run controller and route coverage tests**
 
 Run:
 
@@ -230,7 +230,7 @@ mix test test/easy_web/controllers/coaches/client_controller_test.exs test/easy_
 
 Expected: both test files pass.
 
-- [ ] **Step 5: Commit the HTTP contract**
+- [x] **Step 5: Commit the HTTP contract**
 
 ```bash
 git add backend/lib/easy_web/router.ex backend/lib/easy_web/controllers/coaches/client_controller.ex backend/lib/easy_web/controllers/coaches/client_json.ex backend/lib/easy_web/open_api/schemas/client.ex backend/test/easy_web/controllers/coaches/client_controller_test.exs
@@ -255,7 +255,7 @@ git commit -m "feat(api): expose client attention endpoint"
 * Consumes: OpenAPI operation ID `listAttentionClients`.
 * Produces: generated `useListAttentionClientsQuery` in the coachapp contract; the clientapp generated contract remains consistent with its split OpenAPI document.
 
-- [ ] **Step 1: Generate OpenAPI documents and frontend clients**
+- [x] **Step 1: Generate OpenAPI documents and frontend clients**
 
 From the repository root run:
 
@@ -265,7 +265,7 @@ just gen-api
 
 Expected: the coach OpenAPI document contains `/v1/coach/clients/attention`; coachapp generated code contains `listAttentionClients` and `useListAttentionClientsQuery`. Review formatter writes before staging. The clientapp document must not expose the coach route.
 
-- [ ] **Step 2: Run focused generated-contract checks**
+- [x] **Step 2: Run focused generated-contract checks**
 
 From `frontend/` run:
 
@@ -277,7 +277,7 @@ pnpm -C apps/clientapp-v2 build
 
 Expected: generated files pass Biome and both builds exit 0. Record any pre-existing CSS-minification or bundle-size warnings.
 
-- [ ] **Step 3: Run backend and repository gates**
+- [x] **Step 3: Run backend and repository gates**
 
 From `backend/` run:
 
@@ -294,7 +294,7 @@ git diff --check
 
 Expected: all commands exit 0.
 
-- [ ] **Step 4: Audit scope and commit generated consumers**
+- [x] **Step 4: Audit scope and commit generated consumers**
 
 Confirm the diff contains only the endpoint, tests, OpenAPI artifacts, generated clients, and plan progress. Confirm no popup or dashboard UI wiring was added.
 
@@ -302,3 +302,5 @@ Confirm the diff contains only the endpoint, tests, OpenAPI artifacts, generated
 git add frontend/openapi frontend/apps/coachapp-v2/src/api/generated.ts frontend/apps/clientapp-v2/src/api/generated.ts docs/superpowers/plans/2026-07-11-client-attention-endpoint.md
 git commit -m "chore(api): generate client attention contract"
 ```
+
+Execution note: `just gen-api` wrote the OpenAPI and generated clients, then exited at the repository's known generated-code Biome findings for four `queryArg['from']` expressions. Both generated clients were checked; only coachapp changed. Both frontend production builds pass.

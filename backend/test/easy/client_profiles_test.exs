@@ -729,9 +729,11 @@ defmodule Easy.ClientProfilesTest do
       assert template.system_key == "weekly_check_in"
 
       questions = Enum.flat_map(template.sections, & &1["questions"])
-      assert length(questions) == 10
+      assert length(questions) == 11
       assert Enum.find(questions, &(&1["id"] == "weight"))["type"] == "weight"
+      assert Enum.find(questions, &(&1["id"] == "progress-photos"))["type"] == "photo"
       assert Enum.count(questions, &(&1["type"] == "rating")) == 6
+      assert template.system_version == 2
 
       assert {:ok, renamed} = ClientProfiles.update_form_template(ctx, template.id, %{"name" => "Friday review"})
       assert renamed.system_key == "weekly_check_in"
@@ -751,6 +753,39 @@ defmodule Easy.ClientProfilesTest do
       refute first_template.id == second_template.id
       assert first_template.business_id == first.id
       assert second_template.business_id == second.id
+    end
+
+    test "evolves an older system default once without overwriting other edits" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+
+      old_sections = [
+        %{"title" => "Body", "questions" => [%{"id" => "weight", "label" => "Custom weight", "type" => "weight"}]},
+        %{"title" => "Coach section", "questions" => []}
+      ]
+
+      old_template =
+        %FormTemplate{system_key: "weekly_check_in", system_version: 1}
+        |> Map.put(:business_id, business.id)
+        |> Map.put(:name, "Coach-renamed default")
+        |> Map.put(:purpose, :check_in)
+        |> Map.put(:sections, old_sections)
+        |> Map.put(:status, :active)
+        |> Repo.insert!()
+
+      assert {:ok, [evolved]} = ClientProfiles.list_form_templates(ctx)
+      assert evolved.id == old_template.id
+      assert evolved.name == "Coach-renamed default"
+      assert evolved.system_version == 2
+      assert Enum.any?(evolved.sections, &(&1["title"] == "Coach section"))
+
+      body = Enum.find(evolved.sections, &(&1["title"] == "Body"))
+      assert Enum.find(body["questions"], &(&1["id"] == "weight"))["label"] == "Custom weight"
+      assert Enum.count(body["questions"], &(&1["id"] == "progress-photos")) == 1
+
+      assert {:ok, [listed_again]} = ClientProfiles.list_form_templates(ctx)
+      body_again = Enum.find(listed_again.sections, &(&1["title"] == "Body"))
+      assert Enum.count(body_again["questions"], &(&1["id"] == "progress-photos")) == 1
     end
   end
 

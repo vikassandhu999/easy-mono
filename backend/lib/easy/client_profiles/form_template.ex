@@ -22,6 +22,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
     field :sections, {:array, :map}, default: []
     field :status, Ecto.Enum, values: @statuses, default: :active
     field :system_key, :string
+    field :system_version, :integer
 
     belongs_to :business, Orgs.Business
     has_many :form_assignments, Easy.ClientProfiles.FormAssignment
@@ -46,7 +47,17 @@ defmodule Easy.ClientProfiles.FormTemplate do
     business_id
     |> insert_changeset(attrs)
     |> put_change(:system_key, system_key)
+    |> put_change(:system_version, Map.fetch!(attrs, "system_version"))
+    |> check_constraint(:system_version, name: :form_templates_system_version_positive)
     |> unique_constraint([:business_id, :system_key])
+  end
+
+  @spec system_content_changeset(t(), [map()], pos_integer()) :: Ecto.Changeset.t()
+  def system_content_changeset(template, sections, system_version) do
+    template
+    |> change(sections: sections, system_version: system_version)
+    |> validate_sections()
+    |> check_constraint(:system_version, name: :form_templates_system_version_positive)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()

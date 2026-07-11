@@ -1047,7 +1047,8 @@ defmodule Easy.ClientProfiles do
           "name" => "Weekly check-in",
           "purpose" => "check_in",
           "status" => "active",
-          "sections" => DefaultCheckIn.sections()
+          "sections" => DefaultCheckIn.sections(),
+          "system_version" => DefaultCheckIn.system_version()
         }
 
         ctx.business_id
@@ -1060,7 +1061,48 @@ defmodule Easy.ClientProfiles do
         {:ok, default_check_in_template(ctx.business_id)}
 
       template ->
-        {:ok, template}
+        evolve_default_check_in_template(template)
+    end
+  end
+
+  defp evolve_default_check_in_template(%FormTemplate{system_version: version} = template)
+       when is_integer(version) and version >= 2,
+       do: {:ok, template}
+
+  defp evolve_default_check_in_template(template) do
+    sections = add_default_photo_question(template.sections)
+
+    template
+    |> FormTemplate.system_content_changeset(sections, DefaultCheckIn.system_version())
+    |> Repo.update()
+  end
+
+  defp add_default_photo_question(sections) do
+    photo_question =
+      DefaultCheckIn.sections()
+      |> Enum.flat_map(& &1["questions"])
+      |> Enum.find(&(&1["id"] == "progress-photos"))
+
+    if Enum.any?(sections, fn section ->
+         Enum.any?(Map.get(section, "questions", []), &(&1["id"] == "progress-photos"))
+       end) do
+      sections
+    else
+      append_question_to_body(sections, photo_question)
+    end
+  end
+
+  defp append_question_to_body(sections, question) do
+    if Enum.any?(sections, &(&1["title"] == "Body")) do
+      Enum.map(sections, fn
+        %{"title" => "Body"} = section ->
+          Map.update(section, "questions", [question], &(&1 ++ [question]))
+
+        section ->
+          section
+      end)
+    else
+      [%{"title" => "Body", "questions" => [question]} | sections]
     end
   end
 

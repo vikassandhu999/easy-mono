@@ -3,7 +3,13 @@ defmodule Easy.DefaultCheckIn do
     %{
       "title" => "Body",
       "questions" => [
-        %{"id" => "weight", "label" => "Weight", "type" => "weight", "required" => false}
+        %{"id" => "weight", "label" => "Weight", "type" => "weight", "required" => false},
+        %{
+          "id" => "progress-photos",
+          "label" => "Progress photos (front/side/back)",
+          "type" => "photo",
+          "required" => false
+        }
       ]
     },
     %{
@@ -54,4 +60,7 @@ defmodule Easy.DefaultCheckIn do
 
   @spec sections() :: [map()]
   def sections, do: @sections
+
+  @spec system_version() :: pos_integer()
+  def system_version, do: 2
 end

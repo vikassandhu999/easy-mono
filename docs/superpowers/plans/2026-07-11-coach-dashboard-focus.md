@@ -288,3 +288,37 @@ git status --short
 ```
 
 Expected: no whitespace errors; only intentional implementation or verification changes remain.
+
+### Task 5: Match the distinct mobile composition
+
+**Files:**
+
+* Modify: `frontend/apps/coachapp-v2/src/dashboard/dashboard.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/stat-cell.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/won-lost-stat-cell.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/needs-attention-cell.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/recent-activity-cell.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/subscriptions-ending-cell.tsx`
+* Modify: `frontend/apps/coachapp-v2/src/dashboard/components/quick-actions-row.tsx`
+
+**Interfaces:**
+
+* Adds optional `className?: string` composition slots to `StatCell` and `WonLostStatCell`.
+* Preserves the desktop four-metric bento at `sm` and wider.
+* Preserves the owner setup guide above mobile metrics as an approved deviation.
+
+- [ ] **Step 1: Add composition slots to metric cards**
+
+Use `cn` from `@heroui/styles` to merge page-supplied responsive classes with each metric card's base classes. Do not add a theme token or a mobile-only duplicate component.
+
+- [ ] **Step 2: Apply mobile metric visibility and spans**
+
+Pass `hidden sm:flex` to pending invites. Pass `col-span-2 sm:col-span-1` to won/lost. Active clients and new prospects remain one column each. Hide the header invite action below `md`.
+
+- [ ] **Step 3: Apply the mobile section order**
+
+Use responsive order utilities so recent activity precedes subscriptions and attention below `sm`, then reset every section to the desktop source order at `sm`. Hide quick actions below `sm`.
+
+- [ ] **Step 4: Verify desktop and mobile**
+
+Run build, dashboard-only Biome, and `just check-rm`. Use Insider at 375px to confirm two 159px top metrics, a full-width won/lost card, then activity, subscriptions, and attention. Restore 1920px and confirm the four-column desktop metric row and two-column bento remain unchanged.

@@ -46,7 +46,9 @@ The quick-action row keeps the supported destinations: invite client, training p
 
 At desktop width, content stays left-aligned inside the application's maximum dashboard width. Metrics form a four-column row, the two main cards form a two-column bento, and subscriptions and quick actions span the dashboard width.
 
-At 375px, content becomes a single reading column. The greeting wraps without clipping, the invite action remains reachable, metric cards use a compact two-column layout where the reference permits it, and preview cards show bounded content. The app shell's mobile navigation remains fixed and content retains enough bottom padding to avoid overlap.
+At 375px, the dashboard uses the mockup's distinct mobile composition rather than a direct collapse of the desktop bento. The header contains the date and greeting without the desktop invite action. Active clients and new prospects form a two-column row, followed by a full-width won/lost card. Recent conversations, subscriptions ending, and client attention follow in that order. The desktop pending-invites metric and quick-action row are hidden on mobile.
+
+The owner setup guide remains above the mobile metrics. This approved deviation preserves the persisted setup workflow, which has no equivalent surface in the mobile mockup. The app shell's mobile navigation remains fixed and content retains enough bottom padding to avoid overlap.
 
 ## Data and state handling
 

@@ -1,12 +1,12 @@
-import {Fieldset, Skeleton, Typography, toast} from '@heroui/react';
+import {Button, Fieldset, Modal, Skeleton, Typography, toast, useOverlayState} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Pencil, Utensils} from 'lucide-react';
-import {useMemo, useState} from 'react';
+import {Pencil, Utensils, X} from 'lucide-react';
+import {useMemo} from 'react';
 import {useForm} from 'react-hook-form';
 import {Link} from 'react-router-dom';
 import {z} from 'zod';
 
-import {FieldRow, FormActions, FormLayout, FormNumberField} from '@/@components/form-fields';
+import {FieldRow, FormLayout, FormNumberField} from '@/@components/form-fields';
 import {ROUTES} from '@/@config/routes';
 import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
 import {useListCoachClientNutritionPlansQuery, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
@@ -111,52 +111,91 @@ function MacroEditor({onClose, plan}: {onClose: () => void; plan: NutritionPlan}
   };
 
   return (
-    <div className="mt-4 rounded-[16px] border-[1.5px] border-separator bg-surface-secondary p-4 lg:rounded-[18px]">
-      <FormLayout
-        className="max-w-none gap-5"
-        onSubmit={form.handleSubmit(handleSubmit)}
-        validationBehavior="aria"
-      >
-        <Fieldset>
-          <Fieldset.Legend>Macro targets</Fieldset.Legend>
-          <Fieldset.Group>
-            <FieldRow>
-              {MACRO_FIELDS.map((field) => (
-                <FormNumberField
-                  control={form.control}
-                  fullWidth
-                  key={field.name}
-                  label={field.label}
-                  minValue={0}
-                  name={field.name}
-                />
-              ))}
-            </FieldRow>
-          </Fieldset.Group>
-        </Fieldset>
+    <Modal.Container
+      placement="center"
+      size="md"
+    >
+      <Modal.Dialog className="overflow-hidden rounded-[24px] border-[1.5px] border-separator bg-surface p-0 shadow-2xl">
+        <FormLayout
+          className="max-w-none gap-0"
+          onSubmit={form.handleSubmit(handleSubmit)}
+          validationBehavior="aria"
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-surface-secondary px-6 py-5">
+            <div>
+              <h2 className="font-grotesk text-xl font-bold">Edit nutrition plan</h2>
+              <Typography
+                className="mt-1"
+                color="muted"
+                type="body-sm"
+              >
+                {plan.name} · daily targets
+              </Typography>
+            </div>
+            <button
+              aria-label="Close"
+              className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-surface-secondary text-muted"
+              onClick={onClose}
+              type="button"
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-        {form.formState.errors.root ? (
-          <Typography
-            className="text-danger-soft-foreground"
-            type="body-sm"
-          >
-            {form.formState.errors.root.message}
-          </Typography>
-        ) : null}
+          <div className="px-6 py-5">
+            <Fieldset>
+              <Fieldset.Group>
+                <FieldRow>
+                  {MACRO_FIELDS.map((field) => (
+                    <FormNumberField
+                      control={form.control}
+                      fullWidth
+                      key={field.name}
+                      label={field.label}
+                      minValue={0}
+                      name={field.name}
+                    />
+                  ))}
+                </FieldRow>
+              </Fieldset.Group>
+            </Fieldset>
 
-        <FormActions
-          isSubmitting={isLoading}
-          onCancel={onClose}
-          submitLabel="Save targets"
-          submittingLabel="Saving targets"
-        />
-      </FormLayout>
-    </div>
+            {form.formState.errors.root ? (
+              <Typography
+                className="mt-4 text-danger-soft-foreground"
+                type="body-sm"
+              >
+                {form.formState.errors.root.message}
+              </Typography>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 border-t border-surface-secondary px-6 py-4">
+            <Button
+              className="w-full"
+              isDisabled={isLoading}
+              onPress={onClose}
+              type="button"
+              variant="secondary"
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-full"
+              isPending={isLoading}
+              type="submit"
+            >
+              Save changes
+            </Button>
+          </div>
+        </FormLayout>
+      </Modal.Dialog>
+    </Modal.Container>
   );
 }
 
 export default function ClientNutritionAdherence({clientId, clientName}: {clientId: string; clientName: string}) {
-  const [editing, setEditing] = useState(false);
+  const editModal = useOverlayState();
   const {data, isError, isLoading} = useListCoachClientNutritionPlansQuery({clientId});
   const plan = useMemo(() => selectCurrentPlan(data?.data ?? []), [data]);
   const progress = plan ? getProgramProgress(plan) : null;
@@ -176,14 +215,28 @@ export default function ClientNutritionAdherence({clientId, clientName}: {client
           </Typography>
         </div>
         {plan ? (
-          <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-separator bg-surface px-4 text-[12.5px] font-bold transition-colors hover:bg-surface-hover"
-            onClick={() => setEditing((value) => !value)}
-            type="button"
-          >
-            <Pencil size={15} />
-            Edit plan
-          </button>
+          <Modal state={editModal}>
+            <div className="flex items-center gap-2">
+              <Modal.Trigger className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-separator bg-surface px-4 text-[12.5px] font-bold transition-colors hover:bg-surface-hover">
+                <Pencil size={15} />
+                Edit plan
+              </Modal.Trigger>
+              <Link
+                className="inline-flex min-h-11 items-center rounded-[12px] bg-accent px-4 text-[12.5px] font-bold text-accent-foreground transition-opacity hover:opacity-90"
+                to={ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)}
+              >
+                Open in builder
+              </Link>
+            </div>
+            {editModal.isOpen ? (
+              <Modal.Backdrop isDismissable>
+                <MacroEditor
+                  onClose={editModal.close}
+                  plan={plan}
+                />
+              </Modal.Backdrop>
+            ) : null}
+          </Modal>
         ) : (
           <PlanAssignControl
             clientId={clientId}
@@ -258,7 +311,6 @@ export default function ClientNutritionAdherence({clientId, clientName}: {client
               })}
             </div>
           </div>
-
           <div className="mt-4 rounded-[16px] border-[1.5px] border-separator bg-surface p-4 lg:rounded-[18px] lg:p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <Typography
@@ -284,20 +336,6 @@ export default function ClientNutritionAdherence({clientId, clientName}: {client
               <span>{progress?.endsLabel}</span>
             </div>
           </div>
-
-          {editing ? (
-            <MacroEditor
-              onClose={() => setEditing(false)}
-              plan={plan}
-            />
-          ) : null}
-
-          <Link
-            className="mt-4 inline-flex min-h-11 items-center rounded-[12px] px-3 text-sm font-semibold text-muted transition-colors hover:bg-surface-hover"
-            to={ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)}
-          >
-            Open in builder
-          </Link>
         </>
       ) : (
         <Typography

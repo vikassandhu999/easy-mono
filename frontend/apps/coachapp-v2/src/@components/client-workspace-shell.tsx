@@ -1,12 +1,24 @@
 import {formatIsoDateShort, getInitials} from '@easy/utils';
-import {Avatar, Skeleton} from '@heroui/react';
-import {ChevronLeft, CircleUserRound, ClipboardCheck, Dumbbell, LineChart, MessageCircle, Utensils} from 'lucide-react';
+import {Avatar, Button, Dropdown, Label, Skeleton, toast} from '@heroui/react';
+import {
+  ChevronLeft,
+  CircleUserRound,
+  ClipboardCheck,
+  Dumbbell,
+  LineChart,
+  MessageCircle,
+  MoreHorizontal,
+  Pause,
+  Play,
+  Utensils,
+} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Client} from '@/api/clients';
+import {type Client, useUpdateClientMutation} from '@/api/clients';
+import {getApiErrorMessage} from '@/api/shared';
 import {getClientName} from '@/clients/lib/client';
 import {formatStatusLabel} from '@/clients/lib/client-detail-metrics';
 import {
@@ -71,18 +83,65 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
   const inChat = location.pathname === chatPath;
   const handleBack = () => (inChat ? navigate(detailPath, {replace: true}) : goBack());
   const status = clientStatus(client);
+  const [updateClient, {isLoading: isStatusUpdating}] = useUpdateClientMutation();
+
+  const toggleClientStatus = async () => {
+    const nextStatus = client.status === 'active' ? 'inactive' : 'active';
+    try {
+      await updateClient({body: {status: nextStatus}, id: client.id}).unwrap();
+      toast.success(nextStatus === 'active' ? 'Client reactivated' : 'Client deactivated');
+    } catch (error) {
+      toast.danger(getApiErrorMessage(error, "Client status wasn't changed. Try again."));
+    }
+  };
 
   return (
     <div className="flex h-full min-h-0 w-full bg-surface">
       <aside className="hidden w-[274px] shrink-0 flex-col border-r border-separator bg-surface lg:flex">
         <div className="border-b border-separator px-4 pt-4 pb-3.5">
-          <Link
-            className="mb-3 inline-flex min-h-8 items-center gap-1 text-xs font-bold text-link transition-opacity hover:opacity-70"
-            to={ROUTES.CLIENTS}
-          >
-            <ChevronLeft size={14} />
-            All clients
-          </Link>
+          <div className="mb-3 flex min-h-8 items-center justify-between gap-2">
+            <Link
+              className="inline-flex items-center gap-1 text-xs font-bold text-link transition-opacity hover:opacity-70"
+              to={ROUTES.CLIENTS}
+            >
+              <ChevronLeft size={14} />
+              All clients
+            </Link>
+            {client.status !== 'pending' ? (
+              <Dropdown>
+                <Button
+                  aria-label="Client actions"
+                  className="size-[30px] min-w-[30px] rounded-[9px] text-muted"
+                  isIconOnly
+                  isPending={isStatusUpdating}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <MoreHorizontal size={17} />
+                </Button>
+                <Dropdown.Popover className="w-[212px] rounded-[14px] border-[1.5px] border-separator bg-surface p-1.5 shadow-xl">
+                  <Dropdown.Menu
+                    onAction={() => {
+                      toggleClientStatus();
+                    }}
+                  >
+                    <Dropdown.Item
+                      id="toggle-client-status"
+                      isDisabled={isStatusUpdating}
+                      textValue={client.status === 'active' ? 'Deactivate client' : 'Reactivate client'}
+                    >
+                      {client.status === 'active' ? (
+                        <Pause className="size-4 text-warning-soft-foreground" />
+                      ) : (
+                        <Play className="size-4 text-success-soft-foreground" />
+                      )}
+                      <Label>{client.status === 'active' ? 'Deactivate client' : 'Reactivate client'}</Label>
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown>
+            ) : null}
+          </div>
           <div className="flex items-center gap-3">
             <Avatar
               className="size-[52px] shrink-0 rounded-[15px]!"

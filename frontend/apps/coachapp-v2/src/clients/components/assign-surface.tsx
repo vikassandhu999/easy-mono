@@ -13,10 +13,11 @@ import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 interface Props {
   label: ReactNode;
   popoverClassName?: string;
+  triggerClassName?: string;
   children: (close: () => void) => ReactNode;
 }
 
-export default function AssignSurface({label, popoverClassName = '', children}: Props) {
+export default function AssignSurface({label, popoverClassName = '', triggerClassName = '', children}: Props) {
   const [open, setOpen] = useState(false);
   const isDesktop = useIsDesktop();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -26,7 +27,7 @@ export default function AssignSurface({label, popoverClassName = '', children}: 
   return (
     <>
       <Button
-        className="text-muted"
+        className={`text-muted ${triggerClassName}`}
         onPress={() => setOpen(true)}
         ref={triggerRef}
         size="sm"

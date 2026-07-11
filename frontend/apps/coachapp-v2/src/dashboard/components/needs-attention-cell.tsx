@@ -53,7 +53,7 @@ export function NeedsAttentionCell({clients, isError}: {clients: Client[]; isErr
   const visibleClients = previewClients.slice(0, 4);
 
   return (
-    <section className="col-span-2 flex min-h-80 flex-col rounded-3xl border border-accent bg-accent p-5 text-accent-foreground sm:col-span-2 sm:row-span-2">
+    <section className="order-3 col-span-2 flex min-h-80 flex-col rounded-3xl border border-accent bg-accent p-5 text-accent-foreground sm:order-none sm:col-span-2 sm:row-span-2">
       <div className="mb-4 flex items-center gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-danger-soft text-danger">
           <AlertTriangle size={20} />

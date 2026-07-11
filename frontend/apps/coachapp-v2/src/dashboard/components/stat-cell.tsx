@@ -1,6 +1,8 @@
+import {cn} from '@heroui/styles';
 import type {LucideIcon} from 'lucide-react';
 
 type StatCellProps = {
+  className?: string;
   errorLabel?: string;
   icon: LucideIcon;
   label: string;
@@ -9,10 +11,13 @@ type StatCellProps = {
   value: null | number;
 };
 
-export function StatCell({errorLabel, icon: Icon, label, meta, onPress, value}: StatCellProps) {
+export function StatCell({className, errorLabel, icon: Icon, label, meta, onPress, value}: StatCellProps) {
   return (
     <button
-      className="group flex min-h-32 flex-col justify-between rounded-3xl border-[1.5px] border-separator bg-surface p-4 text-left transition hover:-translate-y-0.5 hover:border-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:min-h-36 sm:p-5"
+      className={cn(
+        'group flex min-h-32 flex-col justify-between rounded-3xl border-[1.5px] border-separator bg-surface p-4 text-left transition hover:-translate-y-0.5 hover:border-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:min-h-36 sm:p-5',
+        className,
+      )}
       onClick={onPress}
       type="button"
     >

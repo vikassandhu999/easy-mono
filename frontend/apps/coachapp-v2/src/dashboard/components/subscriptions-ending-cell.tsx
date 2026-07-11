@@ -45,7 +45,7 @@ export function SubscriptionsEndingCell({clients, isError}: {clients: Client[]; 
   const visibleClients = clients.slice(0, 4);
 
   return (
-    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-5 sm:col-span-4">
+    <section className="order-2 col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-5 sm:order-none sm:col-span-4">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-warning-soft text-warning">

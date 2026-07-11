@@ -85,7 +85,7 @@ export default function Dashboard() {
           {dashboardSummary ? <p className="mt-3 text-sm text-muted">{dashboardSummary}</p> : null}
         </div>
         <Button
-          className="min-h-11 w-full md:w-auto"
+          className="hidden min-h-11 md:flex md:w-auto"
           onPress={() => navigate(ROUTES.INVITE_CLIENT)}
           variant="primary"
         >
@@ -102,6 +102,7 @@ export default function Dashboard() {
               <DashboardSetupCell hiddenReason={profile.business.dashboard_setup_hidden_reason} />
             ) : null}
             <StatCell
+              className="hidden sm:flex"
               errorLabel={clientsError ? "Couldn't load clients" : undefined}
               icon={Users}
               label="Active clients"
@@ -126,6 +127,7 @@ export default function Dashboard() {
               value={prospectsError ? null : newProspectCount}
             />
             <WonLostStatCell
+              className="col-span-2 sm:col-span-1"
               isError={prospectsError}
               lost={prospectSummary?.lost}
               onPress={() => navigate(ROUTES.PROSPECTS)}

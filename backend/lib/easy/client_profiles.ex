@@ -566,8 +566,10 @@ defmodule Easy.ClientProfiles do
 
     case Easy.MailerDelivery.deliver_sync(email_message, metadata: %{assignment_id: assignment.id}) do
       {:ok, _response} ->
-        stamp_reminder(assignment, type)
-        increment_count(counts, 0)
+        case stamp_reminder(assignment, type) do
+          {:ok, _assignment} -> increment_count(counts, 0)
+          {:error, _changeset} -> increment_count(counts, 1)
+        end
 
       {:error, _reason} ->
         increment_count(counts, 1)
@@ -584,11 +586,7 @@ defmodule Easy.ClientProfiles do
 
   defp stamp_reminder(assignment, type) do
     field = if type == :due, do: :due_reminder_sent_at, else: :overdue_reminder_sent_at
-
-    case assignment |> Ecto.Changeset.change([{field, DateTime.utc_now(:second)}]) |> Repo.update() do
-      {:ok, _assignment} -> :ok
-      {:error, changeset} -> Repo.rollback(changeset)
-    end
+    assignment |> Ecto.Changeset.change([{field, DateTime.utc_now(:second)}]) |> Repo.update()
   end
 
   defp include_assignment_client(query) do

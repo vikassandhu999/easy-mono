@@ -139,6 +139,13 @@ Do not rely on joining through a parent to recover tenant ownership. Stamp `busi
 the column non-null. Hit in chat messages and recipe ingredients. **Enforced by:** non-null
 foreign keys/indexes plus tenant-isolation context/controller tests.
 
+### RM-015 — Drop incompatible check constraints before data remaps
+When a migration maps stored values into a vocabulary rejected by the active check constraint,
+drop that constraint before the `UPDATE`, then create the replacement constraint after the data
+has moved. Apply the same order in `down/0`. Empty test databases do not prove this path; run the
+rollback/reapply cycle against representative legacy rows. **Enforced by:** populated-database
+migration verification plus review of every enum or status remap.
+
 ---
 
 ## Frontend

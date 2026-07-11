@@ -156,8 +156,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientAttentionListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias EasyWeb.OpenApi.Schemas.Client
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "ClientAttentionListResponse",

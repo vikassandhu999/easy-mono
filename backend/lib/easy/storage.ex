@@ -1,6 +1,4 @@
 defmodule Easy.Storage do
-  @moduledoc false
-
   @algorithm "AWS4-HMAC-SHA256"
   @service "s3"
   @request_type "aws4_request"
@@ -114,5 +112,11 @@ defmodule Easy.Storage do
   defp hmac(key, data), do: :crypto.mac(:hmac, :sha256, key, data)
   defp sha256_hex(data), do: :crypto.hash(:sha256, data) |> hex()
   defp hex(binary), do: Base.encode16(binary, case: :lower)
-  defp encode(value), do: URI.encode(value, &URI.char_unreserved?/1)
+  defp encode(value), do: URI.encode(value, &unreserved?/1)
+
+  defp unreserved?(char) when char in ?A..?Z, do: true
+  defp unreserved?(char) when char in ?a..?z, do: true
+  defp unreserved?(char) when char in ?0..?9, do: true
+  defp unreserved?(char) when char in [?-, ?_, ?., ?~], do: true
+  defp unreserved?(_char), do: false
 end

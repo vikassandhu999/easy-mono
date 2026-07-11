@@ -124,6 +124,13 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.foodLogEntryRequest,
       }),
     }),
+    createClientUpload: build.mutation<CreateClientUploadApiResponse, CreateClientUploadApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/client/uploads`,
+        method: 'POST',
+        body: queryArg.clientUploadRequest,
+      }),
+    }),
     acceptInvite: build.mutation<AcceptInviteApiResponse, AcceptInviteApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/accept-invite`,
@@ -475,6 +482,11 @@ export type LogDayApiArg = {
   /** Log day request */
   foodLogEntryRequest: FoodLogEntryRequest;
 };
+export type CreateClientUploadApiResponse = /** status 201 Upload created */ ClientUploadResponse;
+export type CreateClientUploadApiArg = {
+  /** Upload request */
+  clientUploadRequest: ClientUploadRequest;
+};
 export type AcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
 export type AcceptInviteApiArg = {
   /** Accept invite request */
@@ -718,10 +730,19 @@ export type FoodLogEntryRequest = {
   unit?: string | null;
   weight_g?: number | null;
 };
+export type ClientProfileSubmissionAttachment = {
+  byte_size: number;
+  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
+  id: string;
+  purpose: 'check_in_photo';
+  read_url: string | null;
+  read_url_expires_at: string | null;
+};
 export type ClientProfileFormSubmission = {
   answers: {
     [key: string]: any;
   };
+  attachments: ClientProfileSubmissionAttachment[];
   form_assignment_id: string;
   id: string;
   inserted_at: string;
@@ -734,7 +755,7 @@ export type ClientProfileFormSubmission = {
         [key: string]: any;
       } | null;
       required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
     }[];
     title?: string;
@@ -1166,6 +1187,25 @@ export type ClientTrainingPlan = {
 export type ClientTrainingPlanResponse = {
   data: ClientTrainingPlan;
 };
+export type ClientUpload = {
+  byte_size: number;
+  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
+  id: string;
+  purpose: 'check_in_photo';
+  upload_headers: {
+    [key: string]: string;
+  };
+  upload_url: string;
+  upload_url_expires_at: string;
+};
+export type ClientUploadResponse = {
+  data: ClientUpload;
+};
+export type ClientUploadRequest = {
+  byte_size: number;
+  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
+  purpose: 'check_in_photo';
+};
 export type MessageResponse = {
   message: string;
 };
@@ -1187,7 +1227,7 @@ export type ClientProfileFormTemplate = {
         [key: string]: any;
       } | null;
       required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
     }[];
     title?: string;
@@ -1477,6 +1517,7 @@ export const {
   useGetClientTrainingPlanTodayQuery,
   useLazyGetClientTrainingPlanTodayQuery,
   useLogDayMutation,
+  useCreateClientUploadMutation,
   useAcceptInviteMutation,
   useListClientFormAssignmentsQuery,
   useLazyListClientFormAssignmentsQuery,

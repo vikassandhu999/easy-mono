@@ -3024,6 +3024,91 @@
         "x-struct": null,
         "x-validate": null
       },
+      "ClientUpload": {
+        "additionalProperties": false,
+        "properties": {
+          "byte_size": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "content_type": {
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "purpose": {
+            "enum": [
+              "check_in_photo"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "upload_headers": {
+            "additionalProperties": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "upload_url": {
+            "format": "uri",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "upload_url_expires_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "content_type",
+          "byte_size",
+          "purpose",
+          "upload_url",
+          "upload_url_expires_at",
+          "upload_headers"
+        ],
+        "title": "ClientUpload",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientUpload",
+        "x-validate": null
+      },
+      "ClientUploadResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ClientUpload"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ClientUploadResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientUploadResponse",
+        "x-validate": null
+      },
       "ClientProfileFormTemplateUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -3094,7 +3179,8 @@
                           "select",
                           "multi_select",
                           "rating",
-                          "weight"
+                          "weight",
+                          "photo"
                         ],
                         "type": "string",
                         "x-struct": null,
@@ -3152,6 +3238,14 @@
           "answers": {
             "additionalProperties": true,
             "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/ClientProfileSubmissionAttachment"
+            },
+            "type": "array",
             "x-struct": null,
             "x-validate": null
           },
@@ -3228,7 +3322,8 @@
                           "select",
                           "multi_select",
                           "rating",
-                          "weight"
+                          "weight",
+                          "photo"
                         ],
                         "type": "string",
                         "x-struct": null,
@@ -3305,6 +3400,7 @@
           "submitted_at",
           "reviewed_at",
           "reviewed_by_id",
+          "attachments",
           "inserted_at",
           "client",
           "form_assignment"
@@ -3794,6 +3890,51 @@
         "x-struct": null,
         "x-validate": null
       },
+      "ClientUploadRequest": {
+        "additionalProperties": false,
+        "example": {
+          "byte_size": 1024000,
+          "content_type": "image/jpeg",
+          "purpose": "check_in_photo"
+        },
+        "properties": {
+          "byte_size": {
+            "maximum": 15728640,
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "content_type": {
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "purpose": {
+            "enum": [
+              "check_in_photo"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "purpose",
+          "content_type",
+          "byte_size"
+        ],
+        "title": "ClientUploadRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TrainerInvitationPreviewResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4245,6 +4386,67 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfile",
         "x-validate": null
       },
+      "ClientProfileSubmissionAttachment": {
+        "additionalProperties": false,
+        "properties": {
+          "byte_size": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "content_type": {
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "purpose": {
+            "enum": [
+              "check_in_photo"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "read_url": {
+            "format": "uri",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "read_url_expires_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "content_type",
+          "byte_size",
+          "purpose",
+          "read_url",
+          "read_url_expires_at"
+        ],
+        "title": "ClientProfileSubmissionAttachment",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileSubmissionAttachment",
+        "x-validate": null
+      },
       "ProspectResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4374,7 +4576,8 @@
                           "select",
                           "multi_select",
                           "rating",
-                          "weight"
+                          "weight",
+                          "photo"
                         ],
                         "type": "string",
                         "x-struct": null,
@@ -8706,7 +8909,8 @@
                           "select",
                           "multi_select",
                           "rating",
-                          "weight"
+                          "weight",
+                          "photo"
                         ],
                         "type": "string",
                         "x-struct": null,
@@ -9894,6 +10098,14 @@
             "x-struct": null,
             "x-validate": null
           },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/ClientProfileSubmissionAttachment"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "form_assignment_id": {
             "format": "uuid",
             "type": "string",
@@ -9961,7 +10173,8 @@
                           "select",
                           "multi_select",
                           "rating",
-                          "weight"
+                          "weight",
+                          "photo"
                         ],
                         "type": "string",
                         "x-struct": null,
@@ -10038,6 +10251,7 @@
           "submitted_at",
           "reviewed_at",
           "reviewed_by_id",
+          "attachments",
           "inserted_at"
         ],
         "title": "ClientProfileFormSubmission",
@@ -13594,6 +13808,76 @@
         "summary": "Add a day to a nutrition plan",
         "tags": [
           "coach nutrition plan days"
+        ]
+      }
+    },
+    "/v1/client/uploads": {
+      "post": {
+        "callbacks": {},
+        "description": "Creates attachment metadata and a short-lived private object-storage PUT URL.",
+        "operationId": "createClientUpload",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientUploadRequest"
+              }
+            }
+          },
+          "description": "Upload request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientUploadResponse"
+                }
+              }
+            },
+            "description": "Upload created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Storage unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create client upload",
+        "tags": [
+          "client uploads"
         ]
       }
     },

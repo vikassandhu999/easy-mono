@@ -5,6 +5,7 @@
 - `flyctl` installed and authenticated
 - production domain decided (or use `easy-backend.fly.dev`)
 - mail provider credentials ready
+- a private Tigris bucket for check-in photos
 
 ## 1) Create Fly app and database
 
@@ -16,6 +17,29 @@ fly postgres attach --app easy-backend easy-backend-db
 ```
 
 `fly postgres attach` sets `DATABASE_URL` on the app.
+
+Create private object storage from the backend app directory:
+
+```bash
+fly storage create -a easy-backend
+```
+
+Keep the bucket private. Fly sets the five runtime values the backend requires:
+`BUCKET_NAME`, `AWS_ENDPOINT_URL_S3`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, and
+`AWS_SECRET_ACCESS_KEY`. New Tigris code uses `https://t3.storage.dev`; the
+Fly-provisioned `https://fly.storage.tigris.dev` endpoint remains supported.
+
+Because photo bytes upload directly from the browser, configure the bucket's
+CORS rules in the Tigris dashboard with both frontend origins. Allow `PUT` and
+`GET`, allow the `Content-Type` header, and keep the rule scoped to:
+
+```text
+https://app.coacheasy.app
+https://client.coacheasy.app
+```
+
+Without this bucket CORS rule, metadata creation succeeds but the browser's
+direct PUT is rejected before the photo reaches storage.
 
 ## 2) Set required secrets
 

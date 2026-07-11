@@ -1857,7 +1857,7 @@ export type ClientProfileFormTemplate = {
         [key: string]: any;
       } | null;
       required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
     }[];
     title?: string;
@@ -2639,10 +2639,19 @@ export type BusinessRequest = {
   handle: string;
   name: string;
 };
+export type ClientProfileSubmissionAttachment = {
+  byte_size: number;
+  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
+  id: string;
+  purpose: 'check_in_photo';
+  read_url: string | null;
+  read_url_expires_at: string | null;
+};
 export type ClientProfileFormSubmission = {
   answers: {
     [key: string]: any;
   };
+  attachments: ClientProfileSubmissionAttachment[];
   form_assignment_id: string;
   id: string;
   inserted_at: string;
@@ -2655,7 +2664,7 @@ export type ClientProfileFormSubmission = {
         [key: string]: any;
       } | null;
       required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
     }[];
     title?: string;
@@ -2743,7 +2752,7 @@ export type ClientProfileFormTemplateRequest = {
         [key: string]: any;
       } | null;
       required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
     }[];
     title?: string;
@@ -2836,6 +2845,7 @@ export type ClientProfileReviewQueueItem = {
   answers: {
     [key: string]: any;
   };
+  attachments: ClientProfileSubmissionAttachment[];
   client: ClientProfileReviewClient;
   form_assignment: ClientProfileFormAssignment;
   form_assignment_id: string;
@@ -2850,7 +2860,7 @@ export type ClientProfileReviewQueueItem = {
         [key: string]: any;
       } | null;
       required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
     }[];
     title?: string;
@@ -3009,7 +3019,7 @@ export type ClientProfileFormTemplateUpdateRequest = {
         [key: string]: any;
       } | null;
       required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight';
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
     }[];
     title?: string;

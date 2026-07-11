@@ -36,6 +36,8 @@ export const ROUTES = {
   TRAINING_PLAN_DETAIL: '/library/training-plans/:id',
   EDIT_TRAINING_PLAN: '/library/training-plans/:id/edit',
   CHECKINS: '/library/check-ins',
+  CHECKINS_TO_REVIEW: '/library/check-ins?tab=review',
+  CHECKIN_REVIEW: '/library/check-ins/review/:id',
   CREATE_CHECKIN: '/library/check-ins/create',
   EDIT_CHECKIN: '/library/check-ins/:id/edit',
   PROSPECTS: '/prospects',

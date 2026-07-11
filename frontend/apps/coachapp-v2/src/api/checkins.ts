@@ -17,6 +17,7 @@ export type {
   ClientProfileFormSubmission,
   ClientProfileFormTemplate,
   ClientProfileFormTemplateRequest,
+  ClientProfileReviewQueueItem,
 } from '@/api/generated';
 
 export const {
@@ -27,11 +28,13 @@ export const {
   useGetFormTemplateQuery,
   useListClientFormAssignmentsForCoachQuery,
   useListCheckInSchedulesForClientQuery,
+  useListCheckInReviewQueueQuery,
   useListFormSubmissionsQuery,
   useListFormTemplatesQuery,
   useUpdateFormAssignmentMutation,
   useUpdateCheckInScheduleMutation,
   useUpdateFormTemplateMutation,
+  useReviewFormSubmissionMutation,
 } = coachApi;
 
 export type FormPurpose = 'check_in' | 'intake';
@@ -207,11 +210,18 @@ coachApi.enhanceEndpoints({
         {type: 'CheckInSchedule', id: 'LIST'},
       ],
     },
+    listCheckInReviewQueue: {providesTags: [{type: 'CheckInReview', id: 'LIST'}]},
     listFormSubmissions: {providesTags: (_r, _e, {id}) => [{type: 'FormSubmission', id}]},
     listFormTemplates: {providesTags: [{type: 'FormTemplate', id: 'LIST'}]},
     // Update only knows the assignment id, not its client, so refresh all
     // assignment lists via the shared LIST tag.
     updateFormAssignment: {invalidatesTags: [{type: 'FormAssignment', id: 'LIST'}]},
+    reviewFormSubmission: {
+      invalidatesTags: [
+        {type: 'CheckInReview', id: 'LIST'},
+        {type: 'FormAssignment', id: 'LIST'},
+      ],
+    },
     updateCheckInSchedule: {
       invalidatesTags: [
         {type: 'CheckInSchedule', id: 'LIST'},

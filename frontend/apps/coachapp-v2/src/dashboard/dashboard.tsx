@@ -5,10 +5,12 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
+import {useListCheckInReviewQueueQuery} from '@/api/checkins';
 import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useListProspectsQuery} from '@/api/prospects';
+import {CheckinsToReviewCell} from '@/dashboard/components/checkins-to-review-cell';
 import {NeedsAttentionCell} from '@/dashboard/components/needs-attention-cell';
 import {QuickActionsRow} from '@/dashboard/components/quick-actions-row';
 import {RecentActivityCell} from '@/dashboard/components/recent-activity-cell';
@@ -43,6 +45,11 @@ export default function Dashboard() {
     isError: conversationsError,
     isLoading: conversationsLoading,
   } = useListCoachConversationsQuery({limit: 5});
+  const {
+    data: reviewQueueData,
+    isError: reviewQueueError,
+    isLoading: reviewQueueLoading,
+  } = useListCheckInReviewQueueQuery();
 
   const isFirstLoad = profileLoading || clientsLoading || prospectsLoading || conversationsLoading;
 
@@ -124,6 +131,8 @@ export default function Dashboard() {
             newProspects={prospectsError ? null : newProspectCount}
             prospectsError={prospectsError}
             subscriptionsEnding={subscriptionsEndingThisMonth}
+            reviewCount={reviewQueueLoading || reviewQueueError ? null : (reviewQueueData?.data.length ?? 0)}
+            reviewError={reviewQueueError}
             wonProspects={prospectSummary?.won}
           />
 
@@ -158,6 +167,11 @@ export default function Dashboard() {
               lost={prospectSummary?.lost}
               onPress={() => navigate(ROUTES.PROSPECTS)}
               won={prospectSummary?.won}
+            />
+
+            <CheckinsToReviewCell
+              count={reviewQueueLoading || reviewQueueError ? null : (reviewQueueData?.data.length ?? 0)}
+              isError={reviewQueueError}
             />
 
             <NeedsAttentionCell

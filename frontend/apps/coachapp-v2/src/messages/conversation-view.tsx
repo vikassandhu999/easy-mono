@@ -42,14 +42,16 @@ function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
 export default function ConversationView({
   backTo,
   conversationId,
+  initialBody = '',
   title,
 }: {
   backTo: string;
   conversationId: string;
+  initialBody?: string;
   title: string;
 }) {
   const dispatch = useAppDispatch();
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState(initialBody);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useConversationMessagesInfiniteQuery({
@@ -86,6 +88,7 @@ export default function ConversationView({
     }
   }, [conversationId, lastMessageId, markRead]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the message-list tail changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({behavior: 'instant', block: 'end'});
   }, [lastMessageId]);

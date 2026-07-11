@@ -34,14 +34,21 @@ export const STATUS_LABELS: Record<string, string> = {
   missed: 'Missed',
 };
 
-export type AssignmentDisplayStatus = 'Completed' | 'Dismissed' | 'Due today' | 'Missed' | 'Overdue' | 'To do';
+export type AssignmentDisplayStatus =
+  | 'Completed'
+  | 'Completed · Reviewed ✓'
+  | 'Dismissed'
+  | 'Due today'
+  | 'Missed'
+  | 'Overdue'
+  | 'To do';
 
 export function assignmentDisplayStatus(
-  assignment: Pick<ClientProfileFormAssignment, 'due_date' | 'status'>,
+  assignment: Pick<ClientProfileFormAssignment, 'due_date' | 'latest_submission_reviewed_at' | 'status'>,
   today: Date = new Date(),
 ): AssignmentDisplayStatus {
   if (assignment.status === 'completed') {
-    return 'Completed';
+    return assignment.latest_submission_reviewed_at ? 'Completed · Reviewed ✓' : 'Completed';
   }
   if (assignment.status === 'dismissed') {
     return 'Dismissed';

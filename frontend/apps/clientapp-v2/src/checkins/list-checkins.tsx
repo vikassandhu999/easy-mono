@@ -13,7 +13,7 @@ import {
 } from '@/api/checkins';
 
 function statusClass(status: AssignmentDisplayStatus): string {
-  if (status === 'Completed') {
+  if (status === 'Completed' || status === 'Completed · Reviewed ✓') {
     return 'bg-success/10 text-success';
   }
   if (status === 'Overdue' || status === 'Missed') {

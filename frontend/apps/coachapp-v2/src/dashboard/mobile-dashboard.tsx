@@ -17,6 +17,8 @@ type MobileDashboardProps = {
   lostProspects?: number;
   newProspects: null | number;
   prospectsError: boolean;
+  reviewCount: null | number;
+  reviewError: boolean;
   subscriptionsEnding: Client[];
   wonProspects?: number;
 };
@@ -39,7 +41,7 @@ function MobileSectionHeading({children}: {children: string}) {
 function MobileStatCard({label, onPress, value}: {label: string; onPress: () => void; value: null | number}) {
   return (
     <button
-      className="min-h-20 rounded-2xl border-[1.5px] border-separator bg-surface p-[0.9375rem] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="min-h-20 w-full rounded-2xl border-[1.5px] border-separator bg-surface p-[0.9375rem] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       onClick={onPress}
       type="button"
     >
@@ -279,6 +281,8 @@ export function MobileDashboard({
   lostProspects,
   newProspects,
   prospectsError,
+  reviewCount,
+  reviewError,
   subscriptionsEnding,
   wonProspects,
 }: MobileDashboardProps) {
@@ -303,6 +307,13 @@ export function MobileDashboard({
         lost={lostProspects}
         won={wonProspects}
       />
+      <div className="mt-2.5">
+        <MobileStatCard
+          label={reviewError ? "Couldn't load check-ins" : 'Check-ins to review'}
+          onPress={() => navigate(ROUTES.CHECKINS_TO_REVIEW)}
+          value={reviewCount}
+        />
+      </div>
       <MobileConversations
         conversations={conversations}
         isError={conversationsError}

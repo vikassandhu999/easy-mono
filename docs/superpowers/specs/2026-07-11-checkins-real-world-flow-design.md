@@ -73,6 +73,49 @@ The six field types (`text | number | boolean | date | select | multi_select`) g
 
 Storage is Tigris (S3-compatible, native on Fly) via presigned URLs: client asks the backend for a presigned PUT, uploads directly, then references the attachment id in `answers`. Reads are presigned GETs with short expiry, minted in the JSON views. The backend never proxies file bytes.
 
+### 2.6 Question presets and the default check-in template
+
+A static preset bank lives in frontend code (coachapp builder) — no table, no endpoint, same philosophy as `default_intake.ex`. Presets exist to steer coaches onto the trendable types: left alone, a coach makes weight a text question and gets no sparkline. The builder gains an "Add common question" picker; inserting a preset creates a prefilled, fully editable `QuestionDraft`.
+
+The bank (grounded in coaching check-in practice — My PT Hub, Gymkee, HubFit templates):
+
+| Preset | Type | Category |
+|---|---|---|
+| Weight | `weight` | Body |
+| Waist measurement | `number` | Body |
+| Hip measurement | `number` | Body |
+| Chest measurement | `number` | Body |
+| Progress photos (front/side/back) | `photo` | Body |
+| Workouts completed this week | `number` | Training |
+| Training adherence | `rating` | Training |
+| Average workout difficulty | `rating` | Training |
+| Muscle soreness | `rating` | Training |
+| Any pain or injuries? | `text` | Training |
+| Nutrition adherence | `rating` | Nutrition |
+| Hunger levels | `rating` | Nutrition |
+| Cravings | `rating` | Nutrition |
+| Meals off plan this week | `number` | Nutrition |
+| Alcoholic drinks this week | `number` | Nutrition |
+| Daily water intake (liters) | `number` | Nutrition |
+| Sleep quality | `rating` | Recovery |
+| Average hours of sleep | `number` | Recovery |
+| Energy levels | `rating` | Recovery |
+| Stress levels | `rating` | Recovery |
+| Average daily steps | `number` | Recovery |
+| Motivation | `rating` | Mindset |
+| Rate your week overall | `rating` | Mindset |
+| Biggest win this week | `text` | Mindset |
+| Biggest challenge this week | `text` | Mindset |
+| What will you improve next week? | `text` | Mindset |
+| Questions for your coach | `text` | Mindset |
+
+**Default "Weekly check-in" template.** Get-or-created per business exactly like the default intake, so a new coach can assign a check-in on day one without building anything. Curated from the bank following the 6–10 question guideline (long check-ins get abandoned): weight, energy, sleep quality, stress, training adherence, nutrition adherence, hunger, biggest win, biggest challenge, questions for coach. Progress photos join the default template when phase 5 ships. Coach edits it like any template.
+
+### 2.7 Interplay with existing trackers
+
+* **Weight tracker (exists — clientapp Progress module over `weight_entries`).** One-way: check-in `weight` answers append entries; the tracker never feeds forms. Both surfaces read the same table, so a check-in weight shows up in the client's Progress chart and in the coach sparkline alongside self-logged entries. The appended entry carries the submission id for provenance and reuses the client's most recent unit (fallback: business default).
+* **Progress photo tracker (does not exist — `progress-home.tsx` explicitly defers it, no photo API anywhere).** Phase 5's `attachments` table is designed to become its store: check-in photo answers create attachments, and a future Progress-module photo gallery is just a query over the client's attachments (check-in photos plus, later, self-uploads with a `progress_photo` purpose). The gallery itself is out of scope here.
+
 ## 3. The sweep
 
 Extends the existing nightly sweep (same pattern as the subscription-expiry sweep). Two jobs, both idempotent:
@@ -130,15 +173,15 @@ Each phase ships independently, in order:
 1. **Hygiene.** Backend `required` enforcement + answer-shape validation, intake_status sync on dismiss/reopen, coach edit/dismiss UI on open assignments.
 2. **Cadence.** Purpose collapse to `intake | check_in` (+ remap migration), `check_in_schedules` incl. `once`, sweep jobs + immediate generation on create, `:missed` status, reminder emails, client due/overdue/missed states, coach Forms library rename + schedule-based assign, retire the assign endpoint.
 3. **Review loop.** `reviewed_*` fields, review endpoint + queue endpoint, coach queue tab + dashboard card, chat deep-link reply, client "Reviewed ✓".
-4. **Ratings + weight.** Two question types, submit-path side effects, builder support, client renderers, trends on client detail.
-5. **Photos.** `attachments` + Tigris presign plumbing, photo question type, builder + client picker, inline rendering in review.
+4. **Ratings + weight.** Two question types, submit-path side effects, builder support, client renderers, trends on client detail, question preset bank (minus photo presets), default "Weekly check-in" template.
+5. **Photos.** `attachments` + Tigris presign plumbing, photo question type, builder + client picker, inline rendering in review, photo presets join the bank and the default template.
 
 ## 8. Out of scope
 
 * Push notifications (Capacitor FCM/APNs is its own project; email + in-app states first)
 * Per-question coach comments or any feedback surface outside chat
 * Intake content changes; intake stays soft-required and never blocks
-* Body measurements beyond weight; photo comparison/side-by-side views
+* A measurements tracker (waist/hip presets are plain `number` questions with profile mappings — no `measurement_entries` table until trends are asked for); photo comparison/side-by-side views; the Progress-module photo gallery
 * Timezone-aware sweep scheduling (inherits whatever the existing nightly sweep does)
 * A third form kind — `custom` and the update purposes are gone; everything a coach builds is a check-in
 * Renaming the clientapp "Check-ins" tab — client-facing vocabulary stays "check-in" even though the coach library is "Forms"

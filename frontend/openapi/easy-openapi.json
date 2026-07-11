@@ -2346,6 +2346,45 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.BusinessResponse",
         "x-validate": null
       },
+      "ClientProfileReviewClient": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "first_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_name": {
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "first_name",
+          "last_name"
+        ],
+        "title": "ClientProfileReviewClient",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileReviewClient",
+        "x-validate": null
+      },
       "Food": {
         "additionalProperties": false,
         "properties": {
@@ -3013,6 +3052,99 @@
         "title": "ClientProfileFormTemplateUpdateRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "ClientProfileReviewQueueItem": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "client": {
+            "$ref": "#/components/schemas/ClientProfileReviewClient"
+          },
+          "form_assignment": {
+            "$ref": "#/components/schemas/ClientProfileFormAssignment"
+          },
+          "form_assignment_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "question_snapshot": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "reviewed_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "reviewed_by_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "submitted_by_type": {
+            "enum": [
+              "coach",
+              "client",
+              "system"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "form_assignment_id",
+          "question_snapshot",
+          "answers",
+          "submitted_by_type",
+          "submitted_at",
+          "reviewed_at",
+          "reviewed_by_id",
+          "inserted_at",
+          "client",
+          "form_assignment"
+        ],
+        "title": "ClientProfileReviewQueueItem",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem",
         "x-validate": null
       },
       "PublicApplicationRequest": {
@@ -6778,6 +6910,26 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientTrainingPlanResponse",
         "x-validate": null
       },
+      "ClientProfileReviewQueueListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ClientProfileReviewQueueItem"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ClientProfileReviewQueueListResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueListResponse",
+        "x-validate": null
+      },
       "ClientProfileFieldListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -7086,6 +7238,13 @@
       "ClientProfileFormAssignment": {
         "additionalProperties": false,
         "properties": {
+          "check_in_schedule_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "client_id": {
             "format": "uuid",
             "type": "string",
@@ -7130,6 +7289,13 @@
           },
           "inserted_at": {
             "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "latest_submission_reviewed_at": {
+            "format": "date-time",
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -7190,6 +7356,7 @@
           "completed_at",
           "due_reminder_sent_at",
           "overdue_reminder_sent_at",
+          "latest_submission_reviewed_at",
           "form_template",
           "inserted_at",
           "updated_at"
@@ -9410,6 +9577,20 @@
             "x-struct": null,
             "x-validate": null
           },
+          "reviewed_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "reviewed_by_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "submitted_at": {
             "format": "date-time",
             "type": "string",
@@ -9434,6 +9615,8 @@
           "answers",
           "submitted_by_type",
           "submitted_at",
+          "reviewed_at",
+          "reviewed_by_id",
           "inserted_at"
         ],
         "title": "ClientProfileFormSubmission",
@@ -16428,6 +16611,66 @@
         ]
       }
     },
+    "/v1/coach/form-submissions/{id}/review": {
+      "post": {
+        "callbacks": {},
+        "operationId": "reviewFormSubmission",
+        "parameters": [
+          {
+            "description": "Form submission id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProfileFormSubmissionResponse"
+                }
+              }
+            },
+            "description": "Reviewed submission"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark a form submission reviewed",
+        "tags": [
+          "coach check-in reviews"
+        ]
+      }
+    },
     "/v1/coach/training-muscles": {
       "get": {
         "callbacks": {},
@@ -19121,6 +19364,44 @@
         "summary": "Update dashboard setup state",
         "tags": [
           "businesses"
+        ]
+      }
+    },
+    "/v1/coach/check-ins/review-queue": {
+      "get": {
+        "callbacks": {},
+        "operationId": "listCheckInReviewQueue",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientProfileReviewQueueListResponse"
+                }
+              }
+            },
+            "description": "Review queue"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List check-ins awaiting review",
+        "tags": [
+          "coach check-in reviews"
         ]
       }
     },

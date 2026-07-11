@@ -728,6 +728,8 @@ export type ClientProfileFormSubmission = {
   question_snapshot: {
     [key: string]: any;
   }[];
+  reviewed_at: string | null;
+  reviewed_by_id: string | null;
   submitted_at: string;
   submitted_by_type: 'coach' | 'client' | 'system';
 };
@@ -1171,6 +1173,7 @@ export type ClientProfileFormTemplate = {
   updated_at: string;
 };
 export type ClientProfileFormAssignment = {
+  check_in_schedule_id: string | null;
   client_id: string;
   completed_at: string | null;
   due_date: string | null;
@@ -1179,6 +1182,7 @@ export type ClientProfileFormAssignment = {
   form_template_id: string;
   id: string;
   inserted_at: string;
+  latest_submission_reviewed_at: string | null;
   overdue_reminder_sent_at: string | null;
   priority: 'high' | 'normal';
   purpose: 'intake' | 'check_in';

@@ -509,6 +509,12 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.businessRequest,
       }),
     }),
+    reviewFormSubmission: build.mutation<ReviewFormSubmissionApiResponse, ReviewFormSubmissionApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/form-submissions/${queryArg.id}/review`,
+        method: 'POST',
+      }),
+    }),
     listMuscles: build.query<ListMusclesApiResponse, ListMusclesApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/training-muscles`,
@@ -725,6 +731,9 @@ const injectedRtkApi = api.injectEndpoints({
         method: 'PATCH',
         body: queryArg.dashboardSetupUpdateRequest,
       }),
+    }),
+    listCheckInReviewQueue: build.query<ListCheckInReviewQueueApiResponse, ListCheckInReviewQueueApiArg>({
+      query: () => ({url: `/v1/coach/check-ins/review-queue`}),
     }),
     getNutritionRecipeImpact: build.query<GetNutritionRecipeImpactApiResponse, GetNutritionRecipeImpactApiArg>({
       query: (queryArg) => ({
@@ -1345,6 +1354,11 @@ export type CreateBusinessApiArg = {
   /** Business create request */
   businessRequest: BusinessRequest;
 };
+export type ReviewFormSubmissionApiResponse = /** status 200 Reviewed submission */ ClientProfileFormSubmissionResponse;
+export type ReviewFormSubmissionApiArg = {
+  /** Form submission id */
+  id: string;
+};
 export type ListMusclesApiResponse = /** status 200 Muscles */ TrainingMuscleListResponse;
 export type ListMusclesApiArg = {
   /** Case-insensitive muscle name search */
@@ -1560,6 +1574,8 @@ export type UpdateDashboardSetupApiArg = {
   /** Dashboard setup update request */
   dashboardSetupUpdateRequest: DashboardSetupUpdateRequest;
 };
+export type ListCheckInReviewQueueApiResponse = /** status 200 Review queue */ ClientProfileReviewQueueListResponse;
+export type ListCheckInReviewQueueApiArg = void;
 export type GetNutritionRecipeImpactApiResponse = /** status 200 Impact */ RecipeImpactResponse;
 export type GetNutritionRecipeImpactApiArg = {
   id: string;
@@ -2148,6 +2164,7 @@ export type ClientTrainingPlanListResponse = {
   data: ClientTrainingPlan[];
 };
 export type ClientProfileFormAssignment = {
+  check_in_schedule_id: string | null;
   client_id: string;
   completed_at: string | null;
   due_date: string | null;
@@ -2156,6 +2173,7 @@ export type ClientProfileFormAssignment = {
   form_template_id: string;
   id: string;
   inserted_at: string;
+  latest_submission_reviewed_at: string | null;
   overdue_reminder_sent_at: string | null;
   priority: 'high' | 'normal';
   purpose: 'intake' | 'check_in';
@@ -2606,6 +2624,24 @@ export type BusinessRequest = {
   handle: string;
   name: string;
 };
+export type ClientProfileFormSubmission = {
+  answers: {
+    [key: string]: any;
+  };
+  form_assignment_id: string;
+  id: string;
+  inserted_at: string;
+  question_snapshot: {
+    [key: string]: any;
+  }[];
+  reviewed_at: string | null;
+  reviewed_by_id: string | null;
+  submitted_at: string;
+  submitted_by_type: 'coach' | 'client' | 'system';
+};
+export type ClientProfileFormSubmissionResponse = {
+  data: ClientProfileFormSubmission;
+};
 export type TrainingMuscle = {
   description: string | null;
   id: string;
@@ -2750,6 +2786,32 @@ export type TrainingExerciseUpdateRequest = {
 export type DashboardSetupUpdateRequest = {
   dashboard_setup_hidden_reason: ('dismissed' | 'completed') | null;
 };
+export type ClientProfileReviewClient = {
+  email: string | null;
+  first_name: string | null;
+  id: string;
+  last_name: string | null;
+};
+export type ClientProfileReviewQueueItem = {
+  answers: {
+    [key: string]: any;
+  };
+  client: ClientProfileReviewClient;
+  form_assignment: ClientProfileFormAssignment;
+  form_assignment_id: string;
+  id: string;
+  inserted_at: string;
+  question_snapshot: {
+    [key: string]: any;
+  }[];
+  reviewed_at: string | null;
+  reviewed_by_id: string | null;
+  submitted_at: string;
+  submitted_by_type: 'coach' | 'client' | 'system';
+};
+export type ClientProfileReviewQueueListResponse = {
+  data: ClientProfileReviewQueueItem[];
+};
 export type RecipeImpactResponse = {
   data?: {
     active_client_plans?: {
@@ -2879,19 +2941,6 @@ export type BillingCheckoutResponse = {
 };
 export type BillingCheckoutRequest = {
   seats_to_add: number;
-};
-export type ClientProfileFormSubmission = {
-  answers: {
-    [key: string]: any;
-  };
-  form_assignment_id: string;
-  id: string;
-  inserted_at: string;
-  question_snapshot: {
-    [key: string]: any;
-  }[];
-  submitted_at: string;
-  submitted_by_type: 'coach' | 'client' | 'system';
 };
 export type ClientProfileFormSubmissionListResponse = {
   data: ClientProfileFormSubmission[];
@@ -3170,6 +3219,7 @@ export const {
   useLazyGetProspectQuery,
   useUpdateProspectMutation,
   useCreateBusinessMutation,
+  useReviewFormSubmissionMutation,
   useListMusclesQuery,
   useLazyListMusclesQuery,
   useRevokeTrainerInviteMutation,
@@ -3215,6 +3265,8 @@ export const {
   useLazyGetExerciseQuery,
   useUpdateExerciseMutation,
   useUpdateDashboardSetupMutation,
+  useListCheckInReviewQueueQuery,
+  useLazyListCheckInReviewQueueQuery,
   useGetNutritionRecipeImpactQuery,
   useLazyGetNutritionRecipeImpactQuery,
   useDuplicateNutritionPlanMutation,

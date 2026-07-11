@@ -436,6 +436,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
           id: %Schema{type: :string, format: :uuid},
           client_id: %Schema{type: :string, format: :uuid},
           form_template_id: %Schema{type: :string, format: :uuid},
+          check_in_schedule_id: %Schema{type: :string, format: :uuid, nullable: true},
           purpose: %Schema{type: :string, enum: Common.form_purposes()},
           priority: %Schema{type: :string, enum: Common.priorities()},
           status: %Schema{type: :string, enum: Common.assignment_statuses()},
@@ -443,6 +444,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
           completed_at: %Schema{type: :string, format: :"date-time", nullable: true},
           due_reminder_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
           overdue_reminder_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
+          latest_submission_reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},
           form_template: ClientProfileFormTemplate
         },
         Shared.timestamps()
@@ -459,6 +461,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
       :completed_at,
       :due_reminder_sent_at,
       :overdue_reminder_sent_at,
+      :latest_submission_reviewed_at,
       :form_template,
       :inserted_at,
       :updated_at
@@ -522,6 +525,8 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
       answers: %Schema{type: :object, additionalProperties: true},
       submitted_by_type: %Schema{type: :string, enum: Common.submitted_by_types()},
       submitted_at: %Schema{type: :string, format: :"date-time"},
+      reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},
+      reviewed_by_id: %Schema{type: :string, format: :uuid, nullable: true},
       inserted_at: %Schema{type: :string, format: :"date-time"}
     },
     required: [
@@ -531,9 +536,86 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
       :answers,
       :submitted_by_type,
       :submitted_at,
+      :reviewed_at,
+      :reviewed_by_id,
       :inserted_at
     ]
   })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewClient do
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileReviewClient",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      email: %Schema{type: :string, nullable: true},
+      first_name: %Schema{type: :string, nullable: true},
+      last_name: %Schema{type: :string, nullable: true}
+    },
+    required: [:id, :email, :first_name, :last_name]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ClientProfileFormAssignment,
+    ClientProfileReviewClient
+  }
+
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileReviewQueueItem",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      form_assignment_id: %Schema{type: :string, format: :uuid},
+      question_snapshot: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
+      answers: %Schema{type: :object, additionalProperties: true},
+      submitted_by_type: %Schema{type: :string, enum: Common.submitted_by_types()},
+      submitted_at: %Schema{type: :string, format: :"date-time"},
+      reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},
+      reviewed_by_id: %Schema{type: :string, format: :uuid, nullable: true},
+      inserted_at: %Schema{type: :string, format: :"date-time"},
+      client: ClientProfileReviewClient,
+      form_assignment: ClientProfileFormAssignment
+    },
+    required: [
+      :id,
+      :form_assignment_id,
+      :question_snapshot,
+      :answers,
+      :submitted_by_type,
+      :submitted_at,
+      :reviewed_at,
+      :reviewed_by_id,
+      :inserted_at,
+      :client,
+      :form_assignment
+    ]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueListResponse do
+  require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileReviewQueueItem, Shared}
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{type: :array, items: ClientProfileReviewQueueItem},
+      "ClientProfileReviewQueueListResponse"
+    )
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionResponse do

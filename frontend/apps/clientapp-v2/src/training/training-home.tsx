@@ -26,6 +26,7 @@ import {
   useListClientTrainingPlansQuery,
   useListClientTrainingSessionsQuery,
 } from '@/api/training';
+import CheckinNudgeCard from '@/checkins/checkin-nudge-card';
 import IntakeCard from '@/checkins/intake-card';
 
 function workoutForDay(plan: ClientTrainingPlan, day: TrainingWeekday): TrainingPlanWorkout | null {
@@ -173,6 +174,7 @@ export default function TrainingHome() {
       title={greeting}
     >
       <IntakeCard />
+      <CheckinNudgeCard />
 
       {activeSession ? (
         <ResumeBanner

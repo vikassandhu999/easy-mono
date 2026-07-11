@@ -4,6 +4,7 @@
  * submitting refreshes the list. Importing hooks here guarantees the enhance ran.
  */
 import {
+  type ClientProfileFormAssignment,
   clientApi,
   useGetClientFormAssignmentQuery,
   useListClientFormAssignmentsQuery,
@@ -18,14 +19,11 @@ export type {
 
 export {useGetClientFormAssignmentQuery, useListClientFormAssignmentsQuery, useSubmitClientFormAssignmentMutation};
 
-export type FormPurpose = 'custom' | 'intake' | 'nutrition_update' | 'training_update' | 'weekly_check_in';
+export type FormPurpose = 'check_in' | 'intake';
 
 export const PURPOSE_LABELS: Record<string, string> = {
-  custom: 'Form',
+  check_in: 'Check-in',
   intake: 'Intake',
-  nutrition_update: 'Nutrition update',
-  training_update: 'Training update',
-  weekly_check_in: 'Weekly check-in',
 };
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -33,7 +31,37 @@ export const STATUS_LABELS: Record<string, string> = {
   completed: 'Completed',
   dismissed: 'Dismissed',
   in_progress: 'In progress',
+  missed: 'Missed',
 };
+
+export type AssignmentDisplayStatus = 'Completed' | 'Dismissed' | 'Due today' | 'Missed' | 'Overdue' | 'To do';
+
+export function assignmentDisplayStatus(
+  assignment: Pick<ClientProfileFormAssignment, 'due_date' | 'status'>,
+  today: Date = new Date(),
+): AssignmentDisplayStatus {
+  if (assignment.status === 'completed') {
+    return 'Completed';
+  }
+  if (assignment.status === 'dismissed') {
+    return 'Dismissed';
+  }
+  if (assignment.status === 'missed') {
+    return 'Missed';
+  }
+  if (!assignment.due_date) {
+    return 'To do';
+  }
+
+  const todayIso = today.toISOString().slice(0, 10);
+  if (assignment.due_date === todayIso) {
+    return 'Due today';
+  }
+  if (assignment.due_date < todayIso) {
+    return 'Overdue';
+  }
+  return 'To do';
+}
 
 clientApi.enhanceEndpoints({
   endpoints: {

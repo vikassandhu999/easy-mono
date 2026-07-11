@@ -1,6 +1,6 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {Button, Spinner, toast} from '@heroui/react';
-import {ArrowLeft, CheckCircle2} from 'lucide-react';
+import {ArrowLeft, CheckCircle2, CircleX} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -134,12 +134,38 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
   );
 }
 
+function ClosedState({assignment}: {assignment: ClientProfileFormAssignment}) {
+  const navigate = useNavigate();
+  const missed = assignment.status === 'missed';
+  return (
+    <PageLayout title={assignment.form_template?.name ?? 'Check-in'}>
+      <div className="max-w-lg">
+        <BackButton onPress={() => navigate(ROUTES.CHECKINS)} />
+        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-danger/10">
+            <CircleX
+              className="text-danger"
+              size={24}
+            />
+          </div>
+          <h3 className="text-base font-medium">{missed ? 'Check-in missed' : 'Check-in closed'}</h3>
+          <p className="mt-2 text-sm text-muted">
+            {missed
+              ? 'This check-in is no longer open. Complete the latest check-in from your list.'
+              : 'This check-in was closed by your coach.'}
+          </p>
+        </div>
+      </div>
+    </PageLayout>
+  );
+}
+
 export default function FillCheckin() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const {data, isError, isLoading} = useGetClientFormAssignmentQuery({id: id!});
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <PageLayout title="Check-in">
         <div className="flex items-center justify-center py-20">
@@ -149,7 +175,7 @@ export default function FillCheckin() {
     );
   }
 
-  if (isError) {
+  if (isError || !data) {
     return (
       <PageLayout title="Check-in">
         <div className="max-w-lg">
@@ -163,9 +189,11 @@ export default function FillCheckin() {
   }
 
   const assignment = data.data;
-  return assignment.status === 'completed' ? (
-    <CompletedState assignment={assignment} />
-  ) : (
-    <FillForm assignment={assignment} />
-  );
+  if (assignment.status === 'completed') {
+    return <CompletedState assignment={assignment} />;
+  }
+  if (assignment.status === 'missed' || assignment.status === 'dismissed') {
+    return <ClosedState assignment={assignment} />;
+  }
+  return <FillForm assignment={assignment} />;
 }

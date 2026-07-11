@@ -5,7 +5,25 @@ import {useNavigate} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {PURPOSE_LABELS, STATUS_LABELS, useListClientFormAssignmentsQuery} from '@/api/checkins';
+import {
+  type AssignmentDisplayStatus,
+  assignmentDisplayStatus,
+  PURPOSE_LABELS,
+  useListClientFormAssignmentsQuery,
+} from '@/api/checkins';
+
+function statusClass(status: AssignmentDisplayStatus): string {
+  if (status === 'Completed') {
+    return 'bg-success/10 text-success';
+  }
+  if (status === 'Overdue' || status === 'Missed') {
+    return 'bg-danger/10 text-danger';
+  }
+  if (status === 'Due today') {
+    return 'bg-warning/10 text-warning';
+  }
+  return 'bg-surface-secondary text-muted';
+}
 
 export default function ListCheckins() {
   const navigate = useNavigate();
@@ -35,13 +53,21 @@ export default function ListCheckins() {
       ) : (
         <div className="flex flex-col gap-2">
           {assignments.map((assignment) => {
-            const completed = assignment.status === 'completed';
+            const status = assignmentDisplayStatus(assignment);
+            const missed = assignment.status === 'missed';
             const due = assignment.due_date ? `Due ${formatIsoDateOnly(assignment.due_date)}` : null;
             return (
               <button
-                className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-surface-secondary"
+                className={`flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition-colors ${
+                  missed ? 'cursor-default opacity-70' : 'hover:bg-surface-secondary'
+                }`}
+                disabled={missed}
                 key={assignment.id}
-                onClick={() => navigate(ROUTES.CHECKIN_FILL.replace(':id', assignment.id))}
+                onClick={() => {
+                  if (!missed) {
+                    navigate(ROUTES.CHECKIN_FILL.replace(':id', assignment.id));
+                  }
+                }}
                 type="button"
               >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
@@ -54,13 +80,15 @@ export default function ListCheckins() {
                     {due ? ` · ${due}` : ''}
                   </p>
                 </div>
-                <span className={`shrink-0 text-xs ${completed ? 'text-muted' : 'font-medium text-accent'}`}>
-                  {STATUS_LABELS[assignment.status] ?? assignment.status}
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${statusClass(status)}`}>
+                  {status}
                 </span>
-                <ChevronRight
-                  className="shrink-0 text-muted"
-                  size={16}
-                />
+                {!missed ? (
+                  <ChevronRight
+                    className="shrink-0 text-muted"
+                    size={16}
+                  />
+                ) : null}
               </button>
             );
           })}

@@ -208,6 +208,16 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    getCoachAttachmentDownloadUrls: build.mutation<
+      GetCoachAttachmentDownloadUrlsApiResponse,
+      GetCoachAttachmentDownloadUrlsApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/v1/coach/attachments/download-urls`,
+        method: 'POST',
+        body: queryArg.attachmentDownloadRequest,
+      }),
+    }),
     createAuthToken: build.mutation<CreateAuthTokenApiResponse, CreateAuthTokenApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/token`,
@@ -366,7 +376,7 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/v1/coach/conversations/${queryArg.id}/messages`,
         method: 'POST',
-        body: queryArg.chatMessageCreateRequest,
+        body: queryArg.coachChatMessageCreateRequest,
       }),
     }),
     trainerAcceptInvite: build.mutation<TrainerAcceptInviteApiResponse, TrainerAcceptInviteApiArg>({
@@ -751,6 +761,13 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.clientProfileFormTemplateUpdateRequest,
       }),
     }),
+    createCoachClientUpload: build.mutation<CreateCoachClientUploadApiResponse, CreateCoachClientUploadApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/clients/${queryArg.clientId}/uploads`,
+        method: 'POST',
+        body: queryArg.attachmentUploadRequest,
+      }),
+    }),
     trainerAcceptInviteVerify: build.mutation<TrainerAcceptInviteVerifyApiResponse, TrainerAcceptInviteVerifyApiArg>({
       query: (queryArg) => ({
         url: `/v1/auth/trainer-accept-invite/verify`,
@@ -1055,6 +1072,12 @@ export type ListCoachConversationsApiArg = {
   /** Limit (max 100) */
   limit?: number;
 };
+export type GetCoachAttachmentDownloadUrlsApiResponse =
+  /** status 200 Attachment downloads */ AttachmentDownloadsResponse;
+export type GetCoachAttachmentDownloadUrlsApiArg = {
+  /** Attachment ids */
+  attachmentDownloadRequest: AttachmentDownloadRequest;
+};
 export type CreateAuthTokenApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type CreateAuthTokenApiArg = {
   /** Token request */
@@ -1190,7 +1213,7 @@ export type CreateCoachConversationMessageApiArg = {
   /** Conversation id */
   id: string;
   /** Message */
-  chatMessageCreateRequest: ChatMessageCreateRequest;
+  coachChatMessageCreateRequest: CoachChatMessageCreateRequest;
 };
 export type TrainerAcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
 export type TrainerAcceptInviteApiArg = {
@@ -1532,6 +1555,13 @@ export type UpdateFormTemplateApiArg = {
   id: string;
   /** Form template update request */
   clientProfileFormTemplateUpdateRequest: ClientProfileFormTemplateUpdateRequest;
+};
+export type CreateCoachClientUploadApiResponse = /** status 201 Upload created */ AttachmentUploadResponse;
+export type CreateCoachClientUploadApiArg = {
+  /** Client id */
+  clientId: string;
+  /** Upload request */
+  attachmentUploadRequest: AttachmentUploadRequest;
 };
 export type TrainerAcceptInviteVerifyApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type TrainerAcceptInviteVerifyApiArg = {
@@ -2239,6 +2269,17 @@ export type ConversationListResponse = {
   count: number;
   data: Conversation[];
 };
+export type AttachmentDownload = {
+  download_url: string;
+  download_url_expires_at: string;
+  id: string;
+};
+export type AttachmentDownloadsResponse = {
+  data: AttachmentDownload[];
+};
+export type AttachmentDownloadRequest = {
+  attachment_ids: string[];
+};
 export type AuthTokenResponse = {
   access_token: string;
   expires_in: number;
@@ -2400,9 +2441,37 @@ export type FoodImpactResponse = {
     }[];
   };
 };
+export type ChatAttachment = {
+  byte_size: number;
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  duration_ms: number | null;
+  id: string;
+};
+export type FormSubmissionEmbedSnapshot = {
+  form_assignment_id: string;
+  submitted_at: string;
+  title: string;
+};
+export type ChatMessageEmbed = {
+  id: string;
+  snapshot: FormSubmissionEmbedSnapshot;
+  type: 'form_submission';
+};
 export type ChatMessage = {
-  body: string;
+  attachments: ChatAttachment[];
+  body: string | null;
   conversation_id: string;
+  embed: ChatMessageEmbed | null;
   id: string;
   inserted_at: string;
   sender_id: string;
@@ -2416,8 +2485,14 @@ export type ChatMessagesResponse = {
 export type ChatMessageResponse = {
   data: ChatMessage;
 };
-export type ChatMessageCreateRequest = {
-  body: string;
+export type ChatMessageEmbedRequest = {
+  id: string;
+  type: 'form_submission';
+};
+export type CoachChatMessageCreateRequest = {
+  attachment_ids?: string[];
+  body?: string | null;
+  embed?: ChatMessageEmbedRequest | null;
 };
 export type TrainerAcceptInviteRequest = {
   email: string;
@@ -2473,19 +2548,11 @@ export type BusinessRequest = {
   handle: string;
   name: string;
 };
-export type ClientProfileSubmissionAttachment = {
-  byte_size: number;
-  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
-  id: string;
-  purpose: 'check_in_photo';
-  read_url: string | null;
-  read_url_expires_at: string | null;
-};
 export type ClientProfileFormSubmission = {
   answers: {
     [key: string]: any;
   };
-  attachments: ClientProfileSubmissionAttachment[];
+  attachments: ChatAttachment[];
   form_assignment_id: string;
   id: string;
   inserted_at: string;
@@ -2673,7 +2740,7 @@ export type ClientProfileReviewQueueItem = {
   answers: {
     [key: string]: any;
   };
-  attachments: ClientProfileSubmissionAttachment[];
+  attachments: ChatAttachment[];
   client: ClientProfileReviewClient;
   form_assignment: ClientProfileFormAssignment;
   form_assignment_id: string;
@@ -2848,6 +2915,45 @@ export type ClientProfileFormTemplateUpdateRequest = {
     [key: string]: any;
   }[];
   status?: 'active' | 'archived';
+};
+export type AttachmentUpload = {
+  byte_size: number;
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  duration_ms: number | null;
+  id: string;
+  upload_headers: {
+    [key: string]: string;
+  };
+  upload_url: string;
+  upload_url_expires_at: string;
+};
+export type AttachmentUploadResponse = {
+  data: AttachmentUpload;
+};
+export type AttachmentUploadRequest = {
+  byte_size: number;
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  duration_ms?: number | null;
 };
 export type TrainerAcceptInviteVerifyRequest = {
   email: string;
@@ -3056,6 +3162,7 @@ export const {
   useCreateMealItemMutation,
   useListCoachConversationsQuery,
   useLazyListCoachConversationsQuery,
+  useGetCoachAttachmentDownloadUrlsMutation,
   useCreateAuthTokenMutation,
   useListProspectsQuery,
   useLazyListProspectsQuery,
@@ -3169,6 +3276,7 @@ export const {
   useGetFormTemplateQuery,
   useLazyGetFormTemplateQuery,
   useUpdateFormTemplateMutation,
+  useCreateCoachClientUploadMutation,
   useTrainerAcceptInviteVerifyMutation,
   useListAttentionClientsQuery,
   useLazyListAttentionClientsQuery,

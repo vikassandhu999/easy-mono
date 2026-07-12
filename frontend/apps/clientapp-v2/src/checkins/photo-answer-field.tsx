@@ -1,10 +1,11 @@
+import {IMAGE_CONTENT_TYPES, putFileToSignedUrl} from '@easy/utils';
 import {Button, ProgressBar} from '@heroui/react';
 import {Camera, ImagePlus, Trash2} from 'lucide-react';
 import {type ChangeEvent, useEffect, useId, useRef, useState} from 'react';
 
-import {putFileToSignedUrl, useCreateClientUploadMutation} from '@/api/uploads';
+import {useCreateClientUploadMutation} from '@/api/uploads';
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+const ACCEPTED_TYPES: readonly string[] = IMAGE_CONTENT_TYPES;
 const MAX_BYTES = 15 * 1024 * 1024;
 const MAX_PHOTOS = 4;
 
@@ -73,10 +74,9 @@ export default function PhotoAnswerField({
 
     try {
       const response = await createUpload({
-        clientUploadRequest: {
+        attachmentUploadRequest: {
           byte_size: file.size,
           content_type: file.type as 'image/heic' | 'image/jpeg' | 'image/png' | 'image/webp',
-          purpose: 'check_in_photo',
         },
       }).unwrap();
 

@@ -128,7 +128,7 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/v1/client/uploads`,
         method: 'POST',
-        body: queryArg.clientUploadRequest,
+        body: queryArg.attachmentUploadRequest,
       }),
     }),
     acceptInvite: build.mutation<AcceptInviteApiResponse, AcceptInviteApiArg>({
@@ -140,6 +140,16 @@ const injectedRtkApi = api.injectEndpoints({
     }),
     listClientFormAssignments: build.query<ListClientFormAssignmentsApiResponse, ListClientFormAssignmentsApiArg>({
       query: () => ({url: `/v1/client/form-assignments`}),
+    }),
+    getClientAttachmentDownloadUrls: build.mutation<
+      GetClientAttachmentDownloadUrlsApiResponse,
+      GetClientAttachmentDownloadUrlsApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/v1/client/attachments/download-urls`,
+        method: 'POST',
+        body: queryArg.attachmentDownloadRequest,
+      }),
     }),
     createClientPerformedSet: build.mutation<CreateClientPerformedSetApiResponse, CreateClientPerformedSetApiArg>({
       query: (queryArg) => ({
@@ -254,7 +264,7 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/v1/client/conversation/messages`,
         method: 'POST',
-        body: queryArg.chatMessageCreateRequest,
+        body: queryArg.clientChatMessageCreateRequest,
       }),
     }),
     getClientTrainingPlan: build.query<GetClientTrainingPlanApiResponse, GetClientTrainingPlanApiArg>({
@@ -469,10 +479,10 @@ export type LogDayApiArg = {
   /** Log day request */
   foodLogEntryRequest: FoodLogEntryRequest;
 };
-export type CreateClientUploadApiResponse = /** status 201 Upload created */ ClientUploadResponse;
+export type CreateClientUploadApiResponse = /** status 201 Upload created */ AttachmentUploadResponse;
 export type CreateClientUploadApiArg = {
   /** Upload request */
-  clientUploadRequest: ClientUploadRequest;
+  attachmentUploadRequest: AttachmentUploadRequest;
 };
 export type AcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
 export type AcceptInviteApiArg = {
@@ -482,6 +492,12 @@ export type AcceptInviteApiArg = {
 export type ListClientFormAssignmentsApiResponse =
   /** status 200 Form assignments */ ClientProfileFormAssignmentListResponse;
 export type ListClientFormAssignmentsApiArg = void;
+export type GetClientAttachmentDownloadUrlsApiResponse =
+  /** status 200 Attachment downloads */ AttachmentDownloadsResponse;
+export type GetClientAttachmentDownloadUrlsApiArg = {
+  /** Attachment ids */
+  attachmentDownloadRequest: AttachmentDownloadRequest;
+};
 export type CreateClientPerformedSetApiResponse = /** status 201 Performed set created */ TrainingPerformedSetResponse;
 export type CreateClientPerformedSetApiArg = {
   /** Training session id */
@@ -573,7 +589,7 @@ export type ListClientConversationMessagesApiArg = {
 export type CreateClientConversationMessageApiResponse = /** status 201 Message */ ChatMessageResponse;
 export type CreateClientConversationMessageApiArg = {
   /** Message */
-  chatMessageCreateRequest: ChatMessageCreateRequest;
+  clientChatMessageCreateRequest: ClientChatMessageCreateRequest;
 };
 export type GetClientTrainingPlanApiResponse = /** status 200 Training plan */ ClientTrainingPlanResponse;
 export type GetClientTrainingPlanApiArg = {
@@ -708,19 +724,27 @@ export type FoodLogEntryRequest = {
   unit?: string | null;
   weight_g?: number | null;
 };
-export type ClientProfileSubmissionAttachment = {
+export type ChatAttachment = {
   byte_size: number;
-  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  duration_ms: number | null;
   id: string;
-  purpose: 'check_in_photo';
-  read_url: string | null;
-  read_url_expires_at: string | null;
 };
 export type ClientProfileFormSubmission = {
   answers: {
     [key: string]: any;
   };
-  attachments: ClientProfileSubmissionAttachment[];
+  attachments: ChatAttachment[];
   form_assignment_id: string;
   id: string;
   inserted_at: string;
@@ -1162,24 +1186,44 @@ export type ClientTrainingPlan = {
 export type ClientTrainingPlanResponse = {
   data: ClientTrainingPlan;
 };
-export type ClientUpload = {
+export type AttachmentUpload = {
   byte_size: number;
-  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  duration_ms: number | null;
   id: string;
-  purpose: 'check_in_photo';
   upload_headers: {
     [key: string]: string;
   };
   upload_url: string;
   upload_url_expires_at: string;
 };
-export type ClientUploadResponse = {
-  data: ClientUpload;
+export type AttachmentUploadResponse = {
+  data: AttachmentUpload;
 };
-export type ClientUploadRequest = {
+export type AttachmentUploadRequest = {
   byte_size: number;
-  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
-  purpose: 'check_in_photo';
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  duration_ms?: number | null;
 };
 export type MessageResponse = {
   message: string;
@@ -1227,6 +1271,17 @@ export type ClientProfileFormAssignment = {
 };
 export type ClientProfileFormAssignmentListResponse = {
   data: ClientProfileFormAssignment[];
+};
+export type AttachmentDownload = {
+  download_url: string;
+  download_url_expires_at: string;
+  id: string;
+};
+export type AttachmentDownloadsResponse = {
+  data: AttachmentDownload[];
+};
+export type AttachmentDownloadRequest = {
+  attachment_ids: string[];
 };
 export type TrainingPerformedSetResponse = {
   data: TrainingPerformedSet;
@@ -1310,9 +1365,21 @@ export type TrainingSessionUpdateRequest = {
   soreness_rating?: number;
   state?: 'completed' | 'discarded';
 };
+export type FormSubmissionEmbedSnapshot = {
+  form_assignment_id: string;
+  submitted_at: string;
+  title: string;
+};
+export type ChatMessageEmbed = {
+  id: string;
+  snapshot: FormSubmissionEmbedSnapshot;
+  type: 'form_submission';
+};
 export type ChatMessage = {
-  body: string;
+  attachments: ChatAttachment[];
+  body: string | null;
   conversation_id: string;
+  embed: ChatMessageEmbed | null;
   id: string;
   inserted_at: string;
   sender_id: string;
@@ -1326,8 +1393,9 @@ export type ChatMessagesResponse = {
 export type ChatMessageResponse = {
   data: ChatMessage;
 };
-export type ChatMessageCreateRequest = {
-  body: string;
+export type ClientChatMessageCreateRequest = {
+  attachment_ids?: string[];
+  body?: string | null;
 };
 export type FoodResponse = {
   data: Food;
@@ -1456,6 +1524,7 @@ export const {
   useAcceptInviteMutation,
   useListClientFormAssignmentsQuery,
   useLazyListClientFormAssignmentsQuery,
+  useGetClientAttachmentDownloadUrlsMutation,
   useCreateClientPerformedSetMutation,
   useGetClientRecipeQuery,
   useLazyGetClientRecipeQuery,

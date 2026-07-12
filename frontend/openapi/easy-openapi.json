@@ -259,7 +259,17 @@
       "ChatMessage": {
         "additionalProperties": false,
         "properties": {
+          "attachments": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ChatAttachment"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
           "body": {
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -267,6 +277,16 @@
           "conversation_id": {
             "format": "uuid",
             "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "embed": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatMessageEmbed"
+              }
+            ],
+            "nullable": true,
             "x-struct": null,
             "x-validate": null
           },
@@ -304,11 +324,45 @@
           "sender_type",
           "sender_id",
           "body",
+          "attachments",
+          "embed",
           "inserted_at"
         ],
         "title": "ChatMessage",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessage",
+        "x-validate": null
+      },
+      "AttachmentDownload": {
+        "additionalProperties": false,
+        "properties": {
+          "download_url": {
+            "format": "uri",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "download_url_expires_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "download_url",
+          "download_url_expires_at"
+        ],
+        "title": "AttachmentDownload",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentDownload",
         "x-validate": null
       },
       "NutritionMealResponse": {
@@ -1492,6 +1546,55 @@
         "x-struct": null,
         "x-validate": null
       },
+      "CoachChatMessageCreateRequest": {
+        "additionalProperties": false,
+        "example": {
+          "attachment_ids": [],
+          "body": "Energy improved.",
+          "embed": {
+            "id": "a65edc2e-f91b-4f01-9b31-1d0fb8b9104e",
+            "type": "form_submission"
+          }
+        },
+        "properties": {
+          "attachment_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "maxItems": 4,
+            "type": "array",
+            "uniqueItems": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "body": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "embed": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatMessageEmbedRequest"
+              }
+            ],
+            "nullable": true,
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "CoachChatMessageCreateRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TrainingScheduleResponse": {
         "properties": {
           "data": {
@@ -1609,6 +1712,55 @@
         "title": "TrainingScheduleDayResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingScheduleDayResponse",
+        "x-validate": null
+      },
+      "ChatAttachment": {
+        "additionalProperties": false,
+        "properties": {
+          "byte_size": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "content_type": {
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic",
+              "video/mp4",
+              "video/webm",
+              "video/quicktime",
+              "audio/webm",
+              "audio/mp4",
+              "audio/mpeg"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "duration_ms": {
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "content_type",
+          "byte_size",
+          "duration_ms"
+        ],
+        "title": "ChatAttachment",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatAttachment",
         "x-validate": null
       },
       "ClientTrainingPlanListResponse": {
@@ -1993,6 +2145,41 @@
         "title": "TrainingExercise",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingExercise",
+        "x-validate": null
+      },
+      "ClientChatMessageCreateRequest": {
+        "additionalProperties": false,
+        "example": {
+          "attachment_ids": [],
+          "body": "Here is today's set."
+        },
+        "properties": {
+          "attachment_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "maxItems": 4,
+            "type": "array",
+            "uniqueItems": true,
+            "x-struct": null,
+            "x-validate": null
+          },
+          "body": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "ClientChatMessageCreateRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "MealLog": {
@@ -2566,6 +2753,33 @@
         "x-struct": null,
         "x-validate": null
       },
+      "ChatMessageEmbedRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "type": {
+            "enum": [
+              "form_submission"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "ChatMessageEmbedRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "NutritionSwitchOptionRequest": {
         "properties": {
           "date": {
@@ -2800,91 +3014,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "ClientUpload": {
-        "additionalProperties": false,
-        "properties": {
-          "byte_size": {
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "content_type": {
-            "enum": [
-              "image/jpeg",
-              "image/png",
-              "image/webp",
-              "image/heic"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "purpose": {
-            "enum": [
-              "check_in_photo"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "upload_headers": {
-            "additionalProperties": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "upload_url": {
-            "format": "uri",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "upload_url_expires_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "content_type",
-          "byte_size",
-          "purpose",
-          "upload_url",
-          "upload_url_expires_at",
-          "upload_headers"
-        ],
-        "title": "ClientUpload",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientUpload",
-        "x-validate": null
-      },
-      "ClientUploadResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ClientUpload"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "ClientUploadResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientUploadResponse",
-        "x-validate": null
-      },
       "ClientProfileFormTemplateUpdateRequest": {
         "additionalProperties": false,
         "example": {
@@ -3012,7 +3141,7 @@
           },
           "attachments": {
             "items": {
-              "$ref": "#/components/schemas/ClientProfileSubmissionAttachment"
+              "$ref": "#/components/schemas/ChatAttachment"
             },
             "type": "array",
             "x-struct": null,
@@ -3652,51 +3781,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "ClientUploadRequest": {
-        "additionalProperties": false,
-        "example": {
-          "byte_size": 1024000,
-          "content_type": "image/jpeg",
-          "purpose": "check_in_photo"
-        },
-        "properties": {
-          "byte_size": {
-            "maximum": 15728640,
-            "minimum": 1,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "content_type": {
-            "enum": [
-              "image/jpeg",
-              "image/png",
-              "image/webp",
-              "image/heic"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "purpose": {
-            "enum": [
-              "check_in_photo"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "purpose",
-          "content_type",
-          "byte_size"
-        ],
-        "title": "ClientUploadRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "TrainerInvitationPreviewResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4146,67 +4230,6 @@
         "title": "ClientProfile",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfile",
-        "x-validate": null
-      },
-      "ClientProfileSubmissionAttachment": {
-        "additionalProperties": false,
-        "properties": {
-          "byte_size": {
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "content_type": {
-            "enum": [
-              "image/jpeg",
-              "image/png",
-              "image/webp",
-              "image/heic"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "purpose": {
-            "enum": [
-              "check_in_photo"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "read_url": {
-            "format": "uri",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "read_url_expires_at": {
-            "format": "date-time",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "content_type",
-          "byte_size",
-          "purpose",
-          "read_url",
-          "read_url_expires_at"
-        ],
-        "title": "ClientProfileSubmissionAttachment",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileSubmissionAttachment",
         "x-validate": null
       },
       "ProspectResponse": {
@@ -5929,28 +5952,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMealItemResponse",
         "x-validate": null
       },
-      "ChatMessageCreateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "body": "Sounds good, see you Monday!"
-        },
-        "properties": {
-          "body": {
-            "maxLength": 4000,
-            "minLength": 1,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "body"
-        ],
-        "title": "ChatMessageCreateRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "RecipeListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -6496,6 +6497,37 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachProfileBusiness",
         "x-validate": null
       },
+      "FormSubmissionEmbedSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "form_assignment_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "title": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "form_assignment_id",
+          "title",
+          "submitted_at"
+        ],
+        "title": "FormSubmissionEmbedSnapshot",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FormSubmissionEmbedSnapshot",
+        "x-validate": null
+      },
       "LandingProgramInput": {
         "additionalProperties": false,
         "properties": {
@@ -6779,6 +6811,37 @@
         "title": "MealLogListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.MealLogListResponse",
+        "x-validate": null
+      },
+      "ChatMessageEmbed": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/FormSubmissionEmbedSnapshot"
+          },
+          "type": {
+            "enum": [
+              "form_submission"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "snapshot"
+        ],
+        "title": "ChatMessageEmbed",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ChatMessageEmbed",
         "x-validate": null
       },
       "ClientInviteRequest": {
@@ -7575,6 +7638,21 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodLogEntry",
         "x-validate": null
       },
+      "AttachmentUploadResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AttachmentUpload"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "AttachmentUploadResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentUploadResponse",
+        "x-validate": null
+      },
       "TrainingMuscleListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -7662,6 +7740,100 @@
         "title": "TrainingSessionRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "AttachmentDownloadsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentDownload"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "AttachmentDownloadsResponse",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentDownloadsResponse",
+        "x-validate": null
+      },
+      "AttachmentUpload": {
+        "additionalProperties": false,
+        "properties": {
+          "byte_size": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "content_type": {
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic",
+              "video/mp4",
+              "video/webm",
+              "video/quicktime",
+              "audio/webm",
+              "audio/mp4",
+              "audio/mpeg"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "duration_ms": {
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "upload_headers": {
+            "additionalProperties": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "upload_url": {
+            "format": "uri",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "upload_url_expires_at": {
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "content_type",
+          "byte_size",
+          "duration_ms",
+          "upload_url",
+          "upload_url_expires_at",
+          "upload_headers"
+        ],
+        "title": "AttachmentUpload",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.AttachmentUpload",
         "x-validate": null
       },
       "ChatMessagesResponse": {
@@ -8671,6 +8843,55 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanWorkoutExercise",
         "x-validate": null
       },
+      "AttachmentUploadRequest": {
+        "additionalProperties": false,
+        "example": {
+          "byte_size": 1024000,
+          "content_type": "audio/mpeg",
+          "duration_ms": 30000
+        },
+        "properties": {
+          "byte_size": {
+            "minimum": 1,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "content_type": {
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic",
+              "video/mp4",
+              "video/webm",
+              "video/quicktime",
+              "audio/webm",
+              "audio/mp4",
+              "audio/mpeg"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "duration_ms": {
+            "maximum": 300000,
+            "minimum": 1,
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "content_type",
+          "byte_size"
+        ],
+        "title": "AttachmentUploadRequest",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "TrainingSession": {
         "additionalProperties": false,
         "properties": {
@@ -9480,7 +9701,7 @@
           },
           "attachments": {
             "items": {
-              "$ref": "#/components/schemas/ClientProfileSubmissionAttachment"
+              "$ref": "#/components/schemas/ChatAttachment"
             },
             "type": "array",
             "x-struct": null,
@@ -9652,6 +9873,32 @@
         "title": "LandingPageResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.LandingPageResponse",
+        "x-validate": null
+      },
+      "AttachmentDownloadRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "attachment_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true,
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "attachment_ids"
+        ],
+        "title": "AttachmentDownloadRequest",
+        "type": "object",
+        "x-struct": null,
         "x-validate": null
       },
       "AcceptInviteRequest": {
@@ -12305,6 +12552,85 @@
         ]
       }
     },
+    "/v1/coach/attachments/download-urls": {
+      "post": {
+        "callbacks": {},
+        "operationId": "getCoachAttachmentDownloadUrls",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachmentDownloadRequest"
+              }
+            }
+          },
+          "description": "Attachment ids",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentDownloadsResponse"
+                }
+              }
+            },
+            "description": "Attachment downloads"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Storage unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create attachment download URLs",
+        "tags": [
+          "coach attachments"
+        ]
+      }
+    },
     "/v1/auth/token": {
       "post": {
         "callbacks": {},
@@ -12956,7 +13282,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ClientUploadRequest"
+                "$ref": "#/components/schemas/AttachmentUploadRequest"
               }
             }
           },
@@ -12968,7 +13294,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClientUploadResponse"
+                  "$ref": "#/components/schemas/AttachmentUploadResponse"
                 }
               }
             },
@@ -13316,6 +13642,85 @@
         "summary": "Make a meal option the default choice for its slot",
         "tags": [
           "coach nutrition plan days"
+        ]
+      }
+    },
+    "/v1/client/attachments/download-urls": {
+      "post": {
+        "callbacks": {},
+        "operationId": "getClientAttachmentDownloadUrls",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachmentDownloadRequest"
+              }
+            }
+          },
+          "description": "Attachment ids",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentDownloadsResponse"
+                }
+              }
+            },
+            "description": "Attachment downloads"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Storage unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create attachment download URLs",
+        "tags": [
+          "client uploads"
         ]
       }
     },
@@ -14366,7 +14771,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ChatMessageCreateRequest"
+                "$ref": "#/components/schemas/CoachChatMessageCreateRequest"
               }
             }
           },
@@ -16389,7 +16794,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ChatMessageCreateRequest"
+                "$ref": "#/components/schemas/ClientChatMessageCreateRequest"
               }
             }
           },
@@ -19700,6 +20105,97 @@
         "summary": "Update form template",
         "tags": [
           "coach form templates"
+        ]
+      }
+    },
+    "/v1/coach/clients/{client_id}/uploads": {
+      "post": {
+        "callbacks": {},
+        "operationId": "createCoachClientUpload",
+        "parameters": [
+          {
+            "description": "Client id",
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachmentUploadRequest"
+              }
+            }
+          },
+          "description": "Upload request",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentUploadResponse"
+                }
+              }
+            },
+            "description": "Upload created"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Storage unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create an upload for a client",
+        "tags": [
+          "coach attachments"
         ]
       }
     },

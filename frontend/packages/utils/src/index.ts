@@ -225,6 +225,7 @@ export const getInitials = (firstName?: null | string, lastName?: null | string)
 
 export * from './date';
 export * from './format-start-end';
+export * from './media';
 export * from './nutrition';
 export * from './workout';
 

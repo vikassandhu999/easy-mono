@@ -1,7 +1,8 @@
 /**
- * MealItemRow — full-width row for a meal item in the nutrition plan builder.
+ * MealItemRow — food card for a meal item in the nutrition plan builder
+ * (design: Coachez-Builder meal-window food card — hairline border, numbered
+ * green badge, soft amount pill).
  *
- * Width discipline: single 10px indent + 2px border-accent rule.
  * Shows food/recipe name + amount (e.g. "Rolled Oats 80g") + per-item macro
  * contribution from item.nutrition (Task 1 server snapshot). If nutrition is
  * absent, shows amount only.
@@ -90,35 +91,46 @@ function formatMacroContribution(
 
 export interface MealItemRowProps {
   item: HydratedMealItem;
+  /** Position in the meal's item list — drives the design's numbered badge. */
+  index: number;
   /** Tap opens the AmountSheet, where the item can be edited or removed. */
   onTap: () => void;
 }
 
-export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(function MealItemRow({item, onTap}, ref) {
+export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(function MealItemRow(
+  {item, index, onTap},
+  ref,
+) {
   const name = item.name ?? item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
   const amount = formatAmount(item);
   const macro = formatMacroContribution(item.nutrition);
 
   return (
-    // 2px accent rule on the row itself; single 10px indent, content-driven height.
-    // pr-2.5 keeps the macro column off the card's right border — without it a
-    // long (truncated) name makes the kcal figures sit flush against the edge.
-    <div className="mt-1.75 flex items-start justify-between border-l-2 border-accent pl-2.5 pr-2.5">
-      {/* Main tap target — name + amount stacked. Ref exposes the button as the
-          desktop anchor for the edit-mode AmountSheet popover. */}
+    // Design: meal-window food card — white, 1.5px hairline border, 14px radius,
+    // numbered green badge, soft amount field. Whole card taps into AmountSheet;
+    // ref exposes the button as the desktop popover anchor.
+    <div className="mt-2 flex items-start gap-2.5 rounded-[14px] border-[1.5px] border-separator bg-surface px-3.5 py-3">
+      <span className="mt-px flex size-6 shrink-0 items-center justify-center rounded-[7px] bg-nutrition-soft text-[11px] font-bold text-nutrition">
+        {index + 1}
+      </span>
+
       <button
         ref={ref}
-        className="min-w-0 flex-1 py-1.75 text-left transition-colors hover:opacity-80"
+        className="min-w-0 flex-1 text-left transition-opacity hover:opacity-80"
         onClick={onTap}
         type="button"
       >
-        <div className="truncate text-xs font-semibold text-foreground">{name}</div>
-        {amount ? <div className="mt-px text-[11px] text-muted">{amount}</div> : null}
+        <div className="truncate font-grotesk text-sm font-semibold text-foreground">{name}</div>
+        {amount ? (
+          <div className="mt-1.5 inline-block rounded-[9px] border border-separator bg-surface-secondary px-2.5 py-1 text-[12.5px] font-medium text-muted">
+            {amount}
+          </div>
+        ) : null}
       </button>
 
       {/* Right-aligned macro contribution column */}
       {macro ? (
-        <div className="shrink-0 whitespace-nowrap py-1.75 pl-2 text-right text-[11px] text-muted">
+        <div className="shrink-0 whitespace-nowrap pl-2 text-right text-[11px] text-muted">
           <span className="font-medium text-foreground">{macro.kcal}</span> kcal
           {macro.p !== '—' || macro.c !== '—' || macro.f !== '—' ? (
             <>

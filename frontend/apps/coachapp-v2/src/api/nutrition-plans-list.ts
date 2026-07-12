@@ -71,6 +71,8 @@ coachApi.enhanceEndpoints({
     },
     // Duplicate is tag:false — invalidate the list so the copy shows on return.
     duplicateNutritionPlan: {invalidatesTags: [{type: 'NutritionPlan', id: 'LIST'}]},
+    // Delete is tag:false too — the Builder hub deletes from the card menu.
+    deleteNutritionPlan: {invalidatesTags: [{type: 'NutritionPlan', id: 'LIST'}]},
     // The client's assigned-plans list + assign mutation are tag:false; wire a
     // shared CLIENT-LIST tag so assigning refreshes the list (and the stat strip).
     listCoachClientNutritionPlans: {providesTags: [{type: 'NutritionPlan', id: 'CLIENT-LIST'}]},

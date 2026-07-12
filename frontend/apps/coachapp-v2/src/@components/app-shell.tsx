@@ -1,18 +1,13 @@
 import {Button, Chip, CloseButton, Separator, Toast} from '@heroui/react';
 import {
-  BookOpen,
   ChevronRight,
-  ClipboardCheck,
-  ClipboardList,
   Download,
-  Dumbbell,
   FolderOpen,
   Inbox,
   LayoutDashboard,
   MessageCircle,
   Settings,
   Users,
-  UtensilsCrossed,
   X,
 } from 'lucide-react';
 import {type ReactNode, useState} from 'react';
@@ -26,6 +21,7 @@ import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import {useListProspectsQuery} from '@/api/prospects';
 import {isClientWorkspacePath} from '@/clients/lib/client-workspace';
+import {BUILDER_TYPES} from '@/library/lib/builder-types';
 import {useAppDispatch} from '@/store';
 
 const ICON_SIZE = 20;
@@ -71,42 +67,16 @@ const SIDEBAR_TOP: NavItem[] = [
   },
 ];
 
-// Library group — collapsible on desktop sidebar
-const LIBRARY_GROUP: NavGroup = {
+// Builder group — collapsible on desktop sidebar; sections come from the
+// library type registry so order/labels/icons stay in sync with the hub.
+const BUILDER_GROUP: NavGroup = {
   icon: <FolderOpen size={ICON_SIZE} />,
-  items: [
-    {
-      icon: <Dumbbell size={ICON_SIZE} />,
-      label: 'Exercises',
-      path: ROUTES.EXERCISES,
-    },
-    {
-      icon: <UtensilsCrossed size={ICON_SIZE} />,
-      label: 'Foods',
-      path: ROUTES.FOODS,
-    },
-    {
-      icon: <BookOpen size={ICON_SIZE} />,
-      label: 'Recipes',
-      path: ROUTES.RECIPES,
-    },
-    {
-      icon: <ClipboardList size={ICON_SIZE} />,
-      label: 'Nutrition Plans',
-      path: ROUTES.NUTRITION_PLANS,
-    },
-    {
-      icon: <ClipboardList size={ICON_SIZE} />,
-      label: 'Training Plans',
-      path: ROUTES.TRAINING_PLANS,
-    },
-    {
-      icon: <ClipboardCheck size={ICON_SIZE} />,
-      label: 'Forms',
-      path: ROUTES.CHECKINS,
-    },
-  ],
-  label: 'Library',
+  items: BUILDER_TYPES.map((t) => ({
+    icon: <t.icon size={ICON_SIZE} />,
+    label: t.group,
+    path: t.listRoute,
+  })),
+  label: 'Builder',
   pathPrefix: ROUTES.LIBRARY,
 };
 
@@ -144,7 +114,7 @@ const BOTTOM_NAV: NavItem[] = [
   },
   {
     icon: <FolderOpen size={ICON_SIZE} />,
-    label: 'Library',
+    label: 'Builder',
     path: ROUTES.LIBRARY,
   },
   {
@@ -299,7 +269,7 @@ function BottomNavItem({dark = false, item}: {dark?: boolean; item: NavItem}) {
 const BOTTOM_NAV_PATHS = new Set(BOTTOM_NAV.map((item) => item.path));
 
 function CompactSidebar() {
-  const items = [...SIDEBAR_TOP, {icon: LIBRARY_GROUP.icon, label: LIBRARY_GROUP.label, path: ROUTES.LIBRARY}];
+  const items = [...SIDEBAR_TOP, {icon: BUILDER_GROUP.icon, label: BUILDER_GROUP.label, path: ROUTES.LIBRARY}];
 
   return (
     <aside className="hidden bg-accent text-accent-foreground/70 lg:fixed lg:inset-y-0 lg:flex lg:w-[70px] lg:flex-col lg:items-center">
@@ -378,7 +348,7 @@ export default function AppShell() {
                 key={item.path}
               />
             ))}
-            <SidebarNavGroupSection group={LIBRARY_GROUP} />
+            <SidebarNavGroupSection group={BUILDER_GROUP} />
           </div>
           <Separator className="my-2" />
           <div className="space-y-1 pt-2">

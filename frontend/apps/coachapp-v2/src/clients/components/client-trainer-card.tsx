@@ -220,11 +220,11 @@ export default function ClientTrainerCard({client}: {client: Client}) {
             )}
           </div>
 
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex">
             <AssignSurface
               label="Change trainer"
               popoverClassName="p-0"
-              triggerClassName="min-h-11 rounded-[12px] bg-accent px-4 text-[12.5px] font-bold text-accent-foreground hover:opacity-90"
+              triggerClassName="min-h-11 flex-1 justify-center rounded-[12px] bg-accent px-4 text-[13px] font-bold text-accent-foreground! hover:opacity-90"
             >
               {(close) => (
                 <TrainerPickerContent

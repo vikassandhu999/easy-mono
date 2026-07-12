@@ -4,12 +4,14 @@ import {
   ChevronLeft,
   CircleUserRound,
   ClipboardCheck,
+  CreditCard,
   Dumbbell,
   LineChart,
   MessageCircle,
   MoreHorizontal,
   Pause,
   Play,
+  Users,
   Utensils,
 } from 'lucide-react';
 import type {ReactNode} from 'react';
@@ -18,6 +20,7 @@ import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom'
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {type Client, useUpdateClientMutation} from '@/api/clients';
+import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import {getApiErrorMessage} from '@/api/shared';
 import {getClientName} from '@/clients/lib/client';
 import {formatStatusLabel} from '@/clients/lib/client-detail-metrics';
@@ -32,8 +35,10 @@ const TAB_ICON: Record<ClientWorkspaceTab, ReactNode> = {
   progress: <LineChart size={18} />,
   nutrition: <Utensils size={18} />,
   training: <Dumbbell size={18} />,
+  trainer: <Users size={18} />,
   'check-in': <ClipboardCheck size={18} />,
   detail: <CircleUserRound size={18} />,
+  subscription: <CreditCard size={18} />,
 };
 
 function clientStatus(client: Client): string {
@@ -86,6 +91,11 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
   const handleBack = () => (inChat ? navigate(detailPath, {replace: true}) : goBack());
   const status = clientStatus(client);
   const [updateClient, {isLoading: isStatusUpdating}] = useUpdateClientMutation();
+  const {data: conversationData} = useGetCoachClientConversationQuery(
+    {clientId: client.id},
+    {skip: client.status === 'pending'},
+  );
+  const unreadCount = conversationData?.data.unread_count ?? 0;
 
   const toggleClientStatus = async () => {
     const nextStatus = client.status === 'active' ? 'inactive' : 'active';
@@ -168,7 +178,12 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
             to={chatPath}
           >
             <MessageCircle size={18} />
-            Chat
+            <span className="flex-1">Chat</span>
+            {unreadCount > 0 ? (
+              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-[5px] text-[10.5px] font-bold text-accent-foreground">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            ) : null}
           </WorkspaceLink>
           {CLIENT_WORKSPACE_TABS.map((tab) => (
             <div key={tab.id}>
@@ -230,6 +245,11 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
                 to={chatPath}
               >
                 <MessageCircle size={18} />
+                {unreadCount > 0 ? (
+                  <span className="absolute -top-[3px] -right-[3px] flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-surface bg-danger px-1 text-[10px] font-bold text-danger-foreground">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                ) : null}
               </Link>
             ) : null}
           </div>
@@ -238,13 +258,13 @@ export default function ClientWorkspaceShell({children, client}: {children: Reac
               {CLIENT_WORKSPACE_TABS.map((tab) => (
                 <Link
                   className={`flex h-[30px] shrink-0 items-center rounded-[9px] px-3 text-xs font-semibold ${
-                    activeTab === tab.id ? 'bg-accent-soft text-accent' : 'text-foreground'
+                    activeTab === tab.id ? '[background-color:var(--link-soft)] text-link' : 'text-foreground'
                   }`}
                   key={tab.id}
                   replace
                   to={clientWorkspaceTabPath(client.id, tab.id)}
                 >
-                  {tab.label.replace(' plan', '')}
+                  {tab.mobileLabel ?? tab.label.replace(' plan', '')}
                 </Link>
               ))}
             </nav>

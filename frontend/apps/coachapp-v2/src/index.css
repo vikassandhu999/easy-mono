@@ -10,6 +10,34 @@
   --font-grotesk: "Space Grotesk Variable", sans-serif;
 }
 
+/* Register the display font with Tailwind so `font-grotesk` exists as a
+   utility — a bare :root var does NOT generate one. */
+@theme {
+  --font-grotesk: "Space Grotesk Variable", sans-serif;
+
+  /* Builder categorical palette (Coachez-Builder design COLORS; teal added for
+     Foods) + design hairlines. Semantic tokens so UI code carries no literal
+     hexes (RM-109). */
+  --color-training: #0091ff;
+  --color-training-soft: #eaf4ff;
+  --color-nutrition: #1f9d57;
+  --color-nutrition-soft: #e7f6ec;
+  --color-forms: #7a5af0;
+  --color-forms-soft: #efebfe;
+  --color-exercises: #e08600;
+  --color-exercises-soft: #fcf0dd;
+  --color-recipes: #e5484d;
+  --color-recipes-soft: #fdecec;
+  --color-foods: #0d9488;
+  --color-foods-soft: #e0f5f1;
+  /* Favourite star amber. */
+  --color-star: #f5a623;
+  /* Card hover border. */
+  --color-edge: #dce1e8;
+  /* Dashed add-tile border (slightly stronger than edge). */
+  --color-edge-strong: #d2d6dd;
+}
+
 /*
  * HeroUI Theme Customization
  * Add this to your global.css after importing @heroui/styles

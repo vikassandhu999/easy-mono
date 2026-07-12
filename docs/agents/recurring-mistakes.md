@@ -282,6 +282,18 @@ surfaces server errors via `setError` needs `validationBehavior="aria"` (passthr
 **Enforced by:** convention for now; graduate to `check-rm` (grep forms using
 `applyFormErrors` without `validationBehavior="aria"`) if it recurs.
 
+### RM-129 — Tailwind v4 utilities come from `@theme`, not `:root` vars
+Declaring `--font-grotesk`/`--color-x` in a plain `:root` block does NOT create the `font-grotesk`/
+`text-x` utility — Tailwind v4 only generates utilities for vars registered in `@theme`, and it
+silently ignores unknown classes, so the element just inherits (every `font-grotesk` in the app
+rendered Inter for weeks). Instance: 2026-07-12 nutrition-builder pass. When adding a design
+token: register it in `@theme` in `index.css`, then verify one computed style in the browser
+(`getComputedStyle(el).fontFamily`), or grep the built CSS for the utility rule. Corollary:
+design palettes belong here as semantic tokens (see the Builder categorical palette) — that is
+also how RM-109 stays satisfiable.
+**Enforced by:** browser computed-style verification during design passes; RM-109's check keeps
+hexes funneling through `@theme`.
+
 ---
 
 ## Deploy / ops

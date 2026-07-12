@@ -7,14 +7,14 @@
  *         that opens FoodRecipePickerSheet (multi-select) → AmountSheet for
  *         each picked item in sequence.
  *
- * Width discipline: body adds NO nested horizontal padding around rows —
- * MealItemRow already owns its own 10px indent + 2px accent rule.
+ * Visuals follow the Coachez-Builder design's editor rows: numbered green
+ * badge, 1.5px hairline card, dashed add tile, green total strip.
  *
  * Cache: rename/delete → optimistic updateQueryData('getNutritionPlan', {id: planId}, …)
  *        + refetch for server-recomputed nutrition snapshots; patch.undo() + toast on failure.
  */
 import {Button, Dropdown, Label, Separator} from '@heroui/react';
-import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
+import {ChevronDown, ChevronRight, MoreHorizontal, Plus, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import type {NutritionMeal} from '@/api/generated';
@@ -43,6 +43,8 @@ interface MealCardProps {
   planId: string;
   open: boolean;
   onToggle: () => void;
+  /** Position in the meals list — drives the design's numbered badge. */
+  index: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,7 +76,7 @@ function formatMealTotal(nutrition: NutritionMeal['nutrition']): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
+export function MealCard({meal, planId, open, onToggle, index}: MealCardProps) {
   const dispatch = useAppDispatch();
   const [updateMeal] = useUpdateMealMutation();
   const [deleteMeal] = useDeleteMealMutation();
@@ -274,11 +276,15 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+    <div
+      className={`rounded-[16px] border-[1.5px] border-separator bg-surface overflow-hidden transition-all ${
+        open ? '' : 'hover:-translate-y-px hover:border-edge hover:shadow-[0_14px_30px_-18px_rgba(24,24,27,0.5)]'
+      }`}
+    >
       {/* Header — acts as accordion toggle (whole row, like WorkoutCard) */}
       <div
         aria-expanded={open}
-        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none"
+        className="flex items-center gap-3 p-[15px] cursor-pointer select-none"
         onClick={editingName ? undefined : onToggle}
         onKeyDown={(e) => {
           if (!editingName && (e.key === 'Enter' || e.key === ' ')) {
@@ -288,17 +294,19 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         role="button"
         tabIndex={0}
       >
-        {/* Chevron */}
-        <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
+        {/* Numbered badge (design: green row badge) */}
+        <span className="flex size-[30px] shrink-0 items-center justify-center rounded-[9px] bg-nutrition-soft text-xs font-bold text-nutrition">
+          {index + 1}
+        </span>
 
-        {/* Name — inline-edit or plain text */}
+        {/* Name + total — inline-edit or plain text */}
         <div className="min-w-0 flex-1">
           {editingName ? (
             <input
               ref={nameInputRef}
               // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
               autoFocus
-              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
+              className="w-full bg-transparent font-grotesk text-[15px] font-bold tracking-[-0.01em] text-foreground outline-none border-b border-accent"
               onBlur={() => {
                 commitRename().catch(() => undefined);
               }}
@@ -311,17 +319,17 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
             // biome-ignore lint/a11y/noNoninteractiveElementInteractions: double-click to rename is a progressive enhancement on a display label; primary rename is in the dropdown menu
             // biome-ignore lint/a11y/noStaticElementInteractions: same as above
             <span
-              className="block truncate text-sm font-semibold text-foreground"
+              className="block truncate font-grotesk text-[15px] font-bold tracking-[-0.01em] text-foreground"
               onDoubleClick={startEditing}
               title="Double-click to rename"
             >
               {meal.name}
             </span>
           )}
+          <div className="mt-0.5 text-xs text-muted">
+            {[`${items.length} item${items.length === 1 ? '' : 's'}`, mealTotal].filter(Boolean).join(' · ')}
+          </div>
         </div>
-
-        {/* Meal total badge */}
-        {mealTotal ? <span className="shrink-0 text-xs text-muted">{mealTotal}</span> : null}
 
         {/* Meal options menu — stop propagation so clicks don't toggle the accordion */}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown; role is on the Button inside */}
@@ -333,7 +341,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
           <Dropdown>
             <Button
               aria-label="Meal options"
-              className="h-9 w-9 min-w-9"
+              className="h-[30px] w-[30px] min-w-0 rounded-[9px]! text-muted/70"
               isIconOnly
               size="sm"
               variant="ghost"
@@ -382,21 +390,30 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
             </Dropdown.Popover>
           </Dropdown>
         </div>
+
+        {/* Expand affordance (design: green "Open" tile) */}
+        <span
+          aria-hidden
+          className="flex size-[30px] shrink-0 items-center justify-center rounded-[9px] bg-nutrition-soft text-nutrition"
+        >
+          {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+        </span>
       </div>
 
       {/* Body — meal items + add button */}
       {open ? (
-        <div className="border-t border-border pb-3 pt-1">
+        <div className="border-t border-separator px-3 pb-3 pt-1.5">
           {isShared ? (
-            <div className="mx-2.5 mt-2 mb-1 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning-soft-foreground">
+            <div className="mt-1.5 rounded-[10px] border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning-soft-foreground">
               Used in {assignmentCount} places — changes apply everywhere
             </div>
           ) : null}
           {items.length === 0 ? (
-            <div className="pl-2.5 py-2 text-xs text-muted">Add foods</div>
+            <div className="py-3 text-center text-xs text-muted">No items yet — add foods below</div>
           ) : (
-            items.map((item) => (
+            items.map((item, i) => (
               <MealItemRow
+                index={i}
                 key={item.id}
                 ref={(el) => {
                   itemRowRefs.current[item.id] = el;
@@ -407,25 +424,30 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
             ))
           )}
 
-          <div className="pl-2.5">
-            <button
-              ref={addItemButtonRef}
-              className="mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
-              onClick={() => setPickerOpen(true)}
-              type="button"
-            >
-              + Add food or recipe
-            </button>
-          </div>
+          {/* Design: dashed add tile (item-level = green hover) */}
+          <button
+            ref={addItemButtonRef}
+            className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-[13px] border-[1.5px] border-dashed border-edge-strong text-[12.5px] font-semibold text-muted transition-colors hover:border-nutrition hover:bg-nutrition-soft/50 hover:text-nutrition"
+            onClick={() => setPickerOpen(true)}
+            type="button"
+          >
+            <Plus
+              size={14}
+              strokeWidth={2.2}
+            />
+            Add food or recipe
+          </button>
 
           {/* Meal total — rolls up live from server-recomputed meal.nutrition */}
           {meal.nutrition?.calories != null ? (
-            <div className="mt-2.5 mx-2.5 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 px-3 py-2">
+            <div className="mt-2.5 flex items-center justify-between rounded-[12px] bg-nutrition-soft/60 px-3.5 py-2.5">
               <div>
-                <div className="text-[11px] text-muted">Meal total</div>
-                <div className="text-sm font-bold text-foreground">{Math.round(meal.nutrition.calories)} kcal</div>
+                <div className="text-[11px] font-bold text-nutrition">Meal total</div>
+                <div className="font-grotesk text-sm font-bold text-foreground">
+                  {Math.round(meal.nutrition.calories)} kcal
+                </div>
               </div>
-              <div className="text-[11px] text-accent">
+              <div className="text-[11px] font-semibold text-nutrition">
                 {fmt(meal.nutrition.protein_g)}P · {fmt(meal.nutrition.carbs_g)}C · {fmt(meal.nutrition.fat_g)}F
               </div>
             </div>

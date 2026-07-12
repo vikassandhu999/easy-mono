@@ -12,6 +12,7 @@ import {toNullableText} from '@/api/shared';
 import ClientCheckins from '@/clients/components/client-checkins';
 import ClientDetailCard from '@/clients/components/client-detail-card';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
+import ClientSubscription from '@/clients/components/client-subscription';
 import ClientTrainerCard from '@/clients/components/client-trainer-card';
 import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
@@ -175,10 +176,13 @@ export default function ClientDetail() {
             />
           ) : null}
 
+          {activeTab === 'trainer' ? <ClientTrainerCard client={client} /> : null}
+
+          {activeTab === 'subscription' ? <ClientSubscription client={client} /> : null}
+
           {activeTab === 'detail' ? (
             <>
               <ClientDetailCard client={client} />
-              <ClientTrainerCard client={client} />
               <section className="rounded-[16px] border-[1.5px] border-separator bg-surface p-4 lg:rounded-[18px] lg:p-5">
                 <div className="mb-3">
                   <h2 className="font-grotesk text-xl font-bold">Notes</h2>

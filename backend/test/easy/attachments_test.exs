@@ -119,11 +119,18 @@ defmodule Easy.AttachmentsTest do
     client = insert_client()
     first = insert_attachment(client)
     second = insert_attachment(client)
+    signing_started_at = DateTime.utc_now(:second)
 
     assert {:ok, downloads} = Attachments.get_downloads(client_ctx(client), [second.id, first.id])
+    signing_finished_at = DateTime.utc_now(:second)
+
     assert Enum.map(downloads, & &1.id) == [second.id, first.id]
     assert Enum.all?(downloads, &(&1.download_url =~ "storage.example.test/easy-test/"))
-    assert Enum.all?(downloads, &match?(%DateTime{}, &1.download_url_expires_at))
+
+    assert Enum.all?(downloads, fn download ->
+             DateTime.compare(download.download_url_expires_at, DateTime.add(signing_started_at, 600)) != :lt and
+               DateTime.compare(download.download_url_expires_at, DateTime.add(signing_finished_at, 600)) != :gt
+           end)
   end
 
   test "returns downloads to the business owner" do

@@ -1,8 +1,8 @@
 defmodule EasyWeb.Coaches.FormTemplateControllerTest do
   use Easy.ConnCase
 
-  alias Easy.ClientProfiles.FormAssignment
-  alias Easy.ClientProfiles.FormTemplate
+  alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormTemplate
   alias Easy.Repo
 
   setup do

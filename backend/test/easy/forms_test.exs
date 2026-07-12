@@ -1,11 +1,11 @@
-defmodule Easy.ClientProfilesTest do
+defmodule Easy.FormsTest do
   use Easy.SchemaCase, async: false
 
-  alias Easy.ClientProfiles
-  alias Easy.ClientProfiles.CheckInSchedule
-  alias Easy.ClientProfiles.FormAssignment
-  alias Easy.ClientProfiles.FormSubmission
-  alias Easy.ClientProfiles.FormTemplate
+  alias Easy.Forms
+  alias Easy.Forms.CheckInSchedule
+  alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormSubmission
+  alias Easy.Forms.FormTemplate
   alias Easy.Ctx
   alias Easy.Fitness.WeightEntry
   alias Easy.Repo
@@ -163,7 +163,7 @@ defmodule Easy.ClientProfilesTest do
       completed_at = DateTime.utc_now(:second)
 
       assert {:ok, assignment} =
-               ClientProfiles.assign_form_template_to_client(ctx, client.id, template.id, %{
+               Forms.assign_form_template_to_client(ctx, client.id, template.id, %{
                  priority: "high",
                  due_date: "2026-06-30",
                  purpose: "custom",
@@ -185,7 +185,7 @@ defmodule Easy.ClientProfilesTest do
       ctx = client_ctx(client)
 
       assert {:error, :form_template_assigned} =
-               ClientProfiles.delete_form_template(ctx, template.id)
+               Forms.delete_form_template(ctx, template.id)
 
       assert Repo.get!(FormTemplate, template.id)
       assert Repo.get!(FormAssignment, assignment.id)
@@ -205,12 +205,12 @@ defmodule Easy.ClientProfilesTest do
 
       ctx = owner_ctx(client.business)
 
-      assert {:ok, []} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
+      assert {:ok, []} = Forms.list_form_assignments_for_client(ctx, client.id)
 
       client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
 
       assert {:error, :not_found} =
-               ClientProfiles.submit_client_form_assignment(client_self_ctx, assignment.id, %{
+               Forms.submit_client_form_assignment(client_self_ctx, assignment.id, %{
                  answers: %{}
                })
     end
@@ -254,7 +254,7 @@ defmodule Easy.ClientProfilesTest do
       assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
 
       assert {:ok, submission} =
-               ClientProfiles.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
                  answers: %{"weight" => 179.4, "weight-2" => 179.2}
                })
 
@@ -292,7 +292,7 @@ defmodule Easy.ClientProfilesTest do
         assignment = insert(:form_assignment, business: business, client: client, form_template: template)
 
         assert {:ok, submission} =
-                 ClientProfiles.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+                 Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
                    answers: %{"weight" => 81.2}
                  })
 
@@ -329,7 +329,7 @@ defmodule Easy.ClientProfilesTest do
       ids = Enum.map(attachments, & &1.id)
 
       assert {:ok, submission} =
-               ClientProfiles.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
                  answers: %{"photos" => ids}
                })
 
@@ -337,7 +337,7 @@ defmodule Easy.ClientProfilesTest do
       assert Enum.all?(submission.attachments, &(&1.read_url =~ "storage.example.test/easy-test/"))
       refute inspect(submission.attachments) =~ "storage_key"
 
-      assert {:ok, [listed]} = ClientProfiles.list_form_submissions(owner_ctx(client.business), assignment.id)
+      assert {:ok, [listed]} = Forms.list_form_submissions(owner_ctx(client.business), assignment.id)
       assert Enum.map(listed.attachments, & &1.id) == ids
     end
 
@@ -363,7 +363,7 @@ defmodule Easy.ClientProfilesTest do
       assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
 
       assert {:error, :invalid_answer_values} =
-               ClientProfiles.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
                  answers: %{"photos" => [foreign_attachment.id]}
                })
 
@@ -377,14 +377,14 @@ defmodule Easy.ClientProfilesTest do
       client = insert_client()
       ctx = owner_ctx(client.business)
 
-      assert {:ok, assignment} = ClientProfiles.assign_default_intake_to_client(ctx, client.id)
+      assert {:ok, assignment} = Forms.assign_default_intake_to_client(ctx, client.id)
       assert assignment.purpose == :intake
       assert assignment.status == :assigned
 
       client2 = insert(:client, business: client.business, status: :active)
 
       assert {:ok, assignment2} =
-               ClientProfiles.assign_default_intake_to_client(ctx, client2.id)
+               Forms.assign_default_intake_to_client(ctx, client2.id)
 
       assert assignment2.form_template_id == assignment.form_template_id
       assert Repo.aggregate(FormTemplate, :count) == 1
@@ -396,7 +396,7 @@ defmodule Easy.ClientProfilesTest do
       business = insert(:business)
       ctx = owner_ctx(business)
 
-      assert {:ok, [template]} = ClientProfiles.list_form_templates(ctx)
+      assert {:ok, [template]} = Forms.list_form_templates(ctx)
       assert template.name == "Weekly check-in"
       assert template.purpose == :check_in
       assert template.system_key == "weekly_check_in"
@@ -408,10 +408,10 @@ defmodule Easy.ClientProfilesTest do
       assert Enum.count(questions, &(&1["type"] == "rating")) == 6
       assert template.system_version == 2
 
-      assert {:ok, renamed} = ClientProfiles.update_form_template(ctx, template.id, %{"name" => "Friday review"})
+      assert {:ok, renamed} = Forms.update_form_template(ctx, template.id, %{"name" => "Friday review"})
       assert renamed.system_key == "weekly_check_in"
 
-      assert {:ok, [listed_again]} = ClientProfiles.list_form_templates(ctx)
+      assert {:ok, [listed_again]} = Forms.list_form_templates(ctx)
       assert listed_again.id == template.id
       assert listed_again.name == "Friday review"
     end
@@ -420,8 +420,8 @@ defmodule Easy.ClientProfilesTest do
       first = insert(:business)
       second = insert(:business)
 
-      assert {:ok, [first_template]} = ClientProfiles.list_form_templates(owner_ctx(first))
-      assert {:ok, [second_template]} = ClientProfiles.list_form_templates(owner_ctx(second))
+      assert {:ok, [first_template]} = Forms.list_form_templates(owner_ctx(first))
+      assert {:ok, [second_template]} = Forms.list_form_templates(owner_ctx(second))
 
       refute first_template.id == second_template.id
       assert first_template.business_id == first.id
@@ -446,7 +446,7 @@ defmodule Easy.ClientProfilesTest do
         |> Map.put(:status, :active)
         |> Repo.insert!()
 
-      assert {:ok, [evolved]} = ClientProfiles.list_form_templates(ctx)
+      assert {:ok, [evolved]} = Forms.list_form_templates(ctx)
       assert evolved.id == old_template.id
       assert evolved.name == "Coach-renamed default"
       assert evolved.system_version == 2
@@ -456,7 +456,7 @@ defmodule Easy.ClientProfilesTest do
       assert Enum.find(body["questions"], &(&1["id"] == "weight"))["label"] == "Custom weight"
       assert Enum.count(body["questions"], &(&1["id"] == "progress-photos")) == 1
 
-      assert {:ok, [listed_again]} = ClientProfiles.list_form_templates(ctx)
+      assert {:ok, [listed_again]} = Forms.list_form_templates(ctx)
       body_again = Enum.find(listed_again.sections, &(&1["title"] == "Body"))
       assert Enum.count(body_again["questions"], &(&1["id"] == "progress-photos")) == 1
     end
@@ -466,13 +466,13 @@ defmodule Easy.ClientProfilesTest do
     test "submitting intake completes the assignment and applies no side effects beyond weight" do
       client = insert_client()
       coach_ctx = owner_ctx(client.business)
-      {:ok, assignment} = ClientProfiles.assign_default_intake_to_client(coach_ctx, client.id)
+      {:ok, assignment} = Forms.assign_default_intake_to_client(coach_ctx, client.id)
 
       ctx = client_ctx(client)
       answers = valid_required_answers(Easy.DefaultIntake.sections())
 
       assert {:ok, submission} =
-               ClientProfiles.submit_client_form_assignment(ctx, assignment.id, %{answers: answers})
+               Forms.submit_client_form_assignment(ctx, assignment.id, %{answers: answers})
 
       reloaded = Repo.get!(FormAssignment, assignment.id)
       assert reloaded.status == :completed
@@ -494,16 +494,16 @@ defmodule Easy.ClientProfilesTest do
           form_template: other_template
         )
 
-      assert {:error, :not_found} = ClientProfiles.get_form_template(ctx, other_template.id)
+      assert {:error, :not_found} = Forms.get_form_template(ctx, other_template.id)
 
       assert {:error, :not_found} =
-               ClientProfiles.update_form_template(ctx, other_template.id, %{"name" => "x"})
+               Forms.update_form_template(ctx, other_template.id, %{"name" => "x"})
 
       assert {:error, :not_found} =
-               ClientProfiles.delete_form_template(ctx, other_template.id)
+               Forms.delete_form_template(ctx, other_template.id)
 
       assert {:error, :not_found} =
-               ClientProfiles.update_form_assignment(ctx, other_assignment.id, %{
+               Forms.update_form_assignment(ctx, other_assignment.id, %{
                  "priority" => "high"
                })
     end
@@ -517,7 +517,7 @@ defmodule Easy.ClientProfilesTest do
         insert(:form_assignment, business: client.business, client: client, form_template: template)
 
       assert {:ok, completed} =
-               ClientProfiles.update_form_assignment(ctx, assignment.id, %{
+               Forms.update_form_assignment(ctx, assignment.id, %{
                  "status" => "completed"
                })
 
@@ -525,7 +525,7 @@ defmodule Easy.ClientProfilesTest do
       refute is_nil(completed.completed_at)
 
       assert {:ok, reopened} =
-               ClientProfiles.update_form_assignment(ctx, assignment.id, %{
+               Forms.update_form_assignment(ctx, assignment.id, %{
                  "status" => "assigned"
                })
 
@@ -615,10 +615,10 @@ defmodule Easy.ClientProfilesTest do
         )
 
       assert {:ok, %{status: :dismissed}} =
-               ClientProfiles.update_form_assignment(ctx, assignment.id, %{status: :dismissed})
+               Forms.update_form_assignment(ctx, assignment.id, %{status: :dismissed})
 
       assert {:ok, %{status: :assigned, completed_at: nil}} =
-               ClientProfiles.update_form_assignment(ctx, assignment.id, %{status: :assigned})
+               Forms.update_form_assignment(ctx, assignment.id, %{status: :assigned})
     end
   end
 
@@ -629,14 +629,14 @@ defmodule Easy.ClientProfilesTest do
       ctx = owner_ctx(client.business)
 
       assert {:ok, schedule} =
-               ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+               Forms.create_check_in_schedule_for_client(ctx, client.id, %{
                  form_template_id: template.id,
                  frequency: :once,
                  next_due_on: ~D[2026-07-11]
                })
 
       refute schedule.active
-      assert {:ok, [assignment]} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
+      assert {:ok, [assignment]} = Forms.list_form_assignments_for_client(ctx, client.id)
       assert assignment.check_in_schedule_id == schedule.id
       assert assignment.due_date == ~D[2026-07-11]
       assert assignment.status == :assigned
@@ -648,16 +648,16 @@ defmodule Easy.ClientProfilesTest do
       ctx = owner_ctx(client.business)
 
       assert {:ok, future} =
-               ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+               Forms.create_check_in_schedule_for_client(ctx, client.id, %{
                  form_template_id: template.id,
                  frequency: :weekly,
                  next_due_on: ~D[2026-07-18]
                })
 
       assert future.next_due_on == ~D[2026-07-18]
-      assert {:ok, []} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
+      assert {:ok, []} = Forms.list_form_assignments_for_client(ctx, client.id)
 
-      assert {1, 0} = ClientProfiles.generate_due_check_ins(~D[2026-07-18])
+      assert {1, 0} = Forms.generate_due_check_ins(~D[2026-07-18])
       assert Repo.reload(future).next_due_on == ~D[2026-07-25]
     end
 
@@ -667,14 +667,14 @@ defmodule Easy.ClientProfilesTest do
       ctx = owner_ctx(client.business)
 
       assert {:ok, schedule} =
-               ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+               Forms.create_check_in_schedule_for_client(ctx, client.id, %{
                  form_template_id: template.id,
                  frequency: :weekly,
                  next_due_on: ~D[2026-07-11]
                })
 
       [first] = Repo.all(FormAssignment.for_schedule(client.business_id, schedule.id))
-      assert {1, 0} = ClientProfiles.generate_due_check_ins(~D[2026-07-18])
+      assert {1, 0} = Forms.generate_due_check_ins(~D[2026-07-18])
       assert Repo.reload(first).status == :missed
       assert Repo.aggregate(FormAssignment.for_schedule(client.business_id, schedule.id), :count) == 2
     end
@@ -692,7 +692,7 @@ defmodule Easy.ClientProfilesTest do
           next_due_on: ~D[2026-06-20]
         )
 
-      assert {0, 1} = ClientProfiles.generate_due_check_ins(~D[2026-07-11])
+      assert {0, 1} = Forms.generate_due_check_ins(~D[2026-07-11])
       assert Repo.reload(schedule).next_due_on == ~D[2026-07-18]
       assert Repo.aggregate(FormAssignment.for_schedule(client.business_id, schedule.id), :count) == 0
     end
@@ -704,14 +704,14 @@ defmodule Easy.ClientProfilesTest do
       ctx = owner_ctx(client.business)
 
       assert {:error, :invalid_check_in_template} =
-               ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+               Forms.create_check_in_schedule_for_client(ctx, client.id, %{
                  form_template_id: intake.id,
                  frequency: :weekly,
                  next_due_on: ~D[2026-07-11]
                })
 
       assert {:error, :not_found} =
-               ClientProfiles.create_check_in_schedule_for_client(ctx, other_client.id, %{
+               Forms.create_check_in_schedule_for_client(ctx, other_client.id, %{
                  form_template_id: intake.id,
                  frequency: :weekly,
                  next_due_on: ~D[2026-07-11]
@@ -795,7 +795,7 @@ defmodule Easy.ClientProfilesTest do
       )
 
       assert {:ok, [listed_newer, listed_older]} =
-               ClientProfiles.list_unreviewed_check_in_submissions(owner_ctx(business))
+               Forms.list_unreviewed_check_in_submissions(owner_ctx(business))
 
       assert [listed_newer.id, listed_older.id] == [newer.id, older.id]
       assert listed_newer.client.id == client.id
@@ -840,7 +840,7 @@ defmodule Easy.ClientProfilesTest do
       insert(:form_submission, business: business, client: hidden_client, form_assignment: hidden_assignment)
 
       assert {:ok, [submission]} =
-               ClientProfiles.list_unreviewed_check_in_submissions(trainer_ctx(trainer_a))
+               Forms.list_unreviewed_check_in_submissions(trainer_ctx(trainer_a))
 
       assert submission.id == visible.id
     end
@@ -863,15 +863,15 @@ defmodule Easy.ClientProfilesTest do
       submission = insert(:form_submission, business: business, client: client, form_assignment: assignment)
       ctx = owner_ctx(business)
 
-      assert {:ok, reviewed} = ClientProfiles.review_form_submission(ctx, submission.id)
+      assert {:ok, reviewed} = Forms.review_form_submission(ctx, submission.id)
       assert reviewed.reviewed_at
       assert reviewed.reviewed_by_id == business.owner_id
 
-      assert {:ok, reviewed_again} = ClientProfiles.review_form_submission(ctx, submission.id)
+      assert {:ok, reviewed_again} = Forms.review_form_submission(ctx, submission.id)
       assert reviewed_again.reviewed_at == reviewed.reviewed_at
       assert reviewed_again.reviewed_by_id == reviewed.reviewed_by_id
 
-      assert {:ok, [listed_assignment]} = ClientProfiles.list_form_assignments_for_client(ctx, client.id)
+      assert {:ok, [listed_assignment]} = Forms.list_form_assignments_for_client(ctx, client.id)
       assert listed_assignment.latest_submission_reviewed_at == reviewed.reviewed_at
     end
 
@@ -882,7 +882,7 @@ defmodule Easy.ClientProfilesTest do
       submission = insert(:form_submission, business: client.business, client: client, form_assignment: assignment)
 
       assert {:error, :not_found} =
-               ClientProfiles.review_form_submission(owner_ctx(insert(:business)), submission.id)
+               Forms.review_form_submission(owner_ctx(insert(:business)), submission.id)
     end
   end
 
@@ -1003,7 +1003,7 @@ defmodule Easy.ClientProfilesTest do
       template: template
     } do
       assert {:error, :not_found} =
-               ClientProfiles.assign_form_template_to_client(trainer_ctx(trainer_a), client_b.id, template.id, %{})
+               Forms.assign_form_template_to_client(trainer_ctx(trainer_a), client_b.id, template.id, %{})
     end
 
     test "list_form_assignments_for_client returns :not_found for a client assigned to another trainer", %{
@@ -1011,7 +1011,7 @@ defmodule Easy.ClientProfilesTest do
       client_b: client_b
     } do
       assert {:error, :not_found} =
-               ClientProfiles.list_form_assignments_for_client(trainer_ctx(trainer_a), client_b.id)
+               Forms.list_form_assignments_for_client(trainer_ctx(trainer_a), client_b.id)
     end
 
     test "get_form_assignment_for_client returns :not_found for a client assigned to another trainer", %{
@@ -1020,13 +1020,13 @@ defmodule Easy.ClientProfilesTest do
       assignment_b: assignment_b
     } do
       assert {:error, :not_found} =
-               ClientProfiles.get_form_assignment_for_client(trainer_ctx(trainer_a), client_b.id, assignment_b.id)
+               Forms.get_form_assignment_for_client(trainer_ctx(trainer_a), client_b.id, assignment_b.id)
     end
 
     test "update_form_assignment returns :not_found for an assignment belonging to another trainer's client",
          %{trainer_a: trainer_a, assignment_b: assignment_b} do
       assert {:error, :not_found} =
-               ClientProfiles.update_form_assignment(trainer_ctx(trainer_a), assignment_b.id, %{
+               Forms.update_form_assignment(trainer_ctx(trainer_a), assignment_b.id, %{
                  "priority" => "high"
                })
     end
@@ -1034,7 +1034,7 @@ defmodule Easy.ClientProfilesTest do
     test "list_form_submissions returns :not_found for an assignment belonging to another trainer's client",
          %{trainer_a: trainer_a, assignment_b: assignment_b} do
       assert {:error, :not_found} =
-               ClientProfiles.list_form_submissions(trainer_ctx(trainer_a), assignment_b.id)
+               Forms.list_form_submissions(trainer_ctx(trainer_a), assignment_b.id)
     end
 
     test "owner ctx succeeds on all of them", %{
@@ -1045,12 +1045,12 @@ defmodule Easy.ClientProfilesTest do
     } do
       ctx = owner_ctx(business)
 
-      assert {:ok, _assignment} = ClientProfiles.assign_form_template_to_client(ctx, client_b.id, template.id, %{})
-      assert {:ok, _assignments} = ClientProfiles.list_form_assignments_for_client(ctx, client_b.id)
-      assert {:ok, %{id: id}} = ClientProfiles.get_form_assignment_for_client(ctx, client_b.id, assignment_b.id)
+      assert {:ok, _assignment} = Forms.assign_form_template_to_client(ctx, client_b.id, template.id, %{})
+      assert {:ok, _assignments} = Forms.list_form_assignments_for_client(ctx, client_b.id)
+      assert {:ok, %{id: id}} = Forms.get_form_assignment_for_client(ctx, client_b.id, assignment_b.id)
       assert id == assignment_b.id
-      assert {:ok, _updated} = ClientProfiles.update_form_assignment(ctx, assignment_b.id, %{"priority" => "high"})
-      assert {:ok, _submissions} = ClientProfiles.list_form_submissions(ctx, assignment_b.id)
+      assert {:ok, _updated} = Forms.update_form_assignment(ctx, assignment_b.id, %{"priority" => "high"})
+      assert {:ok, _submissions} = Forms.list_form_submissions(ctx, assignment_b.id)
     end
   end
 

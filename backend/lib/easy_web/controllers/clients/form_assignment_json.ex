@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.FormAssignmentJSON do
-  alias Easy.ClientProfiles.FormAssignment
-  alias Easy.ClientProfiles.FormSubmission
-  alias Easy.ClientProfiles.FormTemplate
+  alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormSubmission
+  alias Easy.Forms.FormTemplate
 
   @spec show(%{assignment: FormAssignment.t()}) :: %{data: map()}
   def show(%{assignment: assignment}) do

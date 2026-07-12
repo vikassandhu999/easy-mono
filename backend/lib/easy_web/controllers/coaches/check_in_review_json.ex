@@ -1,5 +1,5 @@
 defmodule EasyWeb.Coaches.CheckInReviewJSON do
-  alias Easy.ClientProfiles.FormSubmission
+  alias Easy.Forms.FormSubmission
   alias EasyWeb.Coaches.FormAssignmentJSON
 
   @spec index(%{submissions: [FormSubmission.t()]}) :: %{data: [map()]}

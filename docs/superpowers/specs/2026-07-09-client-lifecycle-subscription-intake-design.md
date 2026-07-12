@@ -103,6 +103,12 @@ A small GenServer (`Easy.Clients.SubscriptionSweeper`) in the supervision tree:
 
 ## 5. Default intake form
 
+> **Superseded (2026-07-11):** profile mappings, the "hiding the builder" plan, and the
+> `intake_status` sync below were removed by
+> `2026-07-11-remove-client-profiles-design.md` — the profile tables and builder are
+> deleted; intake answers live in the FormSubmission; the FormAssignment is the sole
+> owner of intake status. The default-intake template + auto-assignment survive.
+
 Today's custom form builder stays in the codebase but leaves the coach's way. The existing pipeline (`FormTemplate` -> auto `FormAssignment` -> client submits -> `apply_profile_mappings!` fills `ClientProfile` sections) already works end-to-end (`client_profiles.ex:318-434`); we supply curated content and auto-wiring.
 
 ### Default template

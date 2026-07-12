@@ -1,7 +1,7 @@
-defmodule Easy.ClientProfiles.FormAssignment do
+defmodule Easy.Forms.FormAssignment do
   use Ecto.Schema
 
-  alias Easy.ClientProfiles.FormTemplate
+  alias Easy.Forms.FormTemplate
   alias Easy.Clients.Client
   alias Easy.Orgs
 
@@ -30,9 +30,9 @@ defmodule Easy.ClientProfiles.FormAssignment do
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
     belongs_to :form_template, FormTemplate
-    belongs_to :check_in_schedule, Easy.ClientProfiles.CheckInSchedule
+    belongs_to :check_in_schedule, Easy.Forms.CheckInSchedule
 
-    has_many :form_submissions, Easy.ClientProfiles.FormSubmission
+    has_many :form_submissions, Easy.Forms.FormSubmission
 
     timestamps(type: :utc_datetime)
   end

@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.CheckInScheduleController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.ClientProfiles
+  alias Easy.Forms
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -64,7 +64,7 @@ defmodule EasyWeb.Coaches.CheckInScheduleController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"client_id" => client_id}) do
-    with {:ok, schedules} <- ClientProfiles.list_check_in_schedules_for_client(conn.assigns.ctx, client_id) do
+    with {:ok, schedules} <- Forms.list_check_in_schedules_for_client(conn.assigns.ctx, client_id) do
       render(conn, :index, schedules: schedules)
     end
   end
@@ -74,7 +74,7 @@ defmodule EasyWeb.Coaches.CheckInScheduleController do
     client_id = conn.path_params["client_id"]
 
     with {:ok, schedule} <-
-           ClientProfiles.create_check_in_schedule_for_client(conn.assigns.ctx, client_id, conn.body_params) do
+           Forms.create_check_in_schedule_for_client(conn.assigns.ctx, client_id, conn.body_params) do
       conn |> put_status(:created) |> render(:show, schedule: schedule)
     end
   end
@@ -82,14 +82,14 @@ defmodule EasyWeb.Coaches.CheckInScheduleController do
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
     with {:ok, schedule} <-
-           ClientProfiles.update_check_in_schedule(conn.assigns.ctx, conn.path_params["id"], conn.body_params) do
+           Forms.update_check_in_schedule(conn.assigns.ctx, conn.path_params["id"], conn.body_params) do
       render(conn, :show, schedule: schedule)
     end
   end
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params) do
-    with {:ok, _schedule} <- ClientProfiles.delete_check_in_schedule(conn.assigns.ctx, conn.path_params["id"]) do
+    with {:ok, _schedule} <- Forms.delete_check_in_schedule(conn.assigns.ctx, conn.path_params["id"]) do
       send_resp(conn, :no_content, "")
     end
   end

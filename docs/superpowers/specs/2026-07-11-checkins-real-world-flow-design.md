@@ -182,6 +182,8 @@ Each phase ships independently, in order:
 * Per-question coach comments or any feedback surface outside chat
 * Intake content changes; intake stays soft-required and never blocks
 * A measurements tracker (waist/hip presets are plain `number` questions with profile mappings — no `measurement_entries` table until trends are asked for); photo comparison/side-by-side views; the Progress-module photo gallery
+  (Obsolete as of `2026-07-11-remove-client-profiles-design.md`: profile mappings no
+  longer exist; a future measurements feature needs its own design.)
 * Timezone-aware sweep scheduling (inherits whatever the existing nightly sweep does)
 * A third form kind — `custom` and the update purposes are gone; everything a coach builds is a check-in
 * Renaming the clientapp "Check-ins" tab — client-facing vocabulary stays "check-in" even though the coach library is "Forms"

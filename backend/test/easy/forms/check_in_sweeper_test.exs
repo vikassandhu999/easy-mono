@@ -1,11 +1,11 @@
-defmodule Easy.ClientProfiles.CheckInSweeperTest do
+defmodule Easy.Forms.CheckInSweeperTest do
   use Easy.SchemaCase, async: false
 
   import Swoosh.TestAssertions
 
   alias Easy.CheckInSweeper
-  alias Easy.ClientProfiles
-  alias Easy.ClientProfiles.FormAssignment
+  alias Easy.Forms
+  alias Easy.Forms.FormAssignment
   alias Easy.Ctx
   alias Easy.Repo
 
@@ -16,19 +16,19 @@ defmodule Easy.ClientProfiles.CheckInSweeperTest do
     ctx = %Ctx{business_id: coach.business_id, user_id: coach.business.owner_id, owner?: true}
 
     assert {:ok, _schedule} =
-             ClientProfiles.create_check_in_schedule_for_client(ctx, client.id, %{
+             Forms.create_check_in_schedule_for_client(ctx, client.id, %{
                form_template_id: template.id,
                frequency: :once,
                next_due_on: ~D[2026-07-11]
              })
 
-    assert {1, 0} = ClientProfiles.send_due_check_in_reminders(~D[2026-07-11])
+    assert {1, 0} = Forms.send_due_check_in_reminders(~D[2026-07-11])
     assert_email_sent(to: "client@example.com", subject: "Your check-in is due")
 
     assignment = Repo.one!(FormAssignment.for_client(coach.business_id, client.id))
     assert assignment.due_reminder_sent_at
 
-    assert {0, 0} = ClientProfiles.send_due_check_in_reminders(~D[2026-07-11])
+    assert {0, 0} = Forms.send_due_check_in_reminders(~D[2026-07-11])
     refute_email_sent()
   end
 
@@ -45,11 +45,11 @@ defmodule Easy.ClientProfiles.CheckInSweeperTest do
         due_date: ~D[2026-07-09]
       )
 
-    assert {1, 0} = ClientProfiles.send_overdue_check_in_reminders(~D[2026-07-11])
+    assert {1, 0} = Forms.send_overdue_check_in_reminders(~D[2026-07-11])
     assert_email_sent(to: "late@example.com", subject: "Your check-in is overdue")
     assert Repo.reload(assignment).overdue_reminder_sent_at
 
-    assert {0, 0} = ClientProfiles.send_overdue_check_in_reminders(~D[2026-07-11])
+    assert {0, 0} = Forms.send_overdue_check_in_reminders(~D[2026-07-11])
     refute_email_sent()
   end
 

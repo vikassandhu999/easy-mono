@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.ClientProfiles
+  alias Easy.Forms
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -83,7 +83,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   def index(conn, _params) do
     ctx = conn.assigns.ctx
 
-    with {:ok, templates} <- ClientProfiles.list_form_templates(ctx) do
+    with {:ok, templates} <- Forms.list_form_templates(ctx) do
       render(conn, :index, templates: templates)
     end
   end
@@ -92,7 +92,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   def create(conn, _params) do
     ctx = conn.assigns.ctx
 
-    with {:ok, template} <- ClientProfiles.create_form_template(ctx, conn.body_params) do
+    with {:ok, template} <- Forms.create_form_template(ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, template: template)
@@ -103,7 +103,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
   def show(conn, %{"id" => id}) do
     ctx = conn.assigns.ctx
 
-    with {:ok, template} <- ClientProfiles.get_form_template(ctx, id) do
+    with {:ok, template} <- Forms.get_form_template(ctx, id) do
       render(conn, :show, template: template)
     end
   end
@@ -113,7 +113,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, template} <- ClientProfiles.update_form_template(ctx, id, conn.body_params) do
+    with {:ok, template} <- Forms.update_form_template(ctx, id, conn.body_params) do
       render(conn, :show, template: template)
     end
   end
@@ -123,7 +123,7 @@ defmodule EasyWeb.Coaches.FormTemplateController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, _template} <- ClientProfiles.delete_form_template(ctx, id) do
+    with {:ok, _template} <- Forms.delete_form_template(ctx, id) do
       send_resp(conn, :no_content, "")
     end
   end

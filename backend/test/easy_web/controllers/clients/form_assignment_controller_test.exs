@@ -1,8 +1,8 @@
 defmodule EasyWeb.Clients.FormAssignmentControllerTest do
   use Easy.ConnCase
 
-  alias Easy.ClientProfiles.FormAssignment
-  alias Easy.ClientProfiles.FormSubmission
+  alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormSubmission
   alias Easy.Repo
 
   describe "GET /v1/client/form-assignments" do

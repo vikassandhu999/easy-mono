@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.CheckInReviewController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.ClientProfiles
+  alias Easy.Forms
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -37,7 +37,7 @@ defmodule EasyWeb.Coaches.CheckInReviewController do
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    with {:ok, submissions} <- ClientProfiles.list_unreviewed_check_in_submissions(conn.assigns.ctx) do
+    with {:ok, submissions} <- Forms.list_unreviewed_check_in_submissions(conn.assigns.ctx) do
       render(conn, :index, submissions: submissions)
     end
   end
@@ -45,7 +45,7 @@ defmodule EasyWeb.Coaches.CheckInReviewController do
   @spec review(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def review(conn, _params) do
     with {:ok, submission} <-
-           ClientProfiles.review_form_submission(conn.assigns.ctx, conn.path_params["id"]) do
+           Forms.review_form_submission(conn.assigns.ctx, conn.path_params["id"]) do
       render(conn, :show, submission: submission)
     end
   end

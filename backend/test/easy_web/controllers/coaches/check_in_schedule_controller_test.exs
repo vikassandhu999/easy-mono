@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.CheckInScheduleControllerTest do
   use Easy.ConnCase
 
-  alias Easy.ClientProfiles.CheckInSchedule
+  alias Easy.Forms.CheckInSchedule
   alias Easy.Repo
   alias EasyWeb.ApiSpec
 

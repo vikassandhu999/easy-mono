@@ -3,10 +3,10 @@ defmodule Easy.Factory do
 
   alias Easy.Attachments.Attachment
   alias Easy.Billing.BusinessBilling
-  alias Easy.ClientProfiles.CheckInSchedule
-  alias Easy.ClientProfiles.FormAssignment
-  alias Easy.ClientProfiles.FormSubmission
-  alias Easy.ClientProfiles.FormTemplate
+  alias Easy.Forms.CheckInSchedule
+  alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormSubmission
+  alias Easy.Forms.FormTemplate
   alias Easy.Clients.Client
   alias Easy.Fitness.WeightEntry
   alias Easy.Identity.User

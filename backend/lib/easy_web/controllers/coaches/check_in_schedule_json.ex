@@ -1,6 +1,6 @@
 defmodule EasyWeb.Coaches.CheckInScheduleJSON do
-  alias Easy.ClientProfiles.CheckInSchedule
-  alias Easy.ClientProfiles.FormTemplate
+  alias Easy.Forms.CheckInSchedule
+  alias Easy.Forms.FormTemplate
   alias EasyWeb.Coaches.FormTemplateJSON
 
   @spec show(%{schedule: CheckInSchedule.t()}) :: %{data: map()}

@@ -1,5 +1,5 @@
 defmodule EasyWeb.Coaches.FormTemplateJSON do
-  alias Easy.ClientProfiles.FormTemplate
+  alias Easy.Forms.FormTemplate
 
   @spec show(%{template: FormTemplate.t()}) :: %{data: map()}
   def show(%{template: template}) do

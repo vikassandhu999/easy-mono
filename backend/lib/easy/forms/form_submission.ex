@@ -1,7 +1,7 @@
-defmodule Easy.ClientProfiles.FormSubmission do
+defmodule Easy.Forms.FormSubmission do
   use Ecto.Schema
 
-  alias Easy.ClientProfiles.FormAssignment
+  alias Easy.Forms.FormAssignment
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.Identity.User
@@ -125,7 +125,7 @@ defmodule Easy.ClientProfiles.FormSubmission do
   @spec include_review_context(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_review_context(query \\ __MODULE__, business_id) do
     from([s, review_assignment: assignment, review_client: client] in query,
-      join: template in Easy.ClientProfiles.FormTemplate,
+      join: template in Easy.Forms.FormTemplate,
       on: template.id == assignment.form_template_id and template.business_id == ^business_id,
       preload: [client: client, form_assignment: {assignment, form_template: template}]
     )

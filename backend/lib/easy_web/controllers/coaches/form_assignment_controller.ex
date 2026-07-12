@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
   use EasyWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Easy.ClientProfiles
+  alias Easy.Forms
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
@@ -59,7 +59,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
   def index(conn, %{"client_id" => client_id}) do
     ctx = conn.assigns.ctx
 
-    with {:ok, assignments} <- ClientProfiles.list_form_assignments_for_client(ctx, client_id) do
+    with {:ok, assignments} <- Forms.list_form_assignments_for_client(ctx, client_id) do
       render(conn, :index, assignments: assignments)
     end
   end
@@ -69,7 +69,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, submissions} <- ClientProfiles.list_form_submissions(ctx, id) do
+    with {:ok, submissions} <- Forms.list_form_submissions(ctx, id) do
       render(conn, :submissions, submissions: submissions)
     end
   end
@@ -79,7 +79,7 @@ defmodule EasyWeb.Coaches.FormAssignmentController do
     ctx = conn.assigns.ctx
     id = conn.path_params["id"]
 
-    with {:ok, assignment} <- ClientProfiles.update_form_assignment(ctx, id, conn.body_params) do
+    with {:ok, assignment} <- Forms.update_form_assignment(ctx, id, conn.body_params) do
       render(conn, :show, assignment: assignment)
     end
   end

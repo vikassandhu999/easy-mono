@@ -1,7 +1,7 @@
 defmodule Easy.CheckInSweeper do
   use GenServer
 
-  alias Easy.ClientProfiles
+  alias Easy.Forms
 
   @day_ms 24 * 60 * 60 * 1000
 
@@ -25,9 +25,9 @@ defmodule Easy.CheckInSweeper do
 
   @spec sweep(Date.t()) :: map()
   def sweep(today \\ Date.utc_today()) do
-    {generated, inactive_advanced} = ClientProfiles.generate_due_check_ins(today)
-    {due_reminders, due_skipped} = ClientProfiles.send_due_check_in_reminders(today)
-    {overdue_reminders, overdue_skipped} = ClientProfiles.send_overdue_check_in_reminders(today)
+    {generated, inactive_advanced} = Forms.generate_due_check_ins(today)
+    {due_reminders, due_skipped} = Forms.send_due_check_in_reminders(today)
+    {overdue_reminders, overdue_skipped} = Forms.send_overdue_check_in_reminders(today)
 
     %{
       generated: generated,

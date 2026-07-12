@@ -1,4 +1,4 @@
-defmodule Easy.ClientProfiles.FormTemplate do
+defmodule Easy.Forms.FormTemplate do
   use Ecto.Schema
 
   alias Easy.Orgs
@@ -24,7 +24,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
     field :system_version, :integer
 
     belongs_to :business, Orgs.Business
-    has_many :form_assignments, Easy.ClientProfiles.FormAssignment
+    has_many :form_assignments, Easy.Forms.FormAssignment
 
     timestamps(type: :utc_datetime)
   end

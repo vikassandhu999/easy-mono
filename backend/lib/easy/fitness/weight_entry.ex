@@ -1,7 +1,7 @@
 defmodule Easy.Fitness.WeightEntry do
   use Ecto.Schema
 
-  alias Easy.ClientProfiles.FormSubmission
+  alias Easy.Forms.FormSubmission
   alias Easy.Clients.Client
   alias Easy.Orgs
 

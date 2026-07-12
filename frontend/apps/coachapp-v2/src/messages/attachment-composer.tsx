@@ -410,7 +410,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
                       </Button>
                     </div>
                   ) : (
-                    <p className="truncate text-success text-xs">Ready</p>
+                    <p className="truncate text-success-soft-foreground text-xs">Ready</p>
                   )}
                 </div>
               </div>

@@ -27,8 +27,7 @@ defmodule Easy.Chat.Message do
 
     many_to_many :attachments, Attachment,
       join_through: MessageAttachment,
-      join_keys: [chat_message_id: :id, attachment_id: :id],
-      preload_order: {__MODULE__, :attachment_preload_order, []}
+      join_keys: [chat_message_id: :id, attachment_id: :id]
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -53,16 +52,41 @@ defmodule Easy.Chat.Message do
     |> put_embed(embed)
     |> validate_required([:business_id, :conversation_id, :sender_type, :sender_id])
     |> validate_length(:body, max: 4000)
+    |> check_constraint(:embed_type, name: :chat_messages_embed_type_check)
+    |> check_constraint(:embed_id, name: :chat_messages_embed_complete_check)
   end
 
   defp put_embed(changeset, nil), do: changeset
 
-  defp put_embed(changeset, %{type: type, id: id, snapshot: snapshot}) do
+  defp put_embed(changeset, embed) when is_map(embed) do
     changeset
-    |> put_change(:embed_type, type)
-    |> put_change(:embed_id, id)
-    |> put_change(:embed_snapshot, snapshot)
+    |> put_embed_type(Map.get(embed, :type))
+    |> put_embed_id(Map.get(embed, :id))
+    |> put_embed_snapshot(Map.get(embed, :snapshot))
+    |> validate_required([:embed_type, :embed_id, :embed_snapshot])
   end
+
+  defp put_embed_type(changeset, nil), do: changeset
+
+  defp put_embed_type(changeset, type) do
+    case Ecto.Enum.cast_value(__MODULE__, :embed_type, type) do
+      {:ok, value} -> put_change(changeset, :embed_type, value)
+      :error -> add_error(changeset, :embed_type, "is invalid")
+    end
+  end
+
+  defp put_embed_id(changeset, nil), do: changeset
+
+  defp put_embed_id(changeset, id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, value} -> put_change(changeset, :embed_id, value)
+      :error -> add_error(changeset, :embed_id, "is invalid")
+    end
+  end
+
+  defp put_embed_snapshot(changeset, nil), do: changeset
+  defp put_embed_snapshot(changeset, snapshot) when is_map(snapshot), do: put_change(changeset, :embed_snapshot, snapshot)
+  defp put_embed_snapshot(changeset, _snapshot), do: add_error(changeset, :embed_snapshot, "is invalid")
 
   @spec for_conversation(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_conversation(query \\ __MODULE__, business_id, conversation_id),
@@ -82,11 +106,13 @@ defmodule Easy.Chat.Message do
 
   @spec include_attachments(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_attachments(query \\ __MODULE__) do
-    from(message in query, preload: [:attachments])
-  end
-
-  @spec attachment_preload_order() :: keyword()
-  def attachment_preload_order do
-    [asc: dynamic([..., link], link.position)]
+    from(message in query,
+      left_join: link in MessageAttachment,
+      on: link.chat_message_id == message.id and link.business_id == message.business_id,
+      left_join: attachment in Attachment,
+      on: attachment.id == link.attachment_id and attachment.business_id == message.business_id,
+      order_by: [asc: link.position],
+      preload: [attachments: attachment]
+    )
   end
 end

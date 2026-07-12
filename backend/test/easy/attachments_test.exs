@@ -51,6 +51,28 @@ defmodule Easy.AttachmentsTest do
     end
   end
 
+  test "enforces audio and video byte-size boundaries" do
+    audio_max = 10 * 1024 * 1024
+    video_max = 50 * 1024 * 1024
+
+    for content_type <- ~w(audio/webm audio/mp4 audio/mpeg) do
+      assert attachment_changeset(content_type, audio_max, 1).valid?
+      refute attachment_changeset(content_type, audio_max + 1, 1).valid?
+    end
+
+    for content_type <- ~w(video/mp4 video/webm video/quicktime) do
+      assert attachment_changeset(content_type, video_max, 300_000).valid?
+      refute attachment_changeset(content_type, video_max + 1, 300_000).valid?
+    end
+  end
+
+  test "enforces duration boundaries" do
+    assert attachment_changeset("audio/mpeg", 1, 1).valid?
+    assert attachment_changeset("audio/mp4", 1, 300_000).valid?
+    refute attachment_changeset("audio/mpeg", 1, 0).valid?
+    refute attachment_changeset("audio/mp4", 1, 300_001).valid?
+  end
+
   test "rolls back metadata when storage signing is unavailable" do
     client = insert_client()
     previous = Application.get_env(:easy, Easy.Storage)
@@ -85,4 +107,20 @@ defmodule Easy.AttachmentsTest do
   end
 
   defp client_ctx(client), do: Ctx.new(client.business_id, client.user_id)
+
+  defp attachment_changeset(content_type, byte_size, duration_ms) do
+    Attachment.insert_changeset(
+      Ecto.UUID.generate(),
+      Ecto.UUID.generate(),
+      Ecto.UUID.generate(),
+      :client,
+      Ecto.UUID.generate(),
+      %{
+        "storage_key" => Ecto.UUID.generate(),
+        "content_type" => content_type,
+        "byte_size" => byte_size,
+        "duration_ms" => duration_ms
+      }
+    )
+  end
 end

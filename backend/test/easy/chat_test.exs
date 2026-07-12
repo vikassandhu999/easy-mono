@@ -60,6 +60,73 @@ defmodule Easy.ChatTest do
              ).valid?
     end
 
+    test "rejects invalid and incomplete trusted embeds as changeset errors" do
+      id = Ecto.UUID.generate()
+
+      invalid_type =
+        Message.insert_changeset(
+          "biz",
+          "conv",
+          :coach,
+          "coach",
+          %{type: :bogus, id: id, snapshot: %{}},
+          %{}
+        )
+
+      missing_id =
+        Message.insert_changeset(
+          "biz",
+          "conv",
+          :coach,
+          "coach",
+          %{type: :form_submission, snapshot: %{}},
+          %{}
+        )
+
+      missing_snapshot =
+        Message.insert_changeset(
+          "biz",
+          "conv",
+          :coach,
+          "coach",
+          %{type: :form_submission, id: id},
+          %{}
+        )
+
+      refute invalid_type.valid?
+      assert "is invalid" in errors_on(invalid_type).embed_type
+      refute missing_id.valid?
+      assert "can't be blank" in errors_on(missing_id).embed_id
+      refute missing_snapshot.valid?
+      assert "can't be blank" in errors_on(missing_snapshot).embed_snapshot
+    end
+
+    test "registers embed database constraints on the changeset" do
+      changeset = Message.insert_changeset("biz", "conv", :coach, "coach", nil, %{})
+      constraints = Enum.map(changeset.constraints, & &1.constraint)
+
+      assert "chat_messages_embed_type_check" in constraints
+      assert "chat_messages_embed_complete_check" in constraints
+    end
+
+    test "maps embed completeness constraint failures to changeset errors" do
+      conversation = insert(:conversation)
+
+      changeset =
+        conversation.business_id
+        |> Message.insert_changeset(
+          conversation.id,
+          :coach,
+          Ecto.UUID.generate(),
+          nil,
+          %{"body" => "hello"}
+        )
+        |> Ecto.Changeset.put_change(:embed_id, Ecto.UUID.generate())
+
+      assert {:error, changeset} = Easy.Repo.insert(changeset)
+      assert "is invalid" in errors_on(changeset).embed_id
+    end
+
     test "preloads attachments in link position order" do
       message = insert(:chat_message)
       client = message.conversation.client
@@ -83,6 +150,20 @@ defmodule Easy.ChatTest do
       loaded = Message |> Message.include_attachments() |> Easy.Repo.get!(message.id)
 
       assert Enum.map(loaded.attachments, & &1.id) == [first.id, second.id]
+    end
+
+    test "scopes attachment and link joins to the message business" do
+      query = Message.include_attachments()
+
+      assert [link_join, attachment_join] = query.joins
+
+      assert link_join.on.expr
+             |> Macro.to_string()
+             |> String.contains?("&1.business_id() == &0.business_id()")
+
+      assert attachment_join.on.expr
+             |> Macro.to_string()
+             |> String.contains?("&2.business_id() == &0.business_id()")
     end
   end
 

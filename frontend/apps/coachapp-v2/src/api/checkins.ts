@@ -2,9 +2,6 @@
  * Check-ins (form templates + assignments + submissions). The endpoints are
  * codegen'd as `tag: false`; we enhance them with cache tags and re-export the
  * hooks. Importing hooks from this module guarantees the enhance ran.
- *
- * A check-in template's question types are the same six as profile fields, so we
- * reuse ProfileFieldType / FIELD_TYPE_LABELS from client-profile.ts.
  */
 
 import {type ClientProfileFormTemplateRequest, coachApi} from '@/api/generated';
@@ -83,7 +80,6 @@ export const FORM_QUESTION_TYPE_LABELS: Record<FormQuestionType, string> = {
 /** A question in the builder. `id` is the persisted question key (answers are
  *  keyed by it); `key` is an ephemeral React key only. */
 export type QuestionDraft = {
-  fieldKey: null | string; // custom-field profile mapping (ProfileField.key) or null
   id: string;
   key: string;
   label: string;
@@ -111,7 +107,7 @@ function uid(): string {
 }
 
 export function newQuestion(): QuestionDraft {
-  return {fieldKey: null, id: '', key: uid(), label: '', options: [], required: false, type: 'text'};
+  return {id: '', key: uid(), label: '', options: [], required: false, type: 'text'};
 }
 
 export function newSection(title = ''): SectionDraft {
@@ -159,9 +155,7 @@ export function templateToDraft(template: {
       key: uid(),
       title: typeof section.title === 'string' ? section.title : '',
       questions: (Array.isArray(section.questions) ? section.questions : []).map((q: Record<string, unknown>) => {
-        const mapping = q.profile_mapping as {field_key?: string; kind?: string} | undefined;
         return {
-          fieldKey: mapping?.kind === 'custom_field' ? (mapping.field_key ?? null) : null,
           id: typeof q.id === 'string' ? q.id : '',
           key: uid(),
           label: typeof q.label === 'string' ? q.label : '',
@@ -194,9 +188,6 @@ export function draftToRequest(draft: TemplateDraft): ClientProfileFormTemplateR
       const question: QuestionRequest = {id, label: q.label, type: q.type, required: q.required};
       if (SELECT_TYPES.includes(q.type)) {
         question.options = q.options;
-      }
-      if (q.fieldKey) {
-        question.profile_mapping = {field_key: q.fieldKey, kind: 'custom_field'};
       }
       return question;
     }),

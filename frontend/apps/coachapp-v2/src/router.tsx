@@ -16,7 +16,6 @@ import EditCheckin from '@/checkins/edit-checkin';
 import ListCheckins from '@/checkins/list-checkins';
 import ReviewCheckin from '@/checkins/review-checkin';
 import ClientDetail from '@/clients/client-detail';
-import ClientProfilePage from '@/clients/client-profile';
 import ClientWorkoutHistoryPage from '@/clients/client-workout-history-page';
 import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
@@ -48,7 +47,6 @@ import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
 import Billing from '@/settings/billing';
-import ProfileFields from '@/settings/profile-fields';
 import Settings from '@/settings/settings';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
@@ -82,7 +80,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
       {path: ROUTES.CLIENT_WORKOUT_HISTORY, Component: ClientWorkoutHistoryPage},
       {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},
-      {path: ROUTES.CLIENT_PROFILE, Component: ClientProfilePage},
       {path: ROUTES.CLIENT_DETAIL, Component: ClientDetail},
       {path: ROUTES.EDIT_CLIENT, Component: EditClient},
       {path: ROUTES.CLIENT_MESSAGES, Component: ClientConversation},
@@ -115,7 +112,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.ENROLL_PROSPECT, Component: EnrollProspect},
       {path: ROUTES.PROSPECT_DETAIL, Component: ProspectDetail},
       {path: ROUTES.SETTINGS, Component: Settings},
-      {path: ROUTES.SETTINGS_PROFILE_FIELDS, Component: ProfileFields},
       {path: ROUTES.SETTINGS_LANDING_PAGE, Component: LandingPageEditor},
       {path: ROUTES.SETTINGS_BILLING, Component: Billing},
       {path: ROUTES.MESSAGES, Component: MessagesInbox},

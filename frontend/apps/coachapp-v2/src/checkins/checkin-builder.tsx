@@ -29,23 +29,14 @@ import {
   type SectionDraft,
   type TemplateDraft,
 } from '@/api/checkins';
-import {type ProfileFieldType, useListProfileFieldsQuery} from '@/api/client-profile';
 import {QUESTION_PRESETS} from '@/checkins/question-presets';
 
 const FIELD_TYPES = Object.keys(FORM_QUESTION_TYPE_LABELS) as FormQuestionType[];
-const NONE = '__none__';
-
-interface ProfileFieldOption {
-  key: string;
-  label: string;
-  type: ProfileFieldType;
-}
 
 function QuestionEditor({
   question,
   index,
   count,
-  profileFields,
   onChange,
   onRemove,
   onMove,
@@ -55,11 +46,9 @@ function QuestionEditor({
   onChange: (patch: Partial<QuestionDraft>) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
-  profileFields: ProfileFieldOption[];
   question: QuestionDraft;
 }) {
   const showOptions = question.type === 'select' || question.type === 'multi_select';
-  const compatibleProfileFields = profileFields.filter((field) => field.type === question.type);
 
   return (
     <div className="rounded-lg border border-border bg-surface-secondary p-3">
@@ -119,9 +108,7 @@ function QuestionEditor({
               if (!key) {
                 return;
               }
-              const type = key as FormQuestionType;
-              const mappedField = profileFields.find((field) => field.key === question.fieldKey);
-              onChange({type, fieldKey: mappedField?.type === type ? question.fieldKey : null});
+              onChange({type: key as FormQuestionType});
             }}
             value={question.type}
             variant="secondary"
@@ -182,41 +169,6 @@ function QuestionEditor({
             />
           </TextField>
         ) : null}
-
-        {compatibleProfileFields.length > 0 ? (
-          <Select
-            onChange={(key) => onChange({fieldKey: !key || key === NONE ? null : String(key)})}
-            value={question.fieldKey ?? NONE}
-            variant="secondary"
-          >
-            <Label>Save answer to profile field</Label>
-            <Select.Trigger>
-              <Select.Value />
-              <Select.Indicator />
-            </Select.Trigger>
-            <Select.Popover>
-              <ListBox>
-                <ListBox.Item
-                  id={NONE}
-                  textValue="Don't save"
-                >
-                  Don't save
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-                {compatibleProfileFields.map((f) => (
-                  <ListBox.Item
-                    id={f.key}
-                    key={f.key}
-                    textValue={f.label}
-                  >
-                    {f.label}
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                ))}
-              </ListBox>
-            </Select.Popover>
-          </Select>
-        ) : null}
       </div>
     </div>
   );
@@ -225,14 +177,12 @@ function QuestionEditor({
 function SectionEditor({
   section,
   canRemove,
-  profileFields,
   onChange,
   onRemove,
 }: {
   canRemove: boolean;
   onChange: (section: SectionDraft) => void;
   onRemove: () => void;
-  profileFields: ProfileFieldOption[];
   section: SectionDraft;
 }) {
   const setQuestion = (index: number, patch: Partial<QuestionDraft>) => {
@@ -307,7 +257,6 @@ function SectionEditor({
             onChange={(patch) => setQuestion(index, patch)}
             onMove={(dir) => moveQuestion(index, dir)}
             onRemove={() => removeQuestion(index)}
-            profileFields={profileFields}
             question={question}
           />
         ))}
@@ -373,12 +322,6 @@ export default function CheckinBuilder({
 }: Props) {
   const [draft, setDraft] = useState<TemplateDraft>(initialDraft);
   const [error, setError] = useState<null | string>(null);
-  const {data: fieldsData} = useListProfileFieldsQuery();
-  const profileFields: ProfileFieldOption[] = (fieldsData?.data ?? []).map((f) => ({
-    key: f.key,
-    label: f.label,
-    type: f.field_type,
-  }));
 
   const setSection = (index: number, section: SectionDraft) => {
     setDraft((d) => ({...d, sections: d.sections.map((s, i) => (i === index ? section : s))}));
@@ -436,7 +379,6 @@ export default function CheckinBuilder({
             key={section.key}
             onChange={(next) => setSection(index, next)}
             onRemove={() => setDraft((d) => ({...d, sections: d.sections.filter((_, i) => i !== index)}))}
-            profileFields={profileFields}
             section={section}
           />
         ))}

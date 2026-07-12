@@ -119,7 +119,6 @@ export const api = createApi({
     'Muscle',
     'NutritionPlan',
     'PlanItem',
-    'ProfileField',
     'Prospect',
     'Recipe',
     'Team',

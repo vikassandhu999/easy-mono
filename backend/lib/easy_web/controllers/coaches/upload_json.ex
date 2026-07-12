@@ -1,4 +1,4 @@
-defmodule EasyWeb.Clients.UploadJSON do
+defmodule EasyWeb.Coaches.UploadJSON do
   @spec show(%{upload: map()}) :: %{data: map()}
   def show(%{upload: upload}) do
     attachment = upload.attachment

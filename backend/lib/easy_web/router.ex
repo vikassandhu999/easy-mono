@@ -112,6 +112,8 @@ defmodule EasyWeb.Router do
     delete "/clients/:id", ClientController, :delete
     get "/clients", ClientController, :index
     post "/clients/:id/reassign", ClientController, :reassign
+    post "/clients/:client_id/uploads", UploadController, :create
+    post "/attachments/download-urls", UploadController, :download_urls
 
     get "/team", TeamController, :index
     post "/team/invite", TeamController, :invite
@@ -235,6 +237,7 @@ defmodule EasyWeb.Router do
     patch "/me", ProfileController, :update
 
     post "/uploads", UploadController, :create
+    post "/attachments/download-urls", UploadController, :download_urls
 
     get "/form-assignments", FormAssignmentController, :index
     get "/form-assignments/:id", FormAssignmentController, :show

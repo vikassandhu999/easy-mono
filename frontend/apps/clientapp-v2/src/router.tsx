@@ -17,7 +17,9 @@ import NutritionHistory from '@/nutrition/nutrition-history';
 import NutritionToday from '@/nutrition/nutrition-today';
 import ProgressHome from '@/progress/progress-home';
 import Settings from '@/settings/settings';
+import TodayHome from '@/today/today-home';
 import TrainingHome from '@/training/training-home';
+import WorkoutPreview from '@/training/workout-preview';
 import ActiveWorkout from '@/workout/active-workout';
 
 // ── Auth wrappers ────────────────────────────────────────────
@@ -38,7 +40,9 @@ export const router = createBrowserRouter([
   {
     Component: AppShellScreen,
     children: [
+      {path: ROUTES.TODAY, Component: TodayHome},
       {path: ROUTES.TRAINING, Component: TrainingHome},
+      {path: ROUTES.WORKOUT_PREVIEW, Component: WorkoutPreview},
       {path: ROUTES.NUTRITION, Component: NutritionToday},
       {path: ROUTES.NUTRITION_HISTORY, Component: NutritionHistory},
       {path: ROUTES.PROGRESS, Component: ProgressHome},
@@ -58,7 +62,7 @@ export const router = createBrowserRouter([
     element: (
       <Navigate
         replace
-        to={ROUTES.TRAINING}
+        to={ROUTES.TODAY}
       />
     ),
   },

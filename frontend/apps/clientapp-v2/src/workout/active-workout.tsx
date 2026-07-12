@@ -10,8 +10,8 @@
  *
  * Deferred to a follow-up: rest timer, tap-to-type keypad, RPE field.
  */
-import {AlertDialog, Button, Spinner, toast, useOverlayState} from '@heroui/react';
-import {Check, Minus, Pause, Play, Plus, Repeat2, SkipForward, X} from 'lucide-react';
+import {Button, Spinner, toast, useOverlayState} from '@heroui/react';
+import {Check, ChevronDown, Minus, Pause, Play, Plus, Repeat2, SkipForward, X} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
@@ -19,14 +19,15 @@ import {useListClientExercisesQuery} from '@/api/generated';
 import {
   type TrainingSession,
   useCreateClientPerformedSetMutation,
+  useDeleteClientPerformedSetMutation,
   useGetClientTrainingSessionQuery,
   useListClientTrainingSessionsQuery,
+  useUpdateClientPerformedSetMutation,
   useUpdateClientTrainingSessionMutation,
 } from '@/api/training';
 import {
   addedExercises,
   assignPerformed,
-  describeSet,
   type FieldKind,
   fieldsFor,
   formatSeconds,
@@ -60,44 +61,6 @@ function ElapsedClock({startedAt}: {startedAt: string}) {
   const pad = (n: number) => String(n).padStart(2, '0');
   return (
     <span className="shrink-0 text-xs font-semibold text-accent">⏱ {h > 0 ? `${h}:${pad(m)}` : `${m}:${pad(s)}`}</span>
-  );
-}
-
-function Stepper({
-  label,
-  value,
-  step,
-  onChange,
-}: {
-  label: string;
-  onChange: (v: number) => void;
-  step: number;
-  value: number;
-}) {
-  const round = (n: number) => Math.round(n * 10) / 10;
-  return (
-    <div className="flex flex-1 items-center overflow-hidden rounded-[10px] border border-[#34343d]">
-      <button
-        aria-label={`Decrease ${label}`}
-        className="grid place-items-center bg-[#1a1d2a] px-3.5 py-3 text-accent-soft-foreground active:opacity-70"
-        onClick={() => onChange(Math.max(0, round(value - step)))}
-        type="button"
-      >
-        <Minus size={16} />
-      </button>
-      <div className="flex-1 py-1.5 text-center">
-        <div className="text-[8px] uppercase tracking-wider text-muted">{label}</div>
-        <div className="text-lg font-bold">{value}</div>
-      </div>
-      <button
-        aria-label={`Increase ${label}`}
-        className="grid place-items-center bg-[#1a1d2a] px-3.5 py-3 text-accent-soft-foreground active:opacity-70"
-        onClick={() => onChange(round(value + step))}
-        type="button"
-      >
-        <Plus size={16} />
-      </button>
-    </div>
   );
 }
 
@@ -137,10 +100,10 @@ function DurationField({value, onChange}: {onChange: (v: number) => void; value:
 
   return (
     <div className="flex flex-1 items-center gap-1.5">
-      <div className="flex flex-1 items-center overflow-hidden rounded-[10px] border border-[#34343d]">
+      <div className="flex flex-1 items-center overflow-hidden rounded-[10px] border border-border">
         <button
           aria-label="Decrease time"
-          className="grid place-items-center bg-[#1a1d2a] px-3 py-3 text-accent-soft-foreground active:opacity-70"
+          className="grid place-items-center bg-surface-secondary px-3 py-3 text-accent-soft-foreground active:opacity-70"
           onClick={() => onChange(Math.max(0, value - 5))}
           type="button"
         >
@@ -152,7 +115,7 @@ function DurationField({value, onChange}: {onChange: (v: number) => void; value:
         </div>
         <button
           aria-label="Increase time"
-          className="grid place-items-center bg-[#1a1d2a] px-3 py-3 text-accent-soft-foreground active:opacity-70"
+          className="grid place-items-center bg-surface-secondary px-3 py-3 text-accent-soft-foreground active:opacity-70"
           onClick={() => onChange(value + 5)}
           type="button"
         >
@@ -171,10 +134,7 @@ function DurationField({value, onChange}: {onChange: (v: number) => void; value:
   );
 }
 
-const STEP: Record<FieldKind, number> = {distance: 5, duration: 5, reps: 1, weight: 2.5};
 const LABEL: Record<FieldKind, string> = {distance: 'METERS', duration: 'TIME', reps: 'REPS', weight: 'KG'};
-const DISTANCE_LABEL: Record<string, string> = {km: 'KM', meters: 'METERS', miles: 'MILES'};
-
 function plannedValue(planned: SnapshotSet | undefined, kind: FieldKind): null | number {
   if (!planned) {
     return null;
@@ -192,93 +152,128 @@ function plannedValue(planned: SnapshotSet | undefined, kind: FieldKind): null |
 
 const FALLBACK: Record<FieldKind, number> = {distance: 0, duration: 30, reps: 10, weight: 0};
 
-function CurrentSetBlock({
+function SetRow({
   exercise,
-  setIndex,
-  total,
-  carry,
-  isLogging,
-  onLog,
+  index,
+  logged,
+  busy,
+  onComplete,
+  onDelete,
+  onUpdate,
 }: {
-  // last logged value per field, to carry forward (e.g. weight set-to-set)
-  carry: Partial<Record<FieldKind, null | number>>;
+  busy: boolean;
   exercise: SnapshotExercise;
-  isLogging: boolean;
-  onLog: (values: LoggedSet) => void;
-  setIndex: number;
-  // planned set count, or null for open-ended (added) exercises
-  total: null | number;
+  index: number;
+  logged?: ReturnType<typeof assignPerformed>[number][number];
+  onComplete: (values: LoggedSet, restSeconds: number) => void;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, values: LoggedSet) => void;
 }) {
   const fields = fieldsFor(exercise.tracking_type);
-  const planned = (exercise.sets ?? [])[setIndex];
-  const hasTarget =
-    !!planned &&
-    (planned.load_value != null ||
-      planned.reps != null ||
-      planned.duration_seconds != null ||
-      planned.distance_value != null);
-
-  const init = (kind: FieldKind): number => carry[kind] ?? plannedValue(planned, kind) ?? FALLBACK[kind];
-  const [vals, setVals] = useState<Record<FieldKind, number>>(() => ({
-    distance: init('distance'),
-    duration: init('duration'),
-    reps: init('reps'),
-    weight: init('weight'),
+  const planned = (exercise.sets ?? [])[index];
+  const initial = (kind: FieldKind) => {
+    if (logged) {
+      const value =
+        kind === 'weight'
+          ? logged.load_value
+          : kind === 'reps'
+            ? logged.reps
+            : kind === 'distance'
+              ? logged.distance_value
+              : logged.duration_seconds;
+      if (value != null && value !== '') {
+        return Number(value);
+      }
+    }
+    return plannedValue(planned, kind) ?? FALLBACK[kind];
+  };
+  const [values, setValues] = useState<Record<FieldKind, number>>(() => ({
+    distance: initial('distance'),
+    duration: initial('duration'),
+    reps: initial('reps'),
+    weight: initial('weight'),
   }));
-  const set = (kind: FieldKind, v: number) => setVals((prev) => ({...prev, [kind]: v}));
-
-  // Reset only when the current set changes (key) — carry weight forward.
-  const key = `${exercise.exercise_id}-${setIndex}`;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset is keyed to the set, not its values
-  useEffect(() => {
-    setVals({distance: init('distance'), duration: init('duration'), reps: init('reps'), weight: init('weight')});
-  }, [key]);
-
-  const log = () =>
-    onLog({
-      distance_value: fields.includes('distance') ? vals.distance : null,
-      duration_seconds: fields.includes('duration') ? vals.duration : null,
-      load_value: fields.includes('weight') ? vals.weight : null,
-      reps: fields.includes('reps') ? String(vals.reps) : null,
-    });
+  const payload = (): LoggedSet => ({
+    distance_value: fields.includes('distance') ? values.distance : null,
+    duration_seconds: fields.includes('duration') ? values.duration : null,
+    load_value: fields.includes('weight') ? values.weight : null,
+    reps: fields.includes('reps') ? String(values.reps) : null,
+  });
+  const change = (kind: FieldKind, value: number) => setValues((current) => ({...current, [kind]: Math.max(0, value)}));
 
   return (
-    <div className="mt-1 border-t border-[#202026] pt-2.5">
-      <p className="mb-2 text-[11px] text-muted">
-        Set {setIndex + 1}
-        {total != null ? ` of ${total}` : ''}
-        {hasTarget ? ` · target ${describeSet(exercise.tracking_type, planned ?? {})}` : ''}
-      </p>
-      <div className="mb-2.5 flex gap-2.5">
+    <div
+      className={`grid grid-cols-[28px_1fr_42px] items-center gap-2 rounded-[13px] p-1.5 ${logged ? 'bg-[#eef7f1]' : 'bg-surface-secondary'}`}
+    >
+      <span className="text-center text-xs font-extrabold text-muted">{index + 1}</span>
+      <div className="flex min-w-0 gap-1.5">
         {fields.map((kind) =>
           kind === 'duration' ? (
             <DurationField
               key={kind}
-              onChange={(v) => set('duration', v)}
-              value={vals.duration}
+              onChange={(value) => change(kind, value)}
+              value={values[kind]}
             />
           ) : (
-            <Stepper
+            <label
+              className="min-w-0 flex-1"
               key={kind}
-              label={
-                kind === 'distance' ? (DISTANCE_LABEL[planned?.distance_unit ?? 'meters'] ?? 'METERS') : LABEL[kind]
-              }
-              onChange={(v) => set(kind, v)}
-              step={STEP[kind]}
-              value={vals[kind]}
-            />
+            >
+              <span className="sr-only">{LABEL[kind]}</span>
+              <input
+                aria-label={`${LABEL[kind]} set ${index + 1}`}
+                className="h-11 w-full rounded-[10px] border border-field-border bg-white px-1 text-center text-base font-extrabold outline-none focus:border-accent"
+                inputMode="decimal"
+                onBlur={() => logged && onUpdate(logged.id, payload())}
+                onChange={(event) => change(kind, Number(event.target.value))}
+                type="text"
+                value={values[kind]}
+              />
+            </label>
           ),
         )}
       </div>
       <button
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-success py-3.5 text-[15px] font-extrabold text-success-foreground transition-opacity active:opacity-90 disabled:opacity-50"
-        disabled={isLogging}
-        onClick={log}
+        aria-label={logged ? `Mark set ${index + 1} incomplete` : `Complete set ${index + 1}`}
+        className={`grid size-10 place-items-center rounded-[11px] border-2 ${logged ? 'border-success bg-success text-white' : 'border-field-border bg-white text-muted'}`}
+        disabled={busy}
+        onClick={() => (logged ? onDelete(logged.id) : onComplete(payload(), planned?.rest_seconds ?? 90))}
         type="button"
       >
-        <Check size={18} />
-        Log set
+        {logged ? <Check size={18} /> : null}
       </button>
+    </div>
+  );
+}
+
+function EditableSetTable({
+  card,
+  busy,
+  onComplete,
+  onDelete,
+  onUpdate,
+}: {
+  busy: boolean;
+  card: Card;
+  onComplete: (index: number, values: LoggedSet, restSeconds: number) => void;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, values: LoggedSet) => void;
+}) {
+  const count = card.total ?? Math.max(card.done.length + 1, 1);
+  return (
+    <div className="mt-4 space-y-1.5">
+      {Array.from({length: count}, (_, index) => (
+        <SetRow
+          busy={busy}
+          exercise={card.exercise}
+          index={index}
+          key={card.done[index]?.id ?? `${card.id}-${index}`}
+          logged={card.done[index]}
+          onComplete={(values, restSeconds) => onComplete(index, values, restSeconds)}
+          onDelete={onDelete}
+          onUpdate={onUpdate}
+        />
+      ))}
     </div>
   );
 }
@@ -287,7 +282,7 @@ function CurrentSetBlock({
 function ActionButton({label, onPress, children}: {children: React.ReactNode; label: string; onPress: () => void}) {
   return (
     <button
-      className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[#34343d] py-2.5 text-xs font-semibold text-[#cbd2e6] active:bg-surface-secondary"
+      className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary"
       onClick={onPress}
       type="button"
     >
@@ -313,7 +308,7 @@ function ExercisePicker({title, onPick, onClose}: {onClose: () => void; onPick: 
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <div className="flex items-center gap-2 border-b border-[#1f1f25] px-3 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <div className="flex items-center gap-2 border-b border-border px-3 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <button
           aria-label="Close"
           className="grid size-9 shrink-0 place-items-center rounded-lg text-muted active:bg-surface-secondary"
@@ -378,9 +373,11 @@ const SORENESS_OPTIONS = [
   {rating: 5, emoji: '💀', label: 'Brutal'},
 ];
 
-function ActiveWorkout({session}: {session: TrainingSession}) {
+function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; session: TrainingSession}) {
   const navigate = useNavigate();
   const [createSet, {isLoading: isLogging}] = useCreateClientPerformedSetMutation();
+  const [updateSet, {isLoading: isUpdating}] = useUpdateClientPerformedSetMutation();
+  const [deleteSet, {isLoading: isDeleting}] = useDeleteClientPerformedSetMutation();
   const [updateSession, {isLoading: isFinishing}] = useUpdateClientTrainingSessionMutation();
   const finishOverlay = useOverlayState();
 
@@ -393,6 +390,22 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   const [picker, setPicker] = useState<null | {index: number; mode: 'swap'} | {mode: 'add'}>(null);
   const [soreness, setSoreness] = useState<number | null>(null);
   const [note, setNote] = useState('');
+  const [rest, setRest] = useState<null | {left: number; total: number}>(null);
+  useEffect(() => {
+    if (!rest || rest.left <= 0) {
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setRest((current) => (current ? {...current, left: Math.max(0, current.left - 1)} : null)),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [rest]);
+  useEffect(() => {
+    if (rest?.left === 0) {
+      setRest(null);
+    }
+  }, [rest?.left]);
 
   const workoutName = (session.planned_snapshot as {workout_name?: string} | null)?.workout_name ?? 'Workout';
   const planned = snapshotExercises(session);
@@ -456,9 +469,24 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
     }
     return null;
   })();
+  const currentCard = cards.find((card) => card.id === currentId) ?? null;
+  const currentPosition = currentCard ? cards.indexOf(currentCard) : -1;
+  const completedCards = cards.filter(
+    (card) =>
+      (card.total != null && card.done.length >= card.total) ||
+      (card.plannedIndex != null && skipped.has(card.plannedIndex)) ||
+      (card.added && doneAdded.has(card.exercise.exercise_id ?? '')),
+  );
+  const upNext =
+    currentPosition < 0 ? [] : cards.slice(currentPosition + 1).filter((card) => !completedCards.includes(card));
+  const overallTotal = cards.reduce((total, card) => total + (card.total ?? card.done.length), 0);
+  const overallDone = cards.reduce((total, card) => total + card.done.length, 0);
 
-  const handleLog = async (card: Card, values: LoggedSet) => {
-    const plannedSet = (card.exercise.sets ?? [])[card.done.length];
+  const handleLog = async (card: Card, setIndex: number, values: LoggedSet, restSeconds: number) => {
+    const plannedSet = (card.exercise.sets ?? [])[setIndex];
+    const cardPosition = cards
+      .slice(0, cards.indexOf(card))
+      .reduce((total, item) => total + (item.total ?? item.done.length + 1), 0);
     try {
       await createSet({
         sessionId: session.id,
@@ -474,14 +502,34 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
           exercise_name: card.name,
           load_unit: values.load_value == null ? 'none' : ((plannedSet?.load_unit as 'kg' | 'lbs' | null) ?? 'kg'),
           load_value: values.load_value,
-          position: performed.length,
+          position: cardPosition + setIndex,
           reps: values.reps ?? undefined,
           set_type: (plannedSet?.set_type as 'dropset' | 'warmup' | 'working' | null) ?? 'working',
           swapped_from_exercise_id: card.logSwappedFrom ?? undefined,
         },
       }).unwrap();
+      setRest({left: restSeconds, total: restSeconds});
     } catch {
       toast.danger("Couldn't log set. Try again.");
+    }
+  };
+
+  const handleUpdate = async (id: string, values: LoggedSet) => {
+    try {
+      await updateSet({id, trainingPerformedSetRequest: {...values, completed: true}}).unwrap();
+      await refetch();
+    } catch {
+      toast.danger("Couldn't update set. Try again.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteSet({id}).unwrap();
+      setRest(null);
+      await refetch();
+    } catch {
+      toast.danger("Couldn't update set. Try again.");
     }
   };
 
@@ -528,131 +576,181 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="flex items-center justify-between gap-3 border-b border-[#1f1f25] px-3.5 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-        <p className="min-w-0 flex-1 truncate font-bold">{workoutName}</p>
-        <ElapsedClock startedAt={session.started_at} />
-        <button
-          className="shrink-0 rounded-md border border-success-border px-2.5 py-1 text-[11px] text-success-secondary active:opacity-70"
-          onClick={finishOverlay.open}
-          type="button"
-        >
-          Finish
-        </button>
+      <div className="sticky top-0 z-10 border-b border-border bg-[rgba(244,244,242,0.96)] px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-[10px]">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            aria-label="Minimize workout"
+            className="-ml-2 grid size-9 shrink-0 place-items-center rounded-[10px] text-muted"
+            onClick={() => navigate(ROUTES.TRAINING)}
+            type="button"
+          >
+            <ChevronDown size={20} />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-extrabold">{workoutName}</p>
+            <ElapsedClock startedAt={session.started_at} />
+          </div>
+          <button
+            className="shrink-0 rounded-[11px] border border-success-border bg-[#eaf7f0] px-4 py-2 text-[13px] font-extrabold text-success-secondary"
+            onClick={finishOverlay.open}
+            type="button"
+          >
+            Finish
+          </button>
+        </div>
+        <div className="mt-3 flex items-center gap-2.5">
+          <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[#e6e7e4]">
+            <div
+              className="h-full rounded-full bg-accent transition-[width]"
+              style={{width: `${overallTotal ? (overallDone / overallTotal) * 100 : 0}%`}}
+            />
+          </div>
+          <span className="text-[11px] font-bold text-muted">
+            {overallDone}/{overallTotal} sets
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+        {rest ? (
+          <div className="mb-3 flex items-center gap-3 rounded-2xl border border-[#d6e6fb] bg-accent-soft p-3">
+            <div className="relative grid size-10 place-items-center rounded-full border-4 border-[#d6e6fb] text-sm font-extrabold text-accent">
+              {rest.left}
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="block text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted">Rest</span>
+              <b className="text-xl">{formatSeconds(rest.left)}</b>
+            </div>
+            <button
+              className="rounded-[10px] border border-border bg-white px-3 py-2 text-xs font-extrabold"
+              onClick={() =>
+                setRest((current) =>
+                  current ? {...current, left: Math.min(current.total + 60, current.left + 15)} : null,
+                )
+              }
+              type="button"
+            >
+              +15s
+            </button>
+            <button
+              className="rounded-[10px] bg-accent px-3 py-2 text-xs font-extrabold text-white"
+              onClick={() => setRest(null)}
+              type="button"
+            >
+              Skip
+            </button>
+          </div>
+        ) : null}
         {cards.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted">This workout has no exercises.</p>
-        ) : (
-          cards.map((c) => {
-            const isCurrent = c.id === currentId;
-            const isSkipped = c.plannedIndex != null && skipped.has(c.plannedIndex);
-            const isDoneEx = c.total != null && c.total > 0 && c.done.length >= c.total;
-            const last = c.done[c.done.length - 1];
-            const carry = {distance: last?.distance_value ?? null, weight: last?.load_value ?? null};
-            return (
-              <div
-                className={`mb-2.5 rounded-xl border bg-surface p-3 ${
-                  isCurrent
-                    ? 'border-accent shadow-[0_0_0_1px_#6c8cff,0_0_20px_rgba(108,140,255,0.18)]'
-                    : 'border-border opacity-50'
-                }`}
-                key={c.id}
-              >
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <span className={`truncate font-semibold ${isSkipped ? 'text-muted' : ''}`}>{c.name}</span>
-                    {c.badge === 'added' ? (
-                      <span className="shrink-0 rounded border border-[#7d5a2f] px-1.5 py-px text-[9px] text-warning">
-                        added
-                      </span>
-                    ) : c.badge ? (
-                      <span className="shrink-0 rounded border border-[#34506e] px-1.5 py-px text-[9px] text-[#9fb0ff]">
-                        swapped from {c.badge.from}
-                      </span>
-                    ) : null}
-                  </div>
-                  {isCurrent ? (
-                    <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-accent">● Now</span>
-                  ) : isSkipped ? (
-                    <span className="shrink-0 rounded border border-[#3a3a42] px-1.5 py-px text-[9px] text-muted">
-                      skipped
-                    </span>
-                  ) : (
-                    <span className={`shrink-0 text-[11px] ${isDoneEx ? 'text-success-secondary' : 'text-muted'}`}>
-                      {c.done.length}
-                      {c.total != null ? `/${c.total}` : ' sets'}
-                      {isDoneEx ? ' ✓' : ''}
-                    </span>
-                  )}
-                </div>
-
-                {c.done.map((p, si) => (
-                  <div
-                    className="grid grid-cols-[26px_1fr_26px] items-center gap-2 border-t border-[#202026] py-1.5 text-xs text-success-secondary"
-                    key={p.id}
+        ) : currentCard ? (
+          <div className="mb-5 rounded-3xl bg-surface p-4 shadow-[0_0_0_1.5px_#0485f7,0_10px_24px_-18px_rgba(18,20,26,0.28)]">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="rounded-lg bg-accent-soft px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.06em] text-accent">
+                Exercise {currentPosition + 1} of {cards.length}
+              </span>
+              <span className="text-xs font-bold text-muted">
+                {currentCard.exercise.tracking_type?.replaceAll('_', ' ')}
+              </span>
+            </div>
+            <h2 className="text-[25px] font-extrabold leading-[1.05] tracking-[-0.025em]">{currentCard.name}</h2>
+            {currentCard.badge && currentCard.badge !== 'added' ? (
+              <span className="mt-2 inline-block rounded-lg bg-accent-soft px-2 py-1 text-[10px] text-accent-soft-foreground">
+                Swapped from {currentCard.badge.from}
+              </span>
+            ) : null}
+            <p className="mt-4 text-xs font-extrabold">
+              {currentCard.done.length} <span className="text-muted">of {currentCard.total ?? 'open'} sets done</span>
+            </p>
+            <EditableSetTable
+              busy={isLogging || isUpdating || isDeleting}
+              card={currentCard}
+              onComplete={(index, values, restSeconds) => handleLog(currentCard, index, values, restSeconds)}
+              onDelete={handleDelete}
+              onUpdate={handleUpdate}
+            />
+            <div className="mt-3 flex gap-2">
+              {currentCard.added ? (
+                <>
+                  <ActionButton
+                    label="Next"
+                    onPress={() =>
+                      setDoneAdded((current) => new Set(current).add(currentCard.exercise.exercise_id ?? ''))
+                    }
                   >
-                    <span>{si + 1}</span>
-                    <span className="text-[#9aa]">{describeSet(c.exercise.tracking_type, p)}</span>
-                    <Check
-                      className="text-success"
-                      size={14}
-                    />
-                  </div>
-                ))}
-
-                {isCurrent ? (
-                  <>
-                    <CurrentSetBlock
-                      carry={carry}
-                      exercise={c.exercise}
-                      isLogging={isLogging}
-                      key={`${c.id}-${c.done.length}`}
-                      onLog={(values) => handleLog(c, values)}
-                      setIndex={c.done.length}
-                      total={c.total}
-                    />
-                    <div className="mt-2 flex gap-2">
-                      {c.added ? (
-                        <>
-                          <ActionButton
-                            label="Done"
-                            onPress={() => setDoneAdded((s) => new Set(s).add(c.exercise.exercise_id ?? ''))}
-                          >
-                            <Check size={14} />
-                          </ActionButton>
-                          {c.removable ? (
-                            <ActionButton
-                              label="Remove"
-                              onPress={() => setAdded((a) => a.filter((x) => x.id !== c.exercise.exercise_id))}
-                            >
-                              <X size={14} />
-                            </ActionButton>
-                          ) : null}
-                        </>
-                      ) : (
-                        <>
-                          <ActionButton
-                            label="Swap exercise"
-                            onPress={() => setPicker({index: c.plannedIndex as number, mode: 'swap'})}
-                          >
-                            <Repeat2 size={14} />
-                          </ActionButton>
-                          <ActionButton
-                            label="Skip"
-                            onPress={() => setSkipped((s) => new Set(s).add(c.plannedIndex as number))}
-                          >
-                            <SkipForward size={14} />
-                          </ActionButton>
-                        </>
-                      )}
-                    </div>
-                  </>
-                ) : null}
-              </div>
-            );
-          })
+                    <Check size={14} />
+                  </ActionButton>
+                  {currentCard.removable ? (
+                    <ActionButton
+                      label="Remove"
+                      onPress={() =>
+                        setAdded((items) => items.filter((item) => item.id !== currentCard.exercise.exercise_id))
+                      }
+                    >
+                      <X size={14} />
+                    </ActionButton>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <ActionButton
+                    label="Swap"
+                    onPress={() => setPicker({index: currentCard.plannedIndex as number, mode: 'swap'})}
+                  >
+                    <Repeat2 size={14} />
+                  </ActionButton>
+                  <ActionButton
+                    label="Next"
+                    onPress={() => setSkipped((current) => new Set(current).add(currentCard.plannedIndex as number))}
+                  >
+                    <SkipForward size={14} />
+                  </ActionButton>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 rounded-2xl border border-success-border bg-[#eef7f1] p-4 text-center text-success-secondary">
+            <Check
+              className="mx-auto mb-1"
+              size={24}
+            />
+            <b>All exercises complete</b>
+          </div>
         )}
+
+        {upNext.length > 0 ? (
+          <>
+            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">Up next</p>
+            <div className="mb-4 overflow-hidden rounded-[20px] border border-border bg-surface">
+              {upNext.map((card) => (
+                <div
+                  className="flex items-center justify-between border-t border-separator p-3 first:border-t-0"
+                  key={card.id}
+                >
+                  <span className="text-sm font-bold">{card.name}</span>
+                  <span className="text-[11px] text-muted">{card.total ?? 'open'} sets</span>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : null}
+        {completedCards.length > 0 ? (
+          <>
+            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">Completed</p>
+            <div className="mb-4 overflow-hidden rounded-[20px] border border-border bg-surface">
+              {completedCards.map((card) => (
+                <div
+                  className="flex items-center justify-between border-t border-separator p-3 first:border-t-0"
+                  key={card.id}
+                >
+                  <span className="text-sm font-bold text-muted">{card.name}</span>
+                  <span className="text-success-secondary">✓</span>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : null}
 
         <button
           className="mb-2.5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-surface/50 py-2.5 text-sm font-medium text-muted active:bg-surface-secondary"
@@ -684,85 +782,87 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
         />
       ) : null}
 
-      <AlertDialog.Backdrop
-        isOpen={finishOverlay.isOpen}
-        onOpenChange={finishOverlay.setOpen}
-      >
-        <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Heading>Finish workout?</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <div className="flex flex-col gap-4">
-                {/* Summary */}
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    {label: 'SETS', value: String(summary.sets)},
-                    {label: 'EX', value: String(summary.exercises)},
-                    {label: 'VOL', value: summary.volume},
-                  ].map((stat) => (
-                    <div
-                      className="rounded-lg border border-border bg-surface px-2 py-2 text-center"
-                      key={stat.label}
-                    >
-                      <p className="text-lg font-bold leading-none">{stat.value}</p>
-                      <p className="mt-1 text-[10px] tracking-wide text-muted">{stat.label}</p>
-                    </div>
-                  ))}
+      {finishOverlay.isOpen ? (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-[rgba(8,8,11,0.5)]">
+          <button
+            aria-label="Keep training"
+            className="flex-1 cursor-default"
+            onClick={finishOverlay.close}
+            type="button"
+          />
+          <div
+            aria-label="Finish workout"
+            aria-modal="true"
+            className="rounded-t-[28px] bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+            role="dialog"
+          >
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#c3c7ce]" />
+            <h2 className="mb-4 text-[21px] font-extrabold tracking-[-0.02em]">Nice work — finish up?</h2>
+            <div className="mb-4 grid grid-cols-3 gap-2">
+              {[
+                {label: 'SETS', value: String(summary.sets)},
+                {label: 'EX', value: String(summary.exercises)},
+                {label: 'VOL', value: summary.volume},
+              ].map((stat) => (
+                <div
+                  className="rounded-xl border border-border bg-surface p-2 text-center"
+                  key={stat.label}
+                >
+                  <b className="block text-lg">{stat.value}</b>
+                  <span className="text-[9px] font-bold text-muted">{stat.label}</span>
                 </div>
-
-                {/* Soreness — optional */}
-                <div>
-                  <p className="mb-1.5 text-xs text-muted">How did it feel?</p>
-                  <div className="flex justify-between gap-1">
-                    {SORENESS_OPTIONS.map((opt) => (
-                      <button
-                        aria-label={opt.label}
-                        aria-pressed={soreness === opt.rating}
-                        className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg border py-2 transition-colors ${
-                          soreness === opt.rating ? 'border-accent bg-accent/10' : 'border-border'
-                        }`}
-                        key={opt.rating}
-                        onClick={() => setSoreness((cur) => (cur === opt.rating ? null : opt.rating))}
-                        type="button"
-                      >
-                        <span className="text-xl">{opt.emoji}</span>
-                        <span className="text-[9px] text-muted">{opt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Note — optional */}
-                <textarea
-                  className="min-h-16 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent"
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Add a note for your coach (optional)"
-                  value={note}
-                />
-              </div>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                isDisabled={isFinishing}
-                onPress={() => finish('discarded')}
-                variant="danger-soft"
+              ))}
+            </div>
+            <p className="mb-2 text-xs font-bold text-muted">How did it feel?</p>
+            <div className="mb-4 flex gap-1.5">
+              {SORENESS_OPTIONS.map((option) => (
+                <button
+                  aria-label={option.label}
+                  aria-pressed={soreness === option.rating}
+                  className={`flex flex-1 flex-col items-center rounded-xl border py-2 ${soreness === option.rating ? 'border-accent bg-accent-soft' : 'border-border bg-surface'}`}
+                  key={option.rating}
+                  onClick={() => setSoreness((current) => (current === option.rating ? null : option.rating))}
+                  type="button"
+                >
+                  <span className="text-xl">{option.emoji}</span>
+                  <span className="text-[9px] text-muted">{option.label}</span>
+                </button>
+              ))}
+            </div>
+            <textarea
+              className="mb-3 min-h-16 w-full resize-none rounded-xl border border-field-border bg-white p-3 text-sm outline-none focus:border-accent"
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="Add a note for your coach (optional)"
+              value={note}
+            />
+            <button
+              className="min-h-[50px] w-full rounded-[14px] bg-accent text-[15px] font-extrabold text-white disabled:opacity-50"
+              disabled={isFinishing}
+              onClick={() => finish('completed')}
+              type="button"
+            >
+              Save workout
+            </button>
+            <div className="mt-2 flex gap-2">
+              <button
+                className="min-h-11 flex-1 rounded-[13px] border border-border bg-white text-sm font-bold text-muted"
+                onClick={finishOverlay.close}
+                type="button"
+              >
+                Keep training
+              </button>
+              <button
+                className="min-h-11 flex-1 rounded-[13px] border border-border bg-white text-sm font-bold text-danger"
+                disabled={isFinishing}
+                onClick={() => finish('discarded')}
+                type="button"
               >
                 Discard
-              </Button>
-              <Button
-                isPending={isFinishing}
-                onPress={() => finish('completed')}
-                variant="primary"
-              >
-                Save workout
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -771,7 +871,7 @@ export default function ActiveWorkoutScreen() {
   const navigate = useNavigate();
   const {data: sessionsData, isLoading: isLoadingList} = useListClientTrainingSessionsQuery({});
   const activeId = sessionsData?.data.find((s) => s.state === 'active')?.id;
-  const {data, isLoading} = useGetClientTrainingSessionQuery({id: activeId!}, {skip: !activeId});
+  const {data, isLoading, refetch} = useGetClientTrainingSessionQuery({id: activeId!}, {skip: !activeId});
 
   if (isLoadingList || (activeId && isLoading)) {
     return (
@@ -795,5 +895,10 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  return <ActiveWorkout session={data.data} />;
+  return (
+    <ActiveWorkout
+      refetch={refetch}
+      session={data.data}
+    />
+  );
 }

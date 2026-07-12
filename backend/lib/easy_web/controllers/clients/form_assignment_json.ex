@@ -32,6 +32,7 @@ defmodule EasyWeb.Clients.FormAssignmentJSON do
       completed_at: assignment.completed_at,
       due_reminder_sent_at: assignment.due_reminder_sent_at,
       overdue_reminder_sent_at: assignment.overdue_reminder_sent_at,
+      latest_submission: submission_data(assignment.latest_submission),
       latest_submission_reviewed_at: assignment.latest_submission_reviewed_at,
       form_template: form_template(assignment.form_template),
       inserted_at: assignment.inserted_at,
@@ -53,6 +54,8 @@ defmodule EasyWeb.Clients.FormAssignmentJSON do
       inserted_at: submission.inserted_at
     }
   end
+
+  defp submission_data(nil), do: nil
 
   defp form_template(%FormTemplate{} = template) do
     %{

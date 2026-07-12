@@ -2073,6 +2073,47 @@ export type ClientTrainingPlanListResponse = {
   count: number;
   data: ClientTrainingPlan[];
 };
+export type ChatAttachment = {
+  byte_size: number;
+  content_type:
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'image/heic'
+    | 'video/mp4'
+    | 'video/webm'
+    | 'video/quicktime'
+    | 'audio/webm'
+    | 'audio/mp4'
+    | 'audio/mpeg';
+  duration_ms: number | null;
+  id: string;
+};
+export type ClientProfileFormSubmission = {
+  answers: {
+    [key: string]: any;
+  };
+  attachments: ChatAttachment[];
+  form_assignment_id: string;
+  id: string;
+  inserted_at: string;
+  question_snapshot: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
+      [key: string]: any;
+    }[];
+    title?: string;
+    [key: string]: any;
+  }[];
+  reviewed_at: string | null;
+  reviewed_by_id: string | null;
+  submitted_at: string;
+  submitted_by_type: 'coach' | 'client' | 'system';
+};
 export type ClientProfileFormAssignment = {
   check_in_schedule_id: string | null;
   client_id: string;
@@ -2083,6 +2124,7 @@ export type ClientProfileFormAssignment = {
   form_template_id: string;
   id: string;
   inserted_at: string;
+  latest_submission: ClientProfileFormSubmission | null;
   latest_submission_reviewed_at: string | null;
   overdue_reminder_sent_at: string | null;
   priority: 'high' | 'normal';
@@ -2441,22 +2483,6 @@ export type FoodImpactResponse = {
     }[];
   };
 };
-export type ChatAttachment = {
-  byte_size: number;
-  content_type:
-    | 'image/jpeg'
-    | 'image/png'
-    | 'image/webp'
-    | 'image/heic'
-    | 'video/mp4'
-    | 'video/webm'
-    | 'video/quicktime'
-    | 'audio/webm'
-    | 'audio/mp4'
-    | 'audio/mpeg';
-  duration_ms: number | null;
-  id: string;
-};
 export type FormSubmissionEmbedSnapshot = {
   form_assignment_id: string;
   submitted_at: string;
@@ -2547,31 +2573,6 @@ export type BusinessRequest = {
   default_weight_unit?: 'kg' | 'lbs';
   handle: string;
   name: string;
-};
-export type ClientProfileFormSubmission = {
-  answers: {
-    [key: string]: any;
-  };
-  attachments: ChatAttachment[];
-  form_assignment_id: string;
-  id: string;
-  inserted_at: string;
-  question_snapshot: {
-    questions: {
-      id: string;
-      label: string;
-      options?: string[];
-      required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-      [key: string]: any;
-    }[];
-    title?: string;
-    [key: string]: any;
-  }[];
-  reviewed_at: string | null;
-  reviewed_by_id: string | null;
-  submitted_at: string;
-  submitted_by_type: 'coach' | 'client' | 'system';
 };
 export type ClientProfileFormSubmissionResponse = {
   data: ClientProfileFormSubmission;

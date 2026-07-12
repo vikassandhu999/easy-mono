@@ -104,7 +104,7 @@ export default function VerifyInviteOtp() {
       }).unwrap();
       setTokens(result);
       // Post-verify, land on Training home per product decision.
-      navigate(ROUTES.TRAINING, {replace: true});
+      navigate(ROUTES.TODAY, {replace: true});
     } catch (err) {
       const code = getApiErrorCode(err);
 

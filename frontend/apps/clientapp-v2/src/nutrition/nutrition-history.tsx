@@ -13,8 +13,8 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {type MealLog, useListClientMealLogsQuery, useListClientNutritionPlansQuery} from '@/api/nutrition';
 import {type Adherence, adherence, dayTotals, planTargets} from '@/nutrition/nutrition-utils';
 
-const RING_COLOR: Record<Adherence, string> = {none: '#23232b', on: '#3ad07a', over: '#e0524d', under: '#e0a14d'};
-const TEXT_COLOR: Record<Adherence, string> = {none: '#555', on: '#5fe08a', over: '#e08a86', under: '#e0a14d'};
+const RING_COLOR: Record<Adherence, string> = {none: '#d6d8dc', on: '#17a768', over: '#c0392b', under: '#e2a33c'};
+const TEXT_COLOR: Record<Adherence, string> = {none: '#9498a1', on: '#127c4e', over: '#c0392b', under: '#b8770f'};
 const SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function fmt(d: Date): string {
@@ -98,7 +98,7 @@ export default function NutritionHistory() {
       <h1 className="mb-3 text-lg font-bold">History</h1>
 
       {/* week navigator */}
-      <div className="mb-3.5 flex items-center justify-between border-b border-[#1f1f25] pb-3">
+      <div className="mb-3.5 flex items-center justify-between border-b border-border pb-3">
         <button
           aria-label="Previous week"
           className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary"
@@ -152,9 +152,9 @@ export default function NutritionHistory() {
                   <span
                     className="grid size-[30px] place-items-center rounded-full text-[8px] font-bold"
                     style={{
-                      background: `conic-gradient(${RING_COLOR[d.adh]} 0% ${Math.min(100, pct || (d.adh === 'over' ? 100 : 0))}%, #23232b 0)`,
+                      background: `conic-gradient(${RING_COLOR[d.adh]} 0% ${Math.min(100, pct || (d.adh === 'over' ? 100 : 0))}%, #ececef 0)`,
                       color: TEXT_COLOR[d.adh],
-                      outline: d.isToday ? '2px solid #6c8cff' : undefined,
+                      outline: d.isToday ? '2px solid #0485f7' : undefined,
                       outlineOffset: d.isToday ? '1px' : undefined,
                     }}
                   >
@@ -168,16 +168,16 @@ export default function NutritionHistory() {
           {/* legend */}
           <div className="mb-4 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted">
             <span>
-              <span style={{color: '#5fe08a'}}>●</span> on target
+              <span style={{color: '#17a768'}}>●</span> on target
             </span>
             <span>
-              <span style={{color: '#e0a14d'}}>●</span> under
+              <span style={{color: '#e2a33c'}}>●</span> under
             </span>
             <span>
-              <span style={{color: '#e0524d'}}>●</span> over
+              <span style={{color: '#c0392b'}}>●</span> over
             </span>
             <span>
-              <span style={{color: '#555'}}>●</span> no log
+              <span style={{color: '#9498a1'}}>●</span> no log
             </span>
           </div>
 
@@ -201,13 +201,13 @@ export default function NutritionHistory() {
                     <p className="text-xs font-semibold">
                       {d.weekday} · {d.isToday ? 'Today' : shortDate(d.date)}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-[#9aa]">
+                    <p className="mt-0.5 text-[11px] text-muted">
                       {Math.round(d.calories)} / {target ?? '—'} kcal · {Math.round(d.protein)}P
                     </p>
                   </div>
                   <span
                     className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] ${
-                      on ? 'border-[#2f7d4a] text-[#5fe08a]' : 'border-[#7d5a2f] text-[#e0a14d]'
+                      on ? 'border-success text-success-secondary' : 'border-warning text-warning'
                     }`}
                   >
                     {on ? 'on target' : over ? 'over' : 'under'}

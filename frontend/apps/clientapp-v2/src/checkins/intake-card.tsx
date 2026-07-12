@@ -23,7 +23,7 @@ export default function IntakeCard() {
   }
 
   return (
-    <div className="mb-3.5 rounded-2xl border border-border bg-surface p-4">
+    <div className="mb-3.5 rounded-[20px] border border-border bg-surface p-4">
       <div className="flex items-center gap-2">
         <ClipboardCheck
           className="text-accent"

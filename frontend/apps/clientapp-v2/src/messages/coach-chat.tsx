@@ -10,6 +10,7 @@ import {
   useCreateClientConversationMessageMutation,
   useMarkClientConversationReadMutation,
 } from '@/api/conversation';
+import {useGetClientProfileQuery} from '@/api/profile';
 import {getApiErrorMessage} from '@/api/shared';
 import AttachmentComposer from '@/messages/attachment-composer';
 import MessageAttachments from '@/messages/message-attachments';
@@ -72,6 +73,10 @@ export default function CoachChat() {
   const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClientMessagesInfiniteQuery();
   const [sendMessage, {isLoading: isSendingMessage}] = useCreateClientConversationMessageMutation();
   const [markRead] = useMarkClientConversationReadMutation();
+  const {data: profile} = useGetClientProfileQuery();
+  const coach = profile?.data.coach;
+  const coachName = [coach?.first_name, coach?.last_name].filter(Boolean).join(' ') || 'Your coach';
+  const coachInitial = coach?.first_name?.[0]?.toUpperCase() ?? 'C';
 
   // Pages arrive newest-chunk-first, each chunk ascending → reverse pages, keep chunks.
   const messages = [...(data?.pages ?? [])].reverse().flatMap((page) => page.data);
@@ -135,8 +140,15 @@ export default function CoachChat() {
   return (
     // Tab bar (h-16) stays visible below — reserve its height.
     <div className="flex h-[calc(100dvh-4rem)] flex-col">
-      <header className="flex min-h-12 items-center border-b border-border px-4 pt-[env(safe-area-inset-top)]">
-        <h1 className="text-base font-bold">Your coach</h1>
+      <header className="flex min-h-14 items-center gap-3 border-b border-border bg-background px-5 pt-[env(safe-area-inset-top)]">
+        <span className="relative grid size-[38px] place-items-center rounded-full bg-accent text-sm font-extrabold text-white">
+          {coachInitial}
+          <i className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background bg-success" />
+        </span>
+        <span>
+          <h1 className="text-[15px] font-extrabold">Coach {coachName}</h1>
+          <span className="block text-[11px] font-semibold text-success-secondary">Online</span>
+        </span>
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-3">
@@ -182,7 +194,7 @@ export default function CoachChat() {
         )}
       </div>
 
-      <footer className="border-t border-border p-3">
+      <footer className="border-t border-border bg-[rgba(244,244,242,0.96)] p-3 backdrop-blur-[10px]">
         <AttachmentComposer
           disabled={isSending}
           key={composerKey}

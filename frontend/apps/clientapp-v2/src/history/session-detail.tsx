@@ -60,23 +60,23 @@ function ExerciseCard({name, badge, rows}: {badge?: Badge; name: string; rows: R
       <div className="flex items-center justify-between gap-2">
         <span className={`font-semibold ${badge === 'skipped' ? 'text-muted' : ''}`}>{name}</span>
         {badge === 'skipped' ? (
-          <span className="shrink-0 rounded border border-[#3a3a42] px-1.5 py-px text-[9px] text-muted">skipped</span>
+          <span className="shrink-0 rounded border border-border px-1.5 py-px text-[9px] text-muted">skipped</span>
         ) : badge === 'added' ? (
           <span className="shrink-0 rounded border border-[#7d5a2f] px-1.5 py-px text-[9px] text-warning">added</span>
         ) : badge ? (
-          <span className="shrink-0 rounded border border-[#34506e] px-1.5 py-px text-[9px] text-[#9fb0ff]">
+          <span className="shrink-0 rounded border border-[#34506e] px-1.5 py-px text-[9px] text-accent">
             swapped from {badge.swappedFrom}
           </span>
         ) : null}
       </div>
       {rows.map((r) => (
         <div
-          className="mt-1.5 flex items-center justify-between gap-2 border-t border-[#202026] pt-1.5 text-xs"
+          className="mt-1.5 flex items-center justify-between gap-2 border-t border-border pt-1.5 text-xs"
           key={r.id}
         >
-          <span className="text-[#cfe]">{r.actual}</span>
+          <span className="text-success-secondary">{r.actual}</span>
           {r.target ? (
-            <span className="text-[11px] text-[#666]">
+            <span className="text-[11px] text-muted">
               {r.target} <span className={markClass(r.mark)}>{r.mark}</span>
             </span>
           ) : null}
@@ -117,7 +117,7 @@ function Detail({session}: {session: TrainingSession}) {
       <h1 className="text-lg font-bold">{snapshotOf(session).workout_name ?? 'Workout'}</h1>
       <p className="mt-0.5 text-xs text-muted">{sub}</p>
 
-      <div className="my-3.5 flex gap-4 text-xs text-[#9aa]">
+      <div className="my-3.5 flex gap-4 text-xs text-muted">
         <span>
           Sets <b className="text-foreground">{setCount}</b>
         </span>
@@ -166,7 +166,7 @@ function Detail({session}: {session: TrainingSession}) {
       ))}
 
       {session.notes ? (
-        <div className="mt-1 rounded-[10px] border border-border bg-surface p-2.5 text-xs text-[#9aa]">
+        <div className="mt-1 rounded-[10px] border border-border bg-surface p-2.5 text-xs text-muted">
           “{session.notes}”
         </div>
       ) : null}

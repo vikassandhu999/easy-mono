@@ -309,6 +309,8 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile do
       goal_weight_value: %Schema{type: :number, nullable: true},
       goal_weight_unit: %Schema{type: :string, nullable: true},
       default_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"]},
+      subscription_started_on: %Schema{type: :string, format: :date, nullable: true},
+      subscription_ends_on: %Schema{type: :string, format: :date, nullable: true},
       status: %Schema{type: :string},
       coach: %Schema{oneOf: [ClientProfileCoach], nullable: true}
     },
@@ -321,6 +323,8 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile do
       :goal_weight_value,
       :goal_weight_unit,
       :default_weight_unit,
+      :subscription_started_on,
+      :subscription_ends_on,
       :status,
       :coach
     ]

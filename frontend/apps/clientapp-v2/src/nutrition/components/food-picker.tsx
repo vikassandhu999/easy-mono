@@ -88,7 +88,7 @@ export default function FoodPicker({
     <button
       aria-pressed={tab === value}
       className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold ${
-        tab === value ? 'border-accent bg-[#1d2030] text-[#9fb0ff]' : 'border-border text-muted'
+        tab === value ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'
       }`}
       onClick={() => setTab(value)}
       type="button"
@@ -104,7 +104,7 @@ export default function FoodPicker({
       className="fixed inset-0 z-50 flex flex-col bg-background"
       role="dialog"
     >
-      <div className="flex items-center gap-2 border-b border-[#1f1f25] px-3 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <div className="flex items-center gap-2 border-b border-border px-3 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <button
           aria-label="Close"
           className="grid size-9 shrink-0 place-items-center rounded-lg text-muted active:bg-surface-secondary"
@@ -144,7 +144,7 @@ export default function FoodPicker({
           ) : (
             foodItems.map((f) => (
               <button
-                className="flex w-full items-center justify-between gap-2 border-b border-[#1f1f25] py-2.5 text-left active:bg-surface-secondary"
+                className="flex w-full items-center justify-between gap-2 border-b border-border py-2.5 text-left active:bg-surface-secondary"
                 key={f.id}
                 onClick={() => pickFood(f)}
                 type="button"
@@ -162,7 +162,7 @@ export default function FoodPicker({
         ) : (
           recipeItems.map((r) => (
             <button
-              className="flex w-full items-center justify-between gap-2 border-b border-[#1f1f25] py-2.5 text-left active:bg-surface-secondary"
+              className="flex w-full items-center justify-between gap-2 border-b border-border py-2.5 text-left active:bg-surface-secondary"
               key={r.id}
               onClick={() => pickRecipe(r)}
               type="button"
@@ -178,14 +178,14 @@ export default function FoodPicker({
       </div>
 
       {showSlotPicker ? (
-        <div className="border-t border-[#1f1f25] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2.5">
+        <div className="border-t border-border px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2.5">
           <p className="mb-1.5 text-[11px] text-muted">Add to which meal?</p>
           <div className="flex flex-wrap gap-1.5">
             {MEAL_SLOTS.map((s) => (
               <button
                 aria-pressed={slot === s}
                 className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${
-                  slot === s ? 'border-accent text-[#9fb0ff]' : 'border-border text-muted'
+                  slot === s ? 'border-accent text-accent' : 'border-border text-muted'
                 }`}
                 key={s}
                 onClick={() => setSlot(s)}

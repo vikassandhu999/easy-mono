@@ -38,7 +38,7 @@ import {
 } from '@/nutrition/nutrition-utils';
 
 const VERDICT_LABEL: Record<string, string> = {on: 'on target ✓', over: 'over target', under: 'under target'};
-const VERDICT_COLOR: Record<string, string> = {on: '#5fe08a', over: '#e08a86', under: '#e0a14d'};
+const VERDICT_COLOR: Record<string, string> = {on: '#127c4e', over: '#c0392b', under: '#b8770f'};
 
 function localToday(): string {
   const d = new Date();
@@ -65,7 +65,7 @@ function Checkbox({on, disabled, onPress}: {disabled?: boolean; on: boolean; onP
     <button
       aria-label={on ? 'Mark not eaten' : 'Log as eaten'}
       className={`grid size-5 shrink-0 place-items-center rounded-md border transition-colors disabled:opacity-50 ${
-        on ? 'border-success bg-success text-success-foreground' : 'border-[#444]'
+        on ? 'border-success bg-success text-success-foreground' : 'border-field-border'
       }`}
       disabled={disabled}
       onClick={onPress}
@@ -81,7 +81,10 @@ export default function NutritionToday() {
   const [params, setParams] = useSearchParams();
   const today = localToday();
   const date = params.get('date') ?? today;
+  const tomorrow = shiftDate(today, 1);
+  const isPast = date < today;
   const isFuture = date > today;
+  const isEditable = date === today;
 
   const {data: todayResp, isLoading: loadingPlan, refetch: refetchPlan} = useGetTodayNutritionPlanQuery({date});
   const {
@@ -282,13 +285,15 @@ export default function NutritionToday() {
   // empty state — only the meal-logs query erroring is a real failure to surface).
   const adh = adherence(consumed.calories, targets.calories);
   const verdict =
-    date < today && consumed.calories > 0 && targets.calories != null && adh !== 'none' ? (
+    isPast && consumed.calories > 0 && targets.calories != null && adh !== 'none' ? (
       <p
         className="mt-1.5 text-[11px] font-semibold"
         style={{color: VERDICT_COLOR[adh]}}
       >
         {VERDICT_LABEL[adh]}
       </p>
+    ) : isFuture ? (
+      <p className="mt-1.5 text-[11px] font-semibold text-white/50">Planned — read-only until the day starts</p>
     ) : undefined;
 
   if (loadingPlan || loadingLogs) {
@@ -320,7 +325,7 @@ export default function NutritionToday() {
   return (
     <div className="px-4 pb-10 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
       {/* Date navigator */}
-      <div className="mb-3 flex items-center justify-between border-b border-[#1f1f25] pb-3">
+      <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
         <button
           aria-label="Previous day"
           className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary"
@@ -332,7 +337,8 @@ export default function NutritionToday() {
         <span className="text-sm font-bold">{dateLabel(date, today)}</span>
         <button
           aria-label="Next day"
-          className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary"
+          className="grid size-8 place-items-center rounded-lg text-muted active:bg-surface-secondary disabled:opacity-30"
+          disabled={date >= tomorrow}
           onClick={() => setDate(shiftDate(date, 1))}
           type="button"
         >
@@ -365,7 +371,7 @@ export default function NutritionToday() {
                 {slot.options.length > 1 ? (
                   <button
                     className="flex min-w-0 items-center gap-0.5 rounded-md px-1 py-0.5 text-[10px] font-medium text-accent active:opacity-70 disabled:opacity-50"
-                    disabled={isFuture}
+                    disabled={!isEditable}
                     onClick={() => setOptionSheetSlot(slot.slot)}
                     type="button"
                   >
@@ -381,8 +387,8 @@ export default function NutritionToday() {
                 ) : null}
               </div>
               {slot.allPlannedLogged ? (
-                <span className="text-[11px] text-[#7f8cff]">{Math.round(slot.loggedCalories)} · ✓ logged</span>
-              ) : slot.mealId && !isFuture ? (
+                <span className="text-[11px] text-accent">{Math.round(slot.loggedCalories)} · ✓ logged</span>
+              ) : slot.mealId && isEditable ? (
                 <button
                   className="text-[10px] font-medium text-accent active:opacity-70 disabled:opacity-50"
                   disabled={loggingMeal}
@@ -404,24 +410,24 @@ export default function NutritionToday() {
               const name = row.replaced && logged ? (logged.food_name ?? 'Food') : (row.item.food_name ?? 'Food');
               return (
                 <div
-                  className="flex items-center gap-2.5 border-t border-[#202026] py-1.5 text-xs"
+                  className="flex items-center gap-2.5 border-t border-border py-1.5 text-xs"
                   key={row.item.meal_item_id}
                 >
                   <Checkbox
-                    disabled={isFuture}
+                    disabled={!isEditable}
                     on={!!logged}
                     onPress={() => (logged ? removeEntry(logged) : logPlanned(slot, row))}
                   />
                   <button
                     className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
-                    disabled={isFuture}
+                    disabled={!isEditable}
                     onClick={() => openSheet(slot, row)}
                     type="button"
                   >
-                    <span className={`min-w-0 flex-1 truncate ${logged ? 'text-[#7c8]' : ''}`}>
+                    <span className={`min-w-0 flex-1 truncate ${logged ? 'text-success-secondary' : ''}`}>
                       {name}
                       {row.replaced ? (
-                        <span className="ml-1.5 rounded border border-[#34506e] px-1 py-px text-[9px] text-[#9fb0ff]">
+                        <span className="ml-1.5 rounded border border-[#34506e] px-1 py-px text-[9px] text-accent">
                           replaced
                         </span>
                       ) : null}
@@ -434,21 +440,21 @@ export default function NutritionToday() {
 
             {slot.extras.map((entry) => (
               <div
-                className="flex items-center gap-2.5 border-t border-[#202026] py-1.5 text-xs"
+                className="flex items-center gap-2.5 border-t border-border py-1.5 text-xs"
                 key={entry.id}
               >
                 <Checkbox
-                  disabled={isFuture}
+                  disabled={!isEditable}
                   on
                   onPress={() => removeEntry(entry)}
                 />
                 <button
                   className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
-                  disabled={isFuture}
+                  disabled={!isEditable}
                   onClick={() => openExtraSheet(slot, entry)}
                   type="button"
                 >
-                  <span className="min-w-0 flex-1 truncate text-[#7c8]">
+                  <span className="min-w-0 flex-1 truncate text-success-secondary">
                     {entry.food_name ?? 'Food'}
                     <span className="ml-1.5 rounded border border-[#7d5a2f] px-1 py-px text-[9px] text-warning">
                       off-plan
@@ -462,7 +468,7 @@ export default function NutritionToday() {
         ))
       )}
 
-      {!isFuture ? (
+      {isEditable ? (
         <div className="mt-1 flex items-center justify-between gap-3">
           <button
             className="flex items-center gap-1.5 text-xs font-medium text-accent active:opacity-70"
@@ -538,12 +544,11 @@ export default function NutritionToday() {
 
       {confirmSwitch ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss, the dialog has real controls */}
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop dismiss, the dialog has real controls */}
-          {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: backdrop dismiss, the dialog has real controls */}
-          <div
-            className="absolute inset-0"
+          <button
+            aria-label="Cancel meal option switch"
+            className="absolute inset-0 cursor-default"
             onClick={() => setConfirmSwitch(null)}
+            type="button"
           />
           <div
             aria-label="Confirm switch"

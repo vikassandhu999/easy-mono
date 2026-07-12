@@ -80,7 +80,7 @@ export default function VerifyLoginOtp() {
       setTokens(result);
       // Restore the path the user was trying to reach before login.
       // Falls back to Training (home) if not set or empty.
-      const target = state.redirectTo && state.redirectTo.length > 0 ? state.redirectTo : ROUTES.TRAINING;
+      const target = state.redirectTo && state.redirectTo.length > 0 ? state.redirectTo : ROUTES.TODAY;
       navigate(target, {replace: true});
     } catch (err) {
       const code = getApiErrorCode(err);

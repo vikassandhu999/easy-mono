@@ -1262,6 +1262,7 @@ export type ClientProfileFormAssignment = {
   form_template_id: string;
   id: string;
   inserted_at: string;
+  latest_submission: ClientProfileFormSubmission | null;
   latest_submission_reviewed_at: string | null;
   overdue_reminder_sent_at: string | null;
   priority: 'high' | 'normal';
@@ -1345,6 +1346,8 @@ export type ClientProfile = {
   last_name: string | null;
   phone: string | null;
   status: string;
+  subscription_ends_on: string | null;
+  subscription_started_on: string | null;
 };
 export type ClientProfileResponse = {
   data: ClientProfile;

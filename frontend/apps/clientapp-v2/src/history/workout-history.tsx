@@ -40,7 +40,7 @@ function SessionRow({session}: {session: TrainingSession}) {
       <div className="min-w-0">
         <p className="text-[10px] text-muted">{formatDayDate(session.started_at)}</p>
         <p className="mt-0.5 truncate font-semibold">{name}</p>
-        <p className="mt-0.5 text-[11px] text-[#9aa]">{stats}</p>
+        <p className="mt-0.5 text-[11px] text-muted">{stats}</p>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
         {sore ? <span className="text-lg">{sore}</span> : null}

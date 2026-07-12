@@ -1,165 +1,15 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
-/* ============================================================
-   CoachEasy Client App — HeroUI v3 Theme (Dark-First)
-   Deep Teal on Warm Dark · Inspired by Tick It Habit Tracker
-   
-   Usage:
-   1. Save as src/themes/coacheasy.css
-   2. Import in your global CSS:
-   
-      @layer theme, base, components, utilities;
-      @import "tailwindcss";
-      @import "@heroui/styles";
-      @import "./src/themes/coacheasy.css" layer(theme);
-   
-   3. Apply in your root HTML:
-      <html data-theme="coacheasy-dark" class="dark">    ← Client app (default)
-      <html data-theme="coacheasy" class="light">         ← Coach admin panel
-   ============================================================ */
+@theme inline {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
 
 @layer base {
-  /* ─────────────────────────────────────────────
-     DARK THEME (Client App Default)
-     
-     3-tier surface hierarchy (no borders, contrast only):
-     Level 0 — Page bg:    #0C1220  oklch(0.14 0.012 260)
-     Level 1 — Nav/Header:  #111827  oklch(0.18 0.012 260)
-     Level 2 — Cards:       #151D2E  oklch(0.21 0.015 258)
-     ───────────────────────────────────────────── */
-  .dark,
-  [data-theme="dark"] {
-    color-scheme: dark;
-
-    /* == Primitives == */
-    --white: oklch(100% 0 0);
-    --black: oklch(0% 0 0);
-    --snow: oklch(0.96 0.005 250);
-    /* Slightly cool white — #F1F5F9 */
-    --eclipse: oklch(0.14 0.012 260);
-    /* Page bg tone — #0C1220 */
-
-    /* == Spacing == */
-    --spacing: 0.25rem;
-
-    /* == Border == */
-    --border-width: 0px;
-    /* No visible borders — Tick It pattern */
-    --field-border-width: 1px;
-    --disabled-opacity: 0.4;
-
-    /* == Focus ring == */
-    --ring-offset-width: 2px;
-
-    /* == Cursor == */
-    --cursor-interactive: pointer;
-    --cursor-disabled: not-allowed;
-
-    /* == Radius — generous, mobile-native feel == */
-    --radius: 1rem;
-    /* 16px base — up from 12px */
-    --field-radius: calc(var(--radius) * 1);
-
-    /* ── Base Colors ── */
-    --background: oklch(0.14 0.012 260);
-    /* #0C1220 — deep navy-dark */
-    --foreground: oklch(0.96 0.005 250);
-    /* #F1F5F9 — cool white */
-
-    /* ── Surface: 3-tier dark hierarchy ── */
-    --surface: oklch(0.21 0.015 258);
-    /* #151D2E — card surface */
-    --surface-foreground: var(--foreground);
-    --surface-secondary: oklch(0.18 0.012 260);
-    /* #111827 — nav, headers */
-    --surface-secondary-foreground: var(--foreground);
-    --surface-tertiary: oklch(0.24 0.014 256);
-    /* Slightly lighter — hover states */
-    --surface-tertiary-foreground: var(--foreground);
-
-    /* ── Overlay: modals, popovers ── */
-    --overlay: oklch(0.21 0.015 258);
-    --overlay-foreground: var(--foreground);
-
-    /* ── Muted & Default ── */
-    --muted: oklch(0.55 0.015 256);
-    /* De-emphasized text */
-    --scrollbar: oklch(0.35 0.01 256);
-    --default: oklch(0.21 0.015 258);
-    /* Same as surface */
-    --default-foreground: var(--snow);
-
-    /* ── Accent: Deep Teal ── */
-    --accent: oklch(0.6002 0.1038 184.7);
-    /* #0D9488 */
-    --accent-foreground: oklch(0.98 0.01 180);
-    /* Near-white with teal tint */
-
-    /* ── Accent Soft: translucent teal glow ── */
-    --accent-soft: oklch(0.22 0.035 184);
-    /* Dark teal-tinted surface */
-    --accent-soft-foreground: oklch(0.82 0.08 178);
-    /* #5EEAD4 — bright teal text */
-
-    /* ── Form Fields ── */
-    --field-background: oklch(0.18 0.012 260);
-    /* Level 1 surface */
-    --field-foreground: var(--foreground);
-    --field-placeholder: oklch(0.45 0.01 256);
-    /* Dim placeholder */
-    --field-border: oklch(0.28 0.012 258);
-    /* Subtle field border */
-
-    /* ── Status Colors — vibrant on dark ── */
-    --success: oklch(0.72 0.19 150);
-    /* #22C55E — bright green */
-    --success-foreground: var(--eclipse);
-    --warning: oklch(0.82 0.14 76);
-    /* #FBBF24 — warm amber */
-    --warning-foreground: var(--eclipse);
-    --danger: oklch(0.64 0.21 25);
-    /* #EF4444 — red */
-    --danger-foreground: var(--snow);
-
-    /* ── Component Colors ── */
-    --segment: oklch(0.24 0.014 256);
-    --segment-foreground: var(--foreground);
-
-    /* ── Misc Colors ── */
-    --border: oklch(0.22 0.008 258);
-    /* Very subtle — near invisible */
-    --separator: oklch(0.19 0.006 258);
-    --focus: var(--accent);
-    --link: oklch(0.7 0.09 180);
-    /* Bright teal for links */
-
-    /* ── Shadows — minimal, glow-based ── */
-    --surface-shadow: 0 0 0 0 transparent;
-    --overlay-shadow: 0 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 16px 48px rgba(0, 0, 0, 0.4);
-    --field-shadow: 0 0 0 0 transparent;
-
-    /* ── Skeleton ── */
-    --skeleton-animation: shimmer;
-  }
-
-  /* ─────────────────────────────────────────────
-     LIGHT THEME (Coach Admin Panel / Optional)
-     
-     Clean, minimal, Zerodha-inspired.
-     Same teal accent, light surfaces.
-     ───────────────────────────────────────────── */
-  /* ─────────────────────────────────────────────
-     CLIENT APP THEME — dark + periwinkle-blue
-     Source of truth: docs/superpowers/specs/assets/client-{training,nutrition}.
-     bg #0c0c0e · cards #16161b · accent #6c8cff. Applied via :root (app is dark-only).
-     ───────────────────────────────────────────── */
   :root,
-  .dark,
-  [data-theme="dark"] {
-    color-scheme: dark;
-
-    /* Layout */
+  .light,
+  [data-theme="light"] {
+    color-scheme: light;
     --spacing: 0.25rem;
     --border-width: 1px;
     --field-border-width: 1px;
@@ -169,383 +19,127 @@
     --cursor-disabled: not-allowed;
     --radius: 1rem;
     --field-radius: 0.75rem;
-
-    /* Base */
-    --background: #0c0c0e;
-    --foreground: #f5f5f7;
-
-    /* Surfaces */
-    --surface: #16161b;
+    --white: #fff;
+    --black: #08080b;
+    --background: #f4f4f2;
+    --foreground: #12141a;
+    --surface: #fff;
     --surface-foreground: var(--foreground);
-    --surface-secondary: #1a1a1f;
+    --surface-secondary: #f6f7f9;
     --surface-secondary-foreground: var(--foreground);
-    --surface-tertiary: #202028;
+    --surface-tertiary: #fafbfc;
     --surface-tertiary-foreground: var(--foreground);
-
-    /* Overlay */
-    --overlay: #16161b;
+    --overlay: #fff;
     --overlay-foreground: var(--foreground);
-
-    /* Muted & default */
-    --muted: #9499a3;
-    --scrollbar: #34343d;
-    --default: #1a1a1f;
+    --muted: #767b85;
+    --scrollbar: #c3c7ce;
+    --default: #f6f7f9;
     --default-foreground: var(--foreground);
-
-    /* Accent — periwinkle-blue */
-    --accent: #6c8cff;
-    --accent-foreground: #06122e;
-    --accent-soft: #1a2440;
-    --accent-soft-foreground: #9fb0ff;
-
-    /* Form fields */
-    --field-background: #0c0c0e;
+    --accent: #0485f7;
+    --accent-foreground: #fff;
+    --accent-soft: #eef4fb;
+    --accent-soft-foreground: #0d3d6b;
+    --field-background: #fff;
     --field-foreground: var(--foreground);
-    --field-placeholder: #5b5b63;
-    --field-border: #34343d;
-
-    /* Status */
-    --success: #3ad07a;
-    --success-foreground: #06200f;
-    --warning: #e0a14d;
-    --warning-foreground: #0c0c0e;
-    --danger: #e0524d;
-    --danger-foreground: #ffffff;
-
-    /* Component */
-    --segment: #1a1a1f;
+    --field-placeholder: #9498a1;
+    --field-border: #e6e8ec;
+    --success: #17a768;
+    --success-foreground: #fff;
+    --success-secondary: #127c4e;
+    --success-border: #b9e2cc;
+    --warning: #b8770f;
+    --warning-foreground: #12141a;
+    --danger: #c0392b;
+    --danger-foreground: #fff;
+    --segment: #f6f7f9;
     --segment-foreground: var(--foreground);
-
-    /* Misc */
-    --border: #2a2a31;
-    --separator: #1f1f25;
-    --focus: var(--accent);
-    --link: var(--accent);
-
-    /* Shadows */
-    --surface-shadow: 0 0 0 0 transparent;
-    --overlay-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-    --field-shadow: 0 0 0 0 transparent;
-
+    --border: #ececef;
+    --separator: #f0f0ee;
+    --focus: #0485f7;
+    --link: #0485f7;
+    --surface-shadow: 0 10px 24px -18px rgba(18, 20, 26, 0.28);
+    --overlay-shadow: 0 24px 60px -18px rgba(8, 8, 11, 0.35);
+    --field-shadow: none;
     --skeleton-animation: shimmer;
+    --ink-card: #121419;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(4, 133, 247, 0.14);
   }
 }
 
-/* ============================================================
-   COMPONENT OVERRIDES — Dark-First Patterns
-   ============================================================ */
-
 @layer components {
-  /* ── Buttons: solid teal, no gradient (restraint) ── */
   .button {
-    @apply font-semibold;
-    transition: all 0.2s ease;
+    font-weight: 700;
   }
 
   .button--primary {
-    border-radius: calc(var(--radius) * 0.875);
+    border-radius: 0.8125rem;
   }
 
-  .button--primary:hover,
-  .button--primary[data-hovered="true"] {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px oklch(0.6002 0.1038 184.7 / 0.35);
+  .button:active,
+  button:active,
+  a:active {
+    transform: scale(0.98);
   }
 
-  .button--primary:active,
-  .button--primary[data-pressed="true"] {
-    transform: translateY(0) scale(0.97);
-    box-shadow: none;
-  }
-
-  /* ── Cards: borderless, surface-contrast only ── */
   .card {
-    border-radius: calc(var(--radius) * 1.25);
-    border: none;
-    transition: background 0.15s ease;
-  }
-
-  [data-theme="coacheasy-dark"] .card:hover,
-  .dark .card:hover {
-    background: var(--surface-tertiary);
-  }
-
-  /* ── Inputs: subtle dark fields with teal focus ── */
-  .input__wrapper {
-    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    box-shadow: none;
   }
 
   .input__wrapper:focus-within,
   .input__wrapper[data-focused="true"] {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px oklch(0.6002 0.1038 184.7 / 0.15);
+    box-shadow: 0 0 0 3px rgba(4, 133, 247, 0.14);
   }
 
-  /* ── Modal: extra rounded, dark glass ── */
   .modal {
-    border-radius: calc(var(--radius) * 1.5);
+    border-radius: 1.75rem 1.75rem 0 0;
   }
 
-  /* ── Tabs: pill-style, surface-colored ── */
   .tabs__tab-list {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
     background: var(--surface-secondary);
-    border-radius: var(--radius);
     padding: 3px;
   }
 
   .tabs__tab--selected {
+    border-radius: 0.625rem;
     background: var(--surface);
-    border-radius: calc(var(--radius) * 0.75);
-  }
-
-  /* ── Bottom nav ── */
-  .nav-bottom {
-    background: var(--surface-secondary);
-    border-top: 0.5px solid oklch(1 0 0 / 0.04);
-    padding: 8px 0 max(env(safe-area-inset-bottom), 14px);
-  }
-
-  .nav-bottom__item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--muted);
-    transition: color 0.15s ease;
-  }
-
-  .nav-bottom__item--active {
-    color: var(--accent);
-  }
-
-  /* ── Chip / Badge ── */
-  .chip {
-    border-radius: calc(var(--radius) * 2);
-    font-weight: 600;
-    letter-spacing: 0.01em;
   }
 }
 
-/* ============================================================
-   CUSTOM UTILITIES — Client App Specific
-   ============================================================ */
-
-@layer utilities {
-  /* ── Hero workout card: translucent teal glow ── */
-  .card-hero-workout {
-    background: linear-gradient(135deg, oklch(0.6002 0.1038 184.7 / 0.2), oklch(0.5109 0.0861 186.39 / 0.1));
-    border: 0.5px solid oklch(0.6002 0.1038 184.7 / 0.25);
-    border-radius: calc(var(--radius) * 1.25);
-  }
-
-  /* ── Progress bar base ── */
-  .progress-track {
-    height: 4px;
-    background: oklch(1 0 0 / 0.06);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .progress-fill-teal {
-    height: 100%;
-    background: linear-gradient(90deg, oklch(0.6002 0.1038 184.7), oklch(0.5109 0.0861 186.39));
-    border-radius: 2px;
-    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .progress-fill-blue {
-    height: 100%;
-    background: oklch(0.588 0.158 254);
-    border-radius: 2px;
-  }
-
-  .progress-fill-amber {
-    height: 100%;
-    background: oklch(0.7686 0.1647 70);
-    border-radius: 2px;
-  }
-
-  .progress-fill-red {
-    height: 100%;
-    background: oklch(0.6368 0.2078 25);
-    border-radius: 2px;
-  }
-
-  .progress-fill-green {
-    height: 100%;
-    background: oklch(0.72 0.19 150);
-    border-radius: 2px;
-  }
-
-  /* ── Set tracking dots ── */
-  .dot-done {
-    background: oklch(0.6002 0.1038 184.7);
-    color: white;
-  }
-
-  .dot-current {
-    background: oklch(0.6002 0.1038 184.7 / 0.2);
-    border: 1.5px solid oklch(0.6002 0.1038 184.7);
-    color: oklch(0.6002 0.1038 184.7);
-  }
-
-  .dot-pending {
-    background: oklch(1 0 0 / 0.05);
-    color: oklch(1 0 0 / 0.15);
-  }
-
-  /* ── Streak dots ── */
-  .streak-done {
-    background: oklch(0.6002 0.1038 184.7);
-    color: white;
-  }
-
-  .streak-today {
-    background: linear-gradient(135deg, oklch(0.6002 0.1038 184.7), oklch(0.5109 0.0861 186.39));
-    color: white;
-    border: 2px solid oklch(0.82 0.08 178 / 0.3);
-  }
-
-  .streak-rest {
-    background: oklch(0.7686 0.1647 70 / 0.15);
-    color: oklch(0.7686 0.1647 70);
-  }
-
-  .streak-future {
-    background: oklch(1 0 0 / 0.05);
-    color: oklch(1 0 0 / 0.15);
-  }
-
-  /* ── Status pills ── */
-  .pill-logged {
-    background: oklch(0.72 0.19 150 / 0.12);
-    color: oklch(0.75 0.17 150);
-  }
-
-  .pill-pending {
-    background: oklch(1 0 0 / 0.05);
-    color: oklch(1 0 0 / 0.25);
-  }
-
-  .pill-active {
-    background: oklch(0.6002 0.1038 184.7 / 0.15);
-    color: oklch(0.82 0.08 178);
-  }
-
-  /* ── Coach note card ── */
-  .card-coach-note {
-    background: oklch(0.6002 0.1038 184.7 / 0.08);
-    border: 0.5px solid oklch(0.6002 0.1038 184.7 / 0.15);
-    border-radius: calc(var(--radius) * 1);
-  }
-
-  /* ── Chat bubbles ── */
-  .chat-coach {
-    background: oklch(0.21 0.015 258);
-    color: var(--foreground);
-    border-radius: 16px 16px 16px 4px;
-  }
-
-  .chat-client {
-    background: oklch(0.6002 0.1038 184.7);
-    color: white;
-    border-radius: 16px 16px 4px 16px;
-  }
-
-  /* ── Macro color system ── */
-  .macro-teal {
-    border-color: oklch(0.6002 0.1038 184.7);
-    background: oklch(0.6002 0.1038 184.7 / 0.1);
-  }
-
-  .macro-blue {
-    border-color: oklch(0.588 0.158 254);
-    background: oklch(0.588 0.158 254 / 0.1);
-  }
-
-  .macro-amber {
-    border-color: oklch(0.7686 0.1647 70);
-    background: oklch(0.7686 0.1647 70 / 0.1);
-  }
-
-  .macro-red {
-    border-color: oklch(0.6368 0.2078 25);
-    background: oklch(0.6368 0.2078 25 / 0.1);
-  }
-
-  /* ── Divider — extremely subtle ── */
-  .divider-subtle {
-    height: 0.5px;
-    background: oklch(1 0 0 / 0.06);
-  }
-}
-
-/* ============================================================
-   FONT CONFIGURATION
-   
-   Plus Jakarta Sans — geometric, slightly rounded, premium.
-   
-   Add to HTML <head>:
-   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-   ============================================================ */
-
-@theme inline {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-}
-
-/* ============================================================
-   DARK MODE COLOR REFERENCE
-   
-   Surface Hierarchy:
-   ┌─────────────────────────────────────────────┐
-   │  Level 0 — Page bg      #0C1220  0.14       │
-   │  ┌─────────────────────────────────────────┐ │
-   │  │  Level 1 — Nav        #111827  0.18     │ │
-   │  │  ┌─────────────────────────────────────┐│ │
-   │  │  │  Level 2 — Cards   #151D2E  0.21    ││ │
-   │  │  │  ┌─────────────────────────────────┐││ │
-   │  │  │  │  Level 3 — Hover #1C2438  0.24  │││ │
-   │  │  │  └─────────────────────────────────┘││ │
-   │  │  └─────────────────────────────────────┘│ │
-   │  └─────────────────────────────────────────┘ │
-   └─────────────────────────────────────────────┘
-
-   Text Hierarchy:
-   Bright   100%   oklch(0.96 0.005 250)    Headings, numbers
-   Body      70%   oklch(0.96 0.005 250/0.7) Paragraph text
-   Muted     45%   oklch(0.96 0.005 250/0.45) Labels, secondary
-   Hint      25%   oklch(0.96 0.005 250/0.25) Disabled, placeholder
-
-   Accent Palette:
-   Teal primary     #0D9488  oklch(0.6002 0.1038 184.7)
-   Teal bright      #5EEAD4  oklch(0.82 0.08 178)
-   Teal glow (20%)  rgba(13,148,136,0.2)
-   Teal border (25%) rgba(13,148,136,0.25)
-
-   Category Colors:
-   Workout/Teal     oklch(0.6002 0.1038 184.7)
-   Water/Blue       oklch(0.588 0.158 254)      #3B82F6
-   Protein/Blue     oklch(0.588 0.158 254)      #3B82F6
-   Carbs/Amber      oklch(0.7686 0.1647 70)     #F59E0B
-   Fats/Red         oklch(0.6368 0.2078 25)     #EF4444
-   Completed/Green  oklch(0.72 0.19 150)        #22C55E
-   Rest day/Amber   oklch(0.7686 0.1647 70)     #FBBF24
-   ============================================================ */
-
-html,
-body,
-#root {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  background-color: var(--color-background);
-}
-
-/* Hide scrollbar but keep scrollability */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -553,4 +147,14 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+@layer utilities {
+  .rounded-xl {
+    border-radius: 1rem;
+  }
+
+  .rounded-2xl {
+    border-radius: 1.25rem;
+  }
 }

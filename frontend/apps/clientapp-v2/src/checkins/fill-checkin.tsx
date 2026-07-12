@@ -14,6 +14,7 @@ import {
 import {useGetClientProfileQuery} from '@/api/profile';
 import CheckinField, {type AnswerValue, type CheckinQuestion} from '@/checkins/checkin-field';
 import type {PhotoUploadState} from '@/checkins/photo-answer-field';
+import useAttachmentDownloadUrls from '@/messages/use-attachment-download-urls';
 
 type Section = {questions?: CheckinQuestion[]; title?: string};
 
@@ -149,6 +150,24 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
 
 function CompletedState({assignment}: {assignment: ClientProfileFormAssignment}) {
   const navigate = useNavigate();
+  const submission = assignment.latest_submission;
+  const photoIds = submission?.attachments.map((attachment) => attachment.id) ?? [];
+  const {urls: photoUrls} = useAttachmentDownloadUrls(photoIds);
+  const sections = submission?.question_snapshot ?? [];
+
+  const formatAnswer = (question: CheckinQuestion, answer: unknown) => {
+    if (question.type === 'boolean') {
+      return answer === true ? 'Yes' : 'No';
+    }
+    if (Array.isArray(answer)) {
+      return answer.join(', ');
+    }
+    if (question.type === 'weight' && (typeof answer === 'number' || typeof answer === 'string')) {
+      return `${answer} kg`;
+    }
+    return String(answer ?? 'Not answered');
+  };
+
   return (
     <PageLayout title={assignment.form_template?.name ?? 'Check-in'}>
       <div className="max-w-lg">
@@ -167,6 +186,53 @@ function CompletedState({assignment}: {assignment: ClientProfileFormAssignment})
               : 'Thanks — your coach has your answers.'}
           </p>
         </div>
+        {submission ? (
+          <div className="mt-4 space-y-4 rounded-xl border border-border bg-surface p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-extrabold">Your answers</h3>
+              <span className="text-[11px] font-semibold text-muted">
+                {submission.reviewed_at ? 'Reviewed by your coach' : 'Awaiting coach review'}
+              </span>
+            </div>
+            {sections
+              .flatMap((section) => section.questions)
+              .map((question) => {
+                const answer = submission.answers[question.id];
+                const ids = question.type === 'photo' && Array.isArray(answer) ? answer.map(String) : [];
+                return (
+                  <div
+                    className="border-t border-separator pt-3 first:border-0 first:pt-0"
+                    key={question.id}
+                  >
+                    <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{question.label}</p>
+                    {ids.length > 0 ? (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {ids.map((id) =>
+                          photoUrls[id] ? (
+                            <img
+                              alt="Check-in upload"
+                              className="aspect-[3/4] w-full rounded-xl object-cover"
+                              key={id}
+                              src={photoUrls[id]}
+                            />
+                          ) : (
+                            <div
+                              className="grid aspect-[3/4] place-items-center rounded-xl bg-surface-secondary text-xs text-muted"
+                              key={id}
+                            >
+                              Loading photo…
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-sm font-semibold">{formatAnswer(question, answer)}</p>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        ) : null}
       </div>
     </PageLayout>
   );

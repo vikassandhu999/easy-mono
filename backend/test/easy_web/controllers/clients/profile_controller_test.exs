@@ -14,6 +14,8 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
           first_name: "Vikas",
           last_name: "Kumar",
           phone: "+91 98765 43210",
+          subscription_started_on: ~D[2026-07-01],
+          subscription_ends_on: ~D[2026-09-30],
           status: :active
         )
 
@@ -33,6 +35,8 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["goal_weight_unit"] == nil
       assert data["default_weight_unit"] == "kg"
       assert data["status"] == "active"
+      assert data["subscription_started_on"] == "2026-07-01"
+      assert data["subscription_ends_on"] == "2026-09-30"
       refute Map.has_key?(data, "business_id")
 
       assert %{

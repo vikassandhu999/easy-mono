@@ -1,4 +1,5 @@
 import {Avatar, Button, Separator, Spinner} from '@heroui/react';
+import {ArrowLeft} from 'lucide-react';
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -146,6 +147,44 @@ function CoachSection({coach}: {coach: ClientCoach}) {
   );
 }
 
+function MembershipSection({profile}: {profile: ClientProfile}) {
+  const active = profile.status === 'active';
+  const formatDate = (value: null | string) =>
+    value
+      ? new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {day: 'numeric', month: 'short', year: 'numeric'})
+      : '—';
+  return (
+    <section className="mt-6">
+      <SectionHeading title="Membership" />
+      <div className="overflow-hidden rounded-[20px] border border-border bg-surface">
+        <div className="flex items-center gap-3 p-4">
+          <span className="min-w-0 flex-1 text-sm font-extrabold">
+            Coaching with {getFullName(profile.coach.first_name, profile.coach.last_name) || 'your coach'}
+          </span>
+          <span
+            className={`rounded-lg border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.04em] ${active ? 'border-success-border bg-[#eaf7f0] text-success-secondary' : 'border-border bg-surface-secondary text-muted'}`}
+          >
+            {profile.status.replaceAll('_', ' ')}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 border-t border-separator">
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted">Started</p>
+            <p className="mt-1 text-sm font-semibold">{formatDate(profile.subscription_started_on)}</p>
+          </div>
+          <div className="border-l border-separator px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted">Access through</p>
+            <p className="mt-1 text-sm font-semibold">{formatDate(profile.subscription_ends_on)}</p>
+          </div>
+        </div>
+        <p className="border-t border-separator px-4 py-3 text-[11px] leading-[1.5] text-muted">
+          Your seat is managed by your coach. Questions about access or billing? Message them directly.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function AccountSection({email}: {email: null | string}) {
   return (
     <section className="mt-6">
@@ -208,12 +247,26 @@ export default function Settings() {
   const profile = data.data;
 
   return (
-    <PageLayout title="Settings">
+    <PageLayout
+      action={
+        <Button
+          aria-label="Back"
+          isIconOnly
+          onPress={() => navigate(-1)}
+          size="sm"
+          variant="ghost"
+        >
+          <ArrowLeft size={18} />
+        </Button>
+      }
+      title="Settings"
+    >
       <div className="max-w-lg">
         <ProfileSection
           onUpdate={updateProfile}
           profile={profile}
         />
+        <MembershipSection profile={profile} />
         <CoachSection coach={profile.coach} />
         <AccountSection email={profile.email} />
 

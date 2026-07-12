@@ -3,9 +3,10 @@
  * goal, a log-weight sheet, and a recent-entries list. No mockup; follows the
  * dark + periwinkle patterns from Training/Nutrition. (Photos deferred — no photo API.)
  */
-import {Spinner} from '@heroui/react';
-import {Plus, Trash2, TrendingUp} from 'lucide-react';
+import {Button, Spinner} from '@heroui/react';
+import {ArrowLeft, Plus, Trash2, TrendingUp} from 'lucide-react';
 import {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {asGoal, useDeleteWeightEntryMutation, useListWeightEntriesQuery, type WeightEntry} from '@/api/progress';
@@ -30,6 +31,7 @@ function LogButton({onPress, label}: {label: string; onPress: () => void}) {
 }
 
 export default function ProgressHome() {
+  const navigate = useNavigate();
   const {data, isLoading, isError, refetch} = useListWeightEntriesQuery({});
   const [deleteEntry] = useDeleteWeightEntryMutation();
   const [sheet, setSheet] = useState(false);
@@ -80,7 +82,20 @@ export default function ProgressHome() {
   }
 
   return (
-    <PageLayout title="Progress">
+    <PageLayout
+      action={
+        <Button
+          aria-label="Back"
+          isIconOnly
+          onPress={() => navigate(-1)}
+          size="sm"
+          variant="ghost"
+        >
+          <ArrowLeft size={18} />
+        </Button>
+      }
+      title="Progress"
+    >
       {entries.length === 0 ? (
         <div className="rounded-2xl border border-border bg-surface p-6 text-center">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-accent/10">

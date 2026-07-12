@@ -186,5 +186,11 @@
   },
   "css": {"parser": {"tailwindDirectives": true}, "formatter": null, "linter": null, "assist": null},
   "html": {"formatter": {"indentScriptAndStyle": false, "selfCloseVoidElements": "always"}},
+  "overrides": [
+    {
+      "includes": ["**/src/api/generated.ts"],
+      "linter": {"rules": {"complexity": {"useLiteralKeys": "off"}}}
+    }
+  ],
   "assist": {"enabled": true, "actions": {"source": {"organizeImports": "on"}}}
 }

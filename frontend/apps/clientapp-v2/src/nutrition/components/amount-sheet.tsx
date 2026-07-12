@@ -117,19 +117,20 @@ export default function AmountSheet({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60">
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss, the sheet has real controls */}
-      <div
-        className="flex-1"
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-[rgba(8,8,11,0.5)]">
+      <button
+        aria-label="Close amount sheet"
+        className="flex-1 cursor-default"
         onClick={onClose}
+        type="button"
       />
       <div
         aria-label={`Adjust ${target.name}`}
         aria-modal="true"
-        className="rounded-t-2xl border-t border-[#34343d] bg-surface p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-12px_30px_rgba(0,0,0,0.5)]"
+        className="rounded-t-[28px] bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-[0_-18px_50px_rgba(8,8,11,0.22)]"
         role="dialog"
       >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#444]" />
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#c3c7ce]" />
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="min-w-0 truncate font-semibold">{target.name}</span>
           <span className="shrink-0 text-[11px] text-muted">{target.slotLabel}</span>
@@ -139,7 +140,7 @@ export default function AmountSheet({
           <button
             aria-pressed={!free}
             className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium ${
-              !free ? 'border-accent bg-[#1d2030] text-[#9fb0ff]' : 'border-border text-muted'
+              !free ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'
             }`}
             onClick={() => {
               setFree(false);
@@ -152,7 +153,7 @@ export default function AmountSheet({
           <button
             aria-pressed={free}
             className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium ${
-              free ? 'border-accent bg-[#1d2030] text-[#9fb0ff]' : 'border-border text-muted'
+              free ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'
             }`}
             onClick={() => setFree(true)}
             type="button"
@@ -161,7 +162,7 @@ export default function AmountSheet({
           </button>
         </div>
 
-        <label className="mb-2.5 block rounded-[10px] border border-accent bg-[#10131f] px-3 py-2 text-center">
+        <label className="mb-2.5 block rounded-[10px] border border-accent bg-surface-secondary px-3 py-2 text-center">
           <span className="block text-[8px] uppercase tracking-wider text-muted">Amount</span>
           <span className="flex items-baseline justify-center gap-1">
             <input
@@ -177,19 +178,19 @@ export default function AmountSheet({
         </label>
 
         {m ? (
-          <div className="mb-3 flex items-center justify-between rounded-[10px] border border-[#2c3350] bg-[#10131f] px-3 py-2">
+          <div className="mb-3 flex items-center justify-between rounded-[10px] border border-border bg-surface-secondary px-3 py-2">
             <span>
               <span className="block text-[10px] text-muted">eaten →</span>
               <span className="font-bold">{Math.round(m.cal)} kcal</span>
             </span>
-            <span className="text-[10px] text-[#9fb0ff]">
+            <span className="text-[10px] text-accent">
               {Math.round(m.p)}P · {Math.round(m.c)}C · {Math.round(m.f)}F
             </span>
           </div>
         ) : null}
 
         <button
-          className="mb-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-success py-3 text-[15px] font-extrabold text-success-foreground transition-opacity active:opacity-90 disabled:opacity-50"
+          className="mb-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-[13px] bg-accent py-3 text-[15px] font-extrabold text-white disabled:opacity-50"
           disabled={busy}
           onClick={logIt}
           type="button"
@@ -198,7 +199,7 @@ export default function AmountSheet({
         </button>
         <div className="flex gap-2">
           <button
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[#34343d] py-2.5 text-xs font-semibold text-[#cbd2e6] active:bg-surface-secondary disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary disabled:opacity-50"
             disabled={busy}
             onClick={() => onReplace(target)}
             type="button"
@@ -207,7 +208,7 @@ export default function AmountSheet({
           </button>
           {loggedEntry ? (
             <button
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[#34343d] py-2.5 text-xs font-semibold text-[#cbd2e6] active:bg-surface-secondary disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary disabled:opacity-50"
               disabled={busy}
               onClick={notEaten}
               type="button"

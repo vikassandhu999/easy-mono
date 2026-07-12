@@ -45,6 +45,42 @@ defmodule EasyWeb.Clients.FormAssignmentControllerTest do
       assert data["client_id"] == client.id
     end
 
+    test "returns the latest completed submission with its answer snapshot" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: coach.business)
+
+      assignment =
+        insert(:form_assignment,
+          business: coach.business,
+          client: client,
+          form_template: template,
+          status: :completed,
+          completed_at: DateTime.utc_now(:second)
+        )
+
+      submission =
+        insert(:form_submission,
+          business: coach.business,
+          client: client,
+          form_assignment: assignment,
+          question_snapshot: template.sections,
+          answers: %{"meal_prep_ability" => "high"}
+        )
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> get("/v1/client/form-assignments/#{assignment.id}")
+
+      assert %{"data" => %{"latest_submission" => latest}} = json_response(conn, 200)
+      assert latest["id"] == submission.id
+      assert latest["answers"] == %{"meal_prep_ability" => "high"}
+      assert latest["question_snapshot"] == template.sections
+      assert latest["attachments"] == []
+      assert_schema(latest, "ClientProfileFormSubmission", EasyWeb.ApiSpec.spec())
+    end
+
     test "does not return another client's assignment" do
       coach = insert(:coach)
       client = insert(:client, business: coach.business, creator: coach, user: insert(:user))

@@ -1,4 +1,4 @@
-import {Button} from '@heroui/react';
+import {Button, toast} from '@heroui/react';
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
@@ -23,6 +23,13 @@ export function AwaitingSeatScreen() {
     navigate(ROUTES.LOGIN);
   }, [navigate]);
 
+  const handleCheck = async () => {
+    const result = await refetch();
+    if (result.data?.data.status === 'active') {
+      toast.success('Seat activated — welcome in!');
+    }
+  };
+
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background px-6 text-center">
       {businessName ? <p className="text-sm font-semibold text-muted">{businessName}</p> : null}
@@ -31,7 +38,7 @@ export function AwaitingSeatScreen() {
       <div className="mt-4 flex gap-3">
         <Button
           isPending={isFetching}
-          onPress={() => refetch()}
+          onPress={handleCheck}
           size="sm"
           variant="secondary"
         >

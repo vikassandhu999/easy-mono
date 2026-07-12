@@ -21,19 +21,20 @@ export default function OptionSheet({
   slotLabel: string;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60">
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss, the sheet has real controls */}
-      <div
-        className="flex-1"
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-[rgba(8,8,11,0.5)]">
+      <button
+        aria-label="Close option sheet"
+        className="flex-1 cursor-default"
         onClick={onClose}
+        type="button"
       />
       <div
         aria-label={`Choose ${slotLabel} option`}
         aria-modal="true"
-        className="rounded-t-2xl border-t border-[#34343d] bg-surface p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-12px_30px_rgba(0,0,0,0.5)]"
+        className="rounded-t-[28px] bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-[0_-18px_50px_rgba(8,8,11,0.22)]"
         role="dialog"
       >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#444]" />
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#c3c7ce]" />
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="min-w-0 truncate font-semibold">Choose option</span>
           <span className="shrink-0 text-[11px] text-muted">{slotLabel}</span>
@@ -46,7 +47,7 @@ export default function OptionSheet({
               <button
                 aria-pressed={active}
                 className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm ${
-                  active ? 'border-accent bg-[#1d2030]' : 'border-border'
+                  active ? 'border-accent bg-accent-soft' : 'border-border'
                 }`}
                 key={option.meal_id}
                 onClick={() => onSelect(option)}

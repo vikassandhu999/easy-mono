@@ -4213,6 +4213,20 @@
             "type": "string",
             "x-struct": null,
             "x-validate": null
+          },
+          "subscription_ends_on": {
+            "format": "date",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "subscription_started_on": {
+            "format": "date",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [
@@ -4224,6 +4238,8 @@
           "goal_weight_value",
           "goal_weight_unit",
           "default_weight_unit",
+          "subscription_started_on",
+          "subscription_ends_on",
           "status",
           "coach"
         ],
@@ -7296,6 +7312,16 @@
             "x-struct": null,
             "x-validate": null
           },
+          "latest_submission": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ClientProfileFormSubmission"
+              }
+            ],
+            "x-struct": null,
+            "x-validate": null
+          },
           "latest_submission_reviewed_at": {
             "format": "date-time",
             "nullable": true,
@@ -7359,6 +7385,7 @@
           "completed_at",
           "due_reminder_sent_at",
           "overdue_reminder_sent_at",
+          "latest_submission",
           "latest_submission_reviewed_at",
           "form_template",
           "inserted_at",

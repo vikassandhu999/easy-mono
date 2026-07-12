@@ -115,6 +115,7 @@ defmodule Easy.Forms do
         |> include_submission_reviews(ctx.business_id)
         |> order_by([a, _t], asc: a.inserted_at)
         |> Repo.all()
+        |> attach_assignment_submission_attachments(ctx.business_id)
         |> put_latest_submission_reviews()
 
       {:ok, assignments}
@@ -132,6 +133,7 @@ defmodule Easy.Forms do
         |> include_submission_reviews(ctx.business_id)
         |> order_by([a, _t], asc: a.inserted_at)
         |> Repo.all()
+        |> attach_assignment_submission_attachments(ctx.business_id)
         |> put_latest_submission_reviews()
 
       {:ok, assignments}
@@ -301,6 +303,7 @@ defmodule Easy.Forms do
       |> include_form_template(ctx.business_id)
       |> include_submission_reviews(ctx.business_id)
       |> Repo.get(assignment_id)
+      |> attach_assignment_submission_attachments(ctx.business_id)
       |> put_latest_submission_review()
       |> ok_or_not_found()
     end
@@ -449,6 +452,26 @@ defmodule Easy.Forms do
         |> Enum.reject(&is_nil/1)
 
       %{submission | attachments: attachments}
+    end)
+  end
+
+  defp attach_assignment_submission_attachments(nil, _business_id), do: nil
+
+  defp attach_assignment_submission_attachments(%FormAssignment{} = assignment, business_id) do
+    [assignment]
+    |> attach_assignment_submission_attachments(business_id)
+    |> List.first()
+  end
+
+  defp attach_assignment_submission_attachments(assignments, business_id) when is_list(assignments) do
+    submissions =
+      assignments
+      |> Enum.flat_map(& &1.form_submissions)
+      |> attach_submission_attachments(business_id)
+      |> Enum.group_by(& &1.form_assignment_id)
+
+    Enum.map(assignments, fn assignment ->
+      %{assignment | form_submissions: Map.get(submissions, assignment.id, [])}
     end)
   end
 
@@ -843,7 +866,13 @@ defmodule Easy.Forms do
 
   defp put_latest_submission_review(%FormAssignment{form_submissions: submissions} = assignment)
        when is_list(submissions) do
-    %{assignment | latest_submission_reviewed_at: submissions |> List.first() |> submission_reviewed_at()}
+    latest_submission = List.first(submissions)
+
+    %{
+      assignment
+      | latest_submission: latest_submission,
+        latest_submission_reviewed_at: submission_reviewed_at(latest_submission)
+    }
   end
 
   defp put_latest_submission_review(%FormAssignment{} = assignment), do: assignment

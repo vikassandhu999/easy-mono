@@ -1,5 +1,5 @@
 import {Button, Toast} from '@heroui/react';
-import {ClipboardCheck, Dumbbell, MessageCircle, Settings, TrendingUp, UtensilsCrossed} from 'lucide-react';
+import {CalendarDays, ClipboardCheck, Dumbbell, MessageCircle, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 
@@ -34,12 +34,11 @@ function UnreadBadge() {
 
 // Mobile tab bar — the only nav. Client app is mobile-only (Capacitor); no desktop sidebar.
 const BOTTOM_NAV: NavItem[] = [
-  {icon: <Dumbbell size={ICON_SIZE} />, label: 'Training', path: ROUTES.TRAINING},
-  {icon: <UtensilsCrossed size={ICON_SIZE} />, label: 'Nutrition', path: ROUTES.NUTRITION},
-  {icon: <TrendingUp size={ICON_SIZE} />, label: 'Progress', path: ROUTES.PROGRESS},
+  {icon: <CalendarDays size={ICON_SIZE} />, label: 'Today', path: ROUTES.TODAY},
+  {icon: <Dumbbell size={ICON_SIZE} />, label: 'Train', path: ROUTES.TRAINING},
+  {icon: <UtensilsCrossed size={ICON_SIZE} />, label: 'Eat', path: ROUTES.NUTRITION},
   {icon: <ClipboardCheck size={ICON_SIZE} />, label: 'Check-ins', path: ROUTES.CHECKINS},
   {badge: <UnreadBadge />, icon: <MessageCircle size={ICON_SIZE} />, label: 'Coach', path: ROUTES.MESSAGES},
-  {icon: <Settings size={ICON_SIZE} />, label: 'Settings', path: ROUTES.SETTINGS},
 ];
 
 function BottomNavItem({item}: {item: NavItem}) {
@@ -47,7 +46,7 @@ function BottomNavItem({item}: {item: NavItem}) {
     <NavLink
       className={({isActive}) =>
         `relative flex min-h-12 min-w-12 flex-1 flex-col items-center justify-center gap-1 text-[10px] ${
-          isActive ? 'font-semibold text-accent' : 'font-medium text-muted active:text-foreground'
+          isActive ? 'font-extrabold text-accent' : 'font-semibold text-muted active:text-foreground'
         }`
       }
       // `end` for root path so `/` doesn't match every nested route.
@@ -56,7 +55,6 @@ function BottomNavItem({item}: {item: NavItem}) {
     >
       {({isActive}) => (
         <>
-          {isActive ? <span className="absolute top-0 h-0.5 w-6 rounded-full bg-accent" /> : null}
           {item.icon}
           <span>{item.label}</span>
           {item.badge}
@@ -131,7 +129,7 @@ export default function AppShell() {
 
       {/* Mobile tab bar — only on top-level pages */}
       {showTabBar ? (
-        <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-lg items-stretch justify-around border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
+        <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-lg items-stretch justify-around border-t border-border bg-[rgba(255,255,255,0.96)] pb-[env(safe-area-inset-bottom)] backdrop-blur-[10px]">
           <div className="flex h-16 w-full items-stretch justify-around">
             {BOTTOM_NAV.map((item) => (
               <BottomNavItem

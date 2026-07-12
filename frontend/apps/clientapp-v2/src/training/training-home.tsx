@@ -1,23 +1,10 @@
-/**
- * Training home — lean today-launcher (spec: assets/client-training/01-home.html, option A).
- * Hero with the day's workout + in-card Start, a week strip, and a History link.
- * Dark + periwinkle. New schema: plan_items = schedule entries (one per day_of_week,
- * missing day = rest); session.state 'active' drives the resume banner.
- */
-import {
-  getTrainingWeekdayFromDate,
-  TRAINING_DAY_LABELS,
-  TRAINING_DAY_SHORT_LABELS,
-  TRAINING_WEEKDAYS,
-  type TrainingWeekday,
-} from '@easy/utils';
+import {TRAINING_DAY_LABELS, type TrainingWeekday} from '@easy/utils';
 import {Spinner} from '@heroui/react';
-import {Activity, ChevronRight, Play} from 'lucide-react';
+import {Activity, ChevronRight, Eye, Play} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useGetClientProfileQuery} from '@/api/profile';
 import {
   type ClientTrainingPlan,
   type TrainingPlanWorkout,
@@ -26,108 +13,130 @@ import {
   useListClientTrainingPlansQuery,
   useListClientTrainingSessionsQuery,
 } from '@/api/training';
-import CheckinNudgeCard from '@/checkins/checkin-nudge-card';
-import IntakeCard from '@/checkins/intake-card';
+import {
+  currentPlanWeek,
+  currentWeekDates,
+  estimatedMinutes,
+  todayWorkout,
+  totalSets,
+  workoutForDay,
+  workoutPreviewPath,
+} from '@/training/training-utils';
+import {formatDayDate, snapshotOf} from '@/workout/session-utils';
 
-function workoutForDay(plan: ClientTrainingPlan, day: TrainingWeekday): TrainingPlanWorkout | null {
-  const item = plan.plan_items.find((i) => i.day_of_week === day);
-  if (!item) {
-    return null;
-  }
-  return plan.workouts.find((w) => w.id === item.training_workout_id) ?? null;
-}
-
-function estMinutes(workout: TrainingPlanWorkout): null | number {
-  let seconds = 0;
-  for (const el of workout.workout_elements) {
-    for (const set of el.planned_sets) {
-      seconds += (set.duration_seconds ?? 45) + (set.rest_seconds ?? 75);
-    }
-  }
-  if (seconds <= 0) {
-    return null;
-  }
-  return Math.max(15, Math.round(seconds / 300) * 5);
-}
-
-function StartButton({label, onPress, disabled}: {disabled?: boolean; label: string; onPress: () => void}) {
+function ResumeBanner({session, onResume}: {onResume: () => void; session: TrainingSession}) {
   return (
     <button
-      className="mt-3.5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent py-3 font-bold text-accent-foreground transition-opacity active:opacity-90 disabled:opacity-50"
-      disabled={disabled}
-      onClick={onPress}
+      className="mb-3.5 flex w-full items-center gap-3 rounded-[20px] bg-[var(--ink-card)] p-4 text-left text-white"
+      onClick={onResume}
       type="button"
     >
-      <Play
-        fill="currentColor"
-        size={15}
-      />
-      {label}
+      <span className="grid size-[42px] shrink-0 place-items-center rounded-xl bg-white/10 text-accent">
+        <Activity size={20} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8fc4f9]">
+          Workout in progress
+        </span>
+        <b className="mt-0.5 block truncate">{snapshotOf(session).workout_name ?? 'Workout'}</b>
+        <span className="text-xs text-[#9aa3b2]">{session.performed_sets.length} sets logged</span>
+      </span>
+      <span className="rounded-[11px] bg-accent px-3.5 py-2.5 text-[13px] font-extrabold">Resume</span>
     </button>
   );
 }
 
-function Hero({workout, onStart, starting}: {onStart: () => void; starting: boolean; workout: TrainingPlanWorkout}) {
-  const count = workout.workout_elements.length;
-  const mins = estMinutes(workout);
+function PlanCard({plan}: {plan: ClientTrainingPlan}) {
+  const week = currentPlanWeek(plan);
   return (
-    <div className="mb-3.5 rounded-2xl border border-[#2c3350] bg-[linear-gradient(160deg,#1a2440,#15161d)] p-4">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent">Today</p>
-      <p className="text-xl font-bold leading-tight">{workout.name}</p>
-      <p className="mt-1 text-xs text-muted">
-        {count} exercise{count === 1 ? '' : 's'}
-        {mins ? ` · ~${mins} min` : ''}
-      </p>
-      <StartButton
-        disabled={starting}
-        label={starting ? 'Starting…' : 'Start workout'}
-        onPress={onStart}
-      />
-    </div>
-  );
-}
-
-function ResumeBanner({session, onResume}: {onResume: () => void; session: TrainingSession}) {
-  const setCount = session.performed_sets.length;
-  return (
-    <div className="mb-3.5 rounded-2xl border border-warning/30 bg-warning/10 p-4">
-      <div className="flex items-center gap-2">
-        <Activity
-          className="text-warning"
-          size={16}
-        />
-        <p className="text-sm font-semibold">Workout in progress</p>
+    <div className="mb-[22px] rounded-[20px] border border-border bg-surface p-4">
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted">Current plan</p>
+      <h2 className="mt-2 text-lg font-extrabold tracking-[-0.02em]">{plan.name}</h2>
+      <div className="mt-3 flex items-center gap-2.5">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#e6e7e4]">
+          <div
+            className="h-full rounded-full bg-accent"
+            style={{width: `${Math.min(100, (week.current / week.total) * 100)}%`}}
+          />
+        </div>
+        <span className="whitespace-nowrap text-[11px] font-bold text-muted">
+          Week {week.current} of {week.total}
+        </span>
       </div>
-      <p className="mt-1 text-xs text-muted">
-        {setCount} set{setCount === 1 ? '' : 's'} logged
-      </p>
-      <StartButton
-        label="Resume workout"
-        onPress={onResume}
-      />
     </div>
   );
 }
 
-function WeekStrip({plan, today}: {plan: ClientTrainingPlan; today: TrainingWeekday}) {
+function WeekList({
+  plan,
+  active,
+  starting,
+  onStart,
+}: {
+  active?: TrainingSession;
+  onStart: (workout: TrainingPlanWorkout) => void;
+  plan: ClientTrainingPlan;
+  starting: boolean;
+}) {
+  const navigate = useNavigate();
+  const today = new Date().toDateString();
   return (
-    <div className="mb-3 grid grid-cols-7 gap-1 rounded-xl border border-border bg-surface px-1.5 py-2.5 text-center">
-      {TRAINING_WEEKDAYS.map((day) => {
+    <div className="mb-[22px] overflow-hidden rounded-[20px] border border-border bg-surface">
+      {currentWeekDates().map(({day, date}) => {
         const workout = workoutForDay(plan, day);
-        const isToday = day === today;
+        const isToday = date.toDateString() === today;
         return (
-          <div key={day}>
-            <div className={`text-[9px] ${isToday ? 'font-bold text-accent' : 'text-muted'}`}>
-              {TRAINING_DAY_SHORT_LABELS[day].charAt(0)}
-            </div>
-            <div className={`mx-auto mt-1 size-1.5 rounded-full ${workout ? 'bg-accent' : 'bg-[#333]'}`} />
-            <div
-              className={`mt-1 truncate text-[9px] leading-tight ${
-                isToday ? 'font-bold text-accent' : workout ? 'text-[#bbb]' : 'text-muted'
-              }`}
+          <div
+            className={`flex min-h-[62px] items-center gap-3 border-t border-separator px-3.5 py-2.5 first:border-t-0 ${isToday ? 'border-l-[3px] border-l-accent bg-accent-soft/50' : ''}`}
+            key={day}
+          >
+            <span
+              className={`grid size-9 shrink-0 place-items-center rounded-[11px] text-center ${isToday ? 'bg-accent text-white' : 'bg-surface-secondary'}`}
             >
-              {workout ? workout.name : 'Rest'}
-            </div>
+              <span>
+                <b className="block text-xs leading-none">{date.getDate()}</b>
+                <span className="mt-0.5 block text-[8px] font-bold uppercase">
+                  {TRAINING_DAY_LABELS[day].slice(0, 3)}
+                </span>
+              </span>
+            </span>
+            <span className="min-w-0 flex-1">
+              <b className={`block truncate text-sm ${workout ? '' : 'text-muted'}`}>{workout?.name ?? 'Rest day'}</b>
+              {workout ? (
+                <span className="block text-[10px] text-muted">
+                  {workout.workout_elements.length} exercises · {totalSets(workout)} sets
+                  {estimatedMinutes(workout) ? ` · ~${estimatedMinutes(workout)} min` : ''}
+                </span>
+              ) : (
+                <span className="text-[10px] text-muted">Recovery</span>
+              )}
+            </span>
+            {workout ? (
+              <div className="flex shrink-0 gap-1.5">
+                <button
+                  aria-label={`View ${workout.name}`}
+                  className="grid size-9 place-items-center rounded-[10px] border border-border text-muted"
+                  onClick={() => navigate(workoutPreviewPath(workout.id))}
+                  type="button"
+                >
+                  <Eye size={15} />
+                </button>
+                {isToday ? (
+                  <button
+                    aria-label={active ? 'Resume workout' : `Start ${workout.name}`}
+                    className="grid size-9 place-items-center rounded-[10px] bg-accent text-white disabled:opacity-50"
+                    disabled={starting}
+                    onClick={() => (active ? navigate(ROUTES.WORKOUT_ACTIVE) : onStart(workout))}
+                    type="button"
+                  >
+                    <Play
+                      fill="currentColor"
+                      size={13}
+                    />
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         );
       })}
@@ -137,31 +146,26 @@ function WeekStrip({plan, today}: {plan: ClientTrainingPlan; today: TrainingWeek
 
 export default function TrainingHome() {
   const navigate = useNavigate();
-  const {data: plansData, isLoading: isLoadingPlans} = useListClientTrainingPlansQuery({status: 'active'});
-  const {data: sessionsData, isLoading: isLoadingSessions} = useListClientTrainingSessionsQuery({});
-  const {data: profileData} = useGetClientProfileQuery();
+  const {data: plans, isLoading: loadingPlans} = useListClientTrainingPlansQuery({status: 'active'});
+  const {data: sessions, isLoading: loadingSessions} = useListClientTrainingSessionsQuery({});
   const [createSession, {isLoading: starting}] = useCreateClientTrainingSessionMutation();
+  const plan = plans?.data[0];
+  const active = sessions?.data.find((session) => session.state === 'active');
+  const recent = (sessions?.data ?? []).filter((session) => session.state === 'completed').slice(0, 3);
 
-  const plan = plansData?.data[0];
-  const activeSession = sessionsData?.data.find((s) => s.state === 'active');
-  const firstName = profileData?.data.first_name?.trim();
-  const greeting = firstName ? `Hey ${firstName} 👋` : 'Hey 👋';
-  const today = getTrainingWeekdayFromDate(new Date());
-  const todayWorkout = plan ? workoutForDay(plan, today) : null;
-
-  const start = async (workoutId: string) => {
+  const start = async (workout: TrainingPlanWorkout) => {
     try {
-      await createSession({trainingSessionRequest: {training_workout_id: workoutId}}).unwrap();
+      await createSession({trainingSessionRequest: {training_workout_id: workout.id}}).unwrap();
       navigate(ROUTES.WORKOUT_ACTIVE);
     } catch {
-      // surfaced by RTK Query
+      // RTK Query surfaces the request error.
     }
   };
 
-  if (isLoadingPlans || isLoadingSessions) {
+  if (loadingPlans || loadingSessions) {
     return (
       <PageLayout title="Training">
-        <div className="flex items-center justify-center py-20">
+        <div className="grid min-h-56 place-items-center">
           <Spinner />
         </div>
       </PageLayout>
@@ -169,51 +173,69 @@ export default function TrainingHome() {
   }
 
   return (
-    <PageLayout
-      description={TRAINING_DAY_LABELS[today]}
-      title={greeting}
-    >
-      <IntakeCard />
-      <CheckinNudgeCard />
-
-      {activeSession ? (
-        <ResumeBanner
-          onResume={() => navigate(ROUTES.WORKOUT_ACTIVE)}
-          session={activeSession}
-        />
-      ) : todayWorkout ? (
-        <Hero
-          onStart={() => start(todayWorkout.id)}
-          starting={starting}
-          workout={todayWorkout}
-        />
-      ) : plan ? (
-        <div className="mb-3.5 rounded-2xl border border-border bg-surface p-5 text-center">
-          <p className="text-sm text-muted">Rest day — recover well. 🌙</p>
+    <PageLayout title="Training">
+      {!plan ? (
+        <div className="rounded-[20px] border border-border bg-surface px-6 py-9 text-center">
+          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-accent-soft text-accent">
+            <Activity size={21} />
+          </div>
+          <b className="text-[15px]">Your plan is on the way</b>
+          <p className="mx-auto mt-1.5 max-w-60 text-xs leading-5 text-muted">
+            Your coach is putting your training plan together.
+          </p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-          <p className="text-sm font-medium">Your plan is on the way</p>
-          <p className="mt-1.5 text-xs text-muted">Your coach is setting up your training plan.</p>
-        </div>
-      )}
-
-      {plan ? (
         <>
-          <WeekStrip
+          {active ? (
+            <ResumeBanner
+              onResume={() => navigate(ROUTES.WORKOUT_ACTIVE)}
+              session={active}
+            />
+          ) : null}
+          <PlanCard plan={plan} />
+          <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">This week</p>
+          <WeekList
+            active={active}
+            onStart={start}
             plan={plan}
-            today={today}
+            starting={starting}
           />
-          <button
-            className="flex min-h-11 w-full items-center justify-between rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-muted transition-colors active:bg-surface-secondary"
-            onClick={() => navigate(ROUTES.WORKOUT_HISTORY)}
-            type="button"
-          >
-            <span>History</span>
-            <ChevronRight size={16} />
-          </button>
+          {todayWorkout(plan) == null ? (
+            <div className="mb-5 rounded-2xl bg-surface-secondary p-4 text-center text-sm text-muted">
+              Rest day — recover well.
+            </div>
+          ) : null}
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">Recent</p>
+            <button
+              className="text-xs font-bold text-accent"
+              onClick={() => navigate(ROUTES.WORKOUT_HISTORY)}
+              type="button"
+            >
+              View all history
+            </button>
+          </div>
+          {recent.map((session) => (
+            <button
+              className="mb-2 flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-3 text-left"
+              key={session.id}
+              onClick={() => navigate(ROUTES.SESSION_DETAIL.replace(':sessionId', session.id))}
+              type="button"
+            >
+              <span className="min-w-0 flex-1">
+                <b className="block truncate text-sm">{snapshotOf(session).workout_name ?? 'Workout'}</b>
+                <span className="text-[11px] text-muted">
+                  {formatDayDate(session.started_at)} · {session.performed_sets.length} sets
+                </span>
+              </span>
+              <ChevronRight
+                className="text-muted"
+                size={16}
+              />
+            </button>
+          ))}
         </>
-      ) : null}
+      )}
     </PageLayout>
   );
 }

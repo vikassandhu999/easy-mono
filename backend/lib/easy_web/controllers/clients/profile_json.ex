@@ -23,6 +23,8 @@ defmodule EasyWeb.Clients.ProfileJSON do
       goal_weight_value: client.goal_weight_value,
       goal_weight_unit: client.goal_weight_unit,
       default_weight_unit: default_weight_unit,
+      subscription_started_on: client.subscription_started_on,
+      subscription_ends_on: client.subscription_ends_on,
       status: client.status,
       coach: coach_data(coach)
     }

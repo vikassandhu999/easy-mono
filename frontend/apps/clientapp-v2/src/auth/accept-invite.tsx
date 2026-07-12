@@ -94,7 +94,7 @@ function AlreadyLoggedInGuard({onLoggedOut}: {onLoggedOut: () => void}) {
         </Button>
         <Button
           fullWidth
-          onPress={() => navigate(ROUTES.TRAINING, {replace: true})}
+          onPress={() => navigate(ROUTES.TODAY, {replace: true})}
           variant="ghost"
         >
           Cancel

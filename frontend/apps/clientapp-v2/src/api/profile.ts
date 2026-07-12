@@ -20,6 +20,8 @@ export type ClientProfile = {
   goal_weight_unit: 'kg' | 'lbs' | null;
   goal_weight_value: null | number;
   status: string;
+  subscription_ends_on: null | string;
+  subscription_started_on: null | string;
   coach: ClientCoach;
 };
 

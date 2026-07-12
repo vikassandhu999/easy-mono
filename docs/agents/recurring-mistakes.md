@@ -294,6 +294,14 @@ also how RM-109 stays satisfiable.
 **Enforced by:** browser computed-style verification during design passes; RM-109's check keeps
 hexes funneling through `@theme`.
 
+### RM-130 — Generated API clients are not hand-fixed to satisfy lint
+
+OpenAPI codegen may emit bracket access for reserved-looking query keys such as `from`. Do not edit
+`src/api/generated.ts`; the next generation overwrites it. Keep generated-file-only lint exceptions
+in `frontend/biome.json`, narrowly scoped to the emitted rule.
+
+**Enforced by:** the Biome override for `**/src/api/generated.ts`.
+
 ---
 
 ## Deploy / ops

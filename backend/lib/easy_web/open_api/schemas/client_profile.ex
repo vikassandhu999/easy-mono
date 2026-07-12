@@ -265,7 +265,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
   require OpenApiSpex
 
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
-  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormSubmission, ClientProfileFormTemplate, Shared}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -286,6 +286,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
           completed_at: %Schema{type: :string, format: :"date-time", nullable: true},
           due_reminder_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
           overdue_reminder_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
+          latest_submission: %Schema{oneOf: [ClientProfileFormSubmission], nullable: true},
           latest_submission_reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},
           form_template: ClientProfileFormTemplate
         },
@@ -303,6 +304,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
       :completed_at,
       :due_reminder_sent_at,
       :overdue_reminder_sent_at,
+      :latest_submission,
       :latest_submission_reviewed_at,
       :form_template,
       :inserted_at,

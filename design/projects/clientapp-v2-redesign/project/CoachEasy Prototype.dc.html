@@ -23,6 +23,8 @@
   @keyframes ceRow{from{background:#dcebfb;}to{background:#f1f7ff;}}
   @keyframes ceScreen{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
   @keyframes ceSeg{0%,100%{opacity:1;}50%{opacity:.4;}}
+  @keyframes ceSpin{to{transform:rotate(360deg);}}
+  @keyframes ceToast{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 </style>
 </helmet>
 
@@ -218,6 +220,7 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c3c7ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="m9 18 6-6-6-6"/></svg>
               </button>
             </sc-for>
+            <button onClick="{{ goHistory }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:13px 15px;border:none;border-top:1px solid #f0f0ee;background:none;cursor:pointer;font-size:12.5px;font-weight:700;color:#0485f7;" style-active="background:#fafbfc">View all history<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
           </div>
 
           </sc-if>
@@ -450,7 +453,7 @@
             </div>
           </div>
 
-          <button style="width:100%;min-height:50px;border:1px solid #ececef;border-radius:14px;background:#fff;font-size:14px;font-weight:700;color:#c0392b;cursor:pointer;" style-active="background:#fafbfc">Log out</button>
+          <button onClick="{{ logout }}" style="width:100%;min-height:50px;border:1px solid #ececef;border-radius:14px;background:#fff;font-size:14px;font-weight:700;color:#c0392b;cursor:pointer;" style-active="background:#fafbfc">Log out</button>
           <div style="margin-top:14px;text-align:center;font-size:10.5px;color:#b3b8c0;">CoachEasy v2.4.0</div>
         </div>
         </sc-if>
@@ -565,14 +568,18 @@
             </div>
           </div>
           <div style="flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
-            <div style="text-align:center;font-size:11px;color:#9498a1;font-weight:600;margin-bottom:2px;">Today</div>
-            <sc-for list="{{ messages }}" as="msg" hint-placeholder-count="3">
-              <div style="display:flex;justify-content:{{ msg.justify }};">
-                <div style="max-width:78%;border-radius:18px;padding:10px 13px;background:{{ msg.bubbleBg }};{{ msg.corner }}">
-                  <div style="font-size:13.5px;line-height:1.4;color:{{ msg.textColor }};white-space:pre-wrap;">{{ msg.body }}</div>
-                  <div style="margin-top:3px;text-align:right;font-size:9.5px;color:{{ msg.timeColor }};">{{ msg.time }}</div>
+            <sc-for list="{{ chatItems }}" as="it" hint-placeholder-count="4">
+              <sc-if value="{{ it.isSep }}" hint-placeholder-val="{{ false }}">
+                <div style="text-align:center;font-size:11px;color:#9498a1;font-weight:600;margin:2px 0;">{{ it.sep }}</div>
+              </sc-if>
+              <sc-if value="{{ it.isMsg }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;justify-content:{{ it.justify }};">
+                  <div style="max-width:78%;border-radius:18px;padding:10px 13px;background:{{ it.bubbleBg }};{{ it.corner }}">
+                    <div style="font-size:13.5px;line-height:1.4;color:{{ it.textColor }};white-space:pre-wrap;">{{ it.body }}</div>
+                    <div style="margin-top:3px;text-align:right;font-size:9.5px;color:{{ it.timeColor }};">{{ it.time }}</div>
+                  </div>
                 </div>
-              </div>
+              </sc-if>
             </sc-for>
           </div>
           <div style="position:sticky;bottom:0;display:flex;align-items:center;gap:9px;padding:12px 16px;background:rgba(244,244,242,.96);backdrop-filter:blur(10px);border-top:1px solid #ececef;">
@@ -648,29 +655,94 @@
                 <span style="font-size:12px;font-weight:700;color:#9498a1;">{{ cur.muscle }}</span>
               </div>
               <h2 style="margin:0;font-size:25px;font-weight:800;letter-spacing:-.025em;color:#12141a;line-height:1.05;">{{ cur.name }}</h2>
+              <sc-if value="{{ cur.swapped }}" hint-placeholder-val="{{ false }}"><div style="margin-top:9px;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:7px;background:#eef4fb;font-size:10px;font-weight:700;color:#0d3d6b;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0485f7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Swapped from {{ cur.swappedFrom }}</div></sc-if>
               <div style="margin:16px 0 10px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
                 <span style="font-size:12px;font-weight:800;color:#12141a;">{{ cur.doneCount }} <span style="color:#9498a1;">of {{ cur.setTotal }} sets done</span></span>
                 <span style="font-size:11px;font-weight:600;color:#767b85;">Target · {{ cur.target }}</span>
               </div>
+
+              <sc-if value="{{ cur.isWR }}" hint-placeholder-val="{{ true }}">
               <div style="display:grid;grid-template-columns:32px 1fr 1fr 44px;gap:8px;padding:0 6px 7px;">
                 <span style="font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">SET</span>
                 <span style="text-align:center;font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">KG</span>
                 <span style="text-align:center;font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">REPS</span>
                 <span></span>
               </div>
+              </sc-if>
+              <sc-if value="{{ cur.isReps }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:32px 1fr 44px;gap:8px;padding:0 6px 7px;">
+                <span style="font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">SET</span>
+                <span style="text-align:center;font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">REPS</span>
+                <span></span>
+              </div>
+              </sc-if>
+              <sc-if value="{{ cur.isDur }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:28px 1fr 44px;gap:8px;padding:0 6px 7px;">
+                <span style="font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">SET</span>
+                <span style="text-align:center;font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">TIME</span>
+                <span></span>
+              </div>
+              </sc-if>
+              <sc-if value="{{ cur.isDistDur }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:28px 1fr 1.6fr 40px;gap:7px;padding:0 6px 7px;">
+                <span style="font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">SET</span>
+                <span style="text-align:center;font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">METERS</span>
+                <span style="text-align:center;font-size:9px;font-weight:800;letter-spacing:.1em;color:#9498a1;">TIME</span>
+                <span></span>
+              </div>
+              </sc-if>
+
               <div style="display:flex;flex-direction:column;gap:6px;">
                 <sc-for list="{{ cur.rows }}" as="r" hint-placeholder-count="4">
+                  <sc-if value="{{ r.isWR }}" hint-placeholder-val="{{ true }}">
                   <div style="display:grid;grid-template-columns:32px 1fr 1fr 44px;align-items:center;gap:8px;padding:6px;border-radius:13px;background:{{ r.rowBg }};transition:background .2s ease;">
                     <span style="text-align:center;font-size:13px;font-weight:800;color:#767b85;font-variant-numeric:tabular-nums;">{{ r.n }}</span>
                     <input type="text" inputMode="decimal" value="{{ r.kg }}" onChange="{{ r.onKg }}" style="width:100%;box-sizing:border-box;text-align:center;font-size:18px;font-weight:800;color:{{ r.inputColor }};background:#fff;border:1px solid #e6e8ec;border-radius:10px;padding:9px 2px;font-variant-numeric:tabular-nums;outline:none;-webkit-appearance:none;" style-focus="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.14)">
                     <input type="text" inputMode="numeric" value="{{ r.reps }}" onChange="{{ r.onReps }}" style="width:100%;box-sizing:border-box;text-align:center;font-size:18px;font-weight:800;color:{{ r.inputColor }};background:#fff;border:1px solid #e6e8ec;border-radius:10px;padding:9px 2px;font-variant-numeric:tabular-nums;outline:none;-webkit-appearance:none;" style-focus="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.14)">
                     <button onClick="{{ r.toggle }}" style="display:grid;place-items:center;width:38px;height:38px;justify-self:center;border-radius:12px;border:{{ r.checkBorder }};background:{{ r.checkBg }};cursor:pointer;" style-active="transform:scale(.88)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ r.checkStroke }}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
                   </div>
+                  </sc-if>
+                  <sc-if value="{{ r.isReps }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid;grid-template-columns:32px 1fr 44px;align-items:center;gap:8px;padding:6px;border-radius:13px;background:{{ r.rowBg }};transition:background .2s ease;">
+                    <span style="text-align:center;font-size:13px;font-weight:800;color:#767b85;font-variant-numeric:tabular-nums;">{{ r.n }}</span>
+                    <input type="text" inputMode="numeric" value="{{ r.reps }}" onChange="{{ r.onReps }}" style="width:100%;box-sizing:border-box;text-align:center;font-size:18px;font-weight:800;color:{{ r.inputColor }};background:#fff;border:1px solid #e6e8ec;border-radius:10px;padding:9px 2px;font-variant-numeric:tabular-nums;outline:none;-webkit-appearance:none;" style-focus="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.14)">
+                    <button onClick="{{ r.toggle }}" style="display:grid;place-items:center;width:38px;height:38px;justify-self:center;border-radius:12px;border:{{ r.checkBorder }};background:{{ r.checkBg }};cursor:pointer;" style-active="transform:scale(.88)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ r.checkStroke }}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+                  </div>
+                  </sc-if>
+                  <sc-if value="{{ r.isDur }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid;grid-template-columns:28px 1fr 44px;align-items:center;gap:8px;padding:6px;border-radius:13px;background:{{ r.rowBg }};transition:background .2s ease;">
+                    <span style="text-align:center;font-size:13px;font-weight:800;color:#767b85;font-variant-numeric:tabular-nums;">{{ r.n }}</span>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <div style="flex:1;display:flex;align-items:center;background:#fff;border:1px solid #e6e8ec;border-radius:10px;overflow:hidden;">
+                        <button onClick="{{ r.durDec }}" style="display:grid;place-items:center;padding:9px 11px;border:none;background:none;color:#0485f7;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+                        <div style="flex:1;text-align:center;font-size:17px;font-weight:800;color:{{ r.valColor }};font-variant-numeric:tabular-nums;">{{ r.durDisplay }}</div>
+                        <button onClick="{{ r.durInc }}" style="display:grid;place-items:center;padding:9px 11px;border:none;background:none;color:#0485f7;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+                      </div>
+                      <button onClick="{{ r.durToggle }}" style="display:grid;place-items:center;width:36px;height:36px;flex-shrink:0;border:none;border-radius:50%;background:#0485f7;cursor:pointer;" style-active="transform:scale(.9)"><sc-if value="{{ r.running }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></sc-if><sc-if value="{{ r.notRunning }}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><polygon points="6 3 20 12 6 21 6 3"/></svg></sc-if></button>
+                    </div>
+                    <button onClick="{{ r.toggle }}" style="display:grid;place-items:center;width:38px;height:38px;justify-self:center;border-radius:12px;border:{{ r.checkBorder }};background:{{ r.checkBg }};cursor:pointer;" style-active="transform:scale(.88)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ r.checkStroke }}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+                  </div>
+                  </sc-if>
+                  <sc-if value="{{ r.isDistDur }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid;grid-template-columns:28px 1fr 1.6fr 40px;align-items:center;gap:7px;padding:6px;border-radius:13px;background:{{ r.rowBg }};transition:background .2s ease;">
+                    <span style="text-align:center;font-size:13px;font-weight:800;color:#767b85;font-variant-numeric:tabular-nums;">{{ r.n }}</span>
+                    <input type="text" inputMode="numeric" value="{{ r.dist }}" onChange="{{ r.onDist }}" style="width:100%;box-sizing:border-box;text-align:center;font-size:17px;font-weight:800;color:{{ r.inputColor }};background:#fff;border:1px solid #e6e8ec;border-radius:10px;padding:9px 2px;font-variant-numeric:tabular-nums;outline:none;-webkit-appearance:none;" style-focus="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.14)">
+                    <div style="display:flex;align-items:center;gap:5px;">
+                      <div style="flex:1;display:flex;align-items:center;background:#fff;border:1px solid #e6e8ec;border-radius:10px;overflow:hidden;">
+                        <button onClick="{{ r.durDec }}" style="display:grid;place-items:center;padding:9px 8px;border:none;background:none;color:#0485f7;cursor:pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+                        <div style="flex:1;text-align:center;font-size:15px;font-weight:800;color:{{ r.valColor }};font-variant-numeric:tabular-nums;">{{ r.durDisplay }}</div>
+                        <button onClick="{{ r.durInc }}" style="display:grid;place-items:center;padding:9px 8px;border:none;background:none;color:#0485f7;cursor:pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+                      </div>
+                      <button onClick="{{ r.durToggle }}" style="display:grid;place-items:center;width:32px;height:32px;flex-shrink:0;border:none;border-radius:50%;background:#0485f7;cursor:pointer;" style-active="transform:scale(.9)"><sc-if value="{{ r.running }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></sc-if><sc-if value="{{ r.notRunning }}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><polygon points="6 3 20 12 6 21 6 3"/></svg></sc-if></button>
+                    </div>
+                    <button onClick="{{ r.toggle }}" style="display:grid;place-items:center;width:36px;height:36px;justify-self:center;border-radius:12px;border:{{ r.checkBorder }};background:{{ r.checkBg }};cursor:pointer;" style-active="transform:scale(.88)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ r.checkStroke }}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+                  </div>
+                  </sc-if>
                 </sc-for>
               </div>
               <div style="display:flex;gap:8px;margin-top:10px;">
-                <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #e2e4e8;border-radius:12px;background:#fff;padding:11px;font-size:12.5px;font-weight:700;color:#4b5563;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Swap</button>
-                <button onClick="{{ skipEx }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #e2e4e8;border-radius:12px;background:#fff;padding:11px;font-size:12.5px;font-weight:700;color:#4b5563;cursor:pointer;">Next<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+                <button onClick="{{ openSwap }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #e2e4e8;border-radius:12px;background:#fff;padding:11px;font-size:12.5px;font-weight:700;color:#4b5563;cursor:pointer;" style-active="transform:scale(.98)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Swap</button>
+                <button onClick="{{ skipEx }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #e2e4e8;border-radius:12px;background:#fff;padding:11px;font-size:12.5px;font-weight:700;color:#4b5563;cursor:pointer;" style-active="transform:scale(.98)">Next<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
               </div>
             </div>
             </sc-if>
@@ -700,6 +772,8 @@
               </sc-for>
             </div>
             </sc-if>
+
+            <button onClick="{{ openAddEx }}" style="display:flex;width:100%;align-items:center;justify-content:center;gap:7px;border:1.5px dashed #cdd2da;border-radius:15px;background:#fff;padding:14px;margin-bottom:20px;font-size:14px;font-weight:800;color:#0485f7;cursor:pointer;" style-active="transform:scale(.99);background:#fafbfc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0485f7" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add exercise</button>
 
             <sc-if value="{{ activeAllDone }}" hint-placeholder-val="{{ false }}">
               <button onClick="{{ openFinish }}" style="display:flex;min-height:56px;width:100%;align-items:center;justify-content:center;gap:9px;border:none;border-radius:15px;background:#0485f7;font-size:17px;font-weight:800;color:#fff;cursor:pointer;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Finish workout</button>
@@ -756,7 +830,173 @@
         </div>
         </sc-if>
 
+        <!-- ============================ WORKOUT HISTORY ============================ -->
+        <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 20px 24px;animation:ceScreen .28s ease both;" data-screen-label="Workout history">
+          <button onClick="{{ back }}" style="display:grid;place-items:center;width:38px;height:38px;margin:0 0 10px -6px;border:none;border-radius:11px;background:none;cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12141a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+          <h1 style="margin:0 0 4px;font-size:26px;font-weight:800;letter-spacing:-.025em;">History</h1>
+          <div style="margin-bottom:20px;font-size:13px;color:#767b85;">{{ historyCount }} workouts logged</div>
+          <sc-for list="{{ historyMonths }}" as="mo" hint-placeholder-count="2">
+            <div style="margin-bottom:20px;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9498a1;margin-bottom:11px;">{{ mo.label }}</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ mo.rows }}" as="r" hint-placeholder-count="3">
+                  <button onClick="{{ r.open }}" style="width:100%;display:flex;align-items:center;gap:12px;border:1px solid #ececef;border-radius:16px;background:#fff;padding:13px 15px;cursor:pointer;text-align:left;" style-active="transform:scale(.99);background:#fafbfc">
+                    <span style="min-width:0;flex:1;">
+                      <span style="display:block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#9498a1;">{{ r.date }}</span>
+                      <span style="display:block;margin-top:3px;font-size:15px;font-weight:800;letter-spacing:-.01em;color:#12141a;">{{ r.name }}</span>
+                      <span style="display:block;margin-top:3px;font-size:11px;color:#767b85;">{{ r.stats }}</span>
+                    </span>
+                    <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                      <span style="font-size:19px;">{{ r.feelEmoji }}</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c3c7ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <!-- ============================ SPLASH ============================ -->
+        <sc-if value="{{ isSplash }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 26px 90px;animation:ceScreen .28s ease both;" data-screen-label="Splash">
+          <img src="assets/TextLogo.webp" alt="CoachEasy" style="height:30px;width:auto;">
+          <sc-if value="{{ splashSlow }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:28px;"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;border:2.5px solid #d6e6fb;border-top-color:#0485f7;animation:ceSpin .7s linear infinite;"></span></div>
+          </sc-if>
+          <sc-if value="{{ splashStuck }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:28px;display:flex;flex-direction:column;align-items:center;gap:14px;">
+            <p style="margin:0;font-size:13px;color:#767b85;">Taking longer than usual…</p>
+            <button onClick="{{ splashRetry }}" style="min-height:42px;border:1px solid #e2e4e8;border-radius:12px;background:#fff;padding:0 22px;font-size:13.5px;font-weight:700;color:#12141a;cursor:pointer;" style-active="transform:scale(.97)">Retry</button>
+          </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <!-- ============================ LOGIN ============================ -->
+        <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:36px 30px 70px;animation:ceScreen .28s ease both;" data-screen-label="Login">
+          <img src="assets/TextLogo.webp" alt="CoachEasy" style="height:26px;width:auto;align-self:center;margin-bottom:34px;">
+          <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.025em;text-align:center;">Welcome back</h1>
+          <p style="margin:9px 0 0;font-size:14px;line-height:1.5;color:#767b85;text-align:center;">Enter your email and we'll send you a verification code.</p>
+          <sc-if value="{{ loginExpired }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:22px;display:flex;gap:10px;border-radius:14px;background:#f6f7f9;border:1px solid #e6e8ec;padding:13px 14px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#767b85" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            <div style="min-width:0;"><div style="font-size:13px;font-weight:800;color:#12141a;">Your session has expired</div><div style="margin-top:2px;font-size:12px;color:#767b85;">Please log in again to continue.</div></div>
+          </div>
+          </sc-if>
+          <div style="margin-top:28px;">
+            <div style="font-size:13px;font-weight:700;color:#12141a;margin-bottom:7px;">Email</div>
+            <input value="{{ authEmail }}" onInput="{{ onAuthEmail }}" placeholder="you@example.com" type="email" style="width:100%;box-sizing:border-box;border:1px solid #e6e8ec;border-radius:13px;background:#fff;padding:13px 15px;font-size:15px;color:#12141a;outline:none;font-family:inherit;" style-focus="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.12)">
+          </div>
+          <button onClick="{{ goVerifyLogin }}" style="margin-top:18px;display:flex;min-height:52px;width:100%;align-items:center;justify-content:center;border:none;border-radius:14px;background:#0485f7;font-size:16px;font-weight:800;letter-spacing:-.01em;color:#fff;cursor:pointer;" style-active="transform:scale(.99)">Continue with email</button>
+          <p style="margin:26px 0 0;text-align:center;font-size:12.5px;line-height:1.5;color:#9498a1;">Your coach will send you an invitation link to get started.</p>
+          <button onClick="{{ goAcceptInvite }}" style="margin:12px auto 0;display:block;border:none;background:none;font-size:13px;font-weight:700;color:#0485f7;cursor:pointer;">Have an invitation link? →</button>
+        </div>
+        </sc-if>
+
+        <!-- ============================ VERIFY LOGIN OTP ============================ -->
+        <sc-if value="{{ isVerifyLogin }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:36px 30px 70px;animation:ceScreen .28s ease both;" data-screen-label="Verify login">
+          <button onClick="{{ back }}" style="align-self:flex-start;display:grid;place-items:center;width:38px;height:38px;margin:0 0 18px -6px;border:none;border-radius:11px;background:none;cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12141a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+          <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.025em;">Check your email</h1>
+          <p style="margin:9px 0 0;font-size:14px;line-height:1.5;color:#767b85;">We sent a 6-digit code to {{ maskedEmail }}</p>
+          <div style="margin-top:26px;font-size:13px;font-weight:700;color:#12141a;margin-bottom:9px;">Verification code</div>
+          <div style="display:flex;gap:8px;">
+            <sc-for list="{{ otpBoxes }}" as="b" hint-placeholder-count="6">
+              <input id="{{ b.id }}" value="{{ b.val }}" onInput="{{ b.onInput }}" onKeyDown="{{ b.onKey }}" inputMode="numeric" maxLength="1" style="flex:1;min-width:0;height:56px;box-sizing:border-box;text-align:center;font-size:24px;font-weight:800;color:#12141a;background:#fff;border:1.5px solid #e6e8ec;border-radius:13px;outline:none;font-variant-numeric:tabular-nums;font-family:inherit;-webkit-appearance:none;" style-focus="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.14)">
+            </sc-for>
+          </div>
+          <button onClick="{{ verifyLoginDone }}" disabled="{{ otpIncomplete }}" style="margin-top:22px;display:flex;min-height:52px;width:100%;align-items:center;justify-content:center;border:none;border-radius:14px;background:{{ otpBtnBg }};font-size:16px;font-weight:800;color:#fff;cursor:{{ otpBtnCursor }};" style-active="transform:scale(.99)">Verify</button>
+          <div style="margin-top:24px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;">
+            <span style="color:#767b85;">Didn't receive a code?</span>
+            <button onClick="{{ resendLogin }}" style="border:none;background:none;padding:0;font-size:13px;font-weight:700;color:#12141a;text-decoration:underline;cursor:pointer;">Resend</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ============================ ACCEPT INVITE ============================ -->
+        <sc-if value="{{ isAcceptInvite }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:36px 30px 70px;animation:ceScreen .28s ease both;" data-screen-label="Accept invite">
+          <div style="align-self:center;display:grid;place-items:center;width:60px;height:60px;border-radius:18px;background:#eef4fb;margin-bottom:22px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0485f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+          <h1 style="margin:0;font-size:25px;font-weight:800;letter-spacing:-.025em;text-align:center;line-height:1.1;">{{ businessName }}</h1>
+          <p style="margin:9px 0 0;font-size:14px;line-height:1.5;color:#767b85;text-align:center;">Coach {{ coachName }} has invited you</p>
+          <div style="margin-top:30px;">
+            <div style="font-size:13px;font-weight:700;color:#12141a;">What's your email?</div>
+            <div style="margin:3px 0 8px;font-size:12px;color:#9498a1;">We'll send you a login code.</div>
+            <input value="{{ authEmail }}" onInput="{{ onAuthEmail }}" placeholder="you@example.com" type="email" style="width:100%;box-sizing:border-box;border:1px solid #e6e8ec;border-radius:13px;background:#fff;padding:13px 15px;font-size:15px;color:#12141a;outline:none;font-family:inherit;" style-focus="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.12)">
+          </div>
+          <button onClick="{{ goVerifyInvite }}" style="margin-top:18px;display:flex;min-height:52px;width:100%;align-items:center;justify-content:center;border:none;border-radius:14px;background:#0485f7;font-size:16px;font-weight:800;letter-spacing:-.01em;color:#fff;cursor:pointer;" style-active="transform:scale(.99)">Continue</button>
+        </div>
+        </sc-if>
+
+        <!-- ============================ VERIFY INVITE OTP ============================ -->
+        <sc-if value="{{ isVerifyInvite }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:36px 30px 70px;animation:ceScreen .28s ease both;" data-screen-label="Verify invite">
+          <button onClick="{{ back }}" style="align-self:flex-start;display:grid;place-items:center;width:38px;height:38px;margin:0 0 18px -6px;border:none;border-radius:11px;background:none;cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12141a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+          <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.025em;">Check your email</h1>
+          <p style="margin:9px 0 0;font-size:14px;line-height:1.5;color:#767b85;">Enter the code sent to {{ authEmail }}</p>
+          <div style="margin-top:26px;font-size:13px;font-weight:700;color:#12141a;margin-bottom:9px;">Login code</div>
+          <div style="display:flex;gap:8px;">
+            <sc-for list="{{ otpBoxes }}" as="b" hint-placeholder-count="6">
+              <input id="{{ b.id }}" value="{{ b.val }}" onInput="{{ b.onInput }}" onKeyDown="{{ b.onKey }}" inputMode="numeric" maxLength="1" style="flex:1;min-width:0;height:56px;box-sizing:border-box;text-align:center;font-size:24px;font-weight:800;color:#12141a;background:#fff;border:1.5px solid #e6e8ec;border-radius:13px;outline:none;font-variant-numeric:tabular-nums;font-family:inherit;-webkit-appearance:none;" style-focus="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.14)">
+            </sc-for>
+          </div>
+          <button onClick="{{ verifyInviteDone }}" disabled="{{ otpIncomplete }}" style="margin-top:22px;display:flex;min-height:52px;width:100%;align-items:center;justify-content:center;border:none;border-radius:14px;background:{{ otpBtnBg }};font-size:16px;font-weight:800;color:#fff;cursor:{{ otpBtnCursor }};" style-active="transform:scale(.99)">Verify</button>
+          <div style="margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:9px;font-size:13px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="color:#767b85;">Didn't get it?</span>
+              <button onClick="{{ resendInvite }}" disabled="{{ resendDisabled }}" style="border:none;background:none;padding:0;font-size:13px;font-weight:700;color:{{ resendColor }};text-decoration:underline;cursor:{{ resendCursor }};">{{ resendLabel }}</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="color:#767b85;">Wrong email?</span>
+              <button onClick="{{ changeEmail }}" style="border:none;background:none;padding:0;font-size:13px;font-weight:700;color:#12141a;text-decoration:underline;cursor:pointer;">Change it</button>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ============================ AWAITING SEAT ============================ -->
+        <sc-if value="{{ isAwaitingSeat }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 34px 80px;text-align:center;animation:ceScreen .28s ease both;" data-screen-label="Awaiting seat">
+          <div style="display:grid;place-items:center;width:64px;height:64px;border-radius:20px;background:#eef4fb;margin-bottom:20px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0485f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <div style="font-size:12px;font-weight:800;letter-spacing:.04em;color:#767b85;margin-bottom:8px;">{{ businessName }}</div>
+          <h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-.025em;">You're almost in</h1>
+          <p style="margin:10px 0 0;max-width:250px;font-size:14px;line-height:1.5;color:#767b85;">Your coach needs to activate your seat before you can continue.</p>
+          <div style="margin-top:26px;display:flex;gap:10px;">
+            <button onClick="{{ checkSeat }}" style="display:flex;align-items:center;gap:8px;min-height:46px;border:1px solid #e2e4e8;border-radius:13px;background:#fff;padding:0 20px;font-size:14px;font-weight:700;color:#12141a;cursor:pointer;" style-active="transform:scale(.98)"><sc-if value="{{ seatChecking }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;width:15px;height:15px;border-radius:50%;border:2px solid #d6e6fb;border-top-color:#0485f7;animation:ceSpin .7s linear infinite;"></span></sc-if>Check again</button>
+            <button onClick="{{ logout }}" style="min-height:46px;border:none;border-radius:13px;background:none;padding:0 18px;font-size:14px;font-weight:700;color:#767b85;cursor:pointer;">Log out</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ============================ PROFILE ERROR ============================ -->
+        <sc-if value="{{ isProfileError }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 34px 80px;text-align:center;animation:ceScreen .28s ease both;" data-screen-label="Profile error">
+          <div style="display:grid;place-items:center;width:64px;height:64px;border-radius:20px;background:#f6f7f9;margin-bottom:20px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#767b85" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>
+          <h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-.025em;">Something went wrong</h1>
+          <p style="margin:10px 0 0;max-width:260px;font-size:14px;line-height:1.5;color:#767b85;">We couldn't load your profile. Check your connection and try again.</p>
+          <button onClick="{{ profileRetry }}" style="margin-top:26px;display:flex;align-items:center;gap:9px;min-height:50px;border:none;border-radius:14px;background:#0485f7;padding:0 30px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;" style-active="transform:scale(.98)"><sc-if value="{{ profileLoading }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:ceSpin .7s linear infinite;"></span></sc-if>Try again</button>
+          <button onClick="{{ logout }}" style="margin-top:14px;border:none;background:none;font-size:13px;font-weight:700;color:#767b85;cursor:pointer;">Log out</button>
+        </div>
+        </sc-if>
+
       </div>
+
+      <!-- TOAST -->
+      <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:0;right:0;bottom:84px;z-index:40;display:flex;justify-content:center;pointer-events:none;">
+        <div style="display:flex;align-items:center;gap:9px;max-width:88%;border-radius:14px;background:#12141a;padding:12px 16px;box-shadow:0 16px 32px -18px rgba(0,0,0,.6);animation:ceToast .22s ease both;">
+          <span style="display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:{{ toastIconBg }};flex-shrink:0;">
+            <sc-if value="{{ toastSuccess }}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></sc-if>
+            <sc-if value="{{ toastDanger }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></sc-if>
+          </span>
+          <span style="font-size:13px;font-weight:600;color:#fff;">{{ toastMsg }}</span>
+        </div>
+      </div>
+      </sc-if>
 
       <!-- TAB BAR -->
       <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
@@ -927,21 +1167,68 @@
       </div>
       </sc-if>
 
+      <!-- WORKOUT EXERCISE PICKER (swap / add) -->
+      <sc-if value="{{ workoutPickerOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:25;display:flex;flex-direction:column;background:#f4f4f2;animation:ceScreen .2s ease both;">
+        <div style="display:flex;align-items:center;gap:9px;padding:14px 16px 6px;">
+          <button onClick="{{ closeWorkoutPicker }}" style="display:grid;place-items:center;width:34px;height:34px;margin-left:-4px;border:none;border-radius:10px;background:none;color:#767b85;cursor:pointer;flex-shrink:0;" style-active="transform:scale(.9)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          <span style="flex:1;min-width:0;font-size:17px;font-weight:800;letter-spacing:-.02em;color:#12141a;">{{ wpTitle }}</span>
+        </div>
+        <div style="padding:6px 16px 10px;">
+          <div style="display:flex;align-items:center;gap:9px;border:1px solid #e6e8ec;border-radius:12px;background:#fff;padding:0 13px;" style-focus-within="border-color:#0485f7;box-shadow:0 0 0 3px rgba(4,133,247,.12)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9498a1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input value="{{ wpQ }}" onInput="{{ onWpQ }}" placeholder="{{ wpSearchPlaceholder }}" style="flex:1;min-width:0;border:none;background:none;padding:11px 0;font-size:14px;outline:none;color:#12141a;font-family:inherit;">
+          </div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:2px 16px 16px;">
+          <div style="border-radius:18px;background:#fff;border:1px solid #ececef;overflow:hidden;">
+            <sc-for list="{{ workoutPickerRows }}" as="r" hint-placeholder-count="7">
+              <button onClick="{{ r.pick }}" style="width:100%;display:flex;align-items:center;gap:12px;border:none;border-top:1px solid #f0f0ee;background:none;padding:13px 15px;cursor:pointer;text-align:left;" style-active="background:#f6f7f9">
+                <span style="display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#f0f4f9;flex-shrink:0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0485f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 17.5 17.5"/><path d="M21 21l-1-1"/><path d="M3 3l1 1"/><path d="M18 22l4-4"/><path d="M2 6l4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></span>
+                <span style="flex:1;min-width:0;"><span style="display:block;font-size:14px;font-weight:700;color:#12141a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</span><span style="display:block;margin-top:1px;font-size:11px;font-weight:600;color:#9498a1;text-transform:capitalize;">{{ r.muscle }} · {{ r.ttLabel }}</span></span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c3c7ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ wpEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:36px 0;text-align:center;font-size:13px;color:#9498a1;">No exercises match “{{ wpQ }}”</div></sc-if>
+        </div>
+      </div>
+      </sc-if>
+
     </div>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;clientName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Alex&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;coachName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Maya&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;checkinDue&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototype state&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;today&quot;,&quot;options&quot;:[&quot;today&quot;,&quot;train&quot;,&quot;eat&quot;,&quot;checkins&quot;,&quot;coach&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype state&quot;},&quot;trainState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;default&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;rest-day&quot;,&quot;no-plan&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype state&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;clientName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Alex&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;coachName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Maya&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;checkinDue&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prototype state&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;today&quot;,&quot;options&quot;:[&quot;today&quot;,&quot;train&quot;,&quot;eat&quot;,&quot;checkins&quot;,&quot;coach&quot;,&quot;splash&quot;,&quot;login&quot;,&quot;accept-invite&quot;,&quot;awaiting-seat&quot;,&quot;profile-error&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype state&quot;},&quot;trainState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;default&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;rest-day&quot;,&quot;no-plan&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype state&quot;}}">
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.EX = [
-      {name: 'Barbell Bench Press', sets: 4, reps: 8, kg: 60, muscle: 'Chest'},
-      {name: 'Incline Dumbbell Press', sets: 3, reps: 10, kg: 22, muscle: 'Chest'},
-      {name: 'Seated Overhead Press', sets: 3, reps: 8, kg: 40, muscle: 'Shoulders'},
-      {name: 'Cable Lateral Raise', sets: 3, reps: 15, kg: 10, muscle: 'Shoulders'},
-      {name: 'Cable Fly', sets: 3, reps: 12, kg: 15, muscle: 'Chest'},
-      {name: 'Tricep Rope Pushdown', sets: 3, reps: 12, kg: 25, muscle: 'Triceps'},
+    this.BASEPLAN = [
+      {name: 'Barbell Bench Press', tt: 'weight_reps', sets: 4, reps: 8, kg: 60, muscle: 'Chest'},
+      {name: 'Incline Dumbbell Press', tt: 'weight_reps', sets: 3, reps: 10, kg: 22, muscle: 'Chest'},
+      {name: 'Seated Overhead Press', tt: 'weight_reps', sets: 3, reps: 8, kg: 40, muscle: 'Shoulders'},
+      {name: 'Cable Lateral Raise', tt: 'weight_reps', sets: 3, reps: 15, kg: 10, muscle: 'Shoulders'},
+      {name: 'Cable Fly', tt: 'weight_reps', sets: 3, reps: 12, kg: 15, muscle: 'Chest'},
+      {name: 'Tricep Rope Pushdown', tt: 'weight_reps', sets: 3, reps: 12, kg: 25, muscle: 'Triceps'},
+      {name: 'Weighted Plank', tt: 'duration', sets: 3, dur: 45, muscle: 'Core'},
+      {name: "Farmer's Carry", tt: 'distance_duration', sets: 3, dist: 40, dur: 30, muscle: 'Full body'},
+    ];
+    this.LIB = [
+      {name: 'Dumbbell Bench Press', tt: 'weight_reps', muscle: 'Chest'},
+      {name: 'Machine Chest Press', tt: 'weight_reps', muscle: 'Chest'},
+      {name: 'Incline Bench Press', tt: 'weight_reps', muscle: 'Chest'},
+      {name: 'Cable Crossover', tt: 'weight_reps', muscle: 'Chest'},
+      {name: 'Pec Deck', tt: 'weight_reps', muscle: 'Chest'},
+      {name: 'Push-up', tt: 'bodyweight_reps', muscle: 'Chest'},
+      {name: 'Dips', tt: 'bodyweight_reps', muscle: 'Triceps'},
+      {name: 'Arnold Press', tt: 'weight_reps', muscle: 'Shoulders'},
+      {name: 'Dumbbell Lateral Raise', tt: 'weight_reps', muscle: 'Shoulders'},
+      {name: 'Overhead Tricep Extension', tt: 'weight_reps', muscle: 'Triceps'},
+      {name: 'Plank', tt: 'duration', muscle: 'Core'},
+      {name: 'Dead Hang', tt: 'duration', muscle: 'Grip'},
+      {name: 'Treadmill Run', tt: 'distance_duration', muscle: 'Cardio'},
+      {name: 'Rowing Machine', tt: 'distance_duration', muscle: 'Cardio'},
+      {name: 'Sled Push', tt: 'distance_duration', muscle: 'Legs'},
     ];
     this.MEALS = [
       {slot: 'Breakfast', options: [
@@ -1024,7 +1311,7 @@ class Component extends DCLogic {
     ];
     this.TARGET = {kcal: 2100, p: 150, c: 210, f: 70};
     this.WEEK = [
-      {d: 'MON', n: 11, today: true, name: 'Push Day A', sub: '6 exercises · ~48 min'},
+      {d: 'MON', n: 11, today: true, name: 'Push Day A', sub: '8 exercises · ~58 min'},
       {d: 'TUE', n: 12, name: 'Pull Day B', sub: '7 exercises · ~52 min'},
       {d: 'WED', n: 13, rest: true},
       {d: 'THU', n: 14, name: 'Leg Day', sub: '6 exercises · ~55 min'},
@@ -1099,10 +1386,24 @@ class Component extends DCLogic {
           ]},
         ]},
     ];
+    this.HISTORY = [
+      {month: 'July', date: 'Fri, 8 Jul', name: 'Push Day B', dur: '42 min', sets: 20, vol: '5,100 kg', feel: 'Tough', id: 'pushB'},
+      {month: 'July', date: 'Wed, 6 Jul', name: 'Leg Day', dur: '51 min', sets: 18, vol: '8,200 kg', feel: 'Brutal', id: 'legs'},
+      {month: 'July', date: 'Mon, 4 Jul', name: 'Pull Day A', dur: '47 min', sets: 19, vol: '6,300 kg', feel: 'Hard', id: 'pushB'},
+      {month: 'July', date: 'Fri, 1 Jul', name: 'Push Day A', dur: '44 min', sets: 21, vol: '5,400 kg', feel: 'Worked', id: 'pushB'},
+      {month: 'June', date: 'Wed, 29 Jun', name: 'Leg Day', dur: '53 min', sets: 18, vol: '8,050 kg', feel: 'Brutal', id: 'legs'},
+      {month: 'June', date: 'Mon, 27 Jun', name: 'Pull Day B', dur: '46 min', sets: 20, vol: '6,100 kg', feel: 'Tough', id: 'pushB'},
+      {month: 'June', date: 'Fri, 24 Jun', name: 'Push Day B', dur: '41 min', sets: 20, vol: '5,000 kg', feel: 'Hard', id: 'pushB'},
+    ];
     this.ACCENT = '#0485f7';
-    const start = ['today', 'train', 'eat', 'checkins', 'coach'].includes(props.startScreen) ? props.startScreen : 'today';
+    const SMAP = {'accept-invite': 'acceptInvite', 'awaiting-seat': 'awaitingSeat', 'profile-error': 'profileError'};
+    const raw = props.startScreen;
+    const allowed = ['today', 'train', 'eat', 'checkins', 'coach', 'splash', 'login', 'accept-invite', 'awaiting-seat', 'profile-error'];
+    const start = allowed.includes(raw) ? (SMAP[raw] || raw) : 'today';
+    const plan0 = this.BASEPLAN.map((e) => ({...e}));
     this.state = {
       screen: start,
+      plan: plan0,
       history: [],
       sessionState: 'none',
       detailSessionId: null,
@@ -1129,17 +1430,25 @@ class Component extends DCLogic {
       editField: null,
       editDraft: '',
       viewCheckin: null,
-      exSets: this._freshSets(),
+      exSets: this._freshSets(plan0),
       skipped: {},
+      timer: null,
+      workoutPicker: null,
+      wpQ: '',
+      tabLoading: false,
+      coachUnread: 2,
       elapsed: 0,
       restLeft: 0,
       restTotal: 90,
       finishOpen: false,
       soreness: null,
       messages: [
-        {from: 'coach', time: '8:02am', body: "Great session Monday 💪 Let's nail your protein target today — you were a bit short over the weekend."},
-        {from: 'me', time: '8:15am', body: 'Will do! Feeling strong on the presses.'},
-        {from: 'coach', time: '8:20am', body: 'Love it — keep the eccentrics controlled. And log your check-in when you get a sec 🙌'},
+        {from: 'coach', day: 'Yesterday', time: '6:44pm', body: 'How are the legs feeling after Wednesday? That was a big session.'},
+        {from: 'me', day: 'Yesterday', time: '7:10pm', body: 'Sore but good sore 😅 quads are toast'},
+        {from: 'coach', day: 'Yesterday', time: '7:12pm', body: "Perfect. Keep the protein up and we'll keep building."},
+        {from: 'coach', day: 'Today', time: '8:02am', body: "Great session Monday 💪 Let's nail your protein target today — you were a bit short over the weekend."},
+        {from: 'me', day: 'Today', time: '8:15am', body: 'Will do! Feeling strong on the presses.'},
+        {from: 'coach', day: 'Today', time: '8:20am', body: 'Love it — keep the eccentrics controlled. And log your check-in when you get a sec 🙌'},
       ],
       draft: '',
       weights: [
@@ -1151,38 +1460,180 @@ class Component extends DCLogic {
       ],
       weightSheetOpen: false,
       weightDraft: 82.4,
+      weightUnit: 'kg',
+      weightNote: '',
+      weightWhen: 'Today',
       ci: {weight: 82.4, energy: null, sleep: null, training: null, note: ''},
+      // auth + edge states
+      authEmail: 'alex.carter@mail.com',
+      otpDigits: ['', '', '', '', '', ''],
+      loginExpired: false,
+      resendCd: 0,
+      splashStage: 'initial',
+      seatChecking: false,
+      profileLoading: false,
+      toast: null,
     };
   }
 
   componentDidMount() {
     this._t = setInterval(() => {
-      if (this.state.sessionState === 'active') this.setState((s) => ({elapsed: s.elapsed + 1, restLeft: s.screen === 'active' && s.restLeft > 0 ? s.restLeft - 1 : s.restLeft}));
+      this.setState((s) => {
+        const patch = {};
+        if (s.sessionState === 'active') { patch.elapsed = s.elapsed + 1; patch.restLeft = s.screen === 'active' && s.restLeft > 0 ? s.restLeft - 1 : s.restLeft; }
+        if (s.resendCd > 0) patch.resendCd = s.resendCd - 1;
+        if (s.timer && s.screen === 'active') {
+          const {exi, si} = s.timer;
+          patch.exSets = s.exSets.map((arr, i) => i === exi ? arr.map((r, j) => j === si ? {...r, dur: (parseFloat(r.dur) || 0) + 1} : r) : arr);
+        }
+        return patch;
+      });
     }, 1000);
+    if (this.state.screen === 'splash') this._runSplash();
   }
-  componentWillUnmount() { clearInterval(this._t); }
+  componentWillUnmount() { clearInterval(this._t); clearTimeout(this._sp1); clearTimeout(this._sp2); clearTimeout(this._toastT); clearTimeout(this._tl); }
+
+  _runSplash() {
+    clearTimeout(this._sp1); clearTimeout(this._sp2);
+    this.setState({splashStage: 'initial'});
+    this._sp1 = setTimeout(() => { if (this.state.screen === 'splash') this.setState({splashStage: 'slow'}); }, 600);
+    this._sp2 = setTimeout(() => { if (this.state.screen === 'splash') this.setState({splashStage: 'stuck'}); }, 2600);
+  }
+
+  _resetOtp() { this.setState({otpDigits: ['', '', '', '', '', '']}); }
+  onOtpInput(i, e) {
+    const v = (e.target.value || '').replace(/\D/g, '').slice(-1);
+    this.setState((s) => { const d = [...s.otpDigits]; d[i] = v; return {otpDigits: d}; });
+    if (v && i < 5) { const n = document.getElementById('ce-otp-' + (i + 1)); if (n) n.focus(); }
+  }
+  onOtpKey(i, e) {
+    if (e.key === 'Backspace' && !this.state.otpDigits[i] && i > 0) { const p = document.getElementById('ce-otp-' + (i - 1)); if (p) p.focus(); }
+  }
+  _showToast(msg, kind) {
+    clearTimeout(this._toastT);
+    this.setState({toast: {msg, kind: kind || 'success'}});
+    this._toastT = setTimeout(() => this.setState({toast: null}), 2600);
+  }
+  logout() { clearTimeout(this._toastT); this.setState({screen: 'login', history: [], loginExpired: false, seatChecking: false, profileLoading: false, otpDigits: ['', '', '', '', '', ''], toast: null}); this._scrollTop(); }
+  goVerifyLogin() { this._resetOtp(); this.go('verifyLogin'); }
+  goAcceptInvite() { this._resetOtp(); this.go('acceptInvite'); }
+  goVerifyInvite() { this._resetOtp(); this.setState({resendCd: 30}); this.go('verifyInvite'); }
+  verifyLoginDone() { this._resetOtp(); this.setState({screen: 'today', history: []}); this._scrollTop(); }
+  verifyInviteDone() { this._resetOtp(); this.setState({screen: 'awaitingSeat', history: []}); this._scrollTop(); }
+  resendLogin() { this._resetOtp(); this._showToast('A new code is on its way.', 'success'); }
+  resendInvite() { if (this.state.resendCd > 0) return; this._resetOtp(); this.setState({resendCd: 30}); this._showToast('A new code is on its way.', 'success'); }
+  changeEmail() { this.setState((s) => ({screen: 'acceptInvite', history: s.history.slice(0, -1)})); this._scrollTop(); }
+  splashRetry() { this.setState({screen: 'login', history: []}); this._scrollTop(); }
+  checkSeat() {
+    if (this.state.seatChecking) return;
+    this.setState({seatChecking: true});
+    setTimeout(() => { this.setState({seatChecking: false, screen: 'today', history: []}); this._showToast('Seat activated — welcome in!', 'success'); this._scrollTop(); }, 1400);
+  }
+  profileRetry() {
+    if (this.state.profileLoading) return;
+    this.setState({profileLoading: true});
+    setTimeout(() => { this.setState({profileLoading: false, screen: 'today', history: []}); this._scrollTop(); }, 1200);
+  }
 
   _scrollTop() { requestAnimationFrame(() => { const el = document.getElementById('ce-scroll'); if (el) el.scrollTop = 0; }); }
   _scrollChat() { requestAnimationFrame(() => { const el = document.getElementById('ce-scroll'); if (el) el.scrollTop = el.scrollHeight; }); }
 
   go(screen) { this.setState((s) => ({history: [...s.history, s.screen], screen})); this._scrollTop(); }
-  goTab(screen) { const patch = {history: [], screen}; if (screen === 'eat') patch.dayOffset = 0; this.setState(patch); this._scrollTop(); }
+  goTab(screen) {
+    const patch = {history: [], screen};
+    if (screen === 'eat') patch.dayOffset = 0;
+    if (screen === 'coach') patch.coachUnread = 0;
+    if (['today', 'train', 'eat', 'checkins', 'progress', 'coach'].includes(screen)) {
+      patch.tabLoading = true;
+      clearTimeout(this._tl);
+      this._tl = setTimeout(() => this.setState({tabLoading: false}), 480);
+    }
+    this.setState(patch);
+    this._scrollTop();
+  }
   back() { this.setState((s) => { const h = [...s.history]; const prev = h.pop() || 'today'; return {history: h, screen: prev}; }); this._scrollTop(); }
   startWorkout() {
     if (this.state.sessionState === 'active') { this.go('active'); return; }
-    this.setState({sessionState: 'active', elapsed: 0, exSets: this._freshSets(), skipped: {}, soreness: null});
+    const plan0 = this.BASEPLAN.map((e) => ({...e}));
+    this.setState({sessionState: 'active', elapsed: 0, plan: plan0, exSets: this._freshSets(plan0), skipped: {}, soreness: null, timer: null});
     this.go('active');
   }
   openSession(id) { this.setState({detailSessionId: id}); this.go('sessionDetail'); }
 
-  _freshSets() { return this.EX.map((e) => Array.from({length: e.sets}, () => ({kg: e.kg, reps: e.reps, done: false}))); }
+  _fields(tt) {
+    const F = {weight_reps: ['weight', 'reps'], bodyweight_reps: ['reps'], reps_only: ['reps'], duration: ['duration'], distance_duration: ['distance', 'duration'], weight_duration: ['weight', 'duration'], weight_distance: ['weight', 'distance']};
+    return F[tt] || ['weight', 'reps'];
+  }
+  _secs(n) { n = Math.max(0, Math.round(parseFloat(n) || 0)); const m = Math.floor(n / 60), r = n % 60; return m + ':' + String(r).padStart(2, '0'); }
+  _defaultsFor(tt) {
+    const f = this._fields(tt), d = {};
+    if (f.includes('weight')) d.kg = tt === 'bodyweight_reps' ? 0 : 20;
+    if (f.includes('reps')) d.reps = 10;
+    if (f.includes('distance')) d.dist = 40;
+    if (f.includes('duration')) d.dur = 45;
+    return d;
+  }
+  _target(e) {
+    const f = this._fields(e.tt).join();
+    if (f === 'weight,reps') return e.reps + ' reps × ' + e.kg + ' kg';
+    if (f === 'reps') return e.reps + ' reps';
+    if (f === 'duration') return this._secs(e.dur);
+    if (f === 'distance,duration') return e.dist + ' m · ' + this._secs(e.dur);
+    if (f === 'weight,duration') return e.kg + ' kg · ' + this._secs(e.dur);
+    return '';
+  }
+  _metaLine(e) {
+    const f = this._fields(e.tt).join();
+    if (f === 'weight,reps') return e.sets + ' × ' + e.reps + ' · ' + e.kg + ' kg';
+    if (f === 'reps') return e.sets + ' × ' + e.reps + ' reps';
+    if (f === 'duration') return e.sets + ' × ' + this._secs(e.dur);
+    if (f === 'distance,duration') return e.sets + ' × ' + e.dist + ' m';
+    return e.sets + ' sets';
+  }
+  _num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  _exSummary(e, arr) {
+    const done = arr.filter((r) => r.done);
+    const f = this._fields(e.tt).join();
+    if (f === 'weight,reps' || f === 'weight,duration') {
+      const vol = done.reduce((a, r) => a + this._num(r.kg) * this._num(r.reps), 0);
+      return done.length + ' sets · ' + Math.round(vol).toLocaleString() + ' kg';
+    }
+    if (f === 'duration') { const t = done.reduce((a, r) => a + this._num(r.dur), 0); return done.length + ' sets · ' + this._secs(t) + ' total'; }
+    if (f === 'distance,duration') { const t = done.reduce((a, r) => a + this._num(r.dist), 0); return done.length + ' sets · ' + t + ' m'; }
+    return done.length + ' sets';
+  }
+
+  _freshSets(plan) { plan = plan || this.state.plan; return plan.map((e) => Array.from({length: e.sets}, () => ({kg: e.kg || 0, reps: e.reps || 0, dist: e.dist || 0, dur: e.dur || 0, done: false}))); }
   currentIndex() {
-    const {exSets, skipped} = this.state;
-    for (let i = 0; i < this.EX.length; i++) {
+    const {exSets, skipped, plan} = this.state;
+    for (let i = 0; i < plan.length; i++) {
       if (skipped[i]) continue;
       if (exSets[i].some((r) => !r.done)) return i;
     }
     return -1;
+  }
+  toggleTimer(exi, si) { this.setState((s) => (s.timer && s.timer.exi === exi && s.timer.si === si ? {timer: null} : {timer: {exi, si}})); }
+  openSwapCurrent() { const cur = this.currentIndex(); if (cur < 0) return; this.setState({workoutPicker: {mode: 'swap', exi: cur}, wpQ: '', timer: null}); }
+  openAddEx() { this.setState({workoutPicker: {mode: 'add'}, wpQ: ''}); }
+  closeWorkoutPicker() { this.setState({workoutPicker: null}); }
+  pickExercise(x) {
+    const wp = this.state.workoutPicker; if (!wp) return;
+    const def = this._defaultsFor(x.tt);
+    if (wp.mode === 'swap') {
+      this.setState((s) => {
+        const exi = wp.exi, old = s.plan[exi], cnt = old.sets;
+        const ne = Object.assign({name: x.name, tt: x.tt, sets: cnt, muscle: old.muscle, swappedFrom: old.name}, def);
+        const plan = s.plan.map((e, i) => i === exi ? ne : e);
+        const exSets = s.exSets.map((arr, i) => i === exi ? Array.from({length: cnt}, () => ({kg: ne.kg || 0, reps: ne.reps || 0, dist: ne.dist || 0, dur: ne.dur || 0, done: false})) : arr);
+        return {plan, exSets, workoutPicker: null};
+      });
+    } else {
+      this.setState((s) => {
+        const cnt = 3;
+        const ne = Object.assign({name: x.name, tt: x.tt, sets: cnt, muscle: x.muscle || 'Added', added: true}, def);
+        return {plan: [...s.plan, ne], exSets: [...s.exSets, Array.from({length: cnt}, () => ({kg: ne.kg || 0, reps: ne.reps || 0, dist: ne.dist || 0, dur: ne.dur || 0, done: false}))], workoutPicker: null};
+      });
+    }
   }
   setSetField(exi, si, field, val) {
     this.setState((s) => {
@@ -1196,7 +1647,7 @@ class Component extends DCLogic {
       const exSets = s.exSets.map((arr, i) => i === exi ? arr.map((r, j) => j === si ? {...r, done: !r.done} : r) : arr);
       // starting rest only when marking a set complete and work remains
       const anyLeft = exSets.some((arr, i) => !s.skipped[i] && arr.some((r) => !r.done));
-      const patch = {exSets};
+      const patch = {exSets, timer: null};
       if (!wasDone && anyLeft) patch.restLeft = s.restTotal;
       if (wasDone) patch.restLeft = 0;
       return patch;
@@ -1207,14 +1658,15 @@ class Component extends DCLogic {
   skipEx() {
     const cur = this.currentIndex();
     if (cur < 0) return;
-    this.setState((s) => ({skipped: {...s.skipped, [cur]: true}, restLeft: 0}));
+    this.setState((s) => ({skipped: {...s.skipped, [cur]: true}, restLeft: 0, timer: null}));
   }
-  openFinish() { this.setState({finishOpen: true}); }
+  openFinish() { this.setState({finishOpen: true, timer: null}); }
   setSoreness(n) { this.setState({soreness: n}); }
   _resetWorkout(patch) {
+    const plan0 = this.BASEPLAN.map((e) => ({...e}));
     this.setState(Object.assign({
       finishOpen: false, history: [], screen: 'today',
-      exSets: this._freshSets(), skipped: {}, elapsed: 0, soreness: null,
+      plan: plan0, exSets: this._freshSets(plan0), skipped: {}, elapsed: 0, soreness: null, timer: null,
     }, patch || {}));
     this._scrollTop();
   }
@@ -1381,18 +1833,34 @@ class Component extends DCLogic {
   sendMsg() {
     const t = this.state.draft.trim();
     if (!t) return;
-    this.setState((s) => ({messages: [...s.messages, {from: 'me', time: this._now(), body: t}], draft: ''}), () => this._scrollChat());
+    this.setState((s) => ({messages: [...s.messages, {from: 'me', day: 'Today', time: this._now(), body: t}], draft: ''}), () => this._scrollChat());
     setTimeout(() => {
       if (this.state.screen !== 'coach') return;
-      this.setState((s) => ({messages: [...s.messages, {from: 'coach', time: this._now(), body: 'Got it — thanks for the update. Keep it up 👏'}]}), () => this._scrollChat());
+      this.setState((s) => ({messages: [...s.messages, {from: 'coach', day: 'Today', time: this._now(), body: 'Got it — thanks for the update. Keep it up 👏'}]}), () => this._scrollChat());
     }, 1500);
   }
 
-  openWeight() { this.setState((s) => ({weightSheetOpen: true, weightDraft: s.weights[s.weights.length - 1] ? s.weights[s.weights.length - 1].value : 80})); }
+  openWeight() { this.setState((s) => ({weightSheetOpen: true, weightUnit: 'kg', weightNote: '', weightWhen: 'Today', weightDraft: s.weights[s.weights.length - 1] ? s.weights[s.weights.length - 1].value : 80})); }
   closeWeight() { this.setState({weightSheetOpen: false}); }
-  incWD() { this.setState((s) => ({weightDraft: Math.round((s.weightDraft + 0.1) * 10) / 10})); }
-  decWD() { this.setState((s) => ({weightDraft: Math.max(0, Math.round((s.weightDraft - 0.1) * 10) / 10)})); }
-  saveWeight() { const v = this.state.weightDraft; this.setState((s) => ({weights: [...s.weights, {date: 'Today', value: v}], weightSheetOpen: false})); }
+  _wStep(d) { return this.state.weightUnit === 'lb' ? d * 2 : d; }
+  incWD() { this.setState((s) => ({weightDraft: Math.round((s.weightDraft + (s.weightUnit === 'lb' ? 0.2 : 0.1)) * 10) / 10})); }
+  decWD() { this.setState((s) => ({weightDraft: Math.max(0, Math.round((s.weightDraft - (s.weightUnit === 'lb' ? 0.2 : 0.1)) * 10) / 10)})); }
+  setWeightUnit(u) {
+    this.setState((s) => {
+      if (u === s.weightUnit) return {};
+      const v = u === 'lb' ? Math.round(s.weightDraft * 2.20462 * 10) / 10 : Math.round(s.weightDraft / 2.20462 * 10) / 10;
+      return {weightUnit: u, weightDraft: v};
+    });
+  }
+  setWeightWhen(w) { this.setState({weightWhen: w}); }
+  onWeightNote(e) { const v = e.target.value; this.setState({weightNote: v}); }
+  saveWeight() {
+    const s = this.state;
+    const kg = s.weightUnit === 'lb' ? Math.round(s.weightDraft / 2.20462 * 10) / 10 : s.weightDraft;
+    const date = s.weightWhen === 'Yesterday' ? 'Yesterday' : 'Today';
+    this.setState((st) => ({weights: [...st.weights, {date, value: kg}], weightSheetOpen: false}));
+    this._showToast('Weight logged', 'success');
+  }
 
   setCI(k, v) { this.setState((s) => ({ci: {...s.ci, [k]: v}})); }
   incCIW() { this.setState((s) => ({ci: {...s.ci, weight: Math.round((s.ci.weight + 0.1) * 10) / 10}})); }
@@ -1425,6 +1893,14 @@ class Component extends DCLogic {
       isEatHistory: screen === 'eatHistory',
       isSettings: screen === 'settings',
       isCheckinView: screen === 'checkinView',
+      isHistory: screen === 'history',
+      isSplash: screen === 'splash',
+      isLogin: screen === 'login',
+      isVerifyLogin: screen === 'verifyLogin',
+      isAcceptInvite: screen === 'acceptInvite',
+      isVerifyInvite: screen === 'verifyInvite',
+      isAwaitingSeat: screen === 'awaitingSeat',
+      isProfileError: screen === 'profileError',
     };
     const showTabBar = ['today', 'train', 'eat', 'checkins', 'progress', 'coach'].includes(screen);
 
@@ -1623,45 +2099,67 @@ class Component extends DCLogic {
     const activeSets = s.exSets.reduce((a, arr) => a + arr.filter((r) => r.done).length, 0);
     const activeExDone = s.exSets.filter((arr, i) => !s.skipped[i] && arr.every((r) => r.done)).length;
     const activeVol = s.exSets.reduce((a, arr) => a + arr.filter((r) => r.done).reduce((b, r) => b + num(r.kg) * num(r.reps), 0), 0);
-    const overallTotal = this.EX.reduce((a, e, i) => a + (s.skipped[i] ? 0 : e.sets), 0);
+    const overallTotal = s.plan.reduce((a, e, i) => a + (s.skipped[i] ? 0 : e.sets), 0);
     const overallDone = activeSets;
     const overallPct = overallTotal ? Math.round((overallDone / overallTotal) * 100) + '%' : '0%';
     let current = null;
     const upNext = [], completed = [];
-    this.EX.forEach((e, i) => {
+    s.plan.forEach((e, i) => {
       const arr = s.exSets[i];
       const skip = !!s.skipped[i];
       if (i === cur) return;
       if (skip) { completed.push({name: e.name, summary: 'Skipped', isSkipped: true, notSkipped: false}); return; }
       const st = exStat(arr);
       if (st.allDone) {
-        completed.push({name: e.name, summary: st.total + ' sets · ' + Math.round(st.vol).toLocaleString() + ' kg', isSkipped: false, notSkipped: true});
+        completed.push({name: e.name, summary: this._exSummary(e, arr), isSkipped: false, notSkipped: true});
         return;
       }
-      upNext.push({n: i + 1, name: e.name, muscle: e.muscle, meta: e.sets + ' × ' + e.reps + ' · ' + e.kg + ' kg'});
+      upNext.push({n: i + 1, name: e.name, muscle: e.muscle, meta: this._metaLine(e)});
     });
     if (cur >= 0) {
-      const e = this.EX[cur];
+      const e = s.plan[cur];
       const arr = s.exSets[cur];
       const st = exStat(arr);
-      const rows = arr.map((r, si) => ({
-        n: si + 1, kg: r.kg, reps: r.reps, done: r.done, notDone: !r.done,
-        rowBg: r.done ? '#eef7f1' : '#f6f7f9',
-        inputColor: r.done ? '#17a768' : '#12141a',
-        onKg: (ev) => this.setSetField(cur, si, 'kg', ev.target.value),
-        onReps: (ev) => this.setSetField(cur, si, 'reps', ev.target.value),
-        toggle: () => this.toggleSet(cur, si),
-        checkBg: r.done ? '#17a768' : '#fff',
-        checkBorder: r.done ? 'none' : '1.5px solid #d7dae0',
-        checkStroke: r.done ? '#fff' : 'transparent',
-      }));
+      const fj = this._fields(e.tt).join();
+      const rows = arr.map((r, si) => {
+        const running = !!(s.timer && s.timer.exi === cur && s.timer.si === si);
+        return {
+          n: si + 1, done: r.done, notDone: !r.done,
+          isWR: fj === 'weight,reps', isReps: fj === 'reps', isDur: fj === 'duration', isDistDur: fj === 'distance,duration',
+          kg: r.kg, reps: r.reps, dist: r.dist, durDisplay: this._secs(r.dur),
+          running, notRunning: !running,
+          rowBg: r.done ? '#eef7f1' : '#f6f7f9',
+          inputColor: r.done ? '#17a768' : '#12141a',
+          valColor: running ? A : (r.done ? '#17a768' : '#12141a'),
+          onKg: (ev) => this.setSetField(cur, si, 'kg', ev.target.value),
+          onReps: (ev) => this.setSetField(cur, si, 'reps', ev.target.value),
+          onDist: (ev) => this.setSetField(cur, si, 'dist', ev.target.value),
+          durDec: () => this.setSetField(cur, si, 'dur', Math.max(0, this._num(r.dur) - 5)),
+          durInc: () => this.setSetField(cur, si, 'dur', this._num(r.dur) + 5),
+          durToggle: () => this.toggleTimer(cur, si),
+          toggle: () => this.toggleSet(cur, si),
+          checkBg: r.done ? '#17a768' : '#fff',
+          checkBorder: r.done ? 'none' : '1.5px solid #d7dae0',
+          checkStroke: r.done ? '#fff' : 'transparent',
+        };
+      });
+      const HL = {weight: 'KG', reps: 'REPS', distance: 'METERS', duration: 'TIME'};
       current = {
         name: e.name, muscle: e.muscle,
-        posLabel: 'Exercise ' + (cur + 1) + ' of ' + this.EX.length,
+        posLabel: 'Exercise ' + (cur + 1) + ' of ' + s.plan.length,
         doneCount: st.doneCount, setTotal: e.sets, rows,
-        target: e.reps + ' reps × ' + e.kg + ' kg',
+        target: this._target(e),
+        isWR: fj === 'weight,reps', isReps: fj === 'reps', isDur: fj === 'duration', isDistDur: fj === 'distance,duration',
+        headers: this._fields(e.tt).map((k) => ({label: HL[k]})),
+        swapped: !!e.swappedFrom, swappedFrom: e.swappedFrom || '',
       };
     }
+    // exercise picker (swap / add)
+    const wp = s.workoutPicker;
+    const wpq = (s.wpQ || '').trim().toLowerCase();
+    const workoutPickerRows = wp ? this.LIB
+      .filter((x) => !wpq || x.name.toLowerCase().indexOf(wpq) !== -1)
+      .map((x) => ({name: x.name, ttLabel: (x.tt || '').replace(/_/g, ' '), muscle: x.muscle, pick: () => this.pickExercise(x)})) : [];
     const CIRC = 2 * Math.PI * 17;
     const restFrac = s.restTotal ? s.restLeft / s.restTotal : 0;
     const sorenessOpts = [
@@ -1673,16 +2171,20 @@ class Component extends DCLogic {
     });
 
     // COACH
-    const messages = s.messages.map((m) => {
+    let lastDay = null;
+    const chatItems = [];
+    s.messages.forEach((m, idx) => {
+      if (m.day && m.day !== lastDay) { chatItems.push({isSep: true, isMsg: false, sep: m.day, key: 'sep' + idx}); lastDay = m.day; }
       const own = m.from === 'me';
-      return {
+      chatItems.push({
+        isSep: false, isMsg: true, key: 'm' + idx,
         body: m.body, time: m.time,
         justify: own ? 'flex-end' : 'flex-start',
         bubbleBg: own ? A : '#fff',
         textColor: own ? '#fff' : '#12141a',
         timeColor: own ? 'rgba(255,255,255,.7)' : '#9498a1',
         corner: own ? 'border-bottom-right-radius:5px;' : 'border-bottom-left-radius:5px;border:1px solid #ececef;',
-      };
+      });
     });
 
     // PROGRESS
@@ -1708,6 +2210,32 @@ class Component extends DCLogic {
 
     const tabColor = (on) => on ? A : '#a2a7b0';
     const tabW = (on) => on ? '700' : '500';
+
+    // AUTH + EDGE
+    const FEELE = {Fresh: '😎', Easy: '🙂', Worked: '😮‍💨', Hard: '🥵', Tough: '🥵', Brutal: '💀'};
+    const otpBoxes = s.otpDigits.map((d, i) => ({
+      id: 'ce-otp-' + i, val: d,
+      onInput: (e) => this.onOtpInput(i, e), onKey: (e) => this.onOtpKey(i, e),
+    }));
+    const otpComplete = s.otpDigits.every((d) => d !== '');
+    const em = s.authEmail || '';
+    const maskedEmail = em.indexOf('@') > 2 ? em.replace(/(.{2})(.*)(@.*)/, '$1***$3') : em;
+    const businessName = (coachName === 'Maya' ? 'Reyes' : coachName) + ' Performance Coaching';
+    const toast = s.toast;
+    const toastSuccess = !!toast && toast.kind === 'success';
+
+    // WORKOUT HISTORY (month groups)
+    const hGroups = [];
+    let hCur = null;
+    this.HISTORY.forEach((x) => {
+      if (!hCur || hCur.label !== x.month) { hCur = {label: x.month, key: x.month, rows: []}; hGroups.push(hCur); }
+      hCur.rows.push({
+        date: x.date, name: x.name,
+        stats: x.dur + ' · ' + x.sets + ' sets · ' + x.vol + ' volume',
+        feelEmoji: FEELE[x.feel] || '💪',
+        open: () => this.openSession(x.id),
+      });
+    });
 
     return Object.assign({}, flags, {
       clientName, coachName, coachInitial, checkinDue, checkinSent, showTabBar,
@@ -1809,21 +2337,48 @@ class Component extends DCLogic {
       // active
       activeAllDone: cur < 0,
       skipEx: () => this.skipEx(),
+      openSwap: () => this.openSwapCurrent(),
+      openAddEx: () => this.openAddEx(),
+      workoutPickerOpen: !!wp,
+      wpTitle: wp && wp.mode === 'add' ? 'Add exercise' : 'Swap exercise',
+      wpSearchPlaceholder: 'Search exercises…',
+      wpQ: s.wpQ, onWpQ: (e) => this.setState({wpQ: e.target.value}),
+      workoutPickerRows, wpEmpty: !!wp && workoutPickerRows.length === 0,
+      closeWorkoutPicker: () => this.closeWorkoutPicker(),
       openFinish: () => this.openFinish(), saveWorkout: () => this.saveWorkout(), discardWorkout: () => this.discardWorkout(),
       finishOpen: s.finishOpen, sorenessOpts,
       activeSets, activeExDone, activeVolStr: activeVol >= 1000 ? (Math.round(activeVol / 100) / 10) + 'k' : String(Math.round(activeVol)),
       elapsedLabel: this._fmt(s.elapsed),
       // view workout
-      viewExercises: this.EX.map((e, i) => ({n: i + 1, name: e.name, detail: e.sets + ' sets · ' + e.reps + ' reps · ' + e.kg + ' kg'})),
+      viewExercises: s.plan.map((e, i) => ({n: i + 1, name: e.name, detail: e.sets + ' sets · ' + this._target(e)})),
       // coach
-      messages, draft: s.draft, onDraft: (e) => this.onDraft(e), onDraftKey: (e) => this.onDraftKey(e), sendMsg: () => this.sendMsg(),
+      chatItems, unreadCount: s.coachUnread, hasUnread: s.coachUnread > 0,
+      draft: s.draft, onDraft: (e) => this.onDraft(e), onDraftKey: (e) => this.onDraftKey(e), sendMsg: () => this.sendMsg(),
       // progress
       weightsRev, latestWeight: latest ? latest.value : '—',
       changeAbs: Math.abs(change), earliestDate: earliest ? earliest.date : '',
       toGoAbs: latest ? Math.abs(Math.round((latest.value - 78) * 10) / 10) : 0,
       openWeight: () => this.openWeight(), closeWeight: () => this.closeWeight(),
       incWD: () => this.incWD(), decWD: () => this.decWD(), saveWeight: () => this.saveWeight(),
-      weightSheetOpen: s.weightSheetOpen, weightDraft: s.weightDraft,
+      weightSheetOpen: s.weightSheetOpen, weightDraft: s.weightDraft, weightUnit: s.weightUnit,
+      weightNote: s.weightNote, onWeightNote: (e) => this.onWeightNote(e),
+      setKg: () => this.setWeightUnit('kg'), setLb: () => this.setWeightUnit('lb'),
+      kgChipBg: s.weightUnit === 'kg' ? A : '#fff', kgChipColor: s.weightUnit === 'kg' ? '#fff' : '#4b5563',
+      lbChipBg: s.weightUnit === 'lb' ? A : '#fff', lbChipColor: s.weightUnit === 'lb' ? '#fff' : '#4b5563',
+      weightUnitLabel: s.weightUnit,
+      whenOpts: ['Today', 'Yesterday'].map((w) => ({
+        label: w, active: s.weightWhen === w, pick: () => this.setWeightWhen(w),
+        border: s.weightWhen === w ? A : '#e2e4e8', bg: s.weightWhen === w ? '#eaf3fe' : '#fff', color: s.weightWhen === w ? A : '#4b5563',
+      })),
+      goProgress: () => this.go('progress'),
+      tabLoading: s.tabLoading,
+      showToday: flags.isToday && !s.tabLoading,
+      showTrain: flags.isTrain && !s.tabLoading,
+      showEat: flags.isEat && !s.tabLoading,
+      showCheckins: flags.isCheckins && !s.tabLoading,
+      showProgress: flags.isProgress && !s.tabLoading,
+      showCoach: flags.isCoach && !s.tabLoading,
+      skeletonTab: ['today', 'train', 'eat', 'checkins', 'progress', 'coach'].includes(screen) && s.tabLoading,
       // checkin
       ciWeight: ci.weight, ciNote: ci.note, incCIW: () => this.incCIW(), decCIW: () => this.decCIW(),
       onCINote: (e) => this.onCINote(e), submitCheckin: () => this.submitCheckin(),
@@ -1836,6 +2391,35 @@ class Component extends DCLogic {
       noPlan, hasPlan: !noPlan,
       weekRows, recentSessions,
       resume: () => this.go('active'),
+      goHistory: () => this.go('history'),
+      // workout history
+      historyCount: this.HISTORY.length, historyMonths: hGroups,
+      // auth + edge
+      authEmail: s.authEmail, onAuthEmail: (e) => this.setState({authEmail: e.target.value}),
+      loginExpired: s.loginExpired, maskedEmail, businessName,
+      otpBoxes, otpIncomplete: !otpComplete,
+      otpBtnBg: otpComplete ? A : '#b9d8f9', otpBtnCursor: otpComplete ? 'pointer' : 'default',
+      goVerifyLogin: () => this.goVerifyLogin(),
+      goAcceptInvite: () => this.goAcceptInvite(),
+      goVerifyInvite: () => this.goVerifyInvite(),
+      verifyLoginDone: () => { if (otpComplete) this.verifyLoginDone(); },
+      verifyInviteDone: () => { if (otpComplete) this.verifyInviteDone(); },
+      resendLogin: () => this.resendLogin(),
+      resendInvite: () => this.resendInvite(),
+      changeEmail: () => this.changeEmail(),
+      resendDisabled: s.resendCd > 0,
+      resendLabel: s.resendCd > 0 ? 'Resend code in ' + s.resendCd + 's' : 'Resend code',
+      resendColor: s.resendCd > 0 ? '#b3b8c0' : '#12141a',
+      resendCursor: s.resendCd > 0 ? 'default' : 'pointer',
+      splashSlow: s.splashStage === 'slow' || s.splashStage === 'stuck',
+      splashStuck: s.splashStage === 'stuck',
+      splashRetry: () => this.splashRetry(),
+      seatChecking: s.seatChecking, checkSeat: () => this.checkSeat(),
+      profileLoading: s.profileLoading, profileRetry: () => this.profileRetry(),
+      logout: () => this.logout(),
+      toastOpen: !!toast, toastMsg: toast ? toast.msg : '',
+      toastSuccess, toastDanger: !!toast && toast.kind === 'danger',
+      toastIconBg: toastSuccess ? '#17a768' : '#c0392b',
       detailName: dsRaw.name,
       detailMeta: dsRaw.date + ' · ' + dsRaw.duration + ' · ' + dsRaw.sets + ' sets · ' + dsRaw.volume,
       detailFeel: dsRaw.feel, detailNote: dsRaw.note, detailExercises,

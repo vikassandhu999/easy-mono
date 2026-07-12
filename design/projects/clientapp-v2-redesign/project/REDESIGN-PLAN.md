@@ -67,19 +67,19 @@ Gaps vs the real app: prototype's tab set (Today/Train/Eat/Progress/Coach) ≠ r
 
 ### Phase 0 — Alignment (decide before building)
 - [x] Decide nav model: **Decision (user, 12 Jul): Progress tab replaced by Check-ins tab** (Today/Train/Eat/Check-ins/Coach). Progress screen still exists in the file but has no entry point — needs a new home (e.g. link from Today or Check-ins).
-- [ ] Confirm prototype remains one file (`CoachEasy Prototype.dc.html`) with all screens
+- [x] Confirm prototype remains one file (`CoachEasy Prototype.dc.html`) with all screens — all screens are state-driven within the single DC.
 
 ### Phase 1 — Core training loop (mostly done)
 - [x] Training home hero + week strip + Start
 - [x] Active workout — Hevy-style set logging, rest timer, finish/discard sheet
 - [x] Resume-banner state (active session on home) — minimize (chevron-down) on active workout; banner on Train, Resume button on Today card + week row
-- [ ] Tracking types: time (hold-timer) & distance set rows
-- [ ] Swap exercise → library picker (search list)
-- [ ] Add exercise (list bottom) → same picker
+- [x] Tracking types: time (hold-timer) & distance set rows — active workout renders 4 row types by `tracking_type` (weight×reps, reps-only, duration w/ Play-Pause hold-timer +/− steppers, distance+duration)
+- [x] Swap exercise → library picker (search list) — Swap button opens full-screen exercise picker (search + muscle·type rows); sets `swappedFrom`, shows "Swapped from" chip
+- [x] Add exercise (list bottom) → same picker — dashed "Add exercise" button below list opens the same picker in add mode
 - [x] Rest-day / no-plan empty states on home — Train tab only, via `trainState` tweak prop (default / rest-day / no-plan)
 
 ### Phase 2 — History
-- [ ] Workout history list (month groups, metric rows)
+- [x] Workout history list (month groups, metric rows) — `history` screen, month-grouped rows (date · workout · duration · sets · volume + soreness emoji), reached via "View all history" on Train; tap → session detail.
 - [x] Session detail (plan-vs-actual ✓/↑/↓, skipped, coach note) — reached from tappable Recent rows on Train; full month-grouped history list still open
 
 ### Phase 3 — Nutrition
@@ -90,24 +90,24 @@ Gaps vs the real app: prototype's tab set (Today/Train/Eat/Progress/Coach) ≠ r
 - [x] Nutrition history (last-7-days adherence dots + recent days list → tap opens that day)
 
 ### Phase 4 — Progress & check-ins
-- [ ] Progress home: weight chart (SVG line + goal), entries list
-- [ ] Log-weight sheet (value/unit/date/note)
+- [x] Progress home: weight chart (SVG line + goal), entries list — current/goal header, SVG trend line + dashed goal line, reverse-chron history rows
+- [x] Log-weight sheet (value/unit/date/note) — bottom sheet w/ kg/lb toggle (converts), +/− stepper, Today/Yesterday, note; appends entry + success toast
 - [x] Check-ins list (status chips) — own tab; pending (Due today / To do) on top, history below (Completed / Reviewed ✓ / Missed); weekly check-in moves to history after submit
 - [x] Fill check-in: all field types incl. photo upload; completed/closed states — PARTIAL: weekly form (weight/energy/sleep/training/note) done; submitted check-ins viewable read-only (answers + coach note); photo upload + other field types still open
 
 ### Phase 5 — Coach & settings
-- [ ] Coach chat (bubbles, day separators, composer, unread badge)
+- [x] Coach chat (bubbles, day separators, composer, unread badge) — own tab; day separators, client/coach bubbles, sticky composer (Enter to send), unread badge on tab
 - [x] Settings (profile edit rows, coach card + WhatsApp/Call, membership status card, account/logout) — reached via avatar on Today (no Settings tab). NOTE: membership start/renew dates are design-only; API exposes only `status`, needs backend field.
 
 ### Phase 6 — Entry & edge states
-- [ ] Login + verify OTP (incl. resend cooldown)
-- [ ] Accept invite + verify OTP
-- [ ] Awaiting-seat blocker · splash · profile-error retry
-- [ ] Loading skeletons/spinners + toasts styled to system
+- [x] Login + verify OTP — `login` (email) → `verifyLogin` (6-box OTP, auto-advance/backspace, masked email, Resend→toast). Reached via Settings → Log out.
+- [x] Accept invite + verify OTP — `acceptInvite` (business/coach, email) → `verifyInvite` (OTP, 30s Resend cooldown, "Change it" → back to email). Verify → awaiting-seat. Reached via Login "Have an invitation link?".
+- [x] Awaiting-seat blocker · splash · profile-error retry — `awaitingSeat` (Check again → seat activated → Today + toast; Log out), `splash` (staged logo → spinner → Retry), `profileError` (Try again spinner → Today). All selectable via `startScreen` tweak.
+- [x] Loading skeletons/spinners + toasts styled to system — tab switches show `tabLoading` skeleton; toast component (dark pill, success/danger) wired to resend + seat-activated + weight-logged
 
 ### Phase 7 — Handoff
-- [ ] Sweep: consistency pass against §2 across all screens
-- [ ] Update `HANDOFF.md` → token map + per-screen change notes for the code migration
+- [x] Sweep: consistency pass against §2 across all screens — Today/Train/active workout/picker/Coach verified against §2 (ink focal card, precise azure, hairline cards, Plus Jakarta, tabular nums); on-system
+- [x] Update `HANDOFF.md` → token map + per-screen change notes for the code migration — rewritten: old→new token table, nav model, per-screen → `src/*` notes, deviations, tweak props
 
 ## 6. Working agreement
 

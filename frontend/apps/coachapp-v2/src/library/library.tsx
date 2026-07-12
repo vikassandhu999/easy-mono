@@ -9,7 +9,6 @@ import {useListCoachExercisesQuery, useListFoodsQuery, useListRecipesQuery} from
 import {useListNutritionPlansQuery} from '@/api/nutrition-plans-list';
 import {useListTrainingPlansQuery} from '@/api/training-plans-list';
 import TemplateCard from '@/library/components/template-card';
-import TemplatePreview, {type PreviewTarget} from '@/library/components/template-preview';
 import {
   type BuilderItem,
   exerciseItem,
@@ -111,10 +110,9 @@ export default function Library() {
     },
   };
 
-  const [preview, setPreview] = useState<PreviewTarget | null>(null);
   const openItem = (type: BuilderType, item: Pick<BuilderItem, 'id' | 'name'>) => {
     pushRecent({id: item.id, name: item.name, type: type.key});
-    setPreview({id: item.id, name: item.name, type: type.key});
+    navigate(type.detailRoute.replace(':id', item.id));
   };
 
   const visibleTypes = cat === 'all' ? BUILDER_TYPES : BUILDER_TYPES.filter((t) => t.key === cat);
@@ -353,11 +351,6 @@ export default function Library() {
             </div>
           ) : null}
         </div>
-
-        <TemplatePreview
-          onClose={() => setPreview(null)}
-          target={preview}
-        />
       </Page.Content>
     </Page>
   );

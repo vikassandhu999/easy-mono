@@ -14,7 +14,6 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import TemplateCard from '@/library/components/template-card';
-import TemplatePreview, {type PreviewTarget} from '@/library/components/template-preview';
 import type {BuilderItem} from '@/library/lib/builder-items';
 import {type BuilderTypeKey, builderType} from '@/library/lib/builder-types';
 import {type BuilderRef, isFav, pushRecent, toggleFav, useFavs, useRecents} from '@/library/lib/recents';
@@ -148,6 +147,7 @@ export default function SectionPage({
   typeKey,
 }: SectionPageProps) {
   const type = builderType(typeKey);
+  const navigate = useNavigate();
   const [view, setView] = useState<'tile' | 'list'>('tile');
   const favs = useFavs();
   const recents = useRecents();
@@ -168,10 +168,9 @@ export default function SectionPage({
     return () => observer.disconnect();
   }, [hasNextPage, fetchNextPage]);
 
-  const [preview, setPreview] = useState<PreviewTarget | null>(null);
   const open = (item: {id: string; name: string}) => {
     pushRecent({id: item.id, name: item.name, type: typeKey});
-    setPreview({id: item.id, name: item.name, type: typeKey});
+    navigate(type.detailRoute.replace(':id', item.id));
   };
 
   const favHighlight = favs.find((f) => f.type === typeKey);
@@ -300,11 +299,6 @@ export default function SectionPage({
             </>
           )}
         </div>
-
-        <TemplatePreview
-          onClose={() => setPreview(null)}
-          target={preview}
-        />
       </Page.Content>
     </Page>
   );

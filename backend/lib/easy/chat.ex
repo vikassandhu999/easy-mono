@@ -1,9 +1,14 @@
 defmodule Easy.Chat do
+  alias Easy.Attachments.Attachment
   alias Easy.Chat.Conversation
   alias Easy.Chat.Message
+  alias Easy.Chat.MessageAttachment
   alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormSubmission
+  alias Easy.Forms.FormTemplate
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
@@ -70,7 +75,7 @@ defmodule Easy.Chat do
   def send_message(%Ctx{} = ctx, conversation_id, attrs) do
     with {:ok, coach} <- get_coach(ctx),
          {:ok, conversation} <- get_conversation(ctx, conversation_id) do
-      insert_message(ctx.business_id, conversation, :coach, coach.id, attrs)
+      insert_message(ctx, conversation, :coach, coach.id, attrs, :allow_embed)
     end
   end
 
@@ -101,7 +106,7 @@ defmodule Easy.Chat do
   def send_client_message(%Ctx{} = ctx, attrs) do
     with {:ok, client} <- get_client_account(ctx),
          {:ok, conversation} <- upsert_conversation(ctx.business_id, client.id, :client) do
-      insert_message(ctx.business_id, conversation, :client, client.id, attrs)
+      insert_message(ctx, conversation, :client, client.id, attrs, :reject_embed)
     end
   end
 
@@ -142,7 +147,7 @@ defmodule Easy.Chat do
       |> Repo.all()
 
     {page, rest} = Enum.split(messages, limit)
-    %{messages: Enum.reverse(page), has_more: rest != []}
+    %{messages: page |> load_message_attachments(business_id) |> Enum.reverse(), has_more: rest != []}
   end
 
   defp maybe_before(query, _business_id, _conversation_id, nil), do: query
@@ -154,28 +159,27 @@ defmodule Easy.Chat do
     end
   end
 
-  defp insert_message(business_id, conversation, sender_type, sender_id, attrs) do
+  defp insert_message(ctx, conversation, sender_type, sender_id, attrs, embed_policy) do
+    attrs = attrs |> normalize_attrs() |> normalize_body()
+
     result =
       Repo.transaction(fn ->
-        case business_id
-             |> Message.insert_changeset(conversation.id, sender_type, sender_id, attrs)
-             |> Repo.insert() do
-          {:ok, message} ->
-            Conversation
-            |> where([c], c.id == ^conversation.id)
-            |> where([c], is_nil(c.last_message_at) or c.last_message_at <= ^message.inserted_at)
-            |> Repo.update_all(
-              set: [
-                last_message_at: message.inserted_at,
-                last_message_preview: String.slice(message.body, 0, 200),
-                updated_at: DateTime.truncate(message.inserted_at, :second)
-              ]
-            )
+        base_changeset =
+          Message.insert_changeset(ctx.business_id, conversation.id, sender_type, sender_id, nil, attrs)
 
-            message
-
-          {:error, changeset} ->
-            Repo.rollback(changeset)
+        with {:ok, attachment_ids} <- validate_attachment_ids(base_changeset, attrs),
+             {:ok, attachments} <- load_attachments(ctx, conversation.client_id, attachment_ids),
+             {:ok, embed} <- resolve_embed(ctx, conversation.client_id, attrs[:embed], embed_policy, base_changeset),
+             changeset <-
+               Message.insert_changeset(ctx.business_id, conversation.id, sender_type, sender_id, embed, attrs)
+               |> require_content(attachments, embed),
+             {:ok, message} <- Repo.insert(changeset),
+             :ok <- insert_attachment_links(ctx.business_id, message.id, attachments),
+             :ok <- update_conversation(conversation, message, attachments),
+             {:ok, message} <- reload_message(ctx.business_id, message.id) do
+          message
+        else
+          {:error, reason} -> Repo.rollback(reason)
         end
       end)
 
@@ -183,6 +187,217 @@ defmodule Easy.Chat do
       broadcast_message(conversation, message)
       {:ok, message}
     end
+  end
+
+  defp normalize_attrs(attrs) do
+    Enum.reduce(attrs, %{}, fn
+      {"body", value}, acc -> Map.put(acc, :body, value)
+      {"attachment_ids", value}, acc -> Map.put(acc, :attachment_ids, value)
+      {"embed", value}, acc -> Map.put(acc, :embed, normalize_embed(value))
+      {:embed, value}, acc -> Map.put(acc, :embed, normalize_embed(value))
+      {key, _value}, acc when is_binary(key) -> acc
+      {key, value}, acc -> Map.put(acc, key, value)
+    end)
+  end
+
+  defp normalize_embed(embed) when is_map(embed) do
+    Enum.reduce(embed, %{}, fn
+      {"type", value}, acc -> Map.put(acc, :type, value)
+      {"id", value}, acc -> Map.put(acc, :id, value)
+      {key, _value}, acc when is_binary(key) -> acc
+      {key, value}, acc -> Map.put(acc, key, value)
+    end)
+  end
+
+  defp normalize_embed(embed), do: embed
+
+  defp normalize_body(%{body: body} = attrs) when is_binary(body) do
+    case String.trim(body) do
+      "" -> Map.put(attrs, :body, nil)
+      body -> Map.put(attrs, :body, body)
+    end
+  end
+
+  defp normalize_body(attrs), do: attrs
+
+  defp validate_attachment_ids(changeset, attrs) do
+    ids = Map.get(attrs, :attachment_ids, [])
+
+    cond do
+      not is_list(ids) ->
+        {:error, Ecto.Changeset.add_error(changeset, :attachment_ids, "is invalid")}
+
+      length(ids) > 4 ->
+        {:error, Ecto.Changeset.add_error(changeset, :attachment_ids, "should have at most 4 item(s)")}
+
+      true ->
+        case cast_attachment_ids(ids) do
+          {:ok, ids} -> validate_unique_attachment_ids(changeset, ids)
+          :error -> {:error, Ecto.Changeset.add_error(changeset, :attachment_ids, "is invalid")}
+        end
+    end
+  end
+
+  defp validate_unique_attachment_ids(changeset, ids) do
+    if length(Enum.uniq(ids)) == length(ids),
+      do: {:ok, ids},
+      else: {:error, Ecto.Changeset.add_error(changeset, :attachment_ids, "must be unique")}
+  end
+
+  defp cast_attachment_ids(ids) do
+    Enum.reduce_while(ids, {:ok, []}, fn id, {:ok, cast_ids} ->
+      case Ecto.UUID.cast(id) do
+        {:ok, id} -> {:cont, {:ok, [id | cast_ids]}}
+        :error -> {:halt, :error}
+      end
+    end)
+    |> case do
+      {:ok, ids} -> {:ok, Enum.reverse(ids)}
+      :error -> :error
+    end
+  end
+
+  defp load_attachments(_ctx, _client_id, []), do: {:ok, []}
+
+  defp load_attachments(ctx, client_id, ids) do
+    attachments =
+      Attachment
+      |> Attachment.for_client(ctx.business_id, client_id)
+      |> Attachment.with_ids(ids)
+      |> Repo.all()
+
+    if length(attachments) == length(ids) do
+      by_id = Map.new(attachments, &{&1.id, &1})
+      {:ok, Enum.map(ids, &Map.fetch!(by_id, &1))}
+    else
+      {:error, :not_found}
+    end
+  end
+
+  defp resolve_embed(_ctx, _client_id, nil, _policy, _changeset), do: {:ok, nil}
+
+  defp resolve_embed(_ctx, _client_id, _embed, :reject_embed, changeset),
+    do: {:error, Ecto.Changeset.add_error(changeset, :embed, "is not allowed")}
+
+  defp resolve_embed(ctx, client_id, %{type: type, id: id}, :allow_embed, _changeset)
+       when type in [:form_submission, "form_submission"] and is_binary(id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, id} -> resolve_form_submission(ctx, client_id, id)
+      :error -> {:error, :not_found}
+    end
+  end
+
+  defp resolve_embed(_ctx, _client_id, _embed, :allow_embed, changeset),
+    do: {:error, Ecto.Changeset.add_error(changeset, :embed, "is invalid")}
+
+  defp resolve_form_submission(ctx, client_id, id) do
+    result =
+      from(submission in FormSubmission,
+        join: assignment in FormAssignment,
+        on:
+          assignment.id == submission.form_assignment_id and
+            assignment.business_id == submission.business_id and
+            assignment.client_id == submission.client_id,
+        join: template in FormTemplate,
+        on:
+          template.id == assignment.form_template_id and
+            template.business_id == submission.business_id,
+        where:
+          submission.id == ^id and submission.business_id == ^ctx.business_id and
+            submission.client_id == ^client_id,
+        select: {submission, assignment, template}
+      )
+      |> Repo.one()
+
+    case result do
+      {submission, assignment, template} ->
+        {:ok,
+         %{
+           type: :form_submission,
+           id: submission.id,
+           snapshot: %{
+             "form_assignment_id" => assignment.id,
+             "title" => template.name,
+             "submitted_at" => DateTime.to_iso8601(submission.submitted_at)
+           }
+         }}
+
+      nil ->
+        {:error, :not_found}
+    end
+  end
+
+  defp require_content(changeset, [], nil) do
+    if Ecto.Changeset.get_field(changeset, :body),
+      do: changeset,
+      else: Ecto.Changeset.add_error(changeset, :body, "can't be blank")
+  end
+
+  defp require_content(changeset, _attachments, _embed), do: changeset
+
+  defp insert_attachment_links(business_id, message_id, attachments) do
+    attachments
+    |> Enum.with_index()
+    |> Enum.reduce_while(:ok, fn {attachment, position}, :ok ->
+      case business_id
+           |> MessageAttachment.insert_changeset(message_id, attachment.id, %{position: position})
+           |> Repo.insert() do
+        {:ok, _link} -> {:cont, :ok}
+        {:error, changeset} -> {:halt, {:error, changeset}}
+      end
+    end)
+  end
+
+  defp update_conversation(conversation, message, attachments) do
+    Conversation
+    |> where([c], c.id == ^conversation.id and c.business_id == ^conversation.business_id)
+    |> where([c], is_nil(c.last_message_at) or c.last_message_at <= ^message.inserted_at)
+    |> Repo.update_all(
+      set: [
+        last_message_at: message.inserted_at,
+        last_message_preview: message_preview(message, attachments),
+        updated_at: DateTime.truncate(message.inserted_at, :second)
+      ]
+    )
+
+    :ok
+  end
+
+  defp message_preview(%Message{body: body}, _attachments) when is_binary(body),
+    do: String.slice(body, 0, 200)
+
+  defp message_preview(%Message{embed_snapshot: %{"title" => title}}, _attachments),
+    do: "Shared #{title}"
+
+  defp message_preview(_message, attachments) when length(attachments) > 1,
+    do: "#{length(attachments)} attachments"
+
+  defp message_preview(_message, [%Attachment{content_type: "image/" <> _}]), do: "Photo"
+  defp message_preview(_message, [%Attachment{content_type: "video/" <> _}]), do: "Video"
+  defp message_preview(_message, [%Attachment{content_type: "audio/" <> _}]), do: "Voice note"
+  defp message_preview(_message, [_attachment]), do: "Attachment"
+
+  defp reload_message(business_id, message_id) do
+    Message
+    |> where([message], message.id == ^message_id and message.business_id == ^business_id)
+    |> Message.include_attachments()
+    |> Repo.one()
+    |> ok_or_not_found()
+  end
+
+  defp load_message_attachments([], _business_id), do: []
+
+  defp load_message_attachments(messages, business_id) do
+    ids = Enum.map(messages, & &1.id)
+
+    loaded =
+      Message
+      |> where([message], message.business_id == ^business_id and message.id in ^ids)
+      |> Message.include_attachments()
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    Enum.map(messages, &Map.fetch!(loaded, &1.id))
   end
 
   defp broadcast_message(conversation, message) do

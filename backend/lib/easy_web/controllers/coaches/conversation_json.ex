@@ -39,8 +39,25 @@ defmodule EasyWeb.Coaches.ConversationJSON do
       sender_type: m.sender_type,
       sender_id: m.sender_id,
       body: m.body,
+      attachments: Enum.map(m.attachments, &attachment_data/1),
+      embed: embed_data(m),
       inserted_at: m.inserted_at
     }
+  end
+
+  defp attachment_data(attachment) do
+    %{
+      id: attachment.id,
+      content_type: attachment.content_type,
+      byte_size: attachment.byte_size,
+      duration_ms: attachment.duration_ms
+    }
+  end
+
+  defp embed_data(%Message{embed_type: nil}), do: nil
+
+  defp embed_data(%Message{} = message) do
+    %{type: message.embed_type, id: message.embed_id, snapshot: message.embed_snapshot}
   end
 
   defp client_name(%Client{} = client),

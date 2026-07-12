@@ -6,9 +6,9 @@ defmodule EasyWeb.Coaches.ConversationController do
   alias OpenApiSpex.Operation
 
   alias EasyWeb.OpenApi.Schemas.{
-    ChatMessageCreateRequest,
     ChatMessageResponse,
     ChatMessagesResponse,
+    CoachChatMessageCreateRequest,
     ConversationListResponse,
     ConversationResponse,
     ErrorResponse
@@ -74,7 +74,7 @@ defmodule EasyWeb.Coaches.ConversationController do
     operation_id: "createCoachConversationMessage",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:id, :path, :string, "Conversation id")],
-    request_body: {"Message", "application/json", ChatMessageCreateRequest, required: true},
+    request_body: {"Message", "application/json", CoachChatMessageCreateRequest, required: true},
     responses: [
       created: {"Message", "application/json", ChatMessageResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},

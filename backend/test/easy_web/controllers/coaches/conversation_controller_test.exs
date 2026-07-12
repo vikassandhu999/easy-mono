@@ -1,6 +1,8 @@
 defmodule EasyWeb.Coaches.ConversationControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   setup do
     coach = insert(:coach)
     client = insert(:client, business: coach.business, creator: coach)
@@ -34,11 +36,94 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       assert %{"data" => message} = json_response(post_conn, 201)
       assert message["sender_type"] == "coach"
       assert message["body"] == "Hello"
+      assert message["attachments"] == []
+      assert message["embed"] == nil
+      assert_schema(message, "ChatMessage", EasyWeb.ApiSpec.spec())
 
       list_conn =
         build_conn() |> authenticate_coach(coach) |> get("/v1/coach/conversations/#{conversation_id}/messages")
 
       assert %{"data" => [%{"body" => "Hello"}], "has_more" => false} = json_response(list_conn, 200)
+    end
+
+    test "returns attachment metadata and the backend form submission snapshot", %{
+      conn: conn,
+      client: client
+    } do
+      %{"data" => %{"id" => conversation_id}} =
+        conn |> get("/v1/coach/clients/#{client.id}/conversation") |> json_response(200)
+
+      attachment = insert(:attachment, business: client.business, client: client, content_type: "audio/webm")
+      template = insert(:form_template, business: client.business)
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+      submission = insert(:form_submission, business: client.business, client: client, form_assignment: assignment)
+
+      post_conn =
+        post(conn, "/v1/coach/conversations/#{conversation_id}/messages", %{
+          "attachment_ids" => [attachment.id],
+          "embed" => %{"type" => "form_submission", "id" => submission.id}
+        })
+
+      response = json_response(post_conn, 201)
+
+      assert %{
+               "data" => %{
+                 "body" => nil,
+                 "attachments" => [
+                   %{
+                     "id" => attachment_id,
+                     "content_type" => "audio/webm",
+                     "byte_size" => 1024,
+                     "duration_ms" => nil
+                   }
+                 ],
+                 "embed" => %{
+                   "type" => "form_submission",
+                   "id" => submission_id,
+                   "snapshot" => %{
+                     "form_assignment_id" => assignment_id,
+                     "title" => title,
+                     "submitted_at" => submitted_at
+                   }
+                 }
+               }
+             } = response
+
+      assert attachment_id == attachment.id
+      assert submission_id == submission.id
+      assert assignment_id == assignment.id
+      assert title == assignment.form_template.name
+      assert submitted_at == DateTime.to_iso8601(submission.submitted_at)
+      assert_schema(response["data"], "ChatMessage", EasyWeb.ApiSpec.spec())
+
+      list_conn =
+        build_conn()
+        |> authenticate_coach(client.creator)
+        |> get("/v1/coach/conversations/#{conversation_id}/messages")
+
+      assert %{
+               "data" => [
+                 %{
+                   "attachments" => [
+                     %{
+                       "id" => ^attachment_id,
+                       "content_type" => "audio/webm",
+                       "byte_size" => 1024,
+                       "duration_ms" => nil
+                     }
+                   ],
+                   "embed" => %{
+                     "type" => "form_submission",
+                     "id" => ^submission_id,
+                     "snapshot" => %{
+                       "form_assignment_id" => ^assignment_id,
+                       "title" => ^title,
+                       "submitted_at" => ^submitted_at
+                     }
+                   }
+                 }
+               ]
+             } = json_response(list_conn, 200)
     end
 
     test "422s on a blank body", %{conn: conn, client: client} do

@@ -169,6 +169,7 @@ defmodule Easy.ChatTest do
 
   describe "Easy.Chat context" do
     alias Easy.Chat
+    alias Easy.Chat.MessageAttachment
     alias Easy.Ctx
 
     defp coach_ctx(coach), do: trainer_ctx(coach)
@@ -215,6 +216,174 @@ defmodule Easy.ChatTest do
                Chat.list_messages(coach_ctx(coach), conversation.id, limit: 3, before: oldest_loaded.id)
 
       assert Enum.map(page2, & &1.body) == ["m1", "m2"]
+    end
+
+    test "composes text, ordered attachments, and an immutable form submission embed", %{
+      coach: coach,
+      client: client
+    } do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      first = insert(:attachment, business: coach.business, client: client, content_type: "image/png")
+      second = insert(:attachment, business: coach.business, client: client, content_type: "audio/webm")
+      template = insert(:form_template, business: coach.business)
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+      submission = insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)
+
+      assert {:ok, message} =
+               Chat.send_message(coach_ctx(coach), conversation.id, %{
+                 "body" => "  Energy improved.  ",
+                 "attachment_ids" => [String.upcase(second.id), first.id],
+                 "embed" => %{"type" => "form_submission", "id" => submission.id}
+               })
+
+      assert message.body == "Energy improved."
+      assert Enum.map(message.attachments, & &1.id) == [second.id, first.id]
+      assert message.embed_type == :form_submission
+      assert message.embed_id == submission.id
+
+      assert message.embed_snapshot == %{
+               "form_assignment_id" => assignment.id,
+               "title" => assignment.form_template.name,
+               "submitted_at" => DateTime.to_iso8601(submission.submitted_at)
+             }
+
+      assignment.form_template
+      |> Ecto.Changeset.change(name: "Renamed")
+      |> Easy.Repo.update!()
+
+      reloaded = Easy.Repo.get!(Message, message.id)
+      assert reloaded.embed_snapshot["title"] == assignment.form_template.name
+    end
+
+    test "supports attachment-only and embed-only previews", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      attachment = insert(:attachment, business: coach.business, client: client, content_type: "video/mp4")
+
+      assert {:ok, attachment_message} =
+               Chat.send_message(coach_ctx(coach), conversation.id, %{"attachment_ids" => [attachment.id]})
+
+      assert attachment_message.body == nil
+      assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "Video"
+
+      template = insert(:form_template, business: coach.business)
+      assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
+      submission = insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)
+
+      assert {:ok, embed_message} =
+               Chat.send_message(coach_ctx(coach), conversation.id, %{
+                 "embed" => %{"type" => "form_submission", "id" => submission.id}
+               })
+
+      assert embed_message.body == nil
+
+      assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview ==
+               "Shared #{assignment.form_template.name}"
+    end
+
+    test "rejects empty and invalid attachment compositions", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      attachment = insert(:attachment, business: coach.business, client: client)
+
+      assert {:error, empty} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "   "})
+      assert "can't be blank" in errors_on(empty).body
+
+      assert {:error, duplicate} =
+               Chat.send_message(coach_ctx(coach), conversation.id, %{
+                 "attachment_ids" => [attachment.id, attachment.id]
+               })
+
+      assert "must be unique" in errors_on(duplicate).attachment_ids
+
+      assert {:error, too_many} =
+               Chat.send_message(coach_ctx(coach), conversation.id, %{
+                 "attachment_ids" => Enum.map(1..5, fn _ -> Ecto.UUID.generate() end)
+               })
+
+      assert "should have at most 4 item(s)" in errors_on(too_many).attachment_ids
+
+      assert {:error, invalid} =
+               Chat.send_message(coach_ctx(coach), conversation.id, %{"attachment_ids" => ["bad-id"]})
+
+      assert "is invalid" in errors_on(invalid).attachment_ids
+      assert Easy.Repo.aggregate(MessageAttachment, :count) == 0
+    end
+
+    test "rejects unknown and cross-tenant attachments without partial writes", %{coach: coach, client: client} do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      other_client = insert(:client, business: coach.business, creator: coach)
+      cross_client = insert(:attachment, business: coach.business, client: other_client)
+      other_coach = insert(:coach)
+      other_client_business = insert(:client, business: other_coach.business, creator: other_coach)
+      cross_business = insert(:attachment, business: other_coach.business, client: other_client_business)
+
+      for id <- [Ecto.UUID.generate(), cross_client.id, cross_business.id] do
+        assert {:error, :not_found} =
+                 Chat.send_message(coach_ctx(coach), conversation.id, %{
+                   "body" => "must roll back",
+                   "attachment_ids" => [id]
+                 })
+      end
+
+      assert Easy.Repo.aggregate(Message, :count) == 0
+    end
+
+    test "coach embeds must belong to the conversation client and clients cannot embed", %{
+      coach: coach,
+      client: client
+    } do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      other_client = insert(:client, business: coach.business, creator: coach)
+      template = insert(:form_template, business: coach.business)
+      assignment = insert(:form_assignment, business: coach.business, client: other_client, form_template: template)
+      submission = insert(:form_submission, business: coach.business, client: other_client, form_assignment: assignment)
+      embed = %{"type" => "form_submission", "id" => submission.id}
+
+      other_coach = insert(:coach)
+      other_client_business = insert(:client, business: other_coach.business, creator: other_coach)
+      other_template = insert(:form_template, business: other_coach.business)
+
+      other_assignment =
+        insert(:form_assignment,
+          business: other_coach.business,
+          client: other_client_business,
+          form_template: other_template
+        )
+
+      cross_business =
+        insert(:form_submission,
+          business: other_coach.business,
+          client: other_client_business,
+          form_assignment: other_assignment
+        )
+
+      for id <- [submission.id, cross_business.id, Ecto.UUID.generate()] do
+        assert {:error, :not_found} =
+                 Chat.send_message(coach_ctx(coach), conversation.id, %{
+                   "embed" => %{"type" => "form_submission", "id" => id}
+                 })
+      end
+
+      assert {:error, changeset} = Chat.send_client_message(client_ctx(client), %{"embed" => embed})
+      assert "is not allowed" in errors_on(changeset).embed
+    end
+
+    test "paginated messages preload attachments without changing message order", %{
+      coach: coach,
+      client: client
+    } do
+      {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
+      attachment = insert(:attachment, business: coach.business, client: client)
+      {:ok, first} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "first"})
+
+      {:ok, second} =
+        Chat.send_message(coach_ctx(coach), conversation.id, %{
+          "body" => "second",
+          "attachment_ids" => [attachment.id]
+        })
+
+      assert {:ok, %{messages: messages}} = Chat.list_messages(coach_ctx(coach), conversation.id)
+      assert Enum.map(messages, & &1.id) == [first.id, second.id]
+      assert Enum.map(List.last(messages).attachments, & &1.id) == [attachment.id]
     end
 
     test "send_message bumps preview and unread for the client", %{coach: coach, client: client} do

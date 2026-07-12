@@ -14,6 +14,11 @@ export default function ClientConversation() {
   const clientQuery = useGetClientQuery(id!, {skip: !id});
   const conversationQuery = useGetCoachClientConversationQuery({clientId: id!}, {skip: !id});
   const detailPath = ROUTES.CLIENT_DETAIL.replace(':id', id!);
+  const embedId = searchParams.get('embed_id');
+  const initialEmbed =
+    searchParams.get('embed_type') === 'form_submission' && embedId
+      ? ({id: embedId, type: 'form_submission'} as const)
+      : null;
 
   if (clientQuery.isLoading) {
     return (
@@ -50,9 +55,10 @@ export default function ClientConversation() {
       ) : (
         <ConversationView
           backTo={detailPath}
+          clientId={id!}
           conversationId={conversationQuery.data.data.id}
           embedded
-          initialBody={searchParams.get('prefill') ?? ''}
+          initialEmbed={initialEmbed}
           title={conversationQuery.data.data.client_name || 'Client'}
         />
       )}

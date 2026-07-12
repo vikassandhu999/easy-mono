@@ -1,6 +1,6 @@
-import {Button, Spinner, TextArea, Typography} from '@heroui/react';
+import {Button, Spinner, TextArea, Typography, toast} from '@heroui/react';
 import {ArrowLeft, Send} from 'lucide-react';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {useChannelEvent} from '@/@hooks/use-channel-event';
@@ -13,6 +13,12 @@ import {
   useCreateCoachConversationMessageMutation,
   useMarkCoachConversationReadMutation,
 } from '@/api/conversations';
+import type {ChatMessageEmbedRequest} from '@/api/generated';
+import {getApiErrorMessage} from '@/api/shared';
+import AttachmentComposer from '@/messages/attachment-composer';
+import MessageAttachments from '@/messages/message-attachments';
+import MessageEmbed from '@/messages/message-embed';
+import useAttachmentDownloadUrls from '@/messages/use-attachment-download-urls';
 import {useAppDispatch} from '@/store';
 
 function formatDay(iso: string) {
@@ -23,7 +29,17 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
 }
 
-function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
+function MessageBubble({
+  message,
+  own,
+  refresh,
+  urls,
+}: {
+  message: ChatMessage;
+  own: boolean;
+  refresh: (ids: string[]) => Promise<void>;
+  urls: Record<string, string>;
+}) {
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -33,9 +49,19 @@ function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
             : 'rounded-bl-[4px] border border-separator bg-surface text-foreground'
         }`}
       >
-        <p className="whitespace-pre-wrap break-words text-[13px] leading-[1.45] lg:text-[13.5px] lg:leading-[1.5]">
-          {message.body}
-        </p>
+        <div className="grid gap-2">
+          <MessageAttachments
+            attachments={message.attachments}
+            refresh={refresh}
+            urls={urls}
+          />
+          {message.embed ? <MessageEmbed embed={message.embed} /> : null}
+          {message.body ? (
+            <p className="whitespace-pre-wrap break-words text-[13px] leading-[1.45] lg:text-[13.5px] lg:leading-[1.5]">
+              {message.body}
+            </p>
+          ) : null}
+        </div>
         <p
           className={`mt-1 text-left text-[10px] font-normal lg:text-right lg:font-semibold ${own ? 'text-white/70' : 'text-field-placeholder'}`}
         >
@@ -48,20 +74,25 @@ function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
 
 export default function ConversationView({
   backTo,
+  clientId,
   conversationId,
   embedded = false,
-  initialBody = '',
+  initialEmbed = null,
   title,
 }: {
   backTo: string;
+  clientId: string;
   conversationId: string;
   embedded?: boolean;
-  initialBody?: string;
+  initialEmbed?: ChatMessageEmbedRequest | null;
   title: string;
 }) {
   const dispatch = useAppDispatch();
   const isDesktop = useIsDesktop();
-  const [body, setBody] = useState(initialBody);
+  const [body, setBody] = useState('');
+  const [embed, setEmbed] = useState(initialEmbed);
+  const [attachmentState, setAttachmentState] = useState({attachmentIds: [] as string[], busy: false, failed: false});
+  const [composerKey, setComposerKey] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useConversationMessagesInfiniteQuery({
@@ -72,6 +103,8 @@ export default function ConversationView({
 
   // Pages arrive newest-chunk-first, each chunk ascending → reverse pages, keep chunks.
   const messages = [...(data?.pages ?? [])].reverse().flatMap((page) => page.data);
+  const attachmentIds = messages.flatMap((message) => message.attachments.map((attachment) => attachment.id));
+  const {refresh: refreshAttachmentUrls, urls: attachmentUrls} = useAttachmentDownloadUrls(attachmentIds);
   const lastMessageId = messages[messages.length - 1]?.id;
 
   useChannelEvent(
@@ -105,15 +138,39 @@ export default function ConversationView({
 
   const handleSend = async () => {
     const trimmed = body.trim();
-    if (!trimmed || isSending) {
+    if (
+      (!trimmed && attachmentState.attachmentIds.length === 0 && !embed) ||
+      attachmentState.busy ||
+      attachmentState.failed ||
+      isSending
+    ) {
       return;
     }
-    const result = await sendMessage({id: conversationId, chatMessageCreateRequest: {body: trimmed}});
-    if ('data' in result && result.data) {
-      dispatch(appendMessageAction(conversationId, result.data.data));
+    try {
+      const result = await sendMessage({
+        id: conversationId,
+        coachChatMessageCreateRequest: {
+          ...(trimmed && {body: trimmed}),
+          attachment_ids: attachmentState.attachmentIds,
+          ...(embed && {embed}),
+        },
+      }).unwrap();
+      dispatch(appendMessageAction(conversationId, result.data));
       setBody('');
+      setAttachmentState({attachmentIds: [], busy: false, failed: false});
+      setEmbed(null);
+      setComposerKey((current) => current + 1);
+    } catch (error) {
+      toast.danger(getApiErrorMessage(error, "Message wasn't sent. Try again."));
     }
   };
+
+  const handleAttachmentChange = useCallback(
+    (state: {attachmentIds: string[]; busy: boolean; failed: boolean}) => setAttachmentState(state),
+    [],
+  );
+
+  const hasContent = Boolean(body.trim() || attachmentState.attachmentIds.length > 0 || embed);
 
   return (
     <div className={`flex flex-col ${embedded ? 'h-full' : 'h-dvh'}`}>
@@ -174,6 +231,8 @@ export default function ConversationView({
                   <MessageBubble
                     message={message}
                     own={message.sender_type === 'coach'}
+                    refresh={refreshAttachmentUrls}
+                    urls={attachmentUrls}
                   />
                 </div>
               );
@@ -183,33 +242,55 @@ export default function ConversationView({
         )}
       </div>
 
-      <footer
-        className={`flex items-center gap-[9px] border-t border-border bg-surface lg:gap-[11px] ${embedded ? 'px-3 py-2.5 lg:px-5 lg:py-[14px]' : 'p-3'}`}
-      >
-        <TextArea
-          aria-label="Message"
-          className="min-h-10 flex-1 resize-none rounded-[12px]! border-[1.5px]! border-separator! bg-surface! px-[13px]! py-[9px]! text-[13px]! shadow-none! focus:border-focus! lg:min-h-11 lg:rounded-[13px]! lg:bg-surface-secondary! lg:px-[15px]! lg:py-[11px]! lg:text-sm! lg:focus:bg-surface!"
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder={isDesktop ? 'Type a message…' : `Message ${title}…`}
-          rows={1}
-          value={body}
+      <footer className={`border-t border-border bg-surface ${embedded ? 'px-3 py-2.5 lg:px-5 lg:py-[14px]' : 'p-3'}`}>
+        <AttachmentComposer
+          clientId={clientId}
+          disabled={isSending}
+          key={composerKey}
+          onChange={handleAttachmentChange}
         />
-        <Button
-          aria-label="Send"
-          className="size-10 min-w-10 rounded-[12px]! bg-focus! p-0! text-white! lg:size-11 lg:min-w-11 lg:rounded-[13px]!"
-          isDisabled={!body.trim()}
-          isIconOnly
-          isPending={isSending}
-          onPress={handleSend}
-        >
-          <Send className="size-[17px] lg:size-[19px]" />
-        </Button>
+        {embed ? (
+          <div className="mt-2 flex items-start gap-2">
+            <div className="min-w-0 flex-1 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm">
+              Check-in attached for feedback
+            </div>
+            <Button
+              aria-label="Remove check-in"
+              className="min-h-11 min-w-11"
+              isIconOnly
+              onPress={() => setEmbed(null)}
+              variant="secondary"
+            >
+              ×
+            </Button>
+          </div>
+        ) : null}
+        <div className="mt-2 flex items-center gap-[9px] lg:gap-[11px]">
+          <TextArea
+            aria-label="Message"
+            className="min-h-11 flex-1 resize-none rounded-[12px]! border-[1.5px]! border-separator! bg-surface! px-[13px]! py-[9px]! text-[13px]! shadow-none! focus:border-focus! lg:rounded-[13px]! lg:bg-surface-secondary! lg:px-[15px]! lg:py-[11px]! lg:text-sm! lg:focus:bg-surface!"
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend().catch(() => undefined);
+              }
+            }}
+            placeholder={isDesktop ? 'Type a message…' : `Message ${title}…`}
+            rows={1}
+            value={body}
+          />
+          <Button
+            aria-label="Send"
+            className="size-11 min-w-11 rounded-[12px]! bg-focus! p-0! text-white! lg:rounded-[13px]!"
+            isDisabled={!hasContent || attachmentState.busy || attachmentState.failed}
+            isIconOnly
+            isPending={isSending}
+            onPress={handleSend}
+          >
+            <Send className="size-[17px] lg:size-[19px]" />
+          </Button>
+        </div>
       </footer>
     </div>
   );

@@ -23,6 +23,7 @@ function toDateValue(iso: null | string): DateValue | null {
 
 interface DateInputProps {
   ariaLabel?: string;
+  isDisabled?: boolean;
   isRequired?: boolean;
   label?: ReactNode;
   /** Override the default label styling (e.g. compact muted labels). */
@@ -31,10 +32,20 @@ interface DateInputProps {
   value: null | string;
 }
 
-export default function DateInput({ariaLabel, isRequired, label, labelClassName, onChange, value}: DateInputProps) {
+export default function DateInput({
+  ariaLabel,
+  isDisabled,
+  isRequired,
+  label,
+  labelClassName,
+  onChange,
+  value,
+}: DateInputProps) {
   return (
     <DatePicker
       aria-label={label ? undefined : ariaLabel}
+      className={isDisabled ? 'w-full opacity-60' : 'w-full'}
+      isDisabled={isDisabled}
       isRequired={isRequired}
       onChange={(date: DateValue | null) => onChange(date ? date.toString() : null)}
       value={toDateValue(value)}

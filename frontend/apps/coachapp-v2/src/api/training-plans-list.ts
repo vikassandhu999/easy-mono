@@ -60,7 +60,12 @@ coachApi.enhanceEndpoints({
   endpoints: {
     listTrainingPlans: {providesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
     createTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
-    updateTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
+    updateTrainingPlan: {
+      invalidatesTags: [
+        {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'TrainingPlan', id: 'CLIENT-LIST'},
+      ],
+    },
     // Duplicate is tag:false — invalidate the list so the copy shows on return.
     duplicateTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
     // The client's assigned-plans list + assign mutation are tag:false; wire a

@@ -1,8 +1,8 @@
-import { Button } from '@heroui/react';
-import { SearchX, UserPlus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import {Button} from '@heroui/react';
+import {SearchX, UserPlus} from 'lucide-react';
+import {useNavigate} from 'react-router-dom';
 
-import { ROUTES } from '@/@config/routes';
+import {ROUTES} from '@/@config/routes';
 
 export default function ClientEmptyState({
   hasFilter,
@@ -31,8 +31,9 @@ export default function ClientEmptyState({
           : 'Invite your first client to start building your roster.'}
       </p>
       <Button
-        className={`hidden min-h-11 rounded-[11px]! px-4 py-2.25! text-[13px] font-semibold sm:flex ${hasFilter ? 'border-[1.5px]! border-separator bg-surface text-foreground' : 'bg-accent text-accent-foreground'
-          }`}
+        className={`hidden min-h-11 rounded-[11px]! px-4 py-2.25! text-[13px] font-semibold sm:flex ${
+          hasFilter ? 'border-[1.5px]! border-separator bg-surface text-foreground' : 'bg-accent text-accent-foreground'
+        }`}
         onPress={hasFilter ? onClearFilters : () => navigate(ROUTES.INVITE_CLIENT)}
         variant={hasFilter ? 'secondary' : 'primary'}
       >

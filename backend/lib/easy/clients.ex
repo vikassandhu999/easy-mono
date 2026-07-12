@@ -111,24 +111,15 @@ defmodule Easy.Clients do
     offset = max(Keyword.get(opts, :offset, 0), 0)
     limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
 
-    base =
+    attention =
       Client
       |> Client.for_business(ctx.business_id)
       |> Client.visible_to(ctx)
       |> Client.accepted()
-      |> attention_clients(ctx.business_id)
+      |> attention_facts(ctx.business_id)
+      |> attention_clients()
 
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       clients:
-         base
-         |> order_attention_clients(ctx.business_id)
-         |> Easy.Utils.paginate(offset, limit)
-         |> Client.include_preloads(ctx.business_id)
-         |> Repo.all()
-         |> put_attention_flags_for_clients(ctx.business_id)
-     }}
+    {:ok, load_attention_clients(attention, ctx.business_id, offset, limit)}
   end
 
   @spec invite_client(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, any()}
@@ -291,52 +282,80 @@ defmodule Easy.Clients do
 
   defp ensure_reactivation_capacity(_ctx, _client, _attrs), do: :ok
 
-  defp attention_clients(query, business_id) do
+  defp attention_facts(query, business_id) do
     {open_intake, active_training, active_nutrition} = attention_subqueries(business_id)
     today = Date.utc_today()
     horizon = Date.add(today, @expiring_soon_days)
 
     from c in query,
       as: :attention_client,
-      where:
-        exists(subquery(open_intake)) or
-          (not exists(subquery(active_training)) and not exists(subquery(active_nutrition))) or
-          (not is_nil(c.subscription_ends_on) and c.subscription_ends_on >= ^today and
-             c.subscription_ends_on <= ^horizon)
+      select: %{
+        id: c.id,
+        inserted_at: c.inserted_at,
+        intake_incomplete: exists(subquery(open_intake)),
+        needs_plan: not exists(subquery(active_training)) and not exists(subquery(active_nutrition)),
+        expiring_soon:
+          c.status == :active and not is_nil(c.subscription_ends_on) and
+            c.subscription_ends_on >= ^today and c.subscription_ends_on <= ^horizon
+      }
   end
 
-  defp order_attention_clients(query, business_id) do
-    from [attention_client: c] in query,
+  defp attention_clients(query) do
+    from attention in subquery(query),
+      where: attention.intake_incomplete or attention.needs_plan or attention.expiring_soon
+  end
+
+  defp load_attention_clients(query, _business_id, _offset, 0) do
+    %{count: count_attention_clients(query), clients: []}
+  end
+
+  defp load_attention_clients(query, business_id, offset, limit) do
+    rows =
+      Client
+      |> join(:inner, [client], attention in subquery(query),
+        as: :attention,
+        on: attention.id == client.id
+      )
+      |> order_attention_clients()
+      |> Easy.Utils.paginate(offset, limit)
+      |> Client.include_preloads(business_id)
+      |> select([client, attention: attention], {
+        client,
+        attention.intake_incomplete,
+        attention.needs_plan,
+        attention.expiring_soon,
+        fragment("count(*) OVER ()")
+      })
+      |> Repo.all()
+
+    %{
+      count: attention_count(rows, query),
+      clients: Enum.map(rows, &put_attention_flags/1)
+    }
+  end
+
+  defp order_attention_clients(query) do
+    from [client, attention: attention] in query,
       order_by: [
         asc:
           fragment(
-            """
-            CASE
-              WHEN EXISTS (
-                SELECT 1 FROM form_assignments fa
-                WHERE fa.business_id = ? AND fa.client_id = ?
-                  AND fa.purpose = 'intake' AND fa.status IN ('assigned', 'in_progress')
-              ) THEN 1
-              WHEN NOT EXISTS (
-                SELECT 1 FROM training_plans tp
-                WHERE tp.business_id = ? AND tp.client_id = ? AND tp.status = 'active'
-              ) AND NOT EXISTS (
-                SELECT 1 FROM nutrition_plans np
-                WHERE np.business_id = ? AND np.client_id = ? AND np.status = 'active'
-              ) THEN 2
-              ELSE 3
-            END
-            """,
-            type(^business_id, :binary_id),
-            c.id,
-            type(^business_id, :binary_id),
-            c.id,
-            type(^business_id, :binary_id),
-            c.id
+            "CASE WHEN ? THEN 1 WHEN ? THEN 2 ELSE 3 END",
+            attention.intake_incomplete,
+            attention.needs_plan
           ),
-        desc: c.inserted_at,
-        desc: c.id
+        desc: attention.inserted_at,
+        desc: client.id
       ]
+  end
+
+  defp attention_count([{_client, _intake, _plan, _expiry, count} | _], _query), do: count
+  defp attention_count([], query), do: count_attention_clients(query)
+
+  defp count_attention_clients(query) do
+    query
+    |> subquery()
+    |> select([attention], count(attention.id))
+    |> Repo.one()
   end
 
   defp attention_subqueries(business_id) do
@@ -365,58 +384,41 @@ defmodule Easy.Clients do
     {open_intake, active_training, active_nutrition}
   end
 
+  defp put_attention_flags_for_clients([], _business_id), do: []
+
   defp put_attention_flags_for_clients(clients, business_id) do
     ids = Enum.map(clients, & &1.id)
-    flags = attention_flag_sets(business_id, ids)
+
+    flags =
+      Client
+      |> Client.for_business(business_id)
+      |> where([client], client.id in ^ids)
+      |> attention_facts(business_id)
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
     Enum.map(clients, &put_attention_flags(&1, flags))
   end
 
-  defp attention_flag_sets(business_id, ids) do
-    %{
-      intake_open:
-        ids_for_query(
-          from(fa in FormAssignment,
-            where:
-              fa.business_id == ^business_id and fa.client_id in ^ids and
-                fa.purpose == :intake and fa.status in [:assigned, :in_progress],
-            select: fa.client_id
-          )
-        ),
-      with_training:
-        ids_for_query(
-          from(tp in TrainingPlan,
-            where: tp.business_id == ^business_id and tp.client_id in ^ids and tp.status == :active,
-            select: tp.client_id
-          )
-        ),
-      with_nutrition:
-        ids_for_query(
-          from(np in Plan,
-            where: np.business_id == ^business_id and np.client_id in ^ids and np.status == :active,
-            select: np.client_id
-          )
-        )
-    }
+  defp put_attention_flags(client, flags) do
+    case Map.fetch(flags, client.id) do
+      {:ok, attention} -> put_attention_flags({client, attention})
+      :error -> client
+    end
   end
 
-  defp ids_for_query(query), do: query |> Repo.all() |> MapSet.new()
-
-  defp put_attention_flags(client, flags) do
+  defp put_attention_flags({client, attention}) do
     %{
       client
-      | intake_incomplete: client.id in flags.intake_open,
-        needs_plan: client.id not in flags.with_training and client.id not in flags.with_nutrition,
-        expiring_soon: expiring_soon?(client)
+      | intake_incomplete: attention.intake_incomplete,
+        needs_plan: attention.needs_plan,
+        expiring_soon: attention.expiring_soon
     }
   end
 
-  defp expiring_soon?(%Client{status: :active, subscription_ends_on: %Date{} = ends_on}) do
-    today = Date.utc_today()
-    horizon = Date.add(today, @expiring_soon_days)
-    Date.compare(ends_on, today) != :lt and Date.compare(ends_on, horizon) != :gt
+  defp put_attention_flags({client, intake, plan, expiry, _count}) do
+    %{client | intake_incomplete: intake, needs_plan: plan, expiring_soon: expiry}
   end
-
-  defp expiring_soon?(_client), do: false
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

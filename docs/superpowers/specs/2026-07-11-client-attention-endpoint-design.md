@@ -89,7 +89,9 @@ It returns:
 
 The context owns eligibility, visibility, ordering, counting, pagination, preloads, and attention-flag annotation. Controllers and frontend callers must not reconstruct those rules.
 
-The base query is scoped by `ctx.business_id`, piped through `Client.visible_to(ctx)`, and limited to active clients. Correlated existence predicates select clients with an open intake assignment, no active plan of either supported kind, or a subscription ending within the seven-day window. Filtering and counting happen in SQL before pagination. The returned page passes through the shared attention-flag annotation code so the response booleans use the same definitions as client list and detail responses.
+The base query is scoped by `ctx.business_id`, piped through `Client.visible_to(ctx)`, and limited to active clients. One inner subquery computes all three flags from correlated existence predicates and subscription dates. An outer query filters and orders by those computed columns, so eligibility, priority, and returned flags share one definition. `count(*) OVER ()` returns the pre-pagination total with each populated page. A zero-limit or out-of-range page falls back to one count query because a window value cannot be read when no row is returned.
+
+This endpoint is the approved exception to `backend/AGENTS.md`'s two-query list convention. Populated pages use one attention-source query because the computed read model is materially more expensive than a normal table filter and the window count removes repeated evaluation. General client list and detail reads reuse the same facts query for flag annotation.
 
 ## Ordering
 
@@ -123,7 +125,8 @@ Context tests cover:
 * one result for a client with several flags;
 * the approved priority and deterministic tie-breaks;
 * total count before pagination;
-* owner, assigned-trainer, and cross-tenant visibility.
+* owner, assigned-trainer, and cross-tenant visibility;
+* one attention-source SQL statement for a populated page.
 
 Controller tests cover authentication, parameter defaults and limits, an empty result, response-schema validity, and the `/clients/attention` route taking precedence over `/clients/:id`.
 

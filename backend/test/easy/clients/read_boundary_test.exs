@@ -168,6 +168,33 @@ defmodule Easy.Clients.ReadBoundaryTest do
   end
 
   describe "list_attention_clients/2" do
+    test "computes attention flags and count in one attention query" do
+      business = insert(:business)
+      ctx = owner_ctx(business)
+      insert(:client, business: business, status: :active)
+
+      parent = self()
+      handler_id = {__MODULE__, self()}
+
+      :telemetry.attach(
+        handler_id,
+        [:easy, :repo, :query],
+        fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, %{count: 1, clients: [_client]}} = Clients.list_attention_clients(ctx)
+
+      attention_queries =
+        Enum.filter(received_queries(), fn query ->
+          String.contains?(query, ["form_assignments", "training_plans", "nutrition_plans"])
+        end)
+
+      assert length(attention_queries) == 1
+    end
+
     test "returns active attention clients once in priority order" do
       business = insert(:business)
       ctx = owner_ctx(business)
@@ -391,6 +418,14 @@ defmodule Easy.Clients.ReadBoundaryTest do
 
       assert {:error, :not_found} =
                Clients.reassign_client(owner_ctx(business), other_client.id, new_coach.id)
+    end
+  end
+
+  defp received_queries(queries \\ []) do
+    receive do
+      {:query, query} -> received_queries([query | queries])
+    after
+      0 -> queries
     end
   end
 end

@@ -25,6 +25,20 @@ defmodule Easy.AttachmentsTest do
     assert upload.upload_headers == %{"Content-Type" => "image/jpeg"}
   end
 
+  test "accepts generic media metadata without a purpose" do
+    client = insert_client()
+
+    assert {:ok, upload} =
+             Attachments.create_client_upload(client_ctx(client), %{
+               "content_type" => "audio/webm",
+               "byte_size" => 1_024,
+               "duration_ms" => 30_000
+             })
+
+    assert upload.attachment.duration_ms == 30_000
+    refute Map.has_key?(Map.from_struct(upload.attachment), :purpose)
+  end
+
   test "validates content type and byte size" do
     client = insert_client()
 

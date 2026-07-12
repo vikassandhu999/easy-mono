@@ -3,6 +3,7 @@ defmodule Easy.Factory do
 
   alias Easy.Attachments.Attachment
   alias Easy.Billing.BusinessBilling
+  alias Easy.Chat.MessageAttachment
   alias Easy.Forms.CheckInSchedule
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
@@ -216,7 +217,7 @@ defmodule Easy.Factory do
       storage_key: sequence(:attachment_storage_key, &"test/attachment-#{&1}.jpg"),
       content_type: "image/jpeg",
       byte_size: 1_024,
-      purpose: :check_in_photo,
+      duration_ms: nil,
       client: client,
       business: client.business
     }
@@ -635,6 +636,18 @@ defmodule Easy.Factory do
       sender_id: Ecto.UUID.generate(),
       business: conversation.business,
       conversation: conversation
+    }
+  end
+
+  def chat_message_attachment_factory do
+    message = build(:chat_message)
+    attachment = build(:attachment, business: message.business, client: message.conversation.client)
+
+    %MessageAttachment{
+      position: 0,
+      business: message.business,
+      message: message,
+      attachment: attachment
     }
   end
 end

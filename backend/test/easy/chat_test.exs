@@ -42,6 +42,50 @@ defmodule Easy.ChatTest do
     end
   end
 
+  describe "Message.insert_changeset/6" do
+    test "allows attachment-only and embed-only message bodies" do
+      assert Message.insert_changeset("biz", "conv", :coach, "coach", nil, %{}).valid?
+
+      assert Message.insert_changeset(
+               "biz",
+               "conv",
+               :coach,
+               "coach",
+               %{
+                 type: :form_submission,
+                 id: Ecto.UUID.generate(),
+                 snapshot: %{"title" => "Weekly check-in"}
+               },
+               %{}
+             ).valid?
+    end
+
+    test "preloads attachments in link position order" do
+      message = insert(:chat_message)
+      client = message.conversation.client
+      first = insert(:attachment, business: message.business, client: client)
+      second = insert(:attachment, business: message.business, client: client)
+
+      insert(:chat_message_attachment,
+        business: message.business,
+        message: message,
+        attachment: second,
+        position: 1
+      )
+
+      insert(:chat_message_attachment,
+        business: message.business,
+        message: message,
+        attachment: first,
+        position: 0
+      )
+
+      loaded = Message |> Message.include_attachments() |> Easy.Repo.get!(message.id)
+
+      assert Enum.map(loaded.attachments, & &1.id) == [first.id, second.id]
+    end
+  end
+
   describe "Easy.Chat context" do
     alias Easy.Chat
     alias Easy.Ctx

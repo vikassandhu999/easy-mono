@@ -10,6 +10,7 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
   const uniqueIds = useMemo(() => (idsKey ? idsKey.split(',') : []), [idsKey]);
   const activeIdsRef = useRef(new Set(uniqueIds));
   const [downloads, setDownloads] = useState<Record<string, AttachmentDownload>>({});
+  const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
   const [getDownloadUrls] = useGetCoachAttachmentDownloadUrlsMutation();
 
   activeIdsRef.current = new Set(uniqueIds);
@@ -17,9 +18,26 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
   const refresh = useCallback(
     async (refreshIds: string[]) => {
       const requested = [...new Set(refreshIds)].filter((id) => activeIdsRef.current.has(id));
+      let failed = false;
+      let firstError: unknown;
       for (let index = 0; index < requested.length; index += BATCH_SIZE) {
         const batch = requested.slice(index, index + BATCH_SIZE);
-        const response = await getDownloadUrls({attachmentDownloadRequest: {attachment_ids: batch}}).unwrap();
+        setFailedIds((current) => {
+          const next = new Set(current);
+          for (const id of batch) {
+            next.delete(id);
+          }
+          return next;
+        });
+        let response;
+        try {
+          response = await getDownloadUrls({attachmentDownloadRequest: {attachment_ids: batch}}).unwrap();
+        } catch (error) {
+          setFailedIds((current) => new Set([...current, ...batch]));
+          failed = true;
+          firstError ??= error;
+          continue;
+        }
         setDownloads((current) => {
           const next = {...current};
           for (const download of response.data) {
@@ -30,6 +48,9 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
           return next;
         });
       }
+      if (failed) {
+        throw firstError;
+      }
     },
     [getDownloadUrls],
   );
@@ -39,6 +60,10 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
     setDownloads((current) => {
       const retained = Object.entries(current).filter(([id]) => activeIds.has(id));
       return retained.length === Object.keys(current).length ? current : Object.fromEntries(retained);
+    });
+    setFailedIds((current) => {
+      const retained = [...current].filter((id) => activeIds.has(id));
+      return retained.length === current.size ? current : new Set(retained);
     });
 
     const now = Date.now();
@@ -74,6 +99,7 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
   }, [downloads, refresh, uniqueIds]);
 
   return {
+    failedIds,
     refresh,
     urls: Object.fromEntries(Object.entries(downloads).map(([id, download]) => [id, download.download_url])),
   };

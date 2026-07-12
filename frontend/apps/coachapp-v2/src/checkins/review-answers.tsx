@@ -1,4 +1,4 @@
-import {Typography} from '@heroui/react';
+import {Button, Typography} from '@heroui/react';
 
 import type {ClientProfileReviewQueueItem} from '@/api/checkins';
 import useAttachmentDownloadUrls from '@/messages/use-attachment-download-urls';
@@ -25,7 +25,7 @@ function formatAnswer(value: unknown): string {
 export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueItem}) {
   const sections = item.question_snapshot as SnapshotSection[];
   const attachments = new Map(item.attachments.map((attachment) => [attachment.id, attachment]));
-  const {urls} = useAttachmentDownloadUrls(item.attachments.map((attachment) => attachment.id));
+  const {failedIds, refresh, urls} = useAttachmentDownloadUrls(item.attachments.map((attachment) => attachment.id));
 
   return (
     <div className="space-y-5">
@@ -78,7 +78,23 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                             className="grid aspect-[3/4] place-items-center rounded-xl border border-border bg-surface text-center text-muted text-xs"
                             key={String(attachmentId)}
                           >
-                            Photo unavailable
+                            {!attachment ? (
+                              'Photo unavailable'
+                            ) : failedIds.has(attachment.id) ? (
+                              <div className="grid gap-2">
+                                Photo unavailable
+                                <Button
+                                  className="min-h-11"
+                                  onPress={() => refresh([attachment.id]).catch(() => undefined)}
+                                  size="sm"
+                                  variant="secondary"
+                                >
+                                  Retry
+                                </Button>
+                              </div>
+                            ) : (
+                              'Loading photo…'
+                            )}
                           </div>
                         );
                       },

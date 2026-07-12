@@ -30,11 +30,13 @@ function formatTime(iso: string) {
 }
 
 function MessageBubble({
+  failedIds,
   message,
   own,
   refresh,
   urls,
 }: {
+  failedIds: Set<string>;
   message: ChatMessage;
   own: boolean;
   refresh: (ids: string[]) => Promise<void>;
@@ -52,6 +54,7 @@ function MessageBubble({
         <div className="grid gap-2">
           <MessageAttachments
             attachments={message.attachments}
+            failedIds={failedIds}
             refresh={refresh}
             urls={urls}
           />
@@ -78,6 +81,7 @@ export default function ConversationView({
   conversationId,
   embedded = false,
   initialEmbed = null,
+  onEmbedSent,
   title,
 }: {
   backTo: string;
@@ -85,6 +89,7 @@ export default function ConversationView({
   conversationId: string;
   embedded?: boolean;
   initialEmbed?: ChatMessageEmbedRequest | null;
+  onEmbedSent?: () => void;
   title: string;
 }) {
   const dispatch = useAppDispatch();
@@ -93,19 +98,25 @@ export default function ConversationView({
   const [embed, setEmbed] = useState(initialEmbed);
   const [attachmentState, setAttachmentState] = useState({attachmentIds: [] as string[], busy: false, failed: false});
   const [composerKey, setComposerKey] = useState(0);
+  const [sendLocked, setSendLocked] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useConversationMessagesInfiniteQuery({
     conversationId,
   });
-  const [sendMessage, {isLoading: isSending}] = useCreateCoachConversationMessageMutation();
+  const [sendMessage, {isLoading: isSendingMessage}] = useCreateCoachConversationMessageMutation();
   const [markRead] = useMarkCoachConversationReadMutation();
 
   // Pages arrive newest-chunk-first, each chunk ascending → reverse pages, keep chunks.
   const messages = [...(data?.pages ?? [])].reverse().flatMap((page) => page.data);
   const attachmentIds = messages.flatMap((message) => message.attachments.map((attachment) => attachment.id));
-  const {refresh: refreshAttachmentUrls, urls: attachmentUrls} = useAttachmentDownloadUrls(attachmentIds);
+  const {
+    failedIds: failedAttachmentIds,
+    refresh: refreshAttachmentUrls,
+    urls: attachmentUrls,
+  } = useAttachmentDownloadUrls(attachmentIds);
   const lastMessageId = messages[messages.length - 1]?.id;
+  const isSending = sendLocked || isSendingMessage;
 
   useChannelEvent(
     `conversation:${conversationId}`,
@@ -146,6 +157,8 @@ export default function ConversationView({
     ) {
       return;
     }
+    const submittedEmbed = embed;
+    setSendLocked(true);
     try {
       const result = await sendMessage({
         id: conversationId,
@@ -160,8 +173,13 @@ export default function ConversationView({
       setAttachmentState({attachmentIds: [], busy: false, failed: false});
       setEmbed(null);
       setComposerKey((current) => current + 1);
+      if (submittedEmbed) {
+        onEmbedSent?.();
+      }
     } catch (error) {
       toast.danger(getApiErrorMessage(error, "Message wasn't sent. Try again."));
+    } finally {
+      setSendLocked(false);
     }
   };
 
@@ -229,6 +247,7 @@ export default function ConversationView({
                     </p>
                   ) : null}
                   <MessageBubble
+                    failedIds={failedAttachmentIds}
                     message={message}
                     own={message.sender_type === 'coach'}
                     refresh={refreshAttachmentUrls}
@@ -257,6 +276,7 @@ export default function ConversationView({
             <Button
               aria-label="Remove check-in"
               className="min-h-11 min-w-11"
+              isDisabled={isSending}
               isIconOnly
               onPress={() => setEmbed(null)}
               variant="secondary"
@@ -269,6 +289,7 @@ export default function ConversationView({
           <TextArea
             aria-label="Message"
             className="min-h-11 flex-1 resize-none rounded-[12px]! border-[1.5px]! border-separator! bg-surface! px-[13px]! py-[9px]! text-[13px]! shadow-none! focus:border-focus! lg:rounded-[13px]! lg:bg-surface-secondary! lg:px-[15px]! lg:py-[11px]! lg:text-sm! lg:focus:bg-surface!"
+            disabled={isSending}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -283,7 +304,7 @@ export default function ConversationView({
           <Button
             aria-label="Send"
             className="size-11 min-w-11 rounded-[12px]! bg-focus! p-0! text-white! lg:rounded-[13px]!"
-            isDisabled={!hasContent || attachmentState.busy || attachmentState.failed}
+            isDisabled={!hasContent || attachmentState.busy || attachmentState.failed || isSending}
             isIconOnly
             isPending={isSending}
             onPress={handleSend}

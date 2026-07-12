@@ -1,3 +1,4 @@
+import {useCallback} from 'react';
 import {useParams, useSearchParams} from 'react-router-dom';
 
 import ClientWorkspaceShell, {ClientWorkspaceFallback} from '@/@components/client-workspace-shell';
@@ -10,7 +11,7 @@ import ConversationView from '@/messages/conversation-view';
 
 export default function ClientConversation() {
   const {id} = useParams<{id: string}>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const clientQuery = useGetClientQuery(id!, {skip: !id});
   const conversationQuery = useGetCoachClientConversationQuery({clientId: id!}, {skip: !id});
   const detailPath = ROUTES.CLIENT_DETAIL.replace(':id', id!);
@@ -19,6 +20,17 @@ export default function ClientConversation() {
     searchParams.get('embed_type') === 'form_submission' && embedId
       ? ({id: embedId, type: 'form_submission'} as const)
       : null;
+  const clearEmbedParams = useCallback(() => {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('embed_type');
+        next.delete('embed_id');
+        return next;
+      },
+      {replace: true},
+    );
+  }, [setSearchParams]);
 
   if (clientQuery.isLoading) {
     return (
@@ -59,6 +71,7 @@ export default function ClientConversation() {
           conversationId={conversationQuery.data.data.id}
           embedded
           initialEmbed={initialEmbed}
+          onEmbedSent={clearEmbedParams}
           title={conversationQuery.data.data.client_name || 'Client'}
         />
       )}

@@ -1,25 +1,53 @@
 import {mediaKind} from '@easy/utils';
+import {Button} from '@heroui/react';
 import {useState} from 'react';
 
 import type {ChatAttachment} from '@/api/attachments';
 
 function MessageAttachment({
   attachment,
+  failed,
   refresh,
   url,
 }: {
   attachment: ChatAttachment;
+  failed: boolean;
   refresh: (ids: string[]) => Promise<void>;
   url?: string;
 }) {
   const [failedUrl, setFailedUrl] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
   const [retried, setRetried] = useState(false);
+  const mediaFailed = Boolean(url && failedUrl === url);
 
-  if (!url || refreshing || failedUrl === url) {
+  const retryManually = () => {
+    setRefreshing(true);
+    refresh([attachment.id])
+      .then(() => {
+        setFailedUrl(undefined);
+        setRefreshing(false);
+      })
+      .catch(() => setRefreshing(false));
+  };
+
+  if (!url || refreshing || mediaFailed) {
     return (
-      <div className="grid min-h-11 place-items-center rounded-xl border border-border bg-surface-secondary px-3 py-2 text-center text-muted text-xs">
-        {failedUrl === url ? 'Media unavailable' : 'Loading media…'}
+      <div className="grid min-h-11 place-items-center gap-2 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-center text-muted text-xs">
+        {failed || mediaFailed ? (
+          <>
+            <span>Media unavailable</span>
+            <Button
+              className="min-h-11"
+              onPress={retryManually}
+              size="sm"
+              variant="secondary"
+            >
+              Retry
+            </Button>
+          </>
+        ) : (
+          'Loading media…'
+        )}
       </div>
     );
   }
@@ -78,10 +106,12 @@ function MessageAttachment({
 
 export default function MessageAttachments({
   attachments,
+  failedIds,
   refresh,
   urls,
 }: {
   attachments: ChatAttachment[];
+  failedIds: Set<string>;
   refresh: (ids: string[]) => Promise<void>;
   urls: Record<string, string>;
 }) {
@@ -93,6 +123,7 @@ export default function MessageAttachments({
       {attachments.map((attachment) => (
         <MessageAttachment
           attachment={attachment}
+          failed={failedIds.has(attachment.id)}
           key={attachment.id}
           refresh={refresh}
           url={urls[attachment.id]}

@@ -10,7 +10,7 @@
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=Space+Grotesk:wght@500;600;700&amp;family=Caveat:wght@500;600;700&amp;display=swap" rel="stylesheet">
 <meta name="design_doc_mode" content="canvas">
 <style>
   * { box-sizing: border-box; }
@@ -27,6 +27,9 @@
   .day-row:hover .day-edit { opacity: 1; transform: translateX(0); }
   @keyframes subOpen { from { opacity: 0; transform: translateY(-6px); max-height: 0; } to { opacity: 1; transform: translateY(0); max-height: 260px; } }
   @keyframes panelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes scanSweep { 0% { top: 4%; } 50% { top: 92%; } 100% { top: 4%; } }
+  @keyframes spotPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,145,255,.45); } 50% { box-shadow: 0 0 0 8px rgba(0,145,255,0); } }
+  @keyframes dotBlink { 0%,80%,100% { opacity: .25; } 40% { opacity: 1; } }
   .sub-item { transition: background .14s, color .14s, padding-left .14s; }
   .sub-item:hover { padding-left: 20px !important; }
   .assign-pill .ap-arrow { opacity: 0; transform: translateX(-5px); transition: opacity .18s, transform .18s; }
@@ -122,6 +125,9 @@
                           <div onClick="{{ onNewForms }}" style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:10px; font-size:13px; font-weight:600; color:#18181B; cursor:pointer;" style-hover="background:#F5F6F8;"><span style="width:26px; height:26px; border-radius:8px; background:#F1F3F6; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 12h6M9 16h4"/></svg></span>Check-in form</div>
                           <div onClick="{{ onNewExercises }}" style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:10px; font-size:13px; font-weight:600; color:#18181B; cursor:pointer;" style-hover="background:#F5F6F8;"><span style="width:26px; height:26px; border-radius:8px; background:#F1F3F6; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>Exercise</div>
                           <div onClick="{{ onNewRecipe }}" style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:10px; font-size:13px; font-weight:600; color:#18181B; cursor:pointer;" style-hover="background:#F5F6F8;"><span style="width:26px; height:26px; border-radius:8px; background:#F1F3F6; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M12 3v3M8.6 4.6 9.2 7M15.4 4.6 14.8 7"/></svg></span>Recipe</div>
+                          <div style="height:1px; background:#F1F3F6; margin:6px 8px;"></div>
+                          <div style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#A1A1AA; padding:2px 12px 5px;">Import</div>
+                          <div onClick="{{ openImport }}" style="display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:10px; font-size:13px; font-weight:600; color:#18181B; cursor:pointer;" style-hover="background:#EAF4FF;"><span style="width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#0091FF,#0072D6); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></span><div style="flex:1;">Scan / upload<div style="font-size:11px; font-weight:500; color:#8A8A8E; margin-top:1px;">Spotter turns it into a plan</div></div></div>
                         </div>
                       </div>
                     </sc-if>
@@ -861,6 +867,178 @@
               </div>
             </sc-if>
 
+            <!-- SPOTTER IMPORT -->
+            <sc-if value="{{ impOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; inset:0; z-index:105; background:rgba(24,24,27,.42); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:28px;">
+                <div onClick="{{ stop }}" style="width:940px; max-width:100%; height:640px; max-height:100%; display:flex; flex-direction:column; background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 50px 100px -30px rgba(24,24,27,.6); animation:modalPop .4s cubic-bezier(.34,1.4,.5,1) both;">
+
+                  <!-- titlebar: Spotter -->
+                  <div style="flex-shrink:0; display:flex; align-items:center; gap:12px; padding:14px 18px; background:rgba(247,248,250,.9); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-bottom:1px solid #ECEEF2;">
+                    <span style="width:38px; height:38px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0091FF,#0067D6); animation:spotPulse 2.4s ease-in-out infinite;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="12" cy="12" r="3.4"/><path d="M3 8V6a2 2 0 0 1 2-2h2M17 4h2a2 2 0 0 1 2 2v2M21 16v2a2 2 0 0 1-2 2h-2M7 20H5a2 2 0 0 1-2-2v-2"/></svg></span>
+                    <div style="flex:1; min-width:0;">
+                      <div style="display:flex; align-items:center; gap:8px;"><span style="font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; letter-spacing:-.01em;">Spotter</span><span style="font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#0091FF; background:#EAF4FF; padding:2px 7px; border-radius:99px;">AI assistant</span></div>
+                      <div style="font-size:11.5px; color:#8A8A8E; margin-top:1px;">
+                        <sc-if value="{{ imp.isInput }}" hint-placeholder-val="{{ true }}">Give me a document — I'll turn it into a {{ imp.typeLabel }}.</sc-if>
+                        <sc-if value="{{ imp.isReading }}" hint-placeholder-val="{{ false }}">Reading your document…</sc-if>
+                        <sc-if value="{{ imp.isReview }}" hint-placeholder-val="{{ false }}">Here's what I detected — review and save.</sc-if>
+                      </div>
+                    </div>
+                    <div onClick="{{ closeImport }}" style="width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#71717A;" style-hover="background:#ECEEF2;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+                  </div>
+
+                  <!-- ===== STEP: INPUT ===== -->
+                  <sc-if value="{{ imp.isInput }}" hint-placeholder-val="{{ true }}">
+                    <div class="nb-scroll" style="flex:1; overflow-y:auto; padding:26px 30px 30px;">
+
+                      <sc-if value="{{ imp.isChoose }}" hint-placeholder-val="{{ true }}">
+                        <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#A1A1AA; margin-bottom:11px;">What are you making?</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:26px;">
+                          <sc-for list="{{ imp.typeChips }}" as="c" hint-placeholder-count="5">
+                            <div onClick="{{ c.onClick }}" style="display:flex; align-items:center; gap:8px; padding:9px 14px; border:1.5px solid; border-radius:11px; font-size:13px; font-weight:600; cursor:pointer; transition:all .16s; {{ c.style }}"><span style="display:flex; align-items:center; flex-shrink:0;" innerHTML="{{ c.icon }}"></span>{{ c.label }}</div>
+                          </sc-for>
+                        </div>
+
+                        <div style="font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#A1A1AA; margin-bottom:11px;">How do you want to bring it in?</div>
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+                          <div onClick="{{ impScanPane }}" style="border:1px solid #ECEEF2; border-radius:16px; padding:22px 18px; cursor:pointer; text-align:center; transition:all .16s; background:#fff;" style-hover="border-color:#0091FF; box-shadow:0 16px 32px -20px rgba(24,24,27,.35); transform:translateY(-2px);">
+                            <span style="width:52px; height:52px; border-radius:15px; margin:0 auto 13px; display:flex; align-items:center; justify-content:center; background:#EAF4FF; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg></span>
+                            <div style="font-size:14px; font-weight:700; letter-spacing:-.01em;">Scan</div>
+                            <div style="font-size:11.5px; color:#8A8A8E; margin-top:4px; line-height:1.45;">Use your camera to capture a handwritten page</div>
+                          </div>
+                          <label style="border:1px solid #ECEEF2; border-radius:16px; padding:22px 18px; cursor:pointer; text-align:center; transition:all .16s; background:#fff; position:relative; display:block;" style-hover="border-color:#0091FF; box-shadow:0 16px 32px -20px rgba(24,24,27,.35); transform:translateY(-2px);">
+                            <input type="file" accept="image/*,application/pdf,.doc,.docx,.txt" onChange="{{ impFileChosen }}" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+                            <span style="width:52px; height:52px; border-radius:15px; margin:0 auto 13px; display:flex; align-items:center; justify-content:center; background:#E7F6EC; color:#1F9D57;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></span>
+                            <div style="font-size:14px; font-weight:700; letter-spacing:-.01em;">Upload file</div>
+                            <div style="font-size:11.5px; color:#8A8A8E; margin-top:4px; line-height:1.45;">PDF, photo, doc — any format you have</div>
+                          </label>
+                          <div onClick="{{ impPastePane }}" style="border:1px solid #ECEEF2; border-radius:16px; padding:22px 18px; cursor:pointer; text-align:center; transition:all .16s; background:#fff;" style-hover="border-color:#0091FF; box-shadow:0 16px 32px -20px rgba(24,24,27,.35); transform:translateY(-2px);">
+                            <span style="width:52px; height:52px; border-radius:15px; margin:0 auto 13px; display:flex; align-items:center; justify-content:center; background:#EFEBFE; color:#7A5AF0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></span>
+                            <div style="font-size:14px; font-weight:700; letter-spacing:-.01em;">Paste text</div>
+                            <div style="font-size:11.5px; color:#8A8A8E; margin-top:4px; line-height:1.45;">Type or paste notes straight in</div>
+                          </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:9px; margin-top:22px; padding:13px 15px; background:#F7F8FA; border-radius:13px;">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                          <span style="font-size:12px; color:#52525B; line-height:1.5;">Spotter reads structure — days, meals, questions, sets & reps — and maps it straight into your Builder. You review everything before it saves.</span>
+                        </div>
+                      </sc-if>
+
+                      <sc-if value="{{ imp.isScan }}" hint-placeholder-val="{{ false }}">
+                        <div onClick="{{ impChoosePane }}" style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:#71717A; cursor:pointer; margin-bottom:16px;" style-hover="color:#18181B;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m15 18-6-6 6-6"/></svg>Back</div>
+                        <div style="position:relative; width:100%; max-width:460px; margin:0 auto; aspect-ratio:4/3; border-radius:18px; overflow:hidden; background:#101012;">
+                          <div style="position:absolute; inset:26px; border:2px dashed rgba(255,255,255,.35); border-radius:12px;"></div>
+                          <div style="position:absolute; left:0; top:8%; right:0; height:2px; background:linear-gradient(90deg,transparent,#0091FF,transparent); box-shadow:0 0 14px 2px rgba(0,145,255,.6); animation:scanSweep 2.6s ease-in-out infinite;"></div>
+                          <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:rgba(255,255,255,.7); font-size:12px;">
+                            <span style="font-family:'Caveat',cursive; font-size:26px; color:rgba(255,255,255,.5); transform:rotate(-4deg);">Push · Pull · Legs…</span>
+                            <span>Position the document in frame</span>
+                          </div>
+                          <span style="position:absolute; top:12px; left:14px; width:18px; height:18px; border-top:2px solid #fff; border-left:2px solid #fff; opacity:.8;"></span>
+                          <span style="position:absolute; top:12px; right:14px; width:18px; height:18px; border-top:2px solid #fff; border-right:2px solid #fff; opacity:.8;"></span>
+                          <span style="position:absolute; bottom:12px; left:14px; width:18px; height:18px; border-bottom:2px solid #fff; border-left:2px solid #fff; opacity:.8;"></span>
+                          <span style="position:absolute; bottom:12px; right:14px; width:18px; height:18px; border-bottom:2px solid #fff; border-right:2px solid #fff; opacity:.8;"></span>
+                        </div>
+                        <div style="display:flex; justify-content:center; margin-top:22px;">
+                          <div onClick="{{ impScan }}" style="display:flex; align-items:center; gap:9px; background:#18181B; color:#fff; padding:13px 26px; border-radius:13px; font-size:14px; font-weight:600; cursor:pointer;" style-hover="opacity:.9;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9"/></svg>Capture &amp; read</div>
+                        </div>
+                      </sc-if>
+
+                      <sc-if value="{{ imp.isPaste }}" hint-placeholder-val="{{ false }}">
+                        <div onClick="{{ impChoosePane }}" style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:#71717A; cursor:pointer; margin-bottom:16px;" style-hover="color:#18181B;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m15 18-6-6 6-6"/></svg>Back</div>
+                        <textarea onInput="{{ impPasteInput }}" placeholder="Paste or type your notes — e.g.&#10;Push: bench 4x8, OHP 3x10…&#10;Pull: deadlift 3x5, pull-ups 4x8…" style="width:100%; min-height:220px; box-sizing:border-box; resize:vertical; border:1px solid #E4E7EC; border-radius:14px; padding:16px; font-family:'Inter',sans-serif; font-size:13.5px; line-height:1.6; color:#18181B; outline:none; background:#FBFCFE;" style-focus="border-color:#0091FF; background:#fff;">{{ imp.pasted }}</textarea>
+                        <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+                          <div onClick="{{ impConvertPaste }}" style="display:flex; align-items:center; gap:8px; background:#0091FF; color:#fff; padding:12px 22px; border-radius:12px; font-size:13.5px; font-weight:600; cursor:pointer;" style-hover="opacity:.9;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l3.5 8.5L21 13l-8.5 3.5L11 21l-3.5-8.5L3 11l8.5-3.5z"/></svg>Convert with Spotter</div>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== STEP: READING ===== -->
+                  <sc-if value="{{ imp.isReading }}" hint-placeholder-val="{{ false }}">
+                    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; gap:26px;">
+                      <div style="position:relative; width:190px; height:238px; border-radius:12px; background:#fff; border:1px solid #ECEAE0; box-shadow:0 24px 50px -24px rgba(24,24,27,.4); overflow:hidden; padding:22px 20px;">
+                        <div style="position:absolute; left:0; top:4%; right:0; height:3px; background:linear-gradient(90deg,transparent,#0091FF,transparent); box-shadow:0 0 16px 3px rgba(0,145,255,.55); animation:scanSweep 1.6s ease-in-out infinite;"></div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                          <div style="height:9px; width:70%; border-radius:3px; background:#E9EBEF;"></div>
+                          <div style="height:7px; width:92%; border-radius:3px; background:#F0F1F4;"></div>
+                          <div style="height:7px; width:84%; border-radius:3px; background:#F0F1F4;"></div>
+                          <div style="height:7px; width:88%; border-radius:3px; background:#F0F1F4;"></div>
+                          <div style="height:9px; width:55%; border-radius:3px; background:#E9EBEF; margin-top:6px;"></div>
+                          <div style="height:7px; width:90%; border-radius:3px; background:#F0F1F4;"></div>
+                          <div style="height:7px; width:80%; border-radius:3px; background:#F0F1F4;"></div>
+                        </div>
+                      </div>
+                      <div style="text-align:center;">
+                        <div style="font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700; letter-spacing:-.01em;">Spotter is reading your {{ imp.typeLabel }}<span style="animation:dotBlink 1.4s infinite;">.</span><span style="animation:dotBlink 1.4s infinite .2s;">.</span><span style="animation:dotBlink 1.4s infinite .4s;">.</span></div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:14px; font-size:12px; color:#8A8A8E;">
+                          <span style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg>Detecting structure</span>
+                          <span style="display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg>Reading items</span>
+                          <span style="display:flex; align-items:center; gap:6px; color:#0091FF; font-weight:600;"><span style="width:12px; height:12px; border:2px solid #DCE7F2; border-top-color:#0091FF; border-radius:50%; display:inline-block; animation:scanSweep 0s;"></span>Mapping to Builder</span>
+                        </div>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== STEP: REVIEW ===== -->
+                  <sc-if value="{{ imp.isReview }}" hint-placeholder-val="{{ false }}">
+                    <div style="flex:1; display:flex; min-height:0;">
+                      <!-- source -->
+                      <div class="nb-scroll" style="width:42%; flex-shrink:0; overflow-y:auto; padding:22px; border-right:1px solid #ECEEF2; background:#F7F8FA;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA;">Original</span><span style="font-size:10.5px; font-weight:600; color:#8A8A8E;">· {{ imp.sourceKind }}</span></div>
+                        <div style="background:#FBFAF6; border:1px solid #ECE9DF; border-radius:14px; padding:22px 20px; box-shadow:0 14px 30px -20px rgba(24,24,27,.3); background-image:repeating-linear-gradient(#FBFAF6 0px, #FBFAF6 27px, #EFEADB 28px);">
+                          <sc-for list="{{ imp.source }}" as="s" hint-placeholder-count="8">
+                            <div style="font-family:{{ imp.sourceFont }}; font-size:{{ imp.sourceSize }}; line-height:28px; color:#3A3730; animation:fadeUp .4s both; {{ s.delay }}">{{ s.line }}</div>
+                          </sc-for>
+                        </div>
+                      </div>
+                      <!-- converted -->
+                      <div class="nb-scroll" style="flex:1; overflow-y:auto; padding:22px 24px;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                          <span style="display:inline-flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; color:#1F9D57; background:#E7F6EC; padding:3px 9px; border-radius:99px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M20 6 9 17l-5-5"/></svg>Detected · 98% confident</span>
+                          <span style="font-size:11px; color:#8A8A8E;">{{ imp.badge }}</span>
+                        </div>
+                        <div style="background:#fff; border:1px solid #E4E7EC; border-radius:12px; padding:12px 14px; margin-bottom:16px; display:flex; align-items:center; gap:11px;">
+                          <span style="width:36px; height:36px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:{{ imp.iconBg }}; color:{{ imp.iconFg }}; font-size:11px; font-weight:800; font-family:'Space Grotesk',sans-serif;">{{ imp.typeLabel }}</span>
+                          <div style="flex:1; min-width:0;">
+                            <div style="font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#A1A1AA; margin-bottom:3px;">Name this {{ imp.typeLabel }}</div>
+                            <input value="{{ imp.name }}" onInput="{{ impSetName }}" placeholder="Give it a name" style="width:100%; box-sizing:border-box; border:none; outline:none; background:transparent; font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; letter-spacing:-.01em; color:#18181B;">
+                          </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                          <sc-for list="{{ imp.rows }}" as="r" hint-placeholder-count="3">
+                            <div style="border:1px solid #ECEEF2; border-radius:12px; padding:12px 14px; background:#fff; animation:cardIn .4s both;">
+                              <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="width:22px; height:22px; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#F1F3F6; font-size:11px; font-weight:700; color:#52525B; font-family:'Space Grotesk',sans-serif;">{{ r.n }}</span>
+                                <span style="flex:1; min-width:0; font-size:13.5px; font-weight:700; letter-spacing:-.01em;">{{ r.name }}</span>
+                                <sc-if value="{{ r.hasTime }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px; font-weight:600; color:#1F9D57; background:#E7F6EC; padding:2px 9px; border-radius:99px;">{{ r.time }}</span></sc-if>
+                              </div>
+                              <sc-if value="{{ r.hasItems }}" hint-placeholder-val="{{ false }}">
+                                <div style="display:flex; flex-direction:column; gap:6px; margin-top:11px; padding-left:32px;">
+                                  <sc-for list="{{ r.items }}" as="x" hint-placeholder-count="3">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                                      <span style="display:flex; align-items:center; gap:8px; min-width:0; font-size:12.5px; color:#3F3F46;"><span style="width:5px; height:5px; border-radius:50%; background:#C7CBD1; flex-shrink:0;"></span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ x.text }}</span></span>
+                                      <span style="font-size:11.5px; font-weight:600; color:#8A8A8E; white-space:nowrap; flex-shrink:0;">{{ x.detail }}</span>
+                                    </div>
+                                  </sc-for>
+                                </div>
+                              </sc-if>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 20px; background:rgba(247,248,250,.92); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-top:1px solid #ECEEF2;">
+                      <div onClick="{{ impChoosePane }}" style="display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:#71717A; cursor:pointer;" style-hover="color:#18181B;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Try another document</div>
+                      <div style="display:flex; align-items:center; gap:10px;">
+                        <div onClick="{{ impOpenInEditor }}" style="padding:11px 18px; border:1px solid #E4E7EC; border-radius:11px; font-size:13px; font-weight:600; cursor:pointer; color:#3F3F46;" style-hover="background:#F1F3F6;">Open in editor</div>
+                        <div onClick="{{ impSaveToLibrary }}" style="display:flex; align-items:center; gap:8px; background:#0091FF; color:#fff; padding:11px 20px; border-radius:11px; font-size:13px; font-weight:600; cursor:pointer;" style-hover="opacity:.9;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M20 6 9 17l-5-5"/></svg>Save to library</div>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                </div>
+              </div>
+            </sc-if>
+
             <!-- PLAN EDITOR -->
             <sc-if value="{{ edOpen }}" hint-placeholder-val="{{ false }}">
               <div style="position:absolute; inset:0; z-index:100; background:rgba(24,24,27,.42); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); display:flex; align-items:stretch; justify-content:stretch; padding:14px;">
@@ -1486,6 +1664,7 @@ class Component extends DCLogic {
     newMenuOpen: false,
     menuOpen: null,
     preview: null,
+    imp: null,
     favs: [1, 5, 8, 13, 15],
     recent: [1, 5, 8, 15, 2],
     items: [
@@ -1537,6 +1716,89 @@ class Component extends DCLogic {
 
   toggleNewMenu = (e) => { if (e) e.stopPropagation(); this.setState((s) => ({ newMenuOpen: !s.newMenuOpen })); };
   closeNewMenu = () => this.setState({ newMenuOpen: false });
+
+  // ===== Spotter import =====
+  openImport = (e) => { if (e) e.stopPropagation(); this.setState({ imp: { step: 'input', pane: 'choose', type: 'nutrition', mode: null, sourceKind: '', fileName: '', pasted: '', name: '', result: null }, newMenuOpen: false }); };
+  closeImport = () => { clearTimeout(this._impT); this.setState({ imp: null }); };
+  impSetType = (t) => this.setState((s) => ({ imp: { ...s.imp, type: t } }));
+  impPane = (p) => this.setState((s) => ({ imp: { ...s.imp, pane: p } }));
+  impPasteInput = (e) => { const v = e.target.value; this.setState((s) => ({ imp: { ...s.imp, pasted: v } })); };
+  impFileChosen = (e) => {
+    const f = e.target && e.target.files && e.target.files[0];
+    const name = f ? f.name : 'document.pdf';
+    this.setState((s) => ({ imp: { ...s.imp, fileName: name } }));
+    this.impStart('upload', 'Uploaded — ' + name);
+  };
+  impStart = (mode, sourceKind) => {
+    this.setState((s) => ({ imp: { ...s.imp, mode, sourceKind, step: 'reading' } }));
+    clearTimeout(this._impT);
+    this._impT = setTimeout(() => {
+      this.setState((s) => {
+        if (!s.imp) return {};
+        const res = this._importResult(s.imp.type);
+        return { imp: { ...s.imp, step: 'review', result: res, name: res.name } };
+      });
+    }, 2400);
+  };
+  impSetName = (e) => { const v = e.target.value; this.setState((s) => ({ imp: { ...s.imp, name: v } })); };
+  impSaveToLibrary = () => this.setState((s) => {
+    const t = s.imp.type, res = s.imp.result;
+    const name = (s.imp.name || '').trim() || res.name;
+    const count = t === 'training' ? res.rows.reduce((a, d) => a + (d.items ? d.items.length : 0), 0) : res.rows.length;
+    const item = { id: Date.now(), type: t, name, meta: 'Imported · ' + res.badge, count, assigned: 0, used: 0, updated: 'just now', imported: true };
+    return { items: [item, ...s.items], imp: null, cat: t, route: 'main' };
+  });
+  impOpenInEditor = () => this.setState((s) => {
+    const t = s.imp.type, res = s.imp.result;
+    const name = (s.imp.name || '').trim() || res.name;
+    return { ed: { open: true, mode: 'build', type: t, itemId: null, name }, edRows: res.rows, edReplaceId: null, edLibQuery: '', edDay: null, imp: null };
+  });
+  _typeIcon = (k, color) => {
+    const P = {
+      training: '<path d="M12.409 13.017A5 5 0 0 1 22 15c0 3.866-4 7-9 7-4.077 0-8.153-.82-10.371-2.462-.426-.316-.631-.832-.62-1.362C2.118 12.723 2.627 2 6.5 2a.5.5 0 0 1 .5.5c0 .824-.622 1.594-.919 2.361-.297.767-.36 1.914.223 2.487A5 5 0 0 1 12.4 13.024z"/><path d="M15 14a5 5 0 0 0-7.584 2"/><path d="M9.964 6.825C8.019 7.977 9.5 13 8 15"/>',
+      nutrition: '<path d="M7 2v7a3 3 0 0 0 6 0V2M10 2v20"/><path d="M17 2c-1.5 0-3 2.5-3 6s1.5 5 3 5v9"/>',
+      forms: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 12h6M9 16h4"/>',
+      exercises: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+      recipes: '<path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M12 3v3M8.6 4.6 9.2 7M15.4 4.6 14.8 7"/>',
+    };
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">' + P[k] + '</svg>';
+  };
+  _importResult = (type) => {
+    if (type === 'training') {
+      const mkDay = (name, exs) => ({ id: this._rid++, text: name, items: exs.map((e) => ({ id: this._rid++, text: e[0], sets: e[1], reps: e[2], rest: e[3], kind: 'working' })) });
+      return {
+        name: 'Push / Pull / Legs', badge: '3 days · 15 exercises', unit: 'training days',
+        source: ['PUSH DAY', 'bench press 4x8', 'OHP 3x10', 'incline db 3x12', 'lat raise 3x15', 'tricep pushdown 3x12', '', 'PULL DAY', 'deadlift 3x5', 'pull-ups 4x8', 'barbell row 3x10', 'face pull 3x15', 'curls 3x12', '', 'LEG DAY', 'squat 4x6', 'RDL 3x10', 'walking lunge 3x12', 'leg curl 3x15', 'calf raise 4x15'],
+        rows: [
+          mkDay('Push — Chest · Shoulders · Triceps', [['Bench Press', '4', '8', '120s'], ['Overhead Press', '3', '10', '90s'], ['Incline DB Press', '3', '12', '75s'], ['Lateral Raise', '3', '15', '60s'], ['Triceps Pushdown', '3', '12', '60s']]),
+          mkDay('Pull — Back · Biceps', [['Deadlift', '3', '5', '150s'], ['Pull-up', '4', '8', '90s'], ['Bent-over Row', '3', '10', '90s'], ['Face Pull', '3', '15', '60s'], ['Barbell Curl', '3', '12', '60s']]),
+          mkDay('Legs — Quads · Hamstrings · Glutes', [['Back Squat', '4', '6', '150s'], ['Romanian Deadlift', '3', '10', '90s'], ['Walking Lunge', '3', '12', '75s'], ['Leg Curl', '3', '15', '60s'], ['Calf Raise', '4', '15', '45s']]),
+        ],
+      };
+    }
+    if (type === 'nutrition') {
+      return {
+        name: "Karan's Diet Chart", badge: this.REALPLAN.length + ' meals', unit: 'daily meals',
+        source: this.REALPLAN.map((m) => (m.time ? m.time + ' — ' : '') + m.name + ': ' + m.items.map((f) => f.t).join(', ')),
+        rows: this.REALPLAN.map((m) => ({ id: this._rid++, text: m.name, time: m.time, items: m.items.map((f) => this._newFood(f.t, f.a, f.o)) })),
+      };
+    }
+    if (type === 'forms') {
+      const qs = ['Body weight this week (kg)', 'Waist measurement (cm)', 'Energy level (1–10)', 'Sleep quality (1–10)', 'Training adherence (%)', 'Nutrition adherence (%)', 'Progress photos', 'Wins & struggles this week'];
+      return { name: 'Weekly Check-in', badge: qs.length + ' questions', unit: 'questions', source: qs.map((q, i) => (i + 1) + '. ' + q + '?'), rows: qs.map((t) => ({ id: this._rid++, text: t })) };
+    }
+    if (type === 'exercises') {
+      const cues = ['Setup — bar on mid-traps, brace hard', 'Stance — shoulder-width, toes slightly out', 'Descent — sit back & down, controlled', 'Depth — hip crease below knee', 'Drive — through mid-foot, exhale up'];
+      return { name: 'Barbell Back Squat', badge: 'Legs · ' + cues.length + ' cues', unit: 'coaching notes', source: cues, rows: cues.map((t) => ({ id: this._rid++, text: t })) };
+    }
+    const ing = ['200g chicken breast', '150g cooked basmati rice', '100g broccoli', '1 tbsp olive oil', 'Paprika, garlic & salt', 'Cook chicken 6 min/side; steam rice & broccoli; combine'];
+    return { name: 'High-Protein Chicken Bowl', badge: '540 kcal · 6 ingredients', unit: 'ingredients', source: ing, rows: ing.map((t) => ({ id: this._rid++, text: t })) };
+  };
+  _impPreviewRows = (type, rows) => {
+    if (type === 'training') return rows.map((d, i) => ({ n: i + 1, name: d.text, hasTime: false, hasItems: true, items: d.items.map((x) => ({ text: x.text, detail: x.sets + ' × ' + x.reps + ' · rest ' + x.rest })) }));
+    if (type === 'nutrition') return rows.map((d, i) => ({ n: i + 1, name: d.text, hasTime: true, time: d.time || 'Anytime', hasItems: true, items: d.items.map((x) => ({ text: x.text, detail: x.amount || '' })) }));
+    return rows.map((d, i) => ({ n: i + 1, name: d.text, hasTime: false, hasItems: false, items: [] }));
+  };
   addNew = (type) => {
     const id = Date.now();
     const meta = { training: 'Draft · set weeks', nutrition: 'Draft · set meals', forms: 'Draft · add questions', exercises: 'Draft · add details' }[type];
@@ -2148,6 +2410,36 @@ class Component extends DCLogic {
       return { key: k, label: this.TYPES[k].group, count: gcards.length, cards: gcards };
     }).filter((g) => g.count > 0);
 
+    // Spotter import
+    const impState = this.state.imp;
+    let impVals = { impOpen: false, imp: {} };
+    if (impState) {
+      const C = this.COLORS[impState.type];
+      const res = impState.result;
+      impVals = {
+        impOpen: true,
+        imp: {
+          step: impState.step, pane: impState.pane, type: impState.type,
+          isChoose: impState.pane === 'choose', isScan: impState.pane === 'scan', isPaste: impState.pane === 'paste',
+          isInput: impState.step === 'input', isReading: impState.step === 'reading', isReview: impState.step === 'review',
+          typeLabel: this.TYPES[impState.type].label, iconFg: C.fg, iconBg: C.bg,
+          typeChips: this.ORDER.map((k) => ({
+            label: this.TYPES[k].label, onClick: () => this.impSetType(k),
+            style: impState.type === k ? 'border-color:' + this.COLORS[k].fg + '; background:' + this.COLORS[k].bg + '; color:#18181B;' : 'border-color:#ECEEF2; background:#fff; color:#71717A;',
+            icon: this._typeIcon(k, this.COLORS[k].fg),
+          })),
+          pasted: impState.pasted || '', pasteReady: (impState.pasted || '').trim().length > 8,
+          sourceKind: impState.sourceKind || '', fileName: impState.fileName || '', name: impState.name || '',
+          handwritten: impState.mode !== 'paste',
+          sourceFont: impState.mode === 'paste' ? "'Inter', sans-serif" : "'Caveat', cursive",
+          sourceSize: impState.mode === 'paste' ? '13.5px' : '20px',
+          badge: res ? res.badge : '', unit: res ? res.unit : '',
+          source: res ? res.source.map((line, i) => ({ line: line || ' ', delay: 'animation-delay:' + (i * 0.04) + 's;' })) : [],
+          rows: res ? this._impPreviewRows(impState.type, res.rows) : [],
+        },
+      };
+    }
+
     return {
       itemCount: items.length,
       assignedTotal: items.reduce((a, i) => a + (i.assigned || 0), 0),
@@ -2275,6 +2567,13 @@ class Component extends DCLogic {
       })(),
       ...edVals,
       closeEditor: this.closeEditor, edSetName: this.edSetName, edSave: this.edSave,
+      ...impVals,
+      openImport: this.openImport, closeImport: this.closeImport, impSetType: this.impSetType,
+      impPane: this.impPane, impPasteInput: this.impPasteInput, impFileChosen: this.impFileChosen,
+      impScan: () => this.impStart('scan', 'Scanned page'), impConvertPaste: () => this.impStart('paste', 'Pasted text'),
+      impPastePane: () => this.impPane('paste'), impChoosePane: () => this.impPane('choose'),
+      impScanPane: () => this.impPane('scan'),
+      impSetName: this.impSetName, impSaveToLibrary: this.impSaveToLibrary, impOpenInEditor: this.impOpenInEditor,
       edAddBlank: this.edAddBlank, edLibSearch: this.edLibSearch, edCancelReplace: this.edCancelReplace,
       edAddDay: this.edAddDay, edCloseDay: this.edCloseDay, edAddItemToDay: this.edAddItemToDay,
       edTimeInput: this.edTimeInput,

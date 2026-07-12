@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter", sans-serif; background: #EEF1F5; color: #18181B; -webkit-font-smoothing: antialiased; }
+  a { color: #0091FF; text-decoration: none; font-weight: 600; }
+  a:hover { color: #0072D6; }
+  .nb-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  .nb-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+  .nb-scroll::-webkit-scrollbar-thumb { background: rgba(24,24,27,.18); border-radius: 99px; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes panelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+</style>
+</helmet>
+<div ref="{{ root }}" style="min-height:100%; padding:56px 64px 96px;">
+
+  <!-- ============ TURN 2a — MOBILE ============ -->
+  <section style="margin-bottom:60px;">
+    <div id="2a" style="display:flex; flex-direction:column; gap:22px; align-items:flex-start;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; background:#18181B; color:#fff; font-weight:800; font-size:15px; font-family:'Space Grotesk',sans-serif;">2a</span>
+        <div>
+          <div style="font-size:19px; font-weight:800; letter-spacing:-.01em;">Settings — Mobile</div>
+          <div style="font-size:13px; color:#71717A;">Same settings &amp; access control, reflowed for a phone</div>
+        </div>
+      </div>
+
+      <div style="width:426px; padding:13px; border-radius:56px; background:#0A0A0B; box-shadow:0 50px 100px -30px rgba(24,24,27,.5), 0 16px 40px -14px rgba(24,24,27,.3), inset 0 0 0 2px #26262A;">
+        <div style="position:relative; width:400px; height:860px; border-radius:44px; overflow:hidden; background:#F2F3F6; display:flex; flex-direction:column;">
+          <!-- STATUS BAR -->
+          <div style="flex-shrink:0; height:52px; background:#fff; display:flex; align-items:flex-end; justify-content:space-between; padding:0 30px 8px; position:relative; z-index:3;">
+            <span style="font-size:15px; font-weight:700; font-family:'Space Grotesk',sans-serif;">9:41</span>
+            <div style="position:absolute; left:50%; top:9px; transform:translateX(-50%); width:104px; height:28px; background:#0A0A0B; border-radius:99px;"></div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="#18181B"><path d="M2 16h3v4H2zM7 12h3v8H7zM12 8h3v12h-3zM17 4h3v16h-3z"/></svg>
+              <svg viewBox="0 0 26 24" width="22" height="16" fill="none"><rect x="1" y="6" width="20" height="12" rx="3" stroke="#18181B" stroke-width="1.6"/><rect x="3" y="8" width="15" height="8" rx="1.5" fill="#18181B"/><rect x="22" y="10" width="2" height="4" rx="1" fill="#18181B"/></svg>
+            </div>
+          </div>
+          <!-- HEADER -->
+          <div style="flex-shrink:0; background:#fff; border-bottom:1px solid #ECEEF2; padding:4px 20px 16px;">
+            <h1 style="font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; letter-spacing:-.03em; margin:0;">Settings</h1>
+          </div>
+
+          <div class="nb-scroll" style="flex:1; overflow-y:auto; padding:16px 16px 32px;">
+            <!-- ACCOUNT CARD -->
+            <div style="display:flex; align-items:center; gap:13px; padding:15px; background:#fff; border:1px solid #ECEEF2; border-radius:16px;">
+              <span style="width:52px; height:52px; border-radius:15px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#fff; background:#18181B; font-family:'Space Grotesk',sans-serif;">AR</span>
+              <div style="flex:1;"><div style="font-size:15px; font-weight:700;">Alex Rivera</div><div style="font-size:12px; color:#8A8A8E; margin-top:2px;">alex@coachez.com · Owner</div></div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#C7CBD1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+
+            <!-- MENU -->
+            <div style="font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; padding:20px 8px 8px;">Account</div>
+            <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; overflow:hidden;">
+              <div onClick="{{ goProfile }}" style="display:flex; align-items:center; gap:13px; padding:14px 16px; cursor:pointer;" style-active="background:#F7F8FA;"><span style="width:32px; height:32px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#EAF4FF; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span style="flex:1; font-size:13.5px; font-weight:600;">Profile</span><svg viewBox="0 0 24 24" fill="none" stroke="#C7CBD1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div>
+              <div onClick="{{ goBusiness }}" style="display:flex; align-items:center; gap:13px; padding:14px 16px; border-top:1px solid #F1F4F8; cursor:pointer;" style-active="background:#F7F8FA;"><span style="width:32px; height:32px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#EDFBF1; color:#16A34A;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg></span><span style="flex:1; font-size:13.5px; font-weight:600;">Business</span><svg viewBox="0 0 24 24" fill="none" stroke="#C7CBD1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div>
+              <div onClick="{{ goPrefs }}" style="display:flex; align-items:center; gap:13px; padding:14px 16px; border-top:1px solid #F1F4F8; cursor:pointer;" style-active="background:#F7F8FA;"><span style="width:32px; height:32px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#F1F3F6; color:#52525B;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span><span style="flex:1; font-size:13.5px; font-weight:600;">Preferences</span><svg viewBox="0 0 24 24" fill="none" stroke="#C7CBD1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div>
+            </div>
+
+            <div style="font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; padding:20px 8px 8px;">Workspace</div>
+            <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:13px; padding:14px 16px;"><span style="width:32px; height:32px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#EFEBFE; color:#7A5AF0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span><span style="flex:1; font-size:13.5px; font-weight:600;">Team &amp; roles</span><span style="font-size:10.5px; font-weight:700; color:#0091FF; background:#EAF4FF; padding:2px 8px; border-radius:99px;">5</span></div>
+              <div style="display:flex; align-items:center; gap:13px; padding:14px 16px; border-top:1px solid #F1F4F8;"><span style="width:32px; height:32px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#FCF3E3; color:#E08600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span><span style="flex:1; font-size:13.5px; font-weight:600;">Notifications</span><svg viewBox="0 0 24 24" fill="none" stroke="#C7CBD1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div>
+              <div style="display:flex; align-items:center; gap:13px; padding:14px 16px; border-top:1px solid #F1F4F8;"><span style="width:32px; height:32px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#EAF4FF; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 2a4 4 0 0 0-4 4v2h8V6a4 4 0 0 0-4-4zM8 8v4a4 4 0 0 0 8 0V8M12 16v6"/></svg></span><span style="flex:1; font-size:13.5px; font-weight:600;">Integrations</span><svg viewBox="0 0 24 24" fill="none" stroke="#C7CBD1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></div>
+            </div>
+
+            <!-- ROLE PERMISSIONS (mobile) -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:22px 8px 10px;"><span style="font-size:13.5px; font-weight:700; font-family:'Space Grotesk',sans-serif; letter-spacing:-.01em;">Role permissions</span><span style="font-size:11px; color:#8A8A8E;">Tap a level</span></div>
+            <div style="display:flex; gap:7px; overflow-x:auto; padding-bottom:8px;">
+              <sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="4"><div onClick="{{ r.onClick }}" style="flex-shrink:0; display:flex; align-items:center; gap:7px; padding:9px 14px; border:1.5px solid; border-radius:11px; font-size:12.5px; font-weight:600; cursor:pointer; {{ r.style }}"><span style="width:7px; height:7px; border-radius:50%; background:{{ r.dot }};"></span>{{ r.label }}</div></sc-for>
+            </div>
+            <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; overflow:hidden; margin-top:8px;">
+              <sc-for list="{{ featureRows }}" as="f" hint-placeholder-count="8">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-top:1px solid #F1F4F8;">
+                  <div style="min-width:0;"><div style="font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ f.label }}</div></div>
+                  <sc-if value="{{ f.isOwner }}" hint-placeholder-val="{{ false }}"><span style="flex-shrink:0; display:inline-flex; align-items:center; gap:5px; padding:6px 11px; border-radius:9px; font-size:11px; font-weight:700; color:#16A34A; background:#F0FAF4;">Full</span></sc-if>
+                  <sc-if value="{{ f.editable }}" hint-placeholder-val="{{ true }}"><div style="flex-shrink:0; display:flex; background:#F2F3F6; border-radius:9px; padding:2px;"><sc-for list="{{ f.segs }}" as="s" hint-placeholder-count="3"><span onClick="{{ s.onClick }}" style="padding:6px 11px; border-radius:7px; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; {{ s.style }}">{{ s.label }}</span></sc-for></div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- NOTIFICATIONS (mobile) -->
+            <div style="padding:22px 8px 10px;"><span style="font-size:13.5px; font-weight:700; font-family:'Space Grotesk',sans-serif; letter-spacing:-.01em;">Notifications</span></div>
+            <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; overflow:hidden;">
+              <sc-for list="{{ notifRows }}" as="n" hint-placeholder-count="6">
+                <div style="display:flex; align-items:center; gap:12px; padding:13px 14px; border-top:1px solid #F1F4F8;">
+                  <div style="flex:1; min-width:0;"><div style="font-size:12.5px; font-weight:600;">{{ n.label }}</div><div style="font-size:11px; color:#8A8A8E; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ n.desc }}</div></div>
+                  <span onClick="{{ n.onToggle }}" style="width:44px; height:26px; border-radius:99px; flex-shrink:0; position:relative; cursor:pointer; transition:background .2s; {{ n.track }}"><span style="position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s cubic-bezier(.34,1.4,.5,1); {{ n.knob }}"></span></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TURN 1a — DESKTOP ============ -->
+  <section style="margin-bottom:60px;">
+    <header style="max-width:780px; margin:0 auto 44px; text-align:center; animation:fadeUp .5s both;">
+      <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:#18181B; color:#fff; font-size:12px; font-weight:600; margin-bottom:20px;">
+        <span style="width:7px; height:7px; border-radius:50%; background:#0091FF;"></span>
+        Settings · Focus direction
+      </div>
+      <h1 style="font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; letter-spacing:-.02em; margin:0 0 12px;">Settings</h1>
+      <p style="font-size:16px; line-height:1.6; color:#52525B; margin:0;">Everything that runs behind the app — your profile and business, the team and exactly what each role can see and do, notifications, payouts, integrations and security.</p>
+    </header>
+
+    <div style="display:flex; justify-content:center;">
+      <div id="1a" style="display:flex; flex-direction:column; gap:22px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; background:#18181B; color:#fff; font-weight:800; font-size:15px; font-family:'Space Grotesk',sans-serif;">1a</span>
+          <div>
+            <div style="font-size:19px; font-weight:800; letter-spacing:-.01em;">Settings — Focus</div>
+            <div style="font-size:13px; color:#71717A;">Account · team &amp; roles · access control · integrations</div>
+          </div>
+        </div>
+
+        <!-- DESKTOP WINDOW -->
+        <div style="width:1280px; border-radius:22px; overflow:hidden; background:#fff; border:1px solid #E4E7EC; box-shadow:0 40px 80px -28px rgba(24,24,27,.32), 0 12px 28px -12px rgba(24,24,27,.16);">
+          <div style="height:40px; display:flex; align-items:center; gap:8px; padding:0 16px; background:#18181B; border-bottom:1px solid #26262A;">
+            <span style="width:11px;height:11px;border-radius:50%;background:#FF5F57;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#FEBC2E;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#28C840;"></span>
+            <div style="flex:1; text-align:center; font-size:12px; font-weight:500; color:#71717A;">app.coachez.com/settings</div>
+          </div>
+          <div style="display:flex; height:920px; position:relative;">
+
+            <!-- SIDEBAR -->
+            <aside style="width:236px; flex-shrink:0; background:#18181B; color:#A1A1AA; display:flex; flex-direction:column; padding:0 14px;">
+              <div style="height:66px; display:flex; align-items:center; padding-left:8px;">
+                <span style="display:inline-flex; align-items:center; gap:9px;"><img src="assets/icon-192.png" alt="coachez" style="height:26px; width:26px; border-radius:7px;"><span style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; letter-spacing:-.02em; color:#fff;">coachez</span></span>
+              </div>
+              <nav style="display:flex; flex-direction:column; gap:3px; flex:1;">
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>Dashboard</div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span style="flex:1;">Clients</span><span style="background:#26262B; color:#A1A1AA; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">118</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span style="flex:1;">Prospects</span><span style="background:#26262B; color:#A1A1AA; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">31</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M6.5 6.5h11M6.5 17.5h11M4 6.5h.01M4 17.5h.01M20 6.5h.01M20 17.5h.01M9 12h6"></path><rect x="2" y="9" width="4" height="6" rx="1"></rect><rect x="18" y="9" width="4" height="6" rx="1"></rect></svg><span style="flex:1;">Trainers</span><span style="background:#26262B; color:#A1A1AA; font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px;">6</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path></svg><span style="flex:1;">Builder</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex:1;">Analytics &amp; Reports</span></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; color:#A1A1AA; font-weight:500; font-size:14px; cursor:pointer;" style-hover="background:#26262B; color:#E4E4E7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg><span style="flex:1;">Payments &amp; Subscriptions</span></div>
+                <div style="flex:1;"></div>
+                <div style="height:1px; background:#2A2A2E; margin:0 0 8px;"></div>
+                <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; background:#0091FF; color:#fff; font-weight:600; font-size:14px; margin-bottom:14px; font-family:'Space Grotesk',sans-serif;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="12" cy="12" r="3"></circle><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73"></path></svg>Settings</div>
+              </nav>
+            </aside>
+
+            <!-- CONTENT -->
+            <main style="flex:1; display:flex; flex-direction:column; background:#F7F8FA; overflow:hidden; position:relative;">
+              <div style="flex-shrink:0; background:#fff; border-bottom:1px solid #ECEEF2; padding:22px 30px 20px; animation:fadeUp .5s both .04s;">
+                <h1 style="font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; letter-spacing:-.03em; margin:0; line-height:1;">Settings</h1>
+                <div style="font-size:13px; color:#8A8A8E; margin-top:9px;">Manage your account, team access and everything the app runs on.</div>
+              </div>
+
+              <div style="flex:1; display:flex; min-height:0;">
+                <!-- SUB NAV -->
+                <div class="nb-scroll" style="width:230px; flex-shrink:0; border-right:1px solid #ECEEF2; padding:16px 14px; overflow-y:auto; background:#fff;">
+                  <div style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#A1A1AA; padding:6px 12px 8px;">Account</div>
+                  <div onClick="{{ goProfile }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ st.profile }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div>
+                  <div onClick="{{ goBusiness }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ st.business }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/><path d="M9 9v.01M9 12v.01M9 15v.01"/></svg>Business</div>
+                  <div onClick="{{ goPrefs }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ st.prefs }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Preferences</div>
+
+                  <div style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#A1A1AA; padding:16px 12px 8px;">Workspace</div>
+                  <div onClick="{{ goTeam }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ st.team }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span style="flex:1;">Team &amp; roles</span><span style="font-size:10px; font-weight:700; color:#0091FF; background:#EAF4FF; padding:1px 7px; border-radius:99px;">5</span></div>
+                  <div onClick="{{ goNotif }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ st.notif }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Notifications</div>
+                  <div onClick="{{ goIntegrations }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ st.integrations }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M12 2v6M12 2a4 4 0 0 0-4 4v2h8V6a4 4 0 0 0-4-4zM8 8v4a4 4 0 0 0 8 0V8M12 16v6"/></svg>Integrations</div>
+
+                  <div style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#A1A1AA; padding:16px 12px 8px;">Billing &amp; security</div>
+                  <div onClick="{{ goPayments }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ st.payments }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Plan &amp; payouts</div>
+                  <div onClick="{{ goSecurity }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ st.security }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Security</div>
+                </div>
+
+                <!-- PANEL -->
+                <div class="nb-scroll" style="flex:1; overflow-y:auto; padding:26px 30px 40px;">
+
+                  <!-- ===== TEAM & ROLES ===== -->
+                  <sc-if value="{{ isTeam }}" hint-placeholder-val="{{ true }}">
+                    <div style="animation:panelIn .3s both;">
+                      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                        <div><div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; letter-spacing:-.02em;">Team &amp; roles</div><div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">Invite your team and control exactly what each role can see and do.</div></div>
+                        <div onClick="{{ invite }}" style="display:flex; align-items:center; gap:7px; background:#18181B; color:#fff; padding:10px 16px; border-radius:11px; font-size:13px; font-weight:600; cursor:pointer;" style-hover="opacity:.9;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6"/></svg>Invite member</div>
+                      </div>
+
+                      <!-- MEMBERS -->
+                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; overflow:hidden; margin-top:18px;">
+                        <div style="display:grid; grid-template-columns:minmax(0,1.6fr) 1fr 150px 40px; align-items:center; gap:14px; padding:11px 18px; background:#F7F8FA; font-size:10.5px; font-weight:700; color:#8A8A8E; text-transform:uppercase; letter-spacing:.04em;"><span>Member</span><span>Email</span><span>Role</span><span></span></div>
+                        <sc-for list="{{ members }}" as="m" hint-placeholder-count="5">
+                          <div style="display:grid; grid-template-columns:minmax(0,1.6fr) 1fr 150px 40px; align-items:center; gap:14px; padding:12px 18px; border-top:1px solid #F1F4F8;">
+                            <span style="display:flex; align-items:center; gap:11px; min-width:0;"><span style="width:34px; height:34px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; background:#18181B;">{{ m.initials }}</span><span style="font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ m.name }}</span></span>
+                            <span style="font-size:12.5px; color:#71717A; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ m.email }}</span>
+                            <sc-if value="{{ m.locked }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:99px; font-size:11.5px; font-weight:700; color:{{ m.roleColor }}; background:{{ m.roleBg }};">{{ m.roleLabel }}</span></sc-if>
+                            <sc-if value="{{ m.editable }}" hint-placeholder-val="{{ true }}"><select value="{{ m.role }}" onChange="{{ m.onRole }}" style="width:100%; box-sizing:border-box; font-size:12.5px; font-weight:600; color:#18181B; padding:8px 10px; border:1px solid #E4E7EC; border-radius:9px; outline:none; background:#fff; font-family:inherit; cursor:pointer;"><option value="admin">Admin</option><option value="trainer">Trainer</option><option value="assistant">Assistant</option></select></sc-if>
+                            <sc-if value="{{ m.editable }}" hint-placeholder-val="{{ true }}"><div onClick="{{ m.onRemove }}" style="width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#A1A1AA;" style-hover="background:#FEF2F2; color:#EF4444;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></div></sc-if>
+                            <sc-if value="{{ m.locked }}" hint-placeholder-val="{{ false }}"><span></span></sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+
+                      <!-- PERMISSIONS -->
+                      <div style="margin-top:26px;">
+                        <div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; letter-spacing:-.01em;">Role permissions</div>
+                        <div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">Pick a role, then set what it can access across the app. Owner always has full access.</div>
+                        <div style="display:flex; gap:8px; margin:16px 0 6px;">
+                          <sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="4">
+                            <div onClick="{{ r.onClick }}" style="display:flex; align-items:center; gap:8px; padding:9px 15px; border:1.5px solid; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; transition:all .16s; {{ r.style }}"><span style="width:8px; height:8px; border-radius:50%; background:{{ r.dot }};"></span>{{ r.label }}</div>
+                          </sc-for>
+                        </div>
+                        <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; overflow:hidden; margin-top:12px;">
+                          <div style="display:grid; grid-template-columns:minmax(0,1.5fr) 300px; align-items:center; gap:14px; padding:11px 18px; background:#F7F8FA; font-size:10.5px; font-weight:700; color:#8A8A8E; text-transform:uppercase; letter-spacing:.04em;"><span>Feature</span><span style="text-align:right;">Access level</span></div>
+                          <sc-for list="{{ featureRows }}" as="f" hint-placeholder-count="8">
+                            <div style="display:grid; grid-template-columns:minmax(0,1.5fr) 300px; align-items:center; gap:14px; padding:12px 18px; border-top:1px solid #F1F4F8;">
+                              <div><div style="font-size:13.5px; font-weight:600;">{{ f.label }}</div><div style="font-size:11.5px; color:#A1A1AA; margin-top:2px;">{{ f.lvlLabel }}</div></div>
+                              <div style="display:flex; justify-content:flex-end;">
+                                <sc-if value="{{ f.isOwner }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:10px; font-size:12px; font-weight:700; color:#16A34A; background:#F0FAF4;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M20 6 9 17l-5-5"/></svg>Full access</span></sc-if>
+                                <sc-if value="{{ f.editable }}" hint-placeholder-val="{{ true }}"><div style="display:flex; background:#F2F3F6; border-radius:10px; padding:3px;"><sc-for list="{{ f.segs }}" as="s" hint-placeholder-count="3"><span onClick="{{ s.onClick }}" style="padding:7px 15px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; {{ s.style }}">{{ s.label }}</span></sc-for></div></sc-if>
+                              </div>
+                            </div>
+                          </sc-for>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:9px; margin-top:14px; padding:13px 16px; background:#F7F8FA; border-radius:13px;"><svg viewBox="0 0 24 24" fill="none" stroke="#0091FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span style="font-size:12px; color:#52525B; line-height:1.5;"><b style="color:#18181B; font-weight:600;">View</b> lets a role open and read a feature; <b style="color:#18181B; font-weight:600;">Edit</b> also lets them create and change; <b style="color:#18181B; font-weight:600;">None</b> hides it from their sidebar entirely.</span></div>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== PROFILE ===== -->
+                  <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+                    <div style="animation:panelIn .3s both; max-width:640px;">
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; letter-spacing:-.02em;">Profile</div>
+                      <div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">Your personal details, shown to clients and your team.</div>
+                      <div style="display:flex; align-items:center; gap:16px; margin-top:22px; padding:18px; background:#fff; border:1px solid #ECEEF2; border-radius:16px;">
+                        <span style="width:64px; height:64px; border-radius:18px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff; background:#18181B; font-family:'Space Grotesk',sans-serif;">AR</span>
+                        <div style="flex:1;"><div style="font-size:15px; font-weight:700;">Alex Rivera</div><div style="font-size:12.5px; color:#8A8A8E; margin-top:2px;">Head coach · Owner</div></div>
+                        <div style="padding:9px 15px; border:1px solid #E4E7EC; border-radius:10px; font-size:12.5px; font-weight:600; cursor:pointer; color:#3F3F46;" style-hover="background:#F7F8FA;">Change photo</div>
+                      </div>
+                      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;">
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Full name</div><input defaultValue="Alex Rivera" style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none;" style-focus="border-color:#0091FF;"></div>
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Email</div><input defaultValue="alex@coachez.com" style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none;" style-focus="border-color:#0091FF;"></div>
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Phone</div><input defaultValue="+91 98765 43210" style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none;" style-focus="border-color:#0091FF;"></div>
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Timezone</div><select style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none; background:#fff; cursor:pointer;"><option>IST (GMT+5:30)</option><option>GMT</option><option>EST (GMT-5)</option><option>PST (GMT-8)</option></select></div>
+                      </div>
+                      <div style="margin-top:16px;"><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Public bio</div><textarea defaultValue="Strength & conditioning coach helping busy professionals get lean and strong." style="width:100%; box-sizing:border-box; min-height:80px; resize:vertical; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; line-height:1.5; outline:none;" style-focus="border-color:#0091FF;"></textarea></div>
+                      <div onClick="{{ save }}" style="display:inline-flex; align-items:center; gap:8px; background:#0091FF; color:#fff; padding:11px 22px; border-radius:11px; font-size:13px; font-weight:600; cursor:pointer; margin-top:20px;" style-hover="opacity:.9;">Save changes</div>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== BUSINESS ===== -->
+                  <sc-if value="{{ isBusiness }}" hint-placeholder-val="{{ false }}">
+                    <div style="animation:panelIn .3s both; max-width:640px;">
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; letter-spacing:-.02em;">Business</div>
+                      <div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">How your business appears on invoices, receipts and client-facing pages.</div>
+                      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px;">
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Business name</div><input defaultValue="CoachEZ Studio" style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none;" style-focus="border-color:#0091FF;"></div>
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Support email</div><input defaultValue="hello@coachez.com" style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none;" style-focus="border-color:#0091FF;"></div>
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Currency</div><select style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none; background:#fff; cursor:pointer;"><option>USD ($)</option><option>INR (₹)</option><option>EUR (€)</option><option>GBP (£)</option></select></div>
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Tax ID / GSTIN</div><input defaultValue="27ABCDE1234F1Z5" style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none;" style-focus="border-color:#0091FF;"></div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:16px; margin-top:20px; padding:18px; background:#fff; border:1px solid #ECEEF2; border-radius:16px;">
+                        <span style="width:56px; height:56px; border-radius:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#F1F3F6;"><img src="assets/icon-192.png" alt="" style="width:34px; height:34px; border-radius:9px;"></span>
+                        <div style="flex:1;"><div style="font-size:13.5px; font-weight:700;">Business logo</div><div style="font-size:12px; color:#8A8A8E; margin-top:2px;">Shown on invoices and client emails. PNG or SVG, at least 256px.</div></div>
+                        <div style="padding:9px 15px; border:1px solid #E4E7EC; border-radius:10px; font-size:12.5px; font-weight:600; cursor:pointer; color:#3F3F46;" style-hover="background:#F7F8FA;">Upload</div>
+                      </div>
+                      <div onClick="{{ save }}" style="display:inline-flex; align-items:center; gap:8px; background:#0091FF; color:#fff; padding:11px 22px; border-radius:11px; font-size:13px; font-weight:600; cursor:pointer; margin-top:20px;" style-hover="opacity:.9;">Save changes</div>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== NOTIFICATIONS ===== -->
+                  <sc-if value="{{ isNotif }}" hint-placeholder-val="{{ false }}">
+                    <div style="animation:panelIn .3s both; max-width:680px;">
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; letter-spacing:-.02em;">Notifications</div>
+                      <div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">Choose what you get pinged about, and where.</div>
+                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:16px; overflow:hidden; margin-top:20px;">
+                        <sc-for list="{{ notifRows }}" as="n" hint-placeholder-count="6">
+                          <div style="display:flex; align-items:center; gap:14px; padding:15px 18px; border-top:1px solid #F1F4F8;">
+                            <div style="flex:1;"><div style="font-size:13.5px; font-weight:600;">{{ n.label }}</div><div style="font-size:11.5px; color:#8A8A8E; margin-top:2px;">{{ n.desc }}</div></div>
+                            <span onClick="{{ n.onToggle }}" style="width:44px; height:26px; border-radius:99px; flex-shrink:0; position:relative; cursor:pointer; transition:background .2s; {{ n.track }}"><span style="position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s cubic-bezier(.34,1.4,.5,1); {{ n.knob }}"></span></span>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== PREFERENCES ===== -->
+                  <sc-if value="{{ isPrefs }}" hint-placeholder-val="{{ false }}">
+                    <div style="animation:panelIn .3s both; max-width:640px;">
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; letter-spacing:-.02em;">Preferences</div>
+                      <div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">Defaults for how data is shown across the app.</div>
+                      <div style="display:flex; flex-direction:column; gap:14px; margin-top:20px;">
+                        <sc-for list="{{ prefRows }}" as="p" hint-placeholder-count="4">
+                          <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 18px; background:#fff; border:1px solid #ECEEF2; border-radius:14px;">
+                            <div><div style="font-size:13.5px; font-weight:600;">{{ p.label }}</div><div style="font-size:11.5px; color:#8A8A8E; margin-top:2px;">{{ p.desc }}</div></div>
+                            <div style="display:flex; background:#F2F3F6; border-radius:10px; padding:3px; flex-shrink:0;"><sc-for list="{{ p.opts }}" as="o" hint-placeholder-count="2"><span onClick="{{ o.onClick }}" style="padding:8px 15px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer; transition:all .15s; {{ o.style }}">{{ o.label }}</span></sc-for></div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== INTEGRATIONS ===== -->
+                  <sc-if value="{{ isIntegrations }}" hint-placeholder-val="{{ false }}">
+                    <div style="animation:panelIn .3s both; max-width:760px;">
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; letter-spacing:-.02em;">Integrations</div>
+                      <div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">Connect the tools you already use. Connected apps sync automatically.</div>
+                      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px;">
+                        <sc-for list="{{ integrations }}" as="g" hint-placeholder-count="6">
+                          <div style="display:flex; align-items:center; gap:13px; padding:16px; background:#fff; border:1px solid #ECEEF2; border-radius:15px;">
+                            <span style="width:42px; height:42px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:#fff; font-family:'Space Grotesk',sans-serif; background:{{ g.color }};">{{ g.letter }}</span>
+                            <div style="flex:1; min-width:0;"><div style="font-size:13.5px; font-weight:700;">{{ g.name }}</div><div style="font-size:11.5px; color:#8A8A8E; margin-top:2px;">{{ g.desc }}</div></div>
+                            <div onClick="{{ g.onToggle }}" style="padding:8px 15px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; {{ g.btnStyle }}">{{ g.btnLabel }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== PLAN & PAYOUTS ===== -->
+                  <sc-if value="{{ isPayments }}" hint-placeholder-val="{{ false }}">
+                    <div style="animation:panelIn .3s both; max-width:680px;">
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; letter-spacing:-.02em;">Plan &amp; payouts</div>
+                      <div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">Your CoachEZ subscription and where your earnings land.</div>
+                      <div style="display:flex; align-items:center; gap:16px; margin-top:20px; padding:20px; background:linear-gradient(150deg,#18181B,#26262B); border-radius:16px; color:#fff;">
+                        <div style="flex:1;"><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#8FD0FF;">Current plan</div><div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; margin-top:6px;">Studio · $79/mo</div><div style="font-size:12px; color:#A1A1AA; margin-top:4px;">Up to 250 clients · unlimited team · renews Aug 1</div></div>
+                        <div style="background:#fff; color:#18181B; padding:10px 16px; border-radius:11px; font-size:12.5px; font-weight:600; cursor:pointer;" style-hover="opacity:.9;">Manage plan</div>
+                      </div>
+                      <div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin:22px 0 10px;">Payout account</div>
+                      <div style="display:flex; align-items:center; gap:13px; padding:16px; background:#fff; border:1px solid #ECEEF2; border-radius:15px;">
+                        <span style="width:42px; height:42px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#EAF4FF; color:#0091FF;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+                        <div style="flex:1;"><div style="font-size:13.5px; font-weight:700;">HDFC Bank ••4291</div><div style="font-size:11.5px; color:#8A8A8E; margin-top:2px;">Automatic weekly payouts · next Jul 14</div></div>
+                        <div style="padding:9px 15px; border:1px solid #E4E7EC; border-radius:10px; font-size:12.5px; font-weight:600; cursor:pointer; color:#3F3F46;" style-hover="background:#F7F8FA;">Change</div>
+                      </div>
+                      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:14px; padding:16px 18px; background:#fff; border:1px solid #ECEEF2; border-radius:14px;">
+                        <div><div style="font-size:13.5px; font-weight:600;">Automatic weekly payouts</div><div style="font-size:11.5px; color:#8A8A8E; margin-top:2px;">Send available balance to your bank every Monday.</div></div>
+                        <span onClick="{{ toggleAutoPayout }}" style="width:44px; height:26px; border-radius:99px; flex-shrink:0; position:relative; cursor:pointer; transition:background .2s; {{ autoPayoutTrack }}"><span style="position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s cubic-bezier(.34,1.4,.5,1); {{ autoPayoutKnob }}"></span></span>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <!-- ===== SECURITY ===== -->
+                  <sc-if value="{{ isSecurity }}" hint-placeholder-val="{{ false }}">
+                    <div style="animation:panelIn .3s both; max-width:680px;">
+                      <div style="font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; letter-spacing:-.02em;">Security</div>
+                      <div style="font-size:12.5px; color:#8A8A8E; margin-top:4px;">Keep your account and your clients' data safe.</div>
+                      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:20px;">
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">New password</div><input type="password" defaultValue="password12" style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none;" style-focus="border-color:#0091FF;"></div>
+                        <div><div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin-bottom:7px;">Confirm password</div><input type="password" defaultValue="password12" style="width:100%; box-sizing:border-box; border:1px solid #E4E7EC; border-radius:11px; padding:11px 13px; font-family:inherit; font-size:13.5px; outline:none;" style-focus="border-color:#0091FF;"></div>
+                      </div>
+                      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:16px; padding:16px 18px; background:#fff; border:1px solid #ECEEF2; border-radius:14px;">
+                        <div><div style="font-size:13.5px; font-weight:600;">Two-factor authentication</div><div style="font-size:11.5px; color:#8A8A8E; margin-top:2px;">Require a code from your phone at every sign-in.</div></div>
+                        <span onClick="{{ toggle2fa }}" style="width:44px; height:26px; border-radius:99px; flex-shrink:0; position:relative; cursor:pointer; transition:background .2s; {{ twoFaTrack }}"><span style="position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s cubic-bezier(.34,1.4,.5,1); {{ twoFaKnob }}"></span></span>
+                      </div>
+                      <div style="font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#A1A1AA; margin:22px 0 10px;">Active sessions</div>
+                      <div style="background:#fff; border:1px solid #ECEEF2; border-radius:15px; overflow:hidden;">
+                        <sc-for list="{{ sessions }}" as="s" hint-placeholder-count="3">
+                          <div style="display:flex; align-items:center; gap:13px; padding:14px 16px; border-top:1px solid #F1F4F8;">
+                            <span style="width:36px; height:36px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#F1F3F6; color:#52525B;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M12 18h.01"/></svg></span>
+                            <div style="flex:1;"><div style="font-size:13px; font-weight:600;">{{ s.device }}</div><div style="font-size:11.5px; color:#8A8A8E; margin-top:1px;">{{ s.where }}</div></div>
+                            <sc-if value="{{ s.current }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px; font-weight:700; color:#16A34A; background:#F0FAF4; padding:3px 10px; border-radius:99px;">This device</span></sc-if>
+                            <sc-if value="{{ s.other }}" hint-placeholder-val="{{ true }}"><div onClick="{{ save }}" style="font-size:12px; font-weight:600; color:#EF4444; cursor:pointer;" style-hover="text-decoration:underline;">Revoke</div></sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                </div>
+              </div>
+
+              <!-- TOAST -->
+              <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute; bottom:34px; left:50%; z-index:80; transform:translateX(-50%); background:#18181B; color:#fff; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:600; box-shadow:0 20px 40px -14px rgba(24,24,27,.5); animation:toastIn .3s cubic-bezier(.34,1.4,.5,1) both; display:flex; align-items:center; gap:9px;"><svg viewBox="0 0 24 24" fill="none" stroke="#28C840" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20 6 9 17l-5-5"/></svg>{{ toast }}</div>
+              </sc-if>
+
+            </main>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    sec: 'team',
+    permRole: 'trainer',
+    perms: {
+      admin: { dashboard: 'edit', clients: 'edit', prospects: 'edit', trainers: 'edit', builder: 'edit', analytics: 'view', payments: 'edit', settings: 'view' },
+      trainer: { dashboard: 'view', clients: 'edit', prospects: 'view', trainers: 'none', builder: 'edit', analytics: 'view', payments: 'none', settings: 'none' },
+      assistant: { dashboard: 'view', clients: 'view', prospects: 'edit', trainers: 'none', builder: 'view', analytics: 'none', payments: 'none', settings: 'none' },
+    },
+    members: [
+      { id: 1, name: 'Alex Rivera', email: 'alex@coachez.com', role: 'owner' },
+      { id: 2, name: 'Priya Shah', email: 'priya@coachez.com', role: 'admin' },
+      { id: 3, name: 'Daniel Okafor', email: 'daniel@coachez.com', role: 'trainer' },
+      { id: 4, name: 'Hana Nakamura', email: 'hana@coachez.com', role: 'trainer' },
+      { id: 5, name: 'Sam Cole', email: 'sam@coachez.com', role: 'assistant' },
+    ],
+    notif: { newPayment: true, failedPayment: true, newLead: true, checkinDue: true, weeklyDigest: true, productUpdates: false },
+    prefs: { units: 'kg', weekStart: 'mon', timeFmt: '12h', dateFmt: 'dmy' },
+    integrations: { stripe: true, gcal: true, whatsapp: true, zoom: false, mailchimp: false, health: false },
+    autoPayout: true, twoFa: true, toast: null,
+  };
+
+  FEATURES = [['dashboard', 'Dashboard'], ['clients', 'Clients'], ['prospects', 'Prospects'], ['trainers', 'Trainers'], ['builder', 'Builder'], ['analytics', 'Analytics & Reports'], ['payments', 'Payments & Subscriptions'], ['settings', 'Settings']];
+  ROLES = [['owner', 'Owner', '#7A5AF0', '#EFEBFE'], ['admin', 'Admin', '#0091FF', '#EAF4FF'], ['trainer', 'Trainer', '#16A34A', '#F0FAF4'], ['assistant', 'Assistant', '#71717A', '#F1F3F6']];
+  LVLNOTE = { none: 'No access — hidden from sidebar', view: 'Can view — read only', edit: 'Can edit — create & change', full: 'Full access' };
+  INTEG = [
+    ['stripe', 'Stripe', 'Payments & payouts', '#635BFF', 'S'],
+    ['gcal', 'Google Calendar', 'Sync sessions to calendar', '#4285F4', 'G'],
+    ['whatsapp', 'WhatsApp', 'Client messaging', '#25D366', 'W'],
+    ['zoom', 'Zoom', 'Video coaching calls', '#2D8CFF', 'Z'],
+    ['mailchimp', 'Mailchimp', 'Email campaigns', '#FFE01B', 'M'],
+    ['health', 'Apple Health', 'Client activity data', '#FA3E4B', 'H'],
+  ];
+
+  _flash = (msg) => { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), 1900); };
+  _initials(n) { return n.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(); }
+  setSec = (sec) => this.setState({ sec });
+  save = () => this._flash('Changes saved');
+  invite = () => this._flash('Invite sent');
+
+  setPermRole = (permRole) => this.setState({ permRole });
+  setPerm = (feature, level) => this.setState((s) => ({ perms: { ...s.perms, [s.permRole]: { ...s.perms[s.permRole], [feature]: level } } }), () => this._flash('Access updated'));
+  setMemberRole = (id, e) => { const role = e.target.value; this.setState((s) => ({ members: s.members.map((m) => m.id === id ? { ...m, role } : m) }), () => this._flash('Role updated')); };
+  removeMember = (id) => this.setState((s) => ({ members: s.members.filter((m) => m.id !== id) }), () => this._flash('Member removed'));
+
+  toggleNotif = (k) => this.setState((s) => ({ notif: { ...s.notif, [k]: !s.notif[k] } }));
+  setPref = (k, v) => this.setState((s) => ({ prefs: { ...s.prefs, [k]: v } }));
+  toggleInteg = (k) => this.setState((s) => ({ integrations: { ...s.integrations, [k]: !s.integrations[k] } }), () => this._flash(this.state.integrations[k] ? 'Disconnected' : 'Connected'));
+  toggleAutoPayout = () => this.setState((s) => ({ autoPayout: !s.autoPayout }));
+  toggle2fa = () => this.setState((s) => ({ twoFa: !s.twoFa }), () => this._flash('Two-factor updated'));
+
+  _tk(on) { return { track: on ? 'background:#0091FF;' : 'background:#E4E7EC;', knob: on ? 'transform:translateX(18px);' : 'transform:translateX(0);' }; }
+
+  renderVals() {
+    const sec = this.state.sec;
+    const secOf = (k) => sec === k ? 'background:#18181B; color:#fff;' : 'color:#3F3F46;';
+    const st = { profile: secOf('profile'), business: secOf('business'), prefs: secOf('prefs'), team: secOf('team'), notif: secOf('notif'), integrations: secOf('integrations'), payments: secOf('payments'), security: secOf('security') };
+
+    // members
+    const roleMeta = {};
+    this.ROLES.forEach(([k, label, c, bg]) => { roleMeta[k] = { label, c, bg }; });
+    const members = this.state.members.map((m) => {
+      const rm = roleMeta[m.role];
+      const owner = m.role === 'owner';
+      return { ...m, initials: this._initials(m.name), locked: owner, editable: !owner, roleLabel: rm.label, roleColor: rm.c, roleBg: rm.bg, onRole: (e) => this.setMemberRole(m.id, e), onRemove: () => this.removeMember(m.id) };
+    });
+
+    // role tabs
+    const roleTabs = this.ROLES.map(([k, label, c, bg]) => ({
+      label, dot: c, onClick: () => this.setPermRole(k),
+      style: this.state.permRole === k ? 'border-color:' + c + '; background:' + bg + '; color:#18181B;' : 'border-color:#ECEEF2; background:#fff; color:#71717A;',
+    }));
+
+    // permission rows for selected role
+    const pr = this.state.permRole, isOwner = pr === 'owner';
+    const roleP = this.state.perms[pr] || {};
+    const featureRows = this.FEATURES.map(([k, label]) => {
+      const lvl = isOwner ? 'full' : (roleP[k] || 'none');
+      return {
+        key: k, label, isOwner, editable: !isOwner, lvlLabel: this.LVLNOTE[lvl],
+        segs: [['none', 'None'], ['view', 'View'], ['edit', 'Edit']].map(([lk, ll]) => ({
+          label: ll, onClick: () => this.setPerm(k, lk),
+          style: lvl === lk ? 'background:#18181B; color:#fff; box-shadow:0 1px 3px rgba(24,24,27,.14);' : 'color:#71717A;',
+        })),
+      };
+    });
+
+    // notifications
+    const NL = [
+      ['newPayment', 'New payment received', 'When a client is charged successfully'],
+      ['failedPayment', 'Failed payments', 'A card was declined or a renewal failed'],
+      ['newLead', 'New lead', 'A prospect enters your pipeline'],
+      ['checkinDue', 'Check-ins due', 'A client check-in is pending review'],
+      ['weeklyDigest', 'Weekly digest', 'A Monday summary of the week ahead'],
+      ['productUpdates', 'Product updates', 'New CoachEZ features and tips'],
+    ];
+    const notifRows = NL.map(([k, label, desc]) => { const tk = this._tk(this.state.notif[k]); return { label, desc, onToggle: () => this.toggleNotif(k), track: tk.track, knob: tk.knob }; });
+
+    // preferences
+    const prefDef = [
+      ['units', 'Weight units', 'Used across plans and check-ins', [['kg', 'kg'], ['lb', 'lb']]],
+      ['weekStart', 'Week starts on', 'First day of the calendar week', [['mon', 'Monday'], ['sun', 'Sunday']]],
+      ['timeFmt', 'Time format', 'How times are displayed', [['12h', '12-hour'], ['24h', '24-hour']]],
+      ['dateFmt', 'Date format', 'Order of day, month, year', [['dmy', 'DD/MM'], ['mdy', 'MM/DD']]],
+    ];
+    const prefRows = prefDef.map(([k, label, desc, opts]) => ({
+      label, desc, opts: opts.map(([ok, ol]) => ({ label: ol, onClick: () => this.setPref(k, ok), style: this.state.prefs[k] === ok ? 'background:#fff; color:#18181B; box-shadow:0 1px 3px rgba(24,24,27,.12);' : 'color:#8A8A8E;' })),
+    }));
+
+    // integrations
+    const integrations = this.INTEG.map(([k, name, desc, color, letter]) => {
+      const on = this.state.integrations[k];
+      return { name, desc, color, letter, onToggle: () => this.toggleInteg(k), btnLabel: on ? 'Connected' : 'Connect', btnStyle: on ? 'color:#16A34A; background:#F0FAF4;' : 'color:#fff; background:#18181B;' };
+    });
+
+    const ap = this._tk(this.state.autoPayout), tf = this._tk(this.state.twoFa);
+    const sessions = [
+      { device: 'MacBook Pro · Chrome', where: 'Mumbai, IN · active now', current: true, other: false },
+      { device: 'iPhone 15 · CoachEZ app', where: 'Mumbai, IN · 2h ago', current: false, other: true },
+      { device: 'iPad · Safari', where: 'Pune, IN · 3d ago', current: false, other: true },
+    ];
+
+    return {
+      root: this.root, st,
+      goProfile: () => this.setSec('profile'), goBusiness: () => this.setSec('business'), goPrefs: () => this.setSec('prefs'),
+      goTeam: () => this.setSec('team'), goNotif: () => this.setSec('notif'), goIntegrations: () => this.setSec('integrations'),
+      goPayments: () => this.setSec('payments'), goSecurity: () => this.setSec('security'),
+      isProfile: sec === 'profile', isBusiness: sec === 'business', isPrefs: sec === 'prefs', isTeam: sec === 'team',
+      isNotif: sec === 'notif', isIntegrations: sec === 'integrations', isPayments: sec === 'payments', isSecurity: sec === 'security',
+      members, roleTabs, featureRows, notifRows, prefRows, integrations, sessions,
+      autoPayoutTrack: ap.track, autoPayoutKnob: ap.knob, twoFaTrack: tf.track, twoFaKnob: tf.knob,
+      toggleAutoPayout: this.toggleAutoPayout, toggle2fa: this.toggle2fa,
+      save: this.save, invite: this.invite, toast: this.state.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

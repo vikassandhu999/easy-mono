@@ -10,7 +10,6 @@ defmodule Easy.AttachmentsTest do
 
     assert {:ok, upload} =
              Attachments.create_client_upload(client_ctx(client), %{
-               "purpose" => "check_in_photo",
                "content_type" => "image/jpeg",
                "byte_size" => 1_024
              })
@@ -23,6 +22,23 @@ defmodule Easy.AttachmentsTest do
     refute upload.upload_url =~ client.email
     assert upload.upload_url =~ "storage.example.test/easy-test/"
     assert upload.upload_headers == %{"Content-Type" => "image/jpeg"}
+  end
+
+  test "creates an upload for a client visible to the trainer" do
+    trainer = insert(:coach)
+    client = insert(:client, business: trainer.business, creator: trainer, assigned_coach: trainer)
+
+    assert {:ok, upload} =
+             Attachments.create_upload_for_client(trainer_ctx(trainer), client.id, %{
+               "content_type" => "video/mp4",
+               "byte_size" => 1_024,
+               "duration_ms" => 30_000
+             })
+
+    assert upload.attachment.client_id == client.id
+    assert upload.attachment.uploaded_by_type == :coach
+    assert upload.attachment.uploaded_by_id == trainer.id
+    assert upload.attachment.storage_key =~ "/attachments/#{upload.attachment.id}.mp4"
   end
 
   test "accepts generic media metadata without a purpose" do
@@ -43,9 +59,9 @@ defmodule Easy.AttachmentsTest do
     client = insert_client()
 
     for attrs <- [
-          %{"purpose" => "check_in_photo", "content_type" => "image/gif", "byte_size" => 100},
-          %{"purpose" => "check_in_photo", "content_type" => "image/png", "byte_size" => 0},
-          %{"purpose" => "check_in_photo", "content_type" => "image/png", "byte_size" => 15 * 1024 * 1024 + 1}
+          %{"content_type" => "image/gif", "byte_size" => 100},
+          %{"content_type" => "image/png", "byte_size" => 0},
+          %{"content_type" => "image/png", "byte_size" => 15 * 1024 * 1024 + 1}
         ] do
       assert {:error, %Ecto.Changeset{}} = Attachments.create_client_upload(client_ctx(client), attrs)
     end
@@ -82,7 +98,6 @@ defmodule Easy.AttachmentsTest do
 
     assert {:error, :storage_unavailable} =
              Attachments.create_client_upload(client_ctx(client), %{
-               "purpose" => "check_in_photo",
                "content_type" => "image/webp",
                "byte_size" => 100
              })
@@ -95,10 +110,100 @@ defmodule Easy.AttachmentsTest do
 
     assert {:error, :not_found} =
              Attachments.create_client_upload(Ctx.new(business.id, insert(:user).id), %{
-               "purpose" => "check_in_photo",
                "content_type" => "image/png",
                "byte_size" => 100
              })
+  end
+
+  test "returns downloads to the client in request order" do
+    client = insert_client()
+    first = insert_attachment(client)
+    second = insert_attachment(client)
+
+    assert {:ok, downloads} = Attachments.get_downloads(client_ctx(client), [second.id, first.id])
+    assert Enum.map(downloads, & &1.id) == [second.id, first.id]
+    assert Enum.all?(downloads, &(&1.download_url =~ "storage.example.test/easy-test/"))
+    assert Enum.all?(downloads, &match?(%DateTime{}, &1.download_url_expires_at))
+  end
+
+  test "returns downloads to the business owner" do
+    business = insert(:business)
+    owner = insert(:coach, business: business, user: business.owner)
+    client = insert(:client, business: business, creator: owner)
+    attachment = insert_attachment(client)
+
+    assert {:ok, [%{id: id}]} = Attachments.get_downloads(owner_ctx(business), [attachment.id])
+    assert id == attachment.id
+  end
+
+  test "returns downloads to the assigned trainer" do
+    trainer = insert(:coach)
+    client = insert(:client, business: trainer.business, creator: trainer, assigned_coach: trainer)
+    attachment = insert_attachment(client)
+
+    assert {:ok, [%{id: id}]} = Attachments.get_downloads(trainer_ctx(trainer), [attachment.id])
+    assert id == attachment.id
+  end
+
+  test "hides downloads from an unassigned trainer" do
+    trainer = insert(:coach)
+    assigned = insert(:coach, business: trainer.business)
+    client = insert(:client, business: trainer.business, creator: assigned, assigned_coach: assigned)
+    attachment = insert_attachment(client)
+
+    assert {:error, :not_found} = Attachments.get_downloads(trainer_ctx(trainer), [attachment.id])
+  end
+
+  test "hides cross-tenant attachments" do
+    client = insert_client()
+    other_client = insert_client()
+    attachment = insert_attachment(other_client)
+
+    assert {:error, :not_found} = Attachments.get_downloads(client_ctx(client), [attachment.id])
+  end
+
+  test "fails closed when the actor has no coach or client membership" do
+    client = insert_client()
+    attachment = insert_attachment(client)
+    ctx = Ctx.new(client.business_id, insert(:user).id)
+
+    assert {:error, :not_found} = Attachments.get_downloads(ctx, [attachment.id])
+  end
+
+  test "rejects invalid download id lists" do
+    client = insert_client()
+    attachment = insert_attachment(client)
+
+    assert {:error, :invalid_attachments} = Attachments.get_downloads(client_ctx(client), [])
+
+    assert {:error, :invalid_attachments} =
+             Attachments.get_downloads(client_ctx(client), [attachment.id, attachment.id])
+
+    assert {:error, :invalid_attachments} =
+             Attachments.get_downloads(
+               client_ctx(client),
+               Enum.map(1..51, fn _index -> Ecto.UUID.generate() end)
+             )
+  end
+
+  test "returns not found when any requested attachment is missing" do
+    client = insert_client()
+    attachment = insert_attachment(client)
+
+    assert {:error, :not_found} =
+             Attachments.get_downloads(client_ctx(client), [attachment.id, Ecto.UUID.generate()])
+  end
+
+  test "returns storage unavailable when download signing fails" do
+    client = insert_client()
+    attachment = insert_attachment(client)
+    previous = Application.get_env(:easy, Easy.Storage)
+    Application.delete_env(:easy, Easy.Storage)
+
+    on_exit(fn -> Application.put_env(:easy, Easy.Storage, previous) end)
+
+    assert {:error, :storage_unavailable} =
+             Attachments.get_downloads(client_ctx(client), [attachment.id])
   end
 
   defp insert_client do
@@ -107,6 +212,15 @@ defmodule Easy.AttachmentsTest do
   end
 
   defp client_ctx(client), do: Ctx.new(client.business_id, client.user_id)
+
+  defp insert_attachment(client) do
+    insert(:attachment,
+      business: client.business,
+      client: client,
+      uploaded_by_type: :client,
+      uploaded_by_id: client.id
+    )
+  end
 
   defp attachment_changeset(content_type, byte_size, duration_ms) do
     Attachment.insert_changeset(

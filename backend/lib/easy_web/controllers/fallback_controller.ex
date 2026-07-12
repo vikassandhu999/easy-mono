@@ -224,6 +224,10 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{answers: ["can't be blank"]}})})
   end
 
+  def call(conn, {:error, :invalid_attachments}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{attachments: ["are invalid"]}})})
+  end
+
   def call(conn, {:error, :assignment_not_submittable}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{status: ["cannot be submitted"]}})})
   end
@@ -234,7 +238,7 @@ defmodule EasyWeb.FallbackController do
       {:error,
        Error.new(
          :storage_unavailable,
-         "Photo storage is temporarily unavailable. Please try again.",
+         "File storage is temporarily unavailable. Please try again.",
          %{},
          :service_unavailable
        )}

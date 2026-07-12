@@ -101,7 +101,6 @@ export const api = createApi({
     'Billing',
     'ChatMessage',
     'Client',
-    'ClientProfile',
     'CoachProfile',
     'Conversation',
     'Equipment',

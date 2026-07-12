@@ -1,8 +1,6 @@
 /**
  * Form template builder: name + titled sections of typed questions.
- * Question types are the six profile-field types; a question can optionally map
- * its answer onto an existing profile field (custom-field mapping). Draft state
- * lives here; the create/edit wrappers own the mutation.
+ * Draft state lives here; the create/edit wrappers own the mutation.
  */
 import {
   Button,

@@ -58,21 +58,6 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.clientUpdateRequest,
       }),
     }),
-    getCoachingClientProfile: build.query<GetCoachingClientProfileApiResponse, GetCoachingClientProfileApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/coach/clients/${queryArg.clientId}/profile`,
-      }),
-    }),
-    updateCoachingClientProfile: build.mutation<
-      UpdateCoachingClientProfileApiResponse,
-      UpdateCoachingClientProfileApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/v1/coach/clients/${queryArg.clientId}/profile`,
-        method: 'PATCH',
-        body: queryArg.coachingClientProfileRequest,
-      }),
-    }),
     enrollProspect: build.mutation<EnrollProspectApiResponse, EnrollProspectApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/prospects/${queryArg.id}/enroll`,
@@ -190,16 +175,6 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/nutrition-plans`,
         method: 'POST',
         body: queryArg.nutritionPlanRequest,
-      }),
-    }),
-    listProfileFields: build.query<ListProfileFieldsApiResponse, ListProfileFieldsApiArg>({
-      query: () => ({url: `/v1/coach/profile-fields`}),
-    }),
-    createProfileField: build.mutation<CreateProfileFieldApiResponse, CreateProfileFieldApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/coach/profile-fields`,
-        method: 'POST',
-        body: queryArg.clientProfileFieldRequest,
       }),
     }),
     getCurrentBusiness: build.query<GetCurrentBusinessApiResponse, GetCurrentBusinessApiArg>({
@@ -441,19 +416,6 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.verifyRequest,
       }),
     }),
-    deleteProfileField: build.mutation<DeleteProfileFieldApiResponse, DeleteProfileFieldApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/coach/profile-fields/${queryArg.id}`,
-        method: 'DELETE',
-      }),
-    }),
-    updateProfileField: build.mutation<UpdateProfileFieldApiResponse, UpdateProfileFieldApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/coach/profile-fields/${queryArg.id}`,
-        method: 'PATCH',
-        body: queryArg.clientProfileFieldUpdateRequest,
-      }),
-    }),
     deleteNutritionPlan: build.mutation<DeleteNutritionPlanApiResponse, DeleteNutritionPlanApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/nutrition-plans/${queryArg.id}`,
@@ -641,7 +603,6 @@ const injectedRtkApi = api.injectEndpoints({
           search: queryArg.search,
           status: queryArg.status,
           stage: queryArg.stage,
-          profile_filter: queryArg.profileFilter,
         },
       }),
     }),
@@ -968,19 +929,6 @@ export type UpdateClientApiArg = {
   /** Client update request */
   clientUpdateRequest: ClientUpdateRequest;
 };
-export type GetCoachingClientProfileApiResponse = /** status 200 Client profile */ CoachingClientProfileResponse;
-export type GetCoachingClientProfileApiArg = {
-  /** Client id */
-  clientId: string;
-};
-export type UpdateCoachingClientProfileApiResponse =
-  /** status 200 Client profile updated */ CoachingClientProfileResponse;
-export type UpdateCoachingClientProfileApiArg = {
-  /** Client id */
-  clientId: string;
-  /** Client profile update request */
-  coachingClientProfileRequest: CoachingClientProfileRequest;
-};
 export type EnrollProspectApiResponse = /** status 201 Prospect enrolled */ ProspectEnrollResponse;
 export type EnrollProspectApiArg = {
   /** Prospect id */
@@ -1080,13 +1028,6 @@ export type CreateNutritionPlanApiResponse = /** status 201 Nutrition plan creat
 export type CreateNutritionPlanApiArg = {
   /** Nutrition plan request */
   nutritionPlanRequest: NutritionPlanRequest;
-};
-export type ListProfileFieldsApiResponse = /** status 200 Profile fields */ ClientProfileFieldListResponse;
-export type ListProfileFieldsApiArg = void;
-export type CreateProfileFieldApiResponse = /** status 201 Profile field created */ ClientProfileFieldResponse;
-export type CreateProfileFieldApiArg = {
-  /** Profile field create request */
-  clientProfileFieldRequest: ClientProfileFieldRequest;
 };
 export type GetCurrentBusinessApiResponse = /** status 200 Business */ BusinessResponse;
 export type GetCurrentBusinessApiArg = void;
@@ -1289,18 +1230,6 @@ export type VerifyAuthApiArg = {
   /** Verify request */
   verifyRequest: VerifyRequest;
 };
-export type DeleteProfileFieldApiResponse = unknown;
-export type DeleteProfileFieldApiArg = {
-  /** Profile field id */
-  id: string;
-};
-export type UpdateProfileFieldApiResponse = /** status 200 Profile field updated */ ClientProfileFieldResponse;
-export type UpdateProfileFieldApiArg = {
-  /** Profile field id */
-  id: string;
-  /** Profile field update request */
-  clientProfileFieldUpdateRequest: ClientProfileFieldUpdateRequest;
-};
 export type DeleteNutritionPlanApiResponse = unknown;
 export type DeleteNutritionPlanApiArg = {
   /** Nutrition plan id */
@@ -1473,25 +1402,6 @@ export type ListClientsApiArg = {
   status?: 'active' | 'pending' | 'inactive';
   /** Only clients with this stage */
   stage?: 'onboarding' | 'coaching';
-  /** Nested profile filters using deepObject syntax. Example: profile_filter[nutrition][goal]=fat_loss or profile_filter[custom][meal_prep_ability]=high. Values may be scalar or repeated list values; list values match any selected value. */
-  profileFilter?: {
-    custom?: {
-      [key: string]: any;
-    };
-    general?: {
-      [key: string]: any;
-    };
-    lifestyle?: {
-      [key: string]: any;
-    };
-    nutrition?: {
-      [key: string]: any;
-    };
-    training?: {
-      [key: string]: any;
-    };
-    [key: string]: any;
-  };
 };
 export type DeleteTrainingPlanApiResponse = unknown;
 export type DeleteTrainingPlanApiArg = {
@@ -1853,9 +1763,6 @@ export type ClientProfileFormTemplate = {
       id: string;
       label: string;
       options?: string[];
-      profile_mapping?: {
-        [key: string]: any;
-      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -1962,45 +1869,6 @@ export type ClientUpdateRequest = {
   status?: 'active' | 'inactive';
   subscription_ends_on?: string | null;
   subscription_started_on?: string | null;
-};
-export type CoachingClientProfile = {
-  client_id: string;
-  general: {
-    [key: string]: any;
-  };
-  id: string;
-  inserted_at: string;
-  intake_completed_at: string | null;
-  intake_status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-  lifestyle: {
-    [key: string]: any;
-  };
-  nutrition: {
-    [key: string]: any;
-  };
-  training: {
-    [key: string]: any;
-  };
-  updated_at: string;
-};
-export type CoachingClientProfileResponse = {
-  data: CoachingClientProfile;
-};
-export type CoachingClientProfileRequest = {
-  general?: {
-    [key: string]: any;
-  };
-  intake_completed_at?: string | null;
-  intake_status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-  lifestyle?: {
-    [key: string]: any;
-  };
-  nutrition?: {
-    [key: string]: any;
-  };
-  training?: {
-    [key: string]: any;
-  };
 };
 export type ProspectClient = {
   first_name?: string | null;
@@ -2290,32 +2158,6 @@ export type NutritionPlanRequest = {
   target_fat_g?: number | null;
   target_fiber_g?: number | null;
   target_protein_g?: number | null;
-};
-export type ClientProfileField = {
-  archived_at: string | null;
-  field_type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select';
-  filterable: boolean;
-  id: string;
-  inserted_at: string;
-  key: string;
-  label: string;
-  options: string[];
-  section: 'general' | 'nutrition' | 'training' | 'lifestyle';
-  updated_at: string;
-};
-export type ClientProfileFieldListResponse = {
-  data: ClientProfileField[];
-};
-export type ClientProfileFieldResponse = {
-  data: ClientProfileField;
-};
-export type ClientProfileFieldRequest = {
-  field_type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select';
-  filterable?: boolean;
-  key: string;
-  label: string;
-  options?: string[];
-  section: 'general' | 'nutrition' | 'training' | 'lifestyle';
 };
 export type Business = {
   about: string | null;
@@ -2611,14 +2453,6 @@ export type VerifyRequest =
       email: string;
       otp: string;
     };
-export type ClientProfileFieldUpdateRequest = {
-  field_type?: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select';
-  filterable?: boolean;
-  key?: string;
-  label?: string;
-  options?: string[];
-  section?: 'general' | 'nutrition' | 'training' | 'lifestyle';
-};
 export type TrainingWorkoutExerciseArrayResponse = {
   data?: TrainingPlanWorkoutExercise[];
 };
@@ -2660,9 +2494,6 @@ export type ClientProfileFormSubmission = {
       id: string;
       label: string;
       options?: string[];
-      profile_mapping?: {
-        [key: string]: any;
-      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -2748,9 +2579,6 @@ export type ClientProfileFormTemplateRequest = {
       id: string;
       label: string;
       options?: string[];
-      profile_mapping?: {
-        [key: string]: any;
-      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -2856,9 +2684,6 @@ export type ClientProfileReviewQueueItem = {
       id: string;
       label: string;
       options?: string[];
-      profile_mapping?: {
-        [key: string]: any;
-      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -3015,9 +2840,6 @@ export type ClientProfileFormTemplateUpdateRequest = {
       id: string;
       label: string;
       options?: string[];
-      profile_mapping?: {
-        [key: string]: any;
-      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -3203,9 +3025,6 @@ export const {
   useGetClientQuery,
   useLazyGetClientQuery,
   useUpdateClientMutation,
-  useGetCoachingClientProfileQuery,
-  useLazyGetCoachingClientProfileQuery,
-  useUpdateCoachingClientProfileMutation,
   useEnrollProspectMutation,
   useAssignNutritionPlanWeekdayMutation,
   useGetCoachProfileQuery,
@@ -3229,9 +3048,6 @@ export const {
   useListNutritionPlansQuery,
   useLazyListNutritionPlansQuery,
   useCreateNutritionPlanMutation,
-  useListProfileFieldsQuery,
-  useLazyListProfileFieldsQuery,
-  useCreateProfileFieldMutation,
   useGetCurrentBusinessQuery,
   useLazyGetCurrentBusinessQuery,
   useUpdateCurrentBusinessMutation,
@@ -3280,8 +3096,6 @@ export const {
   useInviteClientMutation,
   useCreateWorkoutElementMutation,
   useVerifyAuthMutation,
-  useDeleteProfileFieldMutation,
-  useUpdateProfileFieldMutation,
   useDeleteNutritionPlanMutation,
   useGetNutritionPlanQuery,
   useLazyGetNutritionPlanQuery,

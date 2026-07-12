@@ -11,7 +11,6 @@ defmodule Easy.ClientProfiles.FormTemplate do
 
   @purposes [:intake, :check_in]
   @statuses [:active, :archived]
-  @core_sections ["general", "nutrition", "training", "lifestyle"]
   @question_types ~w(text number boolean date select multi_select rating weight photo)
 
   @type t :: %__MODULE__{}
@@ -81,8 +80,8 @@ defmodule Easy.ClientProfiles.FormTemplate do
   end
 
   # Rejects template content the submission path can't safely consume: a section's `questions`
-  # must be a list of maps, and any `profile_mapping` must match a shape submit_form_assignment
-  # recognizes. Catching it here means a bad template never blocks a client at submit time.
+  # must be a list of maps. Catching it here means a bad template never blocks a client at
+  # submit time.
   defp validate_sections(changeset) do
     sections = get_field(changeset, :sections)
 
@@ -109,8 +108,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
   defp valid_question?(%{} = question) do
     valid_question_identity?(question) and
       valid_question_options?(question) and
-      valid_required_flag?(question) and
-      valid_question_mapping?(question)
+      valid_required_flag?(question)
   end
 
   defp valid_question?(_), do: false
@@ -130,21 +128,4 @@ defmodule Easy.ClientProfiles.FormTemplate do
 
   defp valid_required_flag?(%{"required" => required}), do: is_boolean(required)
   defp valid_required_flag?(_question), do: true
-
-  defp valid_question_mapping?(question) do
-    case Map.get(question, "profile_mapping") do
-      nil -> true
-      mapping -> valid_mapping?(mapping)
-    end
-  end
-
-  defp valid_mapping?(%{"kind" => "core", "section" => section, "field" => field})
-       when is_binary(field) and field != "",
-       do: section in @core_sections
-
-  defp valid_mapping?(%{"kind" => "custom_field", "field_key" => field_key})
-       when is_binary(field_key) and field_key != "",
-       do: true
-
-  defp valid_mapping?(_), do: false
 end

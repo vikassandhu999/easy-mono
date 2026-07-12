@@ -1,7 +1,6 @@
 defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
   alias OpenApiSpex.Schema
 
-  def sections, do: ~w(general nutrition training lifestyle)
   def field_types, do: ~w(text number boolean date select multi_select)
   def question_types, do: field_types() ++ ~w(rating weight photo)
   def form_purposes, do: ~w(intake check_in)
@@ -9,7 +8,6 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
   def assignment_statuses, do: ~w(assigned in_progress completed dismissed missed)
   def priorities, do: ~w(high normal)
   def submitted_by_types, do: ~w(coach client system)
-  def section_schema, do: %Schema{type: :object, additionalProperties: true}
 
   def question_schema do
     %Schema{
@@ -20,8 +18,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
         label: %Schema{type: :string},
         type: %Schema{type: :string, enum: question_types()},
         required: %Schema{type: :boolean},
-        options: %Schema{type: :array, items: %Schema{type: :string}},
-        profile_mapping: %Schema{type: :object, additionalProperties: true, nullable: true}
+        options: %Schema{type: :array, items: %Schema{type: :string}}
       },
       required: [:id, :label, :type]
     }
@@ -38,190 +35,6 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfile.Common do
       required: [:questions]
     }
   end
-
-  def section_properties,
-    do: %{
-      general: section_schema(),
-      nutrition: section_schema(),
-      training: section_schema(),
-      lifestyle: section_schema()
-    }
-end
-
-defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfileRequest do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(
-    %{
-      title: "CoachingClientProfileRequest",
-      type: :object,
-      additionalProperties: false,
-      properties:
-        Map.merge(Common.section_properties(), %{
-          intake_status: %Schema{
-            type: :string,
-            enum: Common.assignment_statuses()
-          },
-          intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
-        }),
-      example: %{
-        "general" => %{"goal" => "strength"},
-        "nutrition" => %{"protein_goal" => "120g"},
-        "training" => %{"experience" => "intermediate"},
-        "lifestyle" => %{"sleep_hours" => 7}
-      }
-    },
-    struct?: false
-  )
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientCoachingProfileUpdateRequest do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
-
-  # Client self-service update: structured sections only. Intentionally excludes the
-  # coach-owned intake_status / intake_completed_at fields (additionalProperties: false
-  # rejects them at the edge; the context changeset also refuses to cast them).
-  OpenApiSpex.schema(
-    %{
-      title: "ClientCoachingProfileUpdateRequest",
-      type: :object,
-      additionalProperties: false,
-      properties: Common.section_properties(),
-      example: %{
-        "general" => %{"goal" => "strength"},
-        "nutrition" => %{"protein_goal" => "120g"},
-        "training" => %{"experience" => "intermediate"},
-        "lifestyle" => %{"sleep_hours" => 7}
-      }
-    },
-    struct?: false
-  )
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldRequest do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(
-    %{
-      title: "ClientProfileFieldRequest",
-      type: :object,
-      additionalProperties: false,
-      properties: %{
-        section: %Schema{type: :string, enum: Common.sections()},
-        label: %Schema{type: :string},
-        key: %Schema{type: :string},
-        field_type: %Schema{type: :string, enum: Common.field_types()},
-        options: %Schema{type: :array, items: %Schema{type: :string}},
-        filterable: %Schema{type: :boolean}
-      },
-      required: [:section, :label, :key, :field_type],
-      example: %{
-        "section" => "nutrition",
-        "label" => "Meal prep ability",
-        "key" => "meal_prep_ability",
-        "field_type" => "select",
-        "options" => ["low", "medium", "high"],
-        "filterable" => true
-      }
-    },
-    struct?: false
-  )
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldUpdateRequest do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(
-    %{
-      title: "ClientProfileFieldUpdateRequest",
-      type: :object,
-      additionalProperties: false,
-      properties: %{
-        section: %Schema{type: :string, enum: Common.sections()},
-        label: %Schema{type: :string},
-        key: %Schema{type: :string},
-        field_type: %Schema{type: :string, enum: Common.field_types()},
-        options: %Schema{type: :array, items: %Schema{type: :string}},
-        filterable: %Schema{type: :boolean}
-      },
-      example: %{
-        "label" => "Meal prep confidence",
-        "options" => ["low", "medium", "high", "expert"]
-      }
-    },
-    struct?: false
-  )
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientProfileField do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
-  alias EasyWeb.OpenApi.Schemas.Shared
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(%{
-    title: "ClientProfileField",
-    type: :object,
-    additionalProperties: false,
-    properties:
-      Map.merge(
-        %{
-          id: %Schema{type: :string, format: :uuid},
-          section: %Schema{type: :string, enum: Common.sections()},
-          label: %Schema{type: :string},
-          key: %Schema{type: :string},
-          field_type: %Schema{
-            type: :string,
-            enum: Common.field_types()
-          },
-          options: %Schema{type: :array, items: %Schema{type: :string}},
-          filterable: %Schema{type: :boolean},
-          archived_at: %Schema{type: :string, format: :"date-time", nullable: true}
-        },
-        Shared.timestamps()
-      ),
-    required: [
-      :id,
-      :section,
-      :label,
-      :key,
-      :field_type,
-      :options,
-      :filterable,
-      :archived_at,
-      :inserted_at,
-      :updated_at
-    ]
-  })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{ClientProfileField, Shared}
-
-  OpenApiSpex.schema(Shared.data_response(ClientProfileField, "ClientProfileFieldResponse"))
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldListResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{ClientProfileField, Shared}
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: ClientProfileField}, "ClientProfileFieldListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientUploadRequest do
@@ -775,100 +588,4 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionListResponse do
       "ClientProfileFormSubmissionListResponse"
     )
   )
-end
-
-defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfile do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
-  alias EasyWeb.OpenApi.Schemas.Shared
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(%{
-    title: "CoachingClientProfile",
-    type: :object,
-    additionalProperties: false,
-    properties:
-      Map.merge(
-        Map.merge(
-          %{
-            id: %Schema{type: :string, format: :uuid},
-            client_id: %Schema{type: :string, format: :uuid}
-          },
-          Map.merge(Common.section_properties(), %{
-            intake_status: %Schema{type: :string, enum: Common.assignment_statuses()},
-            intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
-          })
-        ),
-        Shared.timestamps()
-      ),
-    required: [
-      :id,
-      :client_id,
-      :general,
-      :nutrition,
-      :training,
-      :lifestyle,
-      :intake_status,
-      :intake_completed_at,
-      :inserted_at,
-      :updated_at
-    ]
-  })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientCoachingProfile do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
-  alias EasyWeb.OpenApi.Schemas.Shared
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(%{
-    title: "ClientCoachingProfile",
-    type: :object,
-    additionalProperties: false,
-    properties:
-      Map.merge(
-        Map.merge(
-          %{
-            id: %Schema{type: :string, format: :uuid},
-            client_id: %Schema{type: :string, format: :uuid}
-          },
-          Map.merge(Common.section_properties(), %{
-            intake_status: %Schema{type: :string, enum: Common.assignment_statuses()},
-            intake_completed_at: %Schema{type: :string, format: :"date-time", nullable: true}
-          })
-        ),
-        Shared.timestamps()
-      ),
-    required: [
-      :id,
-      :client_id,
-      :general,
-      :nutrition,
-      :training,
-      :lifestyle,
-      :intake_status,
-      :intake_completed_at,
-      :inserted_at,
-      :updated_at
-    ]
-  })
-end
-
-defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfileResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{CoachingClientProfile, Shared}
-
-  OpenApiSpex.schema(Shared.data_response(CoachingClientProfile, "CoachingClientProfileResponse"))
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientCoachingProfileResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{ClientCoachingProfile, Shared}
-
-  OpenApiSpex.schema(Shared.data_response(ClientCoachingProfile, "ClientCoachingProfileResponse"))
 end

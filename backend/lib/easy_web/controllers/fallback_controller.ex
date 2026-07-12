@@ -167,10 +167,6 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
-  def call(conn, {:error, :invalid_profile_filter}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{profile_filter: ["is invalid"]}})})
-  end
-
   def call(conn, {:error, :self_invite}) do
     call(conn, {:error, Error.unprocessable(%{email: ["you can't invite yourself as a client"]})})
   end
@@ -230,10 +226,6 @@ defmodule EasyWeb.FallbackController do
 
   def call(conn, {:error, :assignment_not_submittable}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{status: ["cannot be submitted"]}})})
-  end
-
-  def call(conn, {:error, :invalid_profile_mapping}) do
-    call(conn, {:error, Error.unprocessable(%{fields: %{profile_mapping: ["is invalid"]}})})
   end
 
   def call(conn, {:error, :storage_unavailable}) do

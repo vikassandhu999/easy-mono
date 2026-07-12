@@ -12,7 +12,6 @@ defmodule Easy.Clients do
   alias Easy.Repo
   alias Easy.Training.TrainingPlan
 
-  @profile_filter_sections ["general", "nutrition", "training", "lifestyle"]
   @expiring_soon_days 7
 
   @spec get_client(Ctx.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
@@ -77,38 +76,33 @@ defmodule Easy.Clients do
 
   @spec list_clients(Ctx.t(), keyword()) ::
           {:ok, %{clients: [Client.t()], count: non_neg_integer(), summary: map()}}
-          | {:error, :invalid_profile_filter}
   def list_clients(%Ctx{} = ctx, opts \\ []) do
     search = Keyword.get(opts, :search, "")
     status = Keyword.get(opts, :status)
     stage = Keyword.get(opts, :stage)
-    profile_filter = Keyword.get(opts, :profile_filter, %{})
     offset = max(Keyword.get(opts, :offset, 0), 0)
     limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
 
-    with {:ok, filters} <- normalize_profile_filter(profile_filter) do
-      base =
-        Client
-        |> Client.for_business(ctx.business_id)
-        |> Client.visible_to(ctx)
-        |> Client.search(search)
-        |> Client.for_status(status)
-        |> Client.for_stage(stage)
-        |> apply_profile_filters(ctx.business_id, filters)
+    base =
+      Client
+      |> Client.for_business(ctx.business_id)
+      |> Client.visible_to(ctx)
+      |> Client.search(search)
+      |> Client.for_status(status)
+      |> Client.for_stage(stage)
 
-      {:ok,
-       %{
-         count: Repo.aggregate(base, :count, :id),
-         summary: summary(Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)),
-         clients:
-           base
-           |> Client.newest()
-           |> Easy.Utils.paginate(offset, limit)
-           |> Client.include_preloads(ctx.business_id)
-           |> Repo.all()
-           |> put_attention_flags_for_clients(ctx.business_id)
-       }}
-    end
+    {:ok,
+     %{
+       count: Repo.aggregate(base, :count, :id),
+       summary: summary(Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)),
+       clients:
+         base
+         |> Client.newest()
+         |> Easy.Utils.paginate(offset, limit)
+         |> Client.include_preloads(ctx.business_id)
+         |> Repo.all()
+         |> put_attention_flags_for_clients(ctx.business_id)
+     }}
   end
 
   @spec list_attention_clients(Ctx.t(), keyword()) ::
@@ -461,116 +455,6 @@ defmodule Easy.Clients do
       |> Repo.one()
 
     counts || %{active: 0, pending: 0, inactive: 0}
-  end
-
-  defp normalize_profile_filter(profile_filter) when is_map(profile_filter) do
-    case Enum.reduce_while(profile_filter, {:ok, []}, &normalize_profile_section/2) do
-      {:ok, filters} -> {:ok, Enum.reverse(filters)}
-      error -> error
-    end
-  end
-
-  defp normalize_profile_filter(_profile_filter), do: invalid_profile_filter()
-
-  defp normalize_profile_section({"custom", filters}, {:ok, acc}) when is_map(filters),
-    do: normalize_filter_fields(filters, acc, fn key, values -> {:custom, key, values} end)
-
-  defp normalize_profile_section({section, filters}, {:ok, acc})
-       when section in @profile_filter_sections and is_map(filters),
-       do: normalize_filter_fields(filters, acc, &core_filter(section, &1, &2))
-
-  defp normalize_profile_section(_section, _acc), do: {:halt, invalid_profile_filter()}
-
-  defp core_filter(section, key, values), do: {:core, section, key, values}
-
-  defp normalize_filter_fields(filters, acc, build_filter) do
-    case Enum.reduce_while(filters, acc, &normalize_filter_field(&1, &2, build_filter)) do
-      :error -> {:halt, invalid_profile_filter()}
-      acc -> {:cont, {:ok, acc}}
-    end
-  end
-
-  defp normalize_filter_field({key, value}, acc, build_filter) do
-    with {:ok, key} <- filter_key(key),
-         {:ok, values} <- filter_values(value) do
-      {:cont, [build_filter.(key, values) | acc]}
-    else
-      :error -> {:halt, :error}
-    end
-  end
-
-  defp apply_profile_filters(query, business_id, filters) do
-    Enum.reduce(filters, query, fn
-      {:core, section, key, values}, query ->
-        apply_core_profile_filter(query, business_id, section, key, values)
-
-      {:custom, key, values}, query ->
-        apply_custom_profile_filter(query, business_id, key, values)
-    end)
-  end
-
-  for section <- @profile_filter_sections do
-    filter_sql =
-      "EXISTS (SELECT 1 FROM client_profiles cp WHERE cp.client_id = ? AND cp.business_id = ? AND ((cp.#{section} ->> ?) = ANY(?) OR (jsonb_typeof(cp.#{section} -> ?) = 'array' AND jsonb_exists_any(cp.#{section} -> ?, ?))))"
-
-    defp apply_core_profile_filter(query, business_id, unquote(section), key, values) do
-      from(c in query,
-        where:
-          fragment(
-            unquote(filter_sql),
-            c.id,
-            type(^business_id, :binary_id),
-            ^key,
-            type(^values, {:array, :string}),
-            ^key,
-            ^key,
-            type(^values, {:array, :string})
-          )
-      )
-    end
-  end
-
-  defp apply_custom_profile_filter(query, business_id, key, values) do
-    from(c in query,
-      where:
-        fragment(
-          "EXISTS (SELECT 1 FROM profile_field_values pfv JOIN profile_field_definitions pfd ON pfd.id = pfv.profile_field_definition_id WHERE pfv.client_id = ? AND pfv.business_id = ? AND pfd.business_id = ? AND pfd.key = ? AND pfd.filterable = TRUE AND pfd.archived_at IS NULL AND ((pfv.value ->> 'value') = ANY(?) OR (jsonb_typeof(pfv.value -> 'value') = 'array' AND jsonb_exists_any(pfv.value -> 'value', ?))))",
-          c.id,
-          type(^business_id, :binary_id),
-          type(^business_id, :binary_id),
-          ^key,
-          type(^values, {:array, :string}),
-          type(^values, {:array, :string})
-        )
-    )
-  end
-
-  defp filter_key(key) when is_binary(key) and key != "", do: {:ok, key}
-  defp filter_key(_key), do: :error
-
-  defp filter_values(value) when is_binary(value) and value != "", do: {:ok, [value]}
-
-  defp filter_values(value) when is_boolean(value) or is_number(value),
-    do: {:ok, [to_string(value)]}
-
-  defp filter_values(values) when is_list(values) do
-    case Enum.reduce_while(values, [], &normalize_filter_value/2) do
-      values when is_list(values) and values != [] -> {:ok, Enum.reverse(values)}
-      _ -> :error
-    end
-  end
-
-  defp filter_values(_value), do: :error
-
-  defp normalize_filter_value(value, acc) do
-    case filter_values(value) do
-      {:ok, [normalized]} -> {:cont, [normalized | acc]}
-      :error -> {:halt, :error}
-    end
-  end
-
-  defp invalid_profile_filter do
-    {:error, :invalid_profile_filter}
   end
 
   defp validate_not_self_invite(%Orgs.Coach{user: %User{email: coach_email}}, %{email: email})

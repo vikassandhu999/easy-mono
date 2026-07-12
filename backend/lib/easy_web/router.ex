@@ -119,14 +119,6 @@ defmodule EasyWeb.Router do
     delete "/team/:id", TeamController, :revoke_invite
     post "/team/:id/deactivate", TeamController, :deactivate
 
-    get "/clients/:client_id/profile", ClientProfileController, :show
-    patch "/clients/:client_id/profile", ClientProfileController, :update
-
-    get "/profile-fields", ProfileFieldController, :index
-    post "/profile-fields", ProfileFieldController, :create
-    patch "/profile-fields/:id", ProfileFieldController, :update
-    delete "/profile-fields/:id", ProfileFieldController, :delete
-
     get "/form-templates", FormTemplateController, :index
     post "/form-templates", FormTemplateController, :create
     get "/form-templates/:id", FormTemplateController, :show
@@ -241,8 +233,6 @@ defmodule EasyWeb.Router do
 
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
-    get "/profile", ClientProfileController, :show
-    patch "/profile", ClientProfileController, :update
 
     post "/uploads", UploadController, :create
 

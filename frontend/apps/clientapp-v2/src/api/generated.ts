@@ -160,19 +160,6 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.trainerAcceptInviteRequest,
       }),
     }),
-    getClientCoachingProfile: build.query<GetClientCoachingProfileApiResponse, GetClientCoachingProfileApiArg>({
-      query: () => ({url: `/v1/client/profile`}),
-    }),
-    updateClientCoachingProfile: build.mutation<
-      UpdateClientCoachingProfileApiResponse,
-      UpdateClientCoachingProfileApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/v1/client/profile`,
-        method: 'PATCH',
-        body: queryArg.clientCoachingProfileUpdateRequest,
-      }),
-    }),
     listClientTrainingPlans: build.query<ListClientTrainingPlansApiResponse, ListClientTrainingPlansApiArg>({
       query: (queryArg) => ({
         url: `/v1/client/training-plans`,
@@ -512,15 +499,6 @@ export type TrainerAcceptInviteApiArg = {
   /** Trainer accept invite request */
   trainerAcceptInviteRequest: TrainerAcceptInviteRequest;
 };
-export type GetClientCoachingProfileApiResponse =
-  /** status 200 Client coaching profile */ ClientCoachingProfileResponse;
-export type GetClientCoachingProfileApiArg = void;
-export type UpdateClientCoachingProfileApiResponse =
-  /** status 200 Client coaching profile updated */ ClientCoachingProfileResponse;
-export type UpdateClientCoachingProfileApiArg = {
-  /** Client profile update request */
-  clientCoachingProfileUpdateRequest: ClientCoachingProfileUpdateRequest;
-};
 export type ListClientTrainingPlansApiResponse = /** status 200 Training plans */ ClientTrainingPlanListResponse;
 export type ListClientTrainingPlansApiArg = {
   /** Number of training plans to skip */
@@ -751,9 +729,6 @@ export type ClientProfileFormSubmission = {
       id: string;
       label: string;
       options?: string[];
-      profile_mapping?: {
-        [key: string]: any;
-      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -1223,9 +1198,6 @@ export type ClientProfileFormTemplate = {
       id: string;
       label: string;
       options?: string[];
-      profile_mapping?: {
-        [key: string]: any;
-      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -1281,43 +1253,6 @@ export type RecipeResponse = {
 export type TrainerAcceptInviteRequest = {
   email: string;
   invitation_token: string;
-};
-export type ClientCoachingProfile = {
-  client_id: string;
-  general: {
-    [key: string]: any;
-  };
-  id: string;
-  inserted_at: string;
-  intake_completed_at: string | null;
-  intake_status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
-  lifestyle: {
-    [key: string]: any;
-  };
-  nutrition: {
-    [key: string]: any;
-  };
-  training: {
-    [key: string]: any;
-  };
-  updated_at: string;
-};
-export type ClientCoachingProfileResponse = {
-  data: ClientCoachingProfile;
-};
-export type ClientCoachingProfileUpdateRequest = {
-  general?: {
-    [key: string]: any;
-  };
-  lifestyle?: {
-    [key: string]: any;
-  };
-  nutrition?: {
-    [key: string]: any;
-  };
-  training?: {
-    [key: string]: any;
-  };
 };
 export type ClientTrainingPlanListResponse = {
   count: number;
@@ -1525,9 +1460,6 @@ export const {
   useGetClientRecipeQuery,
   useLazyGetClientRecipeQuery,
   useTrainerAcceptInviteMutation,
-  useGetClientCoachingProfileQuery,
-  useLazyGetClientCoachingProfileQuery,
-  useUpdateClientCoachingProfileMutation,
   useListClientTrainingPlansQuery,
   useLazyListClientTrainingPlansQuery,
   useListClientFoodsQuery,

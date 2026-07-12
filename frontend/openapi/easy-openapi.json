@@ -948,73 +948,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "ClientProfileFieldUpdateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "label": "Meal prep confidence",
-          "options": [
-            "low",
-            "medium",
-            "high",
-            "expert"
-          ]
-        },
-        "properties": {
-          "field_type": {
-            "enum": [
-              "text",
-              "number",
-              "boolean",
-              "date",
-              "select",
-              "multi_select"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "filterable": {
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "key": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "label": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "options": {
-            "items": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "section": {
-            "enum": [
-              "general",
-              "nutrition",
-              "training",
-              "lifestyle"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "ClientProfileFieldUpdateRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "TrainingExerciseUpdateRequest": {
         "additionalProperties": false,
         "description": "Request body for updating a coach exercise.",
@@ -1419,82 +1352,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "ClientProfileFieldRequest": {
-        "additionalProperties": false,
-        "example": {
-          "field_type": "select",
-          "filterable": true,
-          "key": "meal_prep_ability",
-          "label": "Meal prep ability",
-          "options": [
-            "low",
-            "medium",
-            "high"
-          ],
-          "section": "nutrition"
-        },
-        "properties": {
-          "field_type": {
-            "enum": [
-              "text",
-              "number",
-              "boolean",
-              "date",
-              "select",
-              "multi_select"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "filterable": {
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "key": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "label": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "options": {
-            "items": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "section": {
-            "enum": [
-              "general",
-              "nutrition",
-              "training",
-              "lifestyle"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "section",
-          "label",
-          "key",
-          "field_type"
-        ],
-        "title": "ClientProfileFieldRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "NutritionPlanDayCreateRequest": {
         "properties": {
           "name": {
@@ -1583,72 +1440,6 @@
         "title": "FoodLogEntryListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.FoodLogEntryListResponse",
-        "x-validate": null
-      },
-      "CoachingClientProfileRequest": {
-        "additionalProperties": false,
-        "example": {
-          "general": {
-            "goal": "strength"
-          },
-          "lifestyle": {
-            "sleep_hours": 7
-          },
-          "nutrition": {
-            "protein_goal": "120g"
-          },
-          "training": {
-            "experience": "intermediate"
-          }
-        },
-        "properties": {
-          "general": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "intake_completed_at": {
-            "format": "date-time",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "intake_status": {
-            "enum": [
-              "assigned",
-              "in_progress",
-              "completed",
-              "dismissed",
-              "missed"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "lifestyle": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "training": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "CoachingClientProfileRequest",
-        "type": "object",
-        "x-struct": null,
         "x-validate": null
       },
       "ClientProfileFormAssignmentResponse": {
@@ -2056,21 +1847,6 @@
         "title": "NutritionMeal",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionMeal",
-        "x-validate": null
-      },
-      "ClientProfileFieldResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ClientProfileField"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "ClientProfileFieldResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFieldResponse",
         "x-validate": null
       },
       "TrainingExercise": {
@@ -3158,13 +2934,6 @@
                         "x-struct": null,
                         "x-validate": null
                       },
-                      "profile_mapping": {
-                        "additionalProperties": true,
-                        "nullable": true,
-                        "type": "object",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
                       "required": {
                         "type": "boolean",
                         "x-struct": null,
@@ -3298,13 +3067,6 @@
                           "x-validate": null
                         },
                         "type": "array",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "profile_mapping": {
-                        "additionalProperties": true,
-                        "nullable": true,
-                        "type": "object",
                         "x-struct": null,
                         "x-validate": null
                       },
@@ -4555,13 +4317,6 @@
                         "x-struct": null,
                         "x-validate": null
                       },
-                      "profile_mapping": {
-                        "additionalProperties": true,
-                        "nullable": true,
-                        "type": "object",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
                       "required": {
                         "type": "boolean",
                         "x-struct": null,
@@ -5140,21 +4895,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "CoachingClientProfileResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/CoachingClientProfile"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "CoachingClientProfileResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachingClientProfileResponse",
-        "x-validate": null
-      },
       "ClientProfileFormAssignmentListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5341,21 +5081,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingScheduleEntry",
         "x-validate": null
       },
-      "ClientCoachingProfileResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ClientCoachingProfile"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "ClientCoachingProfileResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientCoachingProfileResponse",
-        "x-validate": null
-      },
       "ClientProfileCheckInScheduleUpdateRequest": {
         "additionalProperties": false,
         "properties": {
@@ -5402,94 +5127,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileCheckInScheduleResponse",
         "x-validate": null
       },
-      "ClientCoachingProfile": {
-        "additionalProperties": false,
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "general": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "inserted_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "intake_completed_at": {
-            "format": "date-time",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "intake_status": {
-            "enum": [
-              "assigned",
-              "in_progress",
-              "completed",
-              "dismissed",
-              "missed"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "lifestyle": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "training": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "client_id",
-          "general",
-          "nutrition",
-          "training",
-          "lifestyle",
-          "intake_status",
-          "intake_completed_at",
-          "inserted_at",
-          "updated_at"
-        ],
-        "title": "ClientCoachingProfile",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientCoachingProfile",
-        "x-validate": null
-      },
       "TrainingExerciseCopyRequest": {
         "additionalProperties": false,
         "description": "Request body for duplicating an exercise.",
@@ -5510,101 +5147,6 @@
         "title": "TrainingExerciseCopyRequest",
         "type": "object",
         "x-struct": null,
-        "x-validate": null
-      },
-      "ClientProfileField": {
-        "additionalProperties": false,
-        "properties": {
-          "archived_at": {
-            "format": "date-time",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "field_type": {
-            "enum": [
-              "text",
-              "number",
-              "boolean",
-              "date",
-              "select",
-              "multi_select"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "filterable": {
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "inserted_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "key": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "label": {
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "options": {
-            "items": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "section": {
-            "enum": [
-              "general",
-              "nutrition",
-              "training",
-              "lifestyle"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "section",
-          "label",
-          "key",
-          "field_type",
-          "options",
-          "filterable",
-          "archived_at",
-          "inserted_at",
-          "updated_at"
-        ],
-        "title": "ClientProfileField",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileField",
         "x-validate": null
       },
       "BillingSummary": {
@@ -6609,53 +6151,6 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.TrainingPlanItem",
         "x-validate": null
       },
-      "ClientCoachingProfileUpdateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "general": {
-            "goal": "strength"
-          },
-          "lifestyle": {
-            "sleep_hours": 7
-          },
-          "nutrition": {
-            "protein_goal": "120g"
-          },
-          "training": {
-            "experience": "intermediate"
-          }
-        },
-        "properties": {
-          "general": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "lifestyle": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "training": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "title": "ClientCoachingProfileUpdateRequest",
-        "type": "object",
-        "x-struct": null,
-        "x-validate": null
-      },
       "TrainingPlanPlannedSet": {
         "additionalProperties": false,
         "properties": {
@@ -7393,26 +6888,6 @@
         "title": "ClientProfileReviewQueueListResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueListResponse",
-        "x-validate": null
-      },
-      "ClientProfileFieldListResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/ClientProfileField"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "title": "ClientProfileFieldListResponse",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.ClientProfileFieldListResponse",
         "x-validate": null
       },
       "NutritionMealLogResponse": {
@@ -8261,94 +7736,6 @@
         "x-struct": null,
         "x-validate": null
       },
-      "CoachingClientProfile": {
-        "additionalProperties": false,
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "general": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "inserted_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "intake_completed_at": {
-            "format": "date-time",
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "intake_status": {
-            "enum": [
-              "assigned",
-              "in_progress",
-              "completed",
-              "dismissed",
-              "missed"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "lifestyle": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "nutrition": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "training": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "id",
-          "client_id",
-          "general",
-          "nutrition",
-          "training",
-          "lifestyle",
-          "intake_status",
-          "intake_completed_at",
-          "inserted_at",
-          "updated_at"
-        ],
-        "title": "CoachingClientProfile",
-        "type": "object",
-        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.CoachingClientProfile",
-        "x-validate": null
-      },
       "VerifyRequest": {
         "example": {
           "email": "coach@example.com",
@@ -8885,13 +8272,6 @@
                           "x-validate": null
                         },
                         "type": "array",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
-                      "profile_mapping": {
-                        "additionalProperties": true,
-                        "nullable": true,
-                        "type": "object",
                         "x-struct": null,
                         "x-validate": null
                       },
@@ -10152,13 +9532,6 @@
                         "x-struct": null,
                         "x-validate": null
                       },
-                      "profile_mapping": {
-                        "additionalProperties": true,
-                        "nullable": true,
-                        "type": "object",
-                        "x-struct": null,
-                        "x-validate": null
-                      },
                       "required": {
                         "type": "boolean",
                         "x-struct": null,
@@ -10893,147 +10266,6 @@
         "summary": "Update client",
         "tags": [
           "coach clients"
-        ]
-      }
-    },
-    "/v1/coach/clients/{client_id}/profile": {
-      "get": {
-        "callbacks": {},
-        "description": "Loads or creates the coaching profile for one client in the authenticated business.",
-        "operationId": "getCoachingClientProfile",
-        "parameters": [
-          {
-            "description": "Client id",
-            "in": "path",
-            "name": "client_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoachingClientProfileResponse"
-                }
-              }
-            },
-            "description": "Client profile"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Get client profile",
-        "tags": [
-          "coach client profiles"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "description": "Updates the structured coaching profile sections for one client in the authenticated business.",
-        "operationId": "updateCoachingClientProfile",
-        "parameters": [
-          {
-            "description": "Client id",
-            "in": "path",
-            "name": "client_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CoachingClientProfileRequest"
-              }
-            }
-          },
-          "description": "Client profile update request",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoachingClientProfileResponse"
-                }
-              }
-            },
-            "description": "Client profile updated"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update client profile",
-        "tags": [
-          "coach client profiles"
         ]
       }
     },
@@ -12608,103 +11840,6 @@
         "summary": "Create nutrition plan",
         "tags": [
           "coach nutrition plans"
-        ]
-      }
-    },
-    "/v1/coach/profile-fields": {
-      "get": {
-        "callbacks": {},
-        "description": "Lists active custom profile fields in the authenticated coach business.",
-        "operationId": "listProfileFields",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientProfileFieldListResponse"
-                }
-              }
-            },
-            "description": "Profile fields"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "List profile fields",
-        "tags": [
-          "coach profile fields"
-        ]
-      },
-      "post": {
-        "callbacks": {},
-        "description": "Creates a custom client profile field in the authenticated coach business.",
-        "operationId": "createProfileField",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientProfileFieldRequest"
-              }
-            }
-          },
-          "description": "Profile field create request",
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientProfileFieldResponse"
-                }
-              }
-            },
-            "description": "Profile field created"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Create profile field",
-        "tags": [
-          "coach profile fields"
         ]
       }
     },
@@ -15356,123 +14491,6 @@
         ]
       }
     },
-    "/v1/client/profile": {
-      "get": {
-        "callbacks": {},
-        "description": "Loads or creates the authenticated client's coaching profile.",
-        "operationId": "getClientCoachingProfile",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientCoachingProfileResponse"
-                }
-              }
-            },
-            "description": "Client coaching profile"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Get client coaching profile",
-        "tags": [
-          "client coaching profile"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "description": "Updates the authenticated client's structured coaching profile sections.",
-        "operationId": "updateClientCoachingProfile",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientCoachingProfileUpdateRequest"
-              }
-            }
-          },
-          "description": "Client profile update request",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientCoachingProfileResponse"
-                }
-              }
-            },
-            "description": "Client coaching profile updated"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update client coaching profile",
-        "tags": [
-          "client coaching profile"
-        ]
-      }
-    },
     "/v1/client/training-plans": {
       "get": {
         "callbacks": {},
@@ -16275,140 +15293,6 @@
         "summary": "Update client profile",
         "tags": [
           "client profile"
-        ]
-      }
-    },
-    "/v1/coach/profile-fields/{id}": {
-      "delete": {
-        "callbacks": {},
-        "description": "Archives a custom client profile field in the authenticated coach business.",
-        "operationId": "deleteProfileField",
-        "parameters": [
-          {
-            "description": "Profile field id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Profile field archived"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Delete profile field",
-        "tags": [
-          "coach profile fields"
-        ]
-      },
-      "patch": {
-        "callbacks": {},
-        "description": "Updates a custom client profile field in the authenticated coach business.",
-        "operationId": "updateProfileField",
-        "parameters": [
-          {
-            "description": "Profile field id",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientProfileFieldUpdateRequest"
-              }
-            }
-          },
-          "description": "Profile field update request",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientProfileFieldResponse"
-                }
-              }
-            },
-            "description": "Profile field updated"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update profile field",
-        "tags": [
-          "coach profile fields"
         ]
       }
     },
@@ -19049,52 +17933,6 @@
               "x-struct": null,
               "x-validate": null
             }
-          },
-          {
-            "description": "Nested profile filters using deepObject syntax. Example: profile_filter[nutrition][goal]=fat_loss or profile_filter[custom][meal_prep_ability]=high. Values may be scalar or repeated list values; list values match any selected value.",
-            "explode": true,
-            "in": "query",
-            "name": "profile_filter",
-            "required": false,
-            "schema": {
-              "additionalProperties": true,
-              "properties": {
-                "custom": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "x-struct": null,
-                  "x-validate": null
-                },
-                "general": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "x-struct": null,
-                  "x-validate": null
-                },
-                "lifestyle": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "x-struct": null,
-                  "x-validate": null
-                },
-                "nutrition": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "x-struct": null,
-                  "x-validate": null
-                },
-                "training": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "x-struct": null,
-                  "x-validate": null
-                }
-              },
-              "type": "object",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "style": "deepObject"
           }
         ],
         "responses": {

@@ -135,25 +135,6 @@ defmodule EasyWeb.Coaches.ClientController do
         %Schema{type: :string, enum: ["onboarding", "coaching"]},
         "Only clients with this stage",
         required: false
-      ),
-      Operation.parameter(
-        :profile_filter,
-        :query,
-        %Schema{
-          type: :object,
-          additionalProperties: true,
-          properties: %{
-            general: %Schema{type: :object, additionalProperties: true},
-            nutrition: %Schema{type: :object, additionalProperties: true},
-            training: %Schema{type: :object, additionalProperties: true},
-            lifestyle: %Schema{type: :object, additionalProperties: true},
-            custom: %Schema{type: :object, additionalProperties: true}
-          }
-        },
-        "Nested profile filters using deepObject syntax. Example: profile_filter[nutrition][goal]=fat_loss or profile_filter[custom][meal_prep_ability]=high. Values may be scalar or repeated list values; list values match any selected value.",
-        required: false,
-        style: :deepObject,
-        explode: true
       )
     ],
     responses: [
@@ -253,8 +234,7 @@ defmodule EasyWeb.Coaches.ClientController do
       offset: parse_integer(params, "offset", 0),
       limit: parse_integer(params, "limit", 10),
       status: Map.get(params, "status"),
-      stage: Map.get(params, "stage"),
-      profile_filter: Map.get(params, "profile_filter", %{})
+      stage: Map.get(params, "stage")
     ]
 
     with {:ok, %{clients: clients, count: count, summary: summary}} <-

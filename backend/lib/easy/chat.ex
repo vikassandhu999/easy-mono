@@ -369,13 +369,10 @@ defmodule Easy.Chat do
   defp message_preview(%Message{embed_snapshot: %{"title" => title}}, _attachments),
     do: "Shared #{title}"
 
-  defp message_preview(_message, attachments) when length(attachments) > 1,
-    do: "#{length(attachments)} attachments"
-
-  defp message_preview(_message, [%Attachment{content_type: "image/" <> _}]), do: "Photo"
-  defp message_preview(_message, [%Attachment{content_type: "video/" <> _}]), do: "Video"
-  defp message_preview(_message, [%Attachment{content_type: "audio/" <> _}]), do: "Voice note"
-  defp message_preview(_message, [_attachment]), do: "Attachment"
+  defp message_preview(_message, [%Attachment{content_type: "image/" <> _} | _]), do: "Photo"
+  defp message_preview(_message, [%Attachment{content_type: "video/" <> _} | _]), do: "Video"
+  defp message_preview(_message, [%Attachment{content_type: "audio/" <> _} | _]), do: "Voice note"
+  defp message_preview(_message, [_attachment | _]), do: "Attachment"
 
   defp reload_message(business_id, message_id) do
     Message

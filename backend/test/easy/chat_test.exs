@@ -265,6 +265,16 @@ defmodule Easy.ChatTest do
       assert attachment_message.body == nil
       assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "Video"
 
+      first_photo = insert(:attachment, business: coach.business, client: client, content_type: "image/jpeg")
+      second_photo = insert(:attachment, business: coach.business, client: client, content_type: "image/png")
+
+      assert {:ok, _message} =
+               Chat.send_message(coach_ctx(coach), conversation.id, %{
+                 "attachment_ids" => [first_photo.id, second_photo.id]
+               })
+
+      assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "Photo"
+
       template = insert(:form_template, business: coach.business)
       assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)
       submission = insert(:form_submission, business: coach.business, client: client, form_assignment: assignment)

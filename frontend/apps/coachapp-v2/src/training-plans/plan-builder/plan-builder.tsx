@@ -1,3 +1,4 @@
+import {Typography} from '@heroui/react';
 import {useParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -52,7 +53,7 @@ export default function TrainingPlanDetail() {
           carries max-w-2xl so it aligns with the content column below —
           Page.Header's own padding would otherwise eat into that width. */}
       <Page.Header className="py-3!">
-        <div className="flex w-full max-w-2xl items-center justify-between gap-3">
+        <div className="flex w-full max-w-2xl items-center justify-between gap-3 lg:max-w-5xl">
           <BackButton onPress={goBack} />
           <div className="flex gap-2">
             <PlanAddToClient plan={plan} />
@@ -65,16 +66,31 @@ export default function TrainingPlanDetail() {
       </Page.Header>
 
       <Page.Content className="px-4 md:px-6 lg:px-8">
-        {/* Layout A — single centred column, max-w-2xl */}
-        <div className="w-full max-w-2xl">
+        {/* Single column on mobile; on lg the header spans full width and the
+            workout list + week schedule sit side by side. */}
+        <div className="w-full max-w-2xl lg:max-w-5xl">
           {/* 1. Plan header: inline name + dates → autosave */}
           <PlanHeader plan={plan} />
 
-          {/* 2. Workout list: accordion, add workout, empty state */}
-          <WorkoutList planId={plan.id} />
+          <div className="lg:grid lg:grid-cols-2 lg:gap-8">
+            {/* 2. Workout list: accordion, add workout, empty state */}
+            <WorkoutList planId={plan.id} />
 
-          {/* 3. Week schedule: day → workout assignment */}
-          <WeekSchedule planId={plan.id} />
+            {/* 3. Week schedule: day → workout assignment. Wrapped to match the
+                WorkoutList section (heading + top divider) so the two columns
+                align side by side and read as siblings when stacked. */}
+            <section className="border-t border-border py-4">
+              <Typography
+                className="mb-3 uppercase tracking-wider"
+                color="muted"
+                type="body-xs"
+                weight="semibold"
+              >
+                Schedule
+              </Typography>
+              <WeekSchedule planId={plan.id} />
+            </section>
+          </div>
         </div>
       </Page.Content>
     </Page>

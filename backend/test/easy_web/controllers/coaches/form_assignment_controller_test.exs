@@ -1,6 +1,8 @@
 defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   setup do
     coach = insert(:coach)
 
@@ -57,6 +59,47 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
       conn = get(conn, "/v1/coach/form-assignments/#{assignment.id}/submissions")
 
       assert %{"data" => []} = json_response(conn, 200)
+    end
+
+    test "returns attachment metadata matching the shared attachment schema", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, business: business, creator: coach, user: insert(:user))
+
+      template =
+        insert(:form_template,
+          business: business,
+          sections: [
+            %{"title" => "Photos", "questions" => [%{"id" => "photos", "label" => "Photos", "type" => "photo"}]}
+          ]
+        )
+
+      assignment = insert(:form_assignment, business: business, client: client, form_template: template)
+      attachment = insert(:attachment, business: business, client: client, uploaded_by_id: client.id)
+
+      insert(:form_submission,
+        business: business,
+        client: client,
+        form_assignment: assignment,
+        question_snapshot: template.sections,
+        answers: %{"photos" => [attachment.id]}
+      )
+
+      conn = get(conn, "/v1/coach/form-assignments/#{assignment.id}/submissions")
+
+      assert %{"data" => [%{"attachments" => [data]} = submission]} = json_response(conn, 200)
+
+      assert data == %{
+               "id" => attachment.id,
+               "content_type" => attachment.content_type,
+               "byte_size" => attachment.byte_size,
+               "duration_ms" => nil
+             }
+
+      assert_schema(data, "ChatAttachment", EasyWeb.ApiSpec.spec())
+      assert_schema(submission, "ClientProfileFormSubmission", EasyWeb.ApiSpec.spec())
     end
 
     test "404 for an assignment in another business", %{conn: conn} do

@@ -2,6 +2,7 @@ defmodule EasyWeb.Clients.FormAssignmentJSON do
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
   alias Easy.Forms.FormTemplate
+  alias EasyWeb.AttachmentJSON
 
   @spec show(%{assignment: FormAssignment.t()}) :: %{data: map()}
   def show(%{assignment: assignment}) do
@@ -48,7 +49,7 @@ defmodule EasyWeb.Clients.FormAssignmentJSON do
       submitted_at: submission.submitted_at,
       reviewed_at: submission.reviewed_at,
       reviewed_by_id: submission.reviewed_by_id,
-      attachments: submission.attachments,
+      attachments: Enum.map(submission.attachments, &AttachmentJSON.data/1),
       inserted_at: submission.inserted_at
     }
   end

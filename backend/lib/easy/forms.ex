@@ -12,7 +12,6 @@ defmodule Easy.Forms do
   alias Easy.Fitness.WeightEntry
   alias Easy.Orgs.Business
   alias Easy.Repo
-  alias Easy.Storage
 
   import Ecto.Query
 
@@ -420,8 +419,8 @@ defmodule Easy.Forms do
     owned_count =
       Attachment
       |> Attachment.for_client(business_id, client_id)
-      |> Attachment.for_purpose(:check_in_photo)
       |> Attachment.with_ids(ids)
+      |> where([attachment], attachment.content_type in ^Attachment.image_content_types())
       |> Repo.aggregate(:count, :id)
 
     if owned_count == length(ids), do: :ok, else: {:error, :invalid_answer_values}
@@ -438,10 +437,9 @@ defmodule Easy.Forms do
     attachments_by_client_and_id =
       Attachment
       |> Attachment.for_business(business_id)
-      |> Attachment.for_purpose(:check_in_photo)
       |> Attachment.with_ids(ids)
       |> Repo.all()
-      |> Map.new(&{{&1.client_id, &1.id}, attachment_read_data(&1)})
+      |> Map.new(&{{&1.client_id, &1.id}, &1})
 
     Enum.map(submissions, fn submission ->
       attachments =
@@ -452,23 +450,6 @@ defmodule Easy.Forms do
 
       %{submission | attachments: attachments}
     end)
-  end
-
-  defp attachment_read_data(attachment) do
-    signed =
-      case Storage.presign_get(attachment.storage_key) do
-        {:ok, value} -> value
-        {:error, _reason} -> %{url: nil, expires_at: nil}
-      end
-
-    %{
-      id: attachment.id,
-      content_type: attachment.content_type,
-      byte_size: attachment.byte_size,
-      purpose: attachment.purpose,
-      read_url: signed.url,
-      read_url_expires_at: signed.expires_at
-    }
   end
 
   defp photo_attachment_ids(sections, answers) do

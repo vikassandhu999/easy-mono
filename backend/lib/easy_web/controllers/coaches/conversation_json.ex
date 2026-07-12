@@ -2,6 +2,7 @@ defmodule EasyWeb.Coaches.ConversationJSON do
   alias Easy.Chat.Conversation
   alias Easy.Chat.Message
   alias Easy.Clients.Client
+  alias EasyWeb.AttachmentJSON
 
   @spec index(%{conversations: [Conversation.t()], count: non_neg_integer()}) :: map()
   def index(%{conversations: conversations, count: count}),
@@ -39,18 +40,9 @@ defmodule EasyWeb.Coaches.ConversationJSON do
       sender_type: m.sender_type,
       sender_id: m.sender_id,
       body: m.body,
-      attachments: Enum.map(m.attachments, &attachment_data/1),
+      attachments: Enum.map(m.attachments, &AttachmentJSON.data/1),
       embed: embed_data(m),
       inserted_at: m.inserted_at
-    }
-  end
-
-  defp attachment_data(attachment) do
-    %{
-      id: attachment.id,
-      content_type: attachment.content_type,
-      byte_size: attachment.byte_size,
-      duration_ms: attachment.duration_ms
     }
   end
 

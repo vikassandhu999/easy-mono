@@ -1,6 +1,7 @@
 defmodule Easy.Forms.FormSubmission do
   use Ecto.Schema
 
+  alias Easy.Attachments.Attachment
   alias Easy.Forms.FormAssignment
   alias Easy.Clients.Client
   alias Easy.Ctx
@@ -15,7 +16,7 @@ defmodule Easy.Forms.FormSubmission do
 
   @actors [:coach, :client, :system]
 
-  @type t :: %__MODULE__{}
+  @type t :: %__MODULE__{attachments: [Attachment.t()]}
 
   schema "form_submissions" do
     field :question_snapshot, {:array, :map}, default: []

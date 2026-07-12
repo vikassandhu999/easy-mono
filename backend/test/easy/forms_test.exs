@@ -1,6 +1,7 @@
 defmodule Easy.FormsTest do
   use Easy.SchemaCase, async: false
 
+  alias Easy.Attachments.Attachment
   alias Easy.Forms
   alias Easy.Forms.CheckInSchedule
   alias Easy.Forms.FormAssignment
@@ -301,7 +302,7 @@ defmodule Easy.FormsTest do
       end
     end
 
-    test "accepts owned photo attachments and returns signed read metadata" do
+    test "accepts owned image attachments and returns attachment rows" do
       client = insert_client()
 
       attachments =
@@ -334,11 +335,37 @@ defmodule Easy.FormsTest do
                })
 
       assert Enum.map(submission.attachments, & &1.id) == ids
-      assert Enum.all?(submission.attachments, &(&1.read_url =~ "storage.example.test/easy-test/"))
-      refute inspect(submission.attachments) =~ "storage_key"
+      assert Enum.all?(submission.attachments, &match?(%Attachment{}, &1))
 
       assert {:ok, [listed]} = Forms.list_form_submissions(owner_ctx(client.business), assignment.id)
       assert Enum.map(listed.attachments, & &1.id) == ids
+    end
+
+    test "rejects owned non-image attachments in photo answers" do
+      client = insert_client()
+
+      audio =
+        insert(:attachment,
+          business: client.business,
+          client: client,
+          uploaded_by_id: client.id,
+          content_type: "audio/webm"
+        )
+
+      template =
+        insert(:form_template,
+          business: client.business,
+          sections: [
+            %{"title" => "Photos", "questions" => [%{"id" => "photos", "label" => "Photos", "type" => "photo"}]}
+          ]
+        )
+
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+
+      assert {:error, :invalid_answer_values} =
+               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+                 answers: %{"photos" => [audio.id]}
+               })
     end
 
     test "rejects photo attachments outside the submitting client" do

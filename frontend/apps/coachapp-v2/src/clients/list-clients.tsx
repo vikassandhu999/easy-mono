@@ -8,7 +8,6 @@ import {useNavigate} from 'react-router-dom';
 import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {type ClientSummary, type ListClientsFilters, useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import ClientAttentionPopover from './clients-list/client-attention-popover';
@@ -45,7 +44,6 @@ function getOptionCount(
 
 export default function ListClients() {
   const navigate = useNavigate();
-  const isDesktop = useIsDesktop();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<Key>('all');
 
@@ -73,11 +71,6 @@ export default function ListClients() {
   function clearFilters() {
     setSearch('');
     setActiveFilter('all');
-  }
-
-  function openClient(key: Key) {
-    const route = isDesktop ? ROUTES.CLIENT_MESSAGES : ROUTES.CLIENT_DETAIL;
-    navigate(route.replace(':id', String(key)));
   }
 
   const totalCount = summaryData?.count ?? '...';
@@ -179,7 +172,7 @@ export default function ListClients() {
             isError={isError}
             isLoading={isLoading || isFetchingNextPage}
             items={clients}
-            onAction={openClient}
+            onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
             onRetry={refetch}
             renderItem={(client) => (
               <ClientListItem

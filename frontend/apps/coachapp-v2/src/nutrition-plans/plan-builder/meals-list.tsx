@@ -11,7 +11,6 @@
  * server-computed nutrition snapshots reconcile.
  */
 import {Button, Typography} from '@heroui/react';
-import {Plus} from 'lucide-react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {coachApi, useCreateMealMutation, useGetNutritionPlanQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
@@ -79,15 +78,17 @@ export function MealsList({planId}: MealsListProps) {
   // ---------------------------------------------------------------------------
 
   return (
-    <section className="border-t border-separator py-4">
-      {/* Section header (design: editor structure title + count subtitle) */}
-      <div className="mb-3.5 flex items-center justify-between">
-        <div>
-          <h3 className="font-grotesk text-[15px] font-bold tracking-[-0.01em]">Meals</h3>
-          <p className="mt-0.5 text-[12.5px] text-muted">
-            {meals.length} meal{meals.length === 1 ? '' : 's'} · tap to edit
-          </p>
-        </div>
+    <section className="border-t border-border py-4">
+      {/* Section header */}
+      <div className="mb-3 flex items-center justify-between">
+        <Typography
+          className="uppercase tracking-wider"
+          color="muted"
+          type="body-xs"
+          weight="semibold"
+        >
+          Meals
+        </Typography>
 
         {meals.length > 0 ? (
           <Button
@@ -118,10 +119,9 @@ export function MealsList({planId}: MealsListProps) {
         </Typography>
       ) : (
         /* Meal accordion */
-        <div className="flex flex-col gap-2.5">
-          {meals.map((meal, index) => (
+        <div className="flex flex-col gap-2">
+          {meals.map((meal) => (
             <MealCard
-              index={index}
               key={meal.id}
               meal={meal}
               open={openId === meal.id}
@@ -132,21 +132,19 @@ export function MealsList({planId}: MealsListProps) {
         </div>
       )}
 
-      {/* Add meal — design: dashed add tile (structure-level = link-blue hover) */}
-      <Button
-        className="mt-3 h-12 w-full rounded-[14px]! border-[1.5px] border-dashed border-edge-strong bg-transparent text-[13px] font-semibold text-muted hover:border-link hover:bg-link-soft hover:text-link"
-        isPending={isCreating}
-        onPress={() => {
-          handleAddMeal().catch(() => undefined);
-        }}
-        variant="ghost"
-      >
-        <Plus
-          size={15}
-          strokeWidth={2.2}
-        />
-        Add meal
-      </Button>
+      {/* Add meal */}
+      <div className="mt-3">
+        <Button
+          isPending={isCreating}
+          onPress={() => {
+            handleAddMeal().catch(() => undefined);
+          }}
+          size="sm"
+          variant="ghost"
+        >
+          + Add meal
+        </Button>
+      </div>
     </section>
   );
 }

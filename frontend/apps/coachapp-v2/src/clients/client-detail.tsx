@@ -1,24 +1,27 @@
-import {formatIsoDateOnly} from '@easy/utils';
-import {Button, TextArea, Typography, toast} from '@heroui/react';
+import {formatIsoDateOnly, getInitials} from '@easy/utils';
+import {Alert, Avatar, Button, TextArea, Typography, toast} from '@heroui/react';
+import {ArrowLeft, MessageCircle, Pencil, Phone} from 'lucide-react';
 import {useState} from 'react';
-import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import ClientWorkspaceShell, {ClientWorkspaceFallback} from '@/@components/client-workspace-shell';
-import {ErrorState} from '@/@components/error-state';
+import {Link, useNavigate, useParams} from 'react-router-dom';
+
+import {BackButton} from '@/@components/back-button';
+import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetBillingQuery} from '@/api/billing';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {toNullableText} from '@/api/shared';
+import {RowChips} from '@/clients/clients-list/client-list-item';
 import ClientCheckins from '@/clients/components/client-checkins';
 import ClientDetailCard from '@/clients/components/client-detail-card';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
-import ClientSubscription from '@/clients/components/client-subscription';
+import ClientStatStrip from '@/clients/components/client-stat-strip';
 import ClientTrainerCard from '@/clients/components/client-trainer-card';
 import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
-import {getClientName} from '@/clients/lib/client';
-import {getClientWorkspaceTab} from '@/clients/lib/client-workspace';
+import {getWhatsAppUrl} from '@/clients/lib/client';
 import {AddSeatsDialog} from '@/settings/add-seats-dialog';
 
 function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: null | string}) {
@@ -105,85 +108,201 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
 export default function ClientDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const goBack = useGoBack(ROUTES.CLIENTS);
   const {data, isError, isLoading} = useGetClientQuery(id!);
   const {data: billingData} = useGetBillingQuery();
 
   if (isLoading) {
     return (
-      <ClientWorkspaceFallback>
-        <div className="h-full overflow-y-auto p-5 lg:p-8">
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Client</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <PageSkeleton />
-        </div>
-      </ClientWorkspaceFallback>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError || !data) {
     return (
-      <ClientWorkspaceFallback>
-        <div className="p-5 lg:p-8">
-          <ErrorState message="Client couldn't load. They may not exist, or you may not have access." />
-        </div>
-      </ClientWorkspaceFallback>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Client</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
+          <Button
+            onPress={goBack}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft size={16} />
+            Clients
+          </Button>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+          <Alert status="danger">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Client couldn&apos;t load</Alert.Title>
+              <Alert.Description>They may not exist, or you may not have access</Alert.Description>
+            </Alert.Content>
+          </Alert>
+        </Page.Content>
+      </Page>
     );
   }
 
   const client = data.data;
   const isPending = client.status === 'pending';
   const isAwaitingSeat = client.status === 'inactive' && client.inactive_reason === 'awaiting_seat';
-  const name = getClientName(client);
-  const activeTab = getClientWorkspaceTab(searchParams);
+
+  const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
+  const initials = getInitials(client.first_name, client.last_name);
 
   return (
-    <ClientWorkspaceShell client={client}>
-      <div className="h-full overflow-y-auto px-[14px] py-4 lg:px-[30px] lg:py-[26px]">
-        <div className="max-w-none space-y-4">
-          {isAwaitingSeat ? (
-            <div className="rounded-[16px] border border-warning-soft bg-warning-soft p-4 text-warning-soft-foreground">
-              {billingData?.data.is_owner ? <AddSeatsDialog /> : 'Ask the owner to add seats.'}
+    <Page>
+      <Page.Header className="py-4 sm:py-8 items-center w-full max-w-6xl">
+        <Page.TitleGroup>
+          <div className={'flex items-center gap-1'}>
+            <BackButton onPress={goBack} />
+            <Page.Title>{name}</Page.Title>
+          </div>
+        </Page.TitleGroup>
+        <Page.Actions>
+          <Button
+            onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
+            size="sm"
+            variant="secondary"
+          >
+            <Pencil size={16} />
+            Edit
+          </Button>
+        </Page.Actions>
+      </Page.Header>
+
+      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <div className="max-w-6xl space-y-5">
+          <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar
+                  className="size-14 shrink-0"
+                  color="accent"
+                >
+                  <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Typography
+                      truncate
+                      type="h5"
+                    >
+                      {name}
+                    </Typography>
+                    <RowChips client={client} />
+                  </div>
+                  {client.phone ? (
+                    <Typography
+                      className="mt-0.5 flex items-center gap-1.5"
+                      color="muted"
+                      truncate
+                      type="body-sm"
+                    >
+                      <Phone size={14} />
+                      {client.phone}
+                    </Typography>
+                  ) : null}
+                  {isAwaitingSeat ? (
+                    <div className="mt-2">
+                      {billingData?.data.is_owner ? (
+                        <AddSeatsDialog />
+                      ) : (
+                        <Typography
+                          color="muted"
+                          type="body-sm"
+                        >
+                          Ask the owner to add seats.
+                        </Typography>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              {client.phone ? (
+                <div className="flex gap-2 sm:ml-auto sm:shrink-0">
+                  <a
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-success-soft px-4 py-2 text-sm font-medium text-success-soft-foreground transition-colors hover:bg-success-soft-hover active:bg-success-soft-hover sm:flex-none"
+                    href={getWhatsAppUrl(client.phone)}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <MessageCircle size={16} />
+                    WhatsApp
+                  </a>
+                  <a
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-separator px-4 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft sm:flex-none"
+                    href={`tel:${client.phone}`}
+                  >
+                    <Phone size={16} />
+                    Call
+                  </a>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-          {activeTab === 'progress' ? (
-            isPending ? (
-              <InvitationWidget
-                client={client}
-                onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
+          </div>
+
+          {isPending ? (
+            <InvitationWidget
+              client={client}
+              onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
+            />
+          ) : (
+            <ClientStatStrip clientId={client.id} />
+          )}
+
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+            <div className="space-y-5">
+              {isPending ? null : <ClientWeight clientId={client.id} />}
+              {isPending ? null : <ClientNutritionAdherence clientId={client.id} />}
+              {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
+              <ClientCheckins
+                clientId={client.id}
+                clientName={name}
               />
-            ) : (
-              <ClientWeight clientId={client.id} />
-            )
-          ) : null}
-
-          {activeTab === 'nutrition' ? (
-            <ClientNutritionAdherence
-              clientId={client.id}
-              clientName={name}
-            />
-          ) : null}
-
-          {activeTab === 'training' ? (
-            <ClientWorkoutHistory
-              clientId={client.id}
-              clientName={name}
-            />
-          ) : null}
-
-          {activeTab === 'check-in' ? (
-            <ClientCheckins
-              clientId={client.id}
-              clientName={name}
-            />
-          ) : null}
-
-          {activeTab === 'trainer' ? <ClientTrainerCard client={client} /> : null}
-
-          {activeTab === 'subscription' ? <ClientSubscription client={client} /> : null}
-
-          {activeTab === 'detail' ? (
-            <>
               <ClientDetailCard client={client} />
-              <section className="rounded-[16px] border-[1.5px] border-separator bg-surface p-4 lg:rounded-[18px] lg:p-5">
+            </div>
+
+            <div className="space-y-5">
+              <ClientTrainerCard client={client} />
+              <Link
+                className="flex min-h-11 items-center gap-3 rounded-3xl border-[1.5px] border-separator bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                to={ROUTES.CLIENT_MESSAGES.replace(':id', client.id)}
+              >
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
+                  <MessageCircle size={16} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Typography
+                    type="body-sm"
+                    weight="semibold"
+                  >
+                    Messages
+                  </Typography>
+                  <Typography
+                    color="muted"
+                    type="body-xs"
+                  >
+                    Chat with this client
+                  </Typography>
+                </div>
+              </Link>
+              <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
                 <div className="mb-3">
                   <h2 className="font-grotesk text-xl font-bold">Notes</h2>
                   <Typography
@@ -198,7 +317,7 @@ export default function ClientDetail() {
                   clientId={client.id}
                   initialNotes={client.notes}
                 />
-              </section>
+              </div>
               <Typography
                 className="px-1"
                 color="muted"
@@ -206,10 +325,10 @@ export default function ClientDetail() {
               >
                 Added {formatIsoDateOnly(client.inserted_at)}
               </Typography>
-            </>
-          ) : null}
+            </div>
+          </div>
         </div>
-      </div>
-    </ClientWorkspaceShell>
+      </Page.Content>
+    </Page>
   );
 }

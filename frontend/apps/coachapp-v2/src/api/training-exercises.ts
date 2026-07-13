@@ -85,10 +85,5 @@ coachApi.enhanceEndpoints({
         {type: 'TrainingExercise', id: 'LIST'},
       ],
     },
-    // The Builder hub reads the standard list (limit 4) and copies/deletes
-    // from the card menu — all tag:false in the generated slice.
-    listCoachExercises: {providesTags: [{type: 'TrainingExercise', id: 'LIST'}]},
-    copyExercise: {invalidatesTags: [{type: 'TrainingExercise', id: 'LIST'}]},
-    deleteExercise: {invalidatesTags: [{type: 'TrainingExercise', id: 'LIST'}]},
   },
 });

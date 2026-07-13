@@ -1,7 +1,6 @@
-import {Button, Typography} from '@heroui/react';
+import {Typography} from '@heroui/react';
 
 import type {ClientProfileReviewQueueItem} from '@/api/checkins';
-import useAttachmentDownloadUrls from '@/messages/use-attachment-download-urls';
 
 type SnapshotQuestion = {id?: string; label?: string; type?: string};
 type SnapshotSection = {questions?: SnapshotQuestion[]; title?: string};
@@ -25,7 +24,6 @@ function formatAnswer(value: unknown): string {
 export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueItem}) {
   const sections = item.question_snapshot as SnapshotSection[];
   const attachments = new Map(item.attachments.map((attachment) => [attachment.id, attachment]));
-  const {failedIds, refresh, urls} = useAttachmentDownloadUrls(item.attachments.map((attachment) => attachment.id));
 
   return (
     <div className="space-y-5">
@@ -59,10 +57,9 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                     {(question.id && Array.isArray(item.answers[question.id]) ? item.answers[question.id] : []).map(
                       (attachmentId: unknown, photoIndex: number) => {
                         const attachment = typeof attachmentId === 'string' ? attachments.get(attachmentId) : undefined;
-                        const url = attachment && urls[attachment.id];
-                        return url ? (
+                        return attachment?.read_url ? (
                           <a
-                            href={url}
+                            href={attachment.read_url}
                             key={attachment.id}
                             rel="noreferrer"
                             target="_blank"
@@ -70,7 +67,7 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                             <img
                               alt={`${question.label ?? 'Progress photo'} ${photoIndex + 1}`}
                               className="aspect-[3/4] w-full rounded-xl border border-border object-cover"
-                              src={url}
+                              src={attachment.read_url}
                             />
                           </a>
                         ) : (
@@ -78,23 +75,7 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                             className="grid aspect-[3/4] place-items-center rounded-xl border border-border bg-surface text-center text-muted text-xs"
                             key={String(attachmentId)}
                           >
-                            {!attachment ? (
-                              'Photo unavailable'
-                            ) : failedIds.has(attachment.id) ? (
-                              <div className="grid gap-2">
-                                Photo unavailable
-                                <Button
-                                  className="min-h-11"
-                                  onPress={() => refresh([attachment.id]).catch(() => undefined)}
-                                  size="sm"
-                                  variant="secondary"
-                                >
-                                  Retry
-                                </Button>
-                              </div>
-                            ) : (
-                              'Loading photo…'
-                            )}
+                            Photo unavailable
                           </div>
                         );
                       },

@@ -1,6 +1,5 @@
-import {Button, Skeleton, Typography, toast} from '@heroui/react';
+import {Skeleton, Typography, toast} from '@heroui/react';
 import {Check, UserRound, X} from 'lucide-react';
-import {useState} from 'react';
 
 import {type Client} from '@/api/clients';
 import {getApiErrorMessage} from '@/api/shared';
@@ -36,14 +35,8 @@ function TrainerPickerContent({
   const {data, isError, isLoading} = useGetTeamQuery();
   const [reassignClient, {isLoading: isSaving}] = useReassignClientMutation();
   const members = (data?.data ?? []).filter((member) => member.status === 'active');
-  const [selectedTrainerId, setSelectedTrainerId] = useState(currentTrainerId);
 
-  const handleConfirm = async () => {
-    const member = members.find((item) => item.id === selectedTrainerId);
-    if (!member || member.id === currentTrainerId) {
-      return;
-    }
-
+  const handlePick = async (member: TeamMember) => {
     try {
       await reassignClient({clientId: client.id, body: {coach_id: member.id}}).unwrap();
       toast.success(`Trainer changed to ${memberName(member)}`);
@@ -54,21 +47,17 @@ function TrainerPickerContent({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-surface">
-      <div className="flex items-start justify-between gap-4 border-b border-surface-secondary px-6 py-5">
-        <div>
-          <h3 className="font-grotesk text-xl font-bold">Change trainer</h3>
-          <Typography
-            className="mt-1"
-            color="muted"
-            type="body-sm"
-          >
-            Reassign this client to another coach
-          </Typography>
-        </div>
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <Typography
+          type="body-sm"
+          weight="semibold"
+        >
+          Change trainer
+        </Typography>
         <button
           aria-label="Close"
-          className="grid size-9 place-items-center rounded-[10px] bg-surface-secondary text-muted"
+          className="grid size-9 place-items-center rounded-xl text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={onClose}
           type="button"
         >
@@ -76,94 +65,67 @@ function TrainerPickerContent({
         </button>
       </div>
 
-      <div className="max-h-[420px] overflow-y-auto px-4 py-3">
-        {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-16 rounded-[14px]" />
-            <Skeleton className="h-16 rounded-[14px]" />
-          </div>
-        ) : isError ? (
-          <Typography
-            color="muted"
-            type="body-sm"
-          >
-            Couldn&apos;t load trainers.
-          </Typography>
-        ) : members.length === 0 ? (
-          <Typography
-            color="muted"
-            type="body-sm"
-          >
-            No active trainers available.
-          </Typography>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            {members.map((member) => {
-              const selected = member.id === selectedTrainerId;
-              return (
-                <button
-                  className={`flex min-h-16 items-center gap-3 rounded-[14px] border-[1.5px] p-3 text-left transition-colors ${
-                    selected ? 'border-accent bg-accent-soft' : 'border-transparent hover:bg-surface-hover'
-                  }`}
-                  disabled={isSaving}
-                  key={member.id}
-                  onClick={() => setSelectedTrainerId(member.id)}
-                  type="button"
-                >
-                  <span className="grid size-[42px] shrink-0 place-items-center rounded-[12px] bg-accent text-accent-foreground text-sm font-bold">
-                    {initials(member)}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <Typography
-                      truncate
-                      type="body-sm"
-                      weight="semibold"
-                    >
-                      {memberName(member)}
-                    </Typography>
-                    <Typography
-                      color="muted"
-                      truncate
-                      type="body-xs"
-                    >
-                      {member.email}
-                    </Typography>
-                  </span>
-                  {selected ? (
-                    <span className="grid size-[22px] shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
-                      <Check
-                        size={13}
-                        strokeWidth={3}
-                      />
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 border-t border-surface-secondary px-5 py-4">
-        <Button
-          className="w-full"
-          isDisabled={isSaving}
-          onPress={onClose}
-          type="button"
-          variant="secondary"
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-14 rounded-2xl" />
+          <Skeleton className="h-14 rounded-2xl" />
+        </div>
+      ) : isError ? (
+        <Typography
+          color="muted"
+          type="body-sm"
         >
-          Cancel
-        </Button>
-        <Button
-          className="w-full"
-          isDisabled={!selectedTrainerId || selectedTrainerId === currentTrainerId}
-          isPending={isSaving}
-          onPress={handleConfirm}
-          type="button"
+          Couldn&apos;t load trainers.
+        </Typography>
+      ) : members.length === 0 ? (
+        <Typography
+          color="muted"
+          type="body-sm"
         >
-          Confirm reassignment
-        </Button>
-      </div>
+          No active trainers available.
+        </Typography>
+      ) : (
+        <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
+          {members.map((member) => {
+            const selected = member.id === currentTrainerId;
+            return (
+              <button
+                className="flex min-h-11 items-center gap-3 rounded-2xl p-2.5 text-left transition-colors hover:bg-surface-hover disabled:opacity-60"
+                disabled={isSaving || selected}
+                key={member.id}
+                onClick={() => handlePick(member)}
+                type="button"
+              >
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground text-sm font-bold">
+                  {initials(member)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <Typography
+                    truncate
+                    type="body-sm"
+                    weight="semibold"
+                  >
+                    {memberName(member)}
+                  </Typography>
+                  <Typography
+                    color="muted"
+                    truncate
+                    type="body-xs"
+                  >
+                    {member.email}
+                  </Typography>
+                </span>
+                {selected ? (
+                  <Check
+                    className="text-success"
+                    size={16}
+                  />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -173,8 +135,8 @@ export default function ClientTrainerCard({client}: {client: Client}) {
   const assigned = (data?.data ?? []).find((member) => member.id === client.assigned_coach_id) ?? null;
 
   return (
-    <section>
-      <div className="mb-5 hidden lg:block">
+    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+      <div className="mb-5">
         <h2 className="font-grotesk text-xl font-bold">Assigned trainer</h2>
         <Typography
           className="mt-1"
@@ -186,11 +148,11 @@ export default function ClientTrainerCard({client}: {client: Client}) {
       </div>
 
       {isLoading ? (
-        <Skeleton className="h-28 rounded-[18px]" />
+        <Skeleton className="h-28 rounded-3xl" />
       ) : (
-        <div className="rounded-[16px] border-[1.5px] border-separator bg-surface p-[18px] lg:rounded-[18px] lg:p-[22px]">
+        <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
           <div className="flex items-center gap-4">
-            <span className="grid size-[54px] shrink-0 place-items-center rounded-[16px] bg-accent text-lg font-bold text-accent-foreground lg:size-[60px] lg:rounded-[17px] lg:text-xl">
+            <span className="grid size-14 shrink-0 place-items-center rounded-3xl bg-accent text-lg font-bold text-accent-foreground">
               {assigned ? initials(assigned) : <UserRound size={22} />}
             </span>
             <div className="min-w-0 flex-1">
@@ -220,12 +182,8 @@ export default function ClientTrainerCard({client}: {client: Client}) {
             )}
           </div>
 
-          <div className="mt-4 flex">
-            <AssignSurface
-              label="Change trainer"
-              popoverClassName="p-0"
-              triggerClassName="min-h-11 flex-1 justify-center rounded-[12px] bg-accent px-4 text-[13px] font-bold text-accent-foreground! hover:opacity-90"
-            >
+          <div className="mt-4 flex justify-end">
+            <AssignSurface label="Change trainer">
               {(close) => (
                 <TrainerPickerContent
                   client={client}

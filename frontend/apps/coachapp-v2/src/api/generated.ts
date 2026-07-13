@@ -58,6 +58,21 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.clientUpdateRequest,
       }),
     }),
+    getCoachingClientProfile: build.query<GetCoachingClientProfileApiResponse, GetCoachingClientProfileApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/clients/${queryArg.clientId}/profile`,
+      }),
+    }),
+    updateCoachingClientProfile: build.mutation<
+      UpdateCoachingClientProfileApiResponse,
+      UpdateCoachingClientProfileApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/v1/coach/clients/${queryArg.clientId}/profile`,
+        method: 'PATCH',
+        body: queryArg.coachingClientProfileRequest,
+      }),
+    }),
     enrollProspect: build.mutation<EnrollProspectApiResponse, EnrollProspectApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/prospects/${queryArg.id}/enroll`,
@@ -177,6 +192,16 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.nutritionPlanRequest,
       }),
     }),
+    listProfileFields: build.query<ListProfileFieldsApiResponse, ListProfileFieldsApiArg>({
+      query: () => ({url: `/v1/coach/profile-fields`}),
+    }),
+    createProfileField: build.mutation<CreateProfileFieldApiResponse, CreateProfileFieldApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/profile-fields`,
+        method: 'POST',
+        body: queryArg.clientProfileFieldRequest,
+      }),
+    }),
     getCurrentBusiness: build.query<GetCurrentBusinessApiResponse, GetCurrentBusinessApiArg>({
       query: () => ({url: `/v1/businesses/me`}),
     }),
@@ -206,16 +231,6 @@ const injectedRtkApi = api.injectEndpoints({
           offset: queryArg.offset,
           limit: queryArg.limit,
         },
-      }),
-    }),
-    getCoachAttachmentDownloadUrls: build.mutation<
-      GetCoachAttachmentDownloadUrlsApiResponse,
-      GetCoachAttachmentDownloadUrlsApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/v1/coach/attachments/download-urls`,
-        method: 'POST',
-        body: queryArg.attachmentDownloadRequest,
       }),
     }),
     createAuthToken: build.mutation<CreateAuthTokenApiResponse, CreateAuthTokenApiArg>({
@@ -376,7 +391,7 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/v1/coach/conversations/${queryArg.id}/messages`,
         method: 'POST',
-        body: queryArg.coachChatMessageCreateRequest,
+        body: queryArg.chatMessageCreateRequest,
       }),
     }),
     trainerAcceptInvite: build.mutation<TrainerAcceptInviteApiResponse, TrainerAcceptInviteApiArg>({
@@ -424,6 +439,19 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/auth/verify`,
         method: 'POST',
         body: queryArg.verifyRequest,
+      }),
+    }),
+    deleteProfileField: build.mutation<DeleteProfileFieldApiResponse, DeleteProfileFieldApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/profile-fields/${queryArg.id}`,
+        method: 'DELETE',
+      }),
+    }),
+    updateProfileField: build.mutation<UpdateProfileFieldApiResponse, UpdateProfileFieldApiArg>({
+      query: (queryArg) => ({
+        url: `/v1/coach/profile-fields/${queryArg.id}`,
+        method: 'PATCH',
+        body: queryArg.clientProfileFieldUpdateRequest,
       }),
     }),
     deleteNutritionPlan: build.mutation<DeleteNutritionPlanApiResponse, DeleteNutritionPlanApiArg>({
@@ -613,6 +641,7 @@ const injectedRtkApi = api.injectEndpoints({
           search: queryArg.search,
           status: queryArg.status,
           stage: queryArg.stage,
+          profile_filter: queryArg.profileFilter,
         },
       }),
     }),
@@ -759,13 +788,6 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/form-templates/${queryArg.id}`,
         method: 'PATCH',
         body: queryArg.clientProfileFormTemplateUpdateRequest,
-      }),
-    }),
-    createCoachClientUpload: build.mutation<CreateCoachClientUploadApiResponse, CreateCoachClientUploadApiArg>({
-      query: (queryArg) => ({
-        url: `/v1/coach/clients/${queryArg.clientId}/uploads`,
-        method: 'POST',
-        body: queryArg.attachmentUploadRequest,
       }),
     }),
     trainerAcceptInviteVerify: build.mutation<TrainerAcceptInviteVerifyApiResponse, TrainerAcceptInviteVerifyApiArg>({
@@ -946,6 +968,19 @@ export type UpdateClientApiArg = {
   /** Client update request */
   clientUpdateRequest: ClientUpdateRequest;
 };
+export type GetCoachingClientProfileApiResponse = /** status 200 Client profile */ CoachingClientProfileResponse;
+export type GetCoachingClientProfileApiArg = {
+  /** Client id */
+  clientId: string;
+};
+export type UpdateCoachingClientProfileApiResponse =
+  /** status 200 Client profile updated */ CoachingClientProfileResponse;
+export type UpdateCoachingClientProfileApiArg = {
+  /** Client id */
+  clientId: string;
+  /** Client profile update request */
+  coachingClientProfileRequest: CoachingClientProfileRequest;
+};
 export type EnrollProspectApiResponse = /** status 201 Prospect enrolled */ ProspectEnrollResponse;
 export type EnrollProspectApiArg = {
   /** Prospect id */
@@ -1046,6 +1081,13 @@ export type CreateNutritionPlanApiArg = {
   /** Nutrition plan request */
   nutritionPlanRequest: NutritionPlanRequest;
 };
+export type ListProfileFieldsApiResponse = /** status 200 Profile fields */ ClientProfileFieldListResponse;
+export type ListProfileFieldsApiArg = void;
+export type CreateProfileFieldApiResponse = /** status 201 Profile field created */ ClientProfileFieldResponse;
+export type CreateProfileFieldApiArg = {
+  /** Profile field create request */
+  clientProfileFieldRequest: ClientProfileFieldRequest;
+};
 export type GetCurrentBusinessApiResponse = /** status 200 Business */ BusinessResponse;
 export type GetCurrentBusinessApiArg = void;
 export type UpdateCurrentBusinessApiResponse = /** status 200 Business updated */ BusinessResponse;
@@ -1071,12 +1113,6 @@ export type ListCoachConversationsApiArg = {
   offset?: number;
   /** Limit (max 100) */
   limit?: number;
-};
-export type GetCoachAttachmentDownloadUrlsApiResponse =
-  /** status 200 Attachment downloads */ AttachmentDownloadsResponse;
-export type GetCoachAttachmentDownloadUrlsApiArg = {
-  /** Attachment ids */
-  attachmentDownloadRequest: AttachmentDownloadRequest;
 };
 export type CreateAuthTokenApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type CreateAuthTokenApiArg = {
@@ -1213,7 +1249,7 @@ export type CreateCoachConversationMessageApiArg = {
   /** Conversation id */
   id: string;
   /** Message */
-  coachChatMessageCreateRequest: CoachChatMessageCreateRequest;
+  chatMessageCreateRequest: ChatMessageCreateRequest;
 };
 export type TrainerAcceptInviteApiResponse = /** status 200 OTP sent */ MessageResponse;
 export type TrainerAcceptInviteApiArg = {
@@ -1252,6 +1288,18 @@ export type VerifyAuthApiResponse = /** status 200 Auth token */ AuthTokenRespon
 export type VerifyAuthApiArg = {
   /** Verify request */
   verifyRequest: VerifyRequest;
+};
+export type DeleteProfileFieldApiResponse = unknown;
+export type DeleteProfileFieldApiArg = {
+  /** Profile field id */
+  id: string;
+};
+export type UpdateProfileFieldApiResponse = /** status 200 Profile field updated */ ClientProfileFieldResponse;
+export type UpdateProfileFieldApiArg = {
+  /** Profile field id */
+  id: string;
+  /** Profile field update request */
+  clientProfileFieldUpdateRequest: ClientProfileFieldUpdateRequest;
 };
 export type DeleteNutritionPlanApiResponse = unknown;
 export type DeleteNutritionPlanApiArg = {
@@ -1425,6 +1473,25 @@ export type ListClientsApiArg = {
   status?: 'active' | 'pending' | 'inactive';
   /** Only clients with this stage */
   stage?: 'onboarding' | 'coaching';
+  /** Nested profile filters using deepObject syntax. Example: profile_filter[nutrition][goal]=fat_loss or profile_filter[custom][meal_prep_ability]=high. Values may be scalar or repeated list values; list values match any selected value. */
+  profileFilter?: {
+    custom?: {
+      [key: string]: any;
+    };
+    general?: {
+      [key: string]: any;
+    };
+    lifestyle?: {
+      [key: string]: any;
+    };
+    nutrition?: {
+      [key: string]: any;
+    };
+    training?: {
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
 };
 export type DeleteTrainingPlanApiResponse = unknown;
 export type DeleteTrainingPlanApiArg = {
@@ -1555,13 +1622,6 @@ export type UpdateFormTemplateApiArg = {
   id: string;
   /** Form template update request */
   clientProfileFormTemplateUpdateRequest: ClientProfileFormTemplateUpdateRequest;
-};
-export type CreateCoachClientUploadApiResponse = /** status 201 Upload created */ AttachmentUploadResponse;
-export type CreateCoachClientUploadApiArg = {
-  /** Client id */
-  clientId: string;
-  /** Upload request */
-  attachmentUploadRequest: AttachmentUploadRequest;
 };
 export type TrainerAcceptInviteVerifyApiResponse = /** status 200 Auth token */ AuthTokenResponse;
 export type TrainerAcceptInviteVerifyApiArg = {
@@ -1793,6 +1853,9 @@ export type ClientProfileFormTemplate = {
       id: string;
       label: string;
       options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -1899,6 +1962,45 @@ export type ClientUpdateRequest = {
   status?: 'active' | 'inactive';
   subscription_ends_on?: string | null;
   subscription_started_on?: string | null;
+};
+export type CoachingClientProfile = {
+  client_id: string;
+  general: {
+    [key: string]: any;
+  };
+  id: string;
+  inserted_at: string;
+  intake_completed_at: string | null;
+  intake_status: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
+  lifestyle: {
+    [key: string]: any;
+  };
+  nutrition: {
+    [key: string]: any;
+  };
+  training: {
+    [key: string]: any;
+  };
+  updated_at: string;
+};
+export type CoachingClientProfileResponse = {
+  data: CoachingClientProfile;
+};
+export type CoachingClientProfileRequest = {
+  general?: {
+    [key: string]: any;
+  };
+  intake_completed_at?: string | null;
+  intake_status?: 'assigned' | 'in_progress' | 'completed' | 'dismissed' | 'missed';
+  lifestyle?: {
+    [key: string]: any;
+  };
+  nutrition?: {
+    [key: string]: any;
+  };
+  training?: {
+    [key: string]: any;
+  };
 };
 export type ProspectClient = {
   first_name?: string | null;
@@ -2073,47 +2175,6 @@ export type ClientTrainingPlanListResponse = {
   count: number;
   data: ClientTrainingPlan[];
 };
-export type ChatAttachment = {
-  byte_size: number;
-  content_type:
-    | 'image/jpeg'
-    | 'image/png'
-    | 'image/webp'
-    | 'image/heic'
-    | 'video/mp4'
-    | 'video/webm'
-    | 'video/quicktime'
-    | 'audio/webm'
-    | 'audio/mp4'
-    | 'audio/mpeg';
-  duration_ms: number | null;
-  id: string;
-};
-export type ClientProfileFormSubmission = {
-  answers: {
-    [key: string]: any;
-  };
-  attachments: ChatAttachment[];
-  form_assignment_id: string;
-  id: string;
-  inserted_at: string;
-  question_snapshot: {
-    questions: {
-      id: string;
-      label: string;
-      options?: string[];
-      required?: boolean;
-      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
-      [key: string]: any;
-    }[];
-    title?: string;
-    [key: string]: any;
-  }[];
-  reviewed_at: string | null;
-  reviewed_by_id: string | null;
-  submitted_at: string;
-  submitted_by_type: 'coach' | 'client' | 'system';
-};
 export type ClientProfileFormAssignment = {
   check_in_schedule_id: string | null;
   client_id: string;
@@ -2124,7 +2185,6 @@ export type ClientProfileFormAssignment = {
   form_template_id: string;
   id: string;
   inserted_at: string;
-  latest_submission: ClientProfileFormSubmission | null;
   latest_submission_reviewed_at: string | null;
   overdue_reminder_sent_at: string | null;
   priority: 'high' | 'normal';
@@ -2231,6 +2291,32 @@ export type NutritionPlanRequest = {
   target_fiber_g?: number | null;
   target_protein_g?: number | null;
 };
+export type ClientProfileField = {
+  archived_at: string | null;
+  field_type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select';
+  filterable: boolean;
+  id: string;
+  inserted_at: string;
+  key: string;
+  label: string;
+  options: string[];
+  section: 'general' | 'nutrition' | 'training' | 'lifestyle';
+  updated_at: string;
+};
+export type ClientProfileFieldListResponse = {
+  data: ClientProfileField[];
+};
+export type ClientProfileFieldResponse = {
+  data: ClientProfileField;
+};
+export type ClientProfileFieldRequest = {
+  field_type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select';
+  filterable?: boolean;
+  key: string;
+  label: string;
+  options?: string[];
+  section: 'general' | 'nutrition' | 'training' | 'lifestyle';
+};
 export type Business = {
   about: string | null;
   dashboard_setup_hidden_at: string | null;
@@ -2310,17 +2396,6 @@ export type Conversation = {
 export type ConversationListResponse = {
   count: number;
   data: Conversation[];
-};
-export type AttachmentDownload = {
-  download_url: string;
-  download_url_expires_at: string;
-  id: string;
-};
-export type AttachmentDownloadsResponse = {
-  data: AttachmentDownload[];
-};
-export type AttachmentDownloadRequest = {
-  attachment_ids: string[];
 };
 export type AuthTokenResponse = {
   access_token: string;
@@ -2483,21 +2558,9 @@ export type FoodImpactResponse = {
     }[];
   };
 };
-export type FormSubmissionEmbedSnapshot = {
-  form_assignment_id: string;
-  submitted_at: string;
-  title: string;
-};
-export type ChatMessageEmbed = {
-  id: string;
-  snapshot: FormSubmissionEmbedSnapshot;
-  type: 'form_submission';
-};
 export type ChatMessage = {
-  attachments: ChatAttachment[];
-  body: string | null;
+  body: string;
   conversation_id: string;
-  embed: ChatMessageEmbed | null;
   id: string;
   inserted_at: string;
   sender_id: string;
@@ -2511,14 +2574,8 @@ export type ChatMessagesResponse = {
 export type ChatMessageResponse = {
   data: ChatMessage;
 };
-export type ChatMessageEmbedRequest = {
-  id: string;
-  type: 'form_submission';
-};
-export type CoachChatMessageCreateRequest = {
-  attachment_ids?: string[];
-  body?: string | null;
-  embed?: ChatMessageEmbedRequest | null;
+export type ChatMessageCreateRequest = {
+  body: string;
 };
 export type TrainerAcceptInviteRequest = {
   email: string;
@@ -2554,6 +2611,14 @@ export type VerifyRequest =
       email: string;
       otp: string;
     };
+export type ClientProfileFieldUpdateRequest = {
+  field_type?: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select';
+  filterable?: boolean;
+  key?: string;
+  label?: string;
+  options?: string[];
+  section?: 'general' | 'nutrition' | 'training' | 'lifestyle';
+};
 export type TrainingWorkoutExerciseArrayResponse = {
   data?: TrainingPlanWorkoutExercise[];
 };
@@ -2573,6 +2638,42 @@ export type BusinessRequest = {
   default_weight_unit?: 'kg' | 'lbs';
   handle: string;
   name: string;
+};
+export type ClientProfileSubmissionAttachment = {
+  byte_size: number;
+  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
+  id: string;
+  purpose: 'check_in_photo';
+  read_url: string | null;
+  read_url_expires_at: string | null;
+};
+export type ClientProfileFormSubmission = {
+  answers: {
+    [key: string]: any;
+  };
+  attachments: ClientProfileSubmissionAttachment[];
+  form_assignment_id: string;
+  id: string;
+  inserted_at: string;
+  question_snapshot: {
+    questions: {
+      id: string;
+      label: string;
+      options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
+      required?: boolean;
+      type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
+      [key: string]: any;
+    }[];
+    title?: string;
+    [key: string]: any;
+  }[];
+  reviewed_at: string | null;
+  reviewed_by_id: string | null;
+  submitted_at: string;
+  submitted_by_type: 'coach' | 'client' | 'system';
 };
 export type ClientProfileFormSubmissionResponse = {
   data: ClientProfileFormSubmission;
@@ -2647,6 +2748,9 @@ export type ClientProfileFormTemplateRequest = {
       id: string;
       label: string;
       options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -2741,7 +2845,7 @@ export type ClientProfileReviewQueueItem = {
   answers: {
     [key: string]: any;
   };
-  attachments: ChatAttachment[];
+  attachments: ClientProfileSubmissionAttachment[];
   client: ClientProfileReviewClient;
   form_assignment: ClientProfileFormAssignment;
   form_assignment_id: string;
@@ -2752,6 +2856,9 @@ export type ClientProfileReviewQueueItem = {
       id: string;
       label: string;
       options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -2908,6 +3015,9 @@ export type ClientProfileFormTemplateUpdateRequest = {
       id: string;
       label: string;
       options?: string[];
+      profile_mapping?: {
+        [key: string]: any;
+      } | null;
       required?: boolean;
       type: 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multi_select' | 'rating' | 'weight' | 'photo';
       [key: string]: any;
@@ -2916,45 +3026,6 @@ export type ClientProfileFormTemplateUpdateRequest = {
     [key: string]: any;
   }[];
   status?: 'active' | 'archived';
-};
-export type AttachmentUpload = {
-  byte_size: number;
-  content_type:
-    | 'image/jpeg'
-    | 'image/png'
-    | 'image/webp'
-    | 'image/heic'
-    | 'video/mp4'
-    | 'video/webm'
-    | 'video/quicktime'
-    | 'audio/webm'
-    | 'audio/mp4'
-    | 'audio/mpeg';
-  duration_ms: number | null;
-  id: string;
-  upload_headers: {
-    [key: string]: string;
-  };
-  upload_url: string;
-  upload_url_expires_at: string;
-};
-export type AttachmentUploadResponse = {
-  data: AttachmentUpload;
-};
-export type AttachmentUploadRequest = {
-  byte_size: number;
-  content_type:
-    | 'image/jpeg'
-    | 'image/png'
-    | 'image/webp'
-    | 'image/heic'
-    | 'video/mp4'
-    | 'video/webm'
-    | 'video/quicktime'
-    | 'audio/webm'
-    | 'audio/mp4'
-    | 'audio/mpeg';
-  duration_ms?: number | null;
 };
 export type TrainerAcceptInviteVerifyRequest = {
   email: string;
@@ -3132,6 +3203,9 @@ export const {
   useGetClientQuery,
   useLazyGetClientQuery,
   useUpdateClientMutation,
+  useGetCoachingClientProfileQuery,
+  useLazyGetCoachingClientProfileQuery,
+  useUpdateCoachingClientProfileMutation,
   useEnrollProspectMutation,
   useAssignNutritionPlanWeekdayMutation,
   useGetCoachProfileQuery,
@@ -3155,6 +3229,9 @@ export const {
   useListNutritionPlansQuery,
   useLazyListNutritionPlansQuery,
   useCreateNutritionPlanMutation,
+  useListProfileFieldsQuery,
+  useLazyListProfileFieldsQuery,
+  useCreateProfileFieldMutation,
   useGetCurrentBusinessQuery,
   useLazyGetCurrentBusinessQuery,
   useUpdateCurrentBusinessMutation,
@@ -3163,7 +3240,6 @@ export const {
   useCreateMealItemMutation,
   useListCoachConversationsQuery,
   useLazyListCoachConversationsQuery,
-  useGetCoachAttachmentDownloadUrlsMutation,
   useCreateAuthTokenMutation,
   useListProspectsQuery,
   useLazyListProspectsQuery,
@@ -3204,6 +3280,8 @@ export const {
   useInviteClientMutation,
   useCreateWorkoutElementMutation,
   useVerifyAuthMutation,
+  useDeleteProfileFieldMutation,
+  useUpdateProfileFieldMutation,
   useDeleteNutritionPlanMutation,
   useGetNutritionPlanQuery,
   useLazyGetNutritionPlanQuery,
@@ -3277,7 +3355,6 @@ export const {
   useGetFormTemplateQuery,
   useLazyGetFormTemplateQuery,
   useUpdateFormTemplateMutation,
-  useCreateCoachClientUploadMutation,
   useTrainerAcceptInviteVerifyMutation,
   useListAttentionClientsQuery,
   useLazyListAttentionClientsQuery,

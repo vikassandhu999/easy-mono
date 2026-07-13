@@ -25,6 +25,7 @@ import {MEAL_SLOT_LABELS, MEAL_SLOTS, WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@eas
 import {
   AlertDialog,
   Button,
+  Chip,
   Dropdown,
   Label,
   ListBox,
@@ -34,10 +35,11 @@ import {
   toast,
   useOverlayState,
 } from '@heroui/react';
-import {MoreHorizontal, Pencil, Plus, Trash2} from 'lucide-react';
+import {MoreHorizontal, Pencil, Trash2} from 'lucide-react';
 import {useEffect, useState} from 'react';
 
 import {getErrorCode, toastMutationError} from '@/@components/mutation-toast';
+import SectionHeading from '@/@components/section-heading';
 import type {NutritionMeal, NutritionPlan} from '@/api/generated';
 import {
   coachApi,
@@ -143,8 +145,11 @@ function SlotGroup({slot, day, meals, isAdding, onOpenAdd, onPickMeal, onRemoveO
 
   return (
     <div>
-      <h4 className="mb-2 font-grotesk text-[13.5px] font-bold tracking-[-0.01em]">{MEAL_SLOT_LABELS[slot] ?? slot}</h4>
-      <div className="flex flex-col gap-2">
+      <SectionHeading
+        className="mb-2"
+        title={MEAL_SLOT_LABELS[slot] ?? slot}
+      />
+      <div className="flex flex-col gap-1.5">
         {options.length === 0 ? (
           <p className="text-xs text-muted">No options yet.</p>
         ) : (
@@ -152,26 +157,28 @@ function SlotGroup({slot, day, meals, isAdding, onOpenAdd, onPickMeal, onRemoveO
             const meal = mealById.get(option.nutrition_meal_id);
             return (
               <div
-                className="flex min-h-11 items-center gap-2.5 rounded-[14px] border-[1.5px] border-separator bg-surface py-2 pl-3.5 pr-2 transition-shadow hover:shadow-[0_12px_26px_-18px_rgba(24,24,27,0.5)]"
+                className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2"
                 key={option.id}
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="truncate font-grotesk text-sm font-semibold text-foreground">
-                    {meal?.name ?? 'Unknown meal'}
-                  </span>
+                  <span className="truncate text-sm text-foreground">{meal?.name ?? 'Unknown meal'}</span>
                   {meal?.nutrition?.calories != null ? (
                     <span className="shrink-0 text-xs text-muted">{Math.round(meal.nutrition.calories)} kcal</span>
                   ) : null}
                 </div>
                 {option.position === 0 ? (
-                  <span className="shrink-0 rounded-full bg-nutrition-soft px-2.5 py-1 text-[11px] font-bold text-nutrition">
+                  <Chip
+                    color="accent"
+                    size="sm"
+                    variant="soft"
+                  >
                     Default
-                  </span>
+                  </Chip>
                 ) : null}
                 <Dropdown>
                   <Button
                     aria-label="Option actions"
-                    className="h-[30px] w-[30px] min-w-0 rounded-[9px]! text-muted/70"
+                    className="h-9 w-9 min-w-9"
                     isIconOnly
                     size="sm"
                     variant="ghost"
@@ -258,15 +265,11 @@ function SlotGroup({slot, day, meals, isAdding, onOpenAdd, onPickMeal, onRemoveO
           </div>
         ) : (
           <button
-            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-[13px] border-[1.5px] border-dashed border-edge-strong text-[12.5px] font-semibold text-muted transition-colors hover:border-nutrition hover:bg-nutrition-soft/50 hover:text-nutrition"
+            className="mt-2 inline-flex min-h-11 items-center text-xs font-medium text-accent transition-colors hover:text-accent/80"
             onClick={onOpenAdd}
             type="button"
           >
-            <Plus
-              size={14}
-              strokeWidth={2.2}
-            />
-            Add option
+            + Add option
           </button>
         )
       ) : null}
@@ -543,9 +546,9 @@ export function PlanDays({plan}: PlanDaysProps) {
 
   if (!activeDay) {
     return (
-      <section className="border-t border-separator py-4">
-        <h3 className="font-grotesk text-[15px] font-bold tracking-[-0.01em]">Days</h3>
-        <p className="mt-2 text-sm text-muted">No days yet.</p>
+      <section className="border-t border-border py-4">
+        <SectionHeading title="Days" />
+        <p className="text-sm text-muted">No days yet.</p>
       </section>
     );
   }
@@ -553,16 +556,13 @@ export function PlanDays({plan}: PlanDaysProps) {
   const totals = computeDayTotals(activeDay, meals);
 
   return (
-    <section className="border-t border-separator py-4">
-      <div className="mb-3.5 flex items-center justify-between">
-        <div>
-          <h3 className="font-grotesk text-[15px] font-bold tracking-[-0.01em]">Days</h3>
-          <p className="mt-0.5 text-[12.5px] text-muted">
-            {days.length} day{days.length === 1 ? '' : 's'} · assign weekdays
-          </p>
-        </div>
+    <section className="border-t border-border py-4">
+      <div className="mb-3 flex items-center justify-between">
+        <SectionHeading
+          className="mb-0"
+          title="Days"
+        />
         <Button
-          className="rounded-[10px]! border-[1.5px] border-separator text-[12.5px] font-semibold"
           isPending={creatingDay}
           onPress={() => {
             handleAddDay().catch(() => undefined);
@@ -570,11 +570,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           size="sm"
           variant="ghost"
         >
-          <Plus
-            size={14}
-            strokeWidth={2.2}
-          />
-          Add day
+          + Add day
         </Button>
       </div>
 
@@ -611,10 +607,8 @@ export function PlanDays({plan}: PlanDaysProps) {
               return (
                 <button
                   aria-label={`Assign ${WEEKDAY_SHORT_LABELS[weekday] ?? weekday} to ${activeDay.name}`}
-                  className={`min-h-11 min-w-[40px] flex-1 rounded-[10px] border-[1.5px] text-xs font-bold transition-colors ${
-                    filled
-                      ? 'border-nutrition/40 bg-nutrition-soft text-nutrition'
-                      : 'border-separator text-muted hover:text-foreground'
+                  className={`min-h-11 min-w-[40px] flex-1 rounded-lg border text-xs font-semibold transition-colors ${
+                    filled ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:text-foreground'
                   }`}
                   key={weekday}
                   onClick={() => {
@@ -636,7 +630,7 @@ export function PlanDays({plan}: PlanDaysProps) {
               <input
                 // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
                 autoFocus
-                className="min-w-0 flex-1 border-b border-accent bg-transparent font-grotesk text-[15px] font-bold tracking-[-0.01em] text-foreground outline-none"
+                className="min-w-0 flex-1 border-b border-accent bg-transparent text-sm font-semibold text-foreground outline-none"
                 onBlur={() => {
                   commitRename().catch(() => undefined);
                 }}
@@ -652,13 +646,11 @@ export function PlanDays({plan}: PlanDaysProps) {
                 value={nameValue}
               />
             ) : (
-              <span className="min-w-0 flex-1 truncate font-grotesk text-[15px] font-bold tracking-[-0.01em] text-foreground">
-                {activeDay.name}
-              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{activeDay.name}</span>
             )}
             <Button
               aria-label="Rename day"
-              className="h-[30px] w-[30px] min-w-0 rounded-[9px]! bg-nutrition-soft! text-nutrition!"
+              className="h-9 w-9 min-w-9"
               isIconOnly
               onPress={startEditingName}
               size="sm"
@@ -668,13 +660,13 @@ export function PlanDays({plan}: PlanDaysProps) {
             </Button>
             <Button
               aria-label="Delete day"
-              className="h-[30px] w-[30px] min-w-0 rounded-[9px]! text-muted/70 hover:bg-danger-soft! hover:text-danger!"
+              className="h-9 w-9 min-w-9"
               isIconOnly
               onPress={deleteAlertState.open}
               size="sm"
               variant="ghost"
             >
-              <Trash2 size={15} />
+              <Trash2 size={14} />
             </Button>
           </div>
         </>
@@ -704,9 +696,9 @@ export function PlanDays({plan}: PlanDaysProps) {
       </div>
 
       {/* Day totals */}
-      <div className="mt-4 rounded-[12px] bg-nutrition-soft/60 px-3.5 py-2.5">
-        <div className="text-[11px] font-bold text-nutrition">Day total</div>
-        <div className="font-grotesk text-sm font-bold text-foreground">{Math.round(totals.calories)} kcal</div>
+      <div className="mt-4 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5">
+        <div className="text-[11px] text-muted">Day total</div>
+        <div className="text-sm font-bold text-foreground">{Math.round(totals.calories)} kcal</div>
         {totals.anyMultiOption ? <p className="mt-1 text-[11px] text-muted">Totals use default options.</p> : null}
       </div>
 

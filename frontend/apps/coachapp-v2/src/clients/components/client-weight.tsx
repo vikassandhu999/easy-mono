@@ -13,6 +13,12 @@ import {formatNumber} from '@/clients/lib/client-detail-metrics';
 
 type Range = 'days' | 'months' | 'weeks';
 
+const RANGE_LABEL: Record<Range, string> = {
+  days: 'Daily',
+  months: 'Monthly',
+  weeks: 'Weekly',
+};
+
 const RANGE_OPTIONS: {id: Range; label: string}[] = [
   {id: 'days', label: 'Days'},
   {id: 'weeks', label: 'Weeks'},
@@ -37,9 +43,6 @@ function bucketLabel(key: string, range: Range): string {
   if (range === 'months') {
     return formatIsoDateShort(`${key}-01`, undefined, {day: undefined});
   }
-  if (range === 'days') {
-    return parseIsoDateToDate(key).toLocaleDateString('en-US', {weekday: 'narrow'});
-  }
   return formatIsoDateShort(key);
 }
 
@@ -52,46 +55,28 @@ function bucketEntries(entries: WeightEntry[], range: Range): WeightChartPoint[]
     buckets.set(bucketKey(entry, range), entry);
   }
 
-  const limit = range === 'days' ? 7 : range === 'weeks' ? 8 : 6;
-  return [...buckets.entries()].slice(-limit).map(([key, entry], index) => ({
-    id: `${range}-${key}-${entry.id}`,
-    label: range === 'weeks' ? `Wk ${index + 1}` : bucketLabel(key, range),
-    unit: entry.unit,
-    value: entry.value,
-  }));
+  return [...buckets.entries()]
+    .map(([key, entry]) => ({
+      id: `${range}-${key}-${entry.id}`,
+      label: bucketLabel(key, range),
+      unit: entry.unit,
+      value: entry.value,
+    }))
+    .slice(-7);
 }
 
-function StatBox({
-  label,
-  mobileLabel,
-  tone,
-  unit,
-  value,
-}: {
-  label: string;
-  mobileLabel?: string;
-  value: string;
-  tone?: 'success';
-  unit?: string;
-}) {
+function StatBox({label, tone, unit, value}: {label: string; value: string; tone?: 'success'; unit?: string}) {
   return (
-    <div className="rounded-[14px] border border-separator bg-surface p-3 lg:rounded-[16px] lg:border-[1.5px] lg:p-4">
+    <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
       <Typography
-        className="text-[10.5px] leading-[normal] font-semibold lg:text-[11.5px]"
+        className="text-[11px] font-semibold"
         color="muted"
       >
-        {mobileLabel ? <span className="lg:hidden">{mobileLabel}</span> : null}
-        <span className={mobileLabel ? 'hidden lg:inline' : undefined}>{label}</span>
+        {label}
       </Typography>
-      <div
-        className={`mt-1 text-xl leading-[normal] font-bold [font-family:var(--font-grotesk)] lg:mt-1.5 lg:text-[26px] ${tone === 'success' ? 'text-success-soft-foreground' : ''}`}
-      >
+      <div className={`mt-1 font-grotesk text-2xl font-bold ${tone === 'success' ? 'text-success' : ''}`}>
         {value}
-        {unit ? (
-          <span className={`ml-1 text-[11px] font-semibold lg:text-sm ${tone === 'success' ? '' : 'text-muted'}`}>
-            {unit}
-          </span>
-        ) : null}
+        {unit ? <span className="ml-1 text-sm font-semibold text-muted">{unit}</span> : null}
       </div>
     </div>
   );
@@ -101,7 +86,7 @@ export default function ClientWeight({clientId}: {clientId: string}) {
   const [range, setRange] = useState<Range>('weeks');
   const {data, isError, isLoading} = useListClientWeightEntriesQuery({clientId});
 
-  const entries: WeightEntry[] = (data?.entries ?? []).map((entry) => ({...entry, value: Number(entry.value)}));
+  const entries: WeightEntry[] = data?.entries ?? [];
   const byNewest = useMemo(
     () => [...entries].sort((a, b) => b.date.localeCompare(a.date) || b.inserted_at.localeCompare(a.inserted_at)),
     [entries],
@@ -111,46 +96,27 @@ export default function ClientWeight({clientId}: {clientId: string}) {
   const unit = latest?.unit ?? earliest?.unit ?? 'kg';
   const totalLost = latest && earliest ? earliest.value - latest.value : null;
   const points = useMemo(() => bucketEntries(entries, range), [entries, range]);
-  const rangeLabel =
-    range === 'days'
-      ? 'this week'
-      : range === 'weeks'
-        ? `last ${points.length} weeks`
-        : points.length > 1
-          ? `${points[0]?.label} – ${points[points.length - 1]?.label}`
-          : 'monthly';
-  const elapsedDays =
-    latest && earliest
-      ? Math.max(
-          1,
-          Math.round(
-            (parseIsoDateToDate(latest.date).getTime() - parseIsoDateToDate(earliest.date).getTime()) / 86_400_000,
-          ),
-        )
-      : 0;
-  const elapsedLabel =
-    elapsedDays >= 60 ? `${Math.round(elapsedDays / 30)} months in` : `${Math.ceil(elapsedDays / 7)} weeks in`;
 
   return (
-    <section>
-      <div className="mb-5 hidden lg:block">
-        <h2 className="text-xl font-bold [font-family:var(--font-grotesk)]">Progress report</h2>
+    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+      <div className="mb-5">
+        <h2 className="font-grotesk text-xl font-bold">Progress report</h2>
         <Typography
           className="mt-1"
           color="muted"
           type="body-sm"
         >
-          {earliest ? `Since ${formatIsoDateShort(earliest.date)} · ${elapsedLabel}` : 'Weight trend'}
+          {earliest ? `Since ${formatIsoDateShort(earliest.date)} · ${RANGE_LABEL[range]} view` : 'Weight trend'}
         </Typography>
       </div>
 
       {isLoading ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2 lg:gap-3">
-            <Skeleton className="h-24 rounded-[16px]" />
-            <Skeleton className="h-24 rounded-[16px]" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className="h-24 rounded-3xl" />
+            <Skeleton className="h-24 rounded-3xl" />
           </div>
-          <Skeleton className="h-72 rounded-[18px]" />
+          <Skeleton className="h-72 rounded-3xl" />
         </div>
       ) : isError ? (
         <Typography
@@ -168,10 +134,9 @@ export default function ClientWeight({clientId}: {clientId: string}) {
         </Typography>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-2 lg:gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <StatBox
               label="Current weight"
-              mobileLabel="Current"
               unit={unit}
               value={formatNumber(latest?.value)}
             />
@@ -179,35 +144,32 @@ export default function ClientWeight({clientId}: {clientId: string}) {
               label="Total lost"
               tone={totalLost != null && totalLost > 0 ? 'success' : undefined}
               unit={unit}
-              value={
-                totalLost == null
-                  ? '—'
-                  : `${totalLost > 0 ? '−' : totalLost < 0 ? '+' : ''}${formatNumber(Math.abs(totalLost))}`
-              }
+              value={totalLost == null ? '—' : formatNumber(totalLost)}
             />
           </div>
 
-          <div className="mt-[14px] rounded-[16px] border border-separator bg-surface p-4 lg:mt-[22px] lg:rounded-[18px] lg:border-[1.5px] lg:p-5">
-            <div className="flex flex-col gap-[10px] sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+          <div className="mt-5 rounded-3xl border-[1.5px] border-separator bg-surface p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <Typography
-                  className="text-[13px] leading-[normal] lg:text-[13.5px]"
-                  weight="bold"
+                  type="body-sm"
+                  weight="semibold"
                 >
                   Weight reduction
                 </Typography>
                 <Typography
-                  className="mt-0.5 text-[11px] leading-[normal] lg:text-[11.5px]"
+                  className="mt-0.5"
                   color="muted"
+                  type="body-xs"
                 >
                   {earliest && latest
-                    ? `${formatNumber(earliest.value)} → ${formatNumber(latest.value)} ${unit} · ${rangeLabel}`
-                    : rangeLabel}
+                    ? `${formatNumber(earliest.value)} -> ${formatNumber(latest.value)} ${unit} · ${RANGE_LABEL[range]}`
+                    : RANGE_LABEL[range]}
                 </Typography>
               </div>
               <ToggleButtonGroup
                 aria-label="Weight chart range"
-                className="flex w-full gap-0 rounded-[9px] bg-surface-secondary p-[3px] sm:w-auto"
+                className="flex flex-wrap gap-1 rounded-xl bg-surface-secondary p-1"
                 isDetached
                 onSelectionChange={(keys) => {
                   const next = [...keys][0];
@@ -221,7 +183,7 @@ export default function ClientWeight({clientId}: {clientId: string}) {
               >
                 {RANGE_OPTIONS.map((option) => (
                   <ToggleButton
-                    className="h-[30px] min-h-[30px] flex-1 rounded-[7px]! px-3 text-xs font-bold data-[selected=true]:bg-segment! data-[selected=true]:text-segment-foreground! data-[selected=true]:shadow-sm sm:flex-none"
+                    className="min-h-9 px-3 text-xs font-bold"
                     id={option.id}
                     key={option.id}
                   >
@@ -231,7 +193,7 @@ export default function ClientWeight({clientId}: {clientId: string}) {
               </ToggleButtonGroup>
             </div>
 
-            <div className="mt-4 lg:mt-3">
+            <div className="mt-3">
               {points.length >= 2 ? (
                 <WeightChart points={points} />
               ) : (

@@ -104,7 +104,7 @@ function ScheduleRows({schedules}: {schedules: ClientProfileCheckInSchedule[]}) 
       </Typography>
       {schedules.map((schedule) => (
         <div
-          className="flex min-h-11 items-center gap-3 rounded-[12px] border border-border bg-surface p-3"
+          className="flex min-h-11 items-center gap-3 rounded-2xl border border-border bg-surface-secondary p-3"
           key={schedule.id}
         >
           <div className="min-w-0 flex-1">
@@ -152,7 +152,7 @@ function SubmissionAnswers({assignment}: {assignment: ClientProfileFormAssignmen
   }
 
   if (isLoading) {
-    return <Skeleton className="h-32 rounded-[16px]" />;
+    return <Skeleton className="h-32 rounded-3xl" />;
   }
 
   if (!submission) {
@@ -190,7 +190,7 @@ function SubmissionAnswers({assignment}: {assignment: ClientProfileFormAssignmen
         <div className="grid gap-3 sm:grid-cols-2">
           {questions.map((question) => (
             <div
-              className="rounded-[14px] border-[1.5px] border-separator bg-surface p-4"
+              className="rounded-3xl border-[1.5px] border-separator bg-surface p-4"
               key={question.id}
             >
               <Typography
@@ -210,7 +210,7 @@ function SubmissionAnswers({assignment}: {assignment: ClientProfileFormAssignmen
           ))}
         </div>
       ) : (
-        <div className="rounded-[14px] border-[1.5px] border-separator bg-surface p-4">
+        <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-4">
           <Typography
             className="break-words"
             type="body-sm"
@@ -233,8 +233,8 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
   const history = [...assignments].sort((a, b) => b.inserted_at.localeCompare(a.inserted_at)).slice(0, 6);
 
   return (
-    <section>
-      <div className="mb-5 hidden flex-col gap-3 lg:flex lg:flex-row lg:items-start lg:justify-between">
+    <section className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-grotesk text-xl font-bold">Client check-in</h2>
           <Typography
@@ -254,8 +254,8 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
 
       {isLoading || schedulesLoading ? (
         <div className="space-y-4">
-          <Skeleton className="h-20 rounded-[16px]" />
-          <Skeleton className="h-40 rounded-[16px]" />
+          <Skeleton className="h-20 rounded-3xl" />
+          <Skeleton className="h-40 rounded-3xl" />
         </div>
       ) : isError ? (
         <Typography
@@ -275,9 +275,9 @@ export default function ClientCheckins({clientId, clientName}: {clientId: string
         <>
           <ScheduleRows schedules={schedules} />
           {nextDue ? (
-            <div className="mb-4 rounded-[14px] border border-accent/30 bg-accent-soft p-4 lg:mb-5 lg:rounded-[16px]">
+            <div className="mb-5 rounded-3xl border border-accent/30 bg-accent-soft p-4">
               <div className="flex items-center gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-accent text-accent-foreground">
+                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
                   <CalendarCheck size={19} />
                 </span>
                 <div className="min-w-0 flex-1">

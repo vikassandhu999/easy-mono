@@ -10,34 +10,6 @@
   --font-grotesk: "Space Grotesk Variable", sans-serif;
 }
 
-/* Register the display font with Tailwind so `font-grotesk` exists as a
-   utility — a bare :root var does NOT generate one. */
-@theme {
-  --font-grotesk: "Space Grotesk Variable", sans-serif;
-
-  /* Builder categorical palette (Coachez-Builder design COLORS; teal added for
-     Foods) + design hairlines. Semantic tokens so UI code carries no literal
-     hexes (RM-109). */
-  --color-training: #0091ff;
-  --color-training-soft: #eaf4ff;
-  --color-nutrition: #1f9d57;
-  --color-nutrition-soft: #e7f6ec;
-  --color-forms: #7a5af0;
-  --color-forms-soft: #efebfe;
-  --color-exercises: #e08600;
-  --color-exercises-soft: #fcf0dd;
-  --color-recipes: #e5484d;
-  --color-recipes-soft: #fdecec;
-  --color-foods: #0d9488;
-  --color-foods-soft: #e0f5f1;
-  /* Favourite star amber. */
-  --color-star: #f5a623;
-  /* Card hover border. */
-  --color-edge: #dce1e8;
-  /* Dashed add-tile border (slightly stronger than edge). */
-  --color-edge-strong: #d2d6dd;
-}
-
 /*
  * HeroUI Theme Customization
  * Add this to your global.css after importing @heroui/styles
@@ -65,12 +37,10 @@
   --field-placeholder: oklch(71.18% 0.0129 286.07);
   --focus: oklch(65.15% 0.192 251.47);
   --foreground: oklch(21.03% 0 285.89);
-  --foreground-secondary: #3f3f46;
   /* The design's #0091FF is 3.23:1 on white — it fails AA as text. Its own hover
    * blue #0072D6 is 4.80:1, so links read and the palette is unchanged. #0091FF
    * stays on --focus, where the 3:1 non-text threshold applies. */
   --link: oklch(55.56% 0.1758 253.81);
-  --link-soft: #eaf4ff;
   --muted: oklch(55.17% 0 285.89);
   --overlay: oklch(100.00% 0 285.89);
   --overlay-foreground: oklch(21.03% 0 285.89);
@@ -86,7 +56,6 @@
   --surface-secondary-foreground: oklch(21.03% 0 285.89);
   --surface-tertiary: oklch(94.87% 0.0058 264.53);
   --surface-tertiary-foreground: oklch(21.03% 0 285.89);
-  --surface-emphasis: #e7eaee;
   --warning: oklch(66.58% 0.1574 58.32);
   --warning-foreground: oklch(99.11% 0 0);
 
@@ -123,9 +92,7 @@
   --field-placeholder: oklch(63.63% 0.0133 286.02);
   --focus: oklch(73.76% 0.1457 244.82);
   --foreground: oklch(99.11% 0 285.89);
-  --foreground-secondary: oklch(82% 0 285.89);
   --link: oklch(73.76% 0.1457 244.82);
-  --link-soft: color-mix(in oklab, var(--link) 18%, var(--surface));
   --muted: oklch(70.50% 0 285.89);
   --overlay: oklch(21.03% 0 285.89);
   --overlay-foreground: oklch(99.11% 0 285.89);
@@ -141,7 +108,6 @@
   --surface-secondary-foreground: oklch(99.11% 0 285.89);
   --surface-tertiary: oklch(28.66% 0.0072 285.93);
   --surface-tertiary-foreground: oklch(99.11% 0 285.89);
-  --surface-emphasis: oklch(33% 0.008 285.89);
   --warning: oklch(76.86% 0.1647 70.08);
   --warning-foreground: oklch(21.03% 0.0059 80.19);
 

@@ -20,7 +20,6 @@ export default function ConversationPage() {
   return (
     <ConversationView
       backTo={ROUTES.MESSAGES}
-      clientId={data.data.client_id}
       conversationId={data.data.id}
       title={data.data.client_name || 'Client'}
     />

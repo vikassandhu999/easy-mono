@@ -63,7 +63,7 @@ export default function NutritionPlanBuilder() {
           carries max-w-2xl so it aligns with the content column below —
           Page.Header's own padding would otherwise eat into that width. */}
       <Page.Header className="py-3!">
-        <div className="flex w-full max-w-2xl items-center justify-between gap-3 lg:max-w-5xl">
+        <div className="flex w-full max-w-2xl items-center justify-between gap-3">
           <BackButton onPress={goBack} />
           <div className="flex gap-2">
             <PlanAddToClient plan={plan} />
@@ -76,19 +76,16 @@ export default function NutritionPlanBuilder() {
       </Page.Header>
 
       <Page.Content className="px-4 md:px-6 lg:px-8">
-        {/* Single column on mobile; on lg the header spans full width and Meals
-            + Days sit side by side. */}
-        <div className="w-full max-w-2xl lg:max-w-5xl">
+        {/* Layout A — single centred column, max-w-2xl */}
+        <div className="w-full max-w-2xl">
           {/* 1. Plan header: inline name + macro targets → autosave */}
           <PlanHeader plan={plan} />
 
-          <div className="lg:grid lg:grid-cols-2 lg:gap-8">
-            {/* 2. Meals library: meal cards + items + amount sheet */}
-            <MealsList planId={plan.id} />
+          {/* 2. Meals library: meal cards + items + amount sheet */}
+          <MealsList planId={plan.id} />
 
-            {/* 3. Days: day tabs, weekday strip, per-slot meal options */}
-            <PlanDays plan={plan} />
-          </div>
+          {/* 3. Days: day tabs, weekday strip, per-slot meal options */}
+          <PlanDays plan={plan} />
         </div>
       </Page.Content>
     </Page>

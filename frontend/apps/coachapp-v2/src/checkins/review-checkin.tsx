@@ -58,6 +58,7 @@ export default function ReviewCheckin() {
   }
 
   const name = clientName(item);
+  const reply = `Re: check-in ${formatIsoDateOnly(item.submitted_at)} — `;
   const messagePath = ROUTES.CLIENT_MESSAGES.replace(':id', item.client.id);
 
   const markReviewed = async () => {
@@ -95,9 +96,7 @@ export default function ReviewCheckin() {
               {isReviewing ? 'Marking reviewed' : 'Mark reviewed'}
             </Button>
             <Button
-              onPress={() =>
-                navigate(`${messagePath}?${new URLSearchParams({embed_type: 'form_submission', embed_id: item.id})}`)
-              }
+              onPress={() => navigate(`${messagePath}?${new URLSearchParams({prefill: reply})}`)}
               variant="secondary"
             >
               <MessageCircle size={17} />

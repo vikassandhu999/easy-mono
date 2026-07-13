@@ -45,10 +45,6 @@ export const PLAN_STATUS_MAP: Record<PlanStatus, {color: 'default' | 'success' |
 // that escaped migration). Keeps the UI resilient instead of crashing on undefined lookups.
 export const UNKNOWN_PLAN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
-export function getClientName(client: Client): string {
-  return [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email || 'Client';
-}
-
 export function getWhatsAppUrl(phone: string): string {
   const cleanPhone = phone.replace(/\D/g, '');
   return `https://wa.me/${cleanPhone}`;

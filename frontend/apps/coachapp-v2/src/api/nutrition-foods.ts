@@ -126,9 +126,5 @@ coachApi.enhanceEndpoints({
     // Copy is tag:false too — invalidate the list so the duplicate appears when
     // the coach returns to it (mirrors createRecipe/deleteRecipe).
     copyNutritionRecipe: {invalidatesTags: [{type: 'Recipe', id: 'LIST'}]},
-    // The Builder hub reads the standard lists (limit 4); tag them so the
-    // delete/copy invalidations above refresh the hub too.
-    listFoods: {providesTags: [{type: 'Food', id: 'LIST'}]},
-    listRecipes: {providesTags: [{type: 'Recipe', id: 'LIST'}]},
   },
 });

@@ -18,6 +18,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField, FormTextField} from '@/@components/form-fields';
 import {toastMutationError} from '@/@components/mutation-toast';
+import SectionHeading from '@/@components/section-heading';
 import type {NutritionPlan} from '@/api/generated';
 import {coachApi, useUpdateNutritionPlanMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
@@ -200,8 +201,11 @@ export function PlanHeader({plan}: PlanHeaderProps) {
   return (
     <div className="w-full space-y-3 py-4">
       {/* Section label + saving indicator + target summary */}
-      <div className="flex items-baseline gap-2">
-        <h3 className="font-grotesk text-[15px] font-bold tracking-[-0.01em]">Plan details</h3>
+      <div className="flex items-center gap-2">
+        <SectionHeading
+          className="mb-0"
+          title="Plan details"
+        />
         {isSaving ? (
           <Spinner
             color="accent"
@@ -212,13 +216,13 @@ export function PlanHeader({plan}: PlanHeaderProps) {
         )}
       </div>
 
-      {/* Plan name — large inline input (design: editor-header name input) */}
+      {/* Plan name — large inline input */}
       <FormTextField
         control={control}
         inputProps={{
           className:
-            'bg-transparent border-0 border-b border-separator rounded-none px-0 font-grotesk text-[20px] font-bold tracking-[-0.02em] focus:border-accent focus:ring-0 transition-colors placeholder:text-muted',
-          placeholder: 'Untitled plan',
+            'bg-transparent border-0 border-b border-border rounded-none px-0 text-xl font-semibold focus:border-accent focus:ring-0 transition-colors placeholder:text-muted',
+          placeholder: 'Plan name',
         }}
         label=""
         name="name"
@@ -227,7 +231,7 @@ export function PlanHeader({plan}: PlanHeaderProps) {
 
       {/* Macro targets — labelled group, two-column grid */}
       <div>
-        <p className="mb-2 text-[12.5px] text-muted">Daily targets</p>
+        <p className="mb-2 text-xs font-medium text-muted">Daily targets</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <FormNumberField
             control={control}

@@ -1,13 +1,18 @@
 import {Button, Chip, CloseButton, Separator, Toast} from '@heroui/react';
 import {
+  BookOpen,
   ChevronRight,
+  ClipboardCheck,
+  ClipboardList,
   Download,
+  Dumbbell,
   FolderOpen,
   Inbox,
   LayoutDashboard,
   MessageCircle,
   Settings,
   Users,
+  UtensilsCrossed,
   X,
 } from 'lucide-react';
 import {type ReactNode, useState} from 'react';
@@ -20,8 +25,6 @@ import {api} from '@/api/base';
 import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import {useListProspectsQuery} from '@/api/prospects';
-import {isClientWorkspacePath} from '@/clients/lib/client-workspace';
-import {BUILDER_TYPES} from '@/library/lib/builder-types';
 import {useAppDispatch} from '@/store';
 
 const ICON_SIZE = 20;
@@ -67,16 +70,42 @@ const SIDEBAR_TOP: NavItem[] = [
   },
 ];
 
-// Builder group — collapsible on desktop sidebar; sections come from the
-// library type registry so order/labels/icons stay in sync with the hub.
-const BUILDER_GROUP: NavGroup = {
+// Library group — collapsible on desktop sidebar
+const LIBRARY_GROUP: NavGroup = {
   icon: <FolderOpen size={ICON_SIZE} />,
-  items: BUILDER_TYPES.map((t) => ({
-    icon: <t.icon size={ICON_SIZE} />,
-    label: t.group,
-    path: t.listRoute,
-  })),
-  label: 'Builder',
+  items: [
+    {
+      icon: <Dumbbell size={ICON_SIZE} />,
+      label: 'Exercises',
+      path: ROUTES.EXERCISES,
+    },
+    {
+      icon: <UtensilsCrossed size={ICON_SIZE} />,
+      label: 'Foods',
+      path: ROUTES.FOODS,
+    },
+    {
+      icon: <BookOpen size={ICON_SIZE} />,
+      label: 'Recipes',
+      path: ROUTES.RECIPES,
+    },
+    {
+      icon: <ClipboardList size={ICON_SIZE} />,
+      label: 'Nutrition Plans',
+      path: ROUTES.NUTRITION_PLANS,
+    },
+    {
+      icon: <ClipboardList size={ICON_SIZE} />,
+      label: 'Training Plans',
+      path: ROUTES.TRAINING_PLANS,
+    },
+    {
+      icon: <ClipboardCheck size={ICON_SIZE} />,
+      label: 'Forms',
+      path: ROUTES.CHECKINS,
+    },
+  ],
+  label: 'Library',
   pathPrefix: ROUTES.LIBRARY,
 };
 
@@ -114,7 +143,7 @@ const BOTTOM_NAV: NavItem[] = [
   },
   {
     icon: <FolderOpen size={ICON_SIZE} />,
-    label: 'Builder',
+    label: 'Library',
     path: ROUTES.LIBRARY,
   },
   {
@@ -268,53 +297,8 @@ function BottomNavItem({dark = false, item}: {dark?: boolean; item: NavItem}) {
 // Paths where the mobile bottom nav is visible (exact match only)
 const BOTTOM_NAV_PATHS = new Set(BOTTOM_NAV.map((item) => item.path));
 
-function CompactSidebar() {
-  const items = [...SIDEBAR_TOP, {icon: BUILDER_GROUP.icon, label: BUILDER_GROUP.label, path: ROUTES.LIBRARY}];
-
-  return (
-    <aside className="hidden bg-accent text-accent-foreground/70 lg:fixed lg:inset-y-0 lg:flex lg:w-[70px] lg:flex-col lg:items-center">
-      <div className="flex h-16 items-center justify-center">
-        <img
-          alt="CoachEasy"
-          className="size-8 rounded-lg"
-          src="/icons/icon-192x192.webp"
-        />
-      </div>
-      <nav className="flex min-h-0 flex-1 flex-col items-center gap-1 py-4">
-        {items.map((item) => (
-          <NavLink
-            aria-label={item.label}
-            className={({isActive}) =>
-              `grid size-11 place-items-center rounded-xl transition-colors ${
-                isActive
-                  ? 'bg-link text-white'
-                  : 'text-accent-foreground/60 hover:bg-accent-foreground/10 hover:text-accent-foreground'
-              }`
-            }
-            key={item.path}
-            title={item.label}
-            to={item.path}
-          >
-            {item.icon}
-          </NavLink>
-        ))}
-        <div className="flex-1" />
-        <NavLink
-          aria-label="Settings"
-          className="grid size-11 place-items-center rounded-xl text-accent-foreground/60 transition-colors hover:bg-accent-foreground/10 hover:text-accent-foreground"
-          title="Settings"
-          to={ROUTES.SETTINGS}
-        >
-          <Settings size={ICON_SIZE} />
-        </NavLink>
-      </nav>
-    </aside>
-  );
-}
-
 export default function AppShell() {
   const location = useLocation();
-  const compact = isClientWorkspacePath(location.pathname);
   const showBottomNav = BOTTOM_NAV_PATHS.has(location.pathname);
   const darkBottomNav = location.pathname === ROUTES.DASHBOARD;
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
@@ -329,10 +313,7 @@ export default function AppShell() {
       {/* Global toast renderer — queued via toast() from @heroui/react */}
       <Toast.Provider placement="bottom end" />
 
-      {compact ? <CompactSidebar /> : null}
-      <aside
-        className={`hidden bg-accent text-accent-foreground/70 lg:fixed lg:inset-y-0 lg:w-59 lg:flex-col ${compact ? '' : 'lg:flex'}`}
-      >
+      <aside className="hidden bg-accent text-accent-foreground/70 lg:fixed lg:inset-y-0 lg:flex lg:w-59 lg:flex-col">
         <div className="flex h-16 items-center px-6">
           <img
             alt="CoachEasy"
@@ -348,7 +329,7 @@ export default function AppShell() {
                 key={item.path}
               />
             ))}
-            <SidebarNavGroupSection group={BUILDER_GROUP} />
+            <SidebarNavGroupSection group={LIBRARY_GROUP} />
           </div>
           <Separator className="my-2" />
           <div className="space-y-1 pt-2">
@@ -386,7 +367,7 @@ export default function AppShell() {
 
       {/* Main content — only add bottom padding when bottom nav is visible */}
       <main
-        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 ${compact ? 'lg:pl-[70px]' : 'lg:pl-59'} ${showBottomNav ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4rem+env(safe-area-inset-bottom))]') : ''}`}
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-59 ${showBottomNav ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4rem+env(safe-area-inset-bottom))]') : ''}`}
       >
         <Outlet />
       </main>

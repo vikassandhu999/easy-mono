@@ -302,6 +302,16 @@ in `frontend/biome.json`, narrowly scoped to the emitted rule.
 
 **Enforced by:** the Biome override for `**/src/api/generated.ts`.
 
+### RM-131 — UI recovery baselines must predate the first visual commit for every named surface
+
+Do not trust a prior recovery snapshot by name alone. The `b5d90e95` coachapp snapshot was called
+pre-Claude but already contained the redesigned dashboard, clients list, shell, and theme, so a
+path restore left those surfaces redesigned. Before restoring UI, inspect `git log -- <owners>` for
+each named surface, identify the first visual commit, and use its parent only as a presentation
+reference while carrying later behavior forward selectively.
+
+**Enforced by:** recovery review records the first visual commit and parent per affected surface.
+
 ---
 
 ## Deploy / ops

@@ -89,7 +89,7 @@ export default function ClientAttentionPopover() {
   }
 
   if (isLoading) {
-    return <Skeleton className="hidden h-11 w-38 rounded-[13px] md:block" />;
+    return <Skeleton className="hidden h-11 w-36 rounded-lg md:block" />;
   }
 
   if (isError || !data || data.count === 0) {
@@ -101,7 +101,7 @@ export default function ClientAttentionPopover() {
       <Button
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="hidden min-h-11 items-center gap-[9px] rounded-[13px]! border-[1.5px]! border-danger-soft bg-danger-soft/50! px-[15px]! py-[11px]! text-[13px] font-bold text-danger! hover:bg-danger-soft! md:flex"
+        className="hidden min-h-11 items-center gap-2 text-danger md:flex"
         onPress={() => setOpen(true)}
         ref={triggerRef}
         variant="secondary"
@@ -118,7 +118,7 @@ export default function ClientAttentionPopover() {
         onOpenChange={handleOpenChange}
       >
         <Popover.Content
-          className="w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[18px] border-[1.5px] border-separator bg-surface p-0 shadow-2xl"
+          className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-lg"
           placement="bottom end"
           triggerRef={triggerRef}
         >
@@ -126,22 +126,22 @@ export default function ClientAttentionPopover() {
             aria-label="Clients needing attention"
             className="outline-none"
           >
-            <div className="flex items-center gap-2.5 border-b border-surface-secondary px-[18px] py-4">
-              <span className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-danger-soft text-danger">
+            <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-danger-soft text-danger">
                 <TriangleAlert
                   size={17}
                   strokeWidth={2.2}
                 />
               </span>
               <div className="min-w-0">
-                <h2 className="font-grotesk text-[15px] leading-tight font-bold text-foreground">Needs attention</h2>
-                <p className="mt-0.5 text-[11.5px] text-muted">Active clients waiting on you</p>
+                <h2 className="text-sm font-semibold text-foreground">Needs attention</h2>
+                <p className="mt-0.5 text-xs text-muted">Active clients waiting on you</p>
               </div>
             </div>
 
             <ListBox
               aria-label="Clients needing attention"
-              className="max-h-[300px] overflow-y-auto p-1.5"
+              className="max-h-72 overflow-y-auto p-1"
               onAction={openClient}
               selectionMode="none"
             >
@@ -150,24 +150,25 @@ export default function ClientAttentionPopover() {
                   const name = clientName(client);
                   return (
                     <ListBox.Item
-                      className="min-h-14 rounded-[11px] px-3 py-2.5 transition-colors hover:bg-surface-hover active:scale-100! data-[pressed=true]:scale-100!"
+                      className="min-h-14 rounded-lg px-3 py-2 transition-colors hover:bg-surface-hover active:scale-100! data-[pressed=true]:scale-100!"
                       id={client.id}
                       textValue={name}
                     >
                       <div className="flex w-full min-w-0 items-center gap-3">
-                        <Avatar className="size-9 shrink-0 rounded-[11px]! bg-accent text-accent-foreground">
-                          <Avatar.Fallback className="rounded-[11px]! bg-accent! text-[13px]! font-bold! text-accent-foreground!">
-                            {clientInitials(client)}
-                          </Avatar.Fallback>
+                        <Avatar
+                          className="shrink-0"
+                          size="sm"
+                        >
+                          <Avatar.Fallback>{clientInitials(client)}</Avatar.Fallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                          <Label className="block truncate text-[13.5px] font-semibold text-foreground">{name}</Label>
-                          <Description className="block truncate text-[11px] text-muted">
+                          <Label className="block truncate text-sm font-medium text-foreground">{name}</Label>
+                          <Description className="block truncate text-xs text-muted">
                             {attentionReason(client)}
                           </Description>
                         </div>
                         <ArrowRight
-                          className="shrink-0 text-link"
+                          className="shrink-0 text-muted"
                           size={15}
                           strokeWidth={2.2}
                         />
@@ -179,9 +180,9 @@ export default function ClientAttentionPopover() {
             </ListBox>
 
             {hasMore ? (
-              <div className="border-t border-surface-secondary px-[18px] py-2.5">
+              <div className="border-t border-border px-4 py-2.5">
                 <Button
-                  className="w-full rounded-[11px]! text-[12.5px] font-bold"
+                  className="min-h-11 w-full"
                   isPending={isLoadingMore}
                   onPress={loadMore}
                   size="sm"

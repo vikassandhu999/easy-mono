@@ -1,9 +1,8 @@
-import {Button, Chip, Disclosure, Skeleton, toast} from '@heroui/react';
-import {ArrowRight, Check, ClipboardCheck, Dumbbell, type LucideIcon, Sparkles, UserPlus, X} from 'lucide-react';
-import {useEffect, useRef, useState} from 'react';
+import {Button, Skeleton, Typography, toast} from '@heroui/react';
+import {ArrowRight, Check, ClipboardCheck, Dumbbell, type LucideIcon, UserPlus, X} from 'lucide-react';
+import {type ReactNode, useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import {useListClientsQuery} from '@/api/clients';
 import {useListNutritionPlansQuery} from '@/api/nutrition-plans-list';
@@ -95,169 +94,136 @@ function useDashboardSetupProgress(skip: boolean): SetupProgress {
   return {doneCount: steps.filter((step) => step.done).length, status: 'ready', steps};
 }
 
-function SetupCellSkeleton({onDismiss}: {onDismiss: () => void}) {
+function SetupShell({children, onDismiss, subtitle}: {children: ReactNode; onDismiss: () => void; subtitle: string}) {
   return (
-    <section className="col-span-2 rounded-card border border-border bg-surface p-4 sm:col-span-4 sm:p-5">
-      <div className="flex min-h-11 items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
-          <Sparkles size={20} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <SectionHeading
-            className="mb-1"
-            title="Get set up"
-          />
-          <Skeleton className="h-4 w-44 max-w-full rounded-control" />
-        </span>
-        <Skeleton className="h-6 w-12 shrink-0 rounded-full" />
+    <section className="overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex min-w-0 flex-col">
+          <Typography weight="semibold">Get set up</Typography>
+          <Typography
+            color="muted"
+            type="body-xs"
+          >
+            {subtitle}
+          </Typography>
+        </div>
         <Button
-          aria-label="Dismiss get set up"
-          className="size-11 min-w-11 shrink-0"
+          aria-label="Dismiss getting started"
+          className="-me-2 size-11 min-w-11 shrink-0 text-muted"
           isIconOnly
           onPress={onDismiss}
           variant="ghost"
         >
-          <X size={18} />
+          <X size={16} />
         </Button>
       </div>
-      <Skeleton className="mt-2 h-1.5 w-full rounded-full" />
+      {children}
     </section>
+  );
+}
+
+function SetupCellSkeleton({onDismiss}: {onDismiss: () => void}) {
+  return (
+    <SetupShell
+      onDismiss={onDismiss}
+      subtitle="Loading setup progress"
+    >
+      <div className="divide-y divide-border">
+        {['client', 'plan', 'assign'].map((key) => (
+          <div
+            className="flex items-center gap-3 px-4 py-3"
+            key={key}
+          >
+            <Skeleton className="size-8 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-40 rounded" />
+              <Skeleton className="h-3 w-56 max-w-full rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </SetupShell>
   );
 }
 
 function SetupCellError({onDismiss, onRetry}: {onDismiss: () => void; onRetry: () => void}) {
   return (
-    <section className="col-span-2 rounded-card border border-border bg-surface p-4 sm:col-span-4 sm:p-5">
-      <div className="flex min-h-11 items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
-          <Sparkles size={20} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <SectionHeading
-            className="mb-1"
-            title="Get set up"
-          />
-          <span className="block font-grotesk text-sm font-bold leading-snug">Setup progress unavailable</span>
-        </span>
+    <SetupShell
+      onDismiss={onDismiss}
+      subtitle="Setup progress unavailable"
+    >
+      <div className="flex items-center justify-between gap-4 px-4 py-4">
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Couldn't load your setup progress.
+        </Typography>
         <Button
           className="min-h-11 shrink-0"
           onPress={onRetry}
           size="sm"
-          variant="ghost"
+          variant="secondary"
         >
           Retry
         </Button>
-        <Button
-          aria-label="Dismiss get set up"
-          className="size-11 min-w-11 shrink-0"
-          isIconOnly
-          onPress={onDismiss}
-          variant="ghost"
-        >
-          <X size={18} />
-        </Button>
       </div>
-      <div className="mt-2 h-1.5 rounded-full bg-surface-secondary" />
-    </section>
-  );
-}
-
-function SetupTask({step}: {step: SetupStep}) {
-  const Icon = step.icon;
-
-  return (
-    <div className="flex min-h-24 items-start gap-3 rounded-card border border-border p-3">
-      <span
-        className={`grid size-9 shrink-0 place-items-center rounded-inset ${
-          step.done ? 'bg-accent-soft text-accent' : 'bg-surface-secondary text-muted'
-        }`}
-      >
-        {step.done ? <Check size={17} /> : <Icon size={17} />}
-      </span>
-      <span className="min-w-0">
-        <span className={`block text-sm font-semibold leading-snug ${step.done ? 'text-muted' : ''}`}>
-          {step.label}
-        </span>
-        <span className="mt-1 block text-xs leading-relaxed text-muted">{step.description}</span>
-      </span>
-    </div>
+    </SetupShell>
   );
 }
 
 function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDismiss: () => void; steps: SetupStep[]}) {
   const navigate = useNavigate();
-  const nextStep = steps.find((step) => !step.done);
-  const progress = `${(doneCount / steps.length) * 100}%`;
+  const orderedSteps = [...steps].sort((a, b) => Number(a.done) - Number(b.done));
 
   return (
-    <section className="col-span-2 rounded-card border border-border bg-surface p-4 sm:col-span-4 sm:p-5">
-      <Disclosure>
-        <div className="flex items-center gap-2">
-          <Disclosure.Trigger className="group flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-control text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
-            <span className="grid size-10 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
-              <Sparkles size={20} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <SectionHeading
-                className="mb-1"
-                title="Get set up"
-              />
-              <span className="block font-grotesk text-sm font-bold leading-snug sm:truncate">
-                {nextStep ? `Next: ${nextStep.label}` : "You're all set"}
-              </span>
-            </span>
-            <Chip
-              className="shrink-0"
-              color="accent"
-              size="sm"
-              variant="soft"
+    <SetupShell
+      onDismiss={onDismiss}
+      subtitle={`${doneCount} of ${steps.length} done`}
+    >
+      <ul className="divide-y divide-border">
+        {orderedSteps.map((step) => (
+          <li key={step.key}>
+            <button
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-hover disabled:pointer-events-none"
+              disabled={step.done}
+              onClick={() => navigate(step.route)}
+              type="button"
             >
-              {doneCount} of {steps.length}
-            </Chip>
-            <Disclosure.Indicator className="size-4 shrink-0 text-muted" />
-          </Disclosure.Trigger>
-          <Button
-            aria-label="Dismiss get set up"
-            className="size-11 min-w-11 shrink-0"
-            isIconOnly
-            onPress={onDismiss}
-            variant="ghost"
-          >
-            <X size={18} />
-          </Button>
-        </div>
-
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-secondary">
-          <div
-            className="h-full rounded-full bg-accent transition-all"
-            style={{width: progress}}
-          />
-        </div>
-
-        <Disclosure.Content>
-          <Disclosure.Body className="pt-3">
-            <div className="grid grid-cols-1 gap-2 border-t border-surface-secondary pt-3 sm:grid-cols-3">
-              {steps.map((step) => (
-                <SetupTask
-                  key={step.key}
-                  step={step}
-                />
-              ))}
-            </div>
-            {nextStep ? (
-              <Button
-                className="mt-3 min-h-11 w-full sm:w-auto"
-                onPress={() => navigate(nextStep.route)}
-                variant="primary"
+              <span
+                className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
+                  step.done ? 'bg-accent/10 text-accent' : 'bg-surface-hover text-muted'
+                }`}
               >
-                Continue setup
-                <ArrowRight size={17} />
-              </Button>
-            ) : null}
-          </Disclosure.Body>
-        </Disclosure.Content>
-      </Disclosure>
-    </section>
+                {step.done ? <Check size={16} /> : <step.icon size={16} />}
+              </span>
+              <span className="flex min-w-0 flex-col">
+                <Typography
+                  className={step.done ? 'text-muted line-through' : undefined}
+                  weight="medium"
+                >
+                  {step.label}
+                </Typography>
+                {!step.done ? (
+                  <Typography
+                    color="muted"
+                    type="body-xs"
+                  >
+                    {step.description}
+                  </Typography>
+                ) : null}
+              </span>
+              {!step.done ? (
+                <ArrowRight
+                  className="ms-auto shrink-0 text-muted"
+                  size={16}
+                />
+              ) : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </SetupShell>
   );
 }
 

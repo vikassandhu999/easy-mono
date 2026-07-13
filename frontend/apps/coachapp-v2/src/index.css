@@ -2,26 +2,7 @@
 @import "@heroui/styles";
 
 @theme {
-  --radius-inset: 8px;
-  --radius-control: 10px;
-  --radius-card: 18px;
-  --radius-window: 22px;
-
-  --shadow-hairline: 0 1px 3px rgb(24 24 27 / 0.15);
-  --shadow-raised: 0 8px 20px -8px rgb(24 24 27 / 0.4);
-  --shadow-popover: 0 24px 56px -18px rgb(24 24 27 / 0.4);
-  --shadow-modal: 0 40px 90px -24px rgb(24 24 27 / 0.5);
-  --shadow-note: 0 16px 34px -12px rgb(24 24 27 / 0.45);
-  --shadow-focus-accent: 0 0 0 3px rgb(0 145 255 / 0.25);
-
-  --text-2xs: 11px;
-  --text-2xs--line-height: 16px;
-}
-
-@theme inline {
-  --color-foreground-secondary: var(--foreground-secondary);
-  --color-link-soft: var(--link-soft);
-  --color-surface-emphasis: var(--surface-emphasis);
+  --font-grotesk: "Space Grotesk Variable", sans-serif;
 }
 
 :root,
@@ -48,52 +29,39 @@
   /* Theme Colors (Light Mode) */
   --accent: oklch(21.03% 0.0059 285.89);
   --accent-foreground: oklch(99.11% 0 0);
-  --background: oklch(95.70% 0.0063 255.48);
-  --border: oklch(92.71% 0.0075 260.73);
-  --danger: oklch(61.92% 0.2419 11.33);
+  --background: oklch(97.02% 0 285.89);
+  --border: oklch(90.00% 0 285.89);
+  --danger: oklch(65.32% 0.2328 29.59);
   --danger-foreground: oklch(99.11% 0 0);
-  --default: oklch(96.60% 0.0062 255.48);
+  --default: oklch(94.00% 0 285.89);
   --default-foreground: oklch(21.03% 0.0059 285.89);
   --field-background: oklch(100.00% 0 285.89);
   --field-border: transparent;
   --field-foreground: oklch(21.03% 0 285.89);
-  --field-placeholder: oklch(71.18% 0.0129 286.07);
-  --focus: oklch(65.15% 0.192 251.47);
+  --field-placeholder: oklch(55.17% 0 285.89);
+  --focus: oklch(21.03% 0.0059 285.89);
   --foreground: oklch(21.03% 0 285.89);
-  --foreground-secondary: #3f3f46;
-  /* The design's #0091FF is 3.23:1 on white — it fails AA as text. Its own hover
-   * blue #0072D6 is 4.80:1, so links read and the palette is unchanged. #0091FF
-   * stays on --focus, where the 3:1 non-text threshold applies. */
-  --link: oklch(55.56% 0.1758 253.81);
-  --link-soft: #eaf4ff;
   --muted: oklch(55.17% 0 285.89);
   --overlay: oklch(100.00% 0 285.89);
   --overlay-foreground: oklch(21.03% 0 285.89);
-  --scrollbar: oklch(82.27% 0.0111 286.15);
+  --scrollbar: oklch(87.10% 0 285.89);
   --segment: oklch(100.00% 0 285.89);
   --segment-foreground: oklch(21.03% 0 285.89);
-  --separator: oklch(94.87% 0.0058 264.53);
-  --success: oklch(62.71% 0.1699 149.21);
-  --success-foreground: oklch(99.11% 0 0);
+  --separator: oklch(92.00% 0 285.89);
+  --success: oklch(73.29% 0.1935 154.66);
+  --success-foreground: oklch(21.03% 0.0059 154.66);
   --surface: oklch(100.00% 0 285.89);
-  --surface-emphasis: #e7eaee;
   --surface-foreground: oklch(21.03% 0 285.89);
-  --surface-secondary: oklch(96.60% 0.0062 255.48);
+  --surface-secondary: oklch(95.24% 0 285.89);
   --surface-secondary-foreground: oklch(21.03% 0 285.89);
-  --surface-tertiary: oklch(94.87% 0.0058 264.53);
+  --surface-tertiary: oklch(93.73% 0 285.89);
   --surface-tertiary-foreground: oklch(21.03% 0 285.89);
-  --warning: oklch(66.58% 0.1574 58.32);
-  --warning-foreground: oklch(99.11% 0 0);
+  --warning: oklch(78.19% 0.1585 76.18);
+  --warning-foreground: oklch(21.03% 0.0059 76.18);
 
-  /* Elevation */
-  --surface-shadow: 0 1px 3px rgb(24 24 27 / 0.15);
-  --overlay-shadow: 0 40px 80px -28px rgb(24 24 27 / 0.32), 0 12px 28px -12px rgb(24 24 27 / 0.16);
-
-  /* Border Radius.
-   * --radius is HeroUI's *unit*, not a card radius: .card = min(32px, radius*3),
-   * .button = radius*3, .chip = radius*2. 0.375rem yields the design's 18px card. */
-  --radius: 0.375rem;
-  --field-radius: 0.625rem;
+  /* Border Radius */
+  --radius: 0.25rem;
+  --field-radius: 0.5rem;
 
   /* Font Family */
   /* Make sure to load Inter font in your app */
@@ -108,79 +76,33 @@
   --accent-foreground: oklch(99.11% 0 0);
   --background: oklch(12.00% 0 285.89);
   --border: oklch(28.00% 0 285.89);
-  --danger: oklch(61.92% 0.2419 11.33);
+  --danger: oklch(59.40% 0.1967 28.48);
   --danger-foreground: oklch(99.11% 0 0);
-  --default: oklch(27.07% 0.0092 285.77);
+  --default: oklch(27.40% 0 285.89);
   --default-foreground: oklch(99.11% 0 0);
   --field-background: oklch(21.03% 0 285.89);
   --field-border: transparent;
   --field-foreground: oklch(99.11% 0 285.89);
-  --field-placeholder: oklch(63.63% 0.0133 286.02);
-  --focus: oklch(73.76% 0.1457 244.82);
+  --field-placeholder: oklch(70.50% 0 285.89);
+  --focus: oklch(21.03% 0.0059 285.89);
   --foreground: oklch(99.11% 0 285.89);
-  --link: oklch(73.76% 0.1457 244.82);
   --muted: oklch(70.50% 0 285.89);
   --overlay: oklch(21.03% 0 285.89);
   --overlay-foreground: oklch(99.11% 0 285.89);
-  --scrollbar: oklch(37.03% 0.0119 285.81);
+  --scrollbar: oklch(70.50% 0 285.89);
   --segment: oklch(39.64% 0 285.89);
   --segment-foreground: oklch(99.11% 0 285.89);
-  --separator: oklch(27.07% 0.0092 285.77);
+  --separator: oklch(25.00% 0 285.89);
   --success: oklch(73.29% 0.1935 154.66);
   --success-foreground: oklch(21.03% 0.0059 154.66);
   --surface: oklch(21.03% 0 285.89);
   --surface-foreground: oklch(99.11% 0 285.89);
-  --surface-secondary: oklch(27.07% 0.0092 285.77);
+  --surface-secondary: oklch(25.70% 0 285.89);
   --surface-secondary-foreground: oklch(99.11% 0 285.89);
-  --surface-tertiary: oklch(28.66% 0.0072 285.93);
+  --surface-tertiary: oklch(27.21% 0 285.89);
   --surface-tertiary-foreground: oklch(99.11% 0 285.89);
-  --warning: oklch(76.86% 0.1647 70.08);
+  --warning: oklch(82.03% 0.1388 80.19);
   --warning-foreground: oklch(21.03% 0.0059 80.19);
-
-  /* Elevation */
-  --surface-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
-  --overlay-shadow: 0 40px 90px -24px rgb(0 0 0 / 0.5);
-}
-
-/*
- * Component overrides for things HeroUI hardcodes as Tailwind classes in its own
- * CSS, which no theme token can reach. Keep this list short — a delta that shows up
- * on one screen belongs at the call site, not here.
- *
- * .button ships font-medium (500); the design's buttons are 600.
- * .chip ships rounded-2xl (radius x2 = 12px); the design's chips are pills.
- */
-@layer components {
-  .button {
-    @apply font-semibold;
-    border-radius: var(--radius-control);
-  }
-
-  .chip {
-    @apply rounded-full font-bold;
-  }
-
-  .tabs__list {
-    background: var(--surface-secondary);
-    border-radius: var(--radius-control);
-    padding: 2px;
-  }
-
-  .tabs__tab {
-    border-radius: var(--radius-inset);
-    color: var(--muted);
-    font-weight: 600;
-  }
-
-  .tabs__tab[aria-selected="true"] {
-    color: var(--foreground);
-  }
-
-  .tabs__indicator {
-    background: var(--surface);
-    border-radius: var(--radius-inset);
-    box-shadow: var(--shadow-hairline);
-  }
 }
 
 .typography--h1,

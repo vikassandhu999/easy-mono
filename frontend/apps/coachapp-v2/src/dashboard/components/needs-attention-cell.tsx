@@ -1,5 +1,5 @@
-import {Avatar} from '@heroui/react';
-import {AlertTriangle, ArrowRight, ClipboardCheck} from 'lucide-react';
+import {Avatar, Typography} from '@heroui/react';
+import {ChevronRight, ClipboardCheck} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -19,53 +19,54 @@ const REASONS: Reason[] = [
 
 function AttentionClientRow({client, reason}: {client: Client; reason: string}) {
   const navigate = useNavigate();
-  const name = clientName(client);
 
   return (
     <button
-      className="flex min-h-14 w-full items-center gap-3 border-t border-accent-foreground/10 py-3 text-left transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       onClick={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', client.id))}
       type="button"
     >
-      <Avatar
-        className="shrink-0 bg-accent-foreground text-accent"
-        size="sm"
-      >
+      <Avatar size="sm">
         <Avatar.Fallback>{clientInitials(client)}</Avatar.Fallback>
       </Avatar>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">{name}</span>
-        <span className="block truncate text-xs text-accent-foreground/60">{reason}</span>
+        <span className="block truncate text-sm font-medium">{clientName(client)}</span>
+        <span className="block truncate text-xs text-muted">{reason}</span>
       </span>
-      <ArrowRight
-        className="shrink-0 text-accent-foreground/70"
-        size={15}
+      <ChevronRight
+        className="shrink-0 text-muted"
+        size={16}
       />
     </button>
   );
 }
 
-function CheckInReviewRow({count}: {count: number}) {
+function CheckInReviewRow({count, isError}: {count: null | number; isError: boolean}) {
   const navigate = useNavigate();
+  let status = 'Loading review queue';
+
+  if (isError) {
+    status = 'Review queue unavailable';
+  } else if (count !== null) {
+    status = `${count} ${count === 1 ? 'submission' : 'submissions'} waiting`;
+  }
 
   return (
     <button
-      className="flex min-h-14 w-full items-center gap-3 border-t border-accent-foreground/10 py-3 text-left transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       onClick={() => navigate(ROUTES.CHECKINS_TO_REVIEW)}
       type="button"
     >
-      <span className="grid size-8 shrink-0 place-items-center rounded-inset bg-accent-foreground text-accent">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-hover text-muted">
         <ClipboardCheck size={16} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">Check-ins to review</span>
-        <span className="block truncate text-xs text-accent-foreground/60">
-          {count} {count === 1 ? 'submission' : 'submissions'} waiting
-        </span>
+        <span className="block truncate text-sm font-medium">Check-ins to review</span>
+        <span className="block truncate text-xs text-muted">{status}</span>
       </span>
-      <ArrowRight
-        className="shrink-0 text-accent-foreground/70"
-        size={15}
+      <ChevronRight
+        className="shrink-0 text-muted"
+        size={16}
       />
     </button>
   );
@@ -74,49 +75,37 @@ function CheckInReviewRow({count}: {count: number}) {
 type NeedsAttentionCellProps = {
   clients: Client[];
   isError: boolean;
-  reviewCount: number;
+  reviewCount: null | number;
   reviewError: boolean;
 };
 
 export function NeedsAttentionCell({clients, isError, reviewCount, reviewError}: NeedsAttentionCellProps) {
-  const uniqueClientCount = new Set(clients.map((client) => client.id)).size;
-  const itemCount = uniqueClientCount + reviewCount;
   const previewClients = REASONS.flatMap((reason) =>
     clients.filter((client) => client[reason.key]).map((client) => ({client, reason: reason.label})),
-  ).filter(({client}, index, rows) => rows.findIndex((row) => row.client.id === client.id) === index);
-  const visibleClients = previewClients.slice(0, reviewCount > 0 ? 3 : 4);
+  )
+    .filter(({client}, index, rows) => rows.findIndex((row) => row.client.id === client.id) === index)
+    .slice(0, 3);
 
   return (
-    <section className="col-span-2 flex min-h-80 flex-col rounded-card border border-accent bg-accent p-5 text-accent-foreground sm:col-span-2 sm:row-span-2">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-control bg-danger-soft text-danger">
-          <AlertTriangle size={20} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="font-grotesk text-lg font-bold leading-tight">Needs attention</h2>
-          <p className="mt-1 text-xs text-accent-foreground/60">
-            {isError || reviewError ? "Couldn't load all attention items" : `${itemCount} items waiting on you`}
-          </p>
-        </div>
-        {!isError && !reviewError ? (
-          <span className="rounded-full bg-accent-foreground/10 px-2.5 py-1 text-xs font-bold text-accent-foreground">
-            {itemCount} {itemCount === 1 ? 'item' : 'items'}
-          </span>
+    <section className="flex flex-col gap-3">
+      <Typography
+        className="uppercase tracking-wider"
+        color="muted"
+        type="body-xs"
+        weight="semibold"
+      >
+        Client follow-ups
+      </Typography>
+      <div>
+        {isError || reviewError ? (
+          <p className="mb-2 text-xs text-danger-soft-foreground">Some follow-ups couldn't be loaded.</p>
         ) : null}
-      </div>
-
-      {isError && reviewError ? (
-        <div className="flex flex-1 items-center rounded-card border border-accent-foreground/10 p-4 text-sm text-accent-foreground/70">
-          Couldn't load attention items.
-        </div>
-      ) : itemCount === 0 ? (
-        <div className="flex flex-1 items-center rounded-card border border-accent-foreground/10 p-4 text-sm text-accent-foreground/70">
-          Nothing needs your attention right now.
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          {reviewCount > 0 ? <CheckInReviewRow count={reviewCount} /> : null}
-          {visibleClients.map(({client, reason}) => (
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+          <CheckInReviewRow
+            count={reviewCount}
+            isError={reviewError}
+          />
+          {previewClients.map(({client, reason}) => (
             <AttentionClientRow
               client={client}
               key={client.id}
@@ -124,7 +113,7 @@ export function NeedsAttentionCell({clients, isError, reviewCount, reviewError}:
             />
           ))}
         </div>
-      )}
+      </div>
     </section>
   );
 }

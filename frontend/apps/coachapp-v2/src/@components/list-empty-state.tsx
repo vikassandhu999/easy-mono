@@ -44,7 +44,7 @@ export default function ListEmptyState({
           </Typography>
           {createRoute && createLabel && (
             <Button
-              className="mt-3"
+              className="mt-3 min-h-11"
               onPress={() => navigate(createRoute)}
               size="sm"
             >

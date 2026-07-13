@@ -1,9 +1,10 @@
-import {Button, Spinner, TextArea, Typography} from '@heroui/react';
+import {Button, Spinner, TextArea, Typography, toast} from '@heroui/react';
 import {ArrowLeft, Send} from 'lucide-react';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {useChannelEvent} from '@/@hooks/use-channel-event';
+import type {ChatMessageEmbedRequest} from '@/api/attachments';
 import {api} from '@/api/base';
 import {
   appendMessageAction,
@@ -12,6 +13,11 @@ import {
   useCreateCoachConversationMessageMutation,
   useMarkCoachConversationReadMutation,
 } from '@/api/conversations';
+import {getApiErrorMessage} from '@/api/shared';
+import AttachmentComposer from '@/messages/attachment-composer';
+import MessageAttachments from '@/messages/message-attachments';
+import MessageEmbed from '@/messages/message-embed';
+import useAttachmentDownloadUrls from '@/messages/use-attachment-download-urls';
 import {useAppDispatch} from '@/store';
 
 function formatDay(iso: string) {
@@ -22,7 +28,19 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
 }
 
-function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
+function MessageBubble({
+  failedIds,
+  message,
+  own,
+  refresh,
+  urls,
+}: {
+  failedIds: Set<string>;
+  message: ChatMessage;
+  own: boolean;
+  refresh: (ids: string[]) => Promise<void>;
+  urls: Record<string, string>;
+}) {
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -30,7 +48,16 @@ function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
           own ? 'rounded-br-sm bg-accent text-accent-foreground' : 'rounded-bl-sm bg-surface-secondary'
         }`}
       >
-        <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p>
+        <div className="grid gap-2">
+          <MessageAttachments
+            attachments={message.attachments}
+            failedIds={failedIds}
+            refresh={refresh}
+            urls={urls}
+          />
+          {message.embed ? <MessageEmbed embed={message.embed} /> : null}
+          {message.body ? <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p> : null}
+        </div>
         <p className={`mt-0.5 text-right text-[10px] ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
           {formatTime(message.inserted_at)}
         </p>
@@ -41,28 +68,43 @@ function MessageBubble({message, own}: {message: ChatMessage; own: boolean}) {
 
 export default function ConversationView({
   backTo,
+  clientId,
   conversationId,
-  initialBody = '',
+  initialEmbed = null,
+  onEmbedSent,
   title,
 }: {
   backTo: string;
+  clientId: string;
   conversationId: string;
-  initialBody?: string;
+  initialEmbed?: ChatMessageEmbedRequest | null;
+  onEmbedSent?: () => void;
   title: string;
 }) {
   const dispatch = useAppDispatch();
-  const [body, setBody] = useState(initialBody);
+  const [body, setBody] = useState('');
+  const [embed, setEmbed] = useState(initialEmbed);
+  const [attachmentState, setAttachmentState] = useState({attachmentIds: [] as string[], busy: false, failed: false});
+  const [composerKey, setComposerKey] = useState(0);
+  const [sendLocked, setSendLocked] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useConversationMessagesInfiniteQuery({
     conversationId,
   });
-  const [sendMessage, {isLoading: isSending}] = useCreateCoachConversationMessageMutation();
+  const [sendMessage, {isLoading: isSendingMessage}] = useCreateCoachConversationMessageMutation();
   const [markRead] = useMarkCoachConversationReadMutation();
 
   // Pages arrive newest-chunk-first, each chunk ascending → reverse pages, keep chunks.
   const messages = [...(data?.pages ?? [])].reverse().flatMap((page) => page.data);
+  const attachmentIds = messages.flatMap((message) => message.attachments.map((attachment) => attachment.id));
+  const {
+    failedIds: failedAttachmentIds,
+    refresh: refreshAttachmentUrls,
+    urls: attachmentUrls,
+  } = useAttachmentDownloadUrls(attachmentIds);
   const lastMessageId = messages[messages.length - 1]?.id;
+  const isSending = sendLocked || isSendingMessage;
 
   useChannelEvent(
     `conversation:${conversationId}`,
@@ -95,15 +137,46 @@ export default function ConversationView({
 
   const handleSend = async () => {
     const trimmed = body.trim();
-    if (!trimmed || isSending) {
+    if (
+      (!trimmed && attachmentState.attachmentIds.length === 0 && !embed) ||
+      attachmentState.busy ||
+      attachmentState.failed ||
+      isSending
+    ) {
       return;
     }
-    const result = await sendMessage({id: conversationId, chatMessageCreateRequest: {body: trimmed}});
-    if ('data' in result && result.data) {
-      dispatch(appendMessageAction(conversationId, result.data.data));
+    const submittedEmbed = embed;
+    setSendLocked(true);
+    try {
+      const result = await sendMessage({
+        id: conversationId,
+        coachChatMessageCreateRequest: {
+          ...(trimmed && {body: trimmed}),
+          attachment_ids: attachmentState.attachmentIds,
+          ...(embed && {embed}),
+        },
+      }).unwrap();
+      dispatch(appendMessageAction(conversationId, result.data));
       setBody('');
+      setAttachmentState({attachmentIds: [], busy: false, failed: false});
+      setEmbed(null);
+      setComposerKey((current) => current + 1);
+      if (submittedEmbed) {
+        onEmbedSent?.();
+      }
+    } catch (error) {
+      toast.danger(getApiErrorMessage(error, "Message wasn't sent. Try again."));
+    } finally {
+      setSendLocked(false);
     }
   };
+
+  const handleAttachmentChange = useCallback(
+    (state: {attachmentIds: string[]; busy: boolean; failed: boolean}) => setAttachmentState(state),
+    [],
+  );
+
+  const hasContent = Boolean(body.trim() || attachmentState.attachmentIds.length > 0 || embed);
 
   return (
     <div className="flex h-dvh flex-col">
@@ -154,8 +227,11 @@ export default function ConversationView({
                     <p className="my-2 text-center text-xs text-muted">{formatDay(message.inserted_at)}</p>
                   ) : null}
                   <MessageBubble
+                    failedIds={failedAttachmentIds}
                     message={message}
                     own={message.sender_type === 'coach'}
+                    refresh={refreshAttachmentUrls}
+                    urls={attachmentUrls}
                   />
                 </div>
               );
@@ -165,29 +241,55 @@ export default function ConversationView({
         )}
       </div>
 
-      <footer className="flex items-end gap-2 border-t border-border p-3">
-        <TextArea
-          aria-label="Message"
-          className="flex-1"
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder="Write a message…"
-          rows={1}
-          value={body}
+      <footer className="border-t border-border p-3">
+        <AttachmentComposer
+          clientId={clientId}
+          disabled={isSending}
+          key={composerKey}
+          onChange={handleAttachmentChange}
         />
-        <Button
-          aria-label="Send"
-          isDisabled={!body.trim()}
-          isPending={isSending}
-          onPress={handleSend}
-        >
-          <Send size={16} />
-        </Button>
+        {embed ? (
+          <div className="mt-2 flex items-start gap-2">
+            <div className="min-w-0 flex-1 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm">
+              Check-in attached for feedback
+            </div>
+            <Button
+              aria-label="Remove check-in"
+              className="min-h-11 min-w-11"
+              isDisabled={isSending}
+              isIconOnly
+              onPress={() => setEmbed(null)}
+              variant="secondary"
+            >
+              ×
+            </Button>
+          </div>
+        ) : null}
+        <div className="mt-2 flex items-end gap-2">
+          <TextArea
+            aria-label="Message"
+            className="flex-1"
+            disabled={isSending}
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend().catch(() => undefined);
+              }
+            }}
+            placeholder="Write a message…"
+            rows={1}
+            value={body}
+          />
+          <Button
+            aria-label="Send"
+            isDisabled={!hasContent || attachmentState.busy || attachmentState.failed || isSending}
+            isPending={isSending}
+            onPress={handleSend}
+          >
+            <Send size={16} />
+          </Button>
+        </div>
       </footer>
     </div>
   );

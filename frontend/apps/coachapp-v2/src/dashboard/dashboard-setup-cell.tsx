@@ -97,9 +97,9 @@ function useDashboardSetupProgress(skip: boolean): SetupProgress {
 
 function SetupCellSkeleton({onDismiss}: {onDismiss: () => void}) {
   return (
-    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
+    <section className="col-span-2 rounded-card border border-border bg-surface p-4 sm:col-span-4 sm:p-5">
       <div className="flex min-h-11 items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+        <span className="grid size-10 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
           <Sparkles size={20} />
         </span>
         <span className="min-w-0 flex-1">
@@ -107,7 +107,7 @@ function SetupCellSkeleton({onDismiss}: {onDismiss: () => void}) {
             className="mb-1"
             title="Get set up"
           />
-          <Skeleton className="h-4 w-44 max-w-full rounded" />
+          <Skeleton className="h-4 w-44 max-w-full rounded-control" />
         </span>
         <Skeleton className="h-6 w-12 shrink-0 rounded-full" />
         <Button
@@ -127,9 +127,9 @@ function SetupCellSkeleton({onDismiss}: {onDismiss: () => void}) {
 
 function SetupCellError({onDismiss, onRetry}: {onDismiss: () => void; onRetry: () => void}) {
   return (
-    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
+    <section className="col-span-2 rounded-card border border-border bg-surface p-4 sm:col-span-4 sm:p-5">
       <div className="flex min-h-11 items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+        <span className="grid size-10 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
           <Sparkles size={20} />
         </span>
         <span className="min-w-0 flex-1">
@@ -166,9 +166,9 @@ function SetupTask({step}: {step: SetupStep}) {
   const Icon = step.icon;
 
   return (
-    <div className="flex min-h-24 items-start gap-3 rounded-2xl border-[1.5px] border-separator p-3">
+    <div className="flex min-h-24 items-start gap-3 rounded-card border border-border p-3">
       <span
-        className={`grid size-9 shrink-0 place-items-center rounded-xl ${
+        className={`grid size-9 shrink-0 place-items-center rounded-inset ${
           step.done ? 'bg-accent-soft text-accent' : 'bg-surface-secondary text-muted'
         }`}
       >
@@ -190,11 +190,11 @@ function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDis
   const progress = `${(doneCount / steps.length) * 100}%`;
 
   return (
-    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-4 sm:col-span-4 sm:p-5">
+    <section className="col-span-2 rounded-card border border-border bg-surface p-4 sm:col-span-4 sm:p-5">
       <Disclosure>
         <div className="flex items-center gap-2">
-          <Disclosure.Trigger className="group flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
-            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+          <Disclosure.Trigger className="group flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-control text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            <span className="grid size-10 shrink-0 place-items-center rounded-control bg-accent-soft text-accent">
               <Sparkles size={20} />
             </span>
             <span className="min-w-0 flex-1">
@@ -229,7 +229,7 @@ function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDis
 
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-secondary">
           <div
-            className="h-full rounded-full bg-accent transition-[width]"
+            className="h-full rounded-full bg-accent transition-all"
             style={{width: progress}}
           />
         </div>

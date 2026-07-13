@@ -1,5 +1,5 @@
 import {Avatar} from '@heroui/react';
-import {AlertTriangle, ArrowRight} from 'lucide-react';
+import {AlertTriangle, ArrowRight, ClipboardCheck} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -45,42 +45,77 @@ function AttentionClientRow({client, reason}: {client: Client; reason: string}) 
   );
 }
 
-export function NeedsAttentionCell({clients, isError}: {clients: Client[]; isError: boolean}) {
+function CheckInReviewRow({count}: {count: number}) {
+  const navigate = useNavigate();
+
+  return (
+    <button
+      className="flex min-h-14 w-full items-center gap-3 border-t border-accent-foreground/10 py-3 text-left transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      onClick={() => navigate(ROUTES.CHECKINS_TO_REVIEW)}
+      type="button"
+    >
+      <span className="grid size-8 shrink-0 place-items-center rounded-inset bg-accent-foreground text-accent">
+        <ClipboardCheck size={16} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold">Check-ins to review</span>
+        <span className="block truncate text-xs text-accent-foreground/60">
+          {count} {count === 1 ? 'submission' : 'submissions'} waiting
+        </span>
+      </span>
+      <ArrowRight
+        className="shrink-0 text-accent-foreground/70"
+        size={15}
+      />
+    </button>
+  );
+}
+
+type NeedsAttentionCellProps = {
+  clients: Client[];
+  isError: boolean;
+  reviewCount: number;
+  reviewError: boolean;
+};
+
+export function NeedsAttentionCell({clients, isError, reviewCount, reviewError}: NeedsAttentionCellProps) {
   const uniqueClientCount = new Set(clients.map((client) => client.id)).size;
+  const itemCount = uniqueClientCount + reviewCount;
   const previewClients = REASONS.flatMap((reason) =>
     clients.filter((client) => client[reason.key]).map((client) => ({client, reason: reason.label})),
   ).filter(({client}, index, rows) => rows.findIndex((row) => row.client.id === client.id) === index);
-  const visibleClients = previewClients.slice(0, 4);
+  const visibleClients = previewClients.slice(0, reviewCount > 0 ? 3 : 4);
 
   return (
-    <section className="col-span-2 flex min-h-80 flex-col rounded-3xl border border-accent bg-accent p-5 text-accent-foreground sm:col-span-2 sm:row-span-2">
+    <section className="col-span-2 flex min-h-80 flex-col rounded-card border border-accent bg-accent p-5 text-accent-foreground sm:col-span-2 sm:row-span-2">
       <div className="mb-4 flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-danger-soft text-danger">
+        <span className="grid size-10 shrink-0 place-items-center rounded-control bg-danger-soft text-danger">
           <AlertTriangle size={20} />
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-grotesk text-lg font-bold leading-tight">Needs attention</h2>
           <p className="mt-1 text-xs text-accent-foreground/60">
-            {isError ? "Couldn't load client attention" : `${uniqueClientCount} clients waiting on you`}
+            {isError || reviewError ? "Couldn't load all attention items" : `${itemCount} items waiting on you`}
           </p>
         </div>
-        {!isError ? (
+        {!isError && !reviewError ? (
           <span className="rounded-full bg-accent-foreground/10 px-2.5 py-1 text-xs font-bold text-accent-foreground">
-            {uniqueClientCount} {uniqueClientCount === 1 ? 'client' : 'clients'}
+            {itemCount} {itemCount === 1 ? 'item' : 'items'}
           </span>
         ) : null}
       </div>
 
-      {isError ? (
-        <div className="flex flex-1 items-center rounded-2xl border border-accent-foreground/10 p-4 text-sm text-accent-foreground/70">
-          Couldn't load client attention.
+      {isError && reviewError ? (
+        <div className="flex flex-1 items-center rounded-card border border-accent-foreground/10 p-4 text-sm text-accent-foreground/70">
+          Couldn't load attention items.
         </div>
-      ) : visibleClients.length === 0 ? (
-        <div className="flex flex-1 items-center rounded-2xl border border-accent-foreground/10 p-4 text-sm text-accent-foreground/70">
-          No client issues right now.
+      ) : itemCount === 0 ? (
+        <div className="flex flex-1 items-center rounded-card border border-accent-foreground/10 p-4 text-sm text-accent-foreground/70">
+          Nothing needs your attention right now.
         </div>
       ) : (
         <div className="flex flex-col">
+          {reviewCount > 0 ? <CheckInReviewRow count={reviewCount} /> : null}
           {visibleClients.map(({client, reason}) => (
             <AttentionClientRow
               client={client}

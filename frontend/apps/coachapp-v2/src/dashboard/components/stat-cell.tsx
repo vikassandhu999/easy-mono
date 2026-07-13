@@ -12,15 +12,13 @@ type StatCellProps = {
 export function StatCell({errorLabel, icon: Icon, label, meta, onPress, value}: StatCellProps) {
   return (
     <button
-      className="group flex min-h-32 flex-col justify-between rounded-3xl border-[1.5px] border-separator bg-surface p-4 text-left transition hover:-translate-y-0.5 hover:border-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:min-h-36 sm:p-5"
+      className="group flex min-h-32 flex-col justify-between rounded-card border border-border bg-surface p-4 text-left transition hover:-translate-y-0.5 hover:border-edge hover:shadow-raised focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:min-h-36 sm:p-5"
       onClick={onPress}
       type="button"
     >
       <span className="flex items-start justify-between gap-3">
-        <span className="font-grotesk text-4xl font-bold leading-none tabular-nums sm:text-[2.75rem]">
-          {value ?? '—'}
-        </span>
-        <span className="grid size-9 place-items-center rounded-xl bg-surface-secondary text-muted transition group-hover:text-foreground">
+        <span className="font-grotesk text-4xl font-bold leading-none tabular-nums sm:text-5xl">{value ?? '—'}</span>
+        <span className="grid size-9 place-items-center rounded-inset bg-surface-secondary text-muted transition group-hover:text-foreground">
           <Icon size={17} />
         </span>
       </span>

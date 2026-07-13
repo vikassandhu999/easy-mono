@@ -35,18 +35,18 @@ const ATTENTION_REASONS: AttentionReason[] = [
 ];
 
 function MobileSectionHeading({children}: {children: string}) {
-  return <h2 className="mb-2.5 text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-muted">{children}</h2>;
+  return <h2 className="mb-2.5 text-2xs font-bold uppercase tracking-wider text-muted">{children}</h2>;
 }
 
 function MobileStatCard({label, onPress, value}: {label: string; onPress: () => void; value: null | number}) {
   return (
     <button
-      className="min-h-20 w-full rounded-2xl border-[1.5px] border-separator bg-surface p-[0.9375rem] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="min-h-20 w-full rounded-card border border-border bg-surface p-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       onClick={onPress}
       type="button"
     >
-      <span className="block font-grotesk text-[2rem] font-bold leading-none tabular-nums">{value ?? '—'}</span>
-      <span className="mt-1.5 block text-[0.71875rem] font-semibold text-muted">{label}</span>
+      <span className="block font-grotesk text-3xl font-bold leading-none tabular-nums">{value ?? '—'}</span>
+      <span className="mt-1.5 block text-xs font-semibold text-foreground-secondary">{label}</span>
     </button>
   );
 }
@@ -57,15 +57,15 @@ function MobileWonLostCard({isError, lost = 0, won = 0}: {isError: boolean; lost
 
   return (
     <button
-      className="mt-2.5 flex min-h-20 w-full items-stretch gap-3.5 rounded-2xl border-[1.5px] border-separator bg-surface p-[0.9375rem] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="mt-2.5 flex min-h-20 w-full items-stretch gap-3.5 rounded-card border border-border bg-surface p-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       onClick={() => navigate(ROUTES.PROSPECTS)}
       type="button"
     >
       <span className="min-w-0 flex-1">
-        <span className="block font-grotesk text-[1.75rem] font-bold leading-none tabular-nums text-success">
+        <span className="block font-grotesk text-3xl font-bold leading-none tabular-nums text-success">
           {value(won)}
         </span>
-        <span className="mt-1.5 flex items-center gap-1 text-[0.71875rem] font-semibold text-muted">
+        <span className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-foreground-secondary">
           <TrendingUp
             className="text-success"
             size={12}
@@ -75,10 +75,10 @@ function MobileWonLostCard({isError, lost = 0, won = 0}: {isError: boolean; lost
       </span>
       <span className="w-px bg-separator" />
       <span className="min-w-0 flex-1">
-        <span className="block font-grotesk text-[1.75rem] font-bold leading-none tabular-nums text-danger">
+        <span className="block font-grotesk text-3xl font-bold leading-none tabular-nums text-danger">
           {value(lost)}
         </span>
-        <span className="mt-1.5 flex items-center gap-1 text-[0.71875rem] font-semibold text-muted">
+        <span className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-foreground-secondary">
           <TrendingDown
             className="text-danger"
             size={12}
@@ -98,22 +98,22 @@ function MobileConversationRow({conversation, featured}: {conversation: Conversa
     <button
       className={
         featured
-          ? 'flex min-h-14 w-full items-center gap-3 rounded-[0.8125rem] border-[1.5px] border-link/30 bg-link/5 px-3 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
+          ? 'flex min-h-14 w-full items-center gap-3 rounded-card border border-link/30 bg-link-soft px-3 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
           : 'flex min-h-14 w-full items-center gap-3 border-b border-surface-secondary py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
       }
       onClick={() => navigate(ROUTES.CONVERSATION.replace(':id', conversation.id))}
       type="button"
     >
       <span
-        className={`grid size-8.5 shrink-0 place-items-center rounded-[0.5625rem] ${
-          featured ? 'bg-link text-white' : 'bg-surface-secondary text-muted'
+        className={`grid size-8.5 shrink-0 place-items-center rounded-control ${
+          featured ? 'bg-link text-accent-foreground' : 'bg-surface-secondary text-muted'
         }`}
       >
         <MessageCircle size={15} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.8125rem] font-bold">{name}</span>
-        <span className={`mt-0.5 block truncate text-[0.6875rem] ${featured ? 'text-link' : 'text-muted'}`}>
+        <span className="block truncate text-sm font-bold">{name}</span>
+        <span className={`mt-0.5 block truncate text-2xs ${featured ? 'text-link' : 'text-muted'}`}>
           {conversation.last_message_preview ?? 'No messages yet'} ·{' '}
           {formatRelativeTime(conversation.last_message_at ?? conversation.inserted_at)}
         </span>
@@ -135,11 +135,11 @@ function MobileConversations({conversations, isError}: {conversations: Conversat
     <section className="mt-4">
       <MobileSectionHeading>Recent conversations</MobileSectionHeading>
       {isError ? (
-        <p className="rounded-[0.8125rem] border border-danger/20 bg-danger-soft p-3 text-xs text-danger-soft-foreground">
+        <p className="rounded-card border border-danger/20 bg-danger-soft p-3 text-xs text-danger-soft-foreground">
           Couldn't load conversations.
         </p>
       ) : visible.length === 0 ? (
-        <p className="rounded-[0.8125rem] border border-separator p-3 text-xs text-muted">
+        <p className="rounded-card border border-border p-3 text-xs text-muted">
           Conversations with your clients will show up here.
         </p>
       ) : (
@@ -162,7 +162,7 @@ function MobileSubscriptionRow({client}: {client: Client}) {
 
   return (
     <button
-      className="flex min-h-14 w-full items-center gap-3 rounded-[0.8125rem] border-[1.5px] border-separator px-3 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="flex min-h-14 w-full items-center gap-3 rounded-card border border-border px-3 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       onClick={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', client.id))}
       type="button"
     >
@@ -170,20 +170,18 @@ function MobileSubscriptionRow({client}: {client: Client}) {
         <Avatar.Fallback>{clientInitials(client)}</Avatar.Fallback>
       </Avatar>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.8125rem] font-semibold">{clientName(client)}</span>
-        <span className="mt-0.5 block text-[0.6875rem] text-muted">
-          Ends {formatShortDate(client.subscription_ends_on)}
-        </span>
+        <span className="block truncate text-sm font-semibold">{clientName(client)}</span>
+        <span className="mt-0.5 block text-2xs text-muted">Ends {formatShortDate(client.subscription_ends_on)}</span>
       </span>
       <span className="text-right">
         <span
-          className={`block text-[0.6875rem] font-bold ${
+          className={`block text-2xs font-bold ${
             client.expiring_soon ? 'text-danger-soft-foreground' : 'text-warning-soft-foreground'
           }`}
         >
           {formatDaysUntil(client.subscription_ends_on)}
         </span>
-        <span className="mt-0.5 block text-[0.6875rem] font-bold text-link">Open</span>
+        <span className="mt-0.5 block text-2xs font-bold text-link">Open</span>
       </span>
     </button>
   );
@@ -194,13 +192,11 @@ function MobileSubscriptions({clients, isError}: {clients: Client[]; isError: bo
     <section className="mt-4">
       <MobileSectionHeading>Subscriptions ending</MobileSectionHeading>
       {isError ? (
-        <p className="rounded-[0.8125rem] border border-danger/20 bg-danger-soft p-3 text-xs text-danger-soft-foreground">
+        <p className="rounded-card border border-danger/20 bg-danger-soft p-3 text-xs text-danger-soft-foreground">
           Couldn't load subscriptions.
         </p>
       ) : clients.length === 0 ? (
-        <p className="rounded-[0.8125rem] border border-separator p-3 text-xs text-muted">
-          No subscriptions end this month.
-        </p>
+        <p className="rounded-card border border-border p-3 text-xs text-muted">No subscriptions end this month.</p>
       ) : (
         <div className="space-y-2">
           {clients.slice(0, 2).map((client) => (
@@ -228,8 +224,8 @@ function MobileAttentionRow({client, reason}: {client: Client; reason: string}) 
         <Avatar.Fallback>{clientInitials(client)}</Avatar.Fallback>
       </Avatar>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.84375rem] font-semibold">{clientName(client)}</span>
-        <span className="block truncate text-[0.71875rem] text-muted">{reason}</span>
+        <span className="block truncate text-sm font-semibold">{clientName(client)}</span>
+        <span className="block truncate text-xs text-muted">{reason}</span>
       </span>
       <ArrowRight
         className="text-muted"
@@ -250,13 +246,11 @@ function MobileAttention({clients, isError}: {clients: Client[]; isError: boolea
     <section className="mt-4">
       <MobileSectionHeading>Needs attention</MobileSectionHeading>
       {isError ? (
-        <p className="rounded-[0.8125rem] border border-danger/20 bg-danger-soft p-3 text-xs text-danger-soft-foreground">
+        <p className="rounded-card border border-danger/20 bg-danger-soft p-3 text-xs text-danger-soft-foreground">
           Couldn't load client attention.
         </p>
       ) : preview.length === 0 ? (
-        <p className="rounded-[0.8125rem] border border-separator p-3 text-xs text-muted">
-          No client issues right now.
-        </p>
+        <p className="rounded-card border border-border p-3 text-xs text-muted">No client issues right now.</p>
       ) : (
         <div>
           {preview.map(({client, reason}) => (

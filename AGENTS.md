@@ -44,3 +44,21 @@ Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root cover the who
 ### Dev OTPs
 
 In Dev mode otp for any login/signup is always 123456.
+
+## Browser automation
+
+Use `chrome-devtools-axi` for interactive browser tasks.
+
+Browser-state rules:
+
+1. Reuse the existing AXI browser session and open tabs.
+2. Before navigating or authenticating, run:
+   `chrome-devtools-axi pages`
+3. Select an existing relevant tab rather than opening a duplicate.
+4. Never log in when an authenticated session already exists.
+5. Never clear cookies, storage, browser data, or the AXI user-data directory.
+6. Do not stop or restart the AXI bridge unless it is unhealthy.
+7. Prefer one combined `run` or `eval` operation over many individual commands.
+8. Use `snapshot` only when the current page state is unknown or changed.
+9. Avoid screenshots unless visual inspection is required.
+10. Save large network responses to files instead of printing them into context.

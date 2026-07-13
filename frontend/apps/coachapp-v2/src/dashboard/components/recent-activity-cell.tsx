@@ -19,7 +19,7 @@ function ConversationRow({conversation, featured = false}: {conversation: Conver
     <button
       className={
         featured
-          ? 'flex min-h-16 w-full items-center gap-3 rounded-2xl border border-link/30 bg-link/5 p-3 text-left transition hover:bg-link/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
+          ? 'flex min-h-16 w-full items-center gap-3 rounded-card border border-link/30 bg-link-soft p-3 text-left transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
           : 'flex min-h-14 w-full items-center gap-3 border-t border-surface-secondary py-3 text-left transition-opacity hover:opacity-75 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
       }
       onClick={() => navigate(ROUTES.CONVERSATION.replace(':id', conversation.id))}
@@ -35,7 +35,7 @@ function ConversationRow({conversation, featured = false}: {conversation: Conver
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-semibold">{name}</span>
           {unread ? (
-            <span className="shrink-0 rounded-full bg-danger px-1.5 py-0.5 text-[0.625rem] font-bold leading-none text-danger-foreground">
+            <span className="shrink-0 rounded-full bg-danger px-1.5 py-0.5 text-2xs font-bold leading-none text-danger-foreground">
               {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
             </span>
           ) : null}
@@ -59,9 +59,9 @@ export function RecentActivityCell({conversations, isError}: {conversations: Con
   const [featured, ...rest] = sorted.slice(0, 4);
 
   return (
-    <section className="col-span-2 flex min-h-80 flex-col rounded-3xl border-[1.5px] border-separator bg-surface p-5 sm:col-span-2 sm:row-span-2">
+    <section className="col-span-2 flex min-h-80 flex-col rounded-card border border-border bg-surface p-5 sm:col-span-2 sm:row-span-2">
       <div className="mb-4 flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-link/15 text-link">
+        <span className="grid size-10 shrink-0 place-items-center rounded-control bg-link-soft text-link">
           <MessageCircle size={20} />
         </span>
         <div className="min-w-0">
@@ -71,11 +71,11 @@ export function RecentActivityCell({conversations, isError}: {conversations: Con
       </div>
 
       {isError ? (
-        <div className="flex flex-1 items-center rounded-2xl border border-danger/20 bg-danger-soft p-4 text-sm text-danger-soft-foreground">
+        <div className="flex flex-1 items-center rounded-card border border-danger/20 bg-danger-soft p-4 text-sm text-danger-soft-foreground">
           Couldn't load recent activity.
         </div>
       ) : !featured ? (
-        <div className="flex flex-1 items-center rounded-2xl border-[1.5px] border-separator p-4 text-sm text-muted">
+        <div className="flex flex-1 items-center rounded-card border border-border p-4 text-sm text-muted">
           Conversations with your clients will show up here.
         </div>
       ) : (

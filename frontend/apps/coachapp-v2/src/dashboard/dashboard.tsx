@@ -10,7 +10,6 @@ import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useListProspectsQuery} from '@/api/prospects';
-import {CheckinsToReviewCell} from '@/dashboard/components/checkins-to-review-cell';
 import {NeedsAttentionCell} from '@/dashboard/components/needs-attention-cell';
 import {QuickActionsRow} from '@/dashboard/components/quick-actions-row';
 import {RecentActivityCell} from '@/dashboard/components/recent-activity-cell';
@@ -84,12 +83,12 @@ export default function Dashboard() {
 
   return (
     <Page className="bg-surface">
-      <Page.Header className="flex-col items-stretch gap-4 px-[1.125rem] pt-2 pb-0 sm:px-6 sm:pt-6 md:flex-row md:items-end lg:px-8 lg:pt-8">
+      <Page.Header className="flex-col items-stretch gap-4 px-4 pt-2 pb-0 sm:px-6 sm:pt-6 md:flex-row md:items-end lg:px-8 lg:pt-8">
         <div className="min-w-0 flex-1">
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-link sm:text-xs">
+          <p className="text-2xs font-semibold uppercase tracking-widest text-link sm:text-xs">
             {formatDashboardDate()}
           </p>
-          <h1 className="mt-1.5 font-grotesk text-[1.625rem] font-bold leading-[1.05] tracking-tight sm:hidden">
+          <h1 className="mt-1.5 font-grotesk text-2xl font-bold leading-tight tracking-tight sm:hidden">
             {name ? (
               <>
                 {greeting()},
@@ -100,7 +99,7 @@ export default function Dashboard() {
               `${greeting()}.`
             )}
           </h1>
-          <h1 className="mt-2 hidden font-grotesk text-[2.375rem] font-bold leading-none tracking-tight sm:block">
+          <h1 className="mt-2 hidden font-grotesk text-4xl font-bold leading-none tracking-tight sm:block">
             {name ? `${greeting()}, ${name}.` : `${greeting()}.`}
           </h1>
           {dashboardSummary ? <p className="mt-3 hidden text-sm text-muted sm:block">{dashboardSummary}</p> : null}
@@ -115,7 +114,7 @@ export default function Dashboard() {
         </Button>
       </Page.Header>
 
-      <Page.Content className="px-[1.125rem] pb-8 sm:px-6 lg:px-8">
+      <Page.Content className="px-4 pb-8 sm:px-6 lg:px-8">
         <div className="flex max-w-5xl flex-col gap-4 pt-4 sm:gap-6 sm:pt-6">
           {profile?.is_owner ? (
             <DashboardSetupCell hiddenReason={profile.business.dashboard_setup_hidden_reason} />
@@ -169,14 +168,11 @@ export default function Dashboard() {
               won={prospectSummary?.won}
             />
 
-            <CheckinsToReviewCell
-              count={reviewQueueLoading || reviewQueueError ? null : (reviewQueueData?.data.length ?? 0)}
-              isError={reviewQueueError}
-            />
-
             <NeedsAttentionCell
               clients={clientsNeedingAttention}
               isError={clientsError}
+              reviewCount={reviewQueueLoading || reviewQueueError ? 0 : (reviewQueueData?.data.length ?? 0)}
+              reviewError={reviewQueueError}
             />
             <RecentActivityCell
               conversations={conversationsData?.data ?? []}

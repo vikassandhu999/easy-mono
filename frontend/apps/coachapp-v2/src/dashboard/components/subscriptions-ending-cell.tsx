@@ -13,7 +13,7 @@ function SubscriptionClientCard({client}: {client: Client}) {
 
   return (
     <button
-      className="flex min-h-24 flex-col justify-between rounded-2xl border-[1.5px] border-separator bg-surface p-3 text-left transition hover:-translate-y-0.5 hover:border-warning focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="flex min-h-24 flex-col justify-between rounded-card border border-border bg-surface p-3 text-left transition hover:-translate-y-0.5 hover:border-warning hover:shadow-raised focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       onClick={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', client.id))}
       type="button"
     >
@@ -45,10 +45,10 @@ export function SubscriptionsEndingCell({clients, isError}: {clients: Client[]; 
   const visibleClients = clients.slice(0, 4);
 
   return (
-    <section className="col-span-2 rounded-3xl border-[1.5px] border-separator bg-surface p-5 sm:col-span-4">
+    <section className="col-span-2 rounded-card border border-border bg-surface p-5 sm:col-span-4">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-warning-soft text-warning">
+          <span className="grid size-10 shrink-0 place-items-center rounded-control bg-warning-soft text-warning">
             <CalendarClock size={20} />
           </span>
           <div className="min-w-0">
@@ -64,13 +64,11 @@ export function SubscriptionsEndingCell({clients, isError}: {clients: Client[]; 
       </div>
 
       {isError ? (
-        <div className="rounded-2xl border border-danger/20 bg-danger-soft p-4 text-sm text-danger-soft-foreground">
+        <div className="rounded-card border border-danger/20 bg-danger-soft p-4 text-sm text-danger-soft-foreground">
           Couldn't load subscriptions.
         </div>
       ) : clients.length === 0 ? (
-        <div className="rounded-2xl border-[1.5px] border-separator p-4 text-sm text-muted">
-          No subscriptions end this month.
-        </div>
+        <div className="rounded-card border border-border p-4 text-sm text-muted">No subscriptions end this month.</div>
       ) : (
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
           {visibleClients.map((client) => (

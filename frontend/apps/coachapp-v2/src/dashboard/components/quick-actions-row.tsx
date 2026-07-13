@@ -24,7 +24,7 @@ export function QuickActionsRow() {
     <section className="col-span-2 grid grid-cols-1 gap-3.5 sm:col-span-4 sm:grid-cols-2 xl:grid-cols-4">
       {ACTIONS.map((action) => (
         <button
-          className="flex min-h-14 items-center gap-3 rounded-3xl bg-accent px-4 text-left text-sm font-semibold text-accent-foreground transition hover:-translate-y-0.5 hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          className="flex min-h-14 items-center gap-3 rounded-card bg-accent px-4 text-left text-sm font-semibold text-accent-foreground transition hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-raised focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           key={action.route}
           onClick={() => navigate(action.route)}
           type="button"

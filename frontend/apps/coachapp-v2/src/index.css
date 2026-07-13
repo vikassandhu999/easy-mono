@@ -1,6 +1,29 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+@theme {
+  --radius-inset: 8px;
+  --radius-control: 10px;
+  --radius-card: 18px;
+  --radius-window: 22px;
+
+  --shadow-hairline: 0 1px 3px rgb(24 24 27 / 0.15);
+  --shadow-raised: 0 8px 20px -8px rgb(24 24 27 / 0.4);
+  --shadow-popover: 0 24px 56px -18px rgb(24 24 27 / 0.4);
+  --shadow-modal: 0 40px 90px -24px rgb(24 24 27 / 0.5);
+  --shadow-note: 0 16px 34px -12px rgb(24 24 27 / 0.45);
+  --shadow-focus-accent: 0 0 0 3px rgb(0 145 255 / 0.25);
+
+  --text-2xs: 11px;
+  --text-2xs--line-height: 16px;
+}
+
+@theme inline {
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-link-soft: var(--link-soft);
+  --color-surface-emphasis: var(--surface-emphasis);
+}
+
 :root,
 .light,
 .default,
@@ -37,10 +60,12 @@
   --field-placeholder: oklch(71.18% 0.0129 286.07);
   --focus: oklch(65.15% 0.192 251.47);
   --foreground: oklch(21.03% 0 285.89);
+  --foreground-secondary: #3f3f46;
   /* The design's #0091FF is 3.23:1 on white — it fails AA as text. Its own hover
    * blue #0072D6 is 4.80:1, so links read and the palette is unchanged. #0091FF
    * stays on --focus, where the 3:1 non-text threshold applies. */
   --link: oklch(55.56% 0.1758 253.81);
+  --link-soft: #eaf4ff;
   --muted: oklch(55.17% 0 285.89);
   --overlay: oklch(100.00% 0 285.89);
   --overlay-foreground: oklch(21.03% 0 285.89);
@@ -51,6 +76,7 @@
   --success: oklch(62.71% 0.1699 149.21);
   --success-foreground: oklch(99.11% 0 0);
   --surface: oklch(100.00% 0 285.89);
+  --surface-emphasis: #e7eaee;
   --surface-foreground: oklch(21.03% 0 285.89);
   --surface-secondary: oklch(96.60% 0.0062 255.48);
   --surface-secondary-foreground: oklch(21.03% 0 285.89);
@@ -127,10 +153,33 @@
 @layer components {
   .button {
     @apply font-semibold;
+    border-radius: var(--radius-control);
   }
 
   .chip {
     @apply rounded-full font-bold;
+  }
+
+  .tabs__list {
+    background: var(--surface-secondary);
+    border-radius: var(--radius-control);
+    padding: 2px;
+  }
+
+  .tabs__tab {
+    border-radius: var(--radius-inset);
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .tabs__tab[aria-selected="true"] {
+    color: var(--foreground);
+  }
+
+  .tabs__indicator {
+    background: var(--surface);
+    border-radius: var(--radius-inset);
+    box-shadow: var(--shadow-hairline);
   }
 }
 

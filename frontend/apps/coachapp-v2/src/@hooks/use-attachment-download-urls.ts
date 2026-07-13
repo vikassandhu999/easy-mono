@@ -9,6 +9,7 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
   const idsKey = [...new Set(ids)].join(',');
   const uniqueIds = useMemo(() => (idsKey ? idsKey.split(',') : []), [idsKey]);
   const activeIdsRef = useRef(new Set(uniqueIds));
+  const failedIdsRef = useRef(new Set<string>());
   const [downloads, setDownloads] = useState<Record<string, AttachmentDownload>>({});
   const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
   const [getDownloadUrls] = useGetCoachAttachmentDownloadUrlsMutation();
@@ -22,6 +23,9 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
       let firstError: unknown;
       for (let index = 0; index < requested.length; index += BATCH_SIZE) {
         const batch = requested.slice(index, index + BATCH_SIZE);
+        for (const id of batch) {
+          failedIdsRef.current.delete(id);
+        }
         setFailedIds((current) => {
           const next = new Set(current);
           for (const id of batch) {
@@ -40,6 +44,9 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
             }
             return next;
           });
+          for (const id of batch) {
+            failedIdsRef.current.add(id);
+          }
           setFailedIds((current) => new Set([...current, ...batch]));
           failed = true;
           firstError ??= error;
@@ -70,11 +77,15 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
     });
     setFailedIds((current) => {
       const retained = [...current].filter((id) => activeIds.has(id));
+      failedIdsRef.current = new Set(retained);
       return retained.length === current.size ? current : new Set(retained);
     });
 
     const now = Date.now();
     const staleIds = uniqueIds.filter((id) => {
+      if (failedIdsRef.current.has(id)) {
+        return false;
+      }
       const expiry = downloads[id]?.download_url_expires_at;
       return !expiry || new Date(expiry).getTime() - now <= REFRESH_BEFORE_MS;
     });

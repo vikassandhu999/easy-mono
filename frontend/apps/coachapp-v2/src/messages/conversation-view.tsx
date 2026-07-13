@@ -275,6 +275,7 @@ export default function ConversationView({
         <div className="mt-2 flex items-end gap-2">
           <TextArea
             aria-label="Message"
+            name="message"
             className="flex-1"
             disabled={isSending || conversationUnavailable}
             onChange={(e) => setBody(e.target.value)}

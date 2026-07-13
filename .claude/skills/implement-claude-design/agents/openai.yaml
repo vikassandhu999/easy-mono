@@ -1,7 +1,0 @@
-interface:
-  display_name: "Implement Claude Design"
-  short_description: "Port Claude Design screens into an existing app"
-  default_prompt: "Use $implement-claude-design to implement a local Claude Design screen in this application."
-
-policy:
-  allow_implicit_invocation: true

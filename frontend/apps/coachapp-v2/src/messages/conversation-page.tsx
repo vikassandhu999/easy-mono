@@ -1,18 +1,27 @@
 import {Spinner} from '@heroui/react';
 import {useParams} from 'react-router-dom';
 
+import {ErrorState} from '@/@components/error-state';
 import {ROUTES} from '@/@config/routes';
 import {useGetCoachConversationQuery} from '@/api/conversations';
 import ConversationView from '@/messages/conversation-view';
 
 export default function ConversationPage() {
   const {id} = useParams<{id: string}>();
-  const {data, isLoading} = useGetCoachConversationQuery({id: id!}, {skip: !id});
+  const {data, isError, isLoading} = useGetCoachConversationQuery({id: id!}, {skip: !id});
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="flex h-dvh items-center justify-center">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="grid h-dvh place-items-center p-4">
+        <ErrorState message="Couldn't load this conversation." />
       </div>
     );
   }

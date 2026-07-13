@@ -1,7 +1,7 @@
 import {Button, Typography} from '@heroui/react';
 
+import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import type {ClientProfileReviewQueueItem} from '@/api/checkins';
-import useAttachmentDownloadUrls from '@/messages/use-attachment-download-urls';
 
 type SnapshotQuestion = {id?: string; label?: string; type?: string};
 type SnapshotSection = {questions?: SnapshotQuestion[]; title?: string};

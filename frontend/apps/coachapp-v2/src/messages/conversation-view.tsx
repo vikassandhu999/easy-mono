@@ -3,8 +3,9 @@ import {ArrowLeft, Send} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
+import {ErrorState} from '@/@components/error-state';
+import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
-import type {ChatMessageEmbedRequest} from '@/api/attachments';
 import {api} from '@/api/base';
 import {
   appendMessageAction,
@@ -13,11 +14,12 @@ import {
   useCreateCoachConversationMessageMutation,
   useMarkCoachConversationReadMutation,
 } from '@/api/conversations';
+import type {ChatMessageEmbedRequest} from '@/api/generated';
 import {getApiErrorMessage} from '@/api/shared';
 import AttachmentComposer from '@/messages/attachment-composer';
 import MessageAttachments from '@/messages/message-attachments';
 import MessageEmbed from '@/messages/message-embed';
-import useAttachmentDownloadUrls from '@/messages/use-attachment-download-urls';
+import type {AttachmentComposerState} from '@/messages/use-attachment-composer';
 import {useAppDispatch} from '@/store';
 
 function formatDay(iso: string) {
@@ -84,14 +86,17 @@ export default function ConversationView({
   const dispatch = useAppDispatch();
   const [body, setBody] = useState('');
   const [embed, setEmbed] = useState(initialEmbed);
-  const [attachmentState, setAttachmentState] = useState({attachmentIds: [] as string[], busy: false, failed: false});
+  const [attachmentState, setAttachmentState] = useState<AttachmentComposerState>({
+    attachmentIds: [],
+    busy: false,
+    failed: false,
+  });
   const [composerKey, setComposerKey] = useState(0);
   const [sendLocked, setSendLocked] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useConversationMessagesInfiniteQuery({
-    conversationId,
-  });
+  const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} =
+    useConversationMessagesInfiniteQuery({conversationId});
   const [sendMessage, {isLoading: isSendingMessage}] = useCreateCoachConversationMessageMutation();
   const [markRead] = useMarkCoachConversationReadMutation();
 
@@ -105,6 +110,7 @@ export default function ConversationView({
   } = useAttachmentDownloadUrls(attachmentIds);
   const lastMessageId = messages[messages.length - 1]?.id;
   const isSending = sendLocked || isSendingMessage;
+  const conversationUnavailable = isError && !data;
 
   useChannelEvent(
     `conversation:${conversationId}`,
@@ -171,10 +177,7 @@ export default function ConversationView({
     }
   };
 
-  const handleAttachmentChange = useCallback(
-    (state: {attachmentIds: string[]; busy: boolean; failed: boolean}) => setAttachmentState(state),
-    [],
-  );
+  const handleAttachmentChange = useCallback((state: AttachmentComposerState) => setAttachmentState(state), []);
 
   const hasContent = Boolean(body.trim() || attachmentState.attachmentIds.length > 0 || embed);
 
@@ -201,6 +204,10 @@ export default function ConversationView({
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner size="sm" />
+          </div>
+        ) : conversationUnavailable ? (
+          <div className="py-12">
+            <ErrorState message="Couldn't load messages." />
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -244,7 +251,7 @@ export default function ConversationView({
       <footer className="border-t border-border p-3">
         <AttachmentComposer
           clientId={clientId}
-          disabled={isSending}
+          disabled={isSending || conversationUnavailable}
           key={composerKey}
           onChange={handleAttachmentChange}
         />
@@ -269,7 +276,7 @@ export default function ConversationView({
           <TextArea
             aria-label="Message"
             className="flex-1"
-            disabled={isSending}
+            disabled={isSending || conversationUnavailable}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -283,7 +290,9 @@ export default function ConversationView({
           />
           <Button
             aria-label="Send"
-            isDisabled={!hasContent || attachmentState.busy || attachmentState.failed || isSending}
+            isDisabled={
+              !hasContent || attachmentState.busy || attachmentState.failed || isSending || conversationUnavailable
+            }
             isPending={isSending}
             onPress={handleSend}
           >

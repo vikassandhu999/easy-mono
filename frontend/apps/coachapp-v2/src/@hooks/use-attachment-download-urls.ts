@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {type AttachmentDownload, useGetCoachAttachmentDownloadUrlsMutation} from '@/api/attachments';
+import {type AttachmentDownload, useGetCoachAttachmentDownloadUrlsMutation} from '@/api/generated';
 
 const BATCH_SIZE = 50;
 const REFRESH_BEFORE_MS = 60_000;
@@ -33,6 +33,13 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
         try {
           response = await getDownloadUrls({attachmentDownloadRequest: {attachment_ids: batch}}).unwrap();
         } catch (error) {
+          setDownloads((current) => {
+            const next = {...current};
+            for (const id of batch) {
+              delete next[id];
+            }
+            return next;
+          });
           setFailedIds((current) => new Set([...current, ...batch]));
           failed = true;
           firstError ??= error;

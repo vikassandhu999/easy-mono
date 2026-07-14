@@ -8,16 +8,16 @@ A coach can establish, understand, and maintain each coaching relationship throu
 
 ## Available information
 
-* Collection context: total and per-status counts, active clients needing attention, search by name or contact information, and filtering by status or coaching stage.
+* Collection context: total matching relationships, overall counts by pending, active, and inactive status, active clients needing attention, search by name or contact information, and filtering by status or coaching stage.
 * Relationship record: name, email, phone, private coach notes, pending/active/inactive status, onboarding/coaching stage, inactive reason, and one assigned trainer.
 * Pending invitation: shareable link, sent time, and expiry time.
 * Coaching context: optional client subscription start and end dates, optional goal weight with kilograms or pounds, and signals for incomplete intake, no active plan, or a subscription ending within seven days.
 
 ## Supported actions
 
-* A coach can discover visible client relationships through search, status or stage filtering, and the attention collection, resulting in a narrowed set with status totals and prioritized attention cases.
-* A coach can invite a person using a display name and at least email or phone, resulting in a pending relationship, a shareable link, and a default intake assignment.
-* A coach can send an invitation by email when email is present or manually share the returned link through a device-supported channel.
+* A coach can discover visible client relationships through search, status or stage filtering, and the attention collection, resulting in a narrowed set with its matching count while overall status totals remain available and attention cases remain prioritized.
+* A coach can invite a person using at least email or phone and may include their name, resulting in a pending relationship, a shareable link, and a default intake assignment.
+* Creating an invitation with an email address automatically attempts email delivery. For a phone-only invitation, the coach can copy or share the returned link through a device-supported channel.
 * A coach can resend a pending email invitation to refresh its expiry or revoke a pending invitation after confirmation to remove the relationship and its pending assignments.
 * A coach can update a pending invitation's fallback name and can update contact information, private notes, goal weight, and client subscription dates when their constraints are satisfied.
 * A coach can deactivate or reactivate an accepted client and change an active client's coaching stage when the relevant constraints allow it, resulting in updated relationship state.
@@ -38,7 +38,7 @@ A coach can establish, understand, and maintain each coaching relationship throu
 
 ## UX-relevant constraints
 
-* Invitation requires a display name plus email or phone; a coach cannot invite their own email or one already linked to an active client.
+* Invitation requires email or phone; first and last name are optional. A coach cannot invite their own email or one already linked to an active client.
 * Invitation acceptance always verifies an email address by OTP, including phone-only invitations.
 * Invitation and optional trainer assignment can finish separately. If assignment fails after invitation succeeds, the pending client remains assigned to the acting coach and can be reassigned later.
 * Resend requires a pending relationship with an email address. Revoke requires a pending relationship.

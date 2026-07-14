@@ -8,7 +8,7 @@ A coach can establish, understand, and maintain each coaching relationship throu
 
 ## Available information
 
-* Roster context: total clients, counts by pending, active, and inactive status, and a separate count and collection of active clients needing attention.
+* Roster context: the matching count after search or filtering, overall visible counts by pending, active, and inactive status, and a separate count and collection of active clients needing attention.
 * Identity and contact: first name, last name, email, phone, and private coach notes. Search can match name, email, or phone.
 * Relationship state: pending, active, or inactive status; onboarding or coaching stage; and the reason an inactive client is unavailable when the system knows it.
 * Invitation state: shareable invitation link, when the invitation was sent, and when it expires. These facts exist only while the relationship is pending.
@@ -19,10 +19,10 @@ A coach can establish, understand, and maintain each coaching relationship throu
 
 ## Supported actions
 
-* A coach can list visible client relationships, search them by identity or contact information, and filter them by status or coaching stage, resulting in a narrowed collection with status totals.
+* A coach can list visible client relationships, search them by identity or contact information, and filter them by status or coaching stage, resulting in a narrowed collection with its matching count while overall status totals remain available.
 * A coach can inspect active clients needing attention, resulting in intake cases first, clients without an active plan second, and expiring subscriptions after them.
-* A coach can invite a person using a display name and at least an email address or phone number, resulting in a pending client relationship, a shareable invitation link, and an assigned default intake.
-* A coach can send the invitation by email when an email address is present, while a coach with only a phone number can copy or share the returned invitation link through a device-supported channel.
+* A coach can invite a person using at least an email address or phone number and may include their name, resulting in a pending client relationship, a shareable invitation link, and an assigned default intake.
+* Creating an invitation with an email address automatically attempts email delivery. For a phone-only invitation, the coach can copy or share the returned link through a device-supported channel.
 * A coach can resend a pending email invitation when the client has an email address, resulting in a refreshed send time and expiry.
 * A coach can revoke a pending invitation after confirmation, resulting in removal of the pending client record and its pending assignments.
 * A coach can update a pending relationship's invitation or fallback name and can update contact information, private notes, goal weight, and subscription dates when the relevant lifecycle rules allow it.
@@ -52,7 +52,7 @@ A coach can establish, understand, and maintain each coaching relationship throu
 
 ## UX-relevant constraints
 
-* A coach invitation needs a display name and at least one delivery or sharing contact: email or phone.
+* A coach invitation needs at least one delivery or sharing contact: email or phone. First and last name are optional.
 * A coach cannot invite their own email address or an email already linked to an active client relationship.
 * Invitation acceptance always verifies an email address by OTP, including when the coach created a phone-only invitation and shared its link manually.
 * Invitation creation and optional trainer reassignment can finish separately. If reassignment fails after invitation succeeds, the pending client remains assigned to the acting coach and can be reassigned later.

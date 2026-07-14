@@ -282,18 +282,6 @@ surfaces server errors via `setError` needs `validationBehavior="aria"` (passthr
 **Enforced by:** convention for now; graduate to `check-rm` (grep forms using
 `applyFormErrors` without `validationBehavior="aria"`) if it recurs.
 
-### RM-129 — Tailwind v4 utilities come from `@theme`, not `:root` vars
-Declaring `--font-grotesk`/`--color-x` in a plain `:root` block does NOT create the `font-grotesk`/
-`text-x` utility — Tailwind v4 only generates utilities for vars registered in `@theme`, and it
-silently ignores unknown classes, so the element just inherits (every `font-grotesk` in the app
-rendered Inter for weeks). Instance: 2026-07-12 nutrition-builder pass. When adding a design
-token: register it in `@theme` in `index.css`, then verify one computed style in the browser
-(`getComputedStyle(el).fontFamily`), or grep the built CSS for the utility rule. Corollary:
-design palettes belong here as semantic tokens (see the Builder categorical palette) — that is
-also how RM-109 stays satisfiable.
-**Enforced by:** browser computed-style verification during design passes; RM-109's check keeps
-hexes funneling through `@theme`.
-
 ### RM-130 — Generated API clients are not hand-fixed to satisfy lint
 
 OpenAPI codegen may emit bracket access for reserved-looking query keys such as `from`. Do not edit
@@ -301,16 +289,6 @@ OpenAPI codegen may emit bracket access for reserved-looking query keys such as 
 in `frontend/biome.json`, narrowly scoped to the emitted rule.
 
 **Enforced by:** the Biome override for `**/src/api/generated.ts`.
-
-### RM-131 — UI recovery baselines must predate the first visual commit for every named surface
-
-Do not trust a prior recovery snapshot by name alone. The `b5d90e95` coachapp snapshot was called
-pre-Claude but already contained the redesigned dashboard, clients list, shell, and theme, so a
-path restore left those surfaces redesigned. Before restoring UI, inspect `git log -- <owners>` for
-each named surface, identify the first visual commit, and use its parent only as a presentation
-reference while carrying later behavior forward selectively.
-
-**Enforced by:** recovery review records the first visual commit and parent per affected surface.
 
 ---
 

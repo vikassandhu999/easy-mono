@@ -90,80 +90,81 @@ export default function ListClients() {
         </Page.Actions>
       </Page.Header>
 
+      <Page.Toolbar
+        className="sticky top-0 z-10 mb-4 flex flex-col gap-3 bg-background/95 pb-3 pt-2 backdrop-blur md:flex-row md:items-end md:justify-between"
+        size="list"
+      >
+        <SearchField
+          aria-label="Search clients"
+          className="w-full md:w-80 md:shrink-0"
+          onChange={setSearch}
+          value={search}
+        >
+          <SearchField.Group className="min-h-11">
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Search clients" />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
+        <Tabs
+          aria-label="Filter clients by status"
+          className="min-w-0 md:ms-auto md:flex-none"
+          onSelectionChange={setActiveFilter}
+          selectedKey={activeFilter}
+          variant="secondary"
+        >
+          <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
+            <Tabs.List className="w-max! min-w-max">
+              {FILTER_OPTIONS.map((option) => {
+                const count = getOptionCount(option, summaryData);
+
+                return (
+                  <Tabs.Tab
+                    className="min-h-11 w-auto! gap-2 whitespace-nowrap px-3 sm:px-4"
+                    id={option.id}
+                    key={option.id}
+                  >
+                    <span>{option.label}</span>
+                    {count === undefined ? null : (
+                      <span className="hidden text-xs font-normal text-muted sm:inline">{count}</span>
+                    )}
+                    <Tabs.Indicator className="bg-current" />
+                  </Tabs.Tab>
+                );
+              })}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
+      </Page.Toolbar>
+
       <Page.Content>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"
         >
-          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-border bg-surface">
-            <div className="sticky top-0 z-10 flex flex-col gap-2 rounded-t-2xl border-b border-separator bg-surface px-4 pt-3 md:flex-row md:items-end md:justify-between md:gap-4 md:px-6">
-              <SearchField
-                aria-label="Search clients"
-                className="w-full pb-1 md:w-80 md:shrink-0 md:pb-3"
-                onChange={setSearch}
-                value={search}
-              >
-                <SearchField.Group className="min-h-11">
-                  <SearchField.SearchIcon />
-                  <SearchField.Input placeholder="Search clients" />
-                  <SearchField.ClearButton />
-                </SearchField.Group>
-              </SearchField>
-              <Tabs
-                aria-label="Filter clients by status"
-                className="min-w-0 md:ms-auto md:flex-none"
-                onSelectionChange={setActiveFilter}
-                selectedKey={activeFilter}
-                variant="secondary"
-              >
-                <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
-                  <Tabs.List className="w-max! min-w-max">
-                    {FILTER_OPTIONS.map((option) => {
-                      const count = getOptionCount(option, summaryData);
-
-                      return (
-                        <Tabs.Tab
-                          className="min-h-11 w-auto! gap-2 whitespace-nowrap px-3 sm:px-4"
-                          id={option.id}
-                          key={option.id}
-                        >
-                          <span>{option.label}</span>
-                          {count === undefined ? null : (
-                            <span className="hidden text-xs font-normal text-muted sm:inline">{count}</span>
-                          )}
-                          <Tabs.Indicator className="bg-current" />
-                        </Tabs.Tab>
-                      );
-                    })}
-                  </Tabs.List>
-                </Tabs.ListContainer>
-              </Tabs>
-            </div>
-
-            <BrowseListBox
-              ariaLabel="Clients"
-              className="flex-1 gap-0 overflow-hidden rounded-b-2xl"
-              emptyState={
-                <ClientEmptyState
-                  hasFilter={hasFilter}
-                  onClearFilters={clearFilters}
-                />
-              }
-              fetchNextPage={fetchNextPage}
-              isError={isError}
-              isLoading={isLoading || isFetchingNextPage}
-              items={clients}
-              onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
-              onRetry={refetch}
-              renderItem={(client) => (
-                <ClientListItem
-                  client={client}
-                  unreadCount={unreadByClientId.get(client.id) ?? 0}
-                />
-              )}
-              skeletonAvatar
-            />
-          </div>
+          <BrowseListBox
+            ariaLabel="Clients"
+            className="flex-1 gap-0 overflow-hidden rounded-2xl border border-border bg-surface"
+            emptyState={
+              <ClientEmptyState
+                hasFilter={hasFilter}
+                onClearFilters={clearFilters}
+              />
+            }
+            fetchNextPage={fetchNextPage}
+            isError={isError}
+            isLoading={isLoading || isFetchingNextPage}
+            items={clients}
+            onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
+            onRetry={refetch}
+            renderItem={(client) => (
+              <ClientListItem
+                client={client}
+                unreadCount={unreadByClientId.get(client.id) ?? 0}
+              />
+            )}
+            skeletonAvatar
+          />
         </Page.Frame>
       </Page.Content>
     </Page>

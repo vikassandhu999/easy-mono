@@ -100,7 +100,7 @@ export default function ListClients() {
           value={search}
           variant="secondary"
         >
-          <SearchField.Group className="min-h-11">
+          <SearchField.Group>
             <SearchField.SearchIcon />
             <SearchField.Input placeholder="Search clients" />
             <SearchField.ClearButton />

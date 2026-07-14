@@ -1,6 +1,6 @@
 import type {Key} from '@heroui/react';
-import {Avatar, Button, Collection, Description, Label, ListBox, Popover, Skeleton} from '@heroui/react';
-import {ArrowRight, ClipboardCheck} from 'lucide-react';
+import {Avatar, Button, Collection, Description, Label, ListBox, Popover, Skeleton, Typography} from '@heroui/react';
+import {ChevronRight, ClipboardCheck} from 'lucide-react';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -96,7 +96,7 @@ export default function ClientAttentionPopover() {
   const list = (
     <ListBox
       aria-label="Client follow-ups"
-      className={isDesktop ? 'max-h-72 overflow-y-auto p-1' : 'px-0'}
+      className={isDesktop ? 'max-h-64 overflow-y-auto p-0' : 'px-0'}
       onAction={openClient}
       selectionMode="none"
     >
@@ -120,9 +120,9 @@ export default function ClientAttentionPopover() {
                   <Label className="block truncate text-sm font-semibold text-foreground">{name}</Label>
                   <Description className="block truncate text-xs text-muted">{attentionReason(client)}</Description>
                 </div>
-                <ArrowRight
+                <ChevronRight
                   className="shrink-0 text-muted"
-                  size={14}
+                  size={16}
                   strokeWidth={2}
                 />
               </div>
@@ -135,7 +135,7 @@ export default function ClientAttentionPopover() {
 
   const loadMoreButton = hasMore ? (
     <Button
-      className="h-8 min-h-8 w-full text-xs text-muted"
+      className="h-9 min-h-9 w-full text-xs text-muted"
       isPending={isLoadingMore}
       onPress={loadMore}
       size="sm"
@@ -171,7 +171,7 @@ export default function ClientAttentionPopover() {
           onOpenChange={handleOpenChange}
         >
           <Popover.Content
-            className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-surface p-0 shadow-lg"
+            className="w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface p-2 shadow-lg"
             placement="bottom end"
             triggerRef={triggerRef}
           >
@@ -179,12 +179,23 @@ export default function ClientAttentionPopover() {
               aria-label="Client follow-ups"
               className="outline-none"
             >
-              <div className="border-b border-border px-3 py-2">
-                <h2 className="text-xs font-semibold text-foreground">Client follow-ups</h2>
+              <div className="flex items-center justify-between px-2 pt-1 pb-2">
+                <Typography
+                  type="body-sm"
+                  weight="semibold"
+                >
+                  Follow-ups
+                </Typography>
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  {data.count} clients
+                </Typography>
               </div>
 
               {list}
-              {loadMoreButton ? <div className="border-t border-border px-2 py-1">{loadMoreButton}</div> : null}
+              {loadMoreButton}
             </Popover.Dialog>
           </Popover.Content>
         </Popover>

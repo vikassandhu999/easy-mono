@@ -177,6 +177,8 @@ An agent creates a Design Envelope from the relevant capability entries immediat
 
 The envelope contains the minimum product truth needed for design. It contains no verification evidence and no current UI structure.
 
+Store a versioned project envelope under `docs/product-capabilities/envelopes/` when it will be handed to Claude Design. Name its canonical capability sources at the top. The envelope remains derived: refresh it from those sources before reuse, and never update it instead of the capability library.
+
 ### Design Envelope template
 
 ```markdown

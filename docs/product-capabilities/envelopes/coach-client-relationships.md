@@ -54,8 +54,10 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * Check-in lifecycle: supplies check-in schedules and occurrences.
 * Completion and submissions: supplies completed answers and submission history.
 * Check-in review and messaging: supplies review state and conversation handoff.
-* Training: supplies plan assignment, coaching-stage advancement, and completed workout history.
-* Nutrition: supplies plan assignment, meal logs, and adherence information.
+* Training planning: supplies plan assignment, coaching-stage advancement, and whether a current training plan exists.
+* Workout experience: supplies completed workout history.
+* Nutrition planning: supplies plan assignment, planned nutrition, coaching-stage advancement, and whether a current nutrition plan exists.
+* Nutrition experience: supplies logged intake.
 * Weight tracking: supplies weight entries and trends against goal weight.
 * Messaging: supplies the coach conversation and unread state without prescribing placement.
 * Prospects: supplies public applications that can be enrolled into client relationships.

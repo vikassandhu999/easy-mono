@@ -146,11 +146,6 @@ const BOTTOM_NAV: NavItem[] = [
     label: 'Library',
     path: ROUTES.LIBRARY,
   },
-  {
-    icon: <Settings size={ICON_SIZE} />,
-    label: 'Settings',
-    path: ROUTES.SETTINGS,
-  },
 ];
 
 function SidebarNavItem({item}: {item: NavItem}) {
@@ -271,29 +266,24 @@ function BottomNavItem({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-1 rounded-lg px-2 text-[10px] ${
+        `flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] transition-colors ${
           isActive ? 'bg-accent/10 font-semibold text-accent' : 'font-medium text-muted'
         }`
       }
       to={item.path}
     >
-      {({isActive}) => (
-        <>
-          {isActive && <span className="absolute top-0.5 h-1 w-5 rounded-full bg-accent" />}
-          <span className={isActive ? 'mt-1' : ''}>{item.icon}</span>
-          <span>{item.label}</span>
-        </>
-      )}
+      {item.icon}
+      <span>{item.label}</span>
     </NavLink>
   );
 }
 
-// Paths where the mobile bottom nav is visible (exact match only)
-const BOTTOM_NAV_PATHS = new Set(BOTTOM_NAV.map((item) => item.path));
+// Paths where the mobile app frame is visible (exact match only)
+const MOBILE_FRAME_PATHS = new Set([...BOTTOM_NAV.map((item) => item.path), ROUTES.SETTINGS]);
 
 export default function AppShell() {
   const location = useLocation();
-  const showBottomNav = BOTTOM_NAV_PATHS.has(location.pathname);
+  const showMobileFrame = MOBILE_FRAME_PATHS.has(location.pathname);
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
   const dispatch = useAppDispatch();
   useChannelEvent('inbox', 'conversation_updated', () => {
@@ -362,8 +352,28 @@ export default function AppShell() {
 
       {/* Main content — only add bottom padding when bottom nav is visible */}
       <main
-        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-64 ${showBottomNav ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4rem+env(safe-area-inset-bottom))]') : ''}`}
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-64 ${showMobileFrame ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4rem+env(safe-area-inset-bottom))]') : ''}`}
       >
+        {showMobileFrame ? (
+          <div className="flex h-14 shrink-0 items-center justify-between px-4 lg:hidden">
+            <img
+              alt="CoachEasy"
+              className="h-6"
+              src="/TextLogo.webp"
+            />
+            <NavLink
+              aria-label="Account settings"
+              className={({isActive}) =>
+                `flex size-11 items-center justify-center rounded-xl transition-colors ${
+                  isActive ? 'bg-accent/10 text-accent' : 'text-muted hover:bg-default-soft hover:text-foreground'
+                }`
+              }
+              to={ROUTES.SETTINGS}
+            >
+              <Settings size={20} />
+            </NavLink>
+          </div>
+        ) : null}
         <Outlet />
       </main>
 
@@ -371,7 +381,7 @@ export default function AppShell() {
       <ScrollRestoration />
 
       {/* Mobile install banner — above bottom nav */}
-      {canInstall && showBottomNav ? (
+      {canInstall && showMobileFrame ? (
         <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-surface px-4 py-2.5 lg:hidden">
           <div className="flex items-center gap-3">
             <img
@@ -398,8 +408,8 @@ export default function AppShell() {
       ) : null}
 
       {/* Mobile bottom nav — only on top-level pages */}
-      {showBottomNav ? (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex min-h-16 items-center justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)] lg:hidden">
+      {showMobileFrame ? (
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex min-h-16 items-center gap-1 border-t border-border bg-background px-2 pb-[env(safe-area-inset-bottom)] lg:hidden">
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
               item={item}

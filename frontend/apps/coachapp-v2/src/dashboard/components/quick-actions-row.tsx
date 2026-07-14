@@ -21,7 +21,7 @@ export function QuickActionsRow() {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-2">
       {ACTIONS.map((action) => (
         <button
           className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3.5 text-left text-sm font-medium transition-colors hover:bg-surface-hover"

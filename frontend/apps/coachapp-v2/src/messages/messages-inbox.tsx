@@ -31,21 +31,28 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
 
   return (
     <ListBox.Item
-      className="min-h-fit px-4 py-3 sm:px-8"
+      className={`min-h-16 px-4 py-3 transition-colors active:scale-100! data-[pressed=true]:scale-100! sm:px-8 ${
+        unread ? 'bg-accent-soft' : 'hover:bg-surface-hover'
+      }`}
       id={conversation.id}
       textValue={name}
     >
-      <Avatar size="sm">
+      <Avatar
+        className={unread ? 'bg-accent-soft text-accent' : undefined}
+        size="sm"
+      >
         <Avatar.Fallback>{initial}</Avatar.Fallback>
       </Avatar>
       <div className="flex min-w-0 flex-col">
-        <Label className="truncate">{name}</Label>
+        <Label className={`truncate ${unread ? 'font-semibold text-foreground' : ''}`}>{name}</Label>
         <Description className={`truncate ${unread ? 'font-medium text-foreground' : ''}`}>
           {conversation.last_message_preview ?? 'No messages yet'}
         </Description>
       </div>
       <div className="ms-auto flex shrink-0 flex-col items-end gap-1">
-        <span className="text-xs text-muted">{timeAgo(conversation.last_message_at)}</span>
+        <span className={`text-xs ${unread ? 'font-medium text-accent-soft-foreground' : 'text-muted'}`}>
+          {timeAgo(conversation.last_message_at)}
+        </span>
         {unread ? (
           <Chip
             color="accent"
@@ -64,34 +71,45 @@ export default function MessagesInbox() {
   // ponytail: flat first-100 inbox, add offset paging when a business outgrows it.
   const {data, isError, isLoading, refetch} = useListCoachConversationsQuery({limit: 100});
   const conversations = data?.data ?? [];
+  const unreadTotal = conversations.reduce((total, conversation) => total + conversation.unread_count, 0);
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="list">
         <Page.TitleGroup>
           <Page.Title>Messages</Page.Title>
+          <Page.Description>
+            {unreadTotal > 0
+              ? `${unreadTotal} unread ${unreadTotal === 1 ? 'message' : 'messages'}`
+              : 'Your client conversations'}
+          </Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content>
-        <BrowseListBox
-          ariaLabel="Conversations"
-          className="flex-1 gap-0"
-          emptyState={
-            <ListEmptyState
-              emptyDescription="Conversations with your clients will show up here."
-              hasFilter={false}
-              nounPlural="messages"
-            />
-          }
-          fetchNextPage={() => undefined}
-          isError={isError}
-          isLoading={isLoading}
-          items={conversations}
-          onAction={(key) => navigate(ROUTES.CONVERSATION.replace(':id', String(key)))}
-          onRetry={refetch}
-          renderItem={(conversation) => <ConversationListItem conversation={conversation} />}
-          skeletonAvatar
-        />
+        <Page.Frame
+          className="flex min-h-0 flex-1 flex-col pb-6 pt-2"
+          size="list"
+        >
+          <BrowseListBox
+            ariaLabel="Conversations"
+            className="flex-1 gap-0 overflow-hidden rounded-2xl border border-border bg-surface"
+            emptyState={
+              <ListEmptyState
+                emptyDescription="Conversations with your clients will show up here."
+                hasFilter={false}
+                nounPlural="messages"
+              />
+            }
+            fetchNextPage={() => undefined}
+            isError={isError}
+            isLoading={isLoading}
+            items={conversations}
+            onAction={(key) => navigate(ROUTES.CONVERSATION.replace(':id', String(key)))}
+            onRetry={refetch}
+            renderItem={(conversation) => <ConversationListItem conversation={conversation} />}
+            skeletonAvatar
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

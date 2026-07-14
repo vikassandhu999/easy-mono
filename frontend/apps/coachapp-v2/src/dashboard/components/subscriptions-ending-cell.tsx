@@ -35,24 +35,17 @@ function SubscriptionClientRow({client}: {client: Client}) {
 export function SubscriptionsEndingCell({clients, isError}: {clients: Client[]; isError: boolean}) {
   return (
     <section className="flex flex-col gap-3">
-      <Typography
-        className="uppercase tracking-wider"
-        color="muted"
-        type="body-xs"
-        weight="semibold"
-      >
-        Subscriptions ending this month
-      </Typography>
+      <Typography type="h5">Subscriptions ending this month</Typography>
       {isError ? (
-        <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-6 text-center text-sm text-danger-soft-foreground">
+        <div className="rounded-2xl border border-danger/20 bg-danger/5 px-4 py-6 text-center text-sm text-danger-soft-foreground">
           Couldn't load subscriptions.
         </div>
       ) : clients.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface px-4 py-6 text-center text-sm text-muted">
+        <div className="rounded-2xl border border-border bg-surface px-4 py-6 text-center text-sm text-muted">
           No subscriptions end this month.
         </div>
       ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
           {clients.slice(0, 4).map((client) => (
             <SubscriptionClientRow
               client={client}

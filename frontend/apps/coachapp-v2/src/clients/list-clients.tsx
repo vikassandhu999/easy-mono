@@ -71,9 +71,12 @@ export default function ListClients() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="list">
         <Page.TitleGroup>
           <Page.Title>Clients</Page.Title>
+          <Page.Description>
+            {summaryData ? `${summaryData.summary.active} active · ${summaryData.count} total` : 'Your coaching roster'}
+          </Page.Description>
         </Page.TitleGroup>
         <Page.Actions>
           <ClientAttentionPopover />
@@ -88,7 +91,10 @@ export default function ListClients() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Toolbar className="sticky top-0 z-10 flex flex-col gap-3 border-b bg-surface pb-3 pt-2">
+      <Page.Toolbar
+        className="sticky top-0 z-10 flex flex-col gap-3 bg-background/95 pb-4 pt-2 backdrop-blur"
+        size="list"
+      >
         <SearchField
           aria-label="Search clients"
           className="w-full sm:max-w-xs"
@@ -125,29 +131,34 @@ export default function ListClients() {
       </Page.Toolbar>
 
       <Page.Content>
-        <BrowseListBox
-          ariaLabel="Clients"
-          className="flex-1 gap-0"
-          emptyState={
-            <ClientEmptyState
-              hasFilter={hasFilter}
-              onClearFilters={clearFilters}
-            />
-          }
-          fetchNextPage={fetchNextPage}
-          isError={isError}
-          isLoading={isLoading || isFetchingNextPage}
-          items={clients}
-          onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
-          onRetry={refetch}
-          renderItem={(client) => (
-            <ClientListItem
-              client={client}
-              unreadCount={unreadByClientId.get(client.id) ?? 0}
-            />
-          )}
-          skeletonAvatar
-        />
+        <Page.Frame
+          className="flex min-h-0 flex-1 flex-col pb-6"
+          size="list"
+        >
+          <BrowseListBox
+            ariaLabel="Clients"
+            className="flex-1 gap-0 overflow-hidden rounded-2xl border border-border bg-surface"
+            emptyState={
+              <ClientEmptyState
+                hasFilter={hasFilter}
+                onClearFilters={clearFilters}
+              />
+            }
+            fetchNextPage={fetchNextPage}
+            isError={isError}
+            isLoading={isLoading || isFetchingNextPage}
+            items={clients}
+            onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
+            onRetry={refetch}
+            renderItem={(client) => (
+              <ClientListItem
+                client={client}
+                unreadCount={unreadByClientId.get(client.id) ?? 0}
+              />
+            )}
+            skeletonAvatar
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

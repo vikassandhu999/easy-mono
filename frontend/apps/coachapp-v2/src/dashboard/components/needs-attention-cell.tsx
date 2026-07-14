@@ -88,19 +88,12 @@ export function NeedsAttentionCell({clients, isError, reviewCount, reviewError}:
 
   return (
     <section className="flex flex-col gap-3">
-      <Typography
-        className="uppercase tracking-wider"
-        color="muted"
-        type="body-xs"
-        weight="semibold"
-      >
-        Client follow-ups
-      </Typography>
+      <Typography type="h5">Client follow-ups</Typography>
       <div>
         {isError || reviewError ? (
           <p className="mb-2 text-xs text-danger-soft-foreground">Some follow-ups couldn't be loaded.</p>
         ) : null}
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
           <CheckInReviewRow
             count={reviewCount}
             isError={reviewError}

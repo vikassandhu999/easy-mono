@@ -9,10 +9,13 @@ import {compareDateStrings, formatRelativeTime} from '@/dashboard/lib/date-forma
 function ConversationRow({conversation}: {conversation: Conversation}) {
   const navigate = useNavigate();
   const name = conversation.client_name || 'Client';
+  const unread = conversation.unread_count > 0;
 
   return (
     <button
-      className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className={`flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+        unread ? 'bg-accent-soft' : 'hover:bg-surface-hover'
+      }`}
       onClick={() => navigate(ROUTES.CONVERSATION.replace(':id', conversation.id))}
       type="button"
     >
@@ -22,8 +25,8 @@ function ConversationRow({conversation}: {conversation: Conversation}) {
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-medium">{name}</span>
-          {conversation.unread_count > 0 ? (
-            <span className="shrink-0 rounded-full bg-danger px-1.5 py-0.5 text-[10px] font-bold leading-none text-danger-foreground">
+          {unread ? (
+            <span className="shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold leading-none text-accent-foreground">
               {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
             </span>
           ) : null}
@@ -47,24 +50,17 @@ export function RecentActivityCell({conversations, isError}: {conversations: Con
 
   return (
     <section className="flex flex-col gap-3">
-      <Typography
-        className="uppercase tracking-wider"
-        color="muted"
-        type="body-xs"
-        weight="semibold"
-      >
-        Recent conversations
-      </Typography>
+      <Typography type="h5">Recent conversations</Typography>
       {isError ? (
-        <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-6 text-center text-sm text-danger-soft-foreground">
+        <div className="rounded-2xl border border-danger/20 bg-danger/5 px-4 py-6 text-center text-sm text-danger-soft-foreground">
           Couldn't load conversations.
         </div>
       ) : visible.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface px-4 py-6 text-center text-sm text-muted">
+        <div className="rounded-2xl border border-border bg-surface px-4 py-6 text-center text-sm text-muted">
           Conversations with your clients will show up here.
         </div>
       ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
           {visible.map((conversation) => (
             <ConversationRow
               conversation={conversation}

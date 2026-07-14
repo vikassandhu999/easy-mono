@@ -27,9 +27,7 @@
 [data-theme="light"],
 [data-theme="default"] {
   /* Theme Colors (Light Mode) */
-  --accent: oklch(21.03% 0.0059 285.89);
-  --accent-foreground: oklch(99.11% 0 0);
-  --background: oklch(97.02% 0 285.89);
+  --background: oklch(97.8% 0.008 85);
   --border: oklch(90.00% 0 285.89);
   --danger: oklch(65.32% 0.2328 29.59);
   --danger-foreground: oklch(99.11% 0 0);
@@ -39,7 +37,6 @@
   --field-border: transparent;
   --field-foreground: oklch(21.03% 0 285.89);
   --field-placeholder: oklch(55.17% 0 285.89);
-  --focus: oklch(21.03% 0.0059 285.89);
   --foreground: oklch(21.03% 0 285.89);
   --muted: oklch(55.17% 0 285.89);
   --overlay: oklch(100.00% 0 285.89);
@@ -59,10 +56,6 @@
   --warning: oklch(78.19% 0.1585 76.18);
   --warning-foreground: oklch(21.03% 0.0059 76.18);
 
-  /* Border Radius */
-  --radius: 0.25rem;
-  --field-radius: 0.5rem;
-
   /* Font Family */
   /* Make sure to load Inter font in your app */
   --font-sans: var(--font-inter);
@@ -72,8 +65,6 @@
 [data-theme="dark"] {
   color-scheme: dark;
   /* Theme Colors (Dark Mode) */
-  --accent: oklch(21.03% 0.0059 285.89);
-  --accent-foreground: oklch(99.11% 0 0);
   --background: oklch(12.00% 0 285.89);
   --border: oklch(28.00% 0 285.89);
   --danger: oklch(59.40% 0.1967 28.48);
@@ -84,7 +75,6 @@
   --field-border: transparent;
   --field-foreground: oklch(99.11% 0 285.89);
   --field-placeholder: oklch(70.50% 0 285.89);
-  --focus: oklch(21.03% 0.0059 285.89);
   --foreground: oklch(99.11% 0 285.89);
   --muted: oklch(70.50% 0 285.89);
   --overlay: oklch(21.03% 0 285.89);

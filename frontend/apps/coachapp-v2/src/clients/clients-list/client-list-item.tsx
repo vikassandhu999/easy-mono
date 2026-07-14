@@ -26,30 +26,20 @@ function mobileAttentionLabel(client: Client): string | null {
   return null;
 }
 
-function MobileRowChips({client}: {client: Client}) {
+function ClientSignalChip({client}: {client: Client}) {
   if (client.status === 'active') {
     const attentionLabel = mobileAttentionLabel(client);
     const stage = stageChip(client);
+    const signal = attentionLabel ? {color: 'warning' as const, label: attentionLabel} : stage;
 
     return (
-      <div className="flex max-w-28 flex-col items-end gap-1 sm:hidden">
-        {attentionLabel ? (
-          <Chip
-            color="warning"
-            size="sm"
-            variant="soft"
-          >
-            <span className="block max-w-24 truncate">{attentionLabel}</span>
-          </Chip>
-        ) : null}
-        <Chip
-          color={stage.color}
-          size="sm"
-          variant="soft"
-        >
-          <span className="block max-w-24 truncate">{stage.label}</span>
-        </Chip>
-      </div>
+      <Chip
+        color={signal.color}
+        size="sm"
+        variant="soft"
+      >
+        <span className="block max-w-24 truncate">{signal.label}</span>
+      </Chip>
     );
   }
 
@@ -59,15 +49,13 @@ function MobileRowChips({client}: {client: Client}) {
       : STATUS_DISPLAY[client.status];
 
   return (
-    <div className="max-w-28 sm:hidden">
-      <Chip
-        color={status.color}
-        size="sm"
-        variant="soft"
-      >
-        <span className="block max-w-24 truncate">{status.label}</span>
-      </Chip>
-    </div>
+    <Chip
+      color={status.color}
+      size="sm"
+      variant="soft"
+    >
+      <span className="block max-w-24 truncate">{status.label}</span>
+    </Chip>
   );
 }
 
@@ -158,7 +146,7 @@ export default function ClientListItem({client, unreadCount}: {client: Client; u
 
   return (
     <ListBox.Item
-      className="min-h-fit px-4 py-3 sm:px-8"
+      className="min-h-16 px-4 py-3 transition-colors hover:bg-surface-hover active:scale-100! data-[pressed=true]:scale-100! sm:px-8"
       id={client.id}
       textValue={name}
     >
@@ -170,7 +158,6 @@ export default function ClientListItem({client, unreadCount}: {client: Client; u
         <Description className="truncate">{subtitle}</Description>
       </div>
       <div className="ms-auto flex min-w-0 shrink-0 items-center gap-2">
-        <MobileRowChips client={client} />
         <div className="hidden shrink-0 items-center gap-1 sm:flex">
           {whatsappUrl ? (
             <a
@@ -194,13 +181,13 @@ export default function ClientListItem({client, unreadCount}: {client: Client; u
           >
             <MessagesSquare size={16} />
             {unreadCount > 0 ? (
-              <span className="absolute right-0 top-0 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-danger-foreground">
+              <span className="absolute right-0 top-0 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-accent-foreground">
                 {unreadLabel(unreadCount)}
               </span>
             ) : null}
           </Link>
-          <RowChips client={client} />
         </div>
+        <ClientSignalChip client={client} />
       </div>
     </ListBox.Item>
   );

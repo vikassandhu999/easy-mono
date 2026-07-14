@@ -96,7 +96,7 @@ function useDashboardSetupProgress(skip: boolean): SetupProgress {
 
 function SetupShell({children, onDismiss, subtitle}: {children: ReactNode; onDismiss: () => void; subtitle: string}) {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-surface">
+    <section className="overflow-hidden rounded-2xl border border-border bg-surface">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex min-w-0 flex-col">
           <Typography weight="semibold">Get set up</Typography>

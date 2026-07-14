@@ -46,14 +46,20 @@ const SECTIONS: LibrarySection[] = [
 export default function Library() {
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header
+        className="pb-2 pt-4 md:pt-6 lg:pt-8"
+        size="wide"
+      >
         <Page.TitleGroup>
           <Page.Title>Library</Page.Title>
           <Page.Description>Your exercises, foods, recipes, and plans</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Page.Content>
+        <Page.Frame
+          className="grid grid-cols-1 gap-3 pb-6 sm:grid-cols-2 lg:grid-cols-3"
+          size="wide"
+        >
           {SECTIONS.map((section) => (
             <Link
               className="flex min-h-11 flex-col gap-1 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
@@ -74,7 +80,7 @@ export default function Library() {
               </Typography>
             </Link>
           ))}
-        </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

@@ -225,13 +225,18 @@ export default function Settings() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <Page.Title>Settings</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <PageSkeleton />
+        <Page.Content>
+          <Page.Frame
+            className="pb-6"
+            size="form"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -240,13 +245,16 @@ export default function Settings() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <Page.Title>Settings</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="max-w-lg">
+        <Page.Content>
+          <Page.Frame
+            className="pb-6"
+            size="form"
+          >
             <ErrorState message="Couldn't load settings." />
             <Button
               className="mt-3"
@@ -256,7 +264,7 @@ export default function Settings() {
             >
               Retry
             </Button>
-          </div>
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -266,13 +274,16 @@ export default function Settings() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="form">
         <Page.TitleGroup>
           <Page.Title>Settings</Page.Title>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="max-w-lg">
+      <Page.Content>
+        <Page.Frame
+          className="pb-6"
+          size="form"
+        >
           <ProfileSection
             onUpdate={updateProfile}
             profile={profile}
@@ -300,7 +311,7 @@ export default function Settings() {
               CoachApp v{__APP_VERSION__}
             </Typography>
           </div>
-        </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

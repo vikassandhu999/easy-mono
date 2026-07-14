@@ -8,6 +8,20 @@ interface PageProps {
   className?: string;
 }
 
+type PageSize = 'form' | 'list' | 'wide';
+
+interface PageLayoutProps extends PageProps {
+  size?: PageSize;
+}
+
+const PAGE_SIZE_CLASS: Record<PageSize, string> = {
+  form: 'max-w-3xl',
+  list: 'max-w-5xl',
+  wide: 'max-w-6xl',
+};
+
+const PAGE_GUTTER_CLASS = 'w-full px-4 md:px-6 lg:px-8';
+
 interface PageTitleProps {
   children: ReactNode;
   className?: string;
@@ -41,11 +55,13 @@ function PageRoot({children, className}: PageProps) {
   );
 }
 
-function PageHeader({children, className}: PageProps) {
+function PageHeader({children, className, size = 'wide'}: PageLayoutProps) {
   return (
     <div
       className={cn(
-        'flex shrink-0 flex-row items-center justify-between gap-3 px-4 pt-4 pb-2 md:px-6 md:pt-6 lg:px-8 lg:pt-8',
+        PAGE_GUTTER_CLASS,
+        PAGE_SIZE_CLASS[size],
+        'flex shrink-0 flex-row items-center justify-between gap-3 pt-4 pb-2 md:pt-6 lg:pt-8',
         className,
       )}
     >
@@ -62,7 +78,7 @@ function PageTitle({children, className}: PageTitleProps) {
   return (
     <Typography
       className={cn('min-w-0 truncate', className)}
-      type="h4"
+      type="h3"
     >
       {children}
     </Typography>
@@ -85,8 +101,12 @@ function PageActions({children, className}: PageProps) {
   return <div className={cn('flex shrink-0 items-center gap-2', className)}>{children}</div>;
 }
 
-function PageToolbar({children, className}: PageProps) {
-  return <div className={cn('mb-6 shrink-0 px-4 md:px-6 lg:px-8', className)}>{children}</div>;
+function PageToolbar({children, className, size = 'wide'}: PageLayoutProps) {
+  return <div className={cn(PAGE_GUTTER_CLASS, PAGE_SIZE_CLASS[size], 'mb-6 shrink-0', className)}>{children}</div>;
+}
+
+function PageFrame({children, className, size = 'wide'}: PageLayoutProps) {
+  return <div className={cn(PAGE_GUTTER_CLASS, PAGE_SIZE_CLASS[size], className)}>{children}</div>;
 }
 
 function PageContent({children, className}: PageProps) {
@@ -97,6 +117,7 @@ export const Page = Object.assign(PageRoot, {
   Actions: PageActions,
   Content: PageContent,
   Description: PageDescription,
+  Frame: PageFrame,
   Header: PageHeader,
   Title: PageTitle,
   TitleGroup: PageTitleGroup,

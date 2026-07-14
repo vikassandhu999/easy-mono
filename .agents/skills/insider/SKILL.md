@@ -41,7 +41,11 @@ the page (clicking, typing) — driving belongs to a browser tool or the user.
 ## Commands
 
 ```
-commands[7]:
+commands[11]:
+  <url> notes [--all] [--page p] [--snap s]  list open annotations (compact rows; --all includes done)
+  <url> notes <id>                           one note, full detail: every element + anchors
+  <url> notes done <id> [--note "how"]       resolve a note; its pin turns green for the user
+  <url> notes rm <id> | notes clear
   <url>                                      status: connected pages, active page
   <url> overview [--page p] [--snap s]       regions, landmarks, components
   <url> read <locator...> [flags]            subtree per locator (the main op)
@@ -59,6 +63,17 @@ read flags: --styles margin,padding | --styles "font*" | --styles all | --depth 
 ```
 
 Every subcommand supports `--help`.
+
+## Handling user feedback (notes)
+
+When the user says "check my notes" / "handle my UI feedback" — or at the start of
+any UI task — run `insider <url> notes`. Each open note is user feedback pinned to
+elements, pre-resolved to component + source line. Work each note: `notes <id>` for
+the full anchors, read the element, make the edit, verify with a live read, then
+`notes done <id> --note "what
+changed"` — the user sees the pin turn green. A note with several elements is one
+intent spanning them (e.g. "align these"). `orphaned: true` on an anchor means the
+element no longer exists on the current page — say so rather than guessing.
 
 ## Tips
 

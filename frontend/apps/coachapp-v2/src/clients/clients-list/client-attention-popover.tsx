@@ -1,6 +1,6 @@
 import type {Key} from '@heroui/react';
 import {Avatar, Button, Collection, Description, Label, ListBox, Popover, Skeleton} from '@heroui/react';
-import {ArrowRight, TriangleAlert} from 'lucide-react';
+import {ArrowRight, ClipboardCheck} from 'lucide-react';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -101,16 +101,16 @@ export default function ClientAttentionPopover() {
       <Button
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="hidden min-h-11 items-center gap-2 text-danger md:flex"
+        className="hidden min-h-11 items-center gap-2 md:flex"
         onPress={() => setOpen(true)}
         ref={triggerRef}
         variant="secondary"
       >
-        <TriangleAlert
+        <ClipboardCheck
           size={17}
           strokeWidth={2.2}
         />
-        {data.count} need attention
+        {data.count} follow-ups
       </Button>
 
       <Popover
@@ -123,24 +123,24 @@ export default function ClientAttentionPopover() {
           triggerRef={triggerRef}
         >
           <Popover.Dialog
-            aria-label="Clients needing attention"
+            aria-label="Client follow-ups"
             className="outline-none"
           >
             <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-danger-soft text-danger">
-                <TriangleAlert
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-hover text-muted">
+                <ClipboardCheck
                   size={17}
                   strokeWidth={2.2}
                 />
               </span>
               <div className="min-w-0">
-                <h2 className="text-sm font-semibold text-foreground">Needs attention</h2>
+                <h2 className="text-sm font-semibold text-foreground">Client follow-ups</h2>
                 <p className="mt-0.5 text-xs text-muted">Active clients waiting on you</p>
               </div>
             </div>
 
             <ListBox
-              aria-label="Clients needing attention"
+              aria-label="Client follow-ups"
               className="max-h-72 overflow-y-auto p-1"
               onAction={openClient}
               selectionMode="none"

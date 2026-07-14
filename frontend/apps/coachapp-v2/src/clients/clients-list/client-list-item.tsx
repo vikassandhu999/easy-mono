@@ -1,6 +1,6 @@
 import {formatIsoDateShort, formatTimeAgo, getInitials} from '@easy/utils';
 import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
-import {MessageCircle, MessagesSquare} from 'lucide-react';
+import {ChevronRight, MessageCircle, MessagesSquare} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -136,7 +136,7 @@ export default function ClientListItem({client, unreadCount}: {client: Client; u
 
   let subtitle = client.email ?? client.phone ?? client.status;
   if (client.status === 'active') {
-    subtitle = `Active · since ${formatIsoDateShort(client.inserted_at)}`;
+    subtitle = `Client since ${formatIsoDateShort(client.inserted_at)}`;
   }
   if (client.status === 'pending') {
     subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
@@ -146,11 +146,14 @@ export default function ClientListItem({client, unreadCount}: {client: Client; u
 
   return (
     <ListBox.Item
-      className="min-h-16 px-4 py-3 transition-colors hover:bg-surface-hover active:scale-100! data-[pressed=true]:scale-100! sm:px-8"
+      className="min-h-16 rounded-none border-b border-border px-4 py-3 transition-colors last:border-b-0 hover:bg-surface-hover active:scale-100! data-[pressed=true]:scale-100! sm:px-8"
       id={client.id}
       textValue={name}
     >
-      <Avatar size="sm">
+      <Avatar
+        className="shrink-0 ring-1 ring-border"
+        size="md"
+      >
         <Avatar.Fallback>{initials}</Avatar.Fallback>
       </Avatar>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -188,6 +191,10 @@ export default function ClientListItem({client, unreadCount}: {client: Client; u
           </Link>
         </div>
         <ClientSignalChip client={client} />
+        <ChevronRight
+          className="hidden shrink-0 text-muted sm:block"
+          size={16}
+        />
       </div>
     </ListBox.Item>
   );

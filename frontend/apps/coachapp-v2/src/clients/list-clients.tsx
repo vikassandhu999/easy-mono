@@ -92,12 +92,12 @@ export default function ListClients() {
       </Page.Header>
 
       <Page.Toolbar
-        className="sticky top-0 z-10 flex flex-col gap-3 bg-background/95 pb-4 pt-2 backdrop-blur"
+        className="sticky top-0 z-10 mb-4 flex flex-col gap-3 bg-background/95 pb-4 pt-2 backdrop-blur md:flex-row md:items-center md:justify-between"
         size="list"
       >
         <SearchField
           aria-label="Search clients"
-          className="w-full sm:max-w-xs"
+          className="w-full md:w-80 md:shrink-0"
           onChange={setSearch}
           value={search}
           variant="secondary"
@@ -110,7 +110,7 @@ export default function ListClients() {
         </SearchField>
         <Tabs
           aria-label="Filter clients by status"
-          className="min-w-0 flex-1"
+          className="min-w-0 md:ms-auto md:flex-none"
           onSelectionChange={setActiveFilter}
           selectedKey={activeFilter}
         >

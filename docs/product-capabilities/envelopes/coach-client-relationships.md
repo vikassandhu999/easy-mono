@@ -11,12 +11,12 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * Collection context: total matching relationships, overall counts by pending, active, and inactive status, active clients needing attention, search by name or contact information, and filtering by status or coaching stage.
 * Relationship record: name, email, phone, private coach notes, pending/active/inactive status, onboarding/coaching stage, inactive reason, and one assigned trainer.
 * Pending invitation: shareable link, sent time, and expiry time.
-* Coaching context: optional client subscription start and end dates, optional goal weight with kilograms or pounds, and signals for incomplete intake, no active plan, or a subscription ending within seven days.
+* Coaching context: optional client subscription start and end dates, optional goal weight with kilograms or pounds, and signals for incomplete onboarding, no active plan, or a subscription ending within seven days.
 
 ## Supported actions
 
 * A coach can discover visible client relationships through search, status or stage filtering, and the attention collection, resulting in a narrowed set with its matching count while overall status totals remain available and attention cases remain prioritized.
-* A coach can invite a person using at least email or phone and may include their name, resulting in a pending relationship, a shareable link, and a default intake assignment.
+* A coach can invite a person using at least email or phone and may include their name, resulting in a pending relationship, a shareable link, and an onboarding assignment.
 * Creating an invitation with an email address automatically attempts email delivery. For a phone-only invitation, the coach can copy or share the returned link through a device-supported channel.
 * A coach can resend a pending email invitation to refresh its expiry or revoke a pending invitation after confirmation to remove the relationship and its pending assignments.
 * A coach can update a pending invitation's fallback name and can update contact information, private notes, goal weight, and client subscription dates when their constraints are satisfied.
@@ -50,7 +50,10 @@ A coach can establish, understand, and maintain each coaching relationship throu
 
 * Team management: supplies active trainers and owner-only trainer lifecycle actions.
 * Billing and seats: supplies capacity, waiting-client activation, and owner-only seat purchasing.
-* Forms and check-ins: supplies default intake, recurring check-ins, submissions, and review state.
+* Check-in library: supplies the questions assigned during onboarding and reused by check-ins.
+* Check-in lifecycle: supplies check-in schedules and occurrences.
+* Completion and submissions: supplies completed answers and submission history.
+* Check-in review and messaging: supplies review state and conversation handoff.
 * Training: supplies plan assignment, coaching-stage advancement, and completed workout history.
 * Nutrition: supplies plan assignment, meal logs, and adherence information.
 * Weight tracking: supplies weight entries and trends against goal weight.
@@ -71,6 +74,6 @@ A coach can establish, understand, and maintain each coaching relationship throu
 The collection contains 48 clients: 31 active, 9 pending, and 8 inactive.
 
 * Aisha Verma is active and in coaching, assigned to Neha Kapoor. Her client subscription runs from 1 June 2026 through 31 August 2026, her goal weight is 62 kg, and she has no attention signals.
-* Kabir Shah is pending, assigned to the business owner, and has both email and phone. His invitation was sent on 12 July 2026 and expires on 11 August 2026. His default intake is assigned.
-* Meera Iyer is active and in onboarding, assigned to Neha Kapoor. Her intake is incomplete and she has no active training or nutrition plan, so both attention signals are present.
+* Kabir Shah is pending, assigned to the business owner, and has both email and phone. His invitation was sent on 12 July 2026 and expires on 11 August 2026. His onboarding questions are assigned.
+* Meera Iyer is active and in onboarding, assigned to Neha Kapoor. Her onboarding questions are incomplete and she has no active training or nutrition plan, so both attention signals are present.
 * Arjun Rao is inactive because his client subscription expired on 6 July 2026. Reactivation requires a later end date or no end date, plus an available seat.

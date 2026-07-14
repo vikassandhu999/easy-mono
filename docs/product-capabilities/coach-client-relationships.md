@@ -15,13 +15,13 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * Coaching assignment: the single trainer assigned to the client.
 * Subscription context: optional start and end dates. An inactive reason can distinguish a manual pause, an expired subscription, and a client waiting for a seat.
 * Goal weight: an optional positive value paired with kilograms or pounds.
-* Attention signals: incomplete intake, no active training or nutrition plan, and an active subscription ending within seven days.
+* Attention signals: incomplete onboarding, no active training or nutrition plan, and an active subscription ending within seven days.
 
 ## Supported actions
 
 * A coach can list visible client relationships, search them by identity or contact information, and filter them by status or coaching stage, resulting in a narrowed collection with its matching count while overall status totals remain available.
-* A coach can inspect active clients needing attention, resulting in intake cases first, clients without an active plan second, and expiring subscriptions after them.
-* A coach can invite a person using at least an email address or phone number and may include their name, resulting in a pending client relationship, a shareable invitation link, and an assigned default intake.
+* A coach can inspect active clients needing attention, resulting in incomplete-onboarding cases first, clients without an active plan second, and expiring subscriptions after them.
+* A coach can invite a person using at least an email address or phone number and may include their name, resulting in a pending client relationship, a shareable invitation link, and assigned onboarding questions.
 * Creating an invitation with an email address automatically attempts email delivery. For a phone-only invitation, the coach can copy or share the returned link through a device-supported channel.
 * A coach can resend a pending email invitation when the client has an email address, resulting in a refreshed send time and expiry.
 * A coach can revoke a pending invitation after confirmation, resulting in removal of the pending client record and its pending assignments.
@@ -68,7 +68,10 @@ A coach can establish, understand, and maintain each coaching relationship throu
 
 * Team management: supplies active trainers and owner-only trainer lifecycle actions. Deactivating a trainer reassigns that trainer's clients to the owner.
 * Billing and seats: supplies seat usage, capacity, awaiting-seat activation, and owner-only seat purchasing.
-* Forms and check-ins: supplies the default intake, recurring check-ins, submissions, review state, and client attention derived from incomplete intake.
+* Check-in library: supplies the onboarding questions assigned during invitation and the reusable questions used by check-ins.
+* Check-in lifecycle: supplies check-in schedules and occurrences.
+* Completion and submissions: supplies completed answers and submission history.
+* Check-in review and messaging: supplies review state and conversation handoff.
 * Training plans and history: supplies plan assignment, the coaching-stage advance, completed workout history, and attention derived from a missing active plan.
 * Nutrition plans and adherence: supplies plan assignment, meal logs, adherence information, and attention derived from a missing active plan.
 * Weight tracking: supplies weight entries, trends, and progress against the client's goal weight.

@@ -35,7 +35,7 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * A created invitation starts as pending and expires 30 days after it was sent.
 * Resending an eligible invitation refreshes its send time and 30-day expiry.
 * Invitation acceptance changes pending to active when the business remains within its seat limit.
-* If the business became over capacity after issuing the invitation, acceptance changes pending to inactive with an awaiting-seat reason. The client becomes active when capacity becomes available.
+* The backend defines a pending-to-inactive awaiting-seat transition when capacity disappeared after invitation, but the full OTP verification transaction currently rolls it back because client session creation requires an active relationship. This is an implementation gap rather than a supported end-to-end transition.
 * Revocation removes a pending relationship. An accepted relationship cannot return to pending.
 * An accepted relationship can move from active to inactive and from inactive to active when its constraints are satisfied.
 * A client starts in onboarding. The first assigned training or nutrition plan advances the client to coaching; a coach may also change the stage while the client is active.
@@ -46,7 +46,7 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * A business owner can see every client in the business. A trainer can see only clients assigned to that trainer.
 * Only a business owner can reassign clients. The target trainer must be active.
 * Active clients and pending invitations consume seats. A full seat allocation blocks another invitation and blocks manual reactivation.
-* A client who accepted while waiting for a seat cannot use the client product until capacity becomes available.
+* An existing client record marked as waiting for a seat is inactive and does not consume capacity. Confirmed added capacity can activate waiting records from oldest to newest.
 * Pending relationships expose invitation actions and do not expose accepted-client activity. Active and inactive relationships no longer expose an invitation link.
 * For accepted clients, the linked user's first and last name take precedence in the coach view; the coach-entered name remains a fallback. Pending relationships use the name entered with the invitation.
 
@@ -84,6 +84,7 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * The backend does not send invitations through SMS or WhatsApp. It returns a link that the coach may share using device capabilities.
 * Trainers cannot see unassigned clients or clients assigned to another trainer.
 * The product does not expose configurable roles or a general permission matrix beyond owner and trainer conditions documented here.
+* A complete client-facing waiting-for-seat acceptance flow is not currently supported end to end and requires implementation repair before design can rely on it.
 
 ## Verification evidence
 
@@ -91,6 +92,7 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * `backend/lib/easy_web/open_api/schemas/client.ex`: public client information and accepted request fields.
 * `backend/lib/easy/clients.ex` and `backend/lib/easy/clients/client.ex`: visibility, invitation, lifecycle, attention, assignment, and validation rules.
 * `backend/lib/easy/billing.ex`: seat availability and awaiting-seat behavior.
+* `backend/lib/easy/identity/invitations.ex` and `backend/lib/easy/identity/session_factory.ex`: the full invitation-verification transaction and the active-client session requirement that currently prevents awaiting-seat acceptance.
 * `backend/lib/easy/coaches.ex`: owner-only team operations and trainer lifecycle.
 * `frontend/apps/coachapp-v2/src/api/clients.ts`, `frontend/apps/coachapp-v2/src/clients/invite-client.tsx`, and `frontend/apps/coachapp-v2/src/clients/client-form/edit-client-form.tsx`: interaction-visible capability behavior.
 * `docs/superpowers/specs/2026-07-09-client-lifecycle-subscription-intake-design.md` and `docs/superpowers/specs/2026-07-08-trainer-team-access-control-design.md`: functional intent, used only where consistent with code.

@@ -26,14 +26,14 @@ A coach can establish, understand, and maintain each coaching relationship throu
 ## Lifecycle
 
 * An invitation starts pending, expires after 30 days, and may be refreshed by resend or removed by revoke.
-* Acceptance changes pending to active, or to inactive awaiting-seat if the business became over capacity. Waiting clients activate when capacity becomes available.
+* Acceptance changes pending to active when the business remains within its seat limit. If capacity disappeared after invitation, full verification currently cannot complete into the intended awaiting-seat state.
 * Accepted relationships move between active and inactive but cannot return to pending or be deleted. Passing the subscription end date makes an active client inactive.
 * Clients start in onboarding. The first assigned training or nutrition plan advances them to coaching; a coach may also change an active client's stage.
 
 ## Conditions
 
 * A business owner sees every client and may reassign them. A trainer sees only assigned clients and cannot reassign them.
-* Active clients and pending invitations consume seats. Full capacity blocks invitation and manual reactivation; awaiting-seat clients cannot use the client product.
+* Active clients and pending invitations consume seats. Full capacity blocks invitation and manual reactivation. Existing waiting-for-seat records are inactive and can activate when confirmed capacity becomes available.
 * Pending relationships have invitation actions but no accepted-client activity. After acceptance, invitation actions disappear and the linked user's name takes precedence over the invitation name.
 
 ## UX-relevant constraints
@@ -64,6 +64,7 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * Backend delivery through SMS or WhatsApp requires approval and product/backend work; only manual link sharing is supported.
 * Configurable roles or permissions beyond owner and trainer conditions require approval and product/backend work.
 * Allowing a trainer to access unassigned clients or another trainer's clients requires approval and product/backend work.
+* A complete client-facing waiting-for-seat acceptance flow requires approval and product/backend work.
 
 ## Example content
 

@@ -16,7 +16,7 @@ interface PageLayoutProps extends PageProps {
 
 const PAGE_SIZE_CLASS: Record<PageSize, string> = {
   form: 'max-w-3xl',
-  list: 'max-w-5xl',
+  list: 'mx-auto max-w-5xl',
   wide: 'max-w-6xl',
 };
 

@@ -25,7 +25,7 @@ export default function ListFoods() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="list">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton
             className={'lg:hidden'}
@@ -43,7 +43,10 @@ export default function ListFoods() {
           </Button>
         </Page.Actions>
       </Page.Header>
-      <Page.Toolbar className={'sticky top-0 z-10 flex flex-col gap-3 pt-2 pb-3 bg-surface border-b'}>
+      <Page.Toolbar
+        className={'sticky top-0 z-10 flex flex-col gap-3 pt-2 pb-3 bg-surface border-b'}
+        size="list"
+      >
         <SearchField
           aria-label="Search foods"
           className="w-full sm:max-w-xs"
@@ -59,25 +62,30 @@ export default function ListFoods() {
         </SearchField>
       </Page.Toolbar>
       <Page.Content>
-        <BrowseListBox
-          ariaLabel="Foods"
-          emptyState={
-            <ListEmptyState
-              createLabel="Create Food"
-              createRoute={ROUTES.CREATE_FOOD}
-              emptyDescription="Create your first food to get started."
-              hasFilter={!!deferredSearch}
-              nounPlural="foods"
-            />
-          }
-          fetchNextPage={fetchNextPage}
-          isError={isError}
-          isLoading={isLoading}
-          onRetry={refetch}
-          items={items}
-          onAction={(key) => navigate(ROUTES.FOOD_DETAIL.replace(':id', String(key)))}
-          renderItem={(food) => <FoodListItem food={food} />}
-        />
+        <Page.Frame
+          className="flex min-h-0 flex-1 flex-col pb-6"
+          size="list"
+        >
+          <BrowseListBox
+            ariaLabel="Foods"
+            emptyState={
+              <ListEmptyState
+                createLabel="Create Food"
+                createRoute={ROUTES.CREATE_FOOD}
+                emptyDescription="Create your first food to get started."
+                hasFilter={!!deferredSearch}
+                nounPlural="foods"
+              />
+            }
+            fetchNextPage={fetchNextPage}
+            isError={isError}
+            isLoading={isLoading}
+            onRetry={refetch}
+            items={items}
+            onAction={(key) => navigate(ROUTES.FOOD_DETAIL.replace(':id', String(key)))}
+            renderItem={(food) => <FoodListItem food={food} />}
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

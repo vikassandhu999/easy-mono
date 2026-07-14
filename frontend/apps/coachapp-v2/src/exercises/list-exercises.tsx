@@ -31,7 +31,7 @@ export default function ListExercises() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="list">
         <Page.TitleGroup className={'flex items-center'}>
           <div className={'lg:hidden'}>
             <BackButton onPress={goBack} />
@@ -48,7 +48,10 @@ export default function ListExercises() {
           </Button>
         </Page.Actions>
       </Page.Header>
-      <Page.Toolbar className={'sticky top-0 z-10 flex flex-col lg:flex-row gap-3 pt-2 pb-3 bg-surface border-b'}>
+      <Page.Toolbar
+        className={'sticky top-0 z-10 flex flex-col lg:flex-row gap-3 pt-2 pb-3 bg-surface border-b'}
+        size="list"
+      >
         <SearchField
           aria-label="Search exercises"
           className="w-full sm:max-w-xs"
@@ -77,26 +80,31 @@ export default function ListExercises() {
         )}
       </Page.Toolbar>
       <Page.Content>
-        <BrowseListBox
-          ariaLabel="Exercises"
-          emptyState={
-            <ListEmptyState
-              createLabel="Create exercise"
-              createRoute={ROUTES.CREATE_EXERCISE}
-              emptyDescription="Create your first exercise to get started."
-              filterDescription="Try adjusting your search or filters to find what you're looking for."
-              hasFilter={!!deferredSearch || selectedMuscleIds.length > 0}
-              nounPlural="exercises"
-            />
-          }
-          fetchNextPage={fetchNextPage}
-          isError={isError}
-          isLoading={isLoading || isFetchingNextPage}
-          items={items}
-          onRetry={refetch}
-          onAction={(key) => navigate(ROUTES.EXERCISE_DETAIL.replace(':id', String(key)))}
-          renderItem={(exercise) => <ExerciseListItem exercise={exercise} />}
-        />
+        <Page.Frame
+          className="flex min-h-0 flex-1 flex-col pb-6"
+          size="list"
+        >
+          <BrowseListBox
+            ariaLabel="Exercises"
+            emptyState={
+              <ListEmptyState
+                createLabel="Create exercise"
+                createRoute={ROUTES.CREATE_EXERCISE}
+                emptyDescription="Create your first exercise to get started."
+                filterDescription="Try adjusting your search or filters to find what you're looking for."
+                hasFilter={!!deferredSearch || selectedMuscleIds.length > 0}
+                nounPlural="exercises"
+              />
+            }
+            fetchNextPage={fetchNextPage}
+            isError={isError}
+            isLoading={isLoading || isFetchingNextPage}
+            items={items}
+            onRetry={refetch}
+            onAction={(key) => navigate(ROUTES.EXERCISE_DETAIL.replace(':id', String(key)))}
+            renderItem={(exercise) => <ExerciseListItem exercise={exercise} />}
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

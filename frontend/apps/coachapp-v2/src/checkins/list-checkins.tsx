@@ -133,7 +133,7 @@ export default function ListCheckins() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="list">
         <Page.TitleGroup className="flex items-center">
           <BackButton
             className="lg:hidden"
@@ -153,122 +153,127 @@ export default function ListCheckins() {
           ) : null}
         </Page.Actions>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <Tabs
-          aria-label="Forms sections"
-          onSelectionChange={(key) => setSearchParams(key === 'review' ? {tab: 'review'} : {}, {replace: true})}
-          selectedKey={activeTab}
+      <Page.Content>
+        <Page.Frame
+          className="pb-6"
+          size="list"
         >
-          <Tabs.ListContainer className="max-w-full overflow-x-auto">
-            <Tabs.List>
-              <Tabs.Tab id="templates">
-                Templates
-                <Tabs.Indicator />
-              </Tabs.Tab>
-              <Tabs.Tab id="review">
-                To review{reviewData ? ` (${reviewData.data.length})` : ''}
-                <Tabs.Indicator />
-              </Tabs.Tab>
-            </Tabs.List>
-          </Tabs.ListContainer>
-        </Tabs>
-        <div className="mt-4">
-          {activeTab === 'review' ? (
-            <ReviewQueue />
-          ) : isLoading ? (
-            <ListSkeleton />
-          ) : isError ? (
-            <div className="flex flex-col items-center gap-3 py-20 text-center">
-              <Typography
-                color="muted"
-                type="body-sm"
-              >
-                Couldn't load check-ins.
-              </Typography>
-              <Button
-                onPress={() => refetch()}
-                size="sm"
-                variant="secondary"
-              >
-                Retry
-              </Button>
-            </div>
-          ) : templates.length === 0 ? (
-            <ListEmptyState
-              createLabel="Create form"
-              createRoute={ROUTES.CREATE_CHECKIN}
-              emptyDescription="Build intake and check-in forms for your clients."
-              hasFilter={false}
-              nounPlural="forms"
-            />
-          ) : (
-            <div className="flex max-w-2xl flex-col gap-3">
-              <ToggleButtonGroup
-                aria-label="Filter forms by type"
-                className="flex flex-wrap gap-1 rounded-xl bg-surface-secondary p-1 self-start"
-                isDetached
-                onSelectionChange={(keys) => {
-                  const next = [...keys][0];
-                  if (next) {
-                    setPurpose(next as typeof purpose);
-                  }
-                }}
-                selectedKeys={[purpose]}
-                selectionMode="single"
-                size="sm"
-              >
-                <ToggleButton id="all">All</ToggleButton>
-                <ToggleButton id="intake">Intake</ToggleButton>
-                <ToggleButton id="check_in">Check-in</ToggleButton>
-              </ToggleButtonGroup>
-              {visibleTemplates.map((template) => {
-                const count = questionCount(template);
-                return (
-                  <button
-                    className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover"
-                    key={template.id}
-                    onClick={() => navigate(ROUTES.EDIT_CHECKIN.replace(':id', template.id))}
-                    type="button"
-                  >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
-                      <ClipboardCheck size={16} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <Typography
-                        truncate
-                        type="body-sm"
-                        weight="semibold"
-                      >
-                        {template.name}
-                      </Typography>
-                      <Typography
-                        color="muted"
-                        type="body-xs"
-                      >
-                        {count} question{count === 1 ? '' : 's'}
-                      </Typography>
-                    </div>
-                    <Chip
-                      size="sm"
-                      variant="soft"
-                    >
-                      {PURPOSE_LABELS[template.purpose] ?? template.purpose}
-                    </Chip>
-                  </button>
-                );
-              })}
-              {visibleTemplates.length === 0 ? (
+          <Tabs
+            aria-label="Forms sections"
+            onSelectionChange={(key) => setSearchParams(key === 'review' ? {tab: 'review'} : {}, {replace: true})}
+            selectedKey={activeTab}
+          >
+            <Tabs.ListContainer className="max-w-full overflow-x-auto">
+              <Tabs.List>
+                <Tabs.Tab id="templates">
+                  Templates
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+                <Tabs.Tab id="review">
+                  To review{reviewData ? ` (${reviewData.data.length})` : ''}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              </Tabs.List>
+            </Tabs.ListContainer>
+          </Tabs>
+          <div className="mt-4">
+            {activeTab === 'review' ? (
+              <ReviewQueue />
+            ) : isLoading ? (
+              <ListSkeleton />
+            ) : isError ? (
+              <div className="flex flex-col items-center gap-3 py-20 text-center">
                 <Typography
-                  className="py-10 text-center"
                   color="muted"
                   type="body-sm"
                 >
-                  No {PURPOSE_LABELS[purpose as 'check_in' | 'intake'].toLowerCase()} forms yet.
+                  Couldn't load check-ins.
                 </Typography>
-              ) : null}
-            </div>
-          )}
-        </div>
+                <Button
+                  onPress={() => refetch()}
+                  size="sm"
+                  variant="secondary"
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : templates.length === 0 ? (
+              <ListEmptyState
+                createLabel="Create form"
+                createRoute={ROUTES.CREATE_CHECKIN}
+                emptyDescription="Build intake and check-in forms for your clients."
+                hasFilter={false}
+                nounPlural="forms"
+              />
+            ) : (
+              <div className="flex max-w-2xl flex-col gap-3">
+                <ToggleButtonGroup
+                  aria-label="Filter forms by type"
+                  className="flex flex-wrap gap-1 rounded-xl bg-surface-secondary p-1 self-start"
+                  isDetached
+                  onSelectionChange={(keys) => {
+                    const next = [...keys][0];
+                    if (next) {
+                      setPurpose(next as typeof purpose);
+                    }
+                  }}
+                  selectedKeys={[purpose]}
+                  selectionMode="single"
+                  size="sm"
+                >
+                  <ToggleButton id="all">All</ToggleButton>
+                  <ToggleButton id="intake">Intake</ToggleButton>
+                  <ToggleButton id="check_in">Check-in</ToggleButton>
+                </ToggleButtonGroup>
+                {visibleTemplates.map((template) => {
+                  const count = questionCount(template);
+                  return (
+                    <button
+                      className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                      key={template.id}
+                      onClick={() => navigate(ROUTES.EDIT_CHECKIN.replace(':id', template.id))}
+                      type="button"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                        <ClipboardCheck size={16} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <Typography
+                          truncate
+                          type="body-sm"
+                          weight="semibold"
+                        >
+                          {template.name}
+                        </Typography>
+                        <Typography
+                          color="muted"
+                          type="body-xs"
+                        >
+                          {count} question{count === 1 ? '' : 's'}
+                        </Typography>
+                      </div>
+                      <Chip
+                        size="sm"
+                        variant="soft"
+                      >
+                        {PURPOSE_LABELS[template.purpose] ?? template.purpose}
+                      </Chip>
+                    </button>
+                  );
+                })}
+                {visibleTemplates.length === 0 ? (
+                  <Typography
+                    className="py-10 text-center"
+                    color="muted"
+                    type="body-sm"
+                  >
+                    No {PURPOSE_LABELS[purpose as 'check_in' | 'intake'].toLowerCase()} forms yet.
+                  </Typography>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

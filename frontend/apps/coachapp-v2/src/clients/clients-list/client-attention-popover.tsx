@@ -7,6 +7,7 @@ import {useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {type Client, useLazyListAttentionClientsQuery, useListAttentionClientsQuery} from '@/api/generated';
+import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import {clientInitials, clientName} from '@/dashboard/lib/client-format';
 
 const PAGE_SIZE = 20;
@@ -39,7 +40,7 @@ export default function ClientAttentionPopover() {
   const [open, setOpen] = useState(false);
   const [appendedClients, setAppendedClients] = useState<Client[]>([]);
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
-  const {data, isError, isLoading} = useListAttentionClientsQuery({limit: PAGE_SIZE, offset: 0}, {skip: !isDesktop});
+  const {data, isError, isLoading} = useListAttentionClientsQuery({limit: PAGE_SIZE, offset: 0});
   const [loadPage, {isFetching: isLoadingMore}] = useLazyListAttentionClientsQuery();
   const firstPageVersion = data ? `${data.count}:${data.data.map((client) => client.id).join(',')}` : null;
 
@@ -84,24 +85,73 @@ export default function ClientAttentionPopover() {
     navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)));
   }
 
-  if (!isDesktop) {
-    return null;
-  }
-
   if (isLoading) {
-    return <Skeleton className="hidden h-8 w-36 rounded-lg md:block" />;
+    return <Skeleton className="h-8 w-12 rounded-lg sm:w-36" />;
   }
 
   if (isError || !data || data.count === 0) {
     return null;
   }
 
+  const list = (
+    <ListBox
+      aria-label="Client follow-ups"
+      className={isDesktop ? 'max-h-72 overflow-y-auto p-1' : 'px-0'}
+      onAction={openClient}
+      selectionMode="none"
+    >
+      <Collection items={loadedClients}>
+        {(client) => {
+          const name = clientName(client);
+          return (
+            <ListBox.Item
+              className={`${isDesktop ? 'min-h-12 px-2 py-1.5' : 'min-h-14 px-1 py-2'} rounded-lg transition-colors hover:bg-surface-hover active:scale-100! data-[pressed=true]:scale-100!`}
+              id={client.id}
+              textValue={name}
+            >
+              <div className="flex w-full min-w-0 items-center gap-2.5">
+                <Avatar
+                  className="shrink-0"
+                  size="sm"
+                >
+                  <Avatar.Fallback>{clientInitials(client)}</Avatar.Fallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <Label className="block truncate text-sm font-semibold text-foreground">{name}</Label>
+                  <Description className="block truncate text-xs text-muted">{attentionReason(client)}</Description>
+                </div>
+                <ArrowRight
+                  className="shrink-0 text-muted"
+                  size={14}
+                  strokeWidth={2}
+                />
+              </div>
+            </ListBox.Item>
+          );
+        }}
+      </Collection>
+    </ListBox>
+  );
+
+  const loadMoreButton = hasMore ? (
+    <Button
+      className="min-h-9 w-full text-muted"
+      isPending={isLoadingMore}
+      onPress={loadMore}
+      size="sm"
+      variant="ghost"
+    >
+      {loadMoreFailed ? 'Retry' : 'Load more'}
+    </Button>
+  ) : null;
+
   return (
     <>
       <Button
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="hidden items-center gap-2 md:flex"
+        aria-label={`${data.count} client follow-ups`}
+        className="items-center gap-2"
         onPress={() => setOpen(true)}
         ref={triggerRef}
         size="sm"
@@ -111,91 +161,53 @@ export default function ClientAttentionPopover() {
           size={17}
           strokeWidth={2.2}
         />
-        {data.count} follow-ups
+        <span className="hidden sm:inline">{data.count} follow-ups</span>
+        <span className="sm:hidden">{data.count}</span>
       </Button>
 
-      <Popover
-        isOpen={open}
-        onOpenChange={handleOpenChange}
-      >
-        <Popover.Content
-          className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-lg"
-          placement="bottom end"
-          triggerRef={triggerRef}
+      {isDesktop ? (
+        <Popover
+          isOpen={open}
+          onOpenChange={handleOpenChange}
         >
-          <Popover.Dialog
-            aria-label="Client follow-ups"
-            className="outline-none"
+          <Popover.Content
+            className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-surface p-0 shadow-lg"
+            placement="bottom end"
+            triggerRef={triggerRef}
           >
-            <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-hover text-muted">
-                <ClipboardCheck
-                  size={17}
-                  strokeWidth={2.2}
-                />
-              </span>
-              <div className="min-w-0">
-                <h2 className="text-sm font-semibold text-foreground">Client follow-ups</h2>
-                <p className="mt-0.5 text-xs text-muted">Active clients waiting on you</p>
-              </div>
-            </div>
-
-            <ListBox
+            <Popover.Dialog
               aria-label="Client follow-ups"
-              className="max-h-72 overflow-y-auto p-1"
-              onAction={openClient}
-              selectionMode="none"
+              className="outline-none"
             >
-              <Collection items={loadedClients}>
-                {(client) => {
-                  const name = clientName(client);
-                  return (
-                    <ListBox.Item
-                      className="min-h-14 rounded-lg px-3 py-2 transition-colors hover:bg-surface-hover active:scale-100! data-[pressed=true]:scale-100!"
-                      id={client.id}
-                      textValue={name}
-                    >
-                      <div className="flex w-full min-w-0 items-center gap-3">
-                        <Avatar
-                          className="shrink-0"
-                          size="sm"
-                        >
-                          <Avatar.Fallback>{clientInitials(client)}</Avatar.Fallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <Label className="block truncate text-sm font-medium text-foreground">{name}</Label>
-                          <Description className="block truncate text-xs text-muted">
-                            {attentionReason(client)}
-                          </Description>
-                        </div>
-                        <ArrowRight
-                          className="shrink-0 text-muted"
-                          size={15}
-                          strokeWidth={2.2}
-                        />
-                      </div>
-                    </ListBox.Item>
-                  );
-                }}
-              </Collection>
-            </ListBox>
-
-            {hasMore ? (
-              <div className="border-t border-border px-4 py-2.5">
-                <Button
-                  className="min-h-11 w-full"
-                  isPending={isLoadingMore}
-                  onPress={loadMore}
-                  size="sm"
-                  variant="primary"
-                >
-                  {loadMoreFailed ? 'Retry' : 'Load more'}
-                </Button>
+              <div className="flex items-center gap-2.5 border-b border-border px-3 py-2.5">
+                <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                  <ClipboardCheck
+                    size={15}
+                    strokeWidth={2.2}
+                  />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-foreground">Client follow-ups</h2>
+                  <p className="mt-0.5 text-xs text-muted">Active clients waiting on you</p>
+                </div>
               </div>
-            ) : null}
-          </Popover.Dialog>
-        </Popover.Content>
-      </Popover>
+
+              {list}
+              {loadMoreButton ? <div className="border-t border-border px-2 py-1.5">{loadMoreButton}</div> : null}
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      ) : (
+        <KeyboardSheet
+          footer={loadMoreButton ?? undefined}
+          onClose={close}
+          open={open}
+          title="Client follow-ups"
+        >
+          <p className="pb-2 text-xs text-muted">Active clients waiting on you</p>
+          {list}
+        </KeyboardSheet>
+      )}
     </>
   );
 }

@@ -25,7 +25,7 @@ export default function ListTrainingPlans() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="list">
         <Page.TitleGroup className="flex items-center">
           <BackButton
             className={'lg:hidden'}
@@ -43,7 +43,10 @@ export default function ListTrainingPlans() {
           </Button>
         </Page.Actions>
       </Page.Header>
-      <Page.Toolbar className={'sticky top-0 z-10 flex flex-col gap-3 border-b bg-surface pt-2 pb-3'}>
+      <Page.Toolbar
+        className={'sticky top-0 z-10 flex flex-col gap-3 border-b bg-surface pt-2 pb-3'}
+        size="list"
+      >
         <SearchField
           aria-label="Search training plans"
           className="w-full sm:max-w-xs"
@@ -59,26 +62,31 @@ export default function ListTrainingPlans() {
         </SearchField>
       </Page.Toolbar>
       <Page.Content>
-        <BrowseListBox
-          ariaLabel="Training plans"
-          className="flex-1 gap-0"
-          emptyState={
-            <ListEmptyState
-              createLabel="Create Training Plan"
-              createRoute={ROUTES.CREATE_TRAINING_PLAN}
-              emptyDescription="Create your first training plan to get started."
-              hasFilter={!!deferredSearch}
-              nounPlural="training plans"
-            />
-          }
-          fetchNextPage={fetchNextPage}
-          isError={isError}
-          isLoading={isLoading}
-          onRetry={refetch}
-          items={items}
-          onAction={(key) => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', String(key)))}
-          renderItem={(plan) => <TrainingPlanListItem plan={plan} />}
-        />
+        <Page.Frame
+          className="flex min-h-0 flex-1 flex-col pb-6"
+          size="list"
+        >
+          <BrowseListBox
+            ariaLabel="Training plans"
+            className="flex-1 gap-0"
+            emptyState={
+              <ListEmptyState
+                createLabel="Create Training Plan"
+                createRoute={ROUTES.CREATE_TRAINING_PLAN}
+                emptyDescription="Create your first training plan to get started."
+                hasFilter={!!deferredSearch}
+                nounPlural="training plans"
+              />
+            }
+            fetchNextPage={fetchNextPage}
+            isError={isError}
+            isLoading={isLoading}
+            onRetry={refetch}
+            items={items}
+            onAction={(key) => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', String(key)))}
+            renderItem={(plan) => <TrainingPlanListItem plan={plan} />}
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

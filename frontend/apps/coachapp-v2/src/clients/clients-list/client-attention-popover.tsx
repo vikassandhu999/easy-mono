@@ -135,7 +135,7 @@ export default function ClientAttentionPopover() {
 
   const loadMoreButton = hasMore ? (
     <Button
-      className="min-h-9 w-full text-muted"
+      className="h-8 min-h-8 w-full text-xs text-muted"
       isPending={isLoadingMore}
       onPress={loadMore}
       size="sm"
@@ -179,21 +179,12 @@ export default function ClientAttentionPopover() {
               aria-label="Client follow-ups"
               className="outline-none"
             >
-              <div className="flex items-center gap-2.5 border-b border-border px-3 py-2.5">
-                <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
-                  <ClipboardCheck
-                    size={15}
-                    strokeWidth={2.2}
-                  />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-foreground">Client follow-ups</h2>
-                  <p className="mt-0.5 text-xs text-muted">Active clients waiting on you</p>
-                </div>
+              <div className="border-b border-border px-3 py-2">
+                <h2 className="text-xs font-semibold text-foreground">Client follow-ups</h2>
               </div>
 
               {list}
-              {loadMoreButton ? <div className="border-t border-border px-2 py-1.5">{loadMoreButton}</div> : null}
+              {loadMoreButton ? <div className="border-t border-border px-2 py-1">{loadMoreButton}</div> : null}
             </Popover.Dialog>
           </Popover.Content>
         </Popover>

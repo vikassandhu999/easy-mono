@@ -80,7 +80,6 @@ export default function ListClients() {
         <Page.Actions>
           <ClientAttentionPopover />
           <Button
-            className="min-h-11"
             onPress={() => navigate(ROUTES.INVITE_CLIENT)}
             size="sm"
           >
@@ -91,7 +90,7 @@ export default function ListClients() {
       </Page.Header>
 
       <Page.Toolbar
-        className="sticky top-0 z-10 mb-4 flex flex-col gap-3 bg-background/95 pb-3 pt-2 backdrop-blur md:flex-row md:items-end md:justify-between"
+        className="mb-4 flex flex-col gap-3 pb-3 pt-2 md:flex-row md:items-end md:justify-between"
         size="list"
       >
         <SearchField
@@ -111,7 +110,7 @@ export default function ListClients() {
           className="min-w-0 md:ms-auto md:flex-none"
           onSelectionChange={setActiveFilter}
           selectedKey={activeFilter}
-          variant="secondary"
+          variant="primary"
         >
           <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
             <Tabs.List className="w-max! min-w-max">
@@ -120,7 +119,7 @@ export default function ListClients() {
 
                 return (
                   <Tabs.Tab
-                    className="min-h-11 w-auto! gap-2 whitespace-nowrap px-3 sm:px-4"
+                    className="w-auto! gap-2 whitespace-nowrap px-3 sm:px-4"
                     id={option.id}
                     key={option.id}
                   >
@@ -128,7 +127,7 @@ export default function ListClients() {
                     {count === undefined ? null : (
                       <span className="hidden text-xs font-normal text-muted sm:inline">{count}</span>
                     )}
-                    <Tabs.Indicator className="bg-current" />
+                    <Tabs.Indicator />
                   </Tabs.Tab>
                 );
               })}

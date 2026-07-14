@@ -89,7 +89,7 @@ export default function ClientAttentionPopover() {
   }
 
   if (isLoading) {
-    return <Skeleton className="hidden h-11 w-36 rounded-lg md:block" />;
+    return <Skeleton className="hidden h-8 w-36 rounded-lg md:block" />;
   }
 
   if (isError || !data || data.count === 0) {
@@ -101,9 +101,10 @@ export default function ClientAttentionPopover() {
       <Button
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="hidden min-h-11 items-center gap-2 md:flex"
+        className="hidden items-center gap-2 md:flex"
         onPress={() => setOpen(true)}
         ref={triggerRef}
+        size="sm"
         variant="secondary"
       >
         <ClipboardCheck

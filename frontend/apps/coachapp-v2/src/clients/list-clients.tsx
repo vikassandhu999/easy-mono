@@ -98,6 +98,7 @@ export default function ListClients() {
           className="w-full md:w-80 md:shrink-0"
           onChange={setSearch}
           value={search}
+          variant="secondary"
         >
           <SearchField.Group className="min-h-11">
             <SearchField.SearchIcon />

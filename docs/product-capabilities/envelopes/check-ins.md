@@ -87,7 +87,7 @@ A coaching business can define reusable onboarding and check-in questions, sched
 * Client relationships: supplies client identity, coaching status, trainer assignment, visibility, invitation-created onboarding, and onboarding attention.
 * Messaging: owns the single coach-client conversation, message delivery, unread state, failure recovery, and real-time updates. This project covers only the check-in handoff and reference context.
 * Attachments: owns private photo upload, access, and stored-file availability.
-* Weight tracking: owns weight units, history, goals, trends, and later edits.
+* Weight tracking: owns weight units, history, trends, progress against the relationship-owned goal, and later edits.
 
 ## Unsupported assumptions
 

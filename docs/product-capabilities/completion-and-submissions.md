@@ -61,7 +61,7 @@ An active client can answer their onboarding questions or an open check-in occur
 * Check-in lifecycle: supplies check-in occurrences, due state, dismissal, missed state, and schedules.
 * Client relationships: supplies active client access, onboarding attention, and coaching stage.
 * Check-in review and messaging: supplies review state, the review queue, answer review, and conversation handoff for check-ins.
-* Weight tracking: owns unit-bearing weight entries, history, trends, goals, and later edits.
+* Weight tracking: owns unit-bearing weight entries, history, trends, progress against the relationship-owned goal, and later edits.
 * Attachments: owns private photo upload, download access, authorization, and stored-file lifecycle.
 
 ## Unsupported assumptions

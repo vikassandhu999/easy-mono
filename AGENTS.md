@@ -27,19 +27,11 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 - `just lint` / `just test` / `just build`
 - `just deploy` — deploy backend to Fly (from `backend/`)
 
-## Agent skills
+## UI redesign ports
 
-### Issue tracker
-
-Issues and PRDs live in **Linear**, accessed via the Linear MCP server. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root cover the whole monorepo. See `docs/agents/domain.md`.
+All redesign work follows `design-handoff/UI-CONTRACT.md` — read it before touching any screen.
+Per-screen workflow, reference images, exact copy, and behavior specs: `design-handoff/README.md`.
+Never read `design-handoff/design/Dashboard Redesign.dc.html` whole — grep `data-screen-label="XX"` for your screen's slice. It is a spec, not source; never copy its markup or styles.
 
 ### Dev OTPs
 

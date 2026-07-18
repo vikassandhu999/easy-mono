@@ -1,21 +1,20 @@
-import {Button, Chip, CloseButton, Separator, Toast} from '@heroui/react';
+import {getInitials} from '@easy/utils';
+import {Button, Chip, CloseButton, Toast} from '@heroui/react';
 import {
-  BookOpen,
-  ChevronRight,
+  ChefHat,
   ClipboardCheck,
   ClipboardList,
-  Download,
   Dumbbell,
-  FolderOpen,
-  Inbox,
   LayoutDashboard,
+  LayoutGrid,
   MessageCircle,
+  Salad,
   Settings,
   Users,
   UtensilsCrossed,
   X,
 } from 'lucide-react';
-import {type ReactNode, useState} from 'react';
+import type {ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 
 import {useInstallPrompt} from '@/@components/use-install-prompt';
@@ -24,10 +23,10 @@ import {useChannelEvent} from '@/@hooks/use-channel-event';
 import {api} from '@/api/base';
 import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
-import {useListProspectsQuery} from '@/api/prospects';
+import {useGetCoachProfileQuery} from '@/api/profile';
 import {useAppDispatch} from '@/store';
 
-const ICON_SIZE = 20;
+const ICON = 18;
 
 interface NavItem {
   badge?: ReactNode;
@@ -36,171 +35,66 @@ interface NavItem {
   path: string;
 }
 
-interface NavGroup {
-  icon: JSX.Element;
-  items: NavItem[];
-  label: string;
-  pathPrefix: string;
-}
-
-// Top-level sidebar items (non-grouped)
-const SIDEBAR_TOP: NavItem[] = [
-  {
-    icon: <LayoutDashboard size={ICON_SIZE} />,
-    label: 'Dashboard',
-    path: ROUTES.DASHBOARD,
-  },
-  {
-    badge: <PendingClientBadge />,
-    icon: <Users size={ICON_SIZE} />,
-    label: 'Clients',
-    path: ROUTES.CLIENTS,
-  },
-  {
-    badge: <NewProspectBadge />,
-    icon: <Inbox size={ICON_SIZE} />,
-    label: 'Prospects',
-    path: ROUTES.PROSPECTS,
-  },
-  {
-    badge: <UnreadMessagesBadge />,
-    icon: <MessageCircle size={ICON_SIZE} />,
-    label: 'Messages',
-    path: ROUTES.MESSAGES,
-  },
+const PRIMARY: NavItem[] = [
+  {icon: <LayoutDashboard size={ICON} />, label: 'Dashboard', path: ROUTES.DASHBOARD},
+  {badge: <ClientCountBadge />, icon: <Users size={ICON} />, label: 'Clients', path: ROUTES.CLIENTS},
+  {badge: <UnreadBadge />, icon: <MessageCircle size={ICON} />, label: 'Messages', path: ROUTES.MESSAGES},
 ];
 
-// Library group — collapsible on desktop sidebar
-const LIBRARY_GROUP: NavGroup = {
-  icon: <FolderOpen size={ICON_SIZE} />,
-  items: [
-    {
-      icon: <Dumbbell size={ICON_SIZE} />,
-      label: 'Exercises',
-      path: ROUTES.EXERCISES,
-    },
-    {
-      icon: <UtensilsCrossed size={ICON_SIZE} />,
-      label: 'Foods',
-      path: ROUTES.FOODS,
-    },
-    {
-      icon: <BookOpen size={ICON_SIZE} />,
-      label: 'Recipes',
-      path: ROUTES.RECIPES,
-    },
-    {
-      icon: <ClipboardList size={ICON_SIZE} />,
-      label: 'Nutrition Plans',
-      path: ROUTES.NUTRITION_PLANS,
-    },
-    {
-      icon: <ClipboardList size={ICON_SIZE} />,
-      label: 'Training Plans',
-      path: ROUTES.TRAINING_PLANS,
-    },
-    {
-      icon: <ClipboardCheck size={ICON_SIZE} />,
-      label: 'Forms',
-      path: ROUTES.CHECKINS,
-    },
-  ],
-  label: 'Library',
-  pathPrefix: ROUTES.LIBRARY,
-};
-
-// Bottom sidebar items
-const SIDEBAR_BOTTOM: NavItem[] = [
-  {
-    icon: <Settings size={ICON_SIZE} />,
-    label: 'Settings',
-    path: ROUTES.SETTINGS,
-  },
+const BUILDER: NavItem[] = [
+  {icon: <Dumbbell size={ICON} />, label: 'Exercises', path: ROUTES.EXERCISES},
+  {icon: <UtensilsCrossed size={ICON} />, label: 'Foods', path: ROUTES.FOODS},
+  {icon: <ChefHat size={ICON} />, label: 'Recipes', path: ROUTES.RECIPES},
+  {icon: <Salad size={ICON} />, label: 'Nutrition', path: ROUTES.NUTRITION_PLANS},
+  {icon: <ClipboardList size={ICON} />, label: 'Training', path: ROUTES.TRAINING_PLANS},
+  {icon: <ClipboardCheck size={ICON} />, label: 'Forms', path: ROUTES.CHECKINS},
 ];
 
-// Mobile bottom nav — max 5 most-used items (thumb-friendly)
+// Mobile bottom tab bar — Builder maps to the library landing.
 const BOTTOM_NAV: NavItem[] = [
-  {
-    icon: <LayoutDashboard size={ICON_SIZE} />,
-    label: 'Home',
-    path: ROUTES.DASHBOARD,
-  },
-  {
-    icon: <Users size={ICON_SIZE} />,
-    label: 'Clients',
-    path: ROUTES.CLIENTS,
-  },
-  {
-    icon: <Inbox size={ICON_SIZE} />,
-    label: 'Prospects',
-    path: ROUTES.PROSPECTS,
-  },
-  {
-    badge: <UnreadMessagesBadge />,
-    icon: <MessageCircle size={ICON_SIZE} />,
-    label: 'Messages',
-    path: ROUTES.MESSAGES,
-  },
-  {
-    icon: <FolderOpen size={ICON_SIZE} />,
-    label: 'Library',
-    path: ROUTES.LIBRARY,
-  },
+  {icon: <LayoutDashboard size={21} />, label: 'Dashboard', path: ROUTES.DASHBOARD},
+  {icon: <Users size={21} />, label: 'Clients', path: ROUTES.CLIENTS},
+  {icon: <LayoutGrid size={21} />, label: 'Builder', path: ROUTES.LIBRARY},
+  {badge: <UnreadBadge />, icon: <MessageCircle size={21} />, label: 'Messages', path: ROUTES.MESSAGES},
 ];
 
-function SidebarNavItem({item}: {item: NavItem}) {
+function SidebarLink({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+        `flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2 text-[13.5px] transition-colors ${
           isActive
-            ? 'bg-accent/10 font-semibold text-accent before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-full before:bg-accent'
-            : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
+            ? 'bg-accent font-semibold text-accent-foreground'
+            : 'font-medium text-white/80 hover:bg-white/10 hover:text-white'
         }`
       }
       to={item.path}
-      viewTransition
     >
-      {item.icon}
+      <span className="[&_svg]:opacity-70">{item.icon}</span>
       <span className="flex-1">{item.label}</span>
       {item.badge}
     </NavLink>
   );
 }
 
-function PendingClientBadge() {
-  const {data} = useListClientsQuery({status: 'pending', limit: 0});
-  const count = data?.summary?.pending ?? 0;
+function ClientCountBadge() {
+  const {data} = useListClientsQuery({limit: 0});
+  const count = data?.summary?.active ?? 0;
   if (count === 0) {
     return null;
   }
   return (
     <Chip
-      color="accent"
+      color="default"
       size="sm"
+      variant="soft"
     >
       {count > 99 ? '99+' : count}
     </Chip>
   );
 }
 
-function NewProspectBadge() {
-  const {data} = useListProspectsQuery({limit: 0});
-  const count = data?.summary?.new ?? 0;
-  if (count === 0) {
-    return null;
-  }
-  return (
-    <Chip
-      color="accent"
-      size="sm"
-    >
-      {count > 99 ? '99+' : count}
-    </Chip>
-  );
-}
-
-function UnreadMessagesBadge() {
+function UnreadBadge() {
   // ponytail: totals the first 100 conversations; matches the inbox page cap.
   const {data} = useListCoachConversationsQuery({limit: 100});
   const count = (data?.data ?? []).reduce((sum, c) => sum + c.unread_count, 0);
@@ -211,54 +105,36 @@ function UnreadMessagesBadge() {
     <Chip
       color="accent"
       size="sm"
+      variant="primary"
     >
       {count > 99 ? '99+' : count}
     </Chip>
   );
 }
 
-function SidebarNavGroupSection({group}: {group: NavGroup}) {
-  const location = useLocation();
-  const isGroupActive = location.pathname.startsWith(group.pathPrefix);
-  const [open, setOpen] = useState(true);
+function ProfileCard() {
+  const {data} = useGetCoachProfileQuery();
+  const profile = data?.data;
+  const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || 'Your profile';
+  const initials = getInitials(profile?.first_name, profile?.last_name) || '?';
 
   return (
-    <div>
-      <Button
-        className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-          isGroupActive && !open
-            ? 'bg-accent/10 font-semibold text-accent'
-            : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
-        }`}
-        fullWidth
-        onPress={() => setOpen((prev) => !prev)}
-        variant="ghost"
-      >
-        {group.icon}
-        <span className="flex-1 text-left">{group.label}</span>
-        <ChevronRight className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : ''}`} />
-      </Button>
-      {open ? (
-        <div className="ml-3 mt-1 space-y-0.5 border-l border-border pl-3">
-          {group.items.map((item) => (
-            <NavLink
-              className={({isActive}) =>
-                `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                  isActive
-                    ? 'bg-accent/10 font-semibold text-accent'
-                    : 'font-medium text-muted hover:bg-default-soft active:bg-default-soft'
-                }`
-              }
-              key={item.path}
-              to={item.path}
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      ) : null}
-    </div>
+    <NavLink
+      className="mx-0.5 flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.07] p-2 transition-colors hover:border-white/20 hover:bg-white/[0.11]"
+      to={ROUTES.SETTINGS}
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning-soft text-xs font-semibold text-warning-soft-foreground">
+        {initials}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-semibold text-white">{name}</span>
+        <span className="block truncate text-[11px] text-white/50">{profile?.business.name ?? ''}</span>
+      </span>
+      <Settings
+        className="shrink-0 text-white/50"
+        size={16}
+      />
+    </NavLink>
   );
 }
 
@@ -266,19 +142,22 @@ function BottomNavItem({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] transition-colors ${
-          isActive ? 'bg-accent/10 font-semibold text-accent' : 'font-medium text-muted'
+        `relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 text-[10px] transition-colors ${
+          isActive ? 'font-semibold text-accent' : 'font-medium text-white/55'
         }`
       }
       to={item.path}
     >
-      {item.icon}
+      <span className="relative">
+        {item.icon}
+        {item.badge ? <span className="absolute -right-2.5 -top-1.5">{item.badge}</span> : null}
+      </span>
       <span>{item.label}</span>
     </NavLink>
   );
 }
 
-// Paths where the mobile app frame is visible (exact match only)
+// Paths where the mobile app frame (top bar + bottom nav) is visible.
 const MOBILE_FRAME_PATHS = new Set([...BOTTOM_NAV.map((item) => item.path), ROUTES.SETTINGS]);
 
 export default function AppShell() {
@@ -296,71 +175,75 @@ export default function AppShell() {
       {/* Global toast renderer — queued via toast() from @heroui/react */}
       <Toast.Provider placement="bottom end" />
 
-      <aside className="hidden border-r border-border bg-surface lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex h-16 items-center px-6">
-          <img
-            alt="CoachEasy"
-            className="h-7"
-            src="/TextLogo.webp"
-          />
+      <aside className="hidden bg-[var(--ink)] lg:fixed lg:inset-y-0 lg:flex lg:w-60 lg:flex-col lg:p-3">
+        <div className="mx-0.5 flex items-center gap-2.5 border-b border-white/10 px-1.5 pb-3.5 pt-0.5">
+          <span className="flex size-8 items-center justify-center rounded-[9px] bg-accent font-grotesk text-base font-bold text-accent-foreground">
+            C
+          </span>
+          <span className="font-grotesk text-[17px] font-bold text-white">
+            Coach<span className="text-accent">Easy</span>
+          </span>
         </div>
-        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-4">
-          <div className="flex-1 space-y-1">
-            {SIDEBAR_TOP.map((item) => (
-              <SidebarNavItem
-                item={item}
-                key={item.path}
-              />
-            ))}
-            <SidebarNavGroupSection group={LIBRARY_GROUP} />
-          </div>
-          <Separator className="my-2" />
-          <div className="space-y-1 pt-2">
-            {SIDEBAR_BOTTOM.map((item) => (
-              <SidebarNavItem
+
+        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-4">
+          <div className="flex flex-col gap-0.5">
+            {PRIMARY.map((item) => (
+              <SidebarLink
                 item={item}
                 key={item.path}
               />
             ))}
           </div>
-          {canInstall ? (
-            <div className="mx-1 mt-3 rounded-lg border border-border bg-surface-secondary p-3">
-              <p className="text-xs text-muted">Install the app for quick access</p>
-              <div className="mt-2 flex gap-2">
-                <Button
-                  className="min-h-11 flex-1"
-                  onPress={promptInstall}
-                  size="sm"
-                >
-                  <Download size={14} />
-                  Install
-                </Button>
-                <Button
-                  aria-label="Dismiss install prompt"
-                  className="min-h-11 min-w-11"
-                  onPress={dismiss}
-                  size="sm"
-                  variant="ghost"
-                >
-                  <X size={14} />
-                </Button>
+          <div className="px-2 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-[0.09em] text-white/40">
+            Builder
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {BUILDER.map((item) => (
+              <SidebarLink
+                item={item}
+                key={item.path}
+              />
+            ))}
+          </div>
+
+          <div className="mt-auto flex flex-col gap-3 pt-4">
+            {canInstall ? (
+              <div className="mx-0.5 rounded-xl border border-white/10 bg-white/[0.07] p-3">
+                <p className="text-xs text-white/70">Install the app for quick access</p>
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    className="min-h-11 flex-1"
+                    onPress={promptInstall}
+                    size="sm"
+                  >
+                    Install
+                  </Button>
+                  <Button
+                    aria-label="Dismiss install prompt"
+                    className="min-h-11 min-w-11 text-white/70"
+                    onPress={dismiss}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <X size={14} />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+            <ProfileCard />
+          </div>
         </nav>
       </aside>
 
       {/* Main content — only add bottom padding when bottom nav is visible */}
       <main
-        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-64 ${showMobileFrame ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4rem+env(safe-area-inset-bottom))]') : ''}`}
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-60 ${showMobileFrame ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]') : ''}`}
       >
         {showMobileFrame ? (
           <div className="flex h-14 shrink-0 items-center justify-between px-4 lg:hidden">
-            <img
-              alt="CoachEasy"
-              className="h-6"
-              src="/TextLogo.webp"
-            />
+            <span className="font-grotesk text-lg font-bold text-foreground">
+              Coach<span className="text-accent">Easy</span>
+            </span>
             <NavLink
               aria-label="Account settings"
               className={({isActive}) =>
@@ -382,7 +265,7 @@ export default function AppShell() {
 
       {/* Mobile install banner — above bottom nav */}
       {canInstall && showMobileFrame ? (
-        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-surface px-4 py-2.5 lg:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-surface px-4 py-2.5 lg:hidden">
           <div className="flex items-center gap-3">
             <img
               alt=""
@@ -409,7 +292,7 @@ export default function AppShell() {
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showMobileFrame ? (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex min-h-16 items-center gap-1 border-t border-border bg-background px-2 pb-[env(safe-area-inset-bottom)] lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-1 bg-[var(--ink)] px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2.5 lg:hidden">
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
               item={item}

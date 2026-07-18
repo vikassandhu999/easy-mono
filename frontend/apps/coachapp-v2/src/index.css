@@ -56,6 +56,10 @@
   --warning: oklch(78.19% 0.1585 76.18);
   --warning-foreground: oklch(21.03% 0.0059 76.18);
 
+  /* App chrome — dark sidebar / elevated priority card (same in both themes) */
+  --ink: oklch(19% 0.004 285);
+  --ink-foreground: oklch(99.11% 0 0);
+
   /* Font Family */
   /* Make sure to load Inter font in your app */
   --font-sans: var(--font-inter);

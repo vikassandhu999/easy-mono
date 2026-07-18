@@ -1,5 +1,5 @@
 import type {LucideIcon} from 'lucide-react';
-import {Dumbbell, Globe, UserPlus, UtensilsCrossed} from 'lucide-react';
+import {ChevronRight, Dumbbell, Globe, UserPlus, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -21,19 +21,22 @@ export function QuickActionsRow() {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 gap-2">
+    <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
       {ACTIONS.map((action) => (
         <button
-          className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3.5 text-left text-sm font-medium transition-colors hover:bg-surface-hover"
+          className="flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           key={action.route}
           onClick={() => navigate(action.route)}
           type="button"
         >
-          <action.icon
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
+            <action.icon size={16} />
+          </span>
+          <span className="flex-1 truncate text-[13.5px] font-medium text-foreground">{action.label}</span>
+          <ChevronRight
             className="shrink-0 text-muted"
             size={16}
           />
-          <span className="truncate">{action.label}</span>
         </button>
       ))}
     </div>

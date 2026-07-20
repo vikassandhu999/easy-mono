@@ -1,104 +1,133 @@
 import type {Key} from '@heroui/react';
 
-import {Button, SearchField, Tabs} from '@heroui/react';
-import {Plus} from 'lucide-react';
+import {Button, SearchField, Separator, ToggleButton, ToggleButtonGroup} from '@heroui/react';
+import {cn} from '@heroui/styles';
+import {UserPlus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {type ClientSummary, type ListClientsFilters, useListClientsQuery} from '@/api/clients';
-import {useListCoachConversationsQuery} from '@/api/conversations';
+import {type ClientSummary, useListClientsQuery} from '@/api/clients';
+import {type Client, useListAttentionClientsQuery} from '@/api/generated';
 
-import ClientAttentionPopover from './clients-list/client-attention-popover';
 import ClientEmptyState from './clients-list/client-empty-state';
 import ClientListItem from './clients-list/client-list-item';
 import useClientsSearch from './clients-list/use-clients-search';
 
+type FilterId = 'active' | 'all' | 'attention' | 'inactive' | 'invited';
+
 type FilterOption = {
-  filter: ListClientsFilters;
-  id: string;
+  id: FilterId;
+  /** COPY.md §CL gives shorter labels for the mobile pill row. */
   label: string;
+  shortLabel: string;
+  status?: string;
   summaryKey?: keyof ClientSummary;
 };
 
 const FILTER_OPTIONS: FilterOption[] = [
-  {id: 'all', label: 'All', filter: {}},
-  {id: 'active', label: 'Active', filter: {status: 'active'}, summaryKey: 'active'},
-  {id: 'invited', label: 'Invited', filter: {status: 'pending'}, summaryKey: 'pending'},
-  {id: 'inactive', label: 'Inactive', filter: {status: 'inactive'}, summaryKey: 'inactive'},
+  {id: 'all', label: 'All', shortLabel: 'All'},
+  {id: 'active', label: 'Active', shortLabel: 'Active', status: 'active', summaryKey: 'active'},
+  {id: 'attention', label: 'Needs attention', shortLabel: 'Attention'},
+  {id: 'invited', label: 'Invited', shortLabel: 'Invited', status: 'pending', summaryKey: 'pending'},
+  {id: 'inactive', label: 'Inactive', shortLabel: 'Inactive', status: 'inactive', summaryKey: 'inactive'},
 ];
 
-function getOptionCount(option: FilterOption, data: {count: number; summary: ClientSummary} | undefined) {
-  if (!data) {
-    return undefined;
-  }
+// HeroUI ToggleButton exposes selection as `data-selected="true"` (see
+// @heroui/styles toggle-button.css), not a `selected:` Tailwind variant —
+// there's no such variant registered in this project, so `selected:*` classes
+// silently no-op. Target the data attribute directly. (RECIPES.md R2)
+const FILTER_PILL_CLASS =
+  'rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted ' +
+  'data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold ' +
+  'data-[selected=true]:text-ink-foreground';
 
-  return option.summaryKey ? data.summary[option.summaryKey] : data.count;
+const ATTENTION_PAGE_SIZE = 100;
+
+function matchesSearch(client: Client, search: string): boolean {
+  const haystack = [client.first_name, client.last_name, client.email, client.phone]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(search.trim().toLowerCase());
 }
 
 export default function ListClients() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<Key>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterId>('all');
 
   const deferredSearch = useDeferredValue(search);
-  const activeStatus = FILTER_OPTIONS.find((option) => option.id === activeFilter)?.filter.status;
-  const {clients, fetchNextPage, isError, isFetchingNextPage, isLoading, refetch} = useClientsSearch({
+  const isAttention = activeFilter === 'attention';
+  const activeStatus = FILTER_OPTIONS.find((option) => option.id === activeFilter)?.status;
+
+  const list = useClientsSearch({
+    enabled: !isAttention,
     search: deferredSearch,
     status: activeStatus,
   });
+  // "Needs attention" is not a value of the list endpoint's `status` filter —
+  // it has its own endpoint (the same one the dashboard uses), which is flat and
+  // has no search param, so search composes client-side for that tab only.
+  const attention = useListAttentionClientsQuery({limit: ATTENTION_PAGE_SIZE, offset: 0});
   const {data: summaryData} = useListClientsQuery({limit: 0});
-  // ponytail: 100 is the backend's max page. Fold unread_count into the client
-  // list response if coaches can reach more conversations than this.
-  const {data: conversationsData} = useListCoachConversationsQuery({limit: 100});
 
-  const unreadByClientId = useMemo(() => {
-    const unread = new Map<string, number>();
-    for (const conversation of conversationsData?.data ?? []) {
-      unread.set(conversation.client_id, conversation.unread_count);
-    }
-    return unread;
-  }, [conversationsData]);
+  const attentionClients = useMemo(
+    () => (attention.data?.data ?? []).filter((client) => matchesSearch(client, deferredSearch)),
+    [attention.data, deferredSearch],
+  );
 
+  const items: Client[] = isAttention ? attentionClients : list.clients;
   const hasFilter = !!deferredSearch || activeFilter !== 'all';
   const clearFilters = () => {
     setSearch('');
     setActiveFilter('all');
   };
 
+  function getCount(option: FilterOption): number | undefined {
+    if (option.id === 'attention') {
+      return attention.data?.count;
+    }
+    if (!summaryData) {
+      return undefined;
+    }
+    return option.summaryKey ? summaryData.summary[option.summaryKey] : summaryData.count;
+  }
+
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header size="list">
         <Page.TitleGroup>
           <Page.Title>Clients</Page.Title>
           <Page.Description>
-            {summaryData ? `${summaryData.summary.active} active · ${summaryData.count} total` : 'Your coaching roster'}
+            {summaryData
+              ? `${summaryData.summary.active} active · ${summaryData.summary.pending} invited`
+              : 'Your coaching roster'}
           </Page.Description>
         </Page.TitleGroup>
         <Page.Actions>
-          <ClientAttentionPopover />
           <Button
+            aria-label="Invite client"
             onPress={() => navigate(ROUTES.INVITE_CLIENT)}
-            size="sm"
+            variant="primary"
           >
-            <Plus size={16} />
-            Invite
+            <UserPlus className="size-4" />
+            <span className="hidden sm:inline">Invite client</span>
           </Button>
         </Page.Actions>
       </Page.Header>
 
       <Page.Toolbar
-        className="mb-4 flex flex-col gap-3 pb-3 pt-2 md:flex-row md:items-end md:justify-between"
+        className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-background pt-2 pb-3"
         size="list"
       >
         <SearchField
           aria-label="Search clients"
-          className="w-full md:w-80 md:shrink-0"
+          className="w-full min-w-0 sm:max-w-72 sm:flex-1"
           onChange={setSearch}
           value={search}
-          variant="secondary"
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
@@ -106,35 +135,46 @@ export default function ListClients() {
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
-        <Tabs
-          aria-label="Filter clients by status"
-          className="min-w-0 md:ms-auto md:flex-none"
-          onSelectionChange={setActiveFilter}
-          selectedKey={activeFilter}
-          variant="primary"
-        >
-          <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
-            <Tabs.List className="w-max! min-w-max">
-              {FILTER_OPTIONS.map((option) => {
-                const count = getOptionCount(option, summaryData);
+        <Separator
+          className="hidden h-6 sm:block"
+          orientation="vertical"
+        />
+        <div className="-mx-4 min-w-0 max-w-full overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <ToggleButtonGroup
+            aria-label="Filter clients by status"
+            className="flex w-max flex-nowrap gap-2"
+            isDetached
+            onSelectionChange={(keys: Set<Key>) => {
+              const next = [...keys][0];
+              if (next) {
+                setActiveFilter(next as FilterId);
+              }
+            }}
+            selectedKeys={[activeFilter]}
+            selectionMode="single"
+          >
+            {FILTER_OPTIONS.map((option) => {
+              const count = getCount(option);
 
-                return (
-                  <Tabs.Tab
-                    className="w-auto! gap-2 whitespace-nowrap px-3 sm:px-4"
-                    id={option.id}
-                    key={option.id}
-                  >
-                    <span>{option.label}</span>
-                    {count === undefined ? null : (
-                      <span className="hidden text-xs font-normal text-muted sm:inline">{count}</span>
-                    )}
-                    <Tabs.Indicator />
-                  </Tabs.Tab>
-                );
-              })}
-            </Tabs.List>
-          </Tabs.ListContainer>
-        </Tabs>
+              return (
+                <ToggleButton
+                  className={FILTER_PILL_CLASS}
+                  id={option.id}
+                  key={option.id}
+                >
+                  <span className="hidden sm:inline">{option.label}</span>
+                  <span className="sm:hidden">{option.shortLabel}</span>
+                  {count === undefined ? null : (
+                    // COPY.md §CL: mobile pills carry a count on `All` only.
+                    <span className={cn('ms-1 text-chip opacity-70', option.id === 'all' ? '' : 'hidden sm:inline')}>
+                      {count}
+                    </span>
+                  )}
+                </ToggleButton>
+              );
+            })}
+          </ToggleButtonGroup>
+        </div>
       </Page.Toolbar>
 
       <Page.Content>
@@ -142,29 +182,26 @@ export default function ListClients() {
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"
         >
-          <BrowseListBox
-            ariaLabel="Clients"
-            className="flex-1 gap-0 overflow-hidden rounded-2xl border border-border bg-surface"
-            emptyState={
-              <ClientEmptyState
-                hasFilter={hasFilter}
-                onClearFilters={clearFilters}
-              />
-            }
-            fetchNextPage={fetchNextPage}
-            isError={isError}
-            isLoading={isLoading || isFetchingNextPage}
-            items={clients}
-            onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
-            onRetry={refetch}
-            renderItem={(client) => (
-              <ClientListItem
-                client={client}
-                unreadCount={unreadByClientId.get(client.id) ?? 0}
-              />
-            )}
-            skeletonAvatar
-          />
+          <div className="overflow-hidden rounded-card border border-border bg-surface">
+            <BrowseListBox
+              ariaLabel="Clients"
+              className="flex-1 gap-0 p-0"
+              emptyState={
+                <ClientEmptyState
+                  hasFilter={hasFilter}
+                  onClearFilters={clearFilters}
+                />
+              }
+              fetchNextPage={isAttention ? () => undefined : list.fetchNextPage}
+              isError={isAttention ? attention.isError : list.isError}
+              isLoading={isAttention ? attention.isLoading : list.isLoading || list.isFetchingNextPage}
+              items={items}
+              onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
+              onRetry={isAttention ? attention.refetch : list.refetch}
+              renderItem={(client) => <ClientListItem client={client} />}
+              skeletonAvatar
+            />
+          </div>
         </Page.Frame>
       </Page.Content>
     </Page>

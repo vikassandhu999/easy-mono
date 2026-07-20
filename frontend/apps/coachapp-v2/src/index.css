@@ -14,6 +14,9 @@
   --text-pill: 12.5px; /* filter pill labels */
   --text-chip: 11.5px; /* chip labels */
   --color-muted-2: oklch(0.55 0.0138 285.94); /* tertiary text (timestamps, chevrons) */
+  /* RECIPES.md R5 attention chips call for `text-warning-text`; `--warning-text`
+     is a plain :root var, so it needs a `--color-*` alias to become a utility. */
+  --color-warning-text: oklch(0.5 0.13 74);
   --color-ink: oklch(0.19 0.004 285); /* dark-filled CTAs / selected states */
   --color-ink-foreground: oklch(1 0 0);
 }

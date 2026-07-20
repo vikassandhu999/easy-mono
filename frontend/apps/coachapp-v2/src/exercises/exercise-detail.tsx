@@ -1,15 +1,19 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
-import {ArrowLeft, Copy, Dumbbell, Pencil, Trash2} from 'lucide-react';
+import {Copy, Dumbbell, Image as ImageIcon, Pencil, Trash2} from 'lucide-react';
+import type {ReactNode} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {coachApi, useCopyExerciseMutation, useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
+
+const OUTLINE_CHIP_CLASS = 'rounded-chip border border-border bg-surface font-semibold text-foreground';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',
@@ -22,6 +26,21 @@ const FORCE_LABEL: Record<string, string> = {
   push: 'Push',
   static: 'Static',
 };
+
+function SectionHeading({title}: {title: string}) {
+  return <Typography type="h6">{title}</Typography>;
+}
+
+// The exercise API stores instructions as a single free-text field; render each
+// non-empty line as a numbered step (GAPS #14 — number adornment, plain text).
+// Strip any leading enumerator the coach typed ("1.", "2)") so the number badge
+// isn't duplicated.
+function toSteps(instructions: string): string[] {
+  return instructions
+    .split('\n')
+    .map((line) => line.trim().replace(/^\d+[.)]\s*/, ''))
+    .filter(Boolean);
+}
 
 export default function ExerciseDetail() {
   const {id} = useParams<{id: string}>();
@@ -61,9 +80,46 @@ export default function ExerciseDetail() {
     }
   };
 
+  const renderDeleteDialog = (trigger: ReactNode, exerciseName: string) => (
+    <AlertDialog>
+      {trigger}
+      <AlertDialog.Backdrop>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="sm:max-w-100">
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Delete exercise?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <Typography>
+                This will permanently delete <strong>{exerciseName}</strong>. This action cannot be undone.
+              </Typography>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                slot="close"
+                variant="tertiary"
+              >
+                Cancel
+              </Button>
+              <Button
+                isPending={isDeleting}
+                onPress={handleDelete}
+                variant="danger"
+              >
+                {isDeleting ? 'Deleting' : 'Delete'}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
+    </AlertDialog>
+  );
+
   if (isLoading) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
           <Page.TitleGroup>
             <Page.Title>Exercise</Page.Title>
@@ -78,31 +134,15 @@ export default function ExerciseDetail() {
 
   if (isError || !data) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
+          <Page.TitleGroup className={'flex items-center'}>
+            <BackButton onPress={goBack} />
             <Page.Title>Exercise</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Exercises
-          </Button>
-        </Page.Toolbar>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
-            <Typography
-              className="text-danger"
-              type="body-sm"
-            >
-              Exercise couldn&apos;t load. It may not exist, or you may not have access
-            </Typography>
-          </div>
+          <ErrorState message="Exercise couldn't load. It may not exist, or you may not have access" />
         </Page.Content>
       </Page>
     );
@@ -112,267 +152,245 @@ export default function ExerciseDetail() {
   const isSystemExercise = exercise.source === 'system';
   const mechanicsLabel = exercise.mechanics ? MECHANICS_LABEL[exercise.mechanics] : null;
   const forceLabel = exercise.force ? FORCE_LABEL[exercise.force] : null;
+  const sourceLabel = isSystemExercise ? 'System' : 'Custom';
   const muscleNames = exercise.muscles.map((m) => m.name);
   const equipmentNames = exercise.equipment.map((e) => e.name);
+  const steps = exercise.instructions ? toSteps(exercise.instructions) : [];
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
-          <Page.Title>Exercise</Page.Title>
+          <Page.Title className="sm:hidden">Exercise</Page.Title>
         </Page.TitleGroup>
-      </Page.Header>
-      <Page.Toolbar className="flex flex-wrap items-center gap-2">
-        {!isSystemExercise && (
-          <Button
-            onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
-            size="sm"
-            variant="secondary"
-          >
-            <Pencil size={16} />
-            Edit
-          </Button>
-        )}
-        <Button
-          isPending={isDuplicating}
-          onPress={handleDuplicate}
-          size="sm"
-          variant="secondary"
-        >
-          <Copy size={16} />
-          Duplicate
-        </Button>
-        {!isSystemExercise && (
-          <AlertDialog>
+        <Page.Actions className="hidden sm:flex">
+          {!isSystemExercise && (
             <Button
-              size="sm"
-              variant="danger"
+              className="bg-ink text-ink-foreground"
+              onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
             >
-              <Trash2 size={16} />
-              Delete
+              <Pencil className="size-4" />
+              Edit
             </Button>
-            <AlertDialog.Backdrop>
-              <AlertDialog.Container>
-                <AlertDialog.Dialog className="sm:max-w-[400px]">
-                  <AlertDialog.CloseTrigger />
-                  <AlertDialog.Header>
-                    <AlertDialog.Icon status="danger" />
-                    <AlertDialog.Heading>Delete exercise?</AlertDialog.Heading>
-                  </AlertDialog.Header>
-                  <AlertDialog.Body>
-                    <Typography>
-                      This will permanently delete <strong>{exercise.name}</strong>. This action cannot be undone.
-                    </Typography>
-                  </AlertDialog.Body>
-                  <AlertDialog.Footer>
-                    <Button
-                      slot="close"
-                      variant="tertiary"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      isPending={isDeleting}
-                      onPress={handleDelete}
-                      variant="danger"
-                    >
-                      {isDeleting ? 'Deleting' : 'Delete'}
-                    </Button>
-                  </AlertDialog.Footer>
-                </AlertDialog.Dialog>
-              </AlertDialog.Container>
-            </AlertDialog.Backdrop>
-          </AlertDialog>
-        )}
-      </Page.Toolbar>
+          )}
+          <Button
+            isPending={isDuplicating}
+            onPress={handleDuplicate}
+            variant="outline"
+          >
+            <Copy className="size-4" />
+            Duplicate
+          </Button>
+          {!isSystemExercise &&
+            renderDeleteDialog(
+              <Button
+                aria-label="Delete exercise"
+                className="text-danger"
+                variant="outline"
+              >
+                <Trash2 className="size-4" />
+              </Button>,
+              exercise.name,
+            )}
+        </Page.Actions>
+      </Page.Header>
 
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="max-w-lg">
-          <div className="flex items-start gap-4 pb-6">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-surface-secondary">
-              {exercise.images[0] ? (
-                <img
-                  alt={exercise.name}
-                  className="size-14 rounded-xl object-cover"
-                  src={exercise.images[0]}
-                />
-              ) : (
-                <Dumbbell
-                  className="text-muted"
-                  size={24}
-                />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <Typography
-                className="wrap-break-word"
-                type="h5"
-              >
-                {exercise.name}
-              </Typography>
-              {(mechanicsLabel || forceLabel) && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="max-w-2xl">
+          {/* Identity + media: media leads on mobile, identity leads on desktop */}
+          <div className="flex flex-col gap-6">
+            <div className="order-2 flex items-start gap-4 sm:order-1">
+              <div className="hidden size-14 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary sm:flex">
+                <Dumbbell className="size-6 text-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <Typography
+                  className="break-words"
+                  type="h3"
+                >
+                  {exercise.name}
+                </Typography>
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {mechanicsLabel && (
                     <Chip
-                      size="sm"
-                      variant="soft"
+                      className={OUTLINE_CHIP_CLASS}
+                      variant="secondary"
                     >
                       {mechanicsLabel}
                     </Chip>
                   )}
                   {forceLabel && (
                     <Chip
-                      size="sm"
-                      variant="soft"
+                      className={OUTLINE_CHIP_CLASS}
+                      variant="secondary"
                     >
                       {forceLabel}
                     </Chip>
                   )}
+                  <Chip
+                    className={OUTLINE_CHIP_CLASS}
+                    variant="secondary"
+                  >
+                    {sourceLabel}
+                  </Chip>
+                </div>
+              </div>
+            </div>
+
+            <div className="order-1 sm:order-2">
+              {exercise.images[0] ? (
+                <img
+                  alt={exercise.name}
+                  className="aspect-[4/3] w-full rounded-card border border-border object-cover sm:aspect-video"
+                  src={exercise.images[0]}
+                />
+              ) : (
+                <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-card border border-dashed border-border bg-surface-secondary sm:aspect-video">
+                  <ImageIcon className="size-7 text-muted-2" />
+                  <Typography
+                    color="muted"
+                    type="body-sm"
+                  >
+                    No demo added yet
+                  </Typography>
                 </div>
               )}
             </div>
           </div>
 
           {exercise.description && (
-            <section className="border-t border-border py-4">
+            <section className="mt-8">
+              <SectionHeading title="About this movement" />
               <Typography
-                className="mb-2"
+                className="mt-3 whitespace-pre-wrap"
                 color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Description
-              </Typography>
-              <Typography
-                className="whitespace-pre-wrap"
-                type="body-sm"
               >
                 {exercise.description}
               </Typography>
             </section>
           )}
 
-          {exercise.instructions && (
-            <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Instructions
-              </Typography>
-              <Typography
-                className="whitespace-pre-wrap"
-                type="body-sm"
-              >
-                {exercise.instructions}
-              </Typography>
-            </section>
-          )}
-
-          {muscleNames.length > 0 && (
-            <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Target muscles
-              </Typography>
-              <div className="flex flex-wrap gap-1.5">
-                {muscleNames.map((name) => (
-                  <Chip
-                    key={name}
-                    size="sm"
-                    variant="soft"
+          {steps.length > 0 && (
+            <section className="mt-8">
+              <SectionHeading title="Instructions" />
+              <div className="mt-3 flex flex-col gap-4">
+                {steps.map((step, i) => (
+                  <div
+                    className="flex items-start gap-3"
+                    key={i}
                   >
-                    {name}
-                  </Chip>
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
+                      {i + 1}
+                    </span>
+                    <Typography>{step}</Typography>
+                  </div>
                 ))}
               </div>
             </section>
           )}
 
-          {equipmentNames.length > 0 && (
-            <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Equipment
-              </Typography>
-              <div className="flex flex-wrap gap-1.5">
-                {equipmentNames.map((name) => (
-                  <Chip
-                    key={name}
-                    size="sm"
-                    variant="soft"
+          {(muscleNames.length > 0 || equipmentNames.length > 0) && (
+            <section className="mt-8 border-t border-separator pt-6">
+              {muscleNames.length > 0 && (
+                <div>
+                  <Typography
+                    color="muted"
+                    type="body-sm"
                   >
-                    {name}
-                  </Chip>
-                ))}
-              </div>
+                    Target muscles
+                  </Typography>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {muscleNames.map((name) => (
+                      <Chip
+                        className={OUTLINE_CHIP_CLASS}
+                        key={name}
+                        variant="secondary"
+                      >
+                        {name}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {equipmentNames.length > 0 && (
+                <div className="mt-5">
+                  <Typography
+                    color="muted"
+                    type="body-sm"
+                  >
+                    Equipment
+                  </Typography>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {equipmentNames.map((name) => (
+                      <Chip
+                        className={OUTLINE_CHIP_CLASS}
+                        key={name}
+                        variant="secondary"
+                      >
+                        {name}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
           )}
 
-          {exercise.images.length > 0 && (
-            <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Images
-              </Typography>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {exercise.images.map((src, i) => (
-                  <img
-                    alt={`${exercise.name} ${i + 1}`}
-                    className="aspect-square rounded-lg object-cover"
-                    key={src}
-                    src={src}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          <section className="border-t border-border py-4">
-            <Typography
-              className="mb-2"
-              color="muted"
-              type="body-xs"
-              weight="semibold"
-            >
-              Details
-            </Typography>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+          <section className="mt-8 border-t border-separator pt-5">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Typography
                   color="muted"
-                  type="body-xs"
+                  type="body-sm"
                 >
                   Created
                 </Typography>
-                <Typography>{formatIsoDateOnly(exercise.inserted_at)}</Typography>
+                <Typography type="body-sm">{formatIsoDateOnly(exercise.inserted_at)}</Typography>
               </div>
               <div>
                 <Typography
                   color="muted"
-                  type="body-xs"
+                  type="body-sm"
                 >
-                  Last updated
+                  Updated
                 </Typography>
-                <Typography>{formatIsoDateOnly(exercise.updated_at)}</Typography>
+                <Typography type="body-sm">{formatIsoDateOnly(exercise.updated_at)}</Typography>
               </div>
             </div>
           </section>
+        </div>
+
+        <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
+          {!isSystemExercise && (
+            <Button
+              className="flex-1"
+              onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
+              variant="primary"
+            >
+              <Pencil className="size-4" />
+              Edit
+            </Button>
+          )}
+          <Button
+            aria-label="Duplicate exercise"
+            isPending={isDuplicating}
+            onPress={handleDuplicate}
+            variant="outline"
+          >
+            <Copy className="size-4" />
+          </Button>
+          {!isSystemExercise &&
+            renderDeleteDialog(
+              <Button
+                aria-label="Delete exercise"
+                className="text-danger"
+                variant="outline"
+              >
+                <Trash2 className="size-4" />
+              </Button>,
+              exercise.name,
+            )}
         </div>
       </Page.Content>
     </Page>

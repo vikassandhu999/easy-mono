@@ -152,6 +152,11 @@ verify copy matches COPY.md § {badge} verbatim.
   `shrink-0` container with NO fixed width so it hugs its content.
 - **Recipe totals live on `recipe.nutrition`** (nullable object) — type segment
   keys via `NonNullable<Recipe['nutrition']>`, not Food's flat per-100g keys.
+- **RECIPES R2/R3's `selected:` Tailwind prefix is a silent NO-OP** — no such
+  variant exists in this project. HeroUI ToggleButton signals selection via
+  `data-selected="true"`, so ink-selected pills/segments need
+  `data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:text-ink-foreground data-[selected=true]:font-semibold`.
+  The reference implementation is the status tabs in `nutrition-plans/list-nutrition-plans.tsx`.
 - **When the ref's own desktop/mobile treatments disagree** (e.g. uppercase mobile
   eyebrows vs title-case desktop legends), follow the accepted FO/FD/FE reference
   ports — one treatment at both widths, app convention wins.

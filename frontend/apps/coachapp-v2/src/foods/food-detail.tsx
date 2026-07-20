@@ -6,6 +6,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
+import {DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
@@ -21,22 +22,6 @@ const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food;
   {color: 'success', key: 'carbs_g_per_100g', label: 'Carbs'},
   {color: 'warning', key: 'fat_g_per_100g', label: 'Fats'},
 ];
-
-function SectionHeading({detail, title}: {detail?: string; title: string}) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <Typography type="h6">{title}</Typography>
-      {detail && (
-        <Typography
-          color="muted"
-          type="body-sm"
-        >
-          · {detail}
-        </Typography>
-      )}
-    </div>
-  );
-}
 
 export default function FoodDetail() {
   const {id} = useParams<{id: string}>();
@@ -214,7 +199,7 @@ export default function FoodDetail() {
 
           {(kcal != null || segments.length > 0) && (
             <section className="mt-8">
-              <SectionHeading
+              <DetailSectionHeading
                 detail="per 100 g"
                 title="Nutrition"
               />
@@ -228,7 +213,7 @@ export default function FoodDetail() {
 
           {food.serving_sizes.length > 0 && (
             <section className="mt-8">
-              <SectionHeading title="Serving sizes" />
+              <DetailSectionHeading title="Serving sizes" />
               <div className="mt-3 flex flex-col gap-2.5">
                 {food.serving_sizes.map((serving, i) => (
                   <div
@@ -257,7 +242,7 @@ export default function FoodDetail() {
 
           {food.notes && (
             <section className="mt-8">
-              <SectionHeading title="Notes" />
+              <DetailSectionHeading title="Notes" />
               <Typography
                 className="mt-2 whitespace-pre-wrap"
                 color="muted"

@@ -6,6 +6,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
+import {DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
@@ -25,10 +26,6 @@ const FORCE_LABEL: Record<string, string> = {
   push: 'Push',
   static: 'Static',
 };
-
-function SectionHeading({title}: {title: string}) {
-  return <Typography type="h6">{title}</Typography>;
-}
 
 // The exercise API stores instructions as a single free-text field; render each
 // non-empty line as a numbered step (GAPS #14 — number adornment, plain text).
@@ -260,7 +257,7 @@ export default function ExerciseDetail() {
 
           {exercise.description && (
             <section className="mt-8">
-              <SectionHeading title="About this movement" />
+              <DetailSectionHeading title="About this movement" />
               <Typography
                 className="mt-3 whitespace-pre-wrap"
                 color="muted"
@@ -272,7 +269,7 @@ export default function ExerciseDetail() {
 
           {steps.length > 0 && (
             <section className="mt-8">
-              <SectionHeading title="Instructions" />
+              <DetailSectionHeading title="Instructions" />
               <div className="mt-3 flex flex-col gap-4">
                 {steps.map((step, i) => (
                   <div

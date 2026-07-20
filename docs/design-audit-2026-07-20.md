@@ -1,6 +1,6 @@
 # CoachApp design audit — 2026-07-20
 
-Scope: `CL` (`/clients`) only. Compared live at `1240x900@2x` and `390x844@2x` against `design-handoff/refs/CL-{desktop,mobile}.png`.
+Scope: `CL` (`/clients`) and the three-pass `IN` follow-up (`/clients/invite`). Compared live at desktop and mobile reference widths against the matching handoff images.
 
 ## Findings
 
@@ -44,3 +44,48 @@ Scope: `CL` (`/clients`) only. Compared live at `1240x900@2x` and `390x844@2x` a
 - Diagnostic typecheck with only unused-local enforcement disabled: passed.
 - Direct Vite production build: passed (existing dependency CSS/chunk-size warnings only).
 - Required strict build: **blocked by pre-existing dirty file** `src/@components/form-fields/form-layout.tsx:1` (`Surface` is imported but unused). The audit did not edit or stage that file.
+
+## IN — Invite client
+
+### Pass 1 findings
+
+| badge | width | what's wrong | pass (A-fidelity / B-consistency) | severity | proposed fix |
+|---|---|---|---|---|---|
+| IN | mobile | The initial screen keeps the desktop subtitle, bordered section card, `Client details` legend, and trainer helper. The reference has a compact surface header, then a flat scroll body with only the delivery helper above the fields. | A-fidelity | high | **Fixed** — the same `Page`, `Fieldset`, and form wrappers now express the flat mobile anatomy responsively while preserving the desktop section card. |
+| IN | mobile | Text/select controls are 40px high with field shadows; Back is 40px. The reference uses plain surface inputs with a visible semantic border and the app contract requires 44px mobile targets. | A-fidelity + B-consistency | high | **Fixed** — live measurement reports 44px controls, a 1px `border-border`, `bg-surface`, and no field shadow. Back, copy, trainer options, and both footer buttons also meet 44px. |
+| IN | mobile success | The sent state is one large card and omits the client summary row. Its actions remain inside that card instead of using the reference's success notice, client snippet, link/share body, and sticky footer actions. | A-fidelity | high | **Fixed** — the state now uses the existing HeroUI `Card`, `Chip`, `Avatar`, `Surface`, and `Button` primitives for the notice, client snippet, link/share area, and footer actions. |
+| IN | desktop + mobile | The page body bypasses `Page.Frame`, so the header owns the canonical content width but the seat/form/success body does not. It will drift from the rest of the app as available width grows. | B-consistency | medium | **Fixed** — body content now sits in `Page.Frame size="content"` under a bare `Page.Content`. |
+| IN | desktop + mobile | Seat usage is oversized (40px icon tile, roomy padding, thick track); the mobile reference uses a compact 32px tile and slimmer meter. | A-fidelity | medium | **Fixed** — the existing HeroUI `Meter` now has the compact tile, padding, and track rhythm without changing seat logic. |
+| IN | desktop | Assigned-trainer helper text is rendered above the select; the reference places it below the control. | A-fidelity | medium | **Fixed** — shared `FormSelectField` now renders its Description after the trigger. |
+| IN | desktop | The handoff's 600px form column is narrower than the app's canonical `size="content"` column. Introducing a third page width would violate `AGENTS.md` and the audit consistency contract. | A-fidelity / B-consistency | low | **Skipped by convention** — IN uses the same `size="content"` token as list/detail/edit screens; no screen-local `max-w-*` or third width was introduced. |
+
+### Systemic
+
+- **Fixed in scope:** the invite Back call site meets 44px without changing unrelated header layouts.
+- **Fixed at owner:** `FormSelectField` owns Description placement for every form select; no invite-only ordering clone was added.
+- **Fixed at owner:** `Page.Content` had `flex-1`, but the shared scroll container was not a flex column. `Page` now activates its existing sizing contract; `/clients` and `/library/exercises/create` were regression-checked.
+
+### Pass 2 — form and control fidelity
+
+- Direct desktop/mobile recaptures confirmed the compact mobile header, flat body, responsive form card, compact seat meter, and post-trigger trainer helper.
+- Inputs now measure 44px mobile / 40px desktop with `bg-surface`, a 1px semantic border, and no shadow.
+- Header and body both use the canonical `size="content"` column. The intentionally wider app token remains in force on desktop.
+
+### Pass 3 — interaction and state regression
+
+- Empty required Name is blocked by native validation; with Name present and no contact, the form renders `Add email or phone` on Email.
+- Two dev-only audit invites covered the before/after success render. `Invite another` returned to the blank form; both audit records were then revoked and the client count returned to 53.
+- The mobile trainer selector opens its existing responsive dialog/listbox; both options measure 44px.
+- Initial and success states both report a 390px document width with no horizontal overflow and no visible interactive target below 44px.
+- Shared `Page`/`FormActions` regression checks passed on `/clients` at mobile/desktop and `/library/exercises/create` at mobile.
+
+### IN verification
+
+- Direct screenshots checked at the reference rasters (`1240x741@2x`, `390x834@2x`) and required audit viewports (`1240x900@2x`, `390x844@2x`).
+- Targeted Biome check on all touched TypeScript files: passed.
+- `./scripts/check-ui-contract.sh`: passed.
+- `./scripts/check-rm.sh`: passed.
+- `git diff --check`: passed.
+- Diagnostic typecheck with only unused-local enforcement disabled: passed.
+- Direct Vite production build: passed (existing dependency CSS/chunk-size warnings only).
+- Required strict build: **blocked by the same pre-existing dirty file** `src/@components/form-fields/form-layout.tsx:1` (`Surface` is imported but unused). The audit did not edit or stage that file.

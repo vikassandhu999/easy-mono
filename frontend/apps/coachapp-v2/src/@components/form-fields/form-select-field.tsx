@@ -6,16 +6,20 @@ import type {BaseFormFieldProps} from './form-field-types';
 
 type FormSelectFieldProps<T extends FieldValues> = BaseFormFieldProps<T> & {
   children: ReactNode;
+  descriptionClassName?: string;
   listBoxProps?: ComponentProps<typeof ListBox>;
+  triggerProps?: ComponentProps<typeof Select.Trigger>;
 } & Omit<ComponentProps<typeof Select>, 'children' | 'isInvalid' | 'onSelectionChange' | 'selectedKey'>;
 
 export function FormSelectField<T extends FieldValues>({
   children,
   control,
   description,
+  descriptionClassName,
   label,
   listBoxProps,
   name,
+  triggerProps,
   ...props
 }: FormSelectFieldProps<T>) {
   return (
@@ -30,12 +34,12 @@ export function FormSelectField<T extends FieldValues>({
           value={field.value || null}
         >
           <Label>{label}</Label>
-          {description ? <Description>{description}</Description> : null}
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
-          <Select.Trigger>
+          <Select.Trigger {...triggerProps}>
             <Select.Value />
             <Select.Indicator />
           </Select.Trigger>
+          {description ? <Description className={descriptionClassName}>{description}</Description> : null}
           <Select.Popover>
             <ListBox {...listBoxProps}>{children}</ListBox>
           </Select.Popover>

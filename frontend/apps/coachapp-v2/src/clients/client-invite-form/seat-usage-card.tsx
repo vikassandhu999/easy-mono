@@ -10,13 +10,13 @@ export function SeatUsageCard({summary}: {summary: BillingSummary}) {
   const remaining = Math.max(summary.seat_limit - summary.used_seats, 0);
 
   return (
-    <div className="flex w-full items-center gap-3 rounded-card border border-border bg-surface p-4">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
-        <Users className="size-5" />
+    <div className="flex w-full items-center gap-3 rounded-card border border-border bg-surface p-3">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent sm:size-9">
+        <Users className="size-4 sm:size-5" />
       </span>
       <Meter
         aria-label="Seat usage"
-        className="flex min-w-0 flex-1 flex-col gap-2"
+        className="flex min-w-0 flex-1 flex-col gap-1.5"
         color={remaining === 0 ? 'warning' : 'accent'}
         maxValue={summary.seat_limit}
         value={summary.used_seats}
@@ -36,7 +36,7 @@ export function SeatUsageCard({summary}: {summary: BillingSummary}) {
             {remaining} remaining
           </Typography>
         </div>
-        <Meter.Track>
+        <Meter.Track className="h-1.5">
           <Meter.Fill />
         </Meter.Track>
       </Meter>

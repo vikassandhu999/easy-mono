@@ -1,5 +1,6 @@
 import {Description, ErrorMessage, Fieldset, ListBox} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {Send} from 'lucide-react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {
@@ -93,17 +94,24 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
   const selfLabel = `${[profile?.data.first_name, profile?.data.last_name].filter(Boolean).join(' ') || 'You'} (you)`;
 
   return (
-    <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+    <FormLayout
+      className="flex-1"
+      onSubmit={handleSubmit(onSubmit)}
+    >
+      <div className="bg-transparent p-0 sm:rounded-card sm:border sm:border-border sm:bg-surface sm:p-6">
         <Fieldset>
-          <Fieldset.Legend>Client details</Fieldset.Legend>
+          <Fieldset.Legend className="hidden sm:block">Client details</Fieldset.Legend>
           <Description>Add an email or phone number so the client can receive the invite.</Description>
 
           <Fieldset.Group>
             <FormTextField
               control={control}
               fullWidth
-              inputProps={{autoComplete: 'name', placeholder: 'Jordan Miles'}}
+              inputProps={{
+                autoComplete: 'name',
+                className: 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10',
+                placeholder: 'Jordan Miles',
+              }}
               isRequired
               label="Name"
               name="name"
@@ -113,7 +121,11 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
               <FormTextField
                 control={control}
                 fullWidth
-                inputProps={{autoComplete: 'email', placeholder: 'name@email.com'}}
+                inputProps={{
+                  autoComplete: 'email',
+                  className: 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10',
+                  placeholder: 'name@email.com',
+                }}
                 label="Email"
                 name="email"
                 type="email"
@@ -121,7 +133,11 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
               <FormTextField
                 control={control}
                 fullWidth
-                inputProps={{autoComplete: 'tel', placeholder: '+1 (555) 000-0000'}}
+                inputProps={{
+                  autoComplete: 'tel',
+                  className: 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10',
+                  placeholder: '+1 (555) 000-0000',
+                }}
                 label="Phone"
                 name="phone"
                 type="tel"
@@ -132,12 +148,17 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
               <FormSelectField
                 control={control}
                 description="Leave as-is to keep yourself assigned."
+                descriptionClassName="hidden sm:block"
                 label="Assigned trainer"
                 name="assigned_trainer_id"
                 placeholder={selfLabel}
+                triggerProps={{
+                  className: 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10',
+                }}
               >
                 {activeTrainers.map((member) => (
                   <ListBox.Item
+                    className="min-h-11 sm:min-h-9"
                     id={member.id}
                     key={member.id}
                     textValue={memberName(member)}
@@ -155,6 +176,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
               label="Notes"
               name="notes"
               textAreaProps={{
+                className: 'min-h-20 border border-border bg-surface shadow-none',
                 placeholder: 'Goals, injuries, preferences, or anything the client mentioned…',
                 rows: 3,
               }}
@@ -168,6 +190,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
       <FormActions
         isSubmitting={isSubmitting}
         onCancel={onCancel}
+        submitIcon={<Send className="size-4" />}
         submitLabel="Send invite"
         submittingLabel="Sending invite"
       />

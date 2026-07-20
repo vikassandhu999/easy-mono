@@ -47,7 +47,7 @@ function PageRoot({children, className}: PageProps) {
       data-scrollbar="thin"
     >
       <div
-        className="easy_main-content group/page absolute inset-0 overflow-y-auto scrollbar"
+        className="easy_main-content group/page absolute inset-0 flex flex-col overflow-y-auto scrollbar"
         data-scrolled={isScrolled}
         onScroll={handleScroll}
       >

@@ -78,6 +78,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of nutrition plans to skip", required: false),
       Operation.parameter(:limit, :query, :integer, "Maximum nutrition plans to return", required: false),
+      Operation.parameter(:search, :query, :string, "Case-insensitive nutrition plan name search", required: false),
       Operation.parameter(
         :status,
         :query,
@@ -169,10 +170,16 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def index(conn, params) do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 10)
+    search = Map.get(params, "search", "")
     status = parse_enum(params, "status", Plan.statuses())
 
     with {:ok, %{count: count, plans: plans}} <-
-           Plans.list_template_plans(conn.assigns.ctx, status: status, offset: offset, limit: limit) do
+           Plans.list_template_plans(conn.assigns.ctx,
+             search: search,
+             status: status,
+             offset: offset,
+             limit: limit
+           ) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, plans: plans)

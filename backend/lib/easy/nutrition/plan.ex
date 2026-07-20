@@ -123,6 +123,12 @@ defmodule Easy.Nutrition.Plan do
     from(p in query, where: p.status == ^status)
   end
 
+  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_search(query \\ __MODULE__, term)
+  def for_search(query, nil), do: query
+  def for_search(query, ""), do: query
+  def for_search(query, term), do: from(p in query, where: ilike(p.name, ^"%#{term}%"))
+
   @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
   def templates(query \\ __MODULE__) do
     from(p in query, where: is_nil(p.client_id))

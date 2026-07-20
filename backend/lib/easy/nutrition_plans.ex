@@ -50,11 +50,13 @@ defmodule Easy.NutritionPlans do
     offset = Keyword.get(opts, :offset, 0)
     limit = min(Keyword.get(opts, :limit, 20), 100)
     status = Keyword.get(opts, :status)
+    search = String.trim(Keyword.get(opts, :search, "") || "")
 
     base =
       Plan
       |> Plan.for_business(ctx.business_id)
       |> Plan.for_status(status)
+      |> Plan.for_search(search)
       |> Plan.templates()
 
     {:ok, paginated(base, offset, limit)}

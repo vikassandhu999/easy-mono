@@ -55,7 +55,7 @@ export default function Library() {
           <Page.Description>Your exercises, foods, recipes, and plans</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="grid grid-cols-1 gap-3 pb-6 sm:grid-cols-2 lg:grid-cols-3"
           size="wide"

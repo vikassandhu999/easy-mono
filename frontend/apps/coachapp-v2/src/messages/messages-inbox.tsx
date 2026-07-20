@@ -85,7 +85,7 @@ export default function MessagesInbox() {
           </Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6 pt-2"
           size="list"

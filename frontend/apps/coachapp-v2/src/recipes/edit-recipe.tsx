@@ -73,7 +73,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
@@ -83,7 +83,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
           <Page.Description>Update this recipe in your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <RecipeForm
           form={form}
           ingredients={ingredients}
@@ -142,7 +142,7 @@ export default function EditRecipe() {
 
   if (isFetching || !data) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
@@ -151,7 +151,7 @@ export default function EditRecipe() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -160,7 +160,7 @@ export default function EditRecipe() {
 
   if (isError) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
@@ -169,7 +169,7 @@ export default function EditRecipe() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <ErrorState message="Couldn't load recipe." />
         </Page.Content>
       </Page>

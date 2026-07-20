@@ -29,7 +29,7 @@ export default function CreateTrainingPlan() {
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header>
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
@@ -39,7 +39,7 @@ export default function CreateTrainingPlan() {
           <Page.Description>Name the plan now, then build workouts next.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <TrainingPlanForm
           form={form}
           isSubmitting={isLoading}

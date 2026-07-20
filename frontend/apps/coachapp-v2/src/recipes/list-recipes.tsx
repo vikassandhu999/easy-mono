@@ -25,7 +25,7 @@ export default function ListRecipes() {
   const total = list.data?.pages[0]?.count;
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header size="list">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton
@@ -68,7 +68,7 @@ export default function ListRecipes() {
         </SearchField>
         {total != null && <span className="ms-auto hidden shrink-0 text-sm text-muted sm:block">{total} recipes</span>}
       </Page.Toolbar>
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"

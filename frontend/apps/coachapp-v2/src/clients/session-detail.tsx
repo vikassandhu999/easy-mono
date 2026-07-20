@@ -96,12 +96,12 @@ export default function SessionDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
             <Page.Title>Workout session</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -111,7 +111,7 @@ export default function SessionDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.Header>
           <Page.TitleGroup>
             <Page.Title>Workout session</Page.Title>
           </Page.TitleGroup>
@@ -126,7 +126,7 @@ export default function SessionDetail() {
             Client
           </Button>
         </Page.Toolbar>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <Alert status="danger">
             <Alert.Indicator />
             <Alert.Content>
@@ -151,7 +151,7 @@ export default function SessionDetail() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header>
         <Page.TitleGroup>
           <Page.Title>Workout session</Page.Title>
         </Page.TitleGroup>
@@ -166,7 +166,7 @@ export default function SessionDetail() {
           Client
         </Button>
       </Page.Toolbar>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <div className="max-w-lg">
           <div className="pb-4">
             <div className="flex min-w-0 items-center gap-2">

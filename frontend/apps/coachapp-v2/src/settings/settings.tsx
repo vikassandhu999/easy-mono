@@ -304,8 +304,8 @@ export default function Settings() {
 
   if (isLoading) {
     return (
-      <Page className="bg-background">
-        <Page.Content>
+      <Page>
+        <Page.Content bare>
           <Page.Frame
             className="pt-6 pb-6"
             size="form"
@@ -319,8 +319,8 @@ export default function Settings() {
 
   if (isError || !data) {
     return (
-      <Page className="bg-background">
-        <Page.Content>
+      <Page>
+        <Page.Content bare>
           <Page.Frame
             className="pt-6 pb-6"
             size="form"
@@ -343,7 +343,7 @@ export default function Settings() {
   const profile = data.data;
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Content>
         <SettingsShell
           onTabChange={setTab}

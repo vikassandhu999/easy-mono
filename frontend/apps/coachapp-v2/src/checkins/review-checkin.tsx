@@ -32,7 +32,7 @@ export default function ReviewCheckin() {
             <Page.Title>Review check-in</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 py-4 md:px-6 lg:px-8">
+        <Page.Content className="py-4">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -50,7 +50,7 @@ export default function ReviewCheckin() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 py-4 md:px-6 lg:px-8">
+        <Page.Content className="py-4">
           <ErrorState message="This check-in is no longer waiting for review." />
         </Page.Content>
       </Page>

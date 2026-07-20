@@ -107,7 +107,7 @@ export default function ListProspects() {
         </Tabs>
       </Page.Toolbar>
 
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"

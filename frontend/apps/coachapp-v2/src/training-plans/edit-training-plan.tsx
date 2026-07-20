@@ -62,9 +62,9 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <EditTrainingPlanHeader goBack={goBack} />
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <TrainingPlanForm
           form={form}
           isSubmitting={isUpdating}
@@ -86,9 +86,9 @@ export default function EditTrainingPlan() {
 
   if (isFetching) {
     return (
-      <Page className="bg-background">
+      <Page>
         <EditTrainingPlanHeader goBack={goBack} />
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -97,9 +97,9 @@ export default function EditTrainingPlan() {
 
   if (isError || !data) {
     return (
-      <Page className="bg-background">
+      <Page>
         <EditTrainingPlanHeader goBack={goBack} />
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <ErrorState message="Couldn't load training plan." />
         </Page.Content>
       </Page>

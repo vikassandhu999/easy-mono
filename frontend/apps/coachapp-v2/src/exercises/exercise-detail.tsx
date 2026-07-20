@@ -119,13 +119,13 @@ export default function ExerciseDetail() {
 
   if (isLoading) {
     return (
-      <Page className="bg-background">
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page>
+        <Page.Header>
           <Page.TitleGroup>
             <Page.Title>Exercise</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -134,14 +134,14 @@ export default function ExerciseDetail() {
 
   if (isError || !data) {
     return (
-      <Page className="bg-background">
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page>
+        <Page.Header>
           <Page.TitleGroup className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Exercise</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="pb-6">
           <ErrorState message="Exercise couldn't load. It may not exist, or you may not have access" />
         </Page.Content>
       </Page>
@@ -158,8 +158,8 @@ export default function ExerciseDetail() {
   const steps = exercise.instructions ? toSteps(exercise.instructions) : [];
 
   return (
-    <Page className="bg-background">
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+    <Page>
+      <Page.Header>
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
           <Page.Title className="sm:hidden">Exercise</Page.Title>
@@ -196,7 +196,7 @@ export default function ExerciseDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="pb-6">
         <div className="max-w-2xl">
           {/* Identity + media: media leads on mobile, identity leads on desktop */}
           <div className="flex flex-col gap-6">

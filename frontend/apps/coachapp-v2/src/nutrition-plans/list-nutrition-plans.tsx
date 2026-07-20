@@ -47,7 +47,7 @@ export default function ListNutritionPlans() {
   const {data: archivedData} = useListNutritionPlansQuery({limit: 1, status: 'archived'});
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header size="list">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton
@@ -127,7 +127,7 @@ export default function ListNutritionPlans() {
           </ToggleButtonGroup>
         </div>
       </Page.Toolbar>
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"

@@ -30,7 +30,7 @@ export default function NutritionPlanBuilder() {
 
   if (isLoading) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header size="wide">
           <BackButton onPress={goBack} />
         </Page.Header>
@@ -43,11 +43,11 @@ export default function NutritionPlanBuilder() {
 
   if (isError || !data) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header size="wide">
           <BackButton onPress={goBack} />
         </Page.Header>
-        <Page.Content>
+        <Page.Content bare>
           <Page.Frame size="wide">
             <ErrorState message="Couldn't load nutrition plan." />
           </Page.Frame>
@@ -59,7 +59,7 @@ export default function NutritionPlanBuilder() {
   const plan = data.data;
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header size="wide">
         <Page.TitleGroup className="flex min-w-0 items-center gap-2">
           <BackButton onPress={goBack} />

@@ -74,7 +74,7 @@ export default function EnrollProspect() {
     return (
       <Page>
         {header}
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -85,7 +85,7 @@ export default function EnrollProspect() {
     return (
       <Page>
         {header}
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <div className="mx-auto max-w-160">
             <ErrorState message="Couldn't load prospect." />
           </div>
@@ -99,7 +99,7 @@ export default function EnrollProspect() {
     return (
       <Page>
         {header}
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <div className="mx-auto flex max-w-160 flex-col gap-3">
             <Typography color="muted">This prospect is already enrolled.</Typography>
             <Button
@@ -117,7 +117,7 @@ export default function EnrollProspect() {
   return (
     <Page>
       {header}
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <FormLayout onSubmit={handleSubmit(onSubmit)}>
           <Fieldset>
             <Fieldset.Group>

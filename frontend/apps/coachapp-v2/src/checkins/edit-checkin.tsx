@@ -51,7 +51,7 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <CheckinBuilder
         backSlot={<BackButton onPress={goBack} />}
         eyebrow="Editing form"
@@ -121,7 +121,7 @@ export default function EditCheckin() {
 
   if (isLoading) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header
           className="max-w-160"
           size="form"
@@ -144,7 +144,7 @@ export default function EditCheckin() {
 
   if (isError || !data) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header
           className="max-w-160"
           size="form"

@@ -42,7 +42,7 @@ export default function EditClient() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -60,7 +60,7 @@ export default function EditClient() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <ErrorState message="Couldn't load client." />
         </Page.Content>
       </Page>
@@ -109,7 +109,7 @@ export default function EditClient() {
           <Page.Description>{name}</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <EditClientForm
           client={client}
           form={form}

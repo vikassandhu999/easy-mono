@@ -31,7 +31,7 @@ export default function EditNutritionPlan() {
 
   if (isFetching) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
@@ -40,7 +40,7 @@ export default function EditNutritionPlan() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -49,7 +49,7 @@ export default function EditNutritionPlan() {
 
   if (isError || !plan) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
@@ -58,7 +58,7 @@ export default function EditNutritionPlan() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <ErrorState message="Couldn't load nutrition plan." />
         </Page.Content>
       </Page>
@@ -88,7 +88,7 @@ export default function EditNutritionPlan() {
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
@@ -98,7 +98,7 @@ export default function EditNutritionPlan() {
           <Page.Description>Update the plan's goals. Meals &amp; days live in the builder.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <NutritionPlanForm
           form={form}
           isSubmitting={isUpdating}

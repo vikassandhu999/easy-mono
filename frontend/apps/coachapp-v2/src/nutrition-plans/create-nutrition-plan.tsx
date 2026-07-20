@@ -29,7 +29,7 @@ export default function CreateNutritionPlan() {
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
@@ -39,7 +39,7 @@ export default function CreateNutritionPlan() {
           <Page.Description>Set plan goals now, then add meals next.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <NutritionPlanForm
           form={form}
           isSubmitting={isLoading}

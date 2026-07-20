@@ -128,13 +128,13 @@ export default function FoodDetail() {
 
   if (isLoading) {
     return (
-      <Page className="bg-background">
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page>
+        <Page.Header>
           <Page.TitleGroup>
             <Page.Title>Food</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -143,14 +143,14 @@ export default function FoodDetail() {
 
   if (isError || !data) {
     return (
-      <Page className="bg-background">
-        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page>
+        <Page.Header>
           <Page.TitleGroup className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Food</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="pb-6">
           <ErrorState message="Food couldn't load. It may not exist, or you may not have access" />
         </Page.Content>
       </Page>
@@ -166,8 +166,8 @@ export default function FoodDetail() {
   const fiber = food.fiber_g_per_100g;
 
   return (
-    <Page className="bg-background">
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+    <Page>
+      <Page.Header>
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
           <Page.Title className="sm:hidden">Food</Page.Title>
@@ -203,7 +203,7 @@ export default function FoodDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="pb-6">
         <div className="max-w-2xl">
           <div className="flex items-start gap-4">
             <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">

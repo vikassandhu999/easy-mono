@@ -170,7 +170,7 @@ export default function ListCheckins() {
   const hasFilter = !!deferredSearch || status !== 'all' || purpose !== 'all';
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header size="list">
         <Page.TitleGroup className="flex items-center">
           <BackButton
@@ -314,7 +314,7 @@ export default function ListCheckins() {
         ) : null}
       </Page.Toolbar>
 
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"

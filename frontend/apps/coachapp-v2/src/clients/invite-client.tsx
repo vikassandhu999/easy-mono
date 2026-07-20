@@ -233,7 +233,7 @@ export default function InviteClient() {
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header>
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
@@ -245,7 +245,7 @@ export default function InviteClient() {
           )}
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         {inviteResult ? (
           <InviteConfirmation
             client={inviteResult}

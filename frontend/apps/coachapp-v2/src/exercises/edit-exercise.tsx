@@ -65,9 +65,9 @@ function EditExerciseForm({
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <EditExerciseHeader goBack={goBack} />
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <ExerciseForm
           equipment={equipmentData?.data ?? []}
           form={form}
@@ -93,9 +93,9 @@ export default function EditExercise() {
 
   if (isFetching) {
     return (
-      <Page className="bg-background">
+      <Page>
         <EditExerciseHeader goBack={goBack} />
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -104,9 +104,9 @@ export default function EditExercise() {
 
   if (isError || !exercise) {
     return (
-      <Page className="bg-background">
+      <Page>
         <EditExerciseHeader goBack={goBack} />
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+        <Page.Content className="pt-4 pb-6">
           <ErrorState message="Couldn't load exercise." />
         </Page.Content>
       </Page>

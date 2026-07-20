@@ -95,7 +95,7 @@ export default function ProspectDetail() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -113,7 +113,7 @@ export default function ProspectDetail() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="pb-6">
           <div className="max-w-4xl">
             <ErrorState message="Couldn't load prospect." />
             <Button
@@ -191,7 +191,7 @@ export default function ProspectDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+      <Page.Content className="pb-6">
         <div className="max-w-4xl space-y-4">
           {/* Profile hero */}
           <Card>

@@ -97,7 +97,7 @@ export default function ListClients() {
   }
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header size="list">
         <Page.TitleGroup>
           <Page.Title>Clients</Page.Title>
@@ -177,7 +177,7 @@ export default function ListClients() {
         </div>
       </Page.Toolbar>
 
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"

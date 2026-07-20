@@ -125,7 +125,7 @@ function DashboardSkeleton() {
         </Page.TitleGroup>
         <Skeleton className="hidden h-16 w-56 rounded-card sm:block" />
       </Page.Header>
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex flex-col gap-5 pb-8 pt-4"
           size="wide"
@@ -187,7 +187,7 @@ export default function Dashboard() {
         />
       </Page.Header>
 
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex flex-col gap-5 pb-8 pt-4"
           size="wide"

@@ -143,7 +143,7 @@ export default function LandingPageEditor() {
   };
 
   const header = (
-    <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+    <Page.Header>
       <button
         className="mb-2 flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
         onClick={() => navigate(ROUTES.SETTINGS)}
@@ -161,7 +161,7 @@ export default function LandingPageEditor() {
     return (
       <Page>
         {header}
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="pb-6">
           <PageSkeleton />
         </Page.Content>
       </Page>
@@ -172,7 +172,7 @@ export default function LandingPageEditor() {
     return (
       <Page>
         {header}
-        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <Page.Content className="pb-6">
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <Typography
               color="muted"
@@ -199,7 +199,7 @@ export default function LandingPageEditor() {
   return (
     <Page>
       {header}
-      <Page.Content className="px-4 pb-28 md:px-6 lg:px-8">
+      <Page.Content className="pb-28">
         <div className="flex max-w-2xl flex-col gap-6">
           {/* Template */}
           <section>

@@ -41,7 +41,7 @@ function PageRoot({children, className}: PageProps) {
 
   return (
     <Surface
-      className={cn('easy_page relative z-0 mr-0 ml-0 block flex-1', className)}
+      className={cn('easy_page relative z-0 mr-0 ml-0 block flex-1 bg-background', className)}
       data-scrollbar="thin"
     >
       <div
@@ -109,8 +109,15 @@ function PageFrame({children, className, size = 'wide'}: PageLayoutProps) {
   return <div className={cn(PAGE_GUTTER_CLASS, PAGE_SIZE_CLASS[size], className)}>{children}</div>;
 }
 
-function PageContent({children, className}: PageProps) {
-  return <div className={cn('flex min-h-0 flex-1 flex-col', className)}>{children}</div>;
+// Owns the page gutter like its Header/Toolbar/Frame siblings, so content stays
+// aligned with the header above it without every screen restating the gutter.
+// Screens that nest a Page.Frame (which applies its own gutter) pass `bare`.
+function PageContent({bare, children, className}: PageProps & {bare?: boolean}) {
+  return (
+    <div className={cn('flex min-h-0 flex-1 flex-col', bare ? undefined : PAGE_GUTTER_CLASS, className)}>
+      {children}
+    </div>
+  );
 }
 
 export const Page = Object.assign(PageRoot, {

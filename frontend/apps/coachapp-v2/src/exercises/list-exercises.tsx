@@ -31,7 +31,7 @@ export default function ListExercises() {
   const muscles = musclesData?.data ?? [];
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header size="list">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton
@@ -89,7 +89,7 @@ export default function ListExercises() {
           <span className="ms-auto hidden shrink-0 text-sm text-muted sm:block">{total} exercises</span>
         )}
       </Page.Toolbar>
-      <Page.Content>
+      <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"

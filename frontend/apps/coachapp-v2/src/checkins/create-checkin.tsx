@@ -26,7 +26,7 @@ export default function CreateCheckin() {
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <CheckinBuilder
         backSlot={<BackButton onPress={goBack} />}
         eyebrow="New form"

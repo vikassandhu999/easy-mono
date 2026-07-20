@@ -49,7 +49,7 @@ export default function CreateFood() {
   };
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
@@ -59,7 +59,7 @@ export default function CreateFood() {
           <Page.Description>Add a custom food to your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
+      <Page.Content className="pt-4 pb-6">
         <FoodForm
           form={form}
           isSubmitting={isLoading}

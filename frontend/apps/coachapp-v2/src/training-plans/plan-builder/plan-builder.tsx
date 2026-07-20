@@ -30,7 +30,7 @@ export default function TrainingPlanDetail() {
 
   if (isLoading) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header size="wide">
           <BackButton onPress={goBack} />
         </Page.Header>
@@ -43,11 +43,11 @@ export default function TrainingPlanDetail() {
 
   if (isError || !data) {
     return (
-      <Page className="bg-background">
+      <Page>
         <Page.Header size="wide">
           <BackButton onPress={goBack} />
         </Page.Header>
-        <Page.Content>
+        <Page.Content bare>
           <Page.Frame size="wide">
             <ErrorState message="Couldn't load training plan. It may not exist or you don't have access." />
           </Page.Frame>
@@ -62,7 +62,7 @@ export default function TrainingPlanDetail() {
   const title = clientName ? `${plan.name} — ${clientName}` : plan.name;
 
   return (
-    <Page className="bg-background">
+    <Page>
       <Page.Header size="wide">
         <Page.TitleGroup className="flex min-w-0 items-center gap-2">
           <BackButton onPress={goBack} />

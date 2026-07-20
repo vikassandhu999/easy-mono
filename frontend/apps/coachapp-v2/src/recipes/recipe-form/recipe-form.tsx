@@ -370,14 +370,12 @@ export default function RecipeForm({
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <div className="sticky bottom-0 -my-2 bg-background py-2 sm:static sm:my-0 sm:bg-transparent sm:py-0">
-        <FormActions
-          isSubmitting={isSubmitting}
-          onCancel={onCancel}
-          submitLabel={submitLabel}
-          submittingLabel={submittingLabel}
-        />
-      </div>
+      <FormActions
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+        submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+      />
     </FormLayout>
   );
 }

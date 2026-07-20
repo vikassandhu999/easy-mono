@@ -1,9 +1,10 @@
 import {Button, Fieldset, Spinner} from '@heroui/react';
 import {Check} from 'lucide-react';
 
-// The single submit/cancel row for every form. Owns the action-row gap (gap-3)
-// and the pending pattern. FormLayout's gap-8 provides the separation above it,
-// so no top margin here.
+// The single submit/cancel row for every form. Owns the action-row gap (gap-3),
+// the pending pattern, and the mobile sticky-footer treatment (every ported form
+// needs it — don't re-wrap this at the call site). FormLayout's gap-8 provides
+// the separation above it, so no top margin here.
 //
 // Pending state overlays the spinner on the (invisible) label instead of
 // swapping children, so the button's width never changes mid-submit — no
@@ -25,7 +26,7 @@ export function FormActions({
   submittingLabel,
 }: FormActionsProps) {
   return (
-    <Fieldset.Actions className="flex justify-end gap-3">
+    <Fieldset.Actions className="sticky bottom-0 -my-2 flex justify-end gap-3 bg-background py-2 sm:static sm:my-0 sm:bg-transparent sm:py-0">
       <Button
         onPress={onCancel}
         variant="outline"

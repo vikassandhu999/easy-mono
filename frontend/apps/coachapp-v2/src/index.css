@@ -3,6 +3,17 @@
 
 @theme {
   --font-grotesk: "Space Grotesk Variable", sans-serif;
+
+  /* Redesign geometry/type tokens (design-handoff/theme.css + RECIPES.md) —
+     registered here so ports write rounded-card / text-chip etc. instead of
+     px arbitrary values (forbidden by UI-CONTRACT §1). */
+  --radius-card: 18px; /* list/detail cards */
+  --radius-control: 9px; /* pills, seg buttons */
+  --radius-nav: 10px; /* sidebar items */
+  --radius-chip: 7px; /* status/plan chips */
+  --text-pill: 12.5px; /* filter pill labels */
+  --text-chip: 11.5px; /* chip labels */
+  --color-muted-2: oklch(0.55 0.0138 285.94); /* tertiary text (timestamps, chevrons) */
 }
 
 :root,

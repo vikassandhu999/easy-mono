@@ -1,0 +1,77 @@
+/* theme.css — CoachEasy redesign tokens, extracted from the prototype's computed styles.
+   INSTALL: merge into src/index.css (replace the current :root token block).
+   This is the single source of truth for the redesign's look. Values are verbatim
+   from the running spec (Dashboard Redesign.dc.html) — do not "harmonize" them. */
+
+@theme {
+  --font-grotesk: "Space Grotesk Variable", sans-serif; /* headings: h1/h2/card titles */
+  --font-sans: "Inter Variable", system-ui, sans-serif;  /* everything else */
+}
+
+:root,
+.light {
+  /* ---- Page & surfaces ---- */
+  /* The page is warm off-white; cards are pure white and sit BRIGHTER than the page.
+     This layering is the signature look — if the page renders white, the theme is broken. */
+  --background: oklch(0.9702 0 0);           /* app content pane (HeroUI default off-white) */
+  --canvas: #e6e4dd;                          /* warm desk tone — ONLY behind the app frame if shown */
+  --surface: oklch(100% 0 0);                 /* cards, list containers, toolbar fields */
+  --surface-secondary: oklch(0.9524 0.0013 286.37);
+  --surface-tertiary: oklch(0.9373 0.0013 286.37);
+
+  /* ---- Ink ---- */
+  --foreground: oklch(0.17 0 0);              /* headings, names — near-black, slightly darker than HeroUI default */
+  --muted: oklch(0.47 0 0);                   /* emails, meta, subtitles, unselected pills */
+  --muted-2: oklch(0.55 0.0138 285.94);       /* tertiary text (timestamps) */
+
+  /* ---- Accent (kept HeroUI blue — the spec uses it for sidebar-active + primary buttons) ---- */
+  --accent: oklch(0.6204 0.195 253.83);
+  --accent-foreground: oklch(0.9911 0 0);
+  --accent-soft: color-mix(in oklab, var(--accent) 15%, transparent);
+
+  /* ---- Ink accent (dark-filled selected states: filter pills, seg controls, day tabs) ---- */
+  --ink: oklch(0.19 0.004 285);               /* also the sidebar background */
+  --ink-foreground: oklch(1 0 0);
+
+  /* ---- Status ---- */
+  --success: oklch(0.7329 0.1935 150.81);
+  --warning: oklch(0.7819 0.1585 72.33);
+  --warning-text: oklch(0.5 0.13 74);         /* text on warning-soft chips */
+  --danger: oklch(0.6532 0.2328 25.74);
+  --success-soft: color-mix(in oklab, var(--success) 15%, transparent);
+  --warning-soft: color-mix(in oklab, var(--warning) 16%, transparent);
+  --danger-soft: color-mix(in oklab, var(--danger) 15%, transparent);
+
+  /* ---- Hairlines ---- */
+  --border: oklch(0.9 0 0);                   /* spec hairline — slightly darker than HeroUI default 0.92 */
+  --separator: oklch(0.92 0.004 286.32);      /* row separators inside cards */
+
+  /* ---- Fields ---- */
+  --field-background: oklch(100% 0 0);        /* fields are WHITE with a visible hairline border,
+                                                 not grey-filled — override HeroUI's borderless default */
+  --field-border: var(--border);
+
+  /* ---- Sidebar (dark ink rail) ---- */
+  --sidebar-bg: var(--ink);
+  --sidebar-fg: oklch(0.72 0.01 285);          /* inactive nav items */
+  --sidebar-fg-active: oklch(1 0 0);
+  --sidebar-active-bg: var(--accent);          /* active nav item = accent fill, 10px radius */
+
+  /* ---- Radii (spec is tighter than HeroUI defaults) ---- */
+  --radius: 0.5rem;
+  --radius-card: 18px;      /* list/detail cards — NOT rounded-3xl(24px) */
+  --radius-control: 9px;    /* pills, seg buttons */
+  --radius-nav: 10px;       /* sidebar items */
+  --radius-chip: 7px;       /* status/plan chips */
+  --radius-button: 24px;    /* primary/secondary buttons stay fully pilled */
+}
+
+/* ---- Non-negotiable applications ---- */
+body { background-color: var(--background); font-family: var(--font-sans); color: var(--foreground); }
+h1, h2, .heading { font-family: var(--font-grotesk); letter-spacing: -0.015em; }
+
+/* ---- Type scale (from spec; px at 100% zoom) ----
+   h1 page title: 25px/600 Grotesk    subtitle: 13px muted
+   row name: 14px/600                 row email/meta: 12px muted
+   pill/seg label: 12.5px/600 (selected) /500   chip: 11.5px/600
+   button: 13px/500                   section label (sidebar): 10.5px/700 caps tracked */

@@ -60,10 +60,13 @@ Not listed → STOP and ask the user; never improvise a component or hand-style 
 Iterate until you cannot name a difference. Minimum two full iterations; the first
 render always has drift.
 
-1. **Render** both widths (batch with `run`; screenshots go to the scratchpad dir):
+1. **Render** both widths (screenshots go to the scratchpad dir). Chrome windows
+   can't shrink below ~500px, so `resize` is wrong for mobile — use viewport
+   emulation, and reset it when done:
    ```
-   chrome-devtools-axi run 'resize 1240 900; open http://localhost:2021/{route}; wait 800; screenshot {scratch}/{badge}-desktop.png'
-   chrome-devtools-axi run 'resize 390 844; wait 400; screenshot {scratch}/{badge}-mobile.png'
+   chrome-devtools-axi open http://localhost:2021/{route}
+   chrome-devtools-axi emulate --viewport "1240x900x2" && chrome-devtools-axi screenshot {scratch}/{badge}-desktop.png
+   chrome-devtools-axi emulate --viewport "390x844x2,mobile,touch" && chrome-devtools-axi screenshot {scratch}/{badge}-mobile.png
    ```
 2. **Compare:** Read your screenshot and the matching `refs/{badge}-*.png` in the
    same message. Write down every concrete mismatch as a list: layout structure,
@@ -104,6 +107,25 @@ verify copy matches COPY.md § {badge} verbatim.
 - One badge per branch. If you discovered a workflow problem (wrong route, missing
   fixture, ambiguous doc), record it in the PR notes so this command gets fixed —
   don't silently work around it.
+
+## Field notes (learned on prior ports — trust these over the handoff docs)
+
+- **HeroUI Chip has no `outline` variant** (contract §2 is stale there). Valid:
+  `primary | secondary | soft | tertiary` — all filled. The redesign's white
+  outline chip = `<Chip size="sm" variant="secondary" className="rounded-chip border border-border bg-surface" />`.
+- **RECIPES.md px arbitrary values** (`rounded-[9px]`, `text-[12.5px]`) would trip
+  the §5 gate — the spec values are registered as `@theme` tokens in `index.css`
+  instead: `rounded-card/control/chip/nav`, `text-pill`, `text-chip`, `text-muted-2`.
+  Use those.
+- **tw-merge eats `text-chip`** when a text-color class is also present (it
+  misreads the custom font-size token as a color). Chip `size="sm"` is 12px ≈
+  spec's 11.5px — acceptable; don't fight it.
+- **`Page` renders a white Surface** — ported list screens pass
+  `<Page className="bg-background">` for the off-white pane until the shell flips
+  the default. `ListBox` needs `p-0` and items `rounded-none` inside an R4 card.
+- **Truncation inside ListBox items**: HeroUI `Label`/`Description` are blocks in
+  a non-stretching flex column — add `max-w-full` alongside `truncate`, and
+  `flex-1 min-w-0` on the text column.
 
 ## Route map (badge → route, from `src/@config/routes.ts`)
 

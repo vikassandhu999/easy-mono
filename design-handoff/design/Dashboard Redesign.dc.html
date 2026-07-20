@@ -116,7 +116,7 @@
   <div id="scr-DB" data-screen-label="DB" style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="db-desktop" class="frame">
     <!-- ============ SIDEBAR ============ -->
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
@@ -236,7 +236,7 @@
   <!-- ============ MOBILE ============ -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="db-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);
      --accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <!-- status bar -->
@@ -327,7 +327,7 @@
   <!-- ===== DESKTOP CLIENTS ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="cl-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -471,7 +471,7 @@
   <!-- ===== MOBILE CLIENTS ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="cl-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -617,7 +617,7 @@
   <!-- ===== DESKTOP INVITE ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="in-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -706,7 +706,7 @@
   <!-- ===== MOBILE INVITE ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="in-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -780,7 +780,7 @@
   <!-- ===== DESKTOP EXERCISES ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="ex-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -881,7 +881,7 @@
   <!-- ===== MOBILE EXERCISES ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="ex-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -986,7 +986,7 @@
   <div id="scr-EP" data-screen-label="EP" style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="ep-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -1060,7 +1060,7 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="ep-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -1123,7 +1123,7 @@
   <div id="scr-ED" data-screen-label="ED" style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="ed-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -1173,7 +1173,7 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="ed-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -1222,7 +1222,7 @@
   <!-- ===== DESKTOP FOODS ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="fo-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -1337,7 +1337,7 @@
   <!-- ===== MOBILE FOODS ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="fo-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -1448,7 +1448,7 @@
   <!-- ===== DESKTOP FOOD DETAIL ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="fd-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -1518,7 +1518,7 @@
   <!-- ===== MOBILE FOOD DETAIL ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="fd-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -1587,7 +1587,7 @@
   <!-- ===== DESKTOP EDIT FOOD ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="fe-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -1657,7 +1657,7 @@
   <!-- ===== MOBILE EDIT FOOD ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="fe-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -1721,7 +1721,7 @@
   <!-- ===== DESKTOP RECIPES ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="rc-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -1812,7 +1812,7 @@
   <!-- ===== MOBILE RECIPES ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="rc-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -1901,7 +1901,7 @@
   <!-- ===== DESKTOP RECIPE DETAIL ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="rd-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -1979,7 +1979,7 @@
   <!-- ===== MOBILE RECIPE DETAIL ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="rd-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -2057,7 +2057,7 @@
   <!-- ===== DESKTOP EDIT RECIPE ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="re-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -2116,7 +2116,7 @@
   <!-- ===== MOBILE EDIT RECIPE ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="re-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -2169,7 +2169,7 @@
   <!-- ===== DESKTOP NUTRITION PLANS ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="np-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -2257,7 +2257,7 @@
   <!-- ===== MOBILE NUTRITION PLANS ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="np-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -2346,7 +2346,7 @@
   <!-- ===== DESKTOP EDIT PLAN ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="ne-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -2397,7 +2397,7 @@
   <!-- ===== MOBILE EDIT PLAN ===== -->
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="ne-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -2597,7 +2597,7 @@
   <div id="scr-TR" data-screen-label="TR" style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="tr-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -2669,7 +2669,7 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="tr-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -2744,7 +2744,7 @@
   <div id="scr-TE" data-screen-label="TE" style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="te-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -2784,7 +2784,7 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="te-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -2927,7 +2927,7 @@
   <div id="scr-FM" data-screen-label="FM" style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame">
+  <div data-ref="fm-desktop" class="frame">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -3003,7 +3003,7 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="fm-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>
@@ -3184,7 +3184,7 @@
   <div id="scr-ST" data-screen-label="ST" style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Desktop</span>
-  <div class="frame" style="position:relative;height:640px">
+  <div data-ref="st-desktop" class="frame" style="position:relative;height:640px">
     <aside class="side">
       <div class="brand"><div class="mark gk">C</div><div class="gk" style="font-size:17px;font-weight:700;color:var(--foreground)">Coach<span style="color:var(--accent)">Easy</span></div></div>
       <div style="display:flex;flex-direction:column;gap:2px;padding:16px 2px 0">
@@ -3327,7 +3327,7 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Mobile</span>
-  <div style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
+  <div data-ref="st-mobile" style="width:390px;background:#111;border-radius:52px;padding:11px;flex:none;box-shadow:0 24px 60px rgba(0,0,0,.22)">
    <div style="width:100%;height:812px;background:var(--background);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:var(--foreground);--accent:oklch(0.62 0.195 253.83);--accent-foreground:oklch(0.99 0 0);--background:oklch(0.975 0 0);--surface:oklch(1 0 0);--foreground:oklch(0.17 0 0);--muted:oklch(0.47 0 0);--border:oklch(0.9 0 0);--ink:oklch(0.19 0.004 285)">
     <div style="height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 32px;background:var(--surface)">
       <span class="gk" style="font-size:15px;font-weight:600;color:var(--foreground)">9:41</span>

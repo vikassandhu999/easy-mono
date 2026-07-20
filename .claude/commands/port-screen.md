@@ -126,6 +126,12 @@ verify copy matches COPY.md § {badge} verbatim.
 - **Truncation inside ListBox items**: HeroUI `Label`/`Description` are blocks in
   a non-stretching flex column — add `max-w-full` alongside `truncate`, and
   `flex-1 min-w-0` on the text column.
+- **Selection-mode collections don't fire `onAction`** — a `Dropdown.Menu`/`ListBox`
+  with `selectionMode="single"` routes activation through `onSelectionChange` ONLY.
+  Wiring `onAction` fails silently. (`question-palette.tsx` avoids it with
+  `selectionMode="none"`; `meal-slot-control.tsx` uses onSelectionChange.)
+- **Driving the app via `eval` + broad `[role=option]` selectors clicks the wrong
+  rows** and can scramble your test data. Target by `aria-label` prefix, not text.
 - **`ToggleButton` paints a grey fill at rest** — R3 segmented controls need an
   explicit `bg-transparent` alongside the `data-[selected=true]:bg-ink` pair, or
   unselected segments read grey instead of the spec's white.

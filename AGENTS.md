@@ -30,6 +30,7 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 ## UI redesign ports
 
 All redesign work follows `design-handoff/UI-CONTRACT.md` — read it before touching any screen.
+**Port screens with `/port-screen XX`** (`.claude/commands/port-screen.md`) — it encodes the read order, the screenshot-vs-reference convergence loop, and the gates. One badge per branch, presentation only.
 Per-screen workflow, reference images, exact copy, and behavior specs: `design-handoff/README.md`.
 Never read `design-handoff/design/Dashboard Redesign.dc.html` whole — grep `data-screen-label="XX"` for your screen's slice. It is a spec, not source; never copy its markup or styles.
 

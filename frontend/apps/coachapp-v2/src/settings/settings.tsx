@@ -326,9 +326,9 @@ export default function Settings() {
             size="form"
           >
             <ErrorState
-            message="Couldn't load settings."
-            onRetry={refetch}
-          />
+              message="Couldn't load settings."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>

@@ -126,6 +126,17 @@ verify copy matches COPY.md § {badge} verbatim.
 - **Truncation inside ListBox items**: HeroUI `Label`/`Description` are blocks in
   a non-stretching flex column — add `max-w-full` alongside `truncate`, and
   `flex-1 min-w-0` on the text column.
+- **Some screens' key states are invisible against mature dev data** — DB's setup
+  strip auto-hides once setup is complete and its check-ins banner needs a non-empty
+  review queue. Verifying those requires seeding an incomplete workspace or briefly
+  stubbing the conditions (mark stubs `TEMP-VERIFY` and grep before committing).
+- **`Avatar`'s root bg class beats a tone passed to `<Avatar className>`** — put
+  tints on `Avatar.Fallback`.
+- **Grid children don't shrink** — a `<section>` in `Page.Frame`'s grid needs explicit
+  `min-w-0` or wide rows force horizontal page scroll at 390px (invisible at 1240px).
+- **`CloseButton` ships a filled circle at rest** — bare `×` needs `bg-transparent`.
+- **`Button variant="secondary"` renders its label in accent** — on dark/ink surfaces
+  add explicit `text-foreground`.
 - **Selection-mode collections don't fire `onAction`** — a `Dropdown.Menu`/`ListBox`
   with `selectionMode="single"` routes activation through `onSelectionChange` ONLY.
   Wiring `onAction` fails silently. (`question-palette.tsx` avoids it with

@@ -2,9 +2,17 @@ import {Description, ErrorMessage, Fieldset, ListBox} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormActions, FormLayout, FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {
+  FieldRow,
+  FormActions,
+  FormLayout,
+  FormSelectField,
+  FormTextAreaField,
+  FormTextField,
+} from '@/@components/form-fields';
 import {useGetBillingQuery} from '@/api/billing';
 import type {ClientInviteRequest} from '@/api/clients';
+import {useGetCoachProfileQuery} from '@/api/profile';
 import {toOptionalText} from '@/api/shared';
 import {type TeamMember, useGetTeamQuery} from '@/api/team';
 import {splitName} from '@/clients/lib/invite-client';
@@ -79,70 +87,81 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
   const isOwner = billing?.data.is_owner ?? false;
   const {data: team} = useGetTeamQuery(undefined, {skip: !isOwner});
   const activeTrainers = (team?.data ?? []).filter((member) => member.status === 'active');
+  const {data: profile} = useGetCoachProfileQuery();
+  // Unassigned means "the acting coach keeps this client", so the empty select
+  // reads as the coach themself rather than a bare "Select an item".
+  const selfLabel = `${[profile?.data.first_name, profile?.data.last_name].filter(Boolean).join(' ') || 'You'} (you)`;
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <Fieldset>
-        <Fieldset.Legend>Client details</Fieldset.Legend>
-        <Description>Add an email or phone number so the client can receive the invite.</Description>
+      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+        <Fieldset>
+          <Fieldset.Legend>Client details</Fieldset.Legend>
+          <Description>Add an email or phone number so the client can receive the invite.</Description>
 
-        <Fieldset.Group>
-          <FormTextField
-            control={control}
-            fullWidth
-            inputProps={{autoComplete: 'name'}}
-            isRequired
-            label="Name"
-            name="name"
-          />
-
-          <FormTextField
-            control={control}
-            fullWidth
-            inputProps={{autoComplete: 'email'}}
-            label="Email"
-            name="email"
-            type="email"
-          />
-
-          <FormTextField
-            control={control}
-            fullWidth
-            inputProps={{autoComplete: 'tel'}}
-            label="Phone"
-            name="phone"
-            type="tel"
-          />
-
-          {isOwner && activeTrainers.length > 0 ? (
-            <FormSelectField
+          <Fieldset.Group>
+            <FormTextField
               control={control}
-              description="Leave blank to keep yourself assigned."
-              label="Assigned trainer"
-              name="assigned_trainer_id"
-            >
-              {activeTrainers.map((member) => (
-                <ListBox.Item
-                  id={member.id}
-                  key={member.id}
-                  textValue={memberName(member)}
-                >
-                  {memberName(member)}
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              ))}
-            </FormSelectField>
-          ) : null}
+              fullWidth
+              inputProps={{autoComplete: 'name', placeholder: 'Jordan Miles'}}
+              isRequired
+              label="Name"
+              name="name"
+            />
 
-          <FormTextAreaField
-            control={control}
-            fullWidth
-            label="Notes"
-            name="notes"
-            textAreaProps={{rows: 3}}
-          />
-        </Fieldset.Group>
-      </Fieldset>
+            <FieldRow>
+              <FormTextField
+                control={control}
+                fullWidth
+                inputProps={{autoComplete: 'email', placeholder: 'name@email.com'}}
+                label="Email"
+                name="email"
+                type="email"
+              />
+              <FormTextField
+                control={control}
+                fullWidth
+                inputProps={{autoComplete: 'tel', placeholder: '+1 (555) 000-0000'}}
+                label="Phone"
+                name="phone"
+                type="tel"
+              />
+            </FieldRow>
+
+            {isOwner && activeTrainers.length > 0 ? (
+              <FormSelectField
+                control={control}
+                description="Leave as-is to keep yourself assigned."
+                label="Assigned trainer"
+                name="assigned_trainer_id"
+                placeholder={selfLabel}
+              >
+                {activeTrainers.map((member) => (
+                  <ListBox.Item
+                    id={member.id}
+                    key={member.id}
+                    textValue={memberName(member)}
+                  >
+                    {memberName(member)}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </FormSelectField>
+            ) : null}
+
+            <FormTextAreaField
+              control={control}
+              fullWidth
+              label="Notes"
+              name="notes"
+              textAreaProps={{
+                placeholder: 'Goals, injuries, preferences, or anything the client mentioned…',
+                rows: 3,
+              }}
+            />
+          </Fieldset.Group>
+        </Fieldset>
+      </div>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 

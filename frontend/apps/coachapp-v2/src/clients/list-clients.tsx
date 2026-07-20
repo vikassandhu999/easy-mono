@@ -62,7 +62,9 @@ export default function ListClients() {
   // "Needs attention" is not a value of the list endpoint's `status` filter —
   // it has its own endpoint (the same one the dashboard uses), which is flat and
   // has no search param, so search composes client-side for that tab only.
-  const attention = useListAttentionClientsQuery({limit: ATTENTION_PAGE_SIZE, offset: 0});
+  // Off-tab we only need `count` for the pill, so ask for zero rows; the full
+  // page loads when the tab is actually selected.
+  const attention = useListAttentionClientsQuery({limit: isAttention ? ATTENTION_PAGE_SIZE : 0, offset: 0});
   const {data: summaryData} = useListClientsQuery({limit: 0});
 
   const attentionClients = useMemo(

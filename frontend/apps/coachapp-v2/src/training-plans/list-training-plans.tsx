@@ -29,12 +29,13 @@ export default function ListTrainingPlans() {
   });
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
 
-  // Lightweight counts for the status tabs — `count` on the list endpoint is
-  // the total matching the filter regardless of `limit`, so `limit: 1` is
-  // enough to read it back.
-  const {data: allData} = useListTrainingPlansQuery({limit: 1});
+  // Per-status counts for the tabs. `count` is the total matching the filter
+  // regardless of `limit`, so `limit: 1` reads it back cheaply. `All` is derived
+  // rather than fetched — status is a closed active|archived enum.
   const {data: activeData} = useListTrainingPlansQuery({limit: 1, status: 'active'});
   const {data: archivedData} = useListTrainingPlansQuery({limit: 1, status: 'archived'});
+  const activeCount = activeData?.count ?? 0;
+  const archivedCount = archivedData?.count ?? 0;
 
   return (
     <Page>
@@ -100,19 +101,19 @@ export default function ListTrainingPlans() {
               className={FILTER_PILL_CLASS}
               id="all"
             >
-              All <span className="text-chip opacity-70">{allData?.count ?? 0}</span>
+              All <span className="text-chip opacity-70">{activeCount + archivedCount}</span>
             </ToggleButton>
             <ToggleButton
               className={FILTER_PILL_CLASS}
               id="active"
             >
-              Active <span className="text-chip opacity-70">{activeData?.count ?? 0}</span>
+              Active <span className="text-chip opacity-70">{activeCount}</span>
             </ToggleButton>
             <ToggleButton
               className={FILTER_PILL_CLASS}
               id="archived"
             >
-              Archived <span className="text-chip opacity-70">{archivedData?.count ?? 0}</span>
+              Archived <span className="text-chip opacity-70">{archivedCount}</span>
             </ToggleButton>
           </ToggleButtonGroup>
         </div>

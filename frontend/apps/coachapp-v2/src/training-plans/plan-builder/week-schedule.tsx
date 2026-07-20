@@ -47,9 +47,8 @@ interface WeekScheduleProps {
 // ---------------------------------------------------------------------------
 
 /** Given the schedule map from the API, return ordered rows. */
-export function buildOrderedDayRows(
-  scheduleMap: Record<string, ScheduleEntry>,
-): Array<{day: DayKey; entry: ScheduleEntry | null}> {
+>
+{
   return ORDERED_DAYS.map((day) => ({
     day,
     entry: scheduleMap[day] ?? null,

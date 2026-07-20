@@ -126,6 +126,14 @@ verify copy matches COPY.md § {badge} verbatim.
 - **Truncation inside ListBox items**: HeroUI `Label`/`Description` are blocks in
   a non-stretching flex column — add `max-w-full` alongside `truncate`, and
   `flex-1 min-w-0` on the text column.
+- **HeroUI 3.2.1 has NO `Snippet`** — GAPS #13's copy row always takes the fallback
+  branch (`Surface` + mono `Typography` + copy `Button` + `toast('Link copied')`).
+- **`Meter` needs compound children like `ProgressBar`** —
+  `<Meter><Meter.Track><Meter.Fill/></Meter.Track></Meter>`; colors are
+  `accent | danger | default | success | warning` (no `primary`).
+- **Viewport emulation remounts the app and resets component state** — screenshotting
+  a post-submit/`sent` state at both widths costs two submissions. And
+  `chrome-devtools-axi` uids go stale after every action: re-snapshot between steps.
 - **`ProgressBar` renders empty unless given compound children** —
   `<ProgressBar value={100}><ProgressBar.Track><ProgressBar.Fill/></ProgressBar.Track></ProgressBar>`.
   Ratio bars = one ProgressBar per segment in a `flex gap-0.5` row, each wrapped in

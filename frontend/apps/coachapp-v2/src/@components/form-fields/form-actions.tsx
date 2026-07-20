@@ -1,4 +1,5 @@
 import {Button, Fieldset, Spinner} from '@heroui/react';
+import {Check} from 'lucide-react';
 
 // The single submit/cancel row for every form. Owns the action-row gap (gap-3)
 // and the pending pattern. FormLayout's gap-8 provides the separation above it,
@@ -36,7 +37,10 @@ export function FormActions({
         isPending={isSubmitting}
         type="submit"
       >
-        <span className={isSubmitting ? 'invisible' : undefined}>{submitLabel}</span>
+        <span className={`flex items-center gap-2 ${isSubmitting ? 'invisible' : ''}`}>
+          <Check className="size-4" />
+          {submitLabel}
+        </span>
         {isSubmitting ? (
           <span className="absolute inset-0 flex items-center justify-center">
             <Spinner

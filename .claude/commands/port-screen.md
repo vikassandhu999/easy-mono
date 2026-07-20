@@ -126,6 +126,17 @@ verify copy matches COPY.md § {badge} verbatim.
 - **Truncation inside ListBox items**: HeroUI `Label`/`Description` are blocks in
   a non-stretching flex column — add `max-w-full` alongside `truncate`, and
   `flex-1 min-w-0` on the text column.
+- **`ToggleButton` paints a grey fill at rest** — R3 segmented controls need an
+  explicit `bg-transparent` alongside the `data-[selected=true]:bg-ink` pair, or
+  unselected segments read grey instead of the spec's white.
+- **`Button` inside a grid cell does not stretch** (it's inline-flex) — palette/tile
+  grids need `w-full` on the Button or cells collapse to label width.
+- **`Page.Title` hard-codes `truncate`** — override with `whitespace-normal` when the
+  title is a generated summary rather than a name.
+- **`ListBox.Label` doesn't exist** — use the top-level `Label` import inside
+  `ListBox.Item`. ListBox exposes `Root / Item / ItemIndicator / Section`.
+- **`Page` scrolls an inner container, not the window** — `chrome-devtools-axi scroll`
+  is a no-op; scroll via `eval` on `.easy_main-content`.
 - **HeroUI 3.2.1 has NO `Snippet`** — GAPS #13's copy row always takes the fallback
   branch (`Surface` + mono `Typography` + copy `Button` + `toast('Link copied')`).
 - **`Meter` needs compound children like `ProgressBar`** —

@@ -1,4 +1,15 @@
+/**
+ * TrainingPlanDetail — the training plan builder screen (badge TB).
+ *
+ * Workout-first: the header carries `{plan} — {client}` plus its actions, and
+ * the body is the active workout — workout tabs, weekday scheduling, exercises
+ * and their sets. Everything below the header lives in `WorkoutList`.
+ *
+ * Plan name and dates are edited on the plan edit screen (badge TE), reachable
+ * from the ⋯ menu — the builder no longer repeats that form (mirrors NB).
+ */
 import {useParams} from 'react-router-dom';
+
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
@@ -9,8 +20,7 @@ import {useGetTrainingPlanQuery} from '@/api/generated';
 
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
-import {PlanHeader} from './plan-header';
-import {WeekSchedule} from './week-schedule';
+import {PlanDates} from './plan-dates';
 import {WorkoutList} from './workout-list';
 
 export default function TrainingPlanDetail() {
@@ -20,8 +30,8 @@ export default function TrainingPlanDetail() {
 
   if (isLoading) {
     return (
-      <Page>
-        <Page.Header className="py-3! items-center">
+      <Page className="bg-background">
+        <Page.Header size="wide">
           <BackButton onPress={goBack} />
         </Page.Header>
         <Page.Content>
@@ -33,49 +43,48 @@ export default function TrainingPlanDetail() {
 
   if (isError || !data) {
     return (
-      <Page>
-        <Page.Header className="py-3! items-center">
+      <Page className="bg-background">
+        <Page.Header size="wide">
           <BackButton onPress={goBack} />
         </Page.Header>
-        <Page.Content className="px-4 pt-4 md:px-6 lg:px-8">
-          <ErrorState message="Couldn't load training plan. It may not exist or you don't have access." />
+        <Page.Content>
+          <Page.Frame size="wide">
+            <ErrorState message="Couldn't load training plan. It may not exist or you don't have access." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
   }
 
   const plan = data.data;
+  // COPY.md § TB — the title is `{plan} — {client}` once the plan is assigned.
+  const clientName = plan.client ? `${plan.client.first_name} ${plan.client.last_name}`.trim() : null;
+  const title = clientName ? `${plan.name} — ${clientName}` : plan.name;
 
   return (
-    <Page>
-      {/* Nav bar — back + plan actions. Inner wrapper (not Page.Header itself)
-          carries max-w-2xl so it aligns with the content column below —
-          Page.Header's own padding would otherwise eat into that width. */}
-      <Page.Header className="py-3!">
-        <div className="flex w-full max-w-2xl items-center justify-between gap-3">
+    <Page className="bg-background">
+      <Page.Header size="wide">
+        <Page.TitleGroup className="flex min-w-0 items-center gap-2">
           <BackButton onPress={goBack} />
-          <div className="flex gap-2">
-            <PlanAddToClient plan={plan} />
-            <PlanActions
-              onDeleted={() => goBack()}
-              plan={plan}
-            />
-          </div>
-        </div>
+          <Page.Title>{title}</Page.Title>
+        </Page.TitleGroup>
+        <Page.Actions>
+          <PlanAddToClient plan={plan} />
+          <PlanActions
+            onDeleted={() => goBack()}
+            plan={plan}
+          />
+        </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="px-4 md:px-6 lg:px-8">
-        {/* Layout A — single centred column, max-w-2xl */}
-        <div className="w-full max-w-2xl">
-          {/* 1. Plan header: inline name + dates → autosave */}
-          <PlanHeader plan={plan} />
-
-          {/* 2. Workout list: accordion, add workout, empty state */}
+      <Page.Content className="pb-10">
+        <Page.Frame
+          className="flex flex-col gap-3"
+          size="wide"
+        >
+          <PlanDates plan={plan} />
           <WorkoutList planId={plan.id} />
-
-          {/* 3. Week schedule: day → workout assignment */}
-          <WeekSchedule planId={plan.id} />
-        </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

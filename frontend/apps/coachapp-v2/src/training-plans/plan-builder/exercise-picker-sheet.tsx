@@ -15,6 +15,7 @@
  *   - selected exercise ids Set (multi-select)
  */
 import {Chip} from '@heroui/react';
+import {Check} from 'lucide-react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 
@@ -237,15 +238,16 @@ export function ExercisePickerSheet({open, onClose, onAdd, anchorEl}: ExercisePi
 
     return (
       <div className="flex items-center gap-2.5 px-1 py-2.5">
-        {/* Checkbox visual */}
+        {/* Selection mark — the row Button owns the press and announces state
+            via aria-pressed, so this is purely decorative. */}
         <div
-          className={[
-            'h-5 w-5 shrink-0 rounded-md border-[1.5px] flex items-center justify-center',
-            selected ? 'border-accent bg-accent text-accent-foreground' : 'border-default-hover',
-          ].join(' ')}
           aria-hidden="true"
+          className={[
+            'flex size-5 shrink-0 items-center justify-center rounded-md border',
+            selected ? 'border-accent bg-accent text-accent-foreground' : 'border-border',
+          ].join(' ')}
         >
-          {selected ? <span className="text-[11px] font-bold leading-none">✓</span> : null}
+          {selected ? <Check className="size-3.5" /> : null}
         </div>
 
         {/* Name + meta */}
@@ -285,6 +287,7 @@ export function ExercisePickerSheet({open, onClose, onAdd, anchorEl}: ExercisePi
       onSearchChange={setSearch}
       onToggleItem={handleToggleItem}
       open={open}
+      placement="bottom"
       renderItem={renderItem}
       search={search}
       selectedKeys={selectedKeys}

@@ -38,3 +38,32 @@ export function fieldsForTrackingType(trackingType: string | null): FieldConfig 
       return {showReps: true, showLoad: true, showDuration: false, showDistance: false, showRpe: true};
   }
 }
+
+/**
+ * tracking_type → the label shown on the exercise row's chip.
+ * Strings are verbatim from design-handoff/COPY.md § TB (Tracking labels).
+ */
+export function trackingTypeLabel(trackingType: string | null): string | null {
+  switch (trackingType) {
+    case 'weight_reps':
+      return 'Weight & reps';
+    case 'bodyweight_reps':
+      return 'Bodyweight reps';
+    case 'weighted_bodyweight':
+      return 'Weighted bodyweight';
+    case 'assisted_bodyweight':
+      return 'Assisted bodyweight';
+    case 'reps_only':
+      return 'Reps only';
+    case 'duration':
+      return 'Duration';
+    case 'weight_duration':
+      return 'Weight & time';
+    case 'distance_duration':
+      return 'Distance & time';
+    case 'weight_distance':
+      return 'Weight & distance';
+    default:
+      return null;
+  }
+}

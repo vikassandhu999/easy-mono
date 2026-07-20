@@ -1,15 +1,21 @@
 /**
- * WorkoutCard — one accordion card for a training workout.
+ * WorkoutCard — the active workout of the training plan builder (badge TB).
  *
- * Header: inline-rename (PATCH workout) + exercise count + chevron + delete menu.
- * Body (open only): one ExerciseRow per workout_element + "Add exercise" button.
+ * Card header: workout name (inline rename) · weekday chips (WeekSchedule) · ⋯
+ * menu (Rename / Delete), then the `Scheduled: Mon, Thu` label. Body: one
+ * ExerciseRow per workout_element, then `Add exercise`.
  *
- * Width discipline: WorkoutCard adds no horizontal padding inside the body —
- * ExerciseRow already owns its own 10px indent + 2px accent rule.
+ * Only the active workout renders — the tabs above (workout-list.tsx) pick it,
+ * so this is a plain card rather than an accordion.
+ *
+ * Cache: tag:false — every mutation optimistically patches `listWorkouts`
+ * (and `getTrainingPlanSchedule` on delete, which the backend cascades) and
+ * rolls back with patch.undo() + toast on failure.
  */
-import {Button, Dropdown, Label, Separator, Typography} from '@heroui/react';
-import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
+import {AlertDialog, Button, Dropdown, Label, Separator, Spinner, Typography, useOverlayState} from '@heroui/react';
+import {MoreHorizontal, Plus, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+
 import {toastMutationError} from '@/@components/mutation-toast';
 import type {TrainingExercise, TrainingPlanWorkout} from '@/api/generated';
 import {
@@ -24,6 +30,7 @@ import {useAppDispatch} from '@/store';
 
 import {ExercisePickerSheet} from './exercise-picker-sheet';
 import {ExerciseRow} from './exercise-row';
+import {ScheduleLabel, WeekSchedule} from './week-schedule';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,25 +38,26 @@ import {ExerciseRow} from './exercise-row';
 
 interface WorkoutCardProps {
   workout: TrainingPlanWorkout;
-  open: boolean;
-  onToggle: () => void;
   planId: string;
+  /** Newly created workouts open straight into rename mode (INTERACTIONS.md § TB). */
+  autoRename?: boolean;
+  onRenamed?: () => void;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps) {
+export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCardProps) {
   const dispatch = useAppDispatch();
   const [updateWorkout] = useUpdateWorkoutMutation();
-  const [deleteWorkout] = useDeleteWorkoutMutation();
+  const [deleteWorkout, {isLoading: isDeleting}] = useDeleteWorkoutMutation();
   const [createWorkoutElement] = useCreateWorkoutElementMutation();
   const [deleteWorkoutElement] = useDeleteWorkoutElementMutation();
   const [reorderWorkoutElements] = useReorderWorkoutElementsMutation();
 
   // Inline rename state
-  const [editingName, setEditingName] = useState(false);
+  const [editingName, setEditingName] = useState(Boolean(autoRename));
   const [nameValue, setNameValue] = useState(workout.name);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,16 +68,17 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     }
   }, [workout.name, editingName]);
 
-  // Exercise picker sheet — anchor the desktop popover to the "+ Add exercise" button
+  const deleteAlertState = useOverlayState();
+
+  // Exercise picker sheet — anchor the desktop popover to the "Add exercise" button
   const [pickerOpen, setPickerOpen] = useState(false);
   const addExerciseButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // ---------------------------------------------------------------------------
-  // Rename handlers
+  // Rename
   // ---------------------------------------------------------------------------
 
-  const startEditing = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation(); // don't toggle accordion
+  const startEditing = useCallback(() => {
     setEditingName(true);
     setTimeout(() => nameInputRef.current?.select(), 0);
   }, []);
@@ -79,9 +88,11 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     if (!trimmed || trimmed === workout.name) {
       setEditingName(false);
       setNameValue(workout.name);
+      onRenamed?.();
       return;
     }
     setEditingName(false);
+    onRenamed?.();
     const patch = dispatch(
       coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
         const w = draft.data.find((x) => x.id === workout.id);
@@ -100,7 +111,7 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
       setNameValue(workout.name);
       toastMutationError(e, "Couldn't save changes");
     }
-  }, [nameValue, workout.id, workout.name, planId, updateWorkout, dispatch]);
+  }, [nameValue, workout.id, workout.name, planId, updateWorkout, dispatch, onRenamed]);
 
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -109,9 +120,10 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
       } else if (e.key === 'Escape') {
         setEditingName(false);
         setNameValue(workout.name);
+        onRenamed?.();
       }
     },
-    [commitRename, workout.name],
+    [commitRename, workout.name, onRenamed],
   );
 
   // ---------------------------------------------------------------------------
@@ -128,8 +140,8 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
       }),
     );
     // The backend cascades schedule entries with the workout — mirror that in
-    // the schedule cache, or the day rows keep pointing at a workout that no
-    // longer exists (ghost assignments in the week schedule).
+    // the schedule cache, or the weekday chips keep pointing at a workout that
+    // no longer exists (INTERACTIONS.md § TB: delete clears the schedule).
     const schedulePatch = dispatch(
       coachApi.util.updateQueryData('getTrainingPlanSchedule', {planId}, (draft) => {
         if (!draft.data) {
@@ -144,12 +156,14 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
     );
     try {
       await deleteWorkout({id: workout.id}).unwrap();
+      deleteAlertState.close();
     } catch (e) {
       patch.undo();
       schedulePatch.undo();
+      deleteAlertState.close();
       toastMutationError(e, "Couldn't delete workout");
     }
-  }, [workout.id, planId, deleteWorkout, dispatch]);
+  }, [workout.id, planId, deleteWorkout, dispatch, deleteAlertState]);
 
   // ---------------------------------------------------------------------------
   // Add exercises (from picker)
@@ -263,167 +277,154 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
   );
 
   // ---------------------------------------------------------------------------
-  // Derived
+  // Render
   // ---------------------------------------------------------------------------
 
   const exerciseCount = workout.workout_elements.length;
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
+  // Rename / Delete — rendered next to the name below `sm` and next to the
+  // weekday chips above it, so it never competes with the chips for width.
+  const workoutMenu = (
+    <Dropdown>
+      <Button
+        aria-label={`Workout options for ${workout.name}`}
+        className="size-11 min-w-11 shrink-0 text-muted"
+        isIconOnly
+        variant="ghost"
+      >
+        <MoreHorizontal className="size-4" />
+      </Button>
+      <Dropdown.Popover>
+        {/* Drive selection via the menu so it fires on pointer AND keyboard
+            activation — RAC routes Enter/Space through onAction, not the
+            item's onPress. */}
+        <Dropdown.Menu
+          onAction={(key) => {
+            if (key === 'rename-workout') {
+              startEditing();
+            } else if (key === 'delete-workout') {
+              deleteAlertState.open();
+            }
+          }}
+        >
+          <Dropdown.Section>
+            <Dropdown.Item
+              id="rename-workout"
+              textValue="Rename workout"
+            >
+              <Label>Rename workout</Label>
+            </Dropdown.Item>
+          </Dropdown.Section>
+          <Separator />
+          <Dropdown.Section>
+            <Dropdown.Item
+              id="delete-workout"
+              textValue="Delete workout"
+              variant="danger"
+            >
+              <div className="flex items-center gap-2">
+                <TrashIcon className="size-4 shrink-0 text-danger" />
+                <Label>Delete workout</Label>
+              </div>
+            </Dropdown.Item>
+          </Dropdown.Section>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
+  );
 
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
-      {/* Header — acts as accordion toggle */}
-      <div
-        aria-expanded={open}
-        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none"
-        onClick={editingName ? undefined : onToggle}
-        onKeyDown={(e) => {
-          if (!editingName && (e.key === 'Enter' || e.key === ' ')) {
-            onToggle();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-      >
-        {/* Chevron */}
-        <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
-
-        {/* Name — inline-edit or plain text */}
-        <div className="flex-1 min-w-0">
-          {editingName ? (
-            <input
-              ref={nameInputRef}
-              // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
-              autoFocus
-              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
-              onBlur={() => {
-                commitRename().catch(() => undefined);
-              }}
-              onChange={(e) => setNameValue(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={handleNameKeyDown}
-              value={nameValue}
-            />
-          ) : (
-            // biome-ignore lint/a11y/noNoninteractiveElementInteractions: double-click to rename is a progressive enhancement on a display label; primary rename is in the dropdown menu
-            // biome-ignore lint/a11y/noStaticElementInteractions: same as above
-            <span
-              className="text-sm font-semibold text-foreground truncate block"
-              onDoubleClick={startEditing}
-              title="Double-click to rename"
-            >
-              {workout.name}
-            </span>
-          )}
-        </div>
-
-        {/* Exercise count badge */}
-        <span className="shrink-0 text-xs text-muted">
-          {exerciseCount} {exerciseCount === 1 ? 'exercise' : 'exercises'}
-        </span>
-
-        {/* Workout options menu — stop propagation so clicks don't toggle the accordion */}
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown; role is on the Button inside */}
-        {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: same as above */}
-        <div
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          <Dropdown>
-            <Button
-              aria-label="Workout options"
-              className="h-9 w-9 min-w-9"
-              isIconOnly
-              size="sm"
-              variant="ghost"
-            >
-              <MoreHorizontal size={15} />
-            </Button>
-            <Dropdown.Popover>
-              <Dropdown.Menu
-                onAction={(key) => {
-                  // Route through onAction so it fires on pointer AND keyboard
-                  // (RAC sends Enter/Space through onAction, not item onPress).
-                  if (key === 'rename-workout') {
-                    setEditingName(true);
-                    setTimeout(() => nameInputRef.current?.select(), 0);
-                    if (!open) {
-                      onToggle();
-                    }
-                  } else if (key === 'delete-workout') {
-                    handleDelete().catch(() => undefined);
-                  }
+    <div className="overflow-hidden rounded-card border border-border bg-surface">
+      {/* Header — name + weekday chips + ⋯ */}
+      <div className="flex flex-col gap-2 px-4 pt-3 pb-3">
+        {/* Below sm the chips take their own scrolling row: seven 44px targets
+            don't fit beside the name at 390px, and wrapping them mid-week reads
+            as two broken weeks. */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:flex-1">
+            {editingName ? (
+              <input
+                ref={nameInputRef}
+                // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
+                autoFocus
+                aria-label="Workout name"
+                className="min-w-0 flex-1 border-b border-accent bg-transparent text-base font-semibold text-foreground outline-none"
+                onBlur={() => {
+                  commitRename().catch(() => undefined);
                 }}
-              >
-                <Dropdown.Section>
-                  <Dropdown.Item
-                    id="rename-workout"
-                    textValue="Rename"
-                  >
-                    <Label>Rename</Label>
-                  </Dropdown.Item>
-                </Dropdown.Section>
-                <Separator />
-                <Dropdown.Section>
-                  <Dropdown.Item
-                    id="delete-workout"
-                    textValue="Delete"
-                    variant="danger"
-                  >
-                    <div className="flex items-center gap-2">
-                      <TrashIcon className="size-4 shrink-0 text-danger" />
-                      <Label>Delete workout</Label>
-                    </div>
-                  </Dropdown.Item>
-                </Dropdown.Section>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
-        </div>
-      </div>
-
-      {/* Body — exercises + add button */}
-      {open ? (
-        <div className="border-t border-border pb-3 pt-1">
-          {exerciseCount === 0 ? (
-            <Typography
-              className="pl-2.5"
-              color="muted"
-              type="body-sm"
-            >
-              Add exercises
-            </Typography>
-          ) : (
-            workout.workout_elements.map((element, index) => (
-              <ExerciseRow
-                key={element.id}
-                index={index}
-                isFirst={index === 0}
-                isLast={index === workout.workout_elements.length - 1}
-                onMove={handleMoveExercise}
-                onRemove={() => {
-                  handleRemoveExercise(element.id).catch(() => undefined);
-                }}
-                planId={planId}
-                workoutExercise={element}
+                onChange={(e) => setNameValue(e.target.value)}
+                onKeyDown={handleNameKeyDown}
+                value={nameValue}
               />
-            ))
-          )}
+            ) : (
+              <Typography
+                className="min-w-0 flex-1 truncate"
+                type="h4"
+                weight="semibold"
+              >
+                {workout.name}
+              </Typography>
+            )}
 
-          <div className="pl-2.5">
-            <button
-              ref={addExerciseButtonRef}
-              className="mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
-              onClick={() => setPickerOpen(true)}
-              type="button"
-            >
-              + Add exercise
-            </button>
+            <div className="shrink-0 sm:hidden">{workoutMenu}</div>
+          </div>
+
+          <div className="flex min-w-0 items-center gap-1.5">
+            <div className="-mx-1 min-w-0 overflow-x-auto px-1 py-0.5">
+              <WeekSchedule
+                planId={planId}
+                workoutId={workout.id}
+                workoutName={workout.name}
+              />
+            </div>
+
+            <div className="hidden shrink-0 sm:block">{workoutMenu}</div>
           </div>
         </div>
-      ) : null}
+
+        <ScheduleLabel
+          planId={planId}
+          workoutId={workout.id}
+        />
+      </div>
+
+      {/* Body — exercises + add */}
+      <div className="border-t border-border px-4 pt-2 pb-4">
+        {exerciseCount === 0 ? (
+          <Typography
+            className="py-2"
+            color="muted"
+            type="body-sm"
+          >
+            No exercises yet — add the first one below.
+          </Typography>
+        ) : (
+          workout.workout_elements.map((element, index) => (
+            <ExerciseRow
+              key={element.id}
+              index={index}
+              isFirst={index === 0}
+              isLast={index === workout.workout_elements.length - 1}
+              onMove={handleMoveExercise}
+              onRemove={() => {
+                handleRemoveExercise(element.id).catch(() => undefined);
+              }}
+              planId={planId}
+              workoutExercise={element}
+            />
+          ))
+        )}
+
+        <Button
+          className="mt-3 w-full rounded-control border border-dashed border-border text-accent"
+          onPress={() => setPickerOpen(true)}
+          ref={addExerciseButtonRef}
+          variant="ghost"
+        >
+          <Plus className="size-4" />
+          Add exercise
+        </Button>
+      </div>
 
       {/* Exercise picker sheet */}
       <ExercisePickerSheet
@@ -434,6 +435,52 @@ export function WorkoutCard({workout, open, onToggle, planId}: WorkoutCardProps)
         onClose={() => setPickerOpen(false)}
         open={pickerOpen}
       />
+
+      {/* Delete workout confirm */}
+      <AlertDialog.Backdrop
+        isDismissable={!isDeleting}
+        isOpen={deleteAlertState.isOpen}
+        onOpenChange={deleteAlertState.setOpen}
+      >
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="sm:max-w-100">
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Delete "{workout.name}"?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>Its exercises go with it, and it comes off the weekly schedule.</AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                isDisabled={isDeleting}
+                slot="close"
+                variant="tertiary"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="relative"
+                isPending={isDeleting}
+                onPress={() => {
+                  handleDelete().catch(() => undefined);
+                }}
+                variant="danger"
+              >
+                <span className={isDeleting ? 'invisible' : undefined}>Delete</span>
+                {isDeleting ? (
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <Spinner
+                      color="current"
+                      size="sm"
+                    />
+                    <span className="sr-only">Deleting</span>
+                  </span>
+                ) : null}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </div>
   );
 }

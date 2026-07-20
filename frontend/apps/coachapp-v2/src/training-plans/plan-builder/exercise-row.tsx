@@ -1,22 +1,27 @@
 /**
- * ExerciseRow — one exercise group inside a workout card.
+ * ExerciseRow — one exercise group inside the active workout card (badge TB).
  *
- * Width discipline: ONE 10px left indent anchored by a 2px accent rule
- * (border-accent). Set rows and the "+ set" button sit flush within that group —
- * no additional nesting or padding per level.
+ * Header: exercise name · tracking-type chip · move up / move down / remove.
+ * Body: the planned sets (SetList) behind a 2px accent rule, then `+ Add set`.
  *
- * "+ set" appends a default working set via PATCH planned_sets, then opens
- * the SetSheet on the new set.
+ * GAPS.md #11: reordering is explicit up/down controls — no drag handles, no
+ * DnD library.
+ *
+ * `+ Add set` duplicates the previous set and immediately opens the editor on
+ * the new one (INTERACTIONS.md § TB).
  */
+import {Button, Chip, Typography} from '@heroui/react';
 import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import {useRef, useState} from 'react';
+
 import {toastMutationError} from '@/@components/mutation-toast';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
 import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
-import {SetRow} from './set-row';
+import {SetList} from './set-row';
 import {SetSheet} from './set-sheet';
+import {trackingTypeLabel} from './tracking-fields';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -65,17 +70,17 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeSetIndex, setActiveSetIndex] = useState(0);
 
-  // Ref for the active set row button — used as the desktop popover anchor
-  const activeSetButtonRef = useRef<HTMLButtonElement | null>(null);
-  const setButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Ref for the active set row — used as the desktop popover anchor
+  const activeSetAnchorRef = useRef<HTMLElement | null>(null);
+  const setRowRefs = useRef<(HTMLElement | null)[]>([]);
   const addSetButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  const openSet = (index: number) => {
+  const openSet = (setIndex: number) => {
     // A just-added set has no rendered row yet (openSet fires before the cache
     // write re-renders), so fall back to the "+ Add set" button — otherwise the
     // desktop SetSheet loses its anchor and drops to a bottom sheet.
-    activeSetButtonRef.current = setButtonRefs.current[index] ?? addSetButtonRef.current ?? null;
-    setActiveSetIndex(index);
+    activeSetAnchorRef.current = setRowRefs.current[setIndex] ?? addSetButtonRef.current ?? null;
+    setActiveSetIndex(setIndex);
     setSheetOpen(true);
   };
 
@@ -94,15 +99,13 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
         trainingWorkoutExerciseRequest: {planned_sets: updatedSets},
       }).unwrap();
       // Reflect the appended set in the listWorkouts cache immediately so the
-      // new SetRow renders before any field edit.
+      // new row renders before any field edit.
       dispatch(
         coachApi.util.updateQueryData('listWorkouts', {planId, limit: 100}, (draft) => {
           for (const workout of draft.data) {
             const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
             if (idx !== -1) {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               workout.workout_elements[idx] = {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 ...workout.workout_elements[idx]!,
                 planned_sets: updatedSets,
               };
@@ -124,7 +127,6 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
         for (const workout of draft.data) {
           const idx = workout.workout_elements.findIndex((e) => e.id === workoutExercise.id);
           if (idx !== -1) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             workout.workout_elements[idx] = {...workout.workout_elements[idx]!, planned_sets: updatedSets};
             break;
           }
@@ -144,80 +146,99 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
 
   const exerciseName = workoutExercise.exercise?.name ?? '—';
   const trackingType = workoutExercise.exercise?.tracking_type ?? null;
-  const canRemoveSet = workoutExercise.planned_sets.length > 1;
+  const trackingLabel = trackingTypeLabel(trackingType);
 
   return (
     <>
-      {/* Exercise group: single 10px indent + 2px accent rule — no further nesting */}
-      <div className="mt-2 border-l-2 border-accent pl-2.5">
-        {/* Exercise name + reorder/remove controls */}
-        <div className="mb-1 flex items-center justify-between gap-2">
-          <span className="min-w-0 truncate text-sm font-semibold text-foreground">{exerciseName}</span>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              aria-label="Move exercise up"
-              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-foreground disabled:opacity-30"
-              disabled={isFirst}
-              onClick={() => onMove(index, -1)}
-              type="button"
+      <div className="border-b border-separator py-2 last:border-0">
+        {/* Exercise name + tracking chip + reorder/remove controls */}
+        <div className="flex items-center gap-2">
+          <Typography
+            className="min-w-0 flex-1 truncate"
+            type="body-sm"
+            weight="semibold"
+          >
+            {exerciseName}
+          </Typography>
+
+          {trackingLabel ? (
+            <Chip
+              className="hidden shrink-0 rounded-chip border border-border bg-surface sm:flex"
+              size="sm"
+              variant="secondary"
             >
-              <ChevronUp size={14} />
-            </button>
-            <button
-              aria-label="Move exercise down"
-              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-foreground disabled:opacity-30"
-              disabled={isLast}
-              onClick={() => onMove(index, 1)}
-              type="button"
+              {trackingLabel}
+            </Chip>
+          ) : null}
+
+          <div className="flex shrink-0 items-center">
+            <Button
+              aria-label={`Move ${exerciseName} up`}
+              className="size-11 min-w-11 text-muted"
+              isDisabled={isFirst}
+              isIconOnly
+              onPress={() => onMove(index, -1)}
+              variant="ghost"
             >
-              <ChevronDown size={14} />
-            </button>
-            <button
-              aria-label="Remove exercise"
-              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-danger"
-              onClick={onRemove}
-              type="button"
+              <ChevronUp className="size-4" />
+            </Button>
+            <Button
+              aria-label={`Move ${exerciseName} down`}
+              className="size-11 min-w-11 text-muted"
+              isDisabled={isLast}
+              isIconOnly
+              onPress={() => onMove(index, 1)}
+              variant="ghost"
             >
-              <X size={14} />
-            </button>
+              <ChevronDown className="size-4" />
+            </Button>
+            <Button
+              aria-label={`Remove ${exerciseName}`}
+              className="size-11 min-w-11 text-muted-2"
+              isIconOnly
+              onPress={onRemove}
+              variant="ghost"
+            >
+              <X className="size-4" />
+            </Button>
           </div>
         </div>
 
-        {/* Set rows — full width within the group (no extra indent) */}
-        {workoutExercise.planned_sets.map((set, i) => (
-          <SetRow
-            key={i}
-            ref={(el) => {
-              setButtonRefs.current[i] = el;
-            }}
-            canRemove={canRemoveSet}
-            index={i}
-            onRemove={() => {
+        {/* Sets — one 2px accent rule anchors the whole group */}
+        <div className="border-l-2 border-accent pl-3">
+          <SetList
+            exerciseName={exerciseName}
+            onOpenSet={openSet}
+            onRemoveSet={(i) => {
               handleRemoveSet(i).catch(() => undefined);
             }}
-            onTap={() => openSet(i)}
-            set={set}
+            registerRowRef={(i, el) => {
+              setRowRefs.current[i] = el;
+            }}
+            sets={workoutExercise.planned_sets}
             trackingType={trackingType}
           />
-        ))}
 
-        {/* + Add set — disabled while a sets PATCH is in flight: a double-click
-            would build two payloads from the same base and lose one add */}
-        <button
-          ref={addSetButtonRef}
-          className="mt-1 -ml-2 inline-flex min-h-9 items-center px-2 py-1 text-xs text-accent hover:text-accent/80 transition-colors disabled:opacity-50"
-          disabled={isSavingSets}
-          onClick={handleAddSet}
-          type="button"
-        >
-          + Add set
-        </button>
+          {/* + Add set — disabled while a sets PATCH is in flight: a double-press
+              would build two payloads from the same base and lose one add. */}
+          <Button
+            className="min-h-11 px-0 text-xs font-semibold text-accent"
+            isDisabled={isSavingSets}
+            onPress={() => {
+              handleAddSet().catch(() => undefined);
+            }}
+            ref={addSetButtonRef}
+            variant="ghost"
+          >
+            + Add set
+          </Button>
+        </div>
       </div>
 
-      {/* Set value sheet */}
+      {/* Set value editor */}
       {sheetOpen ? (
         <SetSheet
-          anchorEl={activeSetButtonRef.current}
+          anchorEl={activeSetAnchorRef.current}
           onClose={() => setSheetOpen(false)}
           onNext={
             activeSetIndex < workoutExercise.planned_sets.length - 1 ? () => setActiveSetIndex((i) => i + 1) : undefined

@@ -1,23 +1,24 @@
+/**
+ * SetList — the planned sets of one exercise (badge TB).
+ *
+ * GAPS.md #7: set rows are `ListBox` items and the whole row is the tap target
+ * (it opens the SetSheet editor). `selectionMode="none"` is required — a
+ * selection-mode collection routes activation through onSelectionChange and
+ * never fires `onAction`.
+ *
+ * The `×` that removes a set sits outside the ListBox's item collection, in a
+ * sibling column, so no interactive control is nested inside an option.
+ */
+import {Button, ListBox} from '@heroui/react';
 import {X} from 'lucide-react';
-import {forwardRef} from 'react';
 
 import type {TrainingPlanPlannedSet} from '@/api/generated';
 
 import {fieldsForTrackingType} from './tracking-fields';
 
-interface SetRowProps {
-  set: TrainingPlanPlannedSet;
-  index: number;
-  /** Exercise tracking_type — drives WHICH measures the summary shows (same
-   * source of truth as the SetSheet editor), so the row and sheet never disagree. */
-  trackingType: string | null;
-  /** Tap the summary to open the SetSheet editor. */
-  onTap: () => void;
-  /** Remove this set. */
-  onRemove: () => void;
-  /** False when this is the only set (planned_sets requires ≥1) — hides remove. */
-  canRemove: boolean;
-}
+// ---------------------------------------------------------------------------
+// Summary formatting
+// ---------------------------------------------------------------------------
 
 function formatLoad(set: TrainingPlanPlannedSet): string | null {
   if (set.load_value === null || set.load_value === undefined || set.load_unit === 'none' || set.load_unit === null) {
@@ -27,7 +28,7 @@ function formatLoad(set: TrainingPlanPlannedSet): string | null {
   return `${set.load_value}${unit}`;
 }
 
-function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | null): string {
+export function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | null): string {
   const fields = fieldsForTrackingType(trackingType);
   const parts: string[] = [];
 
@@ -65,36 +66,68 @@ function formatSetSummary(set: TrainingPlanPlannedSet, trackingType: string | nu
   return parts.join(' · ');
 }
 
-export const SetRow = forwardRef<HTMLButtonElement, SetRowProps>(function SetRow(
-  {set, index, trackingType, onTap, onRemove, canRemove},
-  ref,
-) {
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+interface SetListProps {
+  sets: TrainingPlanPlannedSet[];
+  /** Exercise tracking_type — drives WHICH measures each summary shows (same
+   * source of truth as the SetSheet editor), so rows and sheet never disagree. */
+  trackingType: string | null;
+  exerciseName: string;
+  /** Tap a row to open the SetSheet editor on that set. */
+  onOpenSet: (index: number) => void;
+  onRemoveSet: (index: number) => void;
+  /** Registers each row element as the desktop popover anchor for its set. */
+  registerRowRef: (index: number, el: HTMLElement | null) => void;
+}
+
+export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSet, registerRowRef}: SetListProps) {
+  // planned_sets requires ≥1 — the last remaining set is not removable
+  // (INTERACTIONS.md § TB).
+  const canRemove = sets.length > 1;
+
   return (
-    // Without the remove button (single set) the summary text is the last
-    // element — pr-2.5 keeps it off the card's right border, matching the
-    // optical inset the X button's hit area provides when it is rendered.
-    <div className={`flex items-center gap-2 ${canRemove ? '' : ' pr-2.5'}`}>
-      {/* Tap the summary to edit this set in the SetSheet */}
-      <button
-        ref={ref}
-        className="min-w-0 flex-1 text-left text-xs text-muted transition-colors hover:text-foreground"
-        onClick={onTap}
-        type="button"
+    <div className="flex items-stretch">
+      <ListBox
+        aria-label={`Sets for ${exerciseName}`}
+        className="min-w-0 flex-1 gap-0 border-none bg-transparent p-0 shadow-none"
+        onAction={(key) => onOpenSet(Number(key))}
+        selectionMode="none"
       >
-        <span className="mr-1.5 font-medium text-foreground">Set {index + 1}</span>
-        {formatSetSummary(set, trackingType)}
-      </button>
+        {sets.map((set, index) => (
+          <ListBox.Item
+            className="min-h-11 rounded-none px-0 py-0"
+            id={String(index)}
+            key={index}
+            ref={(el: HTMLElement | null) => registerRowRef(index, el)}
+            textValue={`Set ${index + 1}`}
+          >
+            <span className="min-w-0 truncate text-sm text-muted">
+              <span className="mr-1.5 font-semibold text-foreground">Set {index + 1}</span>
+              {formatSetSummary(set, trackingType)}
+            </span>
+          </ListBox.Item>
+        ))}
+      </ListBox>
 
       {canRemove ? (
-        <button
-          aria-label={`Remove set ${index + 1}`}
-          className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded text-muted transition-colors hover:text-danger"
-          onClick={onRemove}
-          type="button"
-        >
-          <X size={14} />
-        </button>
+        <div className="flex shrink-0 flex-col">
+          {sets.map((_, index) => (
+            <Button
+              aria-label={`Remove set ${index + 1} of ${exerciseName}`}
+              className="size-11 min-w-11 text-muted-2"
+              key={index}
+              isIconOnly
+              onPress={() => onRemoveSet(index)}
+              variant="ghost"
+            >
+              <X className="size-4" />
+            </Button>
+          ))}
+        </div>
       ) : null}
     </div>
   );
-});
+}

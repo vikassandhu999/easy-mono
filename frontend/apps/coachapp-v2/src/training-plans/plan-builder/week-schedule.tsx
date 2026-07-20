@@ -1,29 +1,46 @@
 /**
- * WeekSchedule — 7-day schedule grid for a training plan.
+ * WeekSchedule — the weekday chips that schedule ONE workout (badge TB).
  *
- * Each row: a HeroUI Select for picking a workout (or Rest).
- * Assigning a workout fires PUT /training-plans/:id/schedule/:day.
- * An assigned day can be expanded (read-only) to show its exercises.
- * Cache: tag:false — we use optimistic updateQueryData after each PUT.
+ * The redesign moved scheduling out of a 7-row day grid and onto the active
+ * workout card: seven chips, the ones this workout owns highlighted, plus the
+ * `Scheduled: Mon, Thu` / `Not scheduled yet` label beneath them.
+ *
+ * A weekday holds at most one workout (INTERACTIONS.md § TB), so selecting a
+ * chip implicitly takes that day off whichever workout held it; deselecting
+ * clears the day to rest. GAPS #8: the chips are a `ToggleButtonGroup` and the
+ * exclusivity lives in this handler, not the component.
+ *
+ * Cache: tag:false — optimistic updateQueryData on `getTrainingPlanSchedule`
+ * with patch.undo() + toast on failure.
  */
 import {
   TRAINING_DAY_LABELS as DAY_LABELS,
+  TRAINING_DAY_SHORT_LABELS as DAY_SHORT_LABELS,
   type TrainingWeekday as DayKey,
   TRAINING_WEEKDAYS as ORDERED_DAYS,
 } from '@easy/utils';
-import {ListBox, Select, Skeleton, Typography} from '@heroui/react';
-import {ChevronDown, ChevronRight} from 'lucide-react';
-import {useState} from 'react';
+import {Skeleton, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
+
 import {toastMutationError} from '@/@components/mutation-toast';
-import {
-  coachApi,
-  useGetTrainingPlanScheduleQuery,
-  useListWorkoutsQuery,
-  useSetTrainingPlanDayScheduleMutation,
-} from '@/api/generated';
+import {coachApi, useGetTrainingPlanScheduleQuery, useSetTrainingPlanDayScheduleMutation} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
-const REST_KEY = '__rest__';
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type ScheduleEntry = {
+  day_of_week?: string;
+  training_workout_id?: string | null;
+  workout_name?: string | null;
+  id?: string;
+};
+
+interface WeekScheduleProps {
+  planId: string;
+  workoutId: string;
+  workoutName: string;
+}
 
 // ---------------------------------------------------------------------------
 // Pure helpers (also tested)
@@ -31,92 +48,52 @@ const REST_KEY = '__rest__';
 
 /** Given the schedule map from the API, return ordered rows. */
 export function buildOrderedDayRows(
-  scheduleMap: Record<
-    string,
-    {day_of_week?: string; training_workout_id?: string | null; workout_name?: string | null; id?: string}
-  >,
-): Array<{
-  day: DayKey;
-  entry: {day_of_week?: string; training_workout_id?: string | null; workout_name?: string | null; id?: string} | null;
-}> {
+  scheduleMap: Record<string, ScheduleEntry>,
+): Array<{day: DayKey; entry: ScheduleEntry | null}> {
   return ORDERED_DAYS.map((day) => ({
     day,
     entry: scheduleMap[day] ?? null,
   }));
 }
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+/** The weekdays this workout is assigned to, in Mon..Sun order. */
+export function daysForWorkout(scheduleMap: Record<string, ScheduleEntry>, workoutId: string): DayKey[] {
+  return ORDERED_DAYS.filter((day) => scheduleMap[day]?.training_workout_id === workoutId);
+}
 
-interface WeekScheduleProps {
-  planId: string;
+/** COPY.md § TB — `Scheduled: Mon, Thu` / `Not scheduled yet`. */
+export function scheduleLabel(days: DayKey[]): string {
+  if (days.length === 0) {
+    return 'Not scheduled yet';
+  }
+  return `Scheduled: ${days.map((day) => DAY_SHORT_LABELS[day]).join(', ')}`;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function WeekSchedule({planId}: WeekScheduleProps) {
+export function WeekSchedule({planId, workoutId, workoutName}: WeekScheduleProps) {
   const dispatch = useAppDispatch();
-  const {
-    data: scheduleData,
-    isLoading: scheduleLoading,
-    isError: scheduleError,
-  } = useGetTrainingPlanScheduleQuery({planId});
-  const {
-    data: workoutsData,
-    isLoading: workoutsLoading,
-    isError: workoutsError,
-  } = useListWorkoutsQuery({planId, limit: 100});
+  const {data, isLoading, isError} = useGetTrainingPlanScheduleQuery({planId});
   const [setDaySchedule] = useSetTrainingPlanDayScheduleMutation();
 
-  // Track which days are expanded (read-only exercise list)
-  const [expandedDays, setExpandedDays] = useState<Set<DayKey>>(new Set());
+  const scheduleMap = (data?.data ?? {}) as Record<string, ScheduleEntry>;
+  const assignedDays = daysForWorkout(scheduleMap, workoutId);
 
-  const scheduleMap = scheduleData?.data ?? {};
-  const workouts = workoutsData?.data ?? [];
-  const rows = buildOrderedDayRows(scheduleMap);
-
-  const toggleExpand = (day: DayKey) => {
-    setExpandedDays((prev) => {
-      const next = new Set(prev);
-      if (next.has(day)) {
-        next.delete(day);
-      } else {
-        next.add(day);
-      }
-      return next;
-    });
-  };
-
-  const handleDayChange = async (day: DayKey, selectedKey: string) => {
-    const workoutId = selectedKey === REST_KEY ? null : selectedKey;
-
+  const handleDayChange = async (day: DayKey, nextWorkoutId: string | null) => {
     // Optimistic update — patch holds the inverse so we can roll back on failure.
     const patch = dispatch(
       coachApi.util.updateQueryData('getTrainingPlanSchedule', {planId}, (draft) => {
         if (!draft.data) {
           draft.data = {};
         }
-        if (workoutId === null) {
-          // Clear — reset the entry's assignment
-          if (draft.data[day]) {
-            draft.data[day] = {
-              ...draft.data[day],
-              training_workout_id: null,
-              workout_name: null,
-            };
-          }
-        } else {
-          const workout = workouts.find((w) => w.id === workoutId);
-          draft.data[day] = {
-            ...(draft.data[day] ?? {}),
-            day_of_week: day,
-            training_workout_id: workoutId,
-            workout_name: workout?.name ?? null,
-          };
-        }
+        draft.data[day] = {
+          ...(draft.data[day] ?? {}),
+          day_of_week: day,
+          training_workout_id: nextWorkoutId,
+          workout_name: nextWorkoutId ? workoutName : null,
+        };
       }),
     );
 
@@ -124,7 +101,7 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
       await setDaySchedule({
         planId,
         day,
-        trainingDayScheduleRequest: {training_workout_id: workoutId},
+        trainingDayScheduleRequest: {training_workout_id: nextWorkoutId},
       }).unwrap();
     } catch (e) {
       patch.undo();
@@ -132,13 +109,12 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
     }
   };
 
-  if (scheduleLoading || workoutsLoading) {
-    // Layout-approximating skeleton (RM-125: no centered spinner) — 7 day rows.
+  if (isLoading) {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex gap-1.5">
         {ORDERED_DAYS.map((day) => (
           <Skeleton
-            className="h-[54px] w-full rounded-lg"
+            className="size-11 rounded-control"
             key={day}
           />
         ))}
@@ -146,128 +122,85 @@ export function WeekSchedule({planId}: WeekScheduleProps) {
     );
   }
 
-  if (scheduleError || workoutsError) {
-    return (
-      <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger-soft-foreground">
-        Couldn't load schedule.
-      </div>
-    );
-  }
-
-  if (workouts.length === 0) {
-    // No workouts → every select would be a dead-end Rest-only picker.
+  if (isError) {
     return (
       <Typography
-        color="muted"
-        type="body-sm"
+        className="text-danger"
+        type="body-xs"
       >
-        Add workouts above, then assign them to days here.
+        Couldn't load schedule.
       </Typography>
     );
   }
 
   return (
-    <div className="flex flex-col gap-1">
-      {rows.map(({day, entry}) => {
-        const assignedWorkoutId = entry?.training_workout_id ?? null;
-        const assignedWorkout = assignedWorkoutId ? workouts.find((w) => w.id === assignedWorkoutId) : null;
-        const isExpanded = expandedDays.has(day);
-        const hasWorkout = Boolean(assignedWorkoutId);
+    <ToggleButtonGroup
+      aria-label={`Weekdays for ${workoutName}`}
+      className="flex flex-nowrap gap-1.5"
+      onSelectionChange={(keys) => {
+        const next = new Set([...keys].map(String));
+        for (const day of ORDERED_DAYS) {
+          const wasAssigned = assignedDays.includes(day);
+          const isAssigned = next.has(day);
+          if (isAssigned && !wasAssigned) {
+            handleDayChange(day, workoutId).catch(() => undefined);
+          } else if (!isAssigned && wasAssigned) {
+            handleDayChange(day, null).catch(() => undefined);
+          }
+        }
+      }}
+      selectedKeys={assignedDays}
+      selectionMode="multiple"
+    >
+      {ORDERED_DAYS.map((day) => (
+        <ToggleButton
+          aria-label={`${DAY_LABELS[day]} for ${workoutName}`}
+          className="size-11 min-w-11 shrink-0 rounded-control border border-border bg-transparent px-0 text-pill font-medium text-muted data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:font-semibold data-[selected=true]:text-accent"
+          id={day}
+          key={day}
+        >
+          {DAY_SHORT_LABELS[day]}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
+  );
+}
 
-        return (
-          <div
-            className="rounded-lg border border-border bg-surface overflow-hidden"
-            key={day}
-          >
-            {/* Day row */}
-            <div className="flex items-center gap-3 px-3 py-2">
-              {/* Day label */}
-              <span className="w-24 shrink-0 text-sm font-medium text-foreground">{DAY_LABELS[day]}</span>
+// ---------------------------------------------------------------------------
+// ScheduleLabel — the `Scheduled: Mon, Thu` line under the workout name.
+// Reads the same cached query as the chips, so it costs no extra request.
+// ---------------------------------------------------------------------------
 
-              {/* Workout select */}
-              <div className="flex-1 min-w-0">
-                <Select
-                  aria-label={`Workout for ${DAY_LABELS[day]}`}
-                  onSelectionChange={(key) => {
-                    if (key) {
-                      handleDayChange(day, key as string).catch(() => undefined);
-                    }
-                  }}
-                  selectedKey={assignedWorkoutId ?? REST_KEY}
-                  variant="secondary"
-                >
-                  <Select.Trigger className="h-9 min-h-9 text-sm">
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox>
-                      <ListBox.Item
-                        id={REST_KEY}
-                        key={REST_KEY}
-                        textValue="Rest"
-                      >
-                        <span className="text-muted">Rest</span>
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                      {workouts.map((w) => (
-                        <ListBox.Item
-                          id={w.id}
-                          key={w.id}
-                          textValue={w.name}
-                        >
-                          {w.name}
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                      ))}
-                    </ListBox>
-                  </Select.Popover>
-                </Select>
-              </div>
+interface ScheduleLabelProps {
+  planId: string;
+  workoutId: string;
+}
 
-              {/* Expand toggle — only when a workout is assigned */}
-              {hasWorkout ? (
-                <button
-                  aria-expanded={isExpanded}
-                  aria-label={`Exercises for ${DAY_LABELS[day]}`}
-                  className="shrink-0 -mr-1 flex min-h-9 min-w-9 items-center justify-center text-muted hover:text-foreground transition-colors"
-                  onClick={() => toggleExpand(day)}
-                  type="button"
-                >
-                  {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-                </button>
-              ) : (
-                <span className="w-8 shrink-0" />
-              )}
-            </div>
+export function ScheduleLabel({planId, workoutId}: ScheduleLabelProps) {
+  const {data} = useGetTrainingPlanScheduleQuery({planId});
+  const scheduleMap = (data?.data ?? {}) as Record<string, ScheduleEntry>;
+  const assignedDays = daysForWorkout(scheduleMap, workoutId);
 
-            {/* Expanded exercise list (read-only) */}
-            {isExpanded && assignedWorkout ? (
-              <div className="border-t border-border px-3 pb-2 pt-1.5">
-                {assignedWorkout.workout_elements.length === 0 ? (
-                  <Typography
-                    color="muted"
-                    type="body-xs"
-                  >
-                    No exercises yet
-                  </Typography>
-                ) : (
-                  <ul className="flex flex-col gap-0.5">
-                    {assignedWorkout.workout_elements.map((element) => (
-                      <li
-                        className="text-xs text-muted"
-                        key={element.id}
-                      >
-                        {element.exercise?.name ?? 'Unknown exercise'}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
+  return (
+    <div className="flex flex-col gap-0.5">
+      <Typography
+        color="muted"
+        type="body-xs"
+      >
+        {scheduleLabel(assignedDays)}
+      </Typography>
+
+      {/* A workout used on more than one weekday is edited in one place
+          (INTERACTIONS.md § TB). The days themselves are already on the line
+          above, so the note carries only the consequence. */}
+      {assignedDays.length > 1 ? (
+        <Typography
+          className="text-muted-2"
+          type="body-xs"
+        >
+          Edits apply to all of them.
+        </Typography>
+      ) : null}
     </div>
   );
 }

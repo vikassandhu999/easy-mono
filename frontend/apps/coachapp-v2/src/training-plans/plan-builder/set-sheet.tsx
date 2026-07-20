@@ -9,8 +9,19 @@
  * updates the listWorkouts cache directly so set rows reflect the change
  * immediately (optimistic update pattern).
  */
-import {Popover} from '@heroui/react';
-import {ChevronDown, ChevronLeft, ChevronRight} from 'lucide-react';
+import {
+  Button,
+  Disclosure,
+  Input,
+  Label,
+  Popover,
+  TextArea,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from '@heroui/react';
+import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
@@ -67,6 +78,26 @@ const DISTANCE_UNITS: {value: DistanceUnit; label: string}[] = [
   {value: 'km', label: 'km'},
   {value: 'miles', label: 'mi'},
 ];
+
+// RECIPES.md R3 — segmented control. HeroUI signals selection with
+// `data-selected="true"`; the `selected:` Tailwind prefix is a no-op here, and
+// ToggleButton paints a grey fill at rest unless bg-transparent is explicit.
+const SEGMENT_GROUP_CLASS = 'flex w-full gap-0.5 rounded-control border border-border bg-surface p-0.5';
+const SEGMENT_BUTTON_CLASS =
+  'min-h-11 flex-1 rounded-chip border-0 bg-transparent px-3 py-2 text-pill font-medium text-muted ' +
+  'data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground';
+
+// Unit chips (kg/lbs/bw, m/km/mi) — GAPS #7: also a ToggleButtonGroup.
+const UNIT_BUTTON_CLASS =
+  'min-h-9 rounded-chip border border-border bg-transparent px-2 text-chip font-medium text-muted ' +
+  'data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent';
+
+// min-w-0 is load-bearing: TextField is w-full, so without it the first field
+// claims its intrinsic width and pushes the rest out of the popover.
+const FIELD_BOX_CLASS = 'min-w-0 flex-1 rounded-control border border-border bg-surface px-2 pt-1.5 pb-2 text-center';
+const FIELD_LABEL_CLASS = 'mb-1 block text-chip uppercase tracking-wider text-muted';
+const FIELD_INPUT_CLASS =
+  'h-auto border-0 bg-transparent px-0 text-center text-lg font-semibold text-foreground shadow-none';
 
 // The editor only offers m/km/mi; a stored 'none' (or null) shows as meters,
 // matching the SetRow summary which renders none→'m'.
@@ -307,243 +338,244 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
     <div className="w-full">
       {/* Header: exercise + Done on top, then a "Set N of M" nav row.
           Prev/Next move between sets without closing (spec — replaces swipe). */}
-      <div className="px-4 pb-2 pt-3">
+      <div className="px-4 pt-3 pb-2">
         <div className="flex items-center justify-between gap-2">
           <span className="min-w-0 truncate text-sm font-semibold text-foreground">{exerciseName}</span>
-          <button
-            className="shrink-0 text-sm font-semibold text-accent transition-colors hover:text-accent/80"
-            onClick={() => {
+          <Button
+            className="min-h-11 shrink-0 px-2 text-sm font-semibold text-accent"
+            onPress={() => {
               flushPendingSave()
                 .then(onClose)
                 .catch(() => undefined);
             }}
-            type="button"
+            variant="ghost"
           >
             Done
-          </button>
+          </Button>
         </div>
 
         <div className="mt-1.5 flex items-center justify-center gap-4">
-          <button
+          <Button
             aria-label="Previous set"
-            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-foreground disabled:opacity-30"
-            disabled={!hasPrev}
-            onClick={
-              hasPrev
-                ? () => {
-                    flushPendingSave();
-                    onPrev?.();
-                  }
-                : undefined
-            }
-            type="button"
+            className="size-11 min-w-11 text-muted"
+            isDisabled={!hasPrev}
+            isIconOnly
+            onPress={() => {
+              flushPendingSave().catch(() => undefined);
+              onPrev?.();
+            }}
+            variant="ghost"
           >
-            <ChevronLeft size={16} />
-          </button>
-          <span className="text-xs font-medium text-muted">
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Typography
+            color="muted"
+            type="body-xs"
+            weight="medium"
+          >
             Set {setIndex + 1} of {workoutExercise.planned_sets.length}
-          </span>
-          <button
+          </Typography>
+          <Button
             aria-label="Next set"
-            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded text-muted transition-colors hover:text-foreground disabled:opacity-30"
-            disabled={!hasNext}
-            onClick={
-              hasNext
-                ? () => {
-                    flushPendingSave();
-                    onNext?.();
-                  }
-                : undefined
-            }
-            type="button"
+            className="size-11 min-w-11 text-muted"
+            isDisabled={!hasNext}
+            isIconOnly
+            onPress={() => {
+              flushPendingSave().catch(() => undefined);
+              onNext?.();
+            }}
+            variant="ghost"
           >
-            <ChevronRight size={16} />
-          </button>
+            <ChevronRight className="size-4" />
+          </Button>
         </div>
       </div>
 
       <div className="px-4 pb-4">
         {/* set_type segmented control */}
-        <div className="mb-3 flex gap-1.5">
+        <ToggleButtonGroup
+          aria-label="Set type"
+          className={`${SEGMENT_GROUP_CLASS} mb-3`}
+          onSelectionChange={(keys) => {
+            const next = [...keys][0];
+            if (next) {
+              handleSetType(next as SetType);
+            }
+          }}
+          selectedKeys={[setType]}
+          selectionMode="single"
+        >
           {SET_TYPES.map(({value, label}) => (
-            <button
-              className={[
-                'flex-1 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors',
-                setType === value
-                  ? 'border-accent bg-accent/10 text-accent'
-                  : 'border-border text-muted hover:border-default-hover hover:text-foreground',
-              ].join(' ')}
+            <ToggleButton
+              className={SEGMENT_BUTTON_CLASS}
+              id={value}
               key={value}
-              onClick={() => handleSetType(value)}
-              type="button"
             >
               {label}
-            </button>
+            </ToggleButton>
           ))}
-        </div>
+        </ToggleButtonGroup>
 
         {/* tracking_type-driven numeric fields */}
         <div className="mb-3 flex gap-2">
           {fields.showReps ? (
-            <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Reps</div>
-              <input
-                aria-label="Reps"
-                className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
-                inputMode="text"
-                onChange={(e) => handleReps(e.target.value)}
+            <TextField
+              className={FIELD_BOX_CLASS}
+              onChange={handleReps}
+              value={reps}
+            >
+              <Label className={FIELD_LABEL_CLASS}>Reps</Label>
+              <Input
+                className={FIELD_INPUT_CLASS}
+                inputMode="numeric"
                 placeholder="—"
-                type="text"
-                value={reps}
               />
-            </div>
+            </TextField>
           ) : null}
 
           {fields.showLoad ? (
-            <div className="flex-1 rounded-lg border border-accent/40 bg-accent/5 px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Weight</div>
-              <input
-                aria-label="Weight"
-                className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
-                inputMode="decimal"
-                onChange={(e) => handleLoadValue(e.target.value)}
-                placeholder="—"
-                type="text"
+            <div className={FIELD_BOX_CLASS}>
+              <TextField
+                onChange={handleLoadValue}
                 value={loadValue}
-              />
-              <div className="mt-1.5 flex justify-center gap-1">
+              >
+                <Label className={FIELD_LABEL_CLASS}>Weight</Label>
+                <Input
+                  className={FIELD_INPUT_CLASS}
+                  inputMode="decimal"
+                  placeholder="—"
+                />
+              </TextField>
+              <ToggleButtonGroup
+                aria-label="Weight unit"
+                className="mt-1.5 flex justify-center gap-1"
+                onSelectionChange={(keys) => {
+                  const next = [...keys][0];
+                  if (next) {
+                    handleLoadUnit(next as LoadUnit);
+                  }
+                }}
+                selectedKeys={[loadUnit]}
+                selectionMode="single"
+              >
                 {LOAD_UNITS.map(({value, label}) => (
-                  <button
-                    className={[
-                      'rounded border px-1.5 py-1.5 text-[10px] transition-colors',
-                      loadUnit === value
-                        ? 'border-accent text-accent'
-                        : 'border-border text-muted hover:text-foreground',
-                    ].join(' ')}
+                  <ToggleButton
+                    className={UNIT_BUTTON_CLASS}
+                    id={value}
                     key={value}
-                    onClick={() => handleLoadUnit(value)}
-                    type="button"
                   >
                     {label}
-                  </button>
+                  </ToggleButton>
                 ))}
-              </div>
+              </ToggleButtonGroup>
             </div>
           ) : null}
 
           {fields.showRpe ? (
-            <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">RPE</div>
-              <input
-                aria-label="RPE"
-                className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
+            <TextField
+              className={FIELD_BOX_CLASS}
+              onChange={handleRpe}
+              value={rpe}
+            >
+              <Label className={FIELD_LABEL_CLASS}>RPE</Label>
+              <Input
+                className={FIELD_INPUT_CLASS}
                 inputMode="decimal"
-                onChange={(e) => handleRpe(e.target.value)}
                 placeholder="—"
-                type="text"
-                value={rpe}
               />
-            </div>
+            </TextField>
           ) : null}
 
           {fields.showDuration ? (
-            <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Secs</div>
-              <input
-                aria-label="Duration in seconds"
-                className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
+            <TextField
+              className={FIELD_BOX_CLASS}
+              onChange={handleDuration}
+              value={durationSeconds}
+            >
+              <Label className={FIELD_LABEL_CLASS}>Secs</Label>
+              <Input
+                className={FIELD_INPUT_CLASS}
                 inputMode="numeric"
-                onChange={(e) => handleDuration(e.target.value)}
                 placeholder="—"
-                type="text"
-                value={durationSeconds}
               />
-            </div>
+            </TextField>
           ) : null}
 
           {fields.showDistance ? (
-            <div className="flex-1 rounded-lg border border-border bg-background px-2 pb-2 pt-1.5 text-center">
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-muted">Dist</div>
-              <input
-                aria-label="Distance"
-                className="w-full bg-transparent text-center text-lg font-semibold text-foreground outline-none"
-                inputMode="decimal"
-                onChange={(e) => handleDistanceValue(e.target.value)}
-                placeholder="—"
-                type="text"
+            <div className={FIELD_BOX_CLASS}>
+              <TextField
+                onChange={handleDistanceValue}
                 value={distanceValue}
-              />
-              <div className="mt-1.5 flex justify-center gap-1">
+              >
+                <Label className={FIELD_LABEL_CLASS}>Dist</Label>
+                <Input
+                  className={FIELD_INPUT_CLASS}
+                  inputMode="decimal"
+                  placeholder="—"
+                />
+              </TextField>
+              <ToggleButtonGroup
+                aria-label="Distance unit"
+                className="mt-1.5 flex justify-center gap-1"
+                onSelectionChange={(keys) => {
+                  const next = [...keys][0];
+                  if (next) {
+                    handleDistanceUnit(next as DistanceUnit);
+                  }
+                }}
+                selectedKeys={[distanceUnit]}
+                selectionMode="single"
+              >
                 {DISTANCE_UNITS.map(({value, label}) => (
-                  <button
-                    className={[
-                      'rounded border px-1.5 py-1.5 text-[10px] transition-colors',
-                      distanceUnit === value
-                        ? 'border-accent text-accent'
-                        : 'border-border text-muted hover:text-foreground',
-                    ].join(' ')}
+                  <ToggleButton
+                    className={UNIT_BUTTON_CLASS}
+                    id={value}
                     key={value}
-                    onClick={() => handleDistanceUnit(value)}
-                    type="button"
                   >
                     {label}
-                  </button>
+                  </ToggleButton>
                 ))}
-              </div>
+              </ToggleButtonGroup>
             </div>
           ) : null}
         </div>
 
-        {/* Advanced disclosure: rest timer + notes */}
-        <button
-          className="mb-2 inline-flex items-center gap-1 text-xs text-accent transition-colors hover:text-accent/80"
-          onClick={() => setShowAdvanced((v) => !v)}
-          type="button"
+        {/* Advanced: rest timer + notes */}
+        <Disclosure
+          isExpanded={showAdvanced}
+          onExpandedChange={setShowAdvanced}
         >
-          <ChevronDown
-            className={showAdvanced ? 'rotate-180 transition-transform' : 'transition-transform'}
-            size={14}
-          />
-          Rest timer and notes
-        </button>
-
-        {showAdvanced ? (
-          <div className="space-y-2">
-            <div>
-              <label
-                className="mb-1 block text-[10px] uppercase tracking-wider text-muted"
-                htmlFor="rest-seconds"
-              >
-                Rest (seconds)
-              </label>
-              <input
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
-                id="rest-seconds"
-                inputMode="numeric"
-                onChange={(e) => handleRestSeconds(e.target.value)}
-                placeholder="90"
-                type="text"
+          <Disclosure.Heading>
+            <Disclosure.Trigger className="flex min-h-11 items-center gap-1 text-sm font-medium text-accent">
+              <Disclosure.Indicator />
+              Rest timer and notes
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <Disclosure.Body className="flex flex-col gap-2 px-0 pb-0">
+              <TextField
+                onChange={handleRestSeconds}
                 value={restSeconds}
-              />
-            </div>
-            <div>
-              <label
-                className="mb-1 block text-[10px] uppercase tracking-wider text-muted"
-                htmlFor="set-notes"
               >
-                Notes
-              </label>
-              <textarea
-                className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
-                id="set-notes"
-                onChange={(e) => handleNotes(e.target.value)}
-                placeholder="Tempo, cues, %1RM targets…"
-                rows={2}
+                <Label className={FIELD_LABEL_CLASS}>Rest (seconds)</Label>
+                <Input
+                  inputMode="numeric"
+                  placeholder="90"
+                />
+              </TextField>
+              <TextField
+                onChange={handleNotes}
                 value={notes}
-              />
-            </div>
-          </div>
-        ) : null}
+              >
+                <Label className={FIELD_LABEL_CLASS}>Notes</Label>
+                <TextArea
+                  placeholder="Tempo, cues, %1RM targets…"
+                  rows={2}
+                />
+              </TextField>
+            </Disclosure.Body>
+          </Disclosure.Content>
+        </Disclosure>
       </div>
     </div>
   );
@@ -582,7 +614,7 @@ export function SetSheet({workoutExercise, setIndex, planId, open, onClose, onPr
         }}
       >
         <Popover.Content
-          className="w-96 rounded-xl border border-border bg-surface p-0 shadow-xl"
+          className="w-104 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface p-0 shadow-xl"
           triggerRef={triggerRef}
         >
           <Popover.Dialog className="max-h-[70vh] overflow-y-auto px-4 py-3 outline-none">

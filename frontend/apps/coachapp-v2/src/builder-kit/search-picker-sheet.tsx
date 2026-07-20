@@ -17,7 +17,8 @@
  *   SetSheet / food-picker-control.
  */
 
-import {Button, Popover, SearchField, Spinner} from '@heroui/react';
+import {Button, CloseButton, Popover, SearchField, Spinner} from '@heroui/react';
+import {Plus} from 'lucide-react';
 import {type ReactNode, useCallback, useEffect, useRef} from 'react';
 
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
@@ -82,6 +83,10 @@ export interface SearchPickerSheetProps<T> {
   /** Desktop only: the element the popover anchors to (usually the "+ Add …"
    *  button that opened the picker). Absent → bottom sheet on all widths. */
   anchorEl?: HTMLElement | null;
+  /** Desktop popover placement. Defaults to `right`, which suits a narrow
+   *  "+ Add …" text button; a full-width trigger needs `bottom` or react-aria
+   *  flips the panel off the left edge of the viewport. */
+  placement?: 'right' | 'bottom';
 }
 
 // ---------------------------------------------------------------------------
@@ -109,6 +114,7 @@ export function SearchPickerSheet<T>({
   onLoadMore,
   hasMore = false,
   anchorEl,
+  placement = 'right',
 }: SearchPickerSheetProps<T>) {
   const isDesktop = useIsDesktop();
 
@@ -218,23 +224,21 @@ export function SearchPickerSheet<T>({
             }
           >
             {filters.map((chip) => (
-              // A real button (not a Chip) so the filter is keyboard-operable and its
+              // A Button (not a Chip) so the filter is keyboard-operable and its
               // selected state is announced via aria-pressed.
-              <button
+              <Button
                 aria-pressed={chip.active}
                 className={[
-                  'inline-flex min-h-9 items-center rounded-[7px] border px-2.5 py-1 text-xs font-medium transition-colors',
+                  'min-h-9 rounded-chip border bg-transparent px-2.5 py-1 text-xs font-medium',
                   filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
-                  chip.active
-                    ? 'border-accent bg-accent-soft text-accent'
-                    : 'border-border text-muted hover:bg-default-soft',
+                  chip.active ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted',
                 ].join(' ')}
                 key={chip.id}
-                onClick={chip.onToggle}
-                type="button"
+                onPress={chip.onToggle}
+                variant="ghost"
               >
                 {chip.label}
-              </button>
+              </Button>
             ))}
           </div>
         ) : null}
@@ -252,31 +256,31 @@ export function SearchPickerSheet<T>({
           const key = itemKey(item);
           const selected = selectedKeys.has(key);
           return (
-            <button
+            <Button
               aria-pressed={selected}
               className={[
-                'w-full border-b border-border text-left transition-colors last:border-b-0',
-                selected ? 'bg-accent/10' : '',
+                'h-auto w-full justify-start rounded-none border-b border-border px-0 py-0 text-left last:border-b-0',
+                selected ? 'bg-accent-soft' : 'bg-transparent',
               ].join(' ')}
               key={key}
-              onClick={() => onToggleItem(item)}
-              type="button"
+              onPress={() => onToggleItem(item)}
+              variant="ghost"
             >
-              {renderItem(item, selected)}
-            </button>
+              <span className="block w-full min-w-0">{renderItem(item, selected)}</span>
+            </Button>
           );
         })}
 
         {/* Create-from-no-match row */}
         {showCreateRow ? (
-          <button
-            className="flex w-full min-w-0 items-center gap-2 py-3 text-left text-sm text-accent hover:opacity-80 transition-opacity"
-            onClick={() => onCreateNoMatch?.(search)}
-            type="button"
+          <Button
+            className="h-auto w-full min-w-0 justify-start gap-2 px-0 py-3 text-left text-sm text-accent"
+            onPress={() => onCreateNoMatch?.(search)}
+            variant="ghost"
           >
-            <span className="shrink-0 text-base leading-none">+</span>
+            <Plus className="size-4 shrink-0" />
             <span className="min-w-0 flex-1 truncate">{createLabel ? createLabel(search) : `Create "${search}"`}</span>
-          </button>
+          </Button>
         ) : null}
 
         {/* No-results state — distinct from the loading + create-row cases */}
@@ -314,20 +318,17 @@ export function SearchPickerSheet<T>({
         <Popover.Content
           className="w-96 rounded-xl border border-border bg-surface p-0 shadow-xl"
           triggerRef={triggerRef}
-          placement={'right'}
+          placement={placement}
         >
           <Popover.Dialog className="flex max-h-[70vh] flex-col outline-none p-0">
             {/* Title row — KeyboardSheet renders its own; the popover needs one */}
             <div className="flex items-center justify-between px-4 pb-1 pt-3">
               <span className="text-sm font-semibold text-foreground">{title}</span>
-              <button
+              <CloseButton
                 aria-label="Close"
-                className="-mr-2 flex min-h-9 min-w-9 items-center justify-center rounded-md text-muted hover:text-foreground transition-colors"
-                onClick={onClose}
-                type="button"
-              >
-                ✕
-              </button>
+                className="-mr-2 text-muted"
+                onPress={onClose}
+              />
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">{body}</div>
             <div className="border-t border-separator bg-background px-4 py-3">{dockButton}</div>

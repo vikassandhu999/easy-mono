@@ -1,6 +1,6 @@
 defmodule EasyWeb.OpenApi.Schemas.ChatMessage do
   require OpenApiSpex
-  alias EasyWeb.OpenApi.Schemas.{ChatAttachment, ChatMessageEmbed}
+  alias EasyWeb.OpenApi.Schemas.{Attachment, ChatMessageEmbed}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -13,7 +13,7 @@ defmodule EasyWeb.OpenApi.Schemas.ChatMessage do
       sender_type: %Schema{type: :string, enum: ~w(coach client)},
       sender_id: %Schema{type: :string, format: :uuid},
       body: %Schema{type: :string, nullable: true},
-      attachments: %Schema{type: :array, items: ChatAttachment, default: []},
+      attachments: %Schema{type: :array, items: Attachment, default: []},
       embed: %Schema{allOf: [ChatMessageEmbed], nullable: true},
       inserted_at: %Schema{type: :string, format: :"date-time"}
     },

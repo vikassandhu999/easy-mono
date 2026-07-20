@@ -1,18 +1,17 @@
 defmodule EasyWeb.Clients.UploadJSON do
+  alias EasyWeb.AttachmentJSON
+
   @spec show(%{upload: map()}) :: %{data: map()}
   def show(%{upload: upload}) do
-    attachment = upload.attachment
-
     %{
-      data: %{
-        id: attachment.id,
-        content_type: attachment.content_type,
-        byte_size: attachment.byte_size,
-        duration_ms: attachment.duration_ms,
-        upload_url: upload.upload_url,
-        upload_url_expires_at: upload.upload_url_expires_at,
-        upload_headers: upload.upload_headers
-      }
+      data:
+        upload.attachment
+        |> AttachmentJSON.data()
+        |> Map.merge(%{
+          upload_url: upload.upload_url,
+          upload_url_expires_at: upload.upload_url_expires_at,
+          upload_headers: upload.upload_headers
+        })
     }
   end
 

@@ -89,7 +89,7 @@ defmodule Easy.Nutrition.Recipe do
   def search(query \\ __MODULE__, term)
   def search(query, nil), do: query
   def search(query, ""), do: query
-  def search(query, term), do: from(r in query, where: ilike(r.name, ^"%#{term}%"))
+  def search(query, term), do: from(r in query, where: ilike(r.name, ^Easy.Search.like_pattern(term)))
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do

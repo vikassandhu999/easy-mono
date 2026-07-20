@@ -34,13 +34,25 @@ defmodule Easy.Attachments do
     end
   end
 
-  @spec get_downloads(Ctx.t(), [String.t()]) ::
+  @type downloads_result ::
           {:ok, [map()]} | {:error, :invalid_attachments | :not_found | :storage_unavailable}
+
+  @spec get_downloads(Ctx.t(), [String.t()]) :: downloads_result()
   def get_downloads(%Ctx{} = ctx, ids) do
     with :ok <- validate_download_ids(ids),
          attachments <- load_ordered_attachments(ctx.business_id, ids),
          :ok <- require_complete_set(attachments, ids),
-         :ok <- authorize_attachments(ctx, attachments) do
+         :ok <- authorize_coach_attachments(ctx, attachments) do
+      sign_downloads(attachments)
+    end
+  end
+
+  @spec get_client_downloads(Ctx.t(), [String.t()]) :: downloads_result()
+  def get_client_downloads(%Ctx{} = ctx, ids) do
+    with :ok <- validate_download_ids(ids),
+         attachments <- load_ordered_attachments(ctx.business_id, ids),
+         :ok <- require_complete_set(attachments, ids),
+         :ok <- authorize_client_attachments(ctx, attachments) do
       sign_downloads(attachments)
     end
   end
@@ -113,9 +125,9 @@ defmodule Easy.Attachments do
     if length(attachments) == length(ids), do: :ok, else: {:error, :not_found}
   end
 
-  defp authorize_attachments(%Ctx{owner?: true}, _attachments), do: :ok
+  defp authorize_coach_attachments(%Ctx{owner?: true}, _attachments), do: :ok
 
-  defp authorize_attachments(%Ctx{coach_id: coach_id} = ctx, attachments)
+  defp authorize_coach_attachments(%Ctx{coach_id: coach_id} = ctx, attachments)
        when not is_nil(coach_id) do
     client_ids = attachments |> Enum.map(& &1.client_id) |> Enum.uniq()
 
@@ -132,7 +144,9 @@ defmodule Easy.Attachments do
       else: {:error, :not_found}
   end
 
-  defp authorize_attachments(%Ctx{} = ctx, attachments) do
+  defp authorize_coach_attachments(%Ctx{}, _attachments), do: {:error, :not_found}
+
+  defp authorize_client_attachments(%Ctx{} = ctx, attachments) do
     with {:ok, client} <- get_client(ctx),
          true <- Enum.all?(attachments, &(&1.client_id == client.id)) do
       :ok

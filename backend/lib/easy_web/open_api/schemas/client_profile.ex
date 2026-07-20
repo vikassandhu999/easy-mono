@@ -355,7 +355,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.ChatAttachment
+  alias EasyWeb.OpenApi.Schemas.Attachment
   alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
   alias OpenApiSpex.Schema
 
@@ -372,7 +372,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
       submitted_at: %Schema{type: :string, format: :"date-time"},
       reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},
       reviewed_by_id: %Schema{type: :string, format: :uuid, nullable: true},
-      attachments: %Schema{type: :array, items: ChatAttachment},
+      attachments: %Schema{type: :array, items: Attachment},
       inserted_at: %Schema{type: :string, format: :"date-time"}
     },
     required: [
@@ -412,7 +412,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem do
   require OpenApiSpex
 
   alias EasyWeb.OpenApi.Schemas.{
-    ChatAttachment,
+    Attachment,
     ClientProfileFormAssignment,
     ClientProfileReviewClient
   }
@@ -433,7 +433,7 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueItem do
       submitted_at: %Schema{type: :string, format: :"date-time"},
       reviewed_at: %Schema{type: :string, format: :"date-time", nullable: true},
       reviewed_by_id: %Schema{type: :string, format: :uuid, nullable: true},
-      attachments: %Schema{type: :array, items: ChatAttachment},
+      attachments: %Schema{type: :array, items: Attachment},
       inserted_at: %Schema{type: :string, format: :"date-time"},
       client: ClientProfileReviewClient,
       form_assignment: ClientProfileFormAssignment

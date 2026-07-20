@@ -304,10 +304,10 @@ defmodule Easy.Clients.Client do
   def search(query, term) do
     from(c in query,
       where:
-        ilike(c.first_name, ^"%#{term}%") or
-          ilike(c.last_name, ^"%#{term}%") or
-          ilike(c.email, ^"%#{term}%") or
-          ilike(c.phone, ^"%#{term}%")
+        ilike(c.first_name, ^Easy.Search.like_pattern(term)) or
+          ilike(c.last_name, ^Easy.Search.like_pattern(term)) or
+          ilike(c.email, ^Easy.Search.like_pattern(term)) or
+          ilike(c.phone, ^Easy.Search.like_pattern(term))
     )
   end
 

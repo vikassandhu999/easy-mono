@@ -33,9 +33,10 @@ cd backend && mix precommit   # format, compile --warnings-as-errors, credo, tes
 
 ## Keystone rules (the ones most often missed)
 
-**Actor context.** `%Easy.Ctx{business_id, user_id, role, client_id}` is built
-once in the auth plug. Every tenant-scoped public context function takes `%Ctx{}`
-**first**. Controllers pass `conn.assigns.ctx` — never destructure raw ids from
+**Actor context.** `%Easy.Ctx{business_id, user_id, coach_id, owner?}` is built
+once in the auth plug (`coach_id` when the user is a coach, `owner?` for the
+business owner; client actors are resolved from `user_id` inside contexts).
+Every tenant-scoped public context function takes `%Ctx{}` **first**. Controllers pass `conn.assigns.ctx` — never destructure raw ids from
 `conn.assigns.claims`. Pure reference reads (`list_muscles`) may take plain args.
 
 **Three-case naming** (retires `_for_user` / `_for_coach_user` / `_as_coach` /

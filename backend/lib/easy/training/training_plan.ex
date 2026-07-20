@@ -135,7 +135,7 @@ defmodule Easy.Training.TrainingPlan do
   def for_search(query \\ __MODULE__, term)
   def for_search(query, nil), do: query
   def for_search(query, ""), do: query
-  def for_search(query, term), do: from(t in query, where: ilike(t.name, ^"%#{term}%"))
+  def for_search(query, term), do: from(t in query, where: ilike(t.name, ^Easy.Search.like_pattern(term)))
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do

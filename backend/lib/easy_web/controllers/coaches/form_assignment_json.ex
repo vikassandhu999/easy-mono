@@ -34,7 +34,7 @@ defmodule EasyWeb.Coaches.FormAssignmentJSON do
       completed_at: assignment.completed_at,
       due_reminder_sent_at: assignment.due_reminder_sent_at,
       overdue_reminder_sent_at: assignment.overdue_reminder_sent_at,
-      latest_submission: nil,
+      latest_submission: latest_submission_data(assignment.latest_submission),
       latest_submission_reviewed_at: assignment.latest_submission_reviewed_at,
       form_template: form_template(assignment.form_template),
       inserted_at: assignment.inserted_at,
@@ -44,6 +44,9 @@ defmodule EasyWeb.Coaches.FormAssignmentJSON do
 
   defp form_template(%FormTemplate{} = template), do: FormTemplateJSON.data(template)
   defp form_template(_template), do: nil
+
+  defp latest_submission_data(%FormSubmission{} = submission), do: submission_data(submission)
+  defp latest_submission_data(_submission), do: nil
 
   @spec submission_data(FormSubmission.t()) :: map()
   def submission_data(%FormSubmission{} = submission) do

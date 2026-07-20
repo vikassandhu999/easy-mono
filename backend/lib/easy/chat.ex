@@ -139,16 +139,21 @@ defmodule Easy.Chat do
   defp page_messages(business_id, conversation_id, opts) do
     limit = min(max(Keyword.get(opts, :limit, 50), 1), 100)
 
-    messages =
+    ids =
       Message
       |> Message.for_conversation(business_id, conversation_id)
       |> maybe_before(business_id, conversation_id, Keyword.get(opts, :before))
       |> Message.newest()
       |> limit(^(limit + 1))
+      |> select([message], message.id)
       |> Repo.all()
 
-    {page, rest} = Enum.split(messages, limit)
-    %{messages: page |> load_message_attachments(business_id) |> Enum.reverse(), has_more: rest != []}
+    {page_ids, rest} = Enum.split(ids, limit)
+
+    %{
+      messages: page_ids |> load_messages_with_attachments(business_id) |> Enum.reverse(),
+      has_more: rest != []
+    }
   end
 
   defp maybe_before(query, _business_id, _conversation_id, nil), do: query
@@ -161,7 +166,7 @@ defmodule Easy.Chat do
   end
 
   defp insert_message(ctx, conversation, sender_type, sender_id, attrs, embed_policy) do
-    attrs = attrs |> normalize_attrs() |> normalize_body()
+    attrs = normalize_body(attrs)
 
     base_changeset =
       Message.insert_changeset(ctx.business_id, sender_type, sender_id, conversation.id, nil, attrs)
@@ -187,37 +192,12 @@ defmodule Easy.Chat do
     |> Multi.run(:conversation, fn repo, %{message: message, attachment_links: attachments} ->
       update_conversation(repo, conversation, message, attachments)
     end)
-    |> Multi.run(:complete_message, fn repo, %{message: message} ->
-      reload_message(repo, message.business_id, message.id)
-    end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{complete_message: message}} -> {:ok, message}
+      {:ok, %{message: message}} -> {:ok, %{message | attachments: attachments}}
       {:error, _operation, reason, _changes} -> {:error, reason}
     end
   end
-
-  defp normalize_attrs(attrs) do
-    Enum.reduce(attrs, %{}, fn
-      {"body", value}, acc -> Map.put(acc, :body, value)
-      {"attachment_ids", value}, acc -> Map.put(acc, :attachment_ids, value)
-      {"embed", value}, acc -> Map.put(acc, :embed, normalize_embed(value))
-      {:embed, value}, acc -> Map.put(acc, :embed, normalize_embed(value))
-      {key, _value}, acc when is_binary(key) -> acc
-      {key, value}, acc -> Map.put(acc, key, value)
-    end)
-  end
-
-  defp normalize_embed(embed) when is_map(embed) do
-    Enum.reduce(embed, %{}, fn
-      {"type", value}, acc -> Map.put(acc, :type, value)
-      {"id", value}, acc -> Map.put(acc, :id, value)
-      {key, _value}, acc when is_binary(key) -> acc
-      {key, value}, acc -> Map.put(acc, key, value)
-    end)
-  end
-
-  defp normalize_embed(embed), do: embed
 
   defp normalize_body(%{body: body} = attrs) when is_binary(body) do
     case String.trim(body) do
@@ -287,8 +267,8 @@ defmodule Easy.Chat do
   defp resolve_embed(_ctx, _client_id, _embed, :reject_embed, changeset),
     do: {:error, Ecto.Changeset.add_error(changeset, :embed, "is not allowed")}
 
-  defp resolve_embed(ctx, client_id, %{type: type, id: id}, :allow_embed, _changeset)
-       when type in [:form_submission, "form_submission"] and is_binary(id) do
+  defp resolve_embed(ctx, client_id, %{type: "form_submission", id: id}, :allow_embed, _changeset)
+       when is_binary(id) do
     case Ecto.UUID.cast(id) do
       {:ok, id} -> resolve_form_submission(ctx, client_id, id)
       :error -> {:error, :not_found}
@@ -389,19 +369,9 @@ defmodule Easy.Chat do
   defp message_preview(_message, [%Attachment{content_type: "audio/" <> _} | _]), do: "Voice note"
   defp message_preview(_message, [_attachment | _]), do: "Attachment"
 
-  defp reload_message(repo, business_id, message_id) do
-    Message
-    |> where([message], message.id == ^message_id and message.business_id == ^business_id)
-    |> Message.include_attachments()
-    |> repo.one()
-    |> ok_or_not_found()
-  end
+  defp load_messages_with_attachments([], _business_id), do: []
 
-  defp load_message_attachments([], _business_id), do: []
-
-  defp load_message_attachments(messages, business_id) do
-    ids = Enum.map(messages, & &1.id)
-
+  defp load_messages_with_attachments(ids, business_id) do
     loaded =
       Message
       |> where([message], message.business_id == ^business_id and message.id in ^ids)
@@ -409,7 +379,7 @@ defmodule Easy.Chat do
       |> Repo.all()
       |> Map.new(&{&1.id, &1})
 
-    Enum.map(messages, &Map.fetch!(loaded, &1.id))
+    Enum.map(ids, &Map.fetch!(loaded, &1))
   end
 
   defp broadcast_message(conversation, message) do

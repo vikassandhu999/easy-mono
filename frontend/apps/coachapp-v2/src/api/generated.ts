@@ -2076,7 +2076,7 @@ export type ClientTrainingPlanListResponse = {
   count: number;
   data: ClientTrainingPlan[];
 };
-export type ChatAttachment = {
+export type Attachment = {
   byte_size: number;
   content_type:
     | 'image/jpeg'
@@ -2096,7 +2096,7 @@ export type ClientProfileFormSubmission = {
   answers: {
     [key: string]: any;
   };
-  attachments: ChatAttachment[];
+  attachments: Attachment[];
   form_assignment_id: string;
   id: string;
   inserted_at: string;
@@ -2497,7 +2497,7 @@ export type ChatMessageEmbed = {
   type: 'form_submission';
 };
 export type ChatMessage = {
-  attachments: ChatAttachment[];
+  attachments: Attachment[];
   body: string | null;
   conversation_id: string;
   embed: ChatMessageEmbed | null;
@@ -2755,7 +2755,7 @@ export type ClientProfileReviewQueueItem = {
   answers: {
     [key: string]: any;
   };
-  attachments: ChatAttachment[];
+  attachments: Attachment[];
   client: ClientProfileReviewClient;
   form_assignment: ClientProfileFormAssignment;
   form_assignment_id: string;

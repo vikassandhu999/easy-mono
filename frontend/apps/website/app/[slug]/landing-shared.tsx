@@ -59,8 +59,11 @@ export function useApplyForm(page: LandingPage, selectedProgramId: string | null
       answers,
     });
     setSubmitting(false);
-    if (res.ok) setResult(res.data);
-    else setError(res.message);
+    if (res.ok) {
+      setResult(res.data);
+    } else {
+      setError(res.message);
+    }
   };
 
   return {values, answers, error, submitting, result, set, setAnswer, handleSubmit};
@@ -70,7 +73,9 @@ export function useStickyBar(applyRef: React.RefObject<HTMLElement | null>) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const node = applyRef.current;
-    if (!node) return;
+    if (!node) {
+      return;
+    }
     const observer = new IntersectionObserver(([entry]) => setShow(!entry!.isIntersecting), {threshold: 0.15});
     observer.observe(node);
     return () => observer.disconnect();
@@ -90,7 +95,9 @@ interface QuestionFieldProps {
 
 export function QuestionField({question, value, onChange, inputStyle, labelColor}: QuestionFieldProps) {
   const label = question.label ?? '';
-  if (!label) return null;
+  if (!label) {
+    return null;
+  }
 
   if (question.type === 'long_text') {
     return (
@@ -279,6 +286,7 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
             <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
               <label
+                htmlFor="lead-name"
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
@@ -290,6 +298,7 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
                 Full name
               </label>
               <input
+                id="lead-name"
                 onChange={(e) => set({name: e.target.value})}
                 placeholder="Your name"
                 style={inputStyle}
@@ -298,6 +307,7 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
             </div>
             <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
               <label
+                htmlFor="lead-phone"
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
@@ -309,6 +319,7 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
                 Phone
               </label>
               <input
+                id="lead-phone"
                 inputMode="tel"
                 onChange={(e) => set({phone: e.target.value})}
                 placeholder="+91 98765 43210"
@@ -318,6 +329,7 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
             </div>
             <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
               <label
+                htmlFor="lead-email"
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
@@ -329,6 +341,7 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
                 Email
               </label>
               <input
+                id="lead-email"
                 inputMode="email"
                 onChange={(e) => set({email: e.target.value})}
                 placeholder="you@email.com"
@@ -338,6 +351,7 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
             </div>
             <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
               <label
+                htmlFor="lead-instagram"
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
@@ -349,6 +363,7 @@ export function ApplyForm({page, selectedProgramId, theme}: ApplyFormProps) {
                 Instagram (optional)
               </label>
               <input
+                id="lead-instagram"
                 onChange={(e) => set({instagram: e.target.value})}
                 placeholder="@yourhandle"
                 style={inputStyle}
@@ -484,7 +499,9 @@ interface StickyBarProps {
 }
 
 export function StickyBar({show, onApply, accentBg, barBg, textColor}: StickyBarProps) {
-  if (!show) return null;
+  if (!show) {
+    return null;
+  }
   return (
     <div
       style={{

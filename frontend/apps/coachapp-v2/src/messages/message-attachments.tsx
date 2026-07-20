@@ -2,7 +2,7 @@ import {mediaKind} from '@easy/utils';
 import {Button} from '@heroui/react';
 import {useState} from 'react';
 
-import type {ChatAttachment} from '@/api/generated';
+import type {Attachment} from '@/api/generated';
 
 function MessageAttachment({
   attachment,
@@ -10,7 +10,7 @@ function MessageAttachment({
   refresh,
   url,
 }: {
-  attachment: ChatAttachment;
+  attachment: Attachment;
   failed: boolean;
   refresh: (ids: string[]) => Promise<void>;
   url?: string;
@@ -110,7 +110,7 @@ export default function MessageAttachments({
   refresh,
   urls,
 }: {
-  attachments: ChatAttachment[];
+  attachments: Attachment[];
   failedIds: Set<string>;
   refresh: (ids: string[]) => Promise<void>;
   urls: Record<string, string>;

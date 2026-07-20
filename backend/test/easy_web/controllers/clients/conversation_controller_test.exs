@@ -67,8 +67,8 @@ defmodule EasyWeb.Clients.ConversationControllerTest do
                Easy.Ctx.new(coach.business_id, coach.user_id, coach.id, true),
                conversation.id,
                %{
-                 "attachment_ids" => [attachment.id],
-                 "embed" => %{"type" => "form_submission", "id" => submission.id}
+                 attachment_ids: [attachment.id],
+                 embed: %{type: "form_submission", id: submission.id}
                }
              )
 

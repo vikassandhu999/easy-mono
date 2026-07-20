@@ -146,6 +146,11 @@ defmodule Easy.NutritionPlansTest do
       assert {:ok, %{count: 2}} = NutritionPlans.list_template_plans(owner_ctx(business), [])
     end
 
+    test "escapes ILIKE wildcards instead of matching everything", %{business: business} do
+      assert {:ok, %{count: 0}} = NutritionPlans.list_template_plans(owner_ctx(business), search: "%")
+      assert {:ok, %{count: 0}} = NutritionPlans.list_template_plans(owner_ctx(business), search: "_")
+    end
+
     test "does not leak plans from another business", %{business: business} do
       other = insert(:business)
       other_coach = insert(:coach, business: other, user: other.owner)

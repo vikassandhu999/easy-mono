@@ -146,6 +146,22 @@ has moved. Apply the same order in `down/0`. Empty test databases do not prove t
 rollback/reapply cycle against representative legacy rows. **Enforced by:** populated-database
 migration verification plus review of every enum or status remap.
 
+### RM-016 — Tests must not hard-code calendar dates that depend on "today"
+Logic that compares against `Date.utc_today()` (schedule generation, expiry sweeps) must be
+tested with dates derived from `Date.utc_today()` (`Date.add(Date.utc_today(), 7)`), never
+literals like `~D[2026-07-18]` that were "future" on the day the test was written. Two check-in
+schedule tests turned red days later and broke `mix precommit` for unrelated work. Literals are
+fine only when the code path takes the date as an argument end-to-end (pure date math).
+**Enforced by:** review of any test asserting around a `~D[...]` literal — ask "does the
+assertion still hold in a year?"
+
+### RM-017 — ILIKE search terms must escape `%`/`_` via `Easy.Search.like_pattern/1`
+Interpolating a raw user term into `ilike(x, ^"%#{term}%")` is safe from SQL injection (bound
+param) but not from LIKE-wildcard injection: searching `%` matched every row. Every ilike search
+builder now goes through `Easy.Search.like_pattern(term)`, which backslash-escapes `\`, `%`, `_`.
+Use it for any new ilike filter. **Enforced by:** review — grep `%#{term}%` should return nothing
+under `backend/lib`.
+
 ---
 
 ## Frontend

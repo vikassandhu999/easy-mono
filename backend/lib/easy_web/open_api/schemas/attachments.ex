@@ -121,19 +121,18 @@ defmodule EasyWeb.OpenApi.Schemas.AttachmentDownloadsResponse do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.ChatAttachment do
+defmodule EasyWeb.OpenApi.Schemas.Attachment do
   require OpenApiSpex
 
-  alias Easy.Attachments.Attachment
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
-    title: "ChatAttachment",
+    title: "Attachment",
     type: :object,
     additionalProperties: false,
     properties: %{
       id: %Schema{type: :string, format: :uuid},
-      content_type: %Schema{type: :string, enum: Attachment.content_types()},
+      content_type: %Schema{type: :string, enum: Easy.Attachments.Attachment.content_types()},
       byte_size: %Schema{type: :integer},
       duration_ms: %Schema{type: :integer, nullable: true}
     },

@@ -54,7 +54,7 @@ defmodule EasyWeb.Clients.UploadController do
   @spec download_urls(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def download_urls(conn, _params) do
     with {:ok, downloads} <-
-           Attachments.get_downloads(conn.assigns.ctx, conn.body_params.attachment_ids) do
+           Attachments.get_client_downloads(conn.assigns.ctx, conn.body_params.attachment_ids) do
       render(conn, :downloads, downloads: downloads)
     end
   end

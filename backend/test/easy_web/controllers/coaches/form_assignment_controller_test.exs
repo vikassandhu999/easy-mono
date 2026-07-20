@@ -98,7 +98,7 @@ defmodule EasyWeb.Coaches.FormAssignmentControllerTest do
                "duration_ms" => nil
              }
 
-      assert_schema(data, "ChatAttachment", EasyWeb.ApiSpec.spec())
+      assert_schema(data, "Attachment", EasyWeb.ApiSpec.spec())
       assert_schema(submission, "ClientProfileFormSubmission", EasyWeb.ApiSpec.spec())
     end
 

@@ -213,7 +213,7 @@ Contexts expose application verbs.
 
 ### Actor context (`Ctx`)
 
-`%Easy.Ctx{business_id: uuid, user_id: uuid, role: :coach | :client, client_id: uuid | nil}` is built once in the auth plug from JWT claims and router scope. Every tenant-scoped public context function takes `%Ctx{}` as its first argument. Pure reference reads with no tenant scope (e.g. `list_muscles`, `list_equipment`) may take plain args.
+`%Easy.Ctx{business_id: uuid, user_id: uuid, coach_id: uuid | nil, owner?: boolean}` is built once in the auth plug from JWT claims and router scope. `coach_id` is set when the user has a coach membership; `owner?` marks the business owner. Client actors carry no id on `Ctx` — contexts resolve the client row from `ctx.user_id` (`Client.for_business/2` + `Client.for_user/2`). Every tenant-scoped public context function takes `%Ctx{}` as its first argument. Pure reference reads with no tenant scope (e.g. `list_muscles`, `list_equipment`) may take plain args.
 
 ### Three-case naming convention
 
@@ -396,7 +396,7 @@ Rules:
 - **`for_` = filter, `include_` = preload.** Never mix. **`with_*` is retired** — ambiguous between filter and preload; use `for_*` or `include_*` instead.
 - **No-op on nil/blank is mandatory** for every `for_*` filter so contexts can pipe optional filters unconditionally.
 - **Ordering names carry direction and a tie-break.** `newest` means `order_by: [desc: inserted_at, desc: id]`. `by_position` is the manual-order builder for schemas with a `position` field — a different concept from `newest`.
-- **Preload builders live in the schema**, not hand-rolled in contexts. A preload builder over tenant-scoped children takes `business_id` to scope the nested query: `include_workouts(q, business_id)`.
+- **Preload builders live in the schema**, not hand-rolled in contexts. A preload builder over tenant-scoped children takes `business_id` to scope the nested query: `include_workouts(q, business_id)` — or, when it joins the children directly, correlates on the parent's own column (`on: child.business_id == parent.business_id`), which bakes the scope in without an argument.
 - **Identity filters carry `business_id`** so tenant scope can't be forgotten. When using `for_client` or `for_coach`, do not also pipe `for_business` — scope is already baked in.
 
 ```elixir
@@ -700,7 +700,7 @@ Before finishing, check:
 - [ ] Query builders use `for_*` (filter), `include_*` (preload), bare predicates (named subsets), and named-order functions. No `with_*`.
 - [ ] Identity filters `for_client`/`for_coach` carry `business_id`; don't also pipe `for_business` when using them.
 - [ ] List functions take one trailing `opts \\ []`; pagination defaults `offset: 0`, `limit: 20`, max `100`.
-- [ ] `attrs` is string-keyed. No `Map.get("x") || Map.get(:x)` dual-key probes.
+- [ ] No key-normalization layers in contexts and no `Map.get("x") || Map.get(:x)` dual-key probes — `cast/3` is key-agnostic and identity ids come from the path (§A7).
 - [ ] Associations are preloaded where response data needs them.
 - [ ] Database constraints protect important invariants.
 - [ ] Swagger/OpenAPI specs are updated when endpoint behavior changes.

@@ -45,9 +45,9 @@ defmodule EasyWeb.ConversationChannelTest do
 
     {:ok, message} =
       Chat.send_message(coach_ctx, ctx.conversation.id, %{
-        "body" => "hello",
-        "attachment_ids" => [attachment.id],
-        "embed" => %{"type" => "form_submission", "id" => submission.id}
+        body: "hello",
+        attachment_ids: [attachment.id],
+        embed: %{type: "form_submission", id: submission.id}
       })
 
     message_id = message.id

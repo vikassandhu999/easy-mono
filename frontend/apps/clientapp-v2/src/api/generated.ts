@@ -724,7 +724,7 @@ export type FoodLogEntryRequest = {
   unit?: string | null;
   weight_g?: number | null;
 };
-export type ChatAttachment = {
+export type Attachment = {
   byte_size: number;
   content_type:
     | 'image/jpeg'
@@ -744,7 +744,7 @@ export type ClientProfileFormSubmission = {
   answers: {
     [key: string]: any;
   };
-  attachments: ChatAttachment[];
+  attachments: Attachment[];
   form_assignment_id: string;
   id: string;
   inserted_at: string;
@@ -1379,7 +1379,7 @@ export type ChatMessageEmbed = {
   type: 'form_submission';
 };
 export type ChatMessage = {
-  attachments: ChatAttachment[];
+  attachments: Attachment[];
   body: string | null;
   conversation_id: string;
   embed: ChatMessageEmbed | null;

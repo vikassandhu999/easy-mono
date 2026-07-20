@@ -127,7 +127,7 @@ defmodule Easy.Nutrition.Plan do
   def for_search(query \\ __MODULE__, term)
   def for_search(query, nil), do: query
   def for_search(query, ""), do: query
-  def for_search(query, term), do: from(p in query, where: ilike(p.name, ^"%#{term}%"))
+  def for_search(query, term), do: from(p in query, where: ilike(p.name, ^Easy.Search.like_pattern(term)))
 
   @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
   def templates(query \\ __MODULE__) do

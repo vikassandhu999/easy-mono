@@ -126,7 +126,7 @@ defmodule Easy.AttachmentsTest do
     second = insert_attachment(client)
     signing_started_at = DateTime.utc_now(:second)
 
-    assert {:ok, downloads} = Attachments.get_downloads(client_ctx(client), [second.id, first.id])
+    assert {:ok, downloads} = Attachments.get_client_downloads(client_ctx(client), [second.id, first.id])
     signing_finished_at = DateTime.utc_now(:second)
 
     assert Enum.map(downloads, & &1.id) == [second.id, first.id]
@@ -171,7 +171,7 @@ defmodule Easy.AttachmentsTest do
     other_client = insert_client()
     attachment = insert_attachment(other_client)
 
-    assert {:error, :not_found} = Attachments.get_downloads(client_ctx(client), [attachment.id])
+    assert {:error, :not_found} = Attachments.get_client_downloads(client_ctx(client), [attachment.id])
   end
 
   test "fails closed when the actor has no coach or client membership" do
@@ -180,19 +180,20 @@ defmodule Easy.AttachmentsTest do
     ctx = Ctx.new(client.business_id, insert(:user).id)
 
     assert {:error, :not_found} = Attachments.get_downloads(ctx, [attachment.id])
+    assert {:error, :not_found} = Attachments.get_client_downloads(ctx, [attachment.id])
   end
 
   test "rejects invalid download id lists" do
     client = insert_client()
     attachment = insert_attachment(client)
 
-    assert {:error, :invalid_attachments} = Attachments.get_downloads(client_ctx(client), [])
+    assert {:error, :invalid_attachments} = Attachments.get_client_downloads(client_ctx(client), [])
 
     assert {:error, :invalid_attachments} =
-             Attachments.get_downloads(client_ctx(client), [attachment.id, attachment.id])
+             Attachments.get_client_downloads(client_ctx(client), [attachment.id, attachment.id])
 
     assert {:error, :invalid_attachments} =
-             Attachments.get_downloads(
+             Attachments.get_client_downloads(
                client_ctx(client),
                Enum.map(1..51, fn _index -> Ecto.UUID.generate() end)
              )
@@ -203,7 +204,7 @@ defmodule Easy.AttachmentsTest do
     attachment = insert_attachment(client)
 
     assert {:error, :not_found} =
-             Attachments.get_downloads(client_ctx(client), [attachment.id, Ecto.UUID.generate()])
+             Attachments.get_client_downloads(client_ctx(client), [attachment.id, Ecto.UUID.generate()])
   end
 
   test "returns storage unavailable when download signing fails" do
@@ -215,7 +216,7 @@ defmodule Easy.AttachmentsTest do
     on_exit(fn -> Application.put_env(:easy, Easy.Storage, previous) end)
 
     assert {:error, :storage_unavailable} =
-             Attachments.get_downloads(client_ctx(client), [attachment.id])
+             Attachments.get_client_downloads(client_ctx(client), [attachment.id])
   end
 
   defp insert_client do

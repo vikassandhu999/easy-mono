@@ -674,18 +674,20 @@ defmodule Easy.FormsTest do
       template = insert(:form_template, business: client.business, purpose: :check_in)
       ctx = owner_ctx(client.business)
 
+      next_week = Date.add(Date.utc_today(), 7)
+
       assert {:ok, future} =
                Forms.create_check_in_schedule_for_client(ctx, client.id, %{
                  form_template_id: template.id,
                  frequency: :weekly,
-                 next_due_on: ~D[2026-07-18]
+                 next_due_on: next_week
                })
 
-      assert future.next_due_on == ~D[2026-07-18]
+      assert future.next_due_on == next_week
       assert {:ok, []} = Forms.list_form_assignments_for_client(ctx, client.id)
 
-      assert {1, 0} = Forms.generate_due_check_ins(~D[2026-07-18])
-      assert Repo.reload(future).next_due_on == ~D[2026-07-25]
+      assert {1, 0} = Forms.generate_due_check_ins(next_week)
+      assert Repo.reload(future).next_due_on == Date.add(next_week, 7)
     end
 
     test "new occurrence marks the previous open occurrence missed" do
@@ -693,15 +695,17 @@ defmodule Easy.FormsTest do
       template = insert(:form_template, business: client.business, purpose: :check_in)
       ctx = owner_ctx(client.business)
 
+      today = Date.utc_today()
+
       assert {:ok, schedule} =
                Forms.create_check_in_schedule_for_client(ctx, client.id, %{
                  form_template_id: template.id,
                  frequency: :weekly,
-                 next_due_on: ~D[2026-07-11]
+                 next_due_on: today
                })
 
       [first] = Repo.all(FormAssignment.for_schedule(client.business_id, schedule.id))
-      assert {1, 0} = Forms.generate_due_check_ins(~D[2026-07-18])
+      assert {1, 0} = Forms.generate_due_check_ins(Date.add(today, 7))
       assert Repo.reload(first).status == :missed
       assert Repo.aggregate(FormAssignment.for_schedule(client.business_id, schedule.id), :count) == 2
     end

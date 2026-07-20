@@ -202,7 +202,7 @@ defmodule Easy.ChatTest do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
 
       for i <- 1..5 do
-        {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "m#{i}"})
+        {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{body: "m#{i}"})
       end
 
       assert {:ok, %{messages: page1, has_more: true}} =
@@ -231,9 +231,9 @@ defmodule Easy.ChatTest do
 
       assert {:ok, message} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 "body" => "  Energy improved.  ",
-                 "attachment_ids" => [String.upcase(second.id), first.id],
-                 "embed" => %{"type" => "form_submission", "id" => submission.id}
+                 body: "  Energy improved.  ",
+                 attachment_ids: [String.upcase(second.id), first.id],
+                 embed: %{type: "form_submission", id: submission.id}
                })
 
       assert message.body == "Energy improved."
@@ -260,7 +260,7 @@ defmodule Easy.ChatTest do
       attachment = insert(:attachment, business: coach.business, client: client, content_type: "video/mp4")
 
       assert {:ok, attachment_message} =
-               Chat.send_message(coach_ctx(coach), conversation.id, %{"attachment_ids" => [attachment.id]})
+               Chat.send_message(coach_ctx(coach), conversation.id, %{attachment_ids: [attachment.id]})
 
       assert attachment_message.body == nil
       assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "Video"
@@ -270,7 +270,7 @@ defmodule Easy.ChatTest do
 
       assert {:ok, _message} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 "attachment_ids" => [first_photo.id, second_photo.id]
+                 attachment_ids: [first_photo.id, second_photo.id]
                })
 
       assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "2 attachments"
@@ -281,7 +281,7 @@ defmodule Easy.ChatTest do
 
       assert {:ok, embed_message} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 "embed" => %{"type" => "form_submission", "id" => submission.id}
+                 embed: %{type: "form_submission", id: submission.id}
                })
 
       assert embed_message.body == nil
@@ -294,25 +294,25 @@ defmodule Easy.ChatTest do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
       attachment = insert(:attachment, business: coach.business, client: client)
 
-      assert {:error, empty} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "   "})
+      assert {:error, empty} = Chat.send_message(coach_ctx(coach), conversation.id, %{body: "   "})
       assert "can't be blank" in errors_on(empty).body
 
       assert {:error, duplicate} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 "attachment_ids" => [attachment.id, attachment.id]
+                 attachment_ids: [attachment.id, attachment.id]
                })
 
       assert "must be unique" in errors_on(duplicate).attachment_ids
 
       assert {:error, too_many} =
                Chat.send_message(coach_ctx(coach), conversation.id, %{
-                 "attachment_ids" => Enum.map(1..5, fn _ -> Ecto.UUID.generate() end)
+                 attachment_ids: Enum.map(1..5, fn _ -> Ecto.UUID.generate() end)
                })
 
       assert "should have at most 4 item(s)" in errors_on(too_many).attachment_ids
 
       assert {:error, invalid} =
-               Chat.send_message(coach_ctx(coach), conversation.id, %{"attachment_ids" => ["bad-id"]})
+               Chat.send_message(coach_ctx(coach), conversation.id, %{attachment_ids: ["bad-id"]})
 
       assert "is invalid" in errors_on(invalid).attachment_ids
       assert Easy.Repo.aggregate(MessageAttachment, :count) == 0
@@ -329,8 +329,8 @@ defmodule Easy.ChatTest do
       for id <- [Ecto.UUID.generate(), cross_client.id, cross_business.id] do
         assert {:error, :not_found} =
                  Chat.send_message(coach_ctx(coach), conversation.id, %{
-                   "body" => "must roll back",
-                   "attachment_ids" => [id]
+                   body: "must roll back",
+                   attachment_ids: [id]
                  })
       end
 
@@ -346,7 +346,7 @@ defmodule Easy.ChatTest do
       template = insert(:form_template, business: coach.business)
       assignment = insert(:form_assignment, business: coach.business, client: other_client, form_template: template)
       submission = insert(:form_submission, business: coach.business, client: other_client, form_assignment: assignment)
-      embed = %{"type" => "form_submission", "id" => submission.id}
+      embed = %{type: "form_submission", id: submission.id}
 
       other_coach = insert(:coach)
       other_client_business = insert(:client, business: other_coach.business, creator: other_coach)
@@ -369,11 +369,11 @@ defmodule Easy.ChatTest do
       for id <- [submission.id, cross_business.id, Ecto.UUID.generate()] do
         assert {:error, :not_found} =
                  Chat.send_message(coach_ctx(coach), conversation.id, %{
-                   "embed" => %{"type" => "form_submission", "id" => id}
+                   embed: %{type: "form_submission", id: id}
                  })
       end
 
-      assert {:error, changeset} = Chat.send_client_message(client_ctx(client), %{"embed" => embed})
+      assert {:error, changeset} = Chat.send_client_message(client_ctx(client), %{embed: embed})
       assert "is not allowed" in errors_on(changeset).embed
     end
 
@@ -383,12 +383,12 @@ defmodule Easy.ChatTest do
     } do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
       attachment = insert(:attachment, business: coach.business, client: client)
-      {:ok, first} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "first"})
+      {:ok, first} = Chat.send_message(coach_ctx(coach), conversation.id, %{body: "first"})
 
       {:ok, second} =
         Chat.send_message(coach_ctx(coach), conversation.id, %{
-          "body" => "second",
-          "attachment_ids" => [attachment.id]
+          body: "second",
+          attachment_ids: [attachment.id]
         })
 
       assert {:ok, %{messages: messages}} = Chat.list_messages(coach_ctx(coach), conversation.id)
@@ -398,7 +398,7 @@ defmodule Easy.ChatTest do
 
     test "send_message bumps preview and unread for the client", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "hello there"})
+      {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{body: "hello there"})
 
       assert {:ok, client_view} = Chat.get_client_conversation(client_ctx(client))
       assert client_view.last_message_preview == "hello there"
@@ -407,7 +407,7 @@ defmodule Easy.ChatTest do
 
     test "mark_client_read zeroes the client's unread", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "hi"})
+      {:ok, _} = Chat.send_message(coach_ctx(coach), conversation.id, %{body: "hi"})
 
       assert {:ok, _} = Chat.mark_client_read(client_ctx(client))
       assert {:ok, %{unread_count: 0}} = Chat.get_client_conversation(client_ctx(client))
@@ -415,7 +415,7 @@ defmodule Easy.ChatTest do
 
     test "mark_read stamps the cursor at the newest message, not now", %{coach: coach, client: client} do
       {:ok, conversation} = Chat.get_or_create_conversation_for_client(coach_ctx(coach), client.id)
-      {:ok, _} = Chat.send_client_message(client_ctx(client), %{"body" => "hi"})
+      {:ok, _} = Chat.send_client_message(client_ctx(client), %{body: "hi"})
 
       assert {:ok, _} = Chat.mark_read(coach_ctx(coach), conversation.id)
 
@@ -424,7 +424,7 @@ defmodule Easy.ChatTest do
     end
 
     test "client sends create the conversation lazily and set coach unread", %{coach: coach, client: client} do
-      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{"body" => "help"})
+      assert {:ok, message} = Chat.send_client_message(client_ctx(client), %{body: "help"})
       assert message.sender_type == :client
 
       assert {:ok, %{count: 1, conversations: [conversation]}} = Chat.list_conversations(coach_ctx(coach))
@@ -457,7 +457,7 @@ defmodule Easy.ChatTest do
       Phoenix.PubSub.subscribe(Easy.PubSub, "conversation:#{conversation.id}")
       Phoenix.PubSub.subscribe(Easy.PubSub, "inbox:business:#{coach.business_id}")
 
-      {:ok, message} = Chat.send_message(coach_ctx(coach), conversation.id, %{"body" => "ping"})
+      {:ok, message} = Chat.send_message(coach_ctx(coach), conversation.id, %{body: "ping"})
 
       assert_receive {:chat_message_created, %{id: message_id}}
       assert message_id == message.id

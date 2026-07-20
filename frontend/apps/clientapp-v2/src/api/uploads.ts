@@ -1,10 +1,10 @@
 import {clientApi} from '@/api/generated';
 
 export type {
+  Attachment,
   AttachmentDownload,
   AttachmentUpload,
   AttachmentUploadRequest,
-  ChatAttachment,
   ChatMessageEmbed,
 } from '@/api/generated';
 

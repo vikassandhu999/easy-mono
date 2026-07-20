@@ -43,17 +43,8 @@ interface WeekScheduleProps {
 }
 
 // ---------------------------------------------------------------------------
-// Pure helpers (also tested)
+// Pure helpers
 // ---------------------------------------------------------------------------
-
-/** Given the schedule map from the API, return ordered rows. */
->
-{
-  return ORDERED_DAYS.map((day) => ({
-    day,
-    entry: scheduleMap[day] ?? null,
-  }));
-}
 
 /** The weekdays this workout is assigned to, in Mon..Sun order. */
 export function daysForWorkout(scheduleMap: Record<string, ScheduleEntry>, workoutId: string): DayKey[] {

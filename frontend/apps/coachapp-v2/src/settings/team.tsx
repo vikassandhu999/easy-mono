@@ -415,15 +415,10 @@ export default function TeamSection() {
         </div>
       ) : isError || !data ? (
         <div>
-          <ErrorState message="Couldn't load team" />
-          <Button
-            className="mt-3"
-            onPress={() => refetch()}
-            size="sm"
-            variant="secondary"
-          >
-            Retry
-          </Button>
+          <ErrorState
+            message="Couldn't load team"
+            onRetry={refetch}
+          />
         </div>
       ) : (
         <div className="overflow-hidden rounded-card border border-border bg-surface">

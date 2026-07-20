@@ -404,15 +404,10 @@ export default function BillingSection() {
       <div className="flex flex-col gap-2.5 md:gap-5">
         {header}
         <div>
-          <ErrorState message="Couldn't load billing." />
-          <Button
-            className="mt-3"
-            onPress={() => refetch()}
-            size="sm"
-            variant="secondary"
-          >
-            Retry
-          </Button>
+          <ErrorState
+            message="Couldn't load billing."
+            onRetry={refetch}
+          />
         </div>
       </div>
     );

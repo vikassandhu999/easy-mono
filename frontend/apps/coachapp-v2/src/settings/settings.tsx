@@ -325,15 +325,10 @@ export default function Settings() {
             className="pt-6 pb-6"
             size="form"
           >
-            <ErrorState message="Couldn't load settings." />
-            <Button
-              className="mt-3"
-              onPress={() => refetch()}
-              size="sm"
-              variant="secondary"
-            >
-              Retry
-            </Button>
+            <ErrorState
+            message="Couldn't load settings."
+            onRetry={refetch}
+          />
           </Page.Frame>
         </Page.Content>
       </Page>

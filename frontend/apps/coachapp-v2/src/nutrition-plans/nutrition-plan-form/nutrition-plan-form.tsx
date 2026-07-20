@@ -1,15 +1,8 @@
-import {ErrorMessage, Fieldset} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {
-  FieldRow,
-  FormActions,
-  FormLayout,
-  FormNumberField,
-  FormTextAreaField,
-  FormTextField,
-} from '@/@components/form-fields';
+import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
 import {omitUndefined, toOptionalText} from '@/api/shared';
 
@@ -121,55 +114,64 @@ export default function NutritionPlanForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <Fieldset>
-        <Fieldset.Legend>Plan details</Fieldset.Legend>
+      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+        <Fieldset>
+          <Fieldset.Legend>Plan details</Fieldset.Legend>
+          <Description>Name the plan and describe who it's for.</Description>
 
-        <Fieldset.Group>
-          <FormTextField
-            control={control}
-            fullWidth
-            isRequired
-            label="Name"
-            name="name"
-          />
+          <Fieldset.Group>
+            <FormTextField
+              control={control}
+              fullWidth
+              inputProps={{placeholder: 'e.g. High-Protein Cut'}}
+              isRequired
+              label="Name"
+              name="name"
+            />
 
-          <FormTextAreaField
-            control={control}
-            fullWidth
-            label="Description"
-            name="description"
-            textAreaProps={{rows: 2}}
-          />
-        </Fieldset.Group>
-      </Fieldset>
+            <FormTextAreaField
+              control={control}
+              fullWidth
+              label="Description"
+              name="description"
+              textAreaProps={{placeholder: 'Who this plan is for, phase, or any coaching notes…', rows: 2}}
+            />
+          </Fieldset.Group>
+        </Fieldset>
 
-      <Fieldset>
-        <Fieldset.Legend>Daily macro goal</Fieldset.Legend>
+        <div className="my-6 border-t border-separator" />
 
-        <Fieldset.Group>
-          <FieldRow>
-            {MACRO_FIELDS.map((fieldConfig) => (
-              <FormNumberField
-                control={control}
-                fullWidth
-                label={fieldConfig.label}
-                key={fieldConfig.name}
-                minValue={0}
-                name={fieldConfig.name}
-              />
-            ))}
-          </FieldRow>
-        </Fieldset.Group>
-      </Fieldset>
+        <Fieldset>
+          <Fieldset.Legend>Daily macro goal</Fieldset.Legend>
+          <Description>Optional daily targets. You can fine-tune these in the builder.</Description>
+
+          <Fieldset.Group>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {MACRO_FIELDS.map((fieldConfig) => (
+                <FormNumberField
+                  control={control}
+                  fullWidth
+                  label={fieldConfig.label}
+                  key={fieldConfig.name}
+                  minValue={0}
+                  name={fieldConfig.name}
+                />
+              ))}
+            </div>
+          </Fieldset.Group>
+        </Fieldset>
+      </div>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <FormActions
-        isSubmitting={isSubmitting}
-        onCancel={onCancel}
-        submitLabel={submitLabel}
-        submittingLabel={submittingLabel}
-      />
+      <div className="sticky bottom-0 -my-2 bg-background py-2 sm:static sm:my-0 sm:bg-transparent sm:py-0">
+        <FormActions
+          isSubmitting={isSubmitting}
+          onCancel={onCancel}
+          submitLabel={submitLabel}
+          submittingLabel={submittingLabel}
+        />
+      </div>
     </FormLayout>
   );
 }

@@ -31,7 +31,7 @@ export default function EditNutritionPlan() {
 
   if (isFetching) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
@@ -49,7 +49,7 @@ export default function EditNutritionPlan() {
 
   if (isError || !plan) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
@@ -88,14 +88,14 @@ export default function EditNutritionPlan() {
   };
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />
             <Page.Title>Edit nutrition plan</Page.Title>
           </div>
-          <Page.Description>{plan.name}</Page.Description>
+          <Page.Description>Update the plan's goals. Meals &amp; days live in the builder.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">

@@ -29,14 +29,14 @@ export default function CreateNutritionPlan() {
   };
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />
             <Page.Title>Create nutrition plan</Page.Title>
           </div>
-          <Page.Description>Set plan goals now, then add meals next</Page.Description>
+          <Page.Description>Set plan goals now, then add meals next.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">

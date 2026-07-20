@@ -77,6 +77,7 @@ export function ServingSizesEditor({
           </div>
           <Button
             aria-label={`Remove ${serving.unit}`}
+            className="min-h-11 min-w-11  "
             onPress={() => handleRemove(i)}
             size="sm"
             variant="ghost"
@@ -97,6 +98,7 @@ export function ServingSizesEditor({
               <Label>Unit</Label>
               {servingError && <FieldError>{servingError}</FieldError>}
               <Input
+                className="min-h-11 border border-border bg-surface shadow-none "
                 onChange={(e) => {
                   setNewUnit(e.target.value);
                   setServingError('');
@@ -122,6 +124,7 @@ export function ServingSizesEditor({
           </div>
           <div className="mt-3 flex gap-2">
             <Button
+              className="min-h-11 "
               onPress={handleAdd}
               size="sm"
             >
@@ -129,6 +132,7 @@ export function ServingSizesEditor({
               Add
             </Button>
             <Button
+              className="min-h-11 "
               onPress={() => {
                 setIsAdding(false);
                 resetForm();
@@ -142,7 +146,7 @@ export function ServingSizesEditor({
         </div>
       ) : (
         <Button
-          className="w-full rounded-xl border border-dashed border-border text-muted"
+          className="min-h-11 w-full rounded-xl border border-dashed border-border text-muted "
           onPress={() => setIsAdding(true)}
           variant="ghost"
         >

@@ -1,4 +1,5 @@
 import {Description, FieldError, Label, TextArea, TextField} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import type {ComponentProps} from 'react';
 import {Controller, type FieldValues} from 'react-hook-form';
 
@@ -37,7 +38,10 @@ export function FormTextAreaField<T extends FieldValues>({
           <Label>{label}</Label>
           {description ? <Description>{description}</Description> : null}
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
-          <TextArea {...textAreaProps} />
+          <TextArea
+            {...textAreaProps}
+            className={cn('border border-border bg-surface shadow-none', textAreaProps?.className)}
+          />
         </TextField>
       )}
     />

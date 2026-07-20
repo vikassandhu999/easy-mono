@@ -14,13 +14,18 @@ import {ClipboardCheck, Plus, UserRoundCheck} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
-import {BackButton} from '@/@components/back-button';
-import BrowseListBox, {BrowseRow, FILTER_PILL_CLASS} from '@/@components/browse-list-box';
+import BrowseListBox, {
+  BROWSE_LIST_FRAME_CLASS,
+  BROWSE_LIST_SURFACE_CLASS,
+  BROWSE_SEARCH_GROUP_CLASS,
+  BrowseRow,
+  FILTER_PILL_CLASS,
+} from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
+import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {
   type ClientProfileReviewQueueItem,
   type FormPurpose,
@@ -28,6 +33,7 @@ import {
   useListCheckInReviewQueueQuery,
   useListFormTemplatesQuery,
 } from '@/api/checkins';
+import CreateCheckin from '@/checkins/create-checkin';
 
 import FormTemplateListItem from './form-template-list-item';
 
@@ -38,9 +44,9 @@ type PurposeFilter = 'all' | FormPurpose;
 // the FM prototype (which only depicts a status-tab row) — kept because it's
 // an existing, working filter the prototype simply doesn't depict; restyled
 // to the app's segmented-control tokens instead of deleted. See PORT-TICKET.
-const PURPOSE_GROUP_CLASS = 'inline-flex gap-0.5 rounded-control border border-border bg-surface p-0.5';
+const PURPOSE_GROUP_CLASS = 'inline-flex min-h-11 gap-0.5 rounded-control border border-border bg-surface p-0.5 ';
 const PURPOSE_BUTTON_CLASS =
-  'rounded-chip border-0 px-3 py-1.5 text-pill font-medium text-muted ' +
+  'min-h-11 rounded-chip border-0 px-3 py-1.5 text-pill font-medium text-muted  ' +
   'data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground';
 
 function matchesSearch(name: string, search: string): boolean {
@@ -80,7 +86,7 @@ function ReviewQueue() {
   const items = data?.data ?? [];
 
   return (
-    <div className="overflow-hidden rounded-card border border-border bg-surface">
+    <div className={BROWSE_LIST_SURFACE_CLASS}>
       <BrowseListBox
         ariaLabel="Check-ins to review"
         className="p-0"
@@ -108,8 +114,8 @@ function ReviewQueue() {
 
 export default function ListCheckins() {
   const navigate = useNavigate();
+  const create = useResponsiveCreate(ROUTES.CREATE_CHECKIN);
   const [searchParams, setSearchParams] = useSearchParams();
-  const goBack = useGoBack(ROUTES.LIBRARY);
   const {data, isError, isLoading, refetch} = useListFormTemplatesQuery();
   const templates = data?.data ?? [];
   const {data: reviewData} = useListCheckInReviewQueueQuery();
@@ -145,14 +151,17 @@ export default function ListCheckins() {
 
   const hasFilter = !!deferredSearch || status !== 'all' || purpose !== 'all';
 
+  if (create.isCreating) {
+    return <CreateCheckin onClose={create.stopCreating} />;
+  }
+
   return (
     <Page>
-      <Page.Header size="content">
-        <Page.TitleGroup className="flex items-center">
-          <BackButton
-            className="lg:hidden"
-            onPress={goBack}
-          />
+      <Page.Header
+        className="bg-surface pb-1 sm:bg-transparent sm:pb-2"
+        size="content"
+      >
+        <Page.TitleGroup>
           <div className="min-w-0">
             <Page.Title>Forms</Page.Title>
             <Page.Description className="hidden truncate sm:block">
@@ -164,7 +173,8 @@ export default function ListCheckins() {
           {activeTab === 'templates' ? (
             <Button
               aria-label="Create form"
-              onPress={() => navigate(ROUTES.CREATE_CHECKIN)}
+              className="min-h-11 min-w-11 rounded-control"
+              onPress={create.startCreating}
               variant="primary"
             >
               <Plus className="size-4" />
@@ -175,7 +185,7 @@ export default function ListCheckins() {
       </Page.Header>
 
       <Page.Toolbar
-        className="sticky top-0 z-10 flex flex-col gap-3 bg-background pt-2 pb-3"
+        className="sticky top-0 z-10 mb-0 flex flex-col gap-3 border-b border-border bg-surface pt-2 pb-3 sm:mb-6 sm:border-0 sm:bg-background"
         size="content"
       >
         <Tabs
@@ -185,11 +195,17 @@ export default function ListCheckins() {
         >
           <Tabs.ListContainer className="max-w-full overflow-x-auto">
             <Tabs.List>
-              <Tabs.Tab id="templates">
+              <Tabs.Tab
+                className="min-h-11 "
+                id="templates"
+              >
                 Templates
                 <Tabs.Indicator />
               </Tabs.Tab>
-              <Tabs.Tab id="review">
+              <Tabs.Tab
+                className="min-h-11 "
+                id="review"
+              >
                 To review{reviewData ? ` (${reviewData.data.length})` : ''}
                 <Tabs.Indicator />
               </Tabs.Tab>
@@ -206,17 +222,20 @@ export default function ListCheckins() {
                 onChange={setSearch}
                 value={search}
               >
-                <SearchField.Group>
+                <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
                   <SearchField.SearchIcon />
-                  <SearchField.Input placeholder="Search forms…" />
-                  <SearchField.ClearButton />
+                  <SearchField.Input
+                    className="min-h-11 "
+                    placeholder="Search forms…"
+                  />
+                  <SearchField.ClearButton className="min-h-11 min-w-11  " />
                 </SearchField.Group>
               </SearchField>
               <Separator
                 className="hidden h-6 sm:block"
                 orientation="vertical"
               />
-              <div className="shrink-0">
+              <div className="-mx-4 min-w-0 max-w-full shrink-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">
                 <ToggleButtonGroup
                   aria-label="Filter forms by status"
                   className="flex flex-nowrap gap-2"
@@ -234,19 +253,36 @@ export default function ListCheckins() {
                     className={FILTER_PILL_CLASS}
                     id="all"
                   >
-                    All <span className="text-chip opacity-70">{counts.all}</span>
+                    All{' '}
+                    <span
+                      className={status === 'all' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}
+                    >
+                      {counts.all}
+                    </span>
                   </ToggleButton>
                   <ToggleButton
                     className={FILTER_PILL_CLASS}
                     id="active"
                   >
-                    Active <span className="text-chip opacity-70">{counts.active}</span>
+                    Active{' '}
+                    <span
+                      className={status === 'active' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}
+                    >
+                      {counts.active}
+                    </span>
                   </ToggleButton>
                   <ToggleButton
                     className={FILTER_PILL_CLASS}
                     id="archived"
                   >
-                    Archived <span className="text-chip opacity-70">{counts.archived}</span>
+                    Archived{' '}
+                    <span
+                      className={
+                        status === 'archived' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'
+                      }
+                    >
+                      {counts.archived}
+                    </span>
                   </ToggleButton>
                 </ToggleButtonGroup>
               </div>
@@ -292,7 +328,7 @@ export default function ListCheckins() {
 
       <Page.Content bare>
         <Page.Frame
-          className="flex min-h-0 flex-1 flex-col pb-6"
+          className={BROWSE_LIST_FRAME_CLASS}
           size="content"
         >
           {activeTab === 'review' ? (
@@ -300,13 +336,14 @@ export default function ListCheckins() {
           ) : isError ? (
             <ErrorState message="Couldn't load forms." />
           ) : (
-            <div className="overflow-hidden rounded-card border border-border bg-surface">
+            <div className={BROWSE_LIST_SURFACE_CLASS}>
               <BrowseListBox
                 ariaLabel="Forms"
                 className="p-0"
                 emptyState={
                   <ListEmptyState
                     createLabel="Create form"
+                    onCreate={create.startCreating}
                     createRoute={ROUTES.CREATE_CHECKIN}
                     emptyDescription="Build intake and check-in forms for your clients."
                     hasFilter={hasFilter}

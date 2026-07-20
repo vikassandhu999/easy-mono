@@ -282,7 +282,7 @@ export default function FoodDetail() {
         <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
           {!isSystemFood && (
             <Button
-              className="flex-1"
+              className="min-h-11 flex-1"
               onPress={() => navigate(`/library/foods/${food.id}/edit`)}
               variant="primary"
             >
@@ -292,6 +292,7 @@ export default function FoodDetail() {
           )}
           <Button
             aria-label="Duplicate food"
+            className="min-h-11 min-w-11"
             onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
             variant="outline"
           >
@@ -301,7 +302,7 @@ export default function FoodDetail() {
             renderDeleteDialog(
               <Button
                 aria-label="Delete food"
-                className="text-danger"
+                className="min-h-11 min-w-11 text-danger"
                 variant="outline"
               >
                 <Trash2 className="size-4" />

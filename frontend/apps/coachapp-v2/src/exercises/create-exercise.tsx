@@ -13,13 +13,14 @@ import ExerciseForm, {
   useExerciseForm,
 } from '@/exercises/exercise-form/exercise-form';
 
-export default function CreateExercise() {
+export default function CreateExercise({onClose}: {onClose?: () => void} = {}) {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.EXERCISES);
   const [createExercise, {isLoading}] = useCreateCoachTrainingExerciseMutation();
   const {data: musclesData} = useListMusclesQuery({});
   const {data: equipmentData} = useListEquipmentQuery({});
   const form = useExerciseForm();
+  const close = onClose ?? goBack;
 
   const onSubmit = async (data: ExerciseFormValues) => {
     try {
@@ -35,7 +36,7 @@ export default function CreateExercise() {
       <Page.Header size="content">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
-            <BackButton onPress={goBack} />
+            <BackButton onPress={close} />
             <Page.Title>Create exercise</Page.Title>
           </div>
           <Page.Description>Add a custom movement to your library.</Page.Description>
@@ -47,7 +48,7 @@ export default function CreateExercise() {
           form={form}
           isSubmitting={isLoading}
           muscles={musclesData?.data ?? []}
-          onCancel={() => navigate(ROUTES.EXERCISES)}
+          onCancel={close}
           onSubmit={onSubmit}
           submitLabel="Create exercise"
           submittingLabel="Creating exercise"

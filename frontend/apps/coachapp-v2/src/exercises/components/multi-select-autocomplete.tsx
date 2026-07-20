@@ -78,7 +78,7 @@ export default function MultiSelectAutocomplete({
       value={value}
     >
       {label ? <Label>{label}</Label> : null}
-      <Autocomplete.Trigger>
+      <Autocomplete.Trigger className="min-h-11 ">
         <Autocomplete.Value>
           {({defaultChildren, isPlaceholder, state}: AutocompleteValueRenderProps) => {
             if (isPlaceholder || state.selectedItems.length === 0) {
@@ -106,6 +106,7 @@ export default function MultiSelectAutocomplete({
 
                       return (
                         <Tag
+                          className="[&_[data-slot=tag-remove-button]]:min-h-11 [&_[data-slot=tag-remove-button]]:min-w-11  "
                           id={item.id}
                           key={item.id}
                           textValue={item.name}
@@ -120,7 +121,7 @@ export default function MultiSelectAutocomplete({
             );
           }}
         </Autocomplete.Value>
-        <Autocomplete.ClearButton />
+        <Autocomplete.ClearButton className="min-h-11 min-w-11  " />
         <Autocomplete.Indicator />
       </Autocomplete.Trigger>
       <Autocomplete.Popover>

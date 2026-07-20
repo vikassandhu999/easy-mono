@@ -1,4 +1,5 @@
 import {Description, FieldError, Input, Label, TextField} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {type ComponentProps, type ReactNode, useEffect, useState} from 'react';
 
 // A numeric input backed by a plain text field (inputMode="decimal") instead of
@@ -89,8 +90,9 @@ export function NumberInput({
       {description ? <Description>{description}</Description> : null}
       {error ? <FieldError>{error}</FieldError> : null}
       <Input
-        inputMode="decimal"
         {...inputProps}
+        className={cn('min-h-11 border border-border bg-surface shadow-none ', inputProps?.className)}
+        inputMode="decimal"
       />
     </TextField>
   );

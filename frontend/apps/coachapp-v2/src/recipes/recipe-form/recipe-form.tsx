@@ -5,6 +5,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-section';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
 import type {Food, FoodServingSize, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';
@@ -198,7 +199,7 @@ export default function RecipeForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(handleValidSubmit)}>
-      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+      <div className={RESPONSIVE_FORM_SECTION_CLASS}>
         <Fieldset>
           <Fieldset.Legend>Details</Fieldset.Legend>
           <Description>Name the dish and describe how it's made.</Description>

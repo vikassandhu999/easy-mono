@@ -1,4 +1,5 @@
 import {Description, FieldError, Label, ListBox, Select} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import type {ComponentProps, ReactNode} from 'react';
 import {Controller, type FieldValues} from 'react-hook-form';
 
@@ -35,7 +36,10 @@ export function FormSelectField<T extends FieldValues>({
         >
           <Label>{label}</Label>
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
-          <Select.Trigger {...triggerProps}>
+          <Select.Trigger
+            {...triggerProps}
+            className={cn('min-h-11 border border-border bg-surface shadow-none ', triggerProps?.className)}
+          >
             <Select.Value />
             <Select.Indicator />
           </Select.Trigger>

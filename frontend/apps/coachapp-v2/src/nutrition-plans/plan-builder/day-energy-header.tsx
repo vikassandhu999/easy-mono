@@ -106,7 +106,7 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
           )}
 
           <Button
-            className="shrink-0 text-xs font-semibold text-accent"
+            className="min-h-11 shrink-0 text-xs font-semibold text-accent "
             onPress={onToggleMacros}
             size="sm"
             variant="ghost"

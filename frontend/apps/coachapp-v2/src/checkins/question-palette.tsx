@@ -125,7 +125,7 @@ export default function AddQuestionControl({onAdd}: {onAdd: (question: QuestionD
 
   const trigger = (
     <Button
-      className="w-full rounded-control border border-dashed border-border text-accent"
+      className="min-h-11 w-full rounded-control border border-dashed border-border text-accent "
       onPress={() => setOpen(true)}
       ref={triggerRef}
       variant="ghost"

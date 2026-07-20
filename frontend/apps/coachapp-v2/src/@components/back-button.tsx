@@ -1,4 +1,5 @@
 import {Button} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {ArrowLeft} from 'lucide-react';
 
 // The one back affordance for every Page header (forms, details, lists). Lives
@@ -17,7 +18,7 @@ export function BackButton({
   return (
     <Button
       aria-label={label}
-      className={className}
+      className={cn('min-h-11 min-w-11  ', className)}
       isIconOnly
       onPress={onPress}
       size="md"

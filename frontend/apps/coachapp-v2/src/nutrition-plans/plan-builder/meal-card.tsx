@@ -355,7 +355,7 @@ export function MealCard({
         <Dropdown>
           <Button
             aria-label={`Meal options for ${meal.name}`}
-            className="size-9 min-w-9 shrink-0 text-muted"
+            className="min-h-11 min-w-11 shrink-0 text-muted  "
             isIconOnly
             size="sm"
             variant="ghost"
@@ -410,7 +410,7 @@ export function MealCard({
 
         <Disclosure.Trigger
           aria-label={open ? `Collapse ${meal.name}` : `Expand ${meal.name}`}
-          className="flex size-9 shrink-0 items-center justify-center text-muted"
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center text-muted  "
         >
           <Disclosure.Indicator />
         </Disclosure.Trigger>
@@ -453,7 +453,7 @@ export function MealCard({
           )}
 
           <Button
-            className="mt-1 px-0 text-xs font-semibold text-accent"
+            className="mt-1 min-h-11 px-0 text-xs font-semibold text-accent "
             onPress={() => setPickerOpen(true)}
             ref={addItemButtonRef}
             size="sm"
@@ -488,7 +488,7 @@ export function MealCard({
                 ) : null}
                 <Button
                   aria-label={`Remove swap ${swap.meal.name}`}
-                  className="size-8 min-w-8 shrink-0 text-muted-2"
+                  className="min-h-11 min-w-11 shrink-0 text-muted-2  "
                   isIconOnly
                   onPress={() => onRemoveSwap(swap.optionId)}
                   size="sm"

@@ -3,20 +3,24 @@ import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {BackButton} from '@/@components/back-button';
-import BrowseListBox from '@/@components/browse-list-box';
+import BrowseListBox, {
+  BROWSE_LIST_FRAME_CLASS,
+  BROWSE_LIST_SURFACE_CLASS,
+  BROWSE_SEARCH_GROUP_CLASS,
+} from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
+import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {useCoachFoodsInfiniteQuery} from '@/api/nutrition-foods';
+import CreateFood from '@/foods/create-food';
 
 import FoodListItem from './food-list-item';
 
 export default function ListFoods() {
   const navigate = useNavigate();
-  const goBack = useGoBack(ROUTES.LIBRARY);
+  const create = useResponsiveCreate(ROUTES.CREATE_FOOD);
   const [search, setSearch] = useState('');
 
   const deferredSearch = useDeferredValue(search);
@@ -24,14 +28,17 @@ export default function ListFoods() {
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
   const total = list.data?.pages[0]?.count;
 
+  if (create.isCreating) {
+    return <CreateFood onClose={create.stopCreating} />;
+  }
+
   return (
     <Page>
-      <Page.Header size="content">
-        <Page.TitleGroup className={'flex items-center'}>
-          <BackButton
-            className={'lg:hidden'}
-            onPress={goBack}
-          />
+      <Page.Header
+        className="bg-surface pb-1 sm:bg-transparent sm:pb-2"
+        size="content"
+      >
+        <Page.TitleGroup>
           <div className="min-w-0">
             <Page.Title>Foods</Page.Title>
             <Page.Description className="hidden truncate sm:block">
@@ -42,7 +49,8 @@ export default function ListFoods() {
         <Page.Actions>
           <Button
             aria-label="Create food"
-            onPress={() => navigate(ROUTES.CREATE_FOOD)}
+            className="min-h-11 min-w-11 rounded-control"
+            onPress={create.startCreating}
             variant="primary"
           >
             <Plus className="size-4" />
@@ -51,7 +59,7 @@ export default function ListFoods() {
         </Page.Actions>
       </Page.Header>
       <Page.Toolbar
-        className={'sticky top-0 z-10 flex items-center gap-3 bg-background pt-2 pb-3'}
+        className="sticky top-0 z-10 mb-0 flex items-center gap-3 border-b border-border bg-surface pt-2 pb-3 sm:mb-6 sm:border-0 sm:bg-background"
         size="content"
       >
         <SearchField
@@ -60,26 +68,30 @@ export default function ListFoods() {
           onChange={setSearch}
           value={search}
         >
-          <SearchField.Group>
+          <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search foods…" />
-            <SearchField.ClearButton />
+            <SearchField.Input
+              className="min-h-11 "
+              placeholder="Search foods…"
+            />
+            <SearchField.ClearButton className="min-h-11 min-w-11  " />
           </SearchField.Group>
         </SearchField>
         {total != null && <span className="ms-auto hidden shrink-0 text-sm text-muted sm:block">{total} foods</span>}
       </Page.Toolbar>
       <Page.Content bare>
         <Page.Frame
-          className="flex min-h-0 flex-1 flex-col pb-6"
+          className={BROWSE_LIST_FRAME_CLASS}
           size="content"
         >
-          <div className="overflow-hidden rounded-card border border-border bg-surface">
+          <div className={BROWSE_LIST_SURFACE_CLASS}>
             <BrowseListBox
               ariaLabel="Foods"
               className="flex-1 p-0"
               emptyState={
                 <ListEmptyState
                   createLabel="Create Food"
+                  onCreate={create.startCreating}
                   createRoute={ROUTES.CREATE_FOOD}
                   emptyDescription="Create your first food to get started."
                   hasFilter={!!deferredSearch}

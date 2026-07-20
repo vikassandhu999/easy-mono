@@ -4,6 +4,7 @@ import {useNavigate} from 'react-router-dom';
 
 type Props = {
   createLabel?: string;
+  onCreate?: () => void;
   createRoute?: string;
   emptyDescription: string;
   filterDescription?: string;
@@ -13,6 +14,7 @@ type Props = {
 
 export default function ListEmptyState({
   createLabel,
+  onCreate,
   createRoute,
   emptyDescription,
   filterDescription = "Try adjusting your search to find what you're looking for.",
@@ -20,6 +22,15 @@ export default function ListEmptyState({
   nounPlural,
 }: Props) {
   const navigate = useNavigate();
+  const handleCreate = () => {
+    if (onCreate) {
+      onCreate();
+      return;
+    }
+    if (createRoute) {
+      navigate(createRoute);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
@@ -42,10 +53,10 @@ export default function ListEmptyState({
           >
             {emptyDescription}
           </Typography>
-          {createRoute && createLabel && (
+          {(createRoute || onCreate) && createLabel && (
             <Button
               className="mt-3 min-h-11"
-              onPress={() => navigate(createRoute)}
+              onPress={handleCreate}
               size="sm"
             >
               <Plus size={16} />

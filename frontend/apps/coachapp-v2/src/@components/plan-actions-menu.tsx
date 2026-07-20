@@ -69,6 +69,7 @@ export function PlanActionsMenu({
       <Dropdown>
         <Button
           aria-label="Menu"
+          className="min-h-11 min-w-11  "
           isIconOnly
           isPending={blocking}
           size="sm"

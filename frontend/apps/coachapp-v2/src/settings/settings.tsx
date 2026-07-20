@@ -35,9 +35,9 @@ const TABS = [
 type SettingsTab = (typeof TABS)[number]['id'];
 
 const TAB_CLASS =
-  'flex min-h-11 w-auto shrink-0 cursor-pointer items-center justify-start gap-2 whitespace-nowrap rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0 pb-2 text-sm font-medium text-muted shadow-none outline-none ' +
+  'flex min-h-11 w-auto shrink-0 cursor-pointer items-center justify-start gap-1 whitespace-nowrap rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0 pb-2 text-sm font-medium text-muted shadow-none outline-none ' +
   'data-[selected=true]:border-b-ink data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'md:w-full md:rounded-nav md:border-b-0 md:px-3 md:py-2.5 md:pb-2.5 md:text-foreground ' +
+  'md:w-full md:gap-2 md:rounded-nav md:border-b-0 md:px-3 md:py-2.5 md:pb-2.5 md:text-foreground ' +
   'md:data-[selected=true]:bg-ink md:data-[selected=true]:text-ink-foreground';
 
 const CARD_CLASS = 'overflow-hidden rounded-card border border-border bg-surface';
@@ -212,7 +212,7 @@ function LogOutFooter({className, onLogout}: {className?: string; onLogout: () =
   return (
     <div className={`flex flex-col gap-3 ${className ?? ''}`}>
       <Button
-        className="w-full rounded-xl border border-danger/30"
+        className="min-h-11 w-full rounded-xl border border-danger/30 "
         onPress={onLogout}
         variant="danger-soft"
       >
@@ -242,7 +242,7 @@ function SettingsShell({
 
   return (
     <Tabs
-      className="flex min-h-full flex-col md:flex-row md:items-stretch"
+      className="flex min-h-0 flex-1 flex-col md:flex-row md:items-stretch"
       onSelectionChange={(key) => onTabChange(key as SettingsTab)}
       orientation={isDesktop ? 'vertical' : 'horizontal'}
       selectedKey={tab}
@@ -255,7 +255,7 @@ function SettingsShell({
           Settings
         </Typography>
         <Tabs.ListContainer className="scrollbar-hide -mx-4 max-w-full overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
-          <Tabs.List className="flex w-max min-w-max gap-5 bg-transparent p-0 md:w-full md:min-w-0 md:flex-col md:gap-0.5">
+          <Tabs.List className="flex w-max min-w-max gap-2 bg-transparent p-0 md:w-full md:min-w-0 md:flex-col md:gap-0.5">
             {TABS.map(({icon: Icon, id, label}) => (
               <Tabs.Tab
                 className={TAB_CLASS}
@@ -270,8 +270,8 @@ function SettingsShell({
         </Tabs.ListContainer>
       </div>
 
-      <div className="min-w-0 flex-1 px-4 pt-3.5 pb-6 md:px-8 md:pt-6 md:pb-10">
-        <div className="md:mx-auto md:max-w-140">{children}</div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col px-4 pt-3.5 pb-6 md:px-8 md:pt-6 md:pb-10">
+        <div className="flex min-h-full flex-1 flex-col md:mx-auto md:w-full md:max-w-140">{children}</div>
       </div>
     </Tabs>
   );
@@ -364,7 +364,7 @@ export default function Settings() {
           </Tabs.Panel>
 
           <LogOutFooter
-            className="mt-4 md:hidden"
+            className="mt-auto pt-4 md:hidden"
             onLogout={handleLogout}
           />
         </SettingsShell>

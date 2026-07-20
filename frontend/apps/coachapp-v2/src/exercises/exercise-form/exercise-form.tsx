@@ -23,6 +23,7 @@ import {
   FormTextAreaField,
   FormTextField,
 } from '@/@components/form-fields';
+import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-section';
 import type {
   TrainingExercise,
   TrainingExerciseCreateRequest,
@@ -207,7 +208,7 @@ export default function ExerciseForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+      <div className={RESPONSIVE_FORM_SECTION_CLASS}>
         <Fieldset>
           <Fieldset.Legend>Details</Fieldset.Legend>
           <Description>Name the movement and describe how it's performed.</Description>
@@ -225,7 +226,7 @@ export default function ExerciseForm({
                         <ImageThumbnail url={url} />
                         <CloseButton
                           aria-label={`Remove image ${index + 1}`}
-                          className="absolute -top-2 -right-2 rounded-full bg-ink text-ink-foreground"
+                          className="absolute -top-2 -right-2 min-h-11 min-w-11 rounded-full bg-ink text-ink-foreground  "
                           onPress={() => handleRemoveImage(index)}
                         />
                       </div>
@@ -242,6 +243,7 @@ export default function ExerciseForm({
                       <Label>Add image URL</Label>
                       {imageError && <FieldError>{imageError}</FieldError>}
                       <Input
+                        className="min-h-11 border border-border bg-surface shadow-none "
                         onChange={(e) => {
                           setNewImageUrl(e.target.value);
                           setImageError('');
@@ -252,12 +254,14 @@ export default function ExerciseForm({
                       />
                     </TextField>
                     <Button
+                      className="min-h-11 "
                       onPress={handleAddImage}
                       size="sm"
                     >
                       Add
                     </Button>
                     <Button
+                      className="min-h-11 "
                       onPress={() => {
                         setIsAddingImage(false);
                         setNewImageUrl('');
@@ -271,7 +275,7 @@ export default function ExerciseForm({
                   </div>
                 ) : (
                   <Button
-                    className="w-full rounded-xl border border-dashed border-border text-muted"
+                    className="min-h-11 w-full rounded-xl border border-dashed border-border text-muted "
                     onPress={() => setIsAddingImage(true)}
                     variant="ghost"
                   >

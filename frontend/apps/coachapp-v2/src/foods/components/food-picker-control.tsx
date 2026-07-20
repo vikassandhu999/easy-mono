@@ -1,4 +1,5 @@
 import {Button, Popover} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {Plus} from 'lucide-react';
 import type {ComponentProps} from 'react';
 import {useRef, useState} from 'react';
@@ -50,7 +51,7 @@ export default function FoodPickerControl({onSelect, excludeIds, triggerClassNam
       <Button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className={triggerClassName}
+        className={cn('min-h-11 ', triggerClassName)}
         onPress={() => setOpen(true)}
         ref={triggerRef}
         variant={triggerVariant ?? 'secondary'}

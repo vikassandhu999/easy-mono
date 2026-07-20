@@ -140,24 +140,6 @@ export default function EditRecipe() {
   const backPath = `/library/recipes/${id}`;
   const goBackOuter = useGoBack(backPath);
 
-  if (isFetching || !data) {
-    return (
-      <Page>
-        <Page.Header size="content">
-          <Page.TitleGroup>
-            <div className={'flex items-center gap-1'}>
-              <BackButton onPress={goBackOuter} />
-              <Page.Title>Edit recipe</Page.Title>
-            </div>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
-        </Page.Content>
-      </Page>
-    );
-  }
-
   if (isError) {
     return (
       <Page>
@@ -171,6 +153,24 @@ export default function EditRecipe() {
         </Page.Header>
         <Page.Content className="pt-4 pb-6">
           <ErrorState message="Couldn't load recipe." />
+        </Page.Content>
+      </Page>
+    );
+  }
+
+  if (isFetching || !data) {
+    return (
+      <Page>
+        <Page.Header size="content">
+          <Page.TitleGroup>
+            <div className={'flex items-center gap-1'}>
+              <BackButton onPress={goBackOuter} />
+              <Page.Title>Edit recipe</Page.Title>
+            </div>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="pt-4 pb-6">
+          <PageSkeleton />
         </Page.Content>
       </Page>
     );

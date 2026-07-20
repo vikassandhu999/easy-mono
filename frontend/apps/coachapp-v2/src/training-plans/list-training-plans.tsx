@@ -3,14 +3,20 @@ import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {BackButton} from '@/@components/back-button';
-import BrowseListBox, {FILTER_PILL_CLASS} from '@/@components/browse-list-box';
+import BrowseListBox, {
+  BROWSE_LIST_FRAME_CLASS,
+  BROWSE_LIST_SURFACE_CLASS,
+  BROWSE_SEARCH_GROUP_CLASS,
+  FILTER_PILL_CLASS,
+} from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
+import {useIsSm} from '@/@hooks/use-is-sm';
+import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {useCoachTrainingPlansInfiniteQuery, useListTrainingPlansQuery} from '@/api/training-plans-list';
+import CreateTrainingPlan from '@/training-plans/create-training-plan';
 
 import TrainingPlanListItem from './training-plan-list-item';
 
@@ -18,7 +24,8 @@ type StatusFilter = 'active' | 'all' | 'archived';
 
 export default function ListTrainingPlans() {
   const navigate = useNavigate();
-  const goBack = useGoBack(ROUTES.LIBRARY);
+  const create = useResponsiveCreate(ROUTES.CREATE_TRAINING_PLAN);
+  const isSm = useIsSm();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
 
@@ -37,16 +44,22 @@ export default function ListTrainingPlans() {
   const activeCount = activeData?.count ?? 0;
   const archivedCount = archivedData?.count ?? 0;
 
+  if (create.isCreating) {
+    return <CreateTrainingPlan onClose={create.stopCreating} />;
+  }
+
   return (
     <Page>
-      <Page.Header size="content">
-        <Page.TitleGroup className={'flex items-center'}>
-          <BackButton
-            className={'lg:hidden'}
-            onPress={goBack}
-          />
+      <Page.Header
+        className="bg-surface pb-1 sm:bg-transparent sm:pb-2"
+        size="content"
+      >
+        <Page.TitleGroup>
           <div className="min-w-0">
-            <Page.Title>Training plans</Page.Title>
+            <Page.Title>
+              <span className="sm:hidden">Training</span>
+              <span className="hidden sm:inline">Training plans</span>
+            </Page.Title>
             <Page.Description className="hidden truncate sm:block">
               Reusable workout splits and progressions for your clients
             </Page.Description>
@@ -55,7 +68,8 @@ export default function ListTrainingPlans() {
         <Page.Actions>
           <Button
             aria-label="Create plan"
-            onPress={() => navigate(ROUTES.CREATE_TRAINING_PLAN)}
+            className="min-h-11 min-w-11 rounded-control"
+            onPress={create.startCreating}
             variant="primary"
           >
             <Plus className="size-4" />
@@ -64,7 +78,7 @@ export default function ListTrainingPlans() {
         </Page.Actions>
       </Page.Header>
       <Page.Toolbar
-        className={'sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-background pt-2 pb-3'}
+        className="sticky top-0 z-10 mb-0 flex flex-wrap items-center gap-x-3 gap-y-0 border-b border-border bg-surface pt-2 pb-0 sm:mb-6 sm:gap-3 sm:border-0 sm:bg-background sm:pb-3"
         size="content"
       >
         <SearchField
@@ -73,17 +87,20 @@ export default function ListTrainingPlans() {
           onChange={setSearch}
           value={search}
         >
-          <SearchField.Group>
+          <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search training plans…" />
-            <SearchField.ClearButton />
+            <SearchField.Input
+              className="min-h-11 "
+              placeholder={isSm ? 'Search training plans…' : 'Search plans…'}
+            />
+            <SearchField.ClearButton className="min-h-11 min-w-11  " />
           </SearchField.Group>
         </SearchField>
         <Separator
           className="hidden h-6 sm:block"
           orientation="vertical"
         />
-        <div className="shrink-0">
+        <div className="-mx-4 min-w-0 max-w-full shrink-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           <ToggleButtonGroup
             aria-label="Filter plans by status"
             className="flex flex-nowrap gap-2"
@@ -101,35 +118,47 @@ export default function ListTrainingPlans() {
               className={FILTER_PILL_CLASS}
               id="all"
             >
-              All <span className="text-chip opacity-70">{activeCount + archivedCount}</span>
+              All{' '}
+              <span className={status === 'all' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}>
+                {activeCount + archivedCount}
+              </span>
             </ToggleButton>
             <ToggleButton
               className={FILTER_PILL_CLASS}
               id="active"
             >
-              Active <span className="text-chip opacity-70">{activeCount}</span>
+              Active{' '}
+              <span className={status === 'active' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}>
+                {activeCount}
+              </span>
             </ToggleButton>
             <ToggleButton
               className={FILTER_PILL_CLASS}
               id="archived"
             >
-              Archived <span className="text-chip opacity-70">{archivedCount}</span>
+              Archived{' '}
+              <span
+                className={status === 'archived' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}
+              >
+                {archivedCount}
+              </span>
             </ToggleButton>
           </ToggleButtonGroup>
         </div>
       </Page.Toolbar>
       <Page.Content bare>
         <Page.Frame
-          className="flex min-h-0 flex-1 flex-col pb-6"
+          className={BROWSE_LIST_FRAME_CLASS}
           size="content"
         >
-          <div className="overflow-hidden rounded-card border border-border bg-surface">
+          <div className={BROWSE_LIST_SURFACE_CLASS}>
             <BrowseListBox
               ariaLabel="Training plans"
               className="flex-1 p-0"
               emptyState={
                 <ListEmptyState
                   createLabel="Create Training Plan"
+                  onCreate={create.startCreating}
                   createRoute={ROUTES.CREATE_TRAINING_PLAN}
                   emptyDescription="Create your first training plan to get started."
                   hasFilter={!!deferredSearch || status !== 'all'}

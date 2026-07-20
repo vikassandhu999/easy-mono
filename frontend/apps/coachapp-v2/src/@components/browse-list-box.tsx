@@ -20,15 +20,26 @@ export const LIST_ITEM_CLASS =
 /** The redesign's white outline chip (macro/meta pills on rows and detail pages). */
 export const OUTLINE_CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg-surface font-semibold text-foreground';
 
+/** Responsive shell shared by every top-level browse list. */
+export const BROWSE_LIST_SURFACE_CLASS =
+  'overflow-hidden border-y border-border bg-background sm:rounded-card sm:border sm:bg-surface';
+
+/** Zero-gutter mobile list frame; restores the canonical page gutter on larger screens. */
+export const BROWSE_LIST_FRAME_CLASS = 'flex min-h-0 flex-1 flex-col px-0 pb-0 sm:px-4 sm:pb-6 md:px-6 lg:px-8';
+
+/** Search-field surface used by browse toolbars at both breakpoints. */
+export const BROWSE_SEARCH_GROUP_CLASS = 'min-h-11 border border-border bg-background shadow-none  sm:bg-surface';
+
 /**
  * Ink-selected filter pill (RECIPES.md R2). HeroUI ToggleButton exposes selection
  * as `data-selected="true"` — there is no `selected:` Tailwind variant registered
  * in this project, so `selected:*` classes silently no-op.
  */
 export const FILTER_PILL_CLASS =
-  'min-h-11 rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted sm:min-h-0 ' +
-  'data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold ' +
-  'data-[selected=true]:text-ink-foreground';
+  'me-2.5 min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm font-medium text-muted shadow-none ' +
+  'data-[selected=true]:border-foreground data-[selected=true]:bg-transparent data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
+  'sm:me-0  sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.5 sm:text-pill ' +
+  'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:text-ink-foreground';
 
 type BrowseRowProps = {
   className?: string;

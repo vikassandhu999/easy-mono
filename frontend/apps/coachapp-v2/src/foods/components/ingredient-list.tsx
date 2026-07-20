@@ -263,6 +263,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               </Button>
               <Button
                 aria-label={`Move ${item.food.name} up`}
+                className="min-h-11 min-w-11  "
                 isDisabled={index === 0}
                 isIconOnly
                 onPress={() => moveItem(index, -1)}
@@ -273,6 +274,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               </Button>
               <Button
                 aria-label={`Move ${item.food.name} down`}
+                className="min-h-11 min-w-11  "
                 isDisabled={index === value.length - 1}
                 isIconOnly
                 onPress={() => moveItem(index, 1)}

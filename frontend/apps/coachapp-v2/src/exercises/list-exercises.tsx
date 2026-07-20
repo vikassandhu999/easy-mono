@@ -3,22 +3,26 @@ import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {BackButton} from '@/@components/back-button';
-import BrowseListBox from '@/@components/browse-list-box';
+import BrowseListBox, {
+  BROWSE_LIST_FRAME_CLASS,
+  BROWSE_LIST_SURFACE_CLASS,
+  BROWSE_SEARCH_GROUP_CLASS,
+} from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
+import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {useListMusclesQuery} from '@/api/generated';
 import {useCoachTrainingExercisesInfiniteQuery} from '@/api/training-exercises';
 import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
+import CreateExercise from '@/exercises/create-exercise';
 
 import ExerciseListItem from './exercise-list-item';
 
 export default function ListExercises() {
   const navigate = useNavigate();
-  const goBack = useGoBack(ROUTES.LIBRARY);
+  const create = useResponsiveCreate(ROUTES.CREATE_EXERCISE);
   const [search, setSearch] = useState('');
   const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
 
@@ -30,14 +34,17 @@ export default function ListExercises() {
   const {data: musclesData} = useListMusclesQuery({});
   const muscles = musclesData?.data ?? [];
 
+  if (create.isCreating) {
+    return <CreateExercise onClose={create.stopCreating} />;
+  }
+
   return (
     <Page>
-      <Page.Header size="content">
-        <Page.TitleGroup className={'flex items-center'}>
-          <BackButton
-            className={'lg:hidden'}
-            onPress={goBack}
-          />
+      <Page.Header
+        className="bg-surface pb-1 sm:bg-transparent sm:pb-2"
+        size="content"
+      >
+        <Page.TitleGroup>
           <div className="min-w-0">
             <Page.Title>Exercises</Page.Title>
             <Page.Description className="hidden truncate sm:block">
@@ -48,7 +55,8 @@ export default function ListExercises() {
         <Page.Actions>
           <Button
             aria-label="Create exercise"
-            onPress={() => navigate(ROUTES.CREATE_EXERCISE)}
+            className="min-h-11 min-w-11 rounded-control"
+            onPress={create.startCreating}
             variant="primary"
           >
             <Plus className="size-4" />
@@ -57,7 +65,7 @@ export default function ListExercises() {
         </Page.Actions>
       </Page.Header>
       <Page.Toolbar
-        className={'sticky top-0 z-10 flex items-center gap-3 bg-background pt-2 pb-3'}
+        className="sticky top-0 z-10 mb-0 flex items-center gap-3 border-b border-border bg-surface pt-2 pb-3 sm:mb-6 sm:border-0 sm:bg-background"
         size="content"
       >
         <SearchField
@@ -66,10 +74,13 @@ export default function ListExercises() {
           onChange={setSearch}
           value={search}
         >
-          <SearchField.Group>
+          <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search exercises…" />
-            <SearchField.ClearButton />
+            <SearchField.Input
+              className="min-h-11 "
+              placeholder="Search exercises…"
+            />
+            <SearchField.ClearButton className="min-h-11 min-w-11  " />
           </SearchField.Group>
         </SearchField>
         {muscles.length > 0 && (
@@ -91,16 +102,17 @@ export default function ListExercises() {
       </Page.Toolbar>
       <Page.Content bare>
         <Page.Frame
-          className="flex min-h-0 flex-1 flex-col pb-6"
+          className={BROWSE_LIST_FRAME_CLASS}
           size="content"
         >
-          <div className="overflow-hidden rounded-card border border-border bg-surface">
+          <div className={BROWSE_LIST_SURFACE_CLASS}>
             <BrowseListBox
               ariaLabel="Exercises"
               className="flex-1 p-0"
               emptyState={
                 <ListEmptyState
                   createLabel="Create exercise"
+                  onCreate={create.startCreating}
                   createRoute={ROUTES.CREATE_EXERCISE}
                   emptyDescription="Create your first exercise to get started."
                   hasFilter={!!deferredSearch || selectedMuscleIds.length > 0}

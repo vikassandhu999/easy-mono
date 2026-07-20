@@ -157,8 +157,13 @@ function BottomNavItem({item}: {item: NavItem}) {
   );
 }
 
-// Paths where the mobile app frame (top bar + bottom nav) is visible.
-const MOBILE_FRAME_PATHS = new Set([...BOTTOM_NAV.map((item) => item.path), ROUTES.SETTINGS]);
+// Top-level destinations keep the mobile bottom navigation. Detail, edit, and
+// builder routes remain focused pages without app-shell chrome.
+const MOBILE_FRAME_PATHS = new Set([
+  ...BOTTOM_NAV.map((item) => item.path),
+  ...BUILDER.map((item) => item.path),
+  ROUTES.SETTINGS,
+]);
 
 export default function AppShell() {
   const location = useLocation();

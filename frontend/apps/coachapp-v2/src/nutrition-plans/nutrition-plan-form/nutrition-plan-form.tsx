@@ -3,6 +3,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-section';
 import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
 import {omitUndefined, toOptionalText} from '@/api/shared';
 
@@ -114,7 +115,7 @@ export default function NutritionPlanForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+      <div className={RESPONSIVE_FORM_SECTION_CLASS}>
         <Fieldset>
           <Fieldset.Legend>Plan details</Fieldset.Legend>
           <Description>Name the plan and describe who it's for.</Description>

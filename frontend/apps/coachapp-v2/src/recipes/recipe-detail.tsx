@@ -326,7 +326,7 @@ export default function RecipeDetail() {
 
         <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
           <Button
-            className="flex-1"
+            className="min-h-11 flex-1"
             onPress={() => navigate(`/library/recipes/${recipe.id}/edit`)}
             variant="primary"
           >
@@ -335,6 +335,7 @@ export default function RecipeDetail() {
           </Button>
           <Button
             aria-label="Duplicate recipe"
+            className="min-h-11 min-w-11"
             isPending={isDuplicating}
             onPress={handleDuplicate}
             variant="outline"
@@ -344,7 +345,7 @@ export default function RecipeDetail() {
           {renderDeleteDialog(
             <Button
               aria-label="Delete recipe"
-              className="text-danger"
+              className="min-h-11 min-w-11 text-danger"
               variant="outline"
             >
               <Trash2 className="size-4" />

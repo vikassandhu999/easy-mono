@@ -1,4 +1,5 @@
-import {Button, Separator, Skeleton, Surface, Typography} from '@heroui/react';
+import {getInitials} from '@easy/utils';
+import {Avatar, Button, Separator, Skeleton, Surface, Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {Fragment} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -164,6 +165,7 @@ export default function Dashboard() {
 
   const profile = profileData?.data;
   const name = profile?.first_name?.trim();
+  const initials = getInitials(profile?.first_name, profile?.last_name) || '?';
   const clientSummary = clientsData?.summary;
   const clients = clientsData?.data ?? [];
   const newProspects = prospectsError ? [] : (prospectsData?.data ?? []);
@@ -179,6 +181,13 @@ export default function Dashboard() {
           <div className={EYEBROW}>{formatDashboardDate()}</div>
           <Page.Title className="mt-1.5 font-grotesk">{name ? `${greeting()}, ${name}` : greeting()}</Page.Title>
         </Page.TitleGroup>
+        <Page.Actions className="sm:hidden">
+          <Avatar className="size-11">
+            <Avatar.Fallback className="bg-warning-soft font-semibold text-warning-soft-foreground">
+              {initials}
+            </Avatar.Fallback>
+          </Avatar>
+        </Page.Actions>
         <StatBar
           active={clientSummary?.active ?? 0}
           className="hidden sm:flex"

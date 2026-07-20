@@ -23,6 +23,7 @@ import {
   FormTextAreaField,
   FormTextField,
 } from '@/@components/form-fields';
+import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-section';
 import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
 import type {Food, FoodRequest, FoodUpdateRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
@@ -203,7 +204,7 @@ export default function FoodForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+      <div className={RESPONSIVE_FORM_SECTION_CLASS}>
         <Fieldset>
           <Fieldset.Legend>Details</Fieldset.Legend>
           <Description>Name the food and where it came from.</Description>
@@ -220,7 +221,7 @@ export default function FoodForm({
                     />
                     <CloseButton
                       aria-label="Remove image"
-                      className="absolute -top-2 -right-2 rounded-full bg-ink text-ink-foreground"
+                      className="absolute -top-2 -right-2 min-h-11 min-w-11 rounded-full bg-ink text-ink-foreground  "
                       onPress={() => setValue('image_url', '', {shouldDirty: true})}
                     />
                   </div>
@@ -233,6 +234,7 @@ export default function FoodForm({
                       <Label>Add image URL</Label>
                       {imageError && <FieldError>{imageError}</FieldError>}
                       <Input
+                        className="min-h-11 border border-border bg-surface shadow-none "
                         onChange={(e) => {
                           setNewImageUrl(e.target.value);
                           setImageError('');
@@ -242,12 +244,14 @@ export default function FoodForm({
                       />
                     </TextField>
                     <Button
+                      className="min-h-11 "
                       onPress={handleAddImage}
                       size="sm"
                     >
                       Add
                     </Button>
                     <Button
+                      className="min-h-11 "
                       onPress={() => {
                         setIsAddingImage(false);
                         setNewImageUrl('');

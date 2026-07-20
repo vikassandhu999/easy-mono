@@ -124,7 +124,7 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
 
       <Button
         aria-label={`Remove ${name}`}
-        className="size-8 min-w-8 shrink-0 text-muted-2"
+        className="min-h-11 min-w-11 shrink-0 text-muted-2  "
         isIconOnly
         onPress={onRemove}
         size="sm"

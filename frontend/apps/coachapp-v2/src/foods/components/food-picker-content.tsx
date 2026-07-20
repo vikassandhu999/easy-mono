@@ -1,4 +1,4 @@
-import {SearchField, Spinner, Typography} from '@heroui/react';
+import {Button, ListBox, SearchField, Spinner, Typography} from '@heroui/react';
 import {Apple, ArrowRight, X} from 'lucide-react';
 import {type KeyboardEvent, useDeferredValue, useMemo, useState} from 'react';
 
@@ -71,14 +71,15 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
           >
             Add ingredient
           </Typography>
-          <button
+          <Button
             aria-label="Close"
-            className="-mr-1.5 flex size-9 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            onClick={onClose}
-            type="button"
+            className="-mr-1.5 flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent  "
+            isIconOnly
+            onPress={onClose}
+            variant="ghost"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         <SearchField
@@ -88,13 +89,14 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
           value={search}
           variant="secondary"
         >
-          <SearchField.Group>
+          <SearchField.Group className="min-h-11 border border-border bg-surface shadow-none ">
             <SearchField.SearchIcon />
             <SearchField.Input
+              className="min-h-11 "
               onKeyDown={onInputKeyDown}
               placeholder="Search foods…"
             />
-            {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton />}
+            {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton className="min-h-11 min-w-11  " />}
           </SearchField.Group>
         </SearchField>
       </div>
@@ -119,26 +121,30 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
             {isFetching ? 'Searching…' : 'No foods found'}
           </Typography>
         ) : (
-          <div
+          <ListBox
             aria-label="Search results"
             className="flex flex-col gap-0.5"
-            role="listbox"
+            onAction={(key) => {
+              const food = foods.find((item) => item.id === String(key));
+              if (food) {
+                select(food);
+              }
+            }}
+            selectionMode="none"
           >
             {foods.map((food, index) => {
               const cal = food.calories_per_100g;
               const pro = food.protein_g_per_100g;
               const isHighlighted = index === highlightedIndex;
               return (
-                <button
-                  aria-selected={isHighlighted}
-                  className={`group flex items-center gap-3 rounded-lg p-2 text-left hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${
+                <ListBox.Item
+                  className={`group flex h-auto min-h-11 items-center justify-start gap-3 rounded-lg p-2 text-left font-normal hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${
                     isHighlighted ? 'bg-surface-hover' : ''
                   }`}
+                  id={food.id}
                   key={food.id}
-                  onClick={() => select(food)}
                   onMouseEnter={() => setHighlightedIndex(index)}
-                  role="option"
-                  type="button"
+                  textValue={food.name}
                 >
                   <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary">
                     {food.image_url ? (
@@ -196,10 +202,10 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
                     className="shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100"
                     size={16}
                   />
-                </button>
+                </ListBox.Item>
               );
             })}
-          </div>
+          </ListBox>
         )}
       </div>
     </div>

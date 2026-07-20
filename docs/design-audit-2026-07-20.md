@@ -1,6 +1,6 @@
 # CoachApp design audit — 2026-07-20
 
-Scope: `CL` (`/clients`) and the three-pass `IN` follow-up (`/clients/invite`). Compared live at desktop and mobile reference widths against the matching handoff images.
+Scope: all CoachApp handoff badges. `CL` (`/clients`) and the three-pass `IN` follow-up (`/clients/invite`) were completed first; the remaining badge families were then compared live at desktop and mobile audit widths against the matching handoff images.
 
 ## Findings
 
@@ -68,7 +68,7 @@ Scope: `CL` (`/clients`) and the three-pass `IN` follow-up (`/clients/invite`). 
 ### Pass 2 — form and control fidelity
 
 - Direct desktop/mobile recaptures confirmed the compact mobile header, flat body, responsive form card, compact seat meter, and post-trigger trainer helper.
-- Inputs now measure 44px mobile / 40px desktop with `bg-surface`, a 1px semantic border, and no shadow.
+- Inputs now keep the repository's 44px target at both widths with `bg-surface`, a 1px semantic border, and no shadow.
 - Header and body both use the canonical `size="content"` column. The intentionally wider app token remains in force on desktop.
 
 ### Pass 3 — interaction and state regression
@@ -89,3 +89,82 @@ Scope: `CL` (`/clients`) and the three-pass `IN` follow-up (`/clients/invite`). 
 - Diagnostic typecheck with only unused-local enforcement disabled: passed.
 - Direct Vite production build: passed (existing dependency CSS/chunk-size warnings only).
 - Required strict build: **blocked by the same pre-existing dirty file** `src/@components/form-fields/form-layout.tsx:1` (`Surface` is imported but unused). The audit did not edit or stage that file.
+
+## Remaining screens — pass 1 baseline (before fixes)
+
+Badges covered in this pass:
+
+- `DB`
+- `EX`, `EP`, `ED`
+- `FO`, `FD`, `FE`
+- `RC`, `RD`, `RE`
+- `NP`, `NE`, `NB`
+- `TR`, `TE`, `TB`
+- `FM`, `FB`
+- `ST`
+
+Real list ids were used for every detail, edit, and builder route. Sample-data differences are excluded from the findings.
+
+| badge | width | what's wrong | pass (A-fidelity / B-consistency) | severity | proposed fix |
+|---|---|---|---|---|---|
+| EX / FO / RC / NP / TR / FM | mobile | Top-level Builder lists render a back arrow but the app shell does not render its bottom navigation. The references use these as top-level destinations with the Builder bottom-nav item active. | A-fidelity + B-consistency | high | **Fixed** — the six exact list routes now use the mobile app frame and Builder bottom navigation; list-only Back controls were removed while detail/edit/builder routes retain Back. |
+| EX / FO / RC / NP / TR / FM | mobile | Search/list anatomy keeps the desktop inset, rounded list card. The references use a bordered, shadowless mobile search area and a full-bleed row surface with inset separators. | A-fidelity | high | **Fixed** — the shared browse-list surface, frame, search group, and repeated list scaffold now own the mobile full-bleed anatomy and restore the desktop card treatment from `sm`. |
+| ED / FE / RE / NE / TE | mobile | The edit screens retain a padded desktop card around the entire form, adding a second inset and surface layer. The references show the form sections directly on the mobile page surface. | A-fidelity | high | **Fixed** — the five existing section wrappers are flat on mobile and remain canonical bordered cards on desktop; form behavior and data flow are unchanged. |
+| NP / TR / FM | mobile | Status controls use ink-filled desktop pills and expose every count. Their mobile references use underline tabs and show the count only beside the active tab. | A-fidelity + B-consistency | high | **Fixed** — mobile uses underline tabs and visually renders only the selected tab's count; desktop keeps the existing pills and all counts. |
+| ED / FE / RE / NE / TE | mobile | Canonical form controls keep the default field shadow and do not expose the reference's plain surface + semantic hairline treatment. Several also measure 40px rather than the required 44px. | A-fidelity + B-consistency | high | **Fixed at owner** — shared text, textarea, select, number, and supporting picker controls use `bg-surface`, `border-border`, `shadow-none`, and the repository's 44px minimum at both widths. |
+| DB | mobile | The greeting header omits the profile avatar shown opposite the greeting in the mobile reference. | A-fidelity | medium | **Fixed** — the existing HeroUI `Avatar` uses the already-loaded profile initials and renders only in the mobile greeting header. |
+| ST | mobile | The tab row clips the Account label at 390px, and the shared mobile Log out/version footer follows the short Profile content instead of settling above the bottom navigation. | A-fidelity + B-consistency | medium | **Fixed** — all four tabs fit at 390px, the panel fills the available height, and the existing footer settles above the bottom navigation. |
+| DB / EP / ED / FD / FE / RD / RE / NB / TB / FB / ST | mobile | Compact secondary and icon actions still measure 24–40px even where the layout visually matches, below the 44px interaction contract. | B-consistency | high | **Fixed at existing owners** — shared Back/plan actions and screen-local compact actions now keep 44px hit areas at every breakpoint, preserving the repository convention. |
+| EX / FO / RC / NP / TR / FM | mobile | Create always navigates to the dedicated create route, but the interaction spec requires the mobile list to swap to its create form in place. | A-fidelity + B-consistency | high | **Fixed at shared flow owner** — `useResponsiveCreate` keeps desktop route navigation and switches each mobile list to its existing create component in place; Back/Cancel restore the list without duplicating forms. |
+| FO | desktop + mobile | The handoff includes a Categories filter, but the shipped food list contract exposes only `search`, `limit`, and `offset`. Client-side filtering an infinite 55k-row list would be incorrect. | A-fidelity | medium | **Skipped by contract** — add a backend/OpenAPI category filter first, then connect the existing filter UI to it. |
+| FM | desktop + mobile | Exact copy includes a `Draft` status tab, but the generated form-template contract exposes only `active | archived`; there is no truthful Draft state to query or render. | A-fidelity | medium | **Skipped by contract** — add Draft to the backend/OpenAPI status model first, then render and count it through the existing filter surface. |
+| ED / FE / NE | mobile | Some reference pairs remain side-by-side at 390px, while the canonical `FieldRow` intentionally stacks compact pairs below `sm`. | A-fidelity / B-consistency | low | **Not a finding by convention** — keep the established `FieldRow` breakpoint rather than introducing screen-specific grids. |
+| FM | mobile | The implementation includes Templates/To review and purpose filters that the static FM reference does not depict. Both are working product features called out by the handoff instructions. | A-fidelity | low | **Retained** — restyle the surrounding mobile list anatomy, but do not remove either working filter surface. |
+| NB / TB / FB | mobile | These badges have one desktop-oriented reference canvas rather than separate `-desktop` / `-mobile` image pairs. | A-fidelity | low | **Verified with stated limitation** — all three pass the mobile interaction contract, 390px overflow check, and 44px target scan; no unavailable mobile image comparison is claimed. |
+
+### Systemic
+
+- **Fixed:** six top-level Builder lists now share the correct `AppShell` route classification, mobile search/list anatomy, and bottom navigation without duplicating shell markup.
+- **Fixed:** five edit forms use the same responsive section-card treatment without touching the user-modified `FormLayout` file.
+- **Fixed:** NP, TR, and FM converge through `FILTER_PILL_CLASS`; count visibility remains state-owned at each list.
+- **Fixed:** shared Back, plan actions, serving sizes, form fields, and responsive pickers own their 44px target/input rules; repeated builder actions keep their existing component boundaries.
+- **Fixed:** all six list modules use one responsive-create hook and their existing create components; the list/create behavior is no longer duplicated.
+
+### Pass 1 checks with no finding
+
+- Desktop list/detail/edit alignment uses the canonical `size="content"` column for EX/FO/RC and the NP/TR/FM list/edit screens; NB/TB and DB correctly use `size="wide"`.
+- `EP`, `FD`, and `RD` preserve the same back/title/body column and sticky detail actions at both widths.
+- `NB`, `TB`, and `FB` retain their existing responsive builder controls and working features. Their desktop structures match the available single-canvas references; mobile reference-image verification is unavailable as noted above.
+- `DB` correctly omits completed setup progress for the current account, and its status-chip treatment follows `GAPS.md` instead of copying the prototype's colored row stripe.
+- `ST` keeps the live landing-page entry even though the static Profile reference omits it, as required by the audit's keep-working-features rule.
+
+### Pass 2 — visual convergence
+
+- Recaptured all 19 remaining badges at `390x844@2x` after the responsive fixes. The six list routes now have no list-level Back affordance, keep Builder active in the bottom navigation, use semantic bordered/shadowless search fields, and render full-bleed row surfaces without horizontal overflow.
+- NP/TR use the compact mobile titles `Nutrition` / `Training`; their search placeholders switch at the same 640px `sm` boundary as the rendered layout, and their underline filters, active-only counts, and row anatomy match the mobile references. FM uses the same anatomy while retaining its working Templates/To review and purpose filters.
+- ED/FE/RE/NE/TE render the existing form sections directly on the mobile page surface. Live FE measurement reports 44px controls, a 1px semantic border, `bg-surface`, and zero box shadow.
+- DB now includes the mobile profile avatar. ST shows all four untruncated tabs and keeps Log out/version above the bottom navigation.
+- Recaptured all 19 badges at `1240x900@2x`. Every route remained at a 1240px document width, rendered without a live alert, and retained the canonical desktop list/card/sidebar treatment.
+
+### Pass 3 — interaction and regression
+
+- A full-document mobile scan across all 19 routes found no visible, enabled button, link, input, textarea, select trigger, tab, radio, option, or switch below 44px.
+- The same 44px minimum remains in force at desktop widths, preserving the repository's interaction convention rather than introducing breakpoint-specific target shrinkage.
+- Mobile Create on EX/FO/RC/NP/TR/FM swaps the list for the existing create form without changing the list URL; Back and Cancel restore the populated list. Desktop Create still navigates to the canonical create route.
+- Every mobile route reports a 390px document width. Top-level list routes show the bottom navigation; details, edits, and builders retain their Back affordance and do not gain duplicate list chrome.
+- Selected-tab counts remain state-correct: the selected filter displays its count on mobile while inactive counts are visually hidden; desktop continues to display every count.
+- Filtered-empty states were exercised live on EX/FO/RC/NP/TR/FM with a no-match query; each rendered its entity-specific `No … found` state without changing document width.
+- Real bad ids were exercised live for EP/ED, FD/FE, RD/RE, NE/NB, TE/TB, and FB. Each now renders entity-specific error copy. That pass found and fixed RE's error/loading condition order, which previously kept the skeleton mounted after a 404.
+- Loading branches were checked against their existing `ListSkeleton` / `PageSkeleton` owners during throttled recapture; DB and ST retain their layout-approximating skeletons, and the six lists retain `BrowseListBox` error + Retry handling. CL's earlier live offline pass covers that shared browse-list error owner.
+- NB/TB/FB were verified for responsive controls, overflow, sticky actions, and target sizing. Their single desktop-oriented handoff canvases were used for desktop comparison only.
+- FO Categories remains intentionally absent because the API has no category filter. FM Draft remains absent because the API status enum has no Draft value. FM's working extra filters, ST's landing-page link, compact `FieldRow` breakpoint, DB completed-setup state, and status-chip semantics remain intact.
+
+### Remaining-screen verification
+
+- Targeted Biome check on all audit-owned TypeScript files: passed.
+- `./scripts/check-ui-contract.sh`: passed.
+- `./scripts/check-rm.sh`: passed.
+- `git diff --check`: passed.
+- Diagnostic typecheck with only unused-local enforcement disabled: passed.
+- Direct Vite production build: passed (existing dependency CSS/chunk-size warnings only).
+- Required strict build: **blocked only by the preserved pre-existing dirty file** `src/@components/form-fields/form-layout.tsx:1` (`Surface` is imported but unused). The audit did not edit or stage that file.

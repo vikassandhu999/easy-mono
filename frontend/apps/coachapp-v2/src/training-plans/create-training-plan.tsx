@@ -29,14 +29,14 @@ export default function CreateTrainingPlan() {
   };
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header>
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
             <BackButton onPress={goBack} />
             <Page.Title>Create training plan</Page.Title>
           </div>
-          <Page.Description>Set plan details now, then build workouts next</Page.Description>
+          <Page.Description>Name the plan now, then build workouts next.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">

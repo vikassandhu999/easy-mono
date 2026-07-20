@@ -1,4 +1,4 @@
-import {ErrorMessage, Fieldset} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
@@ -76,37 +76,42 @@ export default function TrainingPlanForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <Fieldset>
-        <Fieldset.Legend>Plan details</Fieldset.Legend>
+      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+        <Fieldset>
+          <Fieldset.Legend>Plan details</Fieldset.Legend>
+          <Description>Name the plan and describe who it's for.</Description>
 
-        <Fieldset.Group>
-          <FormTextField
-            control={control}
-            fullWidth
-            inputProps={{placeholder: 'Push pull legs'}}
-            isRequired
-            label="Name"
-            name="name"
-          />
+          <Fieldset.Group>
+            <FormTextField
+              control={control}
+              fullWidth
+              inputProps={{placeholder: 'e.g. Push Pull Legs'}}
+              isRequired
+              label="Name"
+              name="name"
+            />
 
-          <FormTextAreaField
-            control={control}
-            fullWidth
-            label="Description"
-            name="description"
-            textAreaProps={{placeholder: 'Goals, training split, or coaching notes', rows: 2}}
-          />
-        </Fieldset.Group>
-      </Fieldset>
+            <FormTextAreaField
+              control={control}
+              fullWidth
+              label="Description"
+              name="description"
+              textAreaProps={{placeholder: 'Goals, training split, or coaching notes…', rows: 2}}
+            />
+          </Fieldset.Group>
+        </Fieldset>
+      </div>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <FormActions
-        isSubmitting={isSubmitting}
-        onCancel={onCancel}
-        submitLabel={submitLabel}
-        submittingLabel={submittingLabel}
-      />
+      <div className="sticky bottom-0 -my-2 bg-background py-2 sm:static sm:my-0 sm:bg-transparent sm:py-0">
+        <FormActions
+          isSubmitting={isSubmitting}
+          onCancel={onCancel}
+          submitLabel={submitLabel}
+          submittingLabel={submittingLabel}
+        />
+      </div>
     </FormLayout>
   );
 }

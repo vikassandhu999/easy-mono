@@ -16,8 +16,8 @@ import TrainingPlanForm, {
 } from '@/training-plans/training-plan-form/training-plan-form';
 
 // The one header for every state (loading / error / loaded). Keeps the back
-// button, title, and reserved description slot identical so only the body swaps.
-function EditTrainingPlanHeader({description, goBack}: {description?: string; goBack: () => void}) {
+// button, title, and description identical so only the body swaps.
+function EditTrainingPlanHeader({goBack}: {goBack: () => void}) {
   return (
     <Page.Header>
       <Page.TitleGroup>
@@ -25,7 +25,7 @@ function EditTrainingPlanHeader({description, goBack}: {description?: string; go
           <BackButton onPress={goBack} />
           <Page.Title>Edit training plan</Page.Title>
         </div>
-        {description ? <Page.Description>{description}</Page.Description> : null}
+        <Page.Description>Update the plan's details. Workouts &amp; schedule live in the builder.</Page.Description>
       </Page.TitleGroup>
     </Page.Header>
   );
@@ -62,11 +62,8 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
   };
 
   return (
-    <Page>
-      <EditTrainingPlanHeader
-        description={plan.name}
-        goBack={goBack}
-      />
+    <Page className="bg-background">
+      <EditTrainingPlanHeader goBack={goBack} />
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <TrainingPlanForm
           form={form}
@@ -89,7 +86,7 @@ export default function EditTrainingPlan() {
 
   if (isFetching) {
     return (
-      <Page>
+      <Page className="bg-background">
         <EditTrainingPlanHeader goBack={goBack} />
         <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <PageSkeleton />
@@ -100,7 +97,7 @@ export default function EditTrainingPlan() {
 
   if (isError || !data) {
     return (
-      <Page>
+      <Page className="bg-background">
         <EditTrainingPlanHeader goBack={goBack} />
         <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <ErrorState message="Couldn't load training plan." />

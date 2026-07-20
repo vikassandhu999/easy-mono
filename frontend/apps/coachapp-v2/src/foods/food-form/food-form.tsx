@@ -8,10 +8,9 @@ import {
   Input,
   Label,
   TextField,
-  Typography,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {ImagePlus, Plus, X} from 'lucide-react';
+import {ImagePlus} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
@@ -24,7 +23,7 @@ import {
   FormTextAreaField,
   FormTextField,
 } from '@/@components/form-fields';
-import {NumberInput} from '@/@components/number-input';
+import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
 import type {Food, FoodRequest, FoodUpdateRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
 
@@ -186,43 +185,9 @@ export default function FoodForm({
 
   const imageUrl = watch('image_url');
 
-  const [isAddingServing, setIsAddingServing] = useState(false);
-  const [newUnit, setNewUnit] = useState('');
-  const [newAmount, setNewAmount] = useState<number | undefined>();
-  const [newWeightG, setNewWeightG] = useState<number | undefined>();
-  const [servingError, setServingError] = useState('');
-
   const [isAddingImage, setIsAddingImage] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [imageError, setImageError] = useState('');
-
-  const resetServingForm = useCallback(() => {
-    setNewUnit('');
-    setNewAmount(undefined);
-    setNewWeightG(undefined);
-    setServingError('');
-  }, []);
-
-  const handleAddServing = useCallback(() => {
-    const unit = newUnit.trim();
-    if (!unit) {
-      setServingError('Enter a serving unit');
-      return;
-    }
-    const amount = newAmount ?? null;
-    const weightG = newWeightG ?? null;
-    const serving: ServingSize = {unit, amount, weight_g: weightG};
-    onServingSizesChange([...servingSizes, serving]);
-    resetServingForm();
-    setIsAddingServing(false);
-  }, [newUnit, newAmount, newWeightG, servingSizes, onServingSizesChange, resetServingForm]);
-
-  const handleRemoveServing = useCallback(
-    (index: number) => {
-      onServingSizesChange(servingSizes.filter((_, i) => i !== index));
-    },
-    [servingSizes, onServingSizesChange],
-  );
 
   const handleAddImage = useCallback(() => {
     const url = newImageUrl.trim();
@@ -371,104 +336,10 @@ export default function FoodForm({
           <Fieldset.Legend>Serving sizes</Fieldset.Legend>
           <Description>Optional presets clients can log against.</Description>
 
-          <Fieldset.Group>
-            {servingSizes.map((serving, i) => (
-              <div
-                className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5"
-                key={i}
-              >
-                <div className="flex min-w-0 items-baseline gap-3">
-                  <Typography
-                    type="body-sm"
-                    weight="semibold"
-                  >
-                    {serving.amount ?? 1} {serving.unit}
-                  </Typography>
-                  {serving.weight_g != null && serving.weight_g > 0 && (
-                    <Typography
-                      color="muted"
-                      type="body-sm"
-                    >
-                      {serving.weight_g} g
-                    </Typography>
-                  )}
-                </div>
-                <Button
-                  aria-label={`Remove ${serving.unit}`}
-                  onPress={() => handleRemoveServing(i)}
-                  size="sm"
-                  variant="ghost"
-                >
-                  <X className="size-4" />
-                </Button>
-              </div>
-            ))}
-
-            {isAddingServing ? (
-              <div className="rounded-xl border border-border bg-surface-secondary p-4">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <TextField
-                    fullWidth
-                    isInvalid={!!servingError}
-                    isRequired
-                  >
-                    <Label>Unit</Label>
-                    {servingError && <FieldError>{servingError}</FieldError>}
-                    <Input
-                      onChange={(e) => {
-                        setNewUnit(e.target.value);
-                        setServingError('');
-                      }}
-                      placeholder="e.g. scoop, cup"
-                      value={newUnit}
-                    />
-                  </TextField>
-                  <NumberInput
-                    fullWidth
-                    label="Amount"
-                    minValue={0}
-                    onChange={setNewAmount}
-                    value={newAmount}
-                  />
-                  <NumberInput
-                    fullWidth
-                    label="Weight (g)"
-                    minValue={0}
-                    onChange={setNewWeightG}
-                    value={newWeightG}
-                  />
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    onPress={handleAddServing}
-                    size="sm"
-                  >
-                    <Plus className="size-3.5" />
-                    Add
-                  </Button>
-                  <Button
-                    onPress={() => {
-                      setIsAddingServing(false);
-                      resetServingForm();
-                    }}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                className="w-full rounded-xl border border-dashed border-border text-muted"
-                onPress={() => setIsAddingServing(true)}
-                variant="ghost"
-              >
-                <Plus className="size-4" />
-                Add serving size
-              </Button>
-            )}
-          </Fieldset.Group>
+          <ServingSizesEditor
+            onChange={onServingSizesChange}
+            value={servingSizes}
+          />
         </Fieldset>
       </div>
 

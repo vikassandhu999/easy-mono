@@ -1,23 +1,12 @@
-import {
-  Button,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Input,
-  Label,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Plus, X} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
-import {NumberInput} from '@/@components/number-input';
+import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
 import type {Food, FoodServingSize, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalNumber, toOptionalText} from '@/api/shared';
 import {
@@ -285,9 +274,9 @@ export default function RecipeForm({
         <Fieldset>
           <Fieldset.Legend>Serving sizes</Fieldset.Legend>
           <Description>Optional presets clients can log against.</Description>
-          <RecipeServingSizesEditor
+          <ServingSizesEditor
             onChange={onServingSizesChange}
-            servingSizes={servingSizes}
+            value={servingSizes}
           />
         </Fieldset>
       </div>
@@ -301,148 +290,5 @@ export default function RecipeForm({
         submittingLabel={submittingLabel}
       />
     </FormLayout>
-  );
-}
-
-// Mirrors the serving-size section of foods/food-form: amount / unit / weight
-// rows with add + remove, kept collapsed behind an "Add serving size" button.
-function RecipeServingSizesEditor({
-  onChange,
-  servingSizes,
-}: {
-  onChange: (sizes: ServingSize[]) => void;
-  servingSizes: ServingSize[];
-}) {
-  const [isAdding, setIsAdding] = useState(false);
-  const [newUnit, setNewUnit] = useState('');
-  const [newAmount, setNewAmount] = useState<number | undefined>();
-  const [newWeightG, setNewWeightG] = useState<number | undefined>();
-  const [servingError, setServingError] = useState('');
-
-  const resetForm = useCallback(() => {
-    setNewUnit('');
-    setNewAmount(undefined);
-    setNewWeightG(undefined);
-    setServingError('');
-  }, []);
-
-  const handleAdd = useCallback(() => {
-    const unit = newUnit.trim();
-    if (!unit) {
-      setServingError('Enter serving unit');
-      return;
-    }
-    const serving: ServingSize = {unit, amount: newAmount ?? null, weight_g: newWeightG ?? null};
-    onChange([...servingSizes, serving]);
-    resetForm();
-    setIsAdding(false);
-  }, [newAmount, newUnit, newWeightG, onChange, resetForm, servingSizes]);
-
-  const handleRemove = useCallback(
-    (index: number) => {
-      onChange(servingSizes.filter((_, i) => i !== index));
-    },
-    [onChange, servingSizes],
-  );
-
-  return (
-    <Fieldset.Group>
-      {servingSizes.map((serving, i) => (
-        <div
-          className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5"
-          key={i}
-        >
-          <div className="flex min-w-0 items-baseline gap-3">
-            <Typography
-              type="body-sm"
-              weight="semibold"
-            >
-              {serving.amount ?? 1} {serving.unit}
-            </Typography>
-            {serving.weight_g != null && serving.weight_g > 0 && (
-              <Typography
-                color="muted"
-                type="body-sm"
-              >
-                {serving.weight_g} g
-              </Typography>
-            )}
-          </div>
-          <Button
-            aria-label={`Remove ${serving.unit}`}
-            onPress={() => handleRemove(i)}
-            size="sm"
-            variant="ghost"
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
-      ))}
-
-      {isAdding ? (
-        <div className="rounded-xl border border-border bg-surface-secondary p-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <TextField
-              fullWidth
-              isInvalid={!!servingError}
-              isRequired
-            >
-              <Label>Unit</Label>
-              {servingError && <FieldError>{servingError}</FieldError>}
-              <Input
-                onChange={(e) => {
-                  setNewUnit(e.target.value);
-                  setServingError('');
-                }}
-                placeholder="e.g. scoop, cup"
-                value={newUnit}
-              />
-            </TextField>
-            <NumberInput
-              fullWidth
-              label="Amount"
-              minValue={0}
-              onChange={setNewAmount}
-              value={newAmount}
-            />
-            <NumberInput
-              fullWidth
-              label="Weight (g)"
-              minValue={0}
-              onChange={setNewWeightG}
-              value={newWeightG}
-            />
-          </div>
-          <div className="mt-3 flex gap-2">
-            <Button
-              onPress={handleAdd}
-              size="sm"
-            >
-              <Plus className="size-3.5" />
-              Add
-            </Button>
-            <Button
-              onPress={() => {
-                setIsAdding(false);
-                resetForm();
-              }}
-              size="sm"
-              variant="ghost"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button
-          className="w-full rounded-xl border border-dashed border-border text-muted"
-          onPress={() => setIsAdding(true)}
-          variant="ghost"
-        >
-          <Plus className="size-4" />
-          Add serving size
-        </Button>
-      )}
-    </Fieldset.Group>
   );
 }

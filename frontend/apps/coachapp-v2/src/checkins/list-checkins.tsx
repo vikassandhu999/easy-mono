@@ -4,19 +4,18 @@ import {
   Chip,
   Description,
   Label,
-  ListBox,
   SearchField,
   Separator,
   Tabs,
   ToggleButton,
   ToggleButtonGroup,
 } from '@heroui/react';
-import {ChevronRight, ClipboardCheck, Plus, UserRoundCheck} from 'lucide-react';
+import {ClipboardCheck, Plus, UserRoundCheck} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
-import BrowseListBox, {FILTER_PILL_CLASS, LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import BrowseListBox, {BrowseRow, FILTER_PILL_CLASS} from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
@@ -56,32 +55,22 @@ function reviewClientName(item: ClientProfileReviewQueueItem): string {
 // keeps this working feature, just brought onto §2 components + tokens.
 function ReviewQueueListItem({item}: {item: ClientProfileReviewQueueItem}) {
   return (
-    <ListBox.Item
-      className={LIST_ITEM_CLASS}
+    <BrowseRow
+      icon={<ClipboardCheck className="size-5 text-warning-soft-foreground" />}
+      iconClassName="bg-warning-soft"
       id={item.id}
+      meta={`${item.form_assignment.form_template.name} · ${formatIsoDateOnly(item.submitted_at)}`}
       textValue={reviewClientName(item)}
-    >
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-warning-soft">
-        <ClipboardCheck className="size-5 text-warning-soft-foreground" />
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Label className="max-w-full truncate text-sm font-semibold text-foreground">{reviewClientName(item)}</Label>
-        <Description className="max-w-full truncate text-xs text-muted">
-          {item.form_assignment.form_template.name} · {formatIsoDateOnly(item.submitted_at)}
-        </Description>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1.5">
+      title={reviewClientName(item)}
+      trailing={
         <Chip
           size="sm"
           variant="soft"
         >
           Review
         </Chip>
-        <ChevronRight className="size-4 shrink-0 text-muted-2" />
-      </div>
-    </ListBox.Item>
+      }
+    />
   );
 }
 

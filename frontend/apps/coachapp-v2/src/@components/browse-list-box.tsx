@@ -1,5 +1,7 @@
 import type {Key} from '@heroui/react';
-import {Button, Collection, ListBox, ListBoxLoadMoreItem, Spinner, Typography} from '@heroui/react';
+import {Button, Collection, Description, Label, ListBox, ListBoxLoadMoreItem, Spinner, Typography} from '@heroui/react';
+import {cn} from '@heroui/styles';
+import {ChevronRight} from 'lucide-react';
 import type {ReactNode} from 'react';
 
 import {ListSkeleton} from '@/@components/list-skeleton';
@@ -25,6 +27,71 @@ export const FILTER_PILL_CLASS =
   'rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted ' +
   'data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold ' +
   'data-[selected=true]:text-ink-foreground';
+
+type BrowseRowProps = {
+  /** Tile contents: a lucide glyph, or `BrowseRowThumb` for image-backed rows. */
+  icon: ReactNode;
+  /** Extra classes for the icon tile — only for a domain that tints it (e.g. `bg-warning-soft`). */
+  iconClassName?: string;
+  id: Key;
+  /** Secondary line under the title. Truncates. */
+  meta?: ReactNode;
+  /** Typeahead/accessible text for the row. */
+  textValue: string;
+  title: string;
+  /** Chips shown before the chevron. The chevron is always rendered. */
+  trailing?: ReactNode;
+};
+
+/**
+ * One browse-list row: icon tile → title + meta column → trailing chips → chevron.
+ * Owns the whole skeleton so per-domain files carry only their icon, meta string,
+ * and chips. Pair with `BrowseListBox`; never hand-roll the row markup.
+ */
+export function BrowseRow({icon, iconClassName, id, meta, textValue, title, trailing}: BrowseRowProps) {
+  return (
+    <ListBox.Item
+      className={LIST_ITEM_CLASS}
+      id={id}
+      textValue={textValue}
+    >
+      <div
+        className={cn(
+          'flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-secondary',
+          iconClassName,
+        )}
+      >
+        {icon}
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Label className="max-w-full truncate text-sm font-semibold text-foreground">{title}</Label>
+        {meta === undefined ? null : (
+          <Description className="max-w-full truncate text-xs text-muted">{meta}</Description>
+        )}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1.5">
+        {trailing}
+        <ChevronRight className="size-4 shrink-0 text-muted-2" />
+      </div>
+    </ListBox.Item>
+  );
+}
+
+/** The image-or-fallback contents of a `BrowseRow` icon tile. */
+export function BrowseRowThumb({alt, fallback, src}: {alt: string; fallback: ReactNode; src?: string | null}) {
+  if (!src) {
+    return fallback;
+  }
+  return (
+    <img
+      alt={alt}
+      className="size-11 rounded-xl object-cover"
+      src={src}
+    />
+  );
+}
 
 type Props<T extends object> = {
   ariaLabel: string;

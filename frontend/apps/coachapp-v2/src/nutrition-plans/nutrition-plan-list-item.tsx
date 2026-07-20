@@ -1,7 +1,7 @@
-import {Chip, Description, Label, ListBox} from '@heroui/react';
-import {ChevronRight, Salad} from 'lucide-react';
+import {Chip} from '@heroui/react';
+import {Salad} from 'lucide-react';
 
-import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import {BrowseRow} from '@/@components/browse-list-box';
 import type {NutritionPlan} from '@/api/generated';
 
 type NutritionPlanStatus = NutritionPlan['status'];
@@ -28,23 +28,13 @@ export default function NutritionPlanListItem({plan}: {plan: NutritionPlan}) {
   const meta = getPlanMeta(plan);
 
   return (
-    <ListBox.Item
-      className={LIST_ITEM_CLASS}
+    <BrowseRow
+      icon={<Salad className="size-5 text-foreground" />}
       id={plan.id}
+      meta={meta || plan.description || 'No targets set'}
       textValue={plan.name}
-    >
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-secondary">
-        <Salad className="size-5 text-foreground" />
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Label className="max-w-full truncate text-sm font-semibold text-foreground">{plan.name}</Label>
-        <Description className="max-w-full truncate text-xs text-muted">
-          {meta || plan.description || 'No targets set'}
-        </Description>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1.5">
+      title={plan.name}
+      trailing={
         <Chip
           color={status.color}
           size="sm"
@@ -52,8 +42,7 @@ export default function NutritionPlanListItem({plan}: {plan: NutritionPlan}) {
         >
           {status.label}
         </Chip>
-        <ChevronRight className="size-4 shrink-0 text-muted-2" />
-      </div>
-    </ListBox.Item>
+      }
+    />
   );
 }

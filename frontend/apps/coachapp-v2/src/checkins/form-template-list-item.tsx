@@ -1,7 +1,7 @@
-import {Chip, Description, Label, ListBox} from '@heroui/react';
-import {ChevronRight, ClipboardCheck} from 'lucide-react';
+import {Chip} from '@heroui/react';
+import {ClipboardCheck} from 'lucide-react';
 
-import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import {BrowseRow} from '@/@components/browse-list-box';
 import {type ClientProfileFormTemplate, PURPOSE_LABELS} from '@/api/checkins';
 
 type TemplateStatus = ClientProfileFormTemplate['status'];
@@ -30,21 +30,13 @@ export default function FormTemplateListItem({template}: {template: ClientProfil
   const status = STATUS_MAP[template.status];
 
   return (
-    <ListBox.Item
-      className={LIST_ITEM_CLASS}
+    <BrowseRow
+      icon={<ClipboardCheck className="size-5 text-foreground" />}
       id={template.id}
+      meta={getTemplateMeta(template)}
       textValue={template.name}
-    >
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-secondary">
-        <ClipboardCheck className="size-5 text-foreground" />
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Label className="max-w-full truncate text-sm font-semibold text-foreground">{template.name}</Label>
-        <Description className="max-w-full truncate text-xs text-muted">{getTemplateMeta(template)}</Description>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1.5">
+      title={template.name}
+      trailing={
         <Chip
           color={status.color}
           size="sm"
@@ -52,8 +44,7 @@ export default function FormTemplateListItem({template}: {template: ClientProfil
         >
           {status.label}
         </Chip>
-        <ChevronRight className="size-4 shrink-0 text-muted-2" />
-      </div>
-    </ListBox.Item>
+      }
+    />
   );
 }

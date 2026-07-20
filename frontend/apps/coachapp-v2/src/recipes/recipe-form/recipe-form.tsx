@@ -1,4 +1,15 @@
-import {Button, ErrorMessage, FieldError, Fieldset, Input, Label, TextField, Typography} from '@heroui/react';
+import {
+  Button,
+  Description,
+  ErrorMessage,
+  FieldError,
+  Fieldset,
+  Input,
+  Label,
+  ProgressBar,
+  TextField,
+  Typography,
+} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Plus, X} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
@@ -7,16 +18,55 @@ import {z} from 'zod';
 
 import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import {NumberInput} from '@/@components/number-input';
-import SectionHeading from '@/@components/section-heading';
 import type {Food, FoodServingSize, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalNumber, toOptionalText} from '@/api/shared';
 import {
   canComputeRecipeNutrition,
-  computeRecipeNutritionFromIngredients,
+  computeRecipeTotalsFromIngredients,
   createIngredientDraft,
+  type RecipeTotals,
 } from '@/domain/recipes';
 import FoodPickerControl from '@/foods/components/food-picker-control';
 import IngredientList, {type IngredientItem} from '@/foods/components/ingredient-list';
+
+// P/C/F ratio-bar segments (grams drive segment widths), mirroring the recipe
+// detail page's nutrition card. Fiber shows as a legend stat only, not a segment.
+const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof RecipeTotals; label: string}[] = [
+  {color: 'accent', key: 'protein_g', label: 'Protein'},
+  {color: 'success', key: 'carbs_g', label: 'Carbs'},
+  {color: 'warning', key: 'fats_g', label: 'Fats'},
+];
+
+const LEGEND_DOT: Record<string, string> = {
+  accent: 'bg-accent',
+  muted: 'bg-muted',
+  success: 'bg-success',
+  warning: 'bg-warning',
+};
+
+function LegendEntry({dot, label, value}: {dot: string; label: string; value: number}) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <span className={`size-2 rounded-full ${LEGEND_DOT[dot]}`} />
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          {label}
+        </Typography>
+      </div>
+      <Typography
+        className="tabular-nums"
+        type="body"
+        weight="semibold"
+      >
+        {Math.round(value * 10) / 10}
+        <span className="text-xs font-normal text-muted">g</span>
+      </Typography>
+    </div>
+  );
+}
 
 const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();
 
@@ -33,15 +83,6 @@ export const RECIPE_FORM_DEFAULTS: RecipeFormValues = {
   instructions: '',
   cooked_weight_g: undefined,
 };
-
-// Live nutrition preview is computed per 100 g (or per cooked weight when set).
-const PREVIEW_MACRO_LABELS = [
-  {key: 'calories_per_100g', label: 'Calories', unit: ''},
-  {key: 'protein_g', label: 'Protein', unit: 'g'},
-  {key: 'carbs_g', label: 'Carbs', unit: 'g'},
-  {key: 'fats_g', label: 'Fats', unit: 'g'},
-  {key: 'fiber_g', label: 'Fiber', unit: 'g'},
-] as const;
 
 export function recipeIngredientsToDrafts(ingredients: RecipeIngredient[]): IngredientItem[] {
   // Filter out any ingredients where the backend didn't hydrate the food object
@@ -158,20 +199,16 @@ export default function RecipeForm({
     formState: {errors},
     handleSubmit,
     setError,
-    watch,
   } = form;
 
   const [autoExpandId, setAutoExpandId] = useState<null | string>(null);
   const excludeIds = useMemo(() => ingredients.map((item) => item.food_id), [ingredients]);
 
-  const cookedWeight = watch('cooked_weight_g');
-  const nutrition = useMemo(
-    () =>
-      canComputeRecipeNutrition(ingredients)
-        ? computeRecipeNutritionFromIngredients({cookedWeight, ingredients})
-        : null,
-    [cookedWeight, ingredients],
+  const totals = useMemo(
+    () => (canComputeRecipeNutrition(ingredients) ? computeRecipeTotalsFromIngredients(ingredients) : null),
+    [ingredients],
   );
+  const segments = totals ? MACRO_SEGMENTS.map((s) => ({...s, value: totals[s.key]})).filter((s) => s.value > 0) : [];
 
   const handleFoodSelect = useCallback(
     (food: Food) => {
@@ -203,89 +240,144 @@ export default function RecipeForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(handleValidSubmit)}>
-      <Fieldset>
-        <Fieldset.Legend>Details</Fieldset.Legend>
-        <Fieldset.Group>
-          <FormTextField
-            control={control}
-            fullWidth
-            isRequired
-            label="Name"
-            name="name"
-          />
+      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+        <Fieldset>
+          <Fieldset.Legend>Details</Fieldset.Legend>
+          <Description>Name the dish and describe how it's made.</Description>
+          <Fieldset.Group>
+            <FormTextField
+              control={control}
+              fullWidth
+              inputProps={{placeholder: 'e.g. Chicken & Rice Bowl'}}
+              isRequired
+              label="Name"
+              name="name"
+            />
 
-          <FormTextAreaField
-            control={control}
-            fullWidth
-            label="Instructions"
-            name="instructions"
-            textAreaProps={{rows: 4}}
-          />
+            <FormTextAreaField
+              control={control}
+              fullWidth
+              label="Instructions"
+              name="instructions"
+              textAreaProps={{placeholder: 'Steps to prepare the recipe…', rows: 4}}
+            />
 
-          <FormNumberField
-            control={control}
-            fullWidth
-            label="Cooked weight (g)"
-            minValue={0}
-            name="cooked_weight_g"
-          />
-        </Fieldset.Group>
-      </Fieldset>
+            <FormNumberField
+              control={control}
+              description="Optional — total cooked weight"
+              fullWidth
+              label="Cooked weight (g)"
+              minValue={0}
+              name="cooked_weight_g"
+            />
+          </Fieldset.Group>
+        </Fieldset>
 
-      <Fieldset>
-        <Fieldset.Legend>Ingredients</Fieldset.Legend>
-        <Fieldset.Group>
-          <IngredientList
-            autoExpandId={autoExpandId}
-            onAutoExpandConsumed={() => setAutoExpandId(null)}
-            onChange={onIngredientsChange}
-            value={ingredients}
-          />
-          <FoodPickerControl
-            excludeIds={excludeIds}
-            onSelect={handleFoodSelect}
-          />
-        </Fieldset.Group>
-      </Fieldset>
+        <div className="my-6 border-t border-separator" />
 
-      {nutrition && (
-        <div>
-          <SectionHeading title="Nutrition (per 100 g)" />
-          <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-surface p-3 text-sm sm:grid-cols-3">
-            {PREVIEW_MACRO_LABELS.filter(({key}) => nutrition[key] != null).map(({key, label, unit}) => (
-              <div key={key}>
-                <Typography
-                  color="muted"
-                  type="body-xs"
-                >
-                  {label}
-                </Typography>
-                <Typography weight="medium">
-                  {nutrition[key]}
-                  {unit}
-                </Typography>
+        <Fieldset>
+          <Fieldset.Legend>Ingredients</Fieldset.Legend>
+          <Description>Add foods and set the amount used.</Description>
+          <Fieldset.Group>
+            <IngredientList
+              autoExpandId={autoExpandId}
+              onAutoExpandConsumed={() => setAutoExpandId(null)}
+              onChange={onIngredientsChange}
+              value={ingredients}
+            />
+            <FoodPickerControl
+              excludeIds={excludeIds}
+              onSelect={handleFoodSelect}
+              triggerClassName="w-full rounded-xl border border-dashed border-border text-muted"
+              triggerVariant="ghost"
+            />
+          </Fieldset.Group>
+        </Fieldset>
+
+        {totals && (
+          <>
+            <div className="my-6 border-t border-separator" />
+            <Fieldset>
+              <Fieldset.Legend>
+                Nutrition <span className="font-normal text-muted">· recipe totals</span>
+              </Fieldset.Legend>
+              <div className="mt-3 rounded-card border border-border bg-surface p-5">
+                <div className="flex items-baseline gap-2">
+                  <Typography
+                    className="tabular-nums"
+                    type="h1"
+                  >
+                    {Math.round(totals.calories)}
+                  </Typography>
+                  <Typography color="muted">kcal total</Typography>
+                </div>
+                {segments.length > 0 && (
+                  <>
+                    <div className="mt-4 flex gap-0.5">
+                      {segments.map((s) => (
+                        <div
+                          className="min-w-4"
+                          key={s.label}
+                          style={{flexGrow: s.value}} /* ui-contract-allow */
+                        >
+                          <ProgressBar
+                            aria-label={`${s.label} share`}
+                            color={s.color}
+                            value={100}
+                          >
+                            <ProgressBar.Track>
+                              <ProgressBar.Fill />
+                            </ProgressBar.Track>
+                          </ProgressBar>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 sm:gap-x-10">
+                      {segments.map((s) => (
+                        <LegendEntry
+                          dot={s.color}
+                          key={s.label}
+                          label={s.label}
+                          value={s.value}
+                        />
+                      ))}
+                      {totals.fiber_g > 0 && (
+                        <LegendEntry
+                          dot="muted"
+                          label="Fiber"
+                          value={totals.fiber_g}
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </Fieldset>
+          </>
+        )}
 
-      <Fieldset>
-        <Fieldset.Legend>Serving sizes</Fieldset.Legend>
-        <RecipeServingSizesEditor
-          onChange={onServingSizesChange}
-          servingSizes={servingSizes}
-        />
-      </Fieldset>
+        <div className="my-6 border-t border-separator" />
+
+        <Fieldset>
+          <Fieldset.Legend>Serving sizes</Fieldset.Legend>
+          <Description>Optional presets clients can log against.</Description>
+          <RecipeServingSizesEditor
+            onChange={onServingSizesChange}
+            servingSizes={servingSizes}
+          />
+        </Fieldset>
+      </div>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <FormActions
-        isSubmitting={isSubmitting}
-        onCancel={onCancel}
-        submitLabel={submitLabel}
-        submittingLabel={submittingLabel}
-      />
+      <div className="sticky bottom-0 -my-2 bg-background py-2 sm:static sm:my-0 sm:bg-transparent sm:py-0">
+        <FormActions
+          isSubmitting={isSubmitting}
+          onCancel={onCancel}
+          submitLabel={submitLabel}
+          submittingLabel={submittingLabel}
+        />
+      </div>
     </FormLayout>
   );
 }
@@ -332,45 +424,42 @@ function RecipeServingSizesEditor({
   );
 
   return (
-    <div className="space-y-2">
-      {servingSizes.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {servingSizes.map((serving, i) => (
-            <div
-              className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm"
-              key={i}
+    <Fieldset.Group>
+      {servingSizes.map((serving, i) => (
+        <div
+          className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5"
+          key={i}
+        >
+          <div className="flex min-w-0 items-baseline gap-3">
+            <Typography
+              type="body-sm"
+              weight="semibold"
             >
-              <Typography weight="medium">
-                {serving.amount ?? 1} {serving.unit}
+              {serving.amount ?? 1} {serving.unit}
+            </Typography>
+            {serving.weight_g != null && serving.weight_g > 0 && (
+              <Typography
+                color="muted"
+                type="body-sm"
+              >
+                {serving.weight_g} g
               </Typography>
-              <div className="flex items-center gap-2">
-                {serving.weight_g != null && serving.weight_g > 0 && (
-                  <Typography
-                    color="muted"
-                    type="body-sm"
-                  >
-                    {serving.weight_g}g
-                  </Typography>
-                )}
-                <Button
-                  aria-label={`Remove ${serving.unit}`}
-                  className="min-h-11 min-w-11"
-                  isIconOnly
-                  onPress={() => handleRemove(i)}
-                  size="sm"
-                  variant="ghost"
-                >
-                  <X size={14} />
-                </Button>
-              </div>
-            </div>
-          ))}
+            )}
+          </div>
+          <Button
+            aria-label={`Remove ${serving.unit}`}
+            onPress={() => handleRemove(i)}
+            size="sm"
+            variant="ghost"
+          >
+            <X className="size-4" />
+          </Button>
         </div>
-      )}
+      ))}
 
       {isAdding ? (
-        <Fieldset>
-          <Fieldset.Group>
+        <div className="rounded-xl border border-border bg-surface-secondary p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <TextField
               fullWidth
               isInvalid={!!servingError}
@@ -383,7 +472,7 @@ function RecipeServingSizesEditor({
                   setNewUnit(e.target.value);
                   setServingError('');
                 }}
-                placeholder="cup, serving, slice"
+                placeholder="e.g. scoop, cup"
                 value={newUnit}
               />
             </TextField>
@@ -401,13 +490,13 @@ function RecipeServingSizesEditor({
               onChange={setNewWeightG}
               value={newWeightG}
             />
-          </Fieldset.Group>
-          <Fieldset.Actions>
+          </div>
+          <div className="mt-3 flex gap-2">
             <Button
               onPress={handleAdd}
               size="sm"
             >
-              <Plus size={14} />
+              <Plus className="size-3.5" />
               Add
             </Button>
             <Button
@@ -420,18 +509,18 @@ function RecipeServingSizesEditor({
             >
               Cancel
             </Button>
-          </Fieldset.Actions>
-        </Fieldset>
+          </div>
+        </div>
       ) : (
         <Button
+          className="w-full rounded-xl border border-dashed border-border text-muted"
           onPress={() => setIsAdding(true)}
-          size="sm"
           variant="ghost"
         >
-          <Plus size={14} />
+          <Plus className="size-4" />
           Add serving size
         </Button>
       )}
-    </div>
+    </Fieldset.Group>
   );
 }

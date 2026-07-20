@@ -1,14 +1,12 @@
-import {AlertDialog, Button, Typography, toast, useOverlayState} from '@heroui/react';
-import {Trash2} from 'lucide-react';
+import {AlertDialog, Button, useOverlayState} from '@heroui/react';
 import {useState} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
-import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useDeleteRecipeMutation, useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/generated';
+import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/generated';
 import {applyFormErrors, type ServingSize} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {
@@ -22,11 +20,9 @@ import RecipeForm, {
 // Rendered only when recipe data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).
 function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: string}) {
-  const navigate = useNavigate();
   const goBack = useGoBack(backPath);
   const {data} = useGetRecipeQuery({id: recipeId});
   const [updateRecipe, {isLoading: isUpdating}] = useUpdateRecipeMutation();
-  const [deleteRecipe, {isLoading: isDeleting}] = useDeleteRecipeMutation();
 
   const recipe = data!.data;
   const [ingredients, setIngredients] = useState<IngredientItem[]>(() =>
@@ -39,7 +35,6 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
   // edits separately from form.formState.isDirty for the unsaved-changes guard.
   const [contentChanged, setContentChanged] = useState(false);
   const leaveConfirm = useOverlayState();
-  const deleteConfirm = useOverlayState();
 
   const form = useRecipeForm({
     values: recipeToFormValues(recipe),
@@ -71,45 +66,23 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
         id: recipeId,
         recipeRequest: recipeToUpdateRequest({ingredients, servingSizes, values: formData}),
       }).unwrap();
-      toast.success('Recipe saved');
       goBack();
     } catch (err) {
       applyFormErrors(err, "Recipe wasn't updated. Check the details and try again", form.setError);
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      await deleteRecipe({id: recipeId}).unwrap();
-      deleteConfirm.close();
-      navigate(ROUTES.RECIPES, {replace: true});
-    } catch {
-      deleteConfirm.close();
-      toast.danger("Couldn't delete recipe");
-    }
-  };
-
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={attemptLeave} />
             <Page.Title>Edit recipe</Page.Title>
           </div>
-          <Page.Description>{recipe.name}</Page.Description>
+          <Page.Description>Update this recipe in your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Toolbar className="flex items-center gap-2">
-        <Button
-          onPress={deleteConfirm.open}
-          size="sm"
-          variant="danger"
-        >
-          <Trash2 size={16} />
-          Delete
-        </Button>
-      </Page.Toolbar>
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <RecipeForm
           form={form}
@@ -157,43 +130,6 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
           </AlertDialog.Dialog>
         </AlertDialog.Container>
       </AlertDialog.Backdrop>
-
-      <AlertDialog.Backdrop
-        isDismissable={!isDeleting}
-        isOpen={deleteConfirm.isOpen}
-        onOpenChange={deleteConfirm.setOpen}
-      >
-        <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>Delete recipe?</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <Typography>
-                This will permanently delete <strong>{recipe.name}</strong>. This action cannot be undone.
-              </Typography>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                isDisabled={isDeleting}
-                slot="close"
-                variant="tertiary"
-              >
-                Cancel
-              </Button>
-              <Button
-                isPending={isDeleting}
-                onPress={handleDelete}
-                variant="danger"
-              >
-                {isDeleting ? 'Deleting' : 'Delete'}
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
     </Page>
   );
 }
@@ -206,7 +142,7 @@ export default function EditRecipe() {
 
   if (isFetching || !data) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
@@ -224,7 +160,7 @@ export default function EditRecipe() {
 
   if (isError) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>

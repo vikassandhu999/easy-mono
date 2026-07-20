@@ -1,6 +1,6 @@
 import {Button, Form, Label, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Apple, ArrowDown, ArrowUp, ChevronDown, ChevronUp, X} from 'lucide-react';
+import {Apple, ArrowDown, ArrowUp, X} from 'lucide-react';
 import {useEffect, useId, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
@@ -202,7 +202,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
         color="muted"
         type="body-xs"
       >
-        No ingredients yet. Use “Add ingredient” to add foods.
+        No ingredients yet. Add foods below.
       </Typography>
     );
   }
@@ -218,58 +218,49 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
 
         return (
           <div
-            className="overflow-hidden rounded-lg border border-border bg-surface"
+            className="overflow-hidden rounded-xl border border-border bg-surface"
             key={item.food_id}
             ref={item.food_id === autoExpandId ? autoExpandRowRef : undefined}
           >
-            <div className="flex min-h-11 items-center gap-2 pr-2 pl-3">
-              <button
+            <div className="flex min-h-11 items-center gap-1 pr-2 pl-3">
+              <Button
                 aria-expanded={isExpanded}
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.food.name}`}
-                className="-mx-1 flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-md px-1 text-left transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
-                onClick={() => toggleExpand(item.food_id)}
-                type="button"
+                className="-mx-1 flex min-h-11 min-w-0 flex-1 items-center justify-start gap-3 rounded-md px-1 py-1.5 text-left font-normal hover:bg-surface-hover"
+                onPress={() => toggleExpand(item.food_id)}
+                variant="ghost"
               >
-                <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary">
+                <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-surface-secondary">
                   {item.food.image_url ? (
                     <img
                       alt={item.food.name}
-                      className="size-7 object-cover"
+                      className="size-9 object-cover"
                       src={item.food.image_url}
                     />
                   ) : (
                     <Apple
                       className="text-muted"
-                      size={14}
+                      size={16}
                     />
                   )}
                 </span>
-                <Typography
-                  className="min-w-0 flex-1 truncate"
-                  type="body-sm"
-                  weight="medium"
-                >
-                  {item.food.name}
-                </Typography>
-                <Typography
-                  className="min-w-0 shrink truncate max-w-[45%]"
-                  color="muted"
-                  type="body-sm"
-                >
-                  {formatIngredientSummary(item)}
-                </Typography>
-                {isExpanded ? (
-                  <ChevronUp
-                    className="shrink-0 text-muted"
-                    size={15}
-                  />
-                ) : (
-                  <ChevronDown
-                    className="shrink-0 text-muted"
-                    size={15}
-                  />
-                )}
-              </button>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <Typography
+                    className="min-w-0 max-w-full truncate"
+                    type="body-sm"
+                    weight="semibold"
+                  >
+                    {item.food.name}
+                  </Typography>
+                  <Typography
+                    className="min-w-0 max-w-full truncate"
+                    color="muted"
+                    type="body-xs"
+                  >
+                    {formatIngredientSummary(item)}
+                  </Typography>
+                </div>
+              </Button>
               <Button
                 aria-label={`Move ${item.food.name} up`}
                 isDisabled={index === 0}

@@ -1,5 +1,6 @@
 import {Button, Popover} from '@heroui/react';
 import {Plus} from 'lucide-react';
+import type {ComponentProps} from 'react';
 import {useRef, useState} from 'react';
 
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
@@ -10,6 +11,8 @@ import FoodPickerContent from '@/foods/components/food-picker-content';
 interface Props {
   onSelect: (food: Food) => void;
   excludeIds?: string[];
+  triggerClassName?: string;
+  triggerVariant?: ComponentProps<typeof Button>['variant'];
 }
 
 /**
@@ -17,7 +20,7 @@ interface Props {
  * the nutrition/training PlanAssignControl: an anchored Popover on desktop, a
  * bottom KeyboardSheet on mobile. Body is FoodPickerContent.
  */
-export default function FoodPickerControl({onSelect, excludeIds}: Props) {
+export default function FoodPickerControl({onSelect, excludeIds, triggerClassName, triggerVariant}: Props) {
   const [open, setOpen] = useState(false);
   const isDesktop = useIsDesktop();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -41,10 +44,10 @@ export default function FoodPickerControl({onSelect, excludeIds}: Props) {
       <Button
         aria-expanded={open}
         aria-haspopup="listbox"
+        className={triggerClassName}
         onPress={() => setOpen(true)}
         ref={triggerRef}
-        size="sm"
-        variant="secondary"
+        variant={triggerVariant ?? 'secondary'}
       >
         <Plus size={16} />
         Add ingredient

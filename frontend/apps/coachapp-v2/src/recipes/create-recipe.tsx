@@ -49,14 +49,14 @@ export default function CreateRecipe() {
   };
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={attemptLeave} />
             <Page.Title>Create recipe</Page.Title>
           </div>
-          <Page.Description>Add ingredients, nutrition details, and instructions</Page.Description>
+          <Page.Description>Combine foods into a reusable dish.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">

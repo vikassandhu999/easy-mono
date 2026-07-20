@@ -2,16 +2,35 @@
  * Team settings — owner-only. Lists trainers (invited/active/deactivated),
  * lets the owner invite a new trainer, resend/revoke a pending invite, and
  * deactivate an active trainer (their clients reassign to the owner).
+ *
+ * `Invite trainer` follows the canonical responsive-overlay rule (UI-CONTRACT
+ * §2): one `InviteTrainerForm` behind a `Popover` on desktop and a
+ * `KeyboardSheet` on mobile. The deactivate confirm stays a centered
+ * `AlertDialog` at both widths.
  */
-import {AlertDialog, Button, Chip, ErrorMessage, Fieldset, Form, Skeleton, Typography, toast} from '@heroui/react';
+import {getInitials} from '@easy/utils';
+import {
+  AlertDialog,
+  Avatar,
+  Button,
+  Chip,
+  ErrorMessage,
+  Fieldset,
+  Form,
+  Popover,
+  Skeleton,
+  Typography,
+  toast,
+} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useState} from 'react';
+import {UserPlus} from 'lucide-react';
+import {useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {ErrorState} from '@/@components/error-state';
 import {FormActions, FormTextField} from '@/@components/form-fields';
-import SectionHeading from '@/@components/section-heading';
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {useGetBillingQuery} from '@/api/billing';
 import {applyFormErrors, getApiErrorMessage} from '@/api/shared';
 import {
@@ -23,6 +42,10 @@ import {
   useRevokeTrainerInviteMutation,
 } from '@/api/team';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
+
+const INVITE_TITLE = 'Invite a trainer';
+const INVITE_BLURB = "They'll get an email invite and take a seat once they join.";
 
 const STATUS_LABEL: Record<TeamMember['status'], string> = {
   invited: 'Invited',
@@ -74,10 +97,14 @@ function InviteTrainerForm({onDone}: {onDone: () => void}) {
   };
 
   return (
-    <Form
-      className="pb-2"
-      onSubmit={form.handleSubmit(onSubmit)}
-    >
+    <Form onSubmit={form.handleSubmit(onSubmit)}>
+      <Typography
+        className="mb-3"
+        color="muted"
+        type="body-sm"
+      >
+        {INVITE_BLURB}
+      </Typography>
       <Fieldset>
         <Fieldset.Group>
           <FormTextField
@@ -116,6 +143,64 @@ function InviteTrainerForm({onDone}: {onDone: () => void}) {
   );
 }
 
+function InviteTrainerControl() {
+  const [open, setOpen] = useState(false);
+  const isDesktop = useIsDesktop();
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const trigger = (
+    <Button
+      onPress={() => setOpen(true)}
+      ref={triggerRef}
+      size="sm"
+      variant="primary"
+    >
+      <UserPlus className="size-4" />
+      Invite trainer
+    </Button>
+  );
+
+  if (isDesktop) {
+    return (
+      <>
+        {trigger}
+        <Popover
+          isOpen={open}
+          onOpenChange={(next) => !next && setOpen(false)}
+        >
+          <Popover.Content
+            className="w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface shadow-xl"
+            triggerRef={triggerRef}
+          >
+            <Popover.Dialog className="max-h-[70vh] overflow-y-auto p-4 outline-none">
+              <Typography
+                className="mb-1 font-grotesk"
+                type="h5"
+              >
+                {INVITE_TITLE}
+              </Typography>
+              {open ? <InviteTrainerForm onDone={() => setOpen(false)} /> : null}
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {trigger}
+      <KeyboardSheet
+        onClose={() => setOpen(false)}
+        open={open}
+        title={INVITE_TITLE}
+      >
+        {open ? <InviteTrainerForm onDone={() => setOpen(false)} /> : null}
+      </KeyboardSheet>
+    </>
+  );
+}
+
 function DeactivateTrainerDialog({
   member,
   onOpenChange,
@@ -138,6 +223,8 @@ function DeactivateTrainerDialog({
     }
   };
 
+  const name = member ? memberName(member) : 'this trainer';
+
   return (
     <AlertDialog.Backdrop
       isDismissable={!isLoading}
@@ -152,7 +239,7 @@ function DeactivateTrainerDialog({
             <AlertDialog.Heading>Deactivate trainer?</AlertDialog.Heading>
           </AlertDialog.Header>
           <AlertDialog.Body>
-            <Typography>Deactivate this trainer? Their clients will be reassigned to you.</Typography>
+            <Typography>Deactivate {name}? Their clients will be reassigned to you.</Typography>
           </AlertDialog.Body>
           <AlertDialog.Footer>
             <Button
@@ -176,11 +263,15 @@ function DeactivateTrainerDialog({
   );
 }
 
+function memberName(member: TeamMember): string {
+  return [member.first_name, member.last_name].filter(Boolean).join(' ') || member.email || 'Trainer';
+}
+
 function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate: () => void}) {
   const [resendInvite, {isLoading: isResending}] = useResendTrainerInviteMutation();
   const [revokeInvite, {isLoading: isRevoking}] = useRevokeTrainerInviteMutation();
 
-  const name = [member.first_name, member.last_name].filter(Boolean).join(' ') || member.email || 'Trainer';
+  const name = memberName(member);
 
   const handleResend = async () => {
     try {
@@ -201,12 +292,18 @@ function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate
   };
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
+    <div className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 border-t border-border px-4 py-3 first:border-t-0">
+      <Avatar className="size-9 shrink-0">
+        <Avatar.Fallback className="bg-background text-chip text-muted">
+          {getInitials(member.first_name, member.last_name) || '?'}
+        </Avatar.Fallback>
+      </Avatar>
+
       <div className="min-w-0 flex-1">
         <Typography
           truncate
           type="body-sm"
-          weight="medium"
+          weight="semibold"
         >
           {name}
         </Typography>
@@ -223,13 +320,15 @@ function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate
 
       {member.is_owner ? (
         <Typography
+          className="shrink-0"
           color="muted"
-          type="body-sm"
+          type="body-xs"
         >
           Owner
         </Typography>
       ) : (
         <Chip
+          className="shrink-0 rounded-chip"
           color={STATUS_COLOR[member.status]}
           size="sm"
           variant="soft"
@@ -239,35 +338,39 @@ function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate
       )}
 
       {!member.is_owner && member.status === 'invited' ? (
-        <div className="flex shrink-0 gap-2">
+        <div className="flex basis-full justify-end gap-2 md:basis-auto md:shrink-0">
           <Button
+            className="rounded-control"
             isPending={isResending}
             onPress={handleResend}
             size="sm"
-            variant="ghost"
+            variant="outline"
           >
-            Resend invite
+            Resend
           </Button>
           <Button
+            className="rounded-control text-danger"
             isPending={isRevoking}
             onPress={handleRevoke}
             size="sm"
-            variant="ghost"
+            variant="outline"
           >
-            Revoke invite
+            Revoke
           </Button>
         </div>
       ) : null}
 
       {!member.is_owner && member.status === 'active' ? (
-        <Button
-          className="shrink-0"
-          onPress={onDeactivate}
-          size="sm"
-          variant="ghost"
-        >
-          Deactivate
-        </Button>
+        <div className="flex basis-full justify-end md:basis-auto md:shrink-0">
+          <Button
+            className="rounded-control"
+            onPress={onDeactivate}
+            size="sm"
+            variant="outline"
+          >
+            Deactivate
+          </Button>
+        </div>
       ) : null}
     </div>
   );
@@ -276,31 +379,38 @@ function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate
 export default function TeamSection() {
   const {data: billing} = useGetBillingQuery();
   const {data, isError, isLoading, refetch} = useGetTeamQuery(undefined, {skip: !billing?.data.is_owner});
-  const [isInviting, setIsInviting] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<null | TeamMember>(null);
 
   if (!billing?.data.is_owner) {
-    return null;
-  }
-
-  return (
-    <section className="mt-6">
-      <div className="mb-3 flex items-center justify-between">
-        <SectionHeading
-          className="mb-0"
+    return (
+      <div className="flex flex-col gap-2.5 md:gap-5">
+        <SettingsSectionHeader
+          description="Owner manages access"
           title="Team"
         />
-        <Button
-          onPress={() => setIsInviting(true)}
-          size="sm"
-          variant="ghost"
+        <Typography
+          color="muted"
+          type="body-sm"
         >
-          Invite trainer
-        </Button>
+          Ask the owner to manage the team.
+        </Typography>
       </div>
+    );
+  }
+
+  const members = data?.data ?? [];
+  const activeCount = members.filter((member) => member.status === 'active').length;
+
+  return (
+    <div className="flex flex-col gap-2.5 md:gap-5">
+      <SettingsSectionHeader
+        action={<InviteTrainerControl />}
+        description={`${activeCount} active · ${members.length} total · owner manages access`}
+        title="Team"
+      />
 
       {isLoading ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="overflow-hidden rounded-card border border-border bg-surface">
           <Skeleton className="h-16 w-full" />
         </div>
       ) : isError || !data ? (
@@ -316,8 +426,8 @@ export default function TeamSection() {
           </Button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface divide-y divide-border">
-          {data.data.map((member) => (
+        <div className="overflow-hidden rounded-card border border-border bg-surface">
+          {members.map((member) => (
             <TeamMemberRow
               key={member.id}
               member={member}
@@ -327,14 +437,6 @@ export default function TeamSection() {
         </div>
       )}
 
-      <KeyboardSheet
-        onClose={() => setIsInviting(false)}
-        open={isInviting}
-        title="Invite trainer"
-      >
-        <InviteTrainerForm onDone={() => setIsInviting(false)} />
-      </KeyboardSheet>
-
       <DeactivateTrainerDialog
         member={deactivateTarget}
         onOpenChange={(open) => {
@@ -343,6 +445,6 @@ export default function TeamSection() {
           }
         }}
       />
-    </section>
+    </div>
   );
 }

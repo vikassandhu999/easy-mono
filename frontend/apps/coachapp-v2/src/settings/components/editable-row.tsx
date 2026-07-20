@@ -1,3 +1,9 @@
+/**
+ * One row of the Profile card: `{label} · {value} · Edit`. `Edit` swaps the row
+ * for an inline field with Save/Cancel (INTERACTIONS.md § ST); Enter commits via
+ * the native form submit, the saved value is trimmed, and an empty value renders
+ * as an em dash.
+ */
 import {Button, ErrorMessage, Form, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
@@ -42,7 +48,7 @@ export default function EditableRow({
 
   const onSubmit = async (data: FormValues) => {
     try {
-      await onSave(data.value);
+      await onSave(data.value.trim());
       setEditing(false);
     } catch (err) {
       applyFormErrors(err, "Couldn't save. Try again.", form.setError);
@@ -52,26 +58,25 @@ export default function EditableRow({
   if (editing) {
     return (
       <Form
-        className="flex flex-col gap-1 border-t border-border px-4 py-2"
+        className="flex flex-col gap-2 border-t border-border px-4 py-3 md:flex-row md:items-center md:gap-2.5"
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <div className="flex min-w-0 items-center gap-2">
-          <Typography
-            className="w-20 shrink-0"
-            color="muted"
-            type="body-sm"
-          >
-            {label}
-          </Typography>
-          <div className="min-w-0 flex-1">
-            <FormTextField
-              className="w-full"
-              control={form.control}
-              label={<span className="sr-only">{label}</span>}
-              name="value"
-              type={inputType}
-            />
-          </div>
+        <Typography
+          className="w-20 shrink-0 md:w-22"
+          color="muted"
+          type="body-sm"
+        >
+          {label}
+        </Typography>
+        <FormTextField
+          className="min-w-0 flex-1"
+          control={form.control}
+          inputProps={{autoFocus: true}}
+          label={<span className="sr-only">{label}</span>}
+          name="value"
+          type={inputType}
+        />
+        <div className="flex shrink-0 justify-end gap-2">
           <Button
             isPending={form.formState.isSubmitting}
             size="sm"
@@ -101,9 +106,9 @@ export default function EditableRow({
   }
 
   return (
-    <div className="flex min-h-11 items-center border-t border-border px-4 py-3">
+    <div className="flex min-h-12 items-center gap-3 border-t border-border px-4 py-3">
       <Typography
-        className="w-20 shrink-0"
+        className="w-20 shrink-0 md:w-22"
         color="muted"
         type="body-sm"
       >
@@ -117,7 +122,7 @@ export default function EditableRow({
         {value || '—'}
       </Typography>
       <Button
-        className="shrink-0 text-sm text-accent"
+        className="shrink-0 font-semibold text-accent"
         onPress={startEdit}
         size="sm"
         variant="ghost"

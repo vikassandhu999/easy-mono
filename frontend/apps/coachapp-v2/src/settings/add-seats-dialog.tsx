@@ -1,15 +1,111 @@
 /**
- * Self-contained "Add seats" trigger + confirmation dialog. Shared by the
- * billing page (Task 9) and the invite-client flow's seat-limit prompt
- * (Task 10) — keep the props surface minimal (`onDone`) so both callers can
- * drop it in without extra wiring.
+ * Self-contained "Add seats" trigger + overlay. Shared by the billing tab and
+ * the invite-client / client-detail seat-limit prompts — keep the props surface
+ * minimal (`onDone`) so every caller can drop it in without extra wiring.
+ *
+ * INTERACTIONS.md § ST: a − / + stepper (min 1) with a live monthly cost, in the
+ * canonical responsive overlay (UI-CONTRACT §2) — `Popover` on desktop,
+ * `KeyboardSheet` on mobile, one shared content component. The spec's stepper has
+ * no free-text entry, so the value is driven by the two buttons rather than a
+ * `NumberInput`; nothing here opens a soft keyboard.
  */
-import {AlertDialog, Button, toast} from '@heroui/react';
-import {useState} from 'react';
-import {NumberInput} from '@/@components/number-input';
+import {Button, Popover, Typography, toast} from '@heroui/react';
+import {Minus, Plus} from 'lucide-react';
+import {useRef, useState} from 'react';
+
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {type BillingSummary, useCheckoutSeatsMutation, useGetBillingQuery} from '@/api/billing';
 import {getApiErrorMessage} from '@/api/shared';
+import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import {openRazorpayCheckout} from '@/lib/razorpay';
+
+const TITLE = 'Add seats';
+
+function AddSeatsContent({
+  isLoading,
+  onCancel,
+  onConfirm,
+  price,
+  seats,
+  setSeats,
+}: {
+  isLoading: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+  price: number | undefined;
+  seats: number;
+  setSeats: (seats: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <Typography
+        color="muted"
+        type="body-sm"
+      >
+        Seats to add
+      </Typography>
+
+      <div className="flex items-center justify-center gap-3.5">
+        <Button
+          aria-label="Fewer seats"
+          className="rounded-control"
+          isDisabled={seats <= 1 || isLoading}
+          isIconOnly
+          onPress={() => setSeats(Math.max(1, seats - 1))}
+          variant="outline"
+        >
+          <Minus className="size-4" />
+        </Button>
+        <Typography
+          align="center"
+          className="min-w-13 font-grotesk"
+          type="h2"
+          weight="semibold"
+        >
+          {seats}
+        </Typography>
+        <Button
+          aria-label="More seats"
+          className="rounded-control"
+          isDisabled={isLoading}
+          isIconOnly
+          onPress={() => setSeats(seats + 1)}
+          variant="outline"
+        >
+          <Plus className="size-4" />
+        </Button>
+      </div>
+
+      {price !== undefined ? (
+        <Typography
+          align="center"
+          color="muted"
+          type="body-sm"
+        >
+          ₹{price * seats} / month
+        </Typography>
+      ) : null}
+
+      <div className="flex gap-2">
+        <Button
+          className="flex-1 rounded-control"
+          isDisabled={isLoading}
+          onPress={onCancel}
+          variant="outline"
+        >
+          Cancel
+        </Button>
+        <Button
+          className="flex-1 rounded-control"
+          isPending={isLoading}
+          onPress={onConfirm}
+        >
+          {isLoading ? 'Adding' : TITLE}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function AddSeatsDialog({
   onDone,
@@ -21,7 +117,7 @@ export function AddSeatsDialog({
    * Called instead of the default toast/refetch when checkout requires
    * payment confirmation (the modal path) — receives the pre-checkout
    * billing snapshot. The caller owns the pending-activation UI (Billing
-   * page). When omitted, falls back to the default toast + refetch.
+   * tab). When omitted, falls back to the default toast + refetch.
    */
   onActivating?: (snapshot: BillingSummary) => void;
   /**
@@ -31,19 +127,20 @@ export function AddSeatsDialog({
    */
   isTriggerDisabled?: boolean;
 }) {
-  const [seats, setSeats] = useState<number | undefined>(1);
+  const [open, setOpen] = useState(false);
+  const [seats, setSeats] = useState(1);
+  const isDesktop = useIsDesktop();
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [checkout, {isLoading}] = useCheckoutSeatsMutation();
   const {data, refetch} = useGetBillingQuery();
   const price = data?.data.monthly_seat_price_inr;
 
-  const buy = async (close: () => void) => {
-    const seatsToAdd = Math.floor(seats ?? 0);
-    if (seatsToAdd < 1) {
-      return;
-    }
+  const close = () => setOpen(false);
+
+  const buy = async () => {
     const snapshot = data?.data;
     try {
-      const result = await checkout({seats_to_add: seatsToAdd}).unwrap();
+      const result = await checkout({seats_to_add: seats}).unwrap();
       if (result.data.action === 'checkout' && result.data.checkout) {
         await openRazorpayCheckout({
           keyId: result.data.checkout.key_id,
@@ -64,7 +161,7 @@ export function AddSeatsDialog({
           },
         });
       } else {
-        toast.success(`Added ${seatsToAdd} seat${seatsToAdd > 1 ? 's' : ''}`);
+        toast.success(`Added ${seats} seat${seats > 1 ? 's' : ''}`);
         close();
         onDone?.();
       }
@@ -73,55 +170,69 @@ export function AddSeatsDialog({
     }
   };
 
+  const trigger = (
+    <Button
+      isDisabled={isTriggerDisabled}
+      onPress={() => {
+        setSeats(1);
+        setOpen(true);
+      }}
+      ref={triggerRef}
+      variant="primary"
+    >
+      <Plus className="size-4" />
+      {TITLE}
+    </Button>
+  );
+
+  const content = (
+    <AddSeatsContent
+      isLoading={isLoading}
+      onCancel={close}
+      onConfirm={buy}
+      price={price}
+      seats={seats}
+      setSeats={setSeats}
+    />
+  );
+
+  if (isDesktop) {
+    return (
+      <>
+        {trigger}
+        <Popover
+          isOpen={open}
+          onOpenChange={(next) => !next && close()}
+        >
+          <Popover.Content
+            className="w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface shadow-xl"
+            triggerRef={triggerRef}
+          >
+            <Popover.Dialog className="p-4 outline-none">
+              <Typography
+                className="mb-3 font-grotesk"
+                type="h5"
+              >
+                {TITLE}
+              </Typography>
+              {open ? content : null}
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      </>
+    );
+  }
+
   return (
-    <AlertDialog>
-      <Button
-        isDisabled={isTriggerDisabled}
-        variant="secondary"
+    <>
+      {trigger}
+      <KeyboardSheet
+        onClose={close}
+        open={open}
+        title={TITLE}
       >
-        Add seats
-      </Button>
-      <AlertDialog.Backdrop isDismissable={!isLoading}>
-        <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-[400px]">
-            {({close}) => (
-              <>
-                <AlertDialog.CloseTrigger />
-                <AlertDialog.Header>
-                  <AlertDialog.Heading>Add seats</AlertDialog.Heading>
-                </AlertDialog.Header>
-                <AlertDialog.Body>
-                  <NumberInput
-                    fullWidth
-                    isRequired
-                    label="Seats"
-                    minValue={1}
-                    onChange={setSeats}
-                    value={seats}
-                  />
-                  {price !== undefined ? <p className="mt-3 text-sm text-muted">₹{price} / seat / month</p> : null}
-                </AlertDialog.Body>
-                <AlertDialog.Footer>
-                  <Button
-                    isDisabled={isLoading}
-                    slot="close"
-                    variant="tertiary"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    isDisabled={!seats || seats < 1}
-                    isPending={isLoading}
-                    onPress={() => buy(close)}
-                  >
-                    {isLoading ? 'Adding' : 'Add seats'}
-                  </Button>
-                </AlertDialog.Footer>
-              </>
-            )}
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </AlertDialog>
+        {open ? content : null}
+      </KeyboardSheet>
+    </>
   );
 }

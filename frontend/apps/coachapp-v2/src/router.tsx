@@ -46,7 +46,6 @@ import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
-import Billing from '@/settings/billing';
 import Settings from '@/settings/settings';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
@@ -113,7 +112,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.PROSPECT_DETAIL, Component: ProspectDetail},
       {path: ROUTES.SETTINGS, Component: Settings},
       {path: ROUTES.SETTINGS_LANDING_PAGE, Component: LandingPageEditor},
-      {path: ROUTES.SETTINGS_BILLING, Component: Billing},
+      {path: ROUTES.SETTINGS_BILLING, Component: Settings},
       {path: ROUTES.MESSAGES, Component: MessagesInbox},
       {path: ROUTES.CONVERSATION, Component: ConversationPage},
     ],

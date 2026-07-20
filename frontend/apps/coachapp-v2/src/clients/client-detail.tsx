@@ -74,17 +74,10 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
   }
 
   return (
-    <div
-      className="-mx-2 cursor-pointer rounded-xl p-2 transition-colors hover:bg-surface-hover active:bg-surface-hover"
-      onClick={startEditing}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          startEditing();
-        }
-      }}
-      role="button"
-      tabIndex={0}
+    <Button
+      className="-mx-2 h-auto w-full justify-start rounded-xl p-2 text-left font-normal hover:bg-surface-hover active:bg-surface-hover"
+      onPress={startEditing}
+      variant="ghost"
     >
       {initialNotes ? (
         <Typography
@@ -101,7 +94,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
           Tap to add notes
         </Typography>
       )}
-    </div>
+    </Button>
   );
 }
 
@@ -188,7 +181,7 @@ export default function ClientDetail() {
 
       <Page.Content className="pt-4 pb-6">
         <div className="max-w-6xl space-y-5">
-          <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+          <div className="rounded-card border border-separator bg-surface p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-3">
                 <Avatar
@@ -246,7 +239,7 @@ export default function ClientDetail() {
                     WhatsApp
                   </a>
                   <a
-                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-separator px-4 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft sm:flex-none"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-separator px-4 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft sm:flex-none"
                     href={`tel:${client.phone}`}
                   >
                     <Phone size={16} />
@@ -281,7 +274,7 @@ export default function ClientDetail() {
             <div className="space-y-5">
               <ClientTrainerCard client={client} />
               <Link
-                className="flex min-h-11 items-center gap-3 rounded-3xl border-[1.5px] border-separator bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+                className="flex min-h-11 items-center gap-3 rounded-card border border-separator bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
                 to={ROUTES.CLIENT_MESSAGES.replace(':id', client.id)}
               >
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
@@ -302,7 +295,7 @@ export default function ClientDetail() {
                   </Typography>
                 </div>
               </Link>
-              <div className="rounded-3xl border-[1.5px] border-separator bg-surface p-5">
+              <div className="rounded-card border border-separator bg-surface p-5">
                 <div className="mb-3">
                   <h2 className="font-grotesk text-xl font-bold">Notes</h2>
                   <Typography

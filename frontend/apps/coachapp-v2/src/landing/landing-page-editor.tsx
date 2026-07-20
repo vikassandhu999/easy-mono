@@ -144,13 +144,13 @@ export default function LandingPageEditor() {
 
   const header = (
     <Page.Header>
-      <button
-        className="mb-2 flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
-        onClick={() => navigate(ROUTES.SETTINGS)}
-        type="button"
+      <Button
+        className="mb-2 h-auto w-fit gap-1 px-0 py-0 text-sm font-normal text-muted hover:text-foreground"
+        onPress={() => navigate(ROUTES.SETTINGS)}
+        variant="ghost"
       >
         <ArrowLeft size={16} /> Settings
-      </button>
+      </Button>
       <Page.TitleGroup>
         <Page.Title>Landing page</Page.Title>
       </Page.TitleGroup>
@@ -208,15 +208,15 @@ export default function LandingPageEditor() {
               {TEMPLATES.map((tpl) => {
                 const selected = draft.template === tpl.value;
                 return (
-                  <button
-                    className={`rounded-xl border p-3 text-left transition-colors ${
+                  <Button
+                    className={`h-auto w-full flex-col items-start justify-start gap-0 rounded-xl border p-3 text-left font-normal transition-colors ${
                       selected
                         ? 'border-accent bg-accent/5 ring-1 ring-accent'
                         : 'border-border bg-surface hover:border-accent/50'
                     }`}
                     key={tpl.value}
-                    onClick={() => update({template: tpl.value})}
-                    type="button"
+                    onPress={() => update({template: tpl.value})}
+                    variant="ghost"
                   >
                     <Typography weight="medium">{tpl.label}</Typography>
                     <Typography
@@ -225,7 +225,7 @@ export default function LandingPageEditor() {
                     >
                       {tpl.blurb}
                     </Typography>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

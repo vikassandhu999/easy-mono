@@ -160,7 +160,10 @@ export default function ClientDetail() {
 
   return (
     <Page>
-      <Page.Header className="py-4 sm:py-8 items-center w-full max-w-6xl">
+      <Page.Header
+        className="items-center py-4 sm:py-8"
+        size="content"
+      >
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />
@@ -179,8 +182,14 @@ export default function ClientDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="pt-4 pb-6">
-        <div className="max-w-6xl space-y-5">
+      <Page.Content
+        bare
+        className="pt-4 pb-6"
+      >
+        <Page.Frame
+          className="space-y-5"
+          size="content"
+        >
           <div className="rounded-card border border-separator bg-surface p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-3">
@@ -320,7 +329,7 @@ export default function ClientDetail() {
               </Typography>
             </div>
           </div>
-        </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

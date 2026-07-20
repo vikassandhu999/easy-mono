@@ -122,10 +122,7 @@ export default function EditCheckin() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header
-          className="max-w-160"
-          size="form"
-        >
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
@@ -134,7 +131,7 @@ export default function EditCheckin() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="pb-6">
-          <Page.Frame size="form">
+          <Page.Frame size="content">
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -145,10 +142,7 @@ export default function EditCheckin() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header
-          className="max-w-160"
-          size="form"
-        >
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
@@ -157,7 +151,7 @@ export default function EditCheckin() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="pb-6">
-          <Page.Frame size="form">
+          <Page.Frame size="content">
             <ErrorState message="Couldn't load check-in." />
           </Page.Frame>
         </Page.Content>

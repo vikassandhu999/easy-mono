@@ -94,7 +94,7 @@ export default function RecipeDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <Page.Title>Recipe</Page.Title>
           </Page.TitleGroup>
@@ -109,7 +109,7 @@ export default function RecipeDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Recipe</Page.Title>
@@ -135,7 +135,7 @@ export default function RecipeDetail() {
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
           <Page.Title className="sm:hidden">Recipe</Page.Title>
@@ -169,8 +169,11 @@ export default function RecipeDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="pb-6">
-        <div className="mx-auto w-full max-w-160">
+      <Page.Content
+        bare
+        className="pb-6"
+      >
+        <Page.Frame size="content">
           <div className="flex items-start gap-4">
             <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">
               <ChefHat className="size-8 text-foreground" />
@@ -319,7 +322,7 @@ export default function RecipeDetail() {
               </div>
             </div>
           </section>
-        </div>
+        </Page.Frame>
 
         <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
           <Button

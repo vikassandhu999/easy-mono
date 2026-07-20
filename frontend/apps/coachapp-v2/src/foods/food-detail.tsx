@@ -83,7 +83,7 @@ export default function FoodDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <Page.Title>Food</Page.Title>
           </Page.TitleGroup>
@@ -98,7 +98,7 @@ export default function FoodDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Food</Page.Title>
@@ -121,7 +121,7 @@ export default function FoodDetail() {
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
           <Page.Title className="sm:hidden">Food</Page.Title>
@@ -157,8 +157,11 @@ export default function FoodDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="pb-6">
-        <div className="mx-auto w-full max-w-160">
+      <Page.Content
+        bare
+        className="pb-6"
+      >
+        <Page.Frame size="content">
           <div className="flex items-start gap-4">
             <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">
               {food.image_url ? (
@@ -274,7 +277,7 @@ export default function FoodDetail() {
               </div>
             </div>
           </section>
-        </div>
+        </Page.Frame>
 
         <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
           {!isSystemFood && (

@@ -30,7 +30,7 @@ export default function CreateNutritionPlan() {
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />

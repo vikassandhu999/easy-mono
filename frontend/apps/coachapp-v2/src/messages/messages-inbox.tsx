@@ -75,7 +75,7 @@ export default function MessagesInbox() {
 
   return (
     <Page>
-      <Page.Header size="list">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <Page.Title>Messages</Page.Title>
           <Page.Description>
@@ -88,7 +88,7 @@ export default function MessagesInbox() {
       <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6 pt-2"
-          size="list"
+          size="content"
         >
           <BrowseListBox
             ariaLabel="Conversations"

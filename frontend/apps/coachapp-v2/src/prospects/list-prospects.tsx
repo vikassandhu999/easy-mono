@@ -70,7 +70,7 @@ export default function ListProspects() {
 
   return (
     <Page>
-      <Page.Header size="list">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <Page.Title>Prospects</Page.Title>
           <Page.Description>People who applied through your landing page.</Page.Description>
@@ -79,7 +79,7 @@ export default function ListProspects() {
 
       <Page.Toolbar
         className="sticky top-0 z-10 flex flex-col gap-3 bg-background/95 pb-4 pt-2 backdrop-blur"
-        size="list"
+        size="content"
       >
         <Tabs
           aria-label="Filter prospects by status"
@@ -110,7 +110,7 @@ export default function ListProspects() {
       <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
-          size="list"
+          size="content"
         >
           <BrowseListBox
             ariaLabel="Prospects"

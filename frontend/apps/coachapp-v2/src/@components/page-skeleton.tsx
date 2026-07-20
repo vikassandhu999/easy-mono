@@ -8,7 +8,7 @@ export function PageSkeleton() {
   return (
     <div
       aria-hidden
-      className="flex w-full max-w-2xl flex-col gap-4"
+      className="flex w-full flex-col gap-4"
     >
       <Skeleton className="h-6 w-1/3 rounded" />
       <Skeleton className="h-24 w-full rounded-xl" />

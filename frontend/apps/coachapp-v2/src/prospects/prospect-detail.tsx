@@ -87,7 +87,7 @@ export default function ProspectDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={() => navigate(ROUTES.PROSPECTS)} />
@@ -105,7 +105,7 @@ export default function ProspectDetail() {
   if (isError || !prospect) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={() => navigate(ROUTES.PROSPECTS)} />

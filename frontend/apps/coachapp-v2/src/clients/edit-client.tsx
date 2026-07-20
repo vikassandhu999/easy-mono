@@ -34,7 +34,7 @@ export default function EditClient() {
   if (isFetching) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
@@ -52,7 +52,7 @@ export default function EditClient() {
   if (isError || !client) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
@@ -100,7 +100,7 @@ export default function EditClient() {
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
             <BackButton onPress={goBack} />

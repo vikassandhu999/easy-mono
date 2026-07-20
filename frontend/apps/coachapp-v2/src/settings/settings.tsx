@@ -308,7 +308,7 @@ export default function Settings() {
         <Page.Content bare>
           <Page.Frame
             className="pt-6 pb-6"
-            size="form"
+            size="content"
           >
             <PageSkeleton />
           </Page.Frame>
@@ -323,7 +323,7 @@ export default function Settings() {
         <Page.Content bare>
           <Page.Frame
             className="pt-6 pb-6"
-            size="form"
+            size="content"
           >
             <ErrorState
               message="Couldn't load settings."

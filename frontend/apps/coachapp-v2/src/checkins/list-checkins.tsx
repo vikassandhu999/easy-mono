@@ -147,7 +147,7 @@ export default function ListCheckins() {
 
   return (
     <Page>
-      <Page.Header size="list">
+      <Page.Header size="content">
         <Page.TitleGroup className="flex items-center">
           <BackButton
             className="lg:hidden"
@@ -176,7 +176,7 @@ export default function ListCheckins() {
 
       <Page.Toolbar
         className="sticky top-0 z-10 flex flex-col gap-3 bg-background pt-2 pb-3"
-        size="list"
+        size="content"
       >
         <Tabs
           aria-label="Forms sections"
@@ -293,7 +293,7 @@ export default function ListCheckins() {
       <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
-          size="list"
+          size="content"
         >
           {activeTab === 'review' ? (
             <ReviewQueue />

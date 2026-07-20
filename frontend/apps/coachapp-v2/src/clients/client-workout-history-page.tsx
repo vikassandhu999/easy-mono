@@ -25,7 +25,7 @@ export default function ClientWorkoutHistoryPage() {
   if (isLoadingClient) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <Page.Title>Workout history</Page.Title>
           </Page.TitleGroup>
@@ -39,7 +39,7 @@ export default function ClientWorkoutHistoryPage() {
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <Page.Title>Workout history</Page.Title>
           <Page.Description>{clientName}</Page.Description>

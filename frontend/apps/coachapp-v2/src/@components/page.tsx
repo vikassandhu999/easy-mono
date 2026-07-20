@@ -8,15 +8,17 @@ interface PageProps {
   className?: string;
 }
 
-type PageSize = 'form' | 'list' | 'wide';
+type PageSize = 'content' | 'wide';
 
 interface PageLayoutProps extends PageProps {
   size?: PageSize;
 }
 
+// One content width for every read/write screen — lists, forms and detail views
+// all sit in the same column so navigating between them doesn't jump. `wide` is
+// only for the two plan builders and the dashboard grid.
 const PAGE_SIZE_CLASS: Record<PageSize, string> = {
-  form: 'mx-auto max-w-160',
-  list: 'mx-auto max-w-5xl',
+  content: 'mx-auto max-w-5xl',
   wide: 'mx-auto max-w-6xl',
 };
 

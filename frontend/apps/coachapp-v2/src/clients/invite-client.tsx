@@ -31,7 +31,7 @@ function SeatLimitBlocked({
   seatSummary: BillingSummary;
 }) {
   return (
-    <div className="flex w-full max-w-160 flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <SeatUsageCard summary={seatSummary} />
       <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
         <div className="flex flex-col gap-4">
@@ -87,7 +87,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
   };
 
   return (
-    <div className="flex w-full max-w-160 flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col items-start gap-2">
@@ -234,7 +234,7 @@ export default function InviteClient() {
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
             <BackButton onPress={goBack} />
@@ -258,7 +258,7 @@ export default function InviteClient() {
             seatSummary={blockedSummary}
           />
         ) : (
-          <div className="flex w-full max-w-160 flex-col gap-4">
+          <div className="flex w-full flex-col gap-4">
             {seatSummary && <SeatUsageCard summary={seatSummary} />}
             <InviteClientForm
               form={form}

@@ -27,7 +27,7 @@ export default function ReviewCheckin() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <Page.Title>Review check-in</Page.Title>
           </Page.TitleGroup>
@@ -42,7 +42,7 @@ export default function ReviewCheckin() {
   if (isError || !item) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
@@ -72,7 +72,7 @@ export default function ReviewCheckin() {
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
             <BackButton onPress={goBack} />
@@ -83,28 +83,33 @@ export default function ReviewCheckin() {
           </Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="px-4 pb-8 pt-4 md:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl rounded-3xl border border-border bg-surface p-5 sm:p-6">
-          <ReviewAnswers item={item} />
-          <div className="mt-6 flex flex-col gap-3 border-border border-t pt-5 sm:flex-row">
-            <Button
-              isPending={isReviewing}
-              onPress={markReviewed}
-            >
-              <Check size={17} />
-              {isReviewing ? 'Marking reviewed' : 'Mark reviewed'}
-            </Button>
-            <Button
-              onPress={() =>
-                navigate(`${messagePath}?${new URLSearchParams({embed_type: 'form_submission', embed_id: item.id})}`)
-              }
-              variant="secondary"
-            >
-              <MessageCircle size={17} />
-              Reply in chat
-            </Button>
+      <Page.Content
+        bare
+        className="pt-4 pb-8"
+      >
+        <Page.Frame size="content">
+          <div className="rounded-3xl border border-border bg-surface p-5 sm:p-6">
+            <ReviewAnswers item={item} />
+            <div className="mt-6 flex flex-col gap-3 border-border border-t pt-5 sm:flex-row">
+              <Button
+                isPending={isReviewing}
+                onPress={markReviewed}
+              >
+                <Check size={17} />
+                {isReviewing ? 'Marking reviewed' : 'Mark reviewed'}
+              </Button>
+              <Button
+                onPress={() =>
+                  navigate(`${messagePath}?${new URLSearchParams({embed_type: 'form_submission', embed_id: item.id})}`)
+                }
+                variant="secondary"
+              >
+                <MessageCircle size={17} />
+                Reply in chat
+              </Button>
+            </div>
           </div>
-        </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

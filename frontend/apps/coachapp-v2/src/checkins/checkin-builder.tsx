@@ -608,7 +608,7 @@ export default function CheckinBuilder({
 
   return (
     <>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup className="flex items-center gap-1">
           {backSlot}
           <div className="min-w-0">
@@ -642,7 +642,7 @@ export default function CheckinBuilder({
       </Page.Header>
 
       <Page.Content className="pb-6">
-        <Page.Frame size="form">
+        <Page.Frame size="content">
           <FormLayout
             onSubmit={(e) => {
               e.preventDefault();

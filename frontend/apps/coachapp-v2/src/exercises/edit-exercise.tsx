@@ -24,7 +24,7 @@ import ExerciseForm, {
 // title, and description slot never shift between them.
 function EditExerciseHeader({goBack}: {goBack: () => void}) {
   return (
-    <Page.Header size="form">
+    <Page.Header size="content">
       <Page.TitleGroup>
         <div className={'flex items-center gap-1'}>
           <BackButton onPress={goBack} />

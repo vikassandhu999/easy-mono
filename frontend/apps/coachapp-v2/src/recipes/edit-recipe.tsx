@@ -74,7 +74,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={attemptLeave} />
@@ -143,7 +143,7 @@ export default function EditRecipe() {
   if (isFetching || !data) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
               <BackButton onPress={goBackOuter} />
@@ -161,7 +161,7 @@ export default function EditRecipe() {
   if (isError) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
               <BackButton onPress={goBackOuter} />

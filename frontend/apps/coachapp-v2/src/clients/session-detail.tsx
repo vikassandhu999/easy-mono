@@ -96,7 +96,7 @@ export default function SessionDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <Page.Title>Workout session</Page.Title>
           </Page.TitleGroup>
@@ -111,7 +111,7 @@ export default function SessionDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header size="form">
+        <Page.Header size="content">
           <Page.TitleGroup>
             <Page.Title>Workout session</Page.Title>
           </Page.TitleGroup>
@@ -151,7 +151,7 @@ export default function SessionDetail() {
 
   return (
     <Page>
-      <Page.Header size="form">
+      <Page.Header size="content">
         <Page.TitleGroup>
           <Page.Title>Workout session</Page.Title>
         </Page.TitleGroup>

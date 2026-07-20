@@ -2,7 +2,7 @@ import {Form} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import type {ComponentProps, ReactNode} from 'react';
 
-// The canonical form shell. Bakes the one form width (max-w-160) and the one
+// The canonical form shell. Bakes the one section-to-section gap; the column
 // section-to-section gap (gap-8 / 32px) so individual forms never set their own
 // max-width or inter-section spacing. Centred, matching the redesign refs —
 // Page's size tokens centre their column too, so header and form stay aligned.
@@ -22,7 +22,7 @@ type FormLayoutProps = {
 export function FormLayout({children, className, onSubmit, validationBehavior}: FormLayoutProps) {
   return (
     <Form
-      className={cn('mx-auto flex w-full max-w-160 flex-col gap-8', className)}
+      className={cn('flex w-full flex-col gap-8', className)}
       onSubmit={onSubmit}
       validationBehavior={validationBehavior}
     >

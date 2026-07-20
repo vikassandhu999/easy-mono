@@ -39,7 +39,7 @@ export default function ListTrainingPlans() {
 
   return (
     <Page>
-      <Page.Header size="list">
+      <Page.Header size="content">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton
             className={'lg:hidden'}
@@ -65,7 +65,7 @@ export default function ListTrainingPlans() {
       </Page.Header>
       <Page.Toolbar
         className={'sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-background pt-2 pb-3'}
-        size="list"
+        size="content"
       >
         <SearchField
           aria-label="Search training plans"
@@ -121,7 +121,7 @@ export default function ListTrainingPlans() {
       <Page.Content bare>
         <Page.Frame
           className="flex min-h-0 flex-1 flex-col pb-6"
-          size="list"
+          size="content"
         >
           <div className="overflow-hidden rounded-card border border-border bg-surface">
             <BrowseListBox

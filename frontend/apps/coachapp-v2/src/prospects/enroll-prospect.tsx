@@ -59,7 +59,7 @@ export default function EnrollProspect() {
   };
 
   const header = (
-    <Page.Header size="form">
+    <Page.Header size="content">
       <Page.TitleGroup>
         <div className="flex items-center gap-1">
           <BackButton onPress={goBack} />
@@ -86,7 +86,7 @@ export default function EnrollProspect() {
       <Page>
         {header}
         <Page.Content className="pt-4 pb-6">
-          <div className="mx-auto max-w-160">
+          <div>
             <ErrorState message="Couldn't load prospect." />
           </div>
         </Page.Content>
@@ -100,7 +100,7 @@ export default function EnrollProspect() {
       <Page>
         {header}
         <Page.Content className="pt-4 pb-6">
-          <div className="mx-auto flex max-w-160 flex-col gap-3">
+          <div className="flex flex-col gap-3">
             <Typography color="muted">This prospect is already enrolled.</Typography>
             <Button
               className="self-start"

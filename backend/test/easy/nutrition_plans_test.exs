@@ -118,4 +118,43 @@ defmodule Easy.NutritionPlansTest do
       assert id == template_b.id
     end
   end
+
+  describe "list_template_plans/2 search" do
+    setup do
+      business = insert(:business)
+      coach = insert(:coach, business: business, user: business.owner)
+      insert(:plan, business: business, creator: coach, name: "High-Protein Cut")
+      insert(:plan, business: business, creator: coach, name: "Lean Bulk 3200")
+
+      %{business: business}
+    end
+
+    test "filters by case-insensitive name match", %{business: business} do
+      assert {:ok, %{count: 1, plans: [plan]}} =
+               NutritionPlans.list_template_plans(owner_ctx(business), search: "protein")
+
+      assert plan.name == "High-Protein Cut"
+    end
+
+    test "returns nothing when no name matches", %{business: business} do
+      assert {:ok, %{count: 0, plans: []}} =
+               NutritionPlans.list_template_plans(owner_ctx(business), search: "zzqqxx")
+    end
+
+    test "blank search is a no-op", %{business: business} do
+      assert {:ok, %{count: 2}} = NutritionPlans.list_template_plans(owner_ctx(business), search: "")
+      assert {:ok, %{count: 2}} = NutritionPlans.list_template_plans(owner_ctx(business), [])
+    end
+
+    test "does not leak plans from another business", %{business: business} do
+      other = insert(:business)
+      other_coach = insert(:coach, business: other, user: other.owner)
+      insert(:plan, business: other, creator: other_coach, name: "High-Protein Cut")
+
+      assert {:ok, %{count: 1, plans: [plan]}} =
+               NutritionPlans.list_template_plans(owner_ctx(business), search: "protein")
+
+      assert plan.business_id == business.id
+    end
+  end
 end

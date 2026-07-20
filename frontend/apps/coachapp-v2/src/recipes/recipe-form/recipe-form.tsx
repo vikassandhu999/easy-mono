@@ -6,7 +6,6 @@ import {
   Fieldset,
   Input,
   Label,
-  ProgressBar,
   TextField,
   Typography,
 } from '@heroui/react';
@@ -17,6 +16,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {NumberInput} from '@/@components/number-input';
 import type {Food, FoodServingSize, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalNumber, toOptionalText} from '@/api/shared';
@@ -36,37 +36,6 @@ const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Recip
   {color: 'success', key: 'carbs_g', label: 'Carbs'},
   {color: 'warning', key: 'fats_g', label: 'Fats'},
 ];
-
-const LEGEND_DOT: Record<string, string> = {
-  accent: 'bg-accent',
-  muted: 'bg-muted',
-  success: 'bg-success',
-  warning: 'bg-warning',
-};
-
-function LegendEntry({dot, label, value}: {dot: string; label: string; value: number}) {
-  return (
-    <div>
-      <div className="flex items-center gap-1.5">
-        <span className={`size-2 rounded-full ${LEGEND_DOT[dot]}`} />
-        <Typography
-          color="muted"
-          type="body-sm"
-        >
-          {label}
-        </Typography>
-      </div>
-      <Typography
-        className="tabular-nums"
-        type="body"
-        weight="semibold"
-      >
-        {Math.round(value * 10) / 10}
-        <span className="text-xs font-normal text-muted">g</span>
-      </Typography>
-    </div>
-  );
-}
 
 const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();
 
@@ -301,57 +270,12 @@ export default function RecipeForm({
               <Fieldset.Legend>
                 Nutrition <span className="font-normal text-muted">· recipe totals</span>
               </Fieldset.Legend>
-              <div className="mt-3 rounded-card border border-border bg-surface p-5">
-                <div className="flex items-baseline gap-2">
-                  <Typography
-                    className="tabular-nums"
-                    type="h1"
-                  >
-                    {Math.round(totals.calories)}
-                  </Typography>
-                  <Typography color="muted">kcal total</Typography>
-                </div>
-                {segments.length > 0 && (
-                  <>
-                    <div className="mt-4 flex gap-0.5">
-                      {segments.map((s) => (
-                        <div
-                          className="min-w-4"
-                          key={s.label}
-                          style={{flexGrow: s.value}} /* ui-contract-allow */
-                        >
-                          <ProgressBar
-                            aria-label={`${s.label} share`}
-                            color={s.color}
-                            value={100}
-                          >
-                            <ProgressBar.Track>
-                              <ProgressBar.Fill />
-                            </ProgressBar.Track>
-                          </ProgressBar>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 sm:gap-x-10">
-                      {segments.map((s) => (
-                        <LegendEntry
-                          dot={s.color}
-                          key={s.label}
-                          label={s.label}
-                          value={s.value}
-                        />
-                      ))}
-                      {totals.fiber_g > 0 && (
-                        <LegendEntry
-                          dot="muted"
-                          label="Fiber"
-                          value={totals.fiber_g}
-                        />
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+              <MacroBreakdownCard
+                caption="kcal total"
+                fiber={totals.fiber_g}
+                kcal={totals.calories}
+                segments={segments}
+              />
             </Fieldset>
           </>
         )}

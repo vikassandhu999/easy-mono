@@ -1,5 +1,5 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, ProgressBar, Typography, toast} from '@heroui/react';
+import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
 import {Copy, HandPlatter, Pencil, Trash2} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -7,6 +7,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
+import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
@@ -21,13 +22,6 @@ const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food;
   {color: 'warning', key: 'fat_g_per_100g', label: 'Fats'},
 ];
 
-const LEGEND_DOT: Record<string, string> = {
-  accent: 'bg-accent',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  muted: 'bg-muted',
-};
-
 function SectionHeading({detail, title}: {detail?: string; title: string}) {
   return (
     <div className="flex items-baseline gap-2">
@@ -40,30 +34,6 @@ function SectionHeading({detail, title}: {detail?: string; title: string}) {
           · {detail}
         </Typography>
       )}
-    </div>
-  );
-}
-
-function LegendEntry({dot, label, value}: {dot: string; label: string; value: number}) {
-  return (
-    <div>
-      <div className="flex items-center gap-1.5">
-        <span className={`size-2 rounded-full ${LEGEND_DOT[dot]}`} />
-        <Typography
-          color="muted"
-          type="body-sm"
-        >
-          {label}
-        </Typography>
-      </div>
-      <Typography
-        className="tabular-nums"
-        type="body"
-        weight="semibold"
-      >
-        {Math.round(value * 10) / 10}
-        <span className="text-xs font-normal text-muted">g</span>
-      </Typography>
     </div>
   );
 }
@@ -248,61 +218,11 @@ export default function FoodDetail() {
                 detail="per 100 g"
                 title="Nutrition"
               />
-              <div className="mt-3 rounded-card border border-border bg-surface p-5">
-                {kcal != null && (
-                  <div className="flex items-baseline gap-2">
-                    <Typography
-                      className="tabular-nums"
-                      type="h1"
-                    >
-                      {Math.round(kcal)}
-                    </Typography>
-                    <Typography color="muted">kcal</Typography>
-                  </div>
-                )}
-                {segments.length > 0 && (
-                  <>
-                    <div className="mt-4 flex gap-0.5">
-                      {segments.map((s) => (
-                        <div
-                          className="min-w-4"
-                          key={s.label}
-                          // ponytail: flexGrow is the one genuinely dynamic value here
-                          // (ratio bar) — allowlisted per UI-CONTRACT §1.
-                          style={{flexGrow: s.value}} /* ui-contract-allow */
-                        >
-                          <ProgressBar
-                            aria-label={`${s.label} share`}
-                            color={s.color}
-                            value={100}
-                          >
-                            <ProgressBar.Track>
-                              <ProgressBar.Fill />
-                            </ProgressBar.Track>
-                          </ProgressBar>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 sm:gap-x-10">
-                      {segments.map((s) => (
-                        <LegendEntry
-                          dot={s.color}
-                          key={s.label}
-                          label={s.label}
-                          value={s.value}
-                        />
-                      ))}
-                      {fiber != null && fiber > 0 && (
-                        <LegendEntry
-                          dot="muted"
-                          label="Fiber"
-                          value={fiber}
-                        />
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+              <MacroBreakdownCard
+                fiber={fiber}
+                kcal={kcal}
+                segments={segments}
+              />
             </section>
           )}
 

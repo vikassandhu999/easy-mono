@@ -131,9 +131,10 @@ verify copy matches COPY.md § {badge} verbatim.
   Ratio bars = one ProgressBar per segment in a `flex gap-0.5` row, each wrapped in
   a div with `style={{flexGrow: value}} /* ui-contract-allow */` (the §1 exception;
   the gate skips lines marked `ui-contract-allow`).
-- **Form fields are already white app-wide** (FE port removed the wrappers'
-  `variant="secondary"`); `FormActions` is already Cancel-then-Save, right-aligned.
-  Don't re-fix these per screen.
+- **`FormActions` owns everything about the action row** — Cancel-outline then
+  Save, right-aligned, a ✓ icon on submit, AND the mobile sticky footer. Render it
+  bare (`<FormActions ... />`); never wrap it in a sticky div, never add an icon.
+  Form fields are likewise already white app-wide. Don't re-fix these per screen.
 - **`CloseButton` takes no `size` prop**; `Typography` has no `body-lg` (use
   `body` + weight). Button white-outline = `variant="outline"` (Buttons DO have
   it — only Chip lacks it).

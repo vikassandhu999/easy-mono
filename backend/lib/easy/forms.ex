@@ -1,15 +1,15 @@
 defmodule Easy.Forms do
   alias Easy.Attachments.Attachment
-  alias Easy.Forms.CheckInSchedule
-  alias Easy.Forms.FormAssignment
-  alias Easy.Forms.FormSubmission
-  alias Easy.Forms.FormTemplate
   alias Easy.Clients
   alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.DefaultCheckIn
   alias Easy.DefaultIntake
   alias Easy.Fitness.WeightEntry
+  alias Easy.Forms.CheckInSchedule
+  alias Easy.Forms.FormAssignment
+  alias Easy.Forms.FormSubmission
+  alias Easy.Forms.FormTemplate
   alias Easy.Orgs.Business
   alias Easy.Repo
 
@@ -115,7 +115,6 @@ defmodule Easy.Forms do
         |> include_submission_reviews(ctx.business_id)
         |> order_by([a, _t], asc: a.inserted_at)
         |> Repo.all()
-        |> attach_assignment_submission_attachments(ctx.business_id)
         |> put_latest_submission_reviews()
 
       {:ok, assignments}
@@ -422,7 +421,7 @@ defmodule Easy.Forms do
     owned_count =
       Attachment
       |> Attachment.for_client(business_id, client_id)
-      |> Attachment.with_ids(ids)
+      |> Attachment.for_ids(ids)
       |> where([attachment], attachment.content_type in ^Attachment.image_content_types())
       |> Repo.aggregate(:count, :id)
 
@@ -440,7 +439,7 @@ defmodule Easy.Forms do
     attachments_by_client_and_id =
       Attachment
       |> Attachment.for_business(business_id)
-      |> Attachment.with_ids(ids)
+      |> Attachment.for_ids(ids)
       |> Repo.all()
       |> Map.new(&{{&1.client_id, &1.id}, &1})
 

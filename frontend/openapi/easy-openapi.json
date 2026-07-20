@@ -1547,47 +1547,142 @@
         "x-validate": null
       },
       "CoachChatMessageCreateRequest": {
-        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "attachment_ids": {
+                "default": [],
+                "items": {
+                  "format": "uuid",
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "maxItems": 4,
+                "type": "array",
+                "uniqueItems": true,
+                "x-struct": null,
+                "x-validate": null
+              },
+              "body": {
+                "maxLength": 4000,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "embed": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatMessageEmbedRequest"
+                  }
+                ],
+                "nullable": true,
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "body"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "attachment_ids": {
+                "items": {
+                  "format": "uuid",
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "maxItems": 4,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true,
+                "x-struct": null,
+                "x-validate": null
+              },
+              "body": {
+                "maxLength": 4000,
+                "minLength": 1,
+                "nullable": true,
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "embed": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatMessageEmbedRequest"
+                  }
+                ],
+                "nullable": true,
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "attachment_ids"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "attachment_ids": {
+                "default": [],
+                "items": {
+                  "format": "uuid",
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "maxItems": 4,
+                "type": "array",
+                "uniqueItems": true,
+                "x-struct": null,
+                "x-validate": null
+              },
+              "body": {
+                "maxLength": 4000,
+                "minLength": 1,
+                "nullable": true,
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "embed": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatMessageEmbedRequest"
+                  }
+                ],
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "embed"
+            ],
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        ],
         "example": {
           "attachment_ids": [],
           "body": "Energy improved.",
           "embed": {
             "id": "a65edc2e-f91b-4f01-9b31-1d0fb8b9104e",
             "type": "form_submission"
-          }
-        },
-        "properties": {
-          "attachment_ids": {
-            "default": [],
-            "items": {
-              "format": "uuid",
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
-            },
-            "maxItems": 4,
-            "type": "array",
-            "uniqueItems": true,
-            "x-struct": null,
-            "x-validate": null
-          },
-          "body": {
-            "maxLength": 4000,
-            "minLength": 1,
-            "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "embed": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ChatMessageEmbedRequest"
-              }
-            ],
-            "nullable": true,
-            "x-struct": null,
-            "x-validate": null
           }
         },
         "title": "CoachChatMessageCreateRequest",
@@ -2148,34 +2243,77 @@
         "x-validate": null
       },
       "ClientChatMessageCreateRequest": {
-        "additionalProperties": false,
-        "example": {
-          "attachment_ids": [],
-          "body": "Here is today's set."
-        },
-        "properties": {
-          "attachment_ids": {
-            "default": [],
-            "items": {
-              "format": "uuid",
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "attachment_ids": {
+                "default": [],
+                "items": {
+                  "format": "uuid",
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "maxItems": 4,
+                "type": "array",
+                "uniqueItems": true,
+                "x-struct": null,
+                "x-validate": null
+              },
+              "body": {
+                "maxLength": 4000,
+                "minLength": 1,
+                "pattern": "\\S",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
             },
-            "maxItems": 4,
-            "type": "array",
-            "uniqueItems": true,
+            "required": [
+              "body"
+            ],
+            "type": "object",
             "x-struct": null,
             "x-validate": null
           },
-          "body": {
-            "maxLength": 4000,
-            "minLength": 1,
-            "nullable": true,
-            "type": "string",
+          {
+            "additionalProperties": false,
+            "properties": {
+              "attachment_ids": {
+                "items": {
+                  "format": "uuid",
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                },
+                "maxItems": 4,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true,
+                "x-struct": null,
+                "x-validate": null
+              },
+              "body": {
+                "maxLength": 4000,
+                "minLength": 1,
+                "nullable": true,
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "attachment_ids"
+            ],
+            "type": "object",
             "x-struct": null,
             "x-validate": null
           }
+        ],
+        "example": {
+          "attachment_ids": [],
+          "body": "Here is today's set."
         },
         "title": "ClientChatMessageCreateRequest",
         "type": "object",
@@ -12006,6 +12144,17 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Case-insensitive nutrition plan name search",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string",
               "x-struct": null,
               "x-validate": null
             }

@@ -32,17 +32,17 @@ defmodule Easy.Chat.Message do
     timestamps(type: :utc_datetime_usec)
   end
 
-  @spec insert_changeset(String.t(), String.t(), :coach | :client, String.t(), map()) ::
+  @spec insert_changeset(String.t(), :coach | :client, String.t(), String.t(), map()) ::
           Ecto.Changeset.t()
-  def insert_changeset(business_id, conversation_id, sender_type, sender_id, attrs) do
+  def insert_changeset(business_id, sender_type, sender_id, conversation_id, attrs) do
     business_id
-    |> insert_changeset(conversation_id, sender_type, sender_id, nil, attrs)
+    |> insert_changeset(sender_type, sender_id, conversation_id, nil, attrs)
     |> validate_required([:body])
   end
 
-  @spec insert_changeset(String.t(), String.t(), :coach | :client, String.t(), map() | nil, map()) ::
+  @spec insert_changeset(String.t(), :coach | :client, String.t(), String.t(), map() | nil, map()) ::
           Ecto.Changeset.t()
-  def insert_changeset(business_id, conversation_id, sender_type, sender_id, embed, attrs) do
+  def insert_changeset(business_id, sender_type, sender_id, conversation_id, embed, attrs) do
     %__MODULE__{}
     |> cast(attrs, [:body])
     |> put_change(:business_id, business_id)

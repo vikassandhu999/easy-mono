@@ -63,10 +63,10 @@ defmodule Easy.Attachments do
     attachment =
       case Attachment.insert_changeset(
              business_id,
-             client_id,
-             id,
              actor_type,
              actor_id,
+             client_id,
+             id,
              attachment_attrs
            )
            |> Repo.insert() do
@@ -102,7 +102,7 @@ defmodule Easy.Attachments do
     attachments_by_id =
       Attachment
       |> Attachment.for_business(business_id)
-      |> Attachment.with_ids(ids)
+      |> Attachment.for_ids(ids)
       |> Repo.all()
       |> Map.new(&{&1.id, &1})
 

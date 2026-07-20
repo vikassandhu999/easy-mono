@@ -166,6 +166,7 @@ const injectedRtkApi = api.injectEndpoints({
         params: {
           offset: queryArg.offset,
           limit: queryArg.limit,
+          search: queryArg.search,
           status: queryArg.status,
         },
       }),
@@ -1038,6 +1039,8 @@ export type ListNutritionPlansApiArg = {
   offset?: number;
   /** Maximum nutrition plans to return */
   limit?: number;
+  /** Case-insensitive nutrition plan name search */
+  search?: string;
   /** Only nutrition plans with this status */
   status?: 'active' | 'archived';
 };
@@ -2515,11 +2518,22 @@ export type ChatMessageEmbedRequest = {
   id: string;
   type: 'form_submission';
 };
-export type CoachChatMessageCreateRequest = {
-  attachment_ids?: string[];
-  body?: string | null;
-  embed?: ChatMessageEmbedRequest | null;
-};
+export type CoachChatMessageCreateRequest =
+  | {
+      attachment_ids?: string[];
+      body: string;
+      embed?: ChatMessageEmbedRequest | null;
+    }
+  | {
+      attachment_ids: string[];
+      body?: string | null;
+      embed?: ChatMessageEmbedRequest | null;
+    }
+  | {
+      attachment_ids?: string[];
+      body?: string | null;
+      embed: ChatMessageEmbedRequest;
+    };
 export type TrainerAcceptInviteRequest = {
   email: string;
   invitation_token: string;

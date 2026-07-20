@@ -3,9 +3,9 @@ defmodule Easy.Clients do
   import Ecto.Query
 
   alias Easy.Billing
-  alias Easy.Forms.FormAssignment
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.Forms.FormAssignment
   alias Easy.Identity.User
   alias Easy.Nutrition.Plan
   alias Easy.Orgs

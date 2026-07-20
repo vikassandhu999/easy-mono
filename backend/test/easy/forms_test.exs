@@ -2,13 +2,13 @@ defmodule Easy.FormsTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.Attachments.Attachment
+  alias Easy.Ctx
+  alias Easy.Fitness.WeightEntry
   alias Easy.Forms
   alias Easy.Forms.CheckInSchedule
   alias Easy.Forms.FormAssignment
   alias Easy.Forms.FormSubmission
   alias Easy.Forms.FormTemplate
-  alias Easy.Ctx
-  alias Easy.Fitness.WeightEntry
   alias Easy.Repo
 
   describe "form templates and assignments" do

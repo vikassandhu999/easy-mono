@@ -67,6 +67,16 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert length(data) == 1
       assert hd(data)["client_id"] == nil
     end
+
+    test "filters templates by name", %{conn: conn, coach: coach, business: business} do
+      matching = insert(:plan, creator: coach, business: business, name: "High Protein")
+      insert(:plan, creator: coach, business: business, name: "Recovery")
+
+      conn = get(conn, "/v1/coach/nutrition-plans?search=protein")
+
+      assert %{"data" => [%{"id" => id}], "count" => 1} = json_response(conn, 200)
+      assert id == matching.id
+    end
   end
 
   describe "GET /v1/coach/nutrition-plans/:id" do

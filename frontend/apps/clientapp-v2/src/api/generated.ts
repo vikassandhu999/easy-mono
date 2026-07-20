@@ -1396,10 +1396,15 @@ export type ChatMessagesResponse = {
 export type ChatMessageResponse = {
   data: ChatMessage;
 };
-export type ClientChatMessageCreateRequest = {
-  attachment_ids?: string[];
-  body?: string | null;
-};
+export type ClientChatMessageCreateRequest =
+  | {
+      attachment_ids?: string[];
+      body: string;
+    }
+  | {
+      attachment_ids: string[];
+      body?: string | null;
+    };
 export type FoodResponse = {
   data: Food;
 };

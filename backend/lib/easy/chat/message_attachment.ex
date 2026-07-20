@@ -6,7 +6,6 @@ defmodule Easy.Chat.MessageAttachment do
   alias Easy.Orgs.Business
 
   import Ecto.Changeset
-  import Ecto.Query
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -39,13 +38,6 @@ defmodule Easy.Chat.MessageAttachment do
     )
     |> foreign_key_constraint(:attachment_id,
       name: :chat_message_attachments_attachment_business_id_fkey
-    )
-  end
-
-  @spec for_messages(Ecto.Queryable.t(), String.t(), [String.t()]) :: Ecto.Query.t()
-  def for_messages(query \\ __MODULE__, business_id, message_ids) do
-    from(link in query,
-      where: link.business_id == ^business_id and link.chat_message_id in ^message_ids
     )
   end
 end

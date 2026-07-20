@@ -15,14 +15,14 @@ defmodule Easy.ChatTest do
 
   describe "Message.insert_changeset/5" do
     test "requires a body" do
-      cs = Message.insert_changeset("biz", "conv", :client, "c1", %{})
+      cs = Message.insert_changeset("biz", :client, "c1", "conv", %{})
       refute cs.valid?
       assert "can't be blank" in errors_on(cs).body
     end
 
     test "sets sender from trusted args, not attrs" do
       cs =
-        Message.insert_changeset("biz", "conv", :client, "c1", %{
+        Message.insert_changeset("biz", :client, "c1", "conv", %{
           "body" => "hey",
           "sender_type" => "coach",
           "sender_id" => "evil"
@@ -34,7 +34,7 @@ defmodule Easy.ChatTest do
 
     test "rejects an over-long body" do
       cs =
-        Message.insert_changeset("biz", "conv", :coach, "c1", %{
+        Message.insert_changeset("biz", :coach, "c1", "conv", %{
           "body" => String.duplicate("a", 4001)
         })
 
@@ -44,13 +44,13 @@ defmodule Easy.ChatTest do
 
   describe "Message.insert_changeset/6" do
     test "allows attachment-only and embed-only message bodies" do
-      assert Message.insert_changeset("biz", "conv", :coach, "coach", nil, %{}).valid?
+      assert Message.insert_changeset("biz", :coach, "coach", "conv", nil, %{}).valid?
 
       assert Message.insert_changeset(
                "biz",
-               "conv",
                :coach,
                "coach",
+               "conv",
                %{
                  type: :form_submission,
                  id: Ecto.UUID.generate(),
@@ -66,9 +66,9 @@ defmodule Easy.ChatTest do
       invalid_type =
         Message.insert_changeset(
           "biz",
-          "conv",
           :coach,
           "coach",
+          "conv",
           %{type: :bogus, id: id, snapshot: %{}},
           %{}
         )
@@ -76,9 +76,9 @@ defmodule Easy.ChatTest do
       missing_id =
         Message.insert_changeset(
           "biz",
-          "conv",
           :coach,
           "coach",
+          "conv",
           %{type: :form_submission, snapshot: %{}},
           %{}
         )
@@ -86,9 +86,9 @@ defmodule Easy.ChatTest do
       missing_snapshot =
         Message.insert_changeset(
           "biz",
-          "conv",
           :coach,
           "coach",
+          "conv",
           %{type: :form_submission, id: id},
           %{}
         )
@@ -102,7 +102,7 @@ defmodule Easy.ChatTest do
     end
 
     test "registers embed database constraints on the changeset" do
-      changeset = Message.insert_changeset("biz", "conv", :coach, "coach", nil, %{})
+      changeset = Message.insert_changeset("biz", :coach, "coach", "conv", nil, %{})
       constraints = Enum.map(changeset.constraints, & &1.constraint)
 
       assert "chat_messages_embed_type_check" in constraints
@@ -115,9 +115,9 @@ defmodule Easy.ChatTest do
       changeset =
         conversation.business_id
         |> Message.insert_changeset(
-          conversation.id,
           :coach,
           Ecto.UUID.generate(),
+          conversation.id,
           nil,
           %{"body" => "hello"}
         )
@@ -273,7 +273,7 @@ defmodule Easy.ChatTest do
                  "attachment_ids" => [first_photo.id, second_photo.id]
                })
 
-      assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "Photo"
+      assert Easy.Repo.get!(Conversation, conversation.id).last_message_preview == "2 attachments"
 
       template = insert(:form_template, business: coach.business)
       assignment = insert(:form_assignment, business: coach.business, client: client, form_template: template)

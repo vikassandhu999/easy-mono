@@ -2,9 +2,9 @@ defmodule Easy.Forms.FormSubmission do
   use Ecto.Schema
 
   alias Easy.Attachments.Attachment
-  alias Easy.Forms.FormAssignment
   alias Easy.Clients.Client
   alias Easy.Ctx
+  alias Easy.Forms.FormAssignment
   alias Easy.Identity.User
   alias Easy.Orgs
 

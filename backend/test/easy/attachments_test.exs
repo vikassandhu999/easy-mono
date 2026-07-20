@@ -89,6 +89,11 @@ defmodule Easy.AttachmentsTest do
     refute attachment_changeset("audio/mp4", 1, 300_001).valid?
   end
 
+  test "for_ids no-ops for absent filters" do
+    assert Attachment.for_ids(nil) == Attachment
+    assert Attachment.for_ids("") == Attachment
+  end
+
   test "rolls back metadata when storage signing is unavailable" do
     client = insert_client()
     previous = Application.get_env(:easy, Easy.Storage)
@@ -232,9 +237,9 @@ defmodule Easy.AttachmentsTest do
   defp attachment_changeset(content_type, byte_size, duration_ms) do
     Attachment.insert_changeset(
       Ecto.UUID.generate(),
-      Ecto.UUID.generate(),
-      Ecto.UUID.generate(),
       :client,
+      Ecto.UUID.generate(),
+      Ecto.UUID.generate(),
       Ecto.UUID.generate(),
       %{
         "storage_key" => Ecto.UUID.generate(),

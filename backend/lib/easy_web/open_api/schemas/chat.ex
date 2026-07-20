@@ -137,22 +137,50 @@ defmodule EasyWeb.OpenApi.Schemas.CoachChatMessageCreateRequest do
   alias EasyWeb.OpenApi.Schemas.ChatMessageEmbedRequest
   alias OpenApiSpex.Schema
 
+  @body %Schema{type: :string, minLength: 1, maxLength: 4000, nullable: true}
+  @nonblank_body %Schema{type: :string, minLength: 1, maxLength: 4000, pattern: "\\S"}
+  @attachment_ids %Schema{
+    type: :array,
+    items: %Schema{type: :string, format: :uuid},
+    maxItems: 4,
+    uniqueItems: true,
+    default: []
+  }
+  @nonempty_attachment_ids %Schema{
+    type: :array,
+    items: %Schema{type: :string, format: :uuid},
+    minItems: 1,
+    maxItems: 4,
+    uniqueItems: true
+  }
+  @embed %Schema{allOf: [ChatMessageEmbedRequest], nullable: true}
+  @required_embed %Schema{allOf: [ChatMessageEmbedRequest]}
+  @properties %{body: @body, attachment_ids: @attachment_ids, embed: @embed}
+
   OpenApiSpex.schema(
     %{
       title: "CoachChatMessageCreateRequest",
       type: :object,
-      additionalProperties: false,
-      properties: %{
-        body: %Schema{type: :string, minLength: 1, maxLength: 4000, nullable: true},
-        attachment_ids: %Schema{
-          type: :array,
-          items: %Schema{type: :string, format: :uuid},
-          maxItems: 4,
-          uniqueItems: true,
-          default: []
+      anyOf: [
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: Map.put(@properties, :body, @nonblank_body),
+          required: [:body]
         },
-        embed: %Schema{allOf: [ChatMessageEmbedRequest], nullable: true}
-      },
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: Map.put(@properties, :attachment_ids, @nonempty_attachment_ids),
+          required: [:attachment_ids]
+        },
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: Map.put(@properties, :embed, @required_embed),
+          required: [:embed]
+        }
+      ],
       example: %{
         "body" => "Energy improved.",
         "attachment_ids" => [],
@@ -167,21 +195,42 @@ defmodule EasyWeb.OpenApi.Schemas.ClientChatMessageCreateRequest do
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
+  @body %Schema{type: :string, minLength: 1, maxLength: 4000, nullable: true}
+  @nonblank_body %Schema{type: :string, minLength: 1, maxLength: 4000, pattern: "\\S"}
+  @attachment_ids %Schema{
+    type: :array,
+    items: %Schema{type: :string, format: :uuid},
+    maxItems: 4,
+    uniqueItems: true,
+    default: []
+  }
+  @nonempty_attachment_ids %Schema{
+    type: :array,
+    items: %Schema{type: :string, format: :uuid},
+    minItems: 1,
+    maxItems: 4,
+    uniqueItems: true
+  }
+  @properties %{body: @body, attachment_ids: @attachment_ids}
+
   OpenApiSpex.schema(
     %{
       title: "ClientChatMessageCreateRequest",
       type: :object,
-      additionalProperties: false,
-      properties: %{
-        body: %Schema{type: :string, minLength: 1, maxLength: 4000, nullable: true},
-        attachment_ids: %Schema{
-          type: :array,
-          items: %Schema{type: :string, format: :uuid},
-          maxItems: 4,
-          uniqueItems: true,
-          default: []
+      anyOf: [
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: Map.put(@properties, :body, @nonblank_body),
+          required: [:body]
+        },
+        %Schema{
+          type: :object,
+          additionalProperties: false,
+          properties: Map.put(@properties, :attachment_ids, @nonempty_attachment_ids),
+          required: [:attachment_ids]
         }
-      },
+      ],
       example: %{"body" => "Here is today's set.", "attachment_ids" => []}
     },
     struct?: false

@@ -1,8 +1,8 @@
 defmodule Easy.Forms.FormAssignment do
   use Ecto.Schema
 
-  alias Easy.Forms.FormTemplate
   alias Easy.Clients.Client
+  alias Easy.Forms.FormTemplate
   alias Easy.Orgs
 
   import Ecto.Changeset

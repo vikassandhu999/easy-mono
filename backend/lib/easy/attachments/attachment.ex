@@ -31,9 +31,9 @@ defmodule Easy.Attachments.Attachment do
     timestamps(type: :utc_datetime)
   end
 
-  @spec insert_changeset(String.t(), String.t(), String.t(), atom(), String.t(), map()) ::
+  @spec insert_changeset(String.t(), atom(), String.t(), String.t(), String.t(), map()) ::
           Ecto.Changeset.t()
-  def insert_changeset(business_id, client_id, id, uploaded_by_type, uploaded_by_id, attrs) do
+  def insert_changeset(business_id, uploaded_by_type, uploaded_by_id, client_id, id, attrs) do
     %__MODULE__{id: id}
     |> cast(attrs, [:storage_key, :content_type, :byte_size, :duration_ms])
     |> put_change(:business_id, business_id)
@@ -71,13 +71,11 @@ defmodule Easy.Attachments.Attachment do
     )
   end
 
-  @spec with_ids(Ecto.Queryable.t(), [String.t()]) :: Ecto.Query.t()
-  def with_ids(query \\ __MODULE__, ids), do: from(attachment in query, where: attachment.id in ^ids)
-
-  @spec for_purpose(Ecto.Queryable.t(), :check_in_photo) :: Ecto.Query.t()
-  def for_purpose(query \\ __MODULE__, :check_in_photo) do
-    from(attachment in query, where: attachment.content_type in ^image_content_types())
-  end
+  @spec for_ids(Ecto.Queryable.t(), [String.t()] | String.t() | nil) :: Ecto.Query.t()
+  def for_ids(query \\ __MODULE__, ids)
+  def for_ids(query, nil), do: query
+  def for_ids(query, ""), do: query
+  def for_ids(query, ids), do: from(attachment in query, where: attachment.id in ^ids)
 
   @spec content_types() :: [String.t()]
   def content_types, do: @image_content_types ++ @video_content_types ++ @audio_content_types
@@ -85,14 +83,10 @@ defmodule Easy.Attachments.Attachment do
   @spec image_content_types() :: [String.t()]
   def image_content_types, do: @image_content_types
 
-  @spec max_byte_size(String.t()) :: pos_integer() | nil
-  def max_byte_size(type) when type in @image_content_types, do: 15 * 1024 * 1024
-  def max_byte_size(type) when type in @video_content_types, do: 50 * 1024 * 1024
-  def max_byte_size(type) when type in @audio_content_types, do: 10 * 1024 * 1024
-  def max_byte_size(_type), do: nil
-
-  @spec max_byte_size() :: pos_integer()
-  def max_byte_size, do: max_byte_size("image/jpeg")
+  defp max_byte_size(type) when type in @image_content_types, do: 15 * 1024 * 1024
+  defp max_byte_size(type) when type in @video_content_types, do: 50 * 1024 * 1024
+  defp max_byte_size(type) when type in @audio_content_types, do: 10 * 1024 * 1024
+  defp max_byte_size(_type), do: nil
 
   defp validate_byte_size(changeset) do
     max = max_byte_size(get_field(changeset, :content_type))

@@ -11,6 +11,7 @@ defmodule Easy.Chat do
   alias Easy.Forms.FormTemplate
   alias Easy.Orgs.Coach
   alias Easy.Repo
+  alias Ecto.Multi
 
   import Ecto.Query
 
@@ -162,30 +163,37 @@ defmodule Easy.Chat do
   defp insert_message(ctx, conversation, sender_type, sender_id, attrs, embed_policy) do
     attrs = attrs |> normalize_attrs() |> normalize_body()
 
-    result =
-      Repo.transaction(fn ->
-        base_changeset =
-          Message.insert_changeset(ctx.business_id, conversation.id, sender_type, sender_id, nil, attrs)
+    base_changeset =
+      Message.insert_changeset(ctx.business_id, sender_type, sender_id, conversation.id, nil, attrs)
 
-        with {:ok, attachment_ids} <- validate_attachment_ids(base_changeset, attrs),
-             {:ok, attachments} <- load_attachments(ctx, conversation.client_id, attachment_ids),
-             {:ok, embed} <- resolve_embed(ctx, conversation.client_id, attrs[:embed], embed_policy, base_changeset),
-             changeset <-
-               Message.insert_changeset(ctx.business_id, conversation.id, sender_type, sender_id, embed, attrs)
-               |> require_content(attachments, embed),
-             {:ok, message} <- Repo.insert(changeset),
-             :ok <- insert_attachment_links(ctx.business_id, message.id, attachments),
-             :ok <- update_conversation(conversation, message, attachments),
-             {:ok, message} <- reload_message(ctx.business_id, message.id) do
-          message
-        else
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
-
-    with {:ok, message} <- result do
+    with {:ok, attachment_ids} <- validate_attachment_ids(base_changeset, attrs),
+         {:ok, attachments} <- load_attachments(ctx, conversation.client_id, attachment_ids),
+         {:ok, embed} <- resolve_embed(ctx, conversation.client_id, attrs[:embed], embed_policy, base_changeset),
+         changeset <-
+           Message.insert_changeset(ctx.business_id, sender_type, sender_id, conversation.id, embed, attrs)
+           |> require_content(attachments, embed),
+         {:ok, message} <- persist_message(changeset, conversation, attachments) do
       broadcast_message(conversation, message)
       {:ok, message}
+    end
+  end
+
+  defp persist_message(changeset, conversation, attachments) do
+    Multi.new()
+    |> Multi.insert(:message, changeset)
+    |> Multi.run(:attachment_links, fn repo, %{message: message} ->
+      insert_attachment_links(repo, message.business_id, message.id, attachments)
+    end)
+    |> Multi.run(:conversation, fn repo, %{message: message, attachment_links: attachments} ->
+      update_conversation(repo, conversation, message, attachments)
+    end)
+    |> Multi.run(:complete_message, fn repo, %{message: message} ->
+      reload_message(repo, message.business_id, message.id)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{complete_message: message}} -> {:ok, message}
+      {:error, _operation, reason, _changes} -> {:error, reason}
     end
   end
 
@@ -263,7 +271,7 @@ defmodule Easy.Chat do
     attachments =
       Attachment
       |> Attachment.for_client(ctx.business_id, client_id)
-      |> Attachment.with_ids(ids)
+      |> Attachment.for_ids(ids)
       |> Repo.all()
 
     if length(attachments) == length(ids) do
@@ -335,24 +343,30 @@ defmodule Easy.Chat do
 
   defp require_content(changeset, _attachments, _embed), do: changeset
 
-  defp insert_attachment_links(business_id, message_id, attachments) do
-    attachments
-    |> Enum.with_index()
-    |> Enum.reduce_while(:ok, fn {attachment, position}, :ok ->
-      case business_id
-           |> MessageAttachment.insert_changeset(message_id, attachment.id, %{position: position})
-           |> Repo.insert() do
-        {:ok, _link} -> {:cont, :ok}
-        {:error, changeset} -> {:halt, {:error, changeset}}
-      end
-    end)
+  defp insert_attachment_links(repo, business_id, message_id, attachments) do
+    result =
+      attachments
+      |> Enum.with_index()
+      |> Enum.reduce_while(:ok, fn {attachment, position}, :ok ->
+        case business_id
+             |> MessageAttachment.insert_changeset(message_id, attachment.id, %{position: position})
+             |> repo.insert() do
+          {:ok, _link} -> {:cont, :ok}
+          {:error, changeset} -> {:halt, {:error, changeset}}
+        end
+      end)
+
+    case result do
+      :ok -> {:ok, attachments}
+      error -> error
+    end
   end
 
-  defp update_conversation(conversation, message, attachments) do
+  defp update_conversation(repo, conversation, message, attachments) do
     Conversation
     |> where([c], c.id == ^conversation.id and c.business_id == ^conversation.business_id)
     |> where([c], is_nil(c.last_message_at) or c.last_message_at <= ^message.inserted_at)
-    |> Repo.update_all(
+    |> repo.update_all(
       set: [
         last_message_at: message.inserted_at,
         last_message_preview: message_preview(message, attachments),
@@ -360,7 +374,7 @@ defmodule Easy.Chat do
       ]
     )
 
-    :ok
+    {:ok, :updated}
   end
 
   defp message_preview(%Message{body: body}, _attachments) when is_binary(body),
@@ -369,16 +383,17 @@ defmodule Easy.Chat do
   defp message_preview(%Message{embed_snapshot: %{"title" => title}}, _attachments),
     do: "Shared #{title}"
 
+  defp message_preview(_message, [_, _ | _] = attachments), do: "#{length(attachments)} attachments"
   defp message_preview(_message, [%Attachment{content_type: "image/" <> _} | _]), do: "Photo"
   defp message_preview(_message, [%Attachment{content_type: "video/" <> _} | _]), do: "Video"
   defp message_preview(_message, [%Attachment{content_type: "audio/" <> _} | _]), do: "Voice note"
   defp message_preview(_message, [_attachment | _]), do: "Attachment"
 
-  defp reload_message(business_id, message_id) do
+  defp reload_message(repo, business_id, message_id) do
     Message
     |> where([message], message.id == ^message_id and message.business_id == ^business_id)
     |> Message.include_attachments()
-    |> Repo.one()
+    |> repo.one()
     |> ok_or_not_found()
   end
 

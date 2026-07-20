@@ -1,6 +1,8 @@
 defmodule EasyWeb.Clients.ProfileControllerTest do
   use Easy.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   describe "GET /v1/client/me" do
     test "returns client profile with coach info" do
       coach = insert(:coach, first_name: "Rajat", last_name: "Jain", phone: "+91 99999 12345")
@@ -38,6 +40,7 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["subscription_started_on"] == "2026-07-01"
       assert data["subscription_ends_on"] == "2026-09-30"
       refute Map.has_key?(data, "business_id")
+      assert_schema(data, "ClientProfile", EasyWeb.ApiSpec.spec())
 
       assert %{
                "first_name" => "Rajat",

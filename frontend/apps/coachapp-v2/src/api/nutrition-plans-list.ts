@@ -18,9 +18,7 @@ import {pageTags} from '@/api/shared';
 const PAGE_SIZE = 20;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachNutritionPlansFilters = Pick<ListNutritionPlansApiArg, 'status'> & {
-  search?: string;
-};
+export type CoachNutritionPlansFilters = Pick<ListNutritionPlansApiArg, 'search' | 'status'>;
 
 const nutritionPlansListApi = api.injectEndpoints({
   endpoints: (build) => ({

@@ -355,8 +355,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
   alias EasyWeb.OpenApi.Schemas.ChatAttachment
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{

@@ -103,6 +103,7 @@ export default function ListClients() {
         <Page.Actions>
           <Button
             aria-label="Invite client"
+            className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0"
             onPress={() => navigate(ROUTES.INVITE_CLIENT)}
             variant="primary"
           >
@@ -113,7 +114,7 @@ export default function ListClients() {
       </Page.Header>
 
       <Page.Toolbar
-        className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-background pt-2 pb-3"
+        className="sticky top-0 z-10 mb-1.5 flex flex-wrap items-center gap-3 bg-background pt-2 pb-3"
         size="content"
       >
         <SearchField
@@ -122,10 +123,13 @@ export default function ListClients() {
           onChange={setSearch}
           value={search}
         >
-          <SearchField.Group>
+          <SearchField.Group className="min-h-11 sm:min-h-0">
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search clients" />
-            <SearchField.ClearButton />
+            <SearchField.Input
+              className="min-h-11 sm:min-h-0"
+              placeholder="Search clients"
+            />
+            <SearchField.ClearButton className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0" />
           </SearchField.Group>
         </SearchField>
         <Separator

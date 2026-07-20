@@ -24,11 +24,12 @@ export const OUTLINE_CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg
  * in this project, so `selected:*` classes silently no-op.
  */
 export const FILTER_PILL_CLASS =
-  'rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted ' +
+  'min-h-11 rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted sm:min-h-0 ' +
   'data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold ' +
   'data-[selected=true]:text-ink-foreground';
 
 type BrowseRowProps = {
+  className?: string;
   /** Tile contents: a lucide glyph, or `BrowseRowThumb` for image-backed rows. */
   icon: ReactNode;
   /** Extra classes for the icon tile — only for a domain that tints it (e.g. `bg-warning-soft`). */
@@ -38,9 +39,10 @@ type BrowseRowProps = {
   meta?: ReactNode;
   /** Typeahead/accessible text for the row. */
   textValue: string;
-  title: string;
+  title: ReactNode;
   /** Chips shown before the chevron. The chevron is always rendered. */
   trailing?: ReactNode;
+  trailingClassName?: string;
 };
 
 /**
@@ -48,10 +50,20 @@ type BrowseRowProps = {
  * Owns the whole skeleton so per-domain files carry only their icon, meta string,
  * and chips. Pair with `BrowseListBox`; never hand-roll the row markup.
  */
-export function BrowseRow({icon, iconClassName, id, meta, textValue, title, trailing}: BrowseRowProps) {
+export function BrowseRow({
+  className,
+  icon,
+  iconClassName,
+  id,
+  meta,
+  textValue,
+  title,
+  trailing,
+  trailingClassName,
+}: BrowseRowProps) {
   return (
     <ListBox.Item
-      className={cn(LIST_ITEM_CLASS, 'mt-0')}
+      className={cn(LIST_ITEM_CLASS, 'mt-0', className)}
       id={id}
       textValue={textValue}
     >
@@ -65,13 +77,13 @@ export function BrowseRow({icon, iconClassName, id, meta, textValue, title, trai
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Label className="max-w-full truncate text-sm font-semibold text-foreground">{title}</Label>
+        <Label className="min-w-0 max-w-full truncate text-sm font-semibold text-foreground">{title}</Label>
         {meta === undefined ? null : (
           <Description className="max-w-full truncate text-xs text-muted">{meta}</Description>
         )}
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className={cn('flex shrink-0 items-center gap-1.5', trailingClassName)}>
         {trailing}
         <ChevronRight className="size-4 shrink-0 text-muted-2" />
       </div>
@@ -135,7 +147,7 @@ export default function BrowseListBox<T extends object>({
               color="muted"
               type="body-sm"
             >
-              Couldn't load. Check your connection and try again.
+              Couldn't load {ariaLabel.toLowerCase()}. Check your connection and try again.
             </Typography>
             {onRetry ? (
               <Button

@@ -1,6 +1,8 @@
-import {Button, Skeleton, toast} from '@heroui/react';
-import {ChevronRight, Rocket, X} from 'lucide-react';
-import {useEffect, useRef, useState} from 'react';
+import {Button, Chip, CloseButton, Meter, Separator, Skeleton, Surface, Typography, toast} from '@heroui/react';
+import {cn} from '@heroui/styles';
+import {Check, ChevronRight, Rocket} from 'lucide-react';
+import type {ReactNode} from 'react';
+import {Fragment, useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -92,47 +94,58 @@ function useDashboardSetupProgress(skip: boolean): SetupProgress {
 
 function RocketTile() {
   return (
-    <span className="flex size-[34px] shrink-0 items-center justify-center rounded-[9px] bg-accent-soft text-accent">
-      <Rocket size={17} />
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent">
+      <Rocket className="size-4" />
     </span>
   );
 }
 
 function DismissButton({onDismiss}: {onDismiss: () => void}) {
+  // `CloseButton` takes no `size` prop.
   return (
-    <Button
+    <CloseButton
       aria-label="Dismiss setup"
-      className="size-9 min-w-9 shrink-0 text-muted"
-      isIconOnly
+      className="shrink-0 bg-transparent text-muted"
       onPress={onDismiss}
-      size="sm"
-      variant="ghost"
-    >
-      <X size={15} />
-    </Button>
+    />
+  );
+}
+
+/** GAPS #3 — the strip is a `Surface`, at every state. */
+function SetupSurface({children}: {children: ReactNode}) {
+  return (
+    <Surface className="rounded-card border border-border p-3.5">
+      <section className="flex items-center gap-4">{children}</section>
+    </Surface>
   );
 }
 
 function SetupCellSkeleton({onDismiss}: {onDismiss: () => void}) {
   return (
-    <section className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-3.5">
-      <Skeleton className="size-[34px] shrink-0 rounded-[9px]" />
+    <SetupSurface>
+      <Skeleton className="size-9 shrink-0 rounded-control" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-48 max-w-full rounded" />
         <Skeleton className="h-3 w-32 rounded" />
       </div>
       <DismissButton onDismiss={onDismiss} />
-    </section>
+    </SetupSurface>
   );
 }
 
 function SetupCellError({onDismiss, onRetry}: {onDismiss: () => void; onRetry: () => void}) {
   return (
-    <section className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-3.5">
+    <SetupSurface>
       <RocketTile />
-      <p className="flex-1 text-sm text-muted">Couldn't load your setup progress.</p>
+      <Typography
+        className="flex-1"
+        color="muted"
+        type="body-sm"
+      >
+        Couldn't load your setup progress.
+      </Typography>
       <Button
-        className="min-h-9 shrink-0"
+        className="shrink-0"
         onPress={onRetry}
         size="sm"
         variant="secondary"
@@ -140,112 +153,153 @@ function SetupCellError({onDismiss, onRetry}: {onDismiss: () => void; onRetry: (
         Retry
       </Button>
       <DismissButton onDismiss={onDismiss} />
-    </section>
+    </SetupSurface>
   );
 }
 
-function StepNode({state, step}: {state: 'current' | 'done' | 'upcoming'; step: SetupStep}) {
-  const index = {assign: 3, client: 1, plan: 2}[step.key];
+type StepState = 'current' | 'done' | 'upcoming';
 
+const STEP_STATE_LABEL: Record<StepState, string> = {
+  current: 'In progress',
+  done: 'Done',
+  upcoming: 'Up next',
+};
+
+/**
+ * GAPS #3 — one `Chip` per step, static labels (never `Tabs`). The step's state
+ * rides the chip's colour/variant: done = accent-filled tick, current = accent
+ * outline, upcoming = muted.
+ */
+function StepChip({index, state, step}: {index: number; state: StepState; step: SetupStep}) {
   return (
-    <div
-      className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-[11px] px-3 py-2 ${
-        state === 'current' ? 'border-[1.5px] border-accent bg-surface' : state === 'upcoming' ? 'opacity-70' : ''
-      }`}
+    <Chip
+      className={cn(
+        // Done and upcoming sit on the same neutral fill in the reference — only
+        // the current step is called out, with an accent hairline on white.
+        'h-auto min-w-0 shrink gap-2 rounded-control px-3 py-1.5',
+        state === 'current' ? 'border border-accent bg-surface' : 'border border-transparent bg-surface-secondary',
+        state === 'upcoming' ? 'opacity-70' : '',
+      )}
+      color="default"
+      variant="secondary"
     >
       <span
-        className={`flex size-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+        className={cn(
+          'flex size-5 shrink-0 items-center justify-center rounded-full text-chip font-bold',
           state === 'done'
             ? 'bg-accent text-accent-foreground'
             : state === 'current'
-              ? 'border-[1.5px] border-accent text-accent'
-              : 'border-[1.5px] border-border text-muted'
-        }`}
+              ? 'border border-accent text-accent'
+              : 'border border-border text-muted',
+        )}
       >
-        {state === 'done' ? '✓' : index}
+        {state === 'done' ? <Check className="size-3" /> : index}
       </span>
-      <span className="min-w-0">
-        <span className="block truncate text-[12.5px] font-semibold text-foreground">{step.label}</span>
-        <span className={`block text-[11px] ${state === 'current' ? 'font-semibold text-accent' : 'text-muted'}`}>
-          {state === 'done' ? 'Done' : state === 'current' ? 'In progress' : 'Up next'}
+      <span className="flex min-w-0 flex-col items-start">
+        <span className="max-w-full truncate text-pill font-semibold text-foreground">{step.label}</span>
+        <span className={cn('text-chip font-medium', state === 'current' ? 'text-accent' : 'text-muted')}>
+          {STEP_STATE_LABEL[state]}
         </span>
       </span>
-    </div>
+    </Chip>
   );
 }
 
 function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDismiss: () => void; steps: SetupStep[]}) {
   const navigate = useNavigate();
   const total = steps.length;
+  // INTERACTIONS §DB: the strip points at the next incomplete step and
+  // `Continue setup` deep-links to it.
   const current = steps.find((step) => !step.done) ?? steps[total - 1];
-  const nodeState = (step: SetupStep): 'current' | 'done' | 'upcoming' =>
-    step.done ? 'done' : step === current ? 'current' : 'upcoming';
+  const nextRoute = current?.route ?? ROUTES.CLIENTS;
+  const stepState = (step: SetupStep): StepState => (step.done ? 'done' : step === current ? 'current' : 'upcoming');
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-3.5">
-      {/* Mobile: tappable nudge with progress bar */}
-      <button
-        className="flex w-full items-center gap-3 text-left md:hidden"
-        onClick={() => navigate(current?.route ?? ROUTES.CLIENTS)}
-        type="button"
+    <Surface className="rounded-card border border-border p-3.5">
+      {/* Mobile: GAPS #3 collapses the strip to one row + a chevron that
+          navigates to the next incomplete step. */}
+      <Button
+        className="h-auto w-full justify-start gap-3 rounded-none px-0 py-0 md:hidden"
+        onPress={() => navigate(nextRoute)}
+        variant="ghost"
       >
         <RocketTile />
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13px] font-semibold text-foreground">Get your workspace ready</span>
-          <span className="mt-1.5 flex items-center gap-2.5">
-            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
-              <span
-                className="block h-full rounded-full bg-accent"
-                style={{width: `${(doneCount / total) * 100}%`}}
-              />
-            </span>
-            <span className="shrink-0 text-[11px] font-semibold text-muted">
+        <Meter
+          aria-label="Setup progress"
+          className="flex min-w-0 flex-1 flex-col gap-1.5"
+          color="accent"
+          maxValue={total}
+          value={doneCount}
+        >
+          <Typography
+            className="max-w-full truncate text-start"
+            type="body-sm"
+            weight="semibold"
+          >
+            Get your workspace ready
+          </Typography>
+          <span className="flex items-center gap-2.5">
+            <Meter.Track className="min-w-0 flex-1">
+              <Meter.Fill />
+            </Meter.Track>
+            <Typography
+              className="shrink-0 font-semibold"
+              color="muted"
+              type="body-xs"
+            >
               {doneCount} of {total}
-            </span>
+            </Typography>
           </span>
-        </span>
-        <ChevronRight
-          className="shrink-0 text-muted"
-          size={18}
-        />
-      </button>
+        </Meter>
+        <ChevronRight className="size-4 shrink-0 text-muted" />
+      </Button>
 
-      {/* Desktop: full horizontal stepper */}
-      <div className="hidden items-center gap-5 md:flex">
+      {/* Desktop: title block · step chips · Continue setup · dismiss */}
+      <div className="hidden items-center gap-4 md:flex">
         <div className="flex shrink-0 items-center gap-3">
           <RocketTile />
-          <div>
-            <div className="font-grotesk text-sm font-semibold text-foreground">Get your workspace ready</div>
-            <div className="text-xs text-muted">
+          <div className="flex flex-col">
+            <Typography
+              className="font-grotesk"
+              type="body-sm"
+              weight="semibold"
+            >
+              Get your workspace ready
+            </Typography>
+            <Typography
+              color="muted"
+              type="body-xs"
+            >
               {doneCount} of {total} complete
-            </div>
+            </Typography>
           </div>
         </div>
+
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
-          {steps.map((step, i) => (
-            <div
-              className="flex min-w-0 flex-1 items-center gap-1.5"
-              key={step.key}
-            >
-              <StepNode
-                state={nodeState(step)}
+          {steps.map((step, index) => (
+            <Fragment key={step.key}>
+              {index > 0 ? <Separator className="w-3.5 shrink-0" /> : null}
+              <StepChip
+                index={index + 1}
+                state={stepState(step)}
                 step={step}
               />
-              {i < total - 1 ? <span className="h-px w-3.5 shrink-0 bg-border" /> : null}
-            </div>
+            </Fragment>
           ))}
         </div>
+
         <div className="flex shrink-0 items-center gap-1">
           <Button
-            onPress={() => navigate(current?.route ?? ROUTES.CLIENTS)}
+            onPress={() => navigate(nextRoute)}
             size="sm"
+            variant="primary"
           >
             Continue setup
           </Button>
           <DismissButton onDismiss={onDismiss} />
         </div>
       </div>
-    </section>
+    </Surface>
   );
 }
 

@@ -1,72 +1,124 @@
-import {Avatar, Typography} from '@heroui/react';
-import {ArrowRight} from 'lucide-react';
+import type {Key} from '@heroui/react';
+
+import {Avatar, Badge, Button, Description, Label, ListBox, Typography} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {useNavigate} from 'react-router-dom';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {ROUTES} from '@/@config/routes';
 import type {Conversation} from '@/api/generated';
+import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
 import {compareDateStrings, formatRelativeTime} from '@/dashboard/lib/date-format';
 
+/** GAPS #15 — conversation rows are `ListBox` items, never a table. */
 function ConversationRow({conversation}: {conversation: Conversation}) {
-  const navigate = useNavigate();
   const name = conversation.client_name || 'Client';
   const unread = conversation.unread_count > 0;
 
   return (
-    <button
-      className={`flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-        unread ? 'bg-accent-soft' : 'hover:bg-surface-hover'
-      }`}
-      onClick={() => navigate(ROUTES.CONVERSATION.replace(':id', conversation.id))}
-      type="button"
+    <ListBox.Item
+      className={cn(
+        LIST_ITEM_CLASS,
+        'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none border-b border-separator py-3',
+        'last:border-0 sm:px-4',
+        // The unread row is the accent-tinted one in the reference.
+        unread ? 'bg-accent-soft' : 'hover:bg-surface-secondary',
+      )}
+      id={conversation.id}
+      textValue={name}
     >
-      <Avatar size="sm">
-        <Avatar.Fallback>{name[0]?.toUpperCase() ?? '?'}</Avatar.Fallback>
+      <Avatar
+        className="size-9 shrink-0 bg-surface-secondary"
+        size="md"
+      >
+        <Avatar.Fallback className="text-xs font-semibold text-foreground">
+          {name[0]?.toUpperCase() ?? '?'}
+        </Avatar.Fallback>
       </Avatar>
-      <span className="min-w-0 flex-1">
+
+      <div className="flex min-w-0 flex-col">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-medium">{name}</span>
+          <Label className="min-w-0 truncate text-sm font-semibold text-foreground">{name}</Label>
           {unread ? (
-            <span className="shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold leading-none text-accent-foreground">
+            <Badge
+              className="shrink-0"
+              color="accent"
+              size="sm"
+            >
               {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
-            </span>
+            </Badge>
           ) : null}
         </span>
-        <span className="block truncate text-xs text-muted">
+        <Description className="max-w-full truncate text-xs text-muted">
           {conversation.last_message_preview ?? 'No messages yet'}
-        </span>
-      </span>
-      <span className="flex shrink-0 items-center gap-2 text-xs text-muted">
+        </Description>
+      </div>
+
+      <Typography
+        className="shrink-0 whitespace-nowrap text-muted-2"
+        type="body-xs"
+      >
         {formatRelativeTime(conversation.last_message_at ?? conversation.inserted_at)}
-        <ArrowRight size={14} />
-      </span>
-    </button>
+      </Typography>
+    </ListBox.Item>
   );
 }
 
 export function RecentActivityCell({conversations, isError}: {conversations: Conversation[]; isError: boolean}) {
+  const navigate = useNavigate();
   const visible = [...conversations]
     .sort((a, b) => compareDateStrings(b.last_message_at ?? b.inserted_at, a.last_message_at ?? a.inserted_at))
     .slice(0, 4);
 
   return (
-    <section className="flex flex-col gap-3">
-      <Typography type="h5">Recent conversations</Typography>
+    <section className="flex min-w-0 flex-col gap-3">
+      <DashboardSectionHeading
+        aside={
+          <Button
+            className="shrink-0 text-muted"
+            onPress={() => navigate(ROUTES.MESSAGES)}
+            size="sm"
+            variant="ghost"
+          >
+            Inbox
+          </Button>
+        }
+        title="Recent conversations"
+      />
+
       {isError ? (
-        <div className="rounded-2xl border border-danger/20 bg-danger/5 px-4 py-6 text-center text-sm text-danger-soft-foreground">
-          Couldn't load conversations.
+        <div className="rounded-card border border-border bg-surface px-4 py-6 text-center">
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            Couldn't load conversations.
+          </Typography>
         </div>
       ) : visible.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-surface px-4 py-6 text-center text-sm text-muted">
-          Conversations with your clients will show up here.
+        <div className="rounded-card border border-border bg-surface px-4 py-6 text-center">
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            Conversations with your clients will show up here.
+          </Typography>
         </div>
       ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
-          {visible.map((conversation) => (
-            <ConversationRow
-              conversation={conversation}
-              key={conversation.id}
-            />
-          ))}
+        <div className="overflow-hidden rounded-card border border-border bg-surface">
+          <ListBox
+            aria-label="Recent conversations"
+            className="gap-0 p-0"
+            onAction={(key: Key) => navigate(ROUTES.CONVERSATION.replace(':id', String(key)))}
+            selectionMode="none"
+          >
+            {visible.map((conversation) => (
+              <ConversationRow
+                conversation={conversation}
+                key={conversation.id}
+              />
+            ))}
+          </ListBox>
         </div>
       )}
     </section>

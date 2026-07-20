@@ -1,5 +1,6 @@
-import {Skeleton} from '@heroui/react';
+import {Button, Separator, Skeleton, Surface, Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
+import {Fragment} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
@@ -9,11 +10,33 @@ import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useListProspectsQuery} from '@/api/prospects';
+import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
 import {PriorityQueue} from '@/dashboard/components/priority-queue';
 import {QuickActionsRow} from '@/dashboard/components/quick-actions-row';
 import {RecentActivityCell} from '@/dashboard/components/recent-activity-cell';
 import {DashboardSetupCell} from '@/dashboard/dashboard-setup-cell';
-import {formatDashboardDate} from '@/dashboard/lib/date-format';
+import {daysSince, formatDashboardDate} from '@/dashboard/lib/date-format';
+
+/**
+ * COPY.md §DB check-ins card subtitle — `Oldest waiting 2 days · Sam, Priya, Devon +2`.
+ * Both halves come from the review-queue rows; nothing is invented.
+ */
+function reviewSummary(queue: {client: {first_name: null | string}; inserted_at: string}[]) {
+  const names = queue
+    .map((entry) => entry.client.first_name?.trim())
+    .filter((name): name is string => Boolean(name))
+    .filter((name, index, all) => all.indexOf(name) === index);
+  const shown = names.slice(0, 3).join(', ');
+  const overflow = names.length - 3;
+
+  return {
+    names: shown ? (overflow > 0 ? `${shown} +${overflow}` : shown) : '',
+    oldestDays: queue.reduce<null | number>((oldest, entry) => {
+      const days = daysSince(entry.inserted_at);
+      return days === null ? oldest : Math.max(oldest ?? 0, days);
+    }, null),
+  };
+}
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -26,9 +49,18 @@ function greeting(): string {
   return 'Good evening';
 }
 
-const EYEBROW = 'text-[11px] font-semibold uppercase tracking-[0.09em] text-muted';
+// RECIPES.md R9 — the date eyebrow above the greeting.
+const EYEBROW = 'text-xs font-semibold uppercase tracking-wider text-muted';
 
-function StatGroup({
+/**
+ * GAPS #1 — the glance bar is a `Surface` holding two stat blocks (`Typography`
+ * number + label) with a vertical `Separator` between. No custom stat component
+ * and no Card per number.
+ *
+ * The blocks stay pressable (they deep-link to CL) — that behaviour predates the
+ * redesign and the ref doesn't contradict it, so it's kept rather than dropped.
+ */
+function StatBar({
   active,
   className,
   isError,
@@ -46,26 +78,37 @@ function StatGroup({
   ];
 
   return (
-    <div
-      className={cn(
-        'flex items-stretch divide-x divide-border overflow-hidden rounded-2xl border border-border bg-surface',
-        className,
-      )}
-    >
-      {cells.map((cell) => (
-        <button
-          className="flex flex-1 flex-col gap-0.5 px-5 py-2.5 text-left transition-colors hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          key={cell.label}
-          onClick={() => navigate(ROUTES.CLIENTS)}
-          type="button"
-        >
-          <span className="font-grotesk text-[22px] font-semibold leading-tight tabular-nums text-foreground">
-            {cell.value ?? '—'}
-          </span>
-          <span className="whitespace-nowrap text-[11.5px] text-muted">{cell.label}</span>
-        </button>
+    <Surface className={cn('flex items-stretch overflow-hidden rounded-card border border-border', className)}>
+      {cells.map((cell, index) => (
+        <Fragment key={cell.label}>
+          {index > 0 ? (
+            <Separator
+              className="self-stretch"
+              orientation="vertical"
+            />
+          ) : null}
+          <Button
+            className="h-auto min-h-11 flex-1 flex-col items-start justify-center gap-0.5 rounded-none px-5 py-2.5"
+            onPress={() => navigate(ROUTES.CLIENTS)}
+            variant="ghost"
+          >
+            <Typography
+              className="font-grotesk tabular-nums"
+              type="h4"
+            >
+              {cell.value ?? '—'}
+            </Typography>
+            <Typography
+              className="whitespace-nowrap font-normal"
+              color="muted"
+              type="body-sm"
+            >
+              {cell.label}
+            </Typography>
+          </Button>
+        </Fragment>
       ))}
-    </div>
+    </Surface>
   );
 }
 
@@ -80,17 +123,17 @@ function DashboardSkeleton() {
           <Skeleton className="h-3 w-24 rounded" />
           <Skeleton className="mt-2 h-8 w-56 max-w-full rounded-lg" />
         </Page.TitleGroup>
-        <Skeleton className="hidden h-16 w-56 rounded-2xl sm:block" />
+        <Skeleton className="hidden h-16 w-56 rounded-card sm:block" />
       </Page.Header>
       <Page.Content>
         <Page.Frame
           className="flex flex-col gap-5 pb-8 pt-4"
           size="wide"
         >
-          <Skeleton className="h-16 w-full rounded-2xl" />
-          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
-            <Skeleton className="h-80 w-full rounded-2xl" />
-            <Skeleton className="h-72 w-full rounded-2xl" />
+          <Skeleton className="h-16 w-full rounded-card" />
+          <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
+            <Skeleton className="h-80 w-full rounded-card" />
+            <Skeleton className="h-72 w-full rounded-card" />
           </div>
         </Page.Frame>
       </Page.Content>
@@ -124,6 +167,7 @@ export default function Dashboard() {
   const clientSummary = clientsData?.summary;
   const clients = clientsData?.data ?? [];
   const newProspects = prospectsError ? [] : (prospectsData?.data ?? []);
+  const review = reviewSummary(reviewQueueData?.data ?? []);
 
   return (
     <Page>
@@ -135,7 +179,7 @@ export default function Dashboard() {
           <div className={EYEBROW}>{formatDashboardDate()}</div>
           <Page.Title className="mt-1.5 font-grotesk">{name ? `${greeting()}, ${name}` : greeting()}</Page.Title>
         </Page.TitleGroup>
-        <StatGroup
+        <StatBar
           active={clientSummary?.active ?? 0}
           className="hidden sm:flex"
           isError={clientsError}
@@ -148,7 +192,7 @@ export default function Dashboard() {
           className="flex flex-col gap-5 pb-8 pt-4"
           size="wide"
         >
-          <StatGroup
+          <StatBar
             active={clientSummary?.active ?? 0}
             className="sm:hidden"
             isError={clientsError}
@@ -159,13 +203,15 @@ export default function Dashboard() {
             <DashboardSetupCell hiddenReason={profile.business.dashboard_setup_hidden_reason} />
           ) : null}
 
-          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
+          <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
             <PriorityQueue
               clients={clients}
               isError={clientsError}
               prospects={newProspects}
               reviewCount={reviewQueueLoading || reviewQueueError ? null : (reviewQueueData?.data.length ?? 0)}
               reviewError={reviewQueueError}
+              reviewNames={review.names}
+              reviewOldestDays={review.oldestDays}
             />
 
             <div className="flex min-w-0 flex-col gap-5">
@@ -173,8 +219,8 @@ export default function Dashboard() {
                 conversations={conversationsData?.data ?? []}
                 isError={conversationsError}
               />
-              <section className="flex flex-col gap-3">
-                <h2 className="font-grotesk text-base font-semibold text-foreground">Quick actions</h2>
+              <section className="flex min-w-0 flex-col gap-3">
+                <DashboardSectionHeading title="Quick actions" />
                 <QuickActionsRow />
               </section>
             </div>

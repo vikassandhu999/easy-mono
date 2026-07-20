@@ -1,7 +1,11 @@
+import type {Key} from '@heroui/react';
+import {Label, ListBox} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import type {LucideIcon} from 'lucide-react';
 import {ChevronRight, Dumbbell, Globe, UserPlus, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {ROUTES} from '@/@config/routes';
 
 type Action = {
@@ -10,6 +14,7 @@ type Action = {
   route: string;
 };
 
+// COPY.md §DB quick actions, in reference order.
 const ACTIONS: Action[] = [
   {icon: UserPlus, label: 'Invite a client', route: ROUTES.INVITE_CLIENT},
   {icon: Dumbbell, label: 'New training plan', route: ROUTES.CREATE_TRAINING_PLAN},
@@ -21,24 +26,32 @@ export function QuickActionsRow() {
   const navigate = useNavigate();
 
   return (
-    <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
-      {ACTIONS.map((action) => (
-        <button
-          className="flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          key={action.route}
-          onClick={() => navigate(action.route)}
-          type="button"
-        >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
-            <action.icon size={16} />
-          </span>
-          <span className="flex-1 truncate text-[13.5px] font-medium text-foreground">{action.label}</span>
-          <ChevronRight
-            className="shrink-0 text-muted"
-            size={16}
-          />
-        </button>
-      ))}
+    <div className="overflow-hidden rounded-card border border-border bg-surface">
+      <ListBox
+        aria-label="Quick actions"
+        className="gap-0 p-0"
+        onAction={(key: Key) => navigate(String(key))}
+        selectionMode="none"
+      >
+        {ACTIONS.map((action) => (
+          <ListBox.Item
+            className={cn(
+              LIST_ITEM_CLASS,
+              'grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none',
+              'border-b border-separator py-3 last:border-0 hover:bg-surface-secondary sm:px-4',
+            )}
+            id={action.route}
+            key={action.route}
+            textValue={action.label}
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent">
+              <action.icon className="size-4" />
+            </span>
+            <Label className="min-w-0 truncate text-sm font-medium text-foreground">{action.label}</Label>
+            <ChevronRight className="size-4 shrink-0 text-muted-2" />
+          </ListBox.Item>
+        ))}
+      </ListBox>
     </div>
   );
 }

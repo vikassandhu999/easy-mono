@@ -1,10 +1,15 @@
-import {Button, Chip} from '@heroui/react';
+import type {Key} from '@heroui/react';
+
+import {Avatar, Button, Chip, Description, Label, ListBox, Typography} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {ArrowRight, ClipboardCheck} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import type {Prospect} from '@/api/prospects';
+import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
 import {clientInitials, clientName} from '@/dashboard/lib/client-format';
 import {formatDaysUntil, formatRelativeTime} from '@/dashboard/lib/date-format';
 
@@ -22,18 +27,14 @@ type QueueItem = {
   tone: Tone;
 };
 
+// GAPS #2: severity is carried by the status `Chip` (danger / warning / accent),
+// never by a coloured left stripe — the stripe is the prototype's shorthand, not
+// a token pattern. The avatar tint is the row's only other severity cue.
 const AVATAR_TONE: Record<Tone, string> = {
   accent: 'bg-accent-soft text-accent',
   danger: 'bg-danger-soft text-danger',
-  default: 'bg-surface-tertiary text-muted',
-  warning: 'bg-warning-soft text-warning-soft-foreground',
-};
-
-const STRIPE_TONE: Record<Tone, string> = {
-  accent: 'bg-accent',
-  danger: 'bg-danger',
-  default: 'bg-border',
-  warning: 'bg-warning',
+  default: 'bg-surface-secondary text-muted',
+  warning: 'bg-warning-soft text-warning-text',
 };
 
 function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: string) => void): QueueItem[] {
@@ -104,32 +105,41 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
 
 function QueueRow({item}: {item: QueueItem}) {
   return (
-    <div className="flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-background">
-      <button
-        className="flex min-w-0 flex-1 items-center gap-3.5 self-stretch text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        onClick={item.onOpen}
-        type="button"
+    <ListBox.Item
+      className={cn(
+        LIST_ITEM_CLASS,
+        'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none border-b border-separator py-3',
+        'last:border-0 hover:bg-surface-secondary sm:gap-4 sm:px-4',
+      )}
+      id={item.id}
+      textValue={item.name}
+    >
+      <Avatar
+        className="size-9 shrink-0"
+        size="md"
       >
-        <span className={`w-[3px] shrink-0 self-stretch rounded-full ${STRIPE_TONE[item.tone]}`} />
-        <span
-          className={`flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold ${AVATAR_TONE[item.tone]}`}
-        >
+        {/* The tint has to sit on `Avatar.Fallback` — `Avatar`'s own background
+            class wins on the root and the tone would be painted over. */}
+        <Avatar.Fallback className={cn('text-xs font-semibold', AVATAR_TONE[item.tone])}>
           {item.initials}
+        </Avatar.Fallback>
+      </Avatar>
+
+      <div className="flex min-w-0 flex-col">
+        <span className="flex min-w-0 items-center gap-2">
+          <Label className="min-w-0 truncate text-sm font-semibold text-foreground">{item.name}</Label>
+          <Chip
+            className="shrink-0"
+            color={item.tone}
+            size="sm"
+            variant={item.chipVariant}
+          >
+            {item.chip}
+          </Chip>
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold text-foreground">{item.name}</span>
-            <Chip
-              color={item.tone}
-              size="sm"
-              variant={item.chipVariant}
-            >
-              {item.chip}
-            </Chip>
-          </span>
-          <span className="mt-0.5 block truncate text-[12.5px] text-muted">{item.subtitle}</span>
-        </span>
-      </button>
+        <Description className="max-w-full truncate text-xs text-muted">{item.subtitle}</Description>
+      </div>
+
       <Button
         className="shrink-0"
         onPress={item.onOpen}
@@ -137,6 +147,52 @@ function QueueRow({item}: {item: QueueItem}) {
         variant="outline"
       >
         {item.action}
+      </Button>
+    </ListBox.Item>
+  );
+}
+
+/** The ink hero row above the queue — COPY.md §DB `{n} check-ins to review`. */
+function ReviewBanner({count, names, oldestDays}: {count: number; names: string; oldestDays: null | number}) {
+  const navigate = useNavigate();
+  const subtitle = [
+    oldestDays === null ? null : `Oldest waiting ${oldestDays} day${oldestDays === 1 ? '' : 's'}`,
+    names,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  return (
+    <div className="flex items-center gap-4 rounded-card bg-ink px-5 py-4 text-ink-foreground">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface/10">
+        <ClipboardCheck className="size-5" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Typography
+          className="font-grotesk text-ink-foreground"
+          type="h6"
+        >
+          {count} check-in{count === 1 ? '' : 's'} to review
+        </Typography>
+        {subtitle ? (
+          <Typography
+            // Wraps rather than truncates: at 390px the names list is the point
+            // of the line, and an ellipsis would eat all of it.
+            className="max-w-full text-ink-foreground/60"
+            type="body-xs"
+          >
+            {subtitle}
+          </Typography>
+        ) : null}
+      </div>
+      <Button
+        className="shrink-0 text-foreground"
+        onPress={() => navigate(ROUTES.CHECKINS_TO_REVIEW)}
+        size="sm"
+        variant="secondary"
+      >
+        Review
+        <ArrowRight className="size-4" />
       </Button>
     </div>
   );
@@ -148,82 +204,98 @@ type PriorityQueueProps = {
   prospects: Prospect[];
   reviewCount: null | number;
   reviewError: boolean;
+  reviewNames?: string;
+  reviewOldestDays?: null | number;
 };
 
-export function PriorityQueue({clients, isError, prospects, reviewCount, reviewError}: PriorityQueueProps) {
+export function PriorityQueue({
+  clients,
+  isError,
+  prospects,
+  reviewCount,
+  reviewError,
+  reviewNames = '',
+  reviewOldestDays = null,
+}: PriorityQueueProps) {
   const navigate = useNavigate();
   const items = buildItems(clients, prospects, navigate).slice(0, 6);
+  const byId = new Map(items.map((item) => [item.id, item]));
   const hasReviews = !reviewError && reviewCount !== null && reviewCount > 0;
   const total = items.length + (hasReviews ? 1 : 0);
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between">
-        <div className="flex items-baseline gap-2.5">
-          <h2 className="font-grotesk text-base font-semibold text-foreground">Needs you today</h2>
-          {total > 0 ? (
-            <span className="text-[13px] font-medium text-muted">
-              {total} {total === 1 ? 'item' : 'items'}
-            </span>
-          ) : null}
-        </div>
-        {total > 1 ? <span className="text-xs text-muted">Sorted by priority</span> : null}
-      </div>
+    <section className="flex min-w-0 flex-col gap-3">
+      <DashboardSectionHeading
+        aside={
+          total > 1 ? (
+            <Typography
+              className="shrink-0"
+              color="muted"
+              type="body-xs"
+            >
+              Sorted by priority
+            </Typography>
+          ) : null
+        }
+        count={total > 0 ? `${total} ${total === 1 ? 'item' : 'items'}` : null}
+        title="Needs you today"
+      />
 
       {isError && !hasReviews && items.length === 0 ? (
-        <div className="rounded-2xl border border-danger/20 bg-danger/5 px-5 py-8 text-center text-sm text-danger-soft-foreground">
-          Couldn't load your queue. Check your connection and try again.
+        <div className="rounded-card border border-border bg-surface px-5 py-8 text-center">
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            Couldn't load your queue. Check your connection and try again.
+          </Typography>
         </div>
       ) : null}
 
       {hasReviews ? (
-        <button
-          className="flex items-center gap-4 rounded-2xl bg-[var(--ink)] px-5 py-4 text-left text-white transition-transform hover:scale-[1.005]"
-          onClick={() => navigate(ROUTES.CHECKINS_TO_REVIEW)}
-          type="button"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
-            <ClipboardCheck size={22} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-grotesk text-[17px] font-semibold">
-              {reviewCount} check-in{reviewCount === 1 ? '' : 's'} to review
-            </span>
-            <span className="mt-0.5 block text-[12.5px] text-white/60">
-              {reviewCount === 1 ? 'A submission is waiting' : 'Submissions waiting on your review'}
-            </span>
-          </span>
-          <span className="flex h-9 shrink-0 items-center gap-1.5 rounded-[11px] bg-white px-4 text-[13.5px] font-semibold text-foreground">
-            Review
-            <ArrowRight size={15} />
-          </span>
-        </button>
+        <ReviewBanner
+          count={reviewCount}
+          names={reviewNames}
+          oldestDays={reviewOldestDays}
+        />
       ) : null}
 
       {items.length > 0 ? (
-        <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
-          {items.map((item) => (
-            <QueueRow
-              item={item}
-              key={item.id}
-            />
-          ))}
-          <button
-            className="flex w-full items-center justify-center py-3 text-[13px] font-semibold text-accent transition-colors hover:bg-background"
-            onClick={() => navigate(ROUTES.CLIENTS)}
-            type="button"
+        <div className="overflow-hidden rounded-card border border-border bg-surface">
+          <ListBox
+            aria-label="Needs you today"
+            className="gap-0 p-0"
+            onAction={(key: Key) => byId.get(String(key))?.onOpen()}
+            selectionMode="none"
+          >
+            {items.map((item) => (
+              <QueueRow
+                item={item}
+                key={item.id}
+              />
+            ))}
+          </ListBox>
+          <Button
+            className="w-full rounded-none border-t border-separator text-accent"
+            onPress={() => navigate(ROUTES.CLIENTS)}
+            size="sm"
+            variant="ghost"
           >
             View all clients
-          </button>
+          </Button>
         </div>
       ) : null}
 
       {!hasReviews && items.length === 0 && !isError ? (
-        <div className="rounded-2xl border border-success/20 bg-success-soft px-5 py-7">
-          <p className="font-semibold text-success-soft-foreground">You're all caught up</p>
-          <p className="mt-1 text-sm text-success-soft-foreground">
+        <div className="rounded-card border border-border bg-surface px-5 py-7">
+          <Typography type="body">You're all caught up</Typography>
+          <Typography
+            className="mt-1"
+            color="muted"
+            type="body-sm"
+          >
             Check-ins, expiring plans, and new leads will show up here.
-          </p>
+          </Typography>
         </div>
       ) : null}
     </section>

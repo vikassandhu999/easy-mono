@@ -1,20 +1,28 @@
 /**
- * MealCard — one accordion card for a nutrition meal.
+ * MealCard — one meal on the active day of the nutrition plan builder.
  *
- * Header: inline-rename (PATCH meal, optimistic + rollback) + meal macro total
- *         from meal.nutrition (kcal + P/C/F) + chevron + delete menu.
- * Body (open only): one MealItemRow per meal_items + "Add food or recipe" button
- *         that opens FoodRecipePickerSheet (multi-select) → AmountSheet for
- *         each picked item in sequence.
+ * Collapsed header (redesign): slot tag (opens the slot menu) · meal name ·
+ * `Used in {n} places` when the meal is shared across days · `+{n} swap` when
+ * the meal has alternates · kcal · ⋯ menu · expand chevron.
+ * Expanded body: item rows, `+ Add food or recipe`, then the
+ * `Client can swap with` list and `+ Add a swap`.
  *
- * Width discipline: body adds NO nested horizontal padding around rows —
- * MealItemRow already owns its own 10px indent + 2px accent rule.
+ * The card is a `Disclosure` (UI-CONTRACT §2 / AGENTS.md — the app has no
+ * Accordion). Two triggers are used so the ⋯ menu can sit between the meal's
+ * figures and the chevron the way the reference does; the slot tag and the ⋯
+ * menu are siblings of the trigger, never nested inside it (no button-in-button).
+ *
+ * Data model note: the "meal" is a plan-level entity and the day holds an
+ * ordered slot option per meal, so this component takes both — `meal` for the
+ * content and `optionId` for the day assignment it is rendered under. Swaps are
+ * the non-default options in the same slot.
  *
  * Cache: rename/delete → optimistic updateQueryData('getNutritionPlan', {id: planId}, …)
  *        + refetch for server-recomputed nutrition snapshots; patch.undo() + toast on failure.
  */
-import {Button, Dropdown, Label, Separator} from '@heroui/react';
-import {ChevronDown, ChevronRight, MoreHorizontal, TrashIcon} from 'lucide-react';
+import {Button, Chip, Disclosure, Dropdown, Label, Separator, Typography} from '@heroui/react';
+import {cn} from '@heroui/styles';
+import {ArrowLeftRight, MoreHorizontal, TrashIcon, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import type {NutritionMeal} from '@/api/generated';
@@ -32,57 +40,76 @@ import type {FoodOrRecipe} from './food-recipe-picker-sheet';
 import {FoodRecipePickerSheet, isRecipe} from './food-recipe-picker-sheet';
 import type {HydratedMealItem} from './meal-item-row';
 import {MealItemRow} from './meal-item-row';
-import type {NutritionPlanDay} from './plan-days';
+import type {MealPaletteOption} from './meal-palette';
+import {AddSwapControl} from './meal-palette';
+import {MealSlotControl} from './meal-slot-control';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+export interface MealSwap {
+  /** The day-meal option id — removing a swap removes this option. */
+  optionId: string;
+  meal: NutritionMeal;
+}
 
 interface MealCardProps {
   meal: NutritionMeal;
   planId: string;
   open: boolean;
   onToggle: () => void;
+  /** Meal slot this meal occupies on the active day. */
+  slot: string;
+  onChangeSlot: (slot: string) => void;
+  /** Removes the meal from this day; the meal itself survives in the plan. */
+  onRemoveFromDay: () => void;
+  /** How many day-slot options across the plan point at this meal. */
+  assignmentCount: number;
+  swaps: MealSwap[];
+  swapCandidates: MealPaletteOption[];
+  onAddSwap: (mealId: string) => void;
+  onRemoveSwap: (optionId: string) => void;
+  /** Newly created meals open straight into rename mode (INTERACTIONS.md § NB). */
+  autoRename?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function fmt(n: number | null | undefined): string {
-  if (n == null) {
-    return '—';
-  }
-  return String(Math.round(n));
-}
-
-function formatMealTotal(nutrition: NutritionMeal['nutrition']): string {
-  if (!nutrition) {
-    return '';
-  }
-  const kcal = nutrition.calories;
-  if (kcal == null) {
-    return '';
-  }
-  const p = fmt(nutrition.protein_g);
-  const c = fmt(nutrition.carbs_g);
-  const f = fmt(nutrition.fat_g);
-  return `${Math.round(kcal)} kcal · ${p}P/${c}C/${f}F`;
+function kcalLabel(nutrition: NutritionMeal['nutrition']): string | null {
+  const kcal = nutrition?.calories;
+  return kcal == null ? null : `${Math.round(kcal)} kcal`;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
+export function MealCard({
+  meal,
+  planId,
+  open,
+  onToggle,
+  slot,
+  onChangeSlot,
+  onRemoveFromDay,
+  assignmentCount,
+  swaps,
+  swapCandidates,
+  onAddSwap,
+  onRemoveSwap,
+  autoRename,
+}: MealCardProps) {
   const dispatch = useAppDispatch();
   const [updateMeal] = useUpdateMealMutation();
   const [deleteMeal] = useDeleteMealMutation();
   const [deleteMealItem] = useDeleteMealItemMutation();
-  const {data: planData, refetch} = useGetNutritionPlanQuery({id: planId});
+  const {refetch} = useGetNutritionPlanQuery({id: planId});
 
   // Inline rename state
-  const [editingName, setEditingName] = useState(false);
+  const [editingName, setEditingName] = useState(Boolean(autoRename));
   const [nameValue, setNameValue] = useState(meal.name);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -109,8 +136,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // Rename handlers
   // ---------------------------------------------------------------------------
 
-  const startEditing = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation(); // don't toggle accordion
+  const startEditing = useCallback(() => {
     setEditingName(true);
     setTimeout(() => nameInputRef.current?.select(), 0);
   }, []);
@@ -157,7 +183,7 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   );
 
   // ---------------------------------------------------------------------------
-  // Delete meal
+  // Delete meal (from the whole plan — kept alongside "Remove from this day")
   // ---------------------------------------------------------------------------
 
   const handleDelete = useCallback(async () => {
@@ -251,18 +277,8 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // Derived
   // ---------------------------------------------------------------------------
 
-  const mealTotal = formatMealTotal(meal.nutrition);
   const items = meal.meal_items as HydratedMealItem[];
-
-  // Shared-meal warning: a meal is a reusable entity, so editing it updates
-  // everywhere it's assigned. Count how many day slot-options across the plan's
-  // days reference this meal; warn when it's used in 2+ places. Read straight
-  // off the getNutritionPlan cache (via planData) so day edits keep it fresh.
-  const days = (planData?.data.days ?? []) as unknown as NutritionPlanDay[];
-  const assignmentCount = days.reduce(
-    (n, day) => n + (day.day_meals ?? []).filter((dm) => dm.nutrition_meal_id === meal.id).length,
-    0,
-  );
+  const kcal = kcalLabel(meal.nutrition);
   const isShared = assignmentCount >= 2;
 
   // Resolve food/recipe for the AmountSheet create-mode
@@ -274,126 +290,152 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
-      {/* Header — acts as accordion toggle (whole row, like WorkoutCard) */}
-      <div
-        aria-expanded={open}
-        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none"
-        onClick={editingName ? undefined : onToggle}
-        onKeyDown={(e) => {
-          if (!editingName && (e.key === 'Enter' || e.key === ' ')) {
-            onToggle();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-      >
-        {/* Chevron */}
-        <span className="shrink-0 text-muted">{open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
+    <Disclosure
+      className={cn(
+        'overflow-hidden rounded-card border bg-surface',
+        isShared ? 'border-warning' : open ? 'border-accent' : 'border-border',
+      )}
+      isExpanded={open}
+      onExpandedChange={onToggle}
+    >
+      {/* Header row — the slot tag and the ⋯ menu are siblings of the triggers
+          so no interactive control is nested inside a button. Below `sm` the
+          name takes its own line (`order-last w-full`) so it never truncates
+          away next to the slot tag and the figures. */}
+      <div className="flex flex-wrap items-center gap-x-2 px-3 py-2">
+        <div className="flex-1 shrink-0 sm:flex-none">
+          <MealSlotControl
+            onChange={onChangeSlot}
+            slot={slot}
+          />
+        </div>
 
-        {/* Name — inline-edit or plain text */}
-        <div className="min-w-0 flex-1">
-          {editingName ? (
-            <input
-              ref={nameInputRef}
-              // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
-              autoFocus
-              className="w-full bg-transparent text-sm font-semibold text-foreground outline-none border-b border-accent"
-              onBlur={() => {
-                commitRename().catch(() => undefined);
+        {editingName ? (
+          <input
+            ref={nameInputRef}
+            // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
+            autoFocus
+            aria-label="Meal name"
+            className="order-last w-full min-w-0 border-b border-accent bg-transparent text-sm font-semibold text-foreground outline-none sm:order-none sm:w-auto sm:flex-1"
+            onBlur={() => {
+              commitRename().catch(() => undefined);
+            }}
+            onChange={(e) => setNameValue(e.target.value)}
+            onKeyDown={handleNameKeyDown}
+            value={nameValue}
+          />
+        ) : (
+          <Disclosure.Heading className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
+            <Disclosure.Trigger className="flex min-h-11 w-full items-center gap-2 text-left">
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{meal.name}</span>
+              {isShared ? (
+                <Chip
+                  className="shrink-0 rounded-chip"
+                  color="warning"
+                  size="sm"
+                  variant="soft"
+                >
+                  Used in {assignmentCount} places
+                </Chip>
+              ) : null}
+              {swaps.length > 0 ? (
+                <Chip
+                  className="shrink-0 rounded-chip"
+                  size="sm"
+                  variant="secondary"
+                >
+                  +{swaps.length} swap{swaps.length === 1 ? '' : 's'}
+                </Chip>
+              ) : null}
+              {kcal ? <span className="shrink-0 whitespace-nowrap text-xs text-muted">{kcal}</span> : null}
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+        )}
+
+        <Dropdown>
+          <Button
+            aria-label={`Meal options for ${meal.name}`}
+            className="size-9 min-w-9 shrink-0 text-muted"
+            isIconOnly
+            size="sm"
+            variant="ghost"
+          >
+            <MoreHorizontal className="size-4" />
+          </Button>
+          <Dropdown.Popover>
+            {/* Drive selection via the menu so it fires on pointer AND keyboard
+                activation — RAC routes Enter/Space through onAction, not the
+                item's onPress (same pattern as plan-actions.tsx). */}
+            <Dropdown.Menu
+              onAction={(key) => {
+                if (key === 'rename-meal') {
+                  startEditing();
+                } else if (key === 'remove-from-day') {
+                  onRemoveFromDay();
+                } else if (key === 'delete-meal') {
+                  handleDelete().catch(() => undefined);
+                }
               }}
-              onChange={(e) => setNameValue(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={handleNameKeyDown}
-              value={nameValue}
-            />
-          ) : (
-            // biome-ignore lint/a11y/noNoninteractiveElementInteractions: double-click to rename is a progressive enhancement on a display label; primary rename is in the dropdown menu
-            // biome-ignore lint/a11y/noStaticElementInteractions: same as above
-            <span
-              className="block truncate text-sm font-semibold text-foreground"
-              onDoubleClick={startEditing}
-              title="Double-click to rename"
             >
-              {meal.name}
-            </span>
-          )}
-        </div>
+              <Dropdown.Section>
+                <Dropdown.Item
+                  id="rename-meal"
+                  textValue="Rename meal"
+                >
+                  <Label>Rename meal</Label>
+                </Dropdown.Item>
+                <Dropdown.Item
+                  id="remove-from-day"
+                  textValue="Remove from this day"
+                >
+                  <Label>Remove from this day</Label>
+                </Dropdown.Item>
+              </Dropdown.Section>
+              <Separator />
+              <Dropdown.Section>
+                <Dropdown.Item
+                  id="delete-meal"
+                  textValue="Delete meal"
+                  variant="danger"
+                >
+                  <div className="flex items-center gap-2">
+                    <TrashIcon className="size-4 shrink-0 text-danger" />
+                    <Label>Delete meal</Label>
+                  </div>
+                </Dropdown.Item>
+              </Dropdown.Section>
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
 
-        {/* Meal total badge */}
-        {mealTotal ? <span className="shrink-0 text-xs text-muted">{mealTotal}</span> : null}
-
-        {/* Meal options menu — stop propagation so clicks don't toggle the accordion */}
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper around an interactive dropdown; role is on the Button inside */}
-        {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: same as above */}
-        <div
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
+        <Disclosure.Trigger
+          aria-label={open ? `Collapse ${meal.name}` : `Expand ${meal.name}`}
+          className="flex size-9 shrink-0 items-center justify-center text-muted"
         >
-          <Dropdown>
-            <Button
-              aria-label="Meal options"
-              className="h-9 w-9 min-w-9"
-              isIconOnly
-              size="sm"
-              variant="ghost"
-            >
-              <MoreHorizontal size={15} />
-            </Button>
-            <Dropdown.Popover>
-              {/* Drive selection via the menu so it fires on pointer AND keyboard
-                  activation — RAC routes Enter/Space through onAction, not the
-                  item's onPress (same pattern as plan-actions.tsx). */}
-              <Dropdown.Menu
-                onAction={(key) => {
-                  if (key === 'rename-meal') {
-                    setEditingName(true);
-                    setTimeout(() => nameInputRef.current?.select(), 0);
-                    if (!open) {
-                      onToggle();
-                    }
-                  } else if (key === 'delete-meal') {
-                    handleDelete().catch(() => undefined);
-                  }
-                }}
-              >
-                <Dropdown.Section>
-                  <Dropdown.Item
-                    id="rename-meal"
-                    textValue="Rename"
-                  >
-                    <Label>Rename</Label>
-                  </Dropdown.Item>
-                </Dropdown.Section>
-                <Separator />
-                <Dropdown.Section>
-                  <Dropdown.Item
-                    id="delete-meal"
-                    textValue="Delete"
-                    variant="danger"
-                  >
-                    <div className="flex items-center gap-2">
-                      <TrashIcon className="size-4 shrink-0 text-danger" />
-                      <Label>Delete meal</Label>
-                    </div>
-                  </Dropdown.Item>
-                </Dropdown.Section>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
-        </div>
+          <Disclosure.Indicator />
+        </Disclosure.Trigger>
       </div>
 
-      {/* Body — meal items + add button */}
-      {open ? (
-        <div className="border-t border-border pb-3 pt-1">
+      <Disclosure.Content>
+        <Disclosure.Body className="border-t border-border px-3 pt-1 pb-3">
           {isShared ? (
-            <div className="mx-2.5 mt-2 mb-1 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning-soft-foreground">
-              Used in {assignmentCount} places — changes apply everywhere
-            </div>
+            <Typography
+              className="mt-2 mb-1"
+              color="muted"
+              type="body-xs"
+            >
+              This meal is on {assignmentCount} days — edits apply everywhere.
+            </Typography>
           ) : null}
+
           {items.length === 0 ? (
-            <div className="pl-2.5 py-2 text-xs text-muted">Add foods</div>
+            <Typography
+              className="py-2"
+              color="muted"
+              type="body-sm"
+            >
+              No foods yet — add the first one below.
+            </Typography>
           ) : (
             items.map((item) => (
               <MealItemRow
@@ -402,36 +444,70 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
                   itemRowRefs.current[item.id] = el;
                 }}
                 item={item}
+                onRemove={() => {
+                  handleDeleteItem(item.id).catch(() => undefined);
+                }}
                 onTap={() => setEditingItem(item)}
               />
             ))
           )}
 
-          <div className="pl-2.5">
-            <button
-              ref={addItemButtonRef}
-              className="mt-3 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
-              onClick={() => setPickerOpen(true)}
-              type="button"
-            >
-              + Add food or recipe
-            </button>
+          <Button
+            className="mt-1 px-0 text-xs font-semibold text-accent"
+            onPress={() => setPickerOpen(true)}
+            ref={addItemButtonRef}
+            size="sm"
+            variant="ghost"
+          >
+            + Add food or recipe
+          </Button>
+
+          {/* Swaps — the meal itself is the default, so this lists alternates only. */}
+          <Separator className="my-2 border-t border-dashed border-border bg-transparent" />
+          <Typography
+            className="uppercase tracking-wide"
+            color="muted"
+            type="body-xs"
+            weight="bold"
+          >
+            Client can swap with
+          </Typography>
+
+          <div className="mt-2 flex flex-col gap-1.5">
+            {swaps.map((swap) => (
+              <div
+                className="flex min-h-11 items-center gap-2 rounded-control border border-border px-3 py-2"
+                key={swap.optionId}
+              >
+                <ArrowLeftRight className="size-4 shrink-0 text-muted" />
+                <span className="min-w-0 flex-1 truncate text-sm text-foreground">{swap.meal.name}</span>
+                {kcalLabel(swap.meal.nutrition) ? (
+                  <span className="shrink-0 whitespace-nowrap text-xs text-muted">
+                    {kcalLabel(swap.meal.nutrition)}
+                  </span>
+                ) : null}
+                <Button
+                  aria-label={`Remove swap ${swap.meal.name}`}
+                  className="size-8 min-w-8 shrink-0 text-muted-2"
+                  isIconOnly
+                  onPress={() => onRemoveSwap(swap.optionId)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
+            ))}
           </div>
 
-          {/* Meal total — rolls up live from server-recomputed meal.nutrition */}
-          {meal.nutrition?.calories != null ? (
-            <div className="mt-2.5 mx-2.5 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 px-3 py-2">
-              <div>
-                <div className="text-[11px] text-muted">Meal total</div>
-                <div className="text-sm font-bold text-foreground">{Math.round(meal.nutrition.calories)} kcal</div>
-              </div>
-              <div className="text-[11px] text-accent">
-                {fmt(meal.nutrition.protein_g)}P · {fmt(meal.nutrition.carbs_g)}C · {fmt(meal.nutrition.fat_g)}F
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+          <div className="mt-1">
+            <AddSwapControl
+              onAdd={onAddSwap}
+              options={swapCandidates}
+            />
+          </div>
+        </Disclosure.Body>
+      </Disclosure.Content>
 
       {/* Food/recipe picker sheet */}
       <FoodRecipePickerSheet
@@ -473,6 +549,6 @@ export function MealCard({meal, planId, open, onToggle}: MealCardProps) {
         open={editingItem !== null}
         planId={planId}
       />
-    </div>
+    </Disclosure>
   );
 }

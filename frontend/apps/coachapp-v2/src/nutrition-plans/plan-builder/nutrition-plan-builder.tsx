@@ -1,12 +1,13 @@
 /**
- * NutritionPlanBuilder — assembled nutrition plan builder screen.
+ * NutritionPlanBuilder — the nutrition plan builder screen (badge NB).
  *
- * Layout A — single centred column, max-w-2xl:
- *   1. PlanHeader — inline name + macro targets + autosave
- *   2. MealsList  — meal cards + items + amount sheet
- *   3. PlanDays   — day tabs, weekday strip, per-slot meal options
+ * Day-first: the header carries the plan name and its actions, and the body is
+ * the active day — day switcher, energy line, meal cards, add meal. Everything
+ * below the header lives in `PlanDays`.
  *
- * Mirrors training `src/training-plans/plan-builder/plan-builder.tsx`.
+ * Plan name and macro targets are edited on the plan edit screen (badge NE),
+ * reachable from the ⋯ menu — the builder shows the targets as the energy
+ * line's denominators rather than repeating the form.
  */
 import {useParams} from 'react-router-dom';
 
@@ -18,11 +19,9 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery} from '@/api/generated';
 
-import {MealsList} from './meals-list';
 import {NutritionPlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
 import {PlanDays} from './plan-days';
-import {PlanHeader} from './plan-header';
 
 export default function NutritionPlanBuilder() {
   const {id} = useParams<{id: string}>();
@@ -31,8 +30,8 @@ export default function NutritionPlanBuilder() {
 
   if (isLoading) {
     return (
-      <Page>
-        <Page.Header className="py-3! items-center">
+      <Page className="bg-background">
+        <Page.Header size="wide">
           <BackButton onPress={goBack} />
         </Page.Header>
         <Page.Content>
@@ -44,12 +43,14 @@ export default function NutritionPlanBuilder() {
 
   if (isError || !data) {
     return (
-      <Page>
-        <Page.Header className="py-3! items-center">
+      <Page className="bg-background">
+        <Page.Header size="wide">
           <BackButton onPress={goBack} />
         </Page.Header>
-        <Page.Content className="px-4 pt-4 md:px-6 lg:px-8">
-          <ErrorState message="Couldn't load nutrition plan." />
+        <Page.Content>
+          <Page.Frame size="wide">
+            <ErrorState message="Couldn't load nutrition plan." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -58,35 +59,25 @@ export default function NutritionPlanBuilder() {
   const plan = data.data;
 
   return (
-    <Page>
-      {/* Nav bar — back + plan actions. Inner wrapper (not Page.Header itself)
-          carries max-w-2xl so it aligns with the content column below —
-          Page.Header's own padding would otherwise eat into that width. */}
-      <Page.Header className="py-3!">
-        <div className="flex w-full max-w-2xl items-center justify-between gap-3">
+    <Page className="bg-background">
+      <Page.Header size="wide">
+        <Page.TitleGroup className="flex min-w-0 items-center gap-2">
           <BackButton onPress={goBack} />
-          <div className="flex gap-2">
-            <PlanAddToClient plan={plan} />
-            <NutritionPlanActions
-              onDeleted={() => goBack()}
-              plan={plan}
-            />
-          </div>
-        </div>
+          <Page.Title>{plan.name}</Page.Title>
+        </Page.TitleGroup>
+        <Page.Actions>
+          <PlanAddToClient plan={plan} />
+          <NutritionPlanActions
+            onDeleted={() => goBack()}
+            plan={plan}
+          />
+        </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="px-4 md:px-6 lg:px-8">
-        {/* Layout A — single centred column, max-w-2xl */}
-        <div className="w-full max-w-2xl">
-          {/* 1. Plan header: inline name + macro targets → autosave */}
-          <PlanHeader plan={plan} />
-
-          {/* 2. Meals library: meal cards + items + amount sheet */}
-          <MealsList planId={plan.id} />
-
-          {/* 3. Days: day tabs, weekday strip, per-slot meal options */}
+      <Page.Content className="pb-10">
+        <Page.Frame size="wide">
           <PlanDays plan={plan} />
-        </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

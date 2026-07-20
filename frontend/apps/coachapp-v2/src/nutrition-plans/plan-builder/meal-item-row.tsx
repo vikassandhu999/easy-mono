@@ -1,12 +1,10 @@
 /**
- * MealItemRow — full-width row for a meal item in the nutrition plan builder.
+ * MealItemRow — one item row inside an expanded meal card.
  *
- * Width discipline: single 10px indent + 2px border-accent rule.
- * Shows food/recipe name + amount (e.g. "Rolled Oats 80g") + per-item macro
- * contribution from item.nutrition (Task 1 server snapshot). If nutrition is
- * absent, shows amount only.
- *
- * Tap → opens AmountSheet on the item.
+ * Redesign shape: `{name} · {amount}` on a single line, the item's kcal
+ * right-aligned, and an `×` that removes the item directly (INTERACTIONS.md
+ * § NB — tapping the row opens the amount sheet in edit mode instead).
+ * Rows are separated by hairlines rather than an accent rule.
  *
  * The item type here is the full hydrated form: NutritionMealItem augmented
  * with the food/recipe objects that the plan-builder's cache hydration layer
@@ -14,6 +12,8 @@
  * from generated (which lacks food/recipe) so we can include those fields.
  */
 
+import {Button} from '@heroui/react';
+import {X} from 'lucide-react';
 import {forwardRef} from 'react';
 import type {Food, Recipe} from '@/api/generated';
 
@@ -90,44 +90,48 @@ function formatMacroContribution(
 
 export interface MealItemRowProps {
   item: HydratedMealItem;
-  /** Tap opens the AmountSheet, where the item can be edited or removed. */
+  /** Tap opens the AmountSheet, where the item can be edited. */
   onTap: () => void;
+  /** `×` removes the item from the meal without opening the sheet. */
+  onRemove: () => void;
 }
 
-export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(function MealItemRow({item, onTap}, ref) {
+export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(function MealItemRow(
+  {item, onTap, onRemove},
+  ref,
+) {
   const name = item.name ?? item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
   const amount = formatAmount(item);
   const macro = formatMacroContribution(item.nutrition);
 
   return (
-    // 2px accent rule on the row itself; single 10px indent, content-driven height.
-    // pr-2.5 keeps the macro column off the card's right border — without it a
-    // long (truncated) name makes the kcal figures sit flush against the edge.
-    <div className="mt-1.75 flex items-start justify-between border-l-2 border-accent pl-2.5 pr-2.5">
-      {/* Main tap target — name + amount stacked. Ref exposes the button as the
+    <div className="flex items-center gap-2 border-b border-separator last:border-0">
+      {/* Main tap target — "{name} · {amount}". Ref exposes the button as the
           desktop anchor for the edit-mode AmountSheet popover. */}
-      <button
+      <Button
+        className="h-auto min-h-11 min-w-0 flex-1 justify-start px-0 py-2.5 text-left text-sm font-normal text-foreground"
+        onPress={onTap}
         ref={ref}
-        className="min-w-0 flex-1 py-1.75 text-left transition-colors hover:opacity-80"
-        onClick={onTap}
-        type="button"
+        variant="ghost"
       >
-        <div className="truncate text-xs font-semibold text-foreground">{name}</div>
-        {amount ? <div className="mt-px text-[11px] text-muted">{amount}</div> : null}
-      </button>
+        <span className="block min-w-0 max-w-full truncate">
+          {name}
+          {amount ? <span className="text-muted"> · {amount}</span> : null}
+        </span>
+      </Button>
 
-      {/* Right-aligned macro contribution column */}
-      {macro ? (
-        <div className="shrink-0 whitespace-nowrap py-1.75 pl-2 text-right text-[11px] text-muted">
-          <span className="font-medium text-foreground">{macro.kcal}</span> kcal
-          {macro.p !== '—' || macro.c !== '—' || macro.f !== '—' ? (
-            <>
-              <br />
-              {macro.p}P {macro.c}C {macro.f}F
-            </>
-          ) : null}
-        </div>
-      ) : null}
+      {macro ? <span className="shrink-0 whitespace-nowrap text-xs text-muted">{macro.kcal} kcal</span> : null}
+
+      <Button
+        aria-label={`Remove ${name}`}
+        className="size-8 min-w-8 shrink-0 text-muted-2"
+        isIconOnly
+        onPress={onRemove}
+        size="sm"
+        variant="ghost"
+      >
+        <X className="size-4" />
+      </Button>
     </div>
   );
 });

@@ -1,58 +1,65 @@
 /**
- * PlanDays — "DAYS" section of the nutrition plan builder.
+ * PlanDays — the nutrition plan builder, day-first (badge NB).
  *
- * Replaces the old weekly schedule model: a plan has 1..N named days, each
- * with 6 meal slots holding up to 3 whole-meal options (position 0 = the
- * default option). A weekday -> day map assigns Mon..Sun to one of the days.
+ * A plan has 1..N named days; each day holds ordered meal options per slot and
+ * a weekday map assigns Mon..Sun to exactly one day. The redesign renders one
+ * day at a time:
  *
- * Single day: no tabs, no weekday strip, no day name — just the six slot
- * groups. "Add day" always lives in the section header, in both modes.
- * Multiple days: day tabs, a weekday strip (M T W T F S S) under the tabs
- * assigning the active day to weekdays, and inline rename / delete for the
- * active day.
+ *   day tabs · + Day · ⋯          |  weekday chips
+ *   energy line + macro meters (DayEnergyHeader)
+ *   meal cards in slot order (MealCard)
+ *   Add meal
+ *
+ * The slot options model maps onto the redesign directly: the position-0 option
+ * of a slot is the meal card, and the remaining options are that meal's
+ * `Client can swap with` alternates. Re-slotting a meal has no dedicated
+ * endpoint, so it is a remove-then-add of the day option.
  *
  * The generated `days` / `weekday_assignments` fields on NutritionPlan are
  * loosely typed (`additionalProperties: true` on the backend schema — see
  * EasyWeb.OpenApi.Schemas.NutritionPlan) since they're new; NutritionPlanDay /
  * NutritionDayMeal below give them a concrete shape for this file.
  *
- * Cache: tag:false — mirrors meals-list.tsx / meal-card.tsx: optimistic
- * updateQueryData('getNutritionPlan', {id: planId}, …) + patch.undo() + toast
- * on failure, and a reconciling refetch() after each successful mutation
- * (positions/defaults are server-computed on add/remove/make-default).
+ * Cache: tag:false — optimistic updateQueryData('getNutritionPlan', {id: planId}, …)
+ * + patch.undo() + toast on failure, and a reconciling refetch() after each
+ * successful mutation (positions/defaults are server-computed).
  */
-import {MEAL_SLOT_LABELS, MEAL_SLOTS, WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
+import {MEAL_SLOTS, WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
 import {
   AlertDialog,
   Button,
-  Chip,
   Dropdown,
   Label,
-  ListBox,
-  Select,
+  Separator,
   Spinner,
-  Tabs,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
   toast,
   useOverlayState,
 } from '@heroui/react';
-import {MoreHorizontal, Pencil, Trash2} from 'lucide-react';
+import {MoreHorizontal} from 'lucide-react';
 import {useEffect, useState} from 'react';
 
 import {getErrorCode, toastMutationError} from '@/@components/mutation-toast';
-import SectionHeading from '@/@components/section-heading';
 import type {NutritionMeal, NutritionPlan} from '@/api/generated';
 import {
   coachApi,
   useAddNutritionSlotOptionMutation,
   useAssignNutritionPlanWeekdayMutation,
+  useCreateMealMutation,
   useCreateNutritionPlanDayMutation,
   useDeleteNutritionPlanDayMutation,
   useGetNutritionPlanQuery,
-  useMakeNutritionSlotOptionDefaultMutation,
   useRemoveNutritionSlotOptionMutation,
   useUpdateNutritionPlanDayMutation,
 } from '@/api/generated';
 import {useAppDispatch} from '@/store';
+
+import {DayEnergyHeader} from './day-energy-header';
+import {MealCard, type MealSwap} from './meal-card';
+import {AddMealControl, type MealPaletteOption} from './meal-palette';
+import {slotLabel} from './meal-slot-control';
 
 // ---------------------------------------------------------------------------
 // Types (the generated fields are `{[key: string]: any}` — see file header)
@@ -90,23 +97,52 @@ function optionsForSlot(day: NutritionPlanDay, slot: string): NutritionDayMeal[]
   return (day.day_meals ?? []).filter((dm) => dm.meal_slot === slot).sort((a, b) => a.position - b.position);
 }
 
-/** Default option's meal calories per slot, summed; flags any slot with 2+ options. */
-function computeDayTotals(day: NutritionPlanDay, meals: NutritionMeal[]): {calories: number; anyMultiOption: boolean} {
-  const mealById = new Map(meals.map((m) => [m.id, m]));
-  let calories = 0;
-  let anyMultiOption = false;
+/** Day rows in slot order: the position-0 option plus its alternates. */
+function slotRows(day: NutritionPlanDay): {slot: string; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] {
+  const rows: {slot: string; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] = [];
   for (const slot of MEAL_SLOTS) {
     const options = optionsForSlot(day, slot);
-    if (options.length > 1) {
-      anyMultiOption = true;
-    }
-    const defaultOption = options.find((o) => o.position === 0) ?? options[0];
-    const meal = defaultOption ? mealById.get(defaultOption.nutrition_meal_id) : undefined;
-    if (meal?.nutrition?.calories != null) {
-      calories += meal.nutrition.calories;
+    const primary = options[0];
+    if (primary) {
+      rows.push({slot, primary, alternates: options.slice(1)});
     }
   }
-  return {calories, anyMultiOption};
+  return rows;
+}
+
+/** Macro totals of the day's default options — the numbers behind the energy line. */
+function computeDayTotals(day: NutritionPlanDay, mealById: Map<string, NutritionMeal>) {
+  const totals = {calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0};
+  for (const row of slotRows(day)) {
+    const nutrition = mealById.get(row.primary.nutrition_meal_id)?.nutrition;
+    totals.calories += nutrition?.calories ?? 0;
+    totals.protein_g += nutrition?.protein_g ?? 0;
+    totals.carbs_g += nutrition?.carbs_g ?? 0;
+    totals.fat_g += nutrition?.fat_g ?? 0;
+  }
+  return totals;
+}
+
+/** First slot with nothing on it — where a newly added meal lands. */
+function firstFreeSlot(day: NutritionPlanDay): string {
+  return MEAL_SLOTS.find((slot) => optionsForSlot(day, slot).length === 0) ?? MEAL_SLOTS[0];
+}
+
+/** "On Mon, Tue · Lunch" — where a plan meal already sits, for the reuse list. */
+function mealPlacementSummary(mealId: string, days: NutritionPlanDay[], weekdays: WeekdayAssignments): string {
+  const parts: string[] = [];
+  const dayNames = days.filter((d) => (d.day_meals ?? []).some((dm) => dm.nutrition_meal_id === mealId));
+  if (dayNames.length > 0) {
+    const labels = WEEKDAYS.filter((w) => dayNames.some((d) => weekdays[w] === d.id)).map(
+      (w) => WEEKDAY_SHORT_LABELS[w] ?? w,
+    );
+    parts.push(`On ${labels.length > 0 ? labels.join(', ') : dayNames.map((d) => d.name).join(', ')}`);
+  }
+  const slot = dayNames.flatMap((d) => d.day_meals ?? []).find((dm) => dm.nutrition_meal_id === mealId)?.meal_slot;
+  if (slot) {
+    parts.push(slotLabel(slot));
+  }
+  return parts.join(' · ');
 }
 
 function deleteDayConfirmBody(
@@ -116,165 +152,11 @@ function deleteDayConfirmBody(
 ): string {
   const assignedWeekdays = WEEKDAYS.filter((w) => weekdayAssignments[w] === day.id);
   if (assignedWeekdays.length === 0) {
-    return "This can't be undone.";
+    return 'Its meals stay in the plan.';
   }
   const fallback = days.filter((d) => d.id !== day.id).sort((a, b) => a.position - b.position)[0];
   const labels = assignedWeekdays.map((w) => WEEKDAY_SHORT_LABELS[w] ?? w).join(', ');
-  return `${labels} will move to "${fallback?.name ?? 'the remaining day'}".`;
-}
-
-// ---------------------------------------------------------------------------
-// Sub-component: SlotGroup
-// ---------------------------------------------------------------------------
-
-interface SlotGroupProps {
-  slot: string;
-  day: NutritionPlanDay;
-  meals: NutritionMeal[];
-  isAdding: boolean;
-  onOpenAdd: () => void;
-  onPickMeal: (mealId: string) => void;
-  onRemoveOption: (optionId: string) => void;
-  onMakeDefault: (optionId: string) => void;
-}
-
-function SlotGroup({slot, day, meals, isAdding, onOpenAdd, onPickMeal, onRemoveOption, onMakeDefault}: SlotGroupProps) {
-  const mealById = new Map(meals.map((m) => [m.id, m]));
-  const options = optionsForSlot(day, slot);
-  const availableMeals = meals.filter((m) => !options.some((o) => o.nutrition_meal_id === m.id));
-
-  return (
-    <div>
-      <SectionHeading
-        className="mb-2"
-        title={MEAL_SLOT_LABELS[slot] ?? slot}
-      />
-      <div className="flex flex-col gap-1.5">
-        {options.length === 0 ? (
-          <p className="text-xs text-muted">No options yet.</p>
-        ) : (
-          options.map((option) => {
-            const meal = mealById.get(option.nutrition_meal_id);
-            return (
-              <div
-                className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2"
-                key={option.id}
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="truncate text-sm text-foreground">{meal?.name ?? 'Unknown meal'}</span>
-                  {meal?.nutrition?.calories != null ? (
-                    <span className="shrink-0 text-xs text-muted">{Math.round(meal.nutrition.calories)} kcal</span>
-                  ) : null}
-                </div>
-                {option.position === 0 ? (
-                  <Chip
-                    color="accent"
-                    size="sm"
-                    variant="soft"
-                  >
-                    Default
-                  </Chip>
-                ) : null}
-                <Dropdown>
-                  <Button
-                    aria-label="Option actions"
-                    className="h-9 w-9 min-w-9"
-                    isIconOnly
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <MoreHorizontal size={15} />
-                  </Button>
-                  <Dropdown.Popover>
-                    <Dropdown.Menu
-                      onAction={(key) => {
-                        if (key === 'make-default') {
-                          onMakeDefault(option.id);
-                        } else if (key === 'remove') {
-                          onRemoveOption(option.id);
-                        }
-                      }}
-                    >
-                      {option.position !== 0 ? (
-                        <Dropdown.Item
-                          id="make-default"
-                          textValue="Make default"
-                        >
-                          <Label>Make default</Label>
-                        </Dropdown.Item>
-                      ) : null}
-                      <Dropdown.Item
-                        id="remove"
-                        textValue="Remove"
-                        variant="danger"
-                      >
-                        <Label>Remove</Label>
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown.Popover>
-                </Dropdown>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {options.length < 3 && meals.length > 0 ? (
-        isAdding ? (
-          <div className="mt-2">
-            <Select
-              aria-label={`Add option for ${MEAL_SLOT_LABELS[slot] ?? slot}`}
-              onSelectionChange={(key) => {
-                if (key) {
-                  onPickMeal(String(key));
-                }
-              }}
-              placeholder="Choose a meal"
-              variant="secondary"
-            >
-              <Select.Trigger className="min-h-11 text-sm">
-                <Select.Value />
-                <Select.Indicator />
-              </Select.Trigger>
-              <Select.Popover>
-                <ListBox>
-                  {availableMeals.length === 0 ? (
-                    <ListBox.Item
-                      id="__none__"
-                      isDisabled
-                      key="__none__"
-                      textValue="No meals available"
-                    >
-                      <span className="text-muted">No meals available</span>
-                    </ListBox.Item>
-                  ) : (
-                    availableMeals.map((meal) => (
-                      <ListBox.Item
-                        id={meal.id}
-                        key={meal.id}
-                        textValue={meal.name}
-                      >
-                        {meal.name}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))
-                  )}
-                </ListBox>
-              </Select.Popover>
-            </Select>
-          </div>
-        ) : (
-          <button
-            className="mt-2 inline-flex min-h-11 items-center text-xs font-medium text-accent transition-colors hover:text-accent/80"
-            onClick={onOpenAdd}
-            type="button"
-          >
-            + Add option
-          </button>
-        )
-      ) : null}
-    </div>
-  );
+  return `Its meals stay in the plan. ${labels} will move to "${fallback?.name ?? 'the remaining day'}".`;
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +178,7 @@ export function PlanDays({plan}: PlanDaysProps) {
   const days = getDays(plan);
   const weekdayAssignments = getWeekdayAssignments(plan);
   const meals = plan.meals ?? [];
+  const mealById = new Map(meals.map((m) => [m.id, m]));
 
   const [activeDayId, setActiveDayId] = useState<string | undefined>(days[0]?.id);
   const activeDay = days.find((d) => d.id === activeDayId) ?? days[0];
@@ -308,7 +191,9 @@ export function PlanDays({plan}: PlanDaysProps) {
     }
   }, [days, activeDayId]);
 
-  const [addingSlot, setAddingSlot] = useState<string | null>(null);
+  const [openMealId, setOpenMealId] = useState<string | null>(null);
+  const [autoRenameMealId, setAutoRenameMealId] = useState<string | null>(null);
+  const [showMacros, setShowMacros] = useState(false);
 
   // Inline rename state for the active day.
   const [editingName, setEditingName] = useState(false);
@@ -327,10 +212,10 @@ export function PlanDays({plan}: PlanDaysProps) {
   const [assignWeekday] = useAssignNutritionPlanWeekdayMutation();
   const [addOption] = useAddNutritionSlotOptionMutation();
   const [removeOption] = useRemoveNutritionSlotOptionMutation();
-  const [makeDefault] = useMakeNutritionSlotOptionDefaultMutation();
+  const [createMeal] = useCreateMealMutation();
 
   // ---------------------------------------------------------------------------
-  // Add day
+  // Days: add / rename / delete
   // ---------------------------------------------------------------------------
 
   const handleAddDay = async () => {
@@ -351,12 +236,6 @@ export function PlanDays({plan}: PlanDaysProps) {
       toastMutationError(e, "Couldn't add day");
     }
   };
-
-  // ---------------------------------------------------------------------------
-  // Rename day
-  // ---------------------------------------------------------------------------
-
-  const startEditingName = () => setEditingName(true);
 
   const commitRename = async () => {
     const trimmed = nameValue.trim();
@@ -384,10 +263,6 @@ export function PlanDays({plan}: PlanDaysProps) {
       toastMutationError(e, "Couldn't rename day");
     }
   };
-
-  // ---------------------------------------------------------------------------
-  // Delete day
-  // ---------------------------------------------------------------------------
 
   const confirmDeleteDay = async () => {
     if (!activeDay) {
@@ -428,7 +303,8 @@ export function PlanDays({plan}: PlanDaysProps) {
   };
 
   // ---------------------------------------------------------------------------
-  // Weekday assignment
+  // Weekday assignment — a weekday belongs to exactly one day, so assigning it
+  // here implicitly takes it off whichever day held it (INTERACTIONS.md § NB).
   // ---------------------------------------------------------------------------
 
   const handleAssignWeekday = async (weekday: string, dayId: string) => {
@@ -456,11 +332,10 @@ export function PlanDays({plan}: PlanDaysProps) {
   };
 
   // ---------------------------------------------------------------------------
-  // Slot options: add / remove / make default
+  // Day options: add / remove / re-slot
   // ---------------------------------------------------------------------------
 
-  const handlePickMeal = async (dayId: string, slot: string, mealId: string) => {
-    setAddingSlot(null);
+  const addOptionToDay = async (dayId: string, slot: string, mealId: string) => {
     try {
       const result = await addOption({
         dayId,
@@ -479,16 +354,18 @@ export function PlanDays({plan}: PlanDaysProps) {
         }),
       );
       refetch().catch(() => undefined);
+      return newOption;
     } catch (e) {
       if (getErrorCode(e) === 'max_options') {
         toast.danger('Only 3 options are allowed per slot.');
       } else {
-        toastMutationError(e, "Couldn't add option");
+        toastMutationError(e, "Couldn't add meal to this day");
       }
+      return null;
     }
   };
 
-  const handleRemoveOption = async (dayId: string, optionId: string) => {
+  const removeOptionFromDay = async (dayId: string, optionId: string) => {
     const patch = dispatch(
       coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
         const d = draft.data.days?.find((x) => x.id === dayId);
@@ -504,39 +381,39 @@ export function PlanDays({plan}: PlanDaysProps) {
     try {
       await removeOption({id: optionId}).unwrap();
       refetch().catch(() => undefined);
+      return true;
     } catch (e) {
       patch.undo();
-      toastMutationError(e, "Couldn't remove option");
+      toastMutationError(e, "Couldn't remove meal from this day");
+      return false;
     }
   };
 
-  const handleMakeDefault = async (dayId: string, slot: string, optionId: string) => {
-    const day = days.find((d) => d.id === dayId);
-    const options = day ? optionsForSlot(day, slot) : [];
-    const target = options.find((o) => o.id === optionId);
-    const prevDefault = options.find((o) => o.position === 0);
-    if (!target || target.position === 0) {
-      return;
+  /** No re-slot endpoint exists — move the option by removing and re-adding it. */
+  const handleChangeSlot = async (dayId: string, optionId: string, mealId: string, nextSlot: string) => {
+    const removed = await removeOptionFromDay(dayId, optionId);
+    if (removed) {
+      await addOptionToDay(dayId, nextSlot, mealId);
     }
-    const patch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
-        const d = draft.data.days?.find((x) => x.id === dayId);
-        const dayMeals = d?.day_meals as NutritionDayMeal[] | undefined;
-        const t = dayMeals?.find((x) => x.id === optionId);
-        const p = prevDefault ? dayMeals?.find((x) => x.id === prevDefault.id) : undefined;
-        if (t && p) {
-          const targetPosition = t.position;
-          t.position = p.position;
-          p.position = targetPosition;
-        }
-      }),
-    );
+  };
+
+  const handleCreateMeal = async (dayId: string, slot: string) => {
     try {
-      await makeDefault({id: optionId}).unwrap();
-      refetch().catch(() => undefined);
+      const result = await createMeal({planId: plan.id, nutritionMealRequest: {name: 'New meal'}}).unwrap();
+      const newMeal = result.data;
+      dispatch(
+        coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
+          if (!draft.data.meals) {
+            draft.data.meals = [];
+          }
+          draft.data.meals.push(newMeal);
+        }),
+      );
+      await addOptionToDay(dayId, slot, newMeal.id);
+      setOpenMealId(newMeal.id);
+      setAutoRenameMealId(newMeal.id);
     } catch (e) {
-      patch.undo();
-      toastMutationError(e, "Couldn't set default option");
+      toastMutationError(e, "Couldn't add meal");
     }
   };
 
@@ -546,161 +423,254 @@ export function PlanDays({plan}: PlanDaysProps) {
 
   if (!activeDay) {
     return (
-      <section className="border-t border-border py-4">
-        <SectionHeading title="Days" />
-        <p className="text-sm text-muted">No days yet.</p>
-      </section>
+      <Typography
+        color="muted"
+        type="body-sm"
+      >
+        No days yet.
+      </Typography>
     );
   }
 
-  const totals = computeDayTotals(activeDay, meals);
+  const rows = slotRows(activeDay);
+  const totals = computeDayTotals(activeDay, mealById);
+  const dayMealIds = new Set((activeDay.day_meals ?? []).map((dm) => dm.nutrition_meal_id));
+  const assignedWeekdays = WEEKDAYS.filter((w) => weekdayAssignments[w] === activeDay.id);
+
+  const reusableMeals: MealPaletteOption[] = meals
+    .filter((m) => !dayMealIds.has(m.id))
+    .map((m) => ({id: m.id, name: m.name, sub: mealPlacementSummary(m.id, days, weekdayAssignments)}));
+
+  /** Every day-slot option across the plan that points at a meal — drives "Used in n places". */
+  const assignmentCounts = new Map<string, number>();
+  for (const day of days) {
+    for (const dm of day.day_meals ?? []) {
+      assignmentCounts.set(dm.nutrition_meal_id, (assignmentCounts.get(dm.nutrition_meal_id) ?? 0) + 1);
+    }
+  }
 
   return (
-    <section className="border-t border-border py-4">
-      <div className="mb-3 flex items-center justify-between">
-        <SectionHeading
-          className="mb-0"
-          title="Days"
-        />
-        <Button
-          isPending={creatingDay}
-          onPress={() => {
-            handleAddDay().catch(() => undefined);
-          }}
-          size="sm"
-          variant="ghost"
-        >
-          + Add day
-        </Button>
-      </div>
-
-      {days.length > 1 ? (
-        <>
-          {/* Day tabs */}
-          <div className="mb-3 flex items-center gap-2">
-            <Tabs
-              aria-label="Plan days"
-              className="min-w-0 flex-1"
-              onSelectionChange={(key) => setActiveDayId(String(key))}
-              selectedKey={activeDay.id}
-            >
-              <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
-                <Tabs.List className="w-max! min-w-max">
-                  {days.map((day) => (
-                    <Tabs.Tab
-                      className="w-auto! whitespace-nowrap"
-                      id={day.id}
-                      key={day.id}
-                    >
-                      {day.name}
-                    </Tabs.Tab>
-                  ))}
-                </Tabs.List>
-              </Tabs.ListContainer>
-            </Tabs>
-          </div>
-
-          {/* Weekday strip */}
-          <div className="mb-3 flex gap-1">
-            {WEEKDAYS.map((weekday) => {
-              const filled = weekdayAssignments[weekday] === activeDay.id;
-              return (
-                <button
-                  aria-label={`Assign ${WEEKDAY_SHORT_LABELS[weekday] ?? weekday} to ${activeDay.name}`}
-                  className={`min-h-11 min-w-[40px] flex-1 rounded-lg border text-xs font-semibold transition-colors ${
-                    filled ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:text-foreground'
-                  }`}
-                  key={weekday}
-                  onClick={() => {
-                    if (!filled) {
-                      handleAssignWeekday(weekday, activeDay.id).catch(() => undefined);
-                    }
-                  }}
-                  type="button"
-                >
-                  {(WEEKDAY_SHORT_LABELS[weekday] ?? weekday).charAt(0)}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Rename / delete active day */}
-          <div className="mb-3 flex items-center gap-2">
-            {editingName ? (
-              <input
-                // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
-                autoFocus
-                className="min-w-0 flex-1 border-b border-accent bg-transparent text-sm font-semibold text-foreground outline-none"
-                onBlur={() => {
+    <div className="flex flex-col gap-3 pb-4">
+      {/* Day switcher + weekday chips */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          {editingName ? (
+            <input
+              // biome-ignore lint/a11y/noAutofocus: the day name opens in editing mode on user intent
+              autoFocus
+              aria-label="Day name"
+              className="min-w-0 border-b border-accent bg-transparent text-sm font-semibold text-foreground outline-none"
+              onBlur={() => {
+                commitRename().catch(() => undefined);
+              }}
+              onChange={(e) => setNameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
                   commitRename().catch(() => undefined);
-                }}
-                onChange={(e) => setNameValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    commitRename().catch(() => undefined);
-                  } else if (e.key === 'Escape') {
-                    setEditingName(false);
-                    setNameValue(activeDay.name);
+                } else if (e.key === 'Escape') {
+                  setEditingName(false);
+                  setNameValue(activeDay.name);
+                }
+              }}
+              value={nameValue}
+            />
+          ) : (
+            <ToggleButtonGroup
+              aria-label="Plan days"
+              className="flex flex-wrap gap-1.5"
+              onSelectionChange={(keys) => {
+                const next = [...keys][0];
+                if (next) {
+                  setActiveDayId(String(next));
+                  setOpenMealId(null);
+                }
+              }}
+              selectedKeys={[activeDay.id]}
+              selectionMode="single"
+            >
+              {days.map((day) => (
+                <ToggleButton
+                  className="min-h-11 rounded-control border border-border bg-transparent px-3.5 text-pill font-medium text-muted data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground"
+                  id={day.id}
+                  key={day.id}
+                >
+                  {day.name}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          )}
+
+          <Button
+            className="shrink-0 text-xs font-semibold text-accent"
+            isPending={creatingDay}
+            onPress={() => {
+              handleAddDay().catch(() => undefined);
+            }}
+            size="sm"
+            variant="ghost"
+          >
+            + Day
+          </Button>
+
+          <Dropdown>
+            <Button
+              aria-label="Day options"
+              className="size-11 min-w-11 shrink-0 rounded-control border border-border bg-surface text-muted"
+              isIconOnly
+              size="sm"
+              variant="outline"
+            >
+              <MoreHorizontal className="size-4" />
+            </Button>
+            <Dropdown.Popover>
+              <Dropdown.Menu
+                onAction={(key) => {
+                  if (key === 'rename-day') {
+                    setEditingName(true);
+                  } else if (key === 'delete-day') {
+                    deleteAlertState.open();
                   }
                 }}
-                value={nameValue}
+              >
+                <Dropdown.Section>
+                  <Dropdown.Item
+                    id="rename-day"
+                    textValue="Rename day"
+                  >
+                    <Label>Rename day</Label>
+                  </Dropdown.Item>
+                </Dropdown.Section>
+                <Separator />
+                <Dropdown.Section>
+                  <Dropdown.Item
+                    id="delete-day"
+                    textValue="Delete day"
+                    variant="danger"
+                  >
+                    <Label>Delete day</Label>
+                  </Dropdown.Item>
+                </Dropdown.Section>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
+
+        {/* Weekday chips — exclusivity lives here, not in the component (GAPS #8). */}
+        <ToggleButtonGroup
+          aria-label={`Weekdays on ${activeDay.name}`}
+          className="flex gap-1.5"
+          onSelectionChange={(keys) => {
+            const next = new Set([...keys].map(String));
+            for (const weekday of next) {
+              if (weekdayAssignments[weekday] !== activeDay.id) {
+                handleAssignWeekday(weekday, activeDay.id).catch(() => undefined);
+              }
+            }
+          }}
+          selectedKeys={assignedWeekdays}
+          selectionMode="multiple"
+        >
+          {WEEKDAYS.map((weekday) => (
+            <ToggleButton
+              aria-label={`${WEEKDAY_SHORT_LABELS[weekday] ?? weekday} on ${activeDay.name}`}
+              className="size-11 min-w-11 rounded-control border border-border bg-transparent p-0 text-pill font-semibold text-muted data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent"
+              id={weekday}
+              key={weekday}
+            >
+              {(WEEKDAY_SHORT_LABELS[weekday] ?? weekday).charAt(0)}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+      </div>
+
+      {/* Energy line + macro meters */}
+      <DayEnergyHeader
+        onToggleMacros={() => setShowMacros((v) => !v)}
+        showMacros={showMacros}
+        targets={{
+          calories: plan.target_calories,
+          protein_g: plan.target_protein_g,
+          carbs_g: plan.target_carbs_g,
+          fat_g: plan.target_fat_g,
+        }}
+        totals={totals}
+      />
+
+      {/* Meal cards */}
+      {rows.length === 0 ? (
+        <Typography
+          className="py-2"
+          color="muted"
+          type="body-sm"
+        >
+          No meals on this day yet — add the first one below.
+        </Typography>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {rows.map(({slot, primary, alternates}) => {
+            const meal = mealById.get(primary.nutrition_meal_id);
+            if (!meal) {
+              return null;
+            }
+            const slotMealIds = new Set([primary, ...alternates].map((o) => o.nutrition_meal_id));
+            const swaps: MealSwap[] = alternates
+              .map((option) => {
+                const alternate = mealById.get(option.nutrition_meal_id);
+                return alternate ? {optionId: option.id, meal: alternate} : null;
+              })
+              .filter((s): s is MealSwap => s !== null);
+
+            return (
+              <MealCard
+                assignmentCount={assignmentCounts.get(meal.id) ?? 0}
+                autoRename={autoRenameMealId === meal.id}
+                key={primary.id}
+                meal={meal}
+                onAddSwap={(mealId) => {
+                  addOptionToDay(activeDay.id, slot, mealId).catch(() => undefined);
+                }}
+                onChangeSlot={(nextSlot) => {
+                  if (nextSlot !== slot) {
+                    handleChangeSlot(activeDay.id, primary.id, meal.id, nextSlot).catch(() => undefined);
+                  }
+                }}
+                onRemoveFromDay={() => {
+                  removeOptionFromDay(activeDay.id, primary.id).catch(() => undefined);
+                }}
+                onRemoveSwap={(optionId) => {
+                  removeOptionFromDay(activeDay.id, optionId).catch(() => undefined);
+                }}
+                onToggle={() => {
+                  setOpenMealId((current) => (current === meal.id ? null : meal.id));
+                  setAutoRenameMealId(null);
+                }}
+                open={openMealId === meal.id}
+                planId={plan.id}
+                slot={slot}
+                swapCandidates={meals
+                  .filter((m) => !slotMealIds.has(m.id))
+                  .map((m) => ({
+                    id: m.id,
+                    name: m.name,
+                    sub: m.nutrition?.calories != null ? `${Math.round(m.nutrition.calories)} kcal` : undefined,
+                  }))}
+                swaps={swaps}
               />
-            ) : (
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{activeDay.name}</span>
-            )}
-            <Button
-              aria-label="Rename day"
-              className="h-9 w-9 min-w-9"
-              isIconOnly
-              onPress={startEditingName}
-              size="sm"
-              variant="ghost"
-            >
-              <Pencil size={14} />
-            </Button>
-            <Button
-              aria-label="Delete day"
-              className="h-9 w-9 min-w-9"
-              isIconOnly
-              onPress={deleteAlertState.open}
-              size="sm"
-              variant="ghost"
-            >
-              <Trash2 size={14} />
-            </Button>
-          </div>
-        </>
-      ) : null}
+            );
+          })}
+        </div>
+      )}
 
-      {/* Slot groups */}
-      <div className="flex flex-col gap-4">
-        {MEAL_SLOTS.map((slot) => (
-          <SlotGroup
-            day={activeDay}
-            isAdding={addingSlot === slot}
-            key={slot}
-            meals={meals}
-            onMakeDefault={(optionId) => {
-              handleMakeDefault(activeDay.id, slot, optionId).catch(() => undefined);
-            }}
-            onOpenAdd={() => setAddingSlot(slot)}
-            onPickMeal={(mealId) => {
-              handlePickMeal(activeDay.id, slot, mealId).catch(() => undefined);
-            }}
-            onRemoveOption={(optionId) => {
-              handleRemoveOption(activeDay.id, optionId).catch(() => undefined);
-            }}
-            slot={slot}
-          />
-        ))}
-      </div>
-
-      {/* Day totals */}
-      <div className="mt-4 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5">
-        <div className="text-[11px] text-muted">Day total</div>
-        <div className="text-sm font-bold text-foreground">{Math.round(totals.calories)} kcal</div>
-        {totals.anyMultiOption ? <p className="mt-1 text-[11px] text-muted">Totals use default options.</p> : null}
-      </div>
+      {/* Add meal */}
+      <AddMealControl
+        onCreate={() => {
+          handleCreateMeal(activeDay.id, firstFreeSlot(activeDay)).catch(() => undefined);
+        }}
+        onReuse={(mealId) => {
+          addOptionToDay(activeDay.id, firstFreeSlot(activeDay), mealId).catch(() => undefined);
+        }}
+        reusable={reusableMeals}
+      />
 
       {/* Delete day confirm */}
       <AlertDialog.Backdrop
@@ -713,9 +683,7 @@ export function PlanDays({plan}: PlanDaysProps) {
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>
-                Delete day: <strong>{activeDay.name}</strong>
-              </AlertDialog.Heading>
+              <AlertDialog.Heading>Delete "{activeDay.name}"?</AlertDialog.Heading>
             </AlertDialog.Header>
             <AlertDialog.Body>{deleteDayConfirmBody(activeDay, days, weekdayAssignments)}</AlertDialog.Body>
             <AlertDialog.Footer>
@@ -734,7 +702,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 }}
                 variant="danger"
               >
-                <span className={deletingDay ? 'invisible' : undefined}>Delete day</span>
+                <span className={deletingDay ? 'invisible' : undefined}>Delete</span>
                 {deletingDay ? (
                   <span className="absolute inset-0 flex items-center justify-center">
                     <Spinner
@@ -749,6 +717,6 @@ export function PlanDays({plan}: PlanDaysProps) {
           </AlertDialog.Dialog>
         </AlertDialog.Container>
       </AlertDialog.Backdrop>
-    </section>
+    </div>
   );
 }

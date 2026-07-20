@@ -274,11 +274,12 @@ export default function ListCheckins() {
                   </ToggleButton>
                 </ToggleButtonGroup>
               </div>
-            </div>
-            <div className="shrink-0">
+              {/* Purpose filter has no prototype frame (FM shows status pills only);
+                  kept as a working feature, docked in the same toolbar row so the
+                  toolbar stays one line like the ref. */}
               <ToggleButtonGroup
                 aria-label="Filter forms by type"
-                className={PURPOSE_GROUP_CLASS}
+                className={`${PURPOSE_GROUP_CLASS} sm:ms-auto`}
                 isDetached
                 onSelectionChange={(keys) => {
                   const next = [...keys][0];

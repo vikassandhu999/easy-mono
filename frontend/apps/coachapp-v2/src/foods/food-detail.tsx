@@ -1,27 +1,73 @@
 import {formatIsoDateOnly} from '@easy/utils';
-import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
-import {Apple, ArrowLeft, Copy, Pencil, Trash2} from 'lucide-react';
+import {AlertDialog, Button, Chip, ProgressBar, Typography, toast} from '@heroui/react';
+import {Copy, HandPlatter, Pencil, Trash2} from 'lucide-react';
+import type {ReactNode} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import type {Food} from '@/api/generated';
 import {coachApi, useDeleteFoodMutation, useGetFoodQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
-const MACRO_DISPLAY: {
-  label: string;
-  unit: string;
-  value: (food: import('@/api/generated').Food) => number | null | undefined;
-}[] = [
-  {label: 'Calories', unit: '', value: (f) => f.calories_per_100g},
-  {label: 'Protein', unit: 'g', value: (f) => f.protein_g_per_100g},
-  {label: 'Carbs', unit: 'g', value: (f) => f.carbs_g_per_100g},
-  {label: 'Fats', unit: 'g', value: (f) => f.fat_g_per_100g},
-  {label: 'Fiber', unit: 'g', value: (f) => f.fiber_g_per_100g},
+const OUTLINE_CHIP_CLASS = 'rounded-chip border border-border bg-surface font-semibold text-foreground';
+
+const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food; label: string}[] = [
+  {color: 'accent', key: 'protein_g_per_100g', label: 'Protein'},
+  {color: 'success', key: 'carbs_g_per_100g', label: 'Carbs'},
+  {color: 'warning', key: 'fat_g_per_100g', label: 'Fats'},
 ];
+
+const LEGEND_DOT: Record<string, string> = {
+  accent: 'bg-accent',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  muted: 'bg-muted',
+};
+
+function SectionHeading({detail, title}: {detail?: string; title: string}) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <Typography type="h6">{title}</Typography>
+      {detail && (
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          · {detail}
+        </Typography>
+      )}
+    </div>
+  );
+}
+
+function LegendEntry({dot, label, value}: {dot: string; label: string; value: number}) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <span className={`size-2 rounded-full ${LEGEND_DOT[dot]}`} />
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          {label}
+        </Typography>
+      </div>
+      <Typography
+        className="tabular-nums"
+        type="body"
+        weight="semibold"
+      >
+        {Math.round(value * 10) / 10}
+        <span className="text-xs font-normal text-muted">g</span>
+      </Typography>
+    </div>
+  );
+}
 
 export default function FoodDetail() {
   const {id} = useParams<{id: string}>();
@@ -43,9 +89,46 @@ export default function FoodDetail() {
     }
   };
 
+  const renderDeleteDialog = (trigger: ReactNode, foodName: string) => (
+    <AlertDialog>
+      {trigger}
+      <AlertDialog.Backdrop>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="sm:max-w-100">
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Delete food?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <Typography>
+                This will permanently delete <strong>{foodName}</strong>. This action cannot be undone.
+              </Typography>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                slot="close"
+                variant="tertiary"
+              >
+                Cancel
+              </Button>
+              <Button
+                isPending={isDeleting}
+                onPress={handleDelete}
+                variant="danger"
+              >
+                {isDeleting ? 'Deleting' : 'Delete'}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
+    </AlertDialog>
+  );
+
   if (isLoading) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
           <Page.TitleGroup>
             <Page.Title>Food</Page.Title>
@@ -60,31 +143,15 @@ export default function FoodDetail() {
 
   if (isError || !data) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-          <Page.TitleGroup>
+          <Page.TitleGroup className={'flex items-center'}>
+            <BackButton onPress={goBack} />
             <Page.Title>Food</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Foods
-          </Button>
-        </Page.Toolbar>
         <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
-            <Typography
-              className="text-danger"
-              type="body-sm"
-            >
-              Food couldn&apos;t load. It may not exist, or you may not have access
-            </Typography>
-          </div>
+          <ErrorState message="Food couldn't load. It may not exist, or you may not have access" />
         </Page.Content>
       </Page>
     );
@@ -92,178 +159,167 @@ export default function FoodDetail() {
 
   const food = data.data;
   const isSystemFood = food.source === 'system';
-  // `tags` is not yet in the generated schema — guard defensively
-  const tags: string[] = (food as unknown as {tags?: string[]}).tags ?? [];
-  const visibleMacros = MACRO_DISPLAY.filter(({value}) => {
-    const v = value(food);
-    return v != null && v !== 0;
-  });
+  const kcal = food.calories_per_100g;
+  const segments = MACRO_SEGMENTS.map((s) => ({...s, value: (food[s.key] as number | null) ?? 0})).filter(
+    (s) => s.value > 0,
+  );
+  const fiber = food.fiber_g_per_100g;
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
-          <Page.Title>Food</Page.Title>
+          <Page.Title className="sm:hidden">Food</Page.Title>
         </Page.TitleGroup>
-      </Page.Header>
-      <Page.Toolbar className="flex flex-wrap items-center gap-2">
-        {!isSystemFood && (
-          <Button
-            onPress={() => navigate(`/library/foods/${food.id}/edit`)}
-            size="sm"
-            variant="secondary"
-          >
-            <Pencil size={16} />
-            Edit
-          </Button>
-        )}
-        <Button
-          onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
-          size="sm"
-          variant="secondary"
-        >
-          <Copy size={16} />
-          Duplicate
-        </Button>
-        {!isSystemFood && (
-          <AlertDialog>
+        <Page.Actions className="hidden sm:flex">
+          {!isSystemFood && (
             <Button
-              size="sm"
-              variant="danger"
+              className="bg-ink text-ink-foreground"
+              onPress={() => navigate(`/library/foods/${food.id}/edit`)}
             >
-              <Trash2 size={16} />
-              Delete
+              <Pencil className="size-4" />
+              Edit
             </Button>
-            <AlertDialog.Backdrop>
-              <AlertDialog.Container>
-                <AlertDialog.Dialog className="sm:max-w-[400px]">
-                  <AlertDialog.CloseTrigger />
-                  <AlertDialog.Header>
-                    <AlertDialog.Icon status="danger" />
-                    <AlertDialog.Heading>Delete food?</AlertDialog.Heading>
-                  </AlertDialog.Header>
-                  <AlertDialog.Body>
-                    <Typography>
-                      This will permanently delete <strong>{food.name}</strong>. This action cannot be undone.
-                    </Typography>
-                  </AlertDialog.Body>
-                  <AlertDialog.Footer>
-                    <Button
-                      slot="close"
-                      variant="tertiary"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      isPending={isDeleting}
-                      onPress={handleDelete}
-                      variant="danger"
-                    >
-                      {isDeleting ? 'Deleting' : 'Delete'}
-                    </Button>
-                  </AlertDialog.Footer>
-                </AlertDialog.Dialog>
-              </AlertDialog.Container>
-            </AlertDialog.Backdrop>
-          </AlertDialog>
-        )}
-      </Page.Toolbar>
+          )}
+          <Button
+            onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
+            variant="outline"
+          >
+            <Copy className="size-4" />
+            Duplicate
+          </Button>
+          {!isSystemFood &&
+            renderDeleteDialog(
+              <Button
+                aria-label="Delete food"
+                className="text-danger"
+                variant="outline"
+              >
+                <Trash2 className="size-4" />
+              </Button>,
+              food.name,
+            )}
+        </Page.Actions>
+      </Page.Header>
 
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="max-w-lg">
-          <div className="flex items-start gap-4 pb-6">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-surface-secondary">
+        <div className="max-w-2xl">
+          <div className="flex items-start gap-4">
+            <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">
               {food.image_url ? (
                 <img
                   alt={food.name}
-                  className="size-14 rounded-xl object-cover"
+                  className="size-20 rounded-2xl object-cover"
                   src={food.image_url}
                 />
               ) : (
-                <Apple
-                  className="text-muted"
-                  size={24}
-                />
+                <HandPlatter className="size-8 text-foreground" />
               )}
             </div>
             <div className="min-w-0 flex-1">
               <Typography
                 className="break-words"
-                type="h5"
+                type="h3"
               >
                 {food.name}
               </Typography>
-              {(food.category || food.source) && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {food.category && (
-                    <Chip
-                      size="sm"
-                      variant="soft"
-                    >
-                      {food.category}
-                    </Chip>
-                  )}
-                  {food.source && (
-                    <Chip
-                      color="default"
-                      size="sm"
-                      variant="soft"
-                    >
-                      {food.source}
-                    </Chip>
-                  )}
-                </div>
-              )}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {food.category && (
+                  <Chip
+                    className={`${OUTLINE_CHIP_CLASS} capitalize`}
+                    variant="secondary"
+                  >
+                    {food.category}
+                  </Chip>
+                )}
+                <Chip
+                  className={`${OUTLINE_CHIP_CLASS} capitalize`}
+                  variant="secondary"
+                >
+                  {food.source ?? 'custom'}
+                </Chip>
+              </div>
             </div>
           </div>
 
-          {visibleMacros.length > 0 && (
-            <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Nutrition for 100 g
-              </Typography>
-              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-                {visibleMacros.map(({label, unit, value}) => (
-                  <div key={label}>
+          {(kcal != null || segments.length > 0) && (
+            <section className="mt-8">
+              <SectionHeading
+                detail="per 100 g"
+                title="Nutrition"
+              />
+              <div className="mt-3 rounded-card border border-border bg-surface p-5">
+                {kcal != null && (
+                  <div className="flex items-baseline gap-2">
                     <Typography
-                      color="muted"
-                      type="body-xs"
+                      className="tabular-nums"
+                      type="h1"
                     >
-                      {label}
+                      {Math.round(kcal)}
                     </Typography>
-                    <Typography weight="medium">
-                      {value(food)}
-                      {unit}
-                    </Typography>
+                    <Typography color="muted">kcal</Typography>
                   </div>
-                ))}
+                )}
+                {segments.length > 0 && (
+                  <>
+                    <div className="mt-4 flex gap-0.5">
+                      {segments.map((s) => (
+                        <div
+                          className="min-w-4"
+                          key={s.label}
+                          // ponytail: flexGrow is the one genuinely dynamic value here
+                          // (ratio bar) — allowlisted per UI-CONTRACT §1.
+                          style={{flexGrow: s.value}} /* ui-contract-allow */
+                        >
+                          <ProgressBar
+                            aria-label={`${s.label} share`}
+                            color={s.color}
+                            value={100}
+                          >
+                            <ProgressBar.Track>
+                              <ProgressBar.Fill />
+                            </ProgressBar.Track>
+                          </ProgressBar>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 sm:gap-x-10">
+                      {segments.map((s) => (
+                        <LegendEntry
+                          dot={s.color}
+                          key={s.label}
+                          label={s.label}
+                          value={s.value}
+                        />
+                      ))}
+                      {fiber != null && fiber > 0 && (
+                        <LegendEntry
+                          dot="muted"
+                          label="Fiber"
+                          value={fiber}
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </section>
           )}
 
           {food.serving_sizes.length > 0 && (
-            <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Serving sizes
-              </Typography>
-              <div className="flex flex-col gap-2">
+            <section className="mt-8">
+              <SectionHeading title="Serving sizes" />
+              <div className="mt-3 flex flex-col gap-2.5">
                 {food.serving_sizes.map((serving, i) => (
                   <div
-                    className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3.5"
                     key={i}
                   >
-                    <Typography weight="medium">
+                    <Typography
+                      type="body-sm"
+                      weight="semibold"
+                    >
                       {serving.amount ?? 1} {serving.unit}
                     </Typography>
                     {serving.weight_g != null && serving.weight_g > 0 && (
@@ -271,7 +327,7 @@ export default function FoodDetail() {
                         color="muted"
                         type="body-sm"
                       >
-                        {serving.weight_g}g
+                        {serving.weight_g} g
                       </Typography>
                     )}
                   </div>
@@ -280,79 +336,71 @@ export default function FoodDetail() {
             </section>
           )}
 
-          {tags.length > 0 && (
-            <section className="border-t border-border py-4">
-              <Typography
-                className="mb-2"
-                color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Tags
-              </Typography>
-              <div className="flex flex-wrap gap-1.5">
-                {tags.map((tag) => (
-                  <Chip
-                    key={tag}
-                    size="sm"
-                    variant="soft"
-                  >
-                    {tag}
-                  </Chip>
-                ))}
-              </div>
-            </section>
-          )}
-
           {food.notes && (
-            <section className="border-t border-border py-4">
+            <section className="mt-8">
+              <SectionHeading title="Notes" />
               <Typography
-                className="mb-2"
+                className="mt-2 whitespace-pre-wrap"
                 color="muted"
-                type="body-xs"
-                weight="semibold"
-              >
-                Notes
-              </Typography>
-              <Typography
-                className="whitespace-pre-wrap"
-                type="body-sm"
               >
                 {food.notes}
               </Typography>
             </section>
           )}
 
-          <section className="border-t border-border py-4">
-            <Typography
-              className="mb-2"
-              color="muted"
-              type="body-xs"
-              weight="semibold"
-            >
-              Details
-            </Typography>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+          <section className="mt-8 border-t border-separator pt-5">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Typography
                   color="muted"
-                  type="body-xs"
+                  type="body-sm"
                 >
                   Created
                 </Typography>
-                <Typography>{formatIsoDateOnly(food.inserted_at)}</Typography>
+                <Typography type="body-sm">{formatIsoDateOnly(food.inserted_at)}</Typography>
               </div>
               <div>
                 <Typography
                   color="muted"
-                  type="body-xs"
+                  type="body-sm"
                 >
-                  Last updated
+                  Updated
                 </Typography>
-                <Typography>{formatIsoDateOnly(food.updated_at)}</Typography>
+                <Typography type="body-sm">{formatIsoDateOnly(food.updated_at)}</Typography>
               </div>
             </div>
           </section>
+        </div>
+
+        <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
+          {!isSystemFood && (
+            <Button
+              className="flex-1"
+              onPress={() => navigate(`/library/foods/${food.id}/edit`)}
+              variant="primary"
+            >
+              <Pencil className="size-4" />
+              Edit
+            </Button>
+          )}
+          <Button
+            aria-label="Duplicate food"
+            onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
+            variant="outline"
+          >
+            <Copy className="size-4" />
+          </Button>
+          {!isSystemFood &&
+            renderDeleteDialog(
+              <Button
+                aria-label="Delete food"
+                className="text-danger"
+                variant="outline"
+              >
+                <Trash2 className="size-4" />
+              </Button>,
+              food.name,
+            )}
         </div>
       </Page.Content>
     </Page>

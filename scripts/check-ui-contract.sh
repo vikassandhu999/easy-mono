@@ -7,6 +7,10 @@
 #   ./scripts/check-ui-contract.sh file1.tsx file2.tsx   # explicit files
 #   ./scripts/check-ui-contract.sh                        # files changed vs main
 #
+# UI-CONTRACT §1 allows a single genuinely dynamic style value case-by-case
+# (e.g. a ratio-bar flexGrow). Mark the approved line with a trailing
+# `/* ui-contract-allow */` comment to exempt it.
+#
 # ponytail: scoped to changed files, not the whole tree — legacy code has ~175
 # pre-existing hits; widen to a full-tree gate once the port sweep is done.
 set -uo pipefail
@@ -41,6 +45,7 @@ OUT=$(echo "$FILES" | xargs rg -n --no-messages \
   -e '(bg|text|border|ring)-(primary|neutral|default|success|warning|danger)-[0-9]{2,3}' \
   -e '@nextui-org/' -e 'HeroUIProvider' -e 'framer-motion' \
   -e '\bNumberField\b' \
+  | grep -v 'ui-contract-allow' \
   || true)
 
 if [ -n "$OUT" ]; then

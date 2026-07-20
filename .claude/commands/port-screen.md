@@ -141,7 +141,20 @@ verify copy matches COPY.md § {badge} verbatim.
   `<Button className="bg-ink text-ink-foreground">` — `--color-ink` is in @theme.
 - **Seeding ref-matching data**: POST via the app origin's token —
   `fetch('http://localhost:4000/v1/...', {headers:{Authorization:'Bearer '+localStorage.getItem('coachapp.accessToken')}})`
-  from `chrome-devtools-axi eval`. Food serving_sizes need `label` and `is_default`.
+  from `chrome-devtools-axi eval`. The token is a raw JWT string — never JSON.parse it.
+  Food serving_sizes need `label` and `is_default`. Recipe ingredients need real
+  `food_id`s + `weight_g` for computed totals. Exercises: dev DB has NO custom
+  exercises — make one via `POST /v1/coach/training-exercises/{id}/copy` with
+  `Content-Type: application/json` and a `{name}` body (422 otherwise); delete after.
+- **Exercise `instructions` data embeds `1.`/`2.` enumerators** — numbered-step
+  renderers must strip a leading enumerator per line; form textareas leave as-is.
+- **Fixed-width toolbar filter pills wrap at 390px** — wrap the dropdown in a
+  `shrink-0` container with NO fixed width so it hugs its content.
+- **Recipe totals live on `recipe.nutrition`** (nullable object) — type segment
+  keys via `NonNullable<Recipe['nutrition']>`, not Food's flat per-100g keys.
+- **When the ref's own desktop/mobile treatments disagree** (e.g. uppercase mobile
+  eyebrows vs title-case desktop legends), follow the accepted FO/FD/FE reference
+  ports — one treatment at both widths, app convention wins.
 
 ## Route map (badge → route, from `src/@config/routes.ts`)
 

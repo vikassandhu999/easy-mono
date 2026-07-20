@@ -24,59 +24,69 @@ export default function ListExercises() {
 
   const deferredSearch = useDeferredValue(search);
   const list = useCoachTrainingExercisesInfiniteQuery({muscleIds: selectedMuscleIds, search: deferredSearch});
-  const {fetchNextPage, isError, isLoading, items, isFetchingNextPage, refetch} = useInfiniteItems(list);
+  const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
+  const total = list.data?.pages[0]?.count;
 
   const {data: musclesData} = useListMusclesQuery({});
   const muscles = musclesData?.data ?? [];
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header size="list">
         <Page.TitleGroup className={'flex items-center'}>
-          <div className={'lg:hidden'}>
-            <BackButton onPress={goBack} />
+          <BackButton
+            className={'lg:hidden'}
+            onPress={goBack}
+          />
+          <div className="min-w-0">
+            <Page.Title>Exercises</Page.Title>
+            <Page.Description className="hidden truncate sm:block">
+              Your movement library for building training plans
+            </Page.Description>
           </div>
-          <Page.Title>Exercises</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
           <Button
+            aria-label="Create exercise"
             onPress={() => navigate(ROUTES.CREATE_EXERCISE)}
-            size="sm"
+            variant="primary"
           >
-            <Plus size={16} />
-            Create
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Create exercise</span>
           </Button>
         </Page.Actions>
       </Page.Header>
       <Page.Toolbar
-        className={'sticky top-0 z-10 flex flex-col lg:flex-row gap-3 pt-2 pb-3 bg-surface border-b'}
+        className={'sticky top-0 z-10 flex items-center gap-3 bg-background pt-2 pb-3'}
         size="list"
       >
         <SearchField
           aria-label="Search exercises"
-          className="w-full sm:max-w-xs"
+          className="min-w-0 flex-1 sm:max-w-72"
           onChange={setSearch}
           value={search}
-          variant={'secondary'}
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search exercises..." />
+            <SearchField.Input placeholder="Search exercises…" />
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
         {muscles.length > 0 && (
-          <div className="lg:min-w-40 space-y-4 rounded-3xl">
+          <div className="shrink-0">
             <MultiSelectAutocomplete
               emptyMessage="No muscles found"
               items={muscles}
               name="muscle_ids"
               onChange={setSelectedMuscleIds}
               placeholder="Muscle groups"
-              searchPlaceholder="Search muscles..."
+              searchPlaceholder="Search muscles…"
               value={selectedMuscleIds}
             />
           </div>
+        )}
+        {total != null && (
+          <span className="ms-auto hidden shrink-0 text-sm text-muted sm:block">{total} exercises</span>
         )}
       </Page.Toolbar>
       <Page.Content>
@@ -84,26 +94,28 @@ export default function ListExercises() {
           className="flex min-h-0 flex-1 flex-col pb-6"
           size="list"
         >
-          <BrowseListBox
-            ariaLabel="Exercises"
-            emptyState={
-              <ListEmptyState
-                createLabel="Create exercise"
-                createRoute={ROUTES.CREATE_EXERCISE}
-                emptyDescription="Create your first exercise to get started."
-                filterDescription="Try adjusting your search or filters to find what you're looking for."
-                hasFilter={!!deferredSearch || selectedMuscleIds.length > 0}
-                nounPlural="exercises"
-              />
-            }
-            fetchNextPage={fetchNextPage}
-            isError={isError}
-            isLoading={isLoading || isFetchingNextPage}
-            items={items}
-            onRetry={refetch}
-            onAction={(key) => navigate(ROUTES.EXERCISE_DETAIL.replace(':id', String(key)))}
-            renderItem={(exercise) => <ExerciseListItem exercise={exercise} />}
-          />
+          <div className="overflow-hidden rounded-card border border-border bg-surface">
+            <BrowseListBox
+              ariaLabel="Exercises"
+              className="flex-1 p-0"
+              emptyState={
+                <ListEmptyState
+                  createLabel="Create exercise"
+                  createRoute={ROUTES.CREATE_EXERCISE}
+                  emptyDescription="Create your first exercise to get started."
+                  hasFilter={!!deferredSearch || selectedMuscleIds.length > 0}
+                  nounPlural="exercises"
+                />
+              }
+              fetchNextPage={fetchNextPage}
+              isError={isError}
+              isLoading={isLoading}
+              onRetry={refetch}
+              items={items}
+              onAction={(key) => navigate(ROUTES.EXERCISE_DETAIL.replace(':id', String(key)))}
+              renderItem={(exercise) => <ExerciseListItem exercise={exercise} />}
+            />
+          </div>
         </Page.Frame>
       </Page.Content>
     </Page>

@@ -62,7 +62,7 @@ function SidebarLink({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2 text-[13.5px] transition-colors ${
+        `flex min-h-11 items-center gap-3 rounded-control px-3 py-2 text-sm transition-colors ${
           isActive
             ? 'bg-accent font-semibold text-accent-foreground'
             : 'font-medium text-white/80 hover:bg-white/10 hover:text-white'
@@ -127,8 +127,8 @@ function ProfileCard() {
         {initials}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-semibold text-white">{name}</span>
-        <span className="block truncate text-[11px] text-white/50">{profile?.business.name ?? ''}</span>
+        <span className="block truncate text-sm font-semibold text-white">{name}</span>
+        <span className="block truncate text-chip text-white/50">{profile?.business.name ?? ''}</span>
       </span>
       <Settings
         className="shrink-0 text-white/50"
@@ -142,7 +142,7 @@ function BottomNavItem({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 text-[10px] transition-colors ${
+        `relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 text-chip transition-colors ${
           isActive ? 'font-semibold text-accent' : 'font-medium text-white/55'
         }`
       }
@@ -177,10 +177,10 @@ export default function AppShell() {
 
       <aside className="hidden bg-[var(--ink)] lg:fixed lg:inset-y-0 lg:flex lg:w-60 lg:flex-col lg:p-3">
         <div className="mx-0.5 flex items-center gap-2.5 border-b border-white/10 px-1.5 pb-3.5 pt-0.5">
-          <span className="flex size-8 items-center justify-center rounded-[9px] bg-accent font-grotesk text-base font-bold text-accent-foreground">
+          <span className="flex size-8 items-center justify-center rounded-control bg-accent font-grotesk text-base font-bold text-accent-foreground">
             C
           </span>
-          <span className="font-grotesk text-[17px] font-bold text-white">
+          <span className="font-grotesk text-lg font-bold text-white">
             Coach<span className="text-accent">Easy</span>
           </span>
         </div>
@@ -194,9 +194,7 @@ export default function AppShell() {
               />
             ))}
           </div>
-          <div className="px-2 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-[0.09em] text-white/40">
-            Builder
-          </div>
+          <div className="px-2 pb-1.5 pt-4 text-chip font-semibold uppercase tracking-wider text-white/40">Builder</div>
           <div className="flex flex-col gap-0.5">
             {BUILDER.map((item) => (
               <SidebarLink
@@ -239,24 +237,6 @@ export default function AppShell() {
       <main
         className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-60 ${showMobileFrame ? (canInstall ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]') : ''}`}
       >
-        {showMobileFrame ? (
-          <div className="flex h-14 shrink-0 items-center justify-between px-4 lg:hidden">
-            <span className="font-grotesk text-lg font-bold text-foreground">
-              Coach<span className="text-accent">Easy</span>
-            </span>
-            <NavLink
-              aria-label="Account settings"
-              className={({isActive}) =>
-                `flex size-11 items-center justify-center rounded-xl transition-colors ${
-                  isActive ? 'bg-accent/10 text-accent' : 'text-muted hover:bg-default-soft hover:text-foreground'
-                }`
-              }
-              to={ROUTES.SETTINGS}
-            >
-              <Settings size={20} />
-            </NavLink>
-          </div>
-        ) : null}
         <Outlet />
       </main>
 

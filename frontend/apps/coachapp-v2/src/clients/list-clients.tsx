@@ -134,7 +134,7 @@ export default function ListClients() {
           onChange={setSearch}
           value={search}
         >
-          <SearchField.Group className="min-h-11 sm:min-h-0">
+          <SearchField.Group className="min-h-11 border border-border bg-background shadow-none sm:min-h-0 sm:bg-surface">
             <SearchField.SearchIcon />
             <SearchField.Input
               className="min-h-11 sm:min-h-0"
@@ -173,12 +173,12 @@ export default function ListClients() {
                   <span className="hidden sm:inline">{option.label}</span>
                   <span className="sm:hidden">{option.shortLabel}</span>
                   {count === undefined ? null : (
-                    // COPY.md §CL: mobile pills carry a count on `All` only.
+                    // Mobile carries a count on the selected filter only.
                     <span
                       className={cn(
                         'ms-1 rounded-full bg-surface-secondary px-1.5 py-0.5 text-chip font-bold',
                         'sm:bg-transparent sm:px-0 sm:py-0 sm:font-normal sm:opacity-70',
-                        option.id === 'all' ? '' : 'hidden sm:inline',
+                        option.id === activeFilter ? '' : 'hidden sm:inline',
                       )}
                     >
                       {count}

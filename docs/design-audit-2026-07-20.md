@@ -6,6 +6,7 @@ Scope: `CL` (`/clients`) only. Compared live at `1240x900@2x` and `390x844@2x` a
 
 | badge | width | what's wrong | pass (A-fidelity / B-consistency) | severity | proposed fix |
 |---|---|---|---|---|---|
+| CL | mobile | The app shell adds a CoachEasy/settings bar above the screen that is not part of the requested mobile layout. | A-fidelity | high | **Fixed by explicit product direction** — the shared mobile app-shell bar was removed at its owner; bottom navigation remains. |
 | CL | mobile | The implementation uses the desktop subtitle, ink pills, inset rounded list card, and full-width row rules. The mobile reference instead has a compact surface header with no subtitle, underline filters, a full-bleed list, and separators inset from the text column. | A-fidelity | high | **Fixed** — CL now keeps the existing `Page`, `ToggleButtonGroup`, `BrowseListBox`, and `BrowseRow` primitives while applying the reference's mobile anatomy responsively. |
 | CL | mobile | Invite, search, and filter controls measure 40px high; the search clear button measures 20px. All are below the 44px mobile target required by the app contract. | B-consistency | high | **Fixed** — CL invite/search controls and the shared filter-pill class now have a 44px mobile minimum; live measurement reports no smaller interactive target. |
 | CL | desktop | The client rows are visibly shorter than the reference because CL reduces the canonical `BrowseRow` leading tile from 44px to 36px at every width. | A-fidelity | medium | **Fixed** — CL retains the dense 36px mobile avatar but restores the 44px desktop leading track with a 40px avatar, matching the desktop row rhythm without changing the shared row API. |
@@ -26,11 +27,12 @@ Scope: `CL` (`/clients`) only. Compared live at `1240x900@2x` and `390x844@2x` a
 - Loading uses `ListSkeleton`; empty states are designed; no centered first-load spinner is used.
 - Filter pills use `FILTER_PILL_CLASS`; status/plan chips use the documented semantic tokens.
 - Mobile document width is exactly 390px; no page-level horizontal overflow was measured.
-- App-shell mobile chrome is retained per `GAPS.md`; sample data differences are ignored.
+- App-shell bottom navigation is retained; the top brand/settings bar is removed by explicit product direction. Sample data differences are ignored.
 
 ## Verification
 
 - Second-pass direct image comparisons checked in Chrome at the reference raster's `1240x745@2x` and `390x844@2x`; the required `1240x900@2x` viewport was also recaptured.
+- Third-pass mobile verification confirmed the app-shell top bar is absent, the search uses the background surface with an explicit semantic border and no shadow, and selected tabs render `All 53`, `Active 47`, and `Invited 2` while hiding unselected counts.
 - Live populated and filtered-empty states checked in Chrome; the Active → All filter transition still returns the expected `47` → `53` rows.
 - Live offline Attention state checked: entity-specific error copy and Retry rendered; restoring the network recovered the populated list.
 - Mobile interactive-target scan: no visible input, button, link, radio, or option measured below 44px.

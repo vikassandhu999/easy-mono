@@ -1,20 +1,18 @@
-# Design audit prompt (portable)
+# Design audit prompt
 
-Paste everything below the line into any coding agent that has **shell access to
-this repo** and **a way to screenshot a local URL at a set viewport**. Replace the
-two bracketed placeholders first. Nothing else is tool-specific.
+Written for Codex (shell + browser tools). Paste everything below the line.
 
-- `[SCREENSHOT CMD]` — your browser driver's screenshot-at-viewport command.
-  This repo has `chrome-devtools-axi` available; if your agent can use it:
-  `chrome-devtools-axi open <url>` then
-  `chrome-devtools-axi emulate --viewport "1240x900x2"` then
-  `chrome-devtools-axi screenshot <path>`.
-  Playwright, Puppeteer, or a headless Chrome one-liner all work equally well.
-- `[EVAL CMD]` — your driver's "run this JS in the page, return the result"
-  command. With chrome-devtools-axi: `chrome-devtools-axi eval "<js>"`.
+**Before you start it:** the dev server must be reachable at `http://localhost:2021`
+and dependencies must already be installed. Start `just web` yourself, or run Codex
+with network access — it should not be installing packages mid-audit. It needs
+write access to the repo to land fixes and the report.
 
-If your agent cannot see images, it can still run Pass B (measurement) and the
-gates — say so up front rather than guessing at Pass A.
+The prompt assumes Codex's own browser tools for navigation, screenshots, and
+in-page JS. This repo also has `chrome-devtools-axi` on PATH if the shell route
+is easier: `chrome-devtools-axi open <url>`,
+`chrome-devtools-axi emulate --viewport "1240x900x2"`,
+`chrome-devtools-axi screenshot <path>`, `chrome-devtools-axi eval "<js>"`.
+Either is fine; don't mix them in one run.
 
 ---
 
@@ -27,8 +25,15 @@ reference images or from itself, writing that up, and fixing it.
 ## Setup
 
 - Repo root: this working directory. App: `frontend/apps/coachapp-v2`.
-- Start the dev server: `just web` (or `pnpm -C frontend/apps/coachapp-v2 dev`).
-  It serves `http://localhost:2021`. Dev OTP for any login is `123456`.
+- The dev server should already be running at `http://localhost:2021`. If it
+  isn't, start it with `just web` and wait for it — do not install dependencies,
+  and do not audit against a production build. Dev OTP for any login is `123456`.
+- Reuse the existing signed-in browser session and its open tabs. Do not clear
+  cookies, storage, or browser profile data; do not log in if a session exists.
+- This is a large audit. Do it module by module (all of foods, then all of
+  recipes, and so on) rather than sampling a few screens and generalising. If you
+  run short on budget, cover fewer modules completely and say which ones you
+  skipped — never report partial coverage as if it were full.
 - Reference images: `design-handoff/refs/{badge}-desktop.png` and
   `{badge}-mobile.png`, one pair per screen badge.
 - Work on a branch off the current tip. Check `git status` first and note any
@@ -77,13 +82,15 @@ Run both passes. They catch different things.
 
 For each badge, capture both widths and compare each against its reference image:
 
-- Desktop: viewport `1240x900`, device scale 2 → `[SCREENSHOT CMD]`
-- Mobile: viewport `390x844`, mobile + touch emulation → `[SCREENSHOT CMD]`
+- Desktop: viewport `1240x900`, device scale 2
+- Mobile: viewport `390x844`, mobile + touch emulation
 
 Chrome windows can't physically resize below ~500px, so use **viewport
 emulation** for mobile, not window resizing. Reset the viewport when done.
 
-View your screenshot and the reference together, and name every concrete
+Open your screenshot and the reference image **in the same step** and compare
+them directly. Do not describe a screenshot from memory or infer what a screen
+looks like from its source code — read both images. Name every concrete
 mismatch: layout structure, spacing rhythm, alignment, visual hierarchy,
 surface/background layering, chip and pill treatment, typography (face, weight,
 size), iconography, and which states are shown.
@@ -104,8 +111,8 @@ property on every member and report any value that is not unanimous.
 
 **Content width and left edge.** Walk list → detail → edit for every module
 (foods, recipes, exercises, nutrition plans, training plans, check-ins, clients,
-prospects). All must report the same left offset and width. Measure with
-`[EVAL CMD]`:
+prospects). All must report the same left offset and width. Run this in the page
+and record the result per route:
 
 ```js
 JSON.stringify([...document.querySelectorAll('.easy_page div,.easy_page form')]
@@ -144,7 +151,12 @@ all three — point at a bad id to force the error state.
 
 **Tap targets.** Interactive elements at least 44px tall on mobile.
 
-## Step 1 — report, and stop
+## Step 1 — write the report before you write any code
+
+This is a checkpoint inside the run, not the end of it. Finish the report, then
+continue to Step 2 in the same session without waiting for approval. The point is
+that the findings are written down before any fix is attempted, so you can see
+which ones share a cause.
 
 Write `docs/design-audit-<today's date>.md`. One row per finding:
 

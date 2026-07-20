@@ -84,7 +84,6 @@ export function NumberInput({
       onBlur={onBlur}
       onChange={handleChange}
       value={text}
-      variant={'secondary'}
     >
       {label !== undefined && label !== '' ? <Label>{label}</Label> : null}
       {description ? <Description>{description}</Description> : null}

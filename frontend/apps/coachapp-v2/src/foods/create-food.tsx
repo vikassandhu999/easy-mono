@@ -49,14 +49,14 @@ export default function CreateFood() {
   };
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />
             <Page.Title>Create food</Page.Title>
           </div>
-          <Page.Description>Add nutrition details, serving sizes, and notes</Page.Description>
+          <Page.Description>Add a custom food to your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">

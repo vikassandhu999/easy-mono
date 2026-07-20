@@ -38,7 +38,6 @@ export function FormTextField<T extends FieldValues>({
             onValueChange?.(value);
           }}
           value={field.value ?? ''}
-          variant={'secondary'}
         >
           <Label>{label}</Label>
           {description ? <Description>{description}</Description> : null}

@@ -24,7 +24,13 @@ export function FormActions({
   submittingLabel,
 }: FormActionsProps) {
   return (
-    <Fieldset.Actions className="flex gap-3">
+    <Fieldset.Actions className="flex justify-end gap-3">
+      <Button
+        onPress={onCancel}
+        variant="outline"
+      >
+        {cancelLabel}
+      </Button>
       <Button
         className="relative"
         isPending={isSubmitting}
@@ -40,12 +46,6 @@ export function FormActions({
             <span className="sr-only">{submittingLabel}</span>
           </span>
         ) : null}
-      </Button>
-      <Button
-        onPress={onCancel}
-        variant="ghost"
-      >
-        {cancelLabel}
       </Button>
     </Fieldset.Actions>
   );

@@ -42,14 +42,14 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
   };
 
   return (
-    <Page>
+    <Page className="bg-background">
       <Page.Header>
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />
             <Page.Title>Edit food</Page.Title>
           </div>
-          <Page.Description>{food.name}</Page.Description>
+          <Page.Description>Update this food in your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
@@ -76,7 +76,7 @@ export default function EditFood() {
 
   if (isFetching) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
@@ -94,7 +94,7 @@ export default function EditFood() {
 
   if (isError || !data) {
     return (
-      <Page>
+      <Page className="bg-background">
         <Page.Header>
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>

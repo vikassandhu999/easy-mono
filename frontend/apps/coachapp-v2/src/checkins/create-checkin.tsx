@@ -16,7 +16,7 @@ export default function CreateCheckin() {
   const onSubmit = async (draft: TemplateDraft) => {
     try {
       await createTemplate({
-        clientProfileFormTemplateRequest: draftToRequest({...draft, purpose: 'check_in'}),
+        clientProfileFormTemplateRequest: draftToRequest(draft),
       }).unwrap();
       toast.success('Form created');
       navigate(ROUTES.CHECKINS, {replace: true});
@@ -26,26 +26,17 @@ export default function CreateCheckin() {
   };
 
   return (
-    <Page>
-      <Page.Header>
-        <Page.TitleGroup>
-          <div className="flex items-center gap-1">
-            <BackButton onPress={goBack} />
-            <Page.Title>Create form</Page.Title>
-          </div>
-          <Page.Description>Build a check-in form to schedule for clients</Page.Description>
-        </Page.TitleGroup>
-      </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-        <CheckinBuilder
-          initialDraft={emptyTemplateDraft()}
-          isSubmitting={isLoading}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Create form"
-          submittingLabel="Creating form"
-        />
-      </Page.Content>
+    <Page className="bg-background">
+      <CheckinBuilder
+        backSlot={<BackButton onPress={goBack} />}
+        eyebrow="New form"
+        initialDraft={emptyTemplateDraft()}
+        isSubmitting={isLoading}
+        onCancel={goBack}
+        onSubmit={onSubmit}
+        submitLabel="Save form"
+        submittingLabel="Saving form"
+      />
     </Page>
   );
 }

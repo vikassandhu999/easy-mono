@@ -51,36 +51,27 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
   };
 
   return (
-    <Page>
-      <Page.Header>
-        <Page.TitleGroup>
-          <div className="flex items-center gap-1">
-            <BackButton onPress={goBack} />
-            <Page.Title>Edit form</Page.Title>
-          </div>
-          <Page.Description>{template.name}</Page.Description>
-        </Page.TitleGroup>
-        <Page.Actions>
+    <Page className="bg-background">
+      <CheckinBuilder
+        backSlot={<BackButton onPress={goBack} />}
+        eyebrow="Editing form"
+        headerExtra={
           <Button
+            aria-label="Delete form"
+            isIconOnly
             onPress={deleteConfirm.open}
-            size="sm"
-            variant="danger"
+            variant="outline"
           >
-            <Trash2 size={16} />
-            Delete
+            <Trash2 className="size-4 text-danger" />
           </Button>
-        </Page.Actions>
-      </Page.Header>
-      <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-        <CheckinBuilder
-          initialDraft={templateToDraft(template)}
-          isSubmitting={isUpdating}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Save changes"
-          submittingLabel="Saving changes"
-        />
-      </Page.Content>
+        }
+        initialDraft={templateToDraft(template)}
+        isSubmitting={isUpdating}
+        onCancel={goBack}
+        onSubmit={onSubmit}
+        submitLabel="Save form"
+        submittingLabel="Saving form"
+      />
 
       <AlertDialog.Backdrop
         isDismissable={!isDeleting}
@@ -130,8 +121,11 @@ export default function EditCheckin() {
 
   if (isLoading) {
     return (
-      <Page>
-        <Page.Header>
+      <Page className="bg-background">
+        <Page.Header
+          className="max-w-160"
+          size="form"
+        >
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
@@ -139,8 +133,10 @@ export default function EditCheckin() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-          <PageSkeleton />
+        <Page.Content className="pb-6">
+          <Page.Frame size="form">
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -148,8 +144,11 @@ export default function EditCheckin() {
 
   if (isError || !data) {
     return (
-      <Page>
-        <Page.Header>
+      <Page className="bg-background">
+        <Page.Header
+          className="max-w-160"
+          size="form"
+        >
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={goBack} />
@@ -157,8 +156,10 @@ export default function EditCheckin() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
-          <ErrorState message="Couldn't load check-in." />
+        <Page.Content className="pb-6">
+          <Page.Frame size="form">
+            <ErrorState message="Couldn't load check-in." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );

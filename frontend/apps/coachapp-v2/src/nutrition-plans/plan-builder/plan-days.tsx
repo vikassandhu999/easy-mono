@@ -181,15 +181,10 @@ export function PlanDays({plan}: PlanDaysProps) {
   const mealById = new Map(meals.map((m) => [m.id, m]));
 
   const [activeDayId, setActiveDayId] = useState<string | undefined>(days[0]?.id);
+  // The `?? days[0]` fallback IS the after-delete correction — every consumer
+  // reads activeDay.id, so a stale activeDayId is never observable and needs no
+  // sync effect to write it back.
   const activeDay = days.find((d) => d.id === activeDayId) ?? days[0];
-
-  // Keep the active day valid after a delete or on first load.
-  useEffect(() => {
-    const first = days[0];
-    if (first && !days.some((d) => d.id === activeDayId)) {
-      setActiveDayId(first.id);
-    }
-  }, [days, activeDayId]);
 
   const [openMealId, setOpenMealId] = useState<string | null>(null);
   const [autoRenameMealId, setAutoRenameMealId] = useState<string | null>(null);

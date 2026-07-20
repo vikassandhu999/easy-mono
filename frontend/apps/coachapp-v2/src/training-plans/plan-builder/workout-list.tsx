@@ -16,7 +16,7 @@
  */
 import {Button, Skeleton, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {Plus} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 
 import {ErrorState} from '@/@components/error-state';
 import {toastMutationError} from '@/@components/mutation-toast';
@@ -46,15 +46,9 @@ export function WorkoutList({planId}: WorkoutListProps) {
 
   const [activeWorkoutId, setActiveWorkoutId] = useState<string | undefined>(workouts[0]?.id);
   const [autoRenameId, setAutoRenameId] = useState<string | null>(null);
+  // The `?? workouts[0]` fallback IS the after-delete correction — every consumer
+  // reads activeWorkout.id, so a stale activeWorkoutId is never observable.
   const activeWorkout = workouts.find((w) => w.id === activeWorkoutId) ?? workouts[0];
-
-  // Keep the active workout valid after a delete or on first load.
-  useEffect(() => {
-    const first = workouts[0];
-    if (first && !workouts.some((w) => w.id === activeWorkoutId)) {
-      setActiveWorkoutId(first.id);
-    }
-  }, [workouts, activeWorkoutId]);
 
   // ---------------------------------------------------------------------------
   // Add workout

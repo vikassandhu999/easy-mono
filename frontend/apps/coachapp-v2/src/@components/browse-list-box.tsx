@@ -4,9 +4,27 @@ import type {ReactNode} from 'react';
 
 import {ListSkeleton} from '@/@components/list-skeleton';
 
-/** Shared row styling for browse-list items: padding + disabled press animation. */
+/**
+ * The redesign's browse-list row: hairline-separated, square corners inside the
+ * list card, no press-scale animation. Owns the full spec — call sites pass only
+ * per-domain classes, never a padding/border override.
+ */
 export const LIST_ITEM_CLASS =
-  'min-h-fit px-4 py-2 sm:px-8 transition-none! active:scale-100! data-[pressed=true]:scale-100!';
+  'min-h-fit gap-3 rounded-none px-4 py-3 transition-none! border-b border-separator last:border-0 ' +
+  'hover:bg-surface-secondary active:scale-100! data-[pressed=true]:scale-100!';
+
+/** The redesign's white outline chip (macro/meta pills on rows and detail pages). */
+export const OUTLINE_CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg-surface font-semibold text-foreground';
+
+/**
+ * Ink-selected filter pill (RECIPES.md R2). HeroUI ToggleButton exposes selection
+ * as `data-selected="true"` — there is no `selected:` Tailwind variant registered
+ * in this project, so `selected:*` classes silently no-op.
+ */
+export const FILTER_PILL_CLASS =
+  'rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted ' +
+  'data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold ' +
+  'data-[selected=true]:text-ink-foreground';
 
 type Props<T extends object> = {
   ariaLabel: string;

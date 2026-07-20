@@ -11,13 +11,12 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@heroui/react';
-import {cn} from '@heroui/styles';
 import {ChevronRight, ClipboardCheck, Plus, UserRoundCheck} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
-import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import BrowseListBox, {FILTER_PILL_CLASS, LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
@@ -35,15 +34,6 @@ import FormTemplateListItem from './form-template-list-item';
 
 type StatusFilter = 'active' | 'all' | 'archived';
 type PurposeFilter = 'all' | FormPurpose;
-
-// HeroUI ToggleButton exposes selection as `data-selected="true"` (see
-// @heroui/styles toggle-button.css), not a `selected:` Tailwind variant —
-// there's no such variant registered in this project, so `selected:*`
-// classes silently no-op. Target the data attribute directly. (RECIPES.md R2)
-const STATUS_PILL_CLASS =
-  'rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted ' +
-  'data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold ' +
-  'data-[selected=true]:text-ink-foreground';
 
 // Secondary form-type filter (RECIPES.md R3 segmented control). Not shown in
 // the FM prototype (which only depicts a status-tab row) — kept because it's
@@ -67,10 +57,7 @@ function reviewClientName(item: ClientProfileReviewQueueItem): string {
 function ReviewQueueListItem({item}: {item: ClientProfileReviewQueueItem}) {
   return (
     <ListBox.Item
-      className={cn(
-        LIST_ITEM_CLASS,
-        'gap-3 rounded-none border-b border-separator py-3 last:border-0 hover:bg-surface-secondary sm:px-4',
-      )}
+      className={LIST_ITEM_CLASS}
       id={item.id}
       textValue={reviewClientName(item)}
     >
@@ -255,19 +242,19 @@ export default function ListCheckins() {
                   selectionMode="single"
                 >
                   <ToggleButton
-                    className={STATUS_PILL_CLASS}
+                    className={FILTER_PILL_CLASS}
                     id="all"
                   >
                     All <span className="text-chip opacity-70">{counts.all}</span>
                   </ToggleButton>
                   <ToggleButton
-                    className={STATUS_PILL_CLASS}
+                    className={FILTER_PILL_CLASS}
                     id="active"
                   >
                     Active <span className="text-chip opacity-70">{counts.active}</span>
                   </ToggleButton>
                   <ToggleButton
-                    className={STATUS_PILL_CLASS}
+                    className={FILTER_PILL_CLASS}
                     id="archived"
                   >
                     Archived <span className="text-chip opacity-70">{counts.archived}</span>

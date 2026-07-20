@@ -2,10 +2,8 @@ import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {ChevronRight, Dumbbell} from 'lucide-react';
 
-import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import {LIST_ITEM_CLASS, OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import type {TrainingExercise} from '@/api/generated';
-
-const CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg-surface font-semibold text-foreground';
 
 const MECHANICS_MAP: Record<string, string> = {
   compound: 'Compound',
@@ -31,10 +29,7 @@ export default function ExerciseListItem({exercise}: {exercise: TrainingExercise
 
   return (
     <ListBox.Item
-      className={cn(
-        LIST_ITEM_CLASS,
-        'gap-3 rounded-none border-b border-separator py-3 last:border-0 hover:bg-surface-secondary sm:px-4',
-      )}
+      className={LIST_ITEM_CLASS}
       id={exercise.id}
       textValue={exercise.name}
     >
@@ -58,7 +53,7 @@ export default function ExerciseListItem({exercise}: {exercise: TrainingExercise
       <div className="flex shrink-0 items-center gap-1.5">
         {mechanics && (
           <Chip
-            className={CHIP_CLASS}
+            className={OUTLINE_CHIP_CLASS}
             size="sm"
             variant="secondary"
           >
@@ -67,7 +62,7 @@ export default function ExerciseListItem({exercise}: {exercise: TrainingExercise
         )}
         {force && (
           <Chip
-            className={cn(CHIP_CLASS, 'hidden sm:inline-flex')}
+            className={cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex')}
             size="sm"
             variant="secondary"
           >

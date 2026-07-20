@@ -5,6 +5,7 @@ import type {ReactNode} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
+import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
@@ -12,8 +13,6 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {Recipe} from '@/api/generated';
 import {useCopyNutritionRecipeMutation, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/generated';
-
-const OUTLINE_CHIP_CLASS = 'rounded-chip border border-border bg-surface font-semibold text-foreground';
 
 // recipe.nutrition holds the recipe's total computed macros (not per-100g).
 // The backend derives it from recipe_ingredients; it is null when no ingredient

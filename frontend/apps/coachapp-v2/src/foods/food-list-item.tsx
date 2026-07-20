@@ -2,7 +2,7 @@ import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {ChevronRight, HandPlatter} from 'lucide-react';
 
-import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import {LIST_ITEM_CLASS, OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import type {Food} from '@/api/generated';
 
 type NumericFoodKey = 'protein_g_per_100g' | 'carbs_g_per_100g' | 'fat_g_per_100g';
@@ -12,8 +12,6 @@ const MACRO_DISPLAY: {key: NumericFoodKey; label: string}[] = [
   {key: 'carbs_g_per_100g', label: 'C'},
   {key: 'fat_g_per_100g', label: 'F'},
 ];
-
-const MACRO_CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg-surface font-semibold text-foreground';
 
 function formatMacro(value: number): string {
   return String(Math.round(value * 10) / 10);
@@ -38,10 +36,7 @@ export default function FoodListItem({food}: {food: Food}) {
 
   return (
     <ListBox.Item
-      className={cn(
-        LIST_ITEM_CLASS,
-        'gap-3 rounded-none border-b border-separator py-3 last:border-0 hover:bg-surface-secondary sm:px-4',
-      )}
+      className={LIST_ITEM_CLASS}
       id={food.id}
       textValue={food.name}
     >
@@ -65,7 +60,7 @@ export default function FoodListItem({food}: {food: Food}) {
       <div className="flex shrink-0 items-center gap-1.5">
         {kcal != null && (
           <Chip
-            className={MACRO_CHIP_CLASS}
+            className={OUTLINE_CHIP_CLASS}
             size="sm"
             variant="secondary"
           >
@@ -79,7 +74,7 @@ export default function FoodListItem({food}: {food: Food}) {
           }
           return (
             <Chip
-              className={cn(MACRO_CHIP_CLASS, 'hidden sm:inline-flex')}
+              className={cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex')}
               key={macro.key}
               size="sm"
               variant="secondary"

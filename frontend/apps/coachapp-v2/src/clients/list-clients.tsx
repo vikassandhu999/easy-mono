@@ -6,7 +6,7 @@ import {UserPlus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import BrowseListBox from '@/@components/browse-list-box';
+import BrowseListBox, {FILTER_PILL_CLASS} from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {type ClientSummary, useListClientsQuery} from '@/api/clients';
@@ -34,15 +34,6 @@ const FILTER_OPTIONS: FilterOption[] = [
   {id: 'invited', label: 'Invited', shortLabel: 'Invited', status: 'pending', summaryKey: 'pending'},
   {id: 'inactive', label: 'Inactive', shortLabel: 'Inactive', status: 'inactive', summaryKey: 'inactive'},
 ];
-
-// HeroUI ToggleButton exposes selection as `data-selected="true"` (see
-// @heroui/styles toggle-button.css), not a `selected:` Tailwind variant —
-// there's no such variant registered in this project, so `selected:*` classes
-// silently no-op. Target the data attribute directly. (RECIPES.md R2)
-const FILTER_PILL_CLASS =
-  'rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted ' +
-  'data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold ' +
-  'data-[selected=true]:text-ink-foreground';
 
 const ATTENTION_PAGE_SIZE = 100;
 

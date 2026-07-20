@@ -4,7 +4,7 @@ import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
-import BrowseListBox from '@/@components/browse-list-box';
+import BrowseListBox, {FILTER_PILL_CLASS} from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
@@ -15,15 +15,6 @@ import {useCoachTrainingPlansInfiniteQuery, useListTrainingPlansQuery} from '@/a
 import TrainingPlanListItem from './training-plan-list-item';
 
 type StatusFilter = 'active' | 'all' | 'archived';
-
-// HeroUI ToggleButton exposes selection as `data-selected="true"` (see
-// @heroui/styles toggle-button.css), not a `selected:` Tailwind variant —
-// there's no such variant registered in this project, so `selected:*`
-// classes silently no-op. Target the data attribute directly.
-const STATUS_PILL_CLASS =
-  'rounded-control border border-border bg-surface px-3.5 py-2 text-pill font-medium text-muted ' +
-  'data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold ' +
-  'data-[selected=true]:text-ink-foreground';
 
 export default function ListTrainingPlans() {
   const navigate = useNavigate();
@@ -106,19 +97,19 @@ export default function ListTrainingPlans() {
             selectionMode="single"
           >
             <ToggleButton
-              className={STATUS_PILL_CLASS}
+              className={FILTER_PILL_CLASS}
               id="all"
             >
               All <span className="text-chip opacity-70">{allData?.count ?? 0}</span>
             </ToggleButton>
             <ToggleButton
-              className={STATUS_PILL_CLASS}
+              className={FILTER_PILL_CLASS}
               id="active"
             >
               Active <span className="text-chip opacity-70">{activeData?.count ?? 0}</span>
             </ToggleButton>
             <ToggleButton
-              className={STATUS_PILL_CLASS}
+              className={FILTER_PILL_CLASS}
               id="archived"
             >
               Archived <span className="text-chip opacity-70">{archivedData?.count ?? 0}</span>

@@ -2,10 +2,8 @@ import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {ChefHat, ChevronRight} from 'lucide-react';
 
-import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import {LIST_ITEM_CLASS, OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import type {Recipe} from '@/api/generated';
-
-const CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg-surface font-semibold text-foreground';
 
 export default function RecipeListItem({recipe}: {recipe: Recipe}) {
   const ingredientCount = recipe.recipe_ingredients.length;
@@ -13,10 +11,7 @@ export default function RecipeListItem({recipe}: {recipe: Recipe}) {
 
   return (
     <ListBox.Item
-      className={cn(
-        LIST_ITEM_CLASS,
-        'gap-3 rounded-none border-b border-separator py-3 last:border-0 hover:bg-surface-secondary sm:px-4',
-      )}
+      className={LIST_ITEM_CLASS}
       id={recipe.id}
       textValue={recipe.name}
     >
@@ -34,7 +29,7 @@ export default function RecipeListItem({recipe}: {recipe: Recipe}) {
       <div className="flex shrink-0 items-center gap-1.5">
         {kcal != null && (
           <Chip
-            className={CHIP_CLASS}
+            className={OUTLINE_CHIP_CLASS}
             size="sm"
             variant="secondary"
           >
@@ -43,7 +38,7 @@ export default function RecipeListItem({recipe}: {recipe: Recipe}) {
         )}
         {ingredientCount > 0 && (
           <Chip
-            className={cn(CHIP_CLASS, 'hidden sm:inline-flex')}
+            className={cn(OUTLINE_CHIP_CLASS, 'hidden sm:inline-flex')}
             size="sm"
             variant="secondary"
           >

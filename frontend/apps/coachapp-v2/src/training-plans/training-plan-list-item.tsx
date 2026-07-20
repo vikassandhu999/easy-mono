@@ -1,5 +1,4 @@
 import {Chip, Description, Label, ListBox} from '@heroui/react';
-import {cn} from '@heroui/styles';
 import {ChevronRight, Dumbbell} from 'lucide-react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
@@ -30,10 +29,7 @@ export default function TrainingPlanListItem({plan}: {plan: TrainingPlan}) {
 
   return (
     <ListBox.Item
-      className={cn(
-        LIST_ITEM_CLASS,
-        'gap-3 rounded-none border-b border-separator py-3 last:border-0 hover:bg-surface-secondary sm:px-4',
-      )}
+      className={LIST_ITEM_CLASS}
       id={plan.id}
       textValue={plan.name}
     >

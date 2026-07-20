@@ -5,6 +5,7 @@ import type {ReactNode} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
+import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
@@ -12,8 +13,6 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {coachApi, useCopyExerciseMutation, useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
-
-const OUTLINE_CHIP_CLASS = 'rounded-chip border border-border bg-surface font-semibold text-foreground';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',

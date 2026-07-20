@@ -2,21 +2,21 @@
  * Meal palettes — the NB "Add meal" panel and the per-meal "Add a swap" panel.
  *
  * GAPS.md #10: both are pickers, so both follow the canonical responsive
- * overlay rule — anchored `Popover` on desktop, `KeyboardSheet` on mobile, each
- * wrapping ONE shared content component (`MealPaletteContent`). Reuse lists are
- * a `ListBox` with a `Header` per group, mirroring `checkins/question-palette.tsx`.
+ * overlay rule — `ResponsiveOverlay` wraps ONE shared content component
+ * (`MealPaletteContent`) in an anchored `Popover` on desktop and a
+ * `KeyboardSheet` on mobile. Reuse lists are a `ListBox` with a `Header` per
+ * group, mirroring `checkins/question-palette.tsx`.
  *
  * "Add meal" offers `Create a new meal` (empty meal, opened in rename mode) or
  * `Reuse an existing meal` — a plan-level meal that isn't on this day yet
  * (INTERACTIONS.md § NB). "Add a swap" reuses the same list shape for the
  * meal's `Client can swap with` alternates.
  */
-import {Button, Label, ListBox, Popover, Typography} from '@heroui/react';
+import {Button, Label, ListBox, Typography} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {type ReactNode, useRef, useState} from 'react';
 
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
-import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -103,7 +103,6 @@ interface MealPaletteControlProps extends Omit<MealPaletteContentProps, 'onPick'
 
 function MealPaletteControl({title, trigger, onPick, renderCreate, ...content}: MealPaletteControlProps) {
   const [open, setOpen] = useState(false);
-  const isDesktop = useIsDesktop();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const close = () => setOpen(false);
@@ -112,45 +111,21 @@ function MealPaletteControl({title, trigger, onPick, renderCreate, ...content}: 
     onPick(id);
   };
 
-  const body = open ? (
-    <MealPaletteContent
-      {...content}
-      createSlot={renderCreate?.(close)}
-      onPick={pick}
-    />
-  ) : null;
-
-  const triggerNode = trigger({onPress: () => setOpen(true), ref: triggerRef});
-
-  if (isDesktop) {
-    return (
-      <>
-        {triggerNode}
-        <Popover
-          isOpen={open}
-          onOpenChange={(next) => !next && setOpen(false)}
-        >
-          <Popover.Content
-            className="w-104 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface shadow-xl"
-            triggerRef={triggerRef}
-          >
-            <Popover.Dialog className="max-h-[70vh] overflow-y-auto p-4 outline-none">{body}</Popover.Dialog>
-          </Popover.Content>
-        </Popover>
-      </>
-    );
-  }
-
   return (
     <>
-      {triggerNode}
-      <KeyboardSheet
-        onClose={close}
-        open={open}
+      {trigger({onPress: () => setOpen(true), ref: triggerRef})}
+      <ResponsiveOverlay
+        isOpen={open}
+        onOpenChange={setOpen}
         title={title}
+        triggerRef={triggerRef}
       >
-        {body}
-      </KeyboardSheet>
+        <MealPaletteContent
+          {...content}
+          createSlot={renderCreate?.(close)}
+          onPick={pick}
+        />
+      </ResponsiveOverlay>
     </>
   );
 }

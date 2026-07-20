@@ -2,21 +2,21 @@
  * AddQuestionControl — the FB "Add question" palette.
  *
  * GAPS.md #10: the palette is a picker, so it follows the canonical responsive
- * overlay rule — anchored `Popover` on desktop, `KeyboardSheet` on mobile, both
- * wrapping ONE shared content component (`QuestionPaletteContent`). Preset lists
- * are a `ListBox` with a `Header` per category.
+ * overlay rule — `ResponsiveOverlay` wraps ONE shared content component
+ * (`QuestionPaletteContent`) in an anchored `Popover` on desktop and a
+ * `KeyboardSheet` on mobile. Preset lists are a `ListBox` with a `Header` per
+ * category.
  *
  * Two parts, per INTERACTIONS.md § FM/FB: a blank-type grid (`New question`)
  * and the `Common questions` presets grouped by category. Picking either appends
  * a question to the section and expands it.
  */
-import {Button, Header, Label, ListBox, Popover, Typography} from '@heroui/react';
+import {Button, Header, Label, ListBox, Typography} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useRef, useState} from 'react';
 
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {type FormQuestionType, newQuestion, type QuestionDraft} from '@/api/checkins';
-import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {QUESTION_PRESET_CATEGORIES, QUESTION_PRESETS} from '@/checkins/question-presets';
 import {
   QUESTION_TYPE_ICONS,
@@ -116,7 +116,6 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
 
 export default function AddQuestionControl({onAdd}: {onAdd: (question: QuestionDraft) => void}) {
   const [open, setOpen] = useState(false);
-  const isDesktop = useIsDesktop();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const pick = (question: QuestionDraft) => {
@@ -136,37 +135,17 @@ export default function AddQuestionControl({onAdd}: {onAdd: (question: QuestionD
     </Button>
   );
 
-  if (isDesktop) {
-    return (
-      <>
-        {trigger}
-        <Popover
-          isOpen={open}
-          onOpenChange={(next) => !next && setOpen(false)}
-        >
-          <Popover.Content
-            className="w-104 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface shadow-xl"
-            triggerRef={triggerRef}
-          >
-            <Popover.Dialog className="max-h-[70vh] overflow-y-auto p-4 outline-none">
-              {open ? <QuestionPaletteContent onPick={pick} /> : null}
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
-      </>
-    );
-  }
-
   return (
     <>
       {trigger}
-      <KeyboardSheet
-        onClose={() => setOpen(false)}
-        open={open}
+      <ResponsiveOverlay
+        isOpen={open}
+        onOpenChange={setOpen}
         title={PALETTE_TITLE}
+        triggerRef={triggerRef}
       >
-        {open ? <QuestionPaletteContent onPick={pick} /> : null}
-      </KeyboardSheet>
+        <QuestionPaletteContent onPick={pick} />
+      </ResponsiveOverlay>
     </>
   );
 }

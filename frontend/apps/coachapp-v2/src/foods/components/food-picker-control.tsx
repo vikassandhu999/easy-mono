@@ -19,6 +19,12 @@ interface Props {
  * "Add ingredient" button + its food-search surface, RESPONSIVE the same way as
  * the nutrition/training PlanAssignControl: an anchored Popover on desktop, a
  * bottom KeyboardSheet on mobile. Body is FoodPickerContent.
+ *
+ * Keeps its own shell rather than composing `ResponsiveOverlay`: the desktop
+ * panel is content-sized (`max-w-md`, no height cap — FoodPickerContent owns its
+ * own scroll region) and the mobile sheet is deliberately title-less, so all
+ * three of the wrapper's fixed decisions would have to become knobs.
+ * The popover chrome tokens still match the wrapper's.
  */
 export default function FoodPickerControl({onSelect, excludeIds, triggerClassName, triggerVariant}: Props) {
   const [open, setOpen] = useState(false);
@@ -63,7 +69,7 @@ export default function FoodPickerControl({onSelect, excludeIds, triggerClassNam
           }}
         >
           <Popover.Content
-            className="max-w-md max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-4 shadow-xl"
+            className="max-w-md rounded-2xl border border-border bg-surface p-4 shadow-xl"
             triggerRef={triggerRef}
           >
             <Popover.Dialog

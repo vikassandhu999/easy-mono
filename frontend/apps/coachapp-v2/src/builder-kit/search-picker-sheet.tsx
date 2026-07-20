@@ -15,6 +15,11 @@
  * - Responsive container (canonical picker rule): anchored Popover on desktop
  *   when the caller passes `anchorEl`, KeyboardSheet otherwise — same split as
  *   SetSheet / food-picker-control.
+ *
+ * Keeps its own shell rather than composing `ResponsiveOverlay`: its desktop
+ * panel is a three-part flex column (in-dialog title row, scroll body, sticky
+ * confirm dock) with a caller-chosen `placement`, none of which the wrapper's
+ * single padded scroll body can express. The popover chrome tokens match it.
  */
 
 import {Button, CloseButton, Popover, SearchField, Spinner} from '@heroui/react';
@@ -316,7 +321,7 @@ export function SearchPickerSheet<T>({
         }}
       >
         <Popover.Content
-          className="w-96 rounded-xl border border-border bg-surface p-0 shadow-xl"
+          className="w-96 rounded-2xl border border-border bg-surface p-0 shadow-xl"
           triggerRef={triggerRef}
           placement={placement}
         >

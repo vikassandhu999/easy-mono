@@ -6,7 +6,9 @@ Scope: `CL` (`/clients`) only. Compared live at `1240x900@2x` and `390x844@2x` a
 
 | badge | width | what's wrong | pass (A-fidelity / B-consistency) | severity | proposed fix |
 |---|---|---|---|---|---|
+| CL | mobile | The implementation uses the desktop subtitle, ink pills, inset rounded list card, and full-width row rules. The mobile reference instead has a compact surface header with no subtitle, underline filters, a full-bleed list, and separators inset from the text column. | A-fidelity | high | **Fixed** — CL now keeps the existing `Page`, `ToggleButtonGroup`, `BrowseListBox`, and `BrowseRow` primitives while applying the reference's mobile anatomy responsively. |
 | CL | mobile | Invite, search, and filter controls measure 40px high; the search clear button measures 20px. All are below the 44px mobile target required by the app contract. | B-consistency | high | **Fixed** — CL invite/search controls and the shared filter-pill class now have a 44px mobile minimum; live measurement reports no smaller interactive target. |
+| CL | desktop | The client rows are visibly shorter than the reference because CL reduces the canonical `BrowseRow` leading tile from 44px to 36px at every width. | A-fidelity | medium | **Fixed** — CL retains the dense 36px mobile avatar but restores the 44px desktop leading track with a 40px avatar, matching the desktop row rhythm without changing the shared row API. |
 | CL | desktop + mobile | The reference and `COPY.md` require sorting by `Last active`, but the screen has no sort control. The client list contract has neither a last-active field nor a sort parameter. | A-fidelity | medium | **Skipped** — a presentation-only change cannot supply truthful last-active sorting. Add the real backend/OpenAPI field and sort parameter first, then render the responsive control. |
 | CL | desktop + mobile | The toolbar leaves about 36px between its controls and the list card; the desktop reference is about 18px and the mobile reference is tighter still. | A-fidelity | medium | **Fixed** — the sticky toolbar now retains its bottom padding without the inherited excess margin; desktop measurement is 18px. |
 | CL | desktop + mobile | `ClientListItem` hand-rolls a `ListBox.Item` instead of using the canonical `BrowseRow`, so it can drift independently from every other browse list. | B-consistency | low | **Fixed** — `ClientListItem` now renders through `BrowseRow`; only row/trailing layout class hooks were added to preserve CL's five-column desktop anatomy. |
@@ -16,6 +18,7 @@ Scope: `CL` (`/clients`) only. Compared live at `1240x900@2x` and `390x844@2x` a
 
 - **Fixed:** `FILTER_PILL_CLASS` owns the 44px mobile minimum everywhere it is reused.
 - **Fixed:** `BrowseListBox` owns entity-specific error copy for every browse list.
+- **Fixed:** `BrowseRow` now owns mobile inset separators while retaining its canonical desktop full-width separators.
 
 ## Checks with no finding
 
@@ -27,9 +30,11 @@ Scope: `CL` (`/clients`) only. Compared live at `1240x900@2x` and `390x844@2x` a
 
 ## Verification
 
-- Live populated and filtered-empty states checked in Chrome at `1240x900@2x` and `390x844@2x`.
+- Second-pass direct image comparisons checked in Chrome at the reference raster's `1240x745@2x` and `390x844@2x`; the required `1240x900@2x` viewport was also recaptured.
+- Live populated and filtered-empty states checked in Chrome; the Active → All filter transition still returns the expected `47` → `53` rows.
 - Live offline Attention state checked: entity-specific error copy and Retry rendered; restoring the network recovered the populated list.
 - Mobile interactive-target scan: no visible input, button, link, radio, or option measured below 44px.
+- The shared mobile `BrowseRow` separator change was regression-checked on `/library/exercises`.
 - `pnpm -C frontend/apps/coachapp-v2 lint`: passed.
 - `./scripts/check-ui-contract.sh`: passed.
 - `./scripts/check-rm.sh`: passed.

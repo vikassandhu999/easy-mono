@@ -12,7 +12,9 @@ import {ListSkeleton} from '@/@components/list-skeleton';
  * per-domain classes, never a padding/border override.
  */
 export const LIST_ITEM_CLASS =
-  'min-h-fit gap-3 rounded-none px-4 py-3 transition-none! border-b border-separator last:border-0 ' +
+  'relative min-h-fit gap-3 rounded-none border-b-0 px-4 py-3 transition-none! ' +
+  "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:start-16 after:h-px after:bg-separator after:content-[''] " +
+  'last:after:hidden sm:border-b sm:border-separator sm:after:hidden sm:last:border-0 ' +
   'hover:bg-surface-secondary active:scale-100! data-[pressed=true]:scale-100!';
 
 /** The redesign's white outline chip (macro/meta pills on rows and detail pages). */

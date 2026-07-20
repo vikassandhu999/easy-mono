@@ -156,13 +156,13 @@ export default function ClientListItem({client}: {client: ListClient}) {
       )}
       icon={
         <Avatar
-          className="size-9 shrink-0 bg-surface-secondary"
+          className="size-9 shrink-0 bg-surface-secondary sm:size-10"
           size="md"
         >
           <Avatar.Fallback className="text-xs font-semibold text-foreground">{initials}</Avatar.Fallback>
         </Avatar>
       }
-      iconClassName="size-9 rounded-full bg-transparent"
+      iconClassName="size-9 rounded-full bg-transparent sm:size-11"
       id={client.id}
       meta={
         <>

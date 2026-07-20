@@ -37,6 +37,14 @@ const FILTER_OPTIONS: FilterOption[] = [
 
 const ATTENTION_PAGE_SIZE = 100;
 
+const CLIENT_FILTER_CLASS = cn(
+  FILTER_PILL_CLASS,
+  'me-2.5 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 text-sm shadow-none',
+  'data-[selected=true]:border-foreground data-[selected=true]:bg-transparent data-[selected=true]:text-foreground',
+  'sm:me-0 sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.5 sm:text-pill',
+  'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:text-ink-foreground',
+);
+
 function matchesSearch(client: Client, search: string): boolean {
   const haystack = [client.first_name, client.last_name, client.email, client.phone]
     .filter(Boolean)
@@ -91,10 +99,13 @@ export default function ListClients() {
 
   return (
     <Page>
-      <Page.Header size="content">
+      <Page.Header
+        className="bg-surface pb-1 sm:bg-transparent sm:pb-2 lg:pt-7"
+        size="content"
+      >
         <Page.TitleGroup>
           <Page.Title>Clients</Page.Title>
-          <Page.Description>
+          <Page.Description className="hidden sm:block">
             {summaryData
               ? `${summaryData.summary.active} active · ${summaryData.summary.pending} invited`
               : 'Your coaching roster'}
@@ -103,7 +114,7 @@ export default function ListClients() {
         <Page.Actions>
           <Button
             aria-label="Invite client"
-            className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0"
+            className="min-h-11 min-w-11 rounded-control sm:min-h-0 sm:min-w-0"
             onPress={() => navigate(ROUTES.INVITE_CLIENT)}
             variant="primary"
           >
@@ -114,12 +125,12 @@ export default function ListClients() {
       </Page.Header>
 
       <Page.Toolbar
-        className="sticky top-0 z-10 mb-1.5 flex flex-wrap items-center gap-3 bg-background pt-2 pb-3"
+        className="sticky top-0 z-10 mb-0 flex flex-wrap items-center gap-x-3 gap-y-0 border-b border-border bg-surface pt-0 pb-0 sm:mb-1.5 sm:gap-3 sm:border-0 sm:bg-background sm:pt-2 sm:pb-3 lg:pt-0"
         size="content"
       >
         <SearchField
           aria-label="Search clients"
-          className="w-full min-w-0 sm:max-w-72 sm:flex-1"
+          className="w-full min-w-0 sm:max-w-64 sm:flex-1"
           onChange={setSearch}
           value={search}
         >
@@ -155,7 +166,7 @@ export default function ListClients() {
 
               return (
                 <ToggleButton
-                  className={FILTER_PILL_CLASS}
+                  className={CLIENT_FILTER_CLASS}
                   id={option.id}
                   key={option.id}
                 >
@@ -163,7 +174,13 @@ export default function ListClients() {
                   <span className="sm:hidden">{option.shortLabel}</span>
                   {count === undefined ? null : (
                     // COPY.md §CL: mobile pills carry a count on `All` only.
-                    <span className={cn('ms-1 text-chip opacity-70', option.id === 'all' ? '' : 'hidden sm:inline')}>
+                    <span
+                      className={cn(
+                        'ms-1 rounded-full bg-surface-secondary px-1.5 py-0.5 text-chip font-bold',
+                        'sm:bg-transparent sm:px-0 sm:py-0 sm:font-normal sm:opacity-70',
+                        option.id === 'all' ? '' : 'hidden sm:inline',
+                      )}
+                    >
                       {count}
                     </span>
                   )}
@@ -176,10 +193,10 @@ export default function ListClients() {
 
       <Page.Content bare>
         <Page.Frame
-          className="flex min-h-0 flex-1 flex-col pb-6"
+          className="flex min-h-0 flex-1 flex-col px-0 pb-6 sm:px-4 md:px-6 lg:px-8"
           size="content"
         >
-          <div className="overflow-hidden rounded-card border border-border bg-surface">
+          <div className="overflow-hidden border-y border-border bg-background sm:rounded-card sm:border sm:bg-surface">
             <BrowseListBox
               ariaLabel="Clients"
               className="flex-1 gap-0 p-0"

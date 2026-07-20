@@ -26,39 +26,66 @@
 .default,
 [data-theme="light"],
 [data-theme="default"] {
-  /* Theme Colors (Light Mode) */
-  --background: oklch(97.8% 0.008 85);
-  --border: oklch(90.00% 0 285.89);
-  --danger: oklch(65.32% 0.2328 29.59);
+  /* Theme Colors (Light Mode) — redesign tokens from design-handoff/theme.css.
+     Values are verbatim from the prototype's computed styles; do not "harmonize".
+     The page is warm off-white; cards are pure white and sit BRIGHTER than the
+     page — if the page renders white, the theme is broken. */
+  --background: oklch(0.9702 0 0);
+  --canvas: #e6e4dd; /* warm desk tone — ONLY behind the app frame if shown */
+  --border: oklch(0.9 0 0);
+  --danger: oklch(0.6532 0.2328 25.74);
   --danger-foreground: oklch(99.11% 0 0);
+  --danger-soft: color-mix(in oklab, var(--danger) 15%, transparent);
   --default: oklch(94.00% 0 285.89);
   --default-foreground: oklch(21.03% 0.0059 285.89);
-  --field-background: oklch(100.00% 0 285.89);
-  --field-border: transparent;
+  /* Fields are WHITE with a visible hairline border, not grey/borderless */
+  --field-background: oklch(100% 0 0);
+  --field-border: var(--border);
   --field-foreground: oklch(21.03% 0 285.89);
   --field-placeholder: oklch(55.17% 0 285.89);
-  --foreground: oklch(21.03% 0 285.89);
-  --muted: oklch(55.17% 0 285.89);
+  --foreground: oklch(0.17 0 0);
+  --muted: oklch(0.47 0 0);
+  --muted-2: oklch(0.55 0.0138 285.94); /* tertiary text (timestamps) */
   --overlay: oklch(100.00% 0 285.89);
   --overlay-foreground: oklch(21.03% 0 285.89);
   --scrollbar: oklch(87.10% 0 285.89);
   --segment: oklch(100.00% 0 285.89);
   --segment-foreground: oklch(21.03% 0 285.89);
-  --separator: oklch(92.00% 0 285.89);
-  --success: oklch(73.29% 0.1935 154.66);
+  --separator: oklch(0.92 0.004 286.32);
+  --success: oklch(0.7329 0.1935 150.81);
   --success-foreground: oklch(21.03% 0.0059 154.66);
-  --surface: oklch(100.00% 0 285.89);
+  --success-soft: color-mix(in oklab, var(--success) 15%, transparent);
+  --surface: oklch(100% 0 0);
   --surface-foreground: oklch(21.03% 0 285.89);
-  --surface-secondary: oklch(95.24% 0 285.89);
+  --surface-secondary: oklch(0.9524 0.0013 286.37);
   --surface-secondary-foreground: oklch(21.03% 0 285.89);
-  --surface-tertiary: oklch(93.73% 0 285.89);
+  --surface-tertiary: oklch(0.9373 0.0013 286.37);
   --surface-tertiary-foreground: oklch(21.03% 0 285.89);
-  --warning: oklch(78.19% 0.1585 76.18);
+  --warning: oklch(0.7819 0.1585 72.33);
   --warning-foreground: oklch(21.03% 0.0059 76.18);
+  --warning-soft: color-mix(in oklab, var(--warning) 16%, transparent);
+  --warning-text: oklch(0.5 0.13 74); /* text on warning-soft chips */
 
-  /* App chrome — dark sidebar / elevated priority card (same in both themes) */
-  --ink: oklch(19% 0.004 285);
-  --ink-foreground: oklch(99.11% 0 0);
+  /* Accent (HeroUI blue — sidebar-active + primary buttons) */
+  --accent: oklch(0.6204 0.195 253.83);
+  --accent-foreground: oklch(0.9911 0 0);
+  --accent-soft: color-mix(in oklab, var(--accent) 15%, transparent);
+
+  /* App chrome — dark ink rail (sidebar) + dark-filled selected states */
+  --ink: oklch(0.19 0.004 285);
+  --ink-foreground: oklch(1 0 0);
+  --sidebar-bg: var(--ink);
+  --sidebar-fg: oklch(0.72 0.01 285); /* inactive nav items */
+  --sidebar-fg-active: oklch(1 0 0);
+  --sidebar-active-bg: var(--accent); /* active nav item = accent fill */
+
+  /* Radii (spec is tighter than HeroUI defaults) */
+  --radius: 0.5rem;
+  --radius-card: 18px; /* list/detail cards — NOT rounded-3xl(24px) */
+  --radius-control: 9px; /* pills, seg buttons */
+  --radius-nav: 10px; /* sidebar items */
+  --radius-chip: 7px; /* status/plan chips */
+  --radius-button: 24px; /* primary/secondary buttons stay fully pilled */
 
   /* Font Family */
   /* Make sure to load Inter font in your app */
@@ -104,8 +131,12 @@
 .typography--h3,
 .typography--h4,
 .typography--h5,
-.typography--h6 {
+.typography--h6,
+h1,
+h2,
+.heading {
   font-family: var(--font-grotesk);
+  letter-spacing: -0.015em;
 }
 
 html,
@@ -117,6 +148,8 @@ body,
 body {
   margin: 0;
   background-color: var(--color-background);
+  font-family: var(--font-sans);
+  color: var(--foreground);
 }
 
 /* Hide scrollbar but keep scrollability */

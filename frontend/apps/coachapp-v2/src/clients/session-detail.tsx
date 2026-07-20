@@ -96,7 +96,7 @@ export default function SessionDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <Page.Title>Workout session</Page.Title>
           </Page.TitleGroup>
@@ -111,7 +111,7 @@ export default function SessionDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <Page.Title>Workout session</Page.Title>
           </Page.TitleGroup>
@@ -151,7 +151,7 @@ export default function SessionDetail() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="form">
         <Page.TitleGroup>
           <Page.Title>Workout session</Page.Title>
         </Page.TitleGroup>
@@ -167,7 +167,7 @@ export default function SessionDetail() {
         </Button>
       </Page.Toolbar>
       <Page.Content className="pt-4 pb-6">
-        <div className="max-w-lg">
+        <div className="mx-auto max-w-lg">
           <div className="pb-4">
             <div className="flex min-w-0 items-center gap-2">
               <Typography

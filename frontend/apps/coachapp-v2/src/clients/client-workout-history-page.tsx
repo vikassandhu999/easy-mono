@@ -25,7 +25,7 @@ export default function ClientWorkoutHistoryPage() {
   if (isLoadingClient) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <Page.Title>Workout history</Page.Title>
           </Page.TitleGroup>
@@ -39,7 +39,7 @@ export default function ClientWorkoutHistoryPage() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="form">
         <Page.TitleGroup>
           <Page.Title>Workout history</Page.Title>
           <Page.Description>{clientName}</Page.Description>
@@ -56,7 +56,7 @@ export default function ClientWorkoutHistoryPage() {
         </Button>
       </Page.Toolbar>
       <Page.Content className="pb-6">
-        <div className="max-w-lg">
+        <div className="mx-auto max-w-lg">
           {isLoading && sessions.length === 0 ? (
             <div className="flex items-center justify-center py-12">
               <Spinner color="accent" />

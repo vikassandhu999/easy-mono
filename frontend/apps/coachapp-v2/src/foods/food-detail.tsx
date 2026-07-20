@@ -83,7 +83,7 @@ export default function FoodDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <Page.Title>Food</Page.Title>
           </Page.TitleGroup>
@@ -98,7 +98,7 @@ export default function FoodDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Food</Page.Title>
@@ -121,7 +121,7 @@ export default function FoodDetail() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="form">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
           <Page.Title className="sm:hidden">Food</Page.Title>
@@ -158,7 +158,7 @@ export default function FoodDetail() {
       </Page.Header>
 
       <Page.Content className="pb-6">
-        <div className="max-w-2xl">
+        <div className="mx-auto w-full max-w-160">
           <div className="flex items-start gap-4">
             <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">
               {food.image_url ? (

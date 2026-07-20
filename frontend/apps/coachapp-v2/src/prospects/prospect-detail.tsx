@@ -87,7 +87,7 @@ export default function ProspectDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={() => navigate(ROUTES.PROSPECTS)} />
@@ -105,7 +105,7 @@ export default function ProspectDetail() {
   if (isError || !prospect) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <div className="flex items-center gap-1">
               <BackButton onPress={() => navigate(ROUTES.PROSPECTS)} />
@@ -114,7 +114,7 @@ export default function ProspectDetail() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="pb-6">
-          <div className="max-w-4xl">
+          <div className="mx-auto max-w-4xl">
             <ErrorState message="Couldn't load prospect." />
             <Button
               className="mt-3"
@@ -192,7 +192,7 @@ export default function ProspectDetail() {
       </Page.Header>
 
       <Page.Content className="pb-6">
-        <div className="max-w-4xl space-y-4">
+        <div className="mx-auto max-w-4xl space-y-4">
           {/* Profile hero */}
           <Card>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

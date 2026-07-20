@@ -32,7 +32,7 @@ export default function EditNutritionPlan() {
   if (isFetching) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
               <BackButton onPress={goBack} />
@@ -50,7 +50,7 @@ export default function EditNutritionPlan() {
   if (isError || !plan) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
               <BackButton onPress={goBack} />
@@ -89,7 +89,7 @@ export default function EditNutritionPlan() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="form">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />

@@ -19,7 +19,7 @@ import TrainingPlanForm, {
 // button, title, and description identical so only the body swaps.
 function EditTrainingPlanHeader({goBack}: {goBack: () => void}) {
   return (
-    <Page.Header>
+    <Page.Header size="form">
       <Page.TitleGroup>
         <div className="flex items-center gap-1">
           <BackButton onPress={goBack} />

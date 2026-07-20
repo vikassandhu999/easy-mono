@@ -116,7 +116,7 @@ export default function ExerciseDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <Page.Title>Exercise</Page.Title>
           </Page.TitleGroup>
@@ -131,7 +131,7 @@ export default function ExerciseDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Exercise</Page.Title>
@@ -155,7 +155,7 @@ export default function ExerciseDetail() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="form">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
           <Page.Title className="sm:hidden">Exercise</Page.Title>
@@ -193,7 +193,7 @@ export default function ExerciseDetail() {
       </Page.Header>
 
       <Page.Content className="pb-6">
-        <div className="max-w-2xl">
+        <div className="mx-auto w-full max-w-160">
           {/* Identity + media: media leads on mobile, identity leads on desktop */}
           <div className="flex flex-col gap-6">
             <div className="order-2 flex items-start gap-4 sm:order-1">

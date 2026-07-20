@@ -94,7 +94,8 @@ One shared primitive per job — never hand-roll these (graduated from the recur
 ## Page Anatomy
 
 - The exercise create/edit/detail screens are the reference: icon back arrow in the header/title group (no labeled back button in `Page.Toolbar`), form actions as `<Fieldset.Actions className="mt-4 flex gap-4">`. Compare any new create/edit/detail page against them.
-- Standard page shape: left-aligned max-width content, responsive grid, uppercase section headings, carded sections that stack on mobile. No `mx-auto`-centered detail pages, full-width stretches, or floaty separators.
+- Standard page shape: one centred max-width content column, responsive grid, uppercase section headings, carded sections that stack on mobile. No full-width stretches or floaty separators.
+- **Centring is `Page`'s job, not the screen's.** Forms and detail screens pass `size="form"` to `Page.Header`/`Page.Toolbar`/`Page.Frame` so the header (back button, actions) shares the body's column — the redesign refs align them. Lists use `size="list"`. Never hand-roll `mx-auto` on a screen; if a column is off, fix the size token in `page.tsx`.
 - A module's primary screen is a designed detail/read surface with explicit edit affordances — not a stack of permanently-editable form sections.
 - Prefer HeroUI v3 primitives (`Disclosure`, `ToggleButtonGroup`, `ListBox`, `Chip`, `DateField`, …) over raw HTML controls; raw HTML only for deliberate low-level layout.
 

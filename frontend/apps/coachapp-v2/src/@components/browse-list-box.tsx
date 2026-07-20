@@ -51,7 +51,7 @@ type BrowseRowProps = {
 export function BrowseRow({icon, iconClassName, id, meta, textValue, title, trailing}: BrowseRowProps) {
   return (
     <ListBox.Item
-      className={LIST_ITEM_CLASS}
+      className={cn(LIST_ITEM_CLASS, 'mt-0')}
       id={id}
       textValue={textValue}
     >

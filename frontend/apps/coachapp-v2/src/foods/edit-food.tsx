@@ -43,7 +43,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="form">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />
@@ -77,7 +77,7 @@ export default function EditFood() {
   if (isFetching) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
               <BackButton onPress={goBackOuter} />
@@ -95,7 +95,7 @@ export default function EditFood() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
               <BackButton onPress={goBackOuter} />

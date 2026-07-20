@@ -94,7 +94,7 @@ export default function RecipeDetail() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup>
             <Page.Title>Recipe</Page.Title>
           </Page.TitleGroup>
@@ -109,7 +109,7 @@ export default function RecipeDetail() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header>
+        <Page.Header size="form">
           <Page.TitleGroup className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Recipe</Page.Title>
@@ -135,7 +135,7 @@ export default function RecipeDetail() {
 
   return (
     <Page>
-      <Page.Header>
+      <Page.Header size="form">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
           <Page.Title className="sm:hidden">Recipe</Page.Title>
@@ -170,7 +170,7 @@ export default function RecipeDetail() {
       </Page.Header>
 
       <Page.Content className="pb-6">
-        <div className="max-w-2xl">
+        <div className="mx-auto w-full max-w-160">
           <div className="flex items-start gap-4">
             <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">
               <ChefHat className="size-8 text-foreground" />

@@ -1,7 +1,18 @@
-import {Button, ErrorMessage, Fieldset, ListBox, Typography} from '@heroui/react';
+import {
+  Button,
+  CloseButton,
+  Description,
+  ErrorMessage,
+  FieldError,
+  Fieldset,
+  Input,
+  Label,
+  ListBox,
+  TextField,
+} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {ImageOff, Plus, X} from 'lucide-react';
-import {useState} from 'react';
+import {ImageOff, ImagePlus} from 'lucide-react';
+import {useCallback, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {
@@ -126,11 +137,8 @@ function ImageThumbnail({url}: {url: string}) {
 
   if (failed) {
     return (
-      <div className="flex size-8 shrink-0 items-center justify-center rounded bg-surface-secondary">
-        <ImageOff
-          className="text-muted"
-          size={14}
-        />
+      <div className="flex size-20 items-center justify-center rounded-xl border border-border bg-surface-secondary">
+        <ImageOff className="size-5 text-muted" />
       </div>
     );
   }
@@ -138,8 +146,8 @@ function ImageThumbnail({url}: {url: string}) {
   return (
     // biome-ignore lint/a11y/noNoninteractiveElementInteractions: onError is used only as an image fallback handler.
     <img
-      alt=""
-      className="size-8 shrink-0 rounded object-cover"
+      alt="Exercise"
+      className="size-20 rounded-xl border border-border bg-surface-secondary object-cover"
       onError={() => setFailed(true)}
       src={url}
     />
@@ -160,243 +168,245 @@ export default function ExerciseForm({
     control,
     formState: {errors},
     handleSubmit,
-    setError,
     setValue,
     watch,
   } = form;
 
-  const [showImageInput, setShowImageInput] = useState(false);
   const images = watch('images') ?? [];
+
+  const [isAddingImage, setIsAddingImage] = useState(false);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [imageError, setImageError] = useState('');
+
+  const handleAddImage = useCallback(() => {
+    const url = newImageUrl.trim();
+    if (!url) {
+      setImageError('Paste an image URL');
+      return;
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      setImageError('Use a URL that starts with http:// or https://');
+      return;
+    }
+    setValue('images', [...images, url], {shouldDirty: true});
+    setNewImageUrl('');
+    setImageError('');
+    setIsAddingImage(false);
+  }, [newImageUrl, images, setValue]);
+
+  const handleRemoveImage = useCallback(
+    (index: number) => {
+      setValue(
+        'images',
+        images.filter((_, i) => i !== index),
+        {shouldDirty: true},
+      );
+    },
+    [images, setValue],
+  );
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <Fieldset>
-        <Fieldset.Legend>Details</Fieldset.Legend>
-        <Fieldset.Group>
-          <FormTextField
-            control={control}
-            fullWidth
-            isRequired
-            label="Name"
-            name="name"
-          />
-
-          <FormTextAreaField
-            control={control}
-            fullWidth
-            label="Description"
-            name="description"
-            textAreaProps={{rows: 2}}
-          />
-
-          <FormTextAreaField
-            control={control}
-            fullWidth
-            label="Instructions"
-            name="instructions"
-            textAreaProps={{placeholder: 'Add cues, setup notes, and execution steps', rows: 3}}
-          />
-        </Fieldset.Group>
-      </Fieldset>
-
-      <Fieldset>
-        <Fieldset.Legend>Attributes</Fieldset.Legend>
-        <Fieldset.Group>
-          <FieldRow>
-            <FormSelectField
-              control={control}
-              label="Mechanics"
-              name="mechanics"
-            >
-              {MECHANICS_OPTIONS.map((option) => (
-                <ListBox.Item
-                  id={option.value}
-                  key={option.value}
-                  textValue={option.label}
-                >
-                  {option.label}
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              ))}
-            </FormSelectField>
-
-            <FormSelectField
-              control={control}
-              label="Force"
-              name="force"
-            >
-              {FORCE_OPTIONS.map((option) => (
-                <ListBox.Item
-                  id={option.value}
-                  key={option.value}
-                  textValue={option.label}
-                >
-                  {option.label}
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              ))}
-            </FormSelectField>
-          </FieldRow>
-
-          {muscles.length > 0 && (
-            <Controller
-              control={control}
-              name="muscle_ids"
-              render={({field, fieldState}) => (
-                <MultiSelectAutocomplete
-                  emptyMessage="No muscles found"
-                  errorMessage={fieldState.error?.message}
-                  isInvalid={!!fieldState.error}
-                  items={muscles}
-                  label="Muscles"
-                  name={field.name}
-                  onChange={field.onChange}
-                  placeholder="Search and select muscles"
-                  searchPlaceholder="Search muscles..."
-                  value={field.value ?? []}
-                />
-              )}
-            />
-          )}
-
-          {equipment.length > 0 && (
-            <Controller
-              control={control}
-              name="equipment_ids"
-              render={({field, fieldState}) => (
-                <MultiSelectAutocomplete
-                  emptyMessage="No equipment found"
-                  errorMessage={fieldState.error?.message}
-                  isInvalid={!!fieldState.error}
-                  items={equipment}
-                  label="Equipment"
-                  name={field.name}
-                  onChange={field.onChange}
-                  placeholder="Search and select equipment"
-                  searchPlaceholder="Search equipment..."
-                  value={field.value ?? []}
-                />
-              )}
-            />
-          )}
-        </Fieldset.Group>
-      </Fieldset>
-
-      <Fieldset>
-        <Fieldset.Legend>Images</Fieldset.Legend>
-
-        <Fieldset.Group>
-          {images.length > 0 && (
-            <Fieldset.Group>
-              {images.map((url, index) => (
-                <Fieldset.Group key={`${url}-${index}`}>
-                  <div className="flex min-w-0 items-center gap-2">
-                    <ImageThumbnail url={url} />
-                    <Typography
-                      className="min-w-0 truncate"
-                      color="muted"
-                      type="body-sm"
-                    >
-                      {url}
-                    </Typography>
+      <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+        <Fieldset>
+          <Fieldset.Legend>Details</Fieldset.Legend>
+          <Description>Name the movement and describe how it's performed.</Description>
+          <Fieldset.Group>
+            <div>
+              <Label>Images</Label>
+              <div className="mt-2 flex flex-col gap-3">
+                {images.length > 0 && (
+                  <div className="flex flex-wrap items-start gap-3">
+                    {images.map((url, index) => (
+                      <div
+                        className="relative"
+                        key={`${url}-${index}`}
+                      >
+                        <ImageThumbnail url={url} />
+                        <CloseButton
+                          aria-label={`Remove image ${index + 1}`}
+                          className="absolute -top-2 -right-2 rounded-full bg-ink text-ink-foreground"
+                          onPress={() => handleRemoveImage(index)}
+                        />
+                      </div>
+                    ))}
                   </div>
-                  <Fieldset.Actions>
+                )}
+
+                {isAddingImage ? (
+                  <div className="flex w-full flex-wrap items-end gap-2">
+                    <TextField
+                      className="min-w-0 flex-1"
+                      isInvalid={!!imageError}
+                    >
+                      <Label>Add image URL</Label>
+                      {imageError && <FieldError>{imageError}</FieldError>}
+                      <Input
+                        onChange={(e) => {
+                          setNewImageUrl(e.target.value);
+                          setImageError('');
+                        }}
+                        placeholder="https://…"
+                        type="url"
+                        value={newImageUrl}
+                      />
+                    </TextField>
                     <Button
-                      aria-label={`Remove image ${index + 1}`}
-                      className="min-h-10 min-w-10"
-                      isIconOnly
-                      onPress={() =>
-                        setValue(
-                          'images',
-                          images.filter((_, i) => i !== index),
-                          {shouldDirty: true},
-                        )
-                      }
+                      onPress={handleAddImage}
+                      size="sm"
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      onPress={() => {
+                        setIsAddingImage(false);
+                        setNewImageUrl('');
+                        setImageError('');
+                      }}
                       size="sm"
                       variant="ghost"
                     >
-                      <X size={16} />
+                      Cancel
                     </Button>
-                  </Fieldset.Actions>
-                </Fieldset.Group>
-              ))}
-            </Fieldset.Group>
-          )}
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full rounded-xl border border-dashed border-border text-muted"
+                    onPress={() => setIsAddingImage(true)}
+                    variant="ghost"
+                  >
+                    <ImagePlus className="size-4" />
+                    Add image URL
+                  </Button>
+                )}
+              </div>
+            </div>
 
-          {showImageInput ? (
-            <Fieldset>
-              <FormTextField
+            <FormTextField
+              control={control}
+              fullWidth
+              inputProps={{placeholder: 'e.g. Bulgarian Split Squat'}}
+              isRequired
+              label="Name"
+              name="name"
+            />
+
+            <FormTextAreaField
+              control={control}
+              fullWidth
+              label="Description"
+              name="description"
+              textAreaProps={{placeholder: 'Short summary of the movement…', rows: 3}}
+            />
+
+            <FormTextAreaField
+              control={control}
+              fullWidth
+              label="Instructions"
+              name="instructions"
+              textAreaProps={{placeholder: 'Add cues, setup notes, and execution steps', rows: 4}}
+            />
+          </Fieldset.Group>
+        </Fieldset>
+
+        <div className="my-6 border-t border-separator" />
+
+        <Fieldset>
+          <Fieldset.Legend>Attributes</Fieldset.Legend>
+          <Fieldset.Group>
+            <FieldRow>
+              <FormSelectField
                 control={control}
-                fullWidth
-                inputProps={{placeholder: 'https://example.com/exercise.jpg'}}
-                label="Image URL"
-                name="image_url"
-                onValueChange={() => {
-                  if (errors.image_url) {
-                    form.clearErrors('image_url');
-                  }
-                }}
-                type="url"
+                label="Mechanics"
+                name="mechanics"
+                placeholder="Select…"
+              >
+                {MECHANICS_OPTIONS.map((option) => (
+                  <ListBox.Item
+                    id={option.value}
+                    key={option.value}
+                    textValue={option.label}
+                  >
+                    {option.label}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </FormSelectField>
+
+              <FormSelectField
+                control={control}
+                label="Force"
+                name="force"
+                placeholder="Select…"
+              >
+                {FORCE_OPTIONS.map((option) => (
+                  <ListBox.Item
+                    id={option.value}
+                    key={option.value}
+                    textValue={option.label}
+                  >
+                    {option.label}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </FormSelectField>
+            </FieldRow>
+
+            {muscles.length > 0 && (
+              <Controller
+                control={control}
+                name="muscle_ids"
+                render={({field, fieldState}) => (
+                  <MultiSelectAutocomplete
+                    emptyMessage="No muscles found"
+                    errorMessage={fieldState.error?.message}
+                    isInvalid={!!fieldState.error}
+                    items={muscles}
+                    label="Muscles"
+                    name={field.name}
+                    onChange={field.onChange}
+                    placeholder="Search and select muscles"
+                    searchPlaceholder="Search muscles..."
+                    value={field.value ?? []}
+                  />
+                )}
               />
-              <Fieldset.Actions>
-                <Button
-                  onPress={() => {
-                    const url = (watch('image_url') ?? '').trim();
+            )}
 
-                    if (!url) {
-                      setError('image_url', {message: 'Enter image URL'});
-                      return;
-                    }
-
-                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                      setError('image_url', {message: 'Use a URL that starts with http:// or https://'});
-                      return;
-                    }
-
-                    setValue('images', [...images, url], {shouldDirty: true});
-                    setValue('image_url', '', {shouldDirty: true});
-                    form.clearErrors('image_url');
-                    setShowImageInput(false);
-                  }}
-                  size="sm"
-                >
-                  <Plus size={14} />
-                  Add
-                </Button>
-                <Button
-                  onPress={() => {
-                    setShowImageInput(false);
-                    setValue('image_url', '');
-                    form.clearErrors('image_url');
-                  }}
-                  size="sm"
-                  variant="ghost"
-                >
-                  Cancel
-                </Button>
-              </Fieldset.Actions>
-            </Fieldset>
-          ) : (
-            <Button
-              onPress={() => setShowImageInput(true)}
-              size="sm"
-              variant="ghost"
-            >
-              <Plus size={14} />
-              Add image URL
-            </Button>
-          )}
-        </Fieldset.Group>
-      </Fieldset>
+            {equipment.length > 0 && (
+              <Controller
+                control={control}
+                name="equipment_ids"
+                render={({field, fieldState}) => (
+                  <MultiSelectAutocomplete
+                    emptyMessage="No equipment found"
+                    errorMessage={fieldState.error?.message}
+                    isInvalid={!!fieldState.error}
+                    items={equipment}
+                    label="Equipment"
+                    name={field.name}
+                    onChange={field.onChange}
+                    placeholder="Search and select equipment"
+                    searchPlaceholder="Search equipment..."
+                    value={field.value ?? []}
+                  />
+                )}
+              />
+            )}
+          </Fieldset.Group>
+        </Fieldset>
+      </div>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <FormActions
-        isSubmitting={isSubmitting}
-        onCancel={onCancel}
-        submitLabel={submitLabel}
-        submittingLabel={submittingLabel}
-      />
+      <div className="sticky bottom-0 -my-2 bg-background py-2 sm:static sm:my-0 sm:bg-transparent sm:py-0">
+        <FormActions
+          isSubmitting={isSubmitting}
+          onCancel={onCancel}
+          submitLabel={submitLabel}
+          submittingLabel={submittingLabel}
+        />
+      </div>
     </FormLayout>
   );
 }

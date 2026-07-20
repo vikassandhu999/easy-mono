@@ -22,7 +22,7 @@ import ExerciseForm, {
 
 // One header for every state (loading / error / loaded) so the back button,
 // title, and description slot never shift between them.
-function EditExerciseHeader({goBack, name}: {goBack: () => void; name?: string}) {
+function EditExerciseHeader({goBack}: {goBack: () => void}) {
   return (
     <Page.Header>
       <Page.TitleGroup>
@@ -30,7 +30,7 @@ function EditExerciseHeader({goBack, name}: {goBack: () => void; name?: string})
           <BackButton onPress={goBack} />
           <Page.Title>Edit exercise</Page.Title>
         </div>
-        {name ? <Page.Description>{name}</Page.Description> : null}
+        <Page.Description>Update this movement in your library.</Page.Description>
       </Page.TitleGroup>
     </Page.Header>
   );
@@ -65,11 +65,8 @@ function EditExerciseForm({
   };
 
   return (
-    <Page>
-      <EditExerciseHeader
-        goBack={goBack}
-        name={exercise.name}
-      />
+    <Page className="bg-background">
+      <EditExerciseHeader goBack={goBack} />
       <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
         <ExerciseForm
           equipment={equipmentData?.data ?? []}
@@ -96,7 +93,7 @@ export default function EditExercise() {
 
   if (isFetching) {
     return (
-      <Page>
+      <Page className="bg-background">
         <EditExerciseHeader goBack={goBack} />
         <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <PageSkeleton />
@@ -107,7 +104,7 @@ export default function EditExercise() {
 
   if (isError || !exercise) {
     return (
-      <Page>
+      <Page className="bg-background">
         <EditExerciseHeader goBack={goBack} />
         <Page.Content className="px-4 pb-6 pt-4 md:px-6 lg:px-8">
           <ErrorState message="Couldn't load exercise." />

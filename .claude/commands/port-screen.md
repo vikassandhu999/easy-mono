@@ -126,6 +126,22 @@ verify copy matches COPY.md § {badge} verbatim.
 - **Truncation inside ListBox items**: HeroUI `Label`/`Description` are blocks in
   a non-stretching flex column — add `max-w-full` alongside `truncate`, and
   `flex-1 min-w-0` on the text column.
+- **`ProgressBar` renders empty unless given compound children** —
+  `<ProgressBar value={100}><ProgressBar.Track><ProgressBar.Fill/></ProgressBar.Track></ProgressBar>`.
+  Ratio bars = one ProgressBar per segment in a `flex gap-0.5` row, each wrapped in
+  a div with `style={{flexGrow: value}} /* ui-contract-allow */` (the §1 exception;
+  the gate skips lines marked `ui-contract-allow`).
+- **Form fields are already white app-wide** (FE port removed the wrappers'
+  `variant="secondary"`); `FormActions` is already Cancel-then-Save, right-aligned.
+  Don't re-fix these per screen.
+- **`CloseButton` takes no `size` prop**; `Typography` has no `body-lg` (use
+  `body` + weight). Button white-outline = `variant="outline"` (Buttons DO have
+  it — only Chip lacks it).
+- **Ink-filled CTA** (spec `background:var(--foreground)`) =
+  `<Button className="bg-ink text-ink-foreground">` — `--color-ink` is in @theme.
+- **Seeding ref-matching data**: POST via the app origin's token —
+  `fetch('http://localhost:4000/v1/...', {headers:{Authorization:'Bearer '+localStorage.getItem('coachapp.accessToken')}})`
+  from `chrome-devtools-axi eval`. Food serving_sizes need `label` and `is_default`.
 
 ## Route map (badge → route, from `src/@config/routes.ts`)
 

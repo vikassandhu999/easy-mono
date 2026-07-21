@@ -109,7 +109,6 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
               fullWidth
               inputProps={{
                 autoComplete: 'name',
-                className: 'sm:min-h-10',
                 placeholder: 'Jordan Miles',
               }}
               isRequired
@@ -123,7 +122,6 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
                 fullWidth
                 inputProps={{
                   autoComplete: 'email',
-                  className: 'sm:min-h-10',
                   placeholder: 'name@email.com',
                 }}
                 label="Email"
@@ -135,7 +133,6 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
                 fullWidth
                 inputProps={{
                   autoComplete: 'tel',
-                  className: 'sm:min-h-10',
                   placeholder: '+1 (555) 000-0000',
                 }}
                 label="Phone"
@@ -152,9 +149,6 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
                 label="Assigned trainer"
                 name="assigned_trainer_id"
                 placeholder={selfLabel}
-                triggerProps={{
-                  className: 'sm:min-h-10',
-                }}
               >
                 {activeTrainers.map((member) => (
                   <ListBox.Item

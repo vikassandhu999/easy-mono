@@ -1,7 +1,7 @@
 // The redesign's input skin: 44px target, hairline border, flat surface.
 // Baked into FormTextField/FormSelectField/NumberInput; import it only for
 // raw HeroUI inputs those wrappers can't cover.
-export const INPUT_SKIN_CLASS = 'min-h-11 border border-border bg-surface shadow-none';
+export const INPUT_SKIN_CLASS = 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10';
 
 export const RESPONSIVE_FORM_SECTION_CLASS =
   'bg-background sm:rounded-card sm:border sm:border-border sm:bg-surface sm:p-6';

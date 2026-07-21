@@ -47,17 +47,57 @@ defmodule Easy.Billing do
 
   @spec ensure_seat_available(Ctx.t()) :: :ok | {:error, :seat_limit_reached}
   def ensure_seat_available(%Ctx{business_id: business_id}) do
-    billing = billing_for(business_id)
+    if within_seat_limit?(business_id, billing_for(business_id)),
+      do: :ok,
+      else: {:error, :seat_limit_reached}
+  end
 
-    if used_seats(business_id) < billing.free_seats + billing.paid_seats do
-      :ok
+  # Runs a seat-consuming write atomically with the capacity check. Locks the
+  # business billing row so two concurrent invites/reactivations can't both pass
+  # the check and exceed the limit: whichever commits first, the second re-reads
+  # the now-higher usage under the same lock and is rejected. No Razorpay call
+  # runs here, so no lock is ever held over HTTP.
+  @spec reserve_seat(Ctx.t(), (-> {:ok, term()} | {:error, term()})) ::
+          {:ok, term()} | {:error, :seat_limit_reached | term()}
+  def reserve_seat(%Ctx{business_id: business_id}, write) when is_function(write, 0) do
+    Repo.transaction(fn -> reserve_within_lock(business_id, write) end)
+  end
+
+  defp reserve_within_lock(business_id, write) do
+    billing = lock_business_billing(business_id)
+
+    if within_seat_limit?(business_id, billing) do
+      case write.() do
+        {:ok, value} -> value
+        {:error, reason} -> Repo.rollback(reason)
+      end
     else
-      {:error, :seat_limit_reached}
+      Repo.rollback(:seat_limit_reached)
     end
   end
 
-  @spec ensure_owner(Ctx.t()) :: :ok | {:error, :not_owner}
-  def ensure_owner(%Ctx{} = ctx) do
+  defp within_seat_limit?(business_id, billing) do
+    used_seats(business_id) < billing.free_seats + billing.paid_seats
+  end
+
+  # Upsert-lock: INSERT ... ON CONFLICT DO UPDATE both guarantees the row exists
+  # and takes a row lock held for the rest of the transaction, so a concurrent
+  # reserve_seat for the same business serializes here — even on a business whose
+  # billing row did not exist yet.
+  defp lock_business_billing(business_id) do
+    {:ok, billing} =
+      business_id
+      |> BusinessBilling.insert_changeset()
+      |> Repo.insert(
+        on_conflict: [set: [business_id: business_id]],
+        conflict_target: :business_id,
+        returning: true
+      )
+
+    billing
+  end
+
+  defp ensure_owner(%Ctx{} = ctx) do
     if owner?(ctx), do: :ok, else: {:error, :not_owner}
   end
 
@@ -77,11 +117,6 @@ defmodule Easy.Billing do
   defp over_capacity?(business_id) do
     billing = billing_for(business_id)
     used_seats(business_id) > billing.free_seats + billing.paid_seats
-  end
-
-  @spec activate_awaiting_clients(Ctx.t()) :: {:ok, non_neg_integer()}
-  def activate_awaiting_clients(%Ctx{business_id: business_id}) do
-    activate_awaiting_clients_for_business(business_id)
   end
 
   defp activate_awaiting_clients_for_business(business_id) do
@@ -205,7 +240,8 @@ defmodule Easy.Billing do
   end
 
   @spec handle_razorpay_webhook(binary(), String.t() | nil, String.t() | nil) ::
-          :ok | {:error, :invalid_webhook_signature} | {:error, :duplicate_webhook}
+          :ok
+          | {:error, :invalid_webhook_signature | :duplicate_webhook | :invalid_webhook_payload}
   def handle_razorpay_webhook(raw_body, signature, event_id) do
     with true <- Razorpay.valid_webhook_signature?(raw_body, signature),
          {:ok, params} <- Jason.decode(raw_body) do
@@ -217,18 +253,21 @@ defmodule Easy.Billing do
   end
 
   # Claiming the receipt and applying the event are both DB-only, so wrap them in one
-  # transaction: if apply_webhook_event crashes on a malformed payload, the receipt claim
-  # rolls back too and the (unmodified) retry is not silently deduped and dropped.
+  # transaction: if apply_webhook_event fails on a malformed payload, the receipt claim
+  # rolls back too so the same event id can be retried instead of being silently
+  # deduped and dropped.
   defp claim_and_apply(event_id, params) do
     Repo.transaction(fn ->
-      case claim_receipt(event_id, params["event"]) do
-        :ok -> apply_webhook_event(params)
-        {:error, :duplicate_webhook} -> Repo.rollback(:duplicate_webhook)
+      with :ok <- claim_receipt(event_id, params["event"]),
+           :ok <- apply_webhook_event(params) do
+        :ok
+      else
+        {:error, reason} -> Repo.rollback(reason)
       end
     end)
     |> case do
       {:ok, :ok} -> :ok
-      {:error, :duplicate_webhook} -> {:error, :duplicate_webhook}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -251,26 +290,39 @@ defmodule Easy.Billing do
     end
   end
 
+  # The Razorpay request stays outside the transaction so no DB lock is held over
+  # HTTP; every local write after provider success shares one transaction so a
+  # failed event insert can't leave paid_seats committed without its event.
   defp update_quantity(ctx, billing, subscription_id, target_quantity, seats_to_add) do
-    with {:ok, _} <- Razorpay.update_subscription_quantity(subscription_id, target_quantity),
-         {:ok, _billing} <-
-           billing
-           |> BusinessBilling.update_changeset(%{paid_seats: target_quantity})
-           |> Repo.update(),
+    with {:ok, _} <- Razorpay.update_subscription_quantity(subscription_id, target_quantity) do
+      Repo.transaction(fn -> commit_quantity_update(ctx, billing, target_quantity, seats_to_add) end)
+    end
+  end
+
+  defp commit_quantity_update(ctx, billing, target_quantity, seats_to_add) do
+    with {:ok, _billing} <-
+           billing |> BusinessBilling.update_changeset(%{paid_seats: target_quantity}) |> Repo.update(),
          {:ok, _event} <- record_event(billing.business_id, :seats_added, %{seat_delta: seats_to_add}),
          {:ok, _count} <- activate_awaiting_clients_for_business(billing.business_id) do
-      {:ok, %{action: :updated, billing: seat_summary(ctx)}}
+      %{action: :updated, billing: seat_summary(ctx)}
+    else
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 
   defp do_cancel(ctx, billing, subscription_id) do
-    with {:ok, _} <- Razorpay.cancel_subscription_at_period_end(subscription_id),
-         {:ok, _billing} <-
-           billing
-           |> BusinessBilling.update_changeset(%{status: :cancel_at_period_end})
-           |> Repo.update(),
+    with {:ok, _} <- Razorpay.cancel_subscription_at_period_end(subscription_id) do
+      Repo.transaction(fn -> commit_cancellation(ctx, billing) end)
+    end
+  end
+
+  defp commit_cancellation(ctx, billing) do
+    with {:ok, _billing} <-
+           billing |> BusinessBilling.update_changeset(%{status: :cancel_at_period_end}) |> Repo.update(),
          {:ok, _event} <- record_event(billing.business_id, :cancellation_scheduled) do
-      {:ok, seat_summary(ctx)}
+      seat_summary(ctx)
+    else
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 
@@ -345,7 +397,7 @@ defmodule Easy.Billing do
     subscription = subscription_entity(payload)
     payment = payment_entity(payload)
 
-    with_billing(subscription["id"], fn billing ->
+    with_recognized_subscription(payload, fn billing ->
       apply_charged_transition(billing, subscription)
 
       record_event_or_rollback(billing.business_id, :payment_succeeded, %{
@@ -359,14 +411,14 @@ defmodule Easy.Billing do
 
   defp apply_webhook_event(%{"event" => event, "payload" => payload})
        when event in ["subscription.pending", "subscription.halted"] do
-    with_billing(subscription_entity(payload)["id"], fn billing ->
+    with_recognized_subscription(payload, fn billing ->
       apply_past_due_transition(billing)
       :ok
     end)
   end
 
   defp apply_webhook_event(%{"event" => "subscription.cancelled", "payload" => payload}) do
-    with_billing(subscription_entity(payload)["id"], fn billing ->
+    with_recognized_subscription(payload, fn billing ->
       apply_cancelled_transition(billing)
       :ok
     end)
@@ -375,7 +427,7 @@ defmodule Easy.Billing do
   defp apply_webhook_event(%{"event" => "subscription.updated", "payload" => payload}) do
     subscription = subscription_entity(payload)
 
-    with_billing(subscription["id"], fn billing ->
+    with_recognized_subscription(payload, fn billing ->
       if billing.status in [:active, :past_due, :cancel_at_period_end] and is_integer(subscription["quantity"]) do
         record_seat_change(billing, subscription["quantity"])
 
@@ -468,7 +520,16 @@ defmodule Easy.Billing do
     end
   end
 
-  defp with_billing(nil, _fun), do: :ok
+  # A recognized event must carry a subscription id. A missing or malformed entity
+  # is an invalid payload, not something to acknowledge — return an error so the
+  # receipt claim rolls back and the same event id can be retried. A valid id we
+  # simply have no row for is still acked (fun no-ops), e.g. before checkout saved it.
+  defp with_recognized_subscription(payload, fun) do
+    case subscription_entity(payload)["id"] do
+      nil -> {:error, :invalid_webhook_payload}
+      subscription_id -> with_billing(subscription_id, fun)
+    end
+  end
 
   # Runs inside claim_and_apply's transaction, so the FOR UPDATE lock serializes
   # webhook application against a concurrent sync (see sync_billing).

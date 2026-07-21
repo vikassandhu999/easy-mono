@@ -124,29 +124,48 @@ defmodule Easy.Clients do
 
   @spec invite_client(Ctx.t(), map()) :: {:ok, Client.t()} | {:error, any()}
   def invite_client(%Ctx{} = ctx, invite_attrs) do
-    with :ok <- Billing.ensure_seat_available(ctx),
-         {:ok, coach} <- get_coach(ctx),
+    with {:ok, coach} <- get_coach(ctx),
          :ok <- validate_not_self_invite(coach, invite_attrs),
          :ok <- validate_email_has_no_active_client(invite_attrs),
-         {:ok, client} <- create_invitation(coach, invite_attrs),
-         {:ok, _assignment} <- Easy.Forms.assign_default_intake_to_client(ctx, client.id),
+         {:ok, client} <- reserve_and_create_invitation(ctx, coach, invite_attrs),
          :ok <- maybe_send_invitation_email(client, coach) do
       {:ok, client}
     end
+  end
+
+  # Capacity check + pending-client insert run in one locked transaction so two
+  # concurrent invites can't both consume the last seat (see Billing.reserve_seat).
+  # The email send stays outside so no lock is held over SMTP.
+  defp reserve_and_create_invitation(ctx, coach, invite_attrs) do
+    Billing.reserve_seat(ctx, fn ->
+      with {:ok, client} <- create_invitation(coach, invite_attrs),
+           {:ok, _assignment} <- Easy.Forms.assign_default_intake_to_client(ctx, client.id) do
+        {:ok, client}
+      end
+    end)
   end
 
   @spec update_client(Ctx.t(), String.t(), map()) ::
           {:ok, Client.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_client(%Ctx{} = ctx, client_id, attrs) do
     with {:ok, client} <- get_client_with_preloads(ctx, client_id),
-         :ok <- ensure_reactivation_capacity(ctx, client, attrs),
-         {:ok, updated_client} <- client |> Client.update_changeset(attrs) |> Repo.update(),
+         {:ok, updated_client} <- write_client_update(ctx, client, attrs),
          {:ok, preloaded} <- preload_client(updated_client) do
       # Attention flags are virtual: recompute post-update so the mutation response
       # carries the same derived shape as GET/list, not stale defaults.
       {:ok, preloaded |> List.wrap() |> put_attention_flags_for_clients(ctx.business_id) |> hd()}
     end
   end
+
+  # Reactivation (inactive -> active) consumes a seat, so it reserves one atomically;
+  # every other update is a plain write.
+  defp write_client_update(ctx, client, attrs) do
+    update = fn -> client |> Client.update_changeset(attrs) |> Repo.update() end
+    if reactivation?(client, attrs), do: Billing.reserve_seat(ctx, update), else: update.()
+  end
+
+  defp reactivation?(%Client{status: :inactive}, attrs), do: to_string(attrs[:status] || "") == "active"
+  defp reactivation?(_client, _attrs), do: false
 
   # System-driven half of the stage lifecycle: the first assigned plan is the
   # moment coaching starts. Manual overrides go through update_client.
@@ -267,20 +286,6 @@ defmodule Easy.Clients do
       do_atomic_accept(client_id, business_id, user_id, accepted_email)
     end
   end
-
-  # Seat-gate reactivation only: inactive -> active at the seat limit
-  # is blocked; every other status transition and every non-status update
-  # passes through untouched.
-  defp ensure_reactivation_capacity(ctx, %Client{status: current}, attrs)
-       when current == :inactive do
-    if to_string(attrs[:status] || "") == "active" do
-      Billing.ensure_seat_available(ctx)
-    else
-      :ok
-    end
-  end
-
-  defp ensure_reactivation_capacity(_ctx, _client, _attrs), do: :ok
 
   defp attention_facts(query, business_id) do
     {open_intake, active_training, active_nutrition} = attention_subqueries(business_id)

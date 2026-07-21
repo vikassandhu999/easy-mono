@@ -24,7 +24,7 @@ defmodule Easy.Application do
 
   defp sweeper_children do
     []
-    |> maybe_add_sweeper(:start_subscription_sweeper, Easy.SubscriptionSweeper)
+    |> maybe_add_sweeper(:start_client_subscription_sweeper, Easy.ClientSubscriptionSweeper)
     |> maybe_add_sweeper(:start_check_in_sweeper, Easy.CheckInSweeper)
   end
 

@@ -21366,6 +21366,18 @@
               }
             },
             "description": "Invalid signature"
+          },
+          "422": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "x-struct": null,
+                  "x-validate": null
+                }
+              }
+            },
+            "description": "Invalid payload"
           }
         },
         "summary": "Razorpay webhook",

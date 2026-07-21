@@ -68,7 +68,7 @@ defmodule Easy.Clients.Client do
   # pending -> active is reserved for accept_invite/3 (the accept flow) only.
   # Nothing may return to pending once a Client has been linked to a User.
   # System-driven exceptions use update_all and bypass this changeset:
-  # Billing.activate_awaiting_clients and SubscriptionSweeper.sweep.
+  # Billing's awaiting-client activation and ClientSubscriptionSweeper.sweep.
   @allowed_status_transitions %{
     active: [:inactive],
     inactive: [:active]

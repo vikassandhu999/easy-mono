@@ -2,16 +2,34 @@ defmodule Easy.BillingTest do
   use Easy.DataCase, async: true
 
   alias Easy.{Billing, Ctx, Repo}
-  alias Easy.Billing.Event
+  alias Easy.Billing.{BusinessBilling, Event}
   alias Easy.Clients.Client
 
   import Easy.Factory
+
+  @webhook_secret "test_webhook_secret"
 
   defp ctx_for(business), do: Ctx.new(business.id, business.owner_id)
 
   defp summary(ctx) do
     {:ok, summary} = Billing.get_billing(ctx)
     summary
+  end
+
+  # Drives a signed subscription.charged event through the public webhook
+  # interface — the production trigger for waiting-client activation.
+  defp charged_webhook(sub_id, quantity) do
+    body =
+      Jason.encode!(%{
+        "event" => "subscription.charged",
+        "payload" => %{
+          "subscription" => %{"entity" => %{"id" => sub_id, "quantity" => quantity, "current_end" => 1_790_000_000}},
+          "payment" => %{"entity" => %{"amount" => 10_000, "currency" => "INR"}}
+        }
+      })
+
+    signature = :crypto.mac(:hmac, :sha256, @webhook_secret, body) |> Base.encode16(case: :lower)
+    Billing.handle_razorpay_webhook(body, signature, "evt_#{System.unique_integer([:positive])}")
   end
 
   describe "grant_free_seats/2" do
@@ -69,14 +87,14 @@ defmodule Easy.BillingTest do
     end
   end
 
-  describe "activate_awaiting_clients/1" do
-    test "activate_awaiting_clients only touches awaiting_seat-reason rows" do
+  describe "waiting-client activation (via subscription.charged webhook)" do
+    test "activates awaiting_seat rows but leaves manually-inactive rows" do
       business = insert(:business)
-      insert(:business_billing, business: business, free_seats: 5, paid_seats: 0)
+      insert(:business_billing, business: business, razorpay_subscription_id: "sub_act", free_seats: 5, status: :active)
       waiting = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
       paused = insert(:client, business: business, status: :inactive, inactive_reason: :manual)
 
-      assert {:ok, 1} = Billing.activate_awaiting_clients(ctx_for(business))
+      assert :ok = charged_webhook("sub_act", 5)
 
       assert Repo.get!(Client, waiting.id).status == :active
       assert Repo.get!(Client, waiting.id).inactive_reason == nil
@@ -106,13 +124,38 @@ defmodule Easy.BillingTest do
     end
   end
 
-  describe "ensure_owner/1" do
-    test "owner passes, non-owner gets :not_owner" do
+  describe "owner-only operations" do
+    test "reject a non-owner before doing any work" do
       business = insert(:business)
-      other_user = insert(:user)
+      other = Ctx.new(business.id, insert(:user).id)
 
-      assert :ok = Billing.ensure_owner(ctx_for(business))
-      assert {:error, :not_owner} = Billing.ensure_owner(Ctx.new(business.id, other_user.id))
+      assert {:error, :not_owner} = Billing.checkout(other, 1)
+      assert {:error, :not_owner} = Billing.cancel(other)
+      assert {:error, :not_owner} = Billing.sync_billing(other)
+    end
+
+    test "let the owner past the ownership gate" do
+      business = insert(:business)
+
+      # No subscription yet, so the owner clears ensure_owner and reaches
+      # :no_subscription — proof the gate passed without a Razorpay call.
+      assert {:error, :no_subscription} = Billing.cancel(ctx_for(business))
+      assert {:error, :no_subscription} = Billing.sync_billing(ctx_for(business))
+    end
+  end
+
+  describe "razorpay_subscription_id uniqueness" do
+    test "the same subscription id can't be stored on two businesses" do
+      billing_one = insert(:business_billing, business: insert(:business))
+      billing_two = insert(:business_billing, business: insert(:business))
+
+      assert {:ok, _} =
+               billing_one |> BusinessBilling.update_changeset(%{razorpay_subscription_id: "sub_dup"}) |> Repo.update()
+
+      assert {:error, changeset} =
+               billing_two |> BusinessBilling.update_changeset(%{razorpay_subscription_id: "sub_dup"}) |> Repo.update()
+
+      assert %{razorpay_subscription_id: ["has already been taken"]} = errors_on(changeset)
     end
   end
 

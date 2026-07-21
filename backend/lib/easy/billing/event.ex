@@ -27,7 +27,4 @@ defmodule Easy.Billing.Event do
 
     timestamps(type: :utc_datetime, updated_at: false)
   end
-
-  @spec kinds() :: [atom()]
-  def kinds, do: @kinds
 end

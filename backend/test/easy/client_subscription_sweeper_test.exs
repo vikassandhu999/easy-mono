@@ -1,9 +1,9 @@
-defmodule Easy.SubscriptionSweeperTest do
+defmodule Easy.ClientSubscriptionSweeperTest do
   use Easy.SchemaCase, async: false
 
+  alias Easy.ClientSubscriptionSweeper, as: SubscriptionSweeper
   alias Easy.Clients.Client
   alias Easy.Repo
-  alias Easy.SubscriptionSweeper
 
   test "sweep deactivates only active clients past their end date" do
     business = insert(:business)

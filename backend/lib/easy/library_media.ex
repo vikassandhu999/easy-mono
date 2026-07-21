@@ -21,10 +21,8 @@ defmodule Easy.LibraryMedia do
   @spec create_upload(Ctx.t(), map()) :: upload_result()
   def create_upload(%Ctx{} = ctx, attrs) do
     with {:ok, coach} <- get_coach(ctx) do
-      case Repo.transaction(fn -> insert_and_sign_upload(ctx.business_id, coach.id, attrs) end) do
-        {:ok, upload} -> {:ok, upload}
-        {:error, reason} -> {:error, reason}
-      end
+      # Repo.transaction already returns {:ok, upload} | {:error, reason}.
+      Repo.transaction(fn -> insert_and_sign_upload(ctx.business_id, coach.id, attrs) end)
     end
   end
 

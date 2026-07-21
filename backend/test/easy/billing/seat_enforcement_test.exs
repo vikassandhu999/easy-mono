@@ -19,6 +19,22 @@ defmodule Easy.Billing.SeatEnforcementTest do
     owner_ctx(business)
   end
 
+  @webhook_secret "test_webhook_secret"
+
+  defp charged_webhook(sub_id, quantity) do
+    body =
+      Jason.encode!(%{
+        "event" => "subscription.charged",
+        "payload" => %{
+          "subscription" => %{"entity" => %{"id" => sub_id, "quantity" => quantity, "current_end" => 1_790_000_000}},
+          "payment" => %{"entity" => %{"amount" => 10_000, "currency" => "INR"}}
+        }
+      })
+
+    signature = :crypto.mac(:hmac, :sha256, @webhook_secret, body) |> Base.encode16(case: :lower)
+    Billing.handle_razorpay_webhook(body, signature, "evt_#{System.unique_integer([:positive])}")
+  end
+
   defp fill_free_seats(business) do
     insert(:client, business: business, status: :active)
     insert(:client, business: business, status: :active)
@@ -106,8 +122,9 @@ defmodule Easy.Billing.SeatEnforcementTest do
              Clients.accept_invite(invited, user.id, invited.email)
   end
 
-  test "activate_awaiting_clients activates the oldest awaiting_seat clients up to capacity" do
+  test "a charge activates the oldest awaiting_seat clients up to capacity" do
     business = insert(:business)
+    insert(:business_billing, business: business, razorpay_subscription_id: "sub_cap", free_seats: 2, status: :active)
 
     oldest = insert(:client, business: business, status: :inactive, inactive_reason: :awaiting_seat)
     set_inserted_at(oldest, ~U[2026-01-01 00:00:00Z])
@@ -118,11 +135,23 @@ defmodule Easy.Billing.SeatEnforcementTest do
     insert(:client, business: business, status: :active)
     # limit 2, used 1 -> capacity for exactly one
 
-    assert {:ok, 1} = Billing.activate_awaiting_clients(ctx_for(business))
+    assert :ok = charged_webhook("sub_cap", 0)
     assert Repo.get!(Client, oldest.id).status == :active
     assert Repo.get!(Client, oldest.id).inactive_reason == nil
     assert Repo.get!(Client, newer.id).status == :inactive
     assert Repo.get!(Client, newer.id).inactive_reason == :awaiting_seat
+  end
+
+  test "reactivating an inactive client at the seat limit is rejected" do
+    business = insert(:business)
+    ctx = ctx_for(business)
+    # free limit is 2; fill both with active clients
+    insert(:client, business: business, status: :active)
+    insert(:client, business: business, status: :active)
+    dormant = insert(:client, business: business, status: :inactive, inactive_reason: :manual)
+
+    assert {:error, :seat_limit_reached} = Clients.update_client(ctx, dormant.id, %{status: "active"})
+    assert Repo.get!(Client, dormant.id).status == :inactive
   end
 
   test "existing active clients stay active after payment failure or cancellation" do

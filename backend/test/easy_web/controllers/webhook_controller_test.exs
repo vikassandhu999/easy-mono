@@ -120,21 +120,31 @@ defmodule EasyWeb.WebhookControllerTest do
     assert conn.status == 200
   end
 
-  test "a payload missing the subscription entity is acked 200 and writes no billing state", %{
+  test "a recognized event missing the subscription entity is rejected 422 and stays retryable", %{
     conn: conn,
     business: business
   } do
-    conn =
-      post_webhook(conn, %{
-        "event" => "subscription.charged",
-        "payload" => %{"payment" => %{"entity" => %{"amount" => 100, "currency" => "INR"}}}
-      })
+    event_id = "evt_malformed_retry"
 
-    assert conn.status == 200
+    malformed = %{
+      "event" => "subscription.charged",
+      "payload" => %{"payment" => %{"entity" => %{"amount" => 100, "currency" => "INR"}}}
+    }
+
+    bad = post_webhook(conn, malformed, event_id: event_id)
+
+    assert bad.status == 422
     billing = billing_for(business.id)
     assert billing.status == :free
     assert billing.paid_seats == 0
     assert events_for(business.id) == []
+
+    # The receipt was rolled back (not claimed), so the same event id can be
+    # retried once the payload is well-formed.
+    good = post_webhook(build_conn(), charged_payload("sub_wh", 3, 149_700), event_id: event_id)
+
+    assert good.status == 200
+    assert billing_for(business.id).paid_seats == 3
   end
 
   test "a charge while cancellation is scheduled keeps cancel_at_period_end", %{conn: conn, business: business} do

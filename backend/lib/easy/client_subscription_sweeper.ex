@@ -1,4 +1,4 @@
-defmodule Easy.SubscriptionSweeper do
+defmodule Easy.ClientSubscriptionSweeper do
   use GenServer
 
   import Ecto.Query
@@ -28,9 +28,11 @@ defmodule Easy.SubscriptionSweeper do
     {:noreply, state}
   end
 
-  # Cross-tenant by design: this is the one system-wide job that ends expired
-  # subscriptions. ponytail: UTC date boundary + 24h tick; Oban + business
-  # timezones if precision ever matters.
+  # Ends expired client coaching engagements (clients.subscription_ends_on). This
+  # is unrelated to a business's Razorpay billing subscription (Easy.Billing).
+  # Cross-tenant by design: the one system-wide job that ends expired engagements.
+  # ponytail: UTC date boundary + 24h tick; Oban + business timezones if precision
+  # ever matters.
   @spec sweep() :: {non_neg_integer(), nil}
   def sweep do
     today = Date.utc_today()

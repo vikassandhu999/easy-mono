@@ -14,7 +14,8 @@ defmodule EasyWeb.WebhookController do
     operation_id: "razorpayWebhook",
     responses: [
       ok: {"Acknowledged", "text/plain", %Schema{type: :string}},
-      unauthorized: {"Invalid signature", "text/plain", %Schema{type: :string}}
+      unauthorized: {"Invalid signature", "text/plain", %Schema{type: :string}},
+      unprocessable_entity: {"Invalid payload", "text/plain", %Schema{type: :string}}
     ]
 
   @spec razorpay(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -27,6 +28,8 @@ defmodule EasyWeb.WebhookController do
       # duplicates are acked so Razorpay stops retrying
       {:error, :duplicate_webhook} -> send_resp(conn, 200, "ok")
       {:error, :invalid_webhook_signature} -> send_resp(conn, 401, "invalid signature")
+      # recognized event, missing data: don't claim it — let Razorpay retry
+      {:error, :invalid_webhook_payload} -> send_resp(conn, 422, "invalid payload")
     end
   end
 end

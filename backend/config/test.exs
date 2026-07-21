@@ -23,7 +23,7 @@ config :easy, EasyWeb.Endpoint,
 # In test we don't send emails
 config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Test
 
-config :easy, start_subscription_sweeper: false
+config :easy, start_client_subscription_sweeper: false
 config :easy, start_check_in_sweeper: false
 
 config :easy, Easy.Storage,

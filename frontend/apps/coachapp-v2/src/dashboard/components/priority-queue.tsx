@@ -153,7 +153,17 @@ function QueueRow({item}: {item: QueueItem}) {
 }
 
 /** The ink hero row above the queue — COPY.md §DB `{n} check-ins to review`. */
-function ReviewBanner({count, names, oldestDays}: {count: number; names: string; oldestDays: null | number}) {
+function ReviewBanner({
+  count,
+  names,
+  oldestDays,
+  oldestId,
+}: {
+  count: number;
+  names: string;
+  oldestDays: null | number;
+  oldestId: null | string;
+}) {
   const navigate = useNavigate();
   const subtitle = [
     oldestDays === null ? null : `Oldest waiting ${oldestDays} day${oldestDays === 1 ? '' : 's'}`,
@@ -187,7 +197,8 @@ function ReviewBanner({count, names, oldestDays}: {count: number; names: string;
       </div>
       <Button
         className="min-h-11 shrink-0 text-foreground"
-        onPress={() => navigate(ROUTES.CHECKINS_TO_REVIEW)}
+        isDisabled={oldestId === null}
+        onPress={() => oldestId && navigate(ROUTES.CHECKIN_REVIEW.replace(':id', oldestId))}
         size="sm"
         variant="secondary"
       >
@@ -206,6 +217,7 @@ type PriorityQueueProps = {
   reviewError: boolean;
   reviewNames?: string;
   reviewOldestDays?: null | number;
+  reviewOldestId?: null | string;
 };
 
 export function PriorityQueue({
@@ -216,6 +228,7 @@ export function PriorityQueue({
   reviewError,
   reviewNames = '',
   reviewOldestDays = null,
+  reviewOldestId = null,
 }: PriorityQueueProps) {
   const navigate = useNavigate();
   const items = buildItems(clients, prospects, navigate).slice(0, 6);
@@ -257,6 +270,7 @@ export function PriorityQueue({
           count={reviewCount}
           names={reviewNames}
           oldestDays={reviewOldestDays}
+          oldestId={reviewOldestId}
         />
       ) : null}
 

@@ -22,19 +22,23 @@ import {daysSince, formatDashboardDate} from '@/dashboard/lib/date-format';
  * COPY.md §DB check-ins card subtitle — `Oldest waiting 2 days · Sam, Priya, Devon +2`.
  * Both halves come from the review-queue rows; nothing is invented.
  */
-function reviewSummary(queue: {client: {first_name: null | string}; inserted_at: string}[]) {
+function reviewSummary(queue: {client: {first_name: null | string}; id: string; inserted_at: string}[]) {
   const names = queue
     .map((entry) => entry.client.first_name?.trim())
     .filter((name): name is string => Boolean(name))
     .filter((name, index, all) => all.indexOf(name) === index);
   const shown = names.slice(0, 3).join(', ');
   const overflow = names.length - 3;
+  const oldest = [...queue].sort((a, b) => a.inserted_at.localeCompare(b.inserted_at))[0];
 
   return {
     names: shown ? (overflow > 0 ? `${shown} +${overflow}` : shown) : '',
-    oldestDays: queue.reduce<null | number>((oldest, entry) => {
-      const days = daysSince(entry.inserted_at);
-      return days === null ? oldest : Math.max(oldest ?? 0, days);
+    // The banner's Review CTA deep-links straight into this submission — the
+    // list screen's review tab is gone (product decision 2026-07-21).
+    oldestId: oldest?.id ?? null,
+    oldestDays: queue.reduce<null | number>((days, entry) => {
+      const d = daysSince(entry.inserted_at);
+      return d === null ? days : Math.max(days ?? 0, d);
     }, null),
   };
 }
@@ -227,6 +231,7 @@ export default function Dashboard() {
               reviewError={reviewQueueError}
               reviewNames={review.names}
               reviewOldestDays={review.oldestDays}
+              reviewOldestId={review.oldestId}
             />
 
             <div className="flex min-w-0 flex-col gap-5">

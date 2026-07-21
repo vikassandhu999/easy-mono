@@ -19,7 +19,7 @@ function clientName(item: {client: {first_name: null | string; last_name: null |
 export default function ReviewCheckin() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
-  const goBack = useGoBack(ROUTES.CHECKINS_TO_REVIEW);
+  const goBack = useGoBack(ROUTES.DASHBOARD);
   const {data, isError, isLoading} = useListCheckInReviewQueueQuery();
   const [review, {isLoading: isReviewing}] = useReviewFormSubmissionMutation();
   const item = data?.data.find((submission) => submission.id === id);
@@ -74,7 +74,7 @@ export default function ReviewCheckin() {
     try {
       await review({id: item.id}).unwrap();
       toast.success('Check-in reviewed');
-      navigate(ROUTES.CHECKINS_TO_REVIEW, {replace: true});
+      navigate(ROUTES.DASHBOARD, {replace: true});
     } catch {
       toast.danger("Check-in wasn't marked reviewed. Try again.");
     }

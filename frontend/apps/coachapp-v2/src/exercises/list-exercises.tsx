@@ -3,6 +3,7 @@ import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import BrowseListBox, {
   BROWSE_LIST_FRAME_CLASS,
   BROWSE_LIST_SURFACE_CLASS,
@@ -11,6 +12,7 @@ import BrowseListBox, {
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useListMusclesQuery} from '@/api/generated';
 import {useCoachTrainingExercisesInfiniteQuery} from '@/api/training-exercises';
@@ -20,6 +22,7 @@ import ExerciseListItem from './exercise-list-item';
 
 export default function ListExercises() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.LIBRARY);
   const [search, setSearch] = useState('');
   const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
 
@@ -37,7 +40,13 @@ export default function ListExercises() {
         className="bg-surface pb-1 sm:bg-transparent sm:pb-2"
         size="content"
       >
-        <Page.TitleGroup>
+        <Page.TitleGroup className="flex min-w-0 items-center gap-1">
+          {/* Below lg there's no sidebar and (by design) no bottom nav on the
+              library lists — this is the way back to the Builder hub. */}
+          <BackButton
+            className="lg:hidden"
+            onPress={goBack}
+          />
           <div className="min-w-0">
             <Page.Title>Exercises</Page.Title>
             <Page.Description className="hidden truncate sm:block">

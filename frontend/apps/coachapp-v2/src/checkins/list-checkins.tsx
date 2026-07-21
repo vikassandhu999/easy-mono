@@ -3,6 +3,7 @@ import {Plus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import BrowseListBox, {
   BROWSE_LIST_FRAME_CLASS,
   BROWSE_LIST_SURFACE_CLASS,
@@ -15,6 +16,7 @@ import {ErrorState} from '@/@components/error-state';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useListFormTemplatesQuery} from '@/api/checkins';
 
 import FormTemplateListItem from './form-template-list-item';
@@ -30,6 +32,7 @@ function matchesSearch(name: string, search: string): boolean {
 // decision 2026-07-21.
 export default function ListCheckins() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.LIBRARY);
   const {data, isError, isLoading, refetch} = useListFormTemplatesQuery();
   const templates = data?.data ?? [];
 
@@ -65,7 +68,13 @@ export default function ListCheckins() {
         className="bg-surface pb-1 sm:bg-transparent sm:pb-2"
         size="content"
       >
-        <Page.TitleGroup>
+        <Page.TitleGroup className="flex min-w-0 items-center gap-1">
+          {/* Below lg there's no sidebar and (by design) no bottom nav on the
+              library lists — this is the way back to the Builder hub. */}
+          <BackButton
+            className="lg:hidden"
+            onPress={goBack}
+          />
           <div className="min-w-0">
             <Page.Title>Forms</Page.Title>
             <Page.Description className="hidden truncate sm:block">

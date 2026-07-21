@@ -28,7 +28,7 @@ export const BROWSE_LIST_SURFACE_CLASS =
  * Zero-gutter mobile list frame. Page.Frame supplies the canonical gutter; this
  * only cancels it below sm (full-bleed list) — never restate md/lg values here.
  */
-export const BROWSE_LIST_FRAME_CLASS = 'flex min-h-0 flex-1 flex-col px-0 pb-0 sm:px-4 sm:pb-6';
+export const BROWSE_LIST_FRAME_CLASS = 'flex flex-1 flex-col px-0 pb-0 sm:px-4 sm:pb-6';
 
 /** Search-field surface used by browse toolbars at both breakpoints. */
 export const BROWSE_SEARCH_GROUP_CLASS = 'min-h-11 border border-border bg-background shadow-none sm:bg-surface';
@@ -149,7 +149,11 @@ export default function BrowseListBox<T extends object>({
   return (
     <ListBox
       aria-label={ariaLabel}
-      className={className}
+      // overflow-visible: HeroUI's list-box is overflow:clip, and the load-more
+      // sentinel (a 0-height div whose margin collapses through) lands just past
+      // the box's edge — clip swallows it and infinite scroll silently dies.
+      // The surface card above owns the rounded-corner clipping instead.
+      className={cn('overflow-visible', className)}
       onAction={onAction}
       renderEmptyState={() =>
         isLoading ? (

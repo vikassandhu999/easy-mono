@@ -114,12 +114,13 @@ function PageFrame({children, className, size = 'wide'}: PageLayoutProps) {
 // Owns the page gutter like its Header/Toolbar/Frame siblings, so content stays
 // aligned with the header above it without every screen restating the gutter.
 // Screens that nest a Page.Frame (which applies its own gutter) pass `bare`.
+// flex-1 stretches short pages to the viewport (so mt-auto footers pin to the
+// bottom) but deliberately NO min-h-0: min-height:auto floors this at its
+// content height, which is what lets long lists overflow the scroll container.
+// min-h-0 here turns the page into a viewport-clamped pane — nothing scrolls
+// and infinite lists never load page two.
 function PageContent({bare, children, className}: PageProps & {bare?: boolean}) {
-  return (
-    <div className={cn('flex min-h-0 flex-1 flex-col', bare ? undefined : PAGE_GUTTER_CLASS, className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn('flex flex-1 flex-col', bare ? undefined : PAGE_GUTTER_CLASS, className)}>{children}</div>;
 }
 
 export const Page = Object.assign(PageRoot, {

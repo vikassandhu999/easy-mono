@@ -44,7 +44,7 @@ config :swoosh, :api_client, false
 
 config :easy, Easy.Mailer,
   adapter: Resend.Swoosh.Adapter,
-  api_key: "re_HKFHoitN_AM3vmGGVdwxCSLqTmxQWW8zG"
+  api_key: "REMOVED"
 
 # Authentication and JWT configuration for development
 config :easy, :jwt_secret, "dev-secret-key-minimum-32-characters-long-for-hs256"
@@ -67,6 +67,8 @@ config :easy, Easy.Storage,
   endpoint: "https://t3.storage.dev",
   region: "auto",
   bucket: "easy-dev-placeholder",
+  public_bucket: "easy-dev-public-placeholder",
+  public_url: "https://easy-dev-public-placeholder.t3.storage.dev",
   access_key_id: "dev-access-key",
   secret_access_key: "dev-secret-key"
 

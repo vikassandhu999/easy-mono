@@ -76,10 +76,20 @@ if config_env() == :prod do
     System.get_env("AWS_SECRET_ACCESS_KEY") ||
       raise "AWS_SECRET_ACCESS_KEY is missing. Provision private Tigris storage with fly storage create."
 
+  storage_public_bucket =
+    System.get_env("PUBLIC_BUCKET_NAME") ||
+      raise "PUBLIC_BUCKET_NAME is missing. Provision a public Tigris bucket for library media."
+
+  storage_public_url =
+    System.get_env("PUBLIC_STORAGE_URL") ||
+      raise "PUBLIC_STORAGE_URL is missing. Set the public CDN origin serving the public bucket."
+
   config :easy, Easy.Storage,
     endpoint: storage_endpoint,
     region: storage_region,
     bucket: storage_bucket,
+    public_bucket: storage_public_bucket,
+    public_url: storage_public_url,
     access_key_id: storage_access_key,
     secret_access_key: storage_secret_key
 

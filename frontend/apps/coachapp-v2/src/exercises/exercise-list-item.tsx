@@ -1,6 +1,6 @@
 import {Chip} from '@heroui/react';
 import {cn} from '@heroui/styles';
-import {Dumbbell} from 'lucide-react';
+import {Dumbbell, Video} from 'lucide-react';
 
 import {BrowseRow, BrowseRowThumb, OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import type {TrainingExercise} from '@/api/generated';
@@ -26,14 +26,19 @@ function getSubtitle(exercise: TrainingExercise): string {
 export default function ExerciseListItem({exercise}: {exercise: TrainingExercise}) {
   const mechanics = exercise.mechanics ? MECHANICS_MAP[exercise.mechanics] : null;
   const force = exercise.force ? FORCE_MAP[exercise.force] : null;
+  const isVideo = exercise.media?.kind === 'video';
+  const thumbSrc =
+    exercise.media?.kind === 'image' ? (exercise.media.url ?? undefined) : isVideo ? undefined : exercise.images[0];
 
   return (
     <BrowseRow
       icon={
         <BrowseRowThumb
           alt={exercise.name}
-          fallback={<Dumbbell className="size-5 text-foreground" />}
-          src={exercise.images[0]}
+          fallback={
+            isVideo ? <Video className="size-5 text-foreground" /> : <Dumbbell className="size-5 text-foreground" />
+          }
+          src={thumbSrc}
         />
       }
       id={exercise.id}

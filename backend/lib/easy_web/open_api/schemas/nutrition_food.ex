@@ -48,6 +48,7 @@ defmodule EasyWeb.OpenApi.Schemas.FoodRequest do
         dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
         notes: %Schema{type: :string, nullable: true},
         image_url: %Schema{type: :string, nullable: true},
+        media_id: %Schema{type: :string, format: :uuid, nullable: true},
         serving_sizes: %Schema{type: :array, items: FoodServingSize}
       },
       required: [:name],
@@ -97,6 +98,7 @@ defmodule EasyWeb.OpenApi.Schemas.FoodUpdateRequest do
         dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
         notes: %Schema{type: :string, nullable: true},
         image_url: %Schema{type: :string, nullable: true},
+        media_id: %Schema{type: :string, format: :uuid, nullable: true},
         serving_sizes: %Schema{type: :array, items: FoodServingSize}
       },
       example: %{
@@ -111,7 +113,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.Food do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{FoodServingSize, Shared}
+  alias EasyWeb.OpenApi.Schemas.{FoodServingSize, LibraryMedia, Shared}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -136,6 +138,7 @@ defmodule EasyWeb.OpenApi.Schemas.Food do
           dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
           notes: %Schema{type: :string, nullable: true},
           image_url: %Schema{type: :string, nullable: true},
+          media: %Schema{allOf: [LibraryMedia], nullable: true},
           serving_sizes: %Schema{type: :array, items: FoodServingSize},
           creator_id: %Schema{type: :string, format: :uuid, nullable: true}
         },
@@ -148,6 +151,7 @@ defmodule EasyWeb.OpenApi.Schemas.Food do
       :category,
       :notes,
       :image_url,
+      :media,
       :serving_sizes,
       :inserted_at,
       :updated_at

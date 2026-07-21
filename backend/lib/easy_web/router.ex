@@ -114,6 +114,7 @@ defmodule EasyWeb.Router do
     post "/clients/:id/reassign", ClientController, :reassign
     post "/clients/:client_id/uploads", UploadController, :create
     post "/attachments/download-urls", UploadController, :download_urls
+    post "/library-media/uploads", LibraryMediaController, :create
 
     get "/team", TeamController, :index
     post "/team/invite", TeamController, :invite

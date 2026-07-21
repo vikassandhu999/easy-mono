@@ -1,5 +1,6 @@
 defmodule Easy.Foods do
   alias Easy.Ctx
+  alias Easy.LibraryMedia
   alias Easy.Nutrition.{Food, Meal, MealItem, Plan}
   alias Easy.Orgs.Coach
   alias Easy.Repo
@@ -10,6 +11,7 @@ defmodule Easy.Foods do
   def get_visible_food(%Ctx{} = ctx, food_id) do
     Food
     |> Food.for_business_or_system(ctx.business_id)
+    |> Food.include_media()
     |> Repo.get(food_id)
     |> ok_or_not_found()
   end
@@ -18,6 +20,7 @@ defmodule Easy.Foods do
   def get_business_food(%Ctx{} = ctx, food_id) do
     Food
     |> Food.for_business(ctx.business_id)
+    |> Food.include_media()
     |> Repo.get(food_id)
     |> ok_or_not_found()
   end
@@ -35,17 +38,17 @@ defmodule Easy.Foods do
     {:ok,
      %{
        count: Repo.aggregate(base, :count, :id),
-       foods: ordered |> Easy.Utils.paginate(offset, limit) |> Repo.all()
+       foods: ordered |> Easy.Utils.paginate(offset, limit) |> Food.include_media() |> Repo.all()
      }}
   end
 
   @spec create_food(Ctx.t(), map()) ::
           {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_food(%Ctx{} = ctx, attrs) do
-    with {:ok, coach} <- get_coach(ctx) do
-      ctx.business_id
-      |> Food.insert_changeset(coach.id, attrs)
-      |> Repo.insert()
+    with {:ok, coach} <- get_coach(ctx),
+         :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
+         {:ok, food} <- ctx.business_id |> Food.insert_changeset(coach.id, attrs) |> Repo.insert() do
+      {:ok, Repo.preload(food, :media)}
     end
   end
 
@@ -53,10 +56,10 @@ defmodule Easy.Foods do
           {:ok, Food.t()} | {:error, :not_found | :read_only_source | Ecto.Changeset.t()}
   def update_food(%Ctx{} = ctx, food_id, attrs) do
     with {:ok, food} <- get_visible_food(ctx, food_id),
-         :ok <- ensure_editable(food) do
-      food
-      |> Food.update_changeset(attrs)
-      |> Repo.update()
+         :ok <- ensure_editable(food),
+         :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
+         {:ok, updated} <- food |> Food.update_changeset(attrs) |> Repo.update() do
+      {:ok, Repo.preload(updated, :media, force: true)}
     end
   end
 
@@ -122,6 +125,7 @@ defmodule Easy.Foods do
         "dietary_tags" => food.dietary_tags,
         "notes" => food.notes,
         "image_url" => food.image_url,
+        "media_id" => food.media_id,
         "serving_sizes" => Enum.map(food.serving_sizes, &serving_size_attrs/1)
       }
 

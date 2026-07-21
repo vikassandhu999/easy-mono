@@ -1,18 +1,6 @@
-import {
-  Button,
-  CloseButton,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Input,
-  Label,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {ImagePlus} from 'lucide-react';
-import {useCallback, useState} from 'react';
+import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {
@@ -23,7 +11,8 @@ import {
   FormTextAreaField,
   FormTextField,
 } from '@/@components/form-fields';
-import {INPUT_SKIN_CLASS, RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
+import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
+import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
 import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
 import type {Food, FoodRequest, FoodUpdateRequest} from '@/api/generated';
 import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
@@ -34,6 +23,7 @@ export const foodFormSchema = z.object({
   source: z.string().optional(),
   notes: z.string().optional(),
   image_url: z.string().optional(),
+  media_id: z.string().nullable().optional(),
   calories_per_100g: z.number().min(0, 'Use 0 or higher').optional(),
   protein_g: z.number().min(0, 'Use 0 or higher').optional(),
   carbs_g: z.number().min(0, 'Use 0 or higher').optional(),
@@ -50,6 +40,7 @@ export const FOOD_FORM_DEFAULTS: FoodFormValues = {
   source: '',
   notes: '',
   image_url: '',
+  media_id: null,
   calories_per_100g: undefined,
   protein_g: undefined,
   carbs_g: undefined,
@@ -65,6 +56,7 @@ export function foodToFormValues(food: Food): FoodFormValues {
     source: food.source ?? 'custom',
     notes: food.notes ?? '',
     image_url: food.image_url ?? '',
+    media_id: food.media?.id ?? null,
     calories_per_100g: food.calories_per_100g ?? undefined,
     protein_g: food.protein_g_per_100g ?? undefined,
     carbs_g: food.carbs_g_per_100g ?? undefined,
@@ -72,6 +64,10 @@ export function foodToFormValues(food: Food): FoodFormValues {
     fiber_g: food.fiber_g_per_100g ?? undefined,
     sugar_g: undefined,
   };
+}
+
+export function foodToMediaValue(food: Food): LibraryMediaValue | null {
+  return food.media ? {contentType: food.media.content_type, kind: food.media.kind, url: food.media.url} : null;
 }
 
 export function foodToDuplicateFormValues(food: Food): FoodFormValues {
@@ -105,6 +101,7 @@ export function foodToCreateRequest({
     source: toOptionalText(values.source) as FoodRequest['source'],
     notes: toOptionalText(values.notes),
     image_url: toOptionalText(values.image_url),
+    media_id: values.media_id ?? undefined,
     calories_per_100g: values.calories_per_100g,
     protein_g_per_100g: values.protein_g,
     carbs_g_per_100g: values.carbs_g,
@@ -127,6 +124,7 @@ export function foodToUpdateRequest({
     source: toOptionalText(values.source) as FoodUpdateRequest['source'],
     notes: toOptionalText(values.notes),
     image_url: toOptionalText(values.image_url),
+    media_id: values.media_id ?? null,
     calories_per_100g: values.calories_per_100g,
     protein_g_per_100g: values.protein_g,
     carbs_g_per_100g: values.carbs_g,
@@ -146,6 +144,7 @@ export function useFoodForm(options?: {defaultValues?: FoodFormValues; values?: 
 
 type FoodFormProps = {
   form: ReturnType<typeof useFoodForm>;
+  initialMedia?: LibraryMediaValue | null;
   isSubmitting: boolean;
   onCancel: () => void;
   onServingSizesChange: (sizes: ServingSize[]) => void;
@@ -168,6 +167,7 @@ const MACRO_FIELDS: {label: string; name: MacroFieldName}[] = [
 
 export default function FoodForm({
   form,
+  initialMedia,
   isSubmitting,
   onCancel,
   onServingSizesChange,
@@ -181,26 +181,9 @@ export default function FoodForm({
     formState: {errors},
     handleSubmit,
     setValue,
-    watch,
   } = form;
 
-  const imageUrl = watch('image_url');
-
-  const [isAddingImage, setIsAddingImage] = useState(false);
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [imageError, setImageError] = useState('');
-
-  const handleAddImage = useCallback(() => {
-    const url = newImageUrl.trim();
-    if (!url) {
-      setImageError('Paste an image URL');
-      return;
-    }
-    setValue('image_url', url, {shouldDirty: true});
-    setNewImageUrl('');
-    setImageError('');
-    setIsAddingImage(false);
-  }, [newImageUrl, setValue]);
+  const [mediaBusy, setMediaBusy] = useState(false);
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
@@ -209,73 +192,14 @@ export default function FoodForm({
           <Fieldset.Legend className="hidden sm:block">Details</Fieldset.Legend>
           <Description className="hidden sm:block">Name the food and where it came from.</Description>
           <Fieldset.Group>
-            <div>
-              <Label>Images</Label>
-              <div className="mt-2 flex flex-wrap items-start gap-3">
-                {imageUrl ? (
-                  <div className="relative">
-                    <img
-                      alt="Food"
-                      className="size-20 rounded-xl border border-border bg-surface-secondary object-cover"
-                      src={imageUrl}
-                    />
-                    <CloseButton
-                      aria-label="Remove image"
-                      className="absolute -top-2 -right-2 min-h-11 min-w-11 rounded-full bg-ink text-ink-foreground"
-                      onPress={() => setValue('image_url', '', {shouldDirty: true})}
-                    />
-                  </div>
-                ) : isAddingImage ? (
-                  <div className="flex w-full flex-wrap items-end gap-2">
-                    <TextField
-                      className="min-w-0 flex-1"
-                      isInvalid={!!imageError}
-                    >
-                      <Label>Add image URL</Label>
-                      {imageError && <FieldError>{imageError}</FieldError>}
-                      <Input
-                        className={INPUT_SKIN_CLASS}
-                        onChange={(e) => {
-                          setNewImageUrl(e.target.value);
-                          setImageError('');
-                        }}
-                        placeholder="https://…"
-                        value={newImageUrl}
-                      />
-                    </TextField>
-                    <Button
-                      className="min-h-11"
-                      onPress={handleAddImage}
-                      size="sm"
-                    >
-                      Add
-                    </Button>
-                    <Button
-                      className="min-h-11"
-                      onPress={() => {
-                        setIsAddingImage(false);
-                        setNewImageUrl('');
-                        setImageError('');
-                      }}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    aria-label="Add image URL"
-                    className="size-20 flex-col gap-1 rounded-xl border border-dashed border-border text-muted"
-                    onPress={() => setIsAddingImage(true)}
-                    variant="ghost"
-                  >
-                    <ImagePlus className="size-5" />
-                    <span className="text-xs">Add</span>
-                  </Button>
-                )}
-              </div>
-            </div>
+            <LibraryMediaField
+              initialMedia={initialMedia}
+              onBusyChange={setMediaBusy}
+              onChange={(mediaId) => setValue('media_id', mediaId, {shouldDirty: true})}
+            />
+            <Description className="text-muted">
+              Uploads are public by URL. Don't upload client photos or private material.
+            </Description>
 
             {/* Mobile-only Details header: the real legend above is sm+; on
                 mobile Images lead and this takes its place (FE-mobile ref). */}
@@ -356,7 +280,7 @@ export default function FoodForm({
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
       <FormActions
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || mediaBusy}
         onCancel={onCancel}
         submitLabel={submitLabel}
         submittingLabel={submittingLabel}

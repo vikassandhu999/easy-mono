@@ -14,12 +14,24 @@ defmodule Easy.Storage do
           {:ok, signed_url()} | {:error, :invalid_expiry | :storage_unavailable}
   def presign_get(storage_key, opts \\ []), do: presign("GET", storage_key, opts)
 
+  @spec public_url(String.t()) :: {:ok, String.t()} | {:error, :storage_unavailable}
+  def public_url(storage_key) do
+    case Keyword.get(config(), :public_url) do
+      origin when is_binary(origin) and origin != "" ->
+        {:ok, "#{String.trim_trailing(origin, "/")}/#{storage_key}"}
+
+      _ ->
+        {:error, :storage_unavailable}
+    end
+  end
+
   defp presign(method, storage_key, opts) do
     expires_in = Keyword.get(opts, :expires_in, default_expiry(method))
     now = Keyword.get(opts, :now, DateTime.utc_now(:second))
+    store = Keyword.get(opts, :store, :private)
 
     with :ok <- validate_expiry(expires_in),
-         {:ok, config} <- storage_config() do
+         {:ok, config} <- storage_config(store) do
       {:ok, build_signed_url(method, storage_key, now, expires_in, config)}
     end
   end
@@ -58,13 +70,14 @@ defmodule Easy.Storage do
     }
   end
 
-  defp storage_config do
-    config = Application.get_env(:easy, __MODULE__, [])
+  defp storage_config(store) do
+    config = config()
+    bucket_key = if store == :public, do: :public_bucket, else: :bucket
 
     values = %{
       endpoint: Keyword.get(config, :endpoint),
       region: Keyword.get(config, :region),
-      bucket: Keyword.get(config, :bucket),
+      bucket: Keyword.get(config, bucket_key),
       access_key_id: Keyword.get(config, :access_key_id),
       secret_access_key: Keyword.get(config, :secret_access_key)
     }
@@ -73,6 +86,8 @@ defmodule Easy.Storage do
       do: {:ok, values},
       else: {:error, :storage_unavailable}
   end
+
+  defp config, do: Application.get_env(:easy, __MODULE__, [])
 
   defp validate_expiry(expires_in) when is_integer(expires_in) and expires_in in 1..@max_expiry, do: :ok
   defp validate_expiry(_expires_in), do: {:error, :invalid_expiry}

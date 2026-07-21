@@ -16,6 +16,7 @@ import {applyFormErrors} from '@/api/shared';
 import ExerciseForm, {
   type ExerciseFormValues,
   exerciseToFormValues,
+  exerciseToMediaValue,
   exerciseToUpdateRequest,
   useExerciseForm,
 } from '@/exercises/exercise-form/exercise-form';
@@ -75,6 +76,7 @@ function EditExerciseForm({
           <ExerciseForm
             equipment={equipmentData?.data ?? []}
             form={form}
+            initialMedia={exerciseToMediaValue(exercise)}
             isSubmitting={isUpdating}
             muscles={musclesData?.data ?? []}
             onCancel={goBack}

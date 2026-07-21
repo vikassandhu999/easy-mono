@@ -1,5 +1,6 @@
 defmodule Easy.Exercises do
   alias Easy.Ctx
+  alias Easy.LibraryMedia
   alias Easy.Repo
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingExercise
@@ -80,7 +81,8 @@ defmodule Easy.Exercises do
     {:ok, equipment}
   end
 
-  @spec create_exercise(Ctx.t(), map()) :: {:ok, TrainingExercise.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_exercise(Ctx.t(), map()) ::
+          {:ok, TrainingExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_exercise(%Ctx{} = ctx, attrs) do
     muscle_ids = attrs[:muscle_ids] || []
     equipment_ids = attrs[:equipment_ids] || []
@@ -88,9 +90,13 @@ defmodule Easy.Exercises do
     muscles = load_muscles(muscle_ids)
     equipment = load_equipment(equipment_ids)
 
-    ctx.business_id
-    |> TrainingExercise.insert_changeset(nil, attrs, muscles, equipment)
-    |> Repo.insert()
+    with :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
+         {:ok, exercise} <-
+           ctx.business_id
+           |> TrainingExercise.insert_changeset(nil, attrs, muscles, equipment)
+           |> Repo.insert() do
+      {:ok, Repo.preload(exercise, :media)}
+    end
   end
 
   @spec load_muscles([String.t()] | nil) :: [TrainingMuscle.t()] | nil
@@ -117,16 +123,15 @@ defmodule Easy.Exercises do
 
   @spec update_exercise(Ctx.t(), String.t(), map()) :: exercise_response()
   def update_exercise(%Ctx{} = ctx, exercise_id, attrs) do
-    with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id) do
-      muscle_ids = attrs[:muscle_ids]
-      equipment_ids = attrs[:equipment_ids]
-
-      muscles = load_muscles(muscle_ids)
-      equipment = load_equipment(equipment_ids)
-
-      exercise
-      |> TrainingExercise.update_changeset(attrs, muscles, equipment)
-      |> Repo.update()
+    with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
+         :ok <- LibraryMedia.authorize_attach(ctx, attrs[:media_id]),
+         muscles = load_muscles(attrs[:muscle_ids]),
+         equipment = load_equipment(attrs[:equipment_ids]),
+         {:ok, updated} <-
+           exercise
+           |> TrainingExercise.update_changeset(attrs, muscles, equipment)
+           |> Repo.update() do
+      {:ok, Repo.preload(updated, :media, force: true)}
     end
   end
 
@@ -147,7 +152,8 @@ defmodule Easy.Exercises do
         instructions: exercise.instructions,
         mechanics: exercise.mechanics,
         force: exercise.force,
-        images: exercise.images || []
+        images: exercise.images || [],
+        media_id: exercise.media_id
       }
 
       ctx.business_id
@@ -193,7 +199,7 @@ defmodule Easy.Exercises do
   def delete_equipment(%TrainingEquipment{} = equipment), do: Repo.delete(equipment)
 
   defp preload_exercise({:ok, %TrainingExercise{} = exercise}) do
-    {:ok, Repo.preload(exercise, [:muscles, :equipment])}
+    {:ok, Repo.preload(exercise, [:muscles, :equipment, :media])}
   end
 
   defp preload_exercise(error), do: error

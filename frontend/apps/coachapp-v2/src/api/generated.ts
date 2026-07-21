@@ -151,6 +151,16 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/clients/${queryArg.clientId}/form-assignments`,
       }),
     }),
+    createCoachLibraryMediaUpload: build.mutation<
+      CreateCoachLibraryMediaUploadApiResponse,
+      CreateCoachLibraryMediaUploadApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/v1/coach/library-media/uploads`,
+        method: 'POST',
+        body: queryArg.libraryMediaUploadRequest,
+      }),
+    }),
     resendTrainerInvite: build.mutation<ResendTrainerInviteApiResponse, ResendTrainerInviteApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/team/${queryArg.id}/resend-invite`,
@@ -1022,6 +1032,11 @@ export type ListClientFormAssignmentsForCoachApiResponse =
 export type ListClientFormAssignmentsForCoachApiArg = {
   /** Client id */
   clientId: string;
+};
+export type CreateCoachLibraryMediaUploadApiResponse = /** status 201 Upload created */ LibraryMediaUploadResponse;
+export type CreateCoachLibraryMediaUploadApiArg = {
+  /** Upload request */
+  libraryMediaUploadRequest: LibraryMediaUploadRequest;
 };
 export type ResendTrainerInviteApiResponse = /** status 200 Trainer */ TeamMemberResponse;
 export type ResendTrainerInviteApiArg = {
@@ -2138,6 +2153,26 @@ export type ClientProfileFormAssignment = {
 export type ClientProfileFormAssignmentListResponse = {
   data: ClientProfileFormAssignment[];
 };
+export type LibraryMediaUpload = {
+  byte_size: number;
+  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm';
+  id: string;
+  kind: 'image' | 'video';
+  public_url: string | null;
+  upload_headers: {
+    [key: string]: string;
+  };
+  upload_url: string;
+  upload_url_expires_at: string;
+  url: string | null;
+};
+export type LibraryMediaUploadResponse = {
+  data: LibraryMediaUpload;
+};
+export type LibraryMediaUploadRequest = {
+  byte_size: number;
+  content_type: 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm';
+};
 export type InvitationPreviewResponse = {
   data: {
     business_name?: string | null;
@@ -2394,6 +2429,13 @@ export type TrainingScheduleResponse = {
     [key: string]: TrainingScheduleEntry;
   };
 };
+export type LibraryMedia = {
+  byte_size: number;
+  content_type: string;
+  id: string;
+  kind: 'image' | 'video';
+  url: string | null;
+};
 export type FoodServingSize = {
   amount: number;
   is_default: boolean;
@@ -2425,6 +2467,7 @@ export type Food = {
   id: string;
   image_url: string | null;
   inserted_at: string;
+  media: LibraryMedia | null;
   name: string;
   notes: string | null;
   protein_g_per_100g?: number | null;
@@ -2701,6 +2744,7 @@ export type TrainingExercise = {
   inserted_at: string;
   instructions: string | null;
   mechanics: ('compound' | 'isolation' | 'isometric') | null;
+  media: LibraryMedia | null;
   muscles: TrainingExerciseRelation[];
   name: string;
   source: string | null;
@@ -2724,6 +2768,7 @@ export type TrainingExerciseCreateRequest = {
   images?: string[];
   instructions?: string | null;
   mechanics?: ('compound' | 'isolation' | 'isometric') | null;
+  media_id?: string | null;
   muscle_ids?: string[];
   name: string;
 };
@@ -2739,6 +2784,7 @@ export type TrainingExerciseUpdateRequest = {
   images?: string[];
   instructions?: string | null;
   mechanics?: ('compound' | 'isolation' | 'isometric') | null;
+  media_id?: string | null;
   muscle_ids?: string[];
   name?: string;
 };
@@ -3080,6 +3126,7 @@ export type FoodUpdateRequest = {
   fat_g_per_100g?: number | null;
   fiber_g_per_100g?: number | null;
   image_url?: string | null;
+  media_id?: string | null;
   name?: string;
   notes?: string | null;
   protein_g_per_100g?: number | null;
@@ -3115,6 +3162,7 @@ export type FoodRequest = {
   fat_g_per_100g?: number | null;
   fiber_g_per_100g?: number | null;
   image_url?: string | null;
+  media_id?: string | null;
   name: string;
   notes?: string | null;
   protein_g_per_100g?: number | null;
@@ -3163,6 +3211,7 @@ export const {
   useLazyListCoachClientTrainingPlansQuery,
   useListClientFormAssignmentsForCoachQuery,
   useLazyListClientFormAssignmentsForCoachQuery,
+  useCreateCoachLibraryMediaUploadMutation,
   useResendTrainerInviteMutation,
   useShowInvitationQuery,
   useLazyShowInvitationQuery,

@@ -880,6 +880,13 @@ export type TrainingExerciseRelation = {
   id: string;
   name: string;
 };
+export type LibraryMedia = {
+  byte_size: number;
+  content_type: string;
+  id: string;
+  kind: 'image' | 'video';
+  url: string | null;
+};
 export type TrainingExercise = {
   description: string | null;
   equipment: TrainingExerciseRelation[];
@@ -889,6 +896,7 @@ export type TrainingExercise = {
   inserted_at: string;
   instructions: string | null;
   mechanics: ('compound' | 'isolation' | 'isometric') | null;
+  media: LibraryMedia | null;
   muscles: TrainingExerciseRelation[];
   name: string;
   source: string | null;
@@ -1064,6 +1072,7 @@ export type Food = {
   id: string;
   image_url: string | null;
   inserted_at: string;
+  media: LibraryMedia | null;
   name: string;
   notes: string | null;
   protein_g_per_100g?: number | null;

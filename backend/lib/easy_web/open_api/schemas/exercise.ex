@@ -16,6 +16,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseCreateRequest do
         mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
         force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
         images: %Schema{type: :array, items: %Schema{type: :string}},
+        media_id: %Schema{type: :string, format: :uuid, nullable: true},
         muscle_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
         equipment_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}}
       },
@@ -76,6 +77,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingExerciseUpdateRequest do
         mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
         force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
         images: %Schema{type: :array, items: %Schema{type: :string}},
+        media_id: %Schema{type: :string, format: :uuid, nullable: true},
         muscle_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
         equipment_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}}
       },
@@ -100,7 +102,7 @@ end
 defmodule EasyWeb.OpenApi.Schemas.TrainingExercise do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingExerciseRelation}
+  alias EasyWeb.OpenApi.Schemas.{LibraryMedia, Shared, TrainingExerciseRelation}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -119,6 +121,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingExercise do
           mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
           force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
           images: %Schema{type: :array, items: %Schema{type: :string}},
+          media: %Schema{allOf: [LibraryMedia], nullable: true},
           muscles: %Schema{type: :array, items: TrainingExerciseRelation},
           equipment: %Schema{type: :array, items: TrainingExerciseRelation}
         },
@@ -134,6 +137,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingExercise do
       :mechanics,
       :force,
       :images,
+      :media,
       :muscles,
       :equipment,
       :inserted_at,

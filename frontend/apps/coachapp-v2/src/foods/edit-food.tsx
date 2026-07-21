@@ -11,6 +11,7 @@ import {applyFormErrors} from '@/api/shared';
 import FoodForm, {
   type FoodFormValues,
   foodToFormValues,
+  foodToMediaValue,
   foodToUpdateRequest,
   useFoodForm,
 } from '@/foods/food-form/food-form';
@@ -59,6 +60,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
         >
           <FoodForm
             form={form}
+            initialMedia={foodToMediaValue(food)}
             isSubmitting={isUpdating}
             onCancel={goBack}
             onServingSizesChange={setServingSizes}

@@ -1,6 +1,6 @@
 import {Chip} from '@heroui/react';
 import {cn} from '@heroui/styles';
-import {HandPlatter} from 'lucide-react';
+import {HandPlatter, Video} from 'lucide-react';
 
 import {BrowseRow, BrowseRowThumb, OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
 import type {Food} from '@/api/generated';
@@ -33,14 +33,19 @@ function getSubtitle(food: Food, isSystem: boolean): string {
 export default function FoodListItem({food}: {food: Food}) {
   const isSystem = food.source === 'system';
   const kcal = food.calories_per_100g;
+  const isVideo = food.media?.kind === 'video';
+  const thumbSrc =
+    food.media?.kind === 'image' ? (food.media.url ?? undefined) : isVideo ? undefined : (food.image_url ?? undefined);
 
   return (
     <BrowseRow
       icon={
         <BrowseRowThumb
           alt={food.name}
-          fallback={<HandPlatter className="size-5 text-foreground" />}
-          src={food.image_url}
+          fallback={
+            isVideo ? <Video className="size-5 text-foreground" /> : <HandPlatter className="size-5 text-foreground" />
+          }
+          src={thumbSrc}
         />
       }
       id={food.id}

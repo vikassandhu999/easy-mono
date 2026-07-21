@@ -1,4 +1,6 @@
 defmodule EasyWeb.Clients.FoodJSON do
+  alias Easy.LibraryMedia
+  alias Easy.LibraryMedia.Media
   alias Easy.Nutrition.Food
 
   @spec show(map()) :: map()
@@ -28,11 +30,15 @@ defmodule EasyWeb.Clients.FoodJSON do
       dietary_tags: food.dietary_tags || [],
       notes: food.notes,
       image_url: food.image_url,
+      media: media_data(food.media),
       serving_sizes: serving_sizes_data(food.serving_sizes),
       inserted_at: food.inserted_at,
       updated_at: food.updated_at
     }
   end
+
+  defp media_data(%Media{} = media), do: LibraryMedia.public_representation(media)
+  defp media_data(_), do: nil
 
   defp serving_sizes_data(serving_sizes) when is_list(serving_sizes) do
     for serving_size <- serving_sizes do

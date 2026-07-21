@@ -12,6 +12,7 @@ defmodule Easy.Factory do
   alias Easy.Forms.FormTemplate
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
+  alias Easy.LibraryMedia.Media, as: LibraryMedia
   alias Easy.Nutrition.DayMeal
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
@@ -204,6 +205,18 @@ defmodule Easy.Factory do
       note: nil,
       client: client,
       business: client.business
+    }
+  end
+
+  def library_media_factory do
+    %LibraryMedia{
+      id: Ecto.UUID.generate(),
+      uploaded_by_type: :coach,
+      uploaded_by_id: Ecto.UUID.generate(),
+      storage_key: sequence(:library_media_storage_key, &"businesses/library-media/media-#{&1}.jpg"),
+      content_type: "image/jpeg",
+      byte_size: 1_024,
+      business: build(:business)
     }
   end
 

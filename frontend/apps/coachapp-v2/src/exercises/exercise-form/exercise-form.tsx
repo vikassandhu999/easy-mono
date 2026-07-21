@@ -1,19 +1,6 @@
-import {
-  Button,
-  CloseButton,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Input,
-  Label,
-  ListBox,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset, ListBox, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {ImageOff, ImagePlus} from 'lucide-react';
-import {useCallback, useState} from 'react';
+import {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {
@@ -24,7 +11,8 @@ import {
   FormTextAreaField,
   FormTextField,
 } from '@/@components/form-fields';
-import {INPUT_SKIN_CLASS, RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
+import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
+import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
 import type {
   TrainingExercise,
   TrainingExerciseCreateRequest,
@@ -57,6 +45,7 @@ export const exerciseFormSchema = z.object({
   images: z.array(z.string()).optional(),
   instructions: z.string().optional(),
   mechanics: z.enum(['compound', 'isolation', 'isometric']).optional().or(z.literal('')),
+  media_id: z.string().nullable().optional(),
   muscle_ids: z.array(z.string()).optional(),
   name: z.string().min(1, 'Enter exercise name'),
 });
@@ -71,6 +60,7 @@ export const EXERCISE_FORM_DEFAULTS: ExerciseFormValues = {
   images: [],
   instructions: '',
   mechanics: '',
+  media_id: null,
   muscle_ids: [],
   name: '',
 };
@@ -92,9 +82,16 @@ export function exerciseToFormValues(exercise: TrainingExercise): ExerciseFormVa
     images: exercise.images,
     instructions: exercise.instructions ?? '',
     mechanics: exercise.mechanics ?? '',
+    media_id: exercise.media?.id ?? null,
     muscle_ids: exercise.muscles.map((item) => item.id),
     name: exercise.name,
   };
+}
+
+export function exerciseToMediaValue(exercise: TrainingExercise): LibraryMediaValue | null {
+  return exercise.media
+    ? {contentType: exercise.media.content_type, kind: exercise.media.kind, url: exercise.media.url}
+    : null;
 }
 
 export function exerciseToCreateRequest(values: ExerciseFormValues): TrainingExerciseCreateRequest {
@@ -107,6 +104,7 @@ export function exerciseToCreateRequest(values: ExerciseFormValues): TrainingExe
     muscle_ids: values.muscle_ids?.length ? values.muscle_ids : undefined,
     equipment_ids: values.equipment_ids?.length ? values.equipment_ids : undefined,
     images: values.images?.length ? values.images : undefined,
+    media_id: values.media_id ?? undefined,
   });
 }
 
@@ -120,12 +118,14 @@ export function exerciseToUpdateRequest(values: ExerciseFormValues): TrainingExe
     muscle_ids: values.muscle_ids ?? [],
     equipment_ids: values.equipment_ids ?? [],
     images: values.images ?? [],
+    media_id: values.media_id ?? null,
   };
 }
 
 type ExerciseFormProps = {
   equipment: TrainingExerciseRelation[];
   form: ReturnType<typeof useExerciseForm>;
+  initialMedia?: LibraryMediaValue | null;
   isSubmitting: boolean;
   muscles: TrainingExerciseRelation[];
   onCancel: () => void;
@@ -134,31 +134,10 @@ type ExerciseFormProps = {
   submittingLabel: string;
 };
 
-function ImageThumbnail({url}: {url: string}) {
-  const [failed, setFailed] = useState(false);
-
-  if (failed) {
-    return (
-      <div className="flex size-20 items-center justify-center rounded-xl border border-border bg-surface-secondary">
-        <ImageOff className="size-5 text-muted" />
-      </div>
-    );
-  }
-
-  return (
-    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: onError is used only as an image fallback handler.
-    <img
-      alt="Exercise"
-      className="size-20 rounded-xl border border-border bg-surface-secondary object-cover"
-      onError={() => setFailed(true)}
-      src={url}
-    />
-  );
-}
-
 export default function ExerciseForm({
   equipment,
   form,
+  initialMedia,
   isSubmitting,
   muscles,
   onCancel,
@@ -171,41 +150,9 @@ export default function ExerciseForm({
     formState: {errors},
     handleSubmit,
     setValue,
-    watch,
   } = form;
 
-  const images = watch('images') ?? [];
-
-  const [isAddingImage, setIsAddingImage] = useState(false);
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [imageError, setImageError] = useState('');
-
-  const handleAddImage = useCallback(() => {
-    const url = newImageUrl.trim();
-    if (!url) {
-      setImageError('Paste an image URL');
-      return;
-    }
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      setImageError('Use a URL that starts with http:// or https://');
-      return;
-    }
-    setValue('images', [...images, url], {shouldDirty: true});
-    setNewImageUrl('');
-    setImageError('');
-    setIsAddingImage(false);
-  }, [newImageUrl, images, setValue]);
-
-  const handleRemoveImage = useCallback(
-    (index: number) => {
-      setValue(
-        'images',
-        images.filter((_, i) => i !== index),
-        {shouldDirty: true},
-      );
-    },
-    [images, setValue],
-  );
+  const [mediaBusy, setMediaBusy] = useState(false);
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
@@ -214,78 +161,14 @@ export default function ExerciseForm({
           <Fieldset.Legend className="hidden sm:block">Details</Fieldset.Legend>
           <Description className="hidden sm:block">Name the movement and describe how it's performed.</Description>
           <Fieldset.Group>
-            <div>
-              <Label>Images</Label>
-              <div className="mt-2 flex flex-col gap-3">
-                {images.length > 0 && (
-                  <div className="flex flex-wrap items-start gap-3">
-                    {images.map((url, index) => (
-                      <div
-                        className="relative"
-                        key={`${url}-${index}`}
-                      >
-                        <ImageThumbnail url={url} />
-                        <CloseButton
-                          aria-label={`Remove image ${index + 1}`}
-                          className="absolute -top-2 -right-2 min-h-11 min-w-11 rounded-full bg-ink text-ink-foreground"
-                          onPress={() => handleRemoveImage(index)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {isAddingImage ? (
-                  <div className="flex w-full flex-wrap items-end gap-2">
-                    <TextField
-                      className="min-w-0 flex-1"
-                      isInvalid={!!imageError}
-                    >
-                      <Label>Add image URL</Label>
-                      {imageError && <FieldError>{imageError}</FieldError>}
-                      <Input
-                        className={INPUT_SKIN_CLASS}
-                        onChange={(e) => {
-                          setNewImageUrl(e.target.value);
-                          setImageError('');
-                        }}
-                        placeholder="https://…"
-                        type="url"
-                        value={newImageUrl}
-                      />
-                    </TextField>
-                    <Button
-                      className="min-h-11"
-                      onPress={handleAddImage}
-                      size="sm"
-                    >
-                      Add
-                    </Button>
-                    <Button
-                      className="min-h-11"
-                      onPress={() => {
-                        setIsAddingImage(false);
-                        setNewImageUrl('');
-                        setImageError('');
-                      }}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    className="min-h-11 w-full rounded-xl border border-dashed border-border text-muted"
-                    onPress={() => setIsAddingImage(true)}
-                    variant="ghost"
-                  >
-                    <ImagePlus className="size-4" />
-                    Add image URL
-                  </Button>
-                )}
-              </div>
-            </div>
+            <LibraryMediaField
+              initialMedia={initialMedia}
+              onBusyChange={setMediaBusy}
+              onChange={(mediaId) => setValue('media_id', mediaId, {shouldDirty: true})}
+            />
+            <Description className="text-muted">
+              Uploads are public by URL. Don't upload client photos or private material.
+            </Description>
 
             <div className="border-t border-separator pt-5 sm:hidden">
               <Typography weight="semibold">Details</Typography>
@@ -409,7 +292,7 @@ export default function ExerciseForm({
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
       <FormActions
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || mediaBusy}
         onCancel={onCancel}
         submitLabel={submitLabel}
         submittingLabel={submittingLabel}

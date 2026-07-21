@@ -12,6 +12,7 @@ import FoodForm, {
   type FoodFormValues,
   foodToCreateRequest,
   foodToDuplicateFormValues,
+  foodToMediaValue,
   useFoodForm,
 } from '@/foods/food-form/food-form';
 
@@ -66,6 +67,7 @@ export default function CreateFood() {
         >
           <FoodForm
             form={form}
+            initialMedia={duplicateFrom ? foodToMediaValue(duplicateFrom) : null}
             isSubmitting={isLoading}
             onCancel={goBack}
             onServingSizesChange={setServingSizes}

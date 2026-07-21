@@ -45,6 +45,7 @@ defmodule Easy.Nutrition.Food do
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
+    belongs_to :media, Easy.LibraryMedia.Media, foreign_key: :media_id
 
     timestamps(type: :utc_datetime)
   end
@@ -63,7 +64,8 @@ defmodule Easy.Nutrition.Food do
     :allergens,
     :dietary_tags,
     :notes,
-    :image_url
+    :image_url,
+    :media_id
   ]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
@@ -75,6 +77,8 @@ defmodule Easy.Nutrition.Food do
     |> validate_required([:name, :creator_id, :business_id])
     |> validate_macros()
     |> validate_enums()
+    |> foreign_key_constraint(:media_id)
+    |> check_constraint(:media_id, name: :nutrition_foods_business_media_check)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
   end
 
@@ -85,6 +89,8 @@ defmodule Easy.Nutrition.Food do
     |> validate_required([:name])
     |> validate_macros()
     |> validate_enums()
+    |> foreign_key_constraint(:media_id)
+    |> check_constraint(:media_id, name: :nutrition_foods_business_media_check)
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
   end
 
@@ -142,6 +148,11 @@ defmodule Easy.Nutrition.Food do
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(f in query, order_by: [desc: f.inserted_at, desc: f.id])
+  end
+
+  @spec include_media(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_media(query \\ __MODULE__) do
+    from(f in query, preload: [:media])
   end
 
   defp to_tsquery(term) do

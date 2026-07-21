@@ -1,6 +1,6 @@
 import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
-import {Copy, HandPlatter, Pencil, Trash2} from 'lucide-react';
+import {Copy, HandPlatter, Pencil, Trash2, Video} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -174,12 +174,14 @@ export default function FoodDetail() {
         <Page.Frame size="content">
           <div className="flex items-start gap-4">
             <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">
-              {food.image_url ? (
+              {(food.media?.kind === 'image' ? food.media.url : food.media ? null : food.image_url) ? (
                 <img
                   alt={food.name}
                   className="size-20 rounded-2xl object-cover"
-                  src={food.image_url}
+                  src={(food.media?.kind === 'image' ? food.media.url : food.image_url) ?? undefined}
                 />
+              ) : food.media?.kind === 'video' ? (
+                <Video className="size-8 text-foreground" />
               ) : (
                 <HandPlatter className="size-8 text-foreground" />
               )}

@@ -1,4 +1,6 @@
 defmodule EasyWeb.Clients.ExerciseJSON do
+  alias Easy.LibraryMedia
+  alias Easy.LibraryMedia.Media
   alias Easy.Training.TrainingExercise
 
   @spec show(map()) :: map()
@@ -22,12 +24,16 @@ defmodule EasyWeb.Clients.ExerciseJSON do
       mechanics: exercise.mechanics,
       force: exercise.force,
       images: exercise.images || [],
+      media: media_data(exercise.media),
       muscles: muscles_data(exercise.muscles),
       equipment: equipment_data(exercise.equipment),
       inserted_at: exercise.inserted_at,
       updated_at: exercise.updated_at
     }
   end
+
+  defp media_data(%Media{} = media), do: LibraryMedia.public_representation(media)
+  defp media_data(_), do: nil
 
   defp muscles_data(muscles) when is_list(muscles) do
     Enum.map(muscles, fn muscle ->

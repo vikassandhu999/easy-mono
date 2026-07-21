@@ -30,6 +30,8 @@ config :easy, Easy.Storage,
   endpoint: "https://storage.example.test",
   region: "auto",
   bucket: "easy-test",
+  public_bucket: "easy-test-public",
+  public_url: "https://easy-test-public.storage.example.test",
   access_key_id: "test-access-key",
   secret_access_key: "test-secret-key"
 

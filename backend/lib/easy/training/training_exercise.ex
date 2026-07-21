@@ -42,6 +42,7 @@ defmodule Easy.Training.TrainingExercise do
 
     belongs_to :creator, Easy.Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
+    belongs_to :media, Easy.LibraryMedia.Media, foreign_key: :media_id
 
     many_to_many :muscles, TrainingMuscle,
       join_through: "training_exercise_muscles",
@@ -65,6 +66,7 @@ defmodule Easy.Training.TrainingExercise do
     :mechanics,
     :force,
     :images,
+    :media_id,
     :import_id
   ]
 
@@ -82,6 +84,8 @@ defmodule Easy.Training.TrainingExercise do
     |> put_change(:creator_id, coach_id)
     |> validate_required([:name])
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
+    |> foreign_key_constraint(:media_id)
+    |> check_constraint(:media_id, name: :training_exercises_business_media_check)
     |> maybe_put_assoc(:muscles, muscles)
     |> maybe_put_assoc(:equipment, equipment)
   end
@@ -92,6 +96,8 @@ defmodule Easy.Training.TrainingExercise do
     |> cast(attrs, @cast_fields)
     |> validate_required([:name])
     |> unique_constraint([:name, :business_id], name: :training_exercises_name_business_id_index)
+    |> foreign_key_constraint(:media_id)
+    |> check_constraint(:media_id, name: :training_exercises_business_media_check)
     |> maybe_put_assoc(:muscles, muscles)
     |> maybe_put_assoc(:equipment, equipment)
   end
@@ -152,6 +158,7 @@ defmodule Easy.Training.TrainingExercise do
   def include_muscles_and_equipment(query) do
     from(e in query,
       preload: [
+        :media,
         muscles: ^from(m in TrainingMuscle, order_by: m.name),
         equipment: ^from(eq in TrainingEquipment, order_by: eq.name)
       ]

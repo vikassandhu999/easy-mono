@@ -163,6 +163,11 @@ export default function ExerciseDetail() {
   const muscleNames = exercise.muscles.map((m) => m.name);
   const equipmentNames = exercise.equipment.map((e) => e.name);
   const steps = exercise.instructions ? toSteps(exercise.instructions) : [];
+  const videoUrl = exercise.media?.kind === 'video' ? exercise.media.url : null;
+  const imageSrc =
+    exercise.media?.kind === 'image' ? exercise.media.url : exercise.media ? null : (exercise.images[0] ?? null);
+  const mediaClass =
+    'aspect-[4/3] w-full rounded-card border border-border bg-surface-secondary object-cover sm:aspect-video';
 
   return (
     <Page>
@@ -249,11 +254,19 @@ export default function ExerciseDetail() {
             </div>
 
             <div className="order-1 sm:order-2">
-              {exercise.images[0] ? (
+              {videoUrl ? (
+                // biome-ignore lint/a11y/useMediaCaption: coach-uploaded exercise demo video has no caption track.
+                <video
+                  className={mediaClass}
+                  controls
+                  preload="metadata"
+                  src={videoUrl}
+                />
+              ) : imageSrc ? (
                 <img
                   alt={exercise.name}
-                  className="aspect-[4/3] w-full rounded-card border border-border object-cover sm:aspect-video"
-                  src={exercise.images[0]}
+                  className={mediaClass}
+                  src={imageSrc}
                 />
               ) : (
                 <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-card border border-dashed border-border bg-surface-secondary sm:aspect-video">

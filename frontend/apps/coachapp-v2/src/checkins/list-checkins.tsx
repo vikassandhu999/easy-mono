@@ -9,6 +9,7 @@ import BrowseListBox, {
   BROWSE_SEARCH_GROUP_CLASS,
   FILTER_PILL_CLASS,
   FilterCount,
+  TOOLBAR_DIVIDER_CLASS,
 } from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
 import ListEmptyState from '@/@components/list-empty-state';
@@ -106,7 +107,7 @@ export default function ListCheckins() {
         </SearchField>
         <div className="-mx-4 flex min-w-0 items-center gap-3 overflow-x-auto px-4 sm:mx-0 sm:flex-1 sm:px-0">
           <Separator
-            className="hidden h-6 sm:block"
+            className={TOOLBAR_DIVIDER_CLASS}
             orientation="vertical"
           />
           <ToggleButtonGroup

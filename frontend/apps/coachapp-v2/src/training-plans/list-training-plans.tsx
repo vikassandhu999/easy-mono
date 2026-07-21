@@ -9,6 +9,7 @@ import BrowseListBox, {
   BROWSE_SEARCH_GROUP_CLASS,
   FILTER_PILL_CLASS,
   FilterCount,
+  TOOLBAR_DIVIDER_CLASS,
 } from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
@@ -91,7 +92,7 @@ export default function ListTrainingPlans() {
           </SearchField.Group>
         </SearchField>
         <Separator
-          className="hidden h-6 sm:block"
+          className={TOOLBAR_DIVIDER_CLASS}
           orientation="vertical"
         />
         <div className="-mx-4 min-w-0 max-w-full shrink-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">

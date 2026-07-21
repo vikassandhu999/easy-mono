@@ -6,7 +6,12 @@ import {UserPlus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import BrowseListBox, {BROWSE_LIST_FRAME_CLASS, FILTER_PILL_CLASS} from '@/@components/browse-list-box';
+import BrowseListBox, {
+  BROWSE_LIST_FRAME_CLASS,
+  BROWSE_SEARCH_GROUP_CLASS,
+  FILTER_PILL_CLASS,
+  TOOLBAR_DIVIDER_CLASS,
+} from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {type ClientSummary, useListClientsQuery} from '@/api/clients';
@@ -126,17 +131,17 @@ export default function ListClients() {
           onChange={setSearch}
           value={search}
         >
-          <SearchField.Group className="min-h-11 border border-border bg-background shadow-none sm:min-h-0 sm:bg-surface">
+          <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
             <SearchField.SearchIcon />
             <SearchField.Input
-              className="min-h-11 sm:min-h-0"
+              className="min-h-11"
               placeholder="Search clients"
             />
-            <SearchField.ClearButton className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0" />
+            <SearchField.ClearButton className="min-h-11 min-w-11" />
           </SearchField.Group>
         </SearchField>
         <Separator
-          className="hidden h-6 sm:block"
+          className={TOOLBAR_DIVIDER_CLASS}
           orientation="vertical"
         />
         <div className="-mx-4 min-w-0 max-w-full overflow-x-auto px-4 sm:mx-0 sm:px-0">

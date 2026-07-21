@@ -30,6 +30,13 @@ export const BROWSE_LIST_SURFACE_CLASS =
  */
 export const BROWSE_LIST_FRAME_CLASS = 'flex flex-1 flex-col px-0 pb-0 sm:px-4 sm:pb-6';
 
+/**
+ * Vertical divider between a toolbar's search and its filter pills. HeroUI's
+ * separator recipe is align-self:stretch — with a capped height that pins it to
+ * the flex line's TOP, so self-center is load-bearing.
+ */
+export const TOOLBAR_DIVIDER_CLASS = 'hidden h-6 self-center sm:block';
+
 /** Search-field surface used by browse toolbars at both breakpoints. */
 export const BROWSE_SEARCH_GROUP_CLASS = 'min-h-11 border border-border bg-background shadow-none sm:bg-surface';
 

@@ -6,7 +6,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
-import {DetailSectionHeading} from '@/@components/detail-section-heading';
+import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
@@ -95,7 +95,8 @@ export default function RecipeDetail() {
     return (
       <Page>
         <Page.Header size="content">
-          <Page.TitleGroup>
+          <Page.TitleGroup className={'flex items-center'}>
+            <BackButton onPress={goBack} />
             <Page.Title>Recipe</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
@@ -116,7 +117,7 @@ export default function RecipeDetail() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="pb-6">
-          <ErrorState message="Recipe couldn't load. It may not exist, or you may not have access" />
+          <ErrorState message="Couldn't load recipe." />
         </Page.Content>
       </Page>
     );
@@ -205,7 +206,7 @@ export default function RecipeDetail() {
           </div>
 
           {(kcal != null || segments.length > 0) && (
-            <section className="mt-8">
+            <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading
                 detail="recipe totals"
                 title="Nutrition"
@@ -220,7 +221,7 @@ export default function RecipeDetail() {
           )}
 
           {ingredientCount > 0 && (
-            <section className="mt-8">
+            <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading title="Ingredients" />
               <div className="mt-3 flex flex-col gap-2.5">
                 {orderedIngredients.map((ingredient, i) => {
@@ -260,7 +261,7 @@ export default function RecipeDetail() {
           )}
 
           {recipe.instructions && (
-            <section className="mt-8">
+            <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading title="Instructions" />
               <Typography
                 className="mt-3 whitespace-pre-wrap"
@@ -272,7 +273,7 @@ export default function RecipeDetail() {
           )}
 
           {recipe.serving_sizes.length > 0 && (
-            <section className="mt-8">
+            <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading title="Serving sizes" />
               <div className="mt-3 flex flex-col gap-2.5">
                 {recipe.serving_sizes.map((serving, i) => (

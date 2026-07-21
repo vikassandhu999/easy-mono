@@ -1,5 +1,12 @@
 import {Typography} from '@heroui/react';
 
+/**
+ * A read-surface section (Nutrition / Ingredients / Notes...): mobile runs
+ * sections together with hairline separators (FD/RD mobile refs); desktop's
+ * card layering already separates them.
+ */
+export const DETAIL_SECTION_CLASS = 'mt-8 border-t border-separator pt-8 sm:border-0 sm:pt-0';
+
 // The section caption on read surfaces (food/recipe/exercise detail): a normal
 // dark h6 with an optional muted "· qualifier" suffix, e.g. "Nutrition · per 100 g".
 //

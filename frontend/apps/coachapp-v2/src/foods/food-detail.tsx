@@ -6,7 +6,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
-import {DetailSectionHeading} from '@/@components/detail-section-heading';
+import {DETAIL_SECTION_CLASS, DetailSectionHeading} from '@/@components/detail-section-heading';
 import {ErrorState} from '@/@components/error-state';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {Page} from '@/@components/page';
@@ -16,10 +16,6 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import type {Food} from '@/api/generated';
 import {coachApi, useDeleteFoodMutation, useGetFoodQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
-
-// Mobile runs sections together with hairline separators (FD-mobile ref);
-// desktop's card layering already separates them.
-const DETAIL_SECTION_CLASS = 'mt-8 border-t border-separator pt-8 sm:border-0 sm:pt-0';
 
 const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food; label: string}[] = [
   {color: 'accent', key: 'protein_g_per_100g', label: 'Protein'},

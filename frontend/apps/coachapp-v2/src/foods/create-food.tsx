@@ -59,17 +59,22 @@ export default function CreateFood() {
           <Page.Description>Add a custom food to your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <FoodForm
-          form={form}
-          isSubmitting={isLoading}
-          onCancel={goBack}
-          onServingSizesChange={setServingSizes}
-          onSubmit={onSubmit}
-          servingSizes={servingSizes}
-          submitLabel="Create food"
-          submittingLabel="Creating food"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <FoodForm
+            form={form}
+            isSubmitting={isLoading}
+            onCancel={goBack}
+            onServingSizesChange={setServingSizes}
+            onSubmit={onSubmit}
+            servingSizes={servingSizes}
+            submitLabel="Create food"
+            submittingLabel="Creating food"
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

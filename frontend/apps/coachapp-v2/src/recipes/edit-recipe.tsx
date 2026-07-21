@@ -83,19 +83,24 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
           <Page.Description>Update this recipe in your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <RecipeForm
-          form={form}
-          ingredients={ingredients}
-          isSubmitting={isUpdating}
-          onCancel={attemptLeave}
-          onIngredientsChange={handleIngredientsChange}
-          onServingSizesChange={handleServingSizesChange}
-          onSubmit={onSubmit}
-          servingSizes={servingSizes}
-          submitLabel="Save changes"
-          submittingLabel="Saving changes"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <RecipeForm
+            form={form}
+            ingredients={ingredients}
+            isSubmitting={isUpdating}
+            onCancel={attemptLeave}
+            onIngredientsChange={handleIngredientsChange}
+            onServingSizesChange={handleServingSizesChange}
+            onSubmit={onSubmit}
+            servingSizes={servingSizes}
+            submitLabel="Save changes"
+            submittingLabel="Saving changes"
+          />
+        </Page.Frame>
       </Page.Content>
 
       <AlertDialog.Backdrop
@@ -151,8 +156,13 @@ export default function EditRecipe() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <ErrorState message="Couldn't load recipe." />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <ErrorState message="Couldn't load recipe." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -169,8 +179,13 @@ export default function EditRecipe() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );

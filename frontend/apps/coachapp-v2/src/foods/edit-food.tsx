@@ -52,17 +52,22 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
           <Page.Description>Update this food in your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <FoodForm
-          form={form}
-          isSubmitting={isUpdating}
-          onCancel={goBack}
-          onServingSizesChange={setServingSizes}
-          onSubmit={onSubmit}
-          servingSizes={servingSizes}
-          submitLabel="Save changes"
-          submittingLabel="Saving changes"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <FoodForm
+            form={form}
+            isSubmitting={isUpdating}
+            onCancel={goBack}
+            onServingSizesChange={setServingSizes}
+            onSubmit={onSubmit}
+            servingSizes={servingSizes}
+            submitLabel="Save changes"
+            submittingLabel="Saving changes"
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );
@@ -85,8 +90,13 @@ export default function EditFood() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -103,8 +113,13 @@ export default function EditFood() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <ErrorState message="Couldn't load food." />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <ErrorState message="Couldn't load food." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );

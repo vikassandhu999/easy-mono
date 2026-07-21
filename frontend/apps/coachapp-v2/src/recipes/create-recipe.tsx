@@ -59,19 +59,24 @@ export default function CreateRecipe() {
           <Page.Description>Combine foods into a reusable dish.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <RecipeForm
-          form={form}
-          ingredients={ingredients}
-          isSubmitting={isLoading}
-          onCancel={attemptLeave}
-          onIngredientsChange={setIngredients}
-          onServingSizesChange={setServingSizes}
-          onSubmit={onSubmit}
-          servingSizes={servingSizes}
-          submitLabel="Create recipe"
-          submittingLabel="Creating recipe"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <RecipeForm
+            form={form}
+            ingredients={ingredients}
+            isSubmitting={isLoading}
+            onCancel={attemptLeave}
+            onIngredientsChange={setIngredients}
+            onServingSizesChange={setServingSizes}
+            onSubmit={onSubmit}
+            servingSizes={servingSizes}
+            submitLabel="Create recipe"
+            submittingLabel="Creating recipe"
+          />
+        </Page.Frame>
       </Page.Content>
 
       <AlertDialog.Backdrop

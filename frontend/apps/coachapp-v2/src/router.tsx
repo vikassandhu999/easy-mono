@@ -112,7 +112,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.PROSPECT_DETAIL, Component: ProspectDetail},
       {path: ROUTES.SETTINGS, Component: Settings},
       {path: ROUTES.SETTINGS_LANDING_PAGE, Component: LandingPageEditor},
-      {path: ROUTES.SETTINGS_BILLING, Component: Settings},
+      {path: ROUTES.SETTINGS_TAB, Component: Settings},
       {path: ROUTES.MESSAGES, Component: MessagesInbox},
       {path: ROUTES.CONVERSATION, Component: ConversationPage},
     ],

@@ -7,8 +7,8 @@
 import {getInitials} from '@easy/utils';
 import {Avatar, Button, Tabs, Typography} from '@heroui/react';
 import {ChevronRight, CreditCard, Globe, Shield, User, Users} from 'lucide-react';
-import {useCallback, useEffect, useState} from 'react';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {useCallback} from 'react';
+import {useNavigate, useParams} from 'react-router-dom';
 
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
@@ -279,23 +279,20 @@ function SettingsShell({
   );
 }
 
-const TAB_BY_PATH: Record<string, SettingsTab> = {[ROUTES.SETTINGS_BILLING]: 'billing'};
-
 export default function Settings() {
   const {data, isError, isLoading, refetch} = useGetCoachProfileQuery();
   const [updateProfile] = useUpdateCoachProfileMutation();
   const navigate = useNavigate();
-  const {pathname} = useLocation();
-  // Billing used to be its own page. It is now a tab, so `/settings/billing`
-  // stays routable as a deep link: it opens the Billing tab and immediately
-  // rewrites the URL to `/settings`, which is the canonical settings path.
-  const [tab, setTab] = useState<SettingsTab>(() => TAB_BY_PATH[pathname] ?? 'profile');
-
-  useEffect(() => {
-    if (TAB_BY_PATH[pathname]) {
-      navigate(ROUTES.SETTINGS, {replace: true});
-    }
-  }, [navigate, pathname]);
+  // The URL is the source of truth: /settings/billing opens (and survives a
+  // refresh on) the Billing tab. Unknown tab segments fall back to Profile.
+  const {tab: tabParam} = useParams();
+  const tab: SettingsTab = TABS.some(({id}) => id === tabParam) ? (tabParam as SettingsTab) : 'profile';
+  const setTab = useCallback(
+    (next: SettingsTab) => {
+      navigate(next === 'profile' ? ROUTES.SETTINGS : `/settings/${next}`, {replace: true});
+    },
+    [navigate],
+  );
 
   const handleLogout = useCallback(() => {
     clearTokens();

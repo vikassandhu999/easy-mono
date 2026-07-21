@@ -44,7 +44,8 @@ export const ROUTES = {
   ENROLL_PROSPECT: '/prospects/:id/enroll',
   SETTINGS: '/settings',
   SETTINGS_LANDING_PAGE: '/settings/landing-page',
-  SETTINGS_BILLING: '/settings/billing',
+  // One route per tab (/settings/billing etc). Static landing-page outranks it.
+  SETTINGS_TAB: '/settings/:tab',
   MESSAGES: '/messages',
   CONVERSATION: '/messages/:id',
   CLIENT_MESSAGES: '/clients/:id/messages',

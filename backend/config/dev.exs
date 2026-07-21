@@ -63,14 +63,17 @@ config :easy,
 # Fixed OTP in dev — every login code is 123456, no email-reading needed.
 config :easy, fixed_otp: "123456"
 
+# Local MinIO (docker-compose.minio.yml). The backend only signs URLs; the
+# browser PUTs to and GETs from localhost:9000 directly. `region` must match
+# MINIO_REGION in the compose file.
 config :easy, Easy.Storage,
-  endpoint: "https://t3.storage.dev",
-  region: "auto",
-  bucket: "easy-dev-placeholder",
-  public_bucket: "easy-dev-public-placeholder",
-  public_url: "https://easy-dev-public-placeholder.t3.storage.dev",
-  access_key_id: "dev-access-key",
-  secret_access_key: "dev-secret-key"
+  endpoint: "http://localhost:9000",
+  region: "us-east-1",
+  bucket: "easy-dev-private",
+  public_bucket: "easy-dev-public",
+  public_url: "http://localhost:9000/easy-dev-public",
+  access_key_id: "minioadmin",
+  secret_access_key: "minioadmin"
 
 # Razorpay dev defaults (safe dummies). Real test-mode keys go in
 # config/dev.secret.exs (gitignored) — see that file's header for the shape.

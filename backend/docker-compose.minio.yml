@@ -1,0 +1,43 @@
+# Local S3-compatible storage for testing uploads (attachments + library media).
+# The backend never talks to MinIO — it only signs URLs (pure crypto). The
+# browser does the PUT (private + public) and the public GET, so only ports
+# 9000 (S3 API) and 9001 (console) need to be reachable from the browser.
+#
+#   docker compose -f docker-compose.minio.yml up -d
+#
+# Console: http://localhost:9001  (minioadmin / minioadmin)
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: easy-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      # SigV4 credential-scope region — must match backend/config/dev.exs region.
+      MINIO_REGION: us-east-1
+      # Allow the browser direct-PUT from the coach app origin (any origin in dev).
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - easy-minio-data:/data
+
+  # One-shot: create the private + public buckets and make the public one
+  # anonymously readable, then exit. Safe to re-run.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 minioadmin minioadmin; do echo 'waiting for minio...'; sleep 1; done;
+      mc mb --ignore-existing local/easy-dev-private;
+      mc mb --ignore-existing local/easy-dev-public;
+      mc anonymous set download local/easy-dev-public;
+      echo 'minio buckets ready: easy-dev-private (auth), easy-dev-public (anonymous read)';
+      "
+
+volumes:
+  easy-minio-data:

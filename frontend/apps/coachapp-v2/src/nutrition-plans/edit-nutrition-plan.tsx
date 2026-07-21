@@ -15,6 +15,14 @@ import NutritionPlanForm, {
 } from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
 import {useAppDispatch} from '@/store';
 
+// NE/TE mobile ref shortens the title; desktop keeps the COPY.md string.
+const TITLE = (
+  <>
+    <span className="sm:hidden">Edit plan</span>
+    <span className="hidden sm:inline">Edit nutrition plan</span>
+  </>
+);
+
 export default function EditNutritionPlan() {
   const dispatch = useAppDispatch();
   const {id} = useParams<{id: string}>();
@@ -36,12 +44,17 @@ export default function EditNutritionPlan() {
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
               <BackButton onPress={goBack} />
-              <Page.Title>Edit nutrition plan</Page.Title>
+              <Page.Title>{TITLE}</Page.Title>
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -54,12 +67,17 @@ export default function EditNutritionPlan() {
           <Page.TitleGroup>
             <div className={'flex items-center gap-1'}>
               <BackButton onPress={goBack} />
-              <Page.Title>Edit nutrition plan</Page.Title>
+              <Page.Title>{TITLE}</Page.Title>
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <ErrorState message="Couldn't load nutrition plan." />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <ErrorState message="Couldn't load nutrition plan." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -93,20 +111,25 @@ export default function EditNutritionPlan() {
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
             <BackButton onPress={goBack} />
-            <Page.Title>Edit nutrition plan</Page.Title>
+            <Page.Title>{TITLE}</Page.Title>
           </div>
           <Page.Description>Update the plan's goals. Meals &amp; days live in the builder.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <NutritionPlanForm
-          form={form}
-          isSubmitting={isUpdating}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Save changes"
-          submittingLabel="Saving changes"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <NutritionPlanForm
+            form={form}
+            isSubmitting={isUpdating}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Save changes"
+            submittingLabel="Saving changes"
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

@@ -23,7 +23,10 @@ function EditTrainingPlanHeader({goBack}: {goBack: () => void}) {
       <Page.TitleGroup>
         <div className="flex items-center gap-1">
           <BackButton onPress={goBack} />
-          <Page.Title>Edit training plan</Page.Title>
+          <Page.Title>
+            <span className="sm:hidden">Edit plan</span>
+            <span className="hidden sm:inline">Edit training plan</span>
+          </Page.Title>
         </div>
         <Page.Description>Update the plan's details. Workouts &amp; schedule live in the builder.</Page.Description>
       </Page.TitleGroup>
@@ -64,15 +67,20 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
   return (
     <Page>
       <EditTrainingPlanHeader goBack={goBack} />
-      <Page.Content className="pt-4 pb-6">
-        <TrainingPlanForm
-          form={form}
-          isSubmitting={isUpdating}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Save changes"
-          submittingLabel="Saving changes"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <TrainingPlanForm
+            form={form}
+            isSubmitting={isUpdating}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Save changes"
+            submittingLabel="Saving changes"
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );
@@ -88,8 +96,13 @@ export default function EditTrainingPlan() {
     return (
       <Page>
         <EditTrainingPlanHeader goBack={goBack} />
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -99,8 +112,13 @@ export default function EditTrainingPlan() {
     return (
       <Page>
         <EditTrainingPlanHeader goBack={goBack} />
-        <Page.Content className="pt-4 pb-6">
-          <ErrorState message="Couldn't load training plan." />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <ErrorState message="Couldn't load training plan." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );

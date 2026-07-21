@@ -2,7 +2,14 @@ import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {
+  FieldRow,
+  FormActions,
+  FormLayout,
+  FormNumberField,
+  FormTextAreaField,
+  FormTextField,
+} from '@/@components/form-fields';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
 import {omitUndefined, toOptionalText} from '@/api/shared';
@@ -147,7 +154,7 @@ export default function NutritionPlanForm({
           <Description>Optional daily targets. You can fine-tune these in the builder.</Description>
 
           <Fieldset.Group>
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <FieldRow className="grid-cols-2 md:grid-cols-3">
               {MACRO_FIELDS.map((fieldConfig) => (
                 <FormNumberField
                   control={control}
@@ -158,7 +165,7 @@ export default function NutritionPlanForm({
                   name={fieldConfig.name}
                 />
               ))}
-            </div>
+            </FieldRow>
           </Fieldset.Group>
         </Fieldset>
       </div>

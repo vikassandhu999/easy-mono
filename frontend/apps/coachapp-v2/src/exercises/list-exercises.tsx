@@ -77,7 +77,7 @@ export default function ListExercises() {
           </SearchField.Group>
         </SearchField>
         {muscles.length > 0 && (
-          <div className="shrink-0">
+          <div className="w-36 shrink-0 sm:w-auto">
             <MultiSelectAutocomplete
               emptyMessage="No muscles found"
               items={muscles}

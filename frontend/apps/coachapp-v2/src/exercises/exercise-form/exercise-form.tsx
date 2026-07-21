@@ -9,6 +9,7 @@ import {
   Label,
   ListBox,
   TextField,
+  Typography,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ImageOff, ImagePlus} from 'lucide-react';
@@ -210,8 +211,8 @@ export default function ExerciseForm({
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <div className={RESPONSIVE_FORM_SECTION_CLASS}>
         <Fieldset>
-          <Fieldset.Legend>Details</Fieldset.Legend>
-          <Description>Name the movement and describe how it's performed.</Description>
+          <Fieldset.Legend className="hidden sm:block">Details</Fieldset.Legend>
+          <Description className="hidden sm:block">Name the movement and describe how it's performed.</Description>
           <Fieldset.Group>
             <div>
               <Label>Images</Label>
@@ -286,6 +287,10 @@ export default function ExerciseForm({
               </div>
             </div>
 
+            <div className="border-t border-separator pt-5 sm:hidden">
+              <Typography weight="semibold">Details</Typography>
+            </div>
+
             <FormTextField
               control={control}
               fullWidth
@@ -318,7 +323,7 @@ export default function ExerciseForm({
         <Fieldset>
           <Fieldset.Legend>Attributes</Fieldset.Legend>
           <Fieldset.Group>
-            <FieldRow>
+            <FieldRow className="grid-cols-2">
               <FormSelectField
                 control={control}
                 label="Mechanics"

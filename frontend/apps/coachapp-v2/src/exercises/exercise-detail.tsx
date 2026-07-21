@@ -117,12 +117,18 @@ export default function ExerciseDetail() {
     return (
       <Page>
         <Page.Header size="content">
-          <Page.TitleGroup>
+          <Page.TitleGroup className={'flex items-center'}>
+            <BackButton onPress={goBack} />
             <Page.Title>Exercise</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
-          <PageSkeleton />
+        <Page.Content
+          bare
+          className="pb-6"
+        >
+          <Page.Frame size="content">
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -137,8 +143,13 @@ export default function ExerciseDetail() {
             <Page.Title>Exercise</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
-          <ErrorState message="Exercise couldn't load. It may not exist, or you may not have access" />
+        <Page.Content
+          bare
+          className="pb-6"
+        >
+          <Page.Frame size="content">
+            <ErrorState message="Couldn't load exercise." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );

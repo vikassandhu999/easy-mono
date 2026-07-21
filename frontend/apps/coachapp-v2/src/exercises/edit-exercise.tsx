@@ -67,17 +67,22 @@ function EditExerciseForm({
   return (
     <Page>
       <EditExerciseHeader goBack={goBack} />
-      <Page.Content className="pt-4 pb-6">
-        <ExerciseForm
-          equipment={equipmentData?.data ?? []}
-          form={form}
-          isSubmitting={isUpdating}
-          muscles={musclesData?.data ?? []}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Save changes"
-          submittingLabel="Saving changes"
-        />
+      <Page.Content
+        bare
+        className="pt-4 pb-6"
+      >
+        <Page.Frame size="content">
+          <ExerciseForm
+            equipment={equipmentData?.data ?? []}
+            form={form}
+            isSubmitting={isUpdating}
+            muscles={musclesData?.data ?? []}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Save changes"
+            submittingLabel="Saving changes"
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );
@@ -95,8 +100,13 @@ export default function EditExercise() {
     return (
       <Page>
         <EditExerciseHeader goBack={goBack} />
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content
+          bare
+          className="pt-4 pb-6"
+        >
+          <Page.Frame size="content">
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -106,8 +116,13 @@ export default function EditExercise() {
     return (
       <Page>
         <EditExerciseHeader goBack={goBack} />
-        <Page.Content className="pt-4 pb-6">
-          <ErrorState message="Couldn't load exercise." />
+        <Page.Content
+          bare
+          className="pt-4 pb-6"
+        >
+          <Page.Frame size="content">
+            <ErrorState message="Couldn't load exercise." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );

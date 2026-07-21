@@ -39,7 +39,7 @@ import {
   useOverlayState,
 } from '@heroui/react';
 import {MoreHorizontal} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {getErrorCode, toastMutationError} from '@/@components/mutation-toast';
 import type {NutritionMeal, NutritionPlan} from '@/api/generated';
@@ -175,10 +175,10 @@ export function PlanDays({plan}: PlanDaysProps) {
   const dispatch = useAppDispatch();
   const {refetch} = useGetNutritionPlanQuery({id: plan.id});
 
-  const days = getDays(plan);
-  const weekdayAssignments = getWeekdayAssignments(plan);
+  const days = useMemo(() => getDays(plan), [plan]);
+  const weekdayAssignments = useMemo(() => getWeekdayAssignments(plan), [plan]);
   const meals = plan.meals ?? [];
-  const mealById = new Map(meals.map((m) => [m.id, m]));
+  const mealById = useMemo(() => new Map((plan.meals ?? []).map((m) => [m.id, m])), [plan.meals]);
 
   const [activeDayId, setActiveDayId] = useState<string | undefined>(days[0]?.id);
   // The `?? days[0]` fallback IS the after-delete correction — every consumer
@@ -412,11 +412,38 @@ export function PlanDays({plan}: PlanDaysProps) {
     }
   };
 
+  // Derived per-day views of the plan. Memoized because this component
+  // re-renders per keystroke (day rename, meal rename) and reusableMeals /
+  // assignmentCounts are O(meals x days) placement scans over the whole plan.
+  const derived = useMemo(() => {
+    if (!activeDay) {
+      return null;
+    }
+    const dayMealIds = new Set((activeDay.day_meals ?? []).map((dm) => dm.nutrition_meal_id));
+    const reusable: MealPaletteOption[] = (plan.meals ?? [])
+      .filter((m) => !dayMealIds.has(m.id))
+      .map((m) => ({id: m.id, name: m.name, sub: mealPlacementSummary(m.id, days, weekdayAssignments)}));
+    // Every day-slot option across the plan that points at a meal — drives "Used in n places".
+    const counts = new Map<string, number>();
+    for (const day of days) {
+      for (const dm of day.day_meals ?? []) {
+        counts.set(dm.nutrition_meal_id, (counts.get(dm.nutrition_meal_id) ?? 0) + 1);
+      }
+    }
+    return {
+      assignedWeekdays: WEEKDAYS.filter((w) => weekdayAssignments[w] === activeDay.id),
+      assignmentCounts: counts,
+      reusableMeals: reusable,
+      rows: slotRows(activeDay),
+      totals: computeDayTotals(activeDay, mealById),
+    };
+  }, [activeDay, days, mealById, plan.meals, weekdayAssignments]);
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
-  if (!activeDay) {
+  if (!activeDay || !derived) {
     return (
       <Typography
         color="muted"
@@ -427,22 +454,7 @@ export function PlanDays({plan}: PlanDaysProps) {
     );
   }
 
-  const rows = slotRows(activeDay);
-  const totals = computeDayTotals(activeDay, mealById);
-  const dayMealIds = new Set((activeDay.day_meals ?? []).map((dm) => dm.nutrition_meal_id));
-  const assignedWeekdays = WEEKDAYS.filter((w) => weekdayAssignments[w] === activeDay.id);
-
-  const reusableMeals: MealPaletteOption[] = meals
-    .filter((m) => !dayMealIds.has(m.id))
-    .map((m) => ({id: m.id, name: m.name, sub: mealPlacementSummary(m.id, days, weekdayAssignments)}));
-
-  /** Every day-slot option across the plan that points at a meal — drives "Used in n places". */
-  const assignmentCounts = new Map<string, number>();
-  for (const day of days) {
-    for (const dm of day.day_meals ?? []) {
-      assignmentCounts.set(dm.nutrition_meal_id, (assignmentCounts.get(dm.nutrition_meal_id) ?? 0) + 1);
-    }
-  }
+  const {assignedWeekdays, assignmentCounts, reusableMeals, rows, totals} = derived;
 
   return (
     <div className="flex flex-col gap-3 pb-4">

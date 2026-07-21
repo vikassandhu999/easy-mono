@@ -105,6 +105,36 @@ function normalizeDistanceUnit(unit: string | null | undefined): DistanceUnit {
   return unit === 'km' || unit === 'miles' ? unit : 'meters';
 }
 
+// The sheet's edit buffer: the planned set as strings, keyed like the API set
+// so a field's draft patch and its save patch share names.
+type SetDraft = {
+  set_type: SetType;
+  reps: string;
+  load_value: string;
+  load_unit: LoadUnit;
+  rpe: string;
+  duration_seconds: string;
+  distance_value: string;
+  distance_unit: DistanceUnit;
+  rest_seconds: string;
+  notes: string;
+};
+
+function draftFromSet(s: TrainingPlanPlannedSet | undefined): SetDraft {
+  return {
+    set_type: s?.set_type ?? 'working',
+    reps: s?.reps ?? '',
+    load_value: s?.load_value ?? '',
+    load_unit: (s?.load_unit as LoadUnit | null) ?? 'kg',
+    rpe: s?.rpe == null ? '' : String(s.rpe),
+    duration_seconds: s?.duration_seconds == null ? '' : String(s.duration_seconds),
+    distance_value: s?.distance_value ?? '',
+    distance_unit: normalizeDistanceUnit(s?.distance_unit),
+    rest_seconds: s?.rest_seconds == null ? '' : String(s.rest_seconds),
+    notes: s?.notes ?? '',
+  };
+}
+
 // ---------------------------------------------------------------------------
 // SetSheetContent — editor UI shared between mobile sheet and desktop popover
 // ---------------------------------------------------------------------------
@@ -129,27 +159,10 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
 
   const fields = fieldsForTrackingType(trackingType);
 
-  const [setType, setSetType] = useState<SetType>(currentSet?.set_type ?? 'working');
-  const [reps, setReps] = useState<string>(currentSet?.reps ?? '');
-  const [loadValue, setLoadValue] = useState<string>(currentSet?.load_value ?? '');
-  const [loadUnit, setLoadUnit] = useState<LoadUnit>((currentSet?.load_unit as LoadUnit | null) ?? 'kg');
-  const [rpe, setRpe] = useState<string>(
-    currentSet?.rpe !== null && currentSet?.rpe !== undefined ? String(currentSet.rpe) : '',
-  );
-  const [durationSeconds, setDurationSeconds] = useState<string>(
-    currentSet?.duration_seconds !== null && currentSet?.duration_seconds !== undefined
-      ? String(currentSet.duration_seconds)
-      : '',
-  );
-  const [distanceValue, setDistanceValue] = useState<string>(currentSet?.distance_value ?? '');
-  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(normalizeDistanceUnit(currentSet?.distance_unit));
-  const [restSeconds, setRestSeconds] = useState<string>(
-    currentSet?.rest_seconds !== null && currentSet?.rest_seconds !== undefined ? String(currentSet.rest_seconds) : '',
-  );
-  const [notes, setNotes] = useState<string>(currentSet?.notes ?? '');
+  const [draft, setDraft] = useState<SetDraft>(() => draftFromSet(currentSet));
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Sync local state only when the set being edited actually changes (Prev/Next).
+  // Re-seed the draft only when the set being edited actually changes (Prev/Next).
   // NOT on every workoutExercise identity change: our own optimistic saves rewrite
   // that object, and re-running the reset would clobber in-progress field edits
   // (e.g. a not-yet-valid RPE the coach is still typing).
@@ -160,21 +173,9 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
     }
     syncedSetIndexRef.current = setIndex;
     const s = workoutExercise.planned_sets[setIndex];
-    if (!s) {
-      return;
+    if (s) {
+      setDraft(draftFromSet(s));
     }
-    setSetType(s.set_type ?? 'working');
-    setReps(s.reps ?? '');
-    setLoadValue(s.load_value ?? '');
-    setLoadUnit((s.load_unit as LoadUnit | null) ?? 'kg');
-    setRpe(s.rpe !== null && s.rpe !== undefined ? String(s.rpe) : '');
-    setDurationSeconds(
-      s.duration_seconds !== null && s.duration_seconds !== undefined ? String(s.duration_seconds) : '',
-    );
-    setDistanceValue(s.distance_value ?? '');
-    setDistanceUnit(normalizeDistanceUnit(s.distance_unit));
-    setRestSeconds(s.rest_seconds !== null && s.rest_seconds !== undefined ? String(s.rest_seconds) : '');
-    setNotes(s.notes ?? '');
   }, [setIndex, workoutExercise]);
 
   // Debounced save — optimistic: write cache first, then PATCH, rollback on failure.
@@ -264,71 +265,34 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
     };
   }, []);
 
-  const handleSetType = (v: SetType) => {
-    setSetType(v);
-    scheduleSave({set_type: v});
-  };
-  const handleReps = (v: string) => {
-    setReps(v);
-    scheduleSave({reps: v || null});
-  };
-  const handleLoadValue = (v: string) => {
-    setLoadValue(v);
-    scheduleSave({load_value: v || null});
-  };
-  const handleLoadUnit = (v: LoadUnit) => {
-    setLoadUnit(v);
-    scheduleSave({load_unit: v});
-  };
-  const handleRpe = (v: string) => {
-    setRpe(v);
-    if (v === '') {
-      scheduleSave({rpe: null});
-      return;
+  // Every field edit: buffer the keystroke, autosave when it's a saveable value.
+  const update = (patch: Partial<SetDraft>, save?: Partial<TrainingPlanPlannedSet>) => {
+    setDraft((d) => ({...d, ...patch}));
+    if (save) {
+      scheduleSave(save);
     }
-    // RPE is bounded 1–10 by the API contract — don't autosave a value the
-    // server would 422 (which would optimistically write then silently roll back).
+  };
+
+  // Unparseable text must not save null — that wipes the stored value.
+  const intPatch = (
+    key: 'duration_seconds' | 'rest_seconds',
+    v: string,
+  ): Partial<TrainingPlanPlannedSet> | undefined => {
+    if (v === '') {
+      return {[key]: null};
+    }
+    const num = Number.parseInt(v, 10);
+    return Number.isNaN(num) ? undefined : {[key]: num};
+  };
+
+  // RPE is bounded 1–10 by the API contract — don't autosave a value the
+  // server would 422 (which would optimistically write then silently roll back).
+  const rpePatch = (v: string): Partial<TrainingPlanPlannedSet> | undefined => {
+    if (v === '') {
+      return {rpe: null};
+    }
     const num = Number.parseFloat(v);
-    if (Number.isNaN(num) || num < 1 || num > 10) {
-      return;
-    }
-    scheduleSave({rpe: num});
-  };
-  const handleDuration = (v: string) => {
-    setDurationSeconds(v);
-    if (v === '') {
-      scheduleSave({duration_seconds: null});
-      return;
-    }
-    const num = Number.parseInt(v, 10);
-    // Unparseable text must not save null — that wipes the stored value.
-    if (!Number.isNaN(num)) {
-      scheduleSave({duration_seconds: num});
-    }
-  };
-  const handleDistanceValue = (v: string) => {
-    setDistanceValue(v);
-    scheduleSave({distance_value: v || null});
-  };
-  const handleDistanceUnit = (v: DistanceUnit) => {
-    setDistanceUnit(v);
-    scheduleSave({distance_unit: v});
-  };
-  const handleRestSeconds = (v: string) => {
-    setRestSeconds(v);
-    if (v === '') {
-      scheduleSave({rest_seconds: null});
-      return;
-    }
-    const num = Number.parseInt(v, 10);
-    // Unparseable text must not save null — that wipes the stored value.
-    if (!Number.isNaN(num)) {
-      scheduleSave({rest_seconds: num});
-    }
-  };
-  const handleNotes = (v: string) => {
-    setNotes(v);
-    scheduleSave({notes: v || null});
+    return Number.isNaN(num) || num < 1 || num > 10 ? undefined : {rpe: num};
   };
 
   const hasPrev = setIndex > 0;
@@ -397,12 +361,12 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           aria-label="Set type"
           className={`${SEGMENT_GROUP_CLASS} mb-3`}
           onSelectionChange={(keys) => {
-            const next = [...keys][0];
+            const next = [...keys][0] as SetType | undefined;
             if (next) {
-              handleSetType(next as SetType);
+              update({set_type: next}, {set_type: next});
             }
           }}
-          selectedKeys={[setType]}
+          selectedKeys={[draft.set_type]}
           selectionMode="single"
         >
           {SET_TYPES.map(({value, label}) => (
@@ -421,8 +385,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           {fields.showReps ? (
             <TextField
               className={FIELD_BOX_CLASS}
-              onChange={handleReps}
-              value={reps}
+              onChange={(v) => update({reps: v}, {reps: v || null})}
+              value={draft.reps}
             >
               <Label className={FIELD_LABEL_CLASS}>Reps</Label>
               <Input
@@ -436,8 +400,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           {fields.showLoad ? (
             <div className={FIELD_BOX_CLASS}>
               <TextField
-                onChange={handleLoadValue}
-                value={loadValue}
+                onChange={(v) => update({load_value: v}, {load_value: v || null})}
+                value={draft.load_value}
               >
                 <Label className={FIELD_LABEL_CLASS}>Weight</Label>
                 <Input
@@ -450,12 +414,12 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
                 aria-label="Weight unit"
                 className="mt-1.5 flex justify-center gap-1"
                 onSelectionChange={(keys) => {
-                  const next = [...keys][0];
+                  const next = [...keys][0] as LoadUnit | undefined;
                   if (next) {
-                    handleLoadUnit(next as LoadUnit);
+                    update({load_unit: next}, {load_unit: next});
                   }
                 }}
-                selectedKeys={[loadUnit]}
+                selectedKeys={[draft.load_unit]}
                 selectionMode="single"
               >
                 {LOAD_UNITS.map(({value, label}) => (
@@ -474,8 +438,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           {fields.showRpe ? (
             <TextField
               className={FIELD_BOX_CLASS}
-              onChange={handleRpe}
-              value={rpe}
+              onChange={(v) => update({rpe: v}, rpePatch(v))}
+              value={draft.rpe}
             >
               <Label className={FIELD_LABEL_CLASS}>RPE</Label>
               <Input
@@ -489,8 +453,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           {fields.showDuration ? (
             <TextField
               className={FIELD_BOX_CLASS}
-              onChange={handleDuration}
-              value={durationSeconds}
+              onChange={(v) => update({duration_seconds: v}, intPatch('duration_seconds', v))}
+              value={draft.duration_seconds}
             >
               <Label className={FIELD_LABEL_CLASS}>Secs</Label>
               <Input
@@ -504,8 +468,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           {fields.showDistance ? (
             <div className={FIELD_BOX_CLASS}>
               <TextField
-                onChange={handleDistanceValue}
-                value={distanceValue}
+                onChange={(v) => update({distance_value: v}, {distance_value: v || null})}
+                value={draft.distance_value}
               >
                 <Label className={FIELD_LABEL_CLASS}>Dist</Label>
                 <Input
@@ -518,12 +482,12 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
                 aria-label="Distance unit"
                 className="mt-1.5 flex justify-center gap-1"
                 onSelectionChange={(keys) => {
-                  const next = [...keys][0];
+                  const next = [...keys][0] as DistanceUnit | undefined;
                   if (next) {
-                    handleDistanceUnit(next as DistanceUnit);
+                    update({distance_unit: next}, {distance_unit: next});
                   }
                 }}
-                selectedKeys={[distanceUnit]}
+                selectedKeys={[draft.distance_unit]}
                 selectionMode="single"
               >
                 {DISTANCE_UNITS.map(({value, label}) => (
@@ -554,8 +518,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           <Disclosure.Content>
             <Disclosure.Body className="flex flex-col gap-2 px-0 pb-0">
               <TextField
-                onChange={handleRestSeconds}
-                value={restSeconds}
+                onChange={(v) => update({rest_seconds: v}, intPatch('rest_seconds', v))}
+                value={draft.rest_seconds}
               >
                 <Label className={FIELD_LABEL_CLASS}>Rest (seconds)</Label>
                 <Input
@@ -564,8 +528,8 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
                 />
               </TextField>
               <TextField
-                onChange={handleNotes}
-                value={notes}
+                onChange={(v) => update({notes: v}, {notes: v || null})}
+                value={draft.notes}
               >
                 <Label className={FIELD_LABEL_CLASS}>Notes</Label>
                 <TextArea

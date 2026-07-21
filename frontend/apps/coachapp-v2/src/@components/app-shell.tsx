@@ -167,7 +167,9 @@ const MOBILE_FRAME_PATHS = new Set([
 
 export default function AppShell() {
   const location = useLocation();
-  const showMobileFrame = MOBILE_FRAME_PATHS.has(location.pathname);
+  const showMobileFrame =
+    MOBILE_FRAME_PATHS.has(location.pathname) ||
+    (location.pathname.startsWith(`${ROUTES.SETTINGS}/`) && location.pathname !== ROUTES.SETTINGS_LANDING_PAGE);
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
   const dispatch = useAppDispatch();
   useChannelEvent('inbox', 'conversation_updated', () => {

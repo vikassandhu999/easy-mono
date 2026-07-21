@@ -242,19 +242,19 @@ function SettingsShell({
 
   return (
     <Tabs
-      className="flex min-h-0 flex-1 flex-col md:flex-row md:items-stretch"
+      className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row md:items-stretch"
       onSelectionChange={(key) => onTabChange(key as SettingsTab)}
       orientation={isDesktop ? 'vertical' : 'horizontal'}
       selectedKey={tab}
     >
-      <div className="sticky top-0 z-10 shrink-0 border-b border-border bg-surface px-4 pt-3 md:static md:w-53 md:border-b-0 md:border-r md:bg-background md:px-3.5 md:pt-6">
+      <div className="sticky top-0 z-10 shrink-0 border-b border-border bg-surface pt-3 md:static md:w-53 md:border-b-0 md:border-r md:bg-background md:px-3.5 md:pt-6">
         <Typography
           className="px-0 pb-2 font-grotesk md:px-2 md:pb-3.5"
           type="h3"
         >
           Settings
         </Typography>
-        <Tabs.ListContainer className="scrollbar-hide -mx-4 max-w-full overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
+        <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto md:overflow-visible">
           <Tabs.List className="flex w-max min-w-max gap-2 bg-transparent p-0 md:w-full md:min-w-0 md:flex-col md:gap-0.5">
             {TABS.map(({icon: Icon, id, label}) => (
               <Tabs.Tab
@@ -270,7 +270,7 @@ function SettingsShell({
         </Tabs.ListContainer>
       </div>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col px-4 pt-3.5 pb-6 md:px-8 md:pt-6 md:pb-10">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3.5 pb-6 md:px-8 md:pt-6 md:pb-10">
         {/* Panel measure inside the sidebar+content split — not the page column
             (that's Page.Frame size="content" above), so it isn't a size token. */}
         <div className="flex min-h-full flex-1 flex-col md:mx-auto md:w-full md:max-w-140">{children}</div>
@@ -338,35 +338,52 @@ export default function Settings() {
 
   return (
     <Page>
-      <Page.Content>
-        <SettingsShell
-          onTabChange={setTab}
-          tab={tab}
+      <Page.Content bare>
+        <Page.Frame
+          className="flex flex-1"
+          size="content"
         >
-          <Tabs.Panel id="profile">
-            <ProfilePanel
-              onUpdate={updateProfile}
-              profile={profile}
-            />
-          </Tabs.Panel>
-          <Tabs.Panel id="team">
-            <TeamSection />
-          </Tabs.Panel>
-          <Tabs.Panel id="billing">
-            <BillingSection />
-          </Tabs.Panel>
-          <Tabs.Panel id="account">
-            <AccountPanel
-              email={profile.email}
+          <SettingsShell
+            onTabChange={setTab}
+            tab={tab}
+          >
+            <Tabs.Panel
+              className="p-0"
+              id="profile"
+            >
+              <ProfilePanel
+                onUpdate={updateProfile}
+                profile={profile}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel
+              className="p-0"
+              id="team"
+            >
+              <TeamSection />
+            </Tabs.Panel>
+            <Tabs.Panel
+              className="p-0"
+              id="billing"
+            >
+              <BillingSection />
+            </Tabs.Panel>
+            <Tabs.Panel
+              className="p-0"
+              id="account"
+            >
+              <AccountPanel
+                email={profile.email}
+                onLogout={handleLogout}
+              />
+            </Tabs.Panel>
+
+            <LogOutFooter
+              className="mt-auto pt-4 md:hidden"
               onLogout={handleLogout}
             />
-          </Tabs.Panel>
-
-          <LogOutFooter
-            className="mt-auto pt-4 md:hidden"
-            onLogout={handleLogout}
-          />
-        </SettingsShell>
+          </SettingsShell>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

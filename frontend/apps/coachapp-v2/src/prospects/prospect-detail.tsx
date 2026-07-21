@@ -95,8 +95,13 @@ export default function ProspectDetail() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -113,18 +118,23 @@ export default function ProspectDetail() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
-          <div className="mx-auto max-w-4xl">
-            <ErrorState message="Couldn't load prospect." />
-            <Button
-              className="mt-3"
-              onPress={() => refetch()}
-              size="sm"
-              variant="secondary"
-            >
-              Retry
-            </Button>
-          </div>
+        <Page.Content bare>
+          <Page.Frame
+            className="pb-6"
+            size="content"
+          >
+            <div className="mx-auto max-w-4xl">
+              <ErrorState message="Couldn't load prospect." />
+              <Button
+                className="mt-3"
+                onPress={() => refetch()}
+                size="sm"
+                variant="secondary"
+              >
+                Retry
+              </Button>
+            </div>
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -191,165 +201,170 @@ export default function ProspectDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="pb-6">
-        <div className="mx-auto max-w-4xl space-y-4">
-          {/* Profile hero */}
-          <Card>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 items-center gap-3">
-                <Avatar
-                  className="size-14 shrink-0"
-                  color="accent"
-                >
-                  <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Typography
-                      truncate
-                      type="h5"
-                    >
-                      {prospect.name}
-                    </Typography>
-                    <Chip
-                      color={PROSPECT_STATUS_CHIP[prospect.status]}
-                      size="sm"
-                      variant="soft"
-                    >
-                      {PROSPECT_STATUS_LABEL[prospect.status]}
-                    </Chip>
-                  </div>
-                  {prospect.program ? (
-                    <Typography
-                      className="mt-0.5"
-                      color="muted"
-                      truncate
-                      type="body-sm"
-                    >
-                      Interested in {prospect.program.name}
-                    </Typography>
-                  ) : null}
-                </div>
-              </div>
-              {prospect.phone || prospect.email ? (
-                <div className="flex gap-2 sm:ml-auto sm:shrink-0">
-                  {prospect.phone ? (
-                    <a
-                      className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:min-h-9 sm:flex-none"
-                      href={`tel:${prospect.phone}`}
-                    >
-                      <Phone size={15} />
-                      Call
-                    </a>
-                  ) : null}
-                  {prospect.email ? (
-                    <a
-                      className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:min-h-9 sm:flex-none"
-                      href={`mailto:${prospect.email}`}
-                    >
-                      <Mail size={15} />
-                      Email
-                    </a>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </Card>
-
-          {/* Contact details */}
-          <section>
-            <SectionHeading title="Contact" />
+      <Page.Content bare>
+        <Page.Frame
+          className="pb-6"
+          size="content"
+        >
+          <div className="mx-auto max-w-4xl space-y-4">
+            {/* Profile hero */}
             <Card>
-              {prospect.phone ? (
-                <Field
-                  label="Phone"
-                  value={
-                    <a
-                      className="text-accent"
-                      href={`tel:${prospect.phone}`}
-                    >
-                      {prospect.phone}
-                    </a>
-                  }
-                />
-              ) : null}
-              {prospect.email ? (
-                <Field
-                  label="Email"
-                  value={
-                    <a
-                      className="text-accent"
-                      href={`mailto:${prospect.email}`}
-                    >
-                      {prospect.email}
-                    </a>
-                  }
-                />
-              ) : null}
-              {prospect.instagram ? (
-                <Field
-                  label="Instagram"
-                  value={prospect.instagram}
-                />
-              ) : null}
-              {prospect.landing_page_slug ? (
-                <Field
-                  label="Source"
-                  value={`/${prospect.landing_page_slug}`}
-                />
-              ) : null}
-            </Card>
-          </section>
-
-          {/* Application answers */}
-          {answers.length > 0 ? (
-            <section>
-              <SectionHeading title="Answers" />
-              <Card>
-                <div className="flex flex-col gap-4">
-                  {answers.map(([qid, value]) => (
-                    <div key={qid}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar
+                    className="size-14 shrink-0"
+                    color="accent"
+                  >
+                    <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Typography
-                        color="muted"
-                        type="body-xs"
+                        truncate
+                        type="h5"
                       >
-                        {questionLabels.get(qid) || qid}
+                        {prospect.name}
                       </Typography>
+                      <Chip
+                        color={PROSPECT_STATUS_CHIP[prospect.status]}
+                        size="sm"
+                        variant="soft"
+                      >
+                        {PROSPECT_STATUS_LABEL[prospect.status]}
+                      </Chip>
+                    </div>
+                    {prospect.program ? (
                       <Typography
-                        className="break-words"
+                        className="mt-0.5"
+                        color="muted"
+                        truncate
                         type="body-sm"
                       >
-                        {String(value)}
+                        Interested in {prospect.program.name}
                       </Typography>
-                    </div>
-                  ))}
+                    ) : null}
+                  </div>
                 </div>
+                {prospect.phone || prospect.email ? (
+                  <div className="flex gap-2 sm:ml-auto sm:shrink-0">
+                    {prospect.phone ? (
+                      <a
+                        className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:min-h-9 sm:flex-none"
+                        href={`tel:${prospect.phone}`}
+                      >
+                        <Phone size={15} />
+                        Call
+                      </a>
+                    ) : null}
+                    {prospect.email ? (
+                      <a
+                        className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-hover sm:min-h-9 sm:flex-none"
+                        href={`mailto:${prospect.email}`}
+                      >
+                        <Mail size={15} />
+                        Email
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </Card>
+
+            {/* Contact details */}
+            <section>
+              <SectionHeading title="Contact" />
+              <Card>
+                {prospect.phone ? (
+                  <Field
+                    label="Phone"
+                    value={
+                      <a
+                        className="text-accent"
+                        href={`tel:${prospect.phone}`}
+                      >
+                        {prospect.phone}
+                      </a>
+                    }
+                  />
+                ) : null}
+                {prospect.email ? (
+                  <Field
+                    label="Email"
+                    value={
+                      <a
+                        className="text-accent"
+                        href={`mailto:${prospect.email}`}
+                      >
+                        {prospect.email}
+                      </a>
+                    }
+                  />
+                ) : null}
+                {prospect.instagram ? (
+                  <Field
+                    label="Instagram"
+                    value={prospect.instagram}
+                  />
+                ) : null}
+                {prospect.landing_page_slug ? (
+                  <Field
+                    label="Source"
+                    value={`/${prospect.landing_page_slug}`}
+                  />
+                ) : null}
               </Card>
             </section>
-          ) : null}
 
-          {/* Notes */}
-          <section>
-            <SectionHeading title="Notes" />
-            <Card>
-              <textarea
-                className="min-h-24 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent placeholder:text-muted"
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Private notes about this prospect."
-                value={notes}
-              />
-              <Button
-                className="mt-2"
-                isDisabled={isUpdating || notes === (prospect.notes ?? '')}
-                onPress={saveNotes}
-                size="sm"
-                variant="secondary"
-              >
-                Save notes
-              </Button>
-            </Card>
-          </section>
-        </div>
+            {/* Application answers */}
+            {answers.length > 0 ? (
+              <section>
+                <SectionHeading title="Answers" />
+                <Card>
+                  <div className="flex flex-col gap-4">
+                    {answers.map(([qid, value]) => (
+                      <div key={qid}>
+                        <Typography
+                          color="muted"
+                          type="body-xs"
+                        >
+                          {questionLabels.get(qid) || qid}
+                        </Typography>
+                        <Typography
+                          className="break-words"
+                          type="body-sm"
+                        >
+                          {String(value)}
+                        </Typography>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </section>
+            ) : null}
+
+            {/* Notes */}
+            <section>
+              <SectionHeading title="Notes" />
+              <Card>
+                <textarea
+                  className="min-h-24 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent placeholder:text-muted"
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Private notes about this prospect."
+                  value={notes}
+                />
+                <Button
+                  className="mt-2"
+                  isDisabled={isUpdating || notes === (prospect.notes ?? '')}
+                  onPress={saveNotes}
+                  size="sm"
+                  variant="secondary"
+                >
+                  Save notes
+                </Button>
+              </Card>
+            </section>
+          </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

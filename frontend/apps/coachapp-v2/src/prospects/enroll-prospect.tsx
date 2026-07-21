@@ -74,8 +74,13 @@ export default function EnrollProspect() {
     return (
       <Page>
         {header}
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -85,10 +90,15 @@ export default function EnrollProspect() {
     return (
       <Page>
         {header}
-        <Page.Content className="pt-4 pb-6">
-          <div>
-            <ErrorState message="Couldn't load prospect." />
-          </div>
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <div>
+              <ErrorState message="Couldn't load prospect." />
+            </div>
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -99,16 +109,21 @@ export default function EnrollProspect() {
     return (
       <Page>
         {header}
-        <Page.Content className="pt-4 pb-6">
-          <div className="flex flex-col gap-3">
-            <Typography color="muted">This prospect is already enrolled.</Typography>
-            <Button
-              className="self-start"
-              onPress={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', prospect.client?.id ?? ''))}
-            >
-              View client
-            </Button>
-          </div>
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <div className="flex flex-col gap-3">
+              <Typography color="muted">This prospect is already enrolled.</Typography>
+              <Button
+                className="self-start"
+                onPress={() => navigate(ROUTES.CLIENT_DETAIL.replace(':id', prospect.client?.id ?? ''))}
+              >
+                View client
+              </Button>
+            </div>
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -117,52 +132,57 @@ export default function EnrollProspect() {
   return (
     <Page>
       {header}
-      <Page.Content className="pt-4 pb-6">
-        <FormLayout onSubmit={handleSubmit(onSubmit)}>
-          <Fieldset>
-            <Fieldset.Group>
-              <FieldRow>
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <FormLayout onSubmit={handleSubmit(onSubmit)}>
+            <Fieldset>
+              <Fieldset.Group>
+                <FieldRow>
+                  <FormTextField
+                    control={control}
+                    fullWidth
+                    inputProps={{autoComplete: 'given-name'}}
+                    label="First name"
+                    name="first_name"
+                  />
+                  <FormTextField
+                    control={control}
+                    fullWidth
+                    inputProps={{autoComplete: 'family-name'}}
+                    label="Last name"
+                    name="last_name"
+                  />
+                </FieldRow>
                 <FormTextField
                   control={control}
                   fullWidth
-                  inputProps={{autoComplete: 'given-name'}}
-                  label="First name"
-                  name="first_name"
+                  inputProps={{autoComplete: 'email'}}
+                  label="Email"
+                  name="email"
+                  type="email"
                 />
                 <FormTextField
                   control={control}
                   fullWidth
-                  inputProps={{autoComplete: 'family-name'}}
-                  label="Last name"
-                  name="last_name"
+                  inputProps={{autoComplete: 'tel'}}
+                  label="Phone"
+                  name="phone"
+                  type="tel"
                 />
-              </FieldRow>
-              <FormTextField
-                control={control}
-                fullWidth
-                inputProps={{autoComplete: 'email'}}
-                label="Email"
-                name="email"
-                type="email"
-              />
-              <FormTextField
-                control={control}
-                fullWidth
-                inputProps={{autoComplete: 'tel'}}
-                label="Phone"
-                name="phone"
-                type="tel"
-              />
-            </Fieldset.Group>
-          </Fieldset>
+              </Fieldset.Group>
+            </Fieldset>
 
-          <FormActions
-            isSubmitting={isEnrolling}
-            onCancel={goBack}
-            submitLabel="Send invite"
-            submittingLabel="Sending invite"
-          />
-        </FormLayout>
+            <FormActions
+              isSubmitting={isEnrolling}
+              onCancel={goBack}
+              submitLabel="Send invite"
+              submittingLabel="Sending invite"
+            />
+          </FormLayout>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

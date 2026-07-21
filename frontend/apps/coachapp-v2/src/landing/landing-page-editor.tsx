@@ -161,8 +161,13 @@ export default function LandingPageEditor() {
     return (
       <Page>
         {header}
-        <Page.Content className="pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -172,22 +177,27 @@ export default function LandingPageEditor() {
     return (
       <Page>
         {header}
-        <Page.Content className="pb-6">
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              Couldn't load your landing page.
-            </Typography>
-            <Button
-              onPress={() => refetch()}
-              size="sm"
-              variant="secondary"
-            >
-              Retry
-            </Button>
-          </div>
+        <Page.Content bare>
+          <Page.Frame
+            className="pb-6"
+            size="content"
+          >
+            <div className="flex flex-col items-center gap-3 py-20 text-center">
+              <Typography
+                color="muted"
+                type="body-sm"
+              >
+                Couldn't load your landing page.
+              </Typography>
+              <Button
+                onPress={() => refetch()}
+                size="sm"
+                variant="secondary"
+              >
+                Retry
+              </Button>
+            </div>
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -199,149 +209,154 @@ export default function LandingPageEditor() {
   return (
     <Page>
       {header}
-      <Page.Content className="pb-28">
-        <div className="flex max-w-2xl flex-col gap-6">
-          {/* Template */}
-          <section>
-            <SectionHeading title="Template" />
-            <div className="grid gap-2 sm:grid-cols-3">
-              {TEMPLATES.map((tpl) => {
-                const selected = draft.template === tpl.value;
-                return (
-                  <Button
-                    className={`h-auto w-full flex-col items-start justify-start gap-0 rounded-xl border p-3 text-left font-normal transition-colors ${
-                      selected
-                        ? 'border-accent bg-accent/5 ring-1 ring-accent'
-                        : 'border-border bg-surface hover:border-accent/50'
-                    }`}
-                    key={tpl.value}
-                    onPress={() => update({template: tpl.value})}
-                    variant="ghost"
-                  >
-                    <Typography weight="medium">{tpl.label}</Typography>
-                    <Typography
-                      color="muted"
-                      type="body-xs"
+      <Page.Content bare>
+        <Page.Frame
+          className="pb-28"
+          size="content"
+        >
+          <div className="flex max-w-2xl flex-col gap-6">
+            {/* Template */}
+            <section>
+              <SectionHeading title="Template" />
+              <div className="grid gap-2 sm:grid-cols-3">
+                {TEMPLATES.map((tpl) => {
+                  const selected = draft.template === tpl.value;
+                  return (
+                    <Button
+                      className={`h-auto w-full flex-col items-start justify-start gap-0 rounded-xl border p-3 text-left font-normal transition-colors ${
+                        selected
+                          ? 'border-accent bg-accent/5 ring-1 ring-accent'
+                          : 'border-border bg-surface hover:border-accent/50'
+                      }`}
+                      key={tpl.value}
+                      onPress={() => update({template: tpl.value})}
+                      variant="ghost"
                     >
-                      {tpl.blurb}
-                    </Typography>
-                  </Button>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Basics */}
-          <section>
-            <SectionHeading title="Page" />
-            <Card>
-              <div className="flex flex-col gap-4">
-                <TextRow
-                  description={slugError ? undefined : `Public address: ${publicUrl}`}
-                  error={slugError ?? undefined}
-                  label="Slug"
-                  onChange={(v) => {
-                    setSlugError(null);
-                    update({slug: v});
-                  }}
-                  placeholder="kavya-strength"
-                  value={draft.slug}
-                />
-                <TextRow
-                  description="The 'who this is for' line above the headline."
-                  label="Eyebrow"
-                  onChange={(v) => update({eyebrow: v})}
-                  placeholder="Online coaching for busy lifters"
-                  value={draft.eyebrow}
-                />
-                <TextRow
-                  label="Headline"
-                  onChange={(v) => update({headline: v})}
-                  placeholder="Build strength without guessing what to do next."
-                  value={draft.headline}
-                />
-                <TextRow
-                  label="Subheadline"
-                  onChange={(v) => update({subheadline: v})}
-                  placeholder="Personal coaching for people who train hard but need structure."
-                  textarea
-                  value={draft.subheadline}
-                />
-                <TextRow
-                  description="A coach photo or training image shown in the hero."
-                  label="Hero image URL"
-                  onChange={(v) => update({hero_image_url: v})}
-                  placeholder="https://…/photo.jpg"
-                  value={draft.hero_image_url}
-                />
-                <TextRow
-                  description="Shown prominently on the Coach story template."
-                  label="Coach intro"
-                  onChange={(v) => update({coach_intro: v})}
-                  placeholder="Short story, coaching philosophy, who gets the best results."
-                  textarea
-                  value={draft.coach_intro}
-                />
+                      <Typography weight="medium">{tpl.label}</Typography>
+                      <Typography
+                        color="muted"
+                        type="body-xs"
+                      >
+                        {tpl.blurb}
+                      </Typography>
+                    </Button>
+                  );
+                })}
               </div>
-            </Card>
-          </section>
+            </section>
 
-          {/* Proof points */}
-          <ProofPointsEditor
-            points={draft.proof_points}
-            onChange={(proof_points) => update({proof_points})}
-          />
+            {/* Basics */}
+            <section>
+              <SectionHeading title="Page" />
+              <Card>
+                <div className="flex flex-col gap-4">
+                  <TextRow
+                    description={slugError ? undefined : `Public address: ${publicUrl}`}
+                    error={slugError ?? undefined}
+                    label="Slug"
+                    onChange={(v) => {
+                      setSlugError(null);
+                      update({slug: v});
+                    }}
+                    placeholder="kavya-strength"
+                    value={draft.slug}
+                  />
+                  <TextRow
+                    description="The 'who this is for' line above the headline."
+                    label="Eyebrow"
+                    onChange={(v) => update({eyebrow: v})}
+                    placeholder="Online coaching for busy lifters"
+                    value={draft.eyebrow}
+                  />
+                  <TextRow
+                    label="Headline"
+                    onChange={(v) => update({headline: v})}
+                    placeholder="Build strength without guessing what to do next."
+                    value={draft.headline}
+                  />
+                  <TextRow
+                    label="Subheadline"
+                    onChange={(v) => update({subheadline: v})}
+                    placeholder="Personal coaching for people who train hard but need structure."
+                    textarea
+                    value={draft.subheadline}
+                  />
+                  <TextRow
+                    description="A coach photo or training image shown in the hero."
+                    label="Hero image URL"
+                    onChange={(v) => update({hero_image_url: v})}
+                    placeholder="https://…/photo.jpg"
+                    value={draft.hero_image_url}
+                  />
+                  <TextRow
+                    description="Shown prominently on the Coach story template."
+                    label="Coach intro"
+                    onChange={(v) => update({coach_intro: v})}
+                    placeholder="Short story, coaching philosophy, who gets the best results."
+                    textarea
+                    value={draft.coach_intro}
+                  />
+                </div>
+              </Card>
+            </section>
 
-          {/* Fit points (Problem-fit template) */}
-          <FitPointsEditor
-            onChange={(fit_points) => update({fit_points})}
-            points={draft.fit_points}
-          />
+            {/* Proof points */}
+            <ProofPointsEditor
+              points={draft.proof_points}
+              onChange={(proof_points) => update({proof_points})}
+            />
 
-          {/* Programs */}
-          <ProgramsEditor
-            programs={draft.programs}
-            onChange={(programs) => update({programs})}
-          />
+            {/* Fit points (Problem-fit template) */}
+            <FitPointsEditor
+              onChange={(fit_points) => update({fit_points})}
+              points={draft.fit_points}
+            />
 
-          {/* Questions */}
-          <QuestionsEditor
-            questions={draft.application_questions}
-            onChange={(application_questions) => update({application_questions})}
-          />
+            {/* Programs */}
+            <ProgramsEditor
+              programs={draft.programs}
+              onChange={(programs) => update({programs})}
+            />
 
-          {/* WhatsApp */}
-          <section>
-            <SectionHeading title="WhatsApp follow-up" />
-            <Card>
-              {whatsappConfigured ? (
-                <Typography
-                  color="muted"
-                  type="body-sm"
-                >
-                  Applicants will see a "Send on WhatsApp" button after submitting, using your business number.
-                </Typography>
-              ) : (
-                <div className="flex flex-col gap-2">
+            {/* Questions */}
+            <QuestionsEditor
+              questions={draft.application_questions}
+              onChange={(application_questions) => update({application_questions})}
+            />
+
+            {/* WhatsApp */}
+            <section>
+              <SectionHeading title="WhatsApp follow-up" />
+              <Card>
+                {whatsappConfigured ? (
                   <Typography
                     color="muted"
                     type="body-sm"
                   >
-                    Add a business WhatsApp number to let applicants message you right after applying.
+                    Applicants will see a "Send on WhatsApp" button after submitting, using your business number.
                   </Typography>
-                  <Button
-                    className="self-start"
-                    onPress={() => navigate(ROUTES.SETTINGS)}
-                    size="sm"
-                    variant="secondary"
-                  >
-                    Add in Settings
-                  </Button>
-                </div>
-              )}
-            </Card>
-          </section>
-        </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Typography
+                      color="muted"
+                      type="body-sm"
+                    >
+                      Add a business WhatsApp number to let applicants message you right after applying.
+                    </Typography>
+                    <Button
+                      className="self-start"
+                      onPress={() => navigate(ROUTES.SETTINGS)}
+                      size="sm"
+                      variant="secondary"
+                    >
+                      Add in Settings
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </section>
+          </div>
+        </Page.Frame>
       </Page.Content>
 
       {/* Sticky action bar */}

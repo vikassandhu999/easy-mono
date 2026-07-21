@@ -74,7 +74,10 @@ export default function NutritionPlanBuilder() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="pb-10">
+      <Page.Content
+        bare
+        className="pb-10"
+      >
         <Page.Frame size="wide">
           <PlanDays plan={plan} />
         </Page.Frame>

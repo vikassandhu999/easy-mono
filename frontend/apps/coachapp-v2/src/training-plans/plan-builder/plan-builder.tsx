@@ -77,7 +77,10 @@ export default function TrainingPlanDetail() {
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="pb-10">
+      <Page.Content
+        bare
+        className="pb-10"
+      >
         <Page.Frame
           className="flex flex-col gap-3"
           size="wide"

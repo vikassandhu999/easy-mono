@@ -656,7 +656,10 @@ export default function CheckinBuilder({
         </Page.Actions>
       </Page.Header>
 
-      <Page.Content className="pb-6">
+      <Page.Content
+        bare
+        className="pb-6"
+      >
         <Page.Frame size="content">
           <FormLayout
             onSubmit={(e) => {

@@ -101,8 +101,13 @@ export default function SessionDetail() {
             <Page.Title>Workout session</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -126,14 +131,19 @@ export default function SessionDetail() {
             Client
           </Button>
         </Page.Toolbar>
-        <Page.Content className="pt-4 pb-6">
-          <Alert status="danger">
-            <Alert.Indicator />
-            <Alert.Content>
-              <Alert.Title>Session couldn&apos;t load</Alert.Title>
-              <Alert.Description>The workout session may not exist, or you may not have access</Alert.Description>
-            </Alert.Content>
-          </Alert>
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <Alert status="danger">
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Title>Session couldn&apos;t load</Alert.Title>
+                <Alert.Description>The workout session may not exist, or you may not have access</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -166,124 +176,129 @@ export default function SessionDetail() {
           Client
         </Button>
       </Page.Toolbar>
-      <Page.Content className="pt-4 pb-6">
-        <div className="mx-auto max-w-lg">
-          <div className="pb-4">
-            <div className="flex min-w-0 items-center gap-2">
-              <Typography
-                truncate
-                type="h5"
-              >
-                {title}
-              </Typography>
-              {stateChip ? (
-                <Chip
-                  className="shrink-0"
-                  color={stateChip.color}
-                  size="sm"
-                  variant="soft"
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <div className="mx-auto max-w-lg">
+            <div className="pb-4">
+              <div className="flex min-w-0 items-center gap-2">
+                <Typography
+                  truncate
+                  type="h5"
                 >
-                  {stateChip.label}
-                </Chip>
-              ) : null}
-            </div>
-            <Typography
-              className="mt-1"
-              color="muted"
-              type="body-sm"
-            >
-              {dateStr}
-            </Typography>
-          </div>
-
-          <div className="flex flex-wrap gap-4 pb-4">
-            {duration ? (
-              <div className="flex items-center gap-1.5 text-sm text-muted">
-                <Clock size={14} />
-                {duration}
+                  {title}
+                </Typography>
+                {stateChip ? (
+                  <Chip
+                    className="shrink-0"
+                    color={stateChip.color}
+                    size="sm"
+                    variant="soft"
+                  >
+                    {stateChip.label}
+                  </Chip>
+                ) : null}
               </div>
-            ) : null}
-            {session.soreness_rating ? (
-              <div className="flex items-center gap-1.5 text-sm text-muted">
-                <Activity size={14} />
-                Effort: {session.soreness_rating}/5
-              </div>
-            ) : null}
-            {snapshot ? (
-              <div className="flex items-center gap-1.5 text-sm text-muted">
-                <Dumbbell size={14} />
-                {adherence.completed}/{adherence.totalPlanned} exercises
-                {adherence.totalSets > 0 ? ` \u00B7 ${adherence.totalSets} sets` : ''}
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 text-sm text-muted">
-                <Dumbbell size={14} />
-                {adherence.totalSets} sets across {groups.length} exercise{groups.length !== 1 ? 's' : ''}
-              </div>
-            )}
-          </div>
-
-          {session.notes ? (
-            <div className="flex items-start gap-2 pb-4">
-              <MessageSquare
-                className="mt-0.5 shrink-0 text-muted"
-                size={14}
-              />
               <Typography
-                className="italic min-w-0 break-words"
+                className="mt-1"
                 color="muted"
                 type="body-sm"
               >
-                &ldquo;{session.notes}&rdquo;
+                {dateStr}
               </Typography>
             </div>
-          ) : null}
 
-          {snapshot ? (
-            <div className="flex flex-wrap gap-2 pb-4">
-              {adherence.skipped > 0 ? (
-                <Chip
-                  color="default"
-                  size="sm"
-                  variant="soft"
-                >
-                  {adherence.skipped} skipped
-                </Chip>
+            <div className="flex flex-wrap gap-4 pb-4">
+              {duration ? (
+                <div className="flex items-center gap-1.5 text-sm text-muted">
+                  <Clock size={14} />
+                  {duration}
+                </div>
               ) : null}
-              {adherence.added > 0 ? (
-                <Chip
-                  color="success"
-                  size="sm"
-                  variant="soft"
-                >
-                  {adherence.added} added
-                </Chip>
+              {session.soreness_rating ? (
+                <div className="flex items-center gap-1.5 text-sm text-muted">
+                  <Activity size={14} />
+                  Effort: {session.soreness_rating}/5
+                </div>
               ) : null}
+              {snapshot ? (
+                <div className="flex items-center gap-1.5 text-sm text-muted">
+                  <Dumbbell size={14} />
+                  {adherence.completed}/{adherence.totalPlanned} exercises
+                  {adherence.totalSets > 0 ? ` \u00B7 ${adherence.totalSets} sets` : ''}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-sm text-muted">
+                  <Dumbbell size={14} />
+                  {adherence.totalSets} sets across {groups.length} exercise{groups.length !== 1 ? 's' : ''}
+                </div>
+              )}
             </div>
-          ) : null}
 
-          <Separator />
-
-          {groups.length > 0 ? (
-            <div className="divide-y divide-surface-secondary">
-              {groups.map((group) => (
-                <ExerciseGroupSection
-                  group={group}
-                  key={`${group.exerciseId}_${group.exerciseName}`}
+            {session.notes ? (
+              <div className="flex items-start gap-2 pb-4">
+                <MessageSquare
+                  className="mt-0.5 shrink-0 text-muted"
+                  size={14}
                 />
-              ))}
-            </div>
-          ) : (
-            <Typography
-              align="center"
-              className="py-6"
-              color="muted"
-              type="body-sm"
-            >
-              No exercises logged in this session
-            </Typography>
-          )}
-        </div>
+                <Typography
+                  className="italic min-w-0 break-words"
+                  color="muted"
+                  type="body-sm"
+                >
+                  &ldquo;{session.notes}&rdquo;
+                </Typography>
+              </div>
+            ) : null}
+
+            {snapshot ? (
+              <div className="flex flex-wrap gap-2 pb-4">
+                {adherence.skipped > 0 ? (
+                  <Chip
+                    color="default"
+                    size="sm"
+                    variant="soft"
+                  >
+                    {adherence.skipped} skipped
+                  </Chip>
+                ) : null}
+                {adherence.added > 0 ? (
+                  <Chip
+                    color="success"
+                    size="sm"
+                    variant="soft"
+                  >
+                    {adherence.added} added
+                  </Chip>
+                ) : null}
+              </div>
+            ) : null}
+
+            <Separator />
+
+            {groups.length > 0 ? (
+              <div className="divide-y divide-surface-secondary">
+                {groups.map((group) => (
+                  <ExerciseGroupSection
+                    group={group}
+                    key={`${group.exerciseId}_${group.exerciseName}`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Typography
+                align="center"
+                className="py-6"
+                color="muted"
+                type="body-sm"
+              >
+                No exercises logged in this session
+              </Typography>
+            )}
+          </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

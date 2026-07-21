@@ -131,7 +131,10 @@ export default function EditCheckin() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
+        <Page.Content
+          bare
+          className="pb-6"
+        >
           <Page.Frame size="content">
             <PageSkeleton />
           </Page.Frame>
@@ -151,7 +154,10 @@ export default function EditCheckin() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
+        <Page.Content
+          bare
+          className="pb-6"
+        >
           <Page.Frame size="content">
             <ErrorState message="Couldn't load check-in." />
           </Page.Frame>

@@ -39,15 +39,20 @@ export default function CreateNutritionPlan() {
           <Page.Description>Set plan goals now, then add meals next.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <NutritionPlanForm
-          form={form}
-          isSubmitting={isLoading}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Create plan"
-          submittingLabel="Creating plan"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <NutritionPlanForm
+            form={form}
+            isSubmitting={isLoading}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Create plan"
+            submittingLabel="Creating plan"
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

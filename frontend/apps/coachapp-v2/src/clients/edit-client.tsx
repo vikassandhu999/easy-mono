@@ -42,8 +42,13 @@ export default function EditClient() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -60,8 +65,13 @@ export default function EditClient() {
             </div>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <ErrorState message="Couldn't load client." />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <ErrorState message="Couldn't load client." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -109,14 +119,19 @@ export default function EditClient() {
           <Page.Description>{name}</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <EditClientForm
-          client={client}
-          form={form}
-          isSubmitting={isUpdating}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <EditClientForm
+            client={client}
+            form={form}
+            isSubmitting={isUpdating}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

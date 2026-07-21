@@ -113,8 +113,13 @@ export default function ClientDetail() {
             <Page.Title>Client</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pt-4 pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -138,14 +143,19 @@ export default function ClientDetail() {
             Clients
           </Button>
         </Page.Toolbar>
-        <Page.Content className="pt-4 pb-6">
-          <Alert status="danger">
-            <Alert.Indicator />
-            <Alert.Content>
-              <Alert.Title>Client couldn&apos;t load</Alert.Title>
-              <Alert.Description>They may not exist, or you may not have access</Alert.Description>
-            </Alert.Content>
-          </Alert>
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <Alert status="danger">
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Title>Client couldn&apos;t load</Alert.Title>
+                <Alert.Description>They may not exist, or you may not have access</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          </Page.Frame>
         </Page.Content>
       </Page>
     );

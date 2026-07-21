@@ -41,17 +41,22 @@ export default function CreateExercise() {
           <Page.Description>Add a custom movement to your library.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <ExerciseForm
-          equipment={equipmentData?.data ?? []}
-          form={form}
-          isSubmitting={isLoading}
-          muscles={musclesData?.data ?? []}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Create exercise"
-          submittingLabel="Creating exercise"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <ExerciseForm
+            equipment={equipmentData?.data ?? []}
+            form={form}
+            isSubmitting={isLoading}
+            muscles={musclesData?.data ?? []}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Create exercise"
+            submittingLabel="Creating exercise"
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

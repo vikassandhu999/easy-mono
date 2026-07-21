@@ -88,8 +88,13 @@ export default function FoodDetail() {
             <Page.Title>Food</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -104,8 +109,13 @@ export default function FoodDetail() {
             <Page.Title>Food</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
-          <ErrorState message="Couldn't load food. It may not exist, or you may not have access." />
+        <Page.Content bare>
+          <Page.Frame
+            className="pb-6"
+            size="content"
+          >
+            <ErrorState message="Couldn't load food. It may not exist, or you may not have access." />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );

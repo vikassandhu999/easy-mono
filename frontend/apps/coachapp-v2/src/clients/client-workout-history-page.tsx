@@ -30,8 +30,13 @@ export default function ClientWorkoutHistoryPage() {
             <Page.Title>Workout history</Page.Title>
           </Page.TitleGroup>
         </Page.Header>
-        <Page.Content className="pb-6">
-          <PageSkeleton />
+        <Page.Content bare>
+          <Page.Frame
+            className="pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
         </Page.Content>
       </Page>
     );
@@ -55,41 +60,46 @@ export default function ClientWorkoutHistoryPage() {
           Client
         </Button>
       </Page.Toolbar>
-      <Page.Content className="pb-6">
-        <div className="mx-auto max-w-lg">
-          {isLoading && sessions.length === 0 ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner color="accent" />
-            </div>
-          ) : (
-            <BrowseListBox
-              ariaLabel="Workout history"
-              emptyState={
-                <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                  <Typography
-                    type="body-sm"
-                    weight="medium"
-                  >
-                    No workouts logged yet
-                  </Typography>
-                  <Typography
-                    color="muted"
-                    type="body-xs"
-                  >
-                    Workout sessions will appear here once the client starts logging
-                  </Typography>
-                </div>
-              }
-              fetchNextPage={fetchNextPage}
-              isError={isError}
-              isLoading={isFetchingNextPage}
-              items={sessions}
-              onAction={(key) => navigate(`/clients/${id}/sessions/${key}`)}
-              onRetry={refetch}
-              renderItem={(session) => <SessionListItem session={session} />}
-            />
-          )}
-        </div>
+      <Page.Content bare>
+        <Page.Frame
+          className="pb-6"
+          size="content"
+        >
+          <div className="mx-auto max-w-lg">
+            {isLoading && sessions.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <Spinner color="accent" />
+              </div>
+            ) : (
+              <BrowseListBox
+                ariaLabel="Workout history"
+                emptyState={
+                  <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                    <Typography
+                      type="body-sm"
+                      weight="medium"
+                    >
+                      No workouts logged yet
+                    </Typography>
+                    <Typography
+                      color="muted"
+                      type="body-xs"
+                    >
+                      Workout sessions will appear here once the client starts logging
+                    </Typography>
+                  </div>
+                }
+                fetchNextPage={fetchNextPage}
+                isError={isError}
+                isLoading={isFetchingNextPage}
+                items={sessions}
+                onAction={(key) => navigate(`/clients/${id}/sessions/${key}`)}
+                onRetry={refetch}
+                renderItem={(session) => <SessionListItem session={session} />}
+              />
+            )}
+          </div>
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

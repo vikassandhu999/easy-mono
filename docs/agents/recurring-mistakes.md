@@ -263,6 +263,15 @@ optional form fields after build; add a component test when coachapp has a front
 
 ### RM-123 — Browse lists use `BrowseListBox`; errors via `ErrorState` / "Couldn't load X". **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
 
+### RM-129 — `Page.Content` never takes the gutter into its own hands: `bare` + `Page.Frame`, or nothing
+A `<Page.Content className=...>` that isn't `bare` applies the page gutter itself. Two failure
+shapes shipped ~30 times during the redesign: (a) content with NO `Page.Frame` inside — no width
+limit, so bodies stretch unbounded past 1264px viewports; (b) a `Page.Frame` nested under a
+non-`bare` Content — both apply the gutter, so the body sits 32px from the edge while its own
+header sits at 16px. Rule: every screen body is `<Page.Content bare>` + `<Page.Frame size=...>`
+(className on either carries only vertical padding). Instance: the 2026-07-21 compliance sweep
+(create/detail/prospect/session screens; both plan builders). **Enforced by:** `just check-rm`.
+
 ### RM-124 — Never stack inline `translateX` with a Tailwind `-translate-x-*` (v4 emits the `translate` property, so both apply and the offsets ADD — one mechanism per axis). **Enforced by:** `just check-rm`.
 
 ### RM-125 — Loading/pending states must not change layout (skeletons not centered spinners; constant-width pending buttons). **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.

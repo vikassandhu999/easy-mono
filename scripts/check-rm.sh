@@ -53,5 +53,8 @@ check RM-124 "inline translateX(-50%) stacking with Tailwind translate utilities
 check RM-125 "centered-spinner idiom (use ListSkeleton/PageSkeleton)" \
   'justify-center py-20' "$COACH"
 
+check RM-129 "non-bare Page.Content with className (use bare + Page.Frame; gutter doubles or width unbounds)" \
+  '<Page\.Content className=' "$COACH"
+
 if [ "$fail" -eq 0 ]; then echo "check-rm: all clean"; fi
 exit $fail

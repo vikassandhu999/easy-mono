@@ -39,15 +39,20 @@ export default function CreateTrainingPlan() {
           <Page.Description>Name the plan now, then build workouts next.</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Content className="pt-4 pb-6">
-        <TrainingPlanForm
-          form={form}
-          isSubmitting={isLoading}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Create plan"
-          submittingLabel="Creating plan"
-        />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <TrainingPlanForm
+            form={form}
+            isSubmitting={isLoading}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Create plan"
+            submittingLabel="Creating plan"
+          />
+        </Page.Frame>
       </Page.Content>
     </Page>
   );

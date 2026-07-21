@@ -10,11 +10,16 @@ import {ListSkeleton} from '@/@components/list-skeleton';
  * The redesign's browse-list row: hairline-separated, square corners inside the
  * list card, no press-scale animation. Owns the full spec — call sites pass only
  * per-domain classes, never a padding/border override.
+ *
+ * Separators anchor to the TOP edge with `first:` exceptions, not bottom/`last:`:
+ * react-aria appends its load-more sentinel after the final row, so the last row
+ * is never `:last-child` and a bottom border would always paint against the
+ * card edge.
  */
 export const LIST_ITEM_CLASS =
   'relative min-h-fit gap-3 rounded-none border-b-0 px-4 py-3 transition-none! ' +
-  "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:start-16 after:h-px after:bg-separator after:content-[''] " +
-  'last:after:hidden sm:border-b sm:border-separator sm:after:hidden sm:last:border-0 ' +
+  "after:pointer-events-none after:absolute after:inset-x-0 after:top-0 after:start-16 after:h-px after:bg-separator after:content-[''] " +
+  'first:after:hidden sm:border-t sm:border-separator sm:after:hidden sm:first:border-t-0 ' +
   'hover:bg-surface-secondary active:scale-100! data-[pressed=true]:scale-100!';
 
 /** The redesign's white outline chip (macro/meta pills on rows and detail pages). */

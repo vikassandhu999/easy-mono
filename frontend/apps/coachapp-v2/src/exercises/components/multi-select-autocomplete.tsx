@@ -11,6 +11,7 @@ import {
   TagGroup,
   useFilter,
 } from '@heroui/react';
+import {cn} from '@heroui/styles';
 import type {ReactNode} from 'react';
 
 export type MultiSelectOption = {
@@ -25,6 +26,12 @@ type AutocompleteValueRenderProps = {
 };
 
 type MultiSelectAutocompleteProps = {
+  // Filter mode: the trigger stays a fixed-width button showing `placeholder ·
+  // N` instead of growing a chip per selection. Selections are added/removed in
+  // the popover list. Use this anywhere the control lives in a horizontal
+  // toolbar; leave it off (the default) for full-width form fields, where the
+  // inline tags are the point.
+  collapseToCount?: boolean;
   emptyMessage: string;
   errorMessage?: string;
   isInvalid?: boolean;
@@ -50,6 +57,7 @@ function normalizeSelectedKeys(keys: Key | Key[] | null): string[] {
 }
 
 export default function MultiSelectAutocomplete({
+  collapseToCount = false,
   emptyMessage,
   errorMessage,
   isInvalid = false,
@@ -62,6 +70,7 @@ export default function MultiSelectAutocomplete({
   value,
 }: MultiSelectAutocompleteProps) {
   const {contains} = useFilter({sensitivity: 'base'});
+  const active = value.length > 0;
 
   const handleRemoveTags = (keys: Set<Key>) => {
     onChange(value.filter((id) => !keys.has(id)));
@@ -78,11 +87,26 @@ export default function MultiSelectAutocomplete({
       value={value}
     >
       {label ? <Label>{label}</Label> : null}
-      <Autocomplete.Trigger className="min-h-11">
+      <Autocomplete.Trigger
+        className={cn('min-h-11', collapseToCount && active && 'border-ink font-medium text-foreground')}
+      >
         <Autocomplete.Value>
           {({defaultChildren, isPlaceholder, state}: AutocompleteValueRenderProps) => {
             if (isPlaceholder || state.selectedItems.length === 0) {
               return defaultChildren;
+            }
+
+            // Toolbar filter: label + count badge, fixed width regardless of how
+            // many are selected. Deselect happens in the popover list below.
+            if (collapseToCount) {
+              return (
+                <span className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">{placeholder}</span>
+                  <span className="shrink-0 rounded-full bg-ink px-1.5 text-xs font-semibold text-ink-foreground">
+                    {state.selectedItems.length}
+                  </span>
+                </span>
+              );
             }
 
             const selectedItemKeys = state.selectedItems.map((item) => item.key);

@@ -86,13 +86,14 @@ export default function ListExercises() {
           </SearchField.Group>
         </SearchField>
         {muscles.length > 0 && (
-          <div className="w-36 shrink-0 sm:w-auto">
+          <div className="w-40 shrink-0">
             <MultiSelectAutocomplete
+              collapseToCount
               emptyMessage="No muscles found"
               items={muscles}
               name="muscle_ids"
               onChange={setSelectedMuscleIds}
-              placeholder="Muscle groups"
+              placeholder="Muscles"
               searchPlaceholder="Search muscles…"
               value={selectedMuscleIds}
             />

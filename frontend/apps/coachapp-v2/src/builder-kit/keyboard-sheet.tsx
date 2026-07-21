@@ -199,7 +199,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
             </span>
             <button
               aria-label="Close"
-              className="-mr-2 flex min-h-10 min-w-10 items-center justify-center rounded-md text-muted hover:text-foreground transition-colors"
+              className="-mr-2 flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground"
               onClick={onClose}
               type="button"
             >

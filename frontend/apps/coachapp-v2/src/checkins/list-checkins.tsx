@@ -209,7 +209,7 @@ export default function ListCheckins() {
 
         {activeTab === 'templates' ? (
           <>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <SearchField
                 aria-label="Search forms"
                 className="w-full min-w-0 sm:max-w-72 sm:flex-1"
@@ -225,14 +225,14 @@ export default function ListCheckins() {
                   <SearchField.ClearButton className="min-h-11 min-w-11" />
                 </SearchField.Group>
               </SearchField>
-              <Separator
-                className="hidden h-6 sm:block"
-                orientation="vertical"
-              />
-              <div className="-mx-4 min-w-0 max-w-full shrink-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+              <div className="-mx-4 flex min-w-0 items-center gap-3 overflow-x-auto px-4 sm:mx-0 sm:flex-1 sm:px-0">
+                <Separator
+                  className="hidden h-6 sm:block"
+                  orientation="vertical"
+                />
                 <ToggleButtonGroup
                   aria-label="Filter forms by status"
-                  className="flex flex-nowrap gap-2"
+                  className="flex shrink-0 flex-nowrap gap-2"
                   isDetached
                   onSelectionChange={(keys) => {
                     const next = [...keys][0];
@@ -274,42 +274,41 @@ export default function ListCheckins() {
                     />
                   </ToggleButton>
                 </ToggleButtonGroup>
+                {/* Purpose filter has no prototype frame (FM shows status pills only);
+                    kept as a working feature and docked in this single filter row. */}
+                <ToggleButtonGroup
+                  aria-label="Filter forms by type"
+                  className={`${PURPOSE_GROUP_CLASS} sm:ms-auto`}
+                  isDetached
+                  onSelectionChange={(keys) => {
+                    const next = [...keys][0];
+                    if (next) {
+                      setPurpose(next as PurposeFilter);
+                    }
+                  }}
+                  selectedKeys={[purpose]}
+                  selectionMode="single"
+                >
+                  <ToggleButton
+                    className={PURPOSE_BUTTON_CLASS}
+                    id="all"
+                  >
+                    All
+                  </ToggleButton>
+                  <ToggleButton
+                    className={PURPOSE_BUTTON_CLASS}
+                    id="intake"
+                  >
+                    {PURPOSE_LABELS.intake}
+                  </ToggleButton>
+                  <ToggleButton
+                    className={PURPOSE_BUTTON_CLASS}
+                    id="check_in"
+                  >
+                    {PURPOSE_LABELS.check_in}
+                  </ToggleButton>
+                </ToggleButtonGroup>
               </div>
-              {/* Purpose filter has no prototype frame (FM shows status pills only);
-                  kept as a working feature, docked in the same toolbar row so the
-                  toolbar stays one line like the ref. */}
-              <ToggleButtonGroup
-                aria-label="Filter forms by type"
-                className={`${PURPOSE_GROUP_CLASS} sm:ms-auto`}
-                isDetached
-                onSelectionChange={(keys) => {
-                  const next = [...keys][0];
-                  if (next) {
-                    setPurpose(next as PurposeFilter);
-                  }
-                }}
-                selectedKeys={[purpose]}
-                selectionMode="single"
-              >
-                <ToggleButton
-                  className={PURPOSE_BUTTON_CLASS}
-                  id="all"
-                >
-                  All
-                </ToggleButton>
-                <ToggleButton
-                  className={PURPOSE_BUTTON_CLASS}
-                  id="intake"
-                >
-                  {PURPOSE_LABELS.intake}
-                </ToggleButton>
-                <ToggleButton
-                  className={PURPOSE_BUTTON_CLASS}
-                  id="check_in"
-                >
-                  {PURPOSE_LABELS.check_in}
-                </ToggleButton>
-              </ToggleButtonGroup>
             </div>
           </>
         ) : null}

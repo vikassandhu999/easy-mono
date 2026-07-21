@@ -1,8 +1,10 @@
 import {formatIsoDateShort, formatTimeAgo, getInitials} from '@easy/utils';
-import {Avatar, Chip} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 
-import {BrowseRow} from '@/@components/browse-list-box';
+import {ChevronRight} from 'lucide-react';
+
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import type {Client} from '@/api/clients';
 import type {Client as ListClient} from '@/api/generated';
 import {INACTIVE_REASON_LABEL, stageChip} from '@/clients/lib/client';
@@ -147,25 +149,41 @@ export default function ClientListItem({client}: {client: ListClient}) {
   const planChipLabel = getPlanChipLabel(client);
   const mobileSubtitle = getMobileSubtitle(client);
 
+  // Not a BrowseRow: this row's anatomy is a 5-track grid (avatar · identity ·
+  // chips · status · chevron), so it owns its ListBox.Item on LIST_ITEM_CLASS.
   return (
-    <BrowseRow
+    <ListBox.Item
       className={cn(
+        LIST_ITEM_CLASS,
+        'mt-0',
         // RECIPES.md R4 — row grid. Chips sit in their own LEFT-aligned track.
         'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3',
         'sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,2fr)_auto_auto] sm:gap-4 sm:px-4',
       )}
-      icon={
+      id={client.id}
+      textValue={name}
+    >
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-transparent sm:size-11">
         <Avatar
           className="size-9 shrink-0 bg-surface-secondary sm:size-10"
           size="md"
         >
           <Avatar.Fallback className="text-xs font-semibold text-foreground">{initials}</Avatar.Fallback>
         </Avatar>
-      }
-      iconClassName="size-9 rounded-full bg-transparent sm:size-11"
-      id={client.id}
-      meta={
-        <>
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Label className="min-w-0 max-w-full truncate text-sm font-semibold text-foreground">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="min-w-0 truncate">{name}</span>
+            <span
+              aria-hidden
+              className={cn('size-1.5 shrink-0 rounded-full sm:hidden', DOT_CLASS[status.tone])}
+            />
+            <span className="shrink-0 truncate text-xs font-normal text-muted sm:hidden">{status.label}</span>
+          </span>
+        </Label>
+        <Description className="max-w-full truncate text-xs text-muted">
           {/* Plain span: tw-merge misreads `text-warning-text` as a font size. */}
           <span className={mobileSubtitle.isAttention ? MOBILE_SUBTITLE_ATTENTION_CLASS : MOBILE_SUBTITLE_CLASS}>
             {mobileSubtitle.text}
@@ -173,44 +191,31 @@ export default function ClientListItem({client}: {client: ListClient}) {
           <span className="hidden max-w-full truncate text-xs text-muted sm:block">
             {client.email ?? client.phone ?? '—'}
           </span>
-        </>
-      }
-      textValue={name}
-      title={
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span className="min-w-0 truncate">{name}</span>
-          <span
-            aria-hidden
-            className={cn('size-1.5 shrink-0 rounded-full sm:hidden', DOT_CLASS[status.tone])}
-          />
-          <span className="shrink-0 truncate text-xs font-normal text-muted sm:hidden">{status.label}</span>
-        </span>
-      }
-      trailing={
-        <>
-          <div className="hidden min-w-0 flex-wrap items-center justify-start gap-1.5 sm:flex">
-            {planChipLabel ? <span className={PLAN_CHIP_CLASS}>{planChipLabel}</span> : null}
-            {attentionLabels.map((label) => (
-              <span
-                className={ATTENTION_CHIP_CLASS}
-                key={label}
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+        </Description>
+      </div>
 
-          <div className="hidden items-center justify-end gap-1.5 text-xs text-muted sm:flex">
-            <span
-              aria-hidden
-              className={cn('size-1.5 shrink-0 rounded-full', DOT_CLASS[status.tone])}
-            />
-            <span className="whitespace-nowrap">{status.label}</span>
-            {status.time ? <span className="whitespace-nowrap text-muted-2">· {status.time}</span> : null}
-          </div>
-        </>
-      }
-      trailingClassName="contents"
-    />
+      <div className="hidden min-w-0 flex-wrap items-center justify-start gap-1.5 sm:flex">
+        {planChipLabel ? <span className={PLAN_CHIP_CLASS}>{planChipLabel}</span> : null}
+        {attentionLabels.map((label) => (
+          <span
+            className={ATTENTION_CHIP_CLASS}
+            key={label}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+
+      <div className="hidden items-center justify-end gap-1.5 text-xs text-muted sm:flex">
+        <span
+          aria-hidden
+          className={cn('size-1.5 shrink-0 rounded-full', DOT_CLASS[status.tone])}
+        />
+        <span className="whitespace-nowrap">{status.label}</span>
+        {status.time ? <span className="whitespace-nowrap text-muted-2">· {status.time}</span> : null}
+      </div>
+
+      <ChevronRight className="size-4 shrink-0 text-muted-2" />
+    </ListBox.Item>
   );
 }

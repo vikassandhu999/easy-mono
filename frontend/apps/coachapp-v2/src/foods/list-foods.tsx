@@ -12,25 +12,18 @@ import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {useCoachFoodsInfiniteQuery} from '@/api/nutrition-foods';
-import CreateFood from '@/foods/create-food';
 
 import FoodListItem from './food-list-item';
 
 export default function ListFoods() {
   const navigate = useNavigate();
-  const create = useResponsiveCreate(ROUTES.CREATE_FOOD);
   const [search, setSearch] = useState('');
 
   const deferredSearch = useDeferredValue(search);
   const list = useCoachFoodsInfiniteQuery({search: deferredSearch});
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
   const total = list.data?.pages[0]?.count;
-
-  if (create.isCreating) {
-    return <CreateFood onClose={create.stopCreating} />;
-  }
 
   return (
     <Page>
@@ -50,7 +43,7 @@ export default function ListFoods() {
           <Button
             aria-label="Create food"
             className="min-h-11 min-w-11 rounded-control"
-            onPress={create.startCreating}
+            onPress={() => navigate(ROUTES.CREATE_FOOD)}
             variant="primary"
           >
             <Plus className="size-4" />
@@ -71,10 +64,10 @@ export default function ListFoods() {
           <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
             <SearchField.SearchIcon />
             <SearchField.Input
-              className="min-h-11 "
+              className="min-h-11"
               placeholder="Search foods…"
             />
-            <SearchField.ClearButton className="min-h-11 min-w-11  " />
+            <SearchField.ClearButton className="min-h-11 min-w-11" />
           </SearchField.Group>
         </SearchField>
         {total != null && <span className="ms-auto hidden shrink-0 text-sm text-muted sm:block">{total} foods</span>}
@@ -91,7 +84,6 @@ export default function ListFoods() {
               emptyState={
                 <ListEmptyState
                   createLabel="Create Food"
-                  onCreate={create.startCreating}
                   createRoute={ROUTES.CREATE_FOOD}
                   emptyDescription="Create your first food to get started."
                   hasFilter={!!deferredSearch}

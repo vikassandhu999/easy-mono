@@ -78,7 +78,7 @@ export default function EditableRow({
         />
         <div className="flex shrink-0 justify-end gap-2">
           <Button
-            className="min-h-11 "
+            className="min-h-11"
             isPending={form.formState.isSubmitting}
             size="sm"
             type="submit"
@@ -93,7 +93,7 @@ export default function EditableRow({
             )}
           </Button>
           <Button
-            className="min-h-11 "
+            className="min-h-11"
             onPress={cancel}
             size="sm"
             type="button"
@@ -124,7 +124,7 @@ export default function EditableRow({
         {value || '—'}
       </Typography>
       <Button
-        className="min-h-11 shrink-0 font-semibold text-accent "
+        className="min-h-11 shrink-0 font-semibold text-accent"
         onPress={startEdit}
         size="sm"
         variant="ghost"

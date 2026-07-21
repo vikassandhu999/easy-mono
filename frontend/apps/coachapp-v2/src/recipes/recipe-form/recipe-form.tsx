@@ -5,7 +5,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-section';
+import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
 import type {Food, FoodServingSize, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';

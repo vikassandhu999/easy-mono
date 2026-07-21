@@ -14,7 +14,7 @@ import RecipeForm, {
   useRecipeForm,
 } from '@/recipes/recipe-form/recipe-form';
 
-export default function CreateRecipe({onClose}: {onClose?: () => void} = {}) {
+export default function CreateRecipe() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
   const [createRecipe, {isLoading}] = useCreateRecipeMutation();
@@ -23,7 +23,6 @@ export default function CreateRecipe({onClose}: {onClose?: () => void} = {}) {
   const leaveConfirm = useOverlayState();
 
   const form = useRecipeForm();
-  const close = onClose ?? goBack;
 
   // Unsaved-changes guard: the form's own dirtiness plus the ingredient and
   // serving-size props (which aren't react-hook-form fields).
@@ -34,7 +33,7 @@ export default function CreateRecipe({onClose}: {onClose?: () => void} = {}) {
       leaveConfirm.open();
       return;
     }
-    close();
+    goBack();
   };
 
   const onSubmit = async (data: RecipeFormValues) => {
@@ -97,7 +96,7 @@ export default function CreateRecipe({onClose}: {onClose?: () => void} = {}) {
               <Button
                 onPress={() => {
                   leaveConfirm.close();
-                  close();
+                  goBack();
                 }}
                 variant="danger"
               >

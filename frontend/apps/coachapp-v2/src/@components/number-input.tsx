@@ -1,6 +1,7 @@
 import {Description, FieldError, Input, Label, TextField} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {type ComponentProps, type ReactNode, useEffect, useState} from 'react';
+import {INPUT_SKIN_CLASS} from '@/@components/form-fields/form-classes';
 
 // A numeric input backed by a plain text field (inputMode="decimal") instead of
 // react-aria's NumberField. NumberField is controlled by the *numeric* value and
@@ -90,9 +91,9 @@ export function NumberInput({
       {description ? <Description>{description}</Description> : null}
       {error ? <FieldError>{error}</FieldError> : null}
       <Input
-        {...inputProps}
-        className={cn('min-h-11 border border-border bg-surface shadow-none ', inputProps?.className)}
         inputMode="decimal"
+        {...inputProps}
+        className={cn(INPUT_SKIN_CLASS, inputProps?.className)}
       />
     </TextField>
   );

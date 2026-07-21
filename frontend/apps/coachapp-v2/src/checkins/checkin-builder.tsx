@@ -12,6 +12,7 @@
  * prototype draws drag grips but implements menus, so no grip icon and no DnD
  * library.
  */
+
 import {
   Button,
   Chip,
@@ -43,8 +44,8 @@ import {
   X,
 } from 'lucide-react';
 import {type ReactNode, useState} from 'react';
-
 import {FormActions, FormLayout} from '@/@components/form-fields';
+import {INPUT_SKIN_CLASS} from '@/@components/form-fields/form-classes';
 import {Page} from '@/@components/page';
 import {
   type FormPurpose,
@@ -72,9 +73,8 @@ const SEGMENT_BUTTON_CLASS =
   'data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground';
 
 const CARD_CLASS = 'rounded-card border border-border bg-surface p-4 sm:p-5';
-const DASHED_BUTTON_CLASS = 'min-h-11 w-full rounded-control border border-dashed border-border ';
-const ICON_TARGET_CLASS = 'min-h-11 min-w-11  ';
-const BUILDER_INPUT_CLASS = 'min-h-11 border border-border bg-surface shadow-none ';
+const DASHED_BUTTON_CLASS = 'min-h-11 w-full rounded-control border border-dashed border-border';
+const ICON_TARGET_CLASS = 'min-h-11 min-w-11';
 
 function pluralize(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -133,7 +133,7 @@ function OptionsEditor({onChange, options}: {onChange: (options: string[]) => vo
             value={option}
           >
             <Input
-              className={BUILDER_INPUT_CLASS}
+              className={INPUT_SKIN_CLASS}
               placeholder={`Option ${index + 1}`}
             />
           </TextField>
@@ -150,7 +150,7 @@ function OptionsEditor({onChange, options}: {onChange: (options: string[]) => vo
         </div>
       ))}
       <Button
-        className="min-h-11 self-start "
+        className="min-h-11 self-start"
         onPress={() => onChange([...options, ''])}
         size="sm"
         variant="ghost"
@@ -312,7 +312,7 @@ function QuestionRow({
           >
             <Label>Question</Label>
             <Input
-              className={BUILDER_INPUT_CLASS}
+              className={INPUT_SKIN_CLASS}
               placeholder="Untitled question"
             />
           </TextField>
@@ -324,7 +324,7 @@ function QuestionRow({
               value={question.type}
             >
               <Label>Answer type</Label>
-              <Select.Trigger className="min-h-11 ">
+              <Select.Trigger className="min-h-11">
                 <Icon className="size-4 shrink-0 text-muted" />
                 <Select.Value />
                 <Select.Indicator />
@@ -428,7 +428,7 @@ function SectionCard({
               boxed field, until focused. */}
           <Input
             className={cn(
-              BUILDER_INPUT_CLASS,
+              INPUT_SKIN_CLASS,
               'border-transparent bg-transparent px-0 font-semibold focus:border-border focus:bg-field-background focus:px-3',
             )}
             placeholder="Section title"
@@ -672,7 +672,7 @@ export default function CheckinBuilder({
               >
                 <Label>Form name</Label>
                 <Input
-                  className={BUILDER_INPUT_CLASS}
+                  className={INPUT_SKIN_CLASS}
                   placeholder="e.g. Weekly Check-in"
                 />
               </TextField>

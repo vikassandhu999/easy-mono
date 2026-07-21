@@ -53,7 +53,7 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
   const trigger = (
     <Button
       aria-label={`Meal slot: ${label}`}
-      className="min-h-11 rounded-control border border-border bg-surface px-2.5 text-pill font-medium text-foreground "
+      className="min-h-11 rounded-control border border-border bg-surface px-2.5 text-pill font-medium text-foreground"
       onPress={isDesktop ? undefined : () => setOpen(true)}
       size="sm"
       variant="outline"

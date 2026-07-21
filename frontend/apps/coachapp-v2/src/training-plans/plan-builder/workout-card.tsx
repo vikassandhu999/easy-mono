@@ -416,7 +416,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
         )}
 
         <Button
-          className="mt-3 min-h-11 w-full rounded-control border border-dashed border-border text-accent "
+          className="mt-3 min-h-11 w-full rounded-control border border-dashed border-border text-accent"
           onPress={() => setPickerOpen(true)}
           ref={addExerciseButtonRef}
           variant="ghost"

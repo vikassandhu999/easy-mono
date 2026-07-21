@@ -109,7 +109,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
               fullWidth
               inputProps={{
                 autoComplete: 'name',
-                className: 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10',
+                className: 'sm:min-h-10',
                 placeholder: 'Jordan Miles',
               }}
               isRequired
@@ -123,7 +123,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
                 fullWidth
                 inputProps={{
                   autoComplete: 'email',
-                  className: 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10',
+                  className: 'sm:min-h-10',
                   placeholder: 'name@email.com',
                 }}
                 label="Email"
@@ -135,7 +135,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
                 fullWidth
                 inputProps={{
                   autoComplete: 'tel',
-                  className: 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10',
+                  className: 'sm:min-h-10',
                   placeholder: '+1 (555) 000-0000',
                 }}
                 label="Phone"
@@ -153,7 +153,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
                 name="assigned_trainer_id"
                 placeholder={selfLabel}
                 triggerProps={{
-                  className: 'min-h-11 border border-border bg-surface shadow-none sm:min-h-10',
+                  className: 'sm:min-h-10',
                 }}
               >
                 {activeTrainers.map((member) => (

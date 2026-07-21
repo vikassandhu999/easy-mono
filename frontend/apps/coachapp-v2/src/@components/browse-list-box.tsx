@@ -24,11 +24,14 @@ export const OUTLINE_CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg
 export const BROWSE_LIST_SURFACE_CLASS =
   'overflow-hidden border-y border-border bg-background sm:rounded-card sm:border sm:bg-surface';
 
-/** Zero-gutter mobile list frame; restores the canonical page gutter on larger screens. */
-export const BROWSE_LIST_FRAME_CLASS = 'flex min-h-0 flex-1 flex-col px-0 pb-0 sm:px-4 sm:pb-6 md:px-6 lg:px-8';
+/**
+ * Zero-gutter mobile list frame. Page.Frame supplies the canonical gutter; this
+ * only cancels it below sm (full-bleed list) — never restate md/lg values here.
+ */
+export const BROWSE_LIST_FRAME_CLASS = 'flex min-h-0 flex-1 flex-col px-0 pb-0 sm:px-4 sm:pb-6';
 
 /** Search-field surface used by browse toolbars at both breakpoints. */
-export const BROWSE_SEARCH_GROUP_CLASS = 'min-h-11 border border-border bg-background shadow-none  sm:bg-surface';
+export const BROWSE_SEARCH_GROUP_CLASS = 'min-h-11 border border-border bg-background shadow-none sm:bg-surface';
 
 /**
  * Ink-selected filter pill (RECIPES.md R2). HeroUI ToggleButton exposes selection
@@ -38,11 +41,15 @@ export const BROWSE_SEARCH_GROUP_CLASS = 'min-h-11 border border-border bg-backg
 export const FILTER_PILL_CLASS =
   'me-2.5 min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm font-medium text-muted shadow-none ' +
   'data-[selected=true]:border-foreground data-[selected=true]:bg-transparent data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'sm:me-0  sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.5 sm:text-pill ' +
+  'sm:me-0 sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.5 sm:text-pill ' +
   'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:text-ink-foreground';
 
+/** The count beside a filter-pill label. Mobile shows it on the selected pill only. */
+export function FilterCount({count, isSelected}: {count: ReactNode; isSelected: boolean}) {
+  return <span className={cn('text-chip opacity-70', isSelected ? undefined : 'hidden sm:inline')}>{count}</span>;
+}
+
 type BrowseRowProps = {
-  className?: string;
   /** Tile contents: a lucide glyph, or `BrowseRowThumb` for image-backed rows. */
   icon: ReactNode;
   /** Extra classes for the icon tile — only for a domain that tints it (e.g. `bg-warning-soft`). */
@@ -52,31 +59,24 @@ type BrowseRowProps = {
   meta?: ReactNode;
   /** Typeahead/accessible text for the row. */
   textValue: string;
-  title: ReactNode;
+  title: string;
   /** Chips shown before the chevron. The chevron is always rendered. */
   trailing?: ReactNode;
-  trailingClassName?: string;
 };
 
 /**
  * One browse-list row: icon tile → title + meta column → trailing chips → chevron.
  * Owns the whole skeleton so per-domain files carry only their icon, meta string,
  * and chips. Pair with `BrowseListBox`; never hand-roll the row markup.
+ *
+ * Deliberately narrow: no className/layout overrides. A row whose anatomy differs
+ * (extra tracks, custom grid — see the clients list) is its own `ListBox.Item`
+ * built on `LIST_ITEM_CLASS`, not a bent BrowseRow.
  */
-export function BrowseRow({
-  className,
-  icon,
-  iconClassName,
-  id,
-  meta,
-  textValue,
-  title,
-  trailing,
-  trailingClassName,
-}: BrowseRowProps) {
+export function BrowseRow({icon, iconClassName, id, meta, textValue, title, trailing}: BrowseRowProps) {
   return (
     <ListBox.Item
-      className={cn(LIST_ITEM_CLASS, 'mt-0', className)}
+      className={cn(LIST_ITEM_CLASS, 'mt-0')}
       id={id}
       textValue={textValue}
     >
@@ -96,7 +96,7 @@ export function BrowseRow({
         )}
       </div>
 
-      <div className={cn('flex shrink-0 items-center gap-1.5', trailingClassName)}>
+      <div className="flex shrink-0 items-center gap-1.5">
         {trailing}
         <ChevronRight className="size-4 shrink-0 text-muted-2" />
       </div>

@@ -1,6 +1,7 @@
 import {Button, ListBox, SearchField, Spinner, Typography} from '@heroui/react';
 import {Apple, ArrowRight, X} from 'lucide-react';
 import {type KeyboardEvent, useDeferredValue, useMemo, useState} from 'react';
+import {INPUT_SKIN_CLASS} from '@/@components/form-fields/form-classes';
 
 import type {Food} from '@/api/generated';
 import {useListFoodsQuery} from '@/api/generated';
@@ -73,7 +74,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
           </Typography>
           <Button
             aria-label="Close"
-            className="-mr-1.5 flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent  "
+            className="-mr-1.5 flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             isIconOnly
             onPress={onClose}
             variant="ghost"
@@ -89,14 +90,14 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
           value={search}
           variant="secondary"
         >
-          <SearchField.Group className="min-h-11 border border-border bg-surface shadow-none ">
+          <SearchField.Group className={INPUT_SKIN_CLASS}>
             <SearchField.SearchIcon />
             <SearchField.Input
-              className="min-h-11 "
+              className="min-h-11"
               onKeyDown={onInputKeyDown}
               placeholder="Search foods…"
             />
-            {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton className="min-h-11 min-w-11  " />}
+            {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton className="min-h-11 min-w-11" />}
           </SearchField.Group>
         </SearchField>
       </div>

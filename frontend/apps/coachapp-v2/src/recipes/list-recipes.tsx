@@ -12,25 +12,18 @@ import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {useCoachRecipesInfiniteQuery} from '@/api/nutrition-foods';
-import CreateRecipe from '@/recipes/create-recipe';
 
 import RecipeListItem from './recipe-list-item';
 
 export default function ListRecipes() {
   const navigate = useNavigate();
-  const create = useResponsiveCreate(ROUTES.CREATE_RECIPE);
   const [search, setSearch] = useState('');
 
   const deferredSearch = useDeferredValue(search);
   const list = useCoachRecipesInfiniteQuery({search: deferredSearch});
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
   const total = list.data?.pages[0]?.count;
-
-  if (create.isCreating) {
-    return <CreateRecipe onClose={create.stopCreating} />;
-  }
 
   return (
     <Page>
@@ -50,7 +43,7 @@ export default function ListRecipes() {
           <Button
             aria-label="Create recipe"
             className="min-h-11 min-w-11 rounded-control"
-            onPress={create.startCreating}
+            onPress={() => navigate(ROUTES.CREATE_RECIPE)}
             variant="primary"
           >
             <Plus className="size-4" />
@@ -71,10 +64,10 @@ export default function ListRecipes() {
           <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
             <SearchField.SearchIcon />
             <SearchField.Input
-              className="min-h-11 "
+              className="min-h-11"
               placeholder="Search recipes…"
             />
-            <SearchField.ClearButton className="min-h-11 min-w-11  " />
+            <SearchField.ClearButton className="min-h-11 min-w-11" />
           </SearchField.Group>
         </SearchField>
         {total != null && <span className="ms-auto hidden shrink-0 text-sm text-muted sm:block">{total} recipes</span>}
@@ -91,7 +84,6 @@ export default function ListRecipes() {
               emptyState={
                 <ListEmptyState
                   createLabel="Create Recipe"
-                  onCreate={create.startCreating}
                   createRoute={ROUTES.CREATE_RECIPE}
                   emptyDescription="Create your first recipe to get started."
                   hasFilter={!!deferredSearch}

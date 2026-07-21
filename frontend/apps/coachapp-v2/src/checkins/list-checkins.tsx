@@ -20,12 +20,12 @@ import BrowseListBox, {
   BROWSE_SEARCH_GROUP_CLASS,
   BrowseRow,
   FILTER_PILL_CLASS,
+  FilterCount,
 } from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {
   type ClientProfileReviewQueueItem,
   type FormPurpose,
@@ -33,7 +33,6 @@ import {
   useListCheckInReviewQueueQuery,
   useListFormTemplatesQuery,
 } from '@/api/checkins';
-import CreateCheckin from '@/checkins/create-checkin';
 
 import FormTemplateListItem from './form-template-list-item';
 
@@ -114,7 +113,6 @@ function ReviewQueue() {
 
 export default function ListCheckins() {
   const navigate = useNavigate();
-  const create = useResponsiveCreate(ROUTES.CREATE_CHECKIN);
   const [searchParams, setSearchParams] = useSearchParams();
   const {data, isError, isLoading, refetch} = useListFormTemplatesQuery();
   const templates = data?.data ?? [];
@@ -151,10 +149,6 @@ export default function ListCheckins() {
 
   const hasFilter = !!deferredSearch || status !== 'all' || purpose !== 'all';
 
-  if (create.isCreating) {
-    return <CreateCheckin onClose={create.stopCreating} />;
-  }
-
   return (
     <Page>
       <Page.Header
@@ -174,7 +168,7 @@ export default function ListCheckins() {
             <Button
               aria-label="Create form"
               className="min-h-11 min-w-11 rounded-control"
-              onPress={create.startCreating}
+              onPress={() => navigate(ROUTES.CREATE_CHECKIN)}
               variant="primary"
             >
               <Plus className="size-4" />
@@ -196,14 +190,14 @@ export default function ListCheckins() {
           <Tabs.ListContainer className="max-w-full overflow-x-auto">
             <Tabs.List>
               <Tabs.Tab
-                className="min-h-11 "
+                className="min-h-11"
                 id="templates"
               >
                 Templates
                 <Tabs.Indicator />
               </Tabs.Tab>
               <Tabs.Tab
-                className="min-h-11 "
+                className="min-h-11"
                 id="review"
               >
                 To review{reviewData ? ` (${reviewData.data.length})` : ''}
@@ -225,10 +219,10 @@ export default function ListCheckins() {
                 <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
                   <SearchField.SearchIcon />
                   <SearchField.Input
-                    className="min-h-11 "
+                    className="min-h-11"
                     placeholder="Search forms…"
                   />
-                  <SearchField.ClearButton className="min-h-11 min-w-11  " />
+                  <SearchField.ClearButton className="min-h-11 min-w-11" />
                 </SearchField.Group>
               </SearchField>
               <Separator
@@ -254,35 +248,30 @@ export default function ListCheckins() {
                     id="all"
                   >
                     All{' '}
-                    <span
-                      className={status === 'all' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}
-                    >
-                      {counts.all}
-                    </span>
+                    <FilterCount
+                      count={counts.all}
+                      isSelected={status === 'all'}
+                    />
                   </ToggleButton>
                   <ToggleButton
                     className={FILTER_PILL_CLASS}
                     id="active"
                   >
                     Active{' '}
-                    <span
-                      className={status === 'active' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}
-                    >
-                      {counts.active}
-                    </span>
+                    <FilterCount
+                      count={counts.active}
+                      isSelected={status === 'active'}
+                    />
                   </ToggleButton>
                   <ToggleButton
                     className={FILTER_PILL_CLASS}
                     id="archived"
                   >
                     Archived{' '}
-                    <span
-                      className={
-                        status === 'archived' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'
-                      }
-                    >
-                      {counts.archived}
-                    </span>
+                    <FilterCount
+                      count={counts.archived}
+                      isSelected={status === 'archived'}
+                    />
                   </ToggleButton>
                 </ToggleButtonGroup>
               </div>
@@ -343,7 +332,6 @@ export default function ListCheckins() {
                 emptyState={
                   <ListEmptyState
                     createLabel="Create form"
-                    onCreate={create.startCreating}
                     createRoute={ROUTES.CREATE_CHECKIN}
                     emptyDescription="Build intake and check-in forms for your clients."
                     hasFilter={hasFilter}

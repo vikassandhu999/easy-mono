@@ -75,7 +75,7 @@ export function RecentActivityCell({conversations, isError}: {conversations: Con
       <DashboardSectionHeading
         aside={
           <Button
-            className="min-h-11 shrink-0 text-muted "
+            className="min-h-11 shrink-0 text-muted"
             onPress={() => navigate(ROUTES.MESSAGES)}
             size="sm"
             variant="ghost"

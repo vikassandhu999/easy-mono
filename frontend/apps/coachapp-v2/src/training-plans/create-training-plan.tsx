@@ -12,13 +12,12 @@ import TrainingPlanForm, {
   useTrainingPlanForm,
 } from '@/training-plans/training-plan-form/training-plan-form';
 
-export default function CreateTrainingPlan({onClose}: {onClose?: () => void} = {}) {
+export default function CreateTrainingPlan() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.TRAINING_PLANS);
   const [createPlan, {isLoading}] = useCreateTrainingPlanMutation();
 
   const form = useTrainingPlanForm();
-  const close = onClose ?? goBack;
 
   const onSubmit = async (data: TrainingPlanFormValues) => {
     try {
@@ -34,7 +33,7 @@ export default function CreateTrainingPlan({onClose}: {onClose?: () => void} = {
       <Page.Header size="content">
         <Page.TitleGroup>
           <div className="flex items-center gap-1">
-            <BackButton onPress={close} />
+            <BackButton onPress={goBack} />
             <Page.Title>Create training plan</Page.Title>
           </div>
           <Page.Description>Name the plan now, then build workouts next.</Page.Description>
@@ -44,7 +43,7 @@ export default function CreateTrainingPlan({onClose}: {onClose?: () => void} = {
         <TrainingPlanForm
           form={form}
           isSubmitting={isLoading}
-          onCancel={close}
+          onCancel={goBack}
           onSubmit={onSubmit}
           submitLabel="Create plan"
           submittingLabel="Creating plan"

@@ -12,17 +12,14 @@ import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {useListMusclesQuery} from '@/api/generated';
 import {useCoachTrainingExercisesInfiniteQuery} from '@/api/training-exercises';
 import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
-import CreateExercise from '@/exercises/create-exercise';
 
 import ExerciseListItem from './exercise-list-item';
 
 export default function ListExercises() {
   const navigate = useNavigate();
-  const create = useResponsiveCreate(ROUTES.CREATE_EXERCISE);
   const [search, setSearch] = useState('');
   const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
 
@@ -33,10 +30,6 @@ export default function ListExercises() {
 
   const {data: musclesData} = useListMusclesQuery({});
   const muscles = musclesData?.data ?? [];
-
-  if (create.isCreating) {
-    return <CreateExercise onClose={create.stopCreating} />;
-  }
 
   return (
     <Page>
@@ -56,7 +49,7 @@ export default function ListExercises() {
           <Button
             aria-label="Create exercise"
             className="min-h-11 min-w-11 rounded-control"
-            onPress={create.startCreating}
+            onPress={() => navigate(ROUTES.CREATE_EXERCISE)}
             variant="primary"
           >
             <Plus className="size-4" />
@@ -77,10 +70,10 @@ export default function ListExercises() {
           <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
             <SearchField.SearchIcon />
             <SearchField.Input
-              className="min-h-11 "
+              className="min-h-11"
               placeholder="Search exercises…"
             />
-            <SearchField.ClearButton className="min-h-11 min-w-11  " />
+            <SearchField.ClearButton className="min-h-11 min-w-11" />
           </SearchField.Group>
         </SearchField>
         {muscles.length > 0 && (
@@ -112,7 +105,6 @@ export default function ListExercises() {
               emptyState={
                 <ListEmptyState
                   createLabel="Create exercise"
-                  onCreate={create.startCreating}
                   createRoute={ROUTES.CREATE_EXERCISE}
                   emptyDescription="Create your first exercise to get started."
                   hasFilter={!!deferredSearch || selectedMuscleIds.length > 0}

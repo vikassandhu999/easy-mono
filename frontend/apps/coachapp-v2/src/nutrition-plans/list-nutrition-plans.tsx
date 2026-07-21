@@ -8,16 +8,15 @@ import BrowseListBox, {
   BROWSE_LIST_SURFACE_CLASS,
   BROWSE_SEARCH_GROUP_CLASS,
   FILTER_PILL_CLASS,
+  FilterCount,
 } from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useIsSm} from '@/@hooks/use-is-sm';
-import {useResponsiveCreate} from '@/@hooks/use-responsive-create';
 import {useListNutritionPlansQuery} from '@/api/generated';
 import {useCoachNutritionPlansInfiniteQuery} from '@/api/nutrition-plans-list';
-import CreateNutritionPlan from '@/nutrition-plans/create-nutrition-plan';
 
 import NutritionPlanListItem from './nutrition-plan-list-item';
 
@@ -25,7 +24,6 @@ type StatusFilter = 'active' | 'all' | 'archived';
 
 export default function ListNutritionPlans() {
   const navigate = useNavigate();
-  const create = useResponsiveCreate(ROUTES.CREATE_NUTRITION_PLAN);
   const isSm = useIsSm();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -44,10 +42,6 @@ export default function ListNutritionPlans() {
   const {data: archivedData} = useListNutritionPlansQuery({limit: 1, status: 'archived'});
   const activeCount = activeData?.count ?? 0;
   const archivedCount = archivedData?.count ?? 0;
-
-  if (create.isCreating) {
-    return <CreateNutritionPlan onClose={create.stopCreating} />;
-  }
 
   return (
     <Page>
@@ -70,7 +64,7 @@ export default function ListNutritionPlans() {
           <Button
             aria-label="Create plan"
             className="min-h-11 min-w-11 rounded-control"
-            onPress={create.startCreating}
+            onPress={() => navigate(ROUTES.CREATE_NUTRITION_PLAN)}
             variant="primary"
           >
             <Plus className="size-4" />
@@ -91,10 +85,10 @@ export default function ListNutritionPlans() {
           <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
             <SearchField.SearchIcon />
             <SearchField.Input
-              className="min-h-11 "
+              className="min-h-11"
               placeholder={isSm ? 'Search nutrition plans…' : 'Search plans…'}
             />
-            <SearchField.ClearButton className="min-h-11 min-w-11  " />
+            <SearchField.ClearButton className="min-h-11 min-w-11" />
           </SearchField.Group>
         </SearchField>
         <Separator
@@ -120,29 +114,30 @@ export default function ListNutritionPlans() {
               id="all"
             >
               All{' '}
-              <span className={status === 'all' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}>
-                {activeCount + archivedCount}
-              </span>
+              <FilterCount
+                count={activeCount + archivedCount}
+                isSelected={status === 'all'}
+              />
             </ToggleButton>
             <ToggleButton
               className={FILTER_PILL_CLASS}
               id="active"
             >
               Active{' '}
-              <span className={status === 'active' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}>
-                {activeCount}
-              </span>
+              <FilterCount
+                count={activeCount}
+                isSelected={status === 'active'}
+              />
             </ToggleButton>
             <ToggleButton
               className={FILTER_PILL_CLASS}
               id="archived"
             >
               Archived{' '}
-              <span
-                className={status === 'archived' ? 'text-chip opacity-70' : 'hidden text-chip opacity-70 sm:inline'}
-              >
-                {archivedCount}
-              </span>
+              <FilterCount
+                count={archivedCount}
+                isSelected={status === 'archived'}
+              />
             </ToggleButton>
           </ToggleButtonGroup>
         </div>
@@ -159,7 +154,6 @@ export default function ListNutritionPlans() {
               emptyState={
                 <ListEmptyState
                   createLabel="Create Nutrition Plan"
-                  onCreate={create.startCreating}
                   createRoute={ROUTES.CREATE_NUTRITION_PLAN}
                   emptyDescription="Create your first nutrition plan to get started."
                   hasFilter={!!deferredSearch || status !== 'all'}

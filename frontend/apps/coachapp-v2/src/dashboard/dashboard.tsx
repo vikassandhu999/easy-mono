@@ -2,7 +2,7 @@ import {getInitials} from '@easy/utils';
 import {Avatar, Button, Separator, Skeleton, Surface, Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {Fragment} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
@@ -182,11 +182,17 @@ export default function Dashboard() {
           <Page.Title className="mt-1.5 font-grotesk">{name ? `${greeting()}, ${name}` : greeting()}</Page.Title>
         </Page.TitleGroup>
         <Page.Actions className="sm:hidden">
-          <Avatar className="size-11">
-            <Avatar.Fallback className="bg-warning-soft font-semibold text-warning-soft-foreground">
-              {initials}
-            </Avatar.Fallback>
-          </Avatar>
+          {/* The only sub-lg Settings entry point since the mobile top bar was removed. */}
+          <Link
+            aria-label="Settings"
+            to={ROUTES.SETTINGS}
+          >
+            <Avatar className="size-11">
+              <Avatar.Fallback className="bg-warning-soft font-semibold text-warning-soft-foreground">
+                {initials}
+              </Avatar.Fallback>
+            </Avatar>
+          </Link>
         </Page.Actions>
         <StatBar
           active={clientSummary?.active ?? 0}

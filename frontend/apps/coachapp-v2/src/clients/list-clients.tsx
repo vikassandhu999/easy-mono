@@ -6,7 +6,7 @@ import {UserPlus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import BrowseListBox, {FILTER_PILL_CLASS} from '@/@components/browse-list-box';
+import BrowseListBox, {BROWSE_LIST_FRAME_CLASS, FILTER_PILL_CLASS} from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {type ClientSummary, useListClientsQuery} from '@/api/clients';
@@ -36,14 +36,6 @@ const FILTER_OPTIONS: FilterOption[] = [
 ];
 
 const ATTENTION_PAGE_SIZE = 100;
-
-const CLIENT_FILTER_CLASS = cn(
-  FILTER_PILL_CLASS,
-  'me-2.5 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 text-sm shadow-none',
-  'data-[selected=true]:border-foreground data-[selected=true]:bg-transparent data-[selected=true]:text-foreground',
-  'sm:me-0 sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.5 sm:text-pill',
-  'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:text-ink-foreground',
-);
 
 function matchesSearch(client: Client, search: string): boolean {
   const haystack = [client.first_name, client.last_name, client.email, client.phone]
@@ -166,7 +158,7 @@ export default function ListClients() {
 
               return (
                 <ToggleButton
-                  className={CLIENT_FILTER_CLASS}
+                  className={FILTER_PILL_CLASS}
                   id={option.id}
                   key={option.id}
                 >
@@ -193,7 +185,7 @@ export default function ListClients() {
 
       <Page.Content bare>
         <Page.Frame
-          className="flex min-h-0 flex-1 flex-col px-0 pb-6 sm:px-4 md:px-6 lg:px-8"
+          className={cn(BROWSE_LIST_FRAME_CLASS, 'pb-6 sm:pb-6')}
           size="content"
         >
           <div className="overflow-hidden border-y border-border bg-background sm:rounded-card sm:border sm:bg-surface">

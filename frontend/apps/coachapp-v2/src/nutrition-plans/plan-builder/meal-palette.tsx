@@ -164,7 +164,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
       title="Add meal"
       trigger={({onPress, ref}) => (
         <Button
-          className="min-h-11 w-full rounded-control border border-dashed border-border text-accent "
+          className="min-h-11 w-full rounded-control border border-dashed border-border text-accent"
           onPress={onPress}
           ref={ref}
           variant="ghost"
@@ -197,7 +197,7 @@ export function AddSwapControl({options, onAdd}: AddSwapControlProps) {
       title="Add a swap"
       trigger={({onPress, ref}) => (
         <Button
-          className="min-h-11 px-0 text-xs font-semibold text-accent "
+          className="min-h-11 px-0 text-xs font-semibold text-accent"
           onPress={onPress}
           ref={ref}
           size="sm"

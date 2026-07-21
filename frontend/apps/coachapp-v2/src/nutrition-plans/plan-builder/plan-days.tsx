@@ -496,7 +496,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           )}
 
           <Button
-            className="min-h-11 shrink-0 text-xs font-semibold text-accent "
+            className="min-h-11 shrink-0 text-xs font-semibold text-accent"
             isPending={creatingDay}
             onPress={() => {
               handleAddDay().catch(() => undefined);

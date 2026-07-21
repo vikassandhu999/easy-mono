@@ -3,7 +3,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormActions, FormLayout, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-section';
+import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import type {TrainingPlan, TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '@/api/generated';
 import {omitUndefined, toNullableText, toOptionalText} from '@/api/shared';
 

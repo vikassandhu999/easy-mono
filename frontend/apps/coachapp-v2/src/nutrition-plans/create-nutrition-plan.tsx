@@ -12,13 +12,12 @@ import NutritionPlanForm, {
   useNutritionPlanForm,
 } from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
 
-export default function CreateNutritionPlan({onClose}: {onClose?: () => void} = {}) {
+export default function CreateNutritionPlan() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.NUTRITION_PLANS);
   const [createPlan, {isLoading}] = useCreateNutritionPlanMutation();
 
   const form = useNutritionPlanForm();
-  const close = onClose ?? goBack;
 
   const onSubmit = async (data: NutritionPlanFormValues) => {
     try {
@@ -34,7 +33,7 @@ export default function CreateNutritionPlan({onClose}: {onClose?: () => void} = 
       <Page.Header size="content">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
-            <BackButton onPress={close} />
+            <BackButton onPress={goBack} />
             <Page.Title>Create nutrition plan</Page.Title>
           </div>
           <Page.Description>Set plan goals now, then add meals next.</Page.Description>
@@ -44,7 +43,7 @@ export default function CreateNutritionPlan({onClose}: {onClose?: () => void} = 
         <NutritionPlanForm
           form={form}
           isSubmitting={isLoading}
-          onCancel={close}
+          onCancel={goBack}
           onSubmit={onSubmit}
           submitLabel="Create plan"
           submittingLabel="Creating plan"

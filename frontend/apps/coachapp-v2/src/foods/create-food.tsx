@@ -15,7 +15,7 @@ import FoodForm, {
   useFoodForm,
 } from '@/foods/food-form/food-form';
 
-export default function CreateFood({onClose}: {onClose?: () => void} = {}) {
+export default function CreateFood() {
   const navigate = useNavigate();
   const location = useLocation();
   const goBack = useGoBack(ROUTES.FOODS);
@@ -38,7 +38,6 @@ export default function CreateFood({onClose}: {onClose?: () => void} = {}) {
   );
 
   const form = useFoodForm(duplicateFormValues ? {defaultValues: duplicateFormValues} : undefined);
-  const close = onClose ?? goBack;
 
   const onSubmit = async (data: FoodFormValues) => {
     try {
@@ -54,7 +53,7 @@ export default function CreateFood({onClose}: {onClose?: () => void} = {}) {
       <Page.Header size="content">
         <Page.TitleGroup>
           <div className={'flex items-center gap-1'}>
-            <BackButton onPress={close} />
+            <BackButton onPress={goBack} />
             <Page.Title>Create food</Page.Title>
           </div>
           <Page.Description>Add a custom food to your library.</Page.Description>
@@ -64,7 +63,7 @@ export default function CreateFood({onClose}: {onClose?: () => void} = {}) {
         <FoodForm
           form={form}
           isSubmitting={isLoading}
-          onCancel={close}
+          onCancel={goBack}
           onServingSizesChange={setServingSizes}
           onSubmit={onSubmit}
           servingSizes={servingSizes}

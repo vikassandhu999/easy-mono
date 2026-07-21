@@ -49,7 +49,7 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
       <Button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="min-h-11 "
+        className="min-h-11"
         isPending={isAssigning}
         onPress={() => setOpen(true)}
         ref={triggerRef}

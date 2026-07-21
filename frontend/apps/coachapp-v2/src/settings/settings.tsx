@@ -212,7 +212,7 @@ function LogOutFooter({className, onLogout}: {className?: string; onLogout: () =
   return (
     <div className={`flex flex-col gap-3 ${className ?? ''}`}>
       <Button
-        className="min-h-11 w-full rounded-xl border border-danger/30 "
+        className="min-h-11 w-full rounded-xl border border-danger/30"
         onPress={onLogout}
         variant="danger-soft"
       >
@@ -271,6 +271,8 @@ function SettingsShell({
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col px-4 pt-3.5 pb-6 md:px-8 md:pt-6 md:pb-10">
+        {/* Panel measure inside the sidebar+content split — not the page column
+            (that's Page.Frame size="content" above), so it isn't a size token. */}
         <div className="flex min-h-full flex-1 flex-col md:mx-auto md:w-full md:max-w-140">{children}</div>
       </div>
     </Tabs>

@@ -8,11 +8,10 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {draftToRequest, emptyTemplateDraft, type TemplateDraft, useCreateFormTemplateMutation} from '@/api/checkins';
 import CheckinBuilder from '@/checkins/checkin-builder';
 
-export default function CreateCheckin({onClose}: {onClose?: () => void} = {}) {
+export default function CreateCheckin() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CHECKINS);
   const [createTemplate, {isLoading}] = useCreateFormTemplateMutation();
-  const close = onClose ?? goBack;
 
   const onSubmit = async (draft: TemplateDraft) => {
     try {
@@ -29,11 +28,11 @@ export default function CreateCheckin({onClose}: {onClose?: () => void} = {}) {
   return (
     <Page>
       <CheckinBuilder
-        backSlot={<BackButton onPress={close} />}
+        backSlot={<BackButton onPress={goBack} />}
         eyebrow="New form"
         initialDraft={emptyTemplateDraft()}
         isSubmitting={isLoading}
-        onCancel={close}
+        onCancel={goBack}
         onSubmit={onSubmit}
         submitLabel="Save form"
         submittingLabel="Saving form"

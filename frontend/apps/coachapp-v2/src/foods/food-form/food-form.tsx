@@ -8,6 +8,7 @@ import {
   Input,
   Label,
   TextField,
+  Typography,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ImagePlus} from 'lucide-react';
@@ -61,7 +62,7 @@ export function foodToFormValues(food: Food): FoodFormValues {
   return {
     name: food.name,
     category: food.category ?? '',
-    source: food.source ?? '',
+    source: food.source ?? 'custom',
     notes: food.notes ?? '',
     image_url: food.image_url ?? '',
     calories_per_100g: food.calories_per_100g ?? undefined,
@@ -205,8 +206,8 @@ export default function FoodForm({
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
       <div className={RESPONSIVE_FORM_SECTION_CLASS}>
         <Fieldset>
-          <Fieldset.Legend>Details</Fieldset.Legend>
-          <Description>Name the food and where it came from.</Description>
+          <Fieldset.Legend className="hidden sm:block">Details</Fieldset.Legend>
+          <Description className="hidden sm:block">Name the food and where it came from.</Description>
           <Fieldset.Group>
             <div>
               <Label>Images</Label>
@@ -276,6 +277,12 @@ export default function FoodForm({
               </div>
             </div>
 
+            {/* Mobile-only Details header: the real legend above is sm+; on
+                mobile Images lead and this takes its place (FE-mobile ref). */}
+            <div className="border-t border-separator pt-5 sm:hidden">
+              <Typography weight="semibold">Details</Typography>
+            </div>
+
             <FormTextField
               control={control}
               fullWidth
@@ -285,7 +292,7 @@ export default function FoodForm({
               name="name"
             />
 
-            <FieldRow>
+            <FieldRow className="grid-cols-2">
               <FormTextField
                 control={control}
                 fullWidth
@@ -318,7 +325,7 @@ export default function FoodForm({
           <Fieldset.Legend>Nutrition</Fieldset.Legend>
           <Description>Enter values per 100 g.</Description>
           <Fieldset.Group>
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               {MACRO_FIELDS.map((fieldConfig) => (
                 <FormNumberField
                   control={control}

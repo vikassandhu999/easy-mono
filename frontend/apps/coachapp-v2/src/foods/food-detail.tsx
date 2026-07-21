@@ -17,6 +17,10 @@ import type {Food} from '@/api/generated';
 import {coachApi, useDeleteFoodMutation, useGetFoodQuery} from '@/api/generated';
 import {useAppDispatch} from '@/store';
 
+// Mobile runs sections together with hairline separators (FD-mobile ref);
+// desktop's card layering already separates them.
+const DETAIL_SECTION_CLASS = 'mt-8 border-t border-separator pt-8 sm:border-0 sm:pt-0';
+
 const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food; label: string}[] = [
   {color: 'accent', key: 'protein_g_per_100g', label: 'Protein'},
   {color: 'success', key: 'carbs_g_per_100g', label: 'Carbs'},
@@ -105,7 +109,7 @@ export default function FoodDetail() {
           </Page.TitleGroup>
         </Page.Header>
         <Page.Content className="pb-6">
-          <ErrorState message="Food couldn't load. It may not exist, or you may not have access" />
+          <ErrorState message="Couldn't load food. It may not exist, or you may not have access." />
         </Page.Content>
       </Page>
     );
@@ -201,7 +205,7 @@ export default function FoodDetail() {
           </div>
 
           {(kcal != null || segments.length > 0) && (
-            <section className="mt-8">
+            <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading
                 detail="per 100 g"
                 title="Nutrition"
@@ -215,7 +219,7 @@ export default function FoodDetail() {
           )}
 
           {food.serving_sizes.length > 0 && (
-            <section className="mt-8">
+            <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading title="Serving sizes" />
               <div className="mt-3 flex flex-col gap-2.5">
                 {food.serving_sizes.map((serving, i) => (
@@ -244,14 +248,9 @@ export default function FoodDetail() {
           )}
 
           {food.notes && (
-            <section className="mt-8">
+            <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading title="Notes" />
-              <Typography
-                className="mt-2 whitespace-pre-wrap"
-                color="muted"
-              >
-                {food.notes}
-              </Typography>
+              <Typography className="mt-2 whitespace-pre-wrap">{food.notes}</Typography>
             </section>
           )}
 

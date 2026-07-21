@@ -144,6 +144,39 @@ defmodule Easy.BillingTest do
     end
   end
 
+  describe "reserve_seat/2 atomicity" do
+    # Guards the transaction pattern shared by the payment paths (update_quantity /
+    # do_cancel): an earlier local write committed in the same transaction as a
+    # later step that fails must roll back together.
+    test "an earlier write rolls back when a later step in the same transaction fails" do
+      business = insert(:business)
+      before = Repo.aggregate(Event, :count, :id)
+
+      result =
+        Billing.reserve_seat(ctx_for(business), fn ->
+          Repo.insert!(%Event{business_id: business.id, kind: :seats_added, occurred_at: DateTime.utc_now(:second)})
+          {:error, :later_step_failed}
+        end)
+
+      assert result == {:error, :later_step_failed}
+      assert Repo.aggregate(Event, :count, :id) == before
+    end
+
+    test "the seat-consuming write is skipped entirely at the limit" do
+      business = insert(:business)
+      insert(:client, business: business, status: :active)
+      insert(:client, business: business, status: :active)
+
+      assert {:error, :seat_limit_reached} =
+               Billing.reserve_seat(ctx_for(business), fn ->
+                 send(self(), :ran)
+                 {:ok, :done}
+               end)
+
+      refute_received :ran
+    end
+  end
+
   describe "razorpay_subscription_id uniqueness" do
     test "the same subscription id can't be stored on two businesses" do
       billing_one = insert(:business_billing, business: insert(:business))

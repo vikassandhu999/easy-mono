@@ -87,11 +87,19 @@ expiring =
     subscription_ends_on: Date.add(today, 5)
   })
 
-# Freya is the "fresh / nothing set up yet" fixture (CD-OV `fresh`, CD-CI
-# `no-schedule`). Anything that hands her a check-in schedule breaks both, so
-# strip it on every run.
+# Freya is the "fresh / nothing set up yet" fixture (CD-OV `fresh` + its
+# `No active plan` chip, CD-TR/CD-NU `plan-ended`, CD-CI `no-schedule`). Any
+# plan or schedule that lands on her silently breaks those states, so strip
+# them on every run — a fixture defined by ABSENCE has to seed that absence.
 {deleted, _} = Repo.delete_all(from s in CheckInSchedule, where: s.client_id == ^fresh.id)
 if deleted > 0, do: IO.puts("removed #{deleted} check-in schedule(s) from the fresh fixture")
+
+{dropped_t, _} = Repo.delete_all(from p in Easy.Training.TrainingPlan, where: p.client_id == ^fresh.id)
+{dropped_n, _} = Repo.delete_all(from p in Easy.Nutrition.Plan, where: p.client_id == ^fresh.id)
+
+if dropped_t + dropped_n > 0 do
+  IO.puts("removed #{dropped_t} training + #{dropped_n} nutrition plan(s) from the fresh fixture")
+end
 
 # Ensure Rowan's conversation has 2 unread client messages (header Message
 # badge). Re-marking coach_last_read_at nil keeps it unread across runs.

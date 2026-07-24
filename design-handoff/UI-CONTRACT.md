@@ -120,11 +120,11 @@ Never port a prototype variable. Substitute:
 | `--foreground` / `--muted` | `foreground` / `muted-foreground` | |
 | `--border` | `border` | hairline 1px |
 | `--danger` / `--warning` / `--success` (+ `-soft`) | `danger` / `warning` / `success` (+ `-soft`) | status only |
-| radii (`border-radius:12/13/16px`) | component defaults (`Card` 24, `Chip` 16, fields 12) | delete explicit radii |
+| radii (`border-radius:12/13/16px`) | registered `@theme` radius tokens (`rounded-card/control/chip/nav`) | match the design's computed value — register a token if missing, never a px literal |
 | shadows | `--surface-shadow` / `--overlay-shadow` / `--field-shadow` (role-based) | none in dark mode |
-| spacing literals | Tailwind semantic gap/padding | Card 16px padding, `gap-3`, Button `gap-2`, Chip `gap-1.5` |
+| spacing literals | Tailwind semantic gap/padding | matching the design's computed spacing; `gap-*`/`p-*` steps, new `@theme` token for an exact off-scale value |
 
-Because you're on the default theme, spacing/radius/shadow/type come free — strip the prototype's geometry and let defaults apply.
+**Design wins.** The dc.html's rendered computed values are the target — verified per node/state by `scripts/style-diff.mjs` (see the `design-pro` skill). Where a HeroUI/app default disagrees, fix it at the highest sensible layer (theme override → app wrapper → screen-local token class); a difference survives only as a user-approved entry in `accepted-diffs.md`, never as agent judgment.
 
 ---
 

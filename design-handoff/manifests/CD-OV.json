@@ -1,0 +1,16 @@
+{
+  "design": "design-handoff/design/Client Detail.dc.html",
+  "app": { "base": "http://localhost:2021", "route": "/clients/f9e0ba52-2974-45b9-bf29-ffc3e081f7bd" },
+  "tokenKey": "coachapp.accessToken",
+  "states": [
+    { "name": "active", "design": [], "app": [{ "wait": "h5" }] }
+  ],
+  "pairs": [
+    {
+      "name": "header-name",
+      "design": "div.av + div span.gk",
+      "app": "h5",
+      "widths": ["desktop"]
+    }
+  ]
+}

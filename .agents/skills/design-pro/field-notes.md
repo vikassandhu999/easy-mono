@@ -59,6 +59,19 @@ Trust these over the handoff docs. When you discover a new one, add it here
 
 ## style-diff convergence (learned on CD-OV, the first full run)
 
+- **Before ledgering a whole node as "design wrong", prove the rule is absent.**
+  Cheap check: extract every class the dc.html uses and diff against the classes
+  its inline `<style>` defines —
+  `grep -o 'class="[^"]*"' | ...` vs `<style>` block. Client Detail used 38 and
+  defined 36; the 2 undefined ones (`.attnchip`, `.chip.def`) were exactly the
+  42 diff keys. Dashboard Redesign defines all 39, which is why the whole
+  21-badge campaign never hit this.
+- **The `_ds/…` stylesheets the dc.html links are NOT in the repo** and 404 on
+  every render — but they are TOKEN files only (`:root` custom properties from
+  the Claude Design project, fetchable via `DesignSync get_file`). They define
+  no component classes, and each frame's `.vp` block self-defines its colour
+  tokens, so the missing links do not affect the diff. Don't chase them.
+
 - **DC runtime normalizes style attributes** on nodes it re-renders (holes/sc-if
   subtrees): `font-weight:700` becomes `font-weight: 700`. Manifest `[style*=]`
   selectors must use colon-free substrings (`[style*='700']`, `[style*='14px']`,

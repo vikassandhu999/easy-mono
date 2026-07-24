@@ -42,7 +42,7 @@ fi
 # token", so a long-lived port branch is not re-flagged for scale work already
 # committed. Compares token NAMES, so reordering/comment churn is free.
 if [ -z "${UI_CONTRACT_SKIP_THEME:-}" ] && [ -f "$THEME" ]; then
-  names() { grep -oE '^[[:space:]]*--(text|radius|tracking|leading)-[a-z0-9-]+' | tr -d ' ' | sort -u; }
+  names() { grep -oE '^[[:space:]]*--(text|radius|tracking|leading|color)-[a-z0-9-]+' | tr -d ' ' | sort -u; }
   WAS=$(git show "HEAD:$THEME" 2>/dev/null | names || true)
   NOW=$(names < "$THEME")
   ADDED=$(comm -13 <(echo "$WAS") <(echo "$NOW"))
@@ -74,6 +74,15 @@ OUT=$(echo "$FILES" | xargs rg -n --no-messages \
   -e '(bg|text|border|ring)-(primary|neutral|default|success|warning|danger)-[0-9]{2,3}' \
   -e '@nextui-org/' -e 'HeroUIProvider' -e 'framer-motion' \
   -e '\bNumberField\b' \
+  `# Tailwind's stock type/radius ramps are a SECOND design system: text-sm is` \
+  `# 14px, rounded-xl is 12px. Using them silently opts a screen out of the` \
+  `# scale. Use the tokens (text-body, rounded-panel, ...). rounded-none is a` \
+  `# real 0 and stays legal.` \
+  -e '\b(text-(xs|sm|base|lg|xl|[2-9]xl)|rounded-(sm|md|lg|xl|[2-9]xl|full))\b' \
+  `# Quarter-step spacing is a prototype pixel wearing Tailwind syntax — the` \
+  `# px-literal ban never inspected it, so 36 distinct steps accumulated.` \
+  `# Native 0.5 and 1.5 are fine; everything else snaps to an integer step.` \
+  -e '(^|[^\w-])-?(gap|gap-x|gap-y|p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|space-x|space-y)-([2-9][0-9]*\.5|[0-9]+\.(25|75))\b' \
   | grep -v 'ui-contract-allow' \
   || true)
 

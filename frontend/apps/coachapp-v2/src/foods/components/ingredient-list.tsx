@@ -218,7 +218,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
 
         return (
           <div
-            className="overflow-hidden rounded-xl border border-border bg-surface"
+            className="overflow-hidden rounded-panel border border-border bg-surface"
             key={item.food_id}
             ref={item.food_id === autoExpandId ? autoExpandRowRef : undefined}
           >
@@ -226,11 +226,11 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               <Button
                 aria-expanded={isExpanded}
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.food.name}`}
-                className="-mx-1 flex min-h-11 min-w-0 flex-1 items-center justify-start gap-3 rounded-md px-1 py-1.5 text-left font-normal hover:bg-surface-hover"
+                className="-mx-1 flex min-h-11 min-w-0 flex-1 items-center justify-start gap-3 rounded-chip px-1 py-1.5 text-left font-normal hover:bg-surface-hover"
                 onPress={() => toggleExpand(item.food_id)}
                 variant="ghost"
               >
-                <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-surface-secondary">
+                <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-chip bg-surface-secondary">
                   {item.food.image_url ? (
                     <img
                       alt={item.food.name}
@@ -300,7 +300,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
                 {item.food.serving_sizes.length > 0 && (
                   <div className="mb-3">
                     <Label
-                      className="mb-1.5 block text-sm font-medium text-muted"
+                      className="mb-1.5 block text-body font-medium text-muted"
                       id={quickFillLabelId}
                     >
                       Quick fill

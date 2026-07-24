@@ -78,7 +78,7 @@ export default function PlanScheduleStep({
   return (
     <div className="space-y-4 pb-2">
       <button
-        className="flex min-h-9 items-center gap-1 py-1.5 text-xs font-medium text-muted hover:text-foreground"
+        className="flex min-h-9 items-center gap-1 py-1.5 text-eyebrow font-medium text-muted hover:text-foreground"
         onClick={onBack}
         type="button"
       >
@@ -87,8 +87,8 @@ export default function PlanScheduleStep({
       </button>
 
       {/* Selected plan summary */}
-      <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-separator p-3">
-        <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${iconWrap}`}>
+      <div className="flex items-center gap-3 rounded-card border border-separator p-3">
+        <span className={`grid size-10 shrink-0 place-items-center rounded-panel ${iconWrap}`}>
           <Icon size={18} />
         </span>
         <div className="min-w-0">
@@ -119,10 +119,10 @@ export default function PlanScheduleStep({
       {/* End date */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">End date</Label>
+          <Label className="text-body font-medium">End date</Label>
           {!requireEnd && end ? (
             <button
-              className="min-h-9 py-1.5 text-xs font-medium text-accent hover:underline"
+              className="min-h-9 py-1.5 text-eyebrow font-medium text-accent hover:underline"
               onClick={() => setEnd(null)}
               type="button"
             >
@@ -138,7 +138,7 @@ export default function PlanScheduleStep({
                 const on = activeDuration === w;
                 return (
                   <button
-                    className={`min-h-10 rounded-xl border px-3 py-2 text-xs font-medium ${
+                    className={`min-h-10 rounded-panel border px-3 py-2 text-eyebrow font-medium ${
                       on
                         ? 'border-accent bg-accent-soft text-accent'
                         : 'border-border text-muted hover:bg-surface-hover'
@@ -176,7 +176,7 @@ export default function PlanScheduleStep({
           </>
         ) : (
           <button
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border px-3 py-2.5 text-sm text-muted hover:bg-surface-hover"
+            className="flex w-full items-center justify-center gap-2 rounded-card border border-dashed border-border px-3 py-2 text-body text-muted hover:bg-surface-hover"
             onClick={() => setEnd(addWeeks(start, 8))}
             type="button"
           >
@@ -194,7 +194,7 @@ export default function PlanScheduleStep({
       </div>
 
       {errorMessage ? (
-        <div className="rounded-xl border border-danger/20 bg-danger-soft p-3">
+        <div className="rounded-panel border border-danger/20 bg-danger-soft p-3">
           <Typography
             className="text-danger"
             type="body-sm"

@@ -46,7 +46,7 @@ function MessageBubble({
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 ${
+        className={`max-w-[80%] rounded-card px-3 py-2 ${
           own ? 'rounded-br-sm bg-accent text-accent-foreground' : 'rounded-bl-sm bg-surface-secondary'
         }`}
       >
@@ -58,9 +58,9 @@ function MessageBubble({
             urls={urls}
           />
           {message.embed ? <MessageEmbed embed={message.embed} /> : null}
-          {message.body ? <p className="whitespace-pre-wrap break-words text-sm">{message.body}</p> : null}
+          {message.body ? <p className="whitespace-pre-wrap break-words text-body">{message.body}</p> : null}
         </div>
-        <p className={`mt-0.5 text-right text-[10px] ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
+        <p className={`mt-0.5 text-right text-eyebrow ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
           {formatTime(message.inserted_at)}
         </p>
       </div>
@@ -186,7 +186,7 @@ export default function ConversationView({
       <header className="flex min-h-14 items-center gap-3 border-b border-border px-4">
         <Link
           aria-label="Back"
-          className="grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-hover"
+          className="grid size-9 place-items-center rounded-chip text-muted hover:bg-surface-hover"
           to={backTo}
         >
           <ArrowLeft size={18} />
@@ -223,7 +223,7 @@ export default function ConversationView({
               </Button>
             ) : null}
             {messages.length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted">No messages yet. Say hello!</p>
+              <p className="py-12 text-center text-body text-muted">No messages yet. Say hello!</p>
             ) : null}
             {messages.map((message, index) => {
               const prev = messages[index - 1];
@@ -231,7 +231,7 @@ export default function ConversationView({
               return (
                 <div key={message.id}>
                   {newDay ? (
-                    <p className="my-2 text-center text-xs text-muted">{formatDay(message.inserted_at)}</p>
+                    <p className="my-2 text-center text-eyebrow text-muted">{formatDay(message.inserted_at)}</p>
                   ) : null}
                   <MessageBubble
                     failedIds={failedAttachmentIds}
@@ -257,7 +257,7 @@ export default function ConversationView({
         />
         {embed ? (
           <div className="mt-2 flex items-start gap-2">
-            <div className="min-w-0 flex-1 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm">
+            <div className="min-w-0 flex-1 rounded-panel border border-border bg-surface-secondary px-3 py-2 text-body">
               Check-in attached for feedback
             </div>
             <Button

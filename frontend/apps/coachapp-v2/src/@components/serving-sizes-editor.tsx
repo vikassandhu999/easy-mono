@@ -57,7 +57,7 @@ export function ServingSizesEditor({
     <Fieldset.Group>
       {value.map((serving, i) => (
         <div
-          className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5"
+          className="flex items-center justify-between rounded-panel border border-border bg-surface px-4 py-2"
           key={i}
         >
           <div className="flex min-w-0 items-baseline gap-3">
@@ -89,7 +89,7 @@ export function ServingSizesEditor({
       ))}
 
       {isAdding ? (
-        <div className="rounded-xl border border-border bg-surface-secondary p-4">
+        <div className="rounded-panel border border-border bg-surface-secondary p-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <TextField
               fullWidth
@@ -147,7 +147,7 @@ export function ServingSizesEditor({
         </div>
       ) : (
         <Button
-          className="min-h-11 w-full rounded-xl border border-dashed border-border text-muted"
+          className="min-h-11 w-full rounded-panel border border-dashed border-border text-muted"
           onPress={() => setIsAdding(true)}
           variant="ghost"
         >

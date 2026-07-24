@@ -58,7 +58,7 @@ export default function EditableRow({
   if (editing) {
     return (
       <Form
-        className="flex flex-col gap-2 border-t border-border px-4 py-3 md:flex-row md:items-center md:gap-2.5"
+        className="flex flex-col gap-2 border-t border-border px-4 py-3 md:flex-row md:items-center md:gap-2"
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <Typography

@@ -64,10 +64,10 @@ export default function TrainingPlanDetail() {
   return (
     <Page className="text-foreground [line-height:normal]">
       <Page.Header
-        className="gap-3.5"
+        className="gap-3"
         size="wide"
       >
-        <Page.TitleGroup className="flex min-w-0 items-center gap-3.5">
+        <Page.TitleGroup className="flex min-w-0 items-center gap-3">
           <BackButton
             onPress={goBack}
             testId="tb-back"

@@ -192,12 +192,12 @@ function QuestionRow({
 
   return (
     <div className="rounded-control border border-border bg-surface">
-      <div className="flex min-h-11 items-center gap-2.5 px-2.5 py-2">
+      <div className="flex min-h-11 items-center gap-2 px-2 py-2">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-chip bg-surface-secondary">
           <Icon className="size-4 text-muted" />
         </span>
 
-        <span className={cn('min-w-0 flex-1 truncate text-sm', question.label ? 'text-foreground' : 'text-muted-2')}>
+        <span className={cn('min-w-0 flex-1 truncate text-body', question.label ? 'text-foreground' : 'text-muted-2')}>
           {question.label || 'Untitled question'}
         </span>
 

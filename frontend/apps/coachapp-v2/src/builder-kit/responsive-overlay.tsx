@@ -27,7 +27,7 @@ import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 
 /** Desktop popover chrome, minus the width. The single source of truth. */
-const POPOVER_CHROME = 'max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface shadow-xl';
+const POPOVER_CHROME = 'max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface shadow-xl';
 
 /** Desktop dialog body: padded, capped, scrollable. */
 const POPOVER_DIALOG = 'max-h-[70vh] overflow-y-auto p-4 outline-none';

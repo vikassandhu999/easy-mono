@@ -76,7 +76,7 @@ export default function ListNutritionPlans() {
         <Page.Actions>
           <Button
             aria-label="Create plan"
-            className="size-9.5 min-h-11 min-w-11 gap-0 rounded-control p-0 text-title font-normal leading-[normal] [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5 sm:min-h-0 sm:w-auto sm:gap-1.75 sm:px-4 sm:font-btn sm:text-body sm:font-semibold sm:leading-none"
+            className="size-9.5 min-h-11 min-w-11 gap-0 rounded-control p-0 text-title font-normal leading-[normal] [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5 sm:min-h-0 sm:w-auto sm:gap-2 sm:px-4 sm:font-btn sm:text-body sm:font-semibold sm:leading-none"
             data-testid="np-create"
             onPress={() => navigate(ROUTES.CREATE_NUTRITION_PLAN)}
             variant="primary"
@@ -115,7 +115,7 @@ export default function ListNutritionPlans() {
         <div className="-mx-4 min-w-0 max-w-full shrink-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           <ToggleButtonGroup
             aria-label="Filter plans by status"
-            className="flex flex-nowrap gap-4.5 sm:gap-2"
+            className="flex flex-nowrap gap-4 sm:gap-2"
             isDetached
             onSelectionChange={(keys) => {
               const next = [...keys][0];

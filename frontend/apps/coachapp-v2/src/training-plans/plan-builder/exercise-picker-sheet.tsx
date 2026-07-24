@@ -237,13 +237,13 @@ export function ExercisePickerSheet({open, onClose, onAdd, anchorEl}: ExercisePi
     const meta = [primaryMuscle, primaryEquipment].filter(Boolean).join(' · ');
 
     return (
-      <div className="flex items-center gap-2.5 px-1 py-2.5">
+      <div className="flex items-center gap-2 px-1 py-2">
         {/* Selection mark — the row Button owns the press and announces state
             via aria-pressed, so this is purely decorative. */}
         <div
           aria-hidden="true"
           className={[
-            'flex size-5 shrink-0 items-center justify-center rounded-md border',
+            'flex size-5 shrink-0 items-center justify-center rounded-chip border',
             selected ? 'border-accent bg-accent text-accent-foreground' : 'border-border',
           ].join(' ')}
         >
@@ -252,8 +252,8 @@ export function ExercisePickerSheet({open, onClose, onAdd, anchorEl}: ExercisePi
 
         {/* Name + meta */}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-foreground">{exercise.name}</div>
-          {meta ? <div className="truncate text-xs text-muted">{meta}</div> : null}
+          <div className="truncate text-body font-medium text-foreground">{exercise.name}</div>
+          {meta ? <div className="truncate text-eyebrow text-muted">{meta}</div> : null}
         </div>
 
         {/* tracking_type badge */}

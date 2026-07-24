@@ -49,7 +49,7 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
       <Button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="min-h-11 gap-1.5 rounded-control border border-border bg-surface font-btn text-body font-semibold leading-none text-foreground [box-shadow:none] sm:h-9.5 sm:min-h-0 sm:px-3.5"
+        className="min-h-11 gap-1.5 rounded-control border border-border bg-surface font-btn text-body font-semibold leading-none text-foreground [box-shadow:none] sm:h-9.5 sm:min-h-0 sm:px-3"
         data-testid="nb-add-client"
         isPending={isAssigning}
         onPress={() => setOpen(true)}
@@ -71,7 +71,7 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
           }}
         >
           <Popover.Content
-            className="w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface p-0 shadow-xl"
+            className="w-80 max-w-[calc(100vw-2rem)] rounded-panel border border-border bg-surface p-0 shadow-xl"
             triggerRef={triggerRef}
           >
             <Popover.Dialog

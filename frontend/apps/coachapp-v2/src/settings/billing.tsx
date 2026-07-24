@@ -243,10 +243,10 @@ function SeatUsageCard({
   const isFull = billing.used_seats >= billing.seat_limit;
 
   return (
-    <div className="flex flex-col gap-3.5 rounded-card border border-border bg-surface p-4 md:px-5 md:py-4.5">
+    <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 md:px-5 md:py-4">
       <Meter
         aria-label="Seat usage"
-        className="flex flex-col gap-3.5"
+        className="flex flex-col gap-3"
         color={isFull ? 'warning' : 'accent'}
         maxValue={billing.seat_limit}
         value={billing.used_seats}
@@ -308,7 +308,7 @@ function SeatUsageCard({
       ) : null}
 
       {billing.is_owner ? (
-        <div className="flex flex-wrap items-center gap-2.5 border-t border-border pt-3.5">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
           <AddSeatsDialog
             isTriggerDisabled={isAddSeatsDisabled}
             onActivating={onActivating}
@@ -318,7 +318,7 @@ function SeatUsageCard({
         </div>
       ) : (
         <Typography
-          className="border-t border-border pt-3.5"
+          className="border-t border-border pt-3"
           color="muted"
           type="body-sm"
         >
@@ -392,7 +392,7 @@ export default function BillingSection() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-2.5 md:gap-5">
+      <div className="flex flex-col gap-2 md:gap-5">
         {header}
         <ListSkeleton />
       </div>
@@ -401,7 +401,7 @@ export default function BillingSection() {
 
   if (isError || !data) {
     return (
-      <div className="flex flex-col gap-2.5 md:gap-5">
+      <div className="flex flex-col gap-2 md:gap-5">
         {header}
         <div>
           <ErrorState
@@ -417,7 +417,7 @@ export default function BillingSection() {
   const events = billing.recent_events ?? [];
 
   return (
-    <div className="flex flex-col gap-2.5 md:gap-5">
+    <div className="flex flex-col gap-2 md:gap-5">
       {header}
       {pending ? <ActivatingBanner timedOut={pending.timedOut} /> : null}
       <SeatUsageCard

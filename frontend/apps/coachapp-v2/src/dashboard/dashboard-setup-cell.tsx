@@ -114,7 +114,7 @@ function DismissButton({onDismiss}: {onDismiss: () => void}) {
 /** GAPS #3 — the strip is a `Surface`, at every state. */
 function SetupSurface({children}: {children: ReactNode}) {
   return (
-    <Surface className="rounded-card border border-border p-3.5">
+    <Surface className="rounded-card border border-border p-3">
       <section className="flex items-center gap-4">{children}</section>
     </Surface>
   );
@@ -185,7 +185,7 @@ function StepChip({index, state, step}: {index: number; state: StepState; step: 
     >
       <span
         className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-full text-eyebrow font-bold',
+          'flex size-5 shrink-0 items-center justify-center rounded-pill text-eyebrow font-bold',
           state === 'done'
             ? 'bg-accent text-accent-foreground'
             : state === 'current'
@@ -215,7 +215,7 @@ function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDis
   const stepState = (step: SetupStep): StepState => (step.done ? 'done' : step === current ? 'current' : 'upcoming');
 
   return (
-    <Surface className="rounded-card border border-border p-3.5">
+    <Surface className="rounded-card border border-border p-3">
       {/* Mobile: GAPS #3 collapses the strip to one row + a chevron that
           navigates to the next incomplete step. */}
       <Button
@@ -238,7 +238,7 @@ function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDis
           >
             Get your workspace ready
           </Typography>
-          <span className="flex items-center gap-2.5">
+          <span className="flex items-center gap-2">
             <Meter.Track className="min-w-0 flex-1">
               <Meter.Fill />
             </Meter.Track>

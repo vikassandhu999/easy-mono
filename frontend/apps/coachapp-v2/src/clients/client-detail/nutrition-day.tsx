@@ -21,7 +21,7 @@ import {formatShortDate} from '@/clients/client-detail/data';
 import {CARD, CHIP, EYEBROW, SubHeader} from '@/clients/client-detail/ui';
 
 const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
-const ENTRY_ROW = 'flex items-center gap-2.25 py-1.5 sm:gap-2.5 sm:py-1.75';
+const ENTRY_ROW = 'flex items-center gap-2 py-1.5 sm:gap-2 sm:py-2';
 
 type PlannedItem = {calories?: number; food_name?: string};
 
@@ -66,7 +66,7 @@ function Meter({
 
   return (
     <div>
-      <div className="mb-1.25 flex justify-between text-eyebrow sm:mb-1.5 sm:text-eyebrow">
+      <div className="mb-1 flex justify-between text-eyebrow sm:mb-1.5 sm:text-eyebrow">
         <span
           className="font-semibold"
           data-testid={testId('meter-label')}
@@ -115,7 +115,7 @@ function EntryRow({entry, isFirst}: {entry: FoodLogEntry; isFirst: boolean}) {
           {entry.food_name ?? 'Food'}
         </div>
         <div
-          className="mt-0.25 text-eyebrow text-muted sm:mt-0.5"
+          className="mt-0.5 text-eyebrow text-muted sm:mt-0.5"
           data-testid={testId('entry-macros')}
         >
           {macros}
@@ -228,22 +228,22 @@ export default function NutritionDay() {
           title={date ? formatShortDate(date) : 'Day'}
         />
 
-        <div className="p-3.5 sm:px-7.5 sm:pt-6 sm:pb-7.5">
+        <div className="p-3 sm:px-8 sm:pt-6 sm:pb-8">
           <div
             className="flex flex-col gap-3 sm:max-w-195 sm:gap-4"
             data-testid="nd-root"
           >
             <div
-              className={`${CARD} p-3.75 sm:px-5 sm:py-4.5`}
+              className={`${CARD} p-4 sm:px-5 sm:py-4`}
               data-testid="nd-totals"
             >
               <div
-                className={`${EYEBROW} mb-3.25 sm:mb-4`}
+                className={`${EYEBROW} mb-3 sm:mb-4`}
                 data-testid="nd-totals-eyebrow"
               >
                 Day totals
               </div>
-              <div className="flex flex-col gap-3 sm:gap-3.75">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 {meters.map((meter, index) => (
                   <Meter
                     isFirst={index === 0}
@@ -258,7 +258,7 @@ export default function NutritionDay() {
             </div>
 
             {logs.length === 0 ? (
-              <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
+              <div className={`${CARD} px-3 py-6 text-center sm:px-4`}>
                 <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
                   Nothing logged on this day.
                 </span>
@@ -268,11 +268,11 @@ export default function NutritionDay() {
                 const skipped = skippedItems(log);
                 return (
                   <div
-                    className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+                    className={`${CARD} px-4 py-3 sm:px-4 sm:py-4`}
                     data-testid={logIndex === 0 ? 'nd-meal' : undefined}
                     key={log.id}
                   >
-                    <div className="mb-2.5 flex items-center justify-between sm:mb-3">
+                    <div className="mb-2 flex items-center justify-between sm:mb-3">
                       <div
                         className="text-body font-bold"
                         data-testid={logIndex === 0 ? 'nd-meal-title' : undefined}

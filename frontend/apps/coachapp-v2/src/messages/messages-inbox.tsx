@@ -50,7 +50,7 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
         </Description>
       </div>
       <div className="ms-auto flex shrink-0 flex-col items-end gap-1">
-        <span className={`text-xs ${unread ? 'font-medium text-accent-soft-foreground' : 'text-muted'}`}>
+        <span className={`text-eyebrow ${unread ? 'font-medium text-accent-soft-foreground' : 'text-muted'}`}>
           {timeAgo(conversation.last_message_at)}
         </span>
         {unread ? (
@@ -92,7 +92,7 @@ export default function MessagesInbox() {
         >
           <BrowseListBox
             ariaLabel="Conversations"
-            className="flex-1 gap-0 overflow-hidden rounded-2xl border border-border bg-surface"
+            className="flex-1 gap-0 overflow-hidden rounded-card border border-border bg-surface"
             emptyState={
               <ListEmptyState
                 emptyDescription="Conversations with your clients will show up here."

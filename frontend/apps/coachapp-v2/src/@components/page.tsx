@@ -96,7 +96,7 @@ function PageTitle({children, className, testId}: PageTitleProps) {
 function PageDescription({children, className, testId}: PageDescriptionProps) {
   return (
     <span
-      className={cn('mt-0.75 block text-body leading-[normal] [color:var(--color-muted)]', className)}
+      className={cn('mt-1 block text-body leading-[normal] [color:var(--color-muted)]', className)}
       data-testid={testId}
     >
       {children}

@@ -29,10 +29,10 @@ import {
 } from '@/clients/client-detail/data';
 import {EYEBROW} from '@/clients/client-detail/ui';
 
-const CELL = 'bg-surface px-3.5 py-2.75 sm:flex-1 sm:bg-transparent sm:px-5 sm:py-3.75';
-const VALUE = 'font-grotesk text-heading font-bold sm:mt-1.5 sm:text-metric mt-0.75';
+const CELL = 'bg-surface px-3 py-3 sm:flex-1 sm:bg-transparent sm:px-5 sm:py-4';
+const VALUE = 'font-grotesk text-heading font-bold sm:mt-1.5 sm:text-metric mt-1';
 const UNIT = 'text-eyebrow font-semibold text-muted sm:text-body';
-const SUB = 'text-eyebrow text-muted sm:mt-0.75 sm:text-eyebrow';
+const SUB = 'text-eyebrow text-muted sm:mt-1 sm:text-eyebrow';
 const DIVIDER = 'hidden w-px self-stretch bg-border sm:block';
 
 function Tile({
@@ -127,7 +127,7 @@ export default function StatStrip({client}: {client: Client}) {
 
   return (
     <div
-      className="mt-3.5 grid grid-cols-2 gap-px overflow-hidden rounded-panel border border-border bg-border sm:mt-5 sm:flex sm:bg-transparent sm:[column-gap:normal] sm:[row-gap:normal]"
+      className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-panel border border-border bg-border sm:mt-5 sm:flex sm:bg-transparent sm:[column-gap:normal] sm:[row-gap:normal]"
       data-testid="cd-strip"
     >
       <Tile
@@ -205,7 +205,7 @@ export default function StatStrip({client}: {client: Client}) {
         <div
           className={
             latestWeight && delta
-              ? `text-eyebrow font-semibold sm:mt-0.75 sm:text-eyebrow ${
+              ? `text-eyebrow font-semibold sm:mt-1 sm:text-eyebrow ${
                   delta.tone === 'success'
                     ? 'text-success-soft-foreground'
                     : delta.tone === 'danger'

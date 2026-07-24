@@ -25,8 +25,8 @@ const DOT_CLASS = {
   success: 'bg-success',
 } as const;
 
-const MOBILE_SUBTITLE_CLASS = 'block max-w-full truncate text-xs text-muted sm:hidden';
-const MOBILE_SUBTITLE_ATTENTION_CLASS = 'block max-w-full truncate text-xs text-warning-text! sm:hidden';
+const MOBILE_SUBTITLE_CLASS = 'block max-w-full truncate text-eyebrow text-muted sm:hidden';
+const MOBILE_SUBTITLE_ATTENTION_CLASS = 'block max-w-full truncate text-eyebrow text-warning-text! sm:hidden';
 
 type StatusCell = {label: string; time: null | string; tone: keyof typeof DOT_CLASS};
 
@@ -163,32 +163,32 @@ export default function ClientListItem({client}: {client: ListClient}) {
       id={client.id}
       textValue={name}
     >
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-transparent sm:size-11">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-transparent sm:size-11">
         <Avatar
           className="size-9 shrink-0 bg-surface-secondary sm:size-10"
           size="md"
         >
-          <Avatar.Fallback className="text-xs font-semibold text-foreground">{initials}</Avatar.Fallback>
+          <Avatar.Fallback className="text-eyebrow font-semibold text-foreground">{initials}</Avatar.Fallback>
         </Avatar>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Label className="min-w-0 max-w-full truncate text-sm font-semibold text-foreground">
+        <Label className="min-w-0 max-w-full truncate text-body font-semibold text-foreground">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="min-w-0 truncate">{name}</span>
             <span
               aria-hidden
-              className={cn('size-1.5 shrink-0 rounded-full sm:hidden', DOT_CLASS[status.tone])}
+              className={cn('size-1.5 shrink-0 rounded-pill sm:hidden', DOT_CLASS[status.tone])}
             />
-            <span className="shrink-0 truncate text-xs font-normal text-muted sm:hidden">{status.label}</span>
+            <span className="shrink-0 truncate text-eyebrow font-normal text-muted sm:hidden">{status.label}</span>
           </span>
         </Label>
-        <Description className="max-w-full truncate text-xs text-muted">
+        <Description className="max-w-full truncate text-eyebrow text-muted">
           {/* Plain span: tw-merge misreads `text-warning-text` as a font size. */}
           <span className={mobileSubtitle.isAttention ? MOBILE_SUBTITLE_ATTENTION_CLASS : MOBILE_SUBTITLE_CLASS}>
             {mobileSubtitle.text}
           </span>
-          <span className="hidden max-w-full truncate text-xs text-muted sm:block">
+          <span className="hidden max-w-full truncate text-eyebrow text-muted sm:block">
             {client.email ?? client.phone ?? '—'}
           </span>
         </Description>
@@ -206,10 +206,10 @@ export default function ClientListItem({client}: {client: ListClient}) {
         ))}
       </div>
 
-      <div className="hidden items-center justify-end gap-1.5 text-xs text-muted sm:flex">
+      <div className="hidden items-center justify-end gap-1.5 text-eyebrow text-muted sm:flex">
         <span
           aria-hidden
-          className={cn('size-1.5 shrink-0 rounded-full', DOT_CLASS[status.tone])}
+          className={cn('size-1.5 shrink-0 rounded-pill', DOT_CLASS[status.tone])}
         />
         <span className="whitespace-nowrap">{status.label}</span>
         {status.time ? <span className="whitespace-nowrap text-muted-2">· {status.time}</span> : null}

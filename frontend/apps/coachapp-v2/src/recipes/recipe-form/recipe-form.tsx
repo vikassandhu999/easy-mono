@@ -247,7 +247,7 @@ export default function RecipeForm({
             <FoodPickerControl
               excludeIds={excludeIds}
               onSelect={handleFoodSelect}
-              triggerClassName="w-full rounded-xl border border-dashed border-border text-muted"
+              triggerClassName="w-full rounded-panel border border-dashed border-border text-muted"
               triggerVariant="ghost"
             />
           </Fieldset.Group>

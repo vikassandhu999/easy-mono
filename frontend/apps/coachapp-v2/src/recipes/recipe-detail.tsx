@@ -186,7 +186,7 @@ export default function RecipeDetail() {
       >
         <Page.Frame size="content">
           <div className="flex items-start gap-4">
-            <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">
+            <div className="flex size-20 shrink-0 items-center justify-center rounded-card bg-surface-secondary">
               <ChefHat className="size-8 text-foreground" />
             </div>
             <div className="min-w-0 flex-1">
@@ -233,7 +233,7 @@ export default function RecipeDetail() {
           {ingredientCount > 0 && (
             <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading title="Ingredients" />
-              <div className="mt-3 flex flex-col gap-2.5">
+              <div className="mt-3 flex flex-col gap-2">
                 {orderedIngredients.map((ingredient, i) => {
                   const hasAmount = ingredient.amount != null && ingredient.amount !== 0;
                   const hasWeight = ingredient.weight_g != null && ingredient.weight_g !== 0;
@@ -243,7 +243,7 @@ export default function RecipeDetail() {
 
                   return (
                     <div
-                      className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3.5"
+                      className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3"
                       key={i}
                     >
                       <Typography
@@ -285,10 +285,10 @@ export default function RecipeDetail() {
           {recipe.serving_sizes.length > 0 && (
             <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading title="Serving sizes" />
-              <div className="mt-3 flex flex-col gap-2.5">
+              <div className="mt-3 flex flex-col gap-2">
                 {recipe.serving_sizes.map((serving, i) => (
                   <div
-                    className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3.5"
+                    className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3"
                     key={i}
                   >
                     <Typography

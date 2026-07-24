@@ -39,8 +39,8 @@ export default function DateInput({ariaLabel, isRequired, label, labelClassName,
       onChange={(date: DateValue | null) => onChange(date ? date.toString() : null)}
       value={toDateValue(value)}
     >
-      {label ? <Label className={labelClassName ?? 'mb-1.5 block text-sm font-medium'}>{label}</Label> : null}
-      <DateField.Group className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus-within:border-accent">
+      {label ? <Label className={labelClassName ?? 'mb-1.5 block text-body font-medium'}>{label}</Label> : null}
+      <DateField.Group className="flex w-full items-center gap-2 rounded-chip border border-border bg-background px-3 py-2 text-body focus-within:border-accent">
         <DateField.Input className="flex-1">{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
         <DateField.Suffix>
           <DatePicker.Trigger className="grid size-9 -mr-1 place-items-center text-muted transition-colors hover:text-foreground">

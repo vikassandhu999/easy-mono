@@ -11,7 +11,7 @@ export function SeatUsageCard({summary}: {summary: BillingSummary}) {
 
   return (
     <div className="flex w-full items-center gap-3 rounded-card border border-border bg-surface p-3">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent sm:size-9">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-panel bg-accent-soft text-accent sm:size-9">
         <Users className="size-4 sm:size-5" />
       </span>
       <Meter

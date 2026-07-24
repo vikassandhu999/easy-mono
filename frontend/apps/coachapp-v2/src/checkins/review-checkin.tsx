@@ -98,7 +98,7 @@ export default function ReviewCheckin() {
         className="pt-4 pb-8"
       >
         <Page.Frame size="content">
-          <div className="rounded-3xl border border-border bg-surface p-5 sm:p-6">
+          <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
             <ReviewAnswers item={item} />
             <div className="mt-6 flex flex-col gap-3 border-border border-t pt-5 sm:flex-row">
               <Button

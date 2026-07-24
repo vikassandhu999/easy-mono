@@ -73,7 +73,7 @@ export function PlanDates({plan}: PlanDatesProps) {
       <div className="min-w-40 flex-1">
         <DateInput
           label="Start date"
-          labelClassName="mb-1 block text-xs text-muted"
+          labelClassName="mb-1 block text-eyebrow text-muted"
           onChange={(v) => {
             saveDate('start_date', v).catch(() => undefined);
           }}
@@ -83,7 +83,7 @@ export function PlanDates({plan}: PlanDatesProps) {
       <div className="min-w-40 flex-1">
         <DateInput
           label="End date"
-          labelClassName="mb-1 block text-xs text-muted"
+          labelClassName="mb-1 block text-eyebrow text-muted"
           onChange={(v) => {
             saveDate('end_date', v).catch(() => undefined);
           }}

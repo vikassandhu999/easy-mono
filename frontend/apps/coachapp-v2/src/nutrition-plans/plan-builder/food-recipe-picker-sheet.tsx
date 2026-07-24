@@ -245,22 +245,22 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
     const macroBadge = isRecipe(item) ? recipeMacroBadge(item) : foodMacroBadge(item);
 
     return (
-      <div className="flex items-center gap-2.5 px-1 py-2.5">
+      <div className="flex items-center gap-2 px-1 py-2">
         {/* Checkbox visual */}
         <div
           aria-hidden="true"
           className={[
-            'h-5 w-5 shrink-0 rounded-md border-[1.5px] flex items-center justify-center',
+            'h-5 w-5 shrink-0 rounded-chip border flex items-center justify-center',
             selected ? 'border-accent bg-accent text-accent-foreground' : 'border-default',
           ].join(' ')}
         >
-          {selected ? <span className="text-[11px] font-bold leading-none">✓</span> : null}
+          {selected ? <span className="text-eyebrow font-bold leading-none">✓</span> : null}
         </div>
 
         {/* Name + per-serving subtitle */}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-foreground">{item.name}</div>
-          <div className="truncate text-xs text-muted">
+          <div className="truncate text-body font-medium text-foreground">{item.name}</div>
+          <div className="truncate text-eyebrow text-muted">
             {isRecipe(item)
               ? // Recipe totals cover servings_count servings; without one the
                 // whole recipe is a single serving — label accordingly.

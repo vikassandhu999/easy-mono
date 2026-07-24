@@ -173,11 +173,11 @@ export default function FoodDetail() {
       >
         <Page.Frame size="content">
           <div className="flex items-start gap-4">
-            <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary">
+            <div className="flex size-20 shrink-0 items-center justify-center rounded-card bg-surface-secondary">
               {(food.media?.kind === 'image' ? food.media.url : food.media ? null : food.image_url) ? (
                 <img
                   alt={food.name}
-                  className="size-20 rounded-2xl object-cover"
+                  className="size-20 rounded-card object-cover"
                   src={(food.media?.kind === 'image' ? food.media.url : food.image_url) ?? undefined}
                 />
               ) : food.media?.kind === 'video' ? (
@@ -229,10 +229,10 @@ export default function FoodDetail() {
           {food.serving_sizes.length > 0 && (
             <section className={DETAIL_SECTION_CLASS}>
               <DetailSectionHeading title="Serving sizes" />
-              <div className="mt-3 flex flex-col gap-2.5">
+              <div className="mt-3 flex flex-col gap-2">
                 {food.serving_sizes.map((serving, i) => (
                   <div
-                    className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3.5"
+                    className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3"
                     key={i}
                   >
                     <Typography

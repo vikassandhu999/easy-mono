@@ -99,7 +99,7 @@ export default function ProgressPhotos() {
           onBack={goBack}
           right={
             <Button
-              className={`${OUTLINE_BUTTON} h-8 px-3.75 sm:h-9`}
+              className={`${OUTLINE_BUTTON} h-8 px-4 sm:h-9`}
               data-testid="ph-compare-btn"
               onPress={() => {
                 setComparing((current) => !current);
@@ -113,14 +113,14 @@ export default function ProgressPhotos() {
           title="Progress photos"
         />
 
-        <div className="p-3.5 sm:px-7.5 sm:pt-6 sm:pb-7.5">
+        <div className="p-3 sm:px-8 sm:pt-6 sm:pb-8">
           <div
-            className="flex flex-col gap-2.75 sm:max-w-195 sm:gap-3"
+            className="flex flex-col gap-3 sm:max-w-195 sm:gap-3"
             data-testid="ph-root"
           >
             {isComparing ? (
               <div
-                className="rounded-control bg-accent-soft px-3.25 py-2.5 text-eyebrow font-semibold sm:px-3.5 sm:py-2.75"
+                className="rounded-control bg-accent-soft px-3 py-2 text-eyebrow font-semibold sm:px-3 sm:py-3"
                 data-testid="ph-banner"
               >
                 Select two photos to compare.
@@ -139,7 +139,7 @@ export default function ProgressPhotos() {
                   {formatShortDate(group.date)}
                 </div>
                 <div
-                  className="grid grid-cols-3 gap-1.75 sm:gap-2.5"
+                  className="grid grid-cols-3 gap-2 sm:gap-2"
                   data-testid={groupIndex === 0 ? 'ph-grid' : undefined}
                 >
                   {group.ids.map((photoId) => {
@@ -174,7 +174,7 @@ export default function ProgressPhotos() {
             ))}
 
             {isComparing && selected.length === 2 ? (
-              <div className="sticky bottom-0 flex justify-center pt-2.5">
+              <div className="sticky bottom-0 flex justify-center pt-2">
                 <Button
                   className={`${ACCENT_BUTTON} h-11 rounded-panel px-6 text-body`}
                   onPress={() => setCompareOpen(true)}

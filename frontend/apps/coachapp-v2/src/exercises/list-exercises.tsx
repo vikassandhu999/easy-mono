@@ -100,7 +100,7 @@ export default function ListExercises() {
           </div>
         )}
         {total != null && (
-          <span className="ms-auto hidden shrink-0 text-sm text-muted sm:block">{total} exercises</span>
+          <span className="ms-auto hidden shrink-0 text-body text-muted sm:block">{total} exercises</span>
         )}
       </Page.Toolbar>
       <Page.Content bare>

@@ -53,13 +53,13 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
       {createSlot}
       <div className="flex flex-col">
         <div
-          className="px-2.75 pt-0.5 pb-2 text-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
+          className="px-3 pt-0.5 pb-2 text-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
           data-testid="nb-reuse-label"
         >
           {groupLabel}
         </div>
         {options.length === 0 ? (
-          <div className="px-2.75 pt-1 pb-2 text-eyebrow text-muted">{emptyLabel}</div>
+          <div className="px-3 pt-1 pb-2 text-eyebrow text-muted">{emptyLabel}</div>
         ) : (
           <ListBox
             aria-label={groupLabel}
@@ -69,7 +69,7 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
           >
             {options.map((option) => (
               <ListBox.Item
-                className={`min-h-11 gap-2.5 rounded-control px-2.75 py-2.25 sm:min-h-0 ${AS_TEXT}`}
+                className={`min-h-11 gap-2 rounded-control px-3 py-2 sm:min-h-0 ${AS_TEXT}`}
                 data-testid="nb-reuse-row"
                 id={option.id}
                 key={option.id}
@@ -84,7 +84,7 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
                   </Label>
                   {option.sub ? (
                     <span
-                      className="mt-0.25 max-w-full truncate text-eyebrow text-muted"
+                      className="mt-0.5 max-w-full truncate text-eyebrow text-muted"
                       data-testid="nb-reuse-sub"
                     >
                       {option.sub}
@@ -169,7 +169,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
       options={reusable}
       renderCreate={(close) => (
         <Button
-          className={`h-auto w-full justify-start gap-2.5 rounded-control border-0 bg-transparent px-2.75 py-2.5 text-left [box-shadow:none] [color:var(--color-foreground)] ${AS_TEXT}`}
+          className={`h-auto w-full justify-start gap-2 rounded-control border-0 bg-transparent px-3 py-2 text-left [box-shadow:none] [color:var(--color-foreground)] ${AS_TEXT}`}
           data-testid="nb-create-meal"
           onPress={() => {
             close();

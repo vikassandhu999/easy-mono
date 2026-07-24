@@ -79,7 +79,9 @@ export default function ListRecipes() {
             <SearchField.ClearButton className="min-h-11 min-w-11" />
           </SearchField.Group>
         </SearchField>
-        {total != null && <span className="ms-auto hidden shrink-0 text-sm text-muted sm:block">{total} recipes</span>}
+        {total != null && (
+          <span className="ms-auto hidden shrink-0 text-body text-muted sm:block">{total} recipes</span>
+        )}
       </Page.Toolbar>
       <Page.Content bare>
         <Page.Frame

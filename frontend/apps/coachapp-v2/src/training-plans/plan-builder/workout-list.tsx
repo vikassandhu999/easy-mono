@@ -114,7 +114,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
           >
             {workouts.map((workout) => (
               <ToggleButton
-                className="min-h-11 shrink-0 gap-1.75 rounded-control border border-border bg-surface px-3.5 text-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:min-h-0 sm:py-1.75"
+                className="min-h-11 shrink-0 gap-2 rounded-control border border-border bg-surface px-3 text-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:min-h-0 sm:py-2"
                 data-testid={workout.id === activeWorkout?.id ? 'tb-tab-on' : 'tb-tab-off'}
                 id={workout.id}
                 key={workout.id}
@@ -132,7 +132,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
         ) : null}
 
         <Button
-          className="h-11 shrink-0 gap-1.25 rounded-control border border-dashed border-border bg-transparent px-3 font-btn text-eyebrow font-semibold leading-none [box-shadow:none] [color:var(--color-accent)] sm:h-8.5"
+          className="h-11 shrink-0 gap-1 rounded-control border border-dashed border-border bg-transparent px-3 font-btn text-eyebrow font-semibold leading-none [box-shadow:none] [color:var(--color-accent)] sm:h-8.5"
           data-testid="tb-add-workout"
           isPending={isCreating}
           onPress={() => {

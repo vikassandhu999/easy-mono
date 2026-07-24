@@ -111,7 +111,7 @@ export default function Signup() {
           Already have an account?
         </Typography>
         <Link
-          className="text-sm text-foreground underline"
+          className="text-body text-foreground underline"
           href={ROUTES.LOGIN}
         >
           Log in

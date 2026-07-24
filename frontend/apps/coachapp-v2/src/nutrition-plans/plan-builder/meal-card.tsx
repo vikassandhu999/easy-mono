@@ -317,7 +317,7 @@ export function MealCard({
           name takes its own line (`order-last w-full`) so it never truncates
           away next to the slot tag and the figures. */}
       <div
-        className="flex flex-wrap items-center gap-2.75 px-3.5 py-3"
+        className="flex flex-wrap items-center gap-3 px-3 py-3"
         data-testid="nb-card-header"
       >
         <div className="flex-1 shrink-0 sm:flex-none">
@@ -333,7 +333,7 @@ export function MealCard({
             // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
             autoFocus
             aria-label="Meal name"
-            className="order-last w-full min-w-0 border-b border-accent bg-transparent text-sm font-semibold text-foreground outline-none sm:order-none sm:w-auto sm:flex-1"
+            className="order-last w-full min-w-0 border-b border-accent bg-transparent text-body font-semibold text-foreground outline-none sm:order-none sm:w-auto sm:flex-1"
             onBlur={() => {
               commitRename().catch(() => undefined);
             }}
@@ -344,7 +344,7 @@ export function MealCard({
         ) : (
           <Disclosure.Heading className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
             <Disclosure.Trigger
-              className="flex min-h-11 w-full items-center gap-2.75 text-left sm:min-h-0"
+              className="flex min-h-11 w-full items-center gap-3 text-left sm:min-h-0"
               data-testid={triggerTestId}
             >
               <span
@@ -452,12 +452,12 @@ export function MealCard({
         {/* A plain div, not Disclosure.Body: `.disclosure__body` is unlayered,
             so its padding wins over any utility we put on the component. */}
         <div
-          className="border-t border-border pt-1.5 pr-4 pb-3.5 pl-4 sm:pl-10"
+          className="border-t border-border pt-1.5 pr-4 pb-3 pl-4 sm:pl-10"
           data-testid={openId('nb-body')}
         >
           {isShared ? (
             <div
-              className="flex items-center gap-1.75 pt-2.25 pb-0.5 text-eyebrow [color:var(--color-shared-foreground)]"
+              className="flex items-center gap-2 pt-2 pb-0.5 text-eyebrow [color:var(--color-shared-foreground)]"
               data-testid={openId('nb-shared-note')}
             >
               <Info className="size-3.25 flex-none" />
@@ -467,7 +467,7 @@ export function MealCard({
 
           {items.length === 0 ? (
             <div
-              className="py-2.5 text-eyebrow text-muted"
+              className="py-2 text-eyebrow text-muted"
               data-testid={openId('nb-meal-empty')}
             >
               No foods yet — add the first one below.
@@ -504,7 +504,7 @@ export function MealCard({
 
           {/* Swaps — the meal itself is the default, so this lists alternates only. */}
           <div
-            className="mt-3.25 border-t border-dashed border-border pt-2.75"
+            className="mt-3 border-t border-dashed border-border pt-3"
             data-testid={openId('nb-swaps-section')}
           >
             <div
@@ -517,7 +517,7 @@ export function MealCard({
             <div className="flex flex-col gap-1.5">
               {swaps.map((swap) => (
                 <div
-                  className="flex min-h-11 items-center gap-2.25 rounded-control border border-border px-3 py-2.25 sm:min-h-0"
+                  className="flex min-h-11 items-center gap-2 rounded-control border border-border px-3 py-2 sm:min-h-0"
                   data-testid={openId('nb-swap-row')}
                   key={swap.optionId}
                 >

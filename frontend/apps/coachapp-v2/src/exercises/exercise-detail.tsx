@@ -216,7 +216,7 @@ export default function ExerciseDetail() {
           {/* Identity + media: media leads on mobile, identity leads on desktop */}
           <div className="flex flex-col gap-6">
             <div className="order-2 flex items-start gap-4 sm:order-1">
-              <div className="hidden size-14 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary sm:flex">
+              <div className="hidden size-14 shrink-0 items-center justify-center rounded-card bg-surface-secondary sm:flex">
                 <Dumbbell className="size-6 text-foreground" />
               </div>
               <div className="min-w-0 flex-1">
@@ -303,7 +303,7 @@ export default function ExerciseDetail() {
                     className="flex items-start gap-3"
                     key={i}
                   >
-                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-accent-soft text-eyebrow font-semibold text-accent">
                       {i + 1}
                     </span>
                     <Typography>{step}</Typography>

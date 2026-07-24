@@ -12,7 +12,7 @@ import type {ReactNode} from 'react';
 export function DashboardSectionHeading({aside, count, title}: {aside?: ReactNode; count?: ReactNode; title: string}) {
   return (
     <div className="flex min-w-0 items-baseline justify-between gap-3">
-      <div className="flex min-w-0 items-baseline gap-2.5">
+      <div className="flex min-w-0 items-baseline gap-2">
         <Typography
           className="font-grotesk"
           type="h5"

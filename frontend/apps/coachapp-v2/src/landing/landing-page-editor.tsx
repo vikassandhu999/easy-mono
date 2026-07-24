@@ -28,7 +28,7 @@ const MAX_QUESTIONS = 5;
 const PUBLIC_SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 const inputCls =
-  'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-accent placeholder:text-muted';
+  'w-full rounded-chip border border-border bg-surface px-3 py-2 text-body outline-none transition-colors focus:border-accent placeholder:text-muted';
 
 const key = () => crypto.randomUUID();
 
@@ -53,7 +53,7 @@ function TextRow({
   return (
     <div>
       <label
-        className="mb-1 block text-sm font-medium"
+        className="mb-1 block text-body font-medium"
         htmlFor={id}
       >
         {label}
@@ -96,7 +96,7 @@ function TextRow({
 }
 
 function Card({children}: {children: ReactNode}) {
-  return <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">{children}</div>;
+  return <div className="rounded-panel border border-border bg-surface p-4 sm:p-5">{children}</div>;
 }
 
 export default function LandingPageEditor() {
@@ -145,7 +145,7 @@ export default function LandingPageEditor() {
   const header = (
     <Page.Header>
       <Button
-        className="mb-2 h-auto w-fit gap-1 px-0 py-0 text-sm font-normal text-muted hover:text-foreground"
+        className="mb-2 h-auto w-fit gap-1 px-0 py-0 text-body font-normal text-muted hover:text-foreground"
         onPress={() => navigate(ROUTES.SETTINGS)}
         variant="ghost"
       >
@@ -223,7 +223,7 @@ export default function LandingPageEditor() {
                   const selected = draft.template === tpl.value;
                   return (
                     <Button
-                      className={`h-auto w-full flex-col items-start justify-start gap-0 rounded-xl border p-3 text-left font-normal transition-colors ${
+                      className={`h-auto w-full flex-col items-start justify-start gap-0 rounded-panel border p-3 text-left font-normal transition-colors ${
                         selected
                           ? 'border-accent bg-accent/5 ring-1 ring-accent'
                           : 'border-border bg-surface hover:border-accent/50'
@@ -605,7 +605,7 @@ function QuestionsEditor({questions, onChange}: {questions: QuestionDraft[]; onC
                   value={question.label}
                 />
                 <label className="block">
-                  <span className="mb-1 block text-sm font-medium">Answer type</span>
+                  <span className="mb-1 block text-body font-medium">Answer type</span>
                   <select
                     className={inputCls}
                     onChange={(e) => set(index, {type: e.target.value as QuestionType})}

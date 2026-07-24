@@ -169,7 +169,7 @@ function InviteTrainerControl() {
           onOpenChange={(next) => !next && setOpen(false)}
         >
           <Popover.Content
-            className="w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface shadow-xl"
+            className="w-96 max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface shadow-xl"
             triggerRef={triggerRef}
           >
             <Popover.Dialog className="max-h-[70vh] overflow-y-auto p-4 outline-none">
@@ -383,7 +383,7 @@ export default function TeamSection() {
 
   if (!billing?.data.is_owner) {
     return (
-      <div className="flex flex-col gap-2.5 md:gap-5">
+      <div className="flex flex-col gap-2 md:gap-5">
         <SettingsSectionHeader
           description="Owner manages access"
           title="Team"
@@ -402,7 +402,7 @@ export default function TeamSection() {
   const activeCount = members.filter((member) => member.status === 'active').length;
 
   return (
-    <div className="flex flex-col gap-2.5 md:gap-5">
+    <div className="flex flex-col gap-2 md:gap-5">
       <SettingsSectionHeader
         action={<InviteTrainerControl />}
         description={`${activeCount} active · ${members.length} total · owner manages access`}

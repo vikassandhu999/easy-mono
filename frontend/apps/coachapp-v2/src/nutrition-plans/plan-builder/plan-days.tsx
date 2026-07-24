@@ -481,7 +481,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           : undefined;
 
   return (
-    <div className="mx-auto flex w-full max-w-195 flex-col gap-3.5 pb-4">
+    <div className="mx-auto flex w-full max-w-195 flex-col gap-3 pb-4">
       {/* Day switcher + weekday chips */}
       <div
         className="flex flex-wrap items-center justify-between gap-2"
@@ -511,7 +511,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 value={nameValue}
               />
               <Button
-                className="h-11 shrink-0 rounded-control border-0 bg-accent px-3.5 font-btn text-body font-semibold leading-none [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5"
+                className="h-11 shrink-0 rounded-control border-0 bg-accent px-3 font-btn text-body font-semibold leading-none [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5"
                 data-testid="nb-rename-save"
                 onPress={() => {
                   commitRename().catch(() => undefined);
@@ -538,7 +538,7 @@ export function PlanDays({plan}: PlanDaysProps) {
             >
               {days.map((day) => (
                 <ToggleButton
-                  className="min-h-11 rounded-control border border-border bg-surface px-3.5 text-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:min-h-0 sm:py-1.75 [row-gap:normal] [column-gap:normal]"
+                  className="min-h-11 rounded-control border border-border bg-surface px-3 text-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:min-h-0 sm:py-2 [row-gap:normal] [column-gap:normal]"
                   data-testid={day.id === activeDay.id ? 'nb-daytab-on' : 'nb-daytab-off'}
                   id={day.id}
                   key={day.id}
@@ -609,7 +609,7 @@ export function PlanDays({plan}: PlanDaysProps) {
         {/* Weekday chips — exclusivity lives here, not in the component (GAPS #8). */}
         <ToggleButtonGroup
           aria-label={`Weekdays on ${activeDay.name}`}
-          className="ml-auto flex gap-1.25"
+          className="ml-auto flex gap-1"
           data-testid="nb-wdays"
           onSelectionChange={(keys) => {
             const next = new Set([...keys].map(String));
@@ -652,7 +652,7 @@ export function PlanDays({plan}: PlanDaysProps) {
       {/* Meal cards */}
       {rows.length === 0 ? (
         <div
-          className="rounded-panel border border-dashed border-border p-5.5 text-center text-eyebrow text-muted"
+          className="rounded-panel border border-dashed border-border p-5 text-center text-eyebrow text-muted"
           data-testid="nb-day-empty"
         >
           No meals on this day yet — add the first one below.

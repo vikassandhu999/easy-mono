@@ -18,7 +18,7 @@ function LegendEntry({dot, label, value}: {dot: string; label: string; value: nu
   return (
     <div>
       <div className="flex items-center gap-1.5">
-        <span className={`size-2 rounded-full ${LEGEND_DOT[dot]}`} />
+        <span className={`size-2 rounded-pill ${LEGEND_DOT[dot]}`} />
         <Typography
           color="muted"
           type="body-sm"
@@ -32,7 +32,7 @@ function LegendEntry({dot, label, value}: {dot: string; label: string; value: nu
         weight="semibold"
       >
         {Math.round(value * 10) / 10}
-        <span className="text-xs font-normal text-muted">g</span>
+        <span className="text-eyebrow font-normal text-muted">g</span>
       </Typography>
     </div>
   );

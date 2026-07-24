@@ -7,7 +7,7 @@ import {Button, Typography} from '@heroui/react';
 
 export function ErrorState({message, onRetry}: {message: string; onRetry?: () => void}) {
   return (
-    <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
+    <div className="rounded-panel border border-danger/20 bg-danger/5 p-4 text-center">
       <Typography
         className="text-danger"
         type="body-sm"

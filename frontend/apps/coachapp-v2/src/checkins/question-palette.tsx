@@ -55,7 +55,7 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
             const Icon = QUESTION_TYPE_ICONS[type];
             return (
               <Button
-                className="h-auto min-h-11 w-full flex-col gap-1 rounded-control px-2 py-2.5 text-center"
+                className="h-auto min-h-11 w-full flex-col gap-1 rounded-control px-2 py-2 text-center"
                 key={type}
                 onPress={() => onPick(questionOfType(type))}
                 size="sm"
@@ -96,7 +96,7 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
                 const Icon = QUESTION_TYPE_ICONS[preset.type];
                 return (
                   <ListBox.Item
-                    className="min-h-11 gap-2.5"
+                    className="min-h-11 gap-2"
                     id={preset.key}
                     key={preset.key}
                     textValue={preset.label}

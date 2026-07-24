@@ -109,7 +109,7 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
 
   return (
     <div
-      className="flex items-center gap-2.5 border-b border-border py-2"
+      className="flex items-center gap-2 border-b border-border py-2"
       data-testid={showTestIds ? 'nb-item-row' : undefined}
     >
       {/* Main tap target — "{name} · {amount}". Ref exposes the button as the

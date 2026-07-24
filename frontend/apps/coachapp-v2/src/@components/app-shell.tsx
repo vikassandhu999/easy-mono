@@ -62,7 +62,7 @@ function SidebarLink({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `flex min-h-11 items-center gap-3 rounded-control px-3 py-2 text-sm transition-colors ${
+        `flex min-h-11 items-center gap-3 rounded-control px-3 py-2 text-body transition-colors ${
           isActive
             ? 'bg-accent font-semibold text-accent-foreground'
             : 'font-medium text-white/80 hover:bg-white/10 hover:text-white'
@@ -120,14 +120,14 @@ function ProfileCard() {
 
   return (
     <NavLink
-      className="mx-0.5 flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.07] p-2 transition-colors hover:border-white/20 hover:bg-white/[0.11]"
+      className="mx-0.5 flex items-center gap-2 rounded-panel border border-white/10 bg-white/[0.07] p-2 transition-colors hover:border-white/20 hover:bg-white/[0.11]"
       to={ROUTES.SETTINGS}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning-soft text-xs font-semibold text-warning-soft-foreground">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-warning-soft text-eyebrow font-semibold text-warning-soft-foreground">
         {initials}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-white">{name}</span>
+        <span className="block truncate text-body font-semibold text-white">{name}</span>
         <span className="block truncate text-eyebrow text-white/50">{profile?.business.name ?? ''}</span>
       </span>
       <Settings
@@ -180,11 +180,11 @@ export default function AppShell() {
       <Toast.Provider placement="bottom end" />
 
       <aside className="hidden bg-[var(--ink)] lg:fixed lg:inset-y-0 lg:flex lg:w-60 lg:flex-col lg:p-3">
-        <div className="mx-0.5 flex items-center gap-2.5 border-b border-white/10 px-1.5 pb-3.5 pt-0.5">
-          <span className="flex size-8 items-center justify-center rounded-control bg-accent font-grotesk text-base font-bold text-accent-foreground">
+        <div className="mx-0.5 flex items-center gap-2 border-b border-white/10 px-1.5 pb-3 pt-0.5">
+          <span className="flex size-8 items-center justify-center rounded-control bg-accent font-grotesk text-title font-bold text-accent-foreground">
             C
           </span>
-          <span className="font-grotesk text-lg font-bold text-white">
+          <span className="font-grotesk text-heading font-bold text-white">
             Coach<span className="text-accent">Easy</span>
           </span>
         </div>
@@ -212,8 +212,8 @@ export default function AppShell() {
 
           <div className="mt-auto flex flex-col gap-3 pt-4">
             {canInstall ? (
-              <div className="mx-0.5 rounded-xl border border-white/10 bg-white/[0.07] p-3">
-                <p className="text-xs text-white/70">Install the app for quick access</p>
+              <div className="mx-0.5 rounded-panel border border-white/10 bg-white/[0.07] p-3">
+                <p className="text-eyebrow text-white/70">Install the app for quick access</p>
                 <div className="mt-2 flex gap-2">
                   <Button
                     className="min-h-11 flex-1"
@@ -251,14 +251,14 @@ export default function AppShell() {
 
       {/* Mobile install banner — above bottom nav */}
       {canInstall && showMobileFrame ? (
-        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-surface px-4 py-2.5 lg:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-surface px-4 py-2 lg:hidden">
           <div className="flex items-center gap-3">
             <img
               alt=""
-              className="size-8 rounded-lg"
+              className="size-8 rounded-chip"
               src="/icons/icon-192x192.webp"
             />
-            <p className="flex-1 text-xs text-muted">Install CoachEasy for quick access</p>
+            <p className="flex-1 text-eyebrow text-muted">Install CoachEasy for quick access</p>
             <Button
               className="min-h-11"
               onPress={promptInstall}
@@ -278,7 +278,7 @@ export default function AppShell() {
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showMobileFrame ? (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-1 bg-[var(--ink)] px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2.5 lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch gap-1 bg-[var(--ink)] px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 lg:hidden">
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
               item={item}

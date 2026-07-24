@@ -111,7 +111,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
             const kind = mediaKind(item.file.type);
             return (
               <div
-                className="w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-surface"
+                className="w-28 shrink-0 overflow-hidden rounded-panel border border-border bg-surface"
                 key={item.localId}
               >
                 <div className="relative grid aspect-square place-items-center overflow-hidden bg-surface-secondary">
@@ -157,9 +157,11 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
                     />
                   ) : item.status === 'error' ? (
                     <div className="grid gap-2">
-                      <p className="text-danger-soft-foreground text-xs">{item.errorMessage ?? 'Upload failed.'}</p>
+                      <p className="text-danger-soft-foreground text-eyebrow">
+                        {item.errorMessage ?? 'Upload failed.'}
+                      </p>
                       <Button
-                        className="min-h-11 w-full px-2 text-xs"
+                        className="min-h-11 w-full px-2 text-eyebrow"
                         isDisabled={disabled}
                         onPress={() => retryUpload(item.file, item.durationMs, item.localId)}
                         size="sm"
@@ -169,7 +171,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
                       </Button>
                     </div>
                   ) : (
-                    <p className="truncate text-success-soft-foreground text-xs">Ready</p>
+                    <p className="truncate text-success-soft-foreground text-eyebrow">Ready</p>
                   )}
                 </div>
               </div>
@@ -177,7 +179,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
           })}
         </div>
       ) : null}
-      {fieldError ? <p className="mt-2 text-danger-soft-foreground text-xs">{fieldError}</p> : null}
+      {fieldError ? <p className="mt-2 text-danger-soft-foreground text-eyebrow">{fieldError}</p> : null}
     </div>
   );
 }

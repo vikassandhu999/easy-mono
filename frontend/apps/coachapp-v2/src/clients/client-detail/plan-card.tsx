@@ -51,7 +51,7 @@ export function PlanCard({
   return (
     <>
       <div
-        className={`${CARD} flex items-center gap-3 px-3.75 py-3.25 sm:gap-3.75 sm:px-4.5 sm:py-3.75`}
+        className={`${CARD} flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-4 sm:py-4`}
         data-testid={`${testId}-plan`}
       >
         <span
@@ -75,7 +75,7 @@ export function PlanCard({
           </div>
         </div>
         <Button
-          className={`${OUTLINE_BUTTON} hidden h-9 px-3.75 sm:inline-flex`}
+          className={`${OUTLINE_BUTTON} hidden h-9 px-4 sm:inline-flex`}
           data-testid={`${testId}-plan-open`}
           onPress={onOpen}
         >
@@ -192,11 +192,11 @@ export function EmptyPlanCard({
 }) {
   return (
     <div
-      className={`${CARD} flex flex-col items-center gap-1.25 px-4.5 py-7.5 text-center sm:gap-1.5 sm:px-5 sm:py-9`}
+      className={`${CARD} flex flex-col items-center gap-1 px-4 py-8 text-center sm:gap-1.5 sm:px-5 sm:py-9`}
       data-testid={`${testId}-empty`}
     >
       <span
-        className="mb-0.75 flex size-12 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:mb-1 sm:size-13 sm:rounded-card"
+        className="mb-1 flex size-12 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:mb-1 sm:size-13 sm:rounded-card"
         data-testid={`${testId}-empty-icon`}
       >
         {icon}
@@ -215,7 +215,7 @@ export function EmptyPlanCard({
       </div>
       <AssignSurface
         label="Assign plan"
-        triggerClassName={`${ACCENT_BUTTON} mt-2.25 h-9 px-3.75 sm:mt-2.5 sm:h-9.5`}
+        triggerClassName={`${ACCENT_BUTTON} mt-2 h-9 px-4 sm:mt-2 sm:h-9.5`}
         triggerTestId={`${testId}-empty-btn`}
       >
         {(close) => (

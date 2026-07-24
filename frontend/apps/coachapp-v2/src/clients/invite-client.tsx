@@ -117,7 +117,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
             className="size-10 shrink-0"
             color="accent"
           >
-            <Avatar.Fallback className="text-sm font-semibold">{initials}</Avatar.Fallback>
+            <Avatar.Fallback className="text-body font-semibold">{initials}</Avatar.Fallback>
           </Avatar>
           <div className="min-w-0 flex-1">
             <Typography
@@ -297,7 +297,7 @@ export default function InviteClient() {
               className="min-h-11 min-w-11 sm:min-h-9 sm:min-w-9 sm:border sm:border-border sm:bg-surface"
               onPress={goBack}
             />
-            <Page.Title className="text-lg leading-tight sm:text-2xl">
+            <Page.Title className="text-heading leading-tight sm:text-metric">
               {inviteResult ? 'Invite sent' : 'Invite client'}
             </Page.Title>
           </div>

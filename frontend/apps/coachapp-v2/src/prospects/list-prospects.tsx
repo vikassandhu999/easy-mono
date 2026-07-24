@@ -114,7 +114,7 @@ export default function ListProspects() {
         >
           <BrowseListBox
             ariaLabel="Prospects"
-            className="flex-1 gap-0 overflow-hidden rounded-2xl border border-border bg-surface"
+            className="flex-1 gap-0 overflow-hidden rounded-card border border-border bg-surface"
             emptyState={
               <ListEmptyState
                 emptyDescription="Publish your landing page and applications will show up here."

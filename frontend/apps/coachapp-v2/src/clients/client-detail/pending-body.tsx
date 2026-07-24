@@ -47,16 +47,16 @@ export function InviteCard({client}: {client: Client}) {
 
   return (
     <div
-      className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+      className={`${CARD} px-4 py-3 sm:px-4 sm:py-4`}
       data-testid="cd-invite"
     >
       <div
-        className={`${EYEBROW} mb-2.75 sm:mb-3`}
+        className={`${EYEBROW} mb-3 sm:mb-3`}
         data-testid="cd-invite-eyebrow"
       >
         Invitation
       </div>
-      <div className="flex items-center gap-2.75 sm:gap-3.25">
+      <div className="flex items-center gap-3 sm:gap-3">
         <span
           className="flex size-9.5 flex-none items-center justify-center rounded-control bg-warning-soft text-warning-soft-foreground sm:size-10"
           data-testid="cd-invite-icon"
@@ -71,16 +71,16 @@ export function InviteCard({client}: {client: Client}) {
             Invite sent {sentLabel}
           </div>
           <div
-            className="mt-0.25 text-eyebrow text-muted sm:text-eyebrow"
+            className="mt-0.5 text-eyebrow text-muted sm:text-eyebrow"
             data-testid="cd-invite-sub"
           >
             Waiting for {client.first_name} to accept and set up their app.
           </div>
         </div>
       </div>
-      <div className="mt-3 flex gap-2 sm:mt-3.5 sm:gap-2.25">
+      <div className="mt-3 flex gap-2 sm:mt-3 sm:gap-2">
         <Button
-          className={`${OUTLINE_BUTTON} h-9 flex-1 px-3.75 sm:flex-none`}
+          className={`${OUTLINE_BUTTON} h-9 flex-1 px-4 sm:flex-none`}
           data-testid="cd-invite-resend"
           isPending={isResending}
           onPress={handleResend}
@@ -88,7 +88,7 @@ export function InviteCard({client}: {client: Client}) {
           Resend invite
         </Button>
         <Button
-          className="h-9 min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn text-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-3.75 sm:py-0"
+          className="h-9 min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn text-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-4 sm:py-0"
           data-testid="cd-invite-revoke"
           isPending={isRevoking}
           onPress={handleRevoke}
@@ -114,16 +114,16 @@ export default function PendingBody({
 
   return (
     <div
-      className="flex flex-col gap-3 p-3.5 sm:max-w-160 sm:gap-3.5 sm:p-0"
+      className="flex flex-col gap-3 p-3 sm:max-w-160 sm:gap-3 sm:p-0"
       data-testid="cd-pending"
     >
       <InviteCard client={client} />
       <div
-        className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+        className={`${CARD} px-4 py-3 sm:px-4 sm:py-4`}
         data-testid="cd-intake"
       >
-        <div className={`${EYEBROW} mb-2.5 sm:mb-2.75`}>Intake</div>
-        <div className="flex items-center gap-2.5 sm:gap-2.75">
+        <div className={`${EYEBROW} mb-2 sm:mb-3`}>Intake</div>
+        <div className="flex items-center gap-2 sm:gap-3">
           <span className="flex size-8.5 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9">
             <ClipboardList className="size-4 sm:size-4.25" />
           </span>
@@ -134,12 +134,12 @@ export default function PendingBody({
             >
               {intake?.form_template.name ?? 'Onboarding intake'}
             </div>
-            <div className="mt-0.25 text-eyebrow text-muted">
+            <div className="mt-0.5 text-eyebrow text-muted">
               {intake?.latest_submission ? 'Submitted' : 'Not submitted yet'}
             </div>
           </div>
           <Button
-            className={`${OUTLINE_BUTTON} h-8 px-3 sm:h-9 sm:px-3.75`}
+            className={`${OUTLINE_BUTTON} h-8 px-3 sm:h-9 sm:px-4`}
             data-testid="cd-intake-remind"
             onPress={() => toast.success('Reminder sent')}
           >

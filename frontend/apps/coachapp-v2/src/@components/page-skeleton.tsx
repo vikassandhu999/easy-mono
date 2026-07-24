@@ -11,9 +11,9 @@ export function PageSkeleton() {
       className="flex w-full flex-col gap-4"
     >
       <Skeleton className="h-6 w-1/3 rounded" />
-      <Skeleton className="h-24 w-full rounded-xl" />
-      <Skeleton className="h-40 w-full rounded-xl" />
-      <Skeleton className="h-24 w-full rounded-xl" />
+      <Skeleton className="h-24 w-full rounded-panel" />
+      <Skeleton className="h-40 w-full rounded-panel" />
+      <Skeleton className="h-24 w-full rounded-panel" />
     </div>
   );
 }

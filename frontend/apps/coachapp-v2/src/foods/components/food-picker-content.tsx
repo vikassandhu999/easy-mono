@@ -74,7 +74,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
           </Typography>
           <Button
             aria-label="Close"
-            className="-mr-1.5 flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="-mr-1.5 flex min-h-11 min-w-11 items-center justify-center rounded-chip text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             isIconOnly
             onPress={onClose}
             variant="ghost"
@@ -139,7 +139,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
               const isHighlighted = index === highlightedIndex;
               return (
                 <ListBox.Item
-                  className={`group flex h-auto min-h-11 items-center justify-start gap-3 rounded-lg p-2 text-left font-normal hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${
+                  className={`group flex h-auto min-h-11 items-center justify-start gap-3 rounded-chip p-2 text-left font-normal hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${
                     isHighlighted ? 'bg-surface-hover' : ''
                   }`}
                   id={food.id}
@@ -147,7 +147,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
                   onMouseEnter={() => setHighlightedIndex(index)}
                   textValue={food.name}
                 >
-                  <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-secondary">
+                  <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-chip bg-surface-secondary">
                     {food.image_url ? (
                       <img
                         alt={food.name}

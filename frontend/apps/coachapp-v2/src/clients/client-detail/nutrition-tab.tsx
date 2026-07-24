@@ -21,11 +21,11 @@ import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
 import {CARD, CardError, CardSkeleton, CHIP} from '@/clients/client-detail/ui';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
+const ROW = 'flex items-center gap-3 rounded-panel px-1 py-2 sm:px-2 sm:py-3';
 /** `.lbrow` sits in the page's inherited text context; HeroUI Button imposes its
  *  own 14px/20px/default-foreground, which then cascades into the meter. */
 const ROW_TEXT = 'text-title font-normal leading-[normal] text-foreground';
-const NOT_LOGGED_ROW = 'flex items-center gap-3.5 rounded-panel px-1 py-2.75 sm:px-2';
+const NOT_LOGGED_ROW = 'flex items-center gap-3 rounded-panel px-1 py-3 sm:px-2';
 const ROW_DATE = 'text-eyebrow font-semibold text-muted sm:w-19 sm:flex-none';
 const SEP = 'h-px bg-border';
 /** `.chip.out` — transparent, hairline, muted (RECIPES R5 outline chip). */
@@ -227,7 +227,7 @@ export default function NutritionTab({client}: {client: Client}) {
   const hasAnyLogged = days.some((day) => day.logged > 0);
 
   return (
-    <div className="flex flex-col gap-3 p-3.5 sm:gap-4 sm:p-0">
+    <div className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-0">
       {plans.isLoading ? (
         <CardSkeleton lines={2} />
       ) : plans.isError ? (
@@ -259,14 +259,14 @@ export default function NutritionTab({client}: {client: Client}) {
           onRetry={logs.refetch}
         />
       ) : !hasAnyLogged ? (
-        <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
+        <div className={`${CARD} px-3 py-6 text-center sm:px-4`}>
           <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
             No meals logged yet. Days appear here as {client.first_name ?? 'this client'} logs food.
           </span>
         </div>
       ) : (
         <div
-          className={`${CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
+          className={`${CARD} px-3 pt-1.5 pb-2 sm:px-4 sm:pt-2 sm:pb-3`}
           data-testid="nu-history"
         >
           <div
@@ -317,7 +317,7 @@ export default function NutritionTab({client}: {client: Client}) {
                         >
                           {formatRowDate(day.date, {withMonth: true})}
                         </span>
-                        <span className="flex min-w-0 flex-1 items-center gap-2.75">
+                        <span className="flex min-w-0 flex-1 items-center gap-3">
                           <AdherenceBar percent={day.percent} />
                           <CountChips
                             added={day.added}
@@ -348,7 +348,7 @@ export default function NutritionTab({client}: {client: Client}) {
                             {Math.round(day.logged).toLocaleString()} / {Math.round(day.planned).toLocaleString()}
                           </span>
                         </span>
-                        <span className="mt-1.75 flex items-center gap-2.25">
+                        <span className="mt-2 flex items-center gap-2">
                           <AdherenceBar percent={day.percent} />
                           <CountChips
                             added={day.added}

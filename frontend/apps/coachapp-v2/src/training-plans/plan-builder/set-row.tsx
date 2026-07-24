@@ -95,7 +95,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
     <div className="flex flex-col">
       {sets.map((set, index) => (
         <div
-          className="flex items-center gap-2 py-1.25"
+          className="flex items-center gap-2 py-1"
           data-testid={index === 0 ? 'tb-set-row' : undefined}
           key={index}
         >

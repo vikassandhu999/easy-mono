@@ -135,6 +135,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
         className="fixed inset-0 z-50 bg-black/60"
         onClick={onClose}
         style={{
+          /* ui-contract-allow */
           opacity: visible ? 1 : 0,
           transition: 'opacity 300ms ease',
         }}
@@ -163,6 +164,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
           .join(' ')}
         role="dialog"
         style={{
+          /* ui-contract-allow */
           bottom: keyboardHeight,
           // Height ceiling so the inner overflow-y-auto engages instead of growing
           // off-screen. Subtract keyboardHeight: the panel is anchored at
@@ -185,21 +187,21 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
           className="flex justify-center pb-2 pt-2"
           aria-hidden="true"
         >
-          <div className="h-1 w-10 rounded-full bg-default" />
+          <div className="h-1 w-10 rounded-pill bg-default" />
         </div>
 
         {/* Title row — only rendered when a title is provided */}
         {title !== undefined ? (
           <div className="flex items-center justify-between px-4 pb-2 pt-1">
             <span
-              className="text-sm font-semibold text-foreground"
+              className="text-body font-semibold text-foreground"
               id={titleId}
             >
               {title}
             </span>
             <button
               aria-label="Close"
-              className="-mr-2 flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground"
+              className="-mr-2 flex min-h-11 min-w-11 items-center justify-center rounded-chip text-muted transition-colors hover:text-foreground"
               onClick={onClose}
               type="button"
             >

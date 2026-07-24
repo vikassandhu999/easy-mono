@@ -32,7 +32,7 @@ function MessageAttachment({
 
   if (!url || refreshing || mediaFailed) {
     return (
-      <div className="grid min-h-11 place-items-center gap-2 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-center text-muted text-xs">
+      <div className="grid min-h-11 place-items-center gap-2 rounded-panel border border-border bg-surface-secondary px-3 py-2 text-center text-muted text-eyebrow">
         {failed || mediaFailed ? (
           <>
             <span>Media unavailable</span>
@@ -75,7 +75,7 @@ function MessageAttachment({
         {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: media load errors refresh an expired signed URL */}
         <img
           alt="Message attachment"
-          className="max-h-80 w-full rounded-xl object-cover"
+          className="max-h-80 w-full rounded-panel object-cover"
           onError={onError}
           src={url}
         />
@@ -86,7 +86,7 @@ function MessageAttachment({
     return (
       // biome-ignore lint/a11y/useMediaCaption: user-provided chat video has no caption track
       <video
-        className="max-h-80 w-full rounded-xl bg-black"
+        className="max-h-80 w-full rounded-panel bg-black"
         controls
         onError={onError}
         src={url}

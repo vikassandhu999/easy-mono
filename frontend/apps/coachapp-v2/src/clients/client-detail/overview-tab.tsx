@@ -50,7 +50,7 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
 
   return (
     <div
-      className="flex items-center gap-3 rounded-card border border-warning/30 bg-warning-soft px-3.5 py-3.25 sm:gap-3.5 sm:px-4.25 sm:py-3.75"
+      className="flex items-center gap-3 rounded-card border border-warning/30 bg-warning-soft px-3 py-3 sm:gap-3 sm:px-4 sm:py-4"
       data-testid="cd-review-banner"
     >
       <span className="flex size-9 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-10 sm:rounded-control">
@@ -64,7 +64,7 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
           Check-in to review
         </div>
         <div
-          className="mt-0.25 text-eyebrow text-warning-soft-foreground sm:mt-0.5 sm:text-eyebrow"
+          className="mt-0.5 text-eyebrow text-warning-soft-foreground sm:mt-0.5 sm:text-eyebrow"
           data-testid="cd-review-sub"
         >
           {newest.form_template.name} · submitted {relativeDay(newest.latest_submission.submitted_at)?.toLowerCase()}
@@ -72,7 +72,7 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
         </div>
       </div>
       <Button
-        className={`${ACCENT_BUTTON} h-8 px-3.25 sm:h-9 sm:px-3.75`}
+        className={`${ACCENT_BUTTON} h-8 px-3 sm:h-9 sm:px-4`}
         data-testid="cd-review-btn"
         onPress={() =>
           navigate(ROUTES.CLIENT_CHECKIN_SUBMISSION.replace(':id', clientId).replace(':assignmentId', newest.id))
@@ -154,17 +154,17 @@ function WeekCard({clientId}: {clientId: string}) {
 
   return (
     <div
-      className={`${CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
+      className={`${CARD} p-4 sm:px-5 sm:py-4`}
       data-testid="cd-week"
     >
       <div
-        className={`${EYEBROW} mb-3.5 sm:mb-4`}
+        className={`${EYEBROW} mb-3 sm:mb-4`}
         data-testid="cd-week-eyebrow"
       >
         This week
       </div>
       <div className="flex items-end">
-        <div className="flex w-14 flex-none flex-col gap-2.5 sm:w-16.5 sm:gap-2.75 sm:pb-px">
+        <div className="flex w-14 flex-none flex-col gap-2 sm:w-16.5 sm:gap-3 sm:pb-px">
           <div className="h-7 sm:h-7.5" />
           <div
             className="flex h-3 items-center text-eyebrow font-semibold text-muted sm:h-3.25 sm:text-eyebrow"
@@ -182,7 +182,7 @@ function WeekCard({clientId}: {clientId: string}) {
           const isToday = index === 6;
           return (
             <div
-              className="flex flex-1 flex-col items-center gap-2.5 sm:gap-2.75"
+              className="flex flex-1 flex-col items-center gap-2 sm:gap-3"
               key={isoDate(day)}
             >
               <div className="text-center">
@@ -231,7 +231,7 @@ function PhotoThumb({src}: {src: string}) {
 
 function RatingDots({value}: {value: number}) {
   return (
-    <span className="hidden gap-0.75 sm:flex">
+    <span className="hidden gap-1 sm:flex">
       {Array.from({length: 5}, (_, i) => (
         <span
           className={`size-1.75 rounded-pill ${i < value ? 'bg-accent' : 'bg-surface-tertiary'}`}
@@ -269,10 +269,10 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
 
   return (
     <div
-      className={`${CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
+      className={`${CARD} p-4 sm:px-5 sm:py-4`}
       data-testid="cd-latest"
     >
-      <div className="mb-3 sm:mb-3.5 sm:flex sm:items-baseline sm:gap-2">
+      <div className="mb-3 sm:mb-3 sm:flex sm:items-baseline sm:gap-2">
         <span
           className="font-grotesk text-body font-semibold sm:text-body"
           data-testid="cd-latest-title"
@@ -286,7 +286,7 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
           {newest.form_template.name} · {formatShortDate(submission.submitted_at)}
         </div>
       </div>
-      <div className="mb-3.25 flex gap-6 sm:mb-3.75 sm:flex-wrap sm:gap-8">
+      <div className="mb-3 flex gap-6 sm:mb-4 sm:flex-wrap sm:gap-8">
         {metrics.map((question) => {
           const answer = submission.answers[question.id!];
           return (
@@ -311,7 +311,7 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
         })}
       </div>
       {photoIds.length > 0 ? (
-        <div className="mb-3.25 flex gap-1.75 sm:mb-3.75 sm:gap-2">
+        <div className="mb-3 flex gap-2 sm:mb-4 sm:gap-2">
           {photoIds.map((id) => (
             <span
               className="flex size-14.5 flex-none items-center justify-center overflow-hidden rounded-panel bg-surface-tertiary text-muted/60 sm:size-16"
@@ -323,7 +323,7 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
           ))}
         </div>
       ) : null}
-      <div className="mb-2.75 h-px bg-border sm:mb-3" />
+      <div className="mb-3 h-px bg-border sm:mb-3" />
       <div className="flex items-center justify-between">
         {reviewed ? (
           <Chip
@@ -392,11 +392,11 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
 
   return (
     <div
-      className={`${CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
+      className={`${CARD} p-4 sm:px-5 sm:py-4`}
       data-testid="cd-weight"
     >
-      <div className="mb-2.5 flex items-center justify-between sm:mb-3">
-        <div className="flex flex-1 items-baseline justify-between gap-2 sm:justify-start sm:gap-2.5">
+      <div className="mb-2 flex items-center justify-between sm:mb-3">
+        <div className="flex flex-1 items-baseline justify-between gap-2 sm:justify-start sm:gap-2">
           <span
             className="font-grotesk text-body font-semibold sm:text-body"
             data-testid="cd-weight-title"
@@ -458,7 +458,7 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
           </svg>
           {goal != null ? (
             <span
-              className="absolute right-0.5 bottom-5 bg-surface px-0.75 text-eyebrow text-muted"
+              className="absolute right-0.5 bottom-5 bg-surface px-1 text-eyebrow text-muted"
               data-testid="cd-weight-goal"
             >
               goal {formatKg(goal, client.goal_weight_unit ?? 'kg')}
@@ -515,11 +515,11 @@ export function NotesCard({client}: {client: Client}) {
 
   return (
     <div
-      className={`${CARD} p-3.5 sm:px-4.25 sm:py-4`}
+      className={`${CARD} p-3 sm:px-4 sm:py-4`}
       data-testid="cd-notes"
     >
       <div
-        className={`${EYEBROW} mb-2 sm:mb-2.25`}
+        className={`${EYEBROW} mb-2 sm:mb-2`}
         data-testid="cd-notes-eyebrow"
       >
         Notes
@@ -547,7 +547,7 @@ export function DetailsRow() {
   const {id} = useParams<{id: string}>();
   return (
     <Link
-      className="flex cursor-pointer items-center gap-3.5 rounded-panel border border-border bg-surface p-3.5 transition-colors hover:bg-background sm:px-4.25 sm:py-3.75"
+      className="flex cursor-pointer items-center gap-3 rounded-panel border border-border bg-surface p-3 transition-colors hover:bg-background sm:px-4 sm:py-4"
       data-testid="cd-details"
       to={ROUTES.CLIENT_DETAILS.replace(':id', id!)}
     >
@@ -565,7 +565,7 @@ export function DetailsRow() {
           Details &amp; settings
         </div>
         <div
-          className="mt-0.25 text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
+          className="mt-0.5 text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
           data-testid="cd-details-sub"
         >
           Subscription, coach, intake, invitation
@@ -579,7 +579,7 @@ export function DetailsRow() {
 function FreshEmptyCard({firstName}: {firstName: string}) {
   return (
     <div
-      className={`${CARD} flex flex-col items-center gap-1.25 px-5 py-9.5 text-center sm:gap-1.5 sm:px-5.5 sm:py-11`}
+      className={`${CARD} flex flex-col items-center gap-1 px-5 py-10 text-center sm:gap-1.5 sm:px-5 sm:py-11`}
       data-testid="cd-empty"
     >
       <span
@@ -609,10 +609,10 @@ export default function OverviewTab({client, isFresh}: {client: Client; isFresh:
 
   return (
     <div
-      className="flex flex-col gap-3 p-3.5 sm:grid sm:grid-cols-[minmax(0,1fr)_320px] sm:items-start sm:gap-4 sm:p-0"
+      className="flex flex-col gap-3 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_320px] sm:items-start sm:gap-4 sm:p-0"
       data-testid="cd-ov"
     >
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-3.5">
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-3">
         {isFresh ? (
           <FreshEmptyCard firstName={client.first_name ?? 'this client'} />
         ) : (
@@ -646,7 +646,7 @@ export default function OverviewTab({client, isFresh}: {client: Client; isFresh:
           </>
         )}
       </div>
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-3.5">
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-3">
         <NotesCard client={client} />
         <DetailsRow />
       </div>

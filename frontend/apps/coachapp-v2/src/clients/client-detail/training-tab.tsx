@@ -34,7 +34,7 @@ import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
 import {CARD, CardError, CardSkeleton, CHIP, OUTLINE_BUTTON} from '@/clients/client-detail/ui';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
+const ROW = 'flex items-center gap-3 rounded-panel px-1 py-2 sm:px-2 sm:py-3';
 const ROW_DATE = 'w-18.5 flex-none text-eyebrow font-semibold text-muted';
 const ROW_META = 'mt-0.5 text-eyebrow text-muted sm:text-eyebrow';
 const SEP = 'h-px bg-border';
@@ -176,7 +176,7 @@ export default function TrainingTab({client}: {client: Client}) {
   const hasMore = sessionsQuery.hasNextPage;
 
   return (
-    <div className="flex flex-col gap-3 p-3.5 sm:gap-4 sm:p-0">
+    <div className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-0">
       {plans.isLoading ? (
         <CardSkeleton lines={2} />
       ) : plans.isError ? (
@@ -208,7 +208,7 @@ export default function TrainingTab({client}: {client: Client}) {
           onRetry={sessions.refetch}
         />
       ) : rows.length === 0 ? (
-        <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
+        <div className={`${CARD} px-3 py-6 text-center sm:px-4`}>
           {/* plain span: tw-merge drops the size token when a text-color class
               rides along in a HeroUI className (field-notes) */}
           <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
@@ -217,7 +217,7 @@ export default function TrainingTab({client}: {client: Client}) {
         </div>
       ) : (
         <div
-          className={`${CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
+          className={`${CARD} px-3 pt-1.5 pb-2 sm:px-4 sm:pt-2 sm:pb-3`}
           data-testid="tr-history"
         >
           <ul>
@@ -320,7 +320,7 @@ export default function TrainingTab({client}: {client: Client}) {
           {hasMore ? (
             <div className="flex justify-center pt-2">
               <Button
-                className={`${OUTLINE_BUTTON} h-9 px-3.75`}
+                className={`${OUTLINE_BUTTON} h-9 px-4`}
                 isPending={sessions.isFetchingNextPage}
                 onPress={() => sessions.fetchNextPage()}
               >

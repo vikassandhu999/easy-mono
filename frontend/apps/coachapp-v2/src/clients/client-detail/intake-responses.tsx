@@ -16,7 +16,7 @@ import {formatShortDate, snapshotQuestions} from '@/clients/client-detail/data';
 import {CHIP, SubHeader} from '@/clients/client-detail/ui';
 
 const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
-const LABEL = 'mb-1.5 text-eyebrow font-semibold text-muted sm:mb-1.75 sm:text-eyebrow';
+const LABEL = 'mb-1.5 text-eyebrow font-semibold text-muted sm:mb-2 sm:text-eyebrow';
 const TEXT = 'text-body leading-relaxed sm:text-body';
 
 export default function IntakeResponses() {
@@ -67,9 +67,9 @@ export default function IntakeResponses() {
           subtitle={`Submitted ${formatShortDate(submission.submitted_at)}`}
           title="Intake"
         />
-        <div className="p-4 sm:px-7.5 sm:pt-6 sm:pb-7.5">
+        <div className="p-4 sm:px-8 sm:pt-6 sm:pb-8">
           <div
-            className="flex flex-col gap-4.5 sm:max-w-180 sm:gap-5.5"
+            className="flex flex-col gap-4 sm:max-w-180 sm:gap-5"
             data-testid="ir-root"
           >
             {questions.map((question, index) => {
@@ -84,7 +84,7 @@ export default function IntakeResponses() {
                     {question.label}
                   </div>
                   {Array.isArray(value) ? (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-1.75">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {value.map((option) => (
                         <Chip
                           className={OUT_CHIP}

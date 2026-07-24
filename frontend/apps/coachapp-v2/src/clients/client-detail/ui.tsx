@@ -24,11 +24,11 @@ export const EYEBROW = 'text-eyebrow font-bold uppercase tracking-wider text-mut
 
 /** `.chip` base — HeroUI Chip resets; pair with a tone class + `[color:...]`. */
 export const CHIP =
-  'inline-flex min-h-0 items-center gap-1.25 whitespace-nowrap rounded-pill border-0 px-2.5 py-0.75 text-eyebrow font-bold leading-[normal] [box-shadow:none]';
+  'inline-flex min-h-0 items-center gap-1 whitespace-nowrap rounded-pill border-0 px-2 py-1 text-eyebrow font-bold leading-[normal] [box-shadow:none]';
 
 export function CardSkeleton({lines = 3}: {lines?: number}) {
   return (
-    <div className={`${CARD} flex flex-col gap-3 p-3.75`}>
+    <div className={`${CARD} flex flex-col gap-3 p-4`}>
       {Array.from({length: lines}, (_, i) => (
         <Skeleton
           className={`h-4 ${i === 0 ? 'w-1/3' : 'w-full'} rounded-control`}
@@ -41,7 +41,7 @@ export function CardSkeleton({lines = 3}: {lines?: number}) {
 
 export function CardError({label, onRetry}: {label: string; onRetry: () => void}) {
   return (
-    <div className={`${CARD} border-danger/30 bg-danger-soft p-3.75`}>
+    <div className={`${CARD} border-danger/30 bg-danger-soft p-4`}>
       <Typography
         className="flex items-center gap-2 text-danger-soft-foreground"
         type="body-sm"
@@ -113,7 +113,7 @@ export function SubHeader({
   title: string;
 }) {
   return (
-    <div className="flex flex-none items-center gap-2.75 border-b border-border px-4 pt-0.5 pb-3.25 sm:gap-3.5 sm:px-7.5 sm:py-4.5">
+    <div className="flex flex-none items-center gap-3 border-b border-border px-4 pt-0.5 pb-3 sm:gap-3 sm:px-8 sm:py-4">
       <Button
         aria-label="Back"
         className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"

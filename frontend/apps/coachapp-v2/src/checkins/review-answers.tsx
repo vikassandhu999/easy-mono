@@ -44,7 +44,7 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
           <div className="grid gap-3 sm:grid-cols-2">
             {(section.questions ?? []).map((question, questionIndex) => (
               <div
-                className="rounded-2xl border border-border bg-surface-secondary p-4"
+                className="rounded-card border border-border bg-surface-secondary p-4"
                 key={question.id ?? `${sectionIndex}-${questionIndex}`}
               >
                 <Typography
@@ -69,13 +69,13 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                           >
                             <img
                               alt={`${question.label ?? 'Progress photo'} ${photoIndex + 1}`}
-                              className="aspect-[3/4] w-full rounded-xl border border-border object-cover"
+                              className="aspect-[3/4] w-full rounded-panel border border-border object-cover"
                               src={url}
                             />
                           </a>
                         ) : (
                           <div
-                            className="grid aspect-[3/4] place-items-center rounded-xl border border-border bg-surface text-center text-muted text-xs"
+                            className="grid aspect-[3/4] place-items-center rounded-panel border border-border bg-surface text-center text-muted text-eyebrow"
                             key={String(attachmentId)}
                           >
                             {!attachment ? (

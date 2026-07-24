@@ -39,7 +39,7 @@ const ROW = 'flex items-center justify-between py-2';
 const ROW_LABEL = 'text-eyebrow text-muted sm:text-eyebrow';
 const ROW_VALUE = 'text-eyebrow font-semibold sm:text-eyebrow';
 const EXTEND_BTN =
-  'h-7.5 min-w-0 shrink-0 rounded-control border border-border bg-surface px-2.75 font-btn text-eyebrow font-bold leading-none [box-shadow:none] [color:black] [column-gap:normal] [row-gap:normal] sm:h-8 sm:px-3.25 sm:text-eyebrow';
+  'h-7.5 min-w-0 shrink-0 rounded-control border border-border bg-surface px-3 font-btn text-eyebrow font-bold leading-none [box-shadow:none] [color:black] [column-gap:normal] [row-gap:normal] sm:h-8 sm:px-3 sm:text-eyebrow';
 
 function SubscriptionAlert({client, onExtend}: {client: Client; onExtend: () => void}) {
   const expired = client.status === 'inactive' && client.inactive_reason === 'subscription_expired';
@@ -51,7 +51,7 @@ function SubscriptionAlert({client, onExtend}: {client: Client; onExtend: () => 
 
   return (
     <div
-      className={`mt-2 flex items-center gap-2.25 rounded-control px-3 py-2.5 sm:mt-2.5 sm:gap-2.5 sm:px-3.25 sm:py-2.75 ${
+      className={`mt-2 flex items-center gap-2 rounded-control px-3 py-2 sm:mt-2 sm:gap-2 sm:px-3 sm:py-3 ${
         expired ? 'bg-danger-soft' : 'bg-warning-soft'
       }`}
       data-testid="dt-alert"
@@ -92,7 +92,7 @@ function IntakeRow({clientId}: {clientId: string}) {
 
   return (
     <Link
-      className="flex items-center gap-3.5 rounded-panel border border-border bg-surface px-3.75 py-3.5 sm:px-4.5 sm:py-3.75"
+      className="flex items-center gap-3 rounded-panel border border-border bg-surface px-4 py-3 sm:px-4 sm:py-4"
       data-testid="dt-intake"
       to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
     >
@@ -110,7 +110,7 @@ function IntakeRow({clientId}: {clientId: string}) {
           Intake responses
         </div>
         <div
-          className="mt-0.25 text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
+          className="mt-0.5 text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
           data-testid="dt-intake-sub"
         >
           {submitted ? `Submitted ${formatShortDate(submitted.submitted_at)}` : 'Not submitted yet'}
@@ -205,7 +205,7 @@ export default function DetailsSettings() {
         className="p-0"
       >
         {/* ── sub-screen header ───────────────────────────────────────── */}
-        <div className="flex items-center gap-2.75 border-b border-border bg-surface px-4 pt-0.5 pb-3.25 sm:gap-3.5 sm:px-7.5 sm:py-4.5">
+        <div className="flex items-center gap-3 border-b border-border bg-surface px-4 pt-0.5 pb-3 sm:gap-3 sm:px-8 sm:py-4">
           <Button
             aria-label="Back"
             className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
@@ -233,7 +233,7 @@ export default function DetailsSettings() {
         </div>
 
         {/* ── body ────────────────────────────────────────────────────── */}
-        <div className="p-3.5 sm:px-7.5 sm:pt-6 sm:pb-7.5">
+        <div className="p-3 sm:px-8 sm:pt-6 sm:pb-8">
           <div
             className="flex flex-col gap-3 sm:max-w-180 sm:gap-4"
             data-testid="dt-root"
@@ -249,7 +249,7 @@ export default function DetailsSettings() {
               validationBehavior="aria"
             >
               <div
-                className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+                className={`${CARD} px-4 py-3 sm:px-4 sm:py-4`}
                 data-testid="dt-profile"
               >
                 <div
@@ -258,7 +258,7 @@ export default function DetailsSettings() {
                 >
                   Profile
                 </div>
-                <div className="flex flex-col gap-3.5">
+                <div className="flex flex-col gap-3">
                   <FieldRow>
                     <FormTextField
                       control={form.control}
@@ -293,7 +293,7 @@ export default function DetailsSettings() {
                   </FieldRow>
                   <TrainerSelectField control={form.control} />
                 </div>
-                <div className="mt-3.5">
+                <div className="mt-3">
                   {client.goal_weight_value != null ? (
                     <div className={`${ROW} border-b border-border`}>
                       <span className={ROW_LABEL}>Goal weight</span>
@@ -324,7 +324,7 @@ export default function DetailsSettings() {
               </div>
 
               <div
-                className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+                className={`${CARD} px-4 py-3 sm:px-4 sm:py-4`}
                 data-testid="dt-subcard"
               >
                 <div
@@ -382,7 +382,7 @@ export default function DetailsSettings() {
                   onExtend={focusEndDate}
                 />
                 <div
-                  className="mt-2.5 text-eyebrow text-muted"
+                  className="mt-2 text-eyebrow text-muted"
                   data-testid="dt-caption"
                 >
                   Billing is per seat — manage seats in{' '}
@@ -397,9 +397,9 @@ export default function DetailsSettings() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5">
+              <div className="flex justify-end gap-2">
                 <Button
-                  className="h-10 min-w-0 shrink-0 rounded-control border border-border bg-surface px-3.75 font-btn text-eyebrow font-bold leading-none text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal]"
+                  className="h-10 min-w-0 shrink-0 rounded-control border border-border bg-surface px-4 font-btn text-eyebrow font-bold leading-none text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal]"
                   onPress={() => form.reset(clientToEditFormValues(client))}
                   variant="ghost"
                 >
@@ -432,7 +432,7 @@ export default function DetailsSettings() {
             {client.status === 'inactive' ? (
               <div>
                 <Button
-                  className={`${ACCENT_BUTTON} h-10.5 w-full px-3.75 sm:h-10 sm:w-auto`}
+                  className={`${ACCENT_BUTTON} h-10.5 w-full px-4 sm:h-10 sm:w-auto`}
                   data-testid="dt-reactivate"
                   onPress={() => setStatus('active', `${firstName} is active again.`)}
                 >

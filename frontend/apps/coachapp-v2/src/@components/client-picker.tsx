@@ -55,12 +55,12 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
         <div className="flex max-h-70 flex-col overflow-y-auto">
           {clients.map((client) => (
             <button
-              className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-secondary"
+              className="flex w-full items-center gap-2 rounded-chip px-2 py-2 text-left transition-colors hover:bg-surface-secondary"
               key={client.id}
               onClick={() => onSelect(client)}
               type="button"
             >
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-secondary">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-chip bg-surface-secondary">
                 <Users
                   className="text-muted"
                   size={14}

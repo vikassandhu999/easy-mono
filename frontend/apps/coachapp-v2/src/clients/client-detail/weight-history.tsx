@@ -29,9 +29,9 @@ type RangeId = (typeof RANGES)[number]['id'];
 
 /** `.seg` container + items — inactive muted, active white pill. */
 const RANGE_ITEM =
-  'min-h-0 rounded-chip border-0 bg-transparent px-2.25 py-1 text-eyebrow font-semibold text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] ' +
+  'min-h-0 rounded-chip border-0 bg-transparent px-2 py-1 text-eyebrow font-semibold text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] ' +
   'data-[selected=true]:bg-surface data-[selected=true]:font-bold data-[selected=true]:text-foreground ' +
-  'sm:px-2.75 sm:py-1.25 sm:text-eyebrow';
+  'sm:px-3 sm:py-1 sm:text-eyebrow';
 
 export default function WeightHistory() {
   const {id} = useParams<{id: string}>();
@@ -97,16 +97,16 @@ export default function WeightHistory() {
           title="Weight"
         />
 
-        <div className="p-3.5 sm:px-7.5 sm:pt-6 sm:pb-7.5">
+        <div className="p-3 sm:px-8 sm:pt-6 sm:pb-8">
           <div
             className="flex flex-col gap-3 sm:max-w-195 sm:gap-4"
             data-testid="wh-root"
           >
             <div
-              className={`${CARD} p-3.75 sm:px-5 sm:py-4.5`}
+              className={`${CARD} p-4 sm:px-5 sm:py-4`}
               data-testid="wh-chart"
             >
-              <div className="mb-3.25 flex items-center justify-between sm:mb-4">
+              <div className="mb-3 flex items-center justify-between sm:mb-4">
                 <div
                   className={EYEBROW}
                   data-testid="wh-chart-eyebrow"
@@ -167,7 +167,7 @@ export default function WeightHistory() {
                   </svg>
                   {goal != null ? (
                     <span
-                      className="absolute right-0.5 bottom-6 bg-surface px-0.75 text-eyebrow text-muted sm:bottom-7.5 sm:px-1 sm:text-eyebrow"
+                      className="absolute right-0.5 bottom-6 bg-surface px-1 text-eyebrow text-muted sm:bottom-7.5 sm:px-1 sm:text-eyebrow"
                       data-testid="wh-goal"
                     >
                       goal {goal}
@@ -184,7 +184,7 @@ export default function WeightHistory() {
 
             {entries.length > 0 ? (
               <div
-                className={`${CARD} px-3.75 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
+                className={`${CARD} px-4 pt-1.5 pb-2 sm:px-4 sm:pt-2 sm:pb-3`}
                 data-testid="wh-list"
               >
                 <ul>
@@ -197,7 +197,7 @@ export default function WeightHistory() {
                         />
                       ) : null}
                       <div
-                        className="flex items-center gap-3.5 rounded-panel px-0.5 py-2.5 sm:px-2 sm:py-2.75"
+                        className="flex items-center gap-3 rounded-panel px-0.5 py-2 sm:px-2 sm:py-3"
                         data-testid="wh-row"
                       >
                         <div

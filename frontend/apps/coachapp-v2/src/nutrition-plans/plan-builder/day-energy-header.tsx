@@ -95,7 +95,7 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
 
   return (
     <Card
-      className="flex flex-col gap-3.25 rounded-card border border-border bg-surface px-4.5 py-3.25 [box-shadow:none]"
+      className="flex flex-col gap-3 rounded-card border border-border bg-surface px-4 py-3 [box-shadow:none]"
       data-testid="nb-energy-card"
     >
       <>
@@ -103,7 +103,7 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
           className="flex flex-wrap items-center gap-3"
           data-testid="nb-energy-row"
         >
-          <div className="flex flex-none items-baseline gap-1.25">
+          <div className="flex flex-none items-baseline gap-1">
             <span
               className="font-grotesk text-metric font-semibold text-foreground"
               data-testid="nb-kcal"
@@ -152,7 +152,7 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
 
         {showMacros ? (
           <div
-            className="grid grid-cols-1 gap-4.5 border-t border-border pt-3 sm:grid-cols-3"
+            className="grid grid-cols-1 gap-4 border-t border-border pt-3 sm:grid-cols-3"
             data-testid="nb-macro-grid"
           >
             <MacroMeter

@@ -55,7 +55,7 @@ function greeting(): string {
 }
 
 // RECIPES.md R9 — the date eyebrow above the greeting.
-const EYEBROW = 'text-xs font-semibold uppercase tracking-wider text-muted';
+const EYEBROW = 'text-eyebrow font-semibold uppercase tracking-wider text-muted';
 
 /**
  * GAPS #1 — the glance bar is a `Surface` holding two stat blocks (`Typography`
@@ -93,7 +93,7 @@ function StatBar({
             />
           ) : null}
           <Button
-            className="h-auto min-h-11 flex-1 flex-col items-start justify-center gap-0.5 rounded-none px-5 py-2.5"
+            className="h-auto min-h-11 flex-1 flex-col items-start justify-center gap-0.5 rounded-none px-5 py-2"
             onPress={() => navigate(ROUTES.CLIENTS)}
             variant="ghost"
           >
@@ -126,7 +126,7 @@ function DashboardSkeleton() {
       >
         <Page.TitleGroup>
           <Skeleton className="h-3 w-24 rounded" />
-          <Skeleton className="mt-2 h-8 w-56 max-w-full rounded-lg" />
+          <Skeleton className="mt-2 h-8 w-56 max-w-full rounded-chip" />
         </Page.TitleGroup>
         <Skeleton className="hidden h-16 w-56 rounded-card sm:block" />
       </Page.Header>

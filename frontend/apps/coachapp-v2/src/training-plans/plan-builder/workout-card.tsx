@@ -350,7 +350,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
             don't fit beside the name at 390px, and wrapping them mid-week reads
             as two broken weeks. */}
         <div
-          className="flex flex-col gap-2 px-4 pt-3.5 pb-3 sm:flex-row sm:items-center sm:gap-3"
+          className="flex flex-col gap-2 px-4 pt-3 pb-3 sm:flex-row sm:items-center sm:gap-3"
           data-testid="tb-card-header"
         >
           <div className="flex min-w-0 items-center gap-2 sm:flex-1">

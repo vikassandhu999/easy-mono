@@ -68,7 +68,7 @@ export default function CheckinAssignContent({clientId, clientName, onClose}: Pr
         </Typography>
         <button
           aria-label="Close"
-          className="grid size-9 place-items-center rounded-xl text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="grid size-9 place-items-center rounded-panel text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={onClose}
           type="button"
         >

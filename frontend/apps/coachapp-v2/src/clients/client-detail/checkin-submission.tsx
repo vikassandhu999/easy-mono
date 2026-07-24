@@ -20,7 +20,7 @@ import {getApiErrorMessage} from '@/api/shared';
 import {formatShortDate} from '@/clients/client-detail/data';
 import {ACCENT_BUTTON, CHIP, PhotoThumb} from '@/clients/client-detail/ui';
 
-const Q_LABEL = 'mb-1.75 text-eyebrow font-semibold text-muted sm:mb-2 sm:text-eyebrow';
+const Q_LABEL = 'mb-2 text-eyebrow font-semibold text-muted sm:mb-2 sm:text-eyebrow';
 const VALUE = 'font-grotesk text-title font-bold sm:text-title';
 
 type Question = {id: string; label: string; type: string};
@@ -41,7 +41,7 @@ function submittedAt(iso: string): string {
 
 function RatingAnswer({value}: {value: number}) {
   return (
-    <div className="flex items-center gap-2.25 sm:gap-2.5">
+    <div className="flex items-center gap-2 sm:gap-2">
       <span
         className={VALUE}
         data-testid="cs-rating-value"
@@ -64,7 +64,7 @@ function RatingAnswer({value}: {value: number}) {
 function PhotoAnswer({ids}: {ids: string[]}) {
   const {urls} = useAttachmentDownloadUrls(ids);
   return (
-    <div className="flex flex-wrap gap-2.5">
+    <div className="flex flex-wrap gap-2">
       {ids.map((id) => (
         <PhotoThumb
           className="flex h-30 w-24 flex-none items-center justify-center overflow-hidden rounded-panel bg-surface-tertiary text-muted/60 sm:h-35 sm:w-27.5"
@@ -89,7 +89,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
       return <div className={VALUE}>{formatShortDate(String(value))}</div>;
     case 'multi_select':
       return (
-        <div className="flex flex-wrap gap-1.75">
+        <div className="flex flex-wrap gap-2">
           {(value as string[]).map((option) => (
             <Chip
               className={`${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}
@@ -112,7 +112,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
       );
     case 'weight':
       return (
-        <div className="flex items-baseline gap-2 sm:gap-2.25">
+        <div className="flex items-baseline gap-2 sm:gap-2">
           <span
             className={VALUE}
             data-testid="cs-weight-value"
@@ -195,7 +195,7 @@ export default function CheckinSubmission() {
         bare
         className="flex flex-col p-0"
       >
-        <div className="flex flex-none items-center gap-2.75 border-b border-border px-4 pt-0.5 pb-3.25 sm:gap-3.5 sm:px-7.5 sm:py-4.5">
+        <div className="flex flex-none items-center gap-3 border-b border-border px-4 pt-0.5 pb-3 sm:gap-3 sm:px-8 sm:py-4">
           <Button
             aria-label="Back"
             className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
@@ -238,7 +238,7 @@ export default function CheckinSubmission() {
         </div>
 
         <div
-          className="flex flex-1 flex-col gap-4.5 overflow-y-auto bg-surface p-4 sm:max-w-180 sm:gap-6 sm:bg-transparent sm:px-7.5 sm:py-6"
+          className="flex flex-1 flex-col gap-4 overflow-y-auto bg-surface p-4 sm:max-w-180 sm:gap-6 sm:bg-transparent sm:px-8 sm:py-6"
           data-testid="cs-body"
         >
           {questions.map((question) => (
@@ -258,7 +258,7 @@ export default function CheckinSubmission() {
         </div>
 
         <div
-          className="flex-none border-t border-border px-4 py-3.5 sm:px-7.5 sm:py-4"
+          className="flex-none border-t border-border px-4 py-3 sm:px-8 sm:py-4"
           data-testid="cs-footer"
         >
           {reviewedAt ? (
@@ -270,7 +270,7 @@ export default function CheckinSubmission() {
             </div>
           ) : (
             <Button
-              className={`${ACCENT_BUTTON} h-11.5 w-full rounded-panel px-3.75 text-body`}
+              className={`${ACCENT_BUTTON} h-11.5 w-full rounded-panel px-4 text-body`}
               data-testid="cs-review-btn"
               isPending={isReviewing}
               onPress={markReviewed}

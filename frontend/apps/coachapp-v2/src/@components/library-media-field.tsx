@@ -52,11 +52,11 @@ type Props = {
 
 function Thumbnail({kind, url}: {kind: 'image' | 'video'; url: string | null}) {
   const [failed, setFailed] = useState(false);
-  const className = 'size-24 rounded-xl border border-border bg-surface-secondary object-cover';
+  const className = 'size-24 rounded-panel border border-border bg-surface-secondary object-cover';
 
   if (!url || failed) {
     return (
-      <div className="flex size-24 items-center justify-center rounded-xl border border-border bg-surface-secondary">
+      <div className="flex size-24 items-center justify-center rounded-panel border border-border bg-surface-secondary">
         {kind === 'video' ? <Video className="size-6 text-muted" /> : <ImageOff className="size-6 text-muted" />}
       </div>
     );
@@ -202,7 +202,7 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
               />
               <CloseButton
                 aria-label="Remove media"
-                className="absolute -top-2 -right-2 min-h-11 min-w-11 rounded-full bg-ink text-ink-foreground"
+                className="absolute -top-2 -right-2 min-h-11 min-w-11 rounded-pill bg-ink text-ink-foreground"
                 onPress={remove}
               />
             </div>
@@ -225,10 +225,10 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
               url={previewUrl ?? null}
             />
             <div className="flex-1">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-secondary">
+              <div className="h-2 w-full overflow-hidden rounded-pill bg-surface-secondary">
                 <div
-                  className="h-full rounded-full bg-accent transition-[width]"
-                  style={{width: `${state.progress}%`}}
+                  className="h-full rounded-pill bg-accent transition-[width]"
+                  style={{width: `${state.progress}%`}} /* ui-contract-allow */
                 />
               </div>
               <Typography
@@ -278,7 +278,7 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
 
         {state.status === 'empty' && (
           <Button
-            className="min-h-11 w-full rounded-xl border border-dashed border-border text-muted"
+            className="min-h-11 w-full rounded-panel border border-dashed border-border text-muted"
             isDisabled={disabled}
             onPress={() => inputRef.current?.click()}
             variant="ghost"

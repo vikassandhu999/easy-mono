@@ -17,7 +17,7 @@ import {ListSkeleton} from '@/@components/list-skeleton';
  * card edge.
  */
 export const LIST_ITEM_CLASS =
-  'relative min-h-fit gap-3.25 rounded-none border-b-0 px-3.5 py-3 leading-[normal] transition-none! text-foreground sm:px-4.5 ' +
+  'relative min-h-fit gap-3 rounded-none border-b-0 px-3 py-3 leading-[normal] transition-none! text-foreground sm:px-4 ' +
   "after:pointer-events-none after:absolute after:inset-x-0 after:top-0 after:start-16 after:h-px after:bg-separator after:content-[''] " +
   'first:after:hidden sm:border-t sm:border-separator sm:after:hidden sm:first:border-t-0 ' +
   'hover:bg-surface-secondary active:scale-100! data-[pressed=true]:scale-100!';
@@ -44,7 +44,7 @@ export const TOOLBAR_DIVIDER_CLASS = 'hidden h-6 self-center sm:block';
 
 /** Search-field surface used by browse toolbars at both breakpoints. */
 export const BROWSE_SEARCH_GROUP_CLASS =
-  'min-h-11 gap-2 rounded-control border border-border bg-background px-3.25 text-body leading-[normal] [box-shadow:none] [color:var(--color-muted)] sm:bg-surface';
+  'min-h-11 gap-2 rounded-control border border-border bg-background px-3 text-body leading-[normal] [box-shadow:none] [color:var(--color-muted)] sm:bg-surface';
 
 /**
  * Ink-selected filter pill (RECIPES.md R2). HeroUI ToggleButton exposes selection
@@ -54,7 +54,7 @@ export const BROWSE_SEARCH_GROUP_CLASS =
 export const FILTER_PILL_CLASS =
   'min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-body font-medium leading-[normal] text-muted [box-shadow:none] [row-gap:normal] [column-gap:normal] ' +
   'data-[selected=true]:border-foreground data-[selected=true]:bg-transparent data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.25 sm:py-1.75 sm:text-eyebrow ' +
+  'sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3 sm:py-2 sm:text-eyebrow ' +
   'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:[color:white]';
 
 /** The count beside a filter-pill label. Mobile shows it on the selected pill only. */
@@ -70,7 +70,7 @@ export function FilterCount({
   return (
     <span
       className={cn(
-        'ml-0.75 text-eyebrow opacity-70 sm:ml-0 sm:text-eyebrow',
+        'ml-1 text-eyebrow opacity-70 sm:ml-0 sm:text-eyebrow',
         isSelected ? undefined : 'hidden sm:inline',
       )}
       data-testid={isSelected ? countTestId : undefined}
@@ -163,7 +163,7 @@ export function BrowseRowThumb({alt, fallback, src}: {alt: string; fallback: Rea
   return (
     <img
       alt={alt}
-      className="size-11 rounded-xl object-cover"
+      className="size-11 rounded-panel object-cover"
       src={src}
     />
   );

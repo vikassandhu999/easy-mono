@@ -214,7 +214,7 @@ function WelcomeForm({
       >
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">What&apos;s your email?</Label>
-          <p className="text-xs text-muted">We&apos;ll send you a login code.</p>
+          <p className="text-eyebrow text-muted">We&apos;ll send you a login code.</p>
           <Input
             autoComplete="email"
             autoFocus={shouldFocusEmail}
@@ -223,10 +223,10 @@ function WelcomeForm({
             type="email"
             {...register('email')}
           />
-          {errors.email ? <p className="text-xs text-danger-soft-foreground">{errors.email.message}</p> : null}
+          {errors.email ? <p className="text-eyebrow text-danger-soft-foreground">{errors.email.message}</p> : null}
         </div>
 
-        {errors.root ? <p className="text-sm text-danger-soft-foreground">{errors.root.message}</p> : null}
+        {errors.root ? <p className="text-body text-danger-soft-foreground">{errors.root.message}</p> : null}
 
         <Button
           fullWidth
@@ -305,10 +305,10 @@ function InvalidInvitation() {
           <Alert.Description>Contact the business owner.</Alert.Description>
         </Alert.Content>
       </Alert>
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="mt-6 text-center text-body text-muted">
         Already have an account?{' '}
         <Link
-          className="text-sm text-foreground underline"
+          className="text-body text-foreground underline"
           href={ROUTES.LOGIN}
         >
           Log in

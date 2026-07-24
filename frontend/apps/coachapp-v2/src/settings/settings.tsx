@@ -35,9 +35,9 @@ const TABS = [
 type SettingsTab = (typeof TABS)[number]['id'];
 
 const TAB_CLASS =
-  'flex min-h-11 w-auto shrink-0 cursor-pointer items-center justify-start gap-1 whitespace-nowrap rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0 pb-2 text-sm font-medium text-muted shadow-none outline-none ' +
+  'flex min-h-11 w-auto shrink-0 cursor-pointer items-center justify-start gap-1 whitespace-nowrap rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0 pb-2 text-body font-medium text-muted shadow-none outline-none ' +
   'data-[selected=true]:border-b-ink data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'md:w-full md:gap-2 md:rounded-control md:border-b-0 md:px-3 md:py-2.5 md:pb-2.5 md:text-foreground ' +
+  'md:w-full md:gap-2 md:rounded-control md:border-b-0 md:px-3 md:py-2 md:pb-2 md:text-foreground ' +
   'md:data-[selected=true]:bg-ink md:data-[selected=true]:text-ink-foreground';
 
 const CARD_CLASS = 'overflow-hidden rounded-card border border-border bg-surface';
@@ -85,7 +85,7 @@ function ProfilePanel({
   );
 
   return (
-    <div className="flex flex-col gap-2.5 md:gap-5">
+    <div className="flex flex-col gap-2 md:gap-5">
       <SettingsSectionHeader
         description="Your name and how clients reach you"
         title="Profile"
@@ -94,7 +94,7 @@ function ProfilePanel({
       <div className={CARD_CLASS}>
         <div className="flex items-center gap-3 p-4">
           <Avatar className="size-11 md:size-12">
-            <Avatar.Fallback className="bg-accent text-base font-semibold text-accent-foreground">
+            <Avatar.Fallback className="bg-accent text-title font-semibold text-accent-foreground">
               {initials}
             </Avatar.Fallback>
           </Avatar>
@@ -160,7 +160,7 @@ function ProfilePanel({
 
 function AccountPanel({email, onLogout}: {email: string; onLogout: () => void}) {
   return (
-    <div className="flex flex-col gap-2.5 md:gap-5">
+    <div className="flex flex-col gap-2 md:gap-5">
       <SettingsSectionHeader
         description="Sign-in details"
         title="Account"
@@ -212,7 +212,7 @@ function LogOutFooter({className, onLogout}: {className?: string; onLogout: () =
   return (
     <div className={`flex flex-col gap-3 ${className ?? ''}`}>
       <Button
-        className="min-h-11 w-full rounded-xl border border-danger/30"
+        className="min-h-11 w-full rounded-panel border border-danger/30"
         onPress={onLogout}
         variant="danger-soft"
       >
@@ -247,9 +247,9 @@ function SettingsShell({
       orientation={isDesktop ? 'vertical' : 'horizontal'}
       selectedKey={tab}
     >
-      <div className="sticky top-0 z-10 shrink-0 border-b border-border bg-surface pt-3 md:static md:w-53 md:border-b-0 md:border-r md:bg-background md:px-3.5 md:pt-6">
+      <div className="sticky top-0 z-10 shrink-0 border-b border-border bg-surface pt-3 md:static md:w-53 md:border-b-0 md:border-r md:bg-background md:px-3 md:pt-6">
         <Typography
-          className="px-0 pb-2 font-grotesk md:px-2 md:pb-3.5"
+          className="px-0 pb-2 font-grotesk md:px-2 md:pb-3"
           type="h3"
         >
           Settings
@@ -270,7 +270,7 @@ function SettingsShell({
         </Tabs.ListContainer>
       </div>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3.5 pb-6 md:px-8 md:pt-6 md:pb-10">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3 pb-6 md:px-8 md:pt-6 md:pb-10">
         {/* Panel measure inside the sidebar+content split — not the page column
             (that's Page.Frame size="content" above), so it isn't a size token. */}
         <div className="flex min-h-full flex-1 flex-col md:mx-auto md:w-full md:max-w-140">{children}</div>

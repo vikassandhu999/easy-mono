@@ -24,7 +24,7 @@ import AssignSurface from '@/clients/components/assign-surface';
 import CheckinAssignContent from '@/clients/components/checkin-assign-content';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-panel px-1 py-2.75 sm:px-2';
+const ROW = 'flex items-center gap-3 rounded-panel px-1 py-3 sm:px-2';
 const ROW_TEXT = 'text-title font-normal leading-[normal] text-foreground';
 const SETTING_ROW = 'flex items-center justify-between py-1';
 const SETTING_LABEL = 'text-eyebrow text-muted sm:text-eyebrow';
@@ -56,17 +56,17 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
 
   return (
     <div
-      className={`${CARD} p-3.75 sm:px-4.5 sm:py-4`}
+      className={`${CARD} p-4 sm:px-4 sm:py-4`}
       data-testid="ci-sched"
     >
       <div
-        className={`${EYEBROW} mb-3 sm:mb-3.5`}
+        className={`${EYEBROW} mb-3 sm:mb-3`}
         data-testid="ci-sched-eyebrow"
       >
         Check-in schedule
       </div>
       <Link
-        className="flex items-center gap-2.75 sm:gap-3.25"
+        className="flex items-center gap-3 sm:gap-3"
         data-testid="ci-form-row"
         to={ROUTES.EDIT_CHECKIN.replace(':id', schedule.form_template_id)}
       >
@@ -84,7 +84,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
             {schedule.form_template.name}
           </span>
           <span
-            className="block text-eyebrow text-muted sm:mt-0.25 sm:text-eyebrow"
+            className="block text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
             data-testid="ci-form-sub"
           >
             Form
@@ -93,7 +93,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
         <ChevronRight className="size-4 text-muted" />
       </Link>
       <div
-        className="my-3.25 h-px bg-border sm:my-3.5"
+        className="my-3 h-px bg-border sm:my-3"
         data-testid="ci-sched-sep"
       />
       <div className={SETTING_ROW}>
@@ -192,7 +192,7 @@ function HistoryCard({assignments, clientId}: {assignments: ClientProfileFormAss
 
   return (
     <div
-      className={`${CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
+      className={`${CARD} px-3 pt-1.5 pb-2 sm:px-4 sm:pt-2 sm:pb-3`}
       data-testid="ci-history"
     >
       <div
@@ -250,9 +250,7 @@ function HistoryCard({assignments, clientId}: {assignments: ClientProfileFormAss
                 >
                   {assignment.form_template.name}
                 </span>
-                {submittedLabel ? (
-                  <span className="mt-0.25 block text-eyebrow text-muted">{submittedLabel}</span>
-                ) : null}
+                {submittedLabel ? <span className="mt-0.5 block text-eyebrow text-muted">{submittedLabel}</span> : null}
               </span>
               {chip}
             </>
@@ -302,17 +300,17 @@ function IntakeCard({
 
   return (
     <div
-      className={`${CARD} p-3.75 sm:px-4.5 sm:py-4`}
+      className={`${CARD} p-4 sm:px-4 sm:py-4`}
       data-testid="ci-intake"
     >
       <div
-        className={`${EYEBROW} mb-2.5 sm:mb-2.75`}
+        className={`${EYEBROW} mb-2 sm:mb-3`}
         data-testid="ci-intake-eyebrow"
       >
         Intake
       </div>
       <Link
-        className={`${ROW_TEXT} -mx-1 -my-1.25 flex items-center gap-3.5 rounded-panel px-1 py-1.25 sm:-mx-2 sm:-my-1.5 sm:px-2 sm:py-1.5`}
+        className={`${ROW_TEXT} -mx-1 -my-1 flex items-center gap-3 rounded-panel px-1 py-1 sm:-mx-2 sm:-my-1.5 sm:px-2 sm:py-1.5`}
         data-testid="ci-intake-row"
         to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
       >
@@ -364,12 +362,12 @@ function PhotosCard({assignments, clientId}: {assignments: ClientProfileFormAssi
 
   return (
     <Link
-      className={`${CARD} cursor-pointer p-3.75 sm:px-4.25 sm:py-4`}
+      className={`${CARD} cursor-pointer p-4 sm:px-4 sm:py-4`}
       data-testid="ci-photos"
       to={ROUTES.CLIENT_PHOTOS.replace(':id', clientId)}
     >
       <div
-        className={`${EYEBROW} mb-2.75 sm:mb-3`}
+        className={`${EYEBROW} mb-3 sm:mb-3`}
         data-testid="ci-photos-eyebrow"
       >
         Progress photos
@@ -407,14 +405,14 @@ export default function CheckinsTab({client}: {client: Client}) {
 
   if (schedules.isLoading || assignments.isLoading) {
     return (
-      <div className="flex flex-col gap-3 p-3.5 sm:gap-4 sm:p-0">
+      <div className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-0">
         <CardSkeleton lines={4} />
       </div>
     );
   }
   if (schedules.isError && assignments.isError) {
     return (
-      <div className="flex flex-col gap-3 p-3.5 sm:gap-4 sm:p-0">
+      <div className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-0">
         <CardError
           label="check-ins"
           onRetry={() => {
@@ -428,10 +426,10 @@ export default function CheckinsTab({client}: {client: Client}) {
 
   return (
     <div
-      className="flex flex-col gap-3 p-3.5 sm:grid sm:grid-cols-[minmax(0,1fr)_320px] sm:items-start sm:gap-4 sm:p-0"
+      className="flex flex-col gap-3 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_320px] sm:items-start sm:gap-4 sm:p-0"
       data-testid="ci-root"
     >
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-3.5">
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-3">
         {schedule ? (
           <>
             <ScheduleCard schedule={schedule} />
@@ -442,7 +440,7 @@ export default function CheckinsTab({client}: {client: Client}) {
           </>
         ) : (
           <div
-            className={`${CARD} flex flex-col items-center gap-1.25 px-4.5 py-7 text-center sm:gap-1.5 sm:px-5 sm:py-8.5`}
+            className={`${CARD} flex flex-col items-center gap-1 px-4 py-7 text-center sm:gap-1.5 sm:px-5 sm:py-8`}
             data-testid="ci-empty"
           >
             <span
@@ -466,7 +464,7 @@ export default function CheckinsTab({client}: {client: Client}) {
             <AssignSurface
               label="Set up check-ins"
               popoverClassName="p-4"
-              triggerClassName={`${ACCENT_BUTTON} mt-2 h-9 px-3.75 sm:mt-2.5 sm:h-9.5`}
+              triggerClassName={`${ACCENT_BUTTON} mt-2 h-9 px-4 sm:mt-2 sm:h-9.5`}
               triggerTestId="ci-empty-btn"
             >
               {(close) => (

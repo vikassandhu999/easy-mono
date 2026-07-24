@@ -9,7 +9,6 @@
 import {Button, FieldError, Fieldset, Input, Label, TextField, Typography} from '@heroui/react';
 import {Plus, X} from 'lucide-react';
 import {useCallback, useState} from 'react';
-import {INPUT_SKIN_CLASS} from '@/@components/form-fields/form-classes';
 
 import {NumberInput} from '@/@components/number-input';
 import type {ServingSize} from '@/api/shared';
@@ -99,7 +98,6 @@ export function ServingSizesEditor({
               <Label>Unit</Label>
               {servingError && <FieldError>{servingError}</FieldError>}
               <Input
-                className={INPUT_SKIN_CLASS}
                 onChange={(e) => {
                   setNewUnit(e.target.value);
                   setServingError('');

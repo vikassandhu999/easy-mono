@@ -1,8 +1,6 @@
 import {Description, FieldError, Input, Label, TextField} from '@heroui/react';
-import {cn} from '@heroui/styles';
 import type {ComponentProps} from 'react';
 import {Controller, type FieldValues} from 'react-hook-form';
-import {INPUT_SKIN_CLASS} from '@/@components/form-fields/form-classes';
 
 import type {BaseFormFieldProps} from './form-field-types';
 
@@ -46,7 +44,7 @@ export function FormTextField<T extends FieldValues>({
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
           <Input
             {...inputProps}
-            className={cn(INPUT_SKIN_CLASS, inputProps?.className)}
+            className={inputProps?.className}
           />
         </TextField>
       )}

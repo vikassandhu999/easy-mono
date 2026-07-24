@@ -1,7 +1,6 @@
 import {Button, ListBox, SearchField, Spinner, Typography} from '@heroui/react';
 import {Apple, ArrowRight, X} from 'lucide-react';
 import {type KeyboardEvent, useDeferredValue, useMemo, useState} from 'react';
-import {INPUT_SKIN_CLASS} from '@/@components/form-fields/form-classes';
 
 import type {Food} from '@/api/generated';
 import {useListFoodsQuery} from '@/api/generated';
@@ -90,7 +89,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
           value={search}
           variant="secondary"
         >
-          <SearchField.Group className={INPUT_SKIN_CLASS}>
+          <SearchField.Group>
             <SearchField.SearchIcon />
             <SearchField.Input
               onKeyDown={onInputKeyDown}

@@ -132,6 +132,7 @@
 .toggle-button:not(.toggle-button--sm):not(.toggle-button--lg),
 .search-field-group,
 .input-group,
+.input,
 .tab {
   height: var(--spacing-control);
   min-height: var(--spacing-control);
@@ -287,7 +288,10 @@ svg.lucide:not([class*="size-"]) {
   --danger-soft: color-mix(in oklab, var(--danger) 15%, transparent);
   --default: oklch(94.00% 0 285.89);
   --default-foreground: oklch(21.03% 0.0059 285.89);
-  /* Fields are WHITE with a visible hairline border, not grey/borderless */
+  /* Fields are WHITE with a visible hairline border, not grey/borderless.
+     `--field-border-width` is what HeroUI's `.input` actually reads; it defaults
+     to 0, which is why every field wrapper was bolting a `border` utility on. */
+  --field-border-width: 1px;
   --field-background: oklch(100% 0 0);
   --field-border: var(--border);
   --field-foreground: oklch(21.03% 0 285.89);

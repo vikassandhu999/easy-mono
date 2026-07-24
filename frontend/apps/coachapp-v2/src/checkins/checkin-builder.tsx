@@ -45,7 +45,6 @@ import {
 } from 'lucide-react';
 import {type ReactNode, useState} from 'react';
 import {FormActions, FormLayout} from '@/@components/form-fields';
-import {INPUT_SKIN_CLASS} from '@/@components/form-fields/form-classes';
 import {Page} from '@/@components/page';
 import {
   type FormPurpose,
@@ -124,10 +123,7 @@ function OptionsEditor({onChange, options}: {onChange: (options: string[]) => vo
             onChange={(value) => onChange(options.map((o, i) => (i === index ? value : o)))}
             value={option}
           >
-            <Input
-              className={INPUT_SKIN_CLASS}
-              placeholder={`Option ${index + 1}`}
-            />
+            <Input placeholder={`Option ${index + 1}`} />
           </TextField>
           <Button
             aria-label={`Remove option ${index + 1}`}
@@ -300,10 +296,7 @@ function QuestionRow({
             value={question.label}
           >
             <Label>Question</Label>
-            <Input
-              className={INPUT_SKIN_CLASS}
-              placeholder="Untitled question"
-            />
+            <Input placeholder="Untitled question" />
           </TextField>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
@@ -417,7 +410,6 @@ function SectionCard({
               boxed field, until focused. */}
           <Input
             className={cn(
-              INPUT_SKIN_CLASS,
               'border-transparent bg-transparent px-0 font-semibold focus:border-border focus:bg-field-background focus:px-3',
             )}
             placeholder="Section title"
@@ -662,10 +654,7 @@ export default function CheckinBuilder({
                 value={draft.name}
               >
                 <Label>Form name</Label>
-                <Input
-                  className={INPUT_SKIN_CLASS}
-                  placeholder="e.g. Weekly Check-in"
-                />
+                <Input placeholder="e.g. Weekly Check-in" />
               </TextField>
 
               <div className="flex flex-col gap-2">

@@ -146,7 +146,7 @@ export function WeekSchedule({planId, workoutId, workoutName}: WeekScheduleProps
       {ORDERED_DAYS.map((day) => (
         <ToggleButton
           aria-label={`${DAY_LABELS[day]} for ${workoutName}`}
-          className="size-11 shrink-0 rounded-chip border border-border bg-transparent px-0 text-eyebrow font-semibold text-muted [box-shadow:none] [row-gap:normal] [column-gap:normal] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-8"
+          className="size-11 shrink-0 rounded-chip border border-border bg-transparent px-0 type-eyebrow font-semibold text-muted [box-shadow:none] [row-gap:normal] [column-gap:normal] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-8"
           data-testid={assignedDays.includes(day) ? 'tb-wday-on' : 'tb-wday-off'}
           id={day}
           key={day}
@@ -179,7 +179,7 @@ export function ScheduleLabel({planId, workoutId}: ScheduleLabelProps) {
       data-testid="tb-sched-row"
     >
       <span
-        className="font-count text-eyebrow font-semibold text-muted"
+        className="font-count type-eyebrow font-semibold text-muted"
         data-testid="tb-sched-label"
       >
         {scheduleLabel(assignedDays)}

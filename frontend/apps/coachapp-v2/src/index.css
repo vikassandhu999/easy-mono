@@ -47,19 +47,12 @@
      makes every one of them read as drift against a design that says 16, with
      no code to fix. A type scale has to contain the size the document already
      renders at. */
-  --text-eyebrow: 11px; /* eyebrows, chips, pills, sub-lines · was set-chip 9.5 / eyebrow-sm 10 / caption 10.5 / eyebrow 11 / chip 11.5 / sub 12 / pill 12.5 */
-  --text-eyebrow--line-height: normal;
-  --text-body: 14px; /* body copy, rows, tabs, notes · was note 13 / row 13.5 / tab 14 / metric-sm 15 */
-  --text-body--line-height: normal;
-  --text-title: 16px; /* titles, metric values, answers · was metric 16 / answer 17 — and the inherited baseline */
-  --text-title--line-height: normal;
-  --text-heading: 19px; /* section + mobile page headings · was stat-lg 18 / title-sm 19 */
-  --text-heading--line-height: normal;
-  --text-metric: 22px; /* stat values, mobile page titles · was kcal 22 / title-md 22 / stat-xl 23 */
-  --text-metric--line-height: normal;
-  --text-display: 27px; /* desktop + builder page titles · was title-lg 25 / plan-title 27 */
-  --text-display--line-height: normal;
-
+  --type-eyebrow: 11px; /* eyebrows, chips, pills, sub-lines · was set-chip 9.5 / eyebrow-sm 10 / caption 10.5 / eyebrow 11 / chip 11.5 / sub 12 / pill 12.5 */
+  --type-body: 14px; /* body copy, rows, tabs, notes · was note 13 / row 13.5 / tab 14 / metric-sm 15 */
+  --type-title: 16px; /* titles, metric values, answers · was metric 16 / answer 17 — and the inherited baseline */
+  --type-heading: 19px; /* section + mobile page headings · was stat-lg 18 / title-sm 19 */
+  --type-metric: 22px; /* stat values, mobile page titles · was kcal 22 / title-md 22 / stat-xl 23 */
+  --type-display: 27px; /* desktop + builder page titles · was title-lg 25 / plan-title 27 */
   /* Geometry — 4 steps, chip < control < panel < card. Max drift 2px.
      8px for the same reason 16px is a type step: it is HeroUI's own `--radius`
      (0.5rem) baseline, so components that never opt in still land on the scale. */
@@ -116,6 +109,51 @@
   --color-success-soft-foreground: oklch(0.4 0.12 150);
   --color-warning-soft-foreground: oklch(0.5 0.13 74);
   --color-danger-soft-foreground: oklch(0.52 0.22 26);
+}
+
+/* ── Type utilities ─────────────────────────────────────────────────────────
+   These are `type-*`, not `text-*`, on purpose.
+
+   Tailwind's `--text-*` namespace generates `text-<name>` utilities, which puts
+   a custom size in the same string-space as `text-<colour>`. tailwind-merge —
+   which runs inside `cn()` and inside every HeroUI component — only knows
+   Tailwind's OWN size names, so it classified `type-eyebrow` as a colour and
+   dropped it whenever a real colour followed:
+
+       cn('type-eyebrow', 'text-muted')  ->  'text-muted'      size lost
+       cn('text-sm',      'text-muted')  ->  'text-sm text-muted'
+
+   That silently cost BrowseRow's meta line its 11px for as long as it has
+   existed; a stray `sm:type-eyebrow` was the only reason it looked right above
+   `sm`. 37 call sites were affected the same way.
+
+   Naming them `type-*` removes the collision by construction rather than by
+   discipline: tailwind-merge has no group for `type-`, so it never touches them.
+   The line-height rides along here because `--text-*--line-height` was a feature
+   of the namespace we just left. */
+@utility type-eyebrow {
+  font-size: var(--type-eyebrow);
+  line-height: normal;
+}
+@utility type-body {
+  font-size: var(--type-body);
+  line-height: normal;
+}
+@utility type-title {
+  font-size: var(--type-title);
+  line-height: normal;
+}
+@utility type-heading {
+  font-size: var(--type-heading);
+  line-height: normal;
+}
+@utility type-metric {
+  font-size: var(--type-metric);
+  line-height: normal;
+}
+@utility type-display {
+  font-size: var(--type-display);
+  line-height: normal;
 }
 
 /* ── Control height ─────────────────────────────────────────────────────────

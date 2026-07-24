@@ -297,7 +297,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
                 {item.food.serving_sizes.length > 0 && (
                   <div className="mb-3">
                     <Label
-                      className="mb-1.5 block text-body font-medium text-muted"
+                      className="mb-1.5 block type-body font-medium text-muted"
                       id={quickFillLabelId}
                     >
                       Quick fill

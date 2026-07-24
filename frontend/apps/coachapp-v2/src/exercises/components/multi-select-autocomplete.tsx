@@ -100,7 +100,7 @@ export default function MultiSelectAutocomplete({
               return (
                 <span className="flex items-center gap-1.5 truncate">
                   <span className="truncate">{placeholder}</span>
-                  <span className="shrink-0 rounded-pill bg-ink px-1.5 text-eyebrow font-semibold text-ink-foreground">
+                  <span className="shrink-0 rounded-pill bg-ink px-1.5 type-eyebrow font-semibold text-ink-foreground">
                     {state.selectedItems.length}
                   </span>
                 </span>

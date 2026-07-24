@@ -55,7 +55,7 @@ function greeting(): string {
 }
 
 // RECIPES.md R9 — the date eyebrow above the greeting.
-const EYEBROW = 'text-eyebrow font-semibold uppercase tracking-wider text-muted';
+const EYEBROW = 'type-eyebrow font-semibold uppercase tracking-wider text-muted';
 
 /**
  * GAPS #1 — the glance bar is a `Surface` holding two stat blocks (`Typography`

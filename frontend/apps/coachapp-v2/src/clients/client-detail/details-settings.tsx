@@ -36,10 +36,10 @@ import {
 } from '@/clients/client-form/edit-client-form';
 
 const ROW = 'flex items-center justify-between py-2';
-const ROW_LABEL = 'text-eyebrow text-muted sm:text-eyebrow';
-const ROW_VALUE = 'text-eyebrow font-semibold sm:text-eyebrow';
+const ROW_LABEL = 'type-eyebrow text-muted';
+const ROW_VALUE = 'type-eyebrow font-semibold';
 const EXTEND_BTN =
-  'h-7.5 min-w-0 shrink-0 rounded-control border border-border bg-surface px-3 font-btn text-eyebrow font-bold leading-none [box-shadow:none] [color:black] [column-gap:normal] [row-gap:normal] sm:h-8 sm:px-3 sm:text-eyebrow';
+  'h-7.5 min-w-0 shrink-0 rounded-control border border-border bg-surface px-3 font-btn type-eyebrow font-bold leading-none [box-shadow:none] [color:black] [column-gap:normal] [row-gap:normal] sm:h-8';
 
 function SubscriptionAlert({client, onExtend}: {client: Client; onExtend: () => void}) {
   const expired = client.status === 'inactive' && client.inactive_reason === 'subscription_expired';
@@ -62,7 +62,7 @@ function SubscriptionAlert({client, onExtend}: {client: Client; onExtend: () => 
         <AlarmClock className="flex-none text-warning-soft-foreground" />
       )}
       <div
-        className={`min-w-0 flex-1 text-eyebrow font-semibold sm:text-eyebrow ${
+        className={`min-w-0 flex-1 type-eyebrow font-semibold sm:type-eyebrow ${
           expired ? 'text-danger-soft-foreground' : 'text-warning-soft-foreground'
         }`}
         data-testid="dt-alert-text"
@@ -92,25 +92,25 @@ function IntakeRow({clientId}: {clientId: string}) {
 
   return (
     <Link
-      className="flex items-center gap-3 rounded-panel border border-border bg-surface px-4 py-3 sm:px-4 sm:py-4"
+      className="flex items-center gap-3 rounded-panel border border-border bg-surface px-4 py-3 sm:py-4"
       data-testid="dt-intake"
       to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
     >
       <span
-        className="flex size-9 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9.5 sm:rounded-control"
+        className="flex size-9 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9.5"
         data-testid="dt-intake-icon"
       >
         <ClipboardList className="sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
-          className="text-eyebrow font-bold sm:text-body"
+          className="type-eyebrow font-bold sm:type-body"
           data-testid="dt-intake-title"
         >
           Intake responses
         </div>
         <div
-          className="mt-0.5 text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
+          className="mt-0.5 type-eyebrow text-muted"
           data-testid="dt-intake-sub"
         >
           {submitted ? `Submitted ${formatShortDate(submitted.submitted_at)}` : 'Not submitted yet'}
@@ -205,7 +205,7 @@ export default function DetailsSettings() {
         className="p-0"
       >
         {/* ── sub-screen header ───────────────────────────────────────── */}
-        <div className="flex items-center gap-3 border-b border-border bg-surface px-4 pt-0.5 pb-3 sm:gap-3 sm:px-8 sm:py-4">
+        <div className="flex items-center gap-3 border-b border-border bg-surface px-4 pt-0.5 pb-3 sm:px-8 sm:py-4">
           <Button
             aria-label="Back"
             className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
@@ -218,13 +218,13 @@ export default function DetailsSettings() {
           </Button>
           <div className="min-w-0 flex-1">
             <div
-              className="font-grotesk text-body font-semibold sm:text-heading"
+              className="font-grotesk type-body font-semibold sm:type-heading"
               data-testid="dt-title"
             >
               Details &amp; settings
             </div>
             <div
-              className="text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
+              className="type-eyebrow text-muted sm:mt-0.5"
               data-testid="dt-subtitle"
             >
               {name}
@@ -382,7 +382,7 @@ export default function DetailsSettings() {
                   onExtend={focusEndDate}
                 />
                 <div
-                  className="mt-2 text-eyebrow text-muted"
+                  className="mt-2 type-eyebrow text-muted"
                   data-testid="dt-caption"
                 >
                   Billing is per seat — manage seats in{' '}
@@ -399,7 +399,7 @@ export default function DetailsSettings() {
 
               <div className="flex justify-end gap-2">
                 <Button
-                  className="h-10 min-w-0 shrink-0 rounded-control border border-border bg-surface px-4 font-btn text-eyebrow font-bold leading-none text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal]"
+                  className="h-10 min-w-0 shrink-0 rounded-control border border-border bg-surface px-4 font-btn type-eyebrow font-bold leading-none text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal]"
                   onPress={() => form.reset(clientToEditFormValues(client))}
                   variant="ghost"
                 >
@@ -420,7 +420,7 @@ export default function DetailsSettings() {
             {client.status === 'active' ? (
               <div>
                 <Button
-                  className="h-10.5 min-w-0 w-full shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn text-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:h-10 sm:w-auto sm:px-4 sm:py-0"
+                  className="h-10.5 min-w-0 w-full shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn type-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:h-10 sm:w-auto sm:px-4 sm:py-0"
                   data-testid="dt-deactivate"
                   onPress={() => setDeactivateOpen(true)}
                   variant="ghost"

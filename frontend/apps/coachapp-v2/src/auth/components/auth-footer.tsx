@@ -4,5 +4,5 @@ import type {ReactNode} from 'react';
 // Sign up switch, Resend code). Centered, muted caption + a single link.
 
 export function AuthFooter({children}: {children: ReactNode}) {
-  return <div className="mt-6 flex items-center justify-center gap-1 text-center text-body text-muted">{children}</div>;
+  return <div className="mt-6 flex items-center justify-center gap-1 text-center type-body text-muted">{children}</div>;
 }

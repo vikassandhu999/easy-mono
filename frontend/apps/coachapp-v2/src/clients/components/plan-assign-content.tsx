@@ -214,7 +214,7 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
           )}
 
           <button
-            className="flex w-full items-center gap-2 rounded-card border border-separator p-2 text-body font-medium hover:bg-surface-hover"
+            className="flex w-full items-center gap-2 rounded-card border border-separator p-2 type-body font-medium hover:bg-surface-hover"
             onClick={() => navigate(isNutrition ? ROUTES.CREATE_NUTRITION_PLAN : ROUTES.CREATE_TRAINING_PLAN)}
             type="button"
           >

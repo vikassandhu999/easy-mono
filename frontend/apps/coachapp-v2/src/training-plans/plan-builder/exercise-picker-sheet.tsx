@@ -252,8 +252,8 @@ export function ExercisePickerSheet({open, onClose, onAdd, anchorEl}: ExercisePi
 
         {/* Name + meta */}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-body font-medium text-foreground">{exercise.name}</div>
-          {meta ? <div className="truncate text-eyebrow text-muted">{meta}</div> : null}
+          <div className="truncate type-body font-medium text-foreground">{exercise.name}</div>
+          {meta ? <div className="truncate type-eyebrow text-muted">{meta}</div> : null}
         </div>
 
         {/* tracking_type badge */}

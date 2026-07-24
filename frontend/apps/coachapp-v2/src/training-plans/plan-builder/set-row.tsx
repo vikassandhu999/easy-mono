@@ -106,7 +106,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
             variant="ghost"
           >
             <span
-              className="min-w-0 truncate text-eyebrow text-muted"
+              className="min-w-0 truncate type-eyebrow text-muted"
               data-testid={index === 0 ? 'tb-set-summary' : undefined}
             >
               <span

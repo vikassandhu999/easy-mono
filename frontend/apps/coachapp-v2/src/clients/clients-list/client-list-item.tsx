@@ -11,9 +11,9 @@ import {INACTIVE_REASON_LABEL, stageChip} from '@/clients/lib/client';
 
 // RECIPES.md R5 — plan chip (neutral grey) and attention chip (warning-soft).
 // Plain spans, not `Chip`: the spec chip is 7px radius / 11.5px / 600, and the
-// tokens live in index.css (`rounded-chip`, `text-eyebrow`, `--warning-text`).
-const PLAN_CHIP_CLASS = 'rounded-chip bg-surface-secondary px-2 py-0.5 text-eyebrow font-semibold text-foreground!';
-const ATTENTION_CHIP_CLASS = 'rounded-chip bg-warning-soft px-2 py-0.5 text-eyebrow font-semibold text-warning-text!';
+// tokens live in index.css (`rounded-chip`, `type-eyebrow`, `--warning-text`).
+const PLAN_CHIP_CLASS = 'rounded-chip bg-surface-secondary px-2 py-0.5 type-eyebrow font-semibold text-foreground!';
+const ATTENTION_CHIP_CLASS = 'rounded-chip bg-warning-soft px-2 py-0.5 type-eyebrow font-semibold text-warning-text!';
 
 // RECIPES.md R6 — status dot tone. success=active, accent=invited,
 // danger=expired, muted=inactive. Full class names (never interpolated) so
@@ -25,8 +25,8 @@ const DOT_CLASS = {
   success: 'bg-success',
 } as const;
 
-const MOBILE_SUBTITLE_CLASS = 'block max-w-full truncate text-eyebrow text-muted sm:hidden';
-const MOBILE_SUBTITLE_ATTENTION_CLASS = 'block max-w-full truncate text-eyebrow text-warning-text! sm:hidden';
+const MOBILE_SUBTITLE_CLASS = 'block max-w-full truncate type-eyebrow text-muted sm:hidden';
+const MOBILE_SUBTITLE_ATTENTION_CLASS = 'block max-w-full truncate type-eyebrow text-warning-text! sm:hidden';
 
 type StatusCell = {label: string; time: null | string; tone: keyof typeof DOT_CLASS};
 
@@ -168,27 +168,27 @@ export default function ClientListItem({client}: {client: ListClient}) {
           className="size-9 shrink-0 bg-surface-secondary sm:size-10"
           size="md"
         >
-          <Avatar.Fallback className="text-eyebrow font-semibold text-foreground">{initials}</Avatar.Fallback>
+          <Avatar.Fallback className="type-eyebrow font-semibold text-foreground">{initials}</Avatar.Fallback>
         </Avatar>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Label className="min-w-0 max-w-full truncate text-body font-semibold text-foreground">
+        <Label className="min-w-0 max-w-full truncate type-body font-semibold text-foreground">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="min-w-0 truncate">{name}</span>
             <span
               aria-hidden
               className={cn('size-1.5 shrink-0 rounded-pill sm:hidden', DOT_CLASS[status.tone])}
             />
-            <span className="shrink-0 truncate text-eyebrow font-normal text-muted sm:hidden">{status.label}</span>
+            <span className="shrink-0 truncate type-eyebrow font-normal text-muted sm:hidden">{status.label}</span>
           </span>
         </Label>
-        <Description className="max-w-full truncate text-eyebrow text-muted">
+        <Description className="max-w-full truncate type-eyebrow text-muted">
           {/* Plain span: tw-merge misreads `text-warning-text` as a font size. */}
           <span className={mobileSubtitle.isAttention ? MOBILE_SUBTITLE_ATTENTION_CLASS : MOBILE_SUBTITLE_CLASS}>
             {mobileSubtitle.text}
           </span>
-          <span className="hidden max-w-full truncate text-eyebrow text-muted sm:block">
+          <span className="hidden max-w-full truncate type-eyebrow text-muted sm:block">
             {client.email ?? client.phone ?? '—'}
           </span>
         </Description>
@@ -206,7 +206,7 @@ export default function ClientListItem({client}: {client: ListClient}) {
         ))}
       </div>
 
-      <div className="hidden items-center justify-end gap-1.5 text-eyebrow text-muted sm:flex">
+      <div className="hidden items-center justify-end gap-1.5 type-eyebrow text-muted sm:flex">
         <span
           aria-hidden
           className={cn('size-1.5 shrink-0 rounded-pill', DOT_CLASS[status.tone])}

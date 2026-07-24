@@ -150,7 +150,7 @@ Trust these over the handoff docs. When you discover a new one, add it here
   `> div:nth-child(n)` when siblings are mixed.
 - **A HeroUI `Button` used as a list ROW imposes 14px / 20px line-height /
   default-foreground on everything inside it** — the design's row inherits the
-  page context instead. Reset with `text-metric font-normal leading-[normal]
+  page context instead. Reset with `type-metric font-normal leading-[normal]
   text-foreground` on the row or every child (including meters) diffs. This was
   all 22 of CD/NU's first-pass diffs.
 - **`Switch` also renders NOTHING without compound children** — it joins

@@ -62,7 +62,7 @@ function SidebarLink({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `flex  items-center gap-3 rounded-control px-3 py-2 text-body transition-colors ${
+        `flex  items-center gap-3 rounded-control px-3 py-2 type-body transition-colors ${
           isActive
             ? 'bg-accent font-semibold text-accent-foreground'
             : 'font-medium text-white/80 hover:bg-white/10 hover:text-white'
@@ -123,12 +123,12 @@ function ProfileCard() {
       className="mx-0.5 flex items-center gap-2 rounded-panel border border-white/10 bg-white/[0.07] p-2 transition-colors hover:border-white/20 hover:bg-white/[0.11]"
       to={ROUTES.SETTINGS}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-warning-soft text-eyebrow font-semibold text-warning-soft-foreground">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-warning-soft type-eyebrow font-semibold text-warning-soft-foreground">
         {initials}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-body font-semibold text-white">{name}</span>
-        <span className="block truncate text-eyebrow text-white/50">{profile?.business.name ?? ''}</span>
+        <span className="block truncate type-body font-semibold text-white">{name}</span>
+        <span className="block truncate type-eyebrow text-white/50">{profile?.business.name ?? ''}</span>
       </span>
       <Settings
         className="shrink-0 text-white/50"
@@ -142,7 +142,7 @@ function BottomNavItem({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `relative flex   flex-1 flex-col items-center justify-center gap-1 text-eyebrow transition-colors ${
+        `relative flex   flex-1 flex-col items-center justify-center gap-1 type-eyebrow transition-colors ${
           isActive ? 'font-semibold text-accent' : 'font-medium text-white/55'
         }`
       }
@@ -181,10 +181,10 @@ export default function AppShell() {
 
       <aside className="hidden bg-[var(--ink)] lg:fixed lg:inset-y-0 lg:flex lg:w-60 lg:flex-col lg:p-3">
         <div className="mx-0.5 flex items-center gap-2 border-b border-white/10 px-1.5 pb-3 pt-0.5">
-          <span className="flex size-8 items-center justify-center rounded-control bg-accent font-grotesk text-title font-bold text-accent-foreground">
+          <span className="flex size-8 items-center justify-center rounded-control bg-accent font-grotesk type-title font-bold text-accent-foreground">
             C
           </span>
-          <span className="font-grotesk text-heading font-bold text-white">
+          <span className="font-grotesk type-heading font-bold text-white">
             Coach<span className="text-accent">Easy</span>
           </span>
         </div>
@@ -198,7 +198,7 @@ export default function AppShell() {
               />
             ))}
           </div>
-          <div className="px-2 pb-1.5 pt-4 text-eyebrow font-semibold uppercase tracking-wider text-white/40">
+          <div className="px-2 pb-1.5 pt-4 type-eyebrow font-semibold uppercase tracking-wider text-white/40">
             Builder
           </div>
           <div className="flex flex-col gap-0.5">
@@ -213,7 +213,7 @@ export default function AppShell() {
           <div className="mt-auto flex flex-col gap-3 pt-4">
             {canInstall ? (
               <div className="mx-0.5 rounded-panel border border-white/10 bg-white/[0.07] p-3">
-                <p className="text-eyebrow text-white/70">Install the app for quick access</p>
+                <p className="type-eyebrow text-white/70">Install the app for quick access</p>
                 <div className="mt-2 flex gap-2">
                   <Button
                     className="flex-1"
@@ -259,7 +259,7 @@ export default function AppShell() {
               className="size-8 rounded-chip"
               src="/icons/icon-192x192.webp"
             />
-            <p className="flex-1 text-eyebrow text-muted">Install CoachEasy for quick access</p>
+            <p className="flex-1 type-eyebrow text-muted">Install CoachEasy for quick access</p>
             <Button
               onPress={promptInstall}
               size="sm"

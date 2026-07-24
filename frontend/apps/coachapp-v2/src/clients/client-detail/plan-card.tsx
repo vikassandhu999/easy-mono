@@ -55,20 +55,20 @@ export function PlanCard({
         data-testid={`${testId}-plan`}
       >
         <span
-          className="flex size-10 flex-none items-center justify-center rounded-panel bg-accent-soft text-accent sm:size-11 sm:rounded-panel"
+          className="flex size-10 flex-none items-center justify-center rounded-panel bg-accent-soft text-accent sm:size-11"
           data-testid={`${testId}-plan-icon`}
         >
           {icon}
         </span>
         <div className="min-w-0 flex-1">
           <div
-            className="text-body font-bold sm:text-body"
+            className="type-body font-bold"
             data-testid={`${testId}-plan-name`}
           >
             {name}
           </div>
           <div
-            className="mt-0.5 text-eyebrow text-muted sm:text-eyebrow"
+            className="mt-0.5 type-eyebrow text-muted"
             data-testid={`${testId}-plan-meta`}
           >
             {meta}
@@ -196,19 +196,19 @@ export function EmptyPlanCard({
       data-testid={`${testId}-empty`}
     >
       <span
-        className="mb-1 flex size-12 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:mb-1 sm:size-13 sm:rounded-card"
+        className="mb-1 flex size-12 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:size-13 sm:rounded-card"
         data-testid={`${testId}-empty-icon`}
       >
         {icon}
       </span>
       <div
-        className="font-grotesk text-body font-semibold sm:text-title"
+        className="font-grotesk type-body font-semibold sm:type-title"
         data-testid={`${testId}-empty-title`}
       >
         {title}
       </div>
       <div
-        className="text-eyebrow text-muted sm:max-w-70 sm:text-eyebrow"
+        className="type-eyebrow text-muted sm:max-w-70"
         data-testid={`${testId}-empty-sub`}
       >
         {body}

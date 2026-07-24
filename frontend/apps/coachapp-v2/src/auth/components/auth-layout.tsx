@@ -9,8 +9,8 @@ export default function AuthLayout({children, description, title}: AuthLayoutPro
     <div className="flex min-h-dvh items-center justify-center overflow-y-auto px-4 py-8">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <h1 className="text-heading font-semibold md:text-metric">{title}</h1>
-          <p className="mt-2 text-body text-muted">{description}</p>
+          <h1 className="type-heading font-semibold md:type-metric">{title}</h1>
+          <p className="mt-2 type-body text-muted">{description}</p>
         </div>
         {children}
       </div>

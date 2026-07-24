@@ -16,8 +16,8 @@ import {formatShortDate, snapshotQuestions} from '@/clients/client-detail/data';
 import {CHIP, SubHeader} from '@/clients/client-detail/ui';
 
 const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
-const LABEL = 'mb-1.5 text-eyebrow font-semibold text-muted sm:mb-2 sm:text-eyebrow';
-const TEXT = 'text-body leading-relaxed sm:text-body';
+const LABEL = 'mb-1.5 type-eyebrow font-semibold text-muted sm:mb-2';
+const TEXT = 'type-body leading-relaxed';
 
 export default function IntakeResponses() {
   const {id} = useParams<{id: string}>();

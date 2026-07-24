@@ -303,7 +303,7 @@ export default function ExerciseDetail() {
                     className="flex items-start gap-3"
                     key={i}
                   >
-                    <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-accent-soft text-eyebrow font-semibold text-accent">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-accent-soft type-eyebrow font-semibold text-accent">
                       {i + 1}
                     </span>
                     <Typography>{step}</Typography>

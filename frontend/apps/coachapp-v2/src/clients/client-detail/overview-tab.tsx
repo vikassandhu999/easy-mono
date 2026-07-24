@@ -50,21 +50,21 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
 
   return (
     <div
-      className="flex items-center gap-3 rounded-card border border-warning/30 bg-warning-soft px-3 py-3 sm:gap-3 sm:px-4 sm:py-4"
+      className="flex items-center gap-3 rounded-card border border-warning/30 bg-warning-soft px-3 py-3 sm:px-4 sm:py-4"
       data-testid="cd-review-banner"
     >
-      <span className="flex size-9 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-10 sm:rounded-control">
+      <span className="flex size-9 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-10">
         <ClipboardCheck className="sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
-          className="text-body font-bold sm:text-body"
+          className="type-body font-bold"
           data-testid="cd-review-title"
         >
           Check-in to review
         </div>
         <div
-          className="mt-0.5 text-eyebrow text-warning-soft-foreground sm:mt-0.5 sm:text-eyebrow"
+          className="mt-0.5 type-eyebrow text-warning-soft-foreground"
           data-testid="cd-review-sub"
         >
           {newest.form_template.name} · submitted {relativeDay(newest.latest_submission.submitted_at)?.toLowerCase()}
@@ -167,15 +167,13 @@ function WeekCard({clientId}: {clientId: string}) {
         <div className="flex w-14 flex-none flex-col gap-2 sm:w-16.5 sm:gap-3 sm:pb-px">
           <div className="h-7 sm:h-7.5" />
           <div
-            className="flex h-3 items-center text-eyebrow font-semibold text-muted sm:h-3.25 sm:text-eyebrow"
+            className="flex h-3 items-center type-eyebrow font-semibold text-muted sm:h-3.25"
             data-testid="cd-week-rowlabel"
           >
             Workouts
           </div>
           {hasNutrition ? (
-            <div className="flex h-3 items-center text-eyebrow font-semibold text-muted sm:h-3.25 sm:text-eyebrow">
-              Meals
-            </div>
+            <div className="flex h-3 items-center type-eyebrow font-semibold text-muted sm:h-3.25">Meals</div>
           ) : null}
         </div>
         {days.map((day, index) => {
@@ -188,16 +186,14 @@ function WeekCard({clientId}: {clientId: string}) {
               <div className="text-center">
                 <div
                   className={
-                    isToday
-                      ? 'text-eyebrow font-bold text-foreground sm:text-eyebrow'
-                      : 'text-eyebrow font-semibold text-muted sm:text-eyebrow'
+                    isToday ? 'type-eyebrow font-bold text-foreground' : 'type-eyebrow font-semibold text-muted'
                   }
                   data-testid="cd-week-day-initial"
                 >
                   {DAY_INITIALS[day.getDay()]}
                 </div>
                 <div
-                  className="font-grotesk text-eyebrow font-bold sm:text-body"
+                  className="font-grotesk type-eyebrow font-bold sm:type-body"
                   data-testid="cd-week-day-num"
                 >
                   {day.getDate()}
@@ -272,15 +268,15 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
       className={`${CARD} p-4 sm:px-5 sm:py-4`}
       data-testid="cd-latest"
     >
-      <div className="mb-3 sm:mb-3 sm:flex sm:items-baseline sm:gap-2">
+      <div className="mb-3 sm:flex sm:items-baseline sm:gap-2">
         <span
-          className="font-grotesk text-body font-semibold sm:text-body"
+          className="font-grotesk type-body font-semibold"
           data-testid="cd-latest-title"
         >
           Latest check-in
         </span>
         <div
-          className="mt-0.5 text-eyebrow text-muted sm:mt-0 sm:text-eyebrow"
+          className="mt-0.5 type-eyebrow text-muted sm:mt-0"
           data-testid="cd-latest-sub"
         >
           {newest.form_template.name} · {formatShortDate(submission.submitted_at)}
@@ -292,14 +288,14 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
           return (
             <div key={question.id}>
               <div
-                className="text-eyebrow font-semibold text-muted sm:text-eyebrow"
+                className="type-eyebrow font-semibold text-muted"
                 data-testid="cd-latest-metric-label"
               >
                 {question.type === 'weight' ? 'Weight' : question.label}
               </div>
               <div className="flex items-center gap-2 sm:mt-1.5">
                 <span
-                  className="mt-1 font-grotesk text-body font-bold sm:mt-0 sm:text-title"
+                  className="mt-1 font-grotesk type-body font-bold sm:mt-0 sm:type-title"
                   data-testid="cd-latest-metric-value"
                 >
                   {question.type === 'weight' ? formatKg(Number(answer), 'kg') : `${answer}/5`}
@@ -311,7 +307,7 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
         })}
       </div>
       {photoIds.length > 0 ? (
-        <div className="mb-3 flex gap-2 sm:mb-4 sm:gap-2">
+        <div className="mb-3 flex gap-2 sm:mb-4">
           {photoIds.map((id) => (
             <span
               className="flex size-14.5 flex-none items-center justify-center overflow-hidden rounded-panel bg-surface-tertiary text-muted/60 sm:size-16"
@@ -323,7 +319,7 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
           ))}
         </div>
       ) : null}
-      <div className="mb-3 h-px bg-border sm:mb-3" />
+      <div className="mb-3 h-px bg-border" />
       <div className="flex items-center justify-between">
         {reviewed ? (
           <Chip
@@ -341,7 +337,7 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
           </Chip>
         )}
         <Link
-          className="text-eyebrow font-semibold text-accent sm:text-eyebrow"
+          className="type-eyebrow font-semibold text-accent"
           data-testid="cd-latest-view"
           to={ROUTES.CLIENT_CHECKIN_SUBMISSION.replace(':id', clientId).replace(':assignmentId', newest.id)}
         >
@@ -396,16 +392,16 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
       data-testid="cd-weight"
     >
       <div className="mb-2 flex items-center justify-between sm:mb-3">
-        <div className="flex flex-1 items-baseline justify-between gap-2 sm:justify-start sm:gap-2">
+        <div className="flex flex-1 items-baseline justify-between gap-2 sm:justify-start">
           <span
-            className="font-grotesk text-body font-semibold sm:text-body"
+            className="font-grotesk type-body font-semibold"
             data-testid="cd-weight-title"
           >
             Weight
           </span>
           {latest ? (
             <span
-              className="font-grotesk text-title font-bold sm:text-heading"
+              className="font-grotesk type-title font-bold sm:type-heading"
               data-testid="cd-weight-value"
             >
               {formatKg(latest.value, latest.unit)}
@@ -421,7 +417,7 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
           ) : null}
         </div>
         <Link
-          className="ml-auto hidden text-eyebrow font-semibold text-accent sm:block"
+          className="ml-auto hidden type-eyebrow font-semibold text-accent sm:block"
           data-testid="cd-weight-all"
           to={ROUTES.CLIENT_WEIGHT.replace(':id', clientId)}
         >
@@ -458,7 +454,7 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
           </svg>
           {goal != null ? (
             <span
-              className="absolute right-0.5 bottom-5 bg-surface px-1 text-eyebrow text-muted"
+              className="absolute right-0.5 bottom-5 bg-surface px-1 type-eyebrow text-muted"
               data-testid="cd-weight-goal"
             >
               goal {formatKg(goal, client.goal_weight_unit ?? 'kg')}
@@ -526,7 +522,7 @@ export function NotesCard({client}: {client: Client}) {
       </div>
       <TextArea
         aria-label="Notes"
-        className="min-h-16.5 w-full resize-none rounded-none border-0 bg-transparent p-0.5 font-btn text-body leading-relaxed text-foreground [box-shadow:none] outline-none sm:min-h-19.5"
+        className="min-h-16.5 w-full resize-none rounded-none border-0 bg-transparent p-0.5 font-btn type-body leading-relaxed text-foreground [box-shadow:none] outline-none sm:min-h-19.5"
         data-testid="cd-notes-input"
         onBlur={save}
         onChange={(e) => setDraft(e.target.value)}
@@ -534,7 +530,7 @@ export function NotesCard({client}: {client: Client}) {
         value={draft ?? client.notes ?? ''}
       />
       <div
-        className="mt-1.5 text-eyebrow text-muted sm:mt-2 sm:text-eyebrow"
+        className="mt-1.5 type-eyebrow text-muted sm:mt-2"
         data-testid="cd-notes-caption"
       >
         Only you and your team can see notes.
@@ -552,20 +548,20 @@ export function DetailsRow() {
       to={ROUTES.CLIENT_DETAILS.replace(':id', id!)}
     >
       <span
-        className="flex size-9 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9.5 sm:rounded-control"
+        className="flex size-9 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9.5"
         data-testid="cd-details-icon"
       >
         <Settings2 className="sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
-          className="text-eyebrow font-bold sm:text-body"
+          className="type-eyebrow font-bold sm:type-body"
           data-testid="cd-details-title"
         >
           Details &amp; settings
         </div>
         <div
-          className="mt-0.5 text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
+          className="mt-0.5 type-eyebrow text-muted"
           data-testid="cd-details-sub"
         >
           Subscription, coach, intake, invitation
@@ -589,13 +585,13 @@ function FreshEmptyCard({firstName}: {firstName: string}) {
         <Sparkles className="size-5 sm:size-6" />
       </span>
       <div
-        className="font-grotesk text-body font-semibold sm:text-title"
+        className="font-grotesk type-body font-semibold sm:type-title"
         data-testid="cd-empty-title"
       >
         No activity yet
       </div>
       <div
-        className="text-eyebrow text-muted sm:max-w-80 sm:text-eyebrow"
+        className="type-eyebrow text-muted sm:max-w-80"
         data-testid="cd-empty-sub"
       >
         Once {firstName} has a plan and starts logging, workouts, meals, weight and check-ins show up here.
@@ -612,7 +608,7 @@ export default function OverviewTab({client, isFresh}: {client: Client; isFresh:
       className="flex flex-col gap-3 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_320px] sm:items-start sm:gap-4 sm:p-0"
       data-testid="cd-ov"
     >
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-3">
+      <div className="flex min-w-0 flex-col gap-3">
         {isFresh ? (
           <FreshEmptyCard firstName={client.first_name ?? 'this client'} />
         ) : (
@@ -646,7 +642,7 @@ export default function OverviewTab({client, isFresh}: {client: Client; isFresh:
           </>
         )}
       </div>
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-3">
+      <div className="flex min-w-0 flex-col gap-3">
         <NotesCard client={client} />
         <DetailsRow />
       </div>

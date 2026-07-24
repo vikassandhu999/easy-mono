@@ -28,7 +28,7 @@ const MAX_QUESTIONS = 5;
 const PUBLIC_SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 const inputCls =
-  'w-full rounded-chip border border-border bg-surface px-3 py-2 text-body outline-none transition-colors focus:border-accent placeholder:text-muted';
+  'w-full rounded-chip border border-border bg-surface px-3 py-2 type-body outline-none transition-colors focus:border-accent placeholder:text-muted';
 
 const key = () => crypto.randomUUID();
 
@@ -53,7 +53,7 @@ function TextRow({
   return (
     <div>
       <label
-        className="mb-1 block text-body font-medium"
+        className="mb-1 block type-body font-medium"
         htmlFor={id}
       >
         {label}
@@ -145,7 +145,7 @@ export default function LandingPageEditor() {
   const header = (
     <Page.Header>
       <Button
-        className="mb-2 h-auto w-fit gap-1 px-0 py-0 text-body font-normal text-muted hover:text-foreground"
+        className="mb-2 h-auto w-fit gap-1 px-0 py-0 type-body font-normal text-muted hover:text-foreground"
         onPress={() => navigate(ROUTES.SETTINGS)}
         variant="ghost"
       >
@@ -605,7 +605,7 @@ function QuestionsEditor({questions, onChange}: {questions: QuestionDraft[]; onC
                   value={question.label}
                 />
                 <label className="block">
-                  <span className="mb-1 block text-body font-medium">Answer type</span>
+                  <span className="mb-1 block type-body font-medium">Answer type</span>
                   <select
                     className={inputCls}
                     onChange={(e) => set(index, {type: e.target.value as QuestionType})}

@@ -23,11 +23,11 @@ import {ACCENT_BUTTON, CARD, CardError, CardSkeleton, CHIP, EYEBROW, PhotoThumb}
 import AssignSurface from '@/clients/components/assign-surface';
 import CheckinAssignContent from '@/clients/components/checkin-assign-content';
 
-const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
+const GRP = 'px-0 pt-2 pb-1.5 type-eyebrow font-bold uppercase tracking-grp text-muted';
 const ROW = 'flex items-center gap-3 rounded-panel px-1 py-3 sm:px-2';
-const ROW_TEXT = 'text-title font-normal leading-[normal] text-foreground';
+const ROW_TEXT = 'type-title font-normal leading-[normal] text-foreground';
 const SETTING_ROW = 'flex items-center justify-between py-1';
-const SETTING_LABEL = 'text-eyebrow text-muted sm:text-eyebrow';
+const SETTING_LABEL = 'type-eyebrow text-muted';
 const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
 
 const FREQUENCIES = [
@@ -66,25 +66,25 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
         Check-in schedule
       </div>
       <Link
-        className="flex items-center gap-3 sm:gap-3"
+        className="flex items-center gap-3"
         data-testid="ci-form-row"
         to={ROUTES.EDIT_CHECKIN.replace(':id', schedule.form_template_id)}
       >
         <span
-          className="flex size-9 flex-none items-center justify-center rounded-control bg-accent-soft text-accent sm:size-9.5 sm:rounded-control"
+          className="flex size-9 flex-none items-center justify-center rounded-control bg-accent-soft text-accent sm:size-9.5"
           data-testid="ci-form-icon"
         >
           <ClipboardList className="sm:size-5" />
         </span>
         <span className="min-w-0 flex-1">
           <span
-            className="block text-body font-bold sm:text-body"
+            className="block type-body font-bold"
             data-testid="ci-form-title"
           >
             {schedule.form_template.name}
           </span>
           <span
-            className="block text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
+            className="block type-eyebrow text-muted sm:mt-0.5"
             data-testid="ci-form-sub"
           >
             Form
@@ -93,7 +93,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
         <ChevronRight className="text-muted" />
       </Link>
       <div
-        className="my-3 h-px bg-border sm:my-3"
+        className="my-3 h-px bg-border"
         data-testid="ci-sched-sep"
       />
       <div className={SETTING_ROW}>
@@ -111,7 +111,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
           selectedKey={schedule.frequency}
         >
           <Button
-            className="h-7.5 min-h-0 gap-2 rounded-control border border-border bg-background px-3 text-eyebrow font-semibold text-foreground [box-shadow:none] sm:h-8"
+            className="h-7.5 min-h-0 gap-2 rounded-control border border-border bg-background px-3 type-eyebrow font-semibold text-foreground [box-shadow:none] sm:h-8"
             data-testid="ci-freq-ctl"
             variant="ghost"
           >
@@ -142,7 +142,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
         </span>
         <span className="flex items-center gap-2">
           <span
-            className="text-eyebrow font-semibold sm:text-eyebrow"
+            className="type-eyebrow font-semibold"
             data-testid="ci-next-value"
           >
             {formatShortDate(schedule.next_due_on)}
@@ -233,24 +233,24 @@ function HistoryCard({assignments, clientId}: {assignments: ClientProfileFormAss
           const body = isDesktop ? (
             <>
               <span
-                className="min-w-0 flex-1 text-body font-bold"
+                className="min-w-0 flex-1 type-body font-bold"
                 data-testid="ci-row-title"
               >
                 {assignment.form_template.name}
               </span>
-              {submittedLabel ? <span className="text-eyebrow text-muted">{submittedLabel}</span> : null}
+              {submittedLabel ? <span className="type-eyebrow text-muted">{submittedLabel}</span> : null}
               {chip}
             </>
           ) : (
             <>
               <span className="min-w-0 flex-1">
                 <span
-                  className="block text-body font-bold"
+                  className="block type-body font-bold"
                   data-testid="ci-row-title"
                 >
                   {assignment.form_template.name}
                 </span>
-                {submittedLabel ? <span className="mt-0.5 block text-eyebrow text-muted">{submittedLabel}</span> : null}
+                {submittedLabel ? <span className="mt-0.5 block type-eyebrow text-muted">{submittedLabel}</span> : null}
               </span>
               {chip}
             </>
@@ -315,7 +315,7 @@ function IntakeCard({
         to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
       >
         <span
-          className="min-w-0 flex-1 text-body font-bold sm:text-body"
+          className="min-w-0 flex-1 type-body font-bold"
           data-testid="ci-intake-title"
         >
           {intake.form_template.name}
@@ -384,7 +384,7 @@ function PhotosCard({assignments, clientId}: {assignments: ClientProfileFormAssi
         ))}
         {overflow > 0 ? (
           <span
-            className="flex aspect-square items-center justify-center rounded-panel bg-always-dark text-body font-bold [color:white] [font-family:'Space_Grotesk'] sm:text-title"
+            className="flex aspect-square items-center justify-center rounded-panel bg-always-dark type-body font-bold [color:white] [font-family:'Space_Grotesk'] sm:type-title"
             data-testid="ci-photo-overflow"
           >
             +{overflow}
@@ -429,7 +429,7 @@ export default function CheckinsTab({client}: {client: Client}) {
       className="flex flex-col gap-3 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_320px] sm:items-start sm:gap-4 sm:p-0"
       data-testid="ci-root"
     >
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-3">
+      <div className="flex min-w-0 flex-col gap-3">
         {schedule ? (
           <>
             <ScheduleCard schedule={schedule} />
@@ -444,19 +444,19 @@ export default function CheckinsTab({client}: {client: Client}) {
             data-testid="ci-empty"
           >
             <span
-              className="mb-0.5 flex size-11.5 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:size-12.5 sm:rounded-panel"
+              className="mb-0.5 flex size-11.5 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:size-12.5"
               data-testid="ci-empty-icon"
             >
               <CalendarClock className="size-5 sm:size-6" />
             </span>
             <div
-              className="font-grotesk text-body font-semibold sm:text-title"
+              className="font-grotesk type-body font-semibold sm:type-title"
               data-testid="ci-empty-title"
             >
               No check-in schedule
             </div>
             <div
-              className="text-eyebrow text-muted sm:max-w-75 sm:text-eyebrow"
+              className="type-eyebrow text-muted sm:max-w-75"
               data-testid="ci-empty-sub"
             >
               Set a cadence and {client.first_name ?? 'this client'} will get the form automatically.

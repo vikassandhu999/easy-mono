@@ -20,8 +20,8 @@ import {getApiErrorMessage} from '@/api/shared';
 import {formatShortDate} from '@/clients/client-detail/data';
 import {ACCENT_BUTTON, CHIP, PhotoThumb} from '@/clients/client-detail/ui';
 
-const Q_LABEL = 'mb-2 text-eyebrow font-semibold text-muted sm:mb-2 sm:text-eyebrow';
-const VALUE = 'font-grotesk text-title font-bold sm:text-title';
+const Q_LABEL = 'mb-2 type-eyebrow font-semibold text-muted';
+const VALUE = 'font-grotesk type-title font-bold';
 
 type Question = {id: string; label: string; type: string};
 
@@ -41,7 +41,7 @@ function submittedAt(iso: string): string {
 
 function RatingAnswer({value}: {value: number}) {
   return (
-    <div className="flex items-center gap-2 sm:gap-2">
+    <div className="flex items-center gap-2">
       <span
         className={VALUE}
         data-testid="cs-rating-value"
@@ -112,7 +112,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
       );
     case 'weight':
       return (
-        <div className="flex items-baseline gap-2 sm:gap-2">
+        <div className="flex items-baseline gap-2">
           <span
             className={VALUE}
             data-testid="cs-weight-value"
@@ -120,7 +120,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
             {Number(value).toFixed(1)} kg
           </span>
           <span
-            className="text-eyebrow text-muted sm:text-eyebrow"
+            className="type-eyebrow text-muted"
             data-testid="cs-weight-caption"
           >
             Saved to weight log
@@ -130,7 +130,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
     default:
       return (
         <div
-          className="text-body leading-relaxed sm:text-body"
+          className="type-body leading-relaxed"
           data-testid="cs-text-answer"
         >
           {String(value)}
@@ -195,7 +195,7 @@ export default function CheckinSubmission() {
         bare
         className="flex flex-col p-0"
       >
-        <div className="flex flex-none items-center gap-3 border-b border-border px-4 pt-0.5 pb-3 sm:gap-3 sm:px-8 sm:py-4">
+        <div className="flex flex-none items-center gap-3 border-b border-border px-4 pt-0.5 pb-3 sm:px-8 sm:py-4">
           <Button
             aria-label="Back"
             className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
@@ -208,13 +208,13 @@ export default function CheckinSubmission() {
           </Button>
           <div className="min-w-0 flex-1">
             <div
-              className="font-grotesk text-body font-semibold sm:text-heading"
+              className="font-grotesk type-body font-semibold sm:type-heading"
               data-testid="cs-title"
             >
               {assignment.form_template.name}
             </div>
             <div
-              className="text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
+              className="type-eyebrow text-muted sm:mt-0.5"
               data-testid="cs-sub"
             >
               {submittedAt(submission.submitted_at)}
@@ -263,14 +263,14 @@ export default function CheckinSubmission() {
         >
           {reviewedAt ? (
             <div
-              className="text-center text-eyebrow font-medium text-muted"
+              className="text-center type-eyebrow font-medium text-muted"
               data-testid="cs-reviewed-note"
             >
               Reviewed {formatShortDate(reviewedAt)} · by you
             </div>
           ) : (
             <Button
-              className={`${ACCENT_BUTTON} h-11.5 w-full rounded-panel px-4 text-body`}
+              className={`${ACCENT_BUTTON} h-11.5 w-full rounded-panel px-4 type-body`}
               data-testid="cs-review-btn"
               isPending={isReviewing}
               onPress={markReviewed}

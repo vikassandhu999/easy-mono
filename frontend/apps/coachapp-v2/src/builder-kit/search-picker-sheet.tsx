@@ -234,7 +234,7 @@ export function SearchPickerSheet<T>({
               <Button
                 aria-pressed={chip.active}
                 className={[
-                  ' rounded-chip border bg-transparent px-2 py-1 text-eyebrow font-medium',
+                  ' rounded-chip border bg-transparent px-2 py-1 type-eyebrow font-medium',
                   filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
                   chip.active ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted',
                 ].join(' ')}
@@ -279,7 +279,7 @@ export function SearchPickerSheet<T>({
         {/* Create-from-no-match row */}
         {showCreateRow ? (
           <Button
-            className="h-auto w-full min-w-0 justify-start gap-2 px-0 py-3 text-left text-body text-accent"
+            className="h-auto w-full min-w-0 justify-start gap-2 px-0 py-3 text-left type-body text-accent"
             onPress={() => onCreateNoMatch?.(search)}
             variant="ghost"
           >
@@ -290,7 +290,7 @@ export function SearchPickerSheet<T>({
 
         {/* No-results state — distinct from the loading + create-row cases */}
         {!loading && items.length === 0 && !showCreateRow ? (
-          <div className="py-8 text-center text-body text-muted">No results found.</div>
+          <div className="py-8 text-center type-body text-muted">No results found.</div>
         ) : null}
 
         {/* Infinite scroll sentinel — observed by IntersectionObserver */}
@@ -328,7 +328,7 @@ export function SearchPickerSheet<T>({
           <Popover.Dialog className="flex max-h-[70vh] flex-col outline-none p-0">
             {/* Title row — KeyboardSheet renders its own; the popover needs one */}
             <div className="flex items-center justify-between px-4 pb-1 pt-3">
-              <span className="text-body font-semibold text-foreground">{title}</span>
+              <span className="type-body font-semibold text-foreground">{title}</span>
               <CloseButton
                 aria-label="Close"
                 className="-mr-2 text-muted"

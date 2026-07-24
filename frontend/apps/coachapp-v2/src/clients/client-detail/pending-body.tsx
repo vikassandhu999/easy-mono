@@ -56,29 +56,29 @@ export function InviteCard({client}: {client: Client}) {
       >
         Invitation
       </div>
-      <div className="flex items-center gap-3 sm:gap-3">
+      <div className="flex items-center gap-3">
         <span
           className="flex size-9.5 flex-none items-center justify-center rounded-control bg-warning-soft text-warning-soft-foreground sm:size-10"
           data-testid="cd-invite-icon"
         >
-          <Mail className="size-5 sm:size-5" />
+          <Mail className="size-5" />
         </span>
         <div className="min-w-0 flex-1">
           <div
-            className="text-body font-bold sm:text-body"
+            className="type-body font-bold"
             data-testid="cd-invite-title"
           >
             Invite sent {sentLabel}
           </div>
           <div
-            className="mt-0.5 text-eyebrow text-muted sm:text-eyebrow"
+            className="mt-0.5 type-eyebrow text-muted"
             data-testid="cd-invite-sub"
           >
             Waiting for {client.first_name} to accept and set up their app.
           </div>
         </div>
       </div>
-      <div className="mt-3 flex gap-2 sm:mt-3 sm:gap-2">
+      <div className="mt-3 flex gap-2">
         <Button
           className={`${OUTLINE_BUTTON} h-9 flex-1 px-4 sm:flex-none`}
           data-testid="cd-invite-resend"
@@ -88,7 +88,7 @@ export function InviteCard({client}: {client: Client}) {
           Resend invite
         </Button>
         <Button
-          className="h-9 min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn text-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-4 sm:py-0"
+          className="h-9 min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn type-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-4 sm:py-0"
           data-testid="cd-invite-revoke"
           isPending={isRevoking}
           onPress={handleRevoke}
@@ -114,7 +114,7 @@ export default function PendingBody({
 
   return (
     <div
-      className="flex flex-col gap-3 p-3 sm:max-w-160 sm:gap-3 sm:p-0"
+      className="flex flex-col gap-3 p-3 sm:max-w-160 sm:p-0"
       data-testid="cd-pending"
     >
       <InviteCard client={client} />
@@ -129,12 +129,12 @@ export default function PendingBody({
           </span>
           <div className="min-w-0 flex-1">
             <div
-              className="text-eyebrow font-bold sm:text-body"
+              className="type-eyebrow font-bold sm:type-body"
               data-testid="cd-intake-title"
             >
               {intake?.form_template.name ?? 'Onboarding intake'}
             </div>
-            <div className="mt-0.5 text-eyebrow text-muted">
+            <div className="mt-0.5 type-eyebrow text-muted">
               {intake?.latest_submission ? 'Submitted' : 'Not submitted yet'}
             </div>
           </div>

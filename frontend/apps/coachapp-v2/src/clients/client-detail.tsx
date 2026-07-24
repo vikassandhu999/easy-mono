@@ -48,9 +48,9 @@ const TAB_IDS = ['overview', 'training', 'nutrition', 'check-ins'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 const TAB_CLASS =
-  'w-auto min-w-0 flex-1 justify-center rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0.5 pt-3 pb-3 text-body font-medium text-muted [box-shadow:none] outline-none ' +
+  'w-auto min-w-0 flex-1 justify-center rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0.5 pt-3 pb-3 type-body font-medium text-muted [box-shadow:none] outline-none ' +
   'data-[selected=true]:border-b-current data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'sm:flex-none sm:justify-start sm:px-1 sm:pt-3 sm:pb-3 sm:text-body';
+  'sm:flex-none sm:justify-start sm:px-1 sm:pt-3 sm:pb-3 sm:type-body';
 
 function AttentionChips({client}: {client: Client}) {
   const navigate = useNavigate();
@@ -155,14 +155,14 @@ function StateBanner({client}: {client: Client}) {
   if (reason === 'subscription_expired') {
     return (
       <div
-        className="flex items-center gap-3 rounded-panel border border-danger/30 bg-danger-soft px-3 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3"
+        className="flex items-center gap-3 rounded-panel border border-danger/30 bg-danger-soft px-3 py-3 sm:mb-4 sm:px-4"
         data-testid="cd-banner"
       >
         <span className="flex size-8 flex-none items-center justify-center rounded-control bg-danger/20 text-danger-soft-foreground sm:size-8.5">
           <AlertTriangle />
         </span>
         <div
-          className="min-w-0 flex-1 text-eyebrow font-semibold text-danger-soft-foreground sm:text-body"
+          className="min-w-0 flex-1 type-eyebrow font-semibold text-danger-soft-foreground sm:type-body"
           data-testid="cd-banner-text"
         >
           Subscription has ended. {firstName} is locked out of the app.
@@ -181,14 +181,14 @@ function StateBanner({client}: {client: Client}) {
   if (reason === 'awaiting_seat') {
     return (
       <div
-        className="flex items-center gap-3 rounded-panel border border-warning/32 bg-warning-soft px-3 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3"
+        className="flex items-center gap-3 rounded-panel border border-warning/32 bg-warning-soft px-3 py-3 sm:mb-4 sm:px-4"
         data-testid="cd-banner"
       >
         <span className="flex size-8 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-8.5">
           <AlertCircle />
         </span>
         <div
-          className="min-w-0 flex-1 text-eyebrow font-semibold text-warning-soft-foreground sm:text-body"
+          className="min-w-0 flex-1 type-eyebrow font-semibold text-warning-soft-foreground sm:type-body"
           data-testid="cd-banner-text"
         >
           No seat available. {firstName} can&apos;t use the app until you add one.
@@ -206,14 +206,14 @@ function StateBanner({client}: {client: Client}) {
 
   return (
     <div
-      className="flex items-center gap-3 rounded-panel border border-border bg-surface-tertiary px-3 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3"
+      className="flex items-center gap-3 rounded-panel border border-border bg-surface-tertiary px-3 py-3 sm:mb-4 sm:px-4"
       data-testid="cd-banner"
     >
       <span className="flex size-8 flex-none items-center justify-center rounded-control bg-surface text-muted sm:size-8.5">
         <UserX />
       </span>
       <div
-        className="min-w-0 flex-1 text-eyebrow font-semibold sm:text-body"
+        className="min-w-0 flex-1 type-eyebrow font-semibold sm:type-body"
         data-testid="cd-banner-text"
       >
         {firstName} is inactive.
@@ -307,7 +307,7 @@ export default function ClientDetail() {
         <div className="border-b border-border bg-surface px-4 pt-1.5 text-foreground [line-height:normal] sm:px-8 sm:pt-4">
           <div className="flex items-center justify-between">
             <Button
-              className="h-auto min-h-0 min-w-0 gap-1 rounded-none bg-transparent p-0 text-eyebrow font-semibold text-muted [box-shadow:none] sm:gap-2"
+              className="h-auto min-h-0 min-w-0 gap-1 rounded-none bg-transparent p-0 type-eyebrow font-semibold text-muted [box-shadow:none] sm:gap-2"
               data-testid="cd-back"
               onPress={goBack}
               variant="ghost"
@@ -370,21 +370,21 @@ export default function ClientDetail() {
 
           <div className="mt-0.5 flex flex-wrap items-center gap-3 sm:mt-1.5 sm:flex-nowrap sm:gap-5">
             <Avatar
-              className="size-13 flex-none rounded-pill bg-accent font-bold text-heading [color:white] sm:size-16 sm:text-metric"
+              className="size-13 flex-none rounded-pill bg-accent font-bold type-heading [color:white] sm:size-16 sm:type-metric"
               color="accent"
               data-testid="cd-avatar"
             >
-              <Avatar.Fallback className="rounded-pill bg-accent font-bold text-heading [color:white] sm:text-metric">
+              <Avatar.Fallback className="rounded-pill bg-accent font-bold type-heading [color:white] sm:type-metric">
                 {initials}
               </Avatar.Fallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* not Typography: the unlayered `.typography--h5` rule pins
                     letter-spacing -0.015em and beats any utility; the CD design
                     wants `normal` (style-diff pair `name`). */}
                 <span
-                  className="font-grotesk text-heading font-semibold sm:text-display"
+                  className="font-grotesk type-heading font-semibold sm:type-display"
                   data-testid="cd-name"
                 >
                   {name}
@@ -393,7 +393,7 @@ export default function ClientDetail() {
               </div>
               <AttentionChips client={client} />
               <div
-                className="mt-1.5 hidden items-center gap-1.5 text-eyebrow text-muted sm:flex"
+                className="mt-1.5 hidden items-center gap-1.5 type-eyebrow text-muted sm:flex"
                 data-testid="cd-contact"
               >
                 {client.email ? (
@@ -411,16 +411,16 @@ export default function ClientDetail() {
                 ) : null}
               </div>
               <div
-                className="mt-1 text-eyebrow text-muted sm:hidden"
+                className="mt-1 type-eyebrow text-muted sm:hidden"
                 data-testid="cd-since"
               >
                 Client since {formatShortDate(client.inserted_at)}
               </div>
             </div>
-            <div className="mt-3 flex w-full gap-2 sm:mt-0 sm:w-auto sm:flex-none sm:items-center sm:gap-2">
+            <div className="mt-3 flex w-full gap-2 sm:mt-0 sm:w-auto sm:flex-none sm:items-center">
               {isPending ? null : (
                 <Button
-                  className="relative h-9.5 flex-1 gap-2 rounded-panel px-4 font-btn text-body font-bold leading-none [color:white] [box-shadow:none] sm:h-10 sm:flex-none"
+                  className="relative h-9.5 flex-1 gap-2 rounded-panel px-4 font-btn type-body font-bold leading-none [color:white] [box-shadow:none] sm:h-10 sm:flex-none"
                   data-testid="cd-message"
                   onPress={() => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', client.id))}
                   variant="primary"
@@ -429,7 +429,7 @@ export default function ClientDetail() {
                   Message
                   {unread > 0 ? (
                     <span
-                      className="absolute -top-1.5 -right-1.5 h-4.75 min-w-4.75 rounded-pill border-2 border-surface bg-danger px-1 text-center font-btn text-eyebrow font-bold leading-cbadge [color:white]"
+                      className="absolute -top-1.5 -right-1.5 h-4.75 min-w-4.75 rounded-pill border-2 border-surface bg-danger px-1 text-center font-btn type-eyebrow font-bold leading-cbadge [color:white]"
                       data-testid="cd-msg-badge"
                     >
                       {unread}
@@ -500,7 +500,7 @@ export default function ClientDetail() {
               isFresh={isFresh}
             />
           ) : (
-            <div className="flex flex-col gap-3 p-3 sm:gap-3 sm:p-0">
+            <div className="flex flex-col gap-3 p-3 sm:p-0">
               {tab === 'training' ? <TrainingTab client={client} /> : null}
               {tab === 'nutrition' ? <NutritionTab client={client} /> : null}
               {tab === 'check-ins' ? <CheckinsTab client={client} /> : null}

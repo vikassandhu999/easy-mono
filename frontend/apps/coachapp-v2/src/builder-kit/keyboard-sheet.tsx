@@ -194,7 +194,7 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
         {title !== undefined ? (
           <div className="flex items-center justify-between px-4 pb-2 pt-1">
             <span
-              className="text-body font-semibold text-foreground"
+              className="type-body font-semibold text-foreground"
               id={titleId}
             >
               {title}

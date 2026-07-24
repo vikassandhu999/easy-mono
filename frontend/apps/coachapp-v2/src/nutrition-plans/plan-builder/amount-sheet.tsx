@@ -530,9 +530,9 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     <div className="w-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-2 pt-3">
-        <span className="text-body font-semibold text-foreground truncate pr-2">{itemName}</span>
+        <span className="type-body font-semibold text-foreground truncate pr-2">{itemName}</span>
         <button
-          className="shrink-0 text-body font-semibold text-accent hover:text-accent/80 transition-colors"
+          className="shrink-0 type-body font-semibold text-accent hover:text-accent/80 transition-colors"
           onClick={() => {
             flushPendingSave()
               .then(onClose)
@@ -553,7 +553,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
             <SectionHeading title="Servings" />
             <div className="rounded-chip border border-accent/40 bg-accent/5 px-3 pb-2 pt-1.5 text-center">
               <input
-                className="w-full bg-transparent text-center text-metric font-semibold text-foreground outline-none"
+                className="w-full bg-transparent text-center type-metric font-semibold text-foreground outline-none"
                 inputMode="decimal"
                 onChange={(e) => handleServingCountChange(e.target.value)}
                 placeholder="1"
@@ -572,7 +572,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
               {servingSizes.map((serving, idx) => (
                 <button
                   className={[
-                    'inline-flex  items-center rounded-chip border px-3 py-2 text-eyebrow font-medium transition-colors',
+                    'inline-flex  items-center rounded-chip border px-3 py-2 type-eyebrow font-medium transition-colors',
                     activeServingIdx === idx
                       ? 'border-accent bg-accent/10 text-accent'
                       : 'border-border text-muted hover:border-default-hover hover:text-foreground',
@@ -592,7 +592,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
                 <SectionHeading title="Count" />
                 <div className="rounded-chip border border-border bg-background px-3 pb-2 pt-1.5 text-center">
                   <input
-                    className="w-full bg-transparent text-center text-heading font-semibold text-foreground outline-none"
+                    className="w-full bg-transparent text-center type-heading font-semibold text-foreground outline-none"
                     inputMode="decimal"
                     onChange={(e) => handleServingCountChange(e.target.value)}
                     placeholder="1"
@@ -617,14 +617,14 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
               ].join(' ')}
             >
               <input
-                className="w-full bg-transparent text-center text-metric font-semibold text-foreground outline-none"
+                className="w-full bg-transparent text-center type-metric font-semibold text-foreground outline-none"
                 inputMode="decimal"
                 onChange={(e) => handleGramsChange(e.target.value)}
                 placeholder="—"
                 type="text"
                 value={gramsInput}
               />
-              <div className="mt-0.5 text-eyebrow text-muted">g</div>
+              <div className="mt-0.5 type-eyebrow text-muted">g</div>
             </div>
           </div>
         ) : null}
@@ -634,14 +634,14 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
           <div className="flex items-center justify-between rounded-chip border border-border bg-surface-secondary/40 px-3 py-2">
             <div>
               {resolvedWeightG != null ? (
-                <div className="text-eyebrow text-muted">resolves to {fmt(resolvedWeightG)}g →</div>
+                <div className="type-eyebrow text-muted">resolves to {fmt(resolvedWeightG)}g →</div>
               ) : null}
-              <div className="text-body font-bold text-foreground">{macroPreview.kcal}</div>
+              <div className="type-body font-bold text-foreground">{macroPreview.kcal}</div>
             </div>
-            <div className="text-eyebrow text-accent">{macroPreview.macros}</div>
+            <div className="type-eyebrow text-accent">{macroPreview.macros}</div>
           </div>
         ) : (
-          <div className="rounded-chip border border-border bg-surface-secondary px-3 py-2 text-center text-eyebrow text-muted">
+          <div className="rounded-chip border border-border bg-surface-secondary px-3 py-2 text-center type-eyebrow text-muted">
             {isFoodMode ? 'Select a serving or enter grams to preview macros' : 'Enter servings to preview macros'}
           </div>
         )}
@@ -650,7 +650,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {!isEditMode ? (
           <button
             className={[
-              'w-full rounded-panel py-3 text-body font-semibold transition-colors',
+              'w-full rounded-panel py-3 type-body font-semibold transition-colors',
               canConfirm && !isCreating
                 ? 'bg-accent text-accent-foreground hover:bg-accent-hover'
                 : 'cursor-not-allowed bg-surface-secondary text-muted',
@@ -666,10 +666,10 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         {/* ── Edit mode footer: autosave hint + remove action ── */}
         {isEditMode ? (
           <div className="flex items-center justify-between pt-0.5">
-            <span className="text-eyebrow text-muted">Changes save automatically</span>
+            <span className="type-eyebrow text-muted">Changes save automatically</span>
             {onDelete ? (
               <button
-                className="text-eyebrow font-medium text-danger-soft-foreground transition-colors hover:text-danger-soft-foreground/80"
+                className="type-eyebrow font-medium text-danger-soft-foreground transition-colors hover:text-danger-soft-foreground/80"
                 onClick={() => {
                   // Cancel any pending debounced save — the item is being removed.
                   if (saveTimerRef.current) {

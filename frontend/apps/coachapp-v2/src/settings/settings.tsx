@@ -35,7 +35,7 @@ const TABS = [
 type SettingsTab = (typeof TABS)[number]['id'];
 
 const TAB_CLASS =
-  'flex min-h-11 w-auto shrink-0 cursor-pointer items-center justify-start gap-1 whitespace-nowrap rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0 pb-2 text-body font-medium text-muted shadow-none outline-none ' +
+  'flex min-h-11 w-auto shrink-0 cursor-pointer items-center justify-start gap-1 whitespace-nowrap rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0 pb-2 type-body font-medium text-muted shadow-none outline-none ' +
   'data-[selected=true]:border-b-ink data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
   'md:w-full md:gap-2 md:rounded-control md:border-b-0 md:px-3 md:py-2 md:pb-2 md:text-foreground ' +
   'md:data-[selected=true]:bg-ink md:data-[selected=true]:text-ink-foreground';
@@ -94,7 +94,7 @@ function ProfilePanel({
       <div className={CARD_CLASS}>
         <div className="flex items-center gap-3 p-4">
           <Avatar className="size-11 md:size-12">
-            <Avatar.Fallback className="bg-accent text-title font-semibold text-accent-foreground">
+            <Avatar.Fallback className="bg-accent type-title font-semibold text-accent-foreground">
               {initials}
             </Avatar.Fallback>
           </Avatar>

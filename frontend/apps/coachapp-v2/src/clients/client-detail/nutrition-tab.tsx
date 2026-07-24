@@ -20,13 +20,13 @@ import {formatRowDate, isoDate, lastDays} from '@/clients/client-detail/data';
 import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
 import {CARD, CardError, CardSkeleton, CHIP} from '@/clients/client-detail/ui';
 
-const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
+const GRP = 'px-0 pt-2 pb-1.5 type-eyebrow font-bold uppercase tracking-grp text-muted';
 const ROW = 'flex items-center gap-3 rounded-panel px-1 py-2 sm:px-2 sm:py-3';
 /** `.lbrow` sits in the page's inherited text context; HeroUI Button imposes its
  *  own 14px/20px/default-foreground, which then cascades into the meter. */
-const ROW_TEXT = 'text-title font-normal leading-[normal] text-foreground';
+const ROW_TEXT = 'type-title font-normal leading-[normal] text-foreground';
 const NOT_LOGGED_ROW = 'flex items-center gap-3 rounded-panel px-1 py-3 sm:px-2';
-const ROW_DATE = 'text-eyebrow font-semibold text-muted sm:w-19 sm:flex-none';
+const ROW_DATE = 'type-eyebrow font-semibold text-muted sm:w-19 sm:flex-none';
 const SEP = 'h-px bg-border';
 /** `.chip.out` — transparent, hairline, muted (RECIPES R5 outline chip). */
 const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
@@ -136,7 +136,7 @@ function AdherenceBar({percent}: {percent: number}) {
         </ProgressBar.Track>
       </ProgressBar>
       <span
-        className={`flex-none text-eyebrow font-bold sm:text-eyebrow ${PCT_CLASS[tone]}`}
+        className={`flex-none type-eyebrow font-bold sm:type-eyebrow ${PCT_CLASS[tone]}`}
         data-testid="nu-pct"
       >
         {percent}%
@@ -201,7 +201,7 @@ function NutritionPlanCard({client, plan}: {client: Client; plan: NutritionPlan}
     <PlanCard
       client={client}
       endBody="The client will no longer see planned meals."
-      icon={<Utensils className="size-5 sm:size-5" />}
+      icon={<Utensils className="size-5" />}
       isEnding={isEnding}
       kind="nutrition"
       meta={planMeta(plan, isDesktop)}
@@ -244,7 +244,7 @@ export default function NutritionTab({client}: {client: Client}) {
         <EmptyPlanCard
           body={`Assign a plan so ${client.first_name ?? 'this client'} can log meals against it.`}
           client={client}
-          icon={<UtensilsCrossed className="size-6 sm:size-6" />}
+          icon={<UtensilsCrossed className="size-6" />}
           kind="nutrition"
           testId="nu"
           title="No nutrition plan"
@@ -260,7 +260,7 @@ export default function NutritionTab({client}: {client: Client}) {
         />
       ) : !hasAnyLogged ? (
         <div className={`${CARD} px-3 py-6 text-center sm:px-4`}>
-          <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
+          <span className="type-eyebrow [color:var(--color-muted)]">
             No meals logged yet. Days appear here as {client.first_name ?? 'this client'} logs food.
           </span>
         </div>
@@ -297,7 +297,7 @@ export default function NutritionTab({client}: {client: Client}) {
                     </span>
                     <span className="flex-1" />
                     <span
-                      className="text-eyebrow [color:var(--color-muted)]"
+                      className="type-eyebrow [color:var(--color-muted)]"
                       data-testid="nu-notlogged-text"
                     >
                       Not logged
@@ -326,7 +326,7 @@ export default function NutritionTab({client}: {client: Client}) {
                           />
                         </span>
                         <span
-                          className="flex-none text-eyebrow font-semibold"
+                          className="flex-none type-eyebrow font-semibold"
                           data-testid="nu-kcal"
                         >
                           {Math.round(day.logged).toLocaleString()} / {Math.round(day.planned).toLocaleString()}
@@ -342,7 +342,7 @@ export default function NutritionTab({client}: {client: Client}) {
                             {formatRowDate(day.date, {withMonth: true})}
                           </span>
                           <span
-                            className="text-eyebrow font-semibold"
+                            className="type-eyebrow font-semibold"
                             data-testid="nu-kcal"
                           >
                             {Math.round(day.logged).toLocaleString()} / {Math.round(day.planned).toLocaleString()}

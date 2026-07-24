@@ -58,9 +58,9 @@ function MessageBubble({
             urls={urls}
           />
           {message.embed ? <MessageEmbed embed={message.embed} /> : null}
-          {message.body ? <p className="whitespace-pre-wrap break-words text-body">{message.body}</p> : null}
+          {message.body ? <p className="whitespace-pre-wrap break-words type-body">{message.body}</p> : null}
         </div>
-        <p className={`mt-0.5 text-right text-eyebrow ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
+        <p className={`mt-0.5 text-right type-eyebrow ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
           {formatTime(message.inserted_at)}
         </p>
       </div>
@@ -223,7 +223,7 @@ export default function ConversationView({
               </Button>
             ) : null}
             {messages.length === 0 ? (
-              <p className="py-12 text-center text-body text-muted">No messages yet. Say hello!</p>
+              <p className="py-12 text-center type-body text-muted">No messages yet. Say hello!</p>
             ) : null}
             {messages.map((message, index) => {
               const prev = messages[index - 1];
@@ -231,7 +231,7 @@ export default function ConversationView({
               return (
                 <div key={message.id}>
                   {newDay ? (
-                    <p className="my-2 text-center text-eyebrow text-muted">{formatDay(message.inserted_at)}</p>
+                    <p className="my-2 text-center type-eyebrow text-muted">{formatDay(message.inserted_at)}</p>
                   ) : null}
                   <MessageBubble
                     failedIds={failedAttachmentIds}
@@ -257,7 +257,7 @@ export default function ConversationView({
         />
         {embed ? (
           <div className="mt-2 flex items-start gap-2">
-            <div className="min-w-0 flex-1 rounded-panel border border-border bg-surface-secondary px-3 py-2 text-body">
+            <div className="min-w-0 flex-1 rounded-panel border border-border bg-surface-secondary px-3 py-2 type-body">
               Check-in attached for feedback
             </div>
             <Button

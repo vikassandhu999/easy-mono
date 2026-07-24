@@ -185,7 +185,7 @@ function StepChip({index, state, step}: {index: number; state: StepState; step: 
     >
       <span
         className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-pill text-eyebrow font-bold',
+          'flex size-5 shrink-0 items-center justify-center rounded-pill type-eyebrow font-bold',
           state === 'done'
             ? 'bg-accent text-accent-foreground'
             : state === 'current'
@@ -196,8 +196,8 @@ function StepChip({index, state, step}: {index: number; state: StepState; step: 
         {state === 'done' ? <Check className="size-3.5" /> : index}
       </span>
       <span className="flex min-w-0 flex-col items-start">
-        <span className="max-w-full truncate text-eyebrow font-semibold text-foreground">{step.label}</span>
-        <span className={cn('text-eyebrow font-medium', state === 'current' ? 'text-accent' : 'text-muted')}>
+        <span className="max-w-full truncate type-eyebrow font-semibold text-foreground">{step.label}</span>
+        <span className={cn('type-eyebrow font-medium', state === 'current' ? 'text-accent' : 'text-muted')}>
           {STEP_STATE_LABEL[state]}
         </span>
       </span>

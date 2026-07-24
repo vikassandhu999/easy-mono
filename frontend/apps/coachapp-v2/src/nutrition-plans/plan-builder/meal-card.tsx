@@ -333,7 +333,7 @@ export function MealCard({
             // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
             autoFocus
             aria-label="Meal name"
-            className="order-last w-full min-w-0 border-b border-accent bg-transparent text-body font-semibold text-foreground outline-none sm:order-none sm:w-auto sm:flex-1"
+            className="order-last w-full min-w-0 border-b border-accent bg-transparent type-body font-semibold text-foreground outline-none sm:order-none sm:w-auto sm:flex-1"
             onBlur={() => {
               commitRename().catch(() => undefined);
             }}
@@ -348,7 +348,7 @@ export function MealCard({
               data-testid={triggerTestId}
             >
               <span
-                className="min-w-0 flex-1 truncate text-body font-semibold text-foreground"
+                className="min-w-0 flex-1 truncate type-body font-semibold text-foreground"
                 data-testid="nb-meal-name"
               >
                 {meal.name}
@@ -373,7 +373,7 @@ export function MealCard({
               ) : null}
               {kcal ? (
                 <span
-                  className="shrink-0 whitespace-nowrap text-eyebrow text-muted"
+                  className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
                   data-testid="nb-meal-kcal"
                 >
                   {kcal}
@@ -457,7 +457,7 @@ export function MealCard({
         >
           {isShared ? (
             <div
-              className="flex items-center gap-2 pt-2 pb-0.5 text-eyebrow [color:var(--color-shared-foreground)]"
+              className="flex items-center gap-2 pt-2 pb-0.5 type-eyebrow [color:var(--color-shared-foreground)]"
               data-testid={openId('nb-shared-note')}
             >
               <Info className="size-3.5 flex-none" />
@@ -467,7 +467,7 @@ export function MealCard({
 
           {items.length === 0 ? (
             <div
-              className="py-2 text-eyebrow text-muted"
+              className="py-2 type-eyebrow text-muted"
               data-testid={openId('nb-meal-empty')}
             >
               No foods yet — add the first one below.
@@ -491,7 +491,7 @@ export function MealCard({
 
           <div className="pt-2">
             <Button
-              className={`${INLINE_LINK} text-eyebrow`}
+              className={`${INLINE_LINK} type-eyebrow`}
               data-testid={openId('nb-add-food')}
               onPress={() => setPickerOpen(true)}
               ref={addItemButtonRef}
@@ -508,7 +508,7 @@ export function MealCard({
             data-testid={openId('nb-swaps-section')}
           >
             <div
-              className="mb-2 text-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
+              className="mb-2 type-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
               data-testid={openId('nb-swaps-label')}
             >
               Client can swap with
@@ -523,14 +523,14 @@ export function MealCard({
                 >
                   <ArrowLeftRight className="size-3.5 shrink-0 text-muted" />
                   <span
-                    className="min-w-0 flex-1 truncate text-eyebrow text-foreground"
+                    className="min-w-0 flex-1 truncate type-eyebrow text-foreground"
                     data-testid={openId('nb-swap-name')}
                   >
                     {swap.meal.name}
                   </span>
                   {kcalLabel(swap.meal.nutrition) ? (
                     <span
-                      className="shrink-0 whitespace-nowrap text-eyebrow text-muted"
+                      className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
                       data-testid={openId('nb-swap-kcal')}
                     >
                       {kcalLabel(swap.meal.nutrition)}

@@ -138,7 +138,9 @@ const scaleFrom = (prefix) => {
   const re = new RegExp(`^\\s*--${prefix}-[a-z0-9-]+:\\s*([0-9.]+)px`, 'gm');
   return [...new Set([...src.matchAll(re)].map((m) => Number(m[1])))].sort((x, y) => x - y);
 };
-const SCALE = { text: scaleFrom('text'), radius: scaleFrom('radius') };
+// `type-*`, not `text-*`: the size tokens were moved out of Tailwind's text
+// namespace so tailwind-merge can never mistake them for colours.
+const SCALE = { text: scaleFrom('type'), radius: scaleFrom('radius') };
 const SNAP_PROPS = {
   'font-size': 'text',
   // line-height is quoted in px and tracks font-size, so it moves with the type

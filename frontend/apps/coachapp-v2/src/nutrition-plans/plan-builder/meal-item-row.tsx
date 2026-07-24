@@ -117,7 +117,7 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
           used as a row imposes its own type scale on the label, so the row's
           text size/weight/colour are restated here. */}
       <Button
-        className="h-auto min-w-0 flex-1 justify-start p-0 text-left text-eyebrow font-normal leading-[normal] text-foreground [box-shadow:none]"
+        className="h-auto min-w-0 flex-1 justify-start p-0 text-left type-eyebrow font-normal leading-[normal] text-foreground [box-shadow:none]"
         onPress={onTap}
         ref={ref}
         variant="ghost"
@@ -133,7 +133,7 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
 
       {macro ? (
         <span
-          className="shrink-0 whitespace-nowrap text-eyebrow text-muted"
+          className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
           data-testid={showTestIds ? 'nb-item-kcal' : undefined}
         >
           {macro.kcal} kcal

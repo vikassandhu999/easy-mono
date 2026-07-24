@@ -33,10 +33,10 @@ import {
 import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
 import {CARD, CardError, CardSkeleton, CHIP, OUTLINE_BUTTON} from '@/clients/client-detail/ui';
 
-const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
+const GRP = 'px-0 pt-2 pb-1.5 type-eyebrow font-bold uppercase tracking-grp text-muted';
 const ROW = 'flex items-center gap-3 rounded-panel px-1 py-2 sm:px-2 sm:py-3';
-const ROW_DATE = 'w-18.5 flex-none text-eyebrow font-semibold text-muted';
-const ROW_META = 'mt-0.5 text-eyebrow text-muted sm:text-eyebrow';
+const ROW_DATE = 'w-18.5 flex-none type-eyebrow font-semibold text-muted';
+const ROW_META = 'mt-0.5 type-eyebrow text-muted';
 const SEP = 'h-px bg-border';
 type Row =
   | {kind: 'group'; label: string}
@@ -153,7 +153,7 @@ function TrainingPlanCard({client, plan}: {client: Client; plan: ClientTrainingP
     <PlanCard
       client={client}
       endBody="The client will no longer see scheduled workouts."
-      icon={<Dumbbell className="size-5 sm:size-5" />}
+      icon={<Dumbbell className="size-5" />}
       isEnding={isEnding}
       kind="training"
       meta={meta}
@@ -193,7 +193,7 @@ export default function TrainingTab({client}: {client: Client}) {
         <EmptyPlanCard
           body={`Assign a plan so ${client.first_name ?? 'this client'} sees workouts in their app.`}
           client={client}
-          icon={<Dumbbell className="size-6 sm:size-6" />}
+          icon={<Dumbbell className="size-6" />}
           kind="training"
           testId="tr"
           title="No training plan"
@@ -211,7 +211,7 @@ export default function TrainingTab({client}: {client: Client}) {
         <div className={`${CARD} px-3 py-6 text-center sm:px-4`}>
           {/* plain span: tw-merge drops the size token when a text-color class
               rides along in a HeroUI className (field-notes) */}
-          <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
+          <span className="type-eyebrow [color:var(--color-muted)]">
             No workouts logged yet. Sessions appear here as {client.first_name ?? 'this client'} completes them.
           </span>
         </div>
@@ -262,7 +262,7 @@ export default function TrainingTab({client}: {client: Client}) {
                       ) : null}
                       <span className="min-w-0 flex-1">
                         <span
-                          className="block text-body font-bold sm:text-body"
+                          className="block type-body font-bold"
                           data-testid="tr-row-title"
                         >
                           {row.title}
@@ -291,7 +291,7 @@ export default function TrainingTab({client}: {client: Client}) {
                       ) : null}
                       <span className="min-w-0 flex-1">
                         <span
-                          className="block text-body font-semibold text-muted sm:text-body"
+                          className="block type-body font-semibold text-muted"
                           data-testid="tr-missed-title"
                         >
                           {row.title}

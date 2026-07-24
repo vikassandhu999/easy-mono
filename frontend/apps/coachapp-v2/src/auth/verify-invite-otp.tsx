@@ -172,7 +172,7 @@ export default function VerifyInviteOtp() {
           label="Login code"
           name="otp"
         />
-        {errors.otp ? <p className="text-eyebrow text-danger-soft-foreground">{errors.otp.message}</p> : null}
+        {errors.otp ? <p className="type-eyebrow text-danger-soft-foreground">{errors.otp.message}</p> : null}
 
         {errors.root ? (
           <Alert status="danger">
@@ -203,7 +203,7 @@ export default function VerifyInviteOtp() {
         </Button>
       </form>
 
-      <div className="mt-6 flex flex-col items-center gap-2 text-body">
+      <div className="mt-6 flex flex-col items-center gap-2 type-body">
         <div className="flex items-center gap-1">
           <span className="text-muted">Didn&apos;t get it?</span>
           <Link

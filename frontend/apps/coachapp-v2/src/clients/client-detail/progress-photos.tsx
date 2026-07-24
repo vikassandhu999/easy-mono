@@ -115,12 +115,12 @@ export default function ProgressPhotos() {
 
         <div className="p-3 sm:px-8 sm:pt-6 sm:pb-8">
           <div
-            className="flex flex-col gap-3 sm:max-w-195 sm:gap-3"
+            className="flex flex-col gap-3 sm:max-w-195"
             data-testid="ph-root"
           >
             {isComparing ? (
               <div
-                className="rounded-control bg-accent-soft px-3 py-2 text-eyebrow font-semibold sm:px-3 sm:py-3"
+                className="rounded-control bg-accent-soft px-3 py-2 type-eyebrow font-semibold sm:py-3"
                 data-testid="ph-banner"
               >
                 Select two photos to compare.
@@ -133,13 +133,13 @@ export default function ProgressPhotos() {
                 key={group.date}
               >
                 <div
-                  className={`text-eyebrow font-bold text-muted ${groupIndex > 0 ? 'mt-1' : ''}`}
+                  className={`type-eyebrow font-bold text-muted ${groupIndex > 0 ? 'mt-1' : ''}`}
                   data-testid={groupIndex === 0 ? 'ph-group' : undefined}
                 >
                   {formatShortDate(group.date)}
                 </div>
                 <div
-                  className="grid grid-cols-3 gap-2 sm:gap-2"
+                  className="grid grid-cols-3 gap-2"
                   data-testid={groupIndex === 0 ? 'ph-grid' : undefined}
                 >
                   {group.ids.map((photoId) => {
@@ -147,7 +147,7 @@ export default function ProgressPhotos() {
                     return (
                       <Button
                         aria-label="Progress photo"
-                        className="relative aspect-square h-auto min-h-0 w-full rounded-panel bg-transparent p-0 text-title font-normal leading-[normal] [box-shadow:none]"
+                        className="relative aspect-square h-auto min-h-0 w-full rounded-panel bg-transparent p-0 type-title font-normal leading-[normal] [box-shadow:none]"
                         key={photoId}
                         onPress={() => toggle(photoId)}
                         variant="ghost"
@@ -162,7 +162,7 @@ export default function ProgressPhotos() {
                           <>
                             <span className="absolute inset-0 rounded-panel border-accent [border-width:3px]" />
                             <span className="absolute top-1.25 right-1.25 flex size-4.5 items-center justify-center rounded-pill bg-accent [color:white] sm:top-1.75 sm:right-1.75 sm:size-5.25">
-                              <Check className="size-3.5 sm:size-3.5" />
+                              <Check className="size-3.5" />
                             </span>
                           </>
                         ) : null}
@@ -176,7 +176,7 @@ export default function ProgressPhotos() {
             {isComparing && selected.length === 2 ? (
               <div className="sticky bottom-0 flex justify-center pt-2">
                 <Button
-                  className={`${ACCENT_BUTTON} h-11 rounded-panel px-6 text-body`}
+                  className={`${ACCENT_BUTTON} h-11 rounded-panel px-6 type-body`}
                   onPress={() => setCompareOpen(true)}
                 >
                   Compare 2 photos
@@ -206,7 +206,7 @@ export default function ProgressPhotos() {
                       iconClassName="size-7"
                       src={urls[photoId]}
                     />
-                    <div className="mt-2 text-center text-eyebrow font-semibold text-muted">
+                    <div className="mt-2 text-center type-eyebrow font-semibold text-muted">
                       {dateOf(photoId) ? formatShortDate(dateOf(photoId)!) : ''}
                     </div>
                   </div>

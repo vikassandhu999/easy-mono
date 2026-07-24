@@ -152,11 +152,11 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
                     />
                   ) : item.status === 'error' ? (
                     <div className="grid gap-2">
-                      <p className="text-danger-soft-foreground text-eyebrow">
+                      <p className="text-danger-soft-foreground type-eyebrow">
                         {item.errorMessage ?? 'Upload failed.'}
                       </p>
                       <Button
-                        className="w-full px-2 text-eyebrow"
+                        className="w-full px-2 type-eyebrow"
                         isDisabled={disabled}
                         onPress={() => retryUpload(item.file, item.durationMs, item.localId)}
                         size="sm"
@@ -166,7 +166,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
                       </Button>
                     </div>
                   ) : (
-                    <p className="truncate text-success-soft-foreground text-eyebrow">Ready</p>
+                    <p className="truncate text-success-soft-foreground type-eyebrow">Ready</p>
                   )}
                 </div>
               </div>
@@ -174,7 +174,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
           })}
         </div>
       ) : null}
-      {fieldError ? <p className="mt-2 text-danger-soft-foreground text-eyebrow">{fieldError}</p> : null}
+      {fieldError ? <p className="mt-2 text-danger-soft-foreground type-eyebrow">{fieldError}</p> : null}
     </div>
   );
 }

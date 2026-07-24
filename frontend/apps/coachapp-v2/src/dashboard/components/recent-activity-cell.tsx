@@ -31,14 +31,14 @@ function ConversationRow({conversation}: {conversation: Conversation}) {
         className="size-9 shrink-0 bg-surface-secondary"
         size="md"
       >
-        <Avatar.Fallback className="text-eyebrow font-semibold text-foreground">
+        <Avatar.Fallback className="type-eyebrow font-semibold text-foreground">
           {name[0]?.toUpperCase() ?? '?'}
         </Avatar.Fallback>
       </Avatar>
 
       <div className="flex min-w-0 flex-col">
         <span className="flex min-w-0 items-center gap-2">
-          <Label className="min-w-0 truncate text-body font-semibold text-foreground">{name}</Label>
+          <Label className="min-w-0 truncate type-body font-semibold text-foreground">{name}</Label>
           {unread ? (
             <Badge
               className="shrink-0"
@@ -49,7 +49,7 @@ function ConversationRow({conversation}: {conversation: Conversation}) {
             </Badge>
           ) : null}
         </span>
-        <Description className="max-w-full truncate text-eyebrow text-muted">
+        <Description className="max-w-full truncate type-eyebrow text-muted">
           {conversation.last_message_preview ?? 'No messages yet'}
         </Description>
       </div>

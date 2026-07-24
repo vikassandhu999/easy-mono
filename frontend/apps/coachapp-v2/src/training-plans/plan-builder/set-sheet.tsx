@@ -81,15 +81,15 @@ const DISTANCE_UNITS: {value: DistanceUnit; label: string}[] = [
 
 // Unit chips (kg/lbs/bw, m/km/mi) — GAPS #7: also a ToggleButtonGroup.
 const UNIT_BUTTON_CLASS =
-  'min-h-9 rounded-chip border border-border bg-transparent px-2 text-eyebrow font-medium text-muted ' +
+  'min-h-9 rounded-chip border border-border bg-transparent px-2 type-eyebrow font-medium text-muted ' +
   'data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent';
 
 // min-w-0 is load-bearing: TextField is w-full, so without it the first field
 // claims its intrinsic width and pushes the rest out of the popover.
 const FIELD_BOX_CLASS = 'min-w-0 flex-1 rounded-control border border-border bg-surface px-2 pt-1.5 pb-2 text-center';
-const FIELD_LABEL_CLASS = 'mb-1 block text-eyebrow uppercase tracking-wider text-muted';
+const FIELD_LABEL_CLASS = 'mb-1 block type-eyebrow uppercase tracking-wider text-muted';
 const FIELD_INPUT_CLASS =
-  'h-auto border-0 bg-transparent px-0 text-center text-heading font-semibold text-foreground shadow-none';
+  'h-auto border-0 bg-transparent px-0 text-center type-heading font-semibold text-foreground shadow-none';
 
 // The editor only offers m/km/mi; a stored 'none' (or null) shows as meters,
 // matching the SetRow summary which renders none→'m'.
@@ -296,9 +296,9 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           Prev/Next move between sets without closing (spec — replaces swipe). */}
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="min-w-0 truncate text-body font-semibold text-foreground">{exerciseName}</span>
+          <span className="min-w-0 truncate type-body font-semibold text-foreground">{exerciseName}</span>
           <Button
-            className="shrink-0 px-2 text-body font-semibold text-accent"
+            className="shrink-0 px-2 type-body font-semibold text-accent"
             onPress={() => {
               flushPendingSave()
                 .then(onClose)
@@ -501,7 +501,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           onExpandedChange={setShowAdvanced}
         >
           <Disclosure.Heading>
-            <Disclosure.Trigger className="flex items-center gap-1 text-body font-medium text-accent">
+            <Disclosure.Trigger className="flex items-center gap-1 type-body font-medium text-accent">
               <Disclosure.Indicator />
               Rest timer and notes
             </Disclosure.Trigger>

@@ -32,7 +32,7 @@ function LegendEntry({dot, label, value}: {dot: string; label: string; value: nu
         weight="semibold"
       >
         {Math.round(value * 10) / 10}
-        <span className="text-eyebrow font-normal text-muted">g</span>
+        <span className="type-eyebrow font-normal text-muted">g</span>
       </Typography>
     </div>
   );

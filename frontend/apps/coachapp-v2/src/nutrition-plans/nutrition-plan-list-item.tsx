@@ -29,7 +29,7 @@ export default function NutritionPlanListItem({isFirst, plan}: {isFirst?: boolea
 
   return (
     <BrowseRow
-      icon={<Salad className="size-5 sm:size-5" />}
+      icon={<Salad className="size-5" />}
       id={plan.id}
       meta={meta || plan.description || 'No targets set'}
       testId={isFirst ? 'np-row' : undefined}

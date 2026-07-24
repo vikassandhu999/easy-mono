@@ -105,6 +105,7 @@ One shared primitive per job — never hand-roll these (graduated from the recur
 - Base Tailwind classes target mobile; `sm:`, `md:`, and `lg:` enhance wider layouts.
 - Style with Tailwind utilities and HeroUI props. Do not add per-component CSS files.
 - Use `Page` from `@/@components/page` for app screens unless the owning feature has a stronger established pattern.
+- **Type sizes are `type-*`, never `text-*`.** `text-eyebrow` and friends do not exist as utilities — the size tokens live in a `--type-*` namespace precisely so tailwind-merge cannot confuse them with `text-<colour>` and silently drop them (RM-134). `text-*` is colour only.
 - **Never write a height on a control.** Buttons, toggles, tabs and inputs get their height from the control-height block in `index.css` (`--spacing-control`, 36px, both breakpoints). No `min-h-*`, no `h-*`, no `sm:` override at a call site — a screen that needs a different control height is a theme change, not a className. This replaced `min-h-11` copied onto 93 controls across 44 files, each paired with an `sm:min-h-9`/`sm:min-h-0` that existed only to undo HeroUI's own `h-10 md:h-9`. Renaming that class to a token would have been the same copy-paste with a nicer name; the height belongs on the component.
   - HeroUI's `--sm`/`--lg` size modifiers still scale — the override is scoped away from them, and 53 `size="sm"` buttons depend on it.
   - Rows and layout wrappers are not controls and keep their own heights.

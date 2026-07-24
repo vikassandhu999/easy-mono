@@ -497,7 +497,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 // biome-ignore lint/a11y/noAutofocus: the day name opens in editing mode on user intent
                 autoFocus
                 aria-label="Day name"
-                className="h-11 min-w-0 flex-1 rounded-control border border-accent bg-surface px-3 font-btn text-body font-semibold text-foreground outline-none sm:h-9.5"
+                className="h-11 min-w-0 flex-1 rounded-control border border-accent bg-surface px-3 font-btn type-body font-semibold text-foreground outline-none sm:h-9.5"
                 data-testid="nb-rename-input"
                 onChange={(e) => setNameValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -511,7 +511,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 value={nameValue}
               />
               <Button
-                className="h-11 shrink-0 rounded-control border-0 bg-accent px-3 font-btn text-body font-semibold leading-none [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5"
+                className="h-11 shrink-0 rounded-control border-0 bg-accent px-3 font-btn type-body font-semibold leading-none [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5"
                 data-testid="nb-rename-save"
                 onPress={() => {
                   commitRename().catch(() => undefined);
@@ -538,7 +538,7 @@ export function PlanDays({plan}: PlanDaysProps) {
             >
               {days.map((day) => (
                 <ToggleButton
-                  className="rounded-control border border-border bg-surface px-3 text-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:py-2 [row-gap:normal] [column-gap:normal]"
+                  className="rounded-control border border-border bg-surface px-3 type-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:py-2 [row-gap:normal] [column-gap:normal]"
                   data-testid={day.id === activeDay.id ? 'nb-daytab-on' : 'nb-daytab-off'}
                   id={day.id}
                   key={day.id}
@@ -550,7 +550,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           )}
 
           <Button
-            className={`${INLINE_LINK} shrink-0 px-1.5 text-eyebrow`}
+            className={`${INLINE_LINK} shrink-0 px-1.5 type-eyebrow`}
             data-testid="nb-add-day"
             isPending={creatingDay}
             onPress={() => {
@@ -625,7 +625,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           {WEEKDAYS.map((weekday) => (
             <ToggleButton
               aria-label={`${WEEKDAY_SHORT_LABELS[weekday] ?? weekday} on ${activeDay.name}`}
-              className="size-11 rounded-control border border-border bg-transparent p-0 text-eyebrow font-semibold text-muted [box-shadow:none] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-7.5 [row-gap:normal] [column-gap:normal]"
+              className="size-11 rounded-control border border-border bg-transparent p-0 type-eyebrow font-semibold text-muted [box-shadow:none] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-7.5 [row-gap:normal] [column-gap:normal]"
               data-testid={weekdayAssignments[weekday] === activeDay.id ? 'nb-wday-on' : 'nb-wday-off'}
               id={weekday}
               key={weekday}
@@ -652,7 +652,7 @@ export function PlanDays({plan}: PlanDaysProps) {
       {/* Meal cards */}
       {rows.length === 0 ? (
         <div
-          className="rounded-panel border border-dashed border-border p-5 text-center text-eyebrow text-muted"
+          className="rounded-panel border border-dashed border-border p-5 text-center type-eyebrow text-muted"
           data-testid="nb-day-empty"
         >
           No meals on this day yet — add the first one below.

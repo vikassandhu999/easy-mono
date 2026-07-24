@@ -254,13 +254,13 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
             selected ? 'border-accent bg-accent text-accent-foreground' : 'border-default',
           ].join(' ')}
         >
-          {selected ? <span className="text-eyebrow font-bold leading-none">✓</span> : null}
+          {selected ? <span className="type-eyebrow font-bold leading-none">✓</span> : null}
         </div>
 
         {/* Name + per-serving subtitle */}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-body font-medium text-foreground">{item.name}</div>
-          <div className="truncate text-eyebrow text-muted">
+          <div className="truncate type-body font-medium text-foreground">{item.name}</div>
+          <div className="truncate type-eyebrow text-muted">
             {isRecipe(item)
               ? // Recipe totals cover servings_count servings; without one the
                 // whole recipe is a single serving — label accordingly.

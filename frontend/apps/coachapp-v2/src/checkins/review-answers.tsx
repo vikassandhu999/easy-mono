@@ -75,7 +75,7 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                           </a>
                         ) : (
                           <div
-                            className="grid aspect-[3/4] place-items-center rounded-panel border border-border bg-surface text-center text-muted text-eyebrow"
+                            className="grid aspect-[3/4] place-items-center rounded-panel border border-border bg-surface text-center text-muted type-eyebrow"
                             key={String(attachmentId)}
                           >
                             {!attachment ? (

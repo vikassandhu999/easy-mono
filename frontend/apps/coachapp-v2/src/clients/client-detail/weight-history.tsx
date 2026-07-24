@@ -29,9 +29,9 @@ type RangeId = (typeof RANGES)[number]['id'];
 
 /** `.seg` container + items — inactive muted, active white pill. */
 const RANGE_ITEM =
-  'min-h-0 rounded-chip border-0 bg-transparent px-2 py-1 text-eyebrow font-semibold text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] ' +
+  'min-h-0 rounded-chip border-0 bg-transparent px-2 py-1 type-eyebrow font-semibold text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] ' +
   'data-[selected=true]:bg-surface data-[selected=true]:font-bold data-[selected=true]:text-foreground ' +
-  'sm:px-3 sm:py-1 sm:text-eyebrow';
+  'sm:px-3 sm:py-1 sm:type-eyebrow';
 
 export default function WeightHistory() {
   const {id} = useParams<{id: string}>();
@@ -167,7 +167,7 @@ export default function WeightHistory() {
                   </svg>
                   {goal != null ? (
                     <span
-                      className="absolute right-0.5 bottom-6 bg-surface px-1 text-eyebrow text-muted sm:bottom-7.5 sm:px-1 sm:text-eyebrow"
+                      className="absolute right-0.5 bottom-6 bg-surface px-1 type-eyebrow text-muted sm:bottom-7.5"
                       data-testid="wh-goal"
                     >
                       goal {goal}
@@ -176,7 +176,7 @@ export default function WeightHistory() {
                   ) : null}
                 </div>
               ) : (
-                <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
+                <span className="type-eyebrow [color:var(--color-muted)]">
                   No weight logged yet. Weight arrives from check-ins or the client app.
                 </span>
               )}
@@ -201,19 +201,19 @@ export default function WeightHistory() {
                         data-testid="wh-row"
                       >
                         <div
-                          className="w-15.5 flex-none text-eyebrow font-semibold text-muted sm:w-20 sm:text-eyebrow"
+                          className="w-15.5 flex-none type-eyebrow font-semibold text-muted sm:w-20"
                           data-testid="wh-row-date"
                         >
                           {formatShortDate(entry.date)}
                         </div>
                         <span
-                          className="flex-1 font-grotesk text-body font-bold sm:w-17.5 sm:flex-none sm:text-body"
+                          className="flex-1 font-grotesk type-body font-bold sm:w-17.5 sm:flex-none"
                           data-testid="wh-row-value"
                         >
                           {Number(entry.value).toFixed(1)} {entry.unit}
                         </span>
                         <span
-                          className="text-eyebrow text-muted sm:flex-1 sm:text-eyebrow"
+                          className="type-eyebrow text-muted sm:flex-1"
                           data-testid="wh-row-source"
                         >
                           {entry.form_submission_id ? 'From check-in' : 'Client log'}

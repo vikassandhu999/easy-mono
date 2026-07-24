@@ -42,7 +42,7 @@ fi
 # token", so a long-lived port branch is not re-flagged for scale work already
 # committed. Compares token NAMES, so reordering/comment churn is free.
 if [ -z "${UI_CONTRACT_SKIP_THEME:-}" ] && [ -f "$THEME" ]; then
-  names() { grep -oE '^[[:space:]]*--(text|radius|tracking|leading|color|spacing)-[a-z0-9-]+' | tr -d ' ' | sort -u; }
+  names() { grep -oE '^[[:space:]]*--(type|radius|tracking|leading|color|spacing)-[a-z0-9-]+' | tr -d ' ' | sort -u; }
   WAS=$(git show "HEAD:$THEME" 2>/dev/null | names || true)
   NOW=$(names < "$THEME")
   ADDED=$(comm -13 <(echo "$WAS") <(echo "$NOW"))
@@ -79,6 +79,10 @@ OUT=$(echo "$FILES" | xargs rg -n --no-messages \
   `# scale. Use the tokens (text-body, rounded-panel, ...). rounded-none is a` \
   `# real 0 and stays legal.` \
   -e '\b(text-(xs|sm|base|lg|xl|[2-9]xl)|rounded-(sm|md|lg|xl|[2-9]xl|full))\b' \
+  `# The size scale lives in the type-* namespace. A text-<size> is now a dead` \
+  `# class — the utility does not exist — and was silently eaten by` \
+  `# tailwind-merge before that (RM-134).` \
+  -e '\btext-(eyebrow|body|title|heading|metric|display)\b' \
   `# Quarter-step spacing is a prototype pixel wearing Tailwind syntax — the` \
   `# px-literal ban never inspected it, so 36 distinct steps accumulated.` \
   `# Native 0.5 and 1.5 are fine; everything else snaps to an integer step.` \

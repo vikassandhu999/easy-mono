@@ -78,7 +78,7 @@ export default function PlanScheduleStep({
   return (
     <div className="space-y-4 pb-2">
       <button
-        className="flex items-center gap-1 py-1.5 text-eyebrow font-medium text-muted hover:text-foreground"
+        className="flex items-center gap-1 py-1.5 type-eyebrow font-medium text-muted hover:text-foreground"
         onClick={onBack}
         type="button"
       >
@@ -119,10 +119,10 @@ export default function PlanScheduleStep({
       {/* End date */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-body font-medium">End date</Label>
+          <Label className="type-body font-medium">End date</Label>
           {!requireEnd && end ? (
             <button
-              className="py-1.5 text-eyebrow font-medium text-accent hover:underline"
+              className="py-1.5 type-eyebrow font-medium text-accent hover:underline"
               onClick={() => setEnd(null)}
               type="button"
             >
@@ -138,7 +138,7 @@ export default function PlanScheduleStep({
                 const on = activeDuration === w;
                 return (
                   <button
-                    className={`min-h-10 rounded-panel border px-3 py-2 text-eyebrow font-medium ${
+                    className={`min-h-10 rounded-panel border px-3 py-2 type-eyebrow font-medium ${
                       on
                         ? 'border-accent bg-accent-soft text-accent'
                         : 'border-border text-muted hover:bg-surface-hover'
@@ -176,7 +176,7 @@ export default function PlanScheduleStep({
           </>
         ) : (
           <button
-            className="flex w-full items-center justify-center gap-2 rounded-card border border-dashed border-border px-3 py-2 text-body text-muted hover:bg-surface-hover"
+            className="flex w-full items-center justify-center gap-2 rounded-card border border-dashed border-border px-3 py-2 type-body text-muted hover:bg-surface-hover"
             onClick={() => setEnd(addWeeks(start, 8))}
             type="button"
           >

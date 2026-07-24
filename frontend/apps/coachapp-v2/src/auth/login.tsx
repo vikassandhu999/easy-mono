@@ -92,7 +92,7 @@ export default function Login() {
           Don&apos;t have an account?
         </Typography>
         <Link
-          className="text-body text-foreground underline"
+          className="type-body text-foreground underline"
           href={ROUTES.SIGNUP}
         >
           Sign up

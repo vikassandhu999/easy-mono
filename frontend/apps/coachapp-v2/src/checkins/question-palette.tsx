@@ -62,7 +62,7 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
                 variant="outline"
               >
                 <Icon className="text-muted" />
-                <span className="text-eyebrow font-medium">{questionTypeLabel(type)}</span>
+                <span className="type-eyebrow font-medium">{questionTypeLabel(type)}</span>
               </Button>
             );
           })}

@@ -120,14 +120,14 @@ function QueueRow({item}: {item: QueueItem}) {
       >
         {/* The tint has to sit on `Avatar.Fallback` — `Avatar`'s own background
             class wins on the root and the tone would be painted over. */}
-        <Avatar.Fallback className={cn('text-eyebrow font-semibold', AVATAR_TONE[item.tone])}>
+        <Avatar.Fallback className={cn('type-eyebrow font-semibold', AVATAR_TONE[item.tone])}>
           {item.initials}
         </Avatar.Fallback>
       </Avatar>
 
       <div className="flex min-w-0 flex-col">
         <span className="flex min-w-0 items-center gap-2">
-          <Label className="min-w-0 truncate text-body font-semibold text-foreground">{item.name}</Label>
+          <Label className="min-w-0 truncate type-body font-semibold text-foreground">{item.name}</Label>
           <Chip
             className="shrink-0"
             color={item.tone}
@@ -137,7 +137,7 @@ function QueueRow({item}: {item: QueueItem}) {
             {item.chip}
           </Chip>
         </span>
-        <Description className="max-w-full truncate text-eyebrow text-muted">{item.subtitle}</Description>
+        <Description className="max-w-full truncate type-eyebrow text-muted">{item.subtitle}</Description>
       </div>
 
       <Button

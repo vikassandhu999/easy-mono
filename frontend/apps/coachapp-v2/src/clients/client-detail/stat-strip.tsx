@@ -30,9 +30,9 @@ import {
 import {EYEBROW} from '@/clients/client-detail/ui';
 
 const CELL = 'bg-surface px-3 py-3 sm:flex-1 sm:bg-transparent sm:px-5 sm:py-4';
-const VALUE = 'font-grotesk text-heading font-bold sm:mt-1.5 sm:text-metric mt-1';
-const UNIT = 'text-eyebrow font-semibold text-muted sm:text-body';
-const SUB = 'text-eyebrow text-muted sm:mt-1 sm:text-eyebrow';
+const VALUE = 'font-grotesk type-heading font-bold sm:mt-1.5 sm:type-metric mt-1';
+const UNIT = 'type-eyebrow font-semibold text-muted sm:type-body';
+const SUB = 'type-eyebrow text-muted sm:mt-1';
 const DIVIDER = 'hidden w-px self-stretch bg-border sm:block';
 
 function Tile({
@@ -54,7 +54,7 @@ function Tile({
       data-testid={testid}
     >
       <div
-        className={`${EYEBROW} text-eyebrow sm:text-eyebrow`}
+        className={`${EYEBROW} type-eyebrow sm:type-eyebrow`}
         data-testid={testid ? `${testid}-label` : undefined}
       >
         {label}
@@ -189,7 +189,7 @@ export default function StatStrip({client}: {client: Client}) {
         to={ROUTES.CLIENT_WEIGHT.replace(':id', clientId)}
       >
         <div className="flex items-center justify-between">
-          <div className={`${EYEBROW} text-eyebrow sm:text-eyebrow`}>Weight</div>
+          <div className={`${EYEBROW} type-eyebrow sm:type-eyebrow`}>Weight</div>
           <ChevronRight className="hidden size-3.5 text-muted sm:block" />
         </div>
         <div className={`${VALUE}${latestWeight ? '' : ' text-muted'}`}>
@@ -205,7 +205,7 @@ export default function StatStrip({client}: {client: Client}) {
         <div
           className={
             latestWeight && delta
-              ? `text-eyebrow font-semibold sm:mt-1 sm:text-eyebrow ${
+              ? `type-eyebrow font-semibold sm:mt-1 sm:type-eyebrow ${
                   delta.tone === 'success'
                     ? 'text-success-soft-foreground'
                     : delta.tone === 'danger'

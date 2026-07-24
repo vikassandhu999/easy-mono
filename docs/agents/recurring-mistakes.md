@@ -389,6 +389,36 @@ App-owned classes are allowlisted in the script.
 
 ---
 
+### RM-134 — A custom `text-<size>` token is eaten by tailwind-merge whenever a colour follows it
+
+`cn()` is tailwind-merge, and it runs inside every HeroUI component as well as at our own
+call sites. It knows Tailwind's OWN size names and nothing else, so a custom size lands in
+the same class group as a colour and the later one wins:
+
+    cn('text-eyebrow', 'text-muted')  ->  'text-muted'           size silently gone
+    cn('text-sm',      'text-muted')  ->  'text-sm text-muted'   stock size survives
+
+Nothing errors. The element just renders at the inherited size. `BrowseRow`'s meta line had
+been 12px instead of 11px since it was written, and a stray `sm:text-eyebrow` was the only
+reason it looked right above `sm` — which in turn made 111 apparently-dead `sm:` duplicates
+look removable when they were load-bearing. 37 call sites were affected.
+
+Reordering does not help: size and colour are one group, so whichever is last wins and the
+other is always lost. Configuring the merge does not help either — `tailwind-variants`
+exposes `defaultConfig.twMergeConfig`, but it does not reach `cn`, and the drop happens
+inside HeroUI's own components where our config cannot reach at all.
+
+The rule: **size tokens live in their own namespace.** They are `--type-*` / `type-eyebrow`,
+not `--text-*` / `text-eyebrow`, so tailwind-merge has no group for them and can never
+choose between a size and a colour. `text-*` means colour, only. This is consistency by
+construction rather than by discipline — the mistake is not possible to make.
+
+**Enforced by:** `scripts/check-ui-contract.sh` rejects `text-(eyebrow|body|title|heading|
+metric|display)` — those utilities no longer exist, so any survivor is a dead class.
+`style-diff.mjs` reads the scale from `--type-*`.
+
+---
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

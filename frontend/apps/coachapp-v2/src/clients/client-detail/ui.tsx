@@ -13,18 +13,18 @@ export const CARD = 'rounded-card border border-border bg-surface';
 
 /** `.btnA` — accent-filled button (design uses literal white text). */
 export const ACCENT_BUTTON =
-  'min-w-0 shrink-0 [column-gap:normal] [row-gap:normal] rounded-control bg-accent font-btn text-eyebrow font-bold leading-none [color:white] [box-shadow:none]';
+  'min-w-0 shrink-0 [column-gap:normal] [row-gap:normal] rounded-control bg-accent font-btn type-eyebrow font-bold leading-none [color:white] [box-shadow:none]';
 
 /** `.btnG` — white outline button. */
 export const OUTLINE_BUTTON =
-  'min-w-0 shrink-0 [column-gap:normal] [row-gap:normal] rounded-control border border-border bg-surface font-btn text-eyebrow font-bold leading-none text-foreground [box-shadow:none]';
+  'min-w-0 shrink-0 [column-gap:normal] [row-gap:normal] rounded-control border border-border bg-surface font-btn type-eyebrow font-bold leading-none text-foreground [box-shadow:none]';
 
 /** `.eyebrow` */
-export const EYEBROW = 'text-eyebrow font-bold uppercase tracking-wider text-muted';
+export const EYEBROW = 'type-eyebrow font-bold uppercase tracking-wider text-muted';
 
 /** `.chip` base — HeroUI Chip resets; pair with a tone class + `[color:...]`. */
 export const CHIP =
-  'inline-flex min-h-0 items-center gap-1 whitespace-nowrap rounded-pill border-0 px-2 py-1 text-eyebrow font-bold leading-[normal] [box-shadow:none]';
+  'inline-flex min-h-0 items-center gap-1 whitespace-nowrap rounded-pill border-0 px-2 py-1 type-eyebrow font-bold leading-[normal] [box-shadow:none]';
 
 export function CardSkeleton({lines = 3}: {lines?: number}) {
   return (
@@ -113,7 +113,7 @@ export function SubHeader({
   title: string;
 }) {
   return (
-    <div className="flex flex-none items-center gap-3 border-b border-border px-4 pt-0.5 pb-3 sm:gap-3 sm:px-8 sm:py-4">
+    <div className="flex flex-none items-center gap-3 border-b border-border px-4 pt-0.5 pb-3 sm:px-8 sm:py-4">
       <Button
         aria-label="Back"
         className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
@@ -126,13 +126,13 @@ export function SubHeader({
       </Button>
       <div className="min-w-0 flex-1">
         <div
-          className="font-grotesk text-body font-semibold sm:text-heading"
+          className="font-grotesk type-body font-semibold sm:type-heading"
           data-testid="sub-title"
         >
           {title}
         </div>
         <div
-          className="text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
+          className="type-eyebrow text-muted sm:mt-0.5"
           data-testid="sub-subtitle"
         >
           {subtitle}

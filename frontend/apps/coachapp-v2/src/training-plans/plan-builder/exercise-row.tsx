@@ -162,7 +162,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           data-testid="tb-exercise-head"
         >
           <span
-            className="min-w-0 flex-1 truncate text-body font-semibold text-foreground"
+            className="min-w-0 flex-1 truncate type-body font-semibold text-foreground"
             data-testid="tb-exercise-name"
           >
             {exerciseName}
@@ -236,7 +236,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           {/* + Add set — disabled while a sets PATCH is in flight: a double-press
               would build two payloads from the same base and lose one add. */}
           <Button
-            className={`${INLINE_LINK} mt-0.5 py-1 font-btn text-eyebrow`}
+            className={`${INLINE_LINK} mt-0.5 py-1 font-btn type-eyebrow`}
             data-testid="tb-add-set"
             isDisabled={isSavingSets}
             onPress={() => {

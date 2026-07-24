@@ -73,14 +73,14 @@ export function BrowseRow({icon, iconClassName, id, meta, testId, textValue, tit
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Label
-          className="min-w-0 max-w-full truncate text-body font-semibold leading-[normal] text-foreground"
+          className="min-w-0 max-w-full truncate type-body font-semibold leading-[normal] text-foreground"
           data-testid={testId ? `${testId}-title` : undefined}
         >
           {title}
         </Label>
         {meta === undefined ? null : (
           <Description
-            className="max-w-full truncate text-eyebrow leading-[normal] text-muted sm:text-eyebrow"
+            className="max-w-full truncate type-eyebrow leading-[normal] text-muted"
             data-testid={testId ? `${testId}-meta` : undefined}
           >
             {meta}

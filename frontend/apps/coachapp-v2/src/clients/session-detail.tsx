@@ -19,8 +19,8 @@ import {CARD, CHIP, SubHeader} from '@/clients/client-detail/ui';
 import {buildExerciseGroups, type ExerciseGroup, formatLoad} from '@/clients/lib/session';
 
 /** Set · Reps · Load · RPE · done — one grid template for header and rows. */
-const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[64px_1fr_92px_60px_26px] sm:gap-2';
-const SET_CHIP = `${CHIP} border border-border bg-transparent px-1.5 py-0.5 text-eyebrow font-semibold [color:var(--color-muted)]`;
+const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[64px_1fr_92px_60px_26px]';
+const SET_CHIP = `${CHIP} border border-border bg-transparent px-1.5 py-0.5 type-eyebrow font-semibold [color:var(--color-muted)]`;
 
 function setTypeLabel(set: TrainingPerformedSet): null | string {
   if (set.set_type === 'warmup') {
@@ -35,7 +35,7 @@ function SetRow({index, isFirstCard, set}: {index: number; isFirstCard: boolean;
 
   return (
     <div
-      className={`${GRID} items-center py-2 text-eyebrow sm:py-2 sm:text-eyebrow`}
+      className={`${GRID} items-center py-2 type-eyebrow sm:py-2 sm:type-eyebrow`}
       data-testid={testId('set-row')}
     >
       <span
@@ -63,7 +63,7 @@ function ExerciseCard({group, isFirst}: {group: ExerciseGroup; isFirst: boolean}
       data-testid={isFirst ? 'sd-exercise' : undefined}
     >
       <div
-        className="mb-2 text-body font-bold sm:mb-3 sm:text-body"
+        className="mb-2 type-body font-bold sm:mb-3"
         data-testid={isFirst ? 'sd-exercise-title' : undefined}
       >
         {group.exerciseName}{' '}
@@ -72,7 +72,7 @@ function ExerciseCard({group, isFirst}: {group: ExerciseGroup; isFirst: boolean}
         </span>
       </div>
       <div
-        className={`${GRID} border-b border-border pb-2 text-eyebrow font-semibold text-muted sm:pb-2 sm:text-eyebrow`}
+        className={`${GRID} border-b border-border pb-2 type-eyebrow font-semibold text-muted sm:pb-2 sm:type-eyebrow`}
         data-testid={isFirst ? 'sd-head-row' : undefined}
       >
         <span data-testid={isFirst ? 'sd-head-cell' : undefined}>Set</span>
@@ -96,7 +96,7 @@ function ExerciseCard({group, isFirst}: {group: ExerciseGroup; isFirst: boolean}
           />
         </div>
       ))}
-      {group.sets.length === 0 ? <div className="py-2 text-eyebrow text-muted sm:text-eyebrow">Not logged.</div> : null}
+      {group.sets.length === 0 ? <div className="py-2 type-eyebrow text-muted">Not logged.</div> : null}
     </div>
   );
 }
@@ -174,9 +174,9 @@ export default function SessionDetail() {
             data-testid="sd-root"
           >
             {session.notes ? (
-              <div className="flex gap-2 rounded-panel bg-accent-soft px-3 py-3 sm:gap-3 sm:px-4 sm:py-3">
+              <div className="flex gap-2 rounded-panel bg-accent-soft px-3 py-3 sm:gap-3 sm:px-4">
                 <Quote className="mt-0.5 flex-none text-accent sm:size-5" />
-                <div className="text-eyebrow leading-normal sm:text-body">{session.notes}</div>
+                <div className="type-eyebrow leading-normal sm:type-body">{session.notes}</div>
               </div>
             ) : null}
 
@@ -190,9 +190,7 @@ export default function SessionDetail() {
 
             {groups.length === 0 ? (
               <div className={`${CARD} px-3 py-6 text-center sm:px-4`}>
-                <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
-                  No sets were logged in this session.
-                </span>
+                <span className="type-eyebrow [color:var(--color-muted)]">No sets were logged in this session.</span>
               </div>
             ) : null}
           </div>

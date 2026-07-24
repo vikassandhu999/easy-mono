@@ -53,13 +53,13 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
       {createSlot}
       <div className="flex flex-col">
         <div
-          className="px-3 pt-0.5 pb-2 text-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
+          className="px-3 pt-0.5 pb-2 type-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
           data-testid="nb-reuse-label"
         >
           {groupLabel}
         </div>
         {options.length === 0 ? (
-          <div className="px-3 pt-1 pb-2 text-eyebrow text-muted">{emptyLabel}</div>
+          <div className="px-3 pt-1 pb-2 type-eyebrow text-muted">{emptyLabel}</div>
         ) : (
           <ListBox
             aria-label={groupLabel}
@@ -77,14 +77,14 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
               >
                 <div className="flex min-w-0 flex-1 flex-col">
                   <Label
-                    className="max-w-full truncate text-body font-normal"
+                    className="max-w-full truncate type-body font-normal"
                     data-testid="nb-reuse-name"
                   >
                     {option.name}
                   </Label>
                   {option.sub ? (
                     <span
-                      className="mt-0.5 max-w-full truncate text-eyebrow text-muted"
+                      className="mt-0.5 max-w-full truncate type-eyebrow text-muted"
                       data-testid="nb-reuse-sub"
                     >
                       {option.sub}
@@ -93,7 +93,7 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
                 </div>
                 {option.meta ? (
                   <span
-                    className="shrink-0 whitespace-nowrap text-eyebrow text-muted"
+                    className="shrink-0 whitespace-nowrap type-eyebrow text-muted"
                     data-testid="nb-reuse-kcal"
                   >
                     {option.meta}
@@ -185,13 +185,13 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
           </span>
           <span className="flex flex-col">
             <span
-              className="text-body font-semibold text-foreground"
+              className="type-body font-semibold text-foreground"
               data-testid="nb-create-meal-title"
             >
               Create a new meal
             </span>
             <span
-              className="text-eyebrow font-normal text-muted"
+              className="type-eyebrow font-normal text-muted"
               data-testid="nb-create-meal-sub"
             >
               Start empty, add foods or recipes
@@ -202,7 +202,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
       title="Add meal"
       trigger={({onPress, ref}) => (
         <Button
-          className="h-11 w-full gap-1.5 rounded-panel border border-dashed border-border bg-transparent px-1.5 py-px font-btn text-body font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
+          className="h-11 w-full gap-1.5 rounded-panel border border-dashed border-border bg-transparent px-1.5 py-px font-btn type-body font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
           data-testid="nb-add-meal"
           onPress={onPress}
           ref={ref}
@@ -238,7 +238,7 @@ export function AddSwapControl({options, onAdd, testId}: AddSwapControlProps) {
       title="Add a swap"
       trigger={({onPress, ref}) => (
         <Button
-          className={`${INLINE_LINK} text-eyebrow`}
+          className={`${INLINE_LINK} type-eyebrow`}
           data-testid={testId}
           onPress={onPress}
           ref={ref}

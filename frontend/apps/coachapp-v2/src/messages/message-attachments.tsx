@@ -32,7 +32,7 @@ function MessageAttachment({
 
   if (!url || refreshing || mediaFailed) {
     return (
-      <div className="grid min-h-11 place-items-center gap-2 rounded-panel border border-border bg-surface-secondary px-3 py-2 text-center text-muted text-eyebrow">
+      <div className="grid min-h-11 place-items-center gap-2 rounded-panel border border-border bg-surface-secondary px-3 py-2 text-center text-muted type-eyebrow">
         {failed || mediaFailed ? (
           <>
             <span>Media unavailable</span>

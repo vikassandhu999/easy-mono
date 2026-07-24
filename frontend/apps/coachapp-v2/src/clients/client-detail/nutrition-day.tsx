@@ -21,7 +21,7 @@ import {formatShortDate} from '@/clients/client-detail/data';
 import {CARD, CHIP, EYEBROW, SubHeader} from '@/clients/client-detail/ui';
 
 const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
-const ENTRY_ROW = 'flex items-center gap-2 py-1.5 sm:gap-2 sm:py-2';
+const ENTRY_ROW = 'flex items-center gap-2 py-1.5 sm:py-2';
 
 type PlannedItem = {calories?: number; food_name?: string};
 
@@ -66,7 +66,7 @@ function Meter({
 
   return (
     <div>
-      <div className="mb-1 flex justify-between text-eyebrow sm:mb-1.5 sm:text-eyebrow">
+      <div className="mb-1 flex justify-between type-eyebrow sm:mb-1.5">
         <span
           className="font-semibold"
           data-testid={testId('meter-label')}
@@ -109,13 +109,13 @@ function EntryRow({entry, isFirst}: {entry: FoodLogEntry; isFirst: boolean}) {
     >
       <div className="min-w-0 flex-1">
         <div
-          className="text-body font-semibold"
+          className="type-body font-semibold"
           data-testid={testId('entry-name')}
         >
           {entry.food_name ?? 'Food'}
         </div>
         <div
-          className="mt-0.5 text-eyebrow text-muted sm:mt-0.5"
+          className="mt-0.5 type-eyebrow text-muted"
           data-testid={testId('entry-macros')}
         >
           {macros}
@@ -124,14 +124,14 @@ function EntryRow({entry, isFirst}: {entry: FoodLogEntry; isFirst: boolean}) {
       {sourceChip ? <Chip className={OUT_CHIP}>{sourceChip}</Chip> : null}
       {entry.amount != null ? (
         <span
-          className="text-eyebrow font-semibold text-muted sm:font-normal"
+          className="type-eyebrow font-semibold text-muted sm:font-normal"
           data-testid={testId('entry-amount')}
         >
           {round(entry.amount)} {entry.unit ?? 'g'}
         </span>
       ) : null}
       <span
-        className="w-16 text-right text-eyebrow font-semibold"
+        className="w-16 text-right type-eyebrow font-semibold"
         data-testid={testId('entry-kcal')}
       >
         {round(entry.calories).toLocaleString()} kcal
@@ -259,9 +259,7 @@ export default function NutritionDay() {
 
             {logs.length === 0 ? (
               <div className={`${CARD} px-3 py-6 text-center sm:px-4`}>
-                <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
-                  Nothing logged on this day.
-                </span>
+                <span className="type-eyebrow [color:var(--color-muted)]">Nothing logged on this day.</span>
               </div>
             ) : (
               logs.map((log, logIndex) => {
@@ -274,13 +272,13 @@ export default function NutritionDay() {
                   >
                     <div className="mb-2 flex items-center justify-between sm:mb-3">
                       <div
-                        className="text-body font-bold"
+                        className="type-body font-bold"
                         data-testid={logIndex === 0 ? 'nd-meal-title' : undefined}
                       >
                         {MEAL_SLOT_LABELS[log.meal_slot] ?? log.meal_slot}
                       </div>
                       <div
-                        className="text-eyebrow text-muted"
+                        className="type-eyebrow text-muted"
                         data-testid={logIndex === 0 ? 'nd-meal-kcal' : undefined}
                       >
                         {round(log.logged_calories).toLocaleString()} kcal
@@ -305,10 +303,10 @@ export default function NutritionDay() {
                         <div className="h-px bg-border" />
                         <div className={`${ENTRY_ROW} opacity-55`}>
                           <div className="min-w-0 flex-1">
-                            <div className="text-body font-semibold line-through">{item.food_name}</div>
+                            <div className="type-body font-semibold line-through">{item.food_name}</div>
                           </div>
                           <Chip className={OUT_CHIP}>Skipped</Chip>
-                          <span className="w-16 text-right text-eyebrow font-semibold text-muted">
+                          <span className="w-16 text-right type-eyebrow font-semibold text-muted">
                             {round(item.calories).toLocaleString()} kcal
                           </span>
                         </div>

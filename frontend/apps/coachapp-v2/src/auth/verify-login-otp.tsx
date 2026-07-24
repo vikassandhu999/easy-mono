@@ -121,7 +121,7 @@ export default function VerifyLoginOtp() {
           Didn&apos;t receive a code?
         </Typography>
         <Link
-          className="text-body text-foreground underline"
+          className="type-body text-foreground underline"
           isDisabled={isResending}
           onPress={handleResend}
         >

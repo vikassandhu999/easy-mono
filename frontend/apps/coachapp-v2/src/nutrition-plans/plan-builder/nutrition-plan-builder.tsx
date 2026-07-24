@@ -72,7 +72,7 @@ export default function NutritionPlanBuilder() {
           {/* Not Page.Title: `.typography--h3` is unlayered, so its letter-spacing
               beats any utility and the design's -0.02em can't be applied there. */}
           <span
-            className="min-w-0 flex-1 truncate font-grotesk text-display font-semibold tracking-title text-foreground"
+            className="min-w-0 flex-1 truncate font-grotesk type-display font-semibold tracking-title text-foreground"
             data-testid="nb-title"
           >
             {plan.name}

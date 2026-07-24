@@ -50,7 +50,7 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
         </Description>
       </div>
       <div className="ms-auto flex shrink-0 flex-col items-end gap-1">
-        <span className={`text-eyebrow ${unread ? 'font-medium text-accent-soft-foreground' : 'text-muted'}`}>
+        <span className={`type-eyebrow ${unread ? 'font-medium text-accent-soft-foreground' : 'text-muted'}`}>
           {timeAgo(conversation.last_message_at)}
         </span>
         {unread ? (

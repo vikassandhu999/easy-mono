@@ -184,7 +184,7 @@ function QuestionRow({
           <Icon className="text-muted" />
         </span>
 
-        <span className={cn('min-w-0 flex-1 truncate text-body', question.label ? 'text-foreground' : 'text-muted-2')}>
+        <span className={cn('min-w-0 flex-1 truncate type-body', question.label ? 'text-foreground' : 'text-muted-2')}>
           {question.label || 'Untitled question'}
         </span>
 

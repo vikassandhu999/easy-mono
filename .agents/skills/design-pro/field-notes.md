@@ -128,6 +128,19 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **`AssignSurface` now supports ports**: `triggerClassName` / `triggerTestId`
   style+tag the built-in trigger, and `isOpen`/`onOpenChange`/`anchorRef` drive
   it from a ⋯ menu item with no trigger of its own (CD/TR's Change plan).
+- **A HeroUI `Button` used as a list ROW imposes 14px / 20px line-height /
+  default-foreground on everything inside it** — the design's row inherits the
+  page context instead. Reset with `text-metric font-normal leading-[normal]
+  text-foreground` on the row or every child (including meters) diffs. This was
+  all 22 of CD/NU's first-pass diffs.
+- **`ProgressBar` is the sanctioned meter and needs no `style={{}}`** — give
+  `Track`/`Fill` the design's classes and drive width via `value`; the compound
+  children are required or it renders empty.
+- **`cd` failing in a chained shell command silently skips the `&&` part but
+  still runs anything after a newline** — a refactor "succeeded" (build green,
+  diff PASS) while its edit had never applied, because the following build
+  command ran anyway. Verify a refactor with `git diff --stat`, not just a
+  green build.
 
 ## Styling / tokens
 

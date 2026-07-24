@@ -1,23 +1,11 @@
-import {Button, SearchField, Separator, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {BackButton} from '@/@components/back-button';
-import BrowseListBox, {
-  BROWSE_LIST_FRAME_CLASS,
-  BROWSE_LIST_SURFACE_CLASS,
-  BROWSE_SEARCH_GROUP_CLASS,
-  FILTER_PILL_CLASS,
-  FilterCount,
-  TOOLBAR_DIVIDER_CLASS,
-} from '@/@components/browse-list-box';
+import BrowseScreen from '@/@components/browse-screen';
 import ListEmptyState from '@/@components/list-empty-state';
-import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useIsSm} from '@/@hooks/use-is-sm';
 import {useListNutritionPlansQuery} from '@/api/generated';
 import {useCoachNutritionPlansInfiniteQuery} from '@/api/nutrition-plans-list';
 
@@ -27,8 +15,6 @@ type StatusFilter = 'active' | 'all' | 'archived';
 
 export default function ListNutritionPlans() {
   const navigate = useNavigate();
-  const goBack = useGoBack(ROUTES.LIBRARY);
-  const isSm = useIsSm();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
 
@@ -48,157 +34,45 @@ export default function ListNutritionPlans() {
   const archivedCount = archivedData?.count ?? 0;
 
   return (
-    <Page>
-      <Page.Header
-        className="bg-surface pb-1 sm:bg-transparent sm:pb-2"
-        size="content"
-      >
-        <Page.TitleGroup className="flex min-w-0 items-center gap-1">
-          {/* Below lg there's no sidebar and (by design) no bottom nav on the
-              library lists — this is the way back to the Builder hub. */}
-          <BackButton
-            className="lg:hidden"
-            onPress={goBack}
-          />
-          <div className="min-w-0">
-            <Page.Title testId="np-title">
-              <span className="sm:hidden">Nutrition</span>
-              <span className="hidden sm:inline">Nutrition plans</span>
-            </Page.Title>
-            <Page.Description
-              className="hidden truncate sm:block"
-              testId="np-subtitle"
-            >
-              Reusable daily macro targets and meal structures for your clients
-            </Page.Description>
-          </div>
-        </Page.TitleGroup>
-        <Page.Actions>
-          <Button
-            aria-label="Create plan"
-            className="size-9.5 min-h-11 min-w-11 gap-0 rounded-control p-0 text-title font-normal leading-[normal] [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5 sm:min-h-0 sm:w-auto sm:gap-2 sm:px-4 sm:font-btn sm:text-body sm:font-semibold sm:leading-none"
-            data-testid="np-create"
-            onPress={() => navigate(ROUTES.CREATE_NUTRITION_PLAN)}
-            variant="primary"
-          >
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">Create plan</span>
-          </Button>
-        </Page.Actions>
-      </Page.Header>
-      <Page.Toolbar
-        className="sticky top-0 z-10 mb-0 flex flex-wrap items-center gap-x-3 gap-y-0 border-b border-border bg-surface pt-2 pb-0 sm:mb-6 sm:gap-3 sm:border-0 sm:bg-background sm:pb-3"
-        size="content"
-      >
-        <SearchField
-          aria-label="Search nutrition plans"
-          className="w-full min-w-0 sm:max-w-72 sm:flex-1"
-          onChange={setSearch}
-          value={search}
-        >
-          <SearchField.Group
-            className={BROWSE_SEARCH_GROUP_CLASS}
-            data-testid="np-search"
-          >
-            <SearchField.SearchIcon />
-            <SearchField.Input
-              className="min-h-11"
-              placeholder={isSm ? 'Search nutrition plans…' : 'Search plans…'}
-            />
-            <SearchField.ClearButton className="min-h-11 min-w-11" />
-          </SearchField.Group>
-        </SearchField>
-        <Separator
-          className={TOOLBAR_DIVIDER_CLASS}
-          orientation="vertical"
+    <BrowseScreen
+      action={{icon: <Plus className="size-4" />, label: 'Create plan', to: ROUTES.CREATE_NUTRITION_PLAN}}
+      backTo={ROUTES.LIBRARY}
+      description="Reusable daily macro targets and meal structures for your clients"
+      empty={
+        <ListEmptyState
+          createLabel="Create Nutrition Plan"
+          createRoute={ROUTES.CREATE_NUTRITION_PLAN}
+          emptyDescription="Create your first nutrition plan to get started."
+          hasFilter={!!deferredSearch || status !== 'all'}
+          nounPlural="nutrition plans"
         />
-        <div className="-mx-4 min-w-0 max-w-full shrink-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <ToggleButtonGroup
-            aria-label="Filter plans by status"
-            className="flex flex-nowrap gap-4 sm:gap-2"
-            isDetached
-            onSelectionChange={(keys) => {
-              const next = [...keys][0];
-              if (next) {
-                setStatus(next as StatusFilter);
-              }
-            }}
-            selectedKeys={[status]}
-            selectionMode="single"
-          >
-            <ToggleButton
-              className={FILTER_PILL_CLASS}
-              data-testid={status === 'all' ? 'np-pill-on' : 'np-pill-off'}
-              id="all"
-            >
-              All{' '}
-              <FilterCount
-                count={activeCount + archivedCount}
-                countTestId="np-pill-count"
-                isSelected={status === 'all'}
-              />
-            </ToggleButton>
-            <ToggleButton
-              className={FILTER_PILL_CLASS}
-              data-testid={status === 'active' ? 'np-pill-on' : 'np-pill-off'}
-              id="active"
-            >
-              Active{' '}
-              <FilterCount
-                count={activeCount}
-                isSelected={status === 'active'}
-              />
-            </ToggleButton>
-            <ToggleButton
-              className={FILTER_PILL_CLASS}
-              id="archived"
-            >
-              Archived{' '}
-              <FilterCount
-                count={archivedCount}
-                isSelected={status === 'archived'}
-              />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </div>
-      </Page.Toolbar>
-      <Page.Content bare>
-        <Page.Frame
-          className={BROWSE_LIST_FRAME_CLASS}
-          size="content"
-        >
-          <div
-            className={BROWSE_LIST_SURFACE_CLASS}
-            data-testid="np-card"
-          >
-            <BrowseListBox
-              ariaLabel="Nutrition plans"
-              className="flex-1 p-0"
-              emptyState={
-                <ListEmptyState
-                  createLabel="Create Nutrition Plan"
-                  createRoute={ROUTES.CREATE_NUTRITION_PLAN}
-                  emptyDescription="Create your first nutrition plan to get started."
-                  hasFilter={!!deferredSearch || status !== 'all'}
-                  nounPlural="nutrition plans"
-                />
-              }
-              fetchNextPage={fetchNextPage}
-              isError={isError}
-              isLoading={isLoading}
-              onRetry={refetch}
-              items={items}
-              onAction={(key) => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', String(key)))}
-              renderItem={(plan) => (
-                <NutritionPlanListItem
-                  isFirst={plan.id === items[0]?.id}
-                  plan={plan}
-                />
-              )}
-            />
-          </div>
-        </Page.Frame>
-      </Page.Content>
-    </Page>
+      }
+      filters={{
+        onSelect: setStatus,
+        options: [
+          {count: activeCount + archivedCount, id: 'all', label: 'All'},
+          {count: activeCount, id: 'active', label: 'Active'},
+          {count: archivedCount, id: 'archived', label: 'Archived'},
+        ],
+        selected: status,
+      }}
+      onOpen={(key) => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', String(key)))}
+      query={{fetchNextPage, isError, isLoading, items, refetch}}
+      row={(plan) => (
+        <NutritionPlanListItem
+          isFirst={plan.id === items[0]?.id}
+          plan={plan}
+        />
+      )}
+      search={{
+        onChange: setSearch,
+        placeholder: 'Search nutrition plans\u2026',
+        shortPlaceholder: 'Search plans\u2026',
+        value: search,
+      }}
+      shortTitle="Nutrition"
+      testId="np"
+      title="Nutrition plans"
+    />
   );
 }

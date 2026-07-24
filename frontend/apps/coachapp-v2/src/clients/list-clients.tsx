@@ -1,18 +1,8 @@
-import type {Key} from '@heroui/react';
-
-import {Button, SearchField, Separator, ToggleButton, ToggleButtonGroup} from '@heroui/react';
-import {cn} from '@heroui/styles';
 import {UserPlus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import BrowseListBox, {
-  BROWSE_LIST_FRAME_CLASS,
-  BROWSE_SEARCH_GROUP_CLASS,
-  FILTER_PILL_CLASS,
-  TOOLBAR_DIVIDER_CLASS,
-} from '@/@components/browse-list-box';
-import {Page} from '@/@components/page';
+import BrowseScreen from '@/@components/browse-screen';
 import {ROUTES} from '@/@config/routes';
 import {type ClientSummary, useListClientsQuery} from '@/api/clients';
 import {type Client, useListAttentionClientsQuery} from '@/api/generated';
@@ -95,126 +85,38 @@ export default function ListClients() {
   }
 
   return (
-    <Page>
-      <Page.Header
-        className="bg-surface pb-1 sm:bg-transparent sm:pb-2 lg:pt-7"
-        size="content"
-      >
-        <Page.TitleGroup>
-          <Page.Title>Clients</Page.Title>
-          <Page.Description className="hidden sm:block">
-            {summaryData
-              ? `${summaryData.summary.active} active · ${summaryData.summary.pending} invited`
-              : 'Your coaching roster'}
-          </Page.Description>
-        </Page.TitleGroup>
-        <Page.Actions>
-          <Button
-            aria-label="Invite client"
-            className="min-h-11 min-w-11 rounded-control sm:min-h-0 sm:min-w-0"
-            onPress={() => navigate(ROUTES.INVITE_CLIENT)}
-            variant="primary"
-          >
-            <UserPlus className="size-4" />
-            <span className="hidden sm:inline">Invite client</span>
-          </Button>
-        </Page.Actions>
-      </Page.Header>
-
-      <Page.Toolbar
-        className="sticky top-0 z-10 mb-0 flex flex-wrap items-center gap-x-3 gap-y-0 border-b border-border bg-surface pt-0 pb-0 sm:mb-1.5 sm:gap-3 sm:border-0 sm:bg-background sm:pt-2 sm:pb-3 lg:pt-0"
-        size="content"
-      >
-        <SearchField
-          aria-label="Search clients"
-          className="w-full min-w-0 sm:max-w-64 sm:flex-1"
-          onChange={setSearch}
-          value={search}
-        >
-          <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
-            <SearchField.SearchIcon />
-            <SearchField.Input
-              className="min-h-11"
-              placeholder="Search clients"
-            />
-            <SearchField.ClearButton className="min-h-11 min-w-11" />
-          </SearchField.Group>
-        </SearchField>
-        <Separator
-          className={TOOLBAR_DIVIDER_CLASS}
-          orientation="vertical"
+    <BrowseScreen
+      action={{icon: <UserPlus className="size-4" />, label: 'Invite client', to: ROUTES.INVITE_CLIENT}}
+      description={
+        summaryData
+          ? `${summaryData.summary.active} active \u00b7 ${summaryData.summary.pending} invited`
+          : 'Your coaching roster'
+      }
+      empty={
+        <ClientEmptyState
+          hasFilter={hasFilter}
+          onClearFilters={clearFilters}
         />
-        <div className="-mx-4 min-w-0 max-w-full overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <ToggleButtonGroup
-            aria-label="Filter clients by status"
-            className="flex w-max flex-nowrap gap-2"
-            isDetached
-            onSelectionChange={(keys: Set<Key>) => {
-              const next = [...keys][0];
-              if (next) {
-                setActiveFilter(next as FilterId);
-              }
-            }}
-            selectedKeys={[activeFilter]}
-            selectionMode="single"
-          >
-            {FILTER_OPTIONS.map((option) => {
-              const count = getCount(option);
-
-              return (
-                <ToggleButton
-                  className={FILTER_PILL_CLASS}
-                  id={option.id}
-                  key={option.id}
-                >
-                  <span className="hidden sm:inline">{option.label}</span>
-                  <span className="sm:hidden">{option.shortLabel}</span>
-                  {count === undefined ? null : (
-                    // Mobile carries a count on the selected filter only.
-                    <span
-                      className={cn(
-                        'ms-1 rounded-pill bg-surface-secondary px-1.5 py-0.5 text-eyebrow font-bold',
-                        'sm:bg-transparent sm:px-0 sm:py-0 sm:font-normal sm:opacity-70',
-                        option.id === activeFilter ? '' : 'hidden sm:inline',
-                      )}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </ToggleButton>
-              );
-            })}
-          </ToggleButtonGroup>
-        </div>
-      </Page.Toolbar>
-
-      <Page.Content bare>
-        <Page.Frame
-          className={cn(BROWSE_LIST_FRAME_CLASS, 'pb-6 sm:pb-6')}
-          size="content"
-        >
-          <div className="overflow-hidden border-y border-border bg-background sm:rounded-card sm:border sm:bg-surface">
-            <BrowseListBox
-              ariaLabel="Clients"
-              className="flex-1 gap-0 p-0"
-              emptyState={
-                <ClientEmptyState
-                  hasFilter={hasFilter}
-                  onClearFilters={clearFilters}
-                />
-              }
-              fetchNextPage={isAttention ? () => undefined : list.fetchNextPage}
-              isError={isAttention ? attention.isError : list.isError}
-              isLoading={isAttention ? attention.isLoading : list.isLoading || list.isFetchingNextPage}
-              items={items}
-              onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
-              onRetry={isAttention ? attention.refetch : list.refetch}
-              renderItem={(client) => <ClientListItem client={client} />}
-              skeletonAvatar
-            />
-          </div>
-        </Page.Frame>
-      </Page.Content>
-    </Page>
+      }
+      filters={{
+        onSelect: setActiveFilter,
+        options: FILTER_OPTIONS.map((option) => ({...option, count: getCount(option)})),
+        selected: activeFilter,
+      }}
+      onOpen={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
+      query={{
+        // "Needs attention" is a different endpoint: flat, no search param, so
+        // it exposes no fetchNextPage and BrowseScreen renders no load-more.
+        fetchNextPage: isAttention ? undefined : list.fetchNextPage,
+        isError: isAttention ? attention.isError : list.isError,
+        isLoading: isAttention ? attention.isLoading : list.isLoading || list.isFetchingNextPage,
+        items,
+        refetch: isAttention ? attention.refetch : list.refetch,
+      }}
+      row={(client) => <ClientListItem client={client} />}
+      rowHasThumb
+      search={{onChange: setSearch, placeholder: 'Search clients', value: search}}
+      title="Clients"
+    />
   );
 }

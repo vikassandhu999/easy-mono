@@ -40,9 +40,9 @@ import {CD_BTN_A, CD_CHIP} from '@/clients/client-detail/cd-ui';
 import OverviewTab, {DetailsRow, NotesCard} from '@/clients/client-detail/overview-tab';
 import PendingBody from '@/clients/client-detail/pending-body';
 import StatStrip from '@/clients/client-detail/stat-strip';
+import TrainingTab from '@/clients/client-detail/training-tab';
 import ClientCheckins from '@/clients/components/client-checkins';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
-import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 
 const TAB_IDS = ['overview', 'training', 'nutrition', 'check-ins'] as const;
 type TabId = (typeof TAB_IDS)[number];
@@ -501,7 +501,7 @@ export default function ClientDetail() {
             />
           ) : (
             <div className="flex flex-col gap-3 p-3.5 sm:gap-3.5 sm:p-0">
-              {tab === 'training' ? <ClientWorkoutHistory clientId={client.id} /> : null}
+              {tab === 'training' ? <TrainingTab client={client} /> : null}
               {tab === 'nutrition' ? <ClientNutritionAdherence clientId={client.id} /> : null}
               {tab === 'check-ins' ? (
                 <ClientCheckins

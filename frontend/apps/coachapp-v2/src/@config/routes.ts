@@ -10,7 +10,6 @@ export const ROUTES = {
   CLIENTS: '/clients',
   INVITE_CLIENT: '/clients/invite',
   CLIENT_DETAIL: '/clients/:id',
-  CLIENT_WORKOUT_HISTORY: '/clients/:id/workout-history',
   CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',
   CLIENT_DETAILS: '/clients/:id/details',
   LIBRARY: '/library',

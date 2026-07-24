@@ -51,6 +51,8 @@
   --radius-cd-tile: 11px; /* icon tiles in cards */
   --radius-cd-btn: 10px; /* .btnA / .btnG, small icon tiles */
   --radius-cd-icon: 15px; /* overview empty-state icon tile (desktop) */
+  --radius-cd-plan: 13px; /* plan-card icon tile (desktop) */
+  --tracking-grp: 0.04em; /* .grp list group headers (vs .eyebrow's 0.05em) */
   /* The CD design leaves line-height untouched (computed `normal`) — pair
      every size token with a normal line-height or Tailwind defaults 1.5. */
   --text-eyebrow: 11px; /* .eyebrow, chips, week-strip labels */

@@ -148,3 +148,52 @@ export function formatKg(value: number | string, unit: string): string {
   const n = Number(value);
   return `${Number.isInteger(n) ? n : n.toFixed(1)} ${unit}`;
 }
+
+/**
+ * `48m` / `1h 4m` (§1.1). The shared `formatDuration` renders `48 min`, which
+ * the CD designs don't use — kept local rather than changing every screen.
+ */
+export function formatCdDuration(startedAt: string, endedAt: null | string | undefined): null | string {
+  if (!endedAt) {
+    return null;
+  }
+  const minutes = Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 60_000);
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return null;
+  }
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours === 0 ? `${rest}m` : rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+}
+
+/** Monday-based start of the week containing `date`. */
+export function startOfWeek(date: Date): Date {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  return start;
+}
+
+/** `This week` / `Last week` / `Week of 7 Jul` (§4.2 group headers). */
+export function weekGroupLabel(iso: string): string {
+  const weekStart = startOfWeek(new Date(`${iso}T00:00:00`));
+  const thisWeek = startOfWeek(new Date());
+  const diffWeeks = Math.round((thisWeek.getTime() - weekStart.getTime()) / (7 * DAY_MS));
+  if (diffWeeks <= 0) {
+    return 'This week';
+  }
+  if (diffWeeks === 1) {
+    return 'Last week';
+  }
+  return `Week of ${formatShortDate(isoDate(weekStart))}`;
+}
+
+/** `Tue 21 Jul` (desktop date column) / `Tue 21` (mobile, inline in the meta line). */
+export function formatRowDate(iso: string, {withMonth}: {withMonth: boolean}): string {
+  const date = new Date(`${iso}T00:00:00`);
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    weekday: 'short',
+    ...(withMonth ? {month: 'short'} : {}),
+  });
+}

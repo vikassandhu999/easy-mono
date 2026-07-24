@@ -113,6 +113,21 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **Biome blocks `onError` on `<img>`** (`noNoninteractiveElementInteractions`) —
   use the repo's message-attachments biome-ignore precedent for broken-image
   fallbacks.
+- **`querySelector` takes the FIRST match — check what else the selector hits.**
+  CD-TR's `.lbrow:not(.tap) div[style*='600']` matched the desktop row's *date
+  column* (12px/600), not the title, and reported a phantom font-size diff.
+  When a design row has a leading meta column, index structurally
+  (`> div:nth-child(2) > div:first-child`) instead of by style substring.
+- **Per-width text CONTENT differences need `useIsDesktop()`, not two nodes** —
+  duplicating a node with `hidden sm:block` gives the manifest two matches and
+  `querySelector` grabs the hidden one, whose computed styles differ.
+- **The §5 gate is scoped to files changed vs the branch point** — touching a
+  legacy file pulls its pre-existing violations into your port. `border-[1.5px]`
+  (arbitrary *value*) trips it; `[border-width:1.5px]` (arbitrary *property*)
+  does not, and is the app's existing hairline escape hatch.
+- **`AssignSurface` now supports ports**: `triggerClassName` / `triggerTestId`
+  style+tag the built-in trigger, and `isOpen`/`onOpenChange`/`anchorRef` drive
+  it from a ⋯ menu item with no trigger of its own (CD/TR's Change plan).
 
 ## Styling / tokens
 

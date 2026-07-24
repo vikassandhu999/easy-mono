@@ -17,7 +17,6 @@ import ListCheckins from '@/checkins/list-checkins';
 import ReviewCheckin from '@/checkins/review-checkin';
 import ClientDetail from '@/clients/client-detail';
 import DetailsSettings from '@/clients/client-detail/details-settings';
-import ClientWorkoutHistoryPage from '@/clients/client-workout-history-page';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
 import SessionDetail from '@/clients/session-detail';
@@ -77,7 +76,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.DASHBOARD, Component: Dashboard},
       {path: ROUTES.CLIENTS, Component: ListClients},
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
-      {path: ROUTES.CLIENT_WORKOUT_HISTORY, Component: ClientWorkoutHistoryPage},
       {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},
       {path: ROUTES.CLIENT_DETAIL, Component: ClientDetail},
       {path: ROUTES.CLIENT_DETAILS, Component: DetailsSettings},

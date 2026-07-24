@@ -73,8 +73,7 @@ const SEGMENT_BUTTON_CLASS =
   'data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground';
 
 const CARD_CLASS = 'rounded-card border border-border bg-surface p-4 sm:p-5';
-const DASHED_BUTTON_CLASS = 'min-h-11 w-full rounded-control border border-dashed border-border';
-const ICON_TARGET_CLASS = 'min-h-11 min-w-11';
+const DASHED_BUTTON_CLASS = 'w-full rounded-control border border-dashed border-border';
 
 function pluralize(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -139,7 +138,6 @@ function OptionsEditor({onChange, options}: {onChange: (options: string[]) => vo
           </TextField>
           <Button
             aria-label={`Remove option ${index + 1}`}
-            className={ICON_TARGET_CLASS}
             isIconOnly
             onPress={() => onChange(options.filter((_, i) => i !== index))}
             size="sm"
@@ -150,7 +148,7 @@ function OptionsEditor({onChange, options}: {onChange: (options: string[]) => vo
         </div>
       ))}
       <Button
-        className="min-h-11 self-start"
+        className="self-start"
         onPress={() => onChange([...options, ''])}
         size="sm"
         variant="ghost"
@@ -222,7 +220,6 @@ function QuestionRow({
         <Dropdown>
           <Button
             aria-label={`Question actions: ${question.label || 'Untitled question'}`}
-            className={ICON_TARGET_CLASS}
             isIconOnly
             size="sm"
             variant="ghost"
@@ -293,7 +290,6 @@ function QuestionRow({
 
         <Button
           aria-label={isExpanded ? 'Collapse question' : 'Expand question'}
-          className={ICON_TARGET_CLASS}
           isIconOnly
           onPress={onToggle}
           size="sm"
@@ -324,7 +320,7 @@ function QuestionRow({
               value={question.type}
             >
               <Label>Answer type</Label>
-              <Select.Trigger className="min-h-11">
+              <Select.Trigger>
                 <Icon className="size-4 shrink-0 text-muted" />
                 <Select.Value />
                 <Select.Indicator />
@@ -439,7 +435,6 @@ function SectionCard({
           <Dropdown>
             <Button
               aria-label={`Section actions: ${section.title || 'Untitled section'}`}
-              className={ICON_TARGET_CLASS}
               isIconOnly
               size="sm"
               variant="ghost"

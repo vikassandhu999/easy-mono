@@ -83,7 +83,7 @@ function PageTitle({children, className, testId}: PageTitleProps) {
     <span
       className={cn(
         'block min-w-0 truncate font-grotesk text-metric font-semibold tracking-name [color:var(--color-foreground)]',
-        'sm:text-display sm:tracking-page',
+        'sm:text-metric sm:tracking-page',
         className,
       )}
       data-testid={testId}

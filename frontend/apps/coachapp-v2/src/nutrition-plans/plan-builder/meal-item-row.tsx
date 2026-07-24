@@ -117,7 +117,7 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
           used as a row imposes its own type scale on the label, so the row's
           text size/weight/colour are restated here. */}
       <Button
-        className="h-auto min-h-11 min-w-0 flex-1 justify-start p-0 text-left text-eyebrow font-normal leading-[normal] text-foreground [box-shadow:none] sm:min-h-0"
+        className="h-auto min-w-0 flex-1 justify-start p-0 text-left text-eyebrow font-normal leading-[normal] text-foreground [box-shadow:none]"
         onPress={onTap}
         ref={ref}
         variant="ghost"
@@ -142,7 +142,7 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
 
       <Button
         aria-label={`Remove ${name}`}
-        className={`min-h-11 min-w-11 shrink-0 rounded-chip bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5 sm:min-h-0 sm:min-w-0 ${AS_TEXT} ${NO_GAP}`}
+        className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
         data-testid={showTestIds ? 'nb-item-remove' : undefined}
         isIconOnly
         onPress={onRemove}

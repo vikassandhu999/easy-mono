@@ -572,7 +572,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
               {servingSizes.map((serving, idx) => (
                 <button
                   className={[
-                    'inline-flex min-h-9 items-center rounded-chip border px-3 py-2 text-eyebrow font-medium transition-colors',
+                    'inline-flex  items-center rounded-chip border px-3 py-2 text-eyebrow font-medium transition-colors',
                     activeServingIdx === idx
                       ? 'border-accent bg-accent/10 text-accent'
                       : 'border-border text-muted hover:border-default-hover hover:text-foreground',

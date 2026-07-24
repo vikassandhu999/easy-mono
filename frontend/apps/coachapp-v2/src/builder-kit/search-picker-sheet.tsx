@@ -234,7 +234,7 @@ export function SearchPickerSheet<T>({
               <Button
                 aria-pressed={chip.active}
                 className={[
-                  'min-h-9 rounded-chip border bg-transparent px-2 py-1 text-eyebrow font-medium',
+                  ' rounded-chip border bg-transparent px-2 py-1 text-eyebrow font-medium',
                   filtersLayout === 'segmented' ? 'flex-1 justify-center text-center' : 'shrink-0',
                   chip.active ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted',
                 ].join(' ')}

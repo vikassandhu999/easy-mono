@@ -55,7 +55,7 @@ export default function ListEmptyState({
           </Typography>
           {(createRoute || onCreate) && createLabel && (
             <Button
-              className="mt-3 min-h-11"
+              className="mt-3"
               onPress={handleCreate}
               size="sm"
             >

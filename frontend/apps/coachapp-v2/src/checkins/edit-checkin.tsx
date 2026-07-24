@@ -58,7 +58,6 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
         headerExtra={
           <Button
             aria-label="Delete form"
-            className="min-h-11 min-w-11"
             isIconOnly
             onPress={deleteConfirm.open}
             variant="outline"

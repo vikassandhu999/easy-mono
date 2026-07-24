@@ -93,7 +93,7 @@ function StatBar({
             />
           ) : null}
           <Button
-            className="h-auto min-h-11 flex-1 flex-col items-start justify-center gap-0.5 rounded-none px-5 py-2"
+            className="h-auto flex-1 flex-col items-start justify-center gap-0.5 rounded-none px-5 py-2"
             onPress={() => navigate(ROUTES.CLIENTS)}
             variant="ghost"
           >

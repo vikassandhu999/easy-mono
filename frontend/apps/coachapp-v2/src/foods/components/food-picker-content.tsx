@@ -74,7 +74,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
           </Typography>
           <Button
             aria-label="Close"
-            className="-mr-1.5 flex min-h-11 min-w-11 items-center justify-center rounded-chip text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="-mr-1.5 flex items-center justify-center rounded-chip text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             isIconOnly
             onPress={onClose}
             variant="ghost"
@@ -93,11 +93,10 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
           <SearchField.Group className={INPUT_SKIN_CLASS}>
             <SearchField.SearchIcon />
             <SearchField.Input
-              className="min-h-11"
               onKeyDown={onInputKeyDown}
               placeholder="Search foods…"
             />
-            {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton className="min-h-11 min-w-11" />}
+            {isFetching ? <Spinner size="sm" /> : <SearchField.ClearButton />}
           </SearchField.Group>
         </SearchField>
       </div>

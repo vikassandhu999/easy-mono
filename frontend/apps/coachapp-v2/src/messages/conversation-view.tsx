@@ -262,7 +262,6 @@ export default function ConversationView({
             </div>
             <Button
               aria-label="Remove check-in"
-              className="min-h-11 min-w-11"
               isDisabled={isSending}
               isIconOnly
               onPress={() => setEmbed(null)}

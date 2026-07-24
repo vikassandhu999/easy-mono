@@ -167,8 +167,8 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
                 {inviteUrl}
               </Typography>
               <Button
+                isIconOnly
                 aria-label="Copy"
-                className="min-h-11 min-w-11 sm:min-h-9 sm:min-w-9"
                 onPress={handleCopyLink}
                 size="sm"
                 variant="ghost"
@@ -179,7 +179,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 
             <div className="mt-2 flex gap-2">
               <Button
-                className="min-h-11 min-w-0 flex-1 sm:min-h-9"
+                className="min-w-0 flex-1"
                 onPress={() =>
                   window.open(
                     getWhatsAppUrl(client.phone ?? undefined, fullName, inviteUrl),
@@ -193,7 +193,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
                 Share via WhatsApp
               </Button>
               <Button
-                className="min-h-11 min-w-0 flex-1 sm:min-h-9"
+                className="min-w-0 flex-1"
                 onPress={handleCopyLink}
                 variant="outline"
               >
@@ -216,7 +216,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 
       <div className={cn(STICKY_FOOTER_CLASS, 'sm:justify-start')}>
         <Button
-          className="order-1 min-h-11 sm:order-2 sm:min-h-9"
+          className="order-1 sm:order-2"
           onPress={onInviteAnother}
           variant="outline"
         >
@@ -224,7 +224,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
           Invite another
         </Button>
         <Button
-          className="order-2 min-h-11 flex-1 sm:order-1 sm:min-h-9 sm:flex-none"
+          className="order-2 flex-1 sm:order-1 sm:flex-none"
           onPress={() => navigate(`/clients/${client.id}`, {replace: true})}
         >
           View client
@@ -294,7 +294,7 @@ export default function InviteClient() {
         <Page.TitleGroup>
           <div className="flex items-center gap-1.5 sm:gap-3">
             <BackButton
-              className="min-h-11 min-w-11 sm:min-h-9 sm:min-w-9 sm:border sm:border-border sm:bg-surface"
+              className="sm:border sm:border-border sm:bg-surface"
               onPress={goBack}
             />
             <Page.Title className="text-heading leading-tight sm:text-metric">

@@ -132,7 +132,7 @@ const TOOLBAR =
   'sm:mb-6 sm:gap-3 sm:border-0 sm:bg-background sm:pb-3';
 
 const SEARCH_GROUP =
-  'min-h-11 gap-2 rounded-control border border-border bg-background px-3 text-body leading-[normal] [box-shadow:none] [color:var(--color-muted)] sm:bg-surface';
+  'min-h-9 gap-2 rounded-control border border-border bg-background text-body leading-[normal] [box-shadow:none] text-muted sm:bg-surface';
 
 /**
  * Vertical rule between search and filters. HeroUI's separator recipe is
@@ -147,9 +147,14 @@ const DIVIDER = 'hidden h-6 self-center sm:block';
  * this project, so `selected:*` classes silently no-op.
  */
 const FILTER_PILL =
-  'min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-body font-medium leading-[normal] text-muted [box-shadow:none] [row-gap:normal] [column-gap:normal] ' +
-  'data-[selected=true]:border-foreground data-[selected=true]:bg-transparent data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3 sm:py-2 sm:text-eyebrow ' +
+  // HeroUI's toggle-button base already ships box-shadow:none, border-width:0,
+  // font-weight:500 and font-size:14px, so `[box-shadow:none] border-0
+  // font-medium text-body` were undoing nothing. `sm:py-2` restated the base
+  // `py-2`, and `data-[selected=true]:bg-transparent` restated `bg-transparent`.
+  // Measured against the live DOM at both widths and in both states, not assumed.
+  'rounded-none border-b-2 border-transparent bg-transparent px-0 py-2 text-body leading-[normal] text-muted [row-gap:normal] [column-gap:normal] ' +
+  'data-[selected=true]:border-foreground data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
+  'sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3 ' +
   'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:[color:white]';
 
 /** Zero-gutter on mobile (full-bleed list); Page.Frame owns the gutter from sm up. */
@@ -162,7 +167,7 @@ const SURFACE =
 function FilterCount({count, countTestId, isSelected}: {count: number; countTestId?: string; isSelected: boolean}) {
   return (
     <span
-      className={cn('ml-1 text-eyebrow opacity-70 sm:ml-0', isSelected ? undefined : 'hidden sm:inline')}
+      className={cn('ml-1 text-body font-light opacity-70 sm:ml-0', isSelected ? undefined : 'hidden sm:inline')}
       data-testid={isSelected ? countTestId : undefined}
     >
       {/* A non-breaking space, not a JSX one: the pill is a flex container, so
@@ -235,7 +240,7 @@ export default function BrowseScreen<T extends object, Id extends string>({
           <Page.Actions>
             <Button
               aria-label={action.label}
-              className="min-h-11 min-w-11 rounded-control sm:min-h-0 sm:min-w-0"
+              className="tap-target rounded-control"
               data-testid={testId ? `${testId}-create` : undefined}
               onPress={() => navigate(action.to)}
               variant="primary"
@@ -265,10 +270,9 @@ export default function BrowseScreen<T extends object, Id extends string>({
               >
                 <SearchField.SearchIcon />
                 <SearchField.Input
-                  className="min-h-11"
                   placeholder={!isSm && search.shortPlaceholder ? search.shortPlaceholder : search.placeholder}
                 />
-                <SearchField.ClearButton className="min-h-11 min-w-11" />
+                <SearchField.ClearButton />
               </SearchField.Group>
             </SearchField>
           ) : null}

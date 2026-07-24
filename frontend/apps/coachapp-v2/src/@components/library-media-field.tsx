@@ -202,12 +202,11 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
               />
               <CloseButton
                 aria-label="Remove media"
-                className="absolute -top-2 -right-2 min-h-11 min-w-11 rounded-pill bg-ink text-ink-foreground"
+                className="absolute -top-2 -right-2 rounded-pill bg-ink text-ink-foreground"
                 onPress={remove}
               />
             </div>
             <Button
-              className="min-h-11"
               isDisabled={disabled}
               onPress={() => inputRef.current?.click()}
               size="sm"
@@ -256,7 +255,6 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
               </Typography>
               <div className="mt-2 flex gap-2">
                 <Button
-                  className="min-h-11"
                   isDisabled={disabled}
                   onPress={() => upload(state.file)}
                   size="sm"
@@ -264,7 +262,6 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
                   Retry
                 </Button>
                 <Button
-                  className="min-h-11"
                   onPress={remove}
                   size="sm"
                   variant="ghost"
@@ -278,7 +275,7 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
 
         {state.status === 'empty' && (
           <Button
-            className="min-h-11 w-full rounded-panel border border-dashed border-border text-muted"
+            className="w-full rounded-panel border border-dashed border-border text-muted"
             isDisabled={disabled}
             onPress={() => inputRef.current?.click()}
             variant="ghost"

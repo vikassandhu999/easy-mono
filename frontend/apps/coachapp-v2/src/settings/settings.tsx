@@ -212,7 +212,7 @@ function LogOutFooter({className, onLogout}: {className?: string; onLogout: () =
   return (
     <div className={`flex flex-col gap-3 ${className ?? ''}`}>
       <Button
-        className="min-h-11 w-full rounded-panel border border-danger/30"
+        className="w-full rounded-panel border border-danger/30"
         onPress={onLogout}
         variant="danger-soft"
       >

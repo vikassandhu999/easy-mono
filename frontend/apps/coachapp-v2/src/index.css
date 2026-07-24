@@ -69,6 +69,14 @@
   --radius-card: 17px; /* list + detail cards · was detail-icon 15 / detail-card 16 / card 18 */
   --radius-pill: 999px; /* true pills — not a step, a shape (rounded-full computes ∞px and diffs) */
 
+  /* The one interactive-control height. Applied to the components themselves
+     (see the control-height block below the theme), never written at a call
+     site. Rows and layout wrappers are not controls and keep their own heights. */
+  --spacing-control: 36px;
+  /* Pointer-target floor. Icon-only controls render at --spacing-control but
+     stay tappable at this size via the hit-area rule below. */
+  --spacing-tap: 44px;
+
   --color-muted-2: oklch(0.55 0.0138 285.94); /* tertiary text (timestamps, chevrons) */
   /* RECIPES.md R5 attention chips call for `text-warning-text`; `--warning-text`
      is a plain :root var, so it needs a `--color-*` alias to become a utility. */
@@ -108,6 +116,66 @@
   --color-success-soft-foreground: oklch(0.4 0.12 150);
   --color-warning-soft-foreground: oklch(0.5 0.13 74);
   --color-danger-soft-foreground: oklch(0.52 0.22 26);
+}
+
+/* ── Control height ─────────────────────────────────────────────────────────
+   HeroUI sizes its md controls responsively — `.button` is `h-10 md:h-9`
+   (40px → 36px), tabs are `h-8`, search-field `h-9`. The app wanted one height,
+   so 93 call sites hand-wrote `min-h-11` (plus an `sm:min-h-9`/`sm:min-h-0` to
+   undo the breakpoint) to force it. That is the component's job, not the call
+   site's: set it once here and no screen carries a height class at all.
+
+   Scoped away from `--sm`/`--lg` so HeroUI's size scale still works — 53
+   `size="sm"` buttons rely on it. Specificity (0,3,0) beats the imported
+   recipes, including their `md:` rules, at every width. */
+.button:not(.button--sm):not(.button--lg),
+.toggle-button:not(.toggle-button--sm):not(.toggle-button--lg),
+.search-field-group,
+.input-group,
+.tab {
+  height: var(--spacing-control);
+  min-height: var(--spacing-control);
+}
+
+/* Icon-only controls are square — HeroUI's own `.button--icon-only` is
+   `w-10 md:w-9`, matching its height recipe, so the app's 44 hand-written
+   `min-w-11` were forcing a 44x36 rectangle once the height moved to 36px. */
+.button--icon-only:not(.button--sm):not(.button--lg) {
+  width: var(--spacing-control);
+}
+
+/* ...but a 36px icon button is a small pointer target (1296px^2 vs 1936 at
+   44px), and icon-only is exactly where that hurts most. The pseudo-element
+   belongs to the button, so events still resolve to the button — this only
+   enlarges the hit area, and paints nothing. Negative inset = (36 - 44) / 2. */
+.button--icon-only:not(.button--sm):not(.button--lg)::after {
+  content: "";
+  position: absolute;
+  inset: calc((var(--spacing-control) - var(--spacing-tap)) / 2);
+}
+
+/* A control that is square below `sm` and labelled above cannot use HeroUI's
+   `isIconOnly` — that is a boolean prop, not a breakpoint. This class is what
+   the old `min-w-11 sm:min-w-0` pair was spelling out by hand, and it now lives
+   in one place because BrowseScreen owns every list's action button. Above `sm`
+   the label makes the control wide enough, so the enlarged target is dropped. */
+.tap-target {
+  width: var(--spacing-control);
+  padding-inline: 0;
+}
+.tap-target::after {
+  content: "";
+  position: absolute;
+  inset: calc((var(--spacing-control) - var(--spacing-tap)) / 2);
+}
+@media (width >= 40rem) {
+  .tap-target {
+    width: auto;
+    padding-inline: calc(var(--spacing) * 4);
+  }
+  .tap-target::after {
+    content: none;
+  }
 }
 
 :root,

@@ -84,7 +84,6 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                               <div className="grid gap-2">
                                 Photo unavailable
                                 <Button
-                                  className="min-h-11"
                                   onPress={() => refresh([attachment.id]).catch(() => undefined)}
                                   size="sm"
                                   variant="secondary"

@@ -33,14 +33,14 @@ export function FormActions({
   return (
     <Fieldset.Actions className={cn(STICKY_FOOTER_CLASS, '-mb-6 sm:mt-0 sm:mb-0 sm:justify-end')}>
       <Button
-        className="min-h-11 border-0 text-muted shadow-none sm:min-h-9 sm:border sm:text-foreground"
+        className="border-0 text-muted shadow-none sm:border sm:text-foreground"
         onPress={onCancel}
         variant="outline"
       >
         {cancelLabel}
       </Button>
       <Button
-        className="relative min-h-11 flex-1 sm:min-h-9 sm:flex-none"
+        className="relative flex-1 sm:flex-none"
         isPending={isSubmitting}
         type="submit"
       >

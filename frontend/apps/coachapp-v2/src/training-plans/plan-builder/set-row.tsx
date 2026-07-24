@@ -100,7 +100,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
           key={index}
         >
           <Button
-            className={`h-auto min-h-11 min-w-0 flex-1 justify-start p-0 text-left [box-shadow:none] sm:min-h-0 ${AS_TEXT} ${NO_GAP}`}
+            className={`h-auto  min-w-0 flex-1 justify-start p-0 text-left [box-shadow:none]  ${AS_TEXT} ${NO_GAP}`}
             onPress={() => onOpenSet(index)}
             ref={(el: HTMLButtonElement | null) => registerRowRef(index, el)}
             variant="ghost"
@@ -122,7 +122,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
           {canRemove ? (
             <Button
               aria-label={`Remove set ${index + 1} of ${exerciseName}`}
-              className={`min-h-11 min-w-11 shrink-0 rounded-chip bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5 sm:min-h-0 sm:min-w-0 ${AS_TEXT} ${NO_GAP}`}
+              className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
               data-testid={index === 0 ? 'tb-remove-set' : undefined}
               isIconOnly
               onPress={() => onRemoveSet(index)}

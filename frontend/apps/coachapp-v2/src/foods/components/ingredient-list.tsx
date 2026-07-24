@@ -226,7 +226,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               <Button
                 aria-expanded={isExpanded}
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.food.name}`}
-                className="-mx-1 flex min-h-11 min-w-0 flex-1 items-center justify-start gap-3 rounded-chip px-1 py-1.5 text-left font-normal hover:bg-surface-hover"
+                className="-mx-1 flex min-w-0 flex-1 items-center justify-start gap-3 rounded-chip px-1 py-1.5 text-left font-normal hover:bg-surface-hover"
                 onPress={() => toggleExpand(item.food_id)}
                 variant="ghost"
               >
@@ -263,7 +263,6 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               </Button>
               <Button
                 aria-label={`Move ${item.food.name} up`}
-                className="min-h-11 min-w-11"
                 isDisabled={index === 0}
                 isIconOnly
                 onPress={() => moveItem(index, -1)}
@@ -274,7 +273,6 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               </Button>
               <Button
                 aria-label={`Move ${item.food.name} down`}
-                className="min-h-11 min-w-11"
                 isDisabled={index === value.length - 1}
                 isIconOnly
                 onPress={() => moveItem(index, 1)}
@@ -285,7 +283,6 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               </Button>
               <Button
                 aria-label={`Remove ${item.food.name}`}
-                className="min-h-11 min-w-11"
                 isIconOnly
                 onPress={() => removeItem(index)}
                 size="sm"

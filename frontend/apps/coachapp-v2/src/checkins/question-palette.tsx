@@ -55,7 +55,7 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
             const Icon = QUESTION_TYPE_ICONS[type];
             return (
               <Button
-                className="h-auto min-h-11 w-full flex-col gap-1 rounded-control px-2 py-2 text-center"
+                className="h-auto w-full flex-col gap-1 rounded-control px-2 py-2 text-center"
                 key={type}
                 onPress={() => onPick(questionOfType(type))}
                 size="sm"
@@ -125,7 +125,7 @@ export default function AddQuestionControl({onAdd}: {onAdd: (question: QuestionD
 
   const trigger = (
     <Button
-      className="min-h-11 w-full rounded-control border border-dashed border-border text-accent"
+      className="w-full rounded-control border border-dashed border-border text-accent"
       onPress={() => setOpen(true)}
       ref={triggerRef}
       variant="ghost"

@@ -77,8 +77,8 @@ export function ServingSizesEditor({
             )}
           </div>
           <Button
+            isIconOnly
             aria-label={`Remove ${serving.unit}`}
-            className="min-h-11 min-w-11"
             onPress={() => handleRemove(i)}
             size="sm"
             variant="ghost"
@@ -125,7 +125,6 @@ export function ServingSizesEditor({
           </div>
           <div className="mt-3 flex gap-2">
             <Button
-              className="min-h-11"
               onPress={handleAdd}
               size="sm"
             >
@@ -133,7 +132,6 @@ export function ServingSizesEditor({
               Add
             </Button>
             <Button
-              className="min-h-11"
               onPress={() => {
                 setIsAdding(false);
                 resetForm();
@@ -147,7 +145,7 @@ export function ServingSizesEditor({
         </div>
       ) : (
         <Button
-          className="min-h-11 w-full rounded-panel border border-dashed border-border text-muted"
+          className="w-full rounded-panel border border-dashed border-border text-muted"
           onPress={() => setIsAdding(true)}
           variant="ghost"
         >

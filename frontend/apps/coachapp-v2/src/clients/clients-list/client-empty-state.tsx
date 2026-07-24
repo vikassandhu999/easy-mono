@@ -32,7 +32,7 @@ export default function ClientEmptyState({
         Try adjusting your search or filter to find what you're looking for.
       </Typography>
       <Button
-        className="mt-3 min-h-11"
+        className="mt-3"
         onPress={onClearFilters}
         size="sm"
         variant="secondary"

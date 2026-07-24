@@ -538,7 +538,7 @@ export function PlanDays({plan}: PlanDaysProps) {
             >
               {days.map((day) => (
                 <ToggleButton
-                  className="min-h-11 rounded-control border border-border bg-surface px-3 text-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:min-h-0 sm:py-2 [row-gap:normal] [column-gap:normal]"
+                  className="rounded-control border border-border bg-surface px-3 text-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:py-2 [row-gap:normal] [column-gap:normal]"
                   data-testid={day.id === activeDay.id ? 'nb-daytab-on' : 'nb-daytab-off'}
                   id={day.id}
                   key={day.id}
@@ -565,7 +565,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           <Dropdown>
             <Button
               aria-label="Day options"
-              className={`size-11 min-w-11 shrink-0 rounded-chip border border-border bg-transparent text-muted [box-shadow:none] sm:size-7.5 sm:min-w-0 ${AS_ICON_BUTTON}`}
+              className={`size-11  shrink-0 rounded-chip border border-border bg-transparent text-muted [box-shadow:none] sm:size-7.5  ${AS_ICON_BUTTON}`}
               data-testid="nb-day-menu-btn"
               isIconOnly
               size="sm"
@@ -625,7 +625,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           {WEEKDAYS.map((weekday) => (
             <ToggleButton
               aria-label={`${WEEKDAY_SHORT_LABELS[weekday] ?? weekday} on ${activeDay.name}`}
-              className="size-11 min-w-11 rounded-control border border-border bg-transparent p-0 text-eyebrow font-semibold text-muted [box-shadow:none] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-7.5 sm:min-w-0 [row-gap:normal] [column-gap:normal]"
+              className="size-11 rounded-control border border-border bg-transparent p-0 text-eyebrow font-semibold text-muted [box-shadow:none] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-7.5 [row-gap:normal] [column-gap:normal]"
               data-testid={weekdayAssignments[weekday] === activeDay.id ? 'nb-wday-on' : 'nb-wday-off'}
               id={weekday}
               key={weekday}

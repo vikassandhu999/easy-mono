@@ -105,7 +105,11 @@ One shared primitive per job — never hand-roll these (graduated from the recur
 - Base Tailwind classes target mobile; `sm:`, `md:`, and `lg:` enhance wider layouts.
 - Style with Tailwind utilities and HeroUI props. Do not add per-component CSS files.
 - Use `Page` from `@/@components/page` for app screens unless the owning feature has a stronger established pattern.
-- Interactive targets must be at least `min-h-11` / 44px. Do not rely on hover-only actions.
+- **Never write a height on a control.** Buttons, toggles, tabs and inputs get their height from the control-height block in `index.css` (`--spacing-control`, 36px, both breakpoints). No `min-h-*`, no `h-*`, no `sm:` override at a call site — a screen that needs a different control height is a theme change, not a className. This replaced `min-h-11` copied onto 93 controls across 44 files, each paired with an `sm:min-h-9`/`sm:min-h-0` that existed only to undo HeroUI's own `h-10 md:h-9`. Renaming that class to a token would have been the same copy-paste with a nicer name; the height belongs on the component.
+  - HeroUI's `--sm`/`--lg` size modifiers still scale — the override is scoped away from them, and 53 `size="sm"` buttons depend on it.
+  - Rows and layout wrappers are not controls and keep their own heights.
+  - 36px is below the 44px pointer-target guidance (WCAG 2.5.5). Deliberate product decision, 2026-07-25 — the compact control is the design's. Keep adequate spacing *between* adjacent controls so the effective tap area stays comfortable.
+- Do not rely on hover-only actions.
 - Do not show raw HTML tables on mobile. Use cards/lists or horizontal scrolling when tabular data is unavoidable.
 - Forms are single-column on mobile; use `md:grid-cols-2` only when the wider layout remains easy to scan.
 - Use lucide-react icons for common actions when an icon helps recognition.

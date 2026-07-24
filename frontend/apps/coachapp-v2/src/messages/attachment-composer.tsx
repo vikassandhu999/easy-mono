@@ -34,7 +34,6 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
       <div className="flex flex-wrap gap-2">
         <Button
           aria-label="Take a photo or video"
-          className="min-h-11 min-w-11"
           isDisabled={controlsDisabled}
           isIconOnly
           onPress={() => document.getElementById(`${inputId}-camera`)?.click()}
@@ -44,7 +43,6 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
         </Button>
         <Button
           aria-label="Choose media"
-          className="min-h-11 min-w-11"
           isDisabled={controlsDisabled}
           isIconOnly
           onPress={() => document.getElementById(`${inputId}-library`)?.click()}
@@ -55,7 +53,6 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
         {isRecording ? (
           <>
             <Button
-              className="min-h-11"
               onPress={stopRecording}
               variant="secondary"
             >
@@ -64,7 +61,6 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
             </Button>
             <Button
               aria-label="Cancel recording"
-              className="min-h-11 min-w-11"
               isIconOnly
               onPress={cancelRecording}
               variant="secondary"
@@ -75,7 +71,6 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
         ) : (
           <Button
             aria-label="Record voice note"
-            className="min-h-11 min-w-11"
             isDisabled={controlsDisabled}
             isIconOnly
             isPending={isStarting || isStopping}
@@ -138,7 +133,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
                   {item.status !== 'uploading' ? (
                     <Button
                       aria-label={`Remove ${item.file.name}`}
-                      className="absolute right-1 top-1 min-h-11 min-w-11 bg-surface/90 p-0"
+                      className="absolute right-1 top-1 bg-surface/90 p-0"
                       isDisabled={disabled}
                       isIconOnly
                       onPress={() => removeItem(item)}
@@ -161,7 +156,7 @@ export default function AttachmentComposer({clientId, disabled, onChange}: Attac
                         {item.errorMessage ?? 'Upload failed.'}
                       </p>
                       <Button
-                        className="min-h-11 w-full px-2 text-eyebrow"
+                        className="w-full px-2 text-eyebrow"
                         isDisabled={disabled}
                         onPress={() => retryUpload(item.file, item.durationMs, item.localId)}
                         size="sm"

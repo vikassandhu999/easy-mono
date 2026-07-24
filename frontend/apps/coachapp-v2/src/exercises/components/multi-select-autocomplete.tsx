@@ -87,9 +87,7 @@ export default function MultiSelectAutocomplete({
       value={value}
     >
       {label ? <Label>{label}</Label> : null}
-      <Autocomplete.Trigger
-        className={cn('min-h-11', collapseToCount && active && 'border-ink font-medium text-foreground')}
-      >
+      <Autocomplete.Trigger className={cn('', collapseToCount && active && 'border-ink font-medium text-foreground')}>
         <Autocomplete.Value>
           {({defaultChildren, isPlaceholder, state}: AutocompleteValueRenderProps) => {
             if (isPlaceholder || state.selectedItems.length === 0) {
@@ -123,14 +121,11 @@ export default function MultiSelectAutocomplete({
                   <TagGroup.List>
                     {selectedItemKeys.map((key) => {
                       const item = items.find((option) => option.id === String(key));
-
                       if (!item) {
                         return null;
                       }
-
                       return (
                         <Tag
-                          className="[&_[data-slot=tag-remove-button]]:min-h-11 [&_[data-slot=tag-remove-button]]:min-w-11"
                           id={item.id}
                           key={item.id}
                           textValue={item.name}
@@ -145,10 +140,10 @@ export default function MultiSelectAutocomplete({
             );
           }}
         </Autocomplete.Value>
-        <Autocomplete.ClearButton className="min-h-11 min-w-11" />
+        <Autocomplete.ClearButton />
         <Autocomplete.Indicator />
       </Autocomplete.Trigger>
-      <Autocomplete.Popover>
+      <Autocomplete.Popover className={'max-w-60 w-full'}>
         <Autocomplete.Filter filter={contains}>
           <SearchField
             autoFocus

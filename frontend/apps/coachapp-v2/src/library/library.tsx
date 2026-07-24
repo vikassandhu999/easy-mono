@@ -62,7 +62,7 @@ export default function Library() {
         >
           {SECTIONS.map((section) => (
             <Link
-              className="flex min-h-11 flex-col gap-1 rounded-panel border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
+              className="flex flex-col gap-1 rounded-panel border border-border bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
               key={section.path}
               to={section.path}
             >

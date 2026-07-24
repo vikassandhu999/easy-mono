@@ -141,7 +141,7 @@ function QueueRow({item}: {item: QueueItem}) {
       </div>
 
       <Button
-        className="min-h-11 shrink-0"
+        className="shrink-0"
         onPress={item.onOpen}
         size="sm"
         variant="outline"
@@ -196,7 +196,7 @@ function ReviewBanner({
         ) : null}
       </div>
       <Button
-        className="min-h-11 shrink-0 text-foreground"
+        className="shrink-0 text-foreground"
         isDisabled={oldestId === null}
         onPress={() => oldestId && navigate(ROUTES.CHECKIN_REVIEW.replace(':id', oldestId))}
         size="sm"
@@ -290,7 +290,7 @@ export function PriorityQueue({
             ))}
           </ListBox>
           <Button
-            className="min-h-11 w-full rounded-none border-t border-separator text-accent"
+            className="w-full rounded-none border-t border-separator text-accent"
             onPress={() => navigate(ROUTES.CLIENTS)}
             size="sm"
             variant="ghost"

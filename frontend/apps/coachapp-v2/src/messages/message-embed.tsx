@@ -8,7 +8,7 @@ import type {ChatMessageEmbed} from '@/api/generated';
 export default function MessageEmbed({embed}: {embed: ChatMessageEmbed}) {
   return (
     <Link
-      className="block min-h-11 rounded-panel border border-border bg-surface-secondary p-3 text-foreground"
+      className="block rounded-panel border border-border bg-surface-secondary p-3 text-foreground"
       to={ROUTES.CHECKIN_REVIEW.replace(':id', embed.id)}
     >
       <span className="flex items-center gap-2 text-eyebrow font-semibold uppercase tracking-wide text-muted">

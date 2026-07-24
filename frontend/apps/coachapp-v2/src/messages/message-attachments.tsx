@@ -37,7 +37,6 @@ function MessageAttachment({
           <>
             <span>Media unavailable</span>
             <Button
-              className="min-h-11"
               onPress={retryManually}
               size="sm"
               variant="secondary"

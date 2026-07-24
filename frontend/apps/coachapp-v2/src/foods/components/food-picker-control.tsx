@@ -51,7 +51,7 @@ export default function FoodPickerControl({onSelect, excludeIds, triggerClassNam
       <Button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className={cn('min-h-11 ', triggerClassName)}
+        className={cn(' ', triggerClassName)}
         onPress={() => setOpen(true)}
         ref={triggerRef}
         variant={triggerVariant ?? 'secondary'}

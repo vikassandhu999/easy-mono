@@ -54,7 +54,7 @@ export default function ListExercises() {
             name="muscle_ids"
             onChange={setSelectedMuscleIds}
             placeholder="Muscles"
-            searchPlaceholder="Search muscles\u2026"
+            searchPlaceholder="Search muscles"
             value={selectedMuscleIds}
           />
         ) : null

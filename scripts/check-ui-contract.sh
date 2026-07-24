@@ -42,7 +42,7 @@ fi
 # token", so a long-lived port branch is not re-flagged for scale work already
 # committed. Compares token NAMES, so reordering/comment churn is free.
 if [ -z "${UI_CONTRACT_SKIP_THEME:-}" ] && [ -f "$THEME" ]; then
-  names() { grep -oE '^[[:space:]]*--(text|radius|tracking|leading|color)-[a-z0-9-]+' | tr -d ' ' | sort -u; }
+  names() { grep -oE '^[[:space:]]*--(text|radius|tracking|leading|color|spacing)-[a-z0-9-]+' | tr -d ' ' | sort -u; }
   WAS=$(git show "HEAD:$THEME" 2>/dev/null | names || true)
   NOW=$(names < "$THEME")
   ADDED=$(comm -13 <(echo "$WAS") <(echo "$NOW"))

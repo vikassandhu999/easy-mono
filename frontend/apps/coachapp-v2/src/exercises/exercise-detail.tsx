@@ -387,7 +387,7 @@ export default function ExerciseDetail() {
         <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
           {!isSystemExercise && (
             <Button
-              className="min-h-11 flex-1"
+              className="flex-1"
               onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
               variant="primary"
             >
@@ -396,8 +396,8 @@ export default function ExerciseDetail() {
             </Button>
           )}
           <Button
+            isIconOnly
             aria-label="Duplicate exercise"
-            className="min-h-11 min-w-11"
             isPending={isDuplicating}
             onPress={handleDuplicate}
             variant="outline"
@@ -407,8 +407,9 @@ export default function ExerciseDetail() {
           {!isSystemExercise &&
             renderDeleteDialog(
               <Button
+                isIconOnly
                 aria-label="Delete exercise"
-                className="min-h-11 min-w-11 text-danger"
+                className="text-danger"
                 variant="outline"
               >
                 <Trash2 className="size-4" />

@@ -28,10 +28,10 @@ export function BackButton({
     <Button
       aria-label={label}
       className={cn(
-        'min-h-11 min-w-11 rounded-control border border-border bg-surface p-0 [box-shadow:none] [color:var(--color-foreground)]',
+        '  rounded-control border border-border bg-surface p-0 [box-shadow:none] [color:var(--color-foreground)]',
         AS_TEXT,
         NO_GAP,
-        'sm:size-9.5 sm:min-h-0 sm:min-w-0 sm:p-0',
+        'sm:size-9.5   sm:p-0',
         className,
       )}
       data-testid={testId}

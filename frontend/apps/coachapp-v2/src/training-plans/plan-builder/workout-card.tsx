@@ -293,7 +293,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
     <Dropdown>
       <Button
         aria-label={`Workout options for ${workout.name}`}
-        className={`size-11 min-w-11 shrink-0 rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7.5 sm:min-w-0 ${AS_ICON_BUTTON}`}
+        className={`size-11  shrink-0 rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7.5  ${AS_ICON_BUTTON}`}
         data-testid="tb-workout-menu-btn"
         isIconOnly
         variant="ghost"
@@ -435,7 +435,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
         data-testid="tb-add-exercise-row"
       >
         <Button
-          className="min-h-11 gap-1.5 rounded-none bg-transparent px-0 font-btn text-body font-semibold leading-[normal] [box-shadow:none] [color:var(--color-accent)] sm:min-h-0"
+          className="gap-1.5 rounded-none bg-transparent px-0 font-btn text-body font-semibold leading-[normal] [box-shadow:none] [color:var(--color-accent)]"
           data-testid="tb-add-exercise"
           onPress={() => setPickerOpen(true)}
           ref={addExerciseButtonRef}

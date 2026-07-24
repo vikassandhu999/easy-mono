@@ -55,7 +55,7 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
   const trigger = (
     <Button
       aria-label={`Meal slot: ${label}`}
-      className={`${TAG} min-h-11 gap-1 [color:var(--color-foreground)] sm:min-h-0`}
+      className={`${TAG}  gap-1 [color:var(--color-foreground)] `}
       data-testid="nb-slot-tag"
       onPress={isDesktop ? undefined : () => setOpen(true)}
       size="sm"

@@ -78,7 +78,7 @@ export default function PlanScheduleStep({
   return (
     <div className="space-y-4 pb-2">
       <button
-        className="flex min-h-9 items-center gap-1 py-1.5 text-eyebrow font-medium text-muted hover:text-foreground"
+        className="flex items-center gap-1 py-1.5 text-eyebrow font-medium text-muted hover:text-foreground"
         onClick={onBack}
         type="button"
       >
@@ -122,7 +122,7 @@ export default function PlanScheduleStep({
           <Label className="text-body font-medium">End date</Label>
           {!requireEnd && end ? (
             <button
-              className="min-h-9 py-1.5 text-eyebrow font-medium text-accent hover:underline"
+              className="py-1.5 text-eyebrow font-medium text-accent hover:underline"
               onClick={() => setEnd(null)}
               type="button"
             >

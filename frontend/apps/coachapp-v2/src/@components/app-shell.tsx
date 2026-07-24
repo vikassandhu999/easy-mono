@@ -62,7 +62,7 @@ function SidebarLink({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `flex min-h-11 items-center gap-3 rounded-control px-3 py-2 text-body transition-colors ${
+        `flex  items-center gap-3 rounded-control px-3 py-2 text-body transition-colors ${
           isActive
             ? 'bg-accent font-semibold text-accent-foreground'
             : 'font-medium text-white/80 hover:bg-white/10 hover:text-white'
@@ -142,7 +142,7 @@ function BottomNavItem({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 text-eyebrow transition-colors ${
+        `relative flex   flex-1 flex-col items-center justify-center gap-1 text-eyebrow transition-colors ${
           isActive ? 'font-semibold text-accent' : 'font-medium text-white/55'
         }`
       }
@@ -216,15 +216,16 @@ export default function AppShell() {
                 <p className="text-eyebrow text-white/70">Install the app for quick access</p>
                 <div className="mt-2 flex gap-2">
                   <Button
-                    className="min-h-11 flex-1"
+                    className="flex-1"
                     onPress={promptInstall}
                     size="sm"
                   >
                     Install
                   </Button>
                   <Button
+                    isIconOnly
                     aria-label="Dismiss install prompt"
-                    className="min-h-11 min-w-11 text-white/70"
+                    className="text-white/70"
                     onPress={dismiss}
                     size="sm"
                     variant="ghost"
@@ -260,14 +261,13 @@ export default function AppShell() {
             />
             <p className="flex-1 text-eyebrow text-muted">Install CoachEasy for quick access</p>
             <Button
-              className="min-h-11"
               onPress={promptInstall}
               size="sm"
             >
               Install
             </Button>
             <CloseButton
-              className="min-h-11 min-w-11 text-muted"
+              className="text-muted"
               onPress={dismiss}
             >
               <X size={16} />

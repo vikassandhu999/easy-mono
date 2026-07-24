@@ -306,7 +306,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
         <div className="flex items-center justify-between gap-2">
           <span className="min-w-0 truncate text-body font-semibold text-foreground">{exerciseName}</span>
           <Button
-            className="min-h-11 shrink-0 px-2 text-body font-semibold text-accent"
+            className="shrink-0 px-2 text-body font-semibold text-accent"
             onPress={() => {
               flushPendingSave()
                 .then(onClose)
@@ -321,7 +321,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
         <div className="mt-1.5 flex items-center justify-center gap-4">
           <Button
             aria-label="Previous set"
-            className="size-11 min-w-11 text-muted"
+            className="size-11 text-muted"
             isDisabled={!hasPrev}
             isIconOnly
             onPress={() => {
@@ -341,7 +341,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           </Typography>
           <Button
             aria-label="Next set"
-            className="size-11 min-w-11 text-muted"
+            className="size-11 text-muted"
             isDisabled={!hasNext}
             isIconOnly
             onPress={() => {
@@ -510,7 +510,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
           onExpandedChange={setShowAdvanced}
         >
           <Disclosure.Heading>
-            <Disclosure.Trigger className="flex min-h-11 items-center gap-1 text-body font-medium text-accent">
+            <Disclosure.Trigger className="flex items-center gap-1 text-body font-medium text-accent">
               <Disclosure.Indicator />
               Rest timer and notes
             </Disclosure.Trigger>

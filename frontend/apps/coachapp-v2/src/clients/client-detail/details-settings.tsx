@@ -91,9 +91,10 @@ function IntakeRow({clientId}: {clientId: string}) {
   const submitted = intake.latest_submission;
 
   return (
-    <div
+    <Link
       className="flex items-center gap-3.5 rounded-cd-panel border border-border bg-surface px-3.75 py-3.5 sm:px-4.5 sm:py-3.75"
       data-testid="dt-intake"
+      to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
     >
       <span
         className="flex size-9 flex-none items-center justify-center rounded-cd-btn bg-background text-muted sm:size-9.5 sm:rounded-cd-tile"
@@ -115,9 +116,8 @@ function IntakeRow({clientId}: {clientId: string}) {
           {submitted ? `Submitted ${formatShortDate(submitted.submitted_at)}` : 'Not submitted yet'}
         </div>
       </div>
-      {/* becomes a link when IR (intake responses) is ported */}
       <ChevronRight className="size-4 text-muted" />
-    </div>
+    </Link>
   );
 }
 

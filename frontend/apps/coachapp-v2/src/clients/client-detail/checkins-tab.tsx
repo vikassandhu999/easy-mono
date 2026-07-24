@@ -293,7 +293,15 @@ function HistoryCard({assignments, clientId}: {assignments: ClientProfileFormAss
   );
 }
 
-function IntakeCard({assignments, isDesktop}: {assignments: ClientProfileFormAssignment[]; isDesktop: boolean}) {
+function IntakeCard({
+  assignments,
+  clientId,
+  isDesktop,
+}: {
+  assignments: ClientProfileFormAssignment[];
+  clientId: string;
+  isDesktop: boolean;
+}) {
   const intake = assignments.find((a) => a.purpose === 'intake');
   if (!intake) {
     return null;
@@ -311,10 +319,10 @@ function IntakeCard({assignments, isDesktop}: {assignments: ClientProfileFormAss
       >
         Intake
       </div>
-      {/* becomes a link when IR (intake responses) is ported */}
-      <div
+      <Link
         className={`${ROW_TEXT} -mx-1 -my-1.25 flex items-center gap-3.5 rounded-cd-panel px-1 py-1.25 sm:-mx-2 sm:-my-1.5 sm:px-2 sm:py-1.5`}
         data-testid="ci-intake-row"
+        to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
       >
         <span
           className="min-w-0 flex-1 text-note font-bold sm:text-row"
@@ -333,7 +341,7 @@ function IntakeCard({assignments, isDesktop}: {assignments: ClientProfileFormAss
             : 'Not submitted'}
         </Chip>
         <ChevronRight className="size-4 text-muted" />
-      </div>
+      </Link>
     </div>
   );
 }
@@ -480,6 +488,7 @@ export default function CheckinsTab({client}: {client: Client}) {
         )}
         <IntakeCard
           assignments={rows}
+          clientId={client.id}
           isDesktop={isDesktop}
         />
       </div>

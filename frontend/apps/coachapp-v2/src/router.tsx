@@ -18,6 +18,7 @@ import ReviewCheckin from '@/checkins/review-checkin';
 import ClientDetail from '@/clients/client-detail';
 import CheckinSubmission from '@/clients/client-detail/checkin-submission';
 import DetailsSettings from '@/clients/client-detail/details-settings';
+import IntakeResponses from '@/clients/client-detail/intake-responses';
 import NutritionDay from '@/clients/client-detail/nutrition-day';
 import WeightHistory from '@/clients/client-detail/weight-history';
 import InviteClient from '@/clients/invite-client';
@@ -85,6 +86,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.CLIENT_CHECKIN_SUBMISSION, Component: CheckinSubmission},
       {path: ROUTES.CLIENT_WEIGHT, Component: WeightHistory},
       {path: ROUTES.CLIENT_NUTRITION_DAY, Component: NutritionDay},
+      {path: ROUTES.CLIENT_INTAKE, Component: IntakeResponses},
       {path: ROUTES.CLIENT_MESSAGES, Component: ClientConversation},
       {path: ROUTES.LIBRARY, Component: Library},
       {path: ROUTES.EXERCISES, Component: ListExercises},

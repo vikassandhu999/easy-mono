@@ -361,6 +361,34 @@ values onto the scale so between-step values are a PASS, not drift to chase.
 
 ---
 
+### RM-133 — A theme rule aimed at a third-party class fails silently when the name is wrong
+
+Styling someone else's component from your own stylesheet means guessing at their class
+names, and a wrong guess produces no error anywhere: the build is green, the linter is
+quiet, and the page simply keeps whatever it had. Three shipped in one session —
+`.search-field-group` (really `.search-field__group`), `.tab` (`.tabs__tab`) and
+`.alert-dialog` (`.alert-dialog__dialog`). The first two were merely inert. The third was a
+regression: 14 dialogs had their `sm:max-w-100` deleted "because the theme owns it now",
+and the rule that was supposed to own it had never matched anything, so those dialogs went
+two commits with no width cap.
+
+HeroUI's names are BEM-ish — `block__element--modifier`. The class you want is almost
+always the `block__element` form, not the hyphenated shortening that reads naturally.
+
+The rule: **after writing a theme rule for a vendor component, confirm the selector matches
+a live node and produces the value you intended** — `document.querySelectorAll(sel).length`
+and a `getComputedStyle` read. Verifying that the edit landed is not the same as verifying
+it did anything. The same session made this mistake three times in different forms (a
+`min-w-0` deletion, a global `border-` strip, these selectors); the common thread each time
+was checking the edit rather than the effect.
+
+**Enforced by:** `scripts/check-theme-selectors.sh` in `just lint` — every class selector in
+`index.css` must exist in the installed `@heroui/styles`, resolved from the version the app
+actually loads (several can sit in the pnpm store at once and their names differ).
+App-owned classes are allowlisted in the script.
+
+---
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

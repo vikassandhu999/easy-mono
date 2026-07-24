@@ -292,6 +292,10 @@ svg.lucide:not([class*="size-"]) {
      `--field-border-width` is what HeroUI's `.input` actually reads; it defaults
      to 0, which is why every field wrapper was bolting a `border` utility on. */
   --field-border-width: 1px;
+  /* Without this HeroUI derives the field radius as `--radius * 1.5` = 12px,
+     which is not a step on the scale and left inputs 2px rounder than the
+     buttons beside them. */
+  --field-radius: var(--radius-control);
   --field-background: oklch(100% 0 0);
   /* Fields are flat in the redesign. This is the token HeroUI's `shadow-field`
      resolves to, so clearing it drops the shadow on every field surface at once.

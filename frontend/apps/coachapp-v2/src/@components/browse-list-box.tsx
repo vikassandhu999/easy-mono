@@ -17,7 +17,7 @@ import {ListSkeleton} from '@/@components/list-skeleton';
  * card edge.
  */
 export const LIST_ITEM_CLASS =
-  'relative min-h-fit gap-3 rounded-none border-b-0 px-4 py-3 transition-none! ' +
+  'relative min-h-fit gap-3.25 rounded-none border-b-0 px-3.5 py-3 leading-[normal] transition-none! text-foreground sm:px-4.5 ' +
   "after:pointer-events-none after:absolute after:inset-x-0 after:top-0 after:start-16 after:h-px after:bg-separator after:content-[''] " +
   'first:after:hidden sm:border-t sm:border-separator sm:after:hidden sm:first:border-t-0 ' +
   'hover:bg-surface-secondary active:scale-100! data-[pressed=true]:scale-100!';
@@ -27,7 +27,7 @@ export const OUTLINE_CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg
 
 /** Responsive shell shared by every top-level browse list. */
 export const BROWSE_LIST_SURFACE_CLASS =
-  'overflow-hidden border-y border-border bg-background sm:rounded-card sm:border sm:bg-surface';
+  'overflow-hidden border-y border-border bg-background leading-[normal] text-foreground sm:rounded-card sm:border sm:bg-surface';
 
 /**
  * Zero-gutter mobile list frame. Page.Frame supplies the canonical gutter; this
@@ -43,7 +43,8 @@ export const BROWSE_LIST_FRAME_CLASS = 'flex flex-1 flex-col px-0 pb-0 sm:px-4 s
 export const TOOLBAR_DIVIDER_CLASS = 'hidden h-6 self-center sm:block';
 
 /** Search-field surface used by browse toolbars at both breakpoints. */
-export const BROWSE_SEARCH_GROUP_CLASS = 'min-h-11 border border-border bg-background shadow-none sm:bg-surface';
+export const BROWSE_SEARCH_GROUP_CLASS =
+  'min-h-11 gap-2 rounded-action border border-border bg-background px-3.25 text-note leading-[normal] [box-shadow:none] [color:var(--color-muted)] sm:bg-surface';
 
 /**
  * Ink-selected filter pill (RECIPES.md R2). HeroUI ToggleButton exposes selection
@@ -51,14 +52,27 @@ export const BROWSE_SEARCH_GROUP_CLASS = 'min-h-11 border border-border bg-backg
  * in this project, so `selected:*` classes silently no-op.
  */
 export const FILTER_PILL_CLASS =
-  'me-2.5 min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm font-medium text-muted shadow-none ' +
+  'min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-row font-medium leading-[normal] text-muted [box-shadow:none] [row-gap:normal] [column-gap:normal] ' +
   'data-[selected=true]:border-foreground data-[selected=true]:bg-transparent data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'sm:me-0 sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.5 sm:text-pill ' +
-  'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:text-ink-foreground';
+  'sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.25 sm:py-1.75 sm:text-pill ' +
+  'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:[color:white]';
 
 /** The count beside a filter-pill label. Mobile shows it on the selected pill only. */
 export function FilterCount({count, isSelected}: {count: ReactNode; isSelected: boolean}) {
-  return <span className={cn('text-chip opacity-70', isSelected ? undefined : 'hidden sm:inline')}>{count}</span>;
+  return (
+    <span
+      className={cn(
+        'ml-0.75 text-eyebrow opacity-70 sm:ml-0 sm:text-pill',
+        isSelected ? undefined : 'hidden sm:inline',
+      )}
+      data-testid={isSelected ? 'np-pill-count' : undefined}
+    >
+      {/* A non-breaking space, not a JSX one: the pill is a flex container, so
+          whitespace between its children collapses and "Active 6" reads "Active6". */}
+      {'\u00a0'}
+      {count}
+    </span>
+  );
 }
 
 type BrowseRowProps = {
@@ -72,6 +86,8 @@ type BrowseRowProps = {
   /** Typeahead/accessible text for the row. */
   textValue: string;
   title: string;
+  /** Style-diff anchor prefix; the row's parts derive their ids from it. */
+  testId?: string;
   /** Chips shown before the chevron. The chevron is always rendered. */
   trailing?: ReactNode;
 };
@@ -85,32 +101,47 @@ type BrowseRowProps = {
  * (extra tracks, custom grid — see the clients list) is its own `ListBox.Item`
  * built on `LIST_ITEM_CLASS`, not a bent BrowseRow.
  */
-export function BrowseRow({icon, iconClassName, id, meta, textValue, title, trailing}: BrowseRowProps) {
+export function BrowseRow({icon, iconClassName, id, meta, testId, textValue, title, trailing}: BrowseRowProps) {
   return (
     <ListBox.Item
       className={cn(LIST_ITEM_CLASS, 'mt-0')}
+      data-testid={testId}
       id={id}
       textValue={textValue}
     >
       <div
         className={cn(
-          'flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-secondary',
+          'flex size-10 shrink-0 items-center justify-center rounded-nav bg-surface-tertiary text-muted sm:size-10.5',
           iconClassName,
         )}
+        data-testid={testId ? `${testId}-thumb` : undefined}
       >
         {icon}
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Label className="min-w-0 max-w-full truncate text-sm font-semibold text-foreground">{title}</Label>
+        <Label
+          className="min-w-0 max-w-full truncate text-row font-semibold leading-[normal] text-foreground"
+          data-testid={testId ? `${testId}-title` : undefined}
+        >
+          {title}
+        </Label>
         {meta === undefined ? null : (
-          <Description className="max-w-full truncate text-xs text-muted">{meta}</Description>
+          <Description
+            className="max-w-full truncate text-chip leading-[normal] text-muted sm:text-sub"
+            data-testid={testId ? `${testId}-meta` : undefined}
+          >
+            {meta}
+          </Description>
         )}
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
         {trailing}
-        <ChevronRight className="size-4 shrink-0 text-muted-2" />
+        <ChevronRight
+          className="size-4 shrink-0 leading-[normal] text-muted"
+          data-testid={testId ? `${testId}-chevron` : undefined}
+        />
       </div>
     </ListBox.Item>
   );

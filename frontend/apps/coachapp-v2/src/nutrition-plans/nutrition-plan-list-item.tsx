@@ -23,15 +23,16 @@ function getPlanMeta(plan: NutritionPlan): string {
     .join(' · ');
 }
 
-export default function NutritionPlanListItem({plan}: {plan: NutritionPlan}) {
+export default function NutritionPlanListItem({isFirst, plan}: {isFirst?: boolean; plan: NutritionPlan}) {
   const status = STATUS_MAP[plan.status];
   const meta = getPlanMeta(plan);
 
   return (
     <BrowseRow
-      icon={<Salad className="size-5 text-foreground" />}
+      icon={<Salad className="size-4.75 sm:size-5" />}
       id={plan.id}
       meta={meta || plan.description || 'No targets set'}
+      testId={isFirst ? 'np-row' : undefined}
       textValue={plan.name}
       title={plan.name}
       trailing={

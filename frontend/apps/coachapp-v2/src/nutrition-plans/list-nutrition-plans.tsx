@@ -61,11 +61,14 @@ export default function ListNutritionPlans() {
             onPress={goBack}
           />
           <div className="min-w-0">
-            <Page.Title>
+            <Page.Title testId="np-title">
               <span className="sm:hidden">Nutrition</span>
               <span className="hidden sm:inline">Nutrition plans</span>
             </Page.Title>
-            <Page.Description className="hidden truncate sm:block">
+            <Page.Description
+              className="hidden truncate sm:block"
+              testId="np-subtitle"
+            >
               Reusable daily macro targets and meal structures for your clients
             </Page.Description>
           </div>
@@ -73,7 +76,8 @@ export default function ListNutritionPlans() {
         <Page.Actions>
           <Button
             aria-label="Create plan"
-            className="min-h-11 min-w-11 rounded-control"
+            className="size-9.5 min-h-11 min-w-11 gap-0 rounded-action p-0 text-metric font-normal leading-[normal] [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5 sm:min-h-0 sm:w-auto sm:gap-1.75 sm:px-4 sm:font-btn sm:text-row sm:font-semibold sm:leading-none"
+            data-testid="np-create"
             onPress={() => navigate(ROUTES.CREATE_NUTRITION_PLAN)}
             variant="primary"
           >
@@ -92,7 +96,10 @@ export default function ListNutritionPlans() {
           onChange={setSearch}
           value={search}
         >
-          <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
+          <SearchField.Group
+            className={BROWSE_SEARCH_GROUP_CLASS}
+            data-testid="np-search"
+          >
             <SearchField.SearchIcon />
             <SearchField.Input
               className="min-h-11"
@@ -108,7 +115,7 @@ export default function ListNutritionPlans() {
         <div className="-mx-4 min-w-0 max-w-full shrink-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           <ToggleButtonGroup
             aria-label="Filter plans by status"
-            className="flex flex-nowrap gap-2"
+            className="flex flex-nowrap gap-4.5 sm:gap-2"
             isDetached
             onSelectionChange={(keys) => {
               const next = [...keys][0];
@@ -121,6 +128,7 @@ export default function ListNutritionPlans() {
           >
             <ToggleButton
               className={FILTER_PILL_CLASS}
+              data-testid={status === 'all' ? 'np-pill-on' : 'np-pill-off'}
               id="all"
             >
               All{' '}
@@ -131,6 +139,7 @@ export default function ListNutritionPlans() {
             </ToggleButton>
             <ToggleButton
               className={FILTER_PILL_CLASS}
+              data-testid={status === 'active' ? 'np-pill-on' : 'np-pill-off'}
               id="active"
             >
               Active{' '}
@@ -157,7 +166,10 @@ export default function ListNutritionPlans() {
           className={BROWSE_LIST_FRAME_CLASS}
           size="content"
         >
-          <div className={BROWSE_LIST_SURFACE_CLASS}>
+          <div
+            className={BROWSE_LIST_SURFACE_CLASS}
+            data-testid="np-card"
+          >
             <BrowseListBox
               ariaLabel="Nutrition plans"
               className="flex-1 p-0"
@@ -176,7 +188,12 @@ export default function ListNutritionPlans() {
               onRetry={refetch}
               items={items}
               onAction={(key) => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', String(key)))}
-              renderItem={(plan) => <NutritionPlanListItem plan={plan} />}
+              renderItem={(plan) => (
+                <NutritionPlanListItem
+                  isFirst={plan.id === items[0]?.id}
+                  plan={plan}
+                />
+              )}
             />
           </div>
         </Page.Frame>

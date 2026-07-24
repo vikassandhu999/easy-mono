@@ -1,0 +1,103 @@
+{
+  "design": "design-handoff/design/Dashboard Redesign.dc.html",
+  "app": { "base": "http://localhost:2021", "route": "/library/nutrition-plans" },
+  "tokenKey": "coachapp.accessToken",
+  "states": [
+    {
+      "name": "default",
+      "design": [{ "eval": "location.reload()" }, { "sleep": 1500 }],
+      "app": [{ "wait": "[data-testid='np-row']" }]
+    }
+  ],
+  "pairs": [
+    {
+      "name": "title",
+      "design": {
+        "desktop": "[data-ref='np-desktop'] main .gk",
+        "mobile": "[data-ref='np-mobile'] .gk[style*='22px']"
+      },
+      "app": "[data-testid='np-title']"
+    },
+    {
+      "name": "subtitle",
+      "design": { "desktop": "[data-ref='np-desktop'] main > div > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)" },
+      "app": "[data-testid='np-subtitle']",
+      "widths": ["desktop"]
+    },
+    {
+      "name": "create-btn",
+      "design": {
+        "desktop": "[data-ref='np-desktop'] main button",
+        "mobile": "[data-ref='np-mobile'] div[style*='38px'][style*='var(--accent)']"
+      },
+      "app": "[data-testid='np-create']"
+    },
+    {
+      "name": "search",
+      "design": {
+        "desktop": "[data-ref='np-desktop'] main div[style*='260px']",
+        "mobile": "[data-ref='np-mobile'] div[style*='38px'][style*='var(--background)']"
+      },
+      "app": "[data-testid='np-search']"
+    },
+    {
+      "name": "pill-on",
+      "design": {
+        "desktop": "[data-ref='np-desktop'] .pill[data-on]",
+        "mobile": "[data-ref='np-mobile'] .noscroll > div:nth-child(1)"
+      },
+      "app": "[data-testid='np-pill-on']"
+    },
+    {
+      "name": "pill-off",
+      "design": {
+        "desktop": "[data-ref='np-desktop'] .pill:not([data-on])",
+        "mobile": "[data-ref='np-mobile'] .noscroll > div:nth-child(2)"
+      },
+      "app": "[data-testid='np-pill-off']"
+    },
+    {
+      "name": "pill-count",
+      "design": {
+        "desktop": "[data-ref='np-desktop'] .pill[data-on] > span",
+        "mobile": "[data-ref='np-mobile'] .noscroll > div:nth-child(1) > span"
+      },
+      "app": "[data-testid='np-pill-count']"
+    },
+    {
+      "name": "card",
+      "design": { "desktop": "[data-ref='np-desktop'] main .card" },
+      "app": "[data-testid='np-card']",
+      "widths": ["desktop"]
+    },
+    { "name": "row", "design": "[data-ref='np-desktop'] .exrow", "app": "[data-testid='np-row']", "widths": ["desktop"] },
+    { "name": "row-mobile", "design": "[data-ref='np-mobile'] .exrow", "app": "[data-testid='np-row']", "widths": ["mobile"] },
+    {
+      "name": "thumb",
+      "design": { "desktop": "[data-ref='np-desktop'] .exthumb", "mobile": "[data-ref='np-mobile'] .exthumb" },
+      "app": "[data-testid='np-row-thumb']"
+    },
+    {
+      "name": "row-title",
+      "design": {
+        "desktop": "[data-ref='np-desktop'] .exrow > div:nth-child(2) > div:nth-child(1)",
+        "mobile": "[data-ref='np-mobile'] .exrow > div:nth-child(2) > div:nth-child(1)"
+      },
+      "app": "[data-testid='np-row-title']"
+    },
+    {
+      "name": "row-meta",
+      "design": {
+        "desktop": "[data-ref='np-desktop'] .exrow > div:nth-child(2) > div:nth-child(2)",
+        "mobile": "[data-ref='np-mobile'] .exrow > div:nth-child(2) > div:nth-child(2)"
+      },
+      "app": "[data-testid='np-row-meta']"
+    },
+    {
+      "name": "row-chevron",
+      "design": { "desktop": "[data-ref='np-desktop'] .exrow > svg" },
+      "app": "[data-testid='np-row-chevron']",
+      "widths": ["desktop"]
+    }
+  ]
+}

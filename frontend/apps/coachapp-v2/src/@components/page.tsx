@@ -1,4 +1,4 @@
-import {Surface, Typography} from '@heroui/react';
+import {Surface} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import type {ReactNode, UIEvent} from 'react';
 import {useState} from 'react';
@@ -27,11 +27,13 @@ const PAGE_GUTTER_CLASS = 'w-full px-4 md:px-6 lg:px-8';
 interface PageTitleProps {
   children: ReactNode;
   className?: string;
+  testId?: string;
 }
 
 interface PageDescriptionProps {
   children: ReactNode;
   className?: string;
+  testId?: string;
 }
 
 function PageRoot({children, className}: PageProps) {
@@ -76,26 +78,29 @@ function PageTitleGroup({children, className}: PageProps) {
   return <div className={cn('min-w-0 flex-1', className)}>{children}</div>;
 }
 
-function PageTitle({children, className}: PageTitleProps) {
+function PageTitle({children, className, testId}: PageTitleProps) {
   return (
-    <Typography
-      className={cn('min-w-0 truncate', className)}
-      type="h3"
+    <span
+      className={cn(
+        'block min-w-0 truncate font-grotesk text-title-md font-semibold tracking-name [color:var(--color-foreground)]',
+        'sm:text-title-lg sm:tracking-page',
+        className,
+      )}
+      data-testid={testId}
     >
       {children}
-    </Typography>
+    </span>
   );
 }
 
-function PageDescription({children, className}: PageDescriptionProps) {
+function PageDescription({children, className, testId}: PageDescriptionProps) {
   return (
-    <Typography
-      className={cn('mt-1', className)}
-      color="muted"
-      type="body-sm"
+    <span
+      className={cn('mt-0.75 block text-note leading-[normal] [color:var(--color-muted)]', className)}
+      data-testid={testId}
     >
       {children}
-    </Typography>
+    </span>
   );
 }
 

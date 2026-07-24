@@ -58,7 +58,8 @@
   --text-kcal: 22px; /* day energy value */
   --text-kcal--line-height: 1;
   --tracking-title: -0.02em;
-  --tracking-name: -0.01em; /* workout name (TB) */
+  --tracking-name: -0.01em; /* workout name (TB), mobile page titles */
+  --tracking-page: -0.015em; /* desktop page titles */
   --tracking-eyebrow: 0.09em; /* .eyebrow (vs CD's .grp 0.04em) */
   /* The builders' counts and schedule line use a shorter mono stack than
      Tailwind's `font-mono` default, and the computed strings must match. */
@@ -110,7 +111,9 @@
   --text-answer--line-height: normal;
   --text-stat-lg: 18px; /* weight card value (desktop) */
   --text-stat-lg--line-height: normal;
-  --text-title-sm: 19px; /* mobile page title / mobile stat values */
+  --text-title-md: 22px; /* mobile page title (Dashboard list frames) */
+  --text-title-md--line-height: normal;
+  --text-title-sm: 19px; /* CD mobile page title / mobile stat values */
   --text-title-sm--line-height: normal;
   --text-stat-xl: 23px; /* desktop stat values */
   --text-stat-xl--line-height: normal;

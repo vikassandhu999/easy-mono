@@ -263,6 +263,18 @@ optional form fields after build; add a component test when coachapp has a front
 
 ### RM-123 — Browse lists use `BrowseListBox`; errors via `ErrorState` / "Couldn't load X". **Promoted to** AGENTS §Canonical Components; **enforced by** `just check-rm`.
 
+### RM-130 — Backend decimal fields arrive as JSON strings; coerce with `Number()` before math
+The Elixir backend serializes `Decimal` columns (weight values, load values, goal weights, macro
+targets) as JSON **strings**, but the generated OpenAPI types declare them `number` — TypeScript
+will not warn. Any arithmetic, comparison, or `.toFixed()` on such a field crashes at runtime
+("x.toFixed is not a function") or silently compares lexicographically. Instance: the 2026-07-21
+client-detail rebuild crashed on `weight_entries[].value.toFixed(1)` and charted string values.
+Rule: at the first point a decimal-ish API field is used numerically, wrap it once in `Number(...)`
+(with a comment naming the string serialization) and use the coerced value everywhere after.
+Prefer coercion in the api/domain layer helper over per-component. **Enforced by:** review — no
+reliable grep exists; the type lies, so treat every `.value`/`*_value`/`target_*` field from the
+API as suspect until coerced.
+
 ### RM-129 — `Page.Content` never takes the gutter into its own hands: `bare` + `Page.Frame`, or nothing
 A `<Page.Content className=...>` that isn't `bare` applies the page gutter itself. Two failure
 shapes shipped ~30 times during the redesign: (a) content with NO `Page.Frame` inside — no width

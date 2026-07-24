@@ -22,6 +22,7 @@
        { "name": "active",
          "design": [ {"click": "text=Active"} ],  // steps to reach the state in the prototype
          "app":    [ ],                           // steps to reach it in the app
+         "route":  "/clients/42",                 // optional per-state route (default app.route)
          "pairs":  ["header-name", "stat-weight"] // optional subset; default = all pairs
        }
      ],
@@ -138,7 +139,8 @@ for (const state of manifest.states) {
     await appPage.setViewportSize(WIDTHS[widthName]);
     // 'networkidle' never fires on the app (persistent connections) — rely on
     // explicit {wait} steps in the manifest's state recipe instead.
-    await appPage.goto(manifest.app.base + manifest.app.route, { waitUntil: 'domcontentloaded' });
+    // a state may live on its own route (e.g. one seeded client per lifecycle state)
+    await appPage.goto(manifest.app.base + (state.route ?? manifest.app.route), { waitUntil: 'domcontentloaded' });
     await runSteps(appPage, state.app);
     await appPage.evaluate(() => document.fonts.ready);
     for (const pair of manifest.pairs.filter((p) => pairNames.includes(p.name))) {

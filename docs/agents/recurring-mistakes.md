@@ -327,6 +327,17 @@ in `frontend/biome.json`, narrowly scoped to the emitted rule.
 
 **Enforced by:** the Biome override for `**/src/api/generated.ts`.
 
+### RM-131 — Screen builds are committed the moment they render, on their own branch
+
+The coach client-detail screen was built twice (2026-07-21 and 2026-07-22), browser-verified
+both times, and lost both times because the working tree was never committed before later
+sessions branched/cleaned. A multi-file screen build is committed (WIP commit is fine) on its
+feature branch as soon as it compiles and renders — before verification loops, before review
+passes, before anything that switches branches or reseeds.
+
+**Enforced by:** convention; session-memory carries the reminder. The third build (port/cd-ov)
+was committed within the same session.
+
 ---
 
 ## Deploy / ops

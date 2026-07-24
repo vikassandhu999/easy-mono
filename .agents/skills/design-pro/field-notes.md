@@ -57,6 +57,56 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **Ink-filled CTA** (spec `background:var(--foreground)`) =
   `<Button className="bg-ink text-ink-foreground">` — `--color-ink` is in @theme.
 
+## style-diff convergence (learned on CD-OV, the first full run)
+
+- **DC runtime normalizes style attributes** on nodes it re-renders (holes/sc-if
+  subtrees): `font-weight:700` becomes `font-weight: 700`. Manifest `[style*=]`
+  selectors must use colon-free substrings (`[style*='700']`, `[style*='14px']`,
+  `[style*='warning-soft']`) or structural paths — never `prop:value` literals.
+- **Tailwind v4 custom `--text-*` tokens default line-height to 1.5** — when the
+  design leaves line-height untouched (computed `normal`), pair every token with
+  `--text-<name>--line-height: normal` or every text node diffs.
+- **Wrappers need `[line-height:normal]` + `text-foreground`** — the app body
+  inherits `--default-foreground` (0.2103) and preflight's 1.5 line-height; the
+  design frames compute `--foreground` (0.17) and `normal`. Set both on the
+  screen's top-level containers.
+- **HeroUI `@theme --color-*` literals drift from the redesign `:root` vars**
+  (foreground, muted, surface-tertiary, success, all three soft-foregrounds).
+  Pinned to the design values in `index.css @theme` — check there before
+  ledgering a color diff.
+- **`rounded-full` computes `calc(infinity*1px)` ≈ 3.4e7px**, the designs write
+  `999px` — use the `--radius-pill: 999px` token for design pills.
+- **`shadow-none` on HeroUI components computes a 5-layer transparent shadow
+  stack**, not `none` — use `[box-shadow:none]`.
+- **`gap-0` computes `0px` but a design flex container without gap computes
+  `normal`** — use `sm:[column-gap:normal] sm:[row-gap:normal]` to unset.
+- **tw-merge eats EITHER the size or the color** when a custom text-size token
+  and a text-color utility meet in a HeroUI `className` — apply color as
+  `[color:var(--color-…)]` alongside the size token. Plain elements (no
+  tw-merge) can combine both classes freely.
+- **HeroUI `Tabs.Tab` ships `w-full`** — without an explicit `w-auto` each tab
+  stretches to container width and the row overflows off-screen. Style-diff
+  can't see this (computed props match); only the screenshot pass catches it.
+- **Unlayered CSS beats every utility**: `.typography--h5 { letter-spacing:
+  -0.015em }` in index.css wins over any Tailwind class (layers). A node that
+  needs the design's `normal` letter-spacing can't be a `Typography` heading.
+- **Icon-only buttons with no font rules in the design compute UA defaults**
+  (Arial 13.33px 400, padding 1px 6px, gap normal) — match with
+  `[font-family:Arial] [font-size:13.3333px] font-normal px-1.5 py-px` etc.;
+  invisible on an icon-only node but the script measures it.
+- **Fonts**: fontsource variable families are aliased in index.css as plain
+  `"Inter"` / `"Space Grotesk"` @font-face entries and the `--font-*` tokens
+  use the plain names, so computed font-family matches the designs. Buttons in
+  the CD design use the short `Inter, sans-serif` stack → `font-btn` token.
+- **Textareas keep UA `padding: 2px`** when the design doesn't reset it — `p-0.5`,
+  not `p-0`.
+- **Mutating manifest states go LAST** (states run in order, widths inner) and
+  need a seed reset before every full run: `mix run priv/repo/dev_client_states.exs`
+  restores Rowan White's unreviewed submission + unread messages, and prints the
+  per-state client routes.
+- **`state.route`** (added to style-diff.mjs) points a state at its own seeded
+  client — one client per lifecycle state beats mutating one client between states.
+
 ## Styling / tokens
 
 - **RECIPES.md px arbitrary values** (`rounded-[9px]`, `text-[12.5px]`) would trip

@@ -1,8 +1,29 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+/* Alias the fontsource variable fonts under the designs' plain family names so
+   computed font-family matches the dc.html specs exactly (style-diff PROPS).
+   Same font files — zero visual change. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../node_modules/@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url("../node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
+
 @theme {
-  --font-grotesk: "Space Grotesk Variable", sans-serif;
+  --font-grotesk: "Space Grotesk", sans-serif;
+  /* Client Detail buttons/fields use the short Inter stack (dc.html `font:` shorthand) */
+  --font-btn: "Inter", sans-serif;
 
   /* Redesign geometry/type tokens (design-handoff/theme.css + RECIPES.md) —
      registered here so ports write rounded-card / text-chip etc. instead of
@@ -19,6 +40,61 @@
   --color-warning-text: oklch(0.5 0.13 74);
   --color-ink: oklch(0.19 0.004 285); /* dark-filled CTAs / selected states */
   --color-ink-foreground: oklch(1 0 0);
+
+  /* Client Detail (Client Detail.dc.html) exact-spec tokens — CD-* screens.
+     The CD design family uses different geometry than the dashboard redesign
+     (16px cards vs 18px), so these are separate tokens, not edits to the ones
+     above. */
+  --radius-cd-card: 16px; /* .card */
+  --radius-cd-strip: 14px; /* stat strip container, mobile empty icon tile */
+  --radius-cd-panel: 12px; /* banners, Message button, photo tiles, Call button */
+  --radius-cd-tile: 11px; /* icon tiles in cards */
+  --radius-cd-btn: 10px; /* .btnA / .btnG, small icon tiles */
+  --radius-cd-icon: 15px; /* overview empty-state icon tile (desktop) */
+  /* The CD design leaves line-height untouched (computed `normal`) — pair
+     every size token with a normal line-height or Tailwind defaults 1.5. */
+  --text-eyebrow: 11px; /* .eyebrow, chips, week-strip labels */
+  --text-eyebrow--line-height: normal;
+  --text-eyebrow-sm: 10px; /* mobile eyebrows / week labels */
+  --text-eyebrow-sm--line-height: normal;
+  --text-caption: 10.5px; /* mobile stat sub-lines, goal label, unread badge */
+  --text-caption--line-height: normal;
+  --text-sub: 12px; /* card sub-lines (desktop), mobile banner text */
+  --text-sub--line-height: normal;
+  --text-note: 13px; /* notes textarea, banner text, mobile tabs */
+  --text-note--line-height: normal;
+  --text-row: 13.5px; /* row/card titles */
+  --text-row--line-height: normal;
+  --text-tab: 14px; /* desktop tabs */
+  --text-tab--line-height: normal;
+  --text-metric-sm: 15px; /* mobile metric values */
+  --text-metric-sm--line-height: normal;
+  --text-metric: 16px; /* desktop metric values, empty-state titles */
+  --text-metric--line-height: normal;
+  --text-stat-lg: 18px; /* weight card value (desktop) */
+  --text-stat-lg--line-height: normal;
+  --text-title-sm: 19px; /* mobile page title / mobile stat values */
+  --text-title-sm--line-height: normal;
+  --text-stat-xl: 23px; /* desktop stat values */
+  --text-stat-xl--line-height: normal;
+  --text-title-lg: 25px; /* desktop page title */
+  --text-title-lg--line-height: normal;
+  --text-pill--line-height: normal;
+  --text-chip--line-height: normal;
+  --leading-cbadge: 19px; /* unread badge line-height */
+  --radius-pill: 999px; /* design pills use literal 999px (rounded-full computes ∞px and diffs) */
+
+  /* Design-wins color utility overrides: HeroUI's @theme --color-* literals
+     drift from the redesign's :root values (style-diff caught foreground,
+     muted, surface-tertiary and the soft-foregrounds). Pin the utility tokens
+     to the design's computed values. */
+  --color-foreground: oklch(0.17 0 0);
+  --color-muted: oklch(0.47 0 0);
+  --color-surface-tertiary: oklch(0.93 0 0);
+  --color-success: oklch(0.62 0.15 150);
+  --color-success-soft-foreground: oklch(0.4 0.12 150);
+  --color-warning-soft-foreground: oklch(0.5 0.13 74);
+  --color-danger-soft-foreground: oklch(0.52 0.22 26);
 }
 
 :root,
@@ -26,8 +102,8 @@
 .default,
 [data-theme="light"],
 [data-theme="default"] {
-  --font-inter: "Inter Variable", sans-serif;
-  --font-grotesk: "Space Grotesk Variable", sans-serif;
+  --font-inter: "Inter", system-ui, sans-serif;
+  --font-grotesk: "Space Grotesk", sans-serif;
 }
 
 /*

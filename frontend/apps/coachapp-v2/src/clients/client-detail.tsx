@@ -1,100 +1,232 @@
-import {formatIsoDateOnly, getInitials} from '@easy/utils';
-import {Alert, Avatar, Button, TextArea, Typography, toast} from '@heroui/react';
-import {ArrowLeft, MessageCircle, Pencil, Phone} from 'lucide-react';
+/**
+ * CD — client detail shell (spec §2, design `Client Detail.dc.html`).
+ * Header + stat strip + tabs, driven by client.status + attention flags (§8).
+ * CD/OV is the ported tab; Training/Nutrition/Check-ins temporarily reuse the
+ * pre-redesign components until their own ports (CD/TR, CD/NU, CD/CI) land.
+ * Style fidelity: design-handoff/manifests/CD-OV.json (style-diff.mjs) — the
+ * data-testid attributes are the manifest's selectors.
+ */
+import {getInitials} from '@easy/utils';
+import {AlertDialog, Avatar, Button, Chip, Dropdown, Label, Tabs, Typography, toast} from '@heroui/react';
+import {
+  AlarmClock,
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeft,
+  ClipboardList,
+  Dumbbell,
+  Mail,
+  MessageCircle,
+  MoreHorizontal,
+  Phone,
+  UserX,
+} from 'lucide-react';
 import {useState} from 'react';
-import {Link, useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 
-import {BackButton} from '@/@components/back-button';
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetBillingQuery} from '@/api/billing';
+import {useListCheckInSchedulesForClientQuery} from '@/api/checkins';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
-import {toNullableText} from '@/api/shared';
-import {RowChips} from '@/clients/clients-list/client-list-item';
+import {useGetCoachClientConversationQuery} from '@/api/conversations';
+import type {Client} from '@/api/generated';
+import {useListCoachClientNutritionPlansQuery} from '@/api/nutrition-plans-list';
+import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
+import {formatShortDate} from '@/clients/client-detail/cd-data';
+import {CD_BTN_A, CD_CHIP} from '@/clients/client-detail/cd-ui';
+import OverviewTab, {DetailsRow, NotesCard} from '@/clients/client-detail/overview-tab';
+import PendingBody from '@/clients/client-detail/pending-body';
+import StatStrip from '@/clients/client-detail/stat-strip';
 import ClientCheckins from '@/clients/components/client-checkins';
-import ClientDetailCard from '@/clients/components/client-detail-card';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
-import ClientStatStrip from '@/clients/components/client-stat-strip';
-import ClientTrainerCard from '@/clients/components/client-trainer-card';
-import ClientWeight from '@/clients/components/client-weight';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
-import InvitationWidget from '@/clients/components/invitation-widget';
-import {getWhatsAppUrl} from '@/clients/lib/client';
-import {AddSeatsDialog} from '@/settings/add-seats-dialog';
 
-function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: null | string}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [updateClient, {isLoading: isSaving}] = useUpdateClientMutation();
+const TAB_IDS = ['overview', 'training', 'nutrition', 'check-ins'] as const;
+type TabId = (typeof TAB_IDS)[number];
 
-  const startEditing = () => {
-    setDraft(initialNotes ?? '');
-    setIsEditing(true);
-  };
+const TAB_CLASS =
+  'w-auto min-w-0 flex-1 justify-center rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0.5 pt-2.75 pb-2.75 text-note font-medium text-muted [box-shadow:none] outline-none ' +
+  'data-[selected=true]:border-b-current data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
+  'sm:flex-none sm:justify-start sm:px-1 sm:pt-3 sm:pb-3 sm:text-tab';
 
-  const handleSave = async () => {
+function AttentionChips({client}: {client: Client}) {
+  const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
+  const chips: React.ReactNode[] = [];
+  if (client.needs_plan && client.status === 'active') {
+    chips.push(
+      <Button
+        className={`${CD_CHIP} h-auto min-h-0 bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+        data-testid="cd-attn-plan"
+        key="plan"
+        onPress={() => setSearchParams({tab: 'training'}, {replace: true})}
+        variant="ghost"
+      >
+        <Dumbbell className="size-3.25" />
+        No active plan
+      </Button>,
+    );
+  }
+  if (client.expiring_soon && client.subscription_ends_on) {
+    chips.push(
+      <Button
+        className={`${CD_CHIP} h-auto min-h-0 bg-danger-soft [color:var(--color-danger-soft-foreground)]`}
+        data-testid="cd-attn-expires"
+        key="expires"
+        onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
+        variant="ghost"
+      >
+        <AlarmClock className="size-3.25" />
+        Expires {formatShortDate(client.subscription_ends_on)}
+      </Button>,
+    );
+  }
+  if (client.intake_incomplete) {
+    chips.push(
+      <Chip
+        className={`${CD_CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+        data-testid="cd-attn-intake"
+        key="intake"
+      >
+        <ClipboardList className="size-3.25" />
+        Intake pending
+      </Chip>,
+    );
+  }
+  if (chips.length === 0) {
+    return null;
+  }
+  return <div className="mt-1.5 flex flex-wrap items-center gap-1.75 sm:mt-2">{chips}</div>;
+}
+
+function StatusChip({status}: {status: Client['status']}) {
+  if (status === 'active') {
+    return (
+      <Chip
+        className={`${CD_CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}
+        data-testid="cd-status-chip"
+      >
+        <span className="size-1.5 rounded-pill bg-success sm:size-1.75" />
+        Active
+      </Chip>
+    );
+  }
+  if (status === 'pending') {
+    return (
+      <Chip
+        className={`${CD_CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+        data-testid="cd-status-chip"
+      >
+        Invited
+      </Chip>
+    );
+  }
+  return (
+    <Chip
+      className={`${CD_CHIP} bg-default-soft [color:var(--color-default-soft-foreground)]`}
+      data-testid="cd-status-chip"
+    >
+      Inactive
+    </Chip>
+  );
+}
+
+function StateBanner({client}: {client: Client}) {
+  const navigate = useNavigate();
+  const [updateClient, {isLoading}] = useUpdateClientMutation();
+  if (client.status !== 'inactive') {
+    return null;
+  }
+  const reason = client.inactive_reason ?? 'manual';
+  const firstName = client.first_name ?? 'This client';
+
+  const reactivate = async () => {
     try {
-      await updateClient({id: clientId, body: {notes: toNullableText(draft)}}).unwrap();
-      setIsEditing(false);
+      await updateClient({body: {status: 'active'}, id: client.id}).unwrap();
+      toast.success(`${firstName} is active again.`);
     } catch {
-      toast.danger("Notes weren't saved");
+      toast.danger("Client wasn't reactivated");
     }
   };
 
-  if (isEditing) {
+  if (reason === 'subscription_expired') {
     return (
-      <div className="flex flex-col gap-2">
-        <TextArea
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Add notes about this client"
-          ref={(el) => el?.focus()}
-          rows={3}
-          value={draft}
-        />
-        <div className="flex justify-end gap-2">
-          <Button
-            onPress={() => setIsEditing(false)}
-            size="sm"
-            variant="ghost"
-          >
-            Cancel
-          </Button>
-          <Button
-            isPending={isSaving}
-            onPress={handleSave}
-            size="sm"
-          >
-            Save
-          </Button>
+      <div
+        className="flex items-center gap-2.75 rounded-cd-panel border border-danger/30 bg-danger-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+        data-testid="cd-banner"
+      >
+        <span className="flex size-8 flex-none items-center justify-center rounded-cd-btn bg-danger/20 text-danger-soft-foreground sm:size-8.5">
+          <AlertTriangle className="size-4 sm:size-4.25" />
+        </span>
+        <div
+          className="min-w-0 flex-1 text-sub font-semibold text-danger-soft-foreground sm:text-note"
+          data-testid="cd-banner-text"
+        >
+          Subscription has ended. {firstName} is locked out of the app.
         </div>
+        <Button
+          className={`${CD_BTN_A} h-8 px-3 sm:h-8.5 sm:px-3.75`}
+          data-testid="cd-banner-btn"
+          onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
+        >
+          Extend subscription
+        </Button>
+      </div>
+    );
+  }
+
+  if (reason === 'awaiting_seat') {
+    return (
+      <div
+        className="flex items-center gap-2.75 rounded-cd-panel border border-warning/32 bg-warning-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+        data-testid="cd-banner"
+      >
+        <span className="flex size-8 flex-none items-center justify-center rounded-cd-btn bg-warning/26 text-warning-soft-foreground sm:size-8.5">
+          <AlertCircle className="size-4 sm:size-4.25" />
+        </span>
+        <div
+          className="min-w-0 flex-1 text-sub font-semibold text-warning-soft-foreground sm:text-note"
+          data-testid="cd-banner-text"
+        >
+          No seat available. {firstName} can&apos;t use the app until you add one.
+        </div>
+        <Button
+          className={`${CD_BTN_A} h-8 px-3 sm:h-8.5 sm:px-3.75`}
+          data-testid="cd-banner-btn"
+          onPress={() => navigate(ROUTES.SETTINGS)}
+        >
+          Add seats
+        </Button>
       </div>
     );
   }
 
   return (
-    <Button
-      className="-mx-2 h-auto w-full justify-start rounded-xl p-2 text-left font-normal hover:bg-surface-hover active:bg-surface-hover"
-      onPress={startEditing}
-      variant="ghost"
+    <div
+      className="flex items-center gap-2.75 rounded-cd-panel border border-border bg-surface-tertiary px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+      data-testid="cd-banner"
     >
-      {initialNotes ? (
-        <Typography
-          className="whitespace-pre-wrap"
-          type="body-sm"
-        >
-          {initialNotes}
-        </Typography>
-      ) : (
-        <Typography
-          color="muted"
-          type="body-sm"
-        >
-          Tap to add notes
-        </Typography>
-      )}
-    </Button>
+      <span className="flex size-8 flex-none items-center justify-center rounded-cd-btn bg-surface text-muted sm:size-8.5">
+        <UserX className="size-4 sm:size-4.25" />
+      </span>
+      <div
+        className="min-w-0 flex-1 text-pill font-semibold sm:text-note"
+        data-testid="cd-banner-text"
+      >
+        {firstName} is inactive.
+      </div>
+      <Button
+        className={`${CD_BTN_A} h-8 px-3.25 sm:h-8.5 sm:px-3.75`}
+        data-testid="cd-banner-btn"
+        isPending={isLoading}
+        onPress={reactivate}
+      >
+        Reactivate
+      </Button>
+    </div>
   );
 }
 
@@ -102,22 +234,24 @@ export default function ClientDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CLIENTS);
-  const {data, isError, isLoading} = useGetClientQuery(id!);
-  const {data: billingData} = useGetBillingQuery();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isDeactivateOpen, setDeactivateOpen] = useState(false);
+  const {data, isError, isLoading, refetch} = useGetClientQuery(id!);
+  const [updateClient, {isLoading: isDeactivating}] = useUpdateClientMutation();
+
+  const client = data?.data;
+  const isPending = client?.status === 'pending';
+
+  const conversation = useGetCoachClientConversationQuery({clientId: id!}, {skip: !client || isPending});
+  const {data: trainingPlans} = useListCoachClientTrainingPlansQuery({clientId: id!}, {skip: !client || isPending});
+  const {data: nutritionPlans} = useListCoachClientNutritionPlansQuery({clientId: id!}, {skip: !client || isPending});
+  const {data: schedules} = useListCheckInSchedulesForClientQuery({clientId: id!}, {skip: !client || isPending});
 
   if (isLoading) {
     return (
-      <Page>
-        <Page.Header>
-          <Page.TitleGroup>
-            <Page.Title>Client</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
+      <Page className="bg-background [line-height:normal]">
         <Page.Content bare>
-          <Page.Frame
-            className="pt-4 pb-6"
-            size="content"
-          >
+          <Page.Frame className="pt-4 pb-6">
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -125,222 +259,296 @@ export default function ClientDetail() {
     );
   }
 
-  if (isError || !data) {
+  if (isError || !client) {
     return (
-      <Page>
-        <Page.Header>
-          <Page.TitleGroup>
-            <Page.Title>Client</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Clients
-          </Button>
-        </Page.Toolbar>
+      <Page className="bg-background">
         <Page.Content bare>
-          <Page.Frame
-            className="pt-4 pb-6"
-            size="content"
-          >
-            <Alert status="danger">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>Client couldn&apos;t load</Alert.Title>
-                <Alert.Description>They may not exist, or you may not have access</Alert.Description>
-              </Alert.Content>
-            </Alert>
+          <Page.Frame className="pt-4 pb-6">
+            <ErrorState
+              message="This client couldn't load. They may not exist, or you may not have access."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>
     );
   }
 
-  const client = data.data;
-  const isPending = client.status === 'pending';
-  const isAwaitingSeat = client.status === 'inactive' && client.inactive_reason === 'awaiting_seat';
-
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
   const initials = getInitials(client.first_name, client.last_name);
+  const unread = conversation.data?.data.unread_count ?? 0;
+  const isFresh =
+    client.status === 'active' &&
+    !(trainingPlans?.data ?? []).some((plan) => plan.status === 'active') &&
+    !(nutritionPlans?.data ?? []).some((plan) => plan.status === 'active') &&
+    (schedules?.data ?? []).length === 0;
+
+  const tab = (TAB_IDS as readonly string[]).includes(searchParams.get('tab') ?? '')
+    ? (searchParams.get('tab') as TabId)
+    : 'overview';
+
+  const deactivate = async () => {
+    try {
+      await updateClient({body: {status: 'inactive'}, id: client.id}).unwrap();
+      setDeactivateOpen(false);
+      toast.success('Client deactivated');
+    } catch {
+      toast.danger("Client wasn't deactivated");
+    }
+  };
 
   return (
-    <Page>
-      <Page.Header
-        className="items-center py-4 sm:py-8"
-        size="content"
-      >
-        <Page.TitleGroup>
-          <div className={'flex items-center gap-1'}>
-            <BackButton onPress={goBack} />
-            <Page.Title>{name}</Page.Title>
-          </div>
-        </Page.TitleGroup>
-        <Page.Actions>
-          <Button
-            onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
-            size="sm"
-            variant="secondary"
-          >
-            <Pencil size={16} />
-            Edit
-          </Button>
-        </Page.Actions>
-      </Page.Header>
-
+    <Page className="bg-background">
       <Page.Content
         bare
-        className="pt-4 pb-6"
+        className="p-0"
       >
-        <Page.Frame
-          className="space-y-5"
-          size="content"
-        >
-          <div className="rounded-card border border-separator bg-surface p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 items-center gap-3">
-                <Avatar
-                  className="size-14 shrink-0"
-                  color="accent"
+        {/* ── header zone ─────────────────────────────────────────────── */}
+        <div className="border-b border-border bg-surface px-4.5 pt-1.5 text-foreground [line-height:normal] sm:px-7.5 sm:pt-4">
+          <div className="flex items-center justify-between">
+            <Button
+              className="h-auto min-h-0 min-w-0 gap-1.25 rounded-none bg-transparent p-0 text-pill font-semibold text-muted [box-shadow:none] sm:gap-1.75"
+              data-testid="cd-back"
+              onPress={goBack}
+              variant="ghost"
+            >
+              <ArrowLeft className="size-4" />
+              Clients
+            </Button>
+            <Dropdown>
+              <Button
+                aria-label="More"
+                className="size-8 min-h-0 min-w-0 rounded-cd-panel border-0 bg-transparent px-1.5 py-px font-normal leading-[normal] text-muted [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] sm:size-8.5"
+                data-testid="cd-menu"
+                isIconOnly
+                variant="ghost"
+              >
+                <MoreHorizontal className="size-4.5" />
+              </Button>
+              <Dropdown.Popover>
+                <Dropdown.Menu
+                  onAction={(key) => {
+                    if (key === 'deactivate') {
+                      setDeactivateOpen(true);
+                    } else if (key === 'reactivate') {
+                      updateClient({body: {status: 'active'}, id: client.id})
+                        .unwrap()
+                        .then(() => toast.success(`${client.first_name ?? 'Client'} is active again.`))
+                        .catch(() => toast.danger("Client wasn't reactivated"));
+                    } else if (key === 'edit') {
+                      // Details & settings page (CD/DT) is a follow-up port; the
+                      // edit screen is the closest existing surface.
+                      navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id));
+                    }
+                  }}
                 >
-                  <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Typography
-                      truncate
-                      type="h5"
+                  <Dropdown.Item
+                    id="edit"
+                    textValue="Details & settings"
+                  >
+                    <Label>Details &amp; settings</Label>
+                  </Dropdown.Item>
+                  {client.status === 'active' ? (
+                    <Dropdown.Item
+                      id="deactivate"
+                      textValue="Deactivate client"
+                      variant="danger"
                     >
-                      {name}
-                    </Typography>
-                    <RowChips client={client} />
-                  </div>
-                  {client.phone ? (
-                    <Typography
-                      className="mt-0.5 flex items-center gap-1.5"
-                      color="muted"
-                      truncate
-                      type="body-sm"
+                      <Label>Deactivate client</Label>
+                    </Dropdown.Item>
+                  ) : null}
+                  {client.status === 'inactive' ? (
+                    <Dropdown.Item
+                      id="reactivate"
+                      textValue="Reactivate client"
                     >
-                      <Phone size={14} />
-                      {client.phone}
-                    </Typography>
+                      <Label>Reactivate client</Label>
+                    </Dropdown.Item>
                   ) : null}
-                  {isAwaitingSeat ? (
-                    <div className="mt-2">
-                      {billingData?.data.is_owner ? (
-                        <AddSeatsDialog />
-                      ) : (
-                        <Typography
-                          color="muted"
-                          type="body-sm"
-                        >
-                          Ask the owner to add seats.
-                        </Typography>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
+          </div>
+
+          <div className="mt-0.5 flex flex-wrap items-center gap-3.25 sm:mt-1.5 sm:flex-nowrap sm:gap-5">
+            <Avatar
+              className="size-13 flex-none rounded-pill bg-accent font-bold text-stat-lg [color:white] sm:size-16 sm:text-stat-xl"
+              color="accent"
+              data-testid="cd-avatar"
+            >
+              <Avatar.Fallback className="rounded-pill bg-accent font-bold text-stat-lg [color:white] sm:text-stat-xl">
+                {initials}
+              </Avatar.Fallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                {/* not Typography: the unlayered `.typography--h5` rule pins
+                    letter-spacing -0.015em and beats any utility; the CD design
+                    wants `normal` (style-diff pair `name`). */}
+                <span
+                  className="font-grotesk text-title-sm font-semibold sm:text-title-lg"
+                  data-testid="cd-name"
+                >
+                  {name}
+                </span>
+                <StatusChip status={client.status} />
               </div>
+              <AttentionChips client={client} />
+              <div
+                className="mt-1.5 hidden items-center gap-1.5 text-pill text-muted sm:flex"
+                data-testid="cd-contact"
+              >
+                {client.email ? (
+                  <>
+                    <Mail className="size-3.5" />
+                    {client.email}
+                  </>
+                ) : null}
+                {client.email && client.phone ? <span className="opacity-50">·</span> : null}
+                {client.phone ? (
+                  <>
+                    <Phone className="size-3.5" />
+                    {client.phone}
+                  </>
+                ) : null}
+              </div>
+              <div
+                className="mt-0.75 text-chip text-muted sm:hidden"
+                data-testid="cd-since"
+              >
+                Client since {formatShortDate(client.inserted_at)}
+              </div>
+            </div>
+            <div className="mt-3.25 flex w-full gap-2 sm:mt-0 sm:w-auto sm:flex-none sm:items-center sm:gap-2.25">
+              {isPending ? null : (
+                <Button
+                  className="relative h-9.5 flex-1 gap-2 rounded-cd-panel px-4.5 font-btn text-note font-bold leading-none [color:white] [box-shadow:none] sm:h-10 sm:flex-none"
+                  data-testid="cd-message"
+                  onPress={() => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', client.id))}
+                  variant="primary"
+                >
+                  <MessageCircle className="size-4 sm:size-4.25" />
+                  Message
+                  {unread > 0 ? (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 h-4.75 min-w-4.75 rounded-pill border-2 border-surface bg-danger px-1.25 text-center font-btn text-caption font-bold leading-cbadge [color:white]"
+                      data-testid="cd-msg-badge"
+                    >
+                      {unread}
+                    </span>
+                  ) : null}
+                </Button>
+              )}
               {client.phone ? (
-                <div className="flex gap-2 sm:ml-auto sm:shrink-0">
-                  <a
-                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-success-soft px-4 py-2 text-sm font-medium text-success-soft-foreground transition-colors hover:bg-success-soft-hover active:bg-success-soft-hover sm:flex-none"
-                    href={getWhatsAppUrl(client.phone)}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <MessageCircle size={16} />
-                    WhatsApp
-                  </a>
-                  <a
-                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-separator px-4 py-2 text-sm font-medium transition-colors hover:bg-default-soft active:bg-default-soft sm:flex-none"
-                    href={`tel:${client.phone}`}
-                  >
-                    <Phone size={16} />
-                    Call
-                  </a>
-                </div>
+                <a
+                  aria-label="Call"
+                  className="flex size-9.5 flex-none items-center justify-center rounded-cd-panel border border-border bg-surface text-foreground sm:size-10"
+                  data-testid="cd-call"
+                  href={`tel:${client.phone}`}
+                >
+                  <Phone className="size-4 sm:size-4.25" />
+                </a>
               ) : null}
             </div>
           </div>
 
           {isPending ? (
-            <InvitationWidget
+            <div className="pt-3.5" />
+          ) : (
+            <>
+              <StatStrip client={client} />
+              <Tabs
+                onSelectionChange={(key) =>
+                  setSearchParams(key === 'overview' ? {} : {tab: String(key)}, {replace: true})
+                }
+                selectedKey={tab}
+              >
+                <Tabs.List
+                  aria-label="Client sections"
+                  className="mt-3 flex gap-0 border-0 bg-transparent p-0 sm:mt-4 sm:gap-6.5"
+                >
+                  {TAB_IDS.map((tabId) => (
+                    <Tabs.Tab
+                      className={TAB_CLASS}
+                      data-testid={tab === tabId ? 'cd-tab-active' : 'cd-tab-idle'}
+                      id={tabId}
+                      key={tabId}
+                    >
+                      {tabId === 'check-ins' ? 'Check-ins' : tabId.charAt(0).toUpperCase() + tabId.slice(1)}
+                    </Tabs.Tab>
+                  ))}
+                </Tabs.List>
+              </Tabs>
+            </>
+          )}
+        </div>
+
+        {/* ── body ────────────────────────────────────────────────────── */}
+        <div className="text-foreground [line-height:normal] sm:px-7.5 sm:pt-6 sm:pb-7.5">
+          {client.status === 'inactive' ? (
+            <div className="p-3.5 pb-0 sm:p-0">
+              <StateBanner client={client} />
+            </div>
+          ) : null}
+          {isPending ? (
+            <PendingBody
               client={client}
-              onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
+              detailsRow={<DetailsRow />}
+              notesCard={<NotesCard client={client} />}
+            />
+          ) : tab === 'overview' ? (
+            <OverviewTab
+              client={client}
+              isFresh={isFresh}
             />
           ) : (
-            <ClientStatStrip clientId={client.id} />
-          )}
-
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-            <div className="space-y-5">
-              {isPending ? null : <ClientWeight clientId={client.id} />}
-              {isPending ? null : <ClientNutritionAdherence clientId={client.id} />}
-              {isPending ? null : <ClientWorkoutHistory clientId={client.id} />}
-              <ClientCheckins
-                clientId={client.id}
-                clientName={name}
-              />
-              <ClientDetailCard client={client} />
-            </div>
-
-            <div className="space-y-5">
-              <ClientTrainerCard client={client} />
-              <Link
-                className="flex min-h-11 items-center gap-3 rounded-card border border-separator bg-surface p-4 transition-colors hover:bg-surface-hover active:bg-surface-hover"
-                to={ROUTES.CLIENT_MESSAGES.replace(':id', client.id)}
-              >
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
-                  <MessageCircle size={16} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <Typography
-                    type="body-sm"
-                    weight="semibold"
-                  >
-                    Messages
-                  </Typography>
-                  <Typography
-                    color="muted"
-                    type="body-xs"
-                  >
-                    Chat with this client
-                  </Typography>
-                </div>
-              </Link>
-              <div className="rounded-card border border-separator bg-surface p-5">
-                <div className="mb-3">
-                  <h2 className="font-grotesk text-xl font-bold">Notes</h2>
-                  <Typography
-                    className="mt-1"
-                    color="muted"
-                    type="body-sm"
-                  >
-                    Private coach notes
-                  </Typography>
-                </div>
-                <InlineNotes
+            <div className="flex flex-col gap-3 p-3.5 sm:gap-3.5 sm:p-0">
+              {tab === 'training' ? <ClientWorkoutHistory clientId={client.id} /> : null}
+              {tab === 'nutrition' ? <ClientNutritionAdherence clientId={client.id} /> : null}
+              {tab === 'check-ins' ? (
+                <ClientCheckins
                   clientId={client.id}
-                  initialNotes={client.notes}
+                  clientName={name}
                 />
-              </div>
-              <Typography
-                className="px-1"
-                color="muted"
-                type="body-xs"
-              >
-                Added {formatIsoDateOnly(client.inserted_at)}
-              </Typography>
+              ) : null}
             </div>
-          </div>
-        </Page.Frame>
+          )}
+        </div>
       </Page.Content>
+
+      <AlertDialog.Backdrop
+        isOpen={isDeactivateOpen}
+        onOpenChange={setDeactivateOpen}
+      >
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="sm:max-w-100">
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Deactivate {client.first_name ?? 'client'}?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <Typography>They&apos;ll lose access to the app until you reactivate them.</Typography>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                isDisabled={isDeactivating}
+                onPress={() => setDeactivateOpen(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                isPending={isDeactivating}
+                onPress={deactivate}
+                variant="danger"
+              >
+                Deactivate
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </Page>
   );
 }

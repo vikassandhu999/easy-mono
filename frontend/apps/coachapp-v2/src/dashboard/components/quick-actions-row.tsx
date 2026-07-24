@@ -48,7 +48,7 @@ export function QuickActionsRow() {
               <action.icon className="size-4" />
             </span>
             <Label className="min-w-0 truncate text-body font-medium text-foreground">{action.label}</Label>
-            <ChevronRight className="size-4 shrink-0 text-muted-2" />
+            <ChevronRight className="shrink-0 text-muted-2" />
           </ListBox.Item>
         ))}
       </ListBox>

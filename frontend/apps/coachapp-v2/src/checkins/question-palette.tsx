@@ -61,7 +61,7 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
                 size="sm"
                 variant="outline"
               >
-                <Icon className="size-4 text-muted" />
+                <Icon className="text-muted" />
                 <span className="text-eyebrow font-medium">{questionTypeLabel(type)}</span>
               </Button>
             );
@@ -96,12 +96,12 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
                 const Icon = QUESTION_TYPE_ICONS[preset.type];
                 return (
                   <ListBox.Item
-                    className="min-h-11 gap-2"
+                    className="gap-2"
                     id={preset.key}
                     key={preset.key}
                     textValue={preset.label}
                   >
-                    <Icon className="size-4 shrink-0 text-muted" />
+                    <Icon className="shrink-0 text-muted" />
                     <Label className="max-w-full truncate">{preset.label}</Label>
                   </ListBox.Item>
                 );
@@ -130,7 +130,7 @@ export default function AddQuestionControl({onAdd}: {onAdd: (question: QuestionD
       ref={triggerRef}
       variant="ghost"
     >
-      <Plus className="size-4" />
+      <Plus />
       {PALETTE_TITLE}
     </Button>
   );

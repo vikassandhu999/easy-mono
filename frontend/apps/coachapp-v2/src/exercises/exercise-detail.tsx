@@ -182,7 +182,7 @@ export default function ExerciseDetail() {
               className="bg-ink text-ink-foreground"
               onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
             >
-              <Pencil className="size-4" />
+              <Pencil />
               Edit
             </Button>
           )}
@@ -191,7 +191,7 @@ export default function ExerciseDetail() {
             onPress={handleDuplicate}
             variant="outline"
           >
-            <Copy className="size-4" />
+            <Copy />
             Duplicate
           </Button>
           {!isSystemExercise &&
@@ -201,7 +201,7 @@ export default function ExerciseDetail() {
                 className="text-danger"
                 variant="outline"
               >
-                <Trash2 className="size-4" />
+                <Trash2 />
               </Button>,
               exercise.name,
             )}
@@ -391,7 +391,7 @@ export default function ExerciseDetail() {
               onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
               variant="primary"
             >
-              <Pencil className="size-4" />
+              <Pencil />
               Edit
             </Button>
           )}
@@ -402,7 +402,7 @@ export default function ExerciseDetail() {
             onPress={handleDuplicate}
             variant="outline"
           >
-            <Copy className="size-4" />
+            <Copy />
           </Button>
           {!isSystemExercise &&
             renderDeleteDialog(
@@ -412,7 +412,7 @@ export default function ExerciseDetail() {
                 className="text-danger"
                 variant="outline"
               >
-                <Trash2 className="size-4" />
+                <Trash2 />
               </Button>,
               exercise.name,
             )}

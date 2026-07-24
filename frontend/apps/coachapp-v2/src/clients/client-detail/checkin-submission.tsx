@@ -204,7 +204,7 @@ export default function CheckinSubmission() {
             onPress={goBack}
             variant="ghost"
           >
-            <ArrowLeft className="size-4 sm:size-4" />
+            <ArrowLeft />
           </Button>
           <div className="min-w-0 flex-1">
             <div

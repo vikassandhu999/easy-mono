@@ -95,7 +95,7 @@ function useDashboardSetupProgress(skip: boolean): SetupProgress {
 function RocketTile() {
   return (
     <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent">
-      <Rocket className="size-4" />
+      <Rocket />
     </span>
   );
 }
@@ -251,7 +251,7 @@ function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDis
             </Typography>
           </span>
         </Meter>
-        <ChevronRight className="size-4 shrink-0 text-muted" />
+        <ChevronRight className="shrink-0 text-muted" />
       </Button>
 
       {/* Desktop: title block · step chips · Continue setup · dismiss */}

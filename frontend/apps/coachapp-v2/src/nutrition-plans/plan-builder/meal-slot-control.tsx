@@ -123,7 +123,6 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
         >
           {MEAL_SLOTS.map((option) => (
             <ListBox.Item
-              className="min-h-11"
               id={option}
               key={option}
               textValue={slotLabel(option)}

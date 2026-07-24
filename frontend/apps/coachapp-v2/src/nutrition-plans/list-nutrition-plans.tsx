@@ -35,7 +35,7 @@ export default function ListNutritionPlans() {
 
   return (
     <BrowseScreen
-      action={{icon: <Plus className="size-4" />, label: 'Create plan', to: ROUTES.CREATE_NUTRITION_PLAN}}
+      action={{icon: <Plus />, label: 'Create plan', to: ROUTES.CREATE_NUTRITION_PLAN}}
       backTo={ROUTES.LIBRARY}
       description="Reusable daily macro targets and meal structures for your clients"
       empty={

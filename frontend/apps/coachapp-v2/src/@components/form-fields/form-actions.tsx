@@ -45,7 +45,7 @@ export function FormActions({
         type="submit"
       >
         <span className={`flex items-center gap-2 ${isSubmitting ? 'invisible' : ''}`}>
-          {submitIcon ?? <Check className="size-4" />}
+          {submitIcon ?? <Check />}
           {submitLabel}
         </span>
         {isSubmitting ? (

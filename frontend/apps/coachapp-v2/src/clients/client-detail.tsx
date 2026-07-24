@@ -159,7 +159,7 @@ function StateBanner({client}: {client: Client}) {
         data-testid="cd-banner"
       >
         <span className="flex size-8 flex-none items-center justify-center rounded-control bg-danger/20 text-danger-soft-foreground sm:size-8.5">
-          <AlertTriangle className="size-4 sm:size-4" />
+          <AlertTriangle />
         </span>
         <div
           className="min-w-0 flex-1 text-eyebrow font-semibold text-danger-soft-foreground sm:text-body"
@@ -185,7 +185,7 @@ function StateBanner({client}: {client: Client}) {
         data-testid="cd-banner"
       >
         <span className="flex size-8 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-8.5">
-          <AlertCircle className="size-4 sm:size-4" />
+          <AlertCircle />
         </span>
         <div
           className="min-w-0 flex-1 text-eyebrow font-semibold text-warning-soft-foreground sm:text-body"
@@ -210,7 +210,7 @@ function StateBanner({client}: {client: Client}) {
       data-testid="cd-banner"
     >
       <span className="flex size-8 flex-none items-center justify-center rounded-control bg-surface text-muted sm:size-8.5">
-        <UserX className="size-4 sm:size-4" />
+        <UserX />
       </span>
       <div
         className="min-w-0 flex-1 text-eyebrow font-semibold sm:text-body"
@@ -312,7 +312,7 @@ export default function ClientDetail() {
               onPress={goBack}
               variant="ghost"
             >
-              <ArrowLeft className="size-4" />
+              <ArrowLeft />
               Clients
             </Button>
             <Dropdown>
@@ -425,7 +425,7 @@ export default function ClientDetail() {
                   onPress={() => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', client.id))}
                   variant="primary"
                 >
-                  <MessageCircle className="size-4 sm:size-4" />
+                  <MessageCircle />
                   Message
                   {unread > 0 ? (
                     <span
@@ -444,7 +444,7 @@ export default function ClientDetail() {
                   data-testid="cd-call"
                   href={`tel:${client.phone}`}
                 >
-                  <Phone className="size-4 sm:size-4" />
+                  <Phone />
                 </a>
               ) : null}
             </div>

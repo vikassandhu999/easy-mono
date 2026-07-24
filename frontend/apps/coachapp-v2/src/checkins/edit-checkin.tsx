@@ -62,7 +62,7 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
             onPress={deleteConfirm.open}
             variant="outline"
           >
-            <Trash2 className="size-4 text-danger" />
+            <Trash2 className="text-danger" />
           </Button>
         }
         initialDraft={templateToDraft(template)}

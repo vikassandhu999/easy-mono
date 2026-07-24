@@ -571,7 +571,7 @@ export function PlanDays({plan}: PlanDaysProps) {
               size="sm"
               variant="outline"
             >
-              <MoreHorizontal className="size-4" />
+              <MoreHorizontal />
             </Button>
             <Dropdown.Popover>
               <Dropdown.Menu

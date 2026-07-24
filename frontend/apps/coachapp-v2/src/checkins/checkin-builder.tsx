@@ -65,13 +65,6 @@ import {
   questionTypeLabel,
 } from '@/checkins/question-type-meta';
 
-// RECIPES.md R3 — segmented control. HeroUI signals selection with
-// `data-selected="true"`; the `selected:` Tailwind prefix is a no-op here.
-const SEGMENT_GROUP_CLASS = 'flex w-full gap-0.5 rounded-control border border-border bg-surface p-0.5';
-const SEGMENT_BUTTON_CLASS =
-  'min-h-11 flex-1 rounded-chip border-0 bg-transparent px-3 py-2 text-eyebrow font-medium text-muted ' +
-  'data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground';
-
 const CARD_CLASS = 'rounded-card border border-border bg-surface p-4 sm:p-5';
 const DASHED_BUTTON_CLASS = 'w-full rounded-control border border-dashed border-border';
 
@@ -143,7 +136,7 @@ function OptionsEditor({onChange, options}: {onChange: (options: string[]) => vo
             size="sm"
             variant="ghost"
           >
-            <X className="size-4" />
+            <X />
           </Button>
         </div>
       ))}
@@ -153,7 +146,7 @@ function OptionsEditor({onChange, options}: {onChange: (options: string[]) => vo
         size="sm"
         variant="ghost"
       >
-        <Plus className="size-4" />
+        <Plus />
         Add option
       </Button>
     </div>
@@ -192,7 +185,7 @@ function QuestionRow({
     <div className="rounded-control border border-border bg-surface">
       <div className="flex min-h-11 items-center gap-2 px-2 py-2">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-chip bg-surface-secondary">
-          <Icon className="size-4 text-muted" />
+          <Icon className="text-muted" />
         </span>
 
         <span className={cn('min-w-0 flex-1 truncate text-body', question.label ? 'text-foreground' : 'text-muted-2')}>
@@ -224,7 +217,7 @@ function QuestionRow({
             size="sm"
             variant="ghost"
           >
-            <MoreVertical className="size-4" />
+            <MoreVertical />
           </Button>
           <Dropdown.Popover>
             <Dropdown.Menu
@@ -247,7 +240,7 @@ function QuestionRow({
                   textValue="Move up"
                 >
                   <MenuItemBody
-                    icon={<ArrowUp className="size-4 shrink-0 text-muted" />}
+                    icon={<ArrowUp className="shrink-0 text-muted" />}
                     label="Move up"
                   />
                 </Dropdown.Item>
@@ -257,7 +250,7 @@ function QuestionRow({
                   textValue="Move down"
                 >
                   <MenuItemBody
-                    icon={<ArrowDown className="size-4 shrink-0 text-muted" />}
+                    icon={<ArrowDown className="shrink-0 text-muted" />}
                     label="Move down"
                   />
                 </Dropdown.Item>
@@ -266,7 +259,7 @@ function QuestionRow({
                   textValue="Duplicate"
                 >
                   <MenuItemBody
-                    icon={<Copy className="size-4 shrink-0 text-muted" />}
+                    icon={<Copy className="shrink-0 text-muted" />}
                     label="Duplicate"
                   />
                 </Dropdown.Item>
@@ -279,7 +272,7 @@ function QuestionRow({
                   variant="danger"
                 >
                   <MenuItemBody
-                    icon={<Trash2 className="size-4 shrink-0 text-danger" />}
+                    icon={<Trash2 className="shrink-0 text-danger" />}
                     label="Remove"
                   />
                 </Dropdown.Item>
@@ -295,7 +288,7 @@ function QuestionRow({
           size="sm"
           variant="ghost"
         >
-          <ChevronDown className={cn('size-4 transition-transform', isExpanded && 'rotate-180')} />
+          <ChevronDown className={cn(' transition-transform', isExpanded && 'rotate-180')} />
         </Button>
       </div>
 
@@ -321,7 +314,7 @@ function QuestionRow({
             >
               <Label>Answer type</Label>
               <Select.Trigger>
-                <Icon className="size-4 shrink-0 text-muted" />
+                <Icon className="shrink-0 text-muted" />
                 <Select.Value />
                 <Select.Indicator />
               </Select.Trigger>
@@ -413,7 +406,7 @@ function SectionCard({
   return (
     <div className={CARD_CLASS}>
       <div className="mb-3 flex items-center gap-2">
-        <Folder className="size-4 shrink-0 text-muted" />
+        <Folder className="shrink-0 text-muted" />
         <TextField
           className="min-w-0 flex-1"
           onChange={(value) => onChange({...section, title: value})}
@@ -439,7 +432,7 @@ function SectionCard({
               size="sm"
               variant="ghost"
             >
-              <MoreVertical className="size-4" />
+              <MoreVertical />
             </Button>
             <Dropdown.Popover>
               <Dropdown.Menu
@@ -460,7 +453,7 @@ function SectionCard({
                     textValue="Move section up"
                   >
                     <MenuItemBody
-                      icon={<ArrowUp className="size-4 shrink-0 text-muted" />}
+                      icon={<ArrowUp className="shrink-0 text-muted" />}
                       label="Move section up"
                     />
                   </Dropdown.Item>
@@ -470,7 +463,7 @@ function SectionCard({
                     textValue="Move section down"
                   >
                     <MenuItemBody
-                      icon={<ArrowDown className="size-4 shrink-0 text-muted" />}
+                      icon={<ArrowDown className="shrink-0 text-muted" />}
                       label="Move section down"
                     />
                   </Dropdown.Item>
@@ -483,7 +476,7 @@ function SectionCard({
                     variant="danger"
                   >
                     <MenuItemBody
-                      icon={<Trash2 className="size-4 shrink-0 text-danger" />}
+                      icon={<Trash2 className="shrink-0 text-danger" />}
                       label="Delete section"
                     />
                   </Dropdown.Item>
@@ -645,7 +638,7 @@ export default function CheckinBuilder({
             onPress={handleSubmit}
             variant="primary"
           >
-            <Check className="size-4" />
+            <Check />
             Save form
           </Button>
         </Page.Actions>
@@ -679,7 +672,7 @@ export default function CheckinBuilder({
                 <Label>Type</Label>
                 <ToggleButtonGroup
                   aria-label="Form type"
-                  className={SEGMENT_GROUP_CLASS}
+                  className="segmented"
                   isDetached
                   onSelectionChange={(keys) => {
                     const next = [...keys][0];
@@ -692,7 +685,6 @@ export default function CheckinBuilder({
                 >
                   {PURPOSES.map((purpose) => (
                     <ToggleButton
-                      className={SEGMENT_BUTTON_CLASS}
                       id={purpose}
                       key={purpose}
                     >
@@ -724,7 +716,7 @@ export default function CheckinBuilder({
                 onPress={() => setDraft((d) => ({...d, sections: [...d.sections, newSection('New section')]}))}
                 variant="ghost"
               >
-                <FolderPlus className="size-4" />
+                <FolderPlus />
                 Add section
               </Button>
             </div>

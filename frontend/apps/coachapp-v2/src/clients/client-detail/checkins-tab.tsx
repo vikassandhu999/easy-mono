@@ -74,7 +74,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
           className="flex size-9 flex-none items-center justify-center rounded-control bg-accent-soft text-accent sm:size-9.5 sm:rounded-control"
           data-testid="ci-form-icon"
         >
-          <ClipboardList className="size-4 sm:size-5" />
+          <ClipboardList className="sm:size-5" />
         </span>
         <span className="min-w-0 flex-1">
           <span
@@ -90,7 +90,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
             Form
           </span>
         </span>
-        <ChevronRight className="size-4 text-muted" />
+        <ChevronRight className="text-muted" />
       </Link>
       <div
         className="my-3 h-px bg-border sm:my-3"
@@ -330,7 +330,7 @@ function IntakeCard({
               : formatShortDate(submission.submitted_at)
             : 'Not submitted'}
         </Chip>
-        <ChevronRight className="size-4 text-muted" />
+        <ChevronRight className="text-muted" />
       </Link>
     </div>
   );

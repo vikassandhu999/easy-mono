@@ -27,7 +27,7 @@ export default function ListExercises() {
 
   return (
     <BrowseScreen
-      action={{icon: <Plus className="size-4" />, label: 'Create exercise', to: ROUTES.CREATE_EXERCISE}}
+      action={{icon: <Plus />, label: 'Create exercise', to: ROUTES.CREATE_EXERCISE}}
       backTo={ROUTES.LIBRARY}
       description="Your movement library for building training plans"
       empty={

@@ -189,7 +189,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
               onPress={() => onMove(index, -1)}
               variant="ghost"
             >
-              <ChevronUp className="size-4" />
+              <ChevronUp />
             </Button>
             <Button
               aria-label={`Move ${exerciseName} down`}
@@ -200,7 +200,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
               onPress={() => onMove(index, 1)}
               variant="ghost"
             >
-              <ChevronDown className="size-4" />
+              <ChevronDown />
             </Button>
             <Button
               aria-label={`Remove ${exerciseName}`}
@@ -210,7 +210,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
               onPress={onRemove}
               variant="ghost"
             >
-              <X className="size-4" />
+              <X />
             </Button>
           </div>
         </div>

@@ -142,7 +142,7 @@ export default function FoodDetail() {
               className="bg-ink text-ink-foreground"
               onPress={() => navigate(`/library/foods/${food.id}/edit`)}
             >
-              <Pencil className="size-4" />
+              <Pencil />
               Edit
             </Button>
           )}
@@ -150,7 +150,7 @@ export default function FoodDetail() {
             onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
             variant="outline"
           >
-            <Copy className="size-4" />
+            <Copy />
             Duplicate
           </Button>
           {!isSystemFood &&
@@ -160,7 +160,7 @@ export default function FoodDetail() {
                 className="text-danger"
                 variant="outline"
               >
-                <Trash2 className="size-4" />
+                <Trash2 />
               </Button>,
               food.name,
             )}
@@ -293,7 +293,7 @@ export default function FoodDetail() {
               onPress={() => navigate(`/library/foods/${food.id}/edit`)}
               variant="primary"
             >
-              <Pencil className="size-4" />
+              <Pencil />
               Edit
             </Button>
           )}
@@ -303,7 +303,7 @@ export default function FoodDetail() {
             onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
             variant="outline"
           >
-            <Copy className="size-4" />
+            <Copy />
           </Button>
           {!isSystemFood &&
             renderDeleteDialog(
@@ -313,7 +313,7 @@ export default function FoodDetail() {
                 className="text-danger"
                 variant="outline"
               >
-                <Trash2 className="size-4" />
+                <Trash2 />
               </Button>,
               food.name,
             )}

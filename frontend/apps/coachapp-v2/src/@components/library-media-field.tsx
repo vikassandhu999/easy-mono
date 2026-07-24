@@ -280,7 +280,7 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
             onPress={() => inputRef.current?.click()}
             variant="ghost"
           >
-            <ImagePlus className="size-4" />
+            <ImagePlus />
             Add image or video
           </Button>
         )}

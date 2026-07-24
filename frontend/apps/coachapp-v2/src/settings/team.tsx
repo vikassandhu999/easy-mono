@@ -155,7 +155,7 @@ function InviteTrainerControl() {
       size="sm"
       variant="primary"
     >
-      <UserPlus className="size-4" />
+      <UserPlus />
       Invite trainer
     </Button>
   );
@@ -169,7 +169,7 @@ function InviteTrainerControl() {
           onOpenChange={(next) => !next && setOpen(false)}
         >
           <Popover.Content
-            className="w-96 rounded-card"
+            className="w-96"
             triggerRef={triggerRef}
           >
             <Popover.Dialog className="max-h-[70vh] overflow-y-auto p-4 outline-none">

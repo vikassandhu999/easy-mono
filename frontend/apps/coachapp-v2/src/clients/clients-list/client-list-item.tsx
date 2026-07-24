@@ -215,7 +215,7 @@ export default function ClientListItem({client}: {client: ListClient}) {
         {status.time ? <span className="whitespace-nowrap text-muted-2">· {status.time}</span> : null}
       </div>
 
-      <ChevronRight className="size-4 shrink-0 text-muted-2" />
+      <ChevronRight className="shrink-0 text-muted-2" />
     </ListBox.Item>
   );
 }

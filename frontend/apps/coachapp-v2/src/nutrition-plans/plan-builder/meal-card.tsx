@@ -392,7 +392,7 @@ export function MealCard({
             size="sm"
             variant="ghost"
           >
-            <MoreHorizontal className="size-4" />
+            <MoreHorizontal />
           </Button>
           <Dropdown.Popover>
             {/* Drive selection via the menu so it fires on pointer AND keyboard
@@ -431,7 +431,7 @@ export function MealCard({
                   variant="danger"
                 >
                   <div className="flex items-center gap-2">
-                    <TrashIcon className="size-4 shrink-0 text-danger" />
+                    <TrashIcon className="shrink-0 text-danger" />
                     <Label>Delete meal</Label>
                   </div>
                 </Dropdown.Item>

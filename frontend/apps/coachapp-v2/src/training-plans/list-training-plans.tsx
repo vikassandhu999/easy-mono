@@ -34,7 +34,7 @@ export default function ListTrainingPlans() {
 
   return (
     <BrowseScreen
-      action={{icon: <Plus className="size-4" />, label: 'Create plan', to: ROUTES.CREATE_TRAINING_PLAN}}
+      action={{icon: <Plus />, label: 'Create plan', to: ROUTES.CREATE_TRAINING_PLAN}}
       backTo={ROUTES.LIBRARY}
       description="Reusable workout splits and progressions for your clients"
       empty={

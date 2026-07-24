@@ -91,7 +91,7 @@ export function BrowseRow({icon, iconClassName, id, meta, testId, textValue, tit
       <div className="flex shrink-0 items-center gap-1.5">
         {trailing}
         <ChevronRight
-          className="size-4 shrink-0 leading-[normal] text-muted"
+          className="shrink-0 leading-[normal] text-muted"
           data-testid={testId ? `${testId}-chevron` : undefined}
         />
       </div>

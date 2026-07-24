@@ -173,7 +173,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
                 size="sm"
                 variant="ghost"
               >
-                <ClipboardCopy className="size-4" />
+                <ClipboardCopy />
               </Button>
             </Surface>
 
@@ -189,7 +189,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
                 }
                 variant="outline"
               >
-                <MessageCircle className="size-4" />
+                <MessageCircle />
                 Share via WhatsApp
               </Button>
               <Button
@@ -197,7 +197,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
                 onPress={handleCopyLink}
                 variant="outline"
               >
-                <ClipboardCopy className="size-4" />
+                <ClipboardCopy />
                 Copy link
               </Button>
             </div>
@@ -220,7 +220,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
           onPress={onInviteAnother}
           variant="outline"
         >
-          <UserPlus className="size-4" />
+          <UserPlus />
           Invite another
         </Button>
         <Button

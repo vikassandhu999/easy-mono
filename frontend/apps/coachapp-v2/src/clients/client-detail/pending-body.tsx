@@ -125,7 +125,7 @@ export default function PendingBody({
         <div className={`${EYEBROW} mb-2 sm:mb-3`}>Intake</div>
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="flex size-8.5 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9">
-            <ClipboardList className="size-4 sm:size-4" />
+            <ClipboardList />
           </span>
           <div className="min-w-0 flex-1">
             <div

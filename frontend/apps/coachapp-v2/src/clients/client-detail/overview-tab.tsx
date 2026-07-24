@@ -54,7 +54,7 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
       data-testid="cd-review-banner"
     >
       <span className="flex size-9 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-10 sm:rounded-control">
-        <ClipboardCheck className="size-4 sm:size-5" />
+        <ClipboardCheck className="sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
@@ -555,7 +555,7 @@ export function DetailsRow() {
         className="flex size-9 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9.5 sm:rounded-control"
         data-testid="cd-details-icon"
       >
-        <Settings2 className="size-4 sm:size-5" />
+        <Settings2 className="sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
@@ -571,7 +571,7 @@ export function DetailsRow() {
           Subscription, coach, intake, invitation
         </div>
       </div>
-      <ChevronRight className="size-4 text-muted" />
+      <ChevronRight className="text-muted" />
     </Link>
   );
 }

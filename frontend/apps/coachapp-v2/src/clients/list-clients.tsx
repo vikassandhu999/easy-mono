@@ -86,7 +86,7 @@ export default function ListClients() {
 
   return (
     <BrowseScreen
-      action={{icon: <UserPlus className="size-4" />, label: 'Invite client', to: ROUTES.INVITE_CLIENT}}
+      action={{icon: <UserPlus />, label: 'Invite client', to: ROUTES.INVITE_CLIENT}}
       description={
         summaryData
           ? `${summaryData.summary.active} active \u00b7 ${summaryData.summary.pending} invited`

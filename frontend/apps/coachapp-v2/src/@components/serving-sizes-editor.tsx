@@ -83,7 +83,7 @@ export function ServingSizesEditor({
             size="sm"
             variant="ghost"
           >
-            <X className="size-4" />
+            <X />
           </Button>
         </div>
       ))}
@@ -149,7 +149,7 @@ export function ServingSizesEditor({
           onPress={() => setIsAdding(true)}
           variant="ghost"
         >
-          <Plus className="size-4" />
+          <Plus />
           Add serving size
         </Button>
       )}

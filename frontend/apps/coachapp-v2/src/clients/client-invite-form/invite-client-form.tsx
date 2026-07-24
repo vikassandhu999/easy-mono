@@ -152,7 +152,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
               >
                 {activeTrainers.map((member) => (
                   <ListBox.Item
-                    className="min-h-11 sm:min-h-9"
+                    className="sm:min-h-9"
                     id={member.id}
                     key={member.id}
                     textValue={memberName(member)}
@@ -184,7 +184,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
       <FormActions
         isSubmitting={isSubmitting}
         onCancel={onCancel}
-        submitIcon={<Send className="size-4" />}
+        submitIcon={<Send />}
         submitLabel="Send invite"
         submittingLabel="Sending invite"
       />

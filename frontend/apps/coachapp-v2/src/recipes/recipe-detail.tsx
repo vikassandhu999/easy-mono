@@ -156,7 +156,7 @@ export default function RecipeDetail() {
             className="bg-ink text-ink-foreground"
             onPress={() => navigate(`/library/recipes/${recipe.id}/edit`)}
           >
-            <Pencil className="size-4" />
+            <Pencil />
             Edit
           </Button>
           <Button
@@ -164,7 +164,7 @@ export default function RecipeDetail() {
             onPress={handleDuplicate}
             variant="outline"
           >
-            <Copy className="size-4" />
+            <Copy />
             Duplicate
           </Button>
           {renderDeleteDialog(
@@ -173,7 +173,7 @@ export default function RecipeDetail() {
               className="text-danger"
               variant="outline"
             >
-              <Trash2 className="size-4" />
+              <Trash2 />
             </Button>,
             recipe.name,
           )}
@@ -341,7 +341,7 @@ export default function RecipeDetail() {
             onPress={() => navigate(`/library/recipes/${recipe.id}/edit`)}
             variant="primary"
           >
-            <Pencil className="size-4" />
+            <Pencil />
             Edit
           </Button>
           <Button
@@ -351,7 +351,7 @@ export default function RecipeDetail() {
             onPress={handleDuplicate}
             variant="outline"
           >
-            <Copy className="size-4" />
+            <Copy />
           </Button>
           {renderDeleteDialog(
             <Button
@@ -360,7 +360,7 @@ export default function RecipeDetail() {
               className="text-danger"
               variant="outline"
             >
-              <Trash2 className="size-4" />
+              <Trash2 />
             </Button>,
             recipe.name,
           )}

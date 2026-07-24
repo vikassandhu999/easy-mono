@@ -141,7 +141,7 @@ function ProfilePanel({
           onPress={() => navigate(ROUTES.SETTINGS_LANDING_PAGE)}
           variant="ghost"
         >
-          <Globe className="size-4 shrink-0 text-muted" />
+          <Globe className="shrink-0 text-muted" />
           <span className="min-w-0 flex-1">
             <Typography type="body-sm">Landing page</Typography>
             <Typography
@@ -151,7 +151,7 @@ function ProfilePanel({
               Your public page that turns visitors into prospects
             </Typography>
           </span>
-          <ChevronRight className="size-4 shrink-0 text-muted-2" />
+          <ChevronRight className="shrink-0 text-muted-2" />
         </Button>
       </div>
     </div>
@@ -262,7 +262,7 @@ function SettingsShell({
                 id={id}
                 key={id}
               >
-                <Icon className="size-4 shrink-0" />
+                <Icon className="shrink-0" />
                 {label}
               </Tabs.Tab>
             ))}

@@ -283,7 +283,7 @@ export function SearchPickerSheet<T>({
             onPress={() => onCreateNoMatch?.(search)}
             variant="ghost"
           >
-            <Plus className="size-4 shrink-0" />
+            <Plus className="shrink-0" />
             <span className="min-w-0 flex-1 truncate">{createLabel ? createLabel(search) : `Create "${search}"`}</span>
           </Button>
         ) : null}
@@ -321,7 +321,7 @@ export function SearchPickerSheet<T>({
         }}
       >
         <Popover.Content
-          className="w-96 rounded-card p-0"
+          className="w-96 p-0"
           triggerRef={triggerRef}
           placement={placement}
         >

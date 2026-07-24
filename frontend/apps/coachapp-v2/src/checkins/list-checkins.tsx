@@ -51,7 +51,7 @@ export default function ListCheckins() {
 
   return (
     <BrowseScreen
-      action={{icon: <Plus className="size-4" />, label: 'Create form', to: ROUTES.CREATE_CHECKIN}}
+      action={{icon: <Plus />, label: 'Create form', to: ROUTES.CREATE_CHECKIN}}
       backTo={ROUTES.LIBRARY}
       description="Intake, check-in, and questionnaire forms for your clients"
       empty={

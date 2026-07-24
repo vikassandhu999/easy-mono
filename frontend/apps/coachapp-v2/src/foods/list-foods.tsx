@@ -21,7 +21,7 @@ export default function ListFoods() {
 
   return (
     <BrowseScreen
-      action={{icon: <Plus className="size-4" />, label: 'Create food', to: ROUTES.CREATE_FOOD}}
+      action={{icon: <Plus />, label: 'Create food', to: ROUTES.CREATE_FOOD}}
       backTo={ROUTES.LIBRARY}
       description="Your ingredient library for building nutrition plans"
       empty={

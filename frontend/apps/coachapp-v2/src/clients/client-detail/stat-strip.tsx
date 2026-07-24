@@ -145,7 +145,7 @@ export default function StatStrip({client}: {client: Client}) {
       >
         {trainingPlan ? (
           <span className={behind ? 'inline-flex items-center gap-1 text-danger' : undefined}>
-            {behind ? <TrendingDown className="size-4" /> : null}
+            {behind ? <TrendingDown /> : null}
             {completedDates.size}
             <span
               className={UNIT}

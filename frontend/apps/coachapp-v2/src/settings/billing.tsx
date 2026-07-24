@@ -355,12 +355,12 @@ function ActivityFeed({events}: {events: BillingEvent[]}) {
               const Icon = EVENT_ICON[event.kind] ?? CircleCheck;
               return (
                 <ListBox.Item
-                  className="min-h-11 gap-3 rounded-none border-b border-separator px-4 py-3 last:border-b-0"
+                  className="gap-3 rounded-none border-b border-separator px-4 py-3 last:border-b-0"
                   id={event.id}
                   key={event.id}
                   textValue={activityLabel(event)}
                 >
-                  <Icon className="size-4 shrink-0 text-muted" />
+                  <Icon className="shrink-0 text-muted" />
                   <Label className="max-w-full flex-1 truncate">{activityLabel(event)}</Label>
                   <Typography
                     className="shrink-0"

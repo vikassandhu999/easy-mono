@@ -197,7 +197,61 @@
   border: 1px solid var(--color-border);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-xl);
+  border-radius: var(--radius-card);
   max-width: calc(100vw - 2rem);
+}
+
+/* Rows take their height from the component too. HeroUI's `.list-box-item` is
+   already `min-h-9`, which is the control height — pinning it to the token keeps
+   the two from drifting apart, and removes the `min-h-11` that seven rows had
+   each written by hand. */
+.list-box-item {
+  min-height: var(--spacing-control);
+}
+
+/* Icons are 16px unless told otherwise, so `size-4` is never written — it was on
+   120 of the 209 icon elements.
+   Two things make this safe where a plain `svg` rule would not be:
+   - `.lucide` is the marker lucide-react puts on every icon it renders, so
+     HeroUI's own glyphs (the 12px close-button, the 16px search icon) are out
+     of scope entirely.
+   - `:not([class*="size-"])` means any explicit size at the call site switches
+     the default off, so the 14/20/24 steps still work.
+   Specificity is deliberate: (0,3,1) beats HeroUI's `.button svg:not(...)` at
+   (0,2,2), which paints icons `size-5 sm:size-4`. Losing that fight is exactly
+   why `size-4` had to be written 120 times in the first place. */
+svg.lucide:not([class*="size-"]) {
+  width: calc(var(--spacing) * 4);
+  height: calc(var(--spacing) * 4);
+}
+
+/* Segmented control: a ToggleButtonGroup drawn as one track with inset segments.
+   Both builders had defined it as a pair of byte-identical `SEGMENT_*_CLASS`
+   constants; it is a look, so it lives here and the call sites just name it. */
+.segmented {
+  display: flex;
+  width: 100%;
+  gap: calc(var(--spacing) * 0.5);
+  padding: calc(var(--spacing) * 0.5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface);
+}
+.segmented > .toggle-button {
+  flex: 1 1 0%;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background-color: transparent;
+  padding-inline: calc(var(--spacing) * 3);
+  padding-block: calc(var(--spacing) * 2);
+  font-size: var(--text-eyebrow);
+  font-weight: 500;
+  color: var(--color-muted);
+}
+.segmented > .toggle-button[data-selected="true"] {
+  background-color: var(--color-ink);
+  font-weight: 600;
+  color: var(--color-ink-foreground);
 }
 
 :root,

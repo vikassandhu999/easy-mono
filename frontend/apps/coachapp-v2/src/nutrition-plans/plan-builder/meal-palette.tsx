@@ -181,7 +181,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
             className={`flex size-7 flex-none items-center justify-center rounded-chip bg-accent-tile text-accent ${AS_TEXT} ${NO_GAP}`}
             data-testid="nb-create-meal-icon"
           >
-            <Plus className="size-4" />
+            <Plus />
           </span>
           <span className="flex flex-col">
             <span
@@ -208,7 +208,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
           ref={ref}
           variant="ghost"
         >
-          <Plus className="size-4" />
+          <Plus />
           Add meal
         </Button>
       )}

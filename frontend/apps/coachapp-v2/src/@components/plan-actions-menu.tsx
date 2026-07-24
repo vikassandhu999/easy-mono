@@ -109,7 +109,7 @@ export function PlanActionsMenu({
                   textValue="Restore"
                 >
                   <ItemBody
-                    icon={<ArchiveRestoreIcon className="size-4 shrink-0 text-muted" />}
+                    icon={<ArchiveRestoreIcon className="shrink-0 text-muted" />}
                     label="Restore"
                   />
                 </Dropdown.Item>
@@ -121,7 +121,7 @@ export function PlanActionsMenu({
                 textValue="Edit details"
               >
                 <ItemBody
-                  icon={<Pencil className="size-4 shrink-0 text-muted" />}
+                  icon={<Pencil className="shrink-0 text-muted" />}
                   label="Edit details"
                 />
               </Dropdown.Item>
@@ -133,7 +133,7 @@ export function PlanActionsMenu({
                   textValue="Archive"
                 >
                   <ItemBody
-                    icon={<ArchiveIcon className="size-4 shrink-0 text-muted" />}
+                    icon={<ArchiveIcon className="shrink-0 text-muted" />}
                     label="Archive"
                   />
                 </Dropdown.Item>
@@ -146,7 +146,7 @@ export function PlanActionsMenu({
                 textValue="Copy"
               >
                 <ItemBody
-                  icon={<Copy className="size-4 shrink-0 text-muted" />}
+                  icon={<Copy className="shrink-0 text-muted" />}
                   label="Copy"
                 />
               </Dropdown.Item>
@@ -160,7 +160,7 @@ export function PlanActionsMenu({
                 variant="danger"
               >
                 <ItemBody
-                  icon={<TrashIcon className="size-4 shrink-0 text-danger" />}
+                  icon={<TrashIcon className="shrink-0 text-danger" />}
                   label="Delete"
                 />
               </Dropdown.Item>

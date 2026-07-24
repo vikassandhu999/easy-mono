@@ -54,7 +54,7 @@ function AddSeatsContent({
           onPress={() => setSeats(Math.max(1, seats - 1))}
           variant="outline"
         >
-          <Minus className="size-4" />
+          <Minus />
         </Button>
         <Typography
           align="center"
@@ -72,7 +72,7 @@ function AddSeatsContent({
           onPress={() => setSeats(seats + 1)}
           variant="outline"
         >
-          <Plus className="size-4" />
+          <Plus />
         </Button>
       </div>
 
@@ -180,7 +180,7 @@ export function AddSeatsDialog({
       ref={triggerRef}
       variant="primary"
     >
-      <Plus className="size-4" />
+      <Plus />
       {TITLE}
     </Button>
   );
@@ -205,7 +205,7 @@ export function AddSeatsDialog({
           onOpenChange={(next) => !next && close()}
         >
           <Popover.Content
-            className="w-80 rounded-card"
+            className="w-80"
             triggerRef={triggerRef}
           >
             <Popover.Dialog className="p-4 outline-none">

@@ -90,7 +90,7 @@ export function PlanCard({
             ref={menuRef}
             variant="ghost"
           >
-            <MoreHorizontal className="size-4 text-muted sm:size-4" />
+            <MoreHorizontal className="text-muted" />
           </Button>
           <Dropdown.Popover>
             <Dropdown.Menu

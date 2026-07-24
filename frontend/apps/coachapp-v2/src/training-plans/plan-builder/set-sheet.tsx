@@ -79,14 +79,6 @@ const DISTANCE_UNITS: {value: DistanceUnit; label: string}[] = [
   {value: 'miles', label: 'mi'},
 ];
 
-// RECIPES.md R3 — segmented control. HeroUI signals selection with
-// `data-selected="true"`; the `selected:` Tailwind prefix is a no-op here, and
-// ToggleButton paints a grey fill at rest unless bg-transparent is explicit.
-const SEGMENT_GROUP_CLASS = 'flex w-full gap-0.5 rounded-control border border-border bg-surface p-0.5';
-const SEGMENT_BUTTON_CLASS =
-  'min-h-11 flex-1 rounded-chip border-0 bg-transparent px-3 py-2 text-eyebrow font-medium text-muted ' +
-  'data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground';
-
 // Unit chips (kg/lbs/bw, m/km/mi) — GAPS #7: also a ToggleButtonGroup.
 const UNIT_BUTTON_CLASS =
   'min-h-9 rounded-chip border border-border bg-transparent px-2 text-eyebrow font-medium text-muted ' +
@@ -330,7 +322,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
             }}
             variant="ghost"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft />
           </Button>
           <Typography
             color="muted"
@@ -350,7 +342,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
             }}
             variant="ghost"
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight />
           </Button>
         </div>
       </div>
@@ -359,7 +351,7 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
         {/* set_type segmented control */}
         <ToggleButtonGroup
           aria-label="Set type"
-          className={`${SEGMENT_GROUP_CLASS} mb-3`}
+          className="segmented mb-3"
           onSelectionChange={(keys) => {
             const next = [...keys][0] as SetType | undefined;
             if (next) {
@@ -371,7 +363,6 @@ export function SetSheetContent({workoutExercise, setIndex, planId, onClose, onP
         >
           {SET_TYPES.map(({value, label}) => (
             <ToggleButton
-              className={SEGMENT_BUTTON_CLASS}
               id={value}
               key={value}
             >
@@ -578,7 +569,7 @@ export function SetSheet({workoutExercise, setIndex, planId, open, onClose, onPr
         }}
       >
         <Popover.Content
-          className="w-104 rounded-card p-0"
+          className="w-104 p-0"
           triggerRef={triggerRef}
         >
           <Popover.Dialog className="max-h-[70vh] overflow-y-auto px-4 py-3 outline-none">

@@ -203,7 +203,7 @@ function ReviewBanner({
         variant="secondary"
       >
         Review
-        <ArrowRight className="size-4" />
+        <ArrowRight />
       </Button>
     </div>
   );

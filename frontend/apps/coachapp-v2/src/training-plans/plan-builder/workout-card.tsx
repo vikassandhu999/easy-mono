@@ -298,7 +298,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
         isIconOnly
         variant="ghost"
       >
-        <MoreHorizontal className="size-4" />
+        <MoreHorizontal />
       </Button>
       <Dropdown.Popover>
         {/* Drive selection via the menu so it fires on pointer AND keyboard
@@ -329,7 +329,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
               variant="danger"
             >
               <div className="flex items-center gap-2">
-                <TrashIcon className="size-4 shrink-0 text-danger" />
+                <TrashIcon className="shrink-0 text-danger" />
                 <Label>Delete workout</Label>
               </div>
             </Dropdown.Item>
@@ -441,7 +441,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
           ref={addExerciseButtonRef}
           variant="ghost"
         >
-          <Plus className="size-4" />
+          <Plus />
           Add exercise
         </Button>
       </div>

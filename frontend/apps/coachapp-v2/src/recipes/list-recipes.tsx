@@ -21,7 +21,7 @@ export default function ListRecipes() {
 
   return (
     <BrowseScreen
-      action={{icon: <Plus className="size-4" />, label: 'Create recipe', to: ROUTES.CREATE_RECIPE}}
+      action={{icon: <Plus />, label: 'Create recipe', to: ROUTES.CREATE_RECIPE}}
       backTo={ROUTES.LIBRARY}
       description="Combine foods into reusable dishes for nutrition plans"
       empty={

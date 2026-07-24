@@ -48,7 +48,7 @@ function SetRow({index, isFirstCard, set}: {index: number; isFirstCard: boolean;
       <span>{set.reps ?? '—'}</span>
       <span>{formatLoad(set.load_value, set.load_unit) || '—'}</span>
       <span>{set.rpe ?? '—'}</span>
-      {set.completed ? <Check className="size-4 text-success" /> : <Minus className="size-4 text-muted" />}
+      {set.completed ? <Check className="text-success" /> : <Minus className="text-muted" />}
     </div>
   );
 }
@@ -175,7 +175,7 @@ export default function SessionDetail() {
           >
             {session.notes ? (
               <div className="flex gap-2 rounded-panel bg-accent-soft px-3 py-3 sm:gap-3 sm:px-4 sm:py-3">
-                <Quote className="mt-0.5 size-4 flex-none text-accent sm:size-5" />
+                <Quote className="mt-0.5 flex-none text-accent sm:size-5" />
                 <div className="text-eyebrow leading-normal sm:text-body">{session.notes}</div>
               </div>
             ) : null}

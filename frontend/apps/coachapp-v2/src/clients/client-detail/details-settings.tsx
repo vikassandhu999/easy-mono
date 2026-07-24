@@ -57,9 +57,9 @@ function SubscriptionAlert({client, onExtend}: {client: Client; onExtend: () => 
       data-testid="dt-alert"
     >
       {expired ? (
-        <AlertTriangle className="size-4 flex-none text-danger-soft-foreground sm:size-4" />
+        <AlertTriangle className="flex-none text-danger-soft-foreground" />
       ) : (
-        <AlarmClock className="size-4 flex-none text-warning-soft-foreground sm:size-4" />
+        <AlarmClock className="flex-none text-warning-soft-foreground" />
       )}
       <div
         className={`min-w-0 flex-1 text-eyebrow font-semibold sm:text-eyebrow ${
@@ -100,7 +100,7 @@ function IntakeRow({clientId}: {clientId: string}) {
         className="flex size-9 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9.5 sm:rounded-control"
         data-testid="dt-intake-icon"
       >
-        <ClipboardList className="size-4 sm:size-5" />
+        <ClipboardList className="sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
@@ -116,7 +116,7 @@ function IntakeRow({clientId}: {clientId: string}) {
           {submitted ? `Submitted ${formatShortDate(submitted.submitted_at)}` : 'Not submitted yet'}
         </div>
       </div>
-      <ChevronRight className="size-4 text-muted" />
+      <ChevronRight className="text-muted" />
     </Link>
   );
 }
@@ -214,7 +214,7 @@ export default function DetailsSettings() {
             onPress={goBack}
             variant="ghost"
           >
-            <ArrowLeft className="size-4 sm:size-4" />
+            <ArrowLeft />
           </Button>
           <div className="min-w-0 flex-1">
             <div

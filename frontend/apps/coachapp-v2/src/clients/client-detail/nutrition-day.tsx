@@ -17,10 +17,10 @@ import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {FoodLogEntry, MealLog} from '@/api/generated';
 import {useListCoachMealLogsQuery} from '@/api/generated';
 import {useListCoachClientNutritionPlansQuery} from '@/api/nutrition-plans-list';
-import {formatShortDate} from '@/clients/client-detail/cd-data';
-import {CD_CARD, CD_CHIP, CD_EYEBROW, CdSubHeader} from '@/clients/client-detail/cd-ui';
+import {formatShortDate} from '@/clients/client-detail/data';
+import {CARD, CHIP, EYEBROW, SubHeader} from '@/clients/client-detail/ui';
 
-const OUT_CHIP = `${CD_CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
+const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
 const ENTRY_ROW = 'flex items-center gap-2.25 py-1.5 sm:gap-2.5 sm:py-1.75';
 
 type PlannedItem = {calories?: number; food_name?: string};
@@ -222,7 +222,7 @@ export default function NutritionDay() {
         bare
         className="flex flex-col p-0"
       >
-        <CdSubHeader
+        <SubHeader
           onBack={goBack}
           subtitle={`${round(loggedCalories).toLocaleString()} / ${targetCalories ? round(targetCalories).toLocaleString() : '—'} kcal`}
           title={date ? formatShortDate(date) : 'Day'}
@@ -234,11 +234,11 @@ export default function NutritionDay() {
             data-testid="nd-root"
           >
             <div
-              className={`${CD_CARD} p-3.75 sm:px-5 sm:py-4.5`}
+              className={`${CARD} p-3.75 sm:px-5 sm:py-4.5`}
               data-testid="nd-totals"
             >
               <div
-                className={`${CD_EYEBROW} mb-3.25 sm:mb-4`}
+                className={`${EYEBROW} mb-3.25 sm:mb-4`}
                 data-testid="nd-totals-eyebrow"
               >
                 Day totals
@@ -258,7 +258,7 @@ export default function NutritionDay() {
             </div>
 
             {logs.length === 0 ? (
-              <div className={`${CD_CARD} px-3.5 py-6 text-center sm:px-4.5`}>
+              <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
                 <span className="text-sub [color:var(--color-muted)] sm:text-pill">Nothing logged on this day.</span>
               </div>
             ) : (
@@ -266,7 +266,7 @@ export default function NutritionDay() {
                 const skipped = skippedItems(log);
                 return (
                   <div
-                    className={`${CD_CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+                    className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
                     data-testid={logIndex === 0 ? 'nd-meal' : undefined}
                     key={log.id}
                   >

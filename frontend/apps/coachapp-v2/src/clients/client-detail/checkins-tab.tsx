@@ -18,25 +18,17 @@ import {
 } from '@/api/checkins';
 import type {Client, ClientProfileFormAssignment} from '@/api/generated';
 import {getApiErrorMessage} from '@/api/shared';
-import {formatShortDate, snapshotQuestions} from '@/clients/client-detail/cd-data';
-import {
-  CD_BTN_A,
-  CD_CARD,
-  CD_CHIP,
-  CD_EYEBROW,
-  CdCardError,
-  CdCardSkeleton,
-  CdPhotoThumb,
-} from '@/clients/client-detail/cd-ui';
+import {formatShortDate, snapshotQuestions} from '@/clients/client-detail/data';
+import {ACCENT_BUTTON, CARD, CardError, CardSkeleton, CHIP, EYEBROW, PhotoThumb} from '@/clients/client-detail/ui';
 import AssignSurface from '@/clients/components/assign-surface';
 import CheckinAssignContent from '@/clients/components/checkin-assign-content';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-cd-panel px-1 py-2.75 sm:px-2';
+const ROW = 'flex items-center gap-3.5 rounded-detail-panel px-1 py-2.75 sm:px-2';
 const ROW_TEXT = 'text-metric font-normal leading-[normal] text-foreground';
 const SETTING_ROW = 'flex items-center justify-between py-1';
 const SETTING_LABEL = 'text-sub text-muted sm:text-pill';
-const OUT_CHIP = `${CD_CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
+const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
 
 const FREQUENCIES = [
   {id: 'once', label: 'Once'},
@@ -64,11 +56,11 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
 
   return (
     <div
-      className={`${CD_CARD} p-3.75 sm:px-4.5 sm:py-4`}
+      className={`${CARD} p-3.75 sm:px-4.5 sm:py-4`}
       data-testid="ci-sched"
     >
       <div
-        className={`${CD_EYEBROW} mb-3 sm:mb-3.5`}
+        className={`${EYEBROW} mb-3 sm:mb-3.5`}
         data-testid="ci-sched-eyebrow"
       >
         Check-in schedule
@@ -79,7 +71,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
         to={ROUTES.EDIT_CHECKIN.replace(':id', schedule.form_template_id)}
       >
         <span
-          className="flex size-9 flex-none items-center justify-center rounded-cd-btn bg-accent-soft text-accent sm:size-9.5 sm:rounded-cd-tile"
+          className="flex size-9 flex-none items-center justify-center rounded-detail-button bg-accent-soft text-accent sm:size-9.5 sm:rounded-detail-tile"
           data-testid="ci-form-icon"
         >
           <ClipboardList className="size-4.25 sm:size-4.5" />
@@ -119,7 +111,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
           selectedKey={schedule.frequency}
         >
           <Button
-            className="h-7.5 min-h-0 gap-2 rounded-cd-btn border border-border bg-background px-3 text-pill font-semibold text-foreground [box-shadow:none] sm:h-8"
+            className="h-7.5 min-h-0 gap-2 rounded-detail-button border border-border bg-background px-3 text-pill font-semibold text-foreground [box-shadow:none] sm:h-8"
             data-testid="ci-freq-ctl"
             variant="ghost"
           >
@@ -156,7 +148,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
             {formatShortDate(schedule.next_due_on)}
           </span>
           {isDue ? (
-            <Chip className={`${CD_CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}>Due now</Chip>
+            <Chip className={`${CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}>Due now</Chip>
           ) : null}
         </span>
       </div>
@@ -200,7 +192,7 @@ function HistoryCard({assignments, clientId}: {assignments: ClientProfileFormAss
 
   return (
     <div
-      className={`${CD_CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
+      className={`${CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
       data-testid="ci-history"
     >
       <div
@@ -224,14 +216,14 @@ function HistoryCard({assignments, clientId}: {assignments: ClientProfileFormAss
               </Chip>
             ) : (
               <Chip
-                className={`${CD_CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+                className={`${CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
                 data-testid="ci-chip-needs"
               >
                 Needs review
               </Chip>
             )
           ) : isMissed ? (
-            <Chip className={`${CD_CHIP} bg-danger-soft [color:var(--color-danger-soft-foreground)]`}>Missed</Chip>
+            <Chip className={`${CHIP} bg-danger-soft [color:var(--color-danger-soft-foreground)]`}>Missed</Chip>
           ) : (
             <Chip className={OUT_CHIP}>
               {assignment.due_date ? `Due ${formatShortDate(assignment.due_date)}` : 'Assigned'}
@@ -310,17 +302,17 @@ function IntakeCard({
 
   return (
     <div
-      className={`${CD_CARD} p-3.75 sm:px-4.5 sm:py-4`}
+      className={`${CARD} p-3.75 sm:px-4.5 sm:py-4`}
       data-testid="ci-intake"
     >
       <div
-        className={`${CD_EYEBROW} mb-2.5 sm:mb-2.75`}
+        className={`${EYEBROW} mb-2.5 sm:mb-2.75`}
         data-testid="ci-intake-eyebrow"
       >
         Intake
       </div>
       <Link
-        className={`${ROW_TEXT} -mx-1 -my-1.25 flex items-center gap-3.5 rounded-cd-panel px-1 py-1.25 sm:-mx-2 sm:-my-1.5 sm:px-2 sm:py-1.5`}
+        className={`${ROW_TEXT} -mx-1 -my-1.25 flex items-center gap-3.5 rounded-detail-panel px-1 py-1.25 sm:-mx-2 sm:-my-1.5 sm:px-2 sm:py-1.5`}
         data-testid="ci-intake-row"
         to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
       >
@@ -372,20 +364,20 @@ function PhotosCard({assignments, clientId}: {assignments: ClientProfileFormAssi
 
   return (
     <Link
-      className={`${CD_CARD} cursor-pointer p-3.75 sm:px-4.25 sm:py-4`}
+      className={`${CARD} cursor-pointer p-3.75 sm:px-4.25 sm:py-4`}
       data-testid="ci-photos"
       to={ROUTES.CLIENT_PHOTOS.replace(':id', clientId)}
     >
       <div
-        className={`${CD_EYEBROW} mb-2.75 sm:mb-3`}
+        className={`${EYEBROW} mb-2.75 sm:mb-3`}
         data-testid="ci-photos-eyebrow"
       >
         Progress photos
       </div>
       <div className="grid grid-cols-2 gap-2">
         {shown.map((id) => (
-          <CdPhotoThumb
-            className="flex aspect-square items-center justify-center overflow-hidden rounded-cd-panel bg-surface-tertiary text-muted/60"
+          <PhotoThumb
+            className="flex aspect-square items-center justify-center overflow-hidden rounded-detail-panel bg-surface-tertiary text-muted/60"
             iconClassName="size-5.5"
             key={id}
             src={urls[id]}
@@ -394,7 +386,7 @@ function PhotosCard({assignments, clientId}: {assignments: ClientProfileFormAssi
         ))}
         {overflow > 0 ? (
           <span
-            className="flex aspect-square items-center justify-center rounded-cd-panel bg-cd-dark text-metric-sm font-bold [color:white] [font-family:'Space_Grotesk'] sm:text-metric"
+            className="flex aspect-square items-center justify-center rounded-detail-panel bg-always-dark text-metric-sm font-bold [color:white] [font-family:'Space_Grotesk'] sm:text-metric"
             data-testid="ci-photo-overflow"
           >
             +{overflow}
@@ -416,14 +408,14 @@ export default function CheckinsTab({client}: {client: Client}) {
   if (schedules.isLoading || assignments.isLoading) {
     return (
       <div className="flex flex-col gap-3 p-3.5 sm:gap-4 sm:p-0">
-        <CdCardSkeleton lines={4} />
+        <CardSkeleton lines={4} />
       </div>
     );
   }
   if (schedules.isError && assignments.isError) {
     return (
       <div className="flex flex-col gap-3 p-3.5 sm:gap-4 sm:p-0">
-        <CdCardError
+        <CardError
           label="check-ins"
           onRetry={() => {
             schedules.refetch();
@@ -450,11 +442,11 @@ export default function CheckinsTab({client}: {client: Client}) {
           </>
         ) : (
           <div
-            className={`${CD_CARD} flex flex-col items-center gap-1.25 px-4.5 py-7 text-center sm:gap-1.5 sm:px-5 sm:py-8.5`}
+            className={`${CARD} flex flex-col items-center gap-1.25 px-4.5 py-7 text-center sm:gap-1.5 sm:px-5 sm:py-8.5`}
             data-testid="ci-empty"
           >
             <span
-              className="mb-0.5 flex size-11.5 items-center justify-center rounded-cd-plan bg-surface-tertiary text-muted sm:size-12.5 sm:rounded-cd-strip"
+              className="mb-0.5 flex size-11.5 items-center justify-center rounded-detail-plan bg-surface-tertiary text-muted sm:size-12.5 sm:rounded-detail-strip"
               data-testid="ci-empty-icon"
             >
               <CalendarClock className="size-5.25 sm:size-5.75" />
@@ -474,7 +466,7 @@ export default function CheckinsTab({client}: {client: Client}) {
             <AssignSurface
               label="Set up check-ins"
               popoverClassName="p-4"
-              triggerClassName={`${CD_BTN_A} mt-2 h-9 px-3.75 sm:mt-2.5 sm:h-9.5`}
+              triggerClassName={`${ACCENT_BUTTON} mt-2 h-9 px-3.75 sm:mt-2.5 sm:h-9.5`}
               triggerTestId="ci-empty-btn"
             >
               {(close) => (

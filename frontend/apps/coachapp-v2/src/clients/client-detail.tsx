@@ -35,14 +35,14 @@ import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import type {Client} from '@/api/generated';
 import {useListCoachClientNutritionPlansQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
-import {formatShortDate} from '@/clients/client-detail/cd-data';
-import {CD_BTN_A, CD_CHIP} from '@/clients/client-detail/cd-ui';
 import CheckinsTab from '@/clients/client-detail/checkins-tab';
+import {formatShortDate} from '@/clients/client-detail/data';
 import NutritionTab from '@/clients/client-detail/nutrition-tab';
 import OverviewTab, {DetailsRow, NotesCard} from '@/clients/client-detail/overview-tab';
 import PendingBody from '@/clients/client-detail/pending-body';
 import StatStrip from '@/clients/client-detail/stat-strip';
 import TrainingTab from '@/clients/client-detail/training-tab';
+import {ACCENT_BUTTON, CHIP} from '@/clients/client-detail/ui';
 
 const TAB_IDS = ['overview', 'training', 'nutrition', 'check-ins'] as const;
 type TabId = (typeof TAB_IDS)[number];
@@ -59,7 +59,7 @@ function AttentionChips({client}: {client: Client}) {
   if (client.needs_plan && client.status === 'active') {
     chips.push(
       <Button
-        className={`${CD_CHIP} h-auto min-h-0 bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+        className={`${CHIP} h-auto min-h-0 bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
         data-testid="cd-attn-plan"
         key="plan"
         onPress={() => setSearchParams({tab: 'training'}, {replace: true})}
@@ -73,7 +73,7 @@ function AttentionChips({client}: {client: Client}) {
   if (client.expiring_soon && client.subscription_ends_on) {
     chips.push(
       <Button
-        className={`${CD_CHIP} h-auto min-h-0 bg-danger-soft [color:var(--color-danger-soft-foreground)]`}
+        className={`${CHIP} h-auto min-h-0 bg-danger-soft [color:var(--color-danger-soft-foreground)]`}
         data-testid="cd-attn-expires"
         key="expires"
         onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
@@ -87,7 +87,7 @@ function AttentionChips({client}: {client: Client}) {
   if (client.intake_incomplete) {
     chips.push(
       <Chip
-        className={`${CD_CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+        className={`${CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
         data-testid="cd-attn-intake"
         key="intake"
       >
@@ -106,7 +106,7 @@ function StatusChip({status}: {status: Client['status']}) {
   if (status === 'active') {
     return (
       <Chip
-        className={`${CD_CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}
+        className={`${CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}
         data-testid="cd-status-chip"
       >
         <span className="size-1.5 rounded-pill bg-success sm:size-1.75" />
@@ -117,7 +117,7 @@ function StatusChip({status}: {status: Client['status']}) {
   if (status === 'pending') {
     return (
       <Chip
-        className={`${CD_CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+        className={`${CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
         data-testid="cd-status-chip"
       >
         Invited
@@ -126,7 +126,7 @@ function StatusChip({status}: {status: Client['status']}) {
   }
   return (
     <Chip
-      className={`${CD_CHIP} bg-default-soft [color:var(--color-default-soft-foreground)]`}
+      className={`${CHIP} bg-default-soft [color:var(--color-default-soft-foreground)]`}
       data-testid="cd-status-chip"
     >
       Inactive
@@ -155,10 +155,10 @@ function StateBanner({client}: {client: Client}) {
   if (reason === 'subscription_expired') {
     return (
       <div
-        className="flex items-center gap-2.75 rounded-cd-panel border border-danger/30 bg-danger-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+        className="flex items-center gap-2.75 rounded-detail-panel border border-danger/30 bg-danger-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
         data-testid="cd-banner"
       >
-        <span className="flex size-8 flex-none items-center justify-center rounded-cd-btn bg-danger/20 text-danger-soft-foreground sm:size-8.5">
+        <span className="flex size-8 flex-none items-center justify-center rounded-detail-button bg-danger/20 text-danger-soft-foreground sm:size-8.5">
           <AlertTriangle className="size-4 sm:size-4.25" />
         </span>
         <div
@@ -168,7 +168,7 @@ function StateBanner({client}: {client: Client}) {
           Subscription has ended. {firstName} is locked out of the app.
         </div>
         <Button
-          className={`${CD_BTN_A} h-8 px-3 sm:h-8.5 sm:px-3.75`}
+          className={`${ACCENT_BUTTON} h-8 px-3 sm:h-8.5 sm:px-3.75`}
           data-testid="cd-banner-btn"
           onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
         >
@@ -181,10 +181,10 @@ function StateBanner({client}: {client: Client}) {
   if (reason === 'awaiting_seat') {
     return (
       <div
-        className="flex items-center gap-2.75 rounded-cd-panel border border-warning/32 bg-warning-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+        className="flex items-center gap-2.75 rounded-detail-panel border border-warning/32 bg-warning-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
         data-testid="cd-banner"
       >
-        <span className="flex size-8 flex-none items-center justify-center rounded-cd-btn bg-warning/26 text-warning-soft-foreground sm:size-8.5">
+        <span className="flex size-8 flex-none items-center justify-center rounded-detail-button bg-warning/26 text-warning-soft-foreground sm:size-8.5">
           <AlertCircle className="size-4 sm:size-4.25" />
         </span>
         <div
@@ -194,7 +194,7 @@ function StateBanner({client}: {client: Client}) {
           No seat available. {firstName} can&apos;t use the app until you add one.
         </div>
         <Button
-          className={`${CD_BTN_A} h-8 px-3 sm:h-8.5 sm:px-3.75`}
+          className={`${ACCENT_BUTTON} h-8 px-3 sm:h-8.5 sm:px-3.75`}
           data-testid="cd-banner-btn"
           onPress={() => navigate(ROUTES.SETTINGS)}
         >
@@ -206,10 +206,10 @@ function StateBanner({client}: {client: Client}) {
 
   return (
     <div
-      className="flex items-center gap-2.75 rounded-cd-panel border border-border bg-surface-tertiary px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+      className="flex items-center gap-2.75 rounded-detail-panel border border-border bg-surface-tertiary px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
       data-testid="cd-banner"
     >
-      <span className="flex size-8 flex-none items-center justify-center rounded-cd-btn bg-surface text-muted sm:size-8.5">
+      <span className="flex size-8 flex-none items-center justify-center rounded-detail-button bg-surface text-muted sm:size-8.5">
         <UserX className="size-4 sm:size-4.25" />
       </span>
       <div
@@ -219,7 +219,7 @@ function StateBanner({client}: {client: Client}) {
         {firstName} is inactive.
       </div>
       <Button
-        className={`${CD_BTN_A} h-8 px-3.25 sm:h-8.5 sm:px-3.75`}
+        className={`${ACCENT_BUTTON} h-8 px-3.25 sm:h-8.5 sm:px-3.75`}
         data-testid="cd-banner-btn"
         isPending={isLoading}
         onPress={reactivate}
@@ -318,7 +318,7 @@ export default function ClientDetail() {
             <Dropdown>
               <Button
                 aria-label="More"
-                className="size-8 min-h-0 min-w-0 rounded-cd-panel border-0 bg-transparent px-1.5 py-px font-normal leading-[normal] text-muted [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] sm:size-8.5"
+                className="size-8 min-h-0 min-w-0 rounded-detail-panel border-0 bg-transparent px-1.5 py-px font-normal leading-[normal] text-muted [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] sm:size-8.5"
                 data-testid="cd-menu"
                 isIconOnly
                 variant="ghost"
@@ -420,7 +420,7 @@ export default function ClientDetail() {
             <div className="mt-3.25 flex w-full gap-2 sm:mt-0 sm:w-auto sm:flex-none sm:items-center sm:gap-2.25">
               {isPending ? null : (
                 <Button
-                  className="relative h-9.5 flex-1 gap-2 rounded-cd-panel px-4.5 font-btn text-note font-bold leading-none [color:white] [box-shadow:none] sm:h-10 sm:flex-none"
+                  className="relative h-9.5 flex-1 gap-2 rounded-detail-panel px-4.5 font-btn text-note font-bold leading-none [color:white] [box-shadow:none] sm:h-10 sm:flex-none"
                   data-testid="cd-message"
                   onPress={() => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', client.id))}
                   variant="primary"
@@ -440,7 +440,7 @@ export default function ClientDetail() {
               {client.phone ? (
                 <a
                   aria-label="Call"
-                  className="flex size-9.5 flex-none items-center justify-center rounded-cd-panel border border-border bg-surface text-foreground sm:size-10"
+                  className="flex size-9.5 flex-none items-center justify-center rounded-detail-panel border border-border bg-surface text-foreground sm:size-10"
                   data-testid="cd-call"
                   href={`tel:${client.phone}`}
                 >

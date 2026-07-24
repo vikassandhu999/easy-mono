@@ -16,20 +16,20 @@ import type {Client, MealLog, NutritionPlan} from '@/api/generated';
 import {useListCoachMealLogsQuery, useUpdateNutritionPlanMutation} from '@/api/generated';
 import {useListCoachClientNutritionPlansQuery} from '@/api/nutrition-plans-list';
 import {getApiErrorMessage} from '@/api/shared';
-import {formatRowDate, isoDate, lastDays} from '@/clients/client-detail/cd-data';
-import {CD_CARD, CD_CHIP, CdCardError, CdCardSkeleton} from '@/clients/client-detail/cd-ui';
+import {formatRowDate, isoDate, lastDays} from '@/clients/client-detail/data';
 import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
+import {CARD, CardError, CardSkeleton, CHIP} from '@/clients/client-detail/ui';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-cd-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
+const ROW = 'flex items-center gap-3.5 rounded-detail-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
 /** `.lbrow` sits in the page's inherited text context; HeroUI Button imposes its
  *  own 14px/20px/default-foreground, which then cascades into the meter. */
 const ROW_TEXT = 'text-metric font-normal leading-[normal] text-foreground';
-const NOT_LOGGED_ROW = 'flex items-center gap-3.5 rounded-cd-panel px-1 py-2.75 sm:px-2';
+const NOT_LOGGED_ROW = 'flex items-center gap-3.5 rounded-detail-panel px-1 py-2.75 sm:px-2';
 const ROW_DATE = 'text-sub font-semibold text-muted sm:w-19 sm:flex-none';
 const SEP = 'h-px bg-border';
 /** `.chip.out` — transparent, hairline, muted (RECIPES R5 outline chip). */
-const OUT_CHIP = `${CD_CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
+const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
 
 type DayRow = {
   added: number;
@@ -229,9 +229,9 @@ export default function NutritionTab({client}: {client: Client}) {
   return (
     <div className="flex flex-col gap-3 p-3.5 sm:gap-4 sm:p-0">
       {plans.isLoading ? (
-        <CdCardSkeleton lines={2} />
+        <CardSkeleton lines={2} />
       ) : plans.isError ? (
-        <CdCardError
+        <CardError
           label="nutrition"
           onRetry={plans.refetch}
         />
@@ -252,21 +252,21 @@ export default function NutritionTab({client}: {client: Client}) {
       )}
 
       {!plan ? null : logs.isLoading ? (
-        <CdCardSkeleton />
+        <CardSkeleton />
       ) : logs.isError ? (
-        <CdCardError
+        <CardError
           label="nutrition"
           onRetry={logs.refetch}
         />
       ) : !hasAnyLogged ? (
-        <div className={`${CD_CARD} px-3.5 py-6 text-center sm:px-4.5`}>
+        <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
           <span className="text-sub [color:var(--color-muted)] sm:text-pill">
             No meals logged yet. Days appear here as {client.first_name ?? 'this client'} logs food.
           </span>
         </div>
       ) : (
         <div
-          className={`${CD_CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
+          className={`${CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
           data-testid="nu-history"
         >
           <div

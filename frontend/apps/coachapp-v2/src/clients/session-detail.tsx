@@ -14,13 +14,13 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {TrainingPerformedSet} from '@/api/generated';
 import {useGetCoachClientTrainingSessionQuery} from '@/api/generated';
-import {formatCdDuration, formatRowDate} from '@/clients/client-detail/cd-data';
-import {CD_CARD, CD_CHIP, CdSubHeader} from '@/clients/client-detail/cd-ui';
+import {formatCompactDuration, formatRowDate} from '@/clients/client-detail/data';
+import {CARD, CHIP, SubHeader} from '@/clients/client-detail/ui';
 import {buildExerciseGroups, type ExerciseGroup, formatLoad} from '@/clients/lib/session';
 
 /** Set · Reps · Load · RPE · done — one grid template for header and rows. */
 const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[64px_1fr_92px_60px_26px] sm:gap-2.5';
-const SET_CHIP = `${CD_CHIP} border border-border bg-transparent px-1.5 py-0.25 text-set-chip font-semibold [color:var(--color-muted)]`;
+const SET_CHIP = `${CHIP} border border-border bg-transparent px-1.5 py-0.25 text-set-chip font-semibold [color:var(--color-muted)]`;
 
 function setTypeLabel(set: TrainingPerformedSet): null | string {
   if (set.set_type === 'warmup') {
@@ -59,7 +59,7 @@ function ExerciseCard({group, isFirst}: {group: ExerciseGroup; isFirst: boolean}
 
   return (
     <div
-      className={`${CD_CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+      className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
       data-testid={isFirst ? 'sd-exercise' : undefined}
     >
       <div
@@ -137,7 +137,7 @@ export default function SessionDetail() {
 
   const session = data.data;
   const groups = buildExerciseGroups(session);
-  const duration = formatCdDuration(session.started_at, session.ended_at);
+  const duration = formatCompactDuration(session.started_at, session.ended_at);
   const subtitle = [session.date ? formatRowDate(session.date, {withMonth: true}) : null, duration]
     .filter(Boolean)
     .join(' · ');
@@ -148,17 +148,17 @@ export default function SessionDetail() {
         bare
         className="flex flex-col p-0"
       >
-        <CdSubHeader
+        <SubHeader
           onBack={goBack}
           right={
             <>
               {session.state === 'completed' ? (
-                <Chip className={`${CD_CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}>
+                <Chip className={`${CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}>
                   Completed
                 </Chip>
               ) : null}
               {session.soreness_rating != null ? (
-                <Chip className={`${CD_CHIP} border border-border bg-transparent [color:var(--color-muted)]`}>
+                <Chip className={`${CHIP} border border-border bg-transparent [color:var(--color-muted)]`}>
                   Soreness {session.soreness_rating}/5
                 </Chip>
               ) : null}
@@ -174,7 +174,7 @@ export default function SessionDetail() {
             data-testid="sd-root"
           >
             {session.notes ? (
-              <div className="flex gap-2.5 rounded-cd-panel bg-accent-soft px-3.25 py-3 sm:gap-2.75 sm:px-3.75 sm:py-3.25">
+              <div className="flex gap-2.5 rounded-detail-panel bg-accent-soft px-3.25 py-3 sm:gap-2.75 sm:px-3.75 sm:py-3.25">
                 <Quote className="mt-0.25 size-4 flex-none text-accent sm:size-4.5" />
                 <div className="text-pill leading-normal sm:text-note">{session.notes}</div>
               </div>
@@ -189,7 +189,7 @@ export default function SessionDetail() {
             ))}
 
             {groups.length === 0 ? (
-              <div className={`${CD_CARD} px-3.5 py-6 text-center sm:px-4.5`}>
+              <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
                 <span className="text-sub [color:var(--color-muted)] sm:text-pill">
                   No sets were logged in this session.
                 </span>

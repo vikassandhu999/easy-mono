@@ -12,10 +12,10 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
-import {formatShortDate, snapshotQuestions} from '@/clients/client-detail/cd-data';
-import {CD_CHIP, CdSubHeader} from '@/clients/client-detail/cd-ui';
+import {formatShortDate, snapshotQuestions} from '@/clients/client-detail/data';
+import {CHIP, SubHeader} from '@/clients/client-detail/ui';
 
-const OUT_CHIP = `${CD_CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
+const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
 const LABEL = 'mb-1.5 text-eyebrow font-semibold text-muted sm:mb-1.75 sm:text-chip';
 const TEXT = 'text-note leading-relaxed sm:text-row';
 
@@ -62,7 +62,7 @@ export default function IntakeResponses() {
         bare
         className="flex flex-col p-0"
       >
-        <CdSubHeader
+        <SubHeader
           onBack={goBack}
           subtitle={`Submitted ${formatShortDate(submission.submitted_at)}`}
           title="Intake"

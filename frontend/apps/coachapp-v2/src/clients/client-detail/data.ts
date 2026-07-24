@@ -153,7 +153,7 @@ export function formatKg(value: number | string, unit: string): string {
  * `48m` / `1h 4m` (§1.1). The shared `formatDuration` renders `48 min`, which
  * the CD designs don't use — kept local rather than changing every screen.
  */
-export function formatCdDuration(startedAt: string, endedAt: null | string | undefined): null | string {
+export function formatCompactDuration(startedAt: string, endedAt: null | string | undefined): null | string {
   if (!endedAt) {
     return null;
   }

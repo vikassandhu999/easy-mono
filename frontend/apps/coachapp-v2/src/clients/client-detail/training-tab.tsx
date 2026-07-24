@@ -22,19 +22,19 @@ import {getApiErrorMessage} from '@/api/shared';
 import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
 import {
   activePlan,
-  formatCdDuration,
+  formatCompactDuration,
   formatRowDate,
   formatShortDate,
   isoDate,
   lastDays,
   weekdayKey,
   weekGroupLabel,
-} from '@/clients/client-detail/cd-data';
-import {CD_BTN_G, CD_CARD, CD_CHIP, CdCardError, CdCardSkeleton} from '@/clients/client-detail/cd-ui';
+} from '@/clients/client-detail/data';
 import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
+import {CARD, CardError, CardSkeleton, CHIP, OUTLINE_BUTTON} from '@/clients/client-detail/ui';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-cd-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
+const ROW = 'flex items-center gap-3.5 rounded-detail-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
 const ROW_DATE = 'w-18.5 flex-none text-sub font-semibold text-muted';
 const ROW_META = 'mt-0.5 text-eyebrow text-muted sm:text-chip';
 const SEP = 'h-px bg-border';
@@ -61,7 +61,7 @@ function sessionMeta(session: TrainingSession, isDesktop: boolean): string {
   if (sets > 0) {
     parts.push(`${sets} set${sets === 1 ? '' : 's'}`);
   }
-  const duration = formatCdDuration(session.started_at, session.ended_at);
+  const duration = formatCompactDuration(session.started_at, session.ended_at);
   if (duration) {
     parts.push(duration);
   }
@@ -178,9 +178,9 @@ export default function TrainingTab({client}: {client: Client}) {
   return (
     <div className="flex flex-col gap-3 p-3.5 sm:gap-4 sm:p-0">
       {plans.isLoading ? (
-        <CdCardSkeleton lines={2} />
+        <CardSkeleton lines={2} />
       ) : plans.isError ? (
-        <CdCardError
+        <CardError
           label="training"
           onRetry={plans.refetch}
         />
@@ -201,14 +201,14 @@ export default function TrainingTab({client}: {client: Client}) {
       )}
 
       {sessions.isLoading ? (
-        <CdCardSkeleton />
+        <CardSkeleton />
       ) : sessions.isError ? (
-        <CdCardError
+        <CardError
           label="training"
           onRetry={sessions.refetch}
         />
       ) : rows.length === 0 ? (
-        <div className={`${CD_CARD} px-3.5 py-6 text-center sm:px-4.5`}>
+        <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
           {/* plain span: tw-merge drops the size token when a text-color class
               rides along in a HeroUI className (field-notes) */}
           <span className="text-sub [color:var(--color-muted)] sm:text-pill">
@@ -217,7 +217,7 @@ export default function TrainingTab({client}: {client: Client}) {
         </div>
       ) : (
         <div
-          className={`${CD_CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
+          className={`${CARD} px-3.5 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
           data-testid="tr-history"
         >
           <ul>
@@ -275,7 +275,7 @@ export default function TrainingTab({client}: {client: Client}) {
                         </span>
                       </span>
                       <Chip
-                        className={`${CD_CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}
+                        className={`${CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}
                         data-testid="tr-row-chip"
                       >
                         Completed
@@ -306,7 +306,7 @@ export default function TrainingTab({client}: {client: Client}) {
                         </span>
                       </span>
                       <Chip
-                        className={`${CD_CHIP} bg-danger-soft [color:var(--color-danger-soft-foreground)]`}
+                        className={`${CHIP} bg-danger-soft [color:var(--color-danger-soft-foreground)]`}
                         data-testid="tr-missed-chip"
                       >
                         Missed
@@ -320,7 +320,7 @@ export default function TrainingTab({client}: {client: Client}) {
           {hasMore ? (
             <div className="flex justify-center pt-2">
               <Button
-                className={`${CD_BTN_G} h-9 px-3.75`}
+                className={`${OUTLINE_BUTTON} h-9 px-3.75`}
                 isPending={sessions.isFetchingNextPage}
                 onPress={() => sessions.fetchNextPage()}
               >

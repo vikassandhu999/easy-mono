@@ -23,9 +23,9 @@ import type {Client} from '@/api/generated';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/generated';
 import {applyFormErrors, getApiErrorMessage} from '@/api/shared';
 import {useReassignClientMutation} from '@/api/team';
-import {formatShortDate} from '@/clients/client-detail/cd-data';
-import {CD_BTN_A, CD_CARD, CD_EYEBROW} from '@/clients/client-detail/cd-ui';
+import {formatShortDate} from '@/clients/client-detail/data';
 import {InviteCard} from '@/clients/client-detail/pending-body';
+import {ACCENT_BUTTON, CARD, EYEBROW} from '@/clients/client-detail/ui';
 import {
   clientToEditFormValues,
   EDIT_CLIENT_FORM_FIELDS,
@@ -51,7 +51,7 @@ function SubscriptionAlert({client, onExtend}: {client: Client; onExtend: () => 
 
   return (
     <div
-      className={`mt-2 flex items-center gap-2.25 rounded-cd-tile px-3 py-2.5 sm:mt-2.5 sm:gap-2.5 sm:px-3.25 sm:py-2.75 ${
+      className={`mt-2 flex items-center gap-2.25 rounded-detail-tile px-3 py-2.5 sm:mt-2.5 sm:gap-2.5 sm:px-3.25 sm:py-2.75 ${
         expired ? 'bg-danger-soft' : 'bg-warning-soft'
       }`}
       data-testid="dt-alert"
@@ -92,12 +92,12 @@ function IntakeRow({clientId}: {clientId: string}) {
 
   return (
     <Link
-      className="flex items-center gap-3.5 rounded-cd-panel border border-border bg-surface px-3.75 py-3.5 sm:px-4.5 sm:py-3.75"
+      className="flex items-center gap-3.5 rounded-detail-panel border border-border bg-surface px-3.75 py-3.5 sm:px-4.5 sm:py-3.75"
       data-testid="dt-intake"
       to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
     >
       <span
-        className="flex size-9 flex-none items-center justify-center rounded-cd-btn bg-background text-muted sm:size-9.5 sm:rounded-cd-tile"
+        className="flex size-9 flex-none items-center justify-center rounded-detail-button bg-background text-muted sm:size-9.5 sm:rounded-detail-tile"
         data-testid="dt-intake-icon"
       >
         <ClipboardList className="size-4.25 sm:size-4.5" />
@@ -208,7 +208,7 @@ export default function DetailsSettings() {
         <div className="flex items-center gap-2.75 border-b border-border bg-surface px-4 pt-0.5 pb-3.25 sm:gap-3.5 sm:px-7.5 sm:py-4.5">
           <Button
             aria-label="Back"
-            className="size-8.5 min-h-0 min-w-0 rounded-cd-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
+            className="size-8.5 min-h-0 min-w-0 rounded-detail-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
             data-testid="dt-back"
             isIconOnly
             onPress={goBack}
@@ -249,11 +249,11 @@ export default function DetailsSettings() {
               validationBehavior="aria"
             >
               <div
-                className={`${CD_CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+                className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
                 data-testid="dt-profile"
               >
                 <div
-                  className={`${CD_EYEBROW} mb-1 sm:mb-1.5`}
+                  className={`${EYEBROW} mb-1 sm:mb-1.5`}
                   data-testid="dt-profile-eyebrow"
                 >
                   Profile
@@ -324,11 +324,11 @@ export default function DetailsSettings() {
               </div>
 
               <div
-                className={`${CD_CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+                className={`${CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
                 data-testid="dt-subcard"
               >
                 <div
-                  className={`${CD_EYEBROW} mb-1 sm:mb-1.5`}
+                  className={`${EYEBROW} mb-1 sm:mb-1.5`}
                   data-testid="dt-sub-eyebrow"
                 >
                   Subscription
@@ -399,14 +399,14 @@ export default function DetailsSettings() {
 
               <div className="flex justify-end gap-2.5">
                 <Button
-                  className="h-10 min-w-0 shrink-0 rounded-cd-btn border border-border bg-surface px-3.75 font-btn text-pill font-bold leading-none text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal]"
+                  className="h-10 min-w-0 shrink-0 rounded-detail-button border border-border bg-surface px-3.75 font-btn text-pill font-bold leading-none text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal]"
                   onPress={() => form.reset(clientToEditFormValues(client))}
                   variant="ghost"
                 >
                   Cancel
                 </Button>
                 <Button
-                  className={`${CD_BTN_A} h-10 px-4`}
+                  className={`${ACCENT_BUTTON} h-10 px-4`}
                   isPending={isSaving}
                   type="submit"
                 >
@@ -420,7 +420,7 @@ export default function DetailsSettings() {
             {client.status === 'active' ? (
               <div>
                 <Button
-                  className="h-10.5 min-w-0 w-full shrink-0 rounded-cd-btn border border-danger-soft bg-transparent px-1.5 py-px font-btn text-pill font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:h-10 sm:w-auto sm:px-4 sm:py-0"
+                  className="h-10.5 min-w-0 w-full shrink-0 rounded-detail-button border border-danger-soft bg-transparent px-1.5 py-px font-btn text-pill font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:h-10 sm:w-auto sm:px-4 sm:py-0"
                   data-testid="dt-deactivate"
                   onPress={() => setDeactivateOpen(true)}
                   variant="ghost"
@@ -432,7 +432,7 @@ export default function DetailsSettings() {
             {client.status === 'inactive' ? (
               <div>
                 <Button
-                  className={`${CD_BTN_A} h-10.5 w-full px-3.75 sm:h-10 sm:w-auto`}
+                  className={`${ACCENT_BUTTON} h-10.5 w-full px-3.75 sm:h-10 sm:w-auto`}
                   data-testid="dt-reactivate"
                   onPress={() => setStatus('active', `${firstName} is active again.`)}
                 >

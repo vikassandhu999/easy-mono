@@ -17,8 +17,8 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery, useReviewFormSubmissionMutation} from '@/api/checkins';
 import type {ClientProfileFormSubmission} from '@/api/generated';
 import {getApiErrorMessage} from '@/api/shared';
-import {formatShortDate} from '@/clients/client-detail/cd-data';
-import {CD_BTN_A, CD_CHIP, CdPhotoThumb} from '@/clients/client-detail/cd-ui';
+import {formatShortDate} from '@/clients/client-detail/data';
+import {ACCENT_BUTTON, CHIP, PhotoThumb} from '@/clients/client-detail/ui';
 
 const Q_LABEL = 'mb-1.75 text-eyebrow font-semibold text-muted sm:mb-2 sm:text-chip';
 const VALUE = 'font-grotesk text-metric font-bold sm:text-answer';
@@ -66,8 +66,8 @@ function PhotoAnswer({ids}: {ids: string[]}) {
   return (
     <div className="flex flex-wrap gap-2.5">
       {ids.map((id) => (
-        <CdPhotoThumb
-          className="flex h-30 w-24 flex-none items-center justify-center overflow-hidden rounded-cd-panel bg-surface-tertiary text-muted/60 sm:h-35 sm:w-27.5"
+        <PhotoThumb
+          className="flex h-30 w-24 flex-none items-center justify-center overflow-hidden rounded-detail-panel bg-surface-tertiary text-muted/60 sm:h-35 sm:w-27.5"
           iconClassName="size-5 sm:size-6"
           key={id}
           src={urls[id]}
@@ -92,7 +92,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
         <div className="flex flex-wrap gap-1.75">
           {(value as string[]).map((option) => (
             <Chip
-              className={`${CD_CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}
+              className={`${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}
               key={option}
             >
               {option}
@@ -106,7 +106,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
       return <RatingAnswer value={Number(value)} />;
     case 'select':
       return (
-        <Chip className={`${CD_CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}>
+        <Chip className={`${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}>
           {String(value)}
         </Chip>
       );
@@ -198,7 +198,7 @@ export default function CheckinSubmission() {
         <div className="flex flex-none items-center gap-2.75 border-b border-border px-4 pt-0.5 pb-3.25 sm:gap-3.5 sm:px-7.5 sm:py-4.5">
           <Button
             aria-label="Back"
-            className="size-8.5 min-h-0 min-w-0 rounded-cd-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
+            className="size-8.5 min-h-0 min-w-0 rounded-detail-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
             data-testid="cs-back"
             isIconOnly
             onPress={goBack}
@@ -222,14 +222,14 @@ export default function CheckinSubmission() {
           </div>
           {reviewedAt ? (
             <Chip
-              className={`${CD_CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}
+              className={`${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}
               data-testid="cs-chip-reviewed"
             >
               Reviewed
             </Chip>
           ) : (
             <Chip
-              className={`${CD_CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+              className={`${CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
               data-testid="cs-chip-needs"
             >
               Needs review
@@ -270,7 +270,7 @@ export default function CheckinSubmission() {
             </div>
           ) : (
             <Button
-              className={`${CD_BTN_A} h-11.5 w-full rounded-cd-panel px-3.75 text-tab`}
+              className={`${ACCENT_BUTTON} h-11.5 w-full rounded-detail-panel px-3.75 text-tab`}
               data-testid="cs-review-btn"
               isPending={isReviewing}
               onPress={markReviewed}

@@ -42,22 +42,22 @@
   /* Always-dark fill for the CD photo-overflow tile. The design paints it
      `var(--foreground)`, but `bg-foreground` inverts with the theme (RM-127) —
      this is a constant, so the tile stays dark in both themes. */
-  --color-cd-dark: oklch(0.17 0 0);
+  --color-always-dark: oklch(0.17 0 0);
   --color-ink-foreground: oklch(1 0 0);
 
   /* Client Detail (Client Detail.dc.html) exact-spec tokens — CD-* screens.
      The CD design family uses different geometry than the dashboard redesign
      (16px cards vs 18px), so these are separate tokens, not edits to the ones
      above. */
-  --radius-cd-card: 16px; /* .card */
-  --radius-cd-strip: 14px; /* stat strip container, mobile empty icon tile */
-  --radius-cd-panel: 12px; /* banners, Message button, photo tiles, Call button */
-  --radius-cd-tile: 11px; /* icon tiles in cards */
-  --radius-cd-btn: 10px; /* .btnA / .btnG, small icon tiles */
-  --radius-cd-icon: 15px; /* overview empty-state icon tile (desktop) */
-  --radius-cd-plan: 13px; /* plan-card icon tile (desktop) */
-  --radius-cd-range: 9px; /* WH range segmented container */
-  --radius-cd-seg: 7px; /* WH range segment */
+  --radius-detail-card: 16px; /* .card */
+  --radius-detail-strip: 14px; /* stat strip container, mobile empty icon tile */
+  --radius-detail-panel: 12px; /* banners, Message button, photo tiles, Call button */
+  --radius-detail-tile: 11px; /* icon tiles in cards */
+  --radius-detail-button: 10px; /* .btnA / .btnG, small icon tiles */
+  --radius-detail-icon: 15px; /* overview empty-state icon tile (desktop) */
+  --radius-detail-plan: 13px; /* plan-card icon tile (desktop) */
+  --radius-detail-range: 9px; /* WH range segmented container */
+  --radius-detail-segment: 7px; /* WH range segment */
   --tracking-grp: 0.04em; /* .grp list group headers (vs .eyebrow's 0.05em) */
   /* The CD design leaves line-height untouched (computed `normal`) — pair
      every size token with a normal line-height or Tailwind defaults 1.5. */

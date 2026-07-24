@@ -15,8 +15,8 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {useGetClientQuery} from '@/api/clients';
 import {useListClientWeightEntriesQuery} from '@/api/generated';
-import {formatShortDate, isoDate, sparklinePoints} from '@/clients/client-detail/cd-data';
-import {CD_CARD, CD_EYEBROW, CdSubHeader} from '@/clients/client-detail/cd-ui';
+import {formatShortDate, isoDate, sparklinePoints} from '@/clients/client-detail/data';
+import {CARD, EYEBROW, SubHeader} from '@/clients/client-detail/ui';
 
 const RANGES = [
   {days: 30, id: '1M'},
@@ -29,7 +29,7 @@ type RangeId = (typeof RANGES)[number]['id'];
 
 /** `.seg` container + items — inactive muted, active white pill. */
 const RANGE_ITEM =
-  'min-h-0 rounded-cd-seg border-0 bg-transparent px-2.25 py-1 text-eyebrow font-semibold text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] ' +
+  'min-h-0 rounded-detail-segment border-0 bg-transparent px-2.25 py-1 text-eyebrow font-semibold text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] ' +
   'data-[selected=true]:bg-surface data-[selected=true]:font-bold data-[selected=true]:text-foreground ' +
   'sm:px-2.75 sm:py-1.25 sm:text-chip';
 
@@ -91,7 +91,7 @@ export default function WeightHistory() {
         bare
         className="flex flex-col p-0"
       >
-        <CdSubHeader
+        <SubHeader
           onBack={goBack}
           subtitle={`${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`}
           title="Weight"
@@ -103,18 +103,18 @@ export default function WeightHistory() {
             data-testid="wh-root"
           >
             <div
-              className={`${CD_CARD} p-3.75 sm:px-5 sm:py-4.5`}
+              className={`${CARD} p-3.75 sm:px-5 sm:py-4.5`}
               data-testid="wh-chart"
             >
               <div className="mb-3.25 flex items-center justify-between sm:mb-4">
                 <div
-                  className={CD_EYEBROW}
+                  className={EYEBROW}
                   data-testid="wh-chart-eyebrow"
                 >
                   Trend
                 </div>
                 <ToggleButtonGroup
-                  className="flex rounded-cd-range bg-surface-tertiary p-0.5 [column-gap:normal] [row-gap:normal]"
+                  className="flex rounded-detail-range bg-surface-tertiary p-0.5 [column-gap:normal] [row-gap:normal]"
                   data-testid="wh-range"
                   onSelectionChange={(keys) => {
                     const next = [...keys][0];
@@ -184,7 +184,7 @@ export default function WeightHistory() {
 
             {entries.length > 0 ? (
               <div
-                className={`${CD_CARD} px-3.75 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
+                className={`${CARD} px-3.75 pt-1.5 pb-2.5 sm:px-4.5 sm:pt-2 sm:pb-3`}
                 data-testid="wh-list"
               >
                 <ul>
@@ -197,7 +197,7 @@ export default function WeightHistory() {
                         />
                       ) : null}
                       <div
-                        className="flex items-center gap-3.5 rounded-cd-panel px-0.5 py-2.5 sm:px-2 sm:py-2.75"
+                        className="flex items-center gap-3.5 rounded-detail-panel px-0.5 py-2.5 sm:px-2 sm:py-2.75"
                         data-testid="wh-row"
                       >
                         <div

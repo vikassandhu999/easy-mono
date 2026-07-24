@@ -14,8 +14,8 @@ import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
-import {formatShortDate, snapshotQuestions} from '@/clients/client-detail/cd-data';
-import {CD_BTN_A, CD_BTN_G, CdPhotoThumb, CdSubHeader} from '@/clients/client-detail/cd-ui';
+import {formatShortDate, snapshotQuestions} from '@/clients/client-detail/data';
+import {ACCENT_BUTTON, OUTLINE_BUTTON, PhotoThumb, SubHeader} from '@/clients/client-detail/ui';
 
 type PhotoGroup = {date: string; ids: string[]};
 
@@ -95,11 +95,11 @@ export default function ProgressPhotos() {
         bare
         className="flex flex-col p-0"
       >
-        <CdSubHeader
+        <SubHeader
           onBack={goBack}
           right={
             <Button
-              className={`${CD_BTN_G} h-8 px-3.75 sm:h-9`}
+              className={`${OUTLINE_BUTTON} h-8 px-3.75 sm:h-9`}
               data-testid="ph-compare-btn"
               onPress={() => {
                 setComparing((current) => !current);
@@ -120,7 +120,7 @@ export default function ProgressPhotos() {
           >
             {isComparing ? (
               <div
-                className="rounded-cd-btn bg-accent-soft px-3.25 py-2.5 text-pill font-semibold sm:px-3.5 sm:py-2.75"
+                className="rounded-detail-button bg-accent-soft px-3.25 py-2.5 text-pill font-semibold sm:px-3.5 sm:py-2.75"
                 data-testid="ph-banner"
               >
                 Select two photos to compare.
@@ -147,20 +147,20 @@ export default function ProgressPhotos() {
                     return (
                       <Button
                         aria-label="Progress photo"
-                        className="relative aspect-square h-auto min-h-0 w-full rounded-cd-panel bg-transparent p-0 text-metric font-normal leading-[normal] [box-shadow:none]"
+                        className="relative aspect-square h-auto min-h-0 w-full rounded-detail-panel bg-transparent p-0 text-metric font-normal leading-[normal] [box-shadow:none]"
                         key={photoId}
                         onPress={() => toggle(photoId)}
                         variant="ghost"
                       >
-                        <CdPhotoThumb
-                          className="flex size-full items-center justify-center overflow-hidden rounded-cd-panel bg-surface-tertiary text-muted/60"
+                        <PhotoThumb
+                          className="flex size-full items-center justify-center overflow-hidden rounded-detail-panel bg-surface-tertiary text-muted/60"
                           iconClassName="size-5 sm:size-6"
                           src={urls[photoId]}
                           testId="ph-tile"
                         />
                         {isSelected ? (
                           <>
-                            <span className="absolute inset-0 rounded-cd-panel border-accent [border-width:3px]" />
+                            <span className="absolute inset-0 rounded-detail-panel border-accent [border-width:3px]" />
                             <span className="absolute top-1.25 right-1.25 flex size-4.5 items-center justify-center rounded-pill bg-accent [color:white] sm:top-1.75 sm:right-1.75 sm:size-5.25">
                               <Check className="size-3 sm:size-3.25" />
                             </span>
@@ -176,7 +176,7 @@ export default function ProgressPhotos() {
             {isComparing && selected.length === 2 ? (
               <div className="sticky bottom-0 flex justify-center pt-2.5">
                 <Button
-                  className={`${CD_BTN_A} h-11 rounded-cd-panel px-6 text-tab`}
+                  className={`${ACCENT_BUTTON} h-11 rounded-detail-panel px-6 text-tab`}
                   onPress={() => setCompareOpen(true)}
                 >
                   Compare 2 photos
@@ -201,7 +201,7 @@ export default function ProgressPhotos() {
               <div className="grid grid-cols-2 gap-0.5">
                 {selected.map((photoId) => (
                   <div key={photoId}>
-                    <CdPhotoThumb
+                    <PhotoThumb
                       className="flex aspect-square items-center justify-center overflow-hidden bg-surface-tertiary text-muted/60"
                       iconClassName="size-7"
                       src={urls[photoId]}

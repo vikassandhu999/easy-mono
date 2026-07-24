@@ -11,13 +11,13 @@ import {MoreHorizontal} from 'lucide-react';
 import {type ReactNode, useRef, useState} from 'react';
 
 import type {Client} from '@/api/generated';
-import {CD_BTN_A, CD_BTN_G, CD_CARD} from '@/clients/client-detail/cd-ui';
+import {ACCENT_BUTTON, CARD, OUTLINE_BUTTON} from '@/clients/client-detail/ui';
 import AssignSurface from '@/clients/components/assign-surface';
 import type {PlanKind} from '@/clients/components/plan-assign-content';
 import PlanAssignContent from '@/clients/components/plan-assign-content';
 
 const ICON_BTN =
-  'size-8.5 min-h-0 min-w-0 rounded-cd-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9';
+  'size-8.5 min-h-0 min-w-0 rounded-detail-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9';
 
 export function PlanCard({
   client,
@@ -51,11 +51,11 @@ export function PlanCard({
   return (
     <>
       <div
-        className={`${CD_CARD} flex items-center gap-3 px-3.75 py-3.25 sm:gap-3.75 sm:px-4.5 sm:py-3.75`}
+        className={`${CARD} flex items-center gap-3 px-3.75 py-3.25 sm:gap-3.75 sm:px-4.5 sm:py-3.75`}
         data-testid={`${testId}-plan`}
       >
         <span
-          className="flex size-10 flex-none items-center justify-center rounded-cd-panel bg-accent-soft text-accent sm:size-11 sm:rounded-cd-plan"
+          className="flex size-10 flex-none items-center justify-center rounded-detail-panel bg-accent-soft text-accent sm:size-11 sm:rounded-detail-plan"
           data-testid={`${testId}-plan-icon`}
         >
           {icon}
@@ -75,7 +75,7 @@ export function PlanCard({
           </div>
         </div>
         <Button
-          className={`${CD_BTN_G} hidden h-9 px-3.75 sm:inline-flex`}
+          className={`${OUTLINE_BUTTON} hidden h-9 px-3.75 sm:inline-flex`}
           data-testid={`${testId}-plan-open`}
           onPress={onOpen}
         >
@@ -192,11 +192,11 @@ export function EmptyPlanCard({
 }) {
   return (
     <div
-      className={`${CD_CARD} flex flex-col items-center gap-1.25 px-4.5 py-7.5 text-center sm:gap-1.5 sm:px-5 sm:py-9`}
+      className={`${CARD} flex flex-col items-center gap-1.25 px-4.5 py-7.5 text-center sm:gap-1.5 sm:px-5 sm:py-9`}
       data-testid={`${testId}-empty`}
     >
       <span
-        className="mb-0.75 flex size-12 items-center justify-center rounded-cd-strip bg-surface-tertiary text-muted sm:mb-1 sm:size-13 sm:rounded-cd-icon"
+        className="mb-0.75 flex size-12 items-center justify-center rounded-detail-strip bg-surface-tertiary text-muted sm:mb-1 sm:size-13 sm:rounded-detail-icon"
         data-testid={`${testId}-empty-icon`}
       >
         {icon}
@@ -215,7 +215,7 @@ export function EmptyPlanCard({
       </div>
       <AssignSurface
         label="Assign plan"
-        triggerClassName={`${CD_BTN_A} mt-2.25 h-9 px-3.75 sm:mt-2.5 sm:h-9.5`}
+        triggerClassName={`${ACCENT_BUTTON} mt-2.25 h-9 px-3.75 sm:mt-2.5 sm:h-9.5`}
         triggerTestId={`${testId}-empty-btn`}
       >
         {(close) => (

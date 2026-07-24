@@ -32,8 +32,8 @@ import {
   relativeDay,
   snapshotQuestions,
   weekdayKey,
-} from '@/clients/client-detail/cd-data';
-import {CD_BTN_A, CD_CARD, CD_CHIP, CD_EYEBROW, CdCardError, CdCardSkeleton} from '@/clients/client-detail/cd-ui';
+} from '@/clients/client-detail/data';
+import {ACCENT_BUTTON, CARD, CardError, CardSkeleton, CHIP, EYEBROW} from '@/clients/client-detail/ui';
 
 const DAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -50,10 +50,10 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
 
   return (
     <div
-      className="flex items-center gap-3 rounded-cd-card border border-warning/30 bg-warning-soft px-3.5 py-3.25 sm:gap-3.5 sm:px-4.25 sm:py-3.75"
+      className="flex items-center gap-3 rounded-detail-card border border-warning/30 bg-warning-soft px-3.5 py-3.25 sm:gap-3.5 sm:px-4.25 sm:py-3.75"
       data-testid="cd-review-banner"
     >
-      <span className="flex size-9 flex-none items-center justify-center rounded-cd-btn bg-warning/26 text-warning-soft-foreground sm:size-10 sm:rounded-cd-tile">
+      <span className="flex size-9 flex-none items-center justify-center rounded-detail-button bg-warning/26 text-warning-soft-foreground sm:size-10 sm:rounded-detail-tile">
         <ClipboardCheck className="size-4.25 sm:size-4.75" />
       </span>
       <div className="min-w-0 flex-1">
@@ -72,7 +72,7 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
         </div>
       </div>
       <Button
-        className={`${CD_BTN_A} h-8 px-3.25 sm:h-9 sm:px-3.75`}
+        className={`${ACCENT_BUTTON} h-8 px-3.25 sm:h-9 sm:px-3.75`}
         data-testid="cd-review-btn"
         onPress={() =>
           navigate(ROUTES.CLIENT_CHECKIN_SUBMISSION.replace(':id', clientId).replace(':assignmentId', newest.id))
@@ -119,11 +119,11 @@ function WeekCard({clientId}: {clientId: string}) {
   const {data: nutritionPlans} = useListCoachClientNutritionPlansQuery({clientId});
 
   if (sessions.isLoading || meals.isLoading) {
-    return <CdCardSkeleton />;
+    return <CardSkeleton />;
   }
   if (sessions.isError && meals.isError) {
     return (
-      <CdCardError
+      <CardError
         label="training"
         onRetry={() => {
           sessions.refetch();
@@ -154,11 +154,11 @@ function WeekCard({clientId}: {clientId: string}) {
 
   return (
     <div
-      className={`${CD_CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
+      className={`${CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
       data-testid="cd-week"
     >
       <div
-        className={`${CD_EYEBROW} mb-3.5 sm:mb-4`}
+        className={`${EYEBROW} mb-3.5 sm:mb-4`}
         data-testid="cd-week-eyebrow"
       >
         This week
@@ -269,7 +269,7 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
 
   return (
     <div
-      className={`${CD_CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
+      className={`${CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
       data-testid="cd-latest"
     >
       <div className="mb-3 sm:mb-3.5 sm:flex sm:items-baseline sm:gap-2">
@@ -314,7 +314,7 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
         <div className="mb-3.25 flex gap-1.75 sm:mb-3.75 sm:gap-2">
           {photoIds.map((id) => (
             <span
-              className="flex size-14.5 flex-none items-center justify-center overflow-hidden rounded-cd-panel bg-surface-tertiary text-muted/60 sm:size-16"
+              className="flex size-14.5 flex-none items-center justify-center overflow-hidden rounded-detail-panel bg-surface-tertiary text-muted/60 sm:size-16"
               data-testid="cd-latest-photo"
               key={id}
             >
@@ -327,14 +327,14 @@ function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileF
       <div className="flex items-center justify-between">
         {reviewed ? (
           <Chip
-            className={`${CD_CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}
+            className={`${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`}
             data-testid="cd-latest-chip-reviewed"
           >
             Reviewed
           </Chip>
         ) : (
           <Chip
-            className={`${CD_CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
+            className={`${CHIP} bg-warning-soft [color:var(--color-warning-soft-foreground)]`}
             data-testid="cd-latest-chip-needs"
           >
             Needs review
@@ -374,11 +374,11 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
   const {data, isError, isLoading, refetch} = useListClientWeightEntriesQuery({clientId, since});
 
   if (isLoading) {
-    return <CdCardSkeleton />;
+    return <CardSkeleton />;
   }
   if (isError) {
     return (
-      <CdCardError
+      <CardError
         label="weight"
         onRetry={refetch}
       />
@@ -392,7 +392,7 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
 
   return (
     <div
-      className={`${CD_CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
+      className={`${CARD} p-3.75 sm:px-4.75 sm:py-4.25`}
       data-testid="cd-weight"
     >
       <div className="mb-2.5 flex items-center justify-between sm:mb-3">
@@ -413,7 +413,7 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
           ) : null}
           {delta ? (
             <Chip
-              className={`${CD_CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}
+              className={`${CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}
               data-testid="cd-weight-delta"
             >
               {delta}
@@ -515,11 +515,11 @@ export function NotesCard({client}: {client: Client}) {
 
   return (
     <div
-      className={`${CD_CARD} p-3.5 sm:px-4.25 sm:py-4`}
+      className={`${CARD} p-3.5 sm:px-4.25 sm:py-4`}
       data-testid="cd-notes"
     >
       <div
-        className={`${CD_EYEBROW} mb-2 sm:mb-2.25`}
+        className={`${EYEBROW} mb-2 sm:mb-2.25`}
         data-testid="cd-notes-eyebrow"
       >
         Notes
@@ -547,12 +547,12 @@ export function DetailsRow() {
   const {id} = useParams<{id: string}>();
   return (
     <Link
-      className="flex cursor-pointer items-center gap-3.5 rounded-cd-panel border border-border bg-surface p-3.5 transition-colors hover:bg-background sm:px-4.25 sm:py-3.75"
+      className="flex cursor-pointer items-center gap-3.5 rounded-detail-panel border border-border bg-surface p-3.5 transition-colors hover:bg-background sm:px-4.25 sm:py-3.75"
       data-testid="cd-details"
       to={ROUTES.CLIENT_DETAILS.replace(':id', id!)}
     >
       <span
-        className="flex size-9 flex-none items-center justify-center rounded-cd-btn bg-background text-muted sm:size-9.5 sm:rounded-cd-tile"
+        className="flex size-9 flex-none items-center justify-center rounded-detail-button bg-background text-muted sm:size-9.5 sm:rounded-detail-tile"
         data-testid="cd-details-icon"
       >
         <Settings2 className="size-4.25 sm:size-4.5" />
@@ -579,11 +579,11 @@ export function DetailsRow() {
 function FreshEmptyCard({firstName}: {firstName: string}) {
   return (
     <div
-      className={`${CD_CARD} flex flex-col items-center gap-1.25 px-5 py-9.5 text-center sm:gap-1.5 sm:px-5.5 sm:py-11`}
+      className={`${CARD} flex flex-col items-center gap-1.25 px-5 py-9.5 text-center sm:gap-1.5 sm:px-5.5 sm:py-11`}
       data-testid="cd-empty"
     >
       <span
-        className="mb-0.5 flex size-12 items-center justify-center rounded-cd-strip bg-surface-tertiary text-muted sm:size-13 sm:rounded-cd-icon"
+        className="mb-0.5 flex size-12 items-center justify-center rounded-detail-strip bg-surface-tertiary text-muted sm:size-13 sm:rounded-detail-icon"
         data-testid="cd-empty-icon"
       >
         <Sparkles className="size-5.25 sm:size-5.75" />
@@ -618,9 +618,9 @@ export default function OverviewTab({client, isFresh}: {client: Client; isFresh:
         ) : (
           <>
             {assignments.isLoading ? (
-              <CdCardSkeleton lines={2} />
+              <CardSkeleton lines={2} />
             ) : assignments.isError ? (
-              <CdCardError
+              <CardError
                 label="check-ins"
                 onRetry={assignments.refetch}
               />

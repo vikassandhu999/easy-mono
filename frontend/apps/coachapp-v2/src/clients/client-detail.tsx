@@ -65,7 +65,7 @@ function AttentionChips({client}: {client: Client}) {
         onPress={() => setSearchParams({tab: 'training'}, {replace: true})}
         variant="ghost"
       >
-        <Dumbbell className="size-3.25" />
+        <Dumbbell className="size-3.5" />
         No active plan
       </Button>,
     );
@@ -79,7 +79,7 @@ function AttentionChips({client}: {client: Client}) {
         onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
         variant="ghost"
       >
-        <AlarmClock className="size-3.25" />
+        <AlarmClock className="size-3.5" />
         Expires {formatShortDate(client.subscription_ends_on)}
       </Button>,
     );
@@ -91,7 +91,7 @@ function AttentionChips({client}: {client: Client}) {
         data-testid="cd-attn-intake"
         key="intake"
       >
-        <ClipboardList className="size-3.25" />
+        <ClipboardList className="size-3.5" />
         Intake pending
       </Chip>,
     );
@@ -159,7 +159,7 @@ function StateBanner({client}: {client: Client}) {
         data-testid="cd-banner"
       >
         <span className="flex size-8 flex-none items-center justify-center rounded-control bg-danger/20 text-danger-soft-foreground sm:size-8.5">
-          <AlertTriangle className="size-4 sm:size-4.25" />
+          <AlertTriangle className="size-4 sm:size-4" />
         </span>
         <div
           className="min-w-0 flex-1 text-eyebrow font-semibold text-danger-soft-foreground sm:text-body"
@@ -185,7 +185,7 @@ function StateBanner({client}: {client: Client}) {
         data-testid="cd-banner"
       >
         <span className="flex size-8 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-8.5">
-          <AlertCircle className="size-4 sm:size-4.25" />
+          <AlertCircle className="size-4 sm:size-4" />
         </span>
         <div
           className="min-w-0 flex-1 text-eyebrow font-semibold text-warning-soft-foreground sm:text-body"
@@ -210,7 +210,7 @@ function StateBanner({client}: {client: Client}) {
       data-testid="cd-banner"
     >
       <span className="flex size-8 flex-none items-center justify-center rounded-control bg-surface text-muted sm:size-8.5">
-        <UserX className="size-4 sm:size-4.25" />
+        <UserX className="size-4 sm:size-4" />
       </span>
       <div
         className="min-w-0 flex-1 text-eyebrow font-semibold sm:text-body"
@@ -323,7 +323,7 @@ export default function ClientDetail() {
                 isIconOnly
                 variant="ghost"
               >
-                <MoreHorizontal className="size-4.5" />
+                <MoreHorizontal className="size-5" />
               </Button>
               <Dropdown.Popover>
                 <Dropdown.Menu
@@ -425,7 +425,7 @@ export default function ClientDetail() {
                   onPress={() => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', client.id))}
                   variant="primary"
                 >
-                  <MessageCircle className="size-4 sm:size-4.25" />
+                  <MessageCircle className="size-4 sm:size-4" />
                   Message
                   {unread > 0 ? (
                     <span
@@ -444,7 +444,7 @@ export default function ClientDetail() {
                   data-testid="cd-call"
                   href={`tel:${client.phone}`}
                 >
-                  <Phone className="size-4 sm:size-4.25" />
+                  <Phone className="size-4 sm:size-4" />
                 </a>
               ) : null}
             </div>
@@ -514,7 +514,7 @@ export default function ClientDetail() {
         onOpenChange={setDeactivateOpen}
       >
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
+          <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />

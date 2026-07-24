@@ -578,7 +578,7 @@ export function SetSheet({workoutExercise, setIndex, planId, open, onClose, onPr
         }}
       >
         <Popover.Content
-          className="w-104 max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface p-0 shadow-xl"
+          className="w-104 rounded-card p-0"
           triggerRef={triggerRef}
         >
           <Popover.Dialog className="max-h-[70vh] overflow-y-auto px-4 py-3 outline-none">

@@ -460,7 +460,7 @@ export function MealCard({
               className="flex items-center gap-2 pt-2 pb-0.5 text-eyebrow [color:var(--color-shared-foreground)]"
               data-testid={openId('nb-shared-note')}
             >
-              <Info className="size-3.25 flex-none" />
+              <Info className="size-3.5 flex-none" />
               This meal is on {assignmentCount} days — edits apply everywhere.
             </div>
           ) : null}
@@ -545,7 +545,7 @@ export function MealCard({
                     size="sm"
                     variant="ghost"
                   >
-                    <X className="size-3" />
+                    <X className="size-3.5" />
                   </Button>
                 </div>
               ))}

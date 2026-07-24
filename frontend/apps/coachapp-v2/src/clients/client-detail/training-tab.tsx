@@ -153,7 +153,7 @@ function TrainingPlanCard({client, plan}: {client: Client; plan: ClientTrainingP
     <PlanCard
       client={client}
       endBody="The client will no longer see scheduled workouts."
-      icon={<Dumbbell className="size-4.75 sm:size-5.25" />}
+      icon={<Dumbbell className="size-5 sm:size-5" />}
       isEnding={isEnding}
       kind="training"
       meta={meta}
@@ -193,7 +193,7 @@ export default function TrainingTab({client}: {client: Client}) {
         <EmptyPlanCard
           body={`Assign a plan so ${client.first_name ?? 'this client'} sees workouts in their app.`}
           client={client}
-          icon={<Dumbbell className="size-5.5 sm:size-6" />}
+          icon={<Dumbbell className="size-6 sm:size-6" />}
           kind="training"
           testId="tr"
           title="No training plan"

@@ -205,7 +205,7 @@ export function AddSeatsDialog({
           onOpenChange={(next) => !next && close()}
         >
           <Popover.Content
-            className="w-80 max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface shadow-xl"
+            className="w-80 rounded-card"
             triggerRef={triggerRef}
           >
             <Popover.Dialog className="p-4 outline-none">

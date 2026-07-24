@@ -736,7 +736,7 @@ export function PlanDays({plan}: PlanDaysProps) {
         onOpenChange={deleteAlertState.setOpen}
       >
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
+          <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />

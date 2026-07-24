@@ -128,7 +128,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
               onPress={() => onRemoveSet(index)}
               variant="ghost"
             >
-              <X className="size-3.25" />
+              <X className="size-3.5" />
             </Button>
           ) : null}
         </div>

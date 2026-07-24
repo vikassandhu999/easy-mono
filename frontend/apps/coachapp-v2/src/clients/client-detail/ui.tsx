@@ -122,7 +122,7 @@ export function SubHeader({
         onPress={onBack}
         variant="ghost"
       >
-        <ArrowLeft className="size-4 sm:size-4.25" />
+        <ArrowLeft className="size-4 sm:size-4" />
       </Button>
       <div className="min-w-0 flex-1">
         <div

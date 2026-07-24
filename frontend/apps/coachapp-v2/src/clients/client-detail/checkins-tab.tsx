@@ -74,7 +74,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
           className="flex size-9 flex-none items-center justify-center rounded-control bg-accent-soft text-accent sm:size-9.5 sm:rounded-control"
           data-testid="ci-form-icon"
         >
-          <ClipboardList className="size-4.25 sm:size-4.5" />
+          <ClipboardList className="size-4 sm:size-5" />
         </span>
         <span className="min-w-0 flex-1">
           <span
@@ -447,7 +447,7 @@ export default function CheckinsTab({client}: {client: Client}) {
               className="mb-0.5 flex size-11.5 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:size-12.5 sm:rounded-panel"
               data-testid="ci-empty-icon"
             >
-              <CalendarClock className="size-5.25 sm:size-5.75" />
+              <CalendarClock className="size-5 sm:size-6" />
             </span>
             <div
               className="font-grotesk text-body font-semibold sm:text-title"

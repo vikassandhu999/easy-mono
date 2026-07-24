@@ -201,7 +201,7 @@ function NutritionPlanCard({client, plan}: {client: Client; plan: NutritionPlan}
     <PlanCard
       client={client}
       endBody="The client will no longer see planned meals."
-      icon={<Utensils className="size-4.75 sm:size-5.25" />}
+      icon={<Utensils className="size-5 sm:size-5" />}
       isEnding={isEnding}
       kind="nutrition"
       meta={planMeta(plan, isDesktop)}
@@ -244,7 +244,7 @@ export default function NutritionTab({client}: {client: Client}) {
         <EmptyPlanCard
           body={`Assign a plan so ${client.first_name ?? 'this client'} can log meals against it.`}
           client={client}
-          icon={<UtensilsCrossed className="size-5.5 sm:size-6" />}
+          icon={<UtensilsCrossed className="size-6 sm:size-6" />}
           kind="nutrition"
           testId="nu"
           title="No nutrition plan"

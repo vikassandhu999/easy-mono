@@ -149,7 +149,7 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
         size="sm"
         variant="ghost"
       >
-        <X className="size-3.25" />
+        <X className="size-3.5" />
       </Button>
     </div>
   );

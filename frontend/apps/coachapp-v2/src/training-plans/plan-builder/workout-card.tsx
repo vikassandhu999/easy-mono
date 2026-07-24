@@ -298,7 +298,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
         isIconOnly
         variant="ghost"
       >
-        <MoreHorizontal className="size-4.25" />
+        <MoreHorizontal className="size-4" />
       </Button>
       <Dropdown.Popover>
         {/* Drive selection via the menu so it fires on pointer AND keyboard
@@ -441,7 +441,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
           ref={addExerciseButtonRef}
           variant="ghost"
         >
-          <Plus className="size-3.75" />
+          <Plus className="size-4" />
           Add exercise
         </Button>
       </div>
@@ -463,7 +463,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
         onOpenChange={deleteAlertState.setOpen}
       >
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
+          <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />

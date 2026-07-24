@@ -57,9 +57,9 @@ function SubscriptionAlert({client, onExtend}: {client: Client; onExtend: () => 
       data-testid="dt-alert"
     >
       {expired ? (
-        <AlertTriangle className="size-3.75 flex-none text-danger-soft-foreground sm:size-4" />
+        <AlertTriangle className="size-4 flex-none text-danger-soft-foreground sm:size-4" />
       ) : (
-        <AlarmClock className="size-3.75 flex-none text-warning-soft-foreground sm:size-4" />
+        <AlarmClock className="size-4 flex-none text-warning-soft-foreground sm:size-4" />
       )}
       <div
         className={`min-w-0 flex-1 text-eyebrow font-semibold sm:text-eyebrow ${
@@ -100,7 +100,7 @@ function IntakeRow({clientId}: {clientId: string}) {
         className="flex size-9 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9.5 sm:rounded-control"
         data-testid="dt-intake-icon"
       >
-        <ClipboardList className="size-4.25 sm:size-4.5" />
+        <ClipboardList className="size-4 sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
@@ -214,7 +214,7 @@ export default function DetailsSettings() {
             onPress={goBack}
             variant="ghost"
           >
-            <ArrowLeft className="size-4 sm:size-4.25" />
+            <ArrowLeft className="size-4 sm:size-4" />
           </Button>
           <div className="min-w-0 flex-1">
             <div
@@ -449,7 +449,7 @@ export default function DetailsSettings() {
         onOpenChange={setDeactivateOpen}
       >
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
+          <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />

@@ -90,7 +90,7 @@ export function PlanCard({
             ref={menuRef}
             variant="ghost"
           >
-            <MoreHorizontal className="size-4 text-muted sm:size-4.25" />
+            <MoreHorizontal className="size-4 text-muted sm:size-4" />
           </Button>
           <Dropdown.Popover>
             <Dropdown.Menu
@@ -141,7 +141,7 @@ export function PlanCard({
         onOpenChange={setEndOpen}
       >
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
+          <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="danger" />

@@ -193,7 +193,7 @@ function StepChip({index, state, step}: {index: number; state: StepState; step: 
               : 'border border-border text-muted',
         )}
       >
-        {state === 'done' ? <Check className="size-3" /> : index}
+        {state === 'done' ? <Check className="size-3.5" /> : index}
       </span>
       <span className="flex min-w-0 flex-col items-start">
         <span className="max-w-full truncate text-eyebrow font-semibold text-foreground">{step.label}</span>

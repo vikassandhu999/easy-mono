@@ -178,6 +178,28 @@
   }
 }
 
+/* Confirm dialogs are all one width — 14 of the 15 call sites wrote the same
+   `sm:max-w-100`, so it is the dialog's size, not a per-dialog choice. The one
+   wider dialog still overrides it at its own call site. */
+@media (width >= 40rem) {
+  .alert-dialog {
+    max-width: calc(var(--spacing) * 100);
+  }
+}
+
+/* Popover surface. HeroUI's `.popover` is `rounded-3xl bg-overlay` with its own
+   shadow, so all nine call sites overrode the same four things to reach the
+   design's card. That is the component's look, not a per-popover choice — only
+   the width genuinely varies (w-80 / w-96 / w-104), and that stays at the call
+   site. `max-width` keeps a wide popover on-screen at 375px, which five of the
+   nine remembered to add by hand. */
+.popover {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-xl);
+  max-width: calc(100vw - 2rem);
+}
+
 :root,
 .light,
 .default,

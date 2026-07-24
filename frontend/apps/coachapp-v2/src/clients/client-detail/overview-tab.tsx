@@ -54,7 +54,7 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
       data-testid="cd-review-banner"
     >
       <span className="flex size-9 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-10 sm:rounded-control">
-        <ClipboardCheck className="size-4.25 sm:size-4.75" />
+        <ClipboardCheck className="size-4 sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
@@ -555,7 +555,7 @@ export function DetailsRow() {
         className="flex size-9 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9.5 sm:rounded-control"
         data-testid="cd-details-icon"
       >
-        <Settings2 className="size-4.25 sm:size-4.5" />
+        <Settings2 className="size-4 sm:size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div
@@ -586,7 +586,7 @@ function FreshEmptyCard({firstName}: {firstName: string}) {
         className="mb-0.5 flex size-12 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:size-13 sm:rounded-card"
         data-testid="cd-empty-icon"
       >
-        <Sparkles className="size-5.25 sm:size-5.75" />
+        <Sparkles className="size-5 sm:size-6" />
       </span>
       <div
         className="font-grotesk text-body font-semibold sm:text-title"

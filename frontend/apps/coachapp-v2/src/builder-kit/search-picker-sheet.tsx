@@ -321,7 +321,7 @@ export function SearchPickerSheet<T>({
         }}
       >
         <Popover.Content
-          className="w-96 rounded-card border border-border bg-surface p-0 shadow-xl"
+          className="w-96 rounded-card p-0"
           triggerRef={triggerRef}
           placement={placement}
         >

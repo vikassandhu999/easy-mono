@@ -71,7 +71,7 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
           }}
         >
           <Popover.Content
-            className="w-80 max-w-[calc(100vw-2rem)] rounded-panel border border-border bg-surface p-0 shadow-xl"
+            className="w-80 rounded-panel p-0"
             triggerRef={triggerRef}
           >
             <Popover.Dialog

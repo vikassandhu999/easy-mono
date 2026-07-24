@@ -61,7 +61,7 @@ export function InviteCard({client}: {client: Client}) {
           className="flex size-9.5 flex-none items-center justify-center rounded-control bg-warning-soft text-warning-soft-foreground sm:size-10"
           data-testid="cd-invite-icon"
         >
-          <Mail className="size-4.5 sm:size-4.75" />
+          <Mail className="size-5 sm:size-5" />
         </span>
         <div className="min-w-0 flex-1">
           <div
@@ -125,7 +125,7 @@ export default function PendingBody({
         <div className={`${EYEBROW} mb-2 sm:mb-3`}>Intake</div>
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="flex size-8.5 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9">
-            <ClipboardList className="size-4 sm:size-4.25" />
+            <ClipboardList className="size-4 sm:size-4" />
           </span>
           <div className="min-w-0 flex-1">
             <div

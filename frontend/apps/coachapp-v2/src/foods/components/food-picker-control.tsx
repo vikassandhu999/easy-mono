@@ -70,7 +70,7 @@ export default function FoodPickerControl({onSelect, excludeIds, triggerClassNam
           }}
         >
           <Popover.Content
-            className="max-w-md rounded-card border border-border bg-surface p-4 shadow-xl"
+            className="max-w-md rounded-card p-4"
             triggerRef={triggerRef}
           >
             <Popover.Dialog

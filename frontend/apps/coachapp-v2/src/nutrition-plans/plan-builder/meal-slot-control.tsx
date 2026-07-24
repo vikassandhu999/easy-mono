@@ -62,7 +62,7 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
       variant="outline"
     >
       {label}
-      <ChevronDown className="size-3" />
+      <ChevronDown className="size-3.5" />
     </Button>
   );
 

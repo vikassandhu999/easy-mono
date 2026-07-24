@@ -736,7 +736,7 @@ export function AmountSheet(props: AmountSheetProps) {
         }}
       >
         <Popover.Content
-          className="w-96 rounded-panel border border-border bg-surface p-0 shadow-xl"
+          className="w-96 rounded-panel p-0"
           triggerRef={triggerRef}
         >
           <Popover.Dialog className="max-h-[70vh] overflow-y-auto px-4 py-3 outline-none">{content}</Popover.Dialog>

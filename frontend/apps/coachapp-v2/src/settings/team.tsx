@@ -169,7 +169,7 @@ function InviteTrainerControl() {
           onOpenChange={(next) => !next && setOpen(false)}
         >
           <Popover.Content
-            className="w-96 max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface shadow-xl"
+            className="w-96 rounded-card"
             triggerRef={triggerRef}
           >
             <Popover.Dialog className="max-h-[70vh] overflow-y-auto p-4 outline-none">
@@ -232,7 +232,7 @@ function DeactivateTrainerDialog({
       onOpenChange={onOpenChange}
     >
       <AlertDialog.Container>
-        <AlertDialog.Dialog className="sm:max-w-100">
+        <AlertDialog.Dialog>
           <AlertDialog.CloseTrigger />
           <AlertDialog.Header>
             <AlertDialog.Icon status="danger" />

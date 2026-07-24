@@ -108,7 +108,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
         onOpenChange={leaveConfirm.setOpen}
       >
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
+          <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="warning" />

@@ -162,7 +162,7 @@ export default function ProgressPhotos() {
                           <>
                             <span className="absolute inset-0 rounded-panel border-accent [border-width:3px]" />
                             <span className="absolute top-1.25 right-1.25 flex size-4.5 items-center justify-center rounded-pill bg-accent [color:white] sm:top-1.75 sm:right-1.75 sm:size-5.25">
-                              <Check className="size-3 sm:size-3.25" />
+                              <Check className="size-3.5 sm:size-3.5" />
                             </span>
                           </>
                         ) : null}

@@ -192,7 +192,7 @@ function CancelSubscriptionButton({billing}: {billing: BillingSummary}) {
       </Button>
       <AlertDialog.Backdrop isDismissable={!isLoading}>
         <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
+          <AlertDialog.Dialog>
             {({close}) => (
               <>
                 <AlertDialog.CloseTrigger />

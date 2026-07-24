@@ -37,7 +37,7 @@ import {CD_BTN_A, CD_CARD, CD_CHIP, CD_EYEBROW, CdCardError, CdCardSkeleton} fro
 
 const DAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-function ReviewBanner({assignments}: {assignments: ClientProfileFormAssignment[]}) {
+function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAssignment[]; clientId: string}) {
   const navigate = useNavigate();
   const unreviewed = completedCheckIns(assignments).filter(
     (a) => a.latest_submission && !a.latest_submission.reviewed_at,
@@ -74,7 +74,9 @@ function ReviewBanner({assignments}: {assignments: ClientProfileFormAssignment[]
       <Button
         className={`${CD_BTN_A} h-8 px-3.25 sm:h-9 sm:px-3.75`}
         data-testid="cd-review-btn"
-        onPress={() => navigate(ROUTES.CHECKIN_REVIEW.replace(':id', newest.latest_submission!.id))}
+        onPress={() =>
+          navigate(ROUTES.CLIENT_CHECKIN_SUBMISSION.replace(':id', clientId).replace(':assignmentId', newest.id))
+        }
       >
         Review
       </Button>
@@ -241,7 +243,7 @@ function RatingDots({value}: {value: number}) {
   );
 }
 
-function LatestCheckInCard({assignments}: {assignments: ClientProfileFormAssignment[]}) {
+function LatestCheckInCard({assignments, clientId}: {assignments: ClientProfileFormAssignment[]; clientId: string}) {
   const newest = completedCheckIns(assignments)[0];
   const submission = newest?.latest_submission;
 
@@ -341,7 +343,7 @@ function LatestCheckInCard({assignments}: {assignments: ClientProfileFormAssignm
         <Link
           className="text-sub font-semibold text-accent sm:text-pill"
           data-testid="cd-latest-view"
-          to={ROUTES.CHECKIN_REVIEW.replace(':id', submission.id)}
+          to={ROUTES.CLIENT_CHECKIN_SUBMISSION.replace(':id', clientId).replace(':assignmentId', newest.id)}
         >
           View check-in →
         </Link>
@@ -624,11 +626,19 @@ export default function OverviewTab({client, isFresh}: {client: Client; isFresh:
               />
             ) : (
               <>
-                <ReviewBanner assignments={assignments.data?.data ?? []} />
+                <ReviewBanner
+                  assignments={assignments.data?.data ?? []}
+                  clientId={client.id}
+                />
               </>
             )}
             <WeekCard clientId={client.id} />
-            {assignments.data ? <LatestCheckInCard assignments={assignments.data.data} /> : null}
+            {assignments.data ? (
+              <LatestCheckInCard
+                assignments={assignments.data.data}
+                clientId={client.id}
+              />
+            ) : null}
             <WeightCard
               client={client}
               clientId={client.id}

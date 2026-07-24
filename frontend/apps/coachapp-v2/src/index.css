@@ -39,6 +39,10 @@
      is a plain :root var, so it needs a `--color-*` alias to become a utility. */
   --color-warning-text: oklch(0.5 0.13 74);
   --color-ink: oklch(0.19 0.004 285); /* dark-filled CTAs / selected states */
+  /* Always-dark fill for the CD photo-overflow tile. The design paints it
+     `var(--foreground)`, but `bg-foreground` inverts with the theme (RM-127) —
+     this is a constant, so the tile stays dark in both themes. */
+  --color-cd-dark: oklch(0.17 0 0);
   --color-ink-foreground: oklch(1 0 0);
 
   /* Client Detail (Client Detail.dc.html) exact-spec tokens — CD-* screens.
@@ -73,6 +77,8 @@
   --text-metric-sm--line-height: normal;
   --text-metric: 16px; /* desktop metric values, empty-state titles */
   --text-metric--line-height: normal;
+  --text-answer: 17px; /* CS answer values (desktop) */
+  --text-answer--line-height: normal;
   --text-stat-lg: 18px; /* weight card value (desktop) */
   --text-stat-lg--line-height: normal;
   --text-title-sm: 19px; /* mobile page title / mobile stat values */

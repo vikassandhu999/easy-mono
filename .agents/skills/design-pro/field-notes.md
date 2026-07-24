@@ -133,9 +133,27 @@ Trust these over the handoff docs. When you discover a new one, add it here
   page context instead. Reset with `text-metric font-normal leading-[normal]
   text-foreground` on the row or every child (including meters) diffs. This was
   all 22 of CD/NU's first-pass diffs.
+- **`Switch` also renders NOTHING without compound children** — it joins
+  `ProgressBar`/`Meter`: `<Switch><Switch.Content><Switch.Control><Switch.Thumb/>
+  …`. And react-aria puts `data-selected` on the CONTENT label, not the control,
+  so a selected-state tint needs `group/switch` + `group-data-[selected=true]/switch:`.
 - **`ProgressBar` is the sanctioned meter and needs no `style={{}}`** — give
   `Track`/`Fill` the design's classes and drive width via `value`; the compound
   children are required or it renders empty.
+- **A design flag can be global across BOTH frames** — CD's `showCS` opens the
+  overlay in the desktop AND mobile frame, so a second click on the mobile list
+  is intercepted by the mobile overlay. One click is enough; and any state that
+  runs after it must reset the page (`{eval: "location.reload()"}`) because
+  states share one design page and `markReviewed` also closes the overlay.
+- **Fixtures must be self-restoring, not just self-creating** — a check-in
+  schedule appeared on the "fresh" client mid-session and silently broke both
+  CD-OV `fresh` and CD-CI `no-schedule`. `dev_client_states.exs` now DELETES
+  schedules for that client on every run, alongside the unreviewed-submission
+  reset. If a state depends on the absence of something, seed the absence.
+- **A shared wrapper silently swallows `data-testid`** — passing it to a
+  component whose props type doesn't declare it type-checks (JSX allows
+  `data-*`) but never reaches the DOM, so manifests report MISSING APP NODE.
+  Give shared components an explicit `testId` prop.
 - **`cd` failing in a chained shell command silently skips the `&&` part but
   still runs anything after a newline** — a refactor "succeeded" (build green,
   diff PASS) while its edit had never applied, because the following build

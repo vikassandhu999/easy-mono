@@ -15,6 +15,7 @@ alias Easy.Clients.Client
 alias Easy.Forms.FormSubmission
 alias Easy.Chat.{Conversation, Message}
 alias Easy.Attachments.Attachment
+alias Easy.Forms.CheckInSchedule
 
 rich_id = "f9e0ba52-2974-45b9-bf29-ffc3e081f7bd"
 rich = Repo.get!(Client, rich_id)
@@ -86,6 +87,12 @@ expiring =
     subscription_ends_on: Date.add(today, 5)
   })
 
+# Freya is the "fresh / nothing set up yet" fixture (CD-OV `fresh`, CD-CI
+# `no-schedule`). Anything that hands her a check-in schedule breaks both, so
+# strip it on every run.
+{deleted, _} = Repo.delete_all(from s in CheckInSchedule, where: s.client_id == ^fresh.id)
+if deleted > 0, do: IO.puts("removed #{deleted} check-in schedule(s) from the fresh fixture")
+
 # Ensure Rowan's conversation has 2 unread client messages (header Message
 # badge). Re-marking coach_last_read_at nil keeps it unread across runs.
 conv =
@@ -130,52 +137,58 @@ if newest && newest.reviewed_at do
   IO.puts("reset newest submission #{newest.id} to unreviewed")
 end
 
-# Give the newest submission a photo answer (3 placeholder attachments) so the
-# Overview latest-check-in card renders its photo thumbnails. The storage
-# objects don't exist — presigned GETs 404 — but the tiles render.
-if newest do
+# Give EVERY completed check-in submission a photo answer (3 placeholder
+# attachments each) so the Overview latest-check-in card renders thumbnails AND
+# the Check-ins photos card has more than 3 photos — it needs an overflow tile.
+# The storage objects don't exist (presigned GETs 404); the tiles still render.
+submissions =
+  Repo.all(
+    from s in FormSubmission,
+      where: s.client_id == ^rich_id,
+      order_by: [desc: s.submitted_at]
+  )
+
+for {submission, index} <- Enum.with_index(submissions) do
   existing_photo_q =
-    newest.question_snapshot
+    submission.question_snapshot
     |> List.wrap()
     |> Enum.flat_map(&List.wrap(&1["questions"]))
     |> Enum.find(&(&1["type"] == "photo"))
 
-  cond do
-    existing_photo_q && newest.answers[existing_photo_q["id"]] not in [nil, []] ->
-      IO.puts("photo answer already present — skipping")
+  if existing_photo_q && submission.answers[existing_photo_q["id"]] not in [nil, []] do
+    :ok
+  else
+    atts =
+      for i <- 1..3 do
+        Repo.insert!(%Attachment{
+          id: Ecto.UUID.generate(),
+          uploaded_by_type: :client,
+          uploaded_by_id: rich_id,
+          storage_key: "dev/placeholder-photo-#{index}-#{i}.jpg",
+          content_type: "image/jpeg",
+          byte_size: 120_000,
+          business_id: rich.business_id,
+          client_id: rich_id
+        })
+      end
 
-    true ->
-      atts =
-        for i <- 1..3 do
-          Repo.insert!(%Attachment{
-            id: Ecto.UUID.generate(),
-            uploaded_by_type: :client,
-            uploaded_by_id: rich_id,
-            storage_key: "dev/placeholder-photo-#{i}.jpg",
-            content_type: "image/jpeg",
-            byte_size: 120_000,
-            business_id: rich.business_id,
-            client_id: rich_id
-          })
-        end
+    {photo_q, snapshot} =
+      if existing_photo_q do
+        {existing_photo_q, submission.question_snapshot}
+      else
+        q = %{"id" => Ecto.UUID.generate(), "type" => "photo", "label" => "Progress photos", "required" => false}
+        [first | rest] = List.wrap(submission.question_snapshot)
+        {q, [Map.update(first, "questions", [q], &(&1 ++ [q])) | rest]}
+      end
 
-      {photo_q, snapshot} =
-        if existing_photo_q do
-          {existing_photo_q, newest.question_snapshot}
-        else
-          q = %{"id" => Ecto.UUID.generate(), "type" => "photo", "label" => "Progress photos", "required" => false}
-          [first | rest] = List.wrap(newest.question_snapshot)
-          {q, [Map.update(first, "questions", [q], &(&1 ++ [q])) | rest]}
-        end
+    submission
+    |> Ecto.Changeset.change(
+      question_snapshot: snapshot,
+      answers: Map.put(submission.answers, photo_q["id"], Enum.map(atts, & &1.id))
+    )
+    |> Repo.update!()
 
-      newest
-      |> Ecto.Changeset.change(
-        question_snapshot: snapshot,
-        answers: Map.put(newest.answers, photo_q["id"], Enum.map(atts, & &1.id))
-      )
-      |> Repo.update!()
-
-      IO.puts("added photo answer with 3 placeholder attachments")
+    IO.puts("added photo answer (3 attachments) to submission #{submission.id}")
   end
 end
 

@@ -5,6 +5,8 @@
  * verified by design-handoff/scripts/style-diff.mjs (manifest CD-OV.json).
  */
 import {Button, Skeleton, Typography} from '@heroui/react';
+import {Image as ImageIcon} from 'lucide-react';
+import {useState} from 'react';
 
 /** `.card` — 16px radius, hairline border, white surface. */
 export const CD_CARD = 'rounded-cd-card border border-border bg-surface';
@@ -55,5 +57,42 @@ export function CdCardError({label, onRetry}: {label: string; onRetry: () => voi
         </Button>
       </Typography>
     </div>
+  );
+}
+
+/**
+ * A progress-photo tile. Presigned URLs expire and dev fixtures have no storage
+ * object behind them, so a failed load falls back to the placeholder glyph
+ * rather than the browser's broken-image + alt text.
+ */
+export function CdPhotoThumb({
+  className,
+  iconClassName,
+  src,
+  testId,
+}: {
+  className: string;
+  iconClassName: string;
+  src: string | undefined;
+  testId?: string;
+}) {
+  const [isBroken, setBroken] = useState(false);
+  return (
+    <span
+      className={className}
+      data-testid={testId}
+    >
+      {src && !isBroken ? (
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: load errors swap in the placeholder icon (same as message-attachments)
+        <img
+          alt="Progress"
+          className="size-full object-cover"
+          onError={() => setBroken(true)}
+          src={src}
+        />
+      ) : (
+        <ImageIcon className={iconClassName} />
+      )}
+    </span>
   );
 }

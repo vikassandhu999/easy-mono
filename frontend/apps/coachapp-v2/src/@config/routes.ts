@@ -11,6 +11,7 @@ export const ROUTES = {
   INVITE_CLIENT: '/clients/invite',
   CLIENT_DETAIL: '/clients/:id',
   CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',
+  CLIENT_CHECKIN_SUBMISSION: '/clients/:id/check-ins/:assignmentId',
   CLIENT_DETAILS: '/clients/:id/details',
   LIBRARY: '/library',
   EXERCISES: '/library/exercises',

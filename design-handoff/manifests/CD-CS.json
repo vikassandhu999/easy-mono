@@ -1,0 +1,242 @@
+{
+  "design": "design-handoff/design/Client Detail.dc.html",
+  "app": {
+    "base": "http://localhost:2021",
+    "route": "/clients/f9e0ba52-2974-45b9-bf29-ffc3e081f7bd/check-ins/d4396252-5f97-4819-afa8-d363bb46345a"
+  },
+  "tokenKey": "coachapp.accessToken",
+  "states": [
+    {
+      "name": "needs-review",
+      "design": [
+        {
+          "click": "text=Active"
+        },
+        {
+          "click": ".vp:not(.phone) .ctab >> nth=3"
+        },
+        {
+          "click": ".vp.phone .mtab >> nth=3"
+        },
+        {
+          "click": "[data-ref=CD-CI-desktop] .card:has(.grp) .lbrow.tap >> nth=0"
+        }
+      ],
+      "app": [
+        {
+          "wait": "[data-testid=cs-title]"
+        },
+        {
+          "wait": "[data-testid=cs-review-btn]"
+        },
+        {
+          "wait": "[data-testid=cs-rating-value]"
+        },
+        {
+          "sleep": 400
+        }
+      ],
+      "pairs": [
+        "cs-back",
+        "cs-title",
+        "cs-sub",
+        "cs-chip-needs",
+        "cs-body",
+        "cs-q-label",
+        "cs-rating-value",
+        "cs-dot-on",
+        "cs-dot-off",
+        "cs-weight-value",
+        "cs-weight-caption",
+        "cs-text-answer",
+        "cs-photo",
+        "cs-footer",
+        "cs-review-btn"
+      ]
+    },
+    {
+      "name": "reviewed",
+      "design": [
+        {
+          "eval": "location.reload()"
+        },
+        {
+          "sleep": 1500
+        },
+        {
+          "click": "text=Active"
+        },
+        {
+          "click": ".vp:not(.phone) .ctab >> nth=3"
+        },
+        {
+          "click": ".vp.phone .mtab >> nth=3"
+        },
+        {
+          "click": "[data-ref=CD-CI-desktop] .card:has(.grp) .lbrow.tap >> nth=0"
+        },
+        {
+          "click": "[data-ref=CD-CS-desktop] .btnA"
+        },
+        {
+          "click": "[data-ref=CD-CI-desktop] .card:has(.grp) .lbrow.tap >> nth=0"
+        }
+      ],
+      "app": [
+        {
+          "eval": "(async()=>{const t=localStorage.getItem('coachapp.accessToken');await fetch('http://localhost:4000/v1/coach/form-submissions/5b2ec1cf-5193-4c43-8fbf-48476733eeec/review',{method:'POST',headers:{Authorization:'Bearer '+t}}).catch(()=>{});location.reload();})()"
+        },
+        {
+          "wait": "[data-testid=cs-reviewed-note]"
+        },
+        {
+          "sleep": 400
+        }
+      ],
+      "pairs": [
+        "cs-title",
+        "cs-chip-reviewed",
+        "cs-footer",
+        "cs-reviewed-note"
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "name": "cs-back",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] button[aria-label=Back]",
+        "mobile": "[data-ref=CD-CS-mobile] button[aria-label=Back]"
+      },
+      "app": "[data-testid=cs-back]"
+    },
+    {
+      "name": "cs-title",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] .gk",
+        "mobile": "[data-ref=CD-CS-mobile] .gk"
+      },
+      "app": "[data-testid=cs-title]"
+    },
+    {
+      "name": "cs-sub",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] .gk + div",
+        "mobile": "[data-ref=CD-CS-mobile] .gk + div"
+      },
+      "app": "[data-testid=cs-sub]"
+    },
+    {
+      "name": "cs-chip-needs",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] .chip.warn",
+        "mobile": "[data-ref=CD-CS-mobile] .chip.warn"
+      },
+      "app": "[data-testid=cs-chip-needs]"
+    },
+    {
+      "name": "cs-chip-reviewed",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] .chip.out",
+        "mobile": "[data-ref=CD-CS-mobile] .chip.out"
+      },
+      "app": "[data-testid=cs-chip-reviewed]"
+    },
+    {
+      "name": "cs-body",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:nth-child(2)",
+        "mobile": "[data-ref=CD-CS-mobile] > div:nth-child(3)"
+      },
+      "app": "[data-testid=cs-body]"
+    },
+    {
+      "name": "cs-q-label",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:nth-child(2) > div:first-child > div:first-child",
+        "mobile": "[data-ref=CD-CS-mobile] > div:nth-child(3) > div:first-child > div:first-child"
+      },
+      "app": "[data-testid=cs-q-label]"
+    },
+    {
+      "name": "cs-rating-value",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:nth-child(2) > div:first-child .gk",
+        "mobile": "[data-ref=CD-CS-mobile] > div:nth-child(3) > div:first-child .gk"
+      },
+      "app": "[data-testid=cs-rating-value]"
+    },
+    {
+      "name": "cs-dot-on",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:nth-child(2) > div:first-child > div > span:last-child > span:first-child",
+        "mobile": "[data-ref=CD-CS-mobile] > div:nth-child(3) > div:first-child > div > span:last-child > span:first-child"
+      },
+      "app": "[data-testid=cs-dot-on]"
+    },
+    {
+      "name": "cs-dot-off",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:nth-child(2) > div:first-child > div > span:last-child > span:last-child",
+        "mobile": "[data-ref=CD-CS-mobile] > div:nth-child(3) > div:first-child > div > span:last-child > span:last-child"
+      },
+      "app": "[data-testid=cs-dot-off]"
+    },
+    {
+      "name": "cs-weight-value",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:nth-child(2) > div:nth-child(3) .gk",
+        "mobile": "[data-ref=CD-CS-mobile] > div:nth-child(3) > div:nth-child(3) .gk"
+      },
+      "app": "[data-testid=cs-weight-value]"
+    },
+    {
+      "name": "cs-weight-caption",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:nth-child(2) > div:nth-child(3) .gk + span",
+        "mobile": "[data-ref=CD-CS-mobile] > div:nth-child(3) > div:nth-child(3) .gk + span"
+      },
+      "app": "[data-testid=cs-weight-caption]"
+    },
+    {
+      "name": "cs-text-answer",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:nth-child(2) > div:nth-child(4) > div:last-child",
+        "mobile": "[data-ref=CD-CS-mobile] > div:nth-child(3) > div:nth-child(4) > div:last-child"
+      },
+      "app": "[data-testid=cs-text-answer]"
+    },
+    {
+      "name": "cs-photo",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] .photo",
+        "mobile": "[data-ref=CD-CS-mobile] .photo"
+      },
+      "app": "[data-testid=cs-photo]"
+    },
+    {
+      "name": "cs-footer",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:last-child",
+        "mobile": "[data-ref=CD-CS-mobile] > div:last-child"
+      },
+      "app": "[data-testid=cs-footer]"
+    },
+    {
+      "name": "cs-review-btn",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] .btnA",
+        "mobile": "[data-ref=CD-CS-mobile] .btnA"
+      },
+      "app": "[data-testid=cs-review-btn]"
+    },
+    {
+      "name": "cs-reviewed-note",
+      "design": {
+        "desktop": "[data-ref=CD-CS-desktop] > div:last-child > div",
+        "mobile": "[data-ref=CD-CS-mobile] > div:last-child > div"
+      },
+      "app": "[data-testid=cs-reviewed-note]"
+    }
+  ]
+}

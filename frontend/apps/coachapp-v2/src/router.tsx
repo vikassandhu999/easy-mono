@@ -16,6 +16,7 @@ import EditCheckin from '@/checkins/edit-checkin';
 import ListCheckins from '@/checkins/list-checkins';
 import ReviewCheckin from '@/checkins/review-checkin';
 import ClientDetail from '@/clients/client-detail';
+import CheckinSubmission from '@/clients/client-detail/checkin-submission';
 import DetailsSettings from '@/clients/client-detail/details-settings';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
@@ -79,6 +80,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},
       {path: ROUTES.CLIENT_DETAIL, Component: ClientDetail},
       {path: ROUTES.CLIENT_DETAILS, Component: DetailsSettings},
+      {path: ROUTES.CLIENT_CHECKIN_SUBMISSION, Component: CheckinSubmission},
       {path: ROUTES.CLIENT_MESSAGES, Component: ClientConversation},
       {path: ROUTES.LIBRARY, Component: Library},
       {path: ROUTES.EXERCISES, Component: ListExercises},

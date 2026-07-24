@@ -141,6 +141,13 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **`AssignSurface` now supports ports**: `triggerClassName` / `triggerTestId`
   style+tag the built-in trigger, and `isOpen`/`onOpenChange`/`anchorRef` drive
   it from a ⋯ menu item with no trigger of its own (CD/TR's Change plan).
+- **`check-ui-contract.sh` does NOT see untracked files** — it diffs
+  `git diff --name-only $BASE`, so a brand-new screen passes the gate before its
+  first commit and only fails on the NEXT branch. `git add -N` (or just commit)
+  before trusting a green gate on a new file.
+- **`:first-of-type` counts by TAG, not by class** — `> .card:first-of-type`
+  matched nothing in CD-SD because a non-card div precedes the cards. Index with
+  `> div:nth-child(n)` when siblings are mixed.
 - **A HeroUI `Button` used as a list ROW imposes 14px / 20px line-height /
   default-foreground on everything inside it** — the design's row inherits the
   page context instead. Reset with `text-metric font-normal leading-[normal]

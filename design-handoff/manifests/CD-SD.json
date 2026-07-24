@@ -1,0 +1,146 @@
+{
+  "design": "design-handoff/design/Client Detail.dc.html",
+  "app": {
+    "base": "http://localhost:2021",
+    "route": "/clients/f9e0ba52-2974-45b9-bf29-ffc3e081f7bd/sessions/5f7866cf-90a2-4318-bb92-1ba7727b7d13"
+  },
+  "tokenKey": "coachapp.accessToken",
+  "states": [
+    {
+      "name": "session",
+      "design": [
+        {
+          "click": "text=Active"
+        },
+        {
+          "click": ".vp:not(.phone) .ctab >> nth=1"
+        },
+        {
+          "click": ".vp.phone .mtab >> nth=1"
+        },
+        {
+          "click": "[data-ref=CD-TR-desktop] .lbrow.tap >> nth=0"
+        }
+      ],
+      "app": [
+        {
+          "wait": "[data-testid=sd-root]"
+        },
+        {
+          "wait": "[data-testid=sd-exercise]"
+        },
+        {
+          "wait": "[data-testid=sd-set-row]"
+        },
+        {
+          "sleep": 400
+        }
+      ],
+      "pairs": [
+        "sub-back",
+        "sub-title",
+        "sub-subtitle",
+        "sd-root",
+        "exercise-card",
+        "exercise-title",
+        "head-row",
+        "head-cell",
+        "set-row",
+        "set-num",
+        "set-sep"
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "name": "sub-back",
+      "design": {
+        "desktop": ".vp:not(.phone) button[aria-label=Back]",
+        "mobile": ".vp.phone button[aria-label=Back]"
+      },
+      "app": "[data-testid=sub-back]"
+    },
+    {
+      "name": "sub-title",
+      "design": {
+        "desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk",
+        "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk"
+      },
+      "app": "[data-testid=sub-title]"
+    },
+    {
+      "name": "sub-subtitle",
+      "design": {
+        "desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk + div",
+        "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk + div"
+      },
+      "app": "[data-testid=sub-subtitle]"
+    },
+    {
+      "name": "sd-root",
+      "design": {
+        "desktop": "[data-ref=CD-SD-desktop]",
+        "mobile": "[data-ref=CD-SD-mobile]"
+      },
+      "app": "[data-testid=sd-root]"
+    },
+    {
+      "name": "exercise-card",
+      "design": {
+        "desktop": "[data-ref=CD-SD-desktop] > div:nth-child(2)",
+        "mobile": "[data-ref=CD-SD-mobile] > div:nth-child(2)"
+      },
+      "app": "[data-testid=sd-exercise]"
+    },
+    {
+      "name": "exercise-title",
+      "design": {
+        "desktop": "[data-ref=CD-SD-desktop] > div:nth-child(2) > div:first-child",
+        "mobile": "[data-ref=CD-SD-mobile] > div:nth-child(2) > div:first-child"
+      },
+      "app": "[data-testid=sd-exercise-title]"
+    },
+    {
+      "name": "head-row",
+      "design": {
+        "desktop": "[data-ref=CD-SD-desktop] > div:nth-child(2) > div:nth-child(2)",
+        "mobile": "[data-ref=CD-SD-mobile] > div:nth-child(2) > div:nth-child(2)"
+      },
+      "app": "[data-testid=sd-head-row]"
+    },
+    {
+      "name": "head-cell",
+      "design": {
+        "desktop": "[data-ref=CD-SD-desktop] > div:nth-child(2) > div:nth-child(2) > span:first-child",
+        "mobile": "[data-ref=CD-SD-mobile] > div:nth-child(2) > div:nth-child(2) > span:first-child"
+      },
+      "app": "[data-testid=sd-head-cell]"
+    },
+    {
+      "name": "set-row",
+      "design": {
+        "desktop": "[data-ref=CD-SD-desktop] > div:nth-child(2) > div:nth-child(3)",
+        "mobile": "[data-ref=CD-SD-mobile] > div:nth-child(2) > div:nth-child(3)"
+      },
+      "app": "[data-testid=sd-set-row]"
+    },
+    {
+      "name": "set-num",
+      "design": {
+        "desktop": "[data-ref=CD-SD-desktop] > div:nth-child(2) > div:nth-child(3) > span:first-child"
+      },
+      "app": "[data-testid=sd-set-num]",
+      "widths": [
+        "desktop"
+      ]
+    },
+    {
+      "name": "set-sep",
+      "design": {
+        "desktop": "[data-ref=CD-SD-desktop] .sep",
+        "mobile": "[data-ref=CD-SD-mobile] .sep"
+      },
+      "app": "[data-testid=sd-set-sep]"
+    }
+  ]
+}

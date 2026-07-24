@@ -1,148 +1,134 @@
-import {formatDuration, formatSessionDateLong, SESSION_STATE_CHIP} from '@easy/utils';
-import {Alert, Button, Chip, Separator, Table, Typography} from '@heroui/react';
-import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, SkipForward} from 'lucide-react';
+/**
+ * SD — session detail (spec §4.3; design data-ref CD-SD-*). The client's note
+ * first (it's the reason coaches open this screen), then one card per exercise
+ * with its set grid. Style fidelity: manifests/CD-SD.json.
+ */
+import {Chip} from '@heroui/react';
+import {Check, Minus, Quote} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
+import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
+import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import type {TrainingPerformedSet} from '@/api/generated';
 import {useGetCoachClientTrainingSessionQuery} from '@/api/generated';
-import {buildExerciseGroups, type ExerciseGroup, formatLoad, getAdherenceSummary} from '@/clients/lib/session';
-import {getWorkoutSessionTitle} from '@/domain/workout-sessions';
+import {formatCdDuration, formatRowDate} from '@/clients/client-detail/cd-data';
+import {CD_CARD, CD_CHIP, CdSubHeader} from '@/clients/client-detail/cd-ui';
+import {buildExerciseGroups, type ExerciseGroup, formatLoad} from '@/clients/lib/session';
 
-function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
-  const isSkipped = group.sets.length === 0 && !group.isAdded;
-  const hasPlan = group.plannedSets.length > 0;
+/** Set · Reps · Load · RPE · done — one grid template for header and rows. */
+const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[64px_1fr_92px_60px_26px] sm:gap-2.5';
+const SET_CHIP = `${CD_CHIP} border border-border bg-transparent px-1.5 py-0.25 text-set-chip font-semibold [color:var(--color-muted)]`;
+
+function setTypeLabel(set: TrainingPerformedSet): null | string {
+  if (set.set_type === 'warmup') {
+    return 'Warm-up';
+  }
+  return set.set_type === 'dropset' ? 'Drop set' : null;
+}
+
+function SetRow({index, isFirstCard, set}: {index: number; isFirstCard: boolean; set: TrainingPerformedSet}) {
+  const chip = setTypeLabel(set);
+  const testId = (name: string) => (isFirstCard && index === 0 ? `sd-${name}` : undefined);
 
   return (
-    <div className="py-3">
-      <div className="mb-2 flex items-center gap-2">
-        <Typography
-          type="body-sm"
-          weight="semibold"
-        >
-          {group.exerciseName}
-        </Typography>
-        {group.isAdded ? (
-          <Chip
-            color="success"
-            size="sm"
-            variant="soft"
-          >
-            <Plus size={10} />
-            <span className="ml-1">Added</span>
-          </Chip>
-        ) : null}
-        {isSkipped ? (
-          <Chip
-            color="default"
-            size="sm"
-            variant="soft"
-          >
-            <SkipForward size={10} />
-            <span className="ml-1">Skipped</span>
-          </Chip>
-        ) : null}
-      </div>
+    <div
+      className={`${GRID} items-center py-2 text-sub sm:py-2.25 sm:text-pill`}
+      data-testid={testId('set-row')}
+    >
+      <span
+        className="flex items-center gap-1.5"
+        data-testid={testId('set-num')}
+      >
+        <b>{index + 1}</b>
+        {chip ? <Chip className={SET_CHIP}>{chip}</Chip> : null}
+      </span>
+      <span>{set.reps ?? '—'}</span>
+      <span>{formatLoad(set.load_value, set.load_unit) || '—'}</span>
+      <span>{set.rpe ?? '—'}</span>
+      {set.completed ? <Check className="size-3.75 text-success" /> : <Minus className="size-3.75 text-muted" />}
+    </div>
+  );
+}
 
-      {isSkipped ? (
-        <Typography
-          color="muted"
-          type="body-xs"
-        >
-          {group.plannedSets.length} set{group.plannedSets.length !== 1 ? 's' : ''} planned, none performed
-        </Typography>
-      ) : group.sets.length > 0 ? (
-        <Table>
-          <Table.ScrollContainer>
-            <Table.Content aria-label="Set log">
-              <Table.Header>
-                <Table.Column isRowHeader>#</Table.Column>
-                {hasPlan ? <Table.Column>Plan</Table.Column> : null}
-                <Table.Column>Done</Table.Column>
-                <Table.Column>Load</Table.Column>
-              </Table.Header>
-              <Table.Body>
-                {group.sets.map((set, idx) => {
-                  const planned = hasPlan ? group.plannedSets[idx] : null;
-                  return (
-                    <Table.Row
-                      id={set.id}
-                      key={set.id}
-                    >
-                      <Table.Cell className="text-muted">{idx + 1}</Table.Cell>
-                      {hasPlan ? <Table.Cell className="text-muted">{planned?.targetReps ?? '—'}</Table.Cell> : null}
-                      <Table.Cell>
-                        {set.completed ? <span>{set.reps ?? '—'}</span> : <span className="text-muted">skipped</span>}
-                      </Table.Cell>
-                      <Table.Cell>{formatLoad(set.load_value, set.load_unit)}</Table.Cell>
-                    </Table.Row>
-                  );
-                })}
-              </Table.Body>
-            </Table.Content>
-          </Table.ScrollContainer>
-        </Table>
-      ) : null}
+function ExerciseCard({group, isFirst}: {group: ExerciseGroup; isFirst: boolean}) {
+  const done = group.sets.filter((set) => set.completed).length;
+  const total = group.sets.length || group.plannedSets.length;
+
+  return (
+    <div
+      className={`${CD_CARD} px-3.75 py-3.5 sm:px-4.5 sm:py-4`}
+      data-testid={isFirst ? 'sd-exercise' : undefined}
+    >
+      <div
+        className="mb-2.5 text-row font-bold sm:mb-3 sm:text-tab"
+        data-testid={isFirst ? 'sd-exercise-title' : undefined}
+      >
+        {group.exerciseName}{' '}
+        <span className="font-medium text-muted">
+          ({done}/{total} sets)
+        </span>
+      </div>
+      <div
+        className={`${GRID} border-b border-border pb-1.75 text-eyebrow-sm font-semibold text-muted sm:pb-2 sm:text-eyebrow`}
+        data-testid={isFirst ? 'sd-head-row' : undefined}
+      >
+        <span data-testid={isFirst ? 'sd-head-cell' : undefined}>Set</span>
+        <span>Reps</span>
+        <span>Load</span>
+        <span>RPE</span>
+        <span />
+      </div>
+      {group.sets.map((set, index) => (
+        <div key={set.id}>
+          {index > 0 ? (
+            <div
+              className="h-px bg-border"
+              data-testid={isFirst && index === 1 ? 'sd-set-sep' : undefined}
+            />
+          ) : null}
+          <SetRow
+            index={index}
+            isFirstCard={isFirst}
+            set={set}
+          />
+        </div>
+      ))}
+      {group.sets.length === 0 ? <div className="py-2 text-sub text-muted sm:text-pill">Not logged.</div> : null}
     </div>
   );
 }
 
 export default function SessionDetail() {
   const {clientId, sessionId} = useParams<{clientId: string; sessionId: string}>();
-  const goBack = useGoBack(`/clients/${clientId}`);
-  const {data, isError, isLoading} = useGetCoachClientTrainingSessionQuery({clientId: clientId!, id: sessionId!});
+  const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', clientId!)}?tab=training`);
+  const {data, isError, isLoading, refetch} = useGetCoachClientTrainingSessionQuery({
+    clientId: clientId!,
+    id: sessionId!,
+  });
 
   if (isLoading) {
     return (
-      <Page>
-        <Page.Header size="content">
-          <Page.TitleGroup>
-            <Page.Title>Workout session</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
+      <Page className="bg-background">
         <Page.Content bare>
-          <Page.Frame
-            className="pt-4 pb-6"
-            size="content"
-          >
+          <Page.Frame className="pt-4 pb-6">
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
       </Page>
     );
   }
-
   if (isError || !data) {
     return (
-      <Page>
-        <Page.Header size="content">
-          <Page.TitleGroup>
-            <Page.Title>Workout session</Page.Title>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Toolbar>
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Client
-          </Button>
-        </Page.Toolbar>
+      <Page className="bg-background">
         <Page.Content bare>
-          <Page.Frame
-            className="pt-4 pb-6"
-            size="content"
-          >
-            <Alert status="danger">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>Session couldn&apos;t load</Alert.Title>
-                <Alert.Description>The workout session may not exist, or you may not have access</Alert.Description>
-              </Alert.Content>
-            </Alert>
+          <Page.Frame className="pt-4 pb-6">
+            <ErrorState
+              message="Couldn't load this session."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>
@@ -150,155 +136,67 @@ export default function SessionDetail() {
   }
 
   const session = data.data;
-  const snapshot = session.planned_snapshot;
-  const title = getWorkoutSessionTitle(session);
-  const dateStr = formatSessionDateLong(session.started_at);
-  const duration = formatDuration(session.started_at, session.ended_at);
   const groups = buildExerciseGroups(session);
-  const adherence = getAdherenceSummary(session, groups);
-
-  const stateChip = SESSION_STATE_CHIP[session.state];
+  const duration = formatCdDuration(session.started_at, session.ended_at);
+  const subtitle = [session.date ? formatRowDate(session.date, {withMonth: true}) : null, duration]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <Page>
-      <Page.Header size="content">
-        <Page.TitleGroup>
-          <Page.Title>Workout session</Page.Title>
-        </Page.TitleGroup>
-      </Page.Header>
-      <Page.Toolbar>
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Client
-        </Button>
-      </Page.Toolbar>
-      <Page.Content bare>
-        <Page.Frame
-          className="pt-4 pb-6"
-          size="content"
-        >
-          <div className="mx-auto max-w-lg">
-            <div className="pb-4">
-              <div className="flex min-w-0 items-center gap-2">
-                <Typography
-                  truncate
-                  type="h5"
-                >
-                  {title}
-                </Typography>
-                {stateChip ? (
-                  <Chip
-                    className="shrink-0"
-                    color={stateChip.color}
-                    size="sm"
-                    variant="soft"
-                  >
-                    {stateChip.label}
-                  </Chip>
-                ) : null}
-              </div>
-              <Typography
-                className="mt-1"
-                color="muted"
-                type="body-sm"
-              >
-                {dateStr}
-              </Typography>
-            </div>
-
-            <div className="flex flex-wrap gap-4 pb-4">
-              {duration ? (
-                <div className="flex items-center gap-1.5 text-sm text-muted">
-                  <Clock size={14} />
-                  {duration}
-                </div>
+    <Page className="bg-background text-foreground [line-height:normal]">
+      <Page.Content
+        bare
+        className="flex flex-col p-0"
+      >
+        <CdSubHeader
+          onBack={goBack}
+          right={
+            <>
+              {session.state === 'completed' ? (
+                <Chip className={`${CD_CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}>
+                  Completed
+                </Chip>
               ) : null}
-              {session.soreness_rating ? (
-                <div className="flex items-center gap-1.5 text-sm text-muted">
-                  <Activity size={14} />
-                  Effort: {session.soreness_rating}/5
-                </div>
+              {session.soreness_rating != null ? (
+                <Chip className={`${CD_CHIP} border border-border bg-transparent [color:var(--color-muted)]`}>
+                  Soreness {session.soreness_rating}/5
+                </Chip>
               ) : null}
-              {snapshot ? (
-                <div className="flex items-center gap-1.5 text-sm text-muted">
-                  <Dumbbell size={14} />
-                  {adherence.completed}/{adherence.totalPlanned} exercises
-                  {adherence.totalSets > 0 ? ` \u00B7 ${adherence.totalSets} sets` : ''}
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 text-sm text-muted">
-                  <Dumbbell size={14} />
-                  {adherence.totalSets} sets across {groups.length} exercise{groups.length !== 1 ? 's' : ''}
-                </div>
-              )}
-            </div>
+            </>
+          }
+          subtitle={subtitle}
+          title="Workout"
+        />
 
+        <div className="p-3.5 sm:px-7.5 sm:pt-6 sm:pb-7.5">
+          <div
+            className="flex flex-col gap-3 sm:max-w-195 sm:gap-4"
+            data-testid="sd-root"
+          >
             {session.notes ? (
-              <div className="flex items-start gap-2 pb-4">
-                <MessageSquare
-                  className="mt-0.5 shrink-0 text-muted"
-                  size={14}
-                />
-                <Typography
-                  className="italic min-w-0 break-words"
-                  color="muted"
-                  type="body-sm"
-                >
-                  &ldquo;{session.notes}&rdquo;
-                </Typography>
+              <div className="flex gap-2.5 rounded-cd-panel bg-accent-soft px-3.25 py-3 sm:gap-2.75 sm:px-3.75 sm:py-3.25">
+                <Quote className="mt-0.25 size-4 flex-none text-accent sm:size-4.5" />
+                <div className="text-pill leading-normal sm:text-note">{session.notes}</div>
               </div>
             ) : null}
 
-            {snapshot ? (
-              <div className="flex flex-wrap gap-2 pb-4">
-                {adherence.skipped > 0 ? (
-                  <Chip
-                    color="default"
-                    size="sm"
-                    variant="soft"
-                  >
-                    {adherence.skipped} skipped
-                  </Chip>
-                ) : null}
-                {adherence.added > 0 ? (
-                  <Chip
-                    color="success"
-                    size="sm"
-                    variant="soft"
-                  >
-                    {adherence.added} added
-                  </Chip>
-                ) : null}
+            {groups.map((group, index) => (
+              <ExerciseCard
+                group={group}
+                isFirst={index === 0}
+                key={group.exerciseId}
+              />
+            ))}
+
+            {groups.length === 0 ? (
+              <div className={`${CD_CARD} px-3.5 py-6 text-center sm:px-4.5`}>
+                <span className="text-sub [color:var(--color-muted)] sm:text-pill">
+                  No sets were logged in this session.
+                </span>
               </div>
             ) : null}
-
-            <Separator />
-
-            {groups.length > 0 ? (
-              <div className="divide-y divide-surface-secondary">
-                {groups.map((group) => (
-                  <ExerciseGroupSection
-                    group={group}
-                    key={`${group.exerciseId}_${group.exerciseName}`}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Typography
-                align="center"
-                className="py-6"
-                color="muted"
-                type="body-sm"
-              >
-                No exercises logged in this session
-              </Typography>
-            )}
           </div>
-        </Page.Frame>
+        </div>
       </Page.Content>
     </Page>
   );

@@ -63,6 +63,8 @@
      every size token with a normal line-height or Tailwind defaults 1.5. */
   --text-eyebrow: 11px; /* .eyebrow, chips, week-strip labels */
   --text-eyebrow--line-height: normal;
+  --text-set-chip: 9.5px; /* SD warm-up / drop-set chip */
+  --text-set-chip--line-height: normal;
   --text-eyebrow-sm: 10px; /* mobile eyebrows / week labels */
   --text-eyebrow-sm--line-height: normal;
   --text-caption: 10.5px; /* mobile stat sub-lines, goal label, unread badge */

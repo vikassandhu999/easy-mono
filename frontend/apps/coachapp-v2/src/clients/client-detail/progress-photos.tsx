@@ -145,11 +145,12 @@ export default function ProgressPhotos() {
                   {group.ids.map((photoId) => {
                     const isSelected = selected.includes(photoId);
                     return (
-                      <button
-                        className="relative aspect-square"
+                      <Button
+                        aria-label="Progress photo"
+                        className="relative aspect-square h-auto min-h-0 w-full rounded-cd-panel bg-transparent p-0 text-metric font-normal leading-[normal] [box-shadow:none]"
                         key={photoId}
-                        onClick={() => toggle(photoId)}
-                        type="button"
+                        onPress={() => toggle(photoId)}
+                        variant="ghost"
                       >
                         <CdPhotoThumb
                           className="flex size-full items-center justify-center overflow-hidden rounded-cd-panel bg-surface-tertiary text-muted/60"
@@ -165,7 +166,7 @@ export default function ProgressPhotos() {
                             </span>
                           </>
                         ) : null}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>

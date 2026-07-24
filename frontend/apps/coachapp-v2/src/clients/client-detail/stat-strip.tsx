@@ -30,9 +30,9 @@ import {
 import {EYEBROW} from '@/clients/client-detail/ui';
 
 const CELL = 'bg-surface px-3.5 py-2.75 sm:flex-1 sm:bg-transparent sm:px-5 sm:py-3.75';
-const VALUE = 'font-grotesk text-title-sm font-bold sm:mt-1.5 sm:text-stat-xl mt-0.75';
-const UNIT = 'text-eyebrow font-semibold text-muted sm:text-note';
-const SUB = 'text-caption text-muted sm:mt-0.75 sm:text-chip';
+const VALUE = 'font-grotesk text-heading font-bold sm:mt-1.5 sm:text-metric mt-0.75';
+const UNIT = 'text-eyebrow font-semibold text-muted sm:text-body';
+const SUB = 'text-eyebrow text-muted sm:mt-0.75 sm:text-eyebrow';
 const DIVIDER = 'hidden w-px self-stretch bg-border sm:block';
 
 function Tile({
@@ -54,7 +54,7 @@ function Tile({
       data-testid={testid}
     >
       <div
-        className={`${EYEBROW} text-eyebrow-sm sm:text-eyebrow`}
+        className={`${EYEBROW} text-eyebrow sm:text-eyebrow`}
         data-testid={testid ? `${testid}-label` : undefined}
       >
         {label}
@@ -127,7 +127,7 @@ export default function StatStrip({client}: {client: Client}) {
 
   return (
     <div
-      className="mt-3.5 grid grid-cols-2 gap-px overflow-hidden rounded-detail-strip border border-border bg-border sm:mt-5 sm:flex sm:bg-transparent sm:[column-gap:normal] sm:[row-gap:normal]"
+      className="mt-3.5 grid grid-cols-2 gap-px overflow-hidden rounded-panel border border-border bg-border sm:mt-5 sm:flex sm:bg-transparent sm:[column-gap:normal] sm:[row-gap:normal]"
       data-testid="cd-strip"
     >
       <Tile
@@ -189,7 +189,7 @@ export default function StatStrip({client}: {client: Client}) {
         to={ROUTES.CLIENT_WEIGHT.replace(':id', clientId)}
       >
         <div className="flex items-center justify-between">
-          <div className={`${EYEBROW} text-eyebrow-sm sm:text-eyebrow`}>Weight</div>
+          <div className={`${EYEBROW} text-eyebrow sm:text-eyebrow`}>Weight</div>
           <ChevronRight className="hidden size-3.5 text-muted sm:block" />
         </div>
         <div className={`${VALUE}${latestWeight ? '' : ' text-muted'}`}>
@@ -205,7 +205,7 @@ export default function StatStrip({client}: {client: Client}) {
         <div
           className={
             latestWeight && delta
-              ? `text-caption font-semibold sm:mt-0.75 sm:text-chip ${
+              ? `text-eyebrow font-semibold sm:mt-0.75 sm:text-eyebrow ${
                   delta.tone === 'success'
                     ? 'text-success-soft-foreground'
                     : delta.tone === 'danger'

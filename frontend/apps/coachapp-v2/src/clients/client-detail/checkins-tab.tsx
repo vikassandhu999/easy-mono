@@ -24,10 +24,10 @@ import AssignSurface from '@/clients/components/assign-surface';
 import CheckinAssignContent from '@/clients/components/checkin-assign-content';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-detail-panel px-1 py-2.75 sm:px-2';
-const ROW_TEXT = 'text-metric font-normal leading-[normal] text-foreground';
+const ROW = 'flex items-center gap-3.5 rounded-panel px-1 py-2.75 sm:px-2';
+const ROW_TEXT = 'text-title font-normal leading-[normal] text-foreground';
 const SETTING_ROW = 'flex items-center justify-between py-1';
-const SETTING_LABEL = 'text-sub text-muted sm:text-pill';
+const SETTING_LABEL = 'text-eyebrow text-muted sm:text-eyebrow';
 const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
 
 const FREQUENCIES = [
@@ -71,20 +71,20 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
         to={ROUTES.EDIT_CHECKIN.replace(':id', schedule.form_template_id)}
       >
         <span
-          className="flex size-9 flex-none items-center justify-center rounded-detail-button bg-accent-soft text-accent sm:size-9.5 sm:rounded-detail-tile"
+          className="flex size-9 flex-none items-center justify-center rounded-control bg-accent-soft text-accent sm:size-9.5 sm:rounded-control"
           data-testid="ci-form-icon"
         >
           <ClipboardList className="size-4.25 sm:size-4.5" />
         </span>
         <span className="min-w-0 flex-1">
           <span
-            className="block text-note font-bold sm:text-row"
+            className="block text-body font-bold sm:text-body"
             data-testid="ci-form-title"
           >
             {schedule.form_template.name}
           </span>
           <span
-            className="block text-eyebrow text-muted sm:mt-0.25 sm:text-chip"
+            className="block text-eyebrow text-muted sm:mt-0.25 sm:text-eyebrow"
             data-testid="ci-form-sub"
           >
             Form
@@ -111,7 +111,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
           selectedKey={schedule.frequency}
         >
           <Button
-            className="h-7.5 min-h-0 gap-2 rounded-detail-button border border-border bg-background px-3 text-pill font-semibold text-foreground [box-shadow:none] sm:h-8"
+            className="h-7.5 min-h-0 gap-2 rounded-control border border-border bg-background px-3 text-eyebrow font-semibold text-foreground [box-shadow:none] sm:h-8"
             data-testid="ci-freq-ctl"
             variant="ghost"
           >
@@ -142,7 +142,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
         </span>
         <span className="flex items-center gap-2">
           <span
-            className="text-sub font-semibold sm:text-pill"
+            className="text-eyebrow font-semibold sm:text-eyebrow"
             data-testid="ci-next-value"
           >
             {formatShortDate(schedule.next_due_on)}
@@ -233,19 +233,19 @@ function HistoryCard({assignments, clientId}: {assignments: ClientProfileFormAss
           const body = isDesktop ? (
             <>
               <span
-                className="min-w-0 flex-1 text-row font-bold"
+                className="min-w-0 flex-1 text-body font-bold"
                 data-testid="ci-row-title"
               >
                 {assignment.form_template.name}
               </span>
-              {submittedLabel ? <span className="text-chip text-muted">{submittedLabel}</span> : null}
+              {submittedLabel ? <span className="text-eyebrow text-muted">{submittedLabel}</span> : null}
               {chip}
             </>
           ) : (
             <>
               <span className="min-w-0 flex-1">
                 <span
-                  className="block text-note font-bold"
+                  className="block text-body font-bold"
                   data-testid="ci-row-title"
                 >
                   {assignment.form_template.name}
@@ -312,12 +312,12 @@ function IntakeCard({
         Intake
       </div>
       <Link
-        className={`${ROW_TEXT} -mx-1 -my-1.25 flex items-center gap-3.5 rounded-detail-panel px-1 py-1.25 sm:-mx-2 sm:-my-1.5 sm:px-2 sm:py-1.5`}
+        className={`${ROW_TEXT} -mx-1 -my-1.25 flex items-center gap-3.5 rounded-panel px-1 py-1.25 sm:-mx-2 sm:-my-1.5 sm:px-2 sm:py-1.5`}
         data-testid="ci-intake-row"
         to={ROUTES.CLIENT_INTAKE.replace(':id', clientId)}
       >
         <span
-          className="min-w-0 flex-1 text-note font-bold sm:text-row"
+          className="min-w-0 flex-1 text-body font-bold sm:text-body"
           data-testid="ci-intake-title"
         >
           {intake.form_template.name}
@@ -377,7 +377,7 @@ function PhotosCard({assignments, clientId}: {assignments: ClientProfileFormAssi
       <div className="grid grid-cols-2 gap-2">
         {shown.map((id) => (
           <PhotoThumb
-            className="flex aspect-square items-center justify-center overflow-hidden rounded-detail-panel bg-surface-tertiary text-muted/60"
+            className="flex aspect-square items-center justify-center overflow-hidden rounded-panel bg-surface-tertiary text-muted/60"
             iconClassName="size-5.5"
             key={id}
             src={urls[id]}
@@ -386,7 +386,7 @@ function PhotosCard({assignments, clientId}: {assignments: ClientProfileFormAssi
         ))}
         {overflow > 0 ? (
           <span
-            className="flex aspect-square items-center justify-center rounded-detail-panel bg-always-dark text-metric-sm font-bold [color:white] [font-family:'Space_Grotesk'] sm:text-metric"
+            className="flex aspect-square items-center justify-center rounded-panel bg-always-dark text-body font-bold [color:white] [font-family:'Space_Grotesk'] sm:text-title"
             data-testid="ci-photo-overflow"
           >
             +{overflow}
@@ -446,19 +446,19 @@ export default function CheckinsTab({client}: {client: Client}) {
             data-testid="ci-empty"
           >
             <span
-              className="mb-0.5 flex size-11.5 items-center justify-center rounded-detail-plan bg-surface-tertiary text-muted sm:size-12.5 sm:rounded-detail-strip"
+              className="mb-0.5 flex size-11.5 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:size-12.5 sm:rounded-panel"
               data-testid="ci-empty-icon"
             >
               <CalendarClock className="size-5.25 sm:size-5.75" />
             </span>
             <div
-              className="font-grotesk text-metric-sm font-semibold sm:text-metric"
+              className="font-grotesk text-body font-semibold sm:text-title"
               data-testid="ci-empty-title"
             >
               No check-in schedule
             </div>
             <div
-              className="text-sub text-muted sm:max-w-75 sm:text-pill"
+              className="text-eyebrow text-muted sm:max-w-75 sm:text-eyebrow"
               data-testid="ci-empty-sub"
             >
               Set a cadence and {client.first_name ?? 'this client'} will get the form automatically.

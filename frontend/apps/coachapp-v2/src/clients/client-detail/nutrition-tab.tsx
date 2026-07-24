@@ -21,12 +21,12 @@ import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
 import {CARD, CardError, CardSkeleton, CHIP} from '@/clients/client-detail/ui';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-detail-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
+const ROW = 'flex items-center gap-3.5 rounded-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
 /** `.lbrow` sits in the page's inherited text context; HeroUI Button imposes its
  *  own 14px/20px/default-foreground, which then cascades into the meter. */
-const ROW_TEXT = 'text-metric font-normal leading-[normal] text-foreground';
-const NOT_LOGGED_ROW = 'flex items-center gap-3.5 rounded-detail-panel px-1 py-2.75 sm:px-2';
-const ROW_DATE = 'text-sub font-semibold text-muted sm:w-19 sm:flex-none';
+const ROW_TEXT = 'text-title font-normal leading-[normal] text-foreground';
+const NOT_LOGGED_ROW = 'flex items-center gap-3.5 rounded-panel px-1 py-2.75 sm:px-2';
+const ROW_DATE = 'text-eyebrow font-semibold text-muted sm:w-19 sm:flex-none';
 const SEP = 'h-px bg-border';
 /** `.chip.out` — transparent, hairline, muted (RECIPES R5 outline chip). */
 const OUT_CHIP = `${CHIP} border border-border bg-transparent font-semibold [color:var(--color-muted)]`;
@@ -136,7 +136,7 @@ function AdherenceBar({percent}: {percent: number}) {
         </ProgressBar.Track>
       </ProgressBar>
       <span
-        className={`flex-none text-eyebrow font-bold sm:text-chip ${PCT_CLASS[tone]}`}
+        className={`flex-none text-eyebrow font-bold sm:text-eyebrow ${PCT_CLASS[tone]}`}
         data-testid="nu-pct"
       >
         {percent}%
@@ -260,7 +260,7 @@ export default function NutritionTab({client}: {client: Client}) {
         />
       ) : !hasAnyLogged ? (
         <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
-          <span className="text-sub [color:var(--color-muted)] sm:text-pill">
+          <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
             No meals logged yet. Days appear here as {client.first_name ?? 'this client'} logs food.
           </span>
         </div>
@@ -297,7 +297,7 @@ export default function NutritionTab({client}: {client: Client}) {
                     </span>
                     <span className="flex-1" />
                     <span
-                      className="text-sub [color:var(--color-muted)]"
+                      className="text-eyebrow [color:var(--color-muted)]"
                       data-testid="nu-notlogged-text"
                     >
                       Not logged
@@ -326,7 +326,7 @@ export default function NutritionTab({client}: {client: Client}) {
                           />
                         </span>
                         <span
-                          className="flex-none text-pill font-semibold"
+                          className="flex-none text-eyebrow font-semibold"
                           data-testid="nu-kcal"
                         >
                           {Math.round(day.logged).toLocaleString()} / {Math.round(day.planned).toLocaleString()}
@@ -342,7 +342,7 @@ export default function NutritionTab({client}: {client: Client}) {
                             {formatRowDate(day.date, {withMonth: true})}
                           </span>
                           <span
-                            className="text-sub font-semibold"
+                            className="text-eyebrow font-semibold"
                             data-testid="nu-kcal"
                           >
                             {Math.round(day.logged).toLocaleString()} / {Math.round(day.planned).toLocaleString()}

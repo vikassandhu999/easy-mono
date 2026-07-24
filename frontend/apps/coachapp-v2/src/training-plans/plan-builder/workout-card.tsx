@@ -293,7 +293,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
     <Dropdown>
       <Button
         aria-label={`Workout options for ${workout.name}`}
-        className={`size-11 min-w-11 shrink-0 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7.5 sm:min-w-0 ${AS_ICON_BUTTON}`}
+        className={`size-11 min-w-11 shrink-0 rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7.5 sm:min-w-0 ${AS_ICON_BUTTON}`}
         data-testid="tb-workout-menu-btn"
         isIconOnly
         variant="ghost"
@@ -360,7 +360,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
                 // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
                 autoFocus
                 aria-label="Workout name"
-                className="min-w-0 flex-1 border-accent border-b bg-transparent py-0.5 font-grotesk text-title-sm font-semibold text-foreground outline-none [border-bottom-width:1.5px]"
+                className="min-w-0 flex-1 border-accent border-b bg-transparent py-0.5 font-grotesk text-heading font-semibold text-foreground outline-none [border-bottom-width:1.5px]"
                 data-testid="tb-rename-input"
                 onBlur={() => {
                   commitRename().catch(() => undefined);
@@ -371,7 +371,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
               />
             ) : (
               <span
-                className="min-w-0 flex-1 truncate font-grotesk text-title-sm font-semibold tracking-name text-foreground"
+                className="min-w-0 flex-1 truncate font-grotesk text-heading font-semibold tracking-name text-foreground"
                 data-testid="tb-workout-name"
               >
                 {workout.name}
@@ -407,7 +407,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
       >
         {exerciseCount === 0 ? (
           <div
-            className="py-5 text-center text-pill text-muted"
+            className="py-5 text-center text-eyebrow text-muted"
             data-testid="tb-empty"
           >
             No exercises yet — add the first one below.
@@ -435,7 +435,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
         data-testid="tb-add-exercise-row"
       >
         <Button
-          className="min-h-11 gap-1.5 rounded-none bg-transparent px-0 font-btn text-note font-semibold leading-[normal] [box-shadow:none] [color:var(--color-accent)] sm:min-h-0"
+          className="min-h-11 gap-1.5 rounded-none bg-transparent px-0 font-btn text-body font-semibold leading-[normal] [box-shadow:none] [color:var(--color-accent)] sm:min-h-0"
           data-testid="tb-add-exercise"
           onPress={() => setPickerOpen(true)}
           ref={addExerciseButtonRef}

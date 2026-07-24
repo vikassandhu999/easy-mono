@@ -303,7 +303,7 @@ export function MealCard({
   return (
     <Disclosure
       className={cn(
-        'overflow-hidden rounded-meal border bg-surface [box-shadow:none]',
+        'overflow-hidden rounded-panel border bg-surface [box-shadow:none]',
         // Open wins over shared: the prototype only tints the border amber
         // while the card is collapsed (`isOpen ? accent-mix : shared ? …`).
         open ? 'border-meal-open' : isShared ? 'border-shared-foreground' : 'border-border',
@@ -348,7 +348,7 @@ export function MealCard({
               data-testid={triggerTestId}
             >
               <span
-                className="min-w-0 flex-1 truncate text-row font-semibold text-foreground"
+                className="min-w-0 flex-1 truncate text-body font-semibold text-foreground"
                 data-testid="nb-meal-name"
               >
                 {meal.name}
@@ -373,7 +373,7 @@ export function MealCard({
               ) : null}
               {kcal ? (
                 <span
-                  className="shrink-0 whitespace-nowrap text-sub text-muted"
+                  className="shrink-0 whitespace-nowrap text-eyebrow text-muted"
                   data-testid="nb-meal-kcal"
                 >
                   {kcal}
@@ -386,7 +386,7 @@ export function MealCard({
         <Dropdown>
           <Button
             aria-label={`Meal options for ${meal.name}`}
-            className={`min-h-11 min-w-11 shrink-0 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-h-0 sm:min-w-0 ${AS_ICON_BUTTON}`}
+            className={`min-h-11 min-w-11 shrink-0 rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-h-0 sm:min-w-0 ${AS_ICON_BUTTON}`}
             data-testid="nb-meal-menu-btn"
             isIconOnly
             size="sm"
@@ -457,7 +457,7 @@ export function MealCard({
         >
           {isShared ? (
             <div
-              className="flex items-center gap-1.75 pt-2.25 pb-0.5 text-chip [color:var(--color-shared-foreground)]"
+              className="flex items-center gap-1.75 pt-2.25 pb-0.5 text-eyebrow [color:var(--color-shared-foreground)]"
               data-testid={openId('nb-shared-note')}
             >
               <Info className="size-3.25 flex-none" />
@@ -467,7 +467,7 @@ export function MealCard({
 
           {items.length === 0 ? (
             <div
-              className="py-2.5 text-pill text-muted"
+              className="py-2.5 text-eyebrow text-muted"
               data-testid={openId('nb-meal-empty')}
             >
               No foods yet — add the first one below.
@@ -491,7 +491,7 @@ export function MealCard({
 
           <div className="pt-2">
             <Button
-              className={`${INLINE_LINK} text-sub`}
+              className={`${INLINE_LINK} text-eyebrow`}
               data-testid={openId('nb-add-food')}
               onPress={() => setPickerOpen(true)}
               ref={addItemButtonRef}
@@ -517,13 +517,13 @@ export function MealCard({
             <div className="flex flex-col gap-1.5">
               {swaps.map((swap) => (
                 <div
-                  className="flex min-h-11 items-center gap-2.25 rounded-field border border-border px-3 py-2.25 sm:min-h-0"
+                  className="flex min-h-11 items-center gap-2.25 rounded-control border border-border px-3 py-2.25 sm:min-h-0"
                   data-testid={openId('nb-swap-row')}
                   key={swap.optionId}
                 >
                   <ArrowLeftRight className="size-3.5 shrink-0 text-muted" />
                   <span
-                    className="min-w-0 flex-1 truncate text-pill text-foreground"
+                    className="min-w-0 flex-1 truncate text-eyebrow text-foreground"
                     data-testid={openId('nb-swap-name')}
                   >
                     {swap.meal.name}
@@ -538,7 +538,7 @@ export function MealCard({
                   ) : null}
                   <Button
                     aria-label={`Remove swap ${swap.meal.name}`}
-                    className={`min-h-11 min-w-11 shrink-0 rounded-mini bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5 sm:min-h-0 sm:min-w-0 ${AS_TEXT} ${NO_GAP}`}
+                    className={`min-h-11 min-w-11 shrink-0 rounded-chip bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5 sm:min-h-0 sm:min-w-0 ${AS_TEXT} ${NO_GAP}`}
                     data-testid={openId('nb-swap-remove')}
                     isIconOnly
                     onPress={() => onRemoveSwap(swap.optionId)}

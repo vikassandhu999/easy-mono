@@ -58,20 +58,20 @@ export function InviteCard({client}: {client: Client}) {
       </div>
       <div className="flex items-center gap-2.75 sm:gap-3.25">
         <span
-          className="flex size-9.5 flex-none items-center justify-center rounded-detail-tile bg-warning-soft text-warning-soft-foreground sm:size-10"
+          className="flex size-9.5 flex-none items-center justify-center rounded-control bg-warning-soft text-warning-soft-foreground sm:size-10"
           data-testid="cd-invite-icon"
         >
           <Mail className="size-4.5 sm:size-4.75" />
         </span>
         <div className="min-w-0 flex-1">
           <div
-            className="text-note font-bold sm:text-row"
+            className="text-body font-bold sm:text-body"
             data-testid="cd-invite-title"
           >
             Invite sent {sentLabel}
           </div>
           <div
-            className="mt-0.25 text-eyebrow text-muted sm:text-chip"
+            className="mt-0.25 text-eyebrow text-muted sm:text-eyebrow"
             data-testid="cd-invite-sub"
           >
             Waiting for {client.first_name} to accept and set up their app.
@@ -88,7 +88,7 @@ export function InviteCard({client}: {client: Client}) {
           Resend invite
         </Button>
         <Button
-          className="h-9 min-w-0 flex-1 shrink-0 rounded-detail-button border border-danger-soft bg-transparent px-1.5 py-px font-btn text-pill font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-3.75 sm:py-0"
+          className="h-9 min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn text-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-3.75 sm:py-0"
           data-testid="cd-invite-revoke"
           isPending={isRevoking}
           onPress={handleRevoke}
@@ -124,12 +124,12 @@ export default function PendingBody({
       >
         <div className={`${EYEBROW} mb-2.5 sm:mb-2.75`}>Intake</div>
         <div className="flex items-center gap-2.5 sm:gap-2.75">
-          <span className="flex size-8.5 flex-none items-center justify-center rounded-detail-button bg-background text-muted sm:size-9">
+          <span className="flex size-8.5 flex-none items-center justify-center rounded-control bg-background text-muted sm:size-9">
             <ClipboardList className="size-4 sm:size-4.25" />
           </span>
           <div className="min-w-0 flex-1">
             <div
-              className="text-pill font-bold sm:text-note"
+              className="text-eyebrow font-bold sm:text-body"
               data-testid="cd-intake-title"
             >
               {intake?.form_template.name ?? 'Onboarding intake'}

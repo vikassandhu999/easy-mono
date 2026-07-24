@@ -69,7 +69,7 @@ import {
 // `data-selected="true"`; the `selected:` Tailwind prefix is a no-op here.
 const SEGMENT_GROUP_CLASS = 'flex w-full gap-0.5 rounded-control border border-border bg-surface p-0.5';
 const SEGMENT_BUTTON_CLASS =
-  'min-h-11 flex-1 rounded-chip border-0 bg-transparent px-3 py-2 text-pill font-medium text-muted ' +
+  'min-h-11 flex-1 rounded-chip border-0 bg-transparent px-3 py-2 text-eyebrow font-medium text-muted ' +
   'data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground';
 
 const CARD_CLASS = 'rounded-card border border-border bg-surface p-4 sm:p-5';

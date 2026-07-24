@@ -82,8 +82,8 @@ function PageTitle({children, className, testId}: PageTitleProps) {
   return (
     <span
       className={cn(
-        'block min-w-0 truncate font-grotesk text-title-md font-semibold tracking-name [color:var(--color-foreground)]',
-        'sm:text-title-lg sm:tracking-page',
+        'block min-w-0 truncate font-grotesk text-metric font-semibold tracking-name [color:var(--color-foreground)]',
+        'sm:text-display sm:tracking-page',
         className,
       )}
       data-testid={testId}
@@ -96,7 +96,7 @@ function PageTitle({children, className, testId}: PageTitleProps) {
 function PageDescription({children, className, testId}: PageDescriptionProps) {
   return (
     <span
-      className={cn('mt-0.75 block text-note leading-[normal] [color:var(--color-muted)]', className)}
+      className={cn('mt-0.75 block text-body leading-[normal] [color:var(--color-muted)]', className)}
       data-testid={testId}
     >
       {children}

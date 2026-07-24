@@ -106,7 +106,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
             variant="ghost"
           >
             <span
-              className="min-w-0 truncate text-sub text-muted"
+              className="min-w-0 truncate text-eyebrow text-muted"
               data-testid={index === 0 ? 'tb-set-summary' : undefined}
             >
               <span
@@ -122,7 +122,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
           {canRemove ? (
             <Button
               aria-label={`Remove set ${index + 1} of ${exerciseName}`}
-              className={`min-h-11 min-w-11 shrink-0 rounded-mini bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5 sm:min-h-0 sm:min-w-0 ${AS_TEXT} ${NO_GAP}`}
+              className={`min-h-11 min-w-11 shrink-0 rounded-chip bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5 sm:min-h-0 sm:min-w-0 ${AS_TEXT} ${NO_GAP}`}
               data-testid={index === 0 ? 'tb-remove-set' : undefined}
               isIconOnly
               onPress={() => onRemoveSet(index)}

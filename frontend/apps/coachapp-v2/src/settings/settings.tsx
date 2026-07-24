@@ -37,7 +37,7 @@ type SettingsTab = (typeof TABS)[number]['id'];
 const TAB_CLASS =
   'flex min-h-11 w-auto shrink-0 cursor-pointer items-center justify-start gap-1 whitespace-nowrap rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0 pb-2 text-sm font-medium text-muted shadow-none outline-none ' +
   'data-[selected=true]:border-b-ink data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'md:w-full md:gap-2 md:rounded-nav md:border-b-0 md:px-3 md:py-2.5 md:pb-2.5 md:text-foreground ' +
+  'md:w-full md:gap-2 md:rounded-control md:border-b-0 md:px-3 md:py-2.5 md:pb-2.5 md:text-foreground ' +
   'md:data-[selected=true]:bg-ink md:data-[selected=true]:text-ink-foreground';
 
 const CARD_CLASS = 'overflow-hidden rounded-card border border-border bg-surface';

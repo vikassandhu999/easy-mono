@@ -29,9 +29,9 @@ type RangeId = (typeof RANGES)[number]['id'];
 
 /** `.seg` container + items — inactive muted, active white pill. */
 const RANGE_ITEM =
-  'min-h-0 rounded-detail-segment border-0 bg-transparent px-2.25 py-1 text-eyebrow font-semibold text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] ' +
+  'min-h-0 rounded-chip border-0 bg-transparent px-2.25 py-1 text-eyebrow font-semibold text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] ' +
   'data-[selected=true]:bg-surface data-[selected=true]:font-bold data-[selected=true]:text-foreground ' +
-  'sm:px-2.75 sm:py-1.25 sm:text-chip';
+  'sm:px-2.75 sm:py-1.25 sm:text-eyebrow';
 
 export default function WeightHistory() {
   const {id} = useParams<{id: string}>();
@@ -114,7 +114,7 @@ export default function WeightHistory() {
                   Trend
                 </div>
                 <ToggleButtonGroup
-                  className="flex rounded-detail-range bg-surface-tertiary p-0.5 [column-gap:normal] [row-gap:normal]"
+                  className="flex rounded-control bg-surface-tertiary p-0.5 [column-gap:normal] [row-gap:normal]"
                   data-testid="wh-range"
                   onSelectionChange={(keys) => {
                     const next = [...keys][0];
@@ -167,7 +167,7 @@ export default function WeightHistory() {
                   </svg>
                   {goal != null ? (
                     <span
-                      className="absolute right-0.5 bottom-6 bg-surface px-0.75 text-eyebrow-sm text-muted sm:bottom-7.5 sm:px-1 sm:text-eyebrow"
+                      className="absolute right-0.5 bottom-6 bg-surface px-0.75 text-eyebrow text-muted sm:bottom-7.5 sm:px-1 sm:text-eyebrow"
                       data-testid="wh-goal"
                     >
                       goal {goal}
@@ -176,7 +176,7 @@ export default function WeightHistory() {
                   ) : null}
                 </div>
               ) : (
-                <span className="text-sub [color:var(--color-muted)] sm:text-pill">
+                <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
                   No weight logged yet. Weight arrives from check-ins or the client app.
                 </span>
               )}
@@ -197,23 +197,23 @@ export default function WeightHistory() {
                         />
                       ) : null}
                       <div
-                        className="flex items-center gap-3.5 rounded-detail-panel px-0.5 py-2.5 sm:px-2 sm:py-2.75"
+                        className="flex items-center gap-3.5 rounded-panel px-0.5 py-2.5 sm:px-2 sm:py-2.75"
                         data-testid="wh-row"
                       >
                         <div
-                          className="w-15.5 flex-none text-sub font-semibold text-muted sm:w-20 sm:text-pill"
+                          className="w-15.5 flex-none text-eyebrow font-semibold text-muted sm:w-20 sm:text-eyebrow"
                           data-testid="wh-row-date"
                         >
                           {formatShortDate(entry.date)}
                         </div>
                         <span
-                          className="flex-1 font-grotesk text-row font-bold sm:w-17.5 sm:flex-none sm:text-tab"
+                          className="flex-1 font-grotesk text-body font-bold sm:w-17.5 sm:flex-none sm:text-body"
                           data-testid="wh-row-value"
                         >
                           {Number(entry.value).toFixed(1)} {entry.unit}
                         </span>
                         <span
-                          className="text-eyebrow text-muted sm:flex-1 sm:text-chip"
+                          className="text-eyebrow text-muted sm:flex-1 sm:text-eyebrow"
                           data-testid="wh-row-source"
                         >
                           {entry.form_submission_id ? 'From check-in' : 'Client log'}

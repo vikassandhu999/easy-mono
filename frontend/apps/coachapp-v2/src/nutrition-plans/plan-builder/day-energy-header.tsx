@@ -105,13 +105,13 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
         >
           <div className="flex flex-none items-baseline gap-1.25">
             <span
-              className="font-grotesk text-kcal font-semibold text-foreground"
+              className="font-grotesk text-metric font-semibold text-foreground"
               data-testid="nb-kcal"
             >
               {Math.round(totals.calories).toLocaleString()}
             </span>
             <span
-              className="text-sub text-muted"
+              className="text-eyebrow text-muted"
               data-testid="nb-kcal-target"
             >
               {targets.calories != null ? `/ ${Math.round(targets.calories).toLocaleString()} kcal` : 'kcal'}
@@ -140,7 +140,7 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
           )}
 
           <Button
-            className={`${INLINE_LINK} shrink-0 text-sub`}
+            className={`${INLINE_LINK} shrink-0 text-eyebrow`}
             data-testid="nb-macros-toggle"
             onPress={onToggleMacros}
             size="sm"

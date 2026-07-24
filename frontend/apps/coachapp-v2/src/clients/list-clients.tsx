@@ -173,7 +173,7 @@ export default function ListClients() {
                     // Mobile carries a count on the selected filter only.
                     <span
                       className={cn(
-                        'ms-1 rounded-full bg-surface-secondary px-1.5 py-0.5 text-chip font-bold',
+                        'ms-1 rounded-full bg-surface-secondary px-1.5 py-0.5 text-eyebrow font-bold',
                         'sm:bg-transparent sm:px-0 sm:py-0 sm:font-normal sm:opacity-70',
                         option.id === activeFilter ? '' : 'hidden sm:inline',
                       )}

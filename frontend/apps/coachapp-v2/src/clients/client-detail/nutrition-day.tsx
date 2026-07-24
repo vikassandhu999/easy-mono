@@ -66,7 +66,7 @@ function Meter({
 
   return (
     <div>
-      <div className="mb-1.25 flex justify-between text-sub sm:mb-1.5 sm:text-pill">
+      <div className="mb-1.25 flex justify-between text-eyebrow sm:mb-1.5 sm:text-eyebrow">
         <span
           className="font-semibold"
           data-testid={testId('meter-label')}
@@ -109,7 +109,7 @@ function EntryRow({entry, isFirst}: {entry: FoodLogEntry; isFirst: boolean}) {
     >
       <div className="min-w-0 flex-1">
         <div
-          className="text-note font-semibold"
+          className="text-body font-semibold"
           data-testid={testId('entry-name')}
         >
           {entry.food_name ?? 'Food'}
@@ -124,14 +124,14 @@ function EntryRow({entry, isFirst}: {entry: FoodLogEntry; isFirst: boolean}) {
       {sourceChip ? <Chip className={OUT_CHIP}>{sourceChip}</Chip> : null}
       {entry.amount != null ? (
         <span
-          className="text-chip font-semibold text-muted sm:font-normal"
+          className="text-eyebrow font-semibold text-muted sm:font-normal"
           data-testid={testId('entry-amount')}
         >
           {round(entry.amount)} {entry.unit ?? 'g'}
         </span>
       ) : null}
       <span
-        className="w-16 text-right text-pill font-semibold"
+        className="w-16 text-right text-eyebrow font-semibold"
         data-testid={testId('entry-kcal')}
       >
         {round(entry.calories).toLocaleString()} kcal
@@ -259,7 +259,9 @@ export default function NutritionDay() {
 
             {logs.length === 0 ? (
               <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
-                <span className="text-sub [color:var(--color-muted)] sm:text-pill">Nothing logged on this day.</span>
+                <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
+                  Nothing logged on this day.
+                </span>
               </div>
             ) : (
               logs.map((log, logIndex) => {
@@ -272,13 +274,13 @@ export default function NutritionDay() {
                   >
                     <div className="mb-2.5 flex items-center justify-between sm:mb-3">
                       <div
-                        className="text-tab font-bold"
+                        className="text-body font-bold"
                         data-testid={logIndex === 0 ? 'nd-meal-title' : undefined}
                       >
                         {MEAL_SLOT_LABELS[log.meal_slot] ?? log.meal_slot}
                       </div>
                       <div
-                        className="text-pill text-muted"
+                        className="text-eyebrow text-muted"
                         data-testid={logIndex === 0 ? 'nd-meal-kcal' : undefined}
                       >
                         {round(log.logged_calories).toLocaleString()} kcal
@@ -303,10 +305,10 @@ export default function NutritionDay() {
                         <div className="h-px bg-border" />
                         <div className={`${ENTRY_ROW} opacity-55`}>
                           <div className="min-w-0 flex-1">
-                            <div className="text-note font-semibold line-through">{item.food_name}</div>
+                            <div className="text-body font-semibold line-through">{item.food_name}</div>
                           </div>
                           <Chip className={OUT_CHIP}>Skipped</Chip>
-                          <span className="w-16 text-right text-pill font-semibold text-muted">
+                          <span className="w-16 text-right text-eyebrow font-semibold text-muted">
                             {round(item.calories).toLocaleString()} kcal
                           </span>
                         </div>

@@ -76,7 +76,7 @@ export default function ListNutritionPlans() {
         <Page.Actions>
           <Button
             aria-label="Create plan"
-            className="size-9.5 min-h-11 min-w-11 gap-0 rounded-action p-0 text-metric font-normal leading-[normal] [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5 sm:min-h-0 sm:w-auto sm:gap-1.75 sm:px-4 sm:font-btn sm:text-row sm:font-semibold sm:leading-none"
+            className="size-9.5 min-h-11 min-w-11 gap-0 rounded-control p-0 text-title font-normal leading-[normal] [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5 sm:min-h-0 sm:w-auto sm:gap-1.75 sm:px-4 sm:font-btn sm:text-body sm:font-semibold sm:leading-none"
             data-testid="np-create"
             onPress={() => navigate(ROUTES.CREATE_NUTRITION_PLAN)}
             variant="primary"

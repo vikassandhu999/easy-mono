@@ -59,7 +59,7 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
           {groupLabel}
         </div>
         {options.length === 0 ? (
-          <div className="px-2.75 pt-1 pb-2 text-sub text-muted">{emptyLabel}</div>
+          <div className="px-2.75 pt-1 pb-2 text-eyebrow text-muted">{emptyLabel}</div>
         ) : (
           <ListBox
             aria-label={groupLabel}
@@ -77,7 +77,7 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
               >
                 <div className="flex min-w-0 flex-1 flex-col">
                   <Label
-                    className="max-w-full truncate text-note font-normal"
+                    className="max-w-full truncate text-body font-normal"
                     data-testid="nb-reuse-name"
                   >
                     {option.name}
@@ -93,7 +93,7 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
                 </div>
                 {option.meta ? (
                   <span
-                    className="shrink-0 whitespace-nowrap text-chip text-muted"
+                    className="shrink-0 whitespace-nowrap text-eyebrow text-muted"
                     data-testid="nb-reuse-kcal"
                   >
                     {option.meta}
@@ -178,20 +178,20 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
           variant="ghost"
         >
           <span
-            className={`flex size-7 flex-none items-center justify-center rounded-tile bg-accent-tile text-accent ${AS_TEXT} ${NO_GAP}`}
+            className={`flex size-7 flex-none items-center justify-center rounded-chip bg-accent-tile text-accent ${AS_TEXT} ${NO_GAP}`}
             data-testid="nb-create-meal-icon"
           >
             <Plus className="size-3.75" />
           </span>
           <span className="flex flex-col">
             <span
-              className="text-note font-semibold text-foreground"
+              className="text-body font-semibold text-foreground"
               data-testid="nb-create-meal-title"
             >
               Create a new meal
             </span>
             <span
-              className="text-chip font-normal text-muted"
+              className="text-eyebrow font-normal text-muted"
               data-testid="nb-create-meal-sub"
             >
               Start empty, add foods or recipes
@@ -202,7 +202,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
       title="Add meal"
       trigger={({onPress, ref}) => (
         <Button
-          className="h-11 w-full gap-1.5 rounded-meal border border-dashed border-border bg-transparent px-1.5 py-px font-btn text-note font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
+          className="h-11 w-full gap-1.5 rounded-panel border border-dashed border-border bg-transparent px-1.5 py-px font-btn text-body font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
           data-testid="nb-add-meal"
           onPress={onPress}
           ref={ref}
@@ -238,7 +238,7 @@ export function AddSwapControl({options, onAdd, testId}: AddSwapControlProps) {
       title="Add a swap"
       trigger={({onPress, ref}) => (
         <Button
-          className={`${INLINE_LINK} text-sub`}
+          className={`${INLINE_LINK} text-eyebrow`}
           data-testid={testId}
           onPress={onPress}
           ref={ref}

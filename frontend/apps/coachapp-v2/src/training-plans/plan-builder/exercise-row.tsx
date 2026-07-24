@@ -162,7 +162,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           data-testid="tb-exercise-head"
         >
           <span
-            className="min-w-0 flex-1 truncate text-row font-semibold text-foreground"
+            className="min-w-0 flex-1 truncate text-body font-semibold text-foreground"
             data-testid="tb-exercise-name"
           >
             {exerciseName}
@@ -182,7 +182,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           <div className="flex shrink-0 items-center">
             <Button
               aria-label={`Move ${exerciseName} up`}
-              className={`size-11 min-w-11 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
+              className={`size-11 min-w-11 rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
               data-testid="tb-move-up"
               isDisabled={isFirst}
               isIconOnly
@@ -193,7 +193,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             </Button>
             <Button
               aria-label={`Move ${exerciseName} down`}
-              className={`size-11 min-w-11 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
+              className={`size-11 min-w-11 rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
               data-testid="tb-move-down"
               isDisabled={isLast}
               isIconOnly
@@ -204,7 +204,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             </Button>
             <Button
               aria-label={`Remove ${exerciseName}`}
-              className={`size-11 min-w-11 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
+              className={`size-11 min-w-11 rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
               data-testid="tb-remove-exercise"
               isIconOnly
               onPress={onRemove}
@@ -236,7 +236,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           {/* + Add set — disabled while a sets PATCH is in flight: a double-press
               would build two payloads from the same base and lose one add. */}
           <Button
-            className={`${INLINE_LINK} mt-0.5 py-1 font-btn text-sub`}
+            className={`${INLINE_LINK} mt-0.5 py-1 font-btn text-eyebrow`}
             data-testid="tb-add-set"
             isDisabled={isSavingSets}
             onPress={() => {

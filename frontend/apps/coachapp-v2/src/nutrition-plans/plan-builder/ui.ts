@@ -8,7 +8,7 @@
 
 /** `.ptag` — the slot tag and both meal chips start here and tint from there. */
 export const TAG =
-  'inline-flex min-h-0 items-center whitespace-nowrap rounded-chip border border-border bg-background px-2.25 py-0.75 text-chip font-medium leading-[normal] [box-shadow:none]';
+  'inline-flex min-h-0 items-center whitespace-nowrap rounded-chip border border-border bg-background px-2.25 py-0.75 text-eyebrow font-medium leading-[normal] [box-shadow:none]';
 
 /**
  * `+ Add …` affordances the design draws as accent spans. Callers add the size

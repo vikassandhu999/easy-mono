@@ -25,15 +25,50 @@
   /* Client Detail buttons/fields use the short Inter stack (dc.html `font:` shorthand) */
   --font-btn: "Inter", sans-serif;
 
-  /* Redesign geometry/type tokens (design-handoff/theme.css + RECIPES.md) —
-     registered here so ports write rounded-card / text-chip etc. instead of
-     px arbitrary values (forbidden by UI-CONTRACT §1). */
-  --radius-card: 18px; /* list/detail cards */
-  --radius-control: 9px; /* pills, seg buttons */
-  --radius-nav: 10px; /* sidebar items */
-  --radius-chip: 7px; /* status/plan chips */
-  --text-pill: 12.5px; /* filter pill labels */
-  --text-chip: 11.5px; /* chip labels */
+  /* ── THE SCALE ────────────────────────────────────────────────────────────
+     CLOSED SET. These are every size and radius the app may use.
+
+     Ports snap to the nearest step; they do not add steps. `check-ui-contract.sh`
+     fails any diff that adds one, and `style-diff.mjs` snaps the prototype's
+     computed px onto this scale (±2px) before comparing, so a design value
+     between two steps is a PASS, not drift to chase.
+
+     Why closed: the previous ladder told each port to register an @theme token
+     for any exact spec value it needed. Nine ports took this file from 81 to 164
+     tokens — 19 font sizes from 9.5px to 27px, 14 radii, most used exactly once
+     and named after the single element they came from. That is a transcription
+     of the prototype, not a design system. Adding a step is a user decision, in
+     its own commit, with UI_CONTRACT_SKIP_THEME=1.
+
+     Type — 6 steps: 11 / 14 / 16 / 19 / 22 / 27. Max drift 2px.
+
+     16px is a step because it is the app's INHERITED baseline. Many nodes carry
+     no `text-*` class at all and simply inherit 16px; a scale that omits it
+     makes every one of them read as drift against a design that says 16, with
+     no code to fix. A type scale has to contain the size the document already
+     renders at. */
+  --text-eyebrow: 11px; /* eyebrows, chips, pills, sub-lines · was set-chip 9.5 / eyebrow-sm 10 / caption 10.5 / eyebrow 11 / chip 11.5 / sub 12 / pill 12.5 */
+  --text-eyebrow--line-height: normal;
+  --text-body: 14px; /* body copy, rows, tabs, notes · was note 13 / row 13.5 / tab 14 / metric-sm 15 */
+  --text-body--line-height: normal;
+  --text-title: 16px; /* titles, metric values, answers · was metric 16 / answer 17 — and the inherited baseline */
+  --text-title--line-height: normal;
+  --text-heading: 19px; /* section + mobile page headings · was stat-lg 18 / title-sm 19 */
+  --text-heading--line-height: normal;
+  --text-metric: 22px; /* stat values, mobile page titles · was kcal 22 / title-md 22 / stat-xl 23 */
+  --text-metric--line-height: normal;
+  --text-display: 27px; /* desktop + builder page titles · was title-lg 25 / plan-title 27 */
+  --text-display--line-height: normal;
+
+  /* Geometry — 4 steps, chip < control < panel < card. Max drift 2px.
+     8px for the same reason 16px is a type step: it is HeroUI's own `--radius`
+     (0.5rem) baseline, so components that never opt in still land on the scale. */
+  --radius-chip: 8px; /* chips, inline × buttons, segments · was mini 6 / detail-segment 7 / chip 7 / tile 8 */
+  --radius-control: 10px; /* pills, seg buttons, nav, fields, icon buttons · was control 9 / detail-range 9 / nav 10 / field 10 / detail-button 10 / action 11 / detail-tile 11 */
+  --radius-panel: 13px; /* banners, tiles, meal cards, stat strips · was detail-panel 12 / meal 13 / detail-plan 13 / detail-strip 14 */
+  --radius-card: 17px; /* list + detail cards · was detail-icon 15 / detail-card 16 / card 18 */
+  --radius-pill: 999px; /* true pills — not a step, a shape (rounded-full computes ∞px and diffs) */
+
   --color-muted-2: oklch(0.55 0.0138 285.94); /* tertiary text (timestamps, chevrons) */
   /* RECIPES.md R5 attention chips call for `text-warning-text`; `--warning-text`
      is a plain :root var, so it needs a `--color-*` alias to become a utility. */
@@ -45,18 +80,6 @@
   --color-always-dark: oklch(0.17 0 0);
   --color-ink-foreground: oklch(1 0 0);
 
-  /* Plan-builder (Dashboard Redesign NB/TB frames) exact-spec tokens. The
-     builders use their own geometry step between the 9px controls and the 18px
-     cards, so these are separate tokens rather than edits to the ones above. */
-  --radius-mini: 6px; /* inline × buttons on item / swap rows */
-  --radius-tile: 8px; /* small icon buttons, add-meal panel icon tile */
-  --radius-field: 10px; /* inline rename input, swap rows */
-  --radius-action: 11px; /* page-header back + action buttons */
-  --radius-meal: 13px; /* meal cards, Add meal button, empty-day placeholder */
-  --text-plan-title: 27px; /* builder page title */
-  --text-plan-title--line-height: normal;
-  --text-kcal: 22px; /* day energy value */
-  --text-kcal--line-height: 1;
   --tracking-title: -0.02em;
   --tracking-name: -0.01em; /* workout name (TB), mobile page titles */
   --tracking-page: -0.015em; /* desktop page titles */
@@ -71,58 +94,8 @@
   --color-shared-foreground: oklch(0.45 0.12 72); /* "Used in N places" text + border */
   --color-meal-open: color-mix(in oklab, var(--color-accent) 34%, var(--color-border)); /* expanded meal card */
 
-  /* Client Detail (Client Detail.dc.html) exact-spec tokens — CD-* screens.
-     The CD design family uses different geometry than the dashboard redesign
-     (16px cards vs 18px), so these are separate tokens, not edits to the ones
-     above. */
-  --radius-detail-card: 16px; /* .card */
-  --radius-detail-strip: 14px; /* stat strip container, mobile empty icon tile */
-  --radius-detail-panel: 12px; /* banners, Message button, photo tiles, Call button */
-  --radius-detail-tile: 11px; /* icon tiles in cards */
-  --radius-detail-button: 10px; /* .btnA / .btnG, small icon tiles */
-  --radius-detail-icon: 15px; /* overview empty-state icon tile (desktop) */
-  --radius-detail-plan: 13px; /* plan-card icon tile (desktop) */
-  --radius-detail-range: 9px; /* WH range segmented container */
-  --radius-detail-segment: 7px; /* WH range segment */
   --tracking-grp: 0.04em; /* .grp list group headers (vs .eyebrow's 0.05em) */
-  /* The CD design leaves line-height untouched (computed `normal`) — pair
-     every size token with a normal line-height or Tailwind defaults 1.5. */
-  --text-eyebrow: 11px; /* .eyebrow, chips, week-strip labels */
-  --text-eyebrow--line-height: normal;
-  --text-set-chip: 9.5px; /* SD warm-up / drop-set chip */
-  --text-set-chip--line-height: normal;
-  --text-eyebrow-sm: 10px; /* mobile eyebrows / week labels */
-  --text-eyebrow-sm--line-height: normal;
-  --text-caption: 10.5px; /* mobile stat sub-lines, goal label, unread badge */
-  --text-caption--line-height: normal;
-  --text-sub: 12px; /* card sub-lines (desktop), mobile banner text */
-  --text-sub--line-height: normal;
-  --text-note: 13px; /* notes textarea, banner text, mobile tabs */
-  --text-note--line-height: normal;
-  --text-row: 13.5px; /* row/card titles */
-  --text-row--line-height: normal;
-  --text-tab: 14px; /* desktop tabs */
-  --text-tab--line-height: normal;
-  --text-metric-sm: 15px; /* mobile metric values */
-  --text-metric-sm--line-height: normal;
-  --text-metric: 16px; /* desktop metric values, empty-state titles */
-  --text-metric--line-height: normal;
-  --text-answer: 17px; /* CS answer values (desktop) */
-  --text-answer--line-height: normal;
-  --text-stat-lg: 18px; /* weight card value (desktop) */
-  --text-stat-lg--line-height: normal;
-  --text-title-md: 22px; /* mobile page title (Dashboard list frames) */
-  --text-title-md--line-height: normal;
-  --text-title-sm: 19px; /* CD mobile page title / mobile stat values */
-  --text-title-sm--line-height: normal;
-  --text-stat-xl: 23px; /* desktop stat values */
-  --text-stat-xl--line-height: normal;
-  --text-title-lg: 25px; /* desktop page title */
-  --text-title-lg--line-height: normal;
-  --text-pill--line-height: normal;
-  --text-chip--line-height: normal;
   --leading-cbadge: 19px; /* unread badge line-height */
-  --radius-pill: 999px; /* design pills use literal 999px (rounded-full computes ∞px and diffs) */
 
   /* Design-wins color utility overrides: HeroUI's @theme --color-* literals
      drift from the redesign's :root values (style-diff caught foreground,
@@ -213,10 +186,13 @@
 
   /* Radii (spec is tighter than HeroUI defaults) */
   --radius: 0.5rem;
-  --radius-card: 18px; /* list/detail cards — NOT rounded-3xl(24px) */
-  --radius-control: 9px; /* pills, seg buttons */
-  --radius-nav: 10px; /* sidebar items */
-  --radius-chip: 7px; /* status/plan chips */
+  /* These shadow the @theme scale above for HeroUI's own consumption — they
+     MUST hold the same values, or `rounded-card` and a HeroUI surface disagree
+     by a few px and the port chases a diff that has no cause in its own code. */
+  --radius-chip: 8px;
+  --radius-control: 10px;
+  --radius-panel: 13px;
+  --radius-card: 17px;
   --radius-button: 24px; /* primary/secondary buttons stay fully pilled */
 
   /* Font Family */

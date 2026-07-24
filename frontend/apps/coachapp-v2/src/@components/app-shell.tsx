@@ -128,7 +128,7 @@ function ProfileCard() {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold text-white">{name}</span>
-        <span className="block truncate text-chip text-white/50">{profile?.business.name ?? ''}</span>
+        <span className="block truncate text-eyebrow text-white/50">{profile?.business.name ?? ''}</span>
       </span>
       <Settings
         className="shrink-0 text-white/50"
@@ -142,7 +142,7 @@ function BottomNavItem({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 text-chip transition-colors ${
+        `relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 text-eyebrow transition-colors ${
           isActive ? 'font-semibold text-accent' : 'font-medium text-white/55'
         }`
       }
@@ -198,7 +198,9 @@ export default function AppShell() {
               />
             ))}
           </div>
-          <div className="px-2 pb-1.5 pt-4 text-chip font-semibold uppercase tracking-wider text-white/40">Builder</div>
+          <div className="px-2 pb-1.5 pt-4 text-eyebrow font-semibold uppercase tracking-wider text-white/40">
+            Builder
+          </div>
           <div className="flex flex-col gap-0.5">
             {BUILDER.map((item) => (
               <SidebarLink

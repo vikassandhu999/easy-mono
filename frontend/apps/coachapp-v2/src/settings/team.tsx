@@ -294,7 +294,7 @@ function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate
   return (
     <div className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 border-t border-border px-4 py-3 first:border-t-0">
       <Avatar className="size-9 shrink-0">
-        <Avatar.Fallback className="bg-background text-chip text-muted">
+        <Avatar.Fallback className="bg-background text-eyebrow text-muted">
           {getInitials(member.first_name, member.last_name) || '?'}
         </Avatar.Fallback>
       </Avatar>

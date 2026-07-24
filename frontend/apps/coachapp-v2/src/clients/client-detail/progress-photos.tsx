@@ -120,7 +120,7 @@ export default function ProgressPhotos() {
           >
             {isComparing ? (
               <div
-                className="rounded-detail-button bg-accent-soft px-3.25 py-2.5 text-pill font-semibold sm:px-3.5 sm:py-2.75"
+                className="rounded-control bg-accent-soft px-3.25 py-2.5 text-eyebrow font-semibold sm:px-3.5 sm:py-2.75"
                 data-testid="ph-banner"
               >
                 Select two photos to compare.
@@ -133,7 +133,7 @@ export default function ProgressPhotos() {
                 key={group.date}
               >
                 <div
-                  className={`text-sub font-bold text-muted ${groupIndex > 0 ? 'mt-1' : ''}`}
+                  className={`text-eyebrow font-bold text-muted ${groupIndex > 0 ? 'mt-1' : ''}`}
                   data-testid={groupIndex === 0 ? 'ph-group' : undefined}
                 >
                   {formatShortDate(group.date)}
@@ -147,20 +147,20 @@ export default function ProgressPhotos() {
                     return (
                       <Button
                         aria-label="Progress photo"
-                        className="relative aspect-square h-auto min-h-0 w-full rounded-detail-panel bg-transparent p-0 text-metric font-normal leading-[normal] [box-shadow:none]"
+                        className="relative aspect-square h-auto min-h-0 w-full rounded-panel bg-transparent p-0 text-title font-normal leading-[normal] [box-shadow:none]"
                         key={photoId}
                         onPress={() => toggle(photoId)}
                         variant="ghost"
                       >
                         <PhotoThumb
-                          className="flex size-full items-center justify-center overflow-hidden rounded-detail-panel bg-surface-tertiary text-muted/60"
+                          className="flex size-full items-center justify-center overflow-hidden rounded-panel bg-surface-tertiary text-muted/60"
                           iconClassName="size-5 sm:size-6"
                           src={urls[photoId]}
                           testId="ph-tile"
                         />
                         {isSelected ? (
                           <>
-                            <span className="absolute inset-0 rounded-detail-panel border-accent [border-width:3px]" />
+                            <span className="absolute inset-0 rounded-panel border-accent [border-width:3px]" />
                             <span className="absolute top-1.25 right-1.25 flex size-4.5 items-center justify-center rounded-pill bg-accent [color:white] sm:top-1.75 sm:right-1.75 sm:size-5.25">
                               <Check className="size-3 sm:size-3.25" />
                             </span>
@@ -176,7 +176,7 @@ export default function ProgressPhotos() {
             {isComparing && selected.length === 2 ? (
               <div className="sticky bottom-0 flex justify-center pt-2.5">
                 <Button
-                  className={`${ACCENT_BUTTON} h-11 rounded-detail-panel px-6 text-tab`}
+                  className={`${ACCENT_BUTTON} h-11 rounded-panel px-6 text-body`}
                   onPress={() => setCompareOpen(true)}
                 >
                   Compare 2 photos
@@ -206,7 +206,7 @@ export default function ProgressPhotos() {
                       iconClassName="size-7"
                       src={urls[photoId]}
                     />
-                    <div className="mt-2 text-center text-sub font-semibold text-muted">
+                    <div className="mt-2 text-center text-eyebrow font-semibold text-muted">
                       {dateOf(photoId) ? formatShortDate(dateOf(photoId)!) : ''}
                     </div>
                   </div>

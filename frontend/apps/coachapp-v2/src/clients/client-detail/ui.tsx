@@ -9,15 +9,15 @@ import {ArrowLeft, Image as ImageIcon} from 'lucide-react';
 import {useState} from 'react';
 
 /** `.card` — 16px radius, hairline border, white surface. */
-export const CARD = 'rounded-detail-card border border-border bg-surface';
+export const CARD = 'rounded-card border border-border bg-surface';
 
 /** `.btnA` — accent-filled button (design uses literal white text). */
 export const ACCENT_BUTTON =
-  'min-w-0 shrink-0 [column-gap:normal] [row-gap:normal] rounded-detail-button bg-accent font-btn text-pill font-bold leading-none [color:white] [box-shadow:none]';
+  'min-w-0 shrink-0 [column-gap:normal] [row-gap:normal] rounded-control bg-accent font-btn text-eyebrow font-bold leading-none [color:white] [box-shadow:none]';
 
 /** `.btnG` — white outline button. */
 export const OUTLINE_BUTTON =
-  'min-w-0 shrink-0 [column-gap:normal] [row-gap:normal] rounded-detail-button border border-border bg-surface font-btn text-pill font-bold leading-none text-foreground [box-shadow:none]';
+  'min-w-0 shrink-0 [column-gap:normal] [row-gap:normal] rounded-control border border-border bg-surface font-btn text-eyebrow font-bold leading-none text-foreground [box-shadow:none]';
 
 /** `.eyebrow` */
 export const EYEBROW = 'text-eyebrow font-bold uppercase tracking-wider text-muted';
@@ -31,7 +31,7 @@ export function CardSkeleton({lines = 3}: {lines?: number}) {
     <div className={`${CARD} flex flex-col gap-3 p-3.75`}>
       {Array.from({length: lines}, (_, i) => (
         <Skeleton
-          className={`h-4 ${i === 0 ? 'w-1/3' : 'w-full'} rounded-detail-button`}
+          className={`h-4 ${i === 0 ? 'w-1/3' : 'w-full'} rounded-control`}
           key={i}
         />
       ))}
@@ -116,7 +116,7 @@ export function SubHeader({
     <div className="flex flex-none items-center gap-2.75 border-b border-border px-4 pt-0.5 pb-3.25 sm:gap-3.5 sm:px-7.5 sm:py-4.5">
       <Button
         aria-label="Back"
-        className="size-8.5 min-h-0 min-w-0 rounded-detail-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
+        className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
         data-testid="sub-back"
         isIconOnly
         onPress={onBack}
@@ -126,13 +126,13 @@ export function SubHeader({
       </Button>
       <div className="min-w-0 flex-1">
         <div
-          className="font-grotesk text-metric-sm font-semibold sm:text-stat-lg"
+          className="font-grotesk text-body font-semibold sm:text-heading"
           data-testid="sub-title"
         >
           {title}
         </div>
         <div
-          className="text-eyebrow text-muted sm:mt-0.5 sm:text-sub"
+          className="text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
           data-testid="sub-subtitle"
         >
           {subtitle}

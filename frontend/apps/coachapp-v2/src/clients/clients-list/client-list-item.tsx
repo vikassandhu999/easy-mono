@@ -11,9 +11,9 @@ import {INACTIVE_REASON_LABEL, stageChip} from '@/clients/lib/client';
 
 // RECIPES.md R5 — plan chip (neutral grey) and attention chip (warning-soft).
 // Plain spans, not `Chip`: the spec chip is 7px radius / 11.5px / 600, and the
-// tokens live in index.css (`rounded-chip`, `text-chip`, `--warning-text`).
-const PLAN_CHIP_CLASS = 'rounded-chip bg-surface-secondary px-2 py-0.5 text-chip font-semibold text-foreground!';
-const ATTENTION_CHIP_CLASS = 'rounded-chip bg-warning-soft px-2 py-0.5 text-chip font-semibold text-warning-text!';
+// tokens live in index.css (`rounded-chip`, `text-eyebrow`, `--warning-text`).
+const PLAN_CHIP_CLASS = 'rounded-chip bg-surface-secondary px-2 py-0.5 text-eyebrow font-semibold text-foreground!';
+const ATTENTION_CHIP_CLASS = 'rounded-chip bg-warning-soft px-2 py-0.5 text-eyebrow font-semibold text-warning-text!';
 
 // RECIPES.md R6 — status dot tone. success=active, accent=invited,
 // danger=expired, muted=inactive. Full class names (never interpolated) so

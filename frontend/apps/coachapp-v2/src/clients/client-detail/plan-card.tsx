@@ -17,7 +17,7 @@ import type {PlanKind} from '@/clients/components/plan-assign-content';
 import PlanAssignContent from '@/clients/components/plan-assign-content';
 
 const ICON_BTN =
-  'size-8.5 min-h-0 min-w-0 rounded-detail-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9';
+  'size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9';
 
 export function PlanCard({
   client,
@@ -55,20 +55,20 @@ export function PlanCard({
         data-testid={`${testId}-plan`}
       >
         <span
-          className="flex size-10 flex-none items-center justify-center rounded-detail-panel bg-accent-soft text-accent sm:size-11 sm:rounded-detail-plan"
+          className="flex size-10 flex-none items-center justify-center rounded-panel bg-accent-soft text-accent sm:size-11 sm:rounded-panel"
           data-testid={`${testId}-plan-icon`}
         >
           {icon}
         </span>
         <div className="min-w-0 flex-1">
           <div
-            className="text-tab font-bold sm:text-metric-sm"
+            className="text-body font-bold sm:text-body"
             data-testid={`${testId}-plan-name`}
           >
             {name}
           </div>
           <div
-            className="mt-0.5 text-eyebrow text-muted sm:text-pill"
+            className="mt-0.5 text-eyebrow text-muted sm:text-eyebrow"
             data-testid={`${testId}-plan-meta`}
           >
             {meta}
@@ -196,19 +196,19 @@ export function EmptyPlanCard({
       data-testid={`${testId}-empty`}
     >
       <span
-        className="mb-0.75 flex size-12 items-center justify-center rounded-detail-strip bg-surface-tertiary text-muted sm:mb-1 sm:size-13 sm:rounded-detail-icon"
+        className="mb-0.75 flex size-12 items-center justify-center rounded-panel bg-surface-tertiary text-muted sm:mb-1 sm:size-13 sm:rounded-card"
         data-testid={`${testId}-empty-icon`}
       >
         {icon}
       </span>
       <div
-        className="font-grotesk text-metric-sm font-semibold sm:text-metric"
+        className="font-grotesk text-body font-semibold sm:text-title"
         data-testid={`${testId}-empty-title`}
       >
         {title}
       </div>
       <div
-        className="text-sub text-muted sm:max-w-70 sm:text-pill"
+        className="text-eyebrow text-muted sm:max-w-70 sm:text-eyebrow"
         data-testid={`${testId}-empty-sub`}
       >
         {body}

@@ -34,9 +34,9 @@ import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
 import {CARD, CardError, CardSkeleton, CHIP, OUTLINE_BUTTON} from '@/clients/client-detail/ui';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
-const ROW = 'flex items-center gap-3.5 rounded-detail-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
-const ROW_DATE = 'w-18.5 flex-none text-sub font-semibold text-muted';
-const ROW_META = 'mt-0.5 text-eyebrow text-muted sm:text-chip';
+const ROW = 'flex items-center gap-3.5 rounded-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
+const ROW_DATE = 'w-18.5 flex-none text-eyebrow font-semibold text-muted';
+const ROW_META = 'mt-0.5 text-eyebrow text-muted sm:text-eyebrow';
 const SEP = 'h-px bg-border';
 type Row =
   | {kind: 'group'; label: string}
@@ -211,7 +211,7 @@ export default function TrainingTab({client}: {client: Client}) {
         <div className={`${CARD} px-3.5 py-6 text-center sm:px-4.5`}>
           {/* plain span: tw-merge drops the size token when a text-color class
               rides along in a HeroUI className (field-notes) */}
-          <span className="text-sub [color:var(--color-muted)] sm:text-pill">
+          <span className="text-eyebrow [color:var(--color-muted)] sm:text-eyebrow">
             No workouts logged yet. Sessions appear here as {client.first_name ?? 'this client'} completes them.
           </span>
         </div>
@@ -262,7 +262,7 @@ export default function TrainingTab({client}: {client: Client}) {
                       ) : null}
                       <span className="min-w-0 flex-1">
                         <span
-                          className="block text-note font-bold sm:text-row"
+                          className="block text-body font-bold sm:text-body"
                           data-testid="tr-row-title"
                         >
                           {row.title}
@@ -291,7 +291,7 @@ export default function TrainingTab({client}: {client: Client}) {
                       ) : null}
                       <span className="min-w-0 flex-1">
                         <span
-                          className="block text-note font-semibold text-muted sm:text-row"
+                          className="block text-body font-semibold text-muted sm:text-body"
                           data-testid="tr-missed-title"
                         >
                           {row.title}

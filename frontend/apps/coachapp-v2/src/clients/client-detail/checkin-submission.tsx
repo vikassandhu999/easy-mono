@@ -20,8 +20,8 @@ import {getApiErrorMessage} from '@/api/shared';
 import {formatShortDate} from '@/clients/client-detail/data';
 import {ACCENT_BUTTON, CHIP, PhotoThumb} from '@/clients/client-detail/ui';
 
-const Q_LABEL = 'mb-1.75 text-eyebrow font-semibold text-muted sm:mb-2 sm:text-chip';
-const VALUE = 'font-grotesk text-metric font-bold sm:text-answer';
+const Q_LABEL = 'mb-1.75 text-eyebrow font-semibold text-muted sm:mb-2 sm:text-eyebrow';
+const VALUE = 'font-grotesk text-title font-bold sm:text-title';
 
 type Question = {id: string; label: string; type: string};
 
@@ -67,7 +67,7 @@ function PhotoAnswer({ids}: {ids: string[]}) {
     <div className="flex flex-wrap gap-2.5">
       {ids.map((id) => (
         <PhotoThumb
-          className="flex h-30 w-24 flex-none items-center justify-center overflow-hidden rounded-detail-panel bg-surface-tertiary text-muted/60 sm:h-35 sm:w-27.5"
+          className="flex h-30 w-24 flex-none items-center justify-center overflow-hidden rounded-panel bg-surface-tertiary text-muted/60 sm:h-35 sm:w-27.5"
           iconClassName="size-5 sm:size-6"
           key={id}
           src={urls[id]}
@@ -120,7 +120,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
             {Number(value).toFixed(1)} kg
           </span>
           <span
-            className="text-eyebrow text-muted sm:text-chip"
+            className="text-eyebrow text-muted sm:text-eyebrow"
             data-testid="cs-weight-caption"
           >
             Saved to weight log
@@ -130,7 +130,7 @@ function Answer({question, value}: {question: Question; value: unknown}) {
     default:
       return (
         <div
-          className="text-note leading-relaxed sm:text-row"
+          className="text-body leading-relaxed sm:text-body"
           data-testid="cs-text-answer"
         >
           {String(value)}
@@ -198,7 +198,7 @@ export default function CheckinSubmission() {
         <div className="flex flex-none items-center gap-2.75 border-b border-border px-4 pt-0.5 pb-3.25 sm:gap-3.5 sm:px-7.5 sm:py-4.5">
           <Button
             aria-label="Back"
-            className="size-8.5 min-h-0 min-w-0 rounded-detail-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
+            className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
             data-testid="cs-back"
             isIconOnly
             onPress={goBack}
@@ -208,13 +208,13 @@ export default function CheckinSubmission() {
           </Button>
           <div className="min-w-0 flex-1">
             <div
-              className="font-grotesk text-metric-sm font-semibold sm:text-stat-lg"
+              className="font-grotesk text-body font-semibold sm:text-heading"
               data-testid="cs-title"
             >
               {assignment.form_template.name}
             </div>
             <div
-              className="text-eyebrow text-muted sm:mt-0.5 sm:text-sub"
+              className="text-eyebrow text-muted sm:mt-0.5 sm:text-eyebrow"
               data-testid="cs-sub"
             >
               {submittedAt(submission.submitted_at)}
@@ -263,14 +263,14 @@ export default function CheckinSubmission() {
         >
           {reviewedAt ? (
             <div
-              className="text-center text-pill font-medium text-muted"
+              className="text-center text-eyebrow font-medium text-muted"
               data-testid="cs-reviewed-note"
             >
               Reviewed {formatShortDate(reviewedAt)} · by you
             </div>
           ) : (
             <Button
-              className={`${ACCENT_BUTTON} h-11.5 w-full rounded-detail-panel px-3.75 text-tab`}
+              className={`${ACCENT_BUTTON} h-11.5 w-full rounded-panel px-3.75 text-body`}
               data-testid="cs-review-btn"
               isPending={isReviewing}
               onPress={markReviewed}

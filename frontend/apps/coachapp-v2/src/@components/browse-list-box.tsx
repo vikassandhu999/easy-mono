@@ -44,7 +44,7 @@ export const TOOLBAR_DIVIDER_CLASS = 'hidden h-6 self-center sm:block';
 
 /** Search-field surface used by browse toolbars at both breakpoints. */
 export const BROWSE_SEARCH_GROUP_CLASS =
-  'min-h-11 gap-2 rounded-action border border-border bg-background px-3.25 text-note leading-[normal] [box-shadow:none] [color:var(--color-muted)] sm:bg-surface';
+  'min-h-11 gap-2 rounded-control border border-border bg-background px-3.25 text-body leading-[normal] [box-shadow:none] [color:var(--color-muted)] sm:bg-surface';
 
 /**
  * Ink-selected filter pill (RECIPES.md R2). HeroUI ToggleButton exposes selection
@@ -52,9 +52,9 @@ export const BROWSE_SEARCH_GROUP_CLASS =
  * in this project, so `selected:*` classes silently no-op.
  */
 export const FILTER_PILL_CLASS =
-  'min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-row font-medium leading-[normal] text-muted [box-shadow:none] [row-gap:normal] [column-gap:normal] ' +
+  'min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-body font-medium leading-[normal] text-muted [box-shadow:none] [row-gap:normal] [column-gap:normal] ' +
   'data-[selected=true]:border-foreground data-[selected=true]:bg-transparent data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.25 sm:py-1.75 sm:text-pill ' +
+  'sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3.25 sm:py-1.75 sm:text-eyebrow ' +
   'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:[color:white]';
 
 /** The count beside a filter-pill label. Mobile shows it on the selected pill only. */
@@ -70,7 +70,7 @@ export function FilterCount({
   return (
     <span
       className={cn(
-        'ml-0.75 text-eyebrow opacity-70 sm:ml-0 sm:text-pill',
+        'ml-0.75 text-eyebrow opacity-70 sm:ml-0 sm:text-eyebrow',
         isSelected ? undefined : 'hidden sm:inline',
       )}
       data-testid={isSelected ? countTestId : undefined}
@@ -119,7 +119,7 @@ export function BrowseRow({icon, iconClassName, id, meta, testId, textValue, tit
     >
       <div
         className={cn(
-          'flex size-10 shrink-0 items-center justify-center rounded-nav bg-surface-tertiary text-muted sm:size-10.5',
+          'flex size-10 shrink-0 items-center justify-center rounded-control bg-surface-tertiary text-muted sm:size-10.5',
           iconClassName,
         )}
         data-testid={testId ? `${testId}-thumb` : undefined}
@@ -129,14 +129,14 @@ export function BrowseRow({icon, iconClassName, id, meta, testId, textValue, tit
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Label
-          className="min-w-0 max-w-full truncate text-row font-semibold leading-[normal] text-foreground"
+          className="min-w-0 max-w-full truncate text-body font-semibold leading-[normal] text-foreground"
           data-testid={testId ? `${testId}-title` : undefined}
         >
           {title}
         </Label>
         {meta === undefined ? null : (
           <Description
-            className="max-w-full truncate text-chip leading-[normal] text-muted sm:text-sub"
+            className="max-w-full truncate text-eyebrow leading-[normal] text-muted sm:text-eyebrow"
             data-testid={testId ? `${testId}-meta` : undefined}
           >
             {meta}

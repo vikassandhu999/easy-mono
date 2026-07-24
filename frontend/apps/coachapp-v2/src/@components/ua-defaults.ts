@@ -7,7 +7,7 @@
  */
 
 /** A design node that is a plain `div` / `span`, not a control. */
-export const AS_TEXT = 'text-metric font-normal leading-[normal]';
+export const AS_TEXT = 'text-title font-normal leading-[normal]';
 
 /** A design node with no `gap` of its own — HeroUI controls ship one. */
 export const NO_GAP = '[row-gap:normal] [column-gap:normal]';

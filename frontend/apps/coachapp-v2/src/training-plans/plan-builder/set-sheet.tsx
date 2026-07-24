@@ -84,18 +84,18 @@ const DISTANCE_UNITS: {value: DistanceUnit; label: string}[] = [
 // ToggleButton paints a grey fill at rest unless bg-transparent is explicit.
 const SEGMENT_GROUP_CLASS = 'flex w-full gap-0.5 rounded-control border border-border bg-surface p-0.5';
 const SEGMENT_BUTTON_CLASS =
-  'min-h-11 flex-1 rounded-chip border-0 bg-transparent px-3 py-2 text-pill font-medium text-muted ' +
+  'min-h-11 flex-1 rounded-chip border-0 bg-transparent px-3 py-2 text-eyebrow font-medium text-muted ' +
   'data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground';
 
 // Unit chips (kg/lbs/bw, m/km/mi) — GAPS #7: also a ToggleButtonGroup.
 const UNIT_BUTTON_CLASS =
-  'min-h-9 rounded-chip border border-border bg-transparent px-2 text-chip font-medium text-muted ' +
+  'min-h-9 rounded-chip border border-border bg-transparent px-2 text-eyebrow font-medium text-muted ' +
   'data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent';
 
 // min-w-0 is load-bearing: TextField is w-full, so without it the first field
 // claims its intrinsic width and pushes the rest out of the popover.
 const FIELD_BOX_CLASS = 'min-w-0 flex-1 rounded-control border border-border bg-surface px-2 pt-1.5 pb-2 text-center';
-const FIELD_LABEL_CLASS = 'mb-1 block text-chip uppercase tracking-wider text-muted';
+const FIELD_LABEL_CLASS = 'mb-1 block text-eyebrow uppercase tracking-wider text-muted';
 const FIELD_INPUT_CLASS =
   'h-auto border-0 bg-transparent px-0 text-center text-lg font-semibold text-foreground shadow-none';
 

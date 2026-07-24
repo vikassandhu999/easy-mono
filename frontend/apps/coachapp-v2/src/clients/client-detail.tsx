@@ -48,9 +48,9 @@ const TAB_IDS = ['overview', 'training', 'nutrition', 'check-ins'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 const TAB_CLASS =
-  'w-auto min-w-0 flex-1 justify-center rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0.5 pt-2.75 pb-2.75 text-note font-medium text-muted [box-shadow:none] outline-none ' +
+  'w-auto min-w-0 flex-1 justify-center rounded-none border-0 border-b-2 border-b-transparent bg-transparent px-0.5 pt-2.75 pb-2.75 text-body font-medium text-muted [box-shadow:none] outline-none ' +
   'data-[selected=true]:border-b-current data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'sm:flex-none sm:justify-start sm:px-1 sm:pt-3 sm:pb-3 sm:text-tab';
+  'sm:flex-none sm:justify-start sm:px-1 sm:pt-3 sm:pb-3 sm:text-body';
 
 function AttentionChips({client}: {client: Client}) {
   const navigate = useNavigate();
@@ -155,14 +155,14 @@ function StateBanner({client}: {client: Client}) {
   if (reason === 'subscription_expired') {
     return (
       <div
-        className="flex items-center gap-2.75 rounded-detail-panel border border-danger/30 bg-danger-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+        className="flex items-center gap-2.75 rounded-panel border border-danger/30 bg-danger-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
         data-testid="cd-banner"
       >
-        <span className="flex size-8 flex-none items-center justify-center rounded-detail-button bg-danger/20 text-danger-soft-foreground sm:size-8.5">
+        <span className="flex size-8 flex-none items-center justify-center rounded-control bg-danger/20 text-danger-soft-foreground sm:size-8.5">
           <AlertTriangle className="size-4 sm:size-4.25" />
         </span>
         <div
-          className="min-w-0 flex-1 text-sub font-semibold text-danger-soft-foreground sm:text-note"
+          className="min-w-0 flex-1 text-eyebrow font-semibold text-danger-soft-foreground sm:text-body"
           data-testid="cd-banner-text"
         >
           Subscription has ended. {firstName} is locked out of the app.
@@ -181,14 +181,14 @@ function StateBanner({client}: {client: Client}) {
   if (reason === 'awaiting_seat') {
     return (
       <div
-        className="flex items-center gap-2.75 rounded-detail-panel border border-warning/32 bg-warning-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+        className="flex items-center gap-2.75 rounded-panel border border-warning/32 bg-warning-soft px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
         data-testid="cd-banner"
       >
-        <span className="flex size-8 flex-none items-center justify-center rounded-detail-button bg-warning/26 text-warning-soft-foreground sm:size-8.5">
+        <span className="flex size-8 flex-none items-center justify-center rounded-control bg-warning/26 text-warning-soft-foreground sm:size-8.5">
           <AlertCircle className="size-4 sm:size-4.25" />
         </span>
         <div
-          className="min-w-0 flex-1 text-sub font-semibold text-warning-soft-foreground sm:text-note"
+          className="min-w-0 flex-1 text-eyebrow font-semibold text-warning-soft-foreground sm:text-body"
           data-testid="cd-banner-text"
         >
           No seat available. {firstName} can&apos;t use the app until you add one.
@@ -206,14 +206,14 @@ function StateBanner({client}: {client: Client}) {
 
   return (
     <div
-      className="flex items-center gap-2.75 rounded-detail-panel border border-border bg-surface-tertiary px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
+      className="flex items-center gap-2.75 rounded-panel border border-border bg-surface-tertiary px-3.5 py-3 sm:mb-4 sm:gap-3 sm:px-4 sm:py-3.25"
       data-testid="cd-banner"
     >
-      <span className="flex size-8 flex-none items-center justify-center rounded-detail-button bg-surface text-muted sm:size-8.5">
+      <span className="flex size-8 flex-none items-center justify-center rounded-control bg-surface text-muted sm:size-8.5">
         <UserX className="size-4 sm:size-4.25" />
       </span>
       <div
-        className="min-w-0 flex-1 text-pill font-semibold sm:text-note"
+        className="min-w-0 flex-1 text-eyebrow font-semibold sm:text-body"
         data-testid="cd-banner-text"
       >
         {firstName} is inactive.
@@ -307,7 +307,7 @@ export default function ClientDetail() {
         <div className="border-b border-border bg-surface px-4.5 pt-1.5 text-foreground [line-height:normal] sm:px-7.5 sm:pt-4">
           <div className="flex items-center justify-between">
             <Button
-              className="h-auto min-h-0 min-w-0 gap-1.25 rounded-none bg-transparent p-0 text-pill font-semibold text-muted [box-shadow:none] sm:gap-1.75"
+              className="h-auto min-h-0 min-w-0 gap-1.25 rounded-none bg-transparent p-0 text-eyebrow font-semibold text-muted [box-shadow:none] sm:gap-1.75"
               data-testid="cd-back"
               onPress={goBack}
               variant="ghost"
@@ -318,7 +318,7 @@ export default function ClientDetail() {
             <Dropdown>
               <Button
                 aria-label="More"
-                className="size-8 min-h-0 min-w-0 rounded-detail-panel border-0 bg-transparent px-1.5 py-px font-normal leading-[normal] text-muted [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] sm:size-8.5"
+                className="size-8 min-h-0 min-w-0 rounded-panel border-0 bg-transparent px-1.5 py-px font-normal leading-[normal] text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:size-8.5"
                 data-testid="cd-menu"
                 isIconOnly
                 variant="ghost"
@@ -370,11 +370,11 @@ export default function ClientDetail() {
 
           <div className="mt-0.5 flex flex-wrap items-center gap-3.25 sm:mt-1.5 sm:flex-nowrap sm:gap-5">
             <Avatar
-              className="size-13 flex-none rounded-pill bg-accent font-bold text-stat-lg [color:white] sm:size-16 sm:text-stat-xl"
+              className="size-13 flex-none rounded-pill bg-accent font-bold text-heading [color:white] sm:size-16 sm:text-metric"
               color="accent"
               data-testid="cd-avatar"
             >
-              <Avatar.Fallback className="rounded-pill bg-accent font-bold text-stat-lg [color:white] sm:text-stat-xl">
+              <Avatar.Fallback className="rounded-pill bg-accent font-bold text-heading [color:white] sm:text-metric">
                 {initials}
               </Avatar.Fallback>
             </Avatar>
@@ -384,7 +384,7 @@ export default function ClientDetail() {
                     letter-spacing -0.015em and beats any utility; the CD design
                     wants `normal` (style-diff pair `name`). */}
                 <span
-                  className="font-grotesk text-title-sm font-semibold sm:text-title-lg"
+                  className="font-grotesk text-heading font-semibold sm:text-display"
                   data-testid="cd-name"
                 >
                   {name}
@@ -393,7 +393,7 @@ export default function ClientDetail() {
               </div>
               <AttentionChips client={client} />
               <div
-                className="mt-1.5 hidden items-center gap-1.5 text-pill text-muted sm:flex"
+                className="mt-1.5 hidden items-center gap-1.5 text-eyebrow text-muted sm:flex"
                 data-testid="cd-contact"
               >
                 {client.email ? (
@@ -411,7 +411,7 @@ export default function ClientDetail() {
                 ) : null}
               </div>
               <div
-                className="mt-0.75 text-chip text-muted sm:hidden"
+                className="mt-0.75 text-eyebrow text-muted sm:hidden"
                 data-testid="cd-since"
               >
                 Client since {formatShortDate(client.inserted_at)}
@@ -420,7 +420,7 @@ export default function ClientDetail() {
             <div className="mt-3.25 flex w-full gap-2 sm:mt-0 sm:w-auto sm:flex-none sm:items-center sm:gap-2.25">
               {isPending ? null : (
                 <Button
-                  className="relative h-9.5 flex-1 gap-2 rounded-detail-panel px-4.5 font-btn text-note font-bold leading-none [color:white] [box-shadow:none] sm:h-10 sm:flex-none"
+                  className="relative h-9.5 flex-1 gap-2 rounded-panel px-4.5 font-btn text-body font-bold leading-none [color:white] [box-shadow:none] sm:h-10 sm:flex-none"
                   data-testid="cd-message"
                   onPress={() => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', client.id))}
                   variant="primary"
@@ -429,7 +429,7 @@ export default function ClientDetail() {
                   Message
                   {unread > 0 ? (
                     <span
-                      className="absolute -top-1.5 -right-1.5 h-4.75 min-w-4.75 rounded-pill border-2 border-surface bg-danger px-1.25 text-center font-btn text-caption font-bold leading-cbadge [color:white]"
+                      className="absolute -top-1.5 -right-1.5 h-4.75 min-w-4.75 rounded-pill border-2 border-surface bg-danger px-1.25 text-center font-btn text-eyebrow font-bold leading-cbadge [color:white]"
                       data-testid="cd-msg-badge"
                     >
                       {unread}
@@ -440,7 +440,7 @@ export default function ClientDetail() {
               {client.phone ? (
                 <a
                   aria-label="Call"
-                  className="flex size-9.5 flex-none items-center justify-center rounded-detail-panel border border-border bg-surface text-foreground sm:size-10"
+                  className="flex size-9.5 flex-none items-center justify-center rounded-panel border border-border bg-surface text-foreground sm:size-10"
                   data-testid="cd-call"
                   href={`tel:${client.phone}`}
                 >

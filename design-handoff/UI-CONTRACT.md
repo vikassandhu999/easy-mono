@@ -120,11 +120,13 @@ Never port a prototype variable. Substitute:
 | `--foreground` / `--muted` | `foreground` / `muted-foreground` | |
 | `--border` | `border` | hairline 1px |
 | `--danger` / `--warning` / `--success` (+ `-soft`) | `danger` / `warning` / `success` (+ `-soft`) | status only |
-| radii (`border-radius:12/13/16px`) | registered `@theme` radius tokens (`rounded-card/control/chip/nav`) | match the design's computed value — register a token if missing, never a px literal |
+| radii (`border-radius:12/13/16px`) | the four registered `@theme` radius tokens (`rounded-chip/control/card/panel`) | snap to the nearest — never a px literal, and never a new token |
 | shadows | `--surface-shadow` / `--overlay-shadow` / `--field-shadow` (role-based) | none in dark mode |
-| spacing literals | Tailwind semantic gap/padding | matching the design's computed spacing; `gap-*`/`p-*` steps, new `@theme` token for an exact off-scale value |
+| spacing literals | Tailwind semantic gap/padding | nearest `gap-*`/`p-*` step to the design's computed spacing |
 
-**Design wins.** The dc.html's rendered computed values are the target — verified per node/state by `scripts/style-diff.mjs` (see the `design-pro` skill). Where a HeroUI/app default disagrees, fix it at the highest sensible layer (theme override → app wrapper → screen-local token class); a difference survives only as a user-approved entry in `accepted-diffs.md`, never as agent judgment.
+**The scale is closed.** The `--text-*` and `--radius-*` tokens in `frontend/apps/coachapp-v2/src/index.css` are the complete vocabulary. A port **snaps to the nearest existing token**; it may not register a new one, and `scripts/check-ui-contract.sh` fails any diff that adds one. Adding to the scale is a user decision, made in its own commit. This is the same fence §2 puts around components — a value you cannot express is a STOP-and-ask, not a licence to invent.
+
+**Design wins — within the scale.** The dc.html's rendered computed values are the target for everything the scale does not quantise (color, weight, layout, structure), verified per node/state by `scripts/style-diff.mjs` (see the `design-pro` skill). Where a HeroUI/app default disagrees, fix it at the highest sensible layer (app wrapper → screen-local token class); a difference survives only as a user-approved entry in `accepted-diffs.md`, never as agent judgment. Sizes and radii are the exception: the prototype's exact px is an *input to the scale*, not the target — snapping to within ±2px is a PASS, not a diff to chase.
 
 ---
 

@@ -2,6 +2,7 @@
 # UI-CONTRACT §5 grep gate (design-handoff/UI-CONTRACT.md).
 # Checks .tsx files for forbidden patterns: style={{}}, onClick, hex colors,
 # px/rem arbitrary values, numbered color scales, HeroUI v2 imports, NumberField.
+# Also enforces the theme freeze: index.css may not gain new scale tokens.
 #
 # Usage:
 #   ./scripts/check-ui-contract.sh file1.tsx file2.tsx   # explicit files
@@ -17,20 +18,48 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 APP=frontend/apps/coachapp-v2/src
+THEME=$APP/index.css
 # Wrappers that legitimately contain the banned identifiers internally:
 ALLOWLIST='@components/number-input|@components/form-fields/form-number-field|builder-kit/keyboard-sheet'
+
+# Nearest branch point: prefer base-design's merge-base over main's when it is newer,
+# so a port branch is only checked on ITS changes, not all of base-design's.
+BASE=${UI_CONTRACT_BASE:-}
+if [ -z "$BASE" ]; then
+  BASE=$(git merge-base main HEAD 2>/dev/null || echo HEAD)
+  B2=$(git merge-base base-design HEAD 2>/dev/null || true)
+  if [ -n "$B2" ] && git merge-base --is-ancestor "$BASE" "$B2" 2>/dev/null; then BASE=$B2; fi
+fi
+
+# --- Theme freeze -----------------------------------------------------------
+# The token scale is CLOSED (design-pro SKILL.md §1.0 / §5 rung 3). A port snaps
+# to an existing token or stops and proposes a new one; it never registers one
+# itself. Without this check the §1 px-literal ban does not remove per-screen
+# pixel values, it only *relocates* them into the theme — which is exactly how
+# this file grew 81 -> 164 tokens across nine screen ports.
+# Deliberate scale change: run with UI_CONTRACT_SKIP_THEME=1, in its own commit.
+# Scoped to HEAD, not the branch base: the question is "does THIS change add a
+# token", so a long-lived port branch is not re-flagged for scale work already
+# committed. Compares token NAMES, so reordering/comment churn is free.
+if [ -z "${UI_CONTRACT_SKIP_THEME:-}" ] && [ -f "$THEME" ]; then
+  names() { grep -oE '^[[:space:]]*--(text|radius|tracking|leading)-[a-z0-9-]+' | tr -d ' ' | sort -u; }
+  WAS=$(git show "HEAD:$THEME" 2>/dev/null | names || true)
+  NOW=$(names < "$THEME")
+  ADDED=$(comm -13 <(echo "$WAS") <(echo "$NOW"))
+  if [ -n "$ADDED" ]; then
+    echo "$ADDED" | sed 's/^/  + /'
+    echo ""
+    echo "THEME FROZEN — this diff adds token(s) to $THEME."
+    echo "The scale is closed. Snap to the nearest existing token, or propose the"
+    echo "new one in the port ticket for the user to land in its own commit."
+    echo "Deliberate scale change? UI_CONTRACT_SKIP_THEME=1 ./scripts/check-ui-contract.sh"
+    exit 1
+  fi
+fi
 
 if [ $# -gt 0 ]; then
   FILES="$*"
 else
-  # Nearest branch point: prefer base-design's merge-base over main's when it is newer,
-  # so a port branch is only checked on ITS changes, not all of base-design's.
-  BASE=${UI_CONTRACT_BASE:-}
-  if [ -z "$BASE" ]; then
-    BASE=$(git merge-base main HEAD 2>/dev/null || echo HEAD)
-    B2=$(git merge-base base-design HEAD 2>/dev/null || true)
-    if [ -n "$B2" ] && git merge-base --is-ancestor "$BASE" "$B2" 2>/dev/null; then BASE=$B2; fi
-  fi
   FILES=$(git diff --name-only "$BASE" -- "$APP" | grep '\.tsx$' || true)
 fi
 

@@ -340,6 +340,27 @@ was committed within the same session.
 
 ---
 
+### RM-132 — A per-screen `@theme` token is a px literal wearing a name
+
+Banning arbitrary values in `.tsx` does not remove per-screen pixel values unless the theme
+file is also closed. It only relocates them: told "never a px literal — register an `@theme`
+token for the exact spec value", nine screen ports took `coachapp-v2/src/index.css` from 81 to
+164 tokens — 19 font sizes between 9.5px and 27px, 14 radii, most used once and named after
+the single element they came from (`--radius-detail-strip`, `--text-set-chip`). The theme
+became an append-only log of per-screen decisions, and three separate "restore the baseline"
+resets each grew back within nine commits.
+
+The rule: **the `--text-*` / `--radius-*` scale is a closed vocabulary.** A port snaps to the
+nearest existing step or STOPs and proposes a new one — the same fence UI-CONTRACT §2 already
+puts around components. Adding a step is a user decision in its own commit. Generally: when a
+gate forbids a shape, check where the pressure goes instead of assuming it disappeared.
+
+**Enforced by:** `scripts/check-ui-contract.sh` (theme freeze — fails any commit that adds a
+scale token; `UI_CONTRACT_SKIP_THEME=1` for deliberate changes) + `style-diff.mjs` snaps design
+values onto the scale so between-step values are a PASS, not drift to chase.
+
+---
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

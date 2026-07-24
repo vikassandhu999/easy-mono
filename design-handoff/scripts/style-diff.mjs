@@ -9,9 +9,14 @@
    Run via the app workspace so Playwright resolves:
      cd frontend/apps/coachapp-v2 && node ../../../design-handoff/scripts/style-diff.mjs ../../../design-handoff/manifests/CD-OV.json
 
+   Sizes and radii are compared against the app's TOKEN SCALE, not the
+   prototype's raw px: the design value is snapped to the nearest token when
+   within SNAP, because the scale is the design system and the prototype is an
+   input to it (UI-CONTRACT §3). Everything else compares exactly.
+
    Exit 0 = every compared property matches (or is ledgered in accepted-diffs.md).
    Exit 1 = drift. The report lists every mismatch — fix code or (user-only)
-   ledger it. NEVER widen EPS to pass.
+   ledger it. NEVER widen EPS or SNAP to pass.
 
    Manifest shape (JSON):
    {
@@ -95,12 +100,67 @@ async function styles(page, selector) {
       const el = document.querySelector(sel);
       if (!el) return null;
       const cs = getComputedStyle(el);
-      const out = {};
+      const out = { _text: el.textContent.trim().length > 0 };
       for (const p of props) out[p] = cs.getPropertyValue(p);
       return out;
     },
     [selector, PROPS],
   );
+}
+
+// Typography props are unobservable on a node that renders no text (an icon-only
+// button, a spacer, a wrapper). Comparing them there does not measure the design
+// — it measures the UA stylesheet, and forces the app to hand-replicate browser
+// defaults like `font: 13.3333px Arial` on icon buttons just to score a PASS.
+// Any real layout effect of font-size still shows up in the padding/margin/gap
+// props, which are always compared.
+const TEXT_ONLY = new Set(['font-family', 'font-size', 'font-weight', 'letter-spacing']);
+
+// --- Scale snapping ---------------------------------------------------------
+// The app's token scale is the design system; the prototype's exact px is an
+// INPUT to that scale, not the target (UI-CONTRACT §3). Without this the
+// comparison treats "design says 19px, scale's nearest step is 17px" as drift,
+// and the only fix available to a port is registering a 19px token — which is
+// how the theme grew 81 -> 164 tokens and stopped being a system.
+//
+// So for size/radius props ONLY, the DESIGN value is quantised to the nearest
+// token before comparing. Everything else (color, weight, shadow, spacing,
+// font-family) is still compared exactly.
+//
+// This is NOT a relaxed EPS. EPS stays 0.5px subpixel slack and still applies
+// after snapping. A design value further than SNAP from every token does NOT
+// snap — it reports as drift, which is the STOP-and-propose case (SKILL.md §5
+// rung 3). Widening SNAP to force a pass is the same offence as widening EPS.
+const SNAP = 2.0; // px — max distance a design value may be pulled to a token
+const THEME_CSS = path.join(root, 'frontend/apps/coachapp-v2/src/index.css');
+const scaleFrom = (prefix) => {
+  const src = fs.readFileSync(THEME_CSS, 'utf8');
+  const re = new RegExp(`^\\s*--${prefix}-[a-z0-9-]+:\\s*([0-9.]+)px`, 'gm');
+  return [...new Set([...src.matchAll(re)].map((m) => Number(m[1])))].sort((x, y) => x - y);
+};
+const SCALE = { text: scaleFrom('text'), radius: scaleFrom('radius') };
+const SNAP_PROPS = {
+  'font-size': 'text',
+  // line-height is quoted in px and tracks font-size, so it moves with the type
+  // scale — snapping one without the other just relocates the same drift.
+  'line-height': 'text',
+  'border-top-left-radius': 'radius',
+  'border-top-right-radius': 'radius',
+  'border-bottom-left-radius': 'radius',
+  'border-bottom-right-radius': 'radius',
+};
+// Pull a single-number px value onto the nearest scale step when it is within
+// SNAP. Returns the value untouched otherwise (and for non-snap props).
+function snapDesign(prop, value) {
+  const which = SNAP_PROPS[prop];
+  if (!which || typeof value !== 'string') return value;
+  const steps = SCALE[which];
+  if (!steps?.length) return value;
+  const m = value.match(/^(-?[0-9.]+)px$/);
+  if (!m) return value;
+  const n = Number(m[1]);
+  const near = steps.reduce((best, s) => (Math.abs(s - n) < Math.abs(best - n) ? s : best), steps[0]);
+  return Math.abs(near - n) <= SNAP ? `${near}px` : value;
 }
 
 // Values match when their non-numeric skeletons are equal (normalized quotes/
@@ -155,9 +215,12 @@ for (const state of manifest.states) {
       for (const prop of PROPS) {
         // a border color is invisible (pure noise) when both sides' width is 0
         if (prop === 'border-top-color' && d['border-top-width'] === '0px' && a['border-top-width'] === '0px') continue;
-        if (same(d[prop], a[prop])) continue;
+        // typography is invisible when neither side renders text
+        if (TEXT_ONLY.has(prop) && !d._text && !a._text) continue;
+        const designV = snapDesign(prop, d[prop]);
+        if (same(designV, a[prop])) continue;
         const key = `${screenId}:${state.name}:${pair.name}:${prop}`;
-        findings.push({ state: state.name, width: widthName, pair: pair.name, prop, design: d[prop], app: a[prop], ledgered: ledger.has(key), key });
+        findings.push({ state: state.name, width: widthName, pair: pair.name, prop, design: designV === d[prop] ? d[prop] : `${d[prop]} → ${designV} (snapped)`, app: a[prop], ledgered: ledger.has(key), key });
       }
     }
   }

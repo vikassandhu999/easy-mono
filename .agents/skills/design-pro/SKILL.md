@@ -25,6 +25,11 @@ entries there.
 
 ## 1. Read — in this order
 
+0. **The scale — your closed vocabulary.** `grep -E '^\s*--(text|radius)-'
+   frontend/apps/coachapp-v2/src/index.css`. These are the ONLY sizes and radii
+   you may use. It is a fence, not a starting point: you may not add to it (§5
+   rung 3). Know the list before you map, so the manifest targets real tokens
+   instead of prototype pixel values.
 1. `design-handoff/UI-CONTRACT.md` — the component fence (§2), tokens (§3),
    prohibitions (§1), DoD (§6).
 2. The screen's handoff doc: badge row in UI-CONTRACT §8 (Dashboard file) or
@@ -81,14 +86,23 @@ Access tokens live ~5 min — grab a fresh APP_TOKEN right before every run
 
 For EVERY reported diff, place the fix with this ladder (top rung that holds):
 
-1. **Value recurs across screens/components** → theme token/override in
-   `src/index.css` `@theme` (fix once, everywhere).
-2. **Component-wide** → fix the app wrapper (`@/@components/*`) once.
-3. **This screen only** → local Tailwind via tokens; register a new `@theme`
-   token for an exact spec value (never a px literal — keeps the §5 gate green).
+1. **Component-wide** → fix the app wrapper (`@/@components/*`) once.
+2. **This screen only** → local Tailwind using an **existing** token from the
+   scale (§1.0). Snap to the nearest one; never a px literal.
+3. **Nothing in the scale is within ±2px** → **STOP.** Propose the new token in
+   the ticket and let the user land it. **You never add a token to
+   `src/index.css` yourself** — the scale is closed, exactly like
+   `accepted-diffs.md`, and `check-ui-contract.sh` fails the diff if you try.
 4. **Design wrong/impossible** → propose a ledger entry (key format
    `` `ID:state:pair:prop` ``) in the ticket. The user decides; you never edit
    `accepted-diffs.md` yourself.
+
+Why rung 3 is a stop and not a token: the old ladder told ports to register an
+`@theme` token for any exact spec value, justified as keeping the §1 px-literal
+gate green. That did not remove per-screen pixel values — it *relocated* them
+into the theme, one per screen, forever. Nine ports took the scale from 81 to
+164 tokens and the design stopped being a system. The component fence already
+works this way ("no §2 match → STOP and ask"); the value fence now matches it.
 
 Re-run until the script prints PASS for every state at both widths. `MISSING
 NODE` findings are structure drift — fix the DOM or the manifest selector,
@@ -113,6 +127,8 @@ checklist (each row PASS/ledgered), final screenshots, proposed ledger entries.
 |---|---|
 | "Close enough, the diff is tiny" | The script decides, not you. Fix it or propose a ledger entry. |
 | "I'll raise EPS / trim the allowlist" | Forbidden. That's deleting the test because it fails. |
+| "I'll register an `@theme` token for this exact value" | The scale is closed. Snap to the nearest token, or STOP and propose it. Per-screen tokens are what grew the theme 81 → 164. |
+| "It's not a px literal, so it's fine" | The §1 ban is on per-screen pixel values, not on the characters `[14px]`. A one-off token is the same value wearing a name. |
 | "I'll add the ledger entry myself" | Ledger is user-only. Propose in the ticket. |
 | "I'll start coding, mapping as I go" | Phase-3 gate exists because this produced different designs. |
 | "This state is unreachable/edge-case" | Ask the user. Silent drops are missed states. |

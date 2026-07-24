@@ -92,13 +92,16 @@ export function WorkoutList({planId}: WorkoutListProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {/* Workout tabs + Workout */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div
+        className="flex flex-wrap items-center gap-2 pb-0.5 sm:flex-nowrap sm:overflow-x-auto"
+        data-testid="tb-tabs-row"
+      >
         {workouts.length > 0 ? (
           <ToggleButtonGroup
             aria-label="Workouts"
-            className="flex flex-wrap gap-2"
+            className="flex flex-wrap gap-2 sm:flex-nowrap"
             onSelectionChange={(keys) => {
               const next = [...keys][0];
               if (next) {
@@ -111,26 +114,33 @@ export function WorkoutList({planId}: WorkoutListProps) {
           >
             {workouts.map((workout) => (
               <ToggleButton
-                className="min-h-11 gap-1.5 rounded-control border border-border bg-surface px-3.5 text-pill font-medium text-muted data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground"
+                className="min-h-11 shrink-0 gap-1.75 rounded-control border border-border bg-surface px-3.5 text-pill font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:min-h-0 sm:py-1.75"
+                data-testid={workout.id === activeWorkout?.id ? 'tb-tab-on' : 'tb-tab-off'}
                 id={workout.id}
                 key={workout.id}
               >
                 {workout.name}
-                <span className="opacity-70">{workout.workout_elements.length}</span>
+                <span
+                  className="font-count text-eyebrow-sm font-semibold opacity-60"
+                  data-testid={workout.id === activeWorkout?.id ? 'tb-tab-count' : undefined}
+                >
+                  {workout.workout_elements.length}
+                </span>
               </ToggleButton>
             ))}
           </ToggleButtonGroup>
         ) : null}
 
         <Button
-          className="min-h-11 rounded-control border border-dashed border-border px-3.5 text-pill font-semibold text-accent"
+          className="h-11 shrink-0 gap-1.25 rounded-control border border-dashed border-border bg-transparent px-3 font-btn text-pill font-semibold leading-none [box-shadow:none] [color:var(--color-accent)] sm:h-8.5"
+          data-testid="tb-add-workout"
           isPending={isCreating}
           onPress={() => {
             handleAddWorkout().catch(() => undefined);
           }}
           variant="ghost"
         >
-          <Plus className="size-4" />
+          <Plus className="size-3.5" />
           Workout
         </Button>
       </div>

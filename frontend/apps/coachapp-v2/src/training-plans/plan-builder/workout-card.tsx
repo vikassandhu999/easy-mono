@@ -12,11 +12,13 @@
  * (and `getTrainingPlanSchedule` on delete, which the backend cascades) and
  * rolls back with patch.undo() + toast on failure.
  */
-import {AlertDialog, Button, Dropdown, Label, Separator, Spinner, Typography, useOverlayState} from '@heroui/react';
+import {AlertDialog, Button, Dropdown, Label, Separator, Spinner, useOverlayState} from '@heroui/react';
 import {MoreHorizontal, Plus, TrashIcon} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
+import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {TrainingExercise, TrainingPlanWorkout} from '@/api/generated';
 import {
   coachApi,
@@ -50,6 +52,9 @@ interface WorkoutCardProps {
 
 export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCardProps) {
   const dispatch = useAppDispatch();
+  // One menu node, not a hidden per-width duplicate: two copies make every
+  // `[data-testid]` lookup ambiguous and the hidden one wins querySelector.
+  const isDesktop = useIsDesktop();
   const [updateWorkout] = useUpdateWorkoutMutation();
   const [deleteWorkout, {isLoading: isDeleting}] = useDeleteWorkoutMutation();
   const [createWorkoutElement] = useCreateWorkoutElementMutation();
@@ -288,11 +293,12 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
     <Dropdown>
       <Button
         aria-label={`Workout options for ${workout.name}`}
-        className="size-11 min-w-11 shrink-0 text-muted"
+        className={`size-11 min-w-11 shrink-0 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7.5 sm:min-w-0 ${AS_ICON_BUTTON}`}
+        data-testid="tb-workout-menu-btn"
         isIconOnly
         variant="ghost"
       >
-        <MoreHorizontal className="size-4" />
+        <MoreHorizontal className="size-4.25" />
       </Button>
       <Dropdown.Popover>
         {/* Drive selection via the menu so it fires on pointer AND keyboard
@@ -334,13 +340,19 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
   );
 
   return (
-    <div className="overflow-hidden rounded-card border border-border bg-surface">
+    <div
+      className="relative rounded-card border border-border bg-surface"
+      data-testid="tb-card"
+    >
       {/* Header — name + weekday chips + ⋯ */}
-      <div className="flex flex-col gap-2 px-4 pt-3 pb-3">
+      <div className="flex flex-col">
         {/* Below sm the chips take their own scrolling row: seven 44px targets
             don't fit beside the name at 390px, and wrapping them mid-week reads
             as two broken weeks. */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div
+          className="flex flex-col gap-2 px-4 pt-3.5 pb-3 sm:flex-row sm:items-center sm:gap-3"
+          data-testid="tb-card-header"
+        >
           <div className="flex min-w-0 items-center gap-2 sm:flex-1">
             {editingName ? (
               <input
@@ -348,7 +360,8 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
                 // biome-ignore lint/a11y/noAutofocus: name field opens in editing mode on user intent
                 autoFocus
                 aria-label="Workout name"
-                className="min-w-0 flex-1 border-b border-accent bg-transparent text-base font-semibold text-foreground outline-none"
+                className="min-w-0 flex-1 border-accent border-b bg-transparent py-0.5 font-grotesk text-title-sm font-semibold text-foreground outline-none [border-bottom-width:1.5px]"
+                data-testid="tb-rename-input"
                 onBlur={() => {
                   commitRename().catch(() => undefined);
                 }}
@@ -357,20 +370,19 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
                 value={nameValue}
               />
             ) : (
-              <Typography
-                className="min-w-0 flex-1 truncate"
-                type="h4"
-                weight="semibold"
+              <span
+                className="min-w-0 flex-1 truncate font-grotesk text-title-sm font-semibold tracking-name text-foreground"
+                data-testid="tb-workout-name"
               >
                 {workout.name}
-              </Typography>
+              </span>
             )}
 
-            <div className="shrink-0 sm:hidden">{workoutMenu}</div>
+            {isDesktop ? null : <div className="shrink-0">{workoutMenu}</div>}
           </div>
 
           <div className="flex min-w-0 items-center gap-1.5">
-            <div className="-mx-1 min-w-0 overflow-x-auto px-1 py-0.5">
+            <div className="-mx-1 min-w-0 overflow-x-auto px-1 py-0.5 sm:mx-0 sm:overflow-visible sm:p-0">
               <WeekSchedule
                 planId={planId}
                 workoutId={workout.id}
@@ -378,7 +390,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
               />
             </div>
 
-            <div className="hidden shrink-0 sm:block">{workoutMenu}</div>
+            {isDesktop ? <div className="shrink-0">{workoutMenu}</div> : null}
           </div>
         </div>
 
@@ -389,15 +401,17 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
       </div>
 
       {/* Body — exercises + add */}
-      <div className="border-t border-border px-4 pt-2 pb-4">
+      <div
+        className="flex flex-col border-t border-border px-4 pt-1.5 pb-2"
+        data-testid="tb-exercises"
+      >
         {exerciseCount === 0 ? (
-          <Typography
-            className="py-2"
-            color="muted"
-            type="body-sm"
+          <div
+            className="py-5 text-center text-pill text-muted"
+            data-testid="tb-empty"
           >
             No exercises yet — add the first one below.
-          </Typography>
+          </div>
         ) : (
           workout.workout_elements.map((element, index) => (
             <ExerciseRow
@@ -414,14 +428,20 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
             />
           ))
         )}
+      </div>
 
+      <div
+        className="px-4 py-3"
+        data-testid="tb-add-exercise-row"
+      >
         <Button
-          className="mt-3 min-h-11 w-full rounded-control border border-dashed border-border text-accent"
+          className="min-h-11 gap-1.5 rounded-none bg-transparent px-0 font-btn text-note font-semibold leading-[normal] [box-shadow:none] [color:var(--color-accent)] sm:min-h-0"
+          data-testid="tb-add-exercise"
           onPress={() => setPickerOpen(true)}
           ref={addExerciseButtonRef}
           variant="ghost"
         >
-          <Plus className="size-4" />
+          <Plus className="size-3.75" />
           Add exercise
         </Button>
       </div>

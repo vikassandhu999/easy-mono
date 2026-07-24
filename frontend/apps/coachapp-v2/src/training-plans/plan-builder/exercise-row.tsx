@@ -10,13 +10,15 @@
  * `+ Add set` duplicates the previous set and immediately opens the editor on
  * the new one (INTERACTIONS.md § TB).
  */
-import {Button, Chip, Typography} from '@heroui/react';
+import {Button, Chip} from '@heroui/react';
 import {ChevronDown, ChevronUp, X} from 'lucide-react';
 import {useRef, useState} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
+import {AS_ICON_BUTTON, NO_GAP} from '@/@components/ua-defaults';
 import type {TrainingPlanPlannedSet, TrainingPlanWorkoutExercise} from '@/api/generated';
 import {coachApi, useUpdateWorkoutElementMutation} from '@/api/generated';
+import {INLINE_LINK, TAG} from '@/nutrition-plans/plan-builder/ui';
 import {useAppDispatch} from '@/store';
 
 import {SetList} from './set-row';
@@ -150,20 +152,26 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
 
   return (
     <>
-      <div className="border-b border-separator py-2 last:border-0">
+      <div
+        className="border-b border-border py-3 last:border-0"
+        data-testid="tb-exercise-row"
+      >
         {/* Exercise name + tracking chip + reorder/remove controls */}
-        <div className="flex items-center gap-2">
-          <Typography
-            className="min-w-0 flex-1 truncate"
-            type="body-sm"
-            weight="semibold"
+        <div
+          className="flex items-center gap-2"
+          data-testid="tb-exercise-head"
+        >
+          <span
+            className="min-w-0 flex-1 truncate text-row font-semibold text-foreground"
+            data-testid="tb-exercise-name"
           >
             {exerciseName}
-          </Typography>
+          </span>
 
           {trackingLabel ? (
             <Chip
-              className="hidden shrink-0 rounded-chip border border-border bg-surface sm:flex"
+              className={`${TAG} ${NO_GAP} hidden shrink-0 [color:var(--color-foreground)] sm:inline-flex`}
+              data-testid="tb-track-chip"
               size="sm"
               variant="secondary"
             >
@@ -174,7 +182,8 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           <div className="flex shrink-0 items-center">
             <Button
               aria-label={`Move ${exerciseName} up`}
-              className="size-11 min-w-11 text-muted"
+              className={`size-11 min-w-11 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
+              data-testid="tb-move-up"
               isDisabled={isFirst}
               isIconOnly
               onPress={() => onMove(index, -1)}
@@ -184,7 +193,8 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             </Button>
             <Button
               aria-label={`Move ${exerciseName} down`}
-              className="size-11 min-w-11 text-muted"
+              className={`size-11 min-w-11 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
+              data-testid="tb-move-down"
               isDisabled={isLast}
               isIconOnly
               onPress={() => onMove(index, 1)}
@@ -194,7 +204,8 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             </Button>
             <Button
               aria-label={`Remove ${exerciseName}`}
-              className="size-11 min-w-11 text-muted-2"
+              className={`size-11 min-w-11 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-w-0 ${AS_ICON_BUTTON}`}
+              data-testid="tb-remove-exercise"
               isIconOnly
               onPress={onRemove}
               variant="ghost"
@@ -205,7 +216,10 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
         </div>
 
         {/* Sets — one 2px accent rule anchors the whole group */}
-        <div className="border-l-2 border-accent pl-3">
+        <div
+          className="mt-1.5 border-accent border-l-2 pl-3"
+          data-testid="tb-sets"
+        >
           <SetList
             exerciseName={exerciseName}
             onOpenSet={openSet}
@@ -222,7 +236,8 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           {/* + Add set — disabled while a sets PATCH is in flight: a double-press
               would build two payloads from the same base and lose one add. */}
           <Button
-            className="min-h-11 px-0 text-xs font-semibold text-accent"
+            className={`${INLINE_LINK} mt-0.5 py-1 font-btn text-sub`}
+            data-testid="tb-add-set"
             isDisabled={isSavingSets}
             onPress={() => {
               handleAddSet().catch(() => undefined);

@@ -62,11 +62,24 @@ export default function TrainingPlanDetail() {
   const title = clientName ? `${plan.name} — ${clientName}` : plan.name;
 
   return (
-    <Page>
-      <Page.Header size="wide">
-        <Page.TitleGroup className="flex min-w-0 items-center gap-2">
-          <BackButton onPress={goBack} />
-          <Page.Title>{title}</Page.Title>
+    <Page className="text-foreground [line-height:normal]">
+      <Page.Header
+        className="gap-3.5"
+        size="wide"
+      >
+        <Page.TitleGroup className="flex min-w-0 items-center gap-3.5">
+          <BackButton
+            onPress={goBack}
+            testId="tb-back"
+          />
+          {/* Not Page.Title: `.typography--h3` is unlayered, so its letter-spacing
+              beats any utility and the design's -0.02em can't be applied there. */}
+          <span
+            className="min-w-0 flex-1 truncate font-grotesk text-plan-title font-semibold tracking-title text-foreground"
+            data-testid="tb-title"
+          >
+            {title}
+          </span>
         </Page.TitleGroup>
         <Page.Actions>
           <PlanAddToClient plan={plan} />
@@ -82,7 +95,7 @@ export default function TrainingPlanDetail() {
         className="pb-10"
       >
         <Page.Frame
-          className="flex flex-col gap-3"
+          className="mx-auto flex w-full max-w-235 flex-col gap-4"
           size="wide"
         >
           <PlanDates plan={plan} />

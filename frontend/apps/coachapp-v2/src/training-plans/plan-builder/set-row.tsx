@@ -1,17 +1,20 @@
 /**
  * SetList — the planned sets of one exercise (badge TB).
  *
- * GAPS.md #7: set rows are `ListBox` items and the whole row is the tap target
- * (it opens the SetSheet editor). `selectionMode="none"` is required — a
- * selection-mode collection routes activation through onSelectionChange and
- * never fires `onAction`.
+ * Each row is a tap target that opens the SetSheet editor, with a `×` that
+ * removes the set — the shape the prototype draws.
  *
- * The `×` that removes a set sits outside the ListBox's item collection, in a
- * sibling column, so no interactive control is nested inside an option.
+ * GAPS.md #7 calls for `ListBox` items here, but an item cannot host the row's
+ * own `×` (no interactive control inside an option), and the workaround — a
+ * parallel column of buttons beside the list — drifts out of alignment as soon
+ * as the two columns' row heights differ, which the design's 22px `×` guarantees.
+ * So rows are plain elements with two buttons, mirroring the nutrition builder's
+ * meal-item rows.
  */
-import {Button, ListBox} from '@heroui/react';
+import {Button} from '@heroui/react';
 import {X} from 'lucide-react';
 
+import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import type {TrainingPlanPlannedSet} from '@/api/generated';
 
 import {fieldsForTrackingType} from './tracking-fields';
@@ -89,45 +92,47 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
   const canRemove = sets.length > 1;
 
   return (
-    <div className="flex items-stretch">
-      <ListBox
-        aria-label={`Sets for ${exerciseName}`}
-        className="min-w-0 flex-1 gap-0 border-none bg-transparent p-0 shadow-none"
-        onAction={(key) => onOpenSet(Number(key))}
-        selectionMode="none"
-      >
-        {sets.map((set, index) => (
-          <ListBox.Item
-            className="min-h-11 rounded-none px-0 py-0"
-            id={String(index)}
-            key={index}
-            ref={(el: HTMLElement | null) => registerRowRef(index, el)}
-            textValue={`Set ${index + 1}`}
+    <div className="flex flex-col">
+      {sets.map((set, index) => (
+        <div
+          className="flex items-center gap-2 py-1.25"
+          data-testid={index === 0 ? 'tb-set-row' : undefined}
+          key={index}
+        >
+          <Button
+            className={`h-auto min-h-11 min-w-0 flex-1 justify-start p-0 text-left [box-shadow:none] sm:min-h-0 ${AS_TEXT} ${NO_GAP}`}
+            onPress={() => onOpenSet(index)}
+            ref={(el: HTMLButtonElement | null) => registerRowRef(index, el)}
+            variant="ghost"
           >
-            <span className="min-w-0 truncate text-sm text-muted">
-              <span className="mr-1.5 font-semibold text-foreground">Set {index + 1}</span>
+            <span
+              className="min-w-0 truncate text-sub text-muted"
+              data-testid={index === 0 ? 'tb-set-summary' : undefined}
+            >
+              <span
+                className="mr-1.5 font-semibold text-foreground"
+                data-testid={index === 0 ? 'tb-set-label' : undefined}
+              >
+                Set {index + 1}
+              </span>
               {formatSetSummary(set, trackingType)}
             </span>
-          </ListBox.Item>
-        ))}
-      </ListBox>
+          </Button>
 
-      {canRemove ? (
-        <div className="flex shrink-0 flex-col">
-          {sets.map((_, index) => (
+          {canRemove ? (
             <Button
               aria-label={`Remove set ${index + 1} of ${exerciseName}`}
-              className="size-11 min-w-11 text-muted-2"
-              key={index}
+              className={`min-h-11 min-w-11 shrink-0 rounded-mini bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5 sm:min-h-0 sm:min-w-0 ${AS_TEXT} ${NO_GAP}`}
+              data-testid={index === 0 ? 'tb-remove-set' : undefined}
               isIconOnly
               onPress={() => onRemoveSet(index)}
               variant="ghost"
             >
-              <X className="size-4" />
+              <X className="size-3.25" />
             </Button>
-          ))}
+          ) : null}
         </div>
-      ) : null}
+      ))}
     </div>
   );
 }

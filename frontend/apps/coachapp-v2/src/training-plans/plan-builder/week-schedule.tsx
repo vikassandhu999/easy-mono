@@ -127,6 +127,7 @@ export function WeekSchedule({planId, workoutId, workoutName}: WeekScheduleProps
     <ToggleButtonGroup
       aria-label={`Weekdays for ${workoutName}`}
       className="flex flex-nowrap gap-1.5"
+      data-testid="tb-wdays"
       onSelectionChange={(keys) => {
         const next = new Set([...keys].map(String));
         for (const day of ORDERED_DAYS) {
@@ -145,7 +146,8 @@ export function WeekSchedule({planId, workoutId, workoutName}: WeekScheduleProps
       {ORDERED_DAYS.map((day) => (
         <ToggleButton
           aria-label={`${DAY_LABELS[day]} for ${workoutName}`}
-          className="size-11 min-w-11 shrink-0 rounded-control border border-border bg-transparent px-0 text-pill font-medium text-muted data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:font-semibold data-[selected=true]:text-accent"
+          className="size-11 min-w-11 shrink-0 rounded-tile border border-border bg-transparent px-0 text-eyebrow font-semibold text-muted [box-shadow:none] [row-gap:normal] [column-gap:normal] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-8 sm:min-w-0"
+          data-testid={assignedDays.includes(day) ? 'tb-wday-on' : 'tb-wday-off'}
           id={day}
           key={day}
         >
@@ -172,20 +174,23 @@ export function ScheduleLabel({planId, workoutId}: ScheduleLabelProps) {
   const assignedDays = daysForWorkout(scheduleMap, workoutId);
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <Typography
-        color="muted"
-        type="body-xs"
+    <div
+      className="flex flex-col px-4 pb-3 [row-gap:normal] [column-gap:normal]"
+      data-testid="tb-sched-row"
+    >
+      <span
+        className="font-count text-eyebrow font-semibold text-muted"
+        data-testid="tb-sched-label"
       >
         {scheduleLabel(assignedDays)}
-      </Typography>
+      </span>
 
       {/* A workout used on more than one weekday is edited in one place
           (INTERACTIONS.md § TB). The days themselves are already on the line
           above, so the note carries only the consequence. */}
       {assignedDays.length > 1 ? (
         <Typography
-          className="text-muted-2"
+          className="mt-0.5 text-muted-2"
           type="body-xs"
         >
           Edits apply to all of them.

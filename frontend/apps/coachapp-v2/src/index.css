@@ -58,7 +58,11 @@
   --text-kcal: 22px; /* day energy value */
   --text-kcal--line-height: 1;
   --tracking-title: -0.02em;
+  --tracking-name: -0.01em; /* workout name (TB) */
   --tracking-eyebrow: 0.09em; /* .eyebrow (vs CD's .grp 0.04em) */
+  /* The builders' counts and schedule line use a shorter mono stack than
+     Tailwind's `font-mono` default, and the computed strings must match. */
+  --font-count: ui-monospace, Menlo, monospace;
   /* Exact color-mix fills — `bg-accent/10` computes an oklch alpha, the design
      computes an oklab mix, and the two never compare equal. */
   --color-accent-tint: color-mix(in oklab, var(--color-accent) 10%, transparent);

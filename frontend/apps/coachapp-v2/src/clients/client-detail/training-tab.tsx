@@ -8,9 +8,9 @@
  * headers, and HeroUI dims disabled `ListBox.Item`s — the repo's documented
  * pattern for inert/mixed lists. Load-more stays explicit.
  */
-import {AlertDialog, Button, Chip, Dropdown, Label, Typography, toast} from '@heroui/react';
-import {Dumbbell, MoreHorizontal} from 'lucide-react';
-import {useMemo, useRef, useState} from 'react';
+import {Button, Chip, toast} from '@heroui/react';
+import {Dumbbell} from 'lucide-react';
+import {useMemo} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
@@ -30,18 +30,14 @@ import {
   weekdayKey,
   weekGroupLabel,
 } from '@/clients/client-detail/cd-data';
-import {CD_BTN_A, CD_BTN_G, CD_CARD, CD_CHIP, CdCardError, CdCardSkeleton} from '@/clients/client-detail/cd-ui';
-import AssignSurface from '@/clients/components/assign-surface';
-import PlanAssignContent from '@/clients/components/plan-assign-content';
+import {CD_BTN_G, CD_CARD, CD_CHIP, CdCardError, CdCardSkeleton} from '@/clients/client-detail/cd-ui';
+import {EmptyPlanCard, PlanCard} from '@/clients/client-detail/plan-card';
 
 const GRP = 'px-0 pt-2 pb-1.5 text-eyebrow font-bold uppercase tracking-grp text-muted';
 const ROW = 'flex items-center gap-3.5 rounded-cd-panel px-1 py-2.5 sm:px-2 sm:py-2.75';
 const ROW_DATE = 'w-18.5 flex-none text-sub font-semibold text-muted';
 const ROW_META = 'mt-0.5 text-eyebrow text-muted sm:text-chip';
 const SEP = 'h-px bg-border';
-const ICON_BTN =
-  'size-8.5 min-h-0 min-w-0 rounded-cd-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9';
-
 type Row =
   | {kind: 'group'; label: string}
   | {kind: 'missed'; date: string; id: string; title: string}
@@ -132,11 +128,8 @@ function buildRows(sessions: TrainingSession[], plan: ClientTrainingPlan | undef
   return out;
 }
 
-function PlanCard({client, plan}: {client: Client; plan: ClientTrainingPlan}) {
+function TrainingPlanCard({client, plan}: {client: Client; plan: ClientTrainingPlan}) {
   const navigate = useNavigate();
-  const menuRef = useRef<HTMLButtonElement | null>(null);
-  const [isChangeOpen, setChangeOpen] = useState(false);
-  const [isEndOpen, setEndOpen] = useState(false);
   const [updatePlan, {isLoading: isEnding}] = useUpdateTrainingPlanMutation();
 
   const scheduledDays = new Set(plan.plan_items.map((item) => item.day_of_week)).size;
@@ -150,7 +143,6 @@ function PlanCard({client, plan}: {client: Client; plan: ClientTrainingPlan}) {
   const endPlan = async () => {
     try {
       await updatePlan({id: plan.id, trainingPlanUpdateRequest: {status: 'archived'}}).unwrap();
-      setEndOpen(false);
       toast.success('Plan ended');
     } catch (err) {
       toast.danger(getApiErrorMessage(err, "Plan wasn't ended"));
@@ -158,168 +150,18 @@ function PlanCard({client, plan}: {client: Client; plan: ClientTrainingPlan}) {
   };
 
   return (
-    <>
-      <div
-        className={`${CD_CARD} flex items-center gap-3 px-3.75 py-3.25 sm:gap-3.75 sm:px-4.5 sm:py-3.75`}
-        data-testid="tr-plan"
-      >
-        <span
-          className="flex size-10 flex-none items-center justify-center rounded-cd-panel bg-accent-soft text-accent sm:size-11 sm:rounded-cd-plan"
-          data-testid="tr-plan-icon"
-        >
-          <Dumbbell className="size-4.75 sm:size-5.25" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div
-            className="text-tab font-bold sm:text-metric-sm"
-            data-testid="tr-plan-name"
-          >
-            {plan.name}
-          </div>
-          <div
-            className="mt-0.5 text-chip text-muted sm:text-pill"
-            data-testid="tr-plan-meta"
-          >
-            {meta}
-          </div>
-        </div>
-        <Button
-          className={`${CD_BTN_G} hidden h-9 px-3.75 sm:inline-flex`}
-          data-testid="tr-plan-open"
-          onPress={() => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id))}
-        >
-          Open plan
-        </Button>
-        <Dropdown>
-          <Button
-            aria-label="Plan options"
-            className={ICON_BTN}
-            data-testid="tr-plan-menu"
-            isIconOnly
-            ref={menuRef}
-            variant="ghost"
-          >
-            <MoreHorizontal className="size-4 text-muted sm:size-4.25" />
-          </Button>
-          <Dropdown.Popover>
-            <Dropdown.Menu
-              onAction={(key) => {
-                if (key === 'change') {
-                  setChangeOpen(true);
-                } else if (key === 'end') {
-                  setEndOpen(true);
-                }
-              }}
-            >
-              <Dropdown.Item
-                id="change"
-                textValue="Change plan"
-              >
-                <Label>Change plan</Label>
-              </Dropdown.Item>
-              <Dropdown.Item
-                id="end"
-                textValue="End plan"
-                variant="danger"
-              >
-                <Label>End plan</Label>
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
-      </div>
-
-      <AssignSurface
-        anchorRef={menuRef}
-        isOpen={isChangeOpen}
-        label="Change plan"
-        onOpenChange={setChangeOpen}
-      >
-        {(close) => (
-          <PlanAssignContent
-            clientId={client.id}
-            clientName={client.first_name ?? 'this client'}
-            kind="training"
-            onClose={close}
-          />
-        )}
-      </AssignSurface>
-
-      <AlertDialog.Backdrop
-        isOpen={isEndOpen}
-        onOpenChange={setEndOpen}
-      >
-        <AlertDialog.Container>
-          <AlertDialog.Dialog className="sm:max-w-100">
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>End this plan?</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <Typography>The client will no longer see scheduled workouts.</Typography>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                onPress={() => setEndOpen(false)}
-                variant="outline"
-              >
-                Keep plan
-              </Button>
-              <Button
-                isPending={isEnding}
-                onPress={endPlan}
-                variant="danger"
-              >
-                End plan
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </>
-  );
-}
-
-function EmptyPlanCard({client}: {client: Client}) {
-  return (
-    <div
-      className={`${CD_CARD} flex flex-col items-center gap-1.25 px-4.5 py-7.5 text-center sm:gap-1.5 sm:px-5 sm:py-9`}
-      data-testid="tr-empty"
-    >
-      <span
-        className="mb-0.75 flex size-12 items-center justify-center rounded-cd-strip bg-surface-tertiary text-muted sm:mb-1 sm:size-13 sm:rounded-cd-icon"
-        data-testid="tr-empty-icon"
-      >
-        <Dumbbell className="size-5.5 sm:size-6" />
-      </span>
-      <div
-        className="font-grotesk text-metric-sm font-semibold sm:text-metric"
-        data-testid="tr-empty-title"
-      >
-        No training plan
-      </div>
-      <div
-        className="text-sub text-muted sm:max-w-70 sm:text-pill"
-        data-testid="tr-empty-sub"
-      >
-        Assign a plan so {client.first_name ?? 'this client'} sees workouts in their app.
-      </div>
-      <AssignSurface
-        label="Assign plan"
-        triggerClassName={`${CD_BTN_A} mt-2.25 h-9 px-3.75 sm:mt-2.5 sm:h-9.5`}
-        triggerTestId="tr-empty-btn"
-      >
-        {(close) => (
-          <PlanAssignContent
-            clientId={client.id}
-            clientName={client.first_name ?? 'this client'}
-            kind="training"
-            onClose={close}
-          />
-        )}
-      </AssignSurface>
-    </div>
+    <PlanCard
+      client={client}
+      endBody="The client will no longer see scheduled workouts."
+      icon={<Dumbbell className="size-4.75 sm:size-5.25" />}
+      isEnding={isEnding}
+      kind="training"
+      meta={meta}
+      name={plan.name}
+      onEnd={endPlan}
+      onOpen={() => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id))}
+      testId="tr"
+    />
   );
 }
 
@@ -343,12 +185,19 @@ export default function TrainingTab({client}: {client: Client}) {
           onRetry={plans.refetch}
         />
       ) : plan ? (
-        <PlanCard
+        <TrainingPlanCard
           client={client}
           plan={plan}
         />
       ) : (
-        <EmptyPlanCard client={client} />
+        <EmptyPlanCard
+          body={`Assign a plan so ${client.first_name ?? 'this client'} sees workouts in their app.`}
+          client={client}
+          icon={<Dumbbell className="size-5.5 sm:size-6" />}
+          kind="training"
+          testId="tr"
+          title="No training plan"
+        />
       )}
 
       {sessions.isLoading ? (

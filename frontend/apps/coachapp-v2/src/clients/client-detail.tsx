@@ -37,12 +37,12 @@ import {useListCoachClientNutritionPlansQuery} from '@/api/nutrition-plans-list'
 import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
 import {formatShortDate} from '@/clients/client-detail/cd-data';
 import {CD_BTN_A, CD_CHIP} from '@/clients/client-detail/cd-ui';
+import NutritionTab from '@/clients/client-detail/nutrition-tab';
 import OverviewTab, {DetailsRow, NotesCard} from '@/clients/client-detail/overview-tab';
 import PendingBody from '@/clients/client-detail/pending-body';
 import StatStrip from '@/clients/client-detail/stat-strip';
 import TrainingTab from '@/clients/client-detail/training-tab';
 import ClientCheckins from '@/clients/components/client-checkins';
-import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 
 const TAB_IDS = ['overview', 'training', 'nutrition', 'check-ins'] as const;
 type TabId = (typeof TAB_IDS)[number];
@@ -502,7 +502,7 @@ export default function ClientDetail() {
           ) : (
             <div className="flex flex-col gap-3 p-3.5 sm:gap-3.5 sm:p-0">
               {tab === 'training' ? <TrainingTab client={client} /> : null}
-              {tab === 'nutrition' ? <ClientNutritionAdherence clientId={client.id} /> : null}
+              {tab === 'nutrition' ? <NutritionTab client={client} /> : null}
               {tab === 'check-ins' ? (
                 <ClientCheckins
                   clientId={client.id}

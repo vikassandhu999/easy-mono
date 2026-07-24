@@ -130,10 +130,10 @@
    recipes, including their `md:` rules, at every width. */
 .button:not(.button--sm):not(.button--lg),
 .toggle-button:not(.toggle-button--sm):not(.toggle-button--lg),
-.search-field-group,
+.search-field__group,
 .input-group,
 .input,
-.tab {
+.tabs__tab {
   height: var(--spacing-control);
   min-height: var(--spacing-control);
 }
@@ -183,7 +183,7 @@
    `sm:max-w-100`, so it is the dialog's size, not a per-dialog choice. The one
    wider dialog still overrides it at its own call site. */
 @media (width >= 40rem) {
-  .alert-dialog {
+  .alert-dialog__dialog {
     max-width: calc(var(--spacing) * 100);
   }
 }
@@ -293,6 +293,13 @@ svg.lucide:not([class*="size-"]) {
      to 0, which is why every field wrapper was bolting a `border` utility on. */
   --field-border-width: 1px;
   --field-background: oklch(100% 0 0);
+  /* Fields are flat in the redesign. This is the token HeroUI's `shadow-field`
+     resolves to, so clearing it drops the shadow on every field surface at once.
+     `0 0 #0000` and NOT `none`: the focus ring is another layer of the same
+     box-shadow stack, and the keyword `none` collapses the whole stack — which
+     silently removes the focus indicator from every input. A transparent shadow
+     keeps the stack composable. */
+  --field-shadow: 0 0 #0000;
   --field-border: var(--border);
   --field-foreground: oklch(21.03% 0 285.89);
   --field-placeholder: oklch(55.17% 0 285.89);

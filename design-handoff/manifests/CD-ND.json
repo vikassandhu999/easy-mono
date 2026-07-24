@@ -1,0 +1,48 @@
+{
+  "design": "design-handoff/design/Client Detail.dc.html",
+  "app": { "base": "http://localhost:2021", "route": "/clients/f9e0ba52-2974-45b9-bf29-ffc3e081f7bd/nutrition/2026-07-21" },
+  "tokenKey": "coachapp.accessToken",
+  "states": [
+    {
+      "name": "day",
+      "design": [
+        { "click": "text=Active" },
+        { "click": ".vp:not(.phone) .ctab >> nth=2" },
+        { "click": ".vp.phone .mtab >> nth=2" },
+        { "click": "[data-ref=CD-NU-desktop] .lbrow.tap >> nth=0" }
+      ],
+      "app": [
+        { "wait": "[data-testid=nd-totals]" },
+        { "wait": "[data-testid=nd-meal]" },
+        { "wait": "[data-testid=nd-entry]" },
+        { "sleep": 400 }
+      ],
+      "pairs": [
+        "sub-back", "sub-title", "sub-subtitle",
+        "nd-root", "totals-card", "totals-eyebrow", "meter-label", "meter-value", "meter-track", "meter-fill",
+        "meal-card", "meal-title", "meal-kcal", "entry", "entry-name", "entry-macros", "entry-amount", "entry-kcal", "entry-sep"
+      ]
+    }
+  ],
+  "pairs": [
+    { "name": "sub-back", "design": {"desktop": ".vp:not(.phone) button[aria-label=Back]", "mobile": ".vp.phone button[aria-label=Back]"}, "app": "[data-testid=sub-back]" },
+    { "name": "sub-title", "design": {"desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk", "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk"}, "app": "[data-testid=sub-title]" },
+    { "name": "sub-subtitle", "design": {"desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk + div", "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk + div"}, "app": "[data-testid=sub-subtitle]" },
+    { "name": "nd-root", "design": {"desktop": "[data-ref=CD-ND-desktop]", "mobile": "[data-ref=CD-ND-mobile]"}, "app": "[data-testid=nd-root]" },
+    { "name": "totals-card", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:first-child", "mobile": "[data-ref=CD-ND-mobile] > .card:first-child"}, "app": "[data-testid=nd-totals]" },
+    { "name": "totals-eyebrow", "design": {"desktop": "[data-ref=CD-ND-desktop] .eyebrow", "mobile": "[data-ref=CD-ND-mobile] .eyebrow"}, "app": "[data-testid=nd-totals-eyebrow]" },
+    { "name": "meter-label", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:first-child > div:last-child > div:first-child > div:first-child > span:first-child", "mobile": "[data-ref=CD-ND-mobile] > .card:first-child > div:last-child > div:first-child > div:first-child > span:first-child"}, "app": "[data-testid=nd-meter-label]" },
+    { "name": "meter-value", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:first-child > div:last-child > div:first-child > div:first-child > span:last-child", "mobile": "[data-ref=CD-ND-mobile] > .card:first-child > div:last-child > div:first-child > div:first-child > span:last-child"}, "app": "[data-testid=nd-meter-value]" },
+    { "name": "meter-track", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:first-child > div:last-child > div:first-child > div:last-child", "mobile": "[data-ref=CD-ND-mobile] > .card:first-child > div:last-child > div:first-child > div:last-child"}, "app": "[data-testid=nd-meter-track]" },
+    { "name": "meter-fill", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:first-child > div:last-child > div:first-child > div:last-child > div", "mobile": "[data-ref=CD-ND-mobile] > .card:first-child > div:last-child > div:first-child > div:last-child > div"}, "app": "[data-testid=nd-meter-fill]" },
+    { "name": "meal-card", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:nth-of-type(2)", "mobile": "[data-ref=CD-ND-mobile] > .card:nth-of-type(2)"}, "app": "[data-testid=nd-meal]" },
+    { "name": "meal-title", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:nth-of-type(2) > div:first-child > div:first-child", "mobile": "[data-ref=CD-ND-mobile] > .card:nth-of-type(2) > div:first-child > div:first-child"}, "app": "[data-testid=nd-meal-title]" },
+    { "name": "meal-kcal", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:nth-of-type(2) > div:first-child > div:last-child", "mobile": "[data-ref=CD-ND-mobile] > .card:nth-of-type(2) > div:first-child > div:last-child"}, "app": "[data-testid=nd-meal-kcal]" },
+    { "name": "entry", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:nth-of-type(2) > div:nth-child(2)", "mobile": "[data-ref=CD-ND-mobile] > .card:nth-of-type(2) > div:nth-child(2)"}, "app": "[data-testid=nd-entry]" },
+    { "name": "entry-name", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:nth-of-type(2) > div:nth-child(2) > div:first-child > div:first-child", "mobile": "[data-ref=CD-ND-mobile] > .card:nth-of-type(2) > div:nth-child(2) > div:first-child > div:first-child"}, "app": "[data-testid=nd-entry-name]" },
+    { "name": "entry-macros", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:nth-of-type(2) > div:nth-child(2) > div:first-child > div:last-child", "mobile": "[data-ref=CD-ND-mobile] > .card:nth-of-type(2) > div:nth-child(2) > div:first-child > div:last-child"}, "app": "[data-testid=nd-entry-macros]" },
+    { "name": "entry-amount", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:nth-of-type(2) > div:nth-child(2) > span:first-of-type", "mobile": "[data-ref=CD-ND-mobile] > .card:nth-of-type(2) > div:nth-child(2) > span:first-of-type"}, "app": "[data-testid=nd-entry-amount]" },
+    { "name": "entry-kcal", "design": {"desktop": "[data-ref=CD-ND-desktop] > .card:nth-of-type(2) > div:nth-child(2) > span:last-of-type", "mobile": "[data-ref=CD-ND-mobile] > .card:nth-of-type(2) > div:nth-child(2) > span:last-of-type"}, "app": "[data-testid=nd-entry-kcal]" },
+    { "name": "entry-sep", "design": {"desktop": "[data-ref=CD-ND-desktop] .sep", "mobile": "[data-ref=CD-ND-mobile] .sep"}, "app": "[data-testid=nd-entry-sep]" }
+  ]
+}

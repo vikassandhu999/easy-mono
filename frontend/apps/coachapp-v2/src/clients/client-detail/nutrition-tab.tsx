@@ -6,10 +6,10 @@
  * Like CD/TR the list is a plain semantic list: rows are mixed (tappable
  * logged days and inert "Not logged" days).
  */
-import {Button, Chip, ProgressBar, toast} from '@heroui/react';
+import {Chip, ProgressBar, toast} from '@heroui/react';
 import {Utensils, UtensilsCrossed} from 'lucide-react';
 import {useMemo} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Client, MealLog, NutritionPlan} from '@/api/generated';
@@ -304,11 +304,10 @@ export default function NutritionTab({client}: {client: Client}) {
                     </span>
                   </div>
                 ) : (
-                  <Button
+                  <Link
                     className={`${ROW} ${ROW_TEXT} h-auto w-full justify-start bg-transparent [box-shadow:none] hover:bg-background sm:items-center`}
                     data-testid="nu-row"
-                    onPress={() => toast('Day detail is coming with the ND port')}
-                    variant="ghost"
+                    to={ROUTES.CLIENT_NUTRITION_DAY.replace(':id', client.id).replace(':date', day.date)}
                   >
                     {isDesktop ? (
                       <>
@@ -359,7 +358,7 @@ export default function NutritionTab({client}: {client: Client}) {
                         </span>
                       </span>
                     )}
-                  </Button>
+                  </Link>
                 )}
               </li>
             ))}

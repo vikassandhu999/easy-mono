@@ -7,7 +7,7 @@
 import {Button, Chip, TextArea, Typography, toast} from '@heroui/react';
 import {ChevronRight, ClipboardCheck, Image as ImageIcon, Settings2, Sparkles} from 'lucide-react';
 import {useMemo, useState} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {Link, useNavigate, useParams} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useUpdateClientMutation} from '@/api/clients';
@@ -217,6 +217,7 @@ function PhotoThumb({src}: {src: string}) {
     return <ImageIcon className="size-4.5 sm:size-5" />;
   }
   return (
+    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: load errors swap in the placeholder icon (same as message-attachments)
     <img
       alt="Progress"
       className="size-full object-cover"
@@ -315,11 +316,7 @@ function LatestCheckInCard({assignments}: {assignments: ClientProfileFormAssignm
               data-testid="cd-latest-photo"
               key={id}
             >
-              {urls[id] ? (
-                <PhotoThumb src={urls[id]!} />
-              ) : (
-                <ImageIcon className="size-4.5 sm:size-5" />
-              )}
+              {urls[id] ? <PhotoThumb src={urls[id]!} /> : <ImageIcon className="size-4.5 sm:size-5" />}
             </span>
           ))}
         </div>
@@ -545,10 +542,12 @@ export function NotesCard({client}: {client: Client}) {
 }
 
 export function DetailsRow() {
+  const {id} = useParams<{id: string}>();
   return (
-    <div
+    <Link
       className="flex cursor-pointer items-center gap-3.5 rounded-cd-panel border border-border bg-surface p-3.5 transition-colors hover:bg-background sm:px-4.25 sm:py-3.75"
       data-testid="cd-details"
+      to={ROUTES.CLIENT_DETAILS.replace(':id', id!)}
     >
       <span
         className="flex size-9 flex-none items-center justify-center rounded-cd-btn bg-background text-muted sm:size-9.5 sm:rounded-cd-tile"
@@ -571,7 +570,7 @@ export function DetailsRow() {
         </div>
       </div>
       <ChevronRight className="size-4 text-muted" />
-    </div>
+    </Link>
   );
 }
 

@@ -12,7 +12,7 @@ export const ROUTES = {
   CLIENT_DETAIL: '/clients/:id',
   CLIENT_WORKOUT_HISTORY: '/clients/:id/workout-history',
   CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',
-  EDIT_CLIENT: '/clients/:id/edit',
+  CLIENT_DETAILS: '/clients/:id/details',
   LIBRARY: '/library',
   EXERCISES: '/library/exercises',
   CREATE_EXERCISE: '/library/exercises/create',

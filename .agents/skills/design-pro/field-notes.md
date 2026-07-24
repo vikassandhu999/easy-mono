@@ -106,6 +106,13 @@ Trust these over the handoff docs. When you discover a new one, add it here
   per-state client routes.
 - **`state.route`** (added to style-diff.mjs) points a state at its own seeded
   client — one client per lifecycle state beats mutating one client between states.
+- **`[color:…]` arbitrary property LOSES to a text-color utility in the same
+  className** (cascade order, not tw-merge) — when matching a UA-default color
+  (design buttons with no color rule compute `rgb(0,0,0)`), drop the text-*
+  color class entirely and keep only `[color:black]`.
+- **Biome blocks `onError` on `<img>`** (`noNoninteractiveElementInteractions`) —
+  use the repo's message-attachments biome-ignore precedent for broken-image
+  fallbacks.
 
 ## Styling / tokens
 

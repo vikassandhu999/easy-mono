@@ -1,0 +1,80 @@
+{
+  "design": "design-handoff/design/Client Detail.dc.html",
+  "app": { "base": "http://localhost:2021", "route": "/clients/f9e0ba52-2974-45b9-bf29-ffc3e081f7bd/details" },
+  "tokenKey": "coachapp.accessToken",
+  "states": [
+    {
+      "name": "active",
+      "design": [{ "click": "text=Active" }, { "click": ".card.lbrow" }],
+      "app": [{ "wait": "[data-testid=dt-root]" }, { "wait": "[data-testid=dt-deactivate]" }, { "sleep": 400 }],
+      "pairs": [
+        "dt-back", "dt-title", "dt-subtitle",
+        "dt-root", "dt-profile", "dt-profile-eyebrow", "dt-row-label", "dt-row-value",
+        "dt-subcard", "dt-sub-eyebrow", "dt-caption", "dt-billing-link",
+        "dt-intake", "dt-intake-icon", "dt-intake-title", "dt-intake-sub",
+        "dt-deactivate"
+      ]
+    },
+    {
+      "name": "expiring",
+      "route": "/clients/c387360d-84cb-4273-8191-172135be2e01/details",
+      "design": [{ "click": "text=Expiring" }, { "click": ".card.lbrow" }],
+      "app": [{ "wait": "[data-testid=dt-root]" }, { "wait": "[data-testid=dt-alert]" }, { "sleep": 300 }],
+      "pairs": [
+        "dt-title", "dt-root", "dt-profile", "dt-subcard",
+        "alert-warning", "alert-warning-text", "alert-warning-btn"
+      ]
+    },
+    {
+      "name": "inactive-expired",
+      "route": "/clients/e76cf3f4-af54-4bba-b6b5-2221e33760a3/details",
+      "design": [{ "click": "text=Sub. expired" }, { "click": ".card.lbrow" }],
+      "app": [{ "wait": "[data-testid=dt-root]" }, { "wait": "[data-testid=dt-alert]" }, { "wait": "[data-testid=dt-reactivate]" }, { "sleep": 300 }],
+      "pairs": [
+        "dt-title", "dt-root", "dt-profile",
+        "alert-danger", "alert-danger-text", "alert-danger-btn",
+        "dt-reactivate"
+      ]
+    },
+    {
+      "name": "inactive-manual",
+      "route": "/clients/81d8249d-5238-412f-a83b-f0cf6a0ef4a7/details",
+      "design": [{ "click": "text=Inactive" }, { "click": ".card.lbrow" }],
+      "app": [{ "wait": "[data-testid=dt-root]" }, { "wait": "[data-testid=dt-reactivate]" }, { "sleep": 300 }],
+      "pairs": ["dt-title", "dt-root", "dt-profile", "dt-subcard", "dt-reactivate"]
+    },
+    {
+      "name": "pending",
+      "route": "/clients/ceb449b7-d129-4451-a70a-c87711b6244b/details",
+      "design": [{ "click": "text=Pending" }, { "click": ".card.lbrow" }],
+      "app": [{ "wait": "[data-testid=dt-root]" }, { "wait": "[data-testid=cd-invite]" }, { "sleep": 300 }],
+      "pairs": ["dt-title", "dt-root", "dt-profile", "dt-subcard", "dt-intake", "dt-intake-title"]
+    }
+  ],
+  "pairs": [
+    { "name": "dt-back", "design": { "desktop": ".vp:not(.phone) button[aria-label=Back]", "mobile": ".vp.phone button[aria-label=Back]" }, "app": "[data-testid=dt-back]" },
+    { "name": "dt-title", "design": { "desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk", "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk" }, "app": "[data-testid=dt-title]" },
+    { "name": "dt-subtitle", "design": { "desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk + div", "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk + div" }, "app": "[data-testid=dt-subtitle]" },
+    { "name": "dt-root", "design": { "desktop": "[data-ref=CD-DT-desktop]", "mobile": "[data-ref=CD-DT-mobile]" }, "app": "[data-testid=dt-root]" },
+    { "name": "dt-profile", "design": { "desktop": "[data-ref=CD-DT-desktop] > .card:nth-of-type(1)", "mobile": "[data-ref=CD-DT-mobile] > .card:nth-of-type(1)" }, "app": "[data-testid=dt-profile]" },
+    { "name": "dt-profile-eyebrow", "design": { "desktop": "[data-ref=CD-DT-desktop] > .card:nth-of-type(1) .eyebrow", "mobile": "[data-ref=CD-DT-mobile] > .card:nth-of-type(1) .eyebrow" }, "app": "[data-testid=dt-profile-eyebrow]" },
+    { "name": "dt-row-label", "design": { "desktop": "[data-ref=CD-DT-desktop] > .card:nth-of-type(1) > div:last-child > span:first-child", "mobile": "[data-ref=CD-DT-mobile] > .card:nth-of-type(1) > div:last-child > span:first-child" }, "app": "[data-testid=dt-row-label]" },
+    { "name": "dt-row-value", "design": { "desktop": "[data-ref=CD-DT-desktop] > .card:nth-of-type(1) > div:last-child > span:last-child", "mobile": "[data-ref=CD-DT-mobile] > .card:nth-of-type(1) > div:last-child > span:last-child" }, "app": "[data-testid=dt-row-value]" },
+    { "name": "dt-subcard", "design": { "desktop": "[data-ref=CD-DT-desktop] > .card:nth-of-type(2)", "mobile": "[data-ref=CD-DT-mobile] > .card:nth-of-type(2)" }, "app": "[data-testid=dt-subcard]" },
+    { "name": "dt-sub-eyebrow", "design": { "desktop": "[data-ref=CD-DT-desktop] > .card:nth-of-type(2) .eyebrow", "mobile": "[data-ref=CD-DT-mobile] > .card:nth-of-type(2) .eyebrow" }, "app": "[data-testid=dt-sub-eyebrow]" },
+    { "name": "dt-caption", "design": { "desktop": "[data-ref=CD-DT-desktop] > .card:nth-of-type(2) > div:last-child" }, "app": "[data-testid=dt-caption]", "widths": ["desktop"] },
+    { "name": "dt-billing-link", "design": { "desktop": "[data-ref=CD-DT-desktop] > .card:nth-of-type(2) a" }, "app": "[data-testid=dt-billing-link]", "widths": ["desktop"] },
+    { "name": "alert-warning", "design": { "desktop": "[data-ref=CD-DT-desktop] div[style*='warning-soft'][style*='11px']", "mobile": "[data-ref=CD-DT-mobile] div[style*='warning-soft'][style*='11px']" }, "app": "[data-testid=dt-alert]" },
+    { "name": "alert-warning-text", "design": { "desktop": "[data-ref=CD-DT-desktop] div[style*='warning-soft'][style*='11px'] > div[style*='600']", "mobile": "[data-ref=CD-DT-mobile] div[style*='warning-soft'][style*='11px'] > div[style*='600']" }, "app": "[data-testid=dt-alert-text]" },
+    { "name": "alert-warning-btn", "design": { "desktop": "[data-ref=CD-DT-desktop] div[style*='warning-soft'][style*='11px'] button", "mobile": "[data-ref=CD-DT-mobile] div[style*='warning-soft'][style*='11px'] button" }, "app": "[data-testid=dt-alert-btn]" },
+    { "name": "alert-danger", "design": { "desktop": "[data-ref=CD-DT-desktop] div[style*='danger-soft'][style*='11px']", "mobile": "[data-ref=CD-DT-mobile] div[style*='danger-soft'][style*='11px']" }, "app": "[data-testid=dt-alert]" },
+    { "name": "alert-danger-text", "design": { "desktop": "[data-ref=CD-DT-desktop] div[style*='danger-soft'][style*='11px'] > div[style*='600']", "mobile": "[data-ref=CD-DT-mobile] div[style*='danger-soft'][style*='11px'] > div[style*='600']" }, "app": "[data-testid=dt-alert-text]" },
+    { "name": "alert-danger-btn", "design": { "desktop": "[data-ref=CD-DT-desktop] div[style*='danger-soft'][style*='11px'] button", "mobile": "[data-ref=CD-DT-mobile] div[style*='danger-soft'][style*='11px'] button" }, "app": "[data-testid=dt-alert-btn]" },
+    { "name": "dt-intake", "design": { "desktop": "[data-ref=CD-DT-desktop] .card.lbrow", "mobile": "[data-ref=CD-DT-mobile] .card.lbrow" }, "app": "[data-testid=dt-intake]" },
+    { "name": "dt-intake-icon", "design": { "desktop": "[data-ref=CD-DT-desktop] .card.lbrow > span", "mobile": "[data-ref=CD-DT-mobile] .card.lbrow > span" }, "app": "[data-testid=dt-intake-icon]" },
+    { "name": "dt-intake-title", "design": { "desktop": "[data-ref=CD-DT-desktop] .card.lbrow div[style*='700']", "mobile": "[data-ref=CD-DT-mobile] .card.lbrow div[style*='700']" }, "app": "[data-testid=dt-intake-title]" },
+    { "name": "dt-intake-sub", "design": { "desktop": "[data-ref=CD-DT-desktop] .card.lbrow div[style*='margin-top']", "mobile": "[data-ref=CD-DT-mobile] .card.lbrow div[style*='margin-top']" }, "app": "[data-testid=dt-intake-sub]" },
+    { "name": "dt-deactivate", "design": { "desktop": "[data-ref=CD-DT-desktop] button[style*='danger-soft']", "mobile": "[data-ref=CD-DT-mobile] button[style*='danger-soft']" }, "app": "[data-testid=dt-deactivate]" },
+    { "name": "dt-reactivate", "design": { "desktop": "[data-ref=CD-DT-desktop] .btnA", "mobile": "[data-ref=CD-DT-mobile] .btnA" }, "app": "[data-testid=dt-reactivate]" }
+  ]
+}

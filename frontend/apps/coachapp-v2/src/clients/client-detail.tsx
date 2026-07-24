@@ -76,7 +76,7 @@ function AttentionChips({client}: {client: Client}) {
         className={`${CD_CHIP} h-auto min-h-0 bg-danger-soft [color:var(--color-danger-soft-foreground)]`}
         data-testid="cd-attn-expires"
         key="expires"
-        onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
+        onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
         variant="ghost"
       >
         <AlarmClock className="size-3.25" />
@@ -170,7 +170,7 @@ function StateBanner({client}: {client: Client}) {
         <Button
           className={`${CD_BTN_A} h-8 px-3 sm:h-8.5 sm:px-3.75`}
           data-testid="cd-banner-btn"
-          onPress={() => navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id))}
+          onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
         >
           Extend subscription
         </Button>
@@ -336,9 +336,7 @@ export default function ClientDetail() {
                         .then(() => toast.success(`${client.first_name ?? 'Client'} is active again.`))
                         .catch(() => toast.danger("Client wasn't reactivated"));
                     } else if (key === 'edit') {
-                      // Details & settings page (CD/DT) is a follow-up port; the
-                      // edit screen is the closest existing surface.
-                      navigate(ROUTES.EDIT_CLIENT.replace(':id', client.id));
+                      navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id));
                     }
                   }}
                 >

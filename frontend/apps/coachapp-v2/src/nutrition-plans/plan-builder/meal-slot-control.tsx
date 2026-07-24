@@ -18,6 +18,8 @@ import {useState} from 'react';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 
+import {TAG} from './ui';
+
 /**
  * Sentence-case slot names, per COPY.md § NB. `@easy/utils`' MEAL_SLOT_LABELS
  * is Title Case and shared with the client app, so this screen keeps its own
@@ -53,13 +55,14 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
   const trigger = (
     <Button
       aria-label={`Meal slot: ${label}`}
-      className="min-h-11 rounded-control border border-border bg-surface px-2.5 text-pill font-medium text-foreground"
+      className={`${TAG} min-h-11 gap-1.25 [color:var(--color-foreground)] sm:min-h-0`}
+      data-testid="nb-slot-tag"
       onPress={isDesktop ? undefined : () => setOpen(true)}
       size="sm"
       variant="outline"
     >
       {label}
-      <ChevronDown className="size-3.5 text-muted" />
+      <ChevronDown className="size-3" />
     </Button>
   );
 

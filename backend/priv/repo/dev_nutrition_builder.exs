@@ -1,0 +1,171 @@
+# Dev-only, idempotent seed: the nutrition plan the NB style-diff manifest
+# (design-handoff/manifests/NB.json) runs against.
+#
+#   cd backend && mix run priv/repo/dev_nutrition_builder.exs
+#
+# The manifest drives a live builder — expanding meals, opening menus, switching
+# days — so the fixture has to be restored, not just created: this script
+# DELETES the plan's days/meals and rebuilds them every run. Anything the
+# previous run added, removed or renamed is undone.
+#
+# The shape mirrors the prototype frame so every mapped state is reachable:
+#   Training day — a plain meal, a shared meal, a meal with one swap
+#   Rest day     — reuses the shared meal, plus an empty meal (no foods yet)
+# The day-empty state is reached by pressing "+ Day" (as the prototype does),
+# so the fixture stops at two days — matching the frame's tab row exactly.
+# It prints the plan id; paste it into the manifest's `app.route` if it changes.
+
+import Ecto.Query
+alias Easy.Nutrition.{DayMeal, Food, Meal, MealItem, Plan, PlanDay, WeekdayAssignment}
+alias Easy.Repo
+
+plan_name = "NB fixture — Lean Bulk"
+
+# The dev DB has several businesses; seed the one the coach actually works in,
+# i.e. whichever owns the nutrition plans.
+business_id =
+  Repo.one!(
+    from p in Plan,
+      group_by: p.business_id,
+      order_by: [desc: count(p.id)],
+      select: p.business_id,
+      limit: 1
+  )
+
+business = Repo.get!(Easy.Orgs.Business, business_id)
+
+# A half-built fixture from an earlier run (or one seeded into the wrong
+# business) would shadow this one in the list — drop every copy first.
+Repo.delete_all(from p in Plan, where: p.name == ^plan_name and p.business_id != ^business.id)
+coach = Repo.one!(from c in Easy.Orgs.Coach, where: c.business_id == ^business.id, limit: 1)
+
+plan =
+  case Repo.get_by(Plan, name: plan_name, business_id: business.id) do
+    nil ->
+      Repo.insert!(%Plan{
+        name: plan_name,
+        business_id: business.id,
+        creator_id: coach.id,
+        status: :active,
+        target_calories: 2100.0,
+        target_protein_g: 180.0,
+        target_carbs_g: 200.0,
+        target_fat_g: 60.0
+      })
+
+    existing ->
+      existing
+      |> Ecto.Changeset.change(%{
+        target_calories: 2100.0,
+        target_protein_g: 180.0,
+        target_carbs_g: 200.0,
+        target_fat_g: 60.0,
+        status: :active,
+        client_id: nil
+      })
+      |> Repo.update!()
+  end
+
+# Wipe the plan back to empty. day_meals and meal_items cascade from their
+# parents, so deleting days and meals is enough.
+Repo.delete_all(from w in WeekdayAssignment, where: w.nutrition_plan_id == ^plan.id)
+Repo.delete_all(from d in PlanDay, where: d.nutrition_plan_id == ^plan.id)
+Repo.delete_all(from m in Meal, where: m.nutrition_plan_id == ^plan.id)
+
+# Library foods are public (business_id nil) or business-owned.
+foods =
+  Repo.all(
+    from f in Food,
+      where: is_nil(f.business_id) or f.business_id == ^business.id,
+      # Ordinary-density foods only: the alphabetical head of this library is
+      # chocolate and crisps, and a day built from those blows past the target,
+      # which flips the energy bar to its warning colour.
+      where: f.calories_per_100g > 20.0 and f.calories_per_100g < 200.0,
+      order_by: f.name,
+      limit: 6
+  )
+
+if foods == [] do
+  raise "no foods in the dev DB — run priv/repo/seeds.exs first"
+end
+
+add_day = fn name, position ->
+  Repo.insert!(%PlanDay{
+    name: name,
+    position: position,
+    nutrition_plan_id: plan.id,
+    business_id: business.id
+  })
+end
+
+add_meal = fn name, food_specs ->
+  meal =
+    Repo.insert!(%Meal{
+      name: name,
+      nutrition_plan_id: plan.id,
+      business_id: business.id,
+      creator_id: coach.id
+    })
+
+  for {{food, grams}, position} <- Enum.with_index(food_specs) do
+    Repo.insert!(%MealItem{
+      nutrition_meal_id: meal.id,
+      business_id: business.id,
+      food_id: food.id,
+      weight_g: grams * 1.0,
+      position: position
+    })
+  end
+
+  meal
+end
+
+place = fn day, meal, slot, position ->
+  Repo.insert!(%DayMeal{
+    nutrition_plan_day_id: day.id,
+    nutrition_meal_id: meal.id,
+    business_id: business.id,
+    meal_slot: slot,
+    position: position
+  })
+end
+
+[f1, f2, f3, f4, f5, f6] = foods
+
+training = add_day.("Training day", 0)
+rest = add_day.("Rest day", 1)
+
+oats = add_meal.("Protein oats + berries", [{f1, 80}, {f2, 150}])
+yogurt = add_meal.("Greek yogurt + almonds", [{f3, 170}, {f4, 20}])
+salmon = add_meal.("Salmon, rice & greens", [{f5, 180}, {f6, 150}, {f2, 120}])
+chili = add_meal.("Turkey chili & rice", [{f6, 150}, {f2, 150}])
+empty_meal = add_meal.("New meal", [])
+
+# Training day: plain / shared / swapped-and-open, in slot order.
+place.(training, oats, :breakfast, 0)
+place.(training, yogurt, :morning_snack, 0)
+place.(training, salmon, :dinner, 0)
+place.(training, chili, :dinner, 1)
+
+# Rest day: the shared meal again (drives "Used in 2 places") + an empty meal.
+place.(rest, yogurt, :breakfast, 0)
+place.(rest, empty_meal, :lunch, 0)
+
+for {weekday, day} <- [
+      monday: training,
+      tuesday: training,
+      wednesday: training,
+      thursday: training,
+      friday: training,
+      saturday: rest,
+      sunday: rest
+    ] do
+  Repo.insert!(%WeekdayAssignment{
+    nutrition_plan_id: plan.id,
+    nutrition_plan_day_id: day.id,
+    business_id: business.id,
+    day_of_week: weekday
+  })
+end
+
+IO.puts("NB fixture ready — /library/nutrition-plans/#{plan.id}")

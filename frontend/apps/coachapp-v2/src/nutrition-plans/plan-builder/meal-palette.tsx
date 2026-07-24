@@ -12,11 +12,14 @@
  * (INTERACTIONS.md § NB). "Add a swap" reuses the same list shape for the
  * meal's `Client can swap with` alternates.
  */
-import {Button, Label, ListBox, Typography} from '@heroui/react';
+import {Button, Label, ListBox} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {type ReactNode, useRef, useState} from 'react';
 
+import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
+
+import {INLINE_LINK} from './ui';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,6 +30,8 @@ export interface MealPaletteOption {
   name: string;
   /** Secondary line — "On Mon, Tue · Lunch" for reuse, "474 kcal" for swaps. */
   sub?: string;
+  /** Right-aligned figure on reuse rows — the meal's energy. */
+  meta?: string;
 }
 
 interface MealPaletteContentProps {
@@ -44,24 +49,17 @@ interface MealPaletteContentProps {
 
 function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick}: MealPaletteContentProps) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
       {createSlot}
-      <div className="flex flex-col gap-2">
-        <Typography
-          className="uppercase tracking-wide"
-          color="muted"
-          type="body-xs"
-          weight="bold"
+      <div className="flex flex-col">
+        <div
+          className="px-2.75 pt-0.5 pb-2 text-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
+          data-testid="nb-reuse-label"
         >
           {groupLabel}
-        </Typography>
+        </div>
         {options.length === 0 ? (
-          <Typography
-            color="muted"
-            type="body-sm"
-          >
-            {emptyLabel}
-          </Typography>
+          <div className="px-2.75 pt-1 pb-2 text-sub text-muted">{emptyLabel}</div>
         ) : (
           <ListBox
             aria-label={groupLabel}
@@ -71,15 +69,36 @@ function MealPaletteContent({createSlot, groupLabel, options, emptyLabel, onPick
           >
             {options.map((option) => (
               <ListBox.Item
-                className="min-h-11"
+                className={`min-h-11 gap-2.5 rounded-control px-2.75 py-2.25 sm:min-h-0 ${AS_TEXT}`}
+                data-testid="nb-reuse-row"
                 id={option.id}
                 key={option.id}
                 textValue={option.name}
               >
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <Label className="max-w-full truncate">{option.name}</Label>
-                  {option.sub ? <span className="max-w-full truncate text-chip text-muted">{option.sub}</span> : null}
+                  <Label
+                    className="max-w-full truncate text-note font-normal"
+                    data-testid="nb-reuse-name"
+                  >
+                    {option.name}
+                  </Label>
+                  {option.sub ? (
+                    <span
+                      className="mt-0.25 max-w-full truncate text-eyebrow text-muted"
+                      data-testid="nb-reuse-sub"
+                    >
+                      {option.sub}
+                    </span>
+                  ) : null}
                 </div>
+                {option.meta ? (
+                  <span
+                    className="shrink-0 whitespace-nowrap text-chip text-muted"
+                    data-testid="nb-reuse-kcal"
+                  >
+                    {option.meta}
+                  </span>
+                ) : null}
               </ListBox.Item>
             ))}
           </ListBox>
@@ -150,21 +169,41 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
       options={reusable}
       renderCreate={(close) => (
         <Button
-          className="h-auto w-full flex-col items-start gap-0.5 rounded-control px-3 py-2.5 text-left"
+          className={`h-auto w-full justify-start gap-2.5 rounded-control border-0 bg-transparent px-2.75 py-2.5 text-left [box-shadow:none] [color:var(--color-foreground)] ${AS_TEXT}`}
+          data-testid="nb-create-meal"
           onPress={() => {
             close();
             onCreate();
           }}
-          variant="outline"
+          variant="ghost"
         >
-          <span className="text-sm font-semibold text-foreground">Create a new meal</span>
-          <span className="text-chip text-muted">Start empty, add foods or recipes</span>
+          <span
+            className={`flex size-7 flex-none items-center justify-center rounded-tile bg-accent-tile text-accent ${AS_TEXT} ${NO_GAP}`}
+            data-testid="nb-create-meal-icon"
+          >
+            <Plus className="size-3.75" />
+          </span>
+          <span className="flex flex-col">
+            <span
+              className="text-note font-semibold text-foreground"
+              data-testid="nb-create-meal-title"
+            >
+              Create a new meal
+            </span>
+            <span
+              className="text-chip font-normal text-muted"
+              data-testid="nb-create-meal-sub"
+            >
+              Start empty, add foods or recipes
+            </span>
+          </span>
         </Button>
       )}
       title="Add meal"
       trigger={({onPress, ref}) => (
         <Button
-          className="min-h-11 w-full rounded-control border border-dashed border-border text-accent"
+          className="h-11 w-full gap-1.5 rounded-meal border border-dashed border-border bg-transparent px-1.5 py-px font-btn text-note font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
+          data-testid="nb-add-meal"
           onPress={onPress}
           ref={ref}
           variant="ghost"
@@ -185,9 +224,11 @@ interface AddSwapControlProps {
   /** Other meals in the plan that aren't already alternates of this one. */
   options: MealPaletteOption[];
   onAdd: (mealId: string) => void;
+  /** Style-diff anchor — set only on the open meal card (manifests/NB.json). */
+  testId?: string;
 }
 
-export function AddSwapControl({options, onAdd}: AddSwapControlProps) {
+export function AddSwapControl({options, onAdd, testId}: AddSwapControlProps) {
   return (
     <MealPaletteControl
       emptyLabel="No other meals yet"
@@ -197,7 +238,8 @@ export function AddSwapControl({options, onAdd}: AddSwapControlProps) {
       title="Add a swap"
       trigger={({onPress, ref}) => (
         <Button
-          className="min-h-11 px-0 text-xs font-semibold text-accent"
+          className={`${INLINE_LINK} text-sub`}
+          data-testid={testId}
           onPress={onPress}
           ref={ref}
           size="sm"

@@ -9,6 +9,7 @@ import {ArchiveIcon, ArchiveRestoreIcon, Copy, MoreHorizontal, Pencil, TrashIcon
 import type {ReactNode} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
+import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
 
 type Props = {
   plan: {id: string; name: string; status?: string | null};
@@ -67,9 +68,12 @@ export function PlanActionsMenu({
   return (
     <>
       <Dropdown>
+        {/* Both plan builders draw this as a bordered surface tile (38px / 11px
+            radius) beside "Add to client" — see design-handoff NB & TB frames. */}
         <Button
-          aria-label="Menu"
-          className="min-h-11 min-w-11"
+          aria-label="Plan actions"
+          className={`min-h-11 min-w-11 rounded-action border border-border bg-surface text-muted [box-shadow:none] sm:size-9.5 sm:min-h-0 sm:min-w-0 ${AS_ICON_BUTTON}`}
+          data-testid="nb-plan-actions"
           isIconOnly
           isPending={blocking}
           size="sm"

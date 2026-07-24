@@ -20,11 +20,12 @@
  * Cache: rename/delete → optimistic updateQueryData('getNutritionPlan', {id: planId}, …)
  *        + refetch for server-recomputed nutrition snapshots; patch.undo() + toast on failure.
  */
-import {Button, Chip, Disclosure, Dropdown, Label, Separator, Typography} from '@heroui/react';
+import {Button, Chip, Disclosure, Dropdown, Label, Separator} from '@heroui/react';
 import {cn} from '@heroui/styles';
-import {ArrowLeftRight, MoreHorizontal, TrashIcon, X} from 'lucide-react';
+import {ArrowLeftRight, Info, MoreHorizontal, TrashIcon, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
+import {AS_ICON_BUTTON, AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import type {NutritionMeal} from '@/api/generated';
 import {
   coachApi,
@@ -34,7 +35,6 @@ import {
   useUpdateMealMutation,
 } from '@/api/generated';
 import {useAppDispatch} from '@/store';
-
 import {AmountSheet} from './amount-sheet';
 import type {FoodOrRecipe} from './food-recipe-picker-sheet';
 import {FoodRecipePickerSheet, isRecipe} from './food-recipe-picker-sheet';
@@ -43,6 +43,8 @@ import {MealItemRow} from './meal-item-row';
 import type {MealPaletteOption} from './meal-palette';
 import {AddSwapControl} from './meal-palette';
 import {MealSlotControl} from './meal-slot-control';
+
+import {INLINE_LINK, TAG} from './ui';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,6 +74,9 @@ interface MealCardProps {
   onRemoveSwap: (optionId: string) => void;
   /** Newly created meals open straight into rename mode (INTERACTIONS.md § NB). */
   autoRename?: boolean;
+  /** Style-diff anchors (manifests/NB.json) — one card per variant carries them. */
+  cardTestId?: string;
+  triggerTestId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,6 +106,8 @@ export function MealCard({
   onAddSwap,
   onRemoveSwap,
   autoRename,
+  cardTestId,
+  triggerTestId,
 }: MealCardProps) {
   const dispatch = useAppDispatch();
   const [updateMeal] = useUpdateMealMutation();
@@ -277,6 +284,10 @@ export function MealCard({
   // Derived
   // ---------------------------------------------------------------------------
 
+  // Collapsed Disclosure bodies still render, so body-level style-diff anchors
+  // (manifests/NB.json) are only tagged on the card that is actually open.
+  const openId = (id: string) => (open ? id : undefined);
+
   const items = meal.meal_items as HydratedMealItem[];
   const kcal = kcalLabel(meal.nutrition);
   const isShared = assignmentCount >= 2;
@@ -292,9 +303,12 @@ export function MealCard({
   return (
     <Disclosure
       className={cn(
-        'overflow-hidden rounded-card border bg-surface',
-        isShared ? 'border-warning' : open ? 'border-accent' : 'border-border',
+        'overflow-hidden rounded-meal border bg-surface [box-shadow:none]',
+        // Open wins over shared: the prototype only tints the border amber
+        // while the card is collapsed (`isOpen ? accent-mix : shared ? …`).
+        open ? 'border-meal-open' : isShared ? 'border-shared-foreground' : 'border-border',
       )}
+      data-testid={cardTestId}
       isExpanded={open}
       onExpandedChange={onToggle}
     >
@@ -302,7 +316,10 @@ export function MealCard({
           so no interactive control is nested inside a button. Below `sm` the
           name takes its own line (`order-last w-full`) so it never truncates
           away next to the slot tag and the figures. */}
-      <div className="flex flex-wrap items-center gap-x-2 px-3 py-2">
+      <div
+        className="flex flex-wrap items-center gap-2.75 px-3.5 py-3"
+        data-testid="nb-card-header"
+      >
         <div className="flex-1 shrink-0 sm:flex-none">
           <MealSlotControl
             onChange={onChangeSlot}
@@ -326,28 +343,42 @@ export function MealCard({
           />
         ) : (
           <Disclosure.Heading className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
-            <Disclosure.Trigger className="flex min-h-11 w-full items-center gap-2 text-left">
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{meal.name}</span>
+            <Disclosure.Trigger
+              className="flex min-h-11 w-full items-center gap-2.75 text-left sm:min-h-0"
+              data-testid={triggerTestId}
+            >
+              <span
+                className="min-w-0 flex-1 truncate text-row font-semibold text-foreground"
+                data-testid="nb-meal-name"
+              >
+                {meal.name}
+              </span>
               {isShared ? (
                 <Chip
-                  className="shrink-0 rounded-chip"
-                  color="warning"
+                  className={`${TAG} ${NO_GAP} border-shared-foreground bg-transparent [color:var(--color-shared-foreground)]`}
+                  data-testid="nb-shared-chip"
                   size="sm"
-                  variant="soft"
                 >
                   Used in {assignmentCount} places
                 </Chip>
               ) : null}
               {swaps.length > 0 ? (
                 <Chip
-                  className="shrink-0 rounded-chip"
+                  className={`${TAG} ${NO_GAP} [color:var(--color-muted)]`}
+                  data-testid="nb-swap-chip"
                   size="sm"
-                  variant="secondary"
                 >
                   +{swaps.length} swap{swaps.length === 1 ? '' : 's'}
                 </Chip>
               ) : null}
-              {kcal ? <span className="shrink-0 whitespace-nowrap text-xs text-muted">{kcal}</span> : null}
+              {kcal ? (
+                <span
+                  className="shrink-0 whitespace-nowrap text-sub text-muted"
+                  data-testid="nb-meal-kcal"
+                >
+                  {kcal}
+                </span>
+              ) : null}
             </Disclosure.Trigger>
           </Disclosure.Heading>
         )}
@@ -355,7 +386,8 @@ export function MealCard({
         <Dropdown>
           <Button
             aria-label={`Meal options for ${meal.name}`}
-            className="min-h-11 min-w-11 shrink-0 text-muted"
+            className={`min-h-11 min-w-11 shrink-0 rounded-tile bg-transparent text-muted [box-shadow:none] sm:size-7 sm:min-h-0 sm:min-w-0 ${AS_ICON_BUTTON}`}
+            data-testid="nb-meal-menu-btn"
             isIconOnly
             size="sm"
             variant="ghost"
@@ -417,29 +449,34 @@ export function MealCard({
       </div>
 
       <Disclosure.Content>
-        <Disclosure.Body className="border-t border-border px-3 pt-1 pb-3">
+        {/* A plain div, not Disclosure.Body: `.disclosure__body` is unlayered,
+            so its padding wins over any utility we put on the component. */}
+        <div
+          className="border-t border-border pt-1.5 pr-4 pb-3.5 pl-4 sm:pl-10"
+          data-testid={openId('nb-body')}
+        >
           {isShared ? (
-            <Typography
-              className="mt-2 mb-1"
-              color="muted"
-              type="body-xs"
+            <div
+              className="flex items-center gap-1.75 pt-2.25 pb-0.5 text-chip [color:var(--color-shared-foreground)]"
+              data-testid={openId('nb-shared-note')}
             >
+              <Info className="size-3.25 flex-none" />
               This meal is on {assignmentCount} days — edits apply everywhere.
-            </Typography>
+            </div>
           ) : null}
 
           {items.length === 0 ? (
-            <Typography
-              className="py-2"
-              color="muted"
-              type="body-sm"
+            <div
+              className="py-2.5 text-pill text-muted"
+              data-testid={openId('nb-meal-empty')}
             >
               No foods yet — add the first one below.
-            </Typography>
+            </div>
           ) : (
             items.map((item) => (
               <MealItemRow
                 key={item.id}
+                showTestIds={open}
                 ref={(el) => {
                   itemRowRefs.current[item.id] = el;
                 }}
@@ -452,61 +489,77 @@ export function MealCard({
             ))
           )}
 
-          <Button
-            className="mt-1 min-h-11 px-0 text-xs font-semibold text-accent"
-            onPress={() => setPickerOpen(true)}
-            ref={addItemButtonRef}
-            size="sm"
-            variant="ghost"
-          >
-            + Add food or recipe
-          </Button>
+          <div className="pt-2">
+            <Button
+              className={`${INLINE_LINK} text-sub`}
+              data-testid={openId('nb-add-food')}
+              onPress={() => setPickerOpen(true)}
+              ref={addItemButtonRef}
+              size="sm"
+              variant="ghost"
+            >
+              + Add food or recipe
+            </Button>
+          </div>
 
           {/* Swaps — the meal itself is the default, so this lists alternates only. */}
-          <Separator className="my-2 border-t border-dashed border-border bg-transparent" />
-          <Typography
-            className="uppercase tracking-wide"
-            color="muted"
-            type="body-xs"
-            weight="bold"
+          <div
+            className="mt-3.25 border-t border-dashed border-border pt-2.75"
+            data-testid={openId('nb-swaps-section')}
           >
-            Client can swap with
-          </Typography>
+            <div
+              className="mb-2 text-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
+              data-testid={openId('nb-swaps-label')}
+            >
+              Client can swap with
+            </div>
 
-          <div className="mt-2 flex flex-col gap-1.5">
-            {swaps.map((swap) => (
-              <div
-                className="flex min-h-11 items-center gap-2 rounded-control border border-border px-3 py-2"
-                key={swap.optionId}
-              >
-                <ArrowLeftRight className="size-4 shrink-0 text-muted" />
-                <span className="min-w-0 flex-1 truncate text-sm text-foreground">{swap.meal.name}</span>
-                {kcalLabel(swap.meal.nutrition) ? (
-                  <span className="shrink-0 whitespace-nowrap text-xs text-muted">
-                    {kcalLabel(swap.meal.nutrition)}
-                  </span>
-                ) : null}
-                <Button
-                  aria-label={`Remove swap ${swap.meal.name}`}
-                  className="min-h-11 min-w-11 shrink-0 text-muted-2"
-                  isIconOnly
-                  onPress={() => onRemoveSwap(swap.optionId)}
-                  size="sm"
-                  variant="ghost"
+            <div className="flex flex-col gap-1.5">
+              {swaps.map((swap) => (
+                <div
+                  className="flex min-h-11 items-center gap-2.25 rounded-field border border-border px-3 py-2.25 sm:min-h-0"
+                  data-testid={openId('nb-swap-row')}
+                  key={swap.optionId}
                 >
-                  <X className="size-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+                  <ArrowLeftRight className="size-3.5 shrink-0 text-muted" />
+                  <span
+                    className="min-w-0 flex-1 truncate text-pill text-foreground"
+                    data-testid={openId('nb-swap-name')}
+                  >
+                    {swap.meal.name}
+                  </span>
+                  {kcalLabel(swap.meal.nutrition) ? (
+                    <span
+                      className="shrink-0 whitespace-nowrap text-eyebrow text-muted"
+                      data-testid={openId('nb-swap-kcal')}
+                    >
+                      {kcalLabel(swap.meal.nutrition)}
+                    </span>
+                  ) : null}
+                  <Button
+                    aria-label={`Remove swap ${swap.meal.name}`}
+                    className={`min-h-11 min-w-11 shrink-0 rounded-mini bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5 sm:min-h-0 sm:min-w-0 ${AS_TEXT} ${NO_GAP}`}
+                    data-testid={openId('nb-swap-remove')}
+                    isIconOnly
+                    onPress={() => onRemoveSwap(swap.optionId)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <X className="size-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
 
-          <div className="mt-1">
-            <AddSwapControl
-              onAdd={onAddSwap}
-              options={swapCandidates}
-            />
+            <div className="mt-2">
+              <AddSwapControl
+                onAdd={onAddSwap}
+                options={swapCandidates}
+                testId={openId('nb-add-swap')}
+              />
+            </div>
           </div>
-        </Disclosure.Body>
+        </div>
       </Disclosure.Content>
 
       {/* Food/recipe picker sheet */}

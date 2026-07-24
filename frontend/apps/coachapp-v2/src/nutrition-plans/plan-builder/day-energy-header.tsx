@@ -7,7 +7,9 @@
  * its target. Both need compound children (`Track` + `Fill`) or they render
  * empty.
  */
-import {Button, Card, Meter, ProgressBar, Typography} from '@heroui/react';
+import {Button, Card, Meter, ProgressBar} from '@heroui/react';
+
+import {INLINE_LINK} from './ui';
 
 export interface DayMacroTotals {
   calories: number;
@@ -46,27 +48,42 @@ interface MacroMeterProps {
   label: string;
   value: number;
   target: number | null | undefined;
+  /** Only the first cell carries the style-diff anchors (manifests/NB.json). */
+  testIds?: boolean;
 }
 
-function MacroMeter({label, value, target}: MacroMeterProps) {
+function MacroMeter({label, value, target, testIds}: MacroMeterProps) {
   const over = isOver(value, target);
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <Typography
-        className="truncate"
-        color="muted"
-        type="body-xs"
-      >
-        {label} {Math.round(value)}
-        {target != null ? ` / ${Math.round(target)}` : ''}g
-      </Typography>
+    <div data-testid={testIds ? 'nb-macro-cell' : undefined}>
+      <div className="flex items-baseline justify-between">
+        <span
+          className="text-eyebrow font-semibold uppercase tracking-eyebrow text-muted"
+          data-testid={testIds ? 'nb-macro-label' : undefined}
+        >
+          {label}
+        </span>
+        <span
+          className="text-eyebrow text-muted"
+          data-testid={testIds ? 'nb-macro-value' : undefined}
+        >
+          {Math.round(value)}
+          {target != null ? ` / ${Math.round(target)}` : ''}g
+        </span>
+      </div>
       <Meter
         aria-label={label}
         color={over ? 'warning' : 'accent'}
         value={percent(value, target)}
       >
-        <Meter.Track>
-          <Meter.Fill />
+        <Meter.Track
+          className="mt-1.5 h-1.25 overflow-hidden rounded-pill bg-surface-tertiary"
+          data-testid={testIds ? 'nb-macro-track' : undefined}
+        >
+          <Meter.Fill
+            className="h-full rounded-none"
+            data-testid={testIds ? 'nb-macro-fill' : undefined}
+          />
         </Meter.Track>
       </Meter>
     </div>
@@ -77,17 +94,28 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
   const over = isOver(totals.calories, targets.calories);
 
   return (
-    <Card className="rounded-card border border-border bg-surface">
-      <Card.Content className="flex flex-col gap-3 px-4 py-1">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <div className="flex items-baseline gap-1.5">
-            <Typography type="h3">{Math.round(totals.calories).toLocaleString()}</Typography>
-            <Typography
-              color="muted"
-              type="body-sm"
+    <Card
+      className="flex flex-col gap-3.25 rounded-card border border-border bg-surface px-4.5 py-3.25 [box-shadow:none]"
+      data-testid="nb-energy-card"
+    >
+      <>
+        <div
+          className="flex flex-wrap items-center gap-3"
+          data-testid="nb-energy-row"
+        >
+          <div className="flex flex-none items-baseline gap-1.25">
+            <span
+              className="font-grotesk text-kcal font-semibold text-foreground"
+              data-testid="nb-kcal"
+            >
+              {Math.round(totals.calories).toLocaleString()}
+            </span>
+            <span
+              className="text-sub text-muted"
+              data-testid="nb-kcal-target"
             >
               {targets.calories != null ? `/ ${Math.round(targets.calories).toLocaleString()} kcal` : 'kcal'}
-            </Typography>
+            </span>
           </div>
 
           {targets.calories != null ? (
@@ -97,8 +125,14 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
               color={over ? 'warning' : 'accent'}
               value={percent(totals.calories, targets.calories)}
             >
-              <ProgressBar.Track>
-                <ProgressBar.Fill />
+              <ProgressBar.Track
+                className="h-1.5 overflow-hidden rounded-pill bg-surface-tertiary"
+                data-testid="nb-kcal-track"
+              >
+                <ProgressBar.Fill
+                  className="h-full rounded-pill"
+                  data-testid="nb-kcal-fill"
+                />
               </ProgressBar.Track>
             </ProgressBar>
           ) : (
@@ -106,7 +140,8 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
           )}
 
           <Button
-            className="min-h-11 shrink-0 text-xs font-semibold text-accent"
+            className={`${INLINE_LINK} shrink-0 text-sub`}
+            data-testid="nb-macros-toggle"
             onPress={onToggleMacros}
             size="sm"
             variant="ghost"
@@ -116,10 +151,14 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
         </div>
 
         {showMacros ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div
+            className="grid grid-cols-1 gap-4.5 border-t border-border pt-3 sm:grid-cols-3"
+            data-testid="nb-macro-grid"
+          >
             <MacroMeter
               label="Protein"
               target={targets.protein_g}
+              testIds
               value={totals.protein_g}
             />
             <MacroMeter
@@ -134,7 +173,7 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
             />
           </div>
         ) : null}
-      </Card.Content>
+      </>
     </Card>
   );
 }

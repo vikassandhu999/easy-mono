@@ -42,6 +42,7 @@ import {MoreHorizontal} from 'lucide-react';
 import {useEffect, useMemo, useState} from 'react';
 
 import {getErrorCode, toastMutationError} from '@/@components/mutation-toast';
+import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
 import type {NutritionMeal, NutritionPlan} from '@/api/generated';
 import {
   coachApi,
@@ -60,6 +61,7 @@ import {DayEnergyHeader} from './day-energy-header';
 import {MealCard, type MealSwap} from './meal-card';
 import {AddMealControl, type MealPaletteOption} from './meal-palette';
 import {slotLabel} from './meal-slot-control';
+import {INLINE_LINK} from './ui';
 
 // ---------------------------------------------------------------------------
 // Types (the generated fields are `{[key: string]: any}` — see file header)
@@ -422,7 +424,12 @@ export function PlanDays({plan}: PlanDaysProps) {
     const dayMealIds = new Set((activeDay.day_meals ?? []).map((dm) => dm.nutrition_meal_id));
     const reusable: MealPaletteOption[] = (plan.meals ?? [])
       .filter((m) => !dayMealIds.has(m.id))
-      .map((m) => ({id: m.id, name: m.name, sub: mealPlacementSummary(m.id, days, weekdayAssignments)}));
+      .map((m) => ({
+        id: m.id,
+        meta: m.nutrition?.calories != null ? `${Math.round(m.nutrition.calories)} kcal` : undefined,
+        name: m.name,
+        sub: mealPlacementSummary(m.id, days, weekdayAssignments),
+      }));
     // Every day-slot option across the plan that points at a meal — drives "Used in n places".
     const counts = new Map<string, number>();
     for (const day of days) {
@@ -456,35 +463,69 @@ export function PlanDays({plan}: PlanDaysProps) {
 
   const {assignedWeekdays, assignmentCounts, reusableMeals, rows, totals} = derived;
 
+  // Style-diff anchors (design-handoff/manifests/NB.json): one card per visual
+  // variant carries the id the manifest pairs against. First match wins, so a
+  // card that is both shared and swapped only anchors the higher-priority id —
+  // the script reports the other as MISSING rather than comparing the wrong node.
+  const sharedRow = rows.findIndex((r) => (assignmentCounts.get(r.primary.nutrition_meal_id) ?? 0) >= 2);
+  const plainRow = rows.findIndex((r) => (assignmentCounts.get(r.primary.nutrition_meal_id) ?? 0) < 2);
+  const swapRow = rows.findIndex((r) => r.alternates.length > 0);
+  const emptyRow = rows.findIndex((r) => (mealById.get(r.primary.nutrition_meal_id)?.meal_items.length ?? 0) === 0);
+  const triggerTestId = (index: number) =>
+    index === swapRow
+      ? 'nb-card-open-trigger'
+      : index === sharedRow
+        ? 'nb-card-shared-trigger'
+        : index === emptyRow
+          ? 'nb-card-empty-trigger'
+          : undefined;
+
   return (
-    <div className="flex flex-col gap-3 pb-4">
+    <div className="mx-auto flex w-full max-w-195 flex-col gap-3.5 pb-4">
       {/* Day switcher + weekday chips */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div
+        className="flex flex-wrap items-center justify-between gap-2"
+        data-testid="nb-daytabs-row"
+      >
         <div className="flex min-w-0 items-center gap-2">
           {editingName ? (
-            <input
-              // biome-ignore lint/a11y/noAutofocus: the day name opens in editing mode on user intent
-              autoFocus
-              aria-label="Day name"
-              className="min-w-0 border-b border-accent bg-transparent text-sm font-semibold text-foreground outline-none"
-              onBlur={() => {
-                commitRename().catch(() => undefined);
-              }}
-              onChange={(e) => setNameValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+            <div
+              className="flex flex-1 items-center gap-2"
+              data-testid="nb-rename-row"
+            >
+              <input
+                // biome-ignore lint/a11y/noAutofocus: the day name opens in editing mode on user intent
+                autoFocus
+                aria-label="Day name"
+                className="h-11 min-w-0 flex-1 rounded-field border border-accent bg-surface px-3 font-btn text-note font-semibold text-foreground outline-none sm:h-9.5"
+                data-testid="nb-rename-input"
+                onChange={(e) => setNameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    commitRename().catch(() => undefined);
+                  } else if (e.key === 'Escape') {
+                    setEditingName(false);
+                    setNameValue(activeDay.name);
+                  }
+                }}
+                value={nameValue}
+              />
+              <Button
+                className="h-11 shrink-0 rounded-field border-0 bg-accent px-3.5 font-btn text-note font-semibold leading-none [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5"
+                data-testid="nb-rename-save"
+                onPress={() => {
                   commitRename().catch(() => undefined);
-                } else if (e.key === 'Escape') {
-                  setEditingName(false);
-                  setNameValue(activeDay.name);
-                }
-              }}
-              value={nameValue}
-            />
+                }}
+                size="sm"
+              >
+                Save
+              </Button>
+            </div>
           ) : (
             <ToggleButtonGroup
               aria-label="Plan days"
-              className="flex flex-wrap gap-1.5"
+              className="flex flex-wrap gap-2"
+              data-testid="nb-daytabs"
               onSelectionChange={(keys) => {
                 const next = [...keys][0];
                 if (next) {
@@ -497,7 +538,8 @@ export function PlanDays({plan}: PlanDaysProps) {
             >
               {days.map((day) => (
                 <ToggleButton
-                  className="min-h-11 rounded-control border border-border bg-transparent px-3.5 text-pill font-medium text-muted data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:text-ink-foreground"
+                  className="min-h-11 rounded-control border border-border bg-surface px-3.5 text-pill font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:min-h-0 sm:py-1.75 [row-gap:normal] [column-gap:normal]"
+                  data-testid={day.id === activeDay.id ? 'nb-daytab-on' : 'nb-daytab-off'}
                   id={day.id}
                   key={day.id}
                 >
@@ -508,7 +550,8 @@ export function PlanDays({plan}: PlanDaysProps) {
           )}
 
           <Button
-            className="min-h-11 shrink-0 text-xs font-semibold text-accent"
+            className={`${INLINE_LINK} shrink-0 px-1.5 text-pill`}
+            data-testid="nb-add-day"
             isPending={creatingDay}
             onPress={() => {
               handleAddDay().catch(() => undefined);
@@ -522,7 +565,8 @@ export function PlanDays({plan}: PlanDaysProps) {
           <Dropdown>
             <Button
               aria-label="Day options"
-              className="size-11 min-w-11 shrink-0 rounded-control border border-border bg-surface text-muted"
+              className={`size-11 min-w-11 shrink-0 rounded-tile border border-border bg-transparent text-muted [box-shadow:none] sm:size-7.5 sm:min-w-0 ${AS_ICON_BUTTON}`}
+              data-testid="nb-day-menu-btn"
               isIconOnly
               size="sm"
               variant="outline"
@@ -565,7 +609,8 @@ export function PlanDays({plan}: PlanDaysProps) {
         {/* Weekday chips — exclusivity lives here, not in the component (GAPS #8). */}
         <ToggleButtonGroup
           aria-label={`Weekdays on ${activeDay.name}`}
-          className="flex gap-1.5"
+          className="ml-auto flex gap-1.25"
+          data-testid="nb-wdays"
           onSelectionChange={(keys) => {
             const next = new Set([...keys].map(String));
             for (const weekday of next) {
@@ -580,7 +625,8 @@ export function PlanDays({plan}: PlanDaysProps) {
           {WEEKDAYS.map((weekday) => (
             <ToggleButton
               aria-label={`${WEEKDAY_SHORT_LABELS[weekday] ?? weekday} on ${activeDay.name}`}
-              className="size-11 min-w-11 rounded-control border border-border bg-transparent p-0 text-pill font-semibold text-muted data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent"
+              className="size-11 min-w-11 rounded-control border border-border bg-transparent p-0 text-eyebrow font-semibold text-muted [box-shadow:none] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-7.5 sm:min-w-0 [row-gap:normal] [column-gap:normal]"
+              data-testid={weekdayAssignments[weekday] === activeDay.id ? 'nb-wday-on' : 'nb-wday-off'}
               id={weekday}
               key={weekday}
             >
@@ -605,16 +651,18 @@ export function PlanDays({plan}: PlanDaysProps) {
 
       {/* Meal cards */}
       {rows.length === 0 ? (
-        <Typography
-          className="py-2"
-          color="muted"
-          type="body-sm"
+        <div
+          className="rounded-meal border border-dashed border-border p-5.5 text-center text-pill text-muted"
+          data-testid="nb-day-empty"
         >
           No meals on this day yet — add the first one below.
-        </Typography>
+        </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {rows.map(({slot, primary, alternates}) => {
+        <div
+          className="flex flex-col gap-2"
+          data-testid="nb-meals"
+        >
+          {rows.map(({slot, primary, alternates}, rowIndex) => {
             const meal = mealById.get(primary.nutrition_meal_id);
             if (!meal) {
               return null;
@@ -631,6 +679,7 @@ export function PlanDays({plan}: PlanDaysProps) {
               <MealCard
                 assignmentCount={assignmentCounts.get(meal.id) ?? 0}
                 autoRename={autoRenameMealId === meal.id}
+                cardTestId={rowIndex === plainRow ? 'nb-card' : rowIndex === sharedRow ? 'nb-card-shared' : undefined}
                 key={primary.id}
                 meal={meal}
                 onAddSwap={(mealId) => {
@@ -654,6 +703,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 open={openMealId === meal.id}
                 planId={plan.id}
                 slot={slot}
+                triggerTestId={triggerTestId(rowIndex)}
                 swapCandidates={meals
                   .filter((m) => !slotMealIds.has(m.id))
                   .map((m) => ({

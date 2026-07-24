@@ -59,11 +59,24 @@ export default function NutritionPlanBuilder() {
   const plan = data.data;
 
   return (
-    <Page>
-      <Page.Header size="wide">
-        <Page.TitleGroup className="flex min-w-0 items-center gap-2">
-          <BackButton onPress={goBack} />
-          <Page.Title>{plan.name}</Page.Title>
+    <Page className="text-foreground [line-height:normal]">
+      <Page.Header
+        className="gap-3.5"
+        size="wide"
+      >
+        <Page.TitleGroup className="flex min-w-0 items-center gap-3.5">
+          <BackButton
+            onPress={goBack}
+            testId="nb-back"
+          />
+          {/* Not Page.Title: `.typography--h3` is unlayered, so its letter-spacing
+              beats any utility and the design's -0.02em can't be applied there. */}
+          <span
+            className="min-w-0 flex-1 truncate font-grotesk text-plan-title font-semibold tracking-title text-foreground"
+            data-testid="nb-title"
+          >
+            {plan.name}
+          </span>
         </Page.TitleGroup>
         <Page.Actions>
           <PlanAddToClient plan={plan} />

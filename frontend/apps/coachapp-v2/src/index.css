@@ -45,6 +45,27 @@
   --color-always-dark: oklch(0.17 0 0);
   --color-ink-foreground: oklch(1 0 0);
 
+  /* Plan-builder (Dashboard Redesign NB/TB frames) exact-spec tokens. The
+     builders use their own geometry step between the 9px controls and the 18px
+     cards, so these are separate tokens rather than edits to the ones above. */
+  --radius-mini: 6px; /* inline × buttons on item / swap rows */
+  --radius-tile: 8px; /* small icon buttons, add-meal panel icon tile */
+  --radius-field: 10px; /* inline rename input, swap rows */
+  --radius-action: 11px; /* page-header back + action buttons */
+  --radius-meal: 13px; /* meal cards, Add meal button, empty-day placeholder */
+  --text-plan-title: 27px; /* builder page title */
+  --text-plan-title--line-height: normal;
+  --text-kcal: 22px; /* day energy value */
+  --text-kcal--line-height: 1;
+  --tracking-title: -0.02em;
+  --tracking-eyebrow: 0.09em; /* .eyebrow (vs CD's .grp 0.04em) */
+  /* Exact color-mix fills — `bg-accent/10` computes an oklch alpha, the design
+     computes an oklab mix, and the two never compare equal. */
+  --color-accent-tint: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  --color-accent-tile: color-mix(in oklab, var(--color-accent) 12%, transparent);
+  --color-shared-foreground: oklch(0.45 0.12 72); /* "Used in N places" text + border */
+  --color-meal-open: color-mix(in oklab, var(--color-accent) 34%, var(--color-border)); /* expanded meal card */
+
   /* Client Detail (Client Detail.dc.html) exact-spec tokens — CD-* screens.
      The CD design family uses different geometry than the dashboard redesign
      (16px cards vs 18px), so these are separate tokens, not edits to the ones

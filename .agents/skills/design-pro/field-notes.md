@@ -180,6 +180,44 @@ Trust these over the handoff docs. When you discover a new one, add it here
   command ran anyway. Verify a refactor with `git diff --stat`, not just a
   green build.
 
+## style-diff convergence (learned on NB, the first Dashboard-family manifest)
+
+- **`Dashboard Redesign.dc.html` never defines `--surface-tertiary`, `--warning`,
+  `--danger` or `--success`** — only accent / background / surface / foreground /
+  muted / border / ink. Any declaration referencing them is *invalid at
+  computed-value time*, so the property falls back to its INITIAL value, **not to
+  the helper class's value**: `background: color-mix(…var(--warning)…)` computes
+  `transparent` (not `.ptag`'s `var(--background)`) and `border-color` computes
+  `currentColor`. When a node diffs on exactly these, check `refs/<ID>.png` — if
+  the ref shows the intended tint, the render is broken (ledger it); if the ref
+  agrees with the render, match the render.
+- **`Disclosure.Body`'s `.disclosure__body` is unlayered** — its padding beats
+  every utility. Put a plain `div` inside `Disclosure.Content` instead.
+- **Collapsed `Disclosure` bodies still render** — a static `data-testid` inside
+  one resolves to N nodes and `querySelector` takes the first (hidden) one. Gate
+  body-level anchors on the card's `open` flag.
+- **Never bake `[row-gap:normal]` into a shared class recipe** — it silently
+  beats `gap-*` on every caller that legitimately has a gap. Keep the reset a
+  separate constant (`NO_GAP`) applied per node.
+- **`margin-left: auto` is not a style, it's a measurement** — the value is the
+  remaining space, so it accumulates the sub-pixel text advance of every sibling
+  to its left (the design page renders in a fallback font; the app renders its
+  bundled Inter). NB's weekday row landed 0.53px off with every other property
+  equal. Don't map auto-margined nodes, or expect a ledger entry.
+- **Single-frame screens: run `--width desktop`.** The Dashboard NB section has
+  no mobile frame, so every pair is `widths: ["desktop"]` — but the script still
+  navigates and replays every state at 390px, doubling the run and pushing it
+  past the ~5-minute token TTL (later states fail with a bare selector timeout
+  that looks like a selector bug).
+- **The manifest drives a LIVE builder, so states mutate the fixture** — a run
+  left the plan two days short and one meal heavy. `backend/priv/repo/dev_nutrition_builder.exs`
+  deletes and rebuilds the NB plan every run; run it before every pass. Give the
+  fixture the SAME content as the frame (two days, same tab labels), or
+  layout-derived numbers drift.
+- **Alphabetical fixture data can flip a state** — the first six foods in the dev
+  library are chocolate and crisps, so the seeded day blew past its target and
+  the energy bar rendered in `warning`. The seed filters to 20–200 kcal/100g.
+
 ## Styling / tokens
 
 - **RECIPES.md px arbitrary values** (`rounded-[9px]`, `text-[12.5px]`) would trip

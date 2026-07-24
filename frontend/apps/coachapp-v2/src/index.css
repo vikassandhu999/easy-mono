@@ -56,6 +56,8 @@
   --radius-cd-btn: 10px; /* .btnA / .btnG, small icon tiles */
   --radius-cd-icon: 15px; /* overview empty-state icon tile (desktop) */
   --radius-cd-plan: 13px; /* plan-card icon tile (desktop) */
+  --radius-cd-range: 9px; /* WH range segmented container */
+  --radius-cd-seg: 7px; /* WH range segment */
   --tracking-grp: 0.04em; /* .grp list group headers (vs .eyebrow's 0.05em) */
   /* The CD design leaves line-height untouched (computed `normal`) — pair
      every size token with a normal line-height or Tailwind defaults 1.5. */

@@ -13,6 +13,7 @@ export const ROUTES = {
   CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',
   CLIENT_CHECKIN_SUBMISSION: '/clients/:id/check-ins/:assignmentId',
   CLIENT_DETAILS: '/clients/:id/details',
+  CLIENT_WEIGHT: '/clients/:id/weight',
   LIBRARY: '/library',
   EXERCISES: '/library/exercises',
   CREATE_EXERCISE: '/library/exercises/create',

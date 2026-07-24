@@ -5,6 +5,8 @@
  */
 import {ChevronRight, TrendingDown} from 'lucide-react';
 import {useMemo} from 'react';
+import {Link} from 'react-router-dom';
+import {ROUTES} from '@/@config/routes';
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import type {Client} from '@/api/generated';
 import {
@@ -181,9 +183,10 @@ export default function StatStrip({client}: {client: Client}) {
         )}
       </Tile>
       <div className={DIVIDER} />
-      <div
+      <Link
         className={`${CELL} cursor-pointer transition-colors hover:bg-background`}
         data-testid="cd-stat-weight"
+        to={ROUTES.CLIENT_WEIGHT.replace(':id', clientId)}
       >
         <div className="flex items-center justify-between">
           <div className={`${CD_EYEBROW} text-eyebrow-sm sm:text-eyebrow`}>Weight</div>
@@ -217,7 +220,7 @@ export default function StatStrip({client}: {client: Client}) {
             ? `${delta.direction === 'down' ? '▼' : '▲'} ${delta.value.toFixed(1)} ${latestWeight.unit} in 4 weeks`
             : 'No entries'}
         </div>
-      </div>
+      </Link>
       <div className={DIVIDER} />
       <Tile
         isValueMuted={!lastActive}

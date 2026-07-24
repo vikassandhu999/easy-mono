@@ -5,7 +5,7 @@
  * verified by design-handoff/scripts/style-diff.mjs (manifest CD-OV.json).
  */
 import {Button, Skeleton, Typography} from '@heroui/react';
-import {Image as ImageIcon} from 'lucide-react';
+import {ArrowLeft, Image as ImageIcon} from 'lucide-react';
 import {useState} from 'react';
 
 /** `.card` — 16px radius, hairline border, white surface. */
@@ -94,5 +94,51 @@ export function CdPhotoThumb({
         <ImageIcon className={iconClassName} />
       )}
     </span>
+  );
+}
+
+/**
+ * The focused sub-screen header every CD sub-page shares (DT, CS, WH, ND, PH,
+ * IR): back button, title, sub-line, optional right slot (chip or action).
+ */
+export function CdSubHeader({
+  onBack,
+  right,
+  subtitle,
+  title,
+}: {
+  onBack: () => void;
+  right?: React.ReactNode;
+  subtitle: string;
+  title: string;
+}) {
+  return (
+    <div className="flex flex-none items-center gap-2.75 border-b border-border px-4 pt-0.5 pb-3.25 sm:gap-3.5 sm:px-7.5 sm:py-4.5">
+      <Button
+        aria-label="Back"
+        className="size-8.5 min-h-0 min-w-0 rounded-cd-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [font-family:Arial] [font-size:13.3333px] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
+        data-testid="sub-back"
+        isIconOnly
+        onPress={onBack}
+        variant="ghost"
+      >
+        <ArrowLeft className="size-4 sm:size-4.25" />
+      </Button>
+      <div className="min-w-0 flex-1">
+        <div
+          className="font-grotesk text-metric-sm font-semibold sm:text-stat-lg"
+          data-testid="sub-title"
+        >
+          {title}
+        </div>
+        <div
+          className="text-eyebrow text-muted sm:mt-0.5 sm:text-sub"
+          data-testid="sub-subtitle"
+        >
+          {subtitle}
+        </div>
+      </div>
+      {right}
+    </div>
   );
 }

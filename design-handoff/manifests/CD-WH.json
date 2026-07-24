@@ -1,0 +1,43 @@
+{
+  "design": "design-handoff/design/Client Detail.dc.html",
+  "app": { "base": "http://localhost:2021", "route": "/clients/f9e0ba52-2974-45b9-bf29-ffc3e081f7bd/weight" },
+  "tokenKey": "coachapp.accessToken",
+  "states": [
+    {
+      "name": "entries",
+      "design": [
+        { "click": "text=Active" },
+        { "click": "[data-ref=CD-OV-desktop] .card:has(polyline) a" }
+      ],
+      "app": [
+        { "wait": "[data-testid=wh-chart]" },
+        { "wait": "[data-testid=wh-row]" },
+        { "wait": "[data-testid=wh-goal]" },
+        { "sleep": 400 }
+      ],
+      "pairs": [
+        "sub-back", "sub-title", "sub-subtitle",
+        "wh-root", "chart-card", "chart-eyebrow", "range-group", "range-on", "range-off",
+        "wh-goal", "list-card", "row", "row-date", "row-value", "row-source", "row-sep"
+      ]
+    }
+  ],
+  "pairs": [
+    { "name": "sub-back", "design": {"desktop": ".vp:not(.phone) button[aria-label=Back]", "mobile": ".vp.phone button[aria-label=Back]"}, "app": "[data-testid=sub-back]" },
+    { "name": "sub-title", "design": {"desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk", "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk"}, "app": "[data-testid=sub-title]" },
+    { "name": "sub-subtitle", "design": {"desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk + div", "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk + div"}, "app": "[data-testid=sub-subtitle]" },
+    { "name": "wh-root", "design": {"desktop": "[data-ref=CD-WH-desktop]", "mobile": "[data-ref=CD-WH-mobile]"}, "app": "[data-testid=wh-root]" },
+    { "name": "chart-card", "design": {"desktop": "[data-ref=CD-WH-desktop] > .card:first-child", "mobile": "[data-ref=CD-WH-mobile] > .card:first-child"}, "app": "[data-testid=wh-chart]" },
+    { "name": "chart-eyebrow", "design": {"desktop": "[data-ref=CD-WH-desktop] .eyebrow", "mobile": "[data-ref=CD-WH-mobile] .eyebrow"}, "app": "[data-testid=wh-chart-eyebrow]" },
+    { "name": "range-group", "design": {"desktop": "[data-ref=CD-WH-desktop] .eyebrow + div", "mobile": "[data-ref=CD-WH-mobile] .eyebrow + div"}, "app": "[data-testid=wh-range]" },
+    { "name": "range-on", "design": {"desktop": "[data-ref=CD-WH-desktop] .eyebrow + div > span:nth-child(2)", "mobile": "[data-ref=CD-WH-mobile] .eyebrow + div > span:nth-child(2)"}, "app": "[data-testid=wh-range-on]" },
+    { "name": "range-off", "design": {"desktop": "[data-ref=CD-WH-desktop] .eyebrow + div > span:first-child", "mobile": "[data-ref=CD-WH-mobile] .eyebrow + div > span:first-child"}, "app": "[data-testid=wh-range-off]" },
+    { "name": "wh-goal", "design": {"desktop": "[data-ref=CD-WH-desktop] span[style*='absolute']", "mobile": "[data-ref=CD-WH-mobile] span[style*='absolute']"}, "app": "[data-testid=wh-goal]" },
+    { "name": "list-card", "design": {"desktop": "[data-ref=CD-WH-desktop] > .card:last-child", "mobile": "[data-ref=CD-WH-mobile] > .card:last-child"}, "app": "[data-testid=wh-list]" },
+    { "name": "row", "design": {"desktop": "[data-ref=CD-WH-desktop] .lbrow", "mobile": "[data-ref=CD-WH-mobile] .lbrow"}, "app": "[data-testid=wh-row]" },
+    { "name": "row-date", "design": {"desktop": "[data-ref=CD-WH-desktop] .lbrow > div:first-child", "mobile": "[data-ref=CD-WH-mobile] .lbrow > div:first-child"}, "app": "[data-testid=wh-row-date]" },
+    { "name": "row-value", "design": {"desktop": "[data-ref=CD-WH-desktop] .lbrow .gk", "mobile": "[data-ref=CD-WH-mobile] .lbrow .gk"}, "app": "[data-testid=wh-row-value]" },
+    { "name": "row-source", "design": {"desktop": "[data-ref=CD-WH-desktop] .lbrow > div:last-child", "mobile": "[data-ref=CD-WH-mobile] .lbrow > span:last-child"}, "app": "[data-testid=wh-row-source]" },
+    { "name": "row-sep", "design": {"desktop": "[data-ref=CD-WH-desktop] .sep", "mobile": "[data-ref=CD-WH-mobile] .sep"}, "app": "[data-testid=wh-row-sep]" }
+  ]
+}

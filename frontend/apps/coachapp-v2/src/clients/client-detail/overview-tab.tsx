@@ -420,13 +420,13 @@ function WeightCard({client, clientId}: {client: Client; clientId: string}) {
             </Chip>
           ) : null}
         </div>
-        {/* becomes a link when the WH (weight history) screen is ported */}
-        <span
+        <Link
           className="ml-auto hidden text-pill font-semibold text-accent sm:block"
           data-testid="cd-weight-all"
+          to={ROUTES.CLIENT_WEIGHT.replace(':id', clientId)}
         >
           All entries →
-        </span>
+        </Link>
       </div>
       {entries.length > 1 ? (
         <div className="relative">

@@ -197,3 +197,18 @@ export function formatRowDate(iso: string, {withMonth}: {withMonth: boolean}): s
     ...(withMonth ? {month: 'short'} : {}),
   });
 }
+
+/** Polyline points for a weight sparkline, oldest → newest, fitted to a box. */
+export function sparklinePoints(values: number[], width: number, height: number): string {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const top = height * 0.14;
+  const bottom = height * 0.7;
+  return values
+    .map((value, index) => {
+      const x = values.length === 1 ? width : (index / (values.length - 1)) * width;
+      return `${Math.round(x)},${Math.round(bottom - ((value - min) / span) * (bottom - top))}`;
+    })
+    .join(' ');
+}

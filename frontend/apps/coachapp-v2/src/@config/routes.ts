@@ -13,6 +13,7 @@ export const ROUTES = {
   CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',
   CLIENT_CHECKIN_SUBMISSION: '/clients/:id/check-ins/:assignmentId',
   CLIENT_DETAILS: '/clients/:id/details',
+  CLIENT_PHOTOS: '/clients/:id/photos',
   CLIENT_INTAKE: '/clients/:id/intake',
   CLIENT_NUTRITION_DAY: '/clients/:id/nutrition/:date',
   CLIENT_WEIGHT: '/clients/:id/weight',

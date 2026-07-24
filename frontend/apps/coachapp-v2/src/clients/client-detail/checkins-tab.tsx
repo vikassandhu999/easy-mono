@@ -346,7 +346,7 @@ function IntakeCard({
   );
 }
 
-function PhotosCard({assignments}: {assignments: ClientProfileFormAssignment[]}) {
+function PhotosCard({assignments, clientId}: {assignments: ClientProfileFormAssignment[]; clientId: string}) {
   const photoIds = useMemo(() => {
     const ids: string[] = [];
     for (const assignment of assignments) {
@@ -371,9 +371,10 @@ function PhotosCard({assignments}: {assignments: ClientProfileFormAssignment[]})
   const overflow = photoIds.length - shown.length;
 
   return (
-    <div
+    <Link
       className={`${CD_CARD} cursor-pointer p-3.75 sm:px-4.25 sm:py-4`}
       data-testid="ci-photos"
+      to={ROUTES.CLIENT_PHOTOS.replace(':id', clientId)}
     >
       <div
         className={`${CD_EYEBROW} mb-2.75 sm:mb-3`}
@@ -400,7 +401,7 @@ function PhotosCard({assignments}: {assignments: ClientProfileFormAssignment[]})
           </span>
         ) : null}
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -492,7 +493,10 @@ export default function CheckinsTab({client}: {client: Client}) {
           isDesktop={isDesktop}
         />
       </div>
-      <PhotosCard assignments={rows} />
+      <PhotosCard
+        assignments={rows}
+        clientId={client.id}
+      />
     </div>
   );
 }

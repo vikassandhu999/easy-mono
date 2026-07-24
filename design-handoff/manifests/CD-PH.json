@@ -1,0 +1,153 @@
+{
+  "design": "design-handoff/design/Client Detail.dc.html",
+  "app": {
+    "base": "http://localhost:2021",
+    "route": "/clients/f9e0ba52-2974-45b9-bf29-ffc3e081f7bd/photos"
+  },
+  "tokenKey": "coachapp.accessToken",
+  "states": [
+    {
+      "name": "grid",
+      "design": [
+        {
+          "click": "text=Active"
+        },
+        {
+          "click": ".vp:not(.phone) .ctab >> nth=3"
+        },
+        {
+          "click": ".vp.phone .mtab >> nth=3"
+        },
+        {
+          "click": "[data-ref=CD-CI-desktop] > .card"
+        }
+      ],
+      "app": [
+        {
+          "wait": "[data-testid=ph-root]"
+        },
+        {
+          "wait": "[data-testid=ph-tile]"
+        },
+        {
+          "wait": "[data-testid=ph-group]"
+        },
+        {
+          "sleep": 400
+        }
+      ],
+      "pairs": [
+        "sub-back",
+        "sub-title",
+        "sub-subtitle",
+        "ph-root",
+        "ph-group",
+        "ph-grid",
+        "ph-tile",
+        "compare-btn"
+      ]
+    },
+    {
+      "name": "compare",
+      "design": [
+        {
+          "click": ".vp:not(.phone) div[style*='18px 30px'] .btnG"
+        },
+        {
+          "sleep": 300
+        }
+      ],
+      "app": [
+        {
+          "wait": "[data-testid=ph-root]"
+        },
+        {
+          "eval": "document.querySelector('[data-testid=ph-compare-btn]').click()"
+        },
+        {
+          "wait": "[data-testid=ph-banner]"
+        },
+        {
+          "sleep": 300
+        }
+      ],
+      "pairs": [
+        "ph-banner"
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "name": "sub-back",
+      "design": {
+        "desktop": ".vp:not(.phone) button[aria-label=Back]",
+        "mobile": ".vp.phone button[aria-label=Back]"
+      },
+      "app": "[data-testid=sub-back]"
+    },
+    {
+      "name": "sub-title",
+      "design": {
+        "desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk",
+        "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk"
+      },
+      "app": "[data-testid=sub-title]"
+    },
+    {
+      "name": "sub-subtitle",
+      "design": {
+        "desktop": ".vp:not(.phone) div[style*='18px 30px'] .gk + div",
+        "mobile": ".vp.phone div[style*='2px 16px 13px'] .gk + div"
+      },
+      "app": "[data-testid=sub-subtitle]"
+    },
+    {
+      "name": "compare-btn",
+      "design": {
+        "desktop": ".vp:not(.phone) div[style*='18px 30px'] .btnG",
+        "mobile": ".vp.phone div[style*='2px 16px 13px'] .btnG"
+      },
+      "app": "[data-testid=ph-compare-btn]"
+    },
+    {
+      "name": "ph-root",
+      "design": {
+        "desktop": "[data-ref=CD-PH-desktop]",
+        "mobile": "[data-ref=CD-PH-mobile]"
+      },
+      "app": "[data-testid=ph-root]"
+    },
+    {
+      "name": "ph-group",
+      "design": {
+        "desktop": "[data-ref=CD-PH-desktop] > div:first-child",
+        "mobile": "[data-ref=CD-PH-mobile] > div:first-child"
+      },
+      "app": "[data-testid=ph-group]"
+    },
+    {
+      "name": "ph-grid",
+      "design": {
+        "desktop": "[data-ref=CD-PH-desktop] > div:nth-child(2)",
+        "mobile": "[data-ref=CD-PH-mobile] > div:nth-child(2)"
+      },
+      "app": "[data-testid=ph-grid]"
+    },
+    {
+      "name": "ph-tile",
+      "design": {
+        "desktop": "[data-ref=CD-PH-desktop] .photo",
+        "mobile": "[data-ref=CD-PH-mobile] .photo"
+      },
+      "app": "[data-testid=ph-tile]"
+    },
+    {
+      "name": "ph-banner",
+      "design": {
+        "desktop": "[data-ref=CD-PH-desktop] div[style*='accent-soft']",
+        "mobile": "[data-ref=CD-PH-mobile] div[style*='accent-soft']"
+      },
+      "app": "[data-testid=ph-banner]"
+    }
+  ]
+}

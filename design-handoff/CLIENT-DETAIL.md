@@ -71,6 +71,32 @@ Empty states (reachable individually too): **no training plan** (`Dumbbell`, Ass
 
 `GET/PATCH /v1/coach/clients/:id` (client, flags `intake_incomplete`/`needs_plan`/`expiring_soon`, notes, goal weight, subscription dates) · `…/conversation` (unread) · `…/training-plans` · `…/training-sessions[/:id]` · `…/nutrition-plans` · `…/nutrition-meal-logs` · `…/weight_entries` · `…/check-in-schedules` (GET/POST/PATCH) · `…/form-assignments` (check-in + intake) · `/form-assignments/:id/submissions` + `/form-submissions/:id/review` · `/v1/coach/team` (reassign) · `/v1/coach/billing` (seats) · invite resend/revoke. Reuse RTK Query hooks in `src/api/*`; the prototype's local arrays only show data **shape**.
 
+## Finding a screen's markup in `Client Detail.dc.html`
+
+The file is **one state-driven DC**, not linear sections — each screen is an `<sc-if value="{{ FLAG }}">…</sc-if>` block whose root `<div>` carries a **`data-ref="CD-XX-{desktop,mobile}"`** attribute (same convention as the rest of the kit / `visual-diff.mjs`). It renders twice: the **desktop** frame (`.vp`, ~1240px) first, the **mobile** frame after the `<!-- ============ MOBILE 375 ============ -->` marker (`.phone`).
+
+**To locate a ref:** `grep -n 'data-ref="CD-SD-desktop"' 'Client Detail.dc.html'` → jumps to that exact screen's markup. Every `CD-*.png` ref has a matching `data-ref` (except the whole-frame *state* refs — see below). Behaviour/copy for a screen lives in the logic class at the bottom — grep the state flag (2nd column) in `renderVals()`.
+
+| Ref | `data-ref` | State flag (for logic/`renderVals`) |
+|---|---|---|
+| CD-OV | `CD-OV-desktop` / `CD-OV-mobile` | `isOverview` / `mOverview` |
+| CD-TR | `CD-TR-desktop` / `CD-TR-mobile` | `isTraining` / `mTraining` |
+| CD-NU | `CD-NU-desktop` / `CD-NU-mobile` | `isNutrition` / `mNutrition` |
+| CD-CI | `CD-CI-desktop` / `CD-CI-mobile` | `isCheckins` / `mCheckins` |
+| CD-SD | `CD-SD-desktop` / `CD-SD-mobile` | `isSession` |
+| CD-ND | `CD-ND-desktop` / `CD-ND-mobile` | `isNutriDay` |
+| CD-WH | `CD-WH-desktop` / `CD-WH-mobile` | `isWeight` |
+| CD-CS | `CD-CS-desktop` / `CD-CS-mobile` | `showCS` |
+| CD-PH | `CD-PH-desktop` / `CD-PH-mobile` | `isPhotos` (compare view: `photoCompareOpen`) |
+| CD-DT | `CD-DT-desktop` / `CD-DT-mobile` | `isDetails` |
+| CD-IR | `CD-IR-desktop` / `CD-IR-mobile` | `isIntake` |
+| CD-ED | `CD-ED-desktop` / `CD-ED-mobile` | `isEdit` |
+| CD-pending | `CD-pending-desktop` / `CD-pending-mobile` | `isPending` |
+
+**Whole-frame *state* refs** (`CD-onboarding`, `CD-inactive-expired`, `CD-expiring`) aren't a single block — they restyle the whole frame. Reach them by their flag: onboarding = `fresh`/`notFresh` (stat strip + Overview empty; per-tab empties `trainEnded` / `nutriEnded` / `noSchedule`); inactive = `rManual` / `rExpired` / `rSeat` (banner + DT alert); expiring = `expiring` / `showExpiringChip` (attention chip + DT alert).
+
+The **Preview state** switcher (`.dbtn`, `scen*` handlers) is a prototype-only control — do not port it.
+
 ## Notes / deltas from a naïve read
 
 - **Stage** is NOT editable in ED (removed — it's set elsewhere); shown read-only in DT.

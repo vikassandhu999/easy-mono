@@ -7,6 +7,7 @@ Drop this folder into the repo root as `design-handoff/` (or similar). Then two 
 
 ## Contents
 - `UI-CONTRACT.md` — the rules: component fence, prototype→HeroUI mapping, DoD, screen index (§8).
+- `CLIENT-DETAIL.md` — build handoff for the **client detail hub** and everything reachable from it (CD/OV·TR·NU·CI, SD, ND, CS, PH, WH, DT, IR, ED) + the seven lifecycle states. Prototype: `Client Detail.dc.html` (root); full UX spec: `uploads/2026-07-21-client-detail-ux-spec.md`. Refs: `refs/CD-*.png`.
 - `theme.css` — **install first**: redesign tokens extracted from the prototype's computed styles. Merge into `src/index.css`; every screen inherits most of its fidelity from this.
 - `RECIPES.md` — golden snippets (exact classes/variants) for the repeated patterns: pills, list rows, sidebar, chips, status cells. Copy verbatim.
 - `refs/XX-{desktop,mobile}.png` — per-frame reference renders at design width (desktop 1240, mobile 390, 2×) — inputs to the diff gate. NB/TB/FB are single-frame.

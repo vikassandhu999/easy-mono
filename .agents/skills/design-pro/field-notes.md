@@ -217,6 +217,23 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **Alphabetical fixture data can flip a state** — the first six foods in the dev
   library are chocolate and crisps, so the seeded day blew past its target and
   the energy bar rendered in `warning`. The seed filters to 20–200 kcal/100g.
+- **`oldest()` ties when a seed writes N rows in one second** — `timestamps(type:
+  :utc_datetime)` truncates to the second and the tie-break is the (random) UUID,
+  so TB's builder opened a different workout tab on every run and the mapped
+  nodes moved with it. Stagger `inserted_at` explicitly in fixture seeds.
+- **Per-width duplicates break lookups, and `waitForSelector` says so plainly** —
+  "locator resolved to 2 elements. Proceeding with the first one" plus a timeout
+  means a `hidden sm:block` / `sm:hidden` pair, not a bad selector. Render once
+  with `useIsDesktop()`.
+- **A parallel column of buttons beside a `ListBox` only lines up while both
+  columns' rows are the same height.** TB's set `×` (22px in the design) drifted
+  from its 44px row. When the design puts a control *inside* a row, the row
+  can't be a `ListBox.Item` (no interactive control inside an option) — use
+  plain elements with two buttons, as the NB meal-item rows do.
+- **Don't bake a gap reset into a shared "inline link" recipe either** — NB's
+  affordances are bare spans (gap `normal`), TB's `Add exercise` carries an icon
+  and a 6px gap. An arbitrary `[row-gap:normal]` can't be overridden by a
+  `gap-*` utility, so the odd one out states its own classes.
 
 ## Styling / tokens
 

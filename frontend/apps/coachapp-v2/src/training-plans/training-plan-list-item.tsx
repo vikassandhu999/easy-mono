@@ -23,7 +23,7 @@ function getTrainingPlanMeta(plan: TrainingPlan): string {
     .join(' · ');
 }
 
-export default function TrainingPlanListItem({plan}: {plan: TrainingPlan}) {
+export default function TrainingPlanListItem({isFirst, plan}: {isFirst?: boolean; plan: TrainingPlan}) {
   const status = STATUS_MAP[plan.status];
   const meta = getTrainingPlanMeta(plan);
 
@@ -32,6 +32,7 @@ export default function TrainingPlanListItem({plan}: {plan: TrainingPlan}) {
       icon={<Dumbbell className="size-5 text-foreground" />}
       id={plan.id}
       meta={meta || plan.description || 'No workouts yet'}
+      testId={isFirst ? 'tr-row' : undefined}
       textValue={plan.name}
       title={plan.name}
       trailing={

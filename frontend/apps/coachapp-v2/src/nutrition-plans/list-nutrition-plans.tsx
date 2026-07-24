@@ -134,6 +134,7 @@ export default function ListNutritionPlans() {
               All{' '}
               <FilterCount
                 count={activeCount + archivedCount}
+                countTestId="np-pill-count"
                 isSelected={status === 'all'}
               />
             </ToggleButton>

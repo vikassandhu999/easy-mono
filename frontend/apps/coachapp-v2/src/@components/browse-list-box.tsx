@@ -58,14 +58,22 @@ export const FILTER_PILL_CLASS =
   'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:[color:white]';
 
 /** The count beside a filter-pill label. Mobile shows it on the selected pill only. */
-export function FilterCount({count, isSelected}: {count: ReactNode; isSelected: boolean}) {
+export function FilterCount({
+  count,
+  countTestId,
+  isSelected,
+}: {
+  count: ReactNode;
+  countTestId?: string;
+  isSelected: boolean;
+}) {
   return (
     <span
       className={cn(
         'ml-0.75 text-eyebrow opacity-70 sm:ml-0 sm:text-pill',
         isSelected ? undefined : 'hidden sm:inline',
       )}
-      data-testid={isSelected ? 'np-pill-count' : undefined}
+      data-testid={isSelected ? countTestId : undefined}
     >
       {/* A non-breaking space, not a JSX one: the pill is a flex container, so
           whitespace between its children collapses and "Active 6" reads "Active6". */}

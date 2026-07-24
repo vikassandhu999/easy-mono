@@ -60,11 +60,14 @@ export default function ListTrainingPlans() {
             onPress={goBack}
           />
           <div className="min-w-0">
-            <Page.Title>
+            <Page.Title testId="tr-title">
               <span className="sm:hidden">Training</span>
               <span className="hidden sm:inline">Training plans</span>
             </Page.Title>
-            <Page.Description className="hidden truncate sm:block">
+            <Page.Description
+              className="hidden truncate sm:block"
+              testId="tr-subtitle"
+            >
               Reusable workout splits and progressions for your clients
             </Page.Description>
           </div>
@@ -72,7 +75,8 @@ export default function ListTrainingPlans() {
         <Page.Actions>
           <Button
             aria-label="Create plan"
-            className="min-h-11 min-w-11 rounded-control"
+            className="size-9.5 min-h-11 min-w-11 gap-0 rounded-action p-0 text-metric font-normal leading-[normal] [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5 sm:min-h-0 sm:w-auto sm:gap-1.75 sm:px-4 sm:font-btn sm:text-row sm:font-semibold sm:leading-none"
+            data-testid="tr-create"
             onPress={() => navigate(ROUTES.CREATE_TRAINING_PLAN)}
             variant="primary"
           >
@@ -91,7 +95,10 @@ export default function ListTrainingPlans() {
           onChange={setSearch}
           value={search}
         >
-          <SearchField.Group className={BROWSE_SEARCH_GROUP_CLASS}>
+          <SearchField.Group
+            className={BROWSE_SEARCH_GROUP_CLASS}
+            data-testid="tr-search"
+          >
             <SearchField.SearchIcon />
             <SearchField.Input
               className="min-h-11"
@@ -107,7 +114,7 @@ export default function ListTrainingPlans() {
         <div className="-mx-4 min-w-0 max-w-full shrink-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           <ToggleButtonGroup
             aria-label="Filter plans by status"
-            className="flex flex-nowrap gap-2"
+            className="flex flex-nowrap gap-4.5 sm:gap-2"
             isDetached
             onSelectionChange={(keys) => {
               const next = [...keys][0];
@@ -120,16 +127,19 @@ export default function ListTrainingPlans() {
           >
             <ToggleButton
               className={FILTER_PILL_CLASS}
+              data-testid={status === 'all' ? 'tr-pill-on' : 'tr-pill-off'}
               id="all"
             >
               All{' '}
               <FilterCount
                 count={activeCount + archivedCount}
+                countTestId="tr-pill-count"
                 isSelected={status === 'all'}
               />
             </ToggleButton>
             <ToggleButton
               className={FILTER_PILL_CLASS}
+              data-testid={status === 'active' ? 'tr-pill-on' : 'tr-pill-off'}
               id="active"
             >
               Active{' '}
@@ -156,7 +166,10 @@ export default function ListTrainingPlans() {
           className={BROWSE_LIST_FRAME_CLASS}
           size="content"
         >
-          <div className={BROWSE_LIST_SURFACE_CLASS}>
+          <div
+            className={BROWSE_LIST_SURFACE_CLASS}
+            data-testid="tr-card"
+          >
             <BrowseListBox
               ariaLabel="Training plans"
               className="flex-1 p-0"
@@ -175,7 +188,12 @@ export default function ListTrainingPlans() {
               onRetry={refetch}
               items={items}
               onAction={(key) => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', String(key)))}
-              renderItem={(plan) => <TrainingPlanListItem plan={plan} />}
+              renderItem={(plan) => (
+                <TrainingPlanListItem
+                  isFirst={plan.id === items[0]?.id}
+                  plan={plan}
+                />
+              )}
             />
           </div>
         </Page.Frame>

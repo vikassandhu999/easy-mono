@@ -8,7 +8,7 @@ UI-CONTRACT §2 says: not covered → stop and ask. These are the asks, answered
 `Surface` with two stat blocks (`Typography` number + label), `Separator` orientation=vertical between. No custom stat component, no Card-per-number.
 
 **2. Priority queue rows with left color stripe (DB)**
-`ListBox` items inside a `Card`. The colored stripe is the row's status severity — express it with the status `Chip` (danger/warning/accent) instead of a border stripe. Do not add a 3px colored left border; that's the prototype's shorthand, not a token pattern.
+`ListBox` items inside a `Card`, and the stripe **is** built (reversed 2026-07-25 — both DB refs draw it at both widths, so dropping it was the drift, not the stripe). It's a 3px `w-0.75 self-stretch rounded-pill` span in the row's leading grid column, filled from the same tone map as the avatar tint and the status `Chip`: `bg-danger` / `bg-warning` / `bg-accent` / `bg-border`. Never a `border-left` and never a colour outside those tokens. Reference: `dashboard/components/priority-queue.tsx`.
 
 **3. Setup progress strip (DB)**
 `Surface` + `Chip` per step + `Button` (primary) + `CloseButton`. Steps are static labels, not Tabs. Mobile: collapses to one row + chevron → navigates to the next incomplete step.

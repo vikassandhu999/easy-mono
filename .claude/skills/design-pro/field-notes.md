@@ -102,6 +102,11 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **HeroUI `Tabs.Tab` ships `w-full`** — without an explicit `w-auto` each tab
   stretches to container width and the row overflows off-screen. Style-diff
   can't see this (computed props match); only the screenshot pass catches it.
+- **A release from an unlayered theme rule must be a `:not()` on that rule** —
+  `.button--row` sat in `@layer components` while the control-height rule was
+  unlayered, so it changed nothing and every pressable row/tile carrying it was
+  crushed to 36px (RM-139). Toggle any app-owned modifier on a live node and read
+  `getComputedStyle` before trusting it.
 - **Theme pins on vendor classes live in `@layer components`** — there they
   beat HeroUI's defaults but stay overridable by call-site utilities. An
   UNLAYERED rule in index.css beats every utility app-wide and makes the

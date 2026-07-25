@@ -189,7 +189,7 @@
    Scoped away from `--sm`/`--lg` so HeroUI's size scale still works — 53
    `size="sm"` buttons rely on it. Specificity (0,3,0) beats the imported
    recipes, including their `md:` rules, at every width. */
-.button:not(.button--sm):not(.button--lg),
+.button:not(.button--sm):not(.button--lg):not(.button--row),
 .toggle-button:not(.toggle-button--sm):not(.toggle-button--lg),
 .search-field__group,
 .input-group,
@@ -210,7 +210,14 @@
 
    Padding is zeroed here and re-stated by the component, because a row and a tile
    want different insets. Utilities outrank this layer, so the component's
-   `px-2 py-3` wins over the `padding: 0` below without a fight. */
+   `px-2 py-3` wins over the `padding: 0` below without a fight.
+
+   The load-bearing half of the release is the `:not(.button--row)` in the control
+   selector above, NOT the `height: auto` below: the control rule is unlayered, so
+   it beats every layered rule and every utility. Without the exclusion this whole
+   block was a no-op — the DB glance bar, CD's photo tiles and CD's detail rows
+   were all being crushed to 36px with `.button--row` on them (RM-139). Never
+   "simplify" the `:not()` away. */
 @layer components {
   .button--row {
     height: auto;

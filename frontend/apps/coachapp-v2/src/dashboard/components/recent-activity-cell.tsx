@@ -1,6 +1,6 @@
+import {getInitials} from '@easy/utils';
 import type {Key} from '@heroui/react';
-
-import {Avatar, Badge, Button, Description, Label, ListBox, Typography} from '@heroui/react';
+import {Avatar, Button, Chip, Description, Label, ListBox, Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {useNavigate} from 'react-router-dom';
 
@@ -9,6 +9,12 @@ import {ROUTES} from '@/@config/routes';
 import type {Conversation} from '@/api/generated';
 import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
 import {compareDateStrings, formatRelativeTime} from '@/dashboard/lib/date-format';
+
+/** Both refs show two-letter initials (`SL`, `PN`, `DW`) — the API sends one name string. */
+function initials(name: string): string {
+  const [first, last] = name.split(/\s+/);
+  return getInitials(first, last) || '?';
+}
 
 /** GAPS #15 — conversation rows are `ListBox` items, never a table. */
 function ConversationRow({conversation}: {conversation: Conversation}) {
@@ -31,22 +37,24 @@ function ConversationRow({conversation}: {conversation: Conversation}) {
         className="size-9 shrink-0 bg-surface-secondary"
         size="md"
       >
-        <Avatar.Fallback className="type-eyebrow font-semibold text-foreground">
-          {name[0]?.toUpperCase() ?? '?'}
-        </Avatar.Fallback>
+        <Avatar.Fallback className="type-eyebrow font-semibold text-foreground">{initials(name)}</Avatar.Fallback>
       </Avatar>
 
       <div className="flex min-w-0 flex-col">
         <span className="flex min-w-0 items-center gap-2">
           <Label className="min-w-0 truncate type-body font-semibold text-foreground">{name}</Label>
           {unread ? (
-            <Badge
+            // A `Badge` is absolutely positioned against its wrapper — it floated
+            // outside the row. The ref puts the count inline beside the name, so
+            // it's the same accent `Chip` the queue uses for `New lead`.
+            <Chip
               className="shrink-0"
               color="accent"
               size="sm"
+              variant="primary"
             >
               {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
-            </Badge>
+            </Chip>
           ) : null}
         </span>
         <Description className="max-w-full truncate type-eyebrow text-muted">

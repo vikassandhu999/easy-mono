@@ -259,6 +259,16 @@ the base could be silently eaten, making the `sm:` load-bearing. **Enforced by:*
 `just check-rm` (multiline `-U`, since the halves usually sit in separate string literals
 inside one `cn()`).
 
+### RM-139 — An UNLAYERED theme rule can only be released by its own `:not()`, not by a layered class
+`.button--row` (the sanctioned release from the control-height tier) lived in `@layer
+components` while the control-height rule was unlayered — unlayered beats every layer, so
+the release was a silent no-op and the DB glance bar, CD's photo tiles and CD's pressable
+detail rows were all being crushed to 36px with the class dutifully applied. A release must
+be expressed as an exclusion **in the rule it releases from**
+(`.button:not(.button--sm):not(.button--lg):not(.button--row)`). **Verify by:** toggling
+the modifier on a live node and reading `getComputedStyle` — a class that changes nothing
+is the whole failure mode (RM-133's rule applied to app-owned classes, not just vendor ones).
+
 ---
 
 ## Deploy / ops

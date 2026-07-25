@@ -39,7 +39,8 @@ export function compareDateStrings(a: null | string | undefined, b: null | strin
   return aTime - bTime;
 }
 
-export function formatDaysUntil(value: null | string | undefined, now = new Date()): string {
+/** COPY.md §DB row subtitle — `Subscription ends in 3 days`. */
+export function formatSubscriptionEnd(value: null | string | undefined, now = new Date()): string {
   const date = toDate(value);
   if (!date) {
     return 'No end date';
@@ -48,15 +49,15 @@ export function formatDaysUntil(value: null | string | undefined, now = new Date
   const days = Math.round((startOfLocalDay(date).getTime() - startOfLocalDay(now).getTime()) / DAY_MS);
 
   if (days < 0) {
-    return days === -1 ? 'Ended yesterday' : `Ended ${Math.abs(days)} days ago`;
+    return days === -1 ? 'Subscription ended yesterday' : `Subscription ended ${Math.abs(days)} days ago`;
   }
   if (days === 0) {
-    return 'Ends today';
+    return 'Subscription ends today';
   }
   if (days === 1) {
-    return 'Ends tomorrow';
+    return 'Subscription ends tomorrow';
   }
-  return `Ends in ${days} days`;
+  return `Subscription ends in ${days} days`;
 }
 
 /** Null-guarding wrappers over @easy/utils — the API fields these read are nullable. */

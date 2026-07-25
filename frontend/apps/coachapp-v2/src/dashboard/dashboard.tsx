@@ -92,19 +92,21 @@ function StatBar({
               orientation="vertical"
             />
           ) : null}
+          {/* `button--row` is the theme's release from the control tier — a stat
+              cell is sized by its two lines, and `--spacing-control` clipped them. */}
           <Button
-            className="h-auto flex-1 flex-col items-start justify-center gap-0.5 rounded-none px-5 py-2"
+            className="button--row flex-1 flex-col items-start justify-center gap-px rounded-none px-5 py-2"
             onPress={() => navigate(ROUTES.CLIENTS)}
             variant="ghost"
           >
             <Typography
-              className="font-grotesk tabular-nums"
+              className="type-metric font-grotesk font-semibold tabular-nums"
               type="h4"
             >
               {cell.value ?? '—'}
             </Typography>
             <Typography
-              className="whitespace-nowrap font-normal"
+              className="whitespace-nowrap type-eyebrow font-normal"
               color="muted"
               type="body-sm"
             >

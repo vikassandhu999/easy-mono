@@ -11,7 +11,7 @@ import type {Client} from '@/api/clients';
 import type {Prospect} from '@/api/prospects';
 import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
 import {clientInitials, clientName} from '@/dashboard/lib/client-format';
-import {formatDaysUntil, formatRelativeTime} from '@/dashboard/lib/date-format';
+import {formatRelativeTime, formatSubscriptionEnd} from '@/dashboard/lib/date-format';
 
 type Tone = 'accent' | 'danger' | 'default' | 'warning';
 
@@ -27,14 +27,23 @@ type QueueItem = {
   tone: Tone;
 };
 
-// GAPS #2: severity is carried by the status `Chip` (danger / warning / accent),
-// never by a coloured left stripe — the stripe is the prototype's shorthand, not
-// a token pattern. The avatar tint is the row's only other severity cue.
+// GAPS #2 (revised 2026-07-25): the row carries severity three ways, exactly as
+// both DB refs draw it — the 3px leading stripe, the avatar tint, and the status
+// chip. All three read from the design's own tokens; no stripe colour is invented.
 const AVATAR_TONE: Record<Tone, string> = {
   accent: 'bg-accent-soft text-accent',
   danger: 'bg-danger-soft text-danger',
   default: 'bg-surface-secondary text-muted',
   warning: 'bg-warning-soft text-warning-text',
+};
+
+// `.qstripe` — 3px wide, stretched, fully rounded (a 3px radius on a 3px-wide bar
+// IS `rounded-pill`; the radius clamps to half the width either way).
+const STRIPE_TONE: Record<Tone, string> = {
+  accent: 'bg-accent',
+  danger: 'bg-danger',
+  default: 'bg-border',
+  warning: 'bg-warning',
 };
 
 function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: string) => void): QueueItem[] {
@@ -62,7 +71,7 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
       action: 'Renew',
       chip: 'Expiring',
       chipVariant: 'soft',
-      subtitle: formatDaysUntil(client.subscription_ends_on),
+      subtitle: formatSubscriptionEnd(client.subscription_ends_on),
       tone: 'danger',
     });
   }
@@ -108,12 +117,17 @@ function QueueRow({item}: {item: QueueItem}) {
     <ListBox.Item
       className={cn(
         LIST_ITEM_CLASS,
-        'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none border-b border-separator py-3',
+        'grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none border-b border-separator py-3',
         'last:border-0 hover:bg-surface-secondary sm:gap-4 sm:px-4',
       )}
       id={item.id}
       textValue={item.name}
     >
+      <span
+        aria-hidden
+        className={cn('w-0.75 shrink-0 self-stretch rounded-pill', STRIPE_TONE[item.tone])}
+      />
+
       <Avatar
         className="size-9 shrink-0"
         size="md"

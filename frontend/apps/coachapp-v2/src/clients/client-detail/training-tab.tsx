@@ -320,7 +320,7 @@ export default function TrainingTab({client}: {client: Client}) {
           {hasMore ? (
             <div className="flex justify-center pt-2">
               <Button
-                className={`${OUTLINE_BUTTON} h-9 px-4`}
+                className={`${OUTLINE_BUTTON}  px-4`}
                 isPending={sessions.isFetchingNextPage}
                 onPress={() => sessions.fetchNextPage()}
               >

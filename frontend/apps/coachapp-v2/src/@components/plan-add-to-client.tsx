@@ -49,7 +49,7 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
       <Button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="gap-1.5 rounded-control border border-border bg-surface font-btn type-body font-semibold leading-none text-foreground [box-shadow:none] sm:h-9.5 sm:px-3"
+        className="gap-1.5 rounded-control border border-border bg-surface font-btn type-body font-semibold leading-none text-foreground [box-shadow:none] sm:px-3"
         data-testid="nb-add-client"
         isPending={isAssigning}
         onPress={() => setOpen(true)}

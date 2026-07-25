@@ -270,7 +270,7 @@ export default function CheckinSubmission() {
             </div>
           ) : (
             <Button
-              className={`${ACCENT_BUTTON} h-11.5 w-full rounded-panel px-4 type-body`}
+              className={`${ACCENT_BUTTON}  w-full rounded-panel px-4 type-body`}
               data-testid="cs-review-btn"
               isPending={isReviewing}
               onPress={markReviewed}

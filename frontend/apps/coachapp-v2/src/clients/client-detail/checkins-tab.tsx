@@ -111,7 +111,8 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
           selectedKey={schedule.frequency}
         >
           <Button
-            className="h-7.5 min-h-0 gap-2 rounded-control border border-border bg-background px-3 type-eyebrow font-semibold text-foreground [box-shadow:none] sm:h-8"
+            size="sm"
+            className="min-h-0 gap-2 rounded-control border border-border bg-background px-3 type-eyebrow font-semibold text-foreground [box-shadow:none]"
             data-testid="ci-freq-ctl"
             variant="ghost"
           >

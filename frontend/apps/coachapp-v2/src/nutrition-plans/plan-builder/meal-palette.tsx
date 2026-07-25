@@ -202,7 +202,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
       title="Add meal"
       trigger={({onPress, ref}) => (
         <Button
-          className="h-11 w-full gap-1.5 rounded-panel border border-dashed border-border bg-transparent px-1.5 py-px font-btn type-body font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
+          className="w-full gap-1.5 rounded-panel border border-dashed border-border bg-transparent px-1.5 py-px font-btn type-body font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
           data-testid="nb-add-meal"
           onPress={onPress}
           ref={ref}

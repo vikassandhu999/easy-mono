@@ -168,7 +168,8 @@ function StateBanner({client}: {client: Client}) {
           Subscription has ended. {firstName} is locked out of the app.
         </div>
         <Button
-          className={`${ACCENT_BUTTON} h-8 px-3 sm:h-8.5 sm:px-4`}
+          size="sm"
+          className={`${ACCENT_BUTTON}  px-3  sm:px-4`}
           data-testid="cd-banner-btn"
           onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
         >
@@ -194,7 +195,8 @@ function StateBanner({client}: {client: Client}) {
           No seat available. {firstName} can&apos;t use the app until you add one.
         </div>
         <Button
-          className={`${ACCENT_BUTTON} h-8 px-3 sm:h-8.5 sm:px-4`}
+          size="sm"
+          className={`${ACCENT_BUTTON}  px-3  sm:px-4`}
           data-testid="cd-banner-btn"
           onPress={() => navigate(ROUTES.SETTINGS)}
         >
@@ -219,7 +221,8 @@ function StateBanner({client}: {client: Client}) {
         {firstName} is inactive.
       </div>
       <Button
-        className={`${ACCENT_BUTTON} h-8 px-3 sm:h-8.5 sm:px-4`}
+        size="sm"
+        className={`${ACCENT_BUTTON}  px-3  sm:px-4`}
         data-testid="cd-banner-btn"
         isPending={isLoading}
         onPress={reactivate}
@@ -420,7 +423,7 @@ export default function ClientDetail() {
             <div className="mt-3 flex w-full gap-2 sm:mt-0 sm:w-auto sm:flex-none sm:items-center">
               {isPending ? null : (
                 <Button
-                  className="relative h-9.5 flex-1 gap-2 rounded-panel px-4 font-btn type-body font-bold leading-none [color:white] [box-shadow:none] sm:h-10 sm:flex-none"
+                  className="relative flex-1 gap-2 rounded-panel px-4 font-btn type-body font-bold leading-none [color:white] [box-shadow:none] sm:flex-none"
                   data-testid="cd-message"
                   onPress={() => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', client.id))}
                   variant="primary"

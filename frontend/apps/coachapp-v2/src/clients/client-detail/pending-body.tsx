@@ -80,7 +80,7 @@ export function InviteCard({client}: {client: Client}) {
       </div>
       <div className="mt-3 flex gap-2">
         <Button
-          className={`${OUTLINE_BUTTON} h-9 flex-1 px-4 sm:flex-none`}
+          className={`${OUTLINE_BUTTON}  flex-1 px-4 sm:flex-none`}
           data-testid="cd-invite-resend"
           isPending={isResending}
           onPress={handleResend}
@@ -88,7 +88,7 @@ export function InviteCard({client}: {client: Client}) {
           Resend invite
         </Button>
         <Button
-          className="h-9 min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn type-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-4 sm:py-0"
+          className="min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn type-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-4 sm:py-0"
           data-testid="cd-invite-revoke"
           isPending={isRevoking}
           onPress={handleRevoke}
@@ -139,7 +139,7 @@ export default function PendingBody({
             </div>
           </div>
           <Button
-            className={`${OUTLINE_BUTTON} h-8 px-3 sm:h-9 sm:px-4`}
+            className={`${OUTLINE_BUTTON}  px-3  sm:px-4`}
             data-testid="cd-intake-remind"
             onPress={() => toast.success('Reminder sent')}
           >

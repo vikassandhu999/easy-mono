@@ -99,7 +99,7 @@ export default function ProgressPhotos() {
           onBack={goBack}
           right={
             <Button
-              className={`${OUTLINE_BUTTON} h-8 px-4 sm:h-9`}
+              className={`${OUTLINE_BUTTON}  px-4 `}
               data-testid="ph-compare-btn"
               onPress={() => {
                 setComparing((current) => !current);
@@ -176,7 +176,7 @@ export default function ProgressPhotos() {
             {isComparing && selected.length === 2 ? (
               <div className="sticky bottom-0 flex justify-center pt-2">
                 <Button
-                  className={`${ACCENT_BUTTON} h-11 rounded-panel px-6 type-body`}
+                  className={`${ACCENT_BUTTON}  rounded-panel px-6 type-body`}
                   onPress={() => setCompareOpen(true)}
                 >
                   Compare 2 photos

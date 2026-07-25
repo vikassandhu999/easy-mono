@@ -511,7 +511,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 value={nameValue}
               />
               <Button
-                className="h-11 shrink-0 rounded-control border-0 bg-accent px-3 font-btn type-body font-semibold leading-none [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal] sm:h-9.5"
+                className="shrink-0 rounded-control border-0 bg-accent px-3 font-btn type-body font-semibold leading-none [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal]"
                 data-testid="nb-rename-save"
                 onPress={() => {
                   commitRename().catch(() => undefined);

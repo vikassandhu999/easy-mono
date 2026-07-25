@@ -132,7 +132,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
         ) : null}
 
         <Button
-          className="h-11 shrink-0 gap-1 rounded-control border border-dashed border-border bg-transparent px-3 font-btn type-eyebrow font-semibold leading-none [box-shadow:none] [color:var(--color-accent)] sm:h-8.5"
+          className="shrink-0 gap-1 rounded-control border border-dashed border-border bg-transparent px-3 font-btn type-eyebrow font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
           data-testid="tb-add-workout"
           isPending={isCreating}
           onPress={() => {

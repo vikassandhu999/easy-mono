@@ -72,7 +72,7 @@ function ReviewBanner({assignments, clientId}: {assignments: ClientProfileFormAs
         </div>
       </div>
       <Button
-        className={`${ACCENT_BUTTON} h-8 px-3 sm:h-9 sm:px-4`}
+        className={`${ACCENT_BUTTON}  px-3  sm:px-4`}
         data-testid="cd-review-btn"
         onPress={() =>
           navigate(ROUTES.CLIENT_CHECKIN_SUBMISSION.replace(':id', clientId).replace(':assignmentId', newest.id))

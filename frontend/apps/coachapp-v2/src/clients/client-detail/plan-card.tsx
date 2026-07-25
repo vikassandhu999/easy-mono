@@ -75,7 +75,7 @@ export function PlanCard({
           </div>
         </div>
         <Button
-          className={`${OUTLINE_BUTTON} hidden h-9 px-4 sm:inline-flex`}
+          className={`${OUTLINE_BUTTON} hidden  px-4 sm:inline-flex`}
           data-testid={`${testId}-plan-open`}
           onPress={onOpen}
         >

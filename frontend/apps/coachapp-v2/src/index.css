@@ -69,6 +69,10 @@
   /* Pointer-target floor. Icon-only controls render at --spacing-control but
      stay tappable at this size via the hit-area rule below. */
   --spacing-tap: 44px;
+  /* The small control tier. HeroUI's `--sm` is `h-9 md:h-8`, i.e. a different
+     height per breakpoint; one value keeps a small button the same size on every
+     page and at every width, same as the default tier. */
+  --spacing-control-sm: 32px;
 
   --color-muted-2: oklch(0.55 0.0138 285.94); /* tertiary text (timestamps, chevrons) */
   /* RECIPES.md R5 attention chips call for `text-warning-text`; `--warning-text`
@@ -246,6 +250,34 @@
    each written by hand. */
 .list-box-item {
   min-height: var(--spacing-control);
+}
+
+/* Small control tier — buttons that were hand-written as h-8/h-8.5 belong here,
+   expressed as `size="sm"` rather than a pixel. */
+.button--sm,
+.toggle-button--sm {
+  height: var(--spacing-control-sm);
+  min-height: var(--spacing-control-sm);
+}
+
+/* HeroUI component typography, pinned to the scale. `.chip` shipped 12px and
+   `.description` 12px — neither is a step (11/14/16/19/22/27), so every chip in
+   the app sat off-scale and a description was 11px only where someone happened
+   to write it by hand. `.label` (14) and `.fieldset__legend` (16) already land
+   on the scale and are left alone. */
+.chip,
+.description {
+  font-size: var(--type-eyebrow);
+}
+
+/* The last two off-scale radii: HeroUI rounds a chip at 16px and a date segment
+   at 6px, neither of which is a step (8/10/13/17). A chip is the smallest
+   rounded thing in the app, so both take the chip step. */
+.chip,
+.date-input-group__segment,
+.close-button,
+.autocomplete__clear-button {
+  border-radius: var(--radius-chip);
 }
 
 /* Icons are 16px unless told otherwise, so `size-4` is never written — it was on

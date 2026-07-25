@@ -1,4 +1,5 @@
 import {Chip} from '@heroui/react';
+import {Dumbbell} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import {toastMutationError} from '@/@components/mutation-toast';
@@ -64,6 +65,7 @@ export function TrainingTab({client}: {client: Client}) {
   return (
     <div className="flex flex-col gap-4">
       <PlanPanel
+        icon={Dumbbell}
         emptyBody={`Assign a plan so ${client.first_name ?? 'this client'} sees workouts in their app.`}
         emptyTitle="No training plan"
         meta={
@@ -76,14 +78,15 @@ export function TrainingTab({client}: {client: Client}) {
                 .join(' · ')
             : null
         }
-        assignAction={
+        assign={(control) => (
           <PlanAssignControl
+            {...control}
             clientId={client.id}
             clientName={client.first_name ?? 'this client'}
             kind="training"
-            label={plan ? 'Change plan' : 'Assign plan'}
           />
-        }
+        )}
+        assignLabel="Assign plan"
         isEnding={isEnding}
         name={plan?.name}
         onEnd={plan ? () => endPlan(plan.id) : undefined}

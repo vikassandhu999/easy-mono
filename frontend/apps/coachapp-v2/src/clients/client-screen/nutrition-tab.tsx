@@ -1,5 +1,6 @@
-import {Chip} from '@heroui/react';
-import {useNavigate} from 'react-router-dom';
+import {Chip, ProgressBar} from '@heroui/react';
+import {UtensilsCrossed} from 'lucide-react';
+import {Link, useNavigate} from 'react-router-dom';
 
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
@@ -10,7 +11,6 @@ import {
   useUpdateNutritionPlanMutation,
 } from '@/api/generated';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
-import {DetailRow} from '@/clients/components/detail-row';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
 import {
@@ -73,6 +73,7 @@ export function NutritionTab({client}: {client: Client}) {
   return (
     <div className="flex flex-col gap-4">
       <PlanPanel
+        icon={UtensilsCrossed}
         emptyBody={`Assign a plan so ${client.first_name ?? 'this client'} can log meals against it.`}
         emptyTitle="No nutrition plan"
         meta={
@@ -87,14 +88,15 @@ export function NutritionTab({client}: {client: Client}) {
                 .join(' · ')
             : null
         }
-        assignAction={
+        assign={(control) => (
           <PlanAssignControl
+            {...control}
             clientId={client.id}
             clientName={client.first_name ?? 'this client'}
             kind="nutrition"
-            label={plan ? 'Change plan' : 'Assign plan'}
           />
-        }
+        )}
+        assignLabel="Assign plan"
         isEnding={isEnding}
         name={plan?.name}
         onEnd={plan ? () => endPlan(plan.id, plan.name) : undefined}
@@ -113,39 +115,100 @@ export function NutritionTab({client}: {client: Client}) {
               className="px-2"
               key={day}
             >
-              <DetailRow
-                leading={formatRowDate(day)}
-                meta={
-                  totals
-                    ? [
-                        totals.swapped ? `Swapped ${totals.swapped}` : null,
-                        totals.added ? `Added ${totals.added}` : null,
-                        totals.skipped ? `Skipped ${totals.skipped}` : null,
-                        totals.planned > 0 ? `${formatKcal(totals.logged)} / ${formatKcal(totals.planned)}` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')
-                    : undefined
-                }
-                title={totals ? (pct == null ? 'Logged' : `${pct}%`) : 'Not logged'}
+              <AdherenceRow
+                date={formatRowDate(day)}
+                pct={pct}
                 to={totals ? ROUTES.CLIENT_NUTRITION_DAY.replace(':id', client.id).replace(':date', day) : undefined}
-                tone={totals ? 'default' : 'muted'}
-                trailing={
-                  pct != null && (
-                    <Chip
-                      color={pct >= 90 && pct <= 110 ? 'success' : 'warning'}
-                      size="sm"
-                      variant="soft"
-                    >
-                      {pct >= 90 && pct <= 110 ? 'On target' : pct > 110 ? 'Over' : 'Under'}
-                    </Chip>
-                  )
-                }
+                totals={totals}
               />
             </div>
           );
         })}
       </SectionCard>
     </div>
+  );
+}
+
+type DayTotals = {added: number; logged: number; planned: number; skipped: number; swapped: number};
+
+/**
+ * One adherence day, as the design draws it: the date, a bar banded by how close
+ * the day landed, the percentage in the band's colour, what the client changed,
+ * and the kcal pair on the right. The bar is the point — a coach scans the column
+ * of bars, not the numbers.
+ *
+ * `ProgressBar` (GAPS #5) rather than a hand-styled div, and it needs its compound
+ * children or it renders nothing at all.
+ */
+function AdherenceRow({date, pct, to, totals}: {date: string; pct: null | number; to?: string; totals?: DayTotals}) {
+  const shape = 'flex w-full items-center gap-3 rounded-panel px-2 py-3 text-left';
+  const band = pct == null ? null : pct > 110 ? 'danger' : pct < 90 ? 'warning' : 'success';
+  const PCT_COLOR = {
+    danger: 'text-danger-soft-foreground',
+    success: 'text-success-soft-foreground',
+    warning: 'text-warning-soft-foreground',
+  } as const;
+
+  const body = (
+    <>
+      <span className="w-19 shrink-0 type-eyebrow font-semibold text-muted">{date}</span>
+      {pct == null || band == null ? (
+        <span className="type-body font-semibold text-muted">{totals ? 'Logged' : 'Not logged'}</span>
+      ) : (
+        <>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <ProgressBar
+              aria-label={`${pct}% of target`}
+              className="min-w-0 max-w-58 flex-1"
+              color={band}
+              value={Math.min(pct, 100)}
+            >
+              <ProgressBar.Track className="h-1.75 rounded-pill bg-surface-tertiary">
+                <ProgressBar.Fill className="rounded-pill" />
+              </ProgressBar.Track>
+            </ProgressBar>
+            <span className={`shrink-0 type-eyebrow font-bold ${PCT_COLOR[band]}`}>{pct}%</span>
+            {totals?.swapped ? (
+              <Chip
+                className="chip--outline shrink-0"
+                size="sm"
+              >
+                Swapped {totals.swapped}
+              </Chip>
+            ) : null}
+            {totals?.added ? (
+              <Chip
+                className="chip--outline shrink-0"
+                size="sm"
+              >
+                Added {totals.added}
+              </Chip>
+            ) : null}
+            {totals?.skipped ? (
+              <Chip
+                className="chip--outline shrink-0"
+                size="sm"
+              >
+                Skipped {totals.skipped}
+              </Chip>
+            ) : null}
+          </div>
+          <span className="shrink-0 type-eyebrow font-semibold">
+            {formatKcal(totals?.logged ?? 0)} / {formatKcal(totals?.planned ?? 0)}
+          </span>
+        </>
+      )}
+    </>
+  );
+
+  return to ? (
+    <Link
+      className={`${shape} hover:bg-background`}
+      to={to}
+    >
+      {body}
+    </Link>
+  ) : (
+    <div className={shape}>{body}</div>
   );
 }

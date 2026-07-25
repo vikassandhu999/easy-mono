@@ -22,6 +22,7 @@ import {
   lastNDays,
   weekGroupLabel,
 } from '@/clients/lib/client-detail-data';
+import {sessionWorkoutName} from '@/clients/lib/session';
 
 /** CD-TR: the active plan, then session history grouped by week. */
 export function TrainingTab({client}: {client: Client}) {
@@ -127,7 +128,7 @@ export function TrainingTab({client}: {client: Client}) {
                             .join(' · ')
                         : 'No session logged'
                     }
-                    title={workoutNames.get(session.training_workout_id ?? '') ?? workoutName(session)}
+                    title={sessionWorkoutName(session, workoutNames)}
                     to={
                       isDone
                         ? ROUTES.CLIENT_SESSION_DETAIL.replace(':clientId', client.id).replace(':sessionId', session.id)
@@ -152,16 +153,4 @@ export function TrainingTab({client}: {client: Client}) {
       )}
     </div>
   );
-}
-
-/** The snapshot holds the workout's name at the time it was performed. */
-function workoutName(session: {planned_snapshot?: unknown}): string {
-  const snapshot = session.planned_snapshot;
-  if (snapshot && typeof snapshot === 'object') {
-    const name = (snapshot as {name?: unknown}).name;
-    if (typeof name === 'string' && name) {
-      return name;
-    }
-  }
-  return 'Workout';
 }

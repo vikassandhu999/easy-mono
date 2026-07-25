@@ -144,3 +144,28 @@ export function getAdherenceSummary(
 
   return {added, completed, skipped, totalPlanned, totalSets};
 }
+
+/**
+ * What to call a performed session. A session records WHICH workout it performed,
+ * not its name: `planned_snapshot` carries the name for a session logged against a
+ * since-changed plan, and for one logged against the LIVE plan the name only exists
+ * on the plan's own workouts — hence the optional map. CD-TR rows and CD-SD's title
+ * are the same question, so they ask it in one place.
+ */
+export function sessionWorkoutName(
+  session: {planned_snapshot?: unknown; training_workout_id?: null | string},
+  workoutNames?: Map<string, string>,
+): string {
+  const fromPlan = workoutNames?.get(session.training_workout_id ?? '');
+  if (fromPlan) {
+    return fromPlan;
+  }
+  const snapshot = session.planned_snapshot;
+  if (snapshot && typeof snapshot === 'object') {
+    const name = (snapshot as {name?: unknown}).name;
+    if (typeof name === 'string' && name) {
+      return name;
+    }
+  }
+  return 'Workout';
+}

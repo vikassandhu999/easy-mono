@@ -10,10 +10,10 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {TrainingPerformedSet} from '@/api/generated';
-import {useGetCoachClientTrainingSessionQuery} from '@/api/generated';
+import {useGetCoachClientTrainingSessionQuery, useListCoachClientTrainingPlansQuery} from '@/api/generated';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatCompactDuration, formatRowDate} from '@/clients/lib/client-detail-data';
-import {buildExerciseGroups, type ExerciseGroup, formatLoad} from '@/clients/lib/session';
+import {buildExerciseGroups, type ExerciseGroup, formatLoad, sessionWorkoutName} from '@/clients/lib/session';
 
 /**
  * CD-SD — one performed session: the client's note first (it is why a coach opens
@@ -27,6 +27,11 @@ export default function SessionDetail() {
   const {clientId = '', sessionId = ''} = useParams<{clientId: string; sessionId: string}>();
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', clientId)}?tab=training`);
   const {data, isError, isLoading, refetch} = useGetCoachClientTrainingSessionQuery({clientId, id: sessionId});
+  // The design titles this screen with the WORKOUT's name ("Upper B — Pull"), which
+  // a session only carries by id — so the active plan's workouts supply it, exactly
+  // as the CD-TR rows do.
+  const plans = useListCoachClientTrainingPlansQuery({clientId, status: 'active'});
+  const workoutNames = new Map((plans.data?.data?.[0]?.workouts ?? []).map((w) => [w.id, w.name]));
 
   const header = (
     <Page.Header size="content">
@@ -82,7 +87,7 @@ export default function SessionDetail() {
         <Page.TitleGroup className="flex items-center gap-1">
           <BackButton onPress={goBack} />
           <div className="min-w-0">
-            <Page.Title>Workout</Page.Title>
+            <Page.Title>{sessionWorkoutName(session, workoutNames)}</Page.Title>
             {subtitle && <Page.Description>{subtitle}</Page.Description>}
           </div>
         </Page.TitleGroup>
@@ -155,21 +160,32 @@ export default function SessionDetail() {
  */
 const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[88px_1fr_92px_60px_26px]';
 
+const COL_HEAD = 'type-eyebrow font-semibold text-muted';
+
 function ExerciseCard({group}: {group: ExerciseGroup}) {
   const done = group.sets.filter((set) => set.completed).length;
   const total = group.sets.length || group.plannedSets.length;
 
   return (
     <SectionCard
-      title={`${group.exerciseName} (${done}/${total} sets)`}
+      title={
+        <>
+          {group.exerciseName}{' '}
+          <span className="font-medium text-muted">
+            ({done}/{total} sets)
+          </span>
+        </>
+      }
       titleAs="heading"
     >
       <div className="px-4 pb-4">
         <div className={`${GRID} border-b border-border pb-2`}>
-          <span className="eyebrow">Set</span>
-          <span className="eyebrow">Reps</span>
-          <span className="eyebrow">Load</span>
-          <span className="eyebrow">RPE</span>
+          {/* Plain muted labels, not `.eyebrow`: the design writes these at 11px/600
+              with no uppercase and no tracking (dc.html SD header row). */}
+          <span className={COL_HEAD}>Set</span>
+          <span className={COL_HEAD}>Reps</span>
+          <span className={COL_HEAD}>Load</span>
+          <span className={COL_HEAD}>RPE</span>
           <span />
         </div>
         {group.sets.map((set, index) => (

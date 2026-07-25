@@ -35,7 +35,7 @@ function SetRow({index, isFirstCard, set}: {index: number; isFirstCard: boolean;
 
   return (
     <div
-      className={`${GRID} items-center py-2 type-eyebrow sm:py-2 sm:type-eyebrow`}
+      className={`${GRID} items-center py-2 type-eyebrow`}
       data-testid={testId('set-row')}
     >
       <span
@@ -72,7 +72,7 @@ function ExerciseCard({group, isFirst}: {group: ExerciseGroup; isFirst: boolean}
         </span>
       </div>
       <div
-        className={`${GRID} border-b border-border pb-2 type-eyebrow font-semibold text-muted sm:pb-2 sm:type-eyebrow`}
+        className={`${GRID} border-b border-border pb-2 type-eyebrow font-semibold text-muted`}
         data-testid={isFirst ? 'sd-head-row' : undefined}
       >
         <span data-testid={isFirst ? 'sd-head-cell' : undefined}>Set</span>

@@ -63,6 +63,18 @@ check RM-129 "non-bare Page.Content with className (use bare + Page.Frame; gutte
 check RM-136 "hand-assembled ink-selected pill (use .toggle-button--ink / --filter)" \
   'data-\[selected=true\]:bg-ink' "$COACH"
 
+# A responsive pair with the SAME token on both sides is never a decision — it is
+# the fossil of a step someone meant to add. `Page.Title` carried `type-metric
+# sm:type-metric`, so every page title in the app rendered 22px at every width
+# where the scale says desktop titles are 27px.
+# ponytail: client-detail excluded — 5 dead `sm:type-eyebrow` there, deferred
+# -U (multiline) is required, not optional: the halves are usually separate string
+# literals on separate lines inside one `cn()` or `+`-joined const, which is
+# exactly how the Page.Title one survived a line-based grep. `[^;{}]` keeps the
+# window inside a single className expression.
+check RM-138 "responsive pair with the same type step on both sides (dead sm: — set the real step or drop it)" \
+  '\btype-([a-z]+)\b[^;{}]{0,300}?\bsm:type-\1\b' "$COACH" -U -g '!**/client-detail*/**' -g '!**/client-detail.tsx'
+
 # `[color:var(--color-*)]` is fine — it is the token, escalated to an arbitrary
 # property to outrank a HeroUI recipe that beats the `text-*` utility. A literal
 # colour is the actual bypass: it cannot follow the theme, in either mode.

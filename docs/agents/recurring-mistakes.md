@@ -498,6 +498,33 @@ The rule: **arbitrary-value syntax may carry a token, never a literal colour.**
 
 ---
 
+### RM-138 — A responsive pair with the same token on both sides is a missing step, not a style
+
+`Page.Title` was `type-metric` in its base string and `sm:type-metric` in its `sm:` string.
+Both halves name the same step, so the `sm:` did nothing, and **every page title in the app
+rendered 22px at every width** — where the scale's own comments say `--type-metric` is
+"mobile page titles" and `--type-display` is "desktop + builder page titles". The desktop
+step had been written as a placeholder and never filled in.
+
+Nobody writes `sm:x` to mean "stay the same". A duplicated responsive pair is always one of
+two things: a step someone meant to add and didn't (fix it), or a leftover after the base
+changed (delete it). It is never a decision, which is what makes it gateable.
+
+This is the inverse of the trap in RM-134: there, `sm:type-eyebrow` duplicates looked
+removable but were load-bearing because tailwind-merge had eaten the base. Check what the
+base actually *computes* before deleting — if the base works, the `sm:` is dead; if the base
+is being dropped, the `sm:` is the only thing holding the size up.
+
+Seven more of these existed, all `sm:type-eyebrow` over `type-eyebrow`; five are in Client
+Detail and wait for its redesign.
+
+**Enforced by:** `scripts/check-rm.sh` RM-138. The check must run **multiline** (`-U`) —
+the two halves are normally separate string literals on separate lines inside one `cn()` or
+`+`-joined const, which is exactly how this one survived a line-based grep. The window is
+bounded by `[^;{}]` so it stays inside a single className expression.
+
+---
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

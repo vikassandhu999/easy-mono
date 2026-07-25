@@ -53,13 +53,21 @@
   --type-heading: 19px; /* section + mobile page headings · was stat-lg 18 / title-sm 19 */
   --type-metric: 22px; /* stat values, mobile page titles · was kcal 22 / title-md 22 / stat-xl 23 */
   --type-display: 27px; /* desktop + builder page titles · was title-lg 25 / plan-title 27 */
-  /* The 7th step, added 2026-07-25 for the four design nodes that live above 27
-     and had nothing to snap to: dashboard greeting 29 (DB 144), FD/RD kcal figure
-     34 desktop / 30 mobile (FD 1489/1543, RD 1942/2004), settings seat count and
-     seat stepper 30 (ST 3255/3293). Three of the four are exactly 30.
-     The desktop kcal figure stays 4px off at 34 — outside the ±2 drift, and the
-     one node this step does not resolve. */
-  --type-hero: 30px; /* the largest thing on a screen: greeting, kcal figure, seat count */
+  /* The 7th step, added 2026-07-25 for the design nodes above 27 that had nothing
+     to snap to: FD/RD kcal figure (FD 1489/1543, RD 1942/2004), settings seat
+     count and seat stepper (ST 3255/3293).
+
+     30 and not 34: across both prototype files `30px` appears 6 times and `34px`
+     twice — only the two desktop kcal figures. The scale is the authority, so 34
+     snaps to 30 like any other off-step value, and there is no exception entry for
+     it. A step per prototype value is what took this file to 164 tokens.
+
+     The dashboard greeting (29, DB 144) is deliberately NOT here: it is a
+     `Page.Title`, and page titles are `--type-display` (27) on desktop, 2px away
+     and inside the drift. A greeting that opted out of the page-title treatment to
+     gain 3px would be exactly the per-screen special case this scale exists to
+     prevent. */
+  --type-hero: 30px; /* the largest thing on a screen: kcal figure, seat count */
   /* Geometry — 4 steps, chip < control < panel < card. Max drift 2px.
      8px for the same reason 16px is a type step: it is HeroUI's own `--radius`
      (0.5rem) baseline, so components that never opt in still land on the scale. */

@@ -82,8 +82,14 @@ function PageTitle({children, className, testId}: PageTitleProps) {
   return (
     <span
       className={cn(
+        // 22 on mobile, 27 from `sm` — which is what the scale itself declares:
+        // `--type-metric` is "mobile page titles", `--type-display` is "desktop +
+        // builder page titles". The `sm:` half used to repeat `type-metric`, a
+        // responsive pair with the same token on both sides, so EVERY page title
+        // in the app rendered 22px at every width. A duplicated `sm:` is never a
+        // decision — it is the fossil of a step someone meant to add.
         'block min-w-0 truncate font-grotesk type-metric font-semibold tracking-name [color:var(--color-foreground)]',
-        'sm:type-metric sm:tracking-page',
+        'sm:type-display sm:tracking-page',
         className,
       )}
       data-testid={testId}

@@ -297,9 +297,7 @@ export default function InviteClient() {
               className="sm:border sm:border-border sm:bg-surface"
               onPress={goBack}
             />
-            <Page.Title className="type-heading leading-tight sm:type-metric">
-              {inviteResult ? 'Invite sent' : 'Invite client'}
-            </Page.Title>
+            <Page.Title>{inviteResult ? 'Invite sent' : 'Invite client'}</Page.Title>
           </div>
           {!inviteResult && (
             <Page.Description className="hidden leading-tight sm:mt-0.5 sm:block">

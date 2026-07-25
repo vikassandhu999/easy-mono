@@ -7,3 +7,8 @@ dist
 llm_samples
 
 *.tsbuildinfo
+
+# Vite writes these beside a package's vite.config while building and deletes them
+# after. A failed workspace build aborts the pipeline first, so they survive — then
+# get linted (biome follows .gitignore) and offered for commit.
+*.timestamp-*.mjs

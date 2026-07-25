@@ -72,7 +72,7 @@ export function PlanActionsMenu({
             radius) beside "Add to client" — see design-handoff NB & TB frames. */}
         <Button
           aria-label="Plan actions"
-          className={`  rounded-control border border-border bg-surface text-muted [box-shadow:none] sm:size-9.5   ${AS_ICON_BUTTON}`}
+          className={`  rounded-control border border-border bg-surface text-muted  sm:size-9.5   ${AS_ICON_BUTTON}`}
           data-testid="nb-plan-actions"
           isIconOnly
           isPending={blocking}

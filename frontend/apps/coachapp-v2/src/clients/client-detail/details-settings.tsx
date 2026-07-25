@@ -208,7 +208,7 @@ export default function DetailsSettings() {
         <div className="flex items-center gap-3 border-b border-border bg-surface px-4 pt-0.5 pb-3 sm:px-8 sm:py-4">
           <Button
             aria-label="Back"
-            className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
+            className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
             data-testid="dt-back"
             isIconOnly
             onPress={goBack}
@@ -399,7 +399,7 @@ export default function DetailsSettings() {
 
               <div className="flex justify-end gap-2">
                 <Button
-                  className="min-w-0 shrink-0 rounded-control border border-border bg-surface px-4 font-btn type-eyebrow font-bold leading-none text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal]"
+                  className="min-w-0 shrink-0 rounded-control border border-border bg-surface px-4 font-btn type-eyebrow font-bold leading-none text-foreground [column-gap:normal] [row-gap:normal]"
                   onPress={() => form.reset(clientToEditFormValues(client))}
                   variant="ghost"
                 >
@@ -420,7 +420,7 @@ export default function DetailsSettings() {
             {client.status === 'active' ? (
               <div>
                 <Button
-                  className="min-w-0 w-full shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn type-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:w-auto sm:px-4 sm:py-0"
+                  className="min-w-0 w-full shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn type-eyebrow font-bold leading-none text-danger-soft-foreground [column-gap:normal] [row-gap:normal] sm:w-auto sm:px-4 sm:py-0"
                   data-testid="dt-deactivate"
                   onPress={() => setDeactivateOpen(true)}
                   variant="ghost"

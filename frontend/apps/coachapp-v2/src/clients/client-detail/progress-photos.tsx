@@ -147,7 +147,7 @@ export default function ProgressPhotos() {
                     return (
                       <Button
                         aria-label="Progress photo"
-                        className="relative aspect-square h-auto min-h-0 w-full rounded-panel bg-transparent p-0 type-title font-normal leading-[normal] [box-shadow:none]"
+                        className="relative aspect-square h-auto min-h-0 w-full rounded-panel bg-transparent p-0 type-title font-normal leading-[normal]"
                         key={photoId}
                         onPress={() => toggle(photoId)}
                         variant="ghost"

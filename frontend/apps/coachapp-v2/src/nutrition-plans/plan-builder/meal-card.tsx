@@ -386,7 +386,7 @@ export function MealCard({
         <Dropdown>
           <Button
             aria-label={`Meal options for ${meal.name}`}
-            className={`  shrink-0 rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7   ${AS_ICON_BUTTON}`}
+            className={`  shrink-0 rounded-chip bg-transparent text-muted  sm:size-7   ${AS_ICON_BUTTON}`}
             data-testid="nb-meal-menu-btn"
             isIconOnly
             size="sm"
@@ -538,7 +538,7 @@ export function MealCard({
                   ) : null}
                   <Button
                     aria-label={`Remove swap ${swap.meal.name}`}
-                    className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted [box-shadow:none] sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
+                    className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted  sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
                     data-testid={openId('nb-swap-remove')}
                     isIconOnly
                     onPress={() => onRemoveSwap(swap.optionId)}

@@ -182,7 +182,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
           <div className="flex shrink-0 items-center">
             <Button
               aria-label={`Move ${exerciseName} up`}
-              className={`size-11  rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7  ${AS_ICON_BUTTON}`}
+              className={`size-11  rounded-chip bg-transparent text-muted  sm:size-7  ${AS_ICON_BUTTON}`}
               data-testid="tb-move-up"
               isDisabled={isFirst}
               isIconOnly
@@ -193,7 +193,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             </Button>
             <Button
               aria-label={`Move ${exerciseName} down`}
-              className={`size-11  rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7  ${AS_ICON_BUTTON}`}
+              className={`size-11  rounded-chip bg-transparent text-muted  sm:size-7  ${AS_ICON_BUTTON}`}
               data-testid="tb-move-down"
               isDisabled={isLast}
               isIconOnly
@@ -204,7 +204,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
             </Button>
             <Button
               aria-label={`Remove ${exerciseName}`}
-              className={`size-11  rounded-chip bg-transparent text-muted [box-shadow:none] sm:size-7  ${AS_ICON_BUTTON}`}
+              className={`size-11  rounded-chip bg-transparent text-muted  sm:size-7  ${AS_ICON_BUTTON}`}
               data-testid="tb-remove-exercise"
               isIconOnly
               onPress={onRemove}

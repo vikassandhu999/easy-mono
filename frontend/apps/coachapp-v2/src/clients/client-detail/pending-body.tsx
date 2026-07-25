@@ -88,7 +88,7 @@ export function InviteCard({client}: {client: Client}) {
           Resend invite
         </Button>
         <Button
-          className="min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn type-eyebrow font-bold leading-none text-danger-soft-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-4 sm:py-0"
+          className="min-w-0 flex-1 shrink-0 rounded-control border border-danger-soft bg-transparent px-1.5 py-px font-btn type-eyebrow font-bold leading-none text-danger-soft-foreground [column-gap:normal] [row-gap:normal] sm:flex-none sm:px-4 sm:py-0"
           data-testid="cd-invite-revoke"
           isPending={isRevoking}
           onPress={handleRevoke}

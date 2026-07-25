@@ -116,7 +116,7 @@ export function SubHeader({
     <div className="flex flex-none items-center gap-3 border-b border-border px-4 pt-0.5 pb-3 sm:px-8 sm:py-4">
       <Button
         aria-label="Back"
-        className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [box-shadow:none] [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
+        className="size-8.5 min-h-0 min-w-0 rounded-panel border border-border bg-surface px-1.5 py-px text-foreground [column-gap:normal] [row-gap:normal] font-normal leading-[normal] sm:size-9.5"
         data-testid="sub-back"
         isIconOnly
         onPress={onBack}

@@ -310,7 +310,7 @@ export default function ClientDetail() {
         <div className="border-b border-border bg-surface px-4 pt-1.5 text-foreground [line-height:normal] sm:px-8 sm:pt-4">
           <div className="flex items-center justify-between">
             <Button
-              className="h-auto min-h-0 min-w-0 gap-1 rounded-none bg-transparent p-0 type-eyebrow font-semibold text-muted [box-shadow:none] sm:gap-2"
+              className="h-auto min-h-0 min-w-0 gap-1 rounded-none bg-transparent p-0 type-eyebrow font-semibold text-muted sm:gap-2"
               data-testid="cd-back"
               onPress={goBack}
               variant="ghost"
@@ -321,7 +321,7 @@ export default function ClientDetail() {
             <Dropdown>
               <Button
                 aria-label="More"
-                className="size-8 min-h-0 min-w-0 rounded-panel border-0 bg-transparent px-1.5 py-px font-normal leading-[normal] text-muted [box-shadow:none] [column-gap:normal] [row-gap:normal] sm:size-8.5"
+                className="size-8 min-h-0 min-w-0 rounded-panel border-0 bg-transparent px-1.5 py-px font-normal leading-[normal] text-muted [column-gap:normal] [row-gap:normal] sm:size-8.5"
                 data-testid="cd-menu"
                 isIconOnly
                 variant="ghost"
@@ -423,7 +423,7 @@ export default function ClientDetail() {
             <div className="mt-3 flex w-full gap-2 sm:mt-0 sm:w-auto sm:flex-none sm:items-center">
               {isPending ? null : (
                 <Button
-                  className="relative flex-1 gap-2 rounded-panel px-4 font-btn type-body font-bold leading-none [color:white] [box-shadow:none] sm:flex-none"
+                  className="relative flex-1 gap-2 rounded-panel px-4 font-btn type-body font-bold leading-none [color:white] sm:flex-none"
                   data-testid="cd-message"
                   onPress={() => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', client.id))}
                   variant="primary"

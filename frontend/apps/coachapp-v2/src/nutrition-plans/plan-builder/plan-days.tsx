@@ -511,7 +511,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 value={nameValue}
               />
               <Button
-                className="shrink-0 rounded-control border-0 bg-accent px-3 font-btn type-body font-semibold leading-none [box-shadow:none] [color:white] [row-gap:normal] [column-gap:normal]"
+                className="shrink-0 rounded-control border-0 bg-accent px-3 font-btn type-body font-semibold leading-none [color:white] [row-gap:normal] [column-gap:normal]"
                 data-testid="nb-rename-save"
                 onPress={() => {
                   commitRename().catch(() => undefined);
@@ -538,7 +538,7 @@ export function PlanDays({plan}: PlanDaysProps) {
             >
               {days.map((day) => (
                 <ToggleButton
-                  className="rounded-control border border-border bg-surface px-3 type-eyebrow font-medium text-muted [box-shadow:none] data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:py-2 [row-gap:normal] [column-gap:normal]"
+                  className="rounded-control border border-border bg-surface px-3 type-eyebrow font-medium text-muted data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:py-2 [row-gap:normal] [column-gap:normal]"
                   data-testid={day.id === activeDay.id ? 'nb-daytab-on' : 'nb-daytab-off'}
                   id={day.id}
                   key={day.id}
@@ -565,7 +565,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           <Dropdown>
             <Button
               aria-label="Day options"
-              className={`size-11  shrink-0 rounded-chip border border-border bg-transparent text-muted [box-shadow:none] sm:size-7.5  ${AS_ICON_BUTTON}`}
+              className={`size-11  shrink-0 rounded-chip border border-border bg-transparent text-muted  sm:size-7.5  ${AS_ICON_BUTTON}`}
               data-testid="nb-day-menu-btn"
               isIconOnly
               size="sm"
@@ -625,7 +625,7 @@ export function PlanDays({plan}: PlanDaysProps) {
           {WEEKDAYS.map((weekday) => (
             <ToggleButton
               aria-label={`${WEEKDAY_SHORT_LABELS[weekday] ?? weekday} on ${activeDay.name}`}
-              className="size-11 rounded-control border border-border bg-transparent p-0 type-eyebrow font-semibold text-muted [box-shadow:none] data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-7.5 [row-gap:normal] [column-gap:normal]"
+              className="size-11 rounded-control border border-border bg-transparent p-0 type-eyebrow font-semibold text-muted data-[selected=true]:border-accent data-[selected=true]:bg-accent-tint data-[selected=true]:text-accent sm:size-7.5 [row-gap:normal] [column-gap:normal]"
               data-testid={weekdayAssignments[weekday] === activeDay.id ? 'nb-wday-on' : 'nb-wday-off'}
               id={weekday}
               key={weekday}

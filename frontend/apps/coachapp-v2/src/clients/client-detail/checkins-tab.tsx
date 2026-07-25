@@ -112,7 +112,7 @@ function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
         >
           <Button
             size="sm"
-            className="min-h-0 gap-2 rounded-control border border-border bg-background px-3 type-eyebrow font-semibold text-foreground [box-shadow:none]"
+            className="min-h-0 gap-2 rounded-control border border-border bg-background px-3 type-eyebrow font-semibold text-foreground"
             data-testid="ci-freq-ctl"
             variant="ghost"
           >

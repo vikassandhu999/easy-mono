@@ -169,7 +169,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
       options={reusable}
       renderCreate={(close) => (
         <Button
-          className={`h-auto w-full justify-start gap-2 rounded-control border-0 bg-transparent px-3 py-2 text-left [box-shadow:none] [color:var(--color-foreground)] ${AS_TEXT}`}
+          className={`h-auto w-full justify-start gap-2 rounded-control border-0 bg-transparent px-3 py-2 text-left  [color:var(--color-foreground)] ${AS_TEXT}`}
           data-testid="nb-create-meal"
           onPress={() => {
             close();
@@ -202,7 +202,7 @@ export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProp
       title="Add meal"
       trigger={({onPress, ref}) => (
         <Button
-          className="w-full gap-1.5 rounded-panel border border-dashed border-border bg-transparent px-1.5 py-px font-btn type-body font-semibold leading-none [box-shadow:none] [color:var(--color-accent)]"
+          className="w-full gap-1.5 rounded-panel border border-dashed border-border bg-transparent px-1.5 py-px font-btn type-body font-semibold leading-none [color:var(--color-accent)]"
           data-testid="nb-add-meal"
           onPress={onPress}
           ref={ref}

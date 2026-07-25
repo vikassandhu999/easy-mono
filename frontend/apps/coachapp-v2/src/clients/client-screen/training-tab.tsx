@@ -1,0 +1,132 @@
+import {Chip} from '@heroui/react';
+import {useNavigate} from 'react-router-dom';
+
+import SectionHeading from '@/@components/section-heading';
+import {ROUTES} from '@/@config/routes';
+import type {Client} from '@/api/clients';
+import {useListCoachClientTrainingPlansQuery, useListCoachClientTrainingSessionsQuery} from '@/api/generated';
+import {PlanPanel} from '@/clients/client-screen/plan-panel';
+import {DetailRow} from '@/clients/components/detail-row';
+import {SectionCard} from '@/clients/components/section-card';
+import {
+  formatCompactDuration,
+  formatDayMonth,
+  formatRowDate,
+  lastNDays,
+  weekGroupLabel,
+} from '@/clients/lib/client-detail-data';
+
+/** CD-TR: the active plan, then session history grouped by week. */
+export function TrainingTab({client}: {client: Client}) {
+  const navigate = useNavigate();
+  const window = lastNDays(56);
+  const plans = useListCoachClientTrainingPlansQuery({clientId: client.id, status: 'active'});
+  const sessions = useListCoachClientTrainingSessionsQuery({
+    clientId: client.id,
+    from: window[0]!,
+    to: window[window.length - 1]!,
+  });
+
+  const plan = plans.data?.data?.[0];
+  const scheduledDays = plan ? new Set(plan.plan_items.map((i) => i.day_of_week)).size : 0;
+
+  // Newest first, which is the order the design lists them in.
+  const rows = [...(sessions.data?.data ?? [])]
+    .filter((s) => s.date)
+    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+
+  // Group headers are "This week" / "Last week" / "Week of 7 Jul"; a header is
+  // emitted only when the group changes, so the list stays flat.
+  let lastGroup: null | string = null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <PlanPanel
+        emptyBody={`Assign a plan so ${client.first_name ?? 'this client'} sees workouts in their app.`}
+        emptyTitle="No training plan"
+        meta={
+          plan
+            ? [
+                plan.start_date ? `Started ${formatDayMonth(plan.start_date)}` : null,
+                scheduledDays ? `${scheduledDays} days a week` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')
+            : null
+        }
+        name={plan?.name}
+        onOpen={plan ? () => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
+      />
+
+      {rows.length > 0 && (
+        <SectionCard divided>
+          {rows.map((session) => {
+            const group = weekGroupLabel(session.date!);
+            const isNewGroup = group !== lastGroup;
+            lastGroup = group;
+            const setCount = session.performed_sets.length;
+            const exerciseCount = new Set(session.performed_sets.map((s) => s.exercise_id)).size;
+            const duration = formatCompactDuration(session.started_at, session.ended_at);
+            const isDone = session.state === 'completed';
+
+            return (
+              <div key={session.id}>
+                {isNewGroup && (
+                  <SectionHeading
+                    className="px-4 pt-4 pb-1"
+                    title={group}
+                  />
+                )}
+                <div className="px-2">
+                  <DetailRow
+                    leading={formatRowDate(session.date!)}
+                    meta={
+                      isDone
+                        ? [
+                            `${exerciseCount} exercises`,
+                            `${setCount} sets`,
+                            duration,
+                            session.soreness_rating != null ? `Soreness ${session.soreness_rating}/5` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')
+                        : 'No session logged'
+                    }
+                    title={workoutName(session)}
+                    to={
+                      isDone
+                        ? ROUTES.CLIENT_SESSION_DETAIL.replace(':clientId', client.id).replace(':sessionId', session.id)
+                        : undefined
+                    }
+                    tone={isDone ? 'default' : 'muted'}
+                    trailing={
+                      <Chip
+                        color={isDone ? 'success' : 'danger'}
+                        size="sm"
+                        variant="soft"
+                      >
+                        {isDone ? 'Completed' : 'Missed'}
+                      </Chip>
+                    }
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </SectionCard>
+      )}
+    </div>
+  );
+}
+
+/** The snapshot holds the workout's name at the time it was performed. */
+function workoutName(session: {planned_snapshot?: unknown}): string {
+  const snapshot = session.planned_snapshot;
+  if (snapshot && typeof snapshot === 'object') {
+    const name = (snapshot as {name?: unknown}).name;
+    if (typeof name === 'string' && name) {
+      return name;
+    }
+  }
+  return 'Workout';
+}

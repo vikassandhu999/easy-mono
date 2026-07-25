@@ -43,7 +43,7 @@ KNOWN=$(cat "$HEROUI"/*.css | grep -oE '\.[a-z][a-z0-9_-]*' | sort -u)
 # (`.toggle-button--ghost`), so an app variant follows the same convention. The
 # check that matters for these is still enforced — the BLOCK must exist, so
 # `.toggle-buton--ink` is still caught. Only the modifier is app-owned.
-OURS='^\.(segmented|tap-target|scrollbar-hide|heading|light|default|dark)$'
+OURS='^\.(eyebrow|segmented|tap-target|scrollbar-hide|heading|light|default|dark)$'
 APP_MODIFIERS='^\.[a-z][a-z0-9-]*--(ink|filter|tab|row)$'
 
 MISSING=""

@@ -2,9 +2,9 @@
 // form sections — those use Fieldset.Legend). One uppercase-muted token instead
 // of ad-hoc span / Typography / type-eyebrow / type-eyebrow variants.
 
-// `tracking-eyebrow`, not `tracking-wider`: the designs put `.eyebrow` at
-// letter-spacing .09em and `tracking-wider` is .05em. `--tracking-eyebrow` has
-// held the right value all along — this heading just never used it.
+// The treatment is the theme's `.eyebrow` (size, weight, .09em tracking, uppercase,
+// muted) — this component only decides that a section caption is an `<h3>`. A stat
+// label wears the same class on a `<span>`, so neither spells the treatment out.
 export default function SectionHeading({title, className = 'mb-3'}: {title: string; className?: string}) {
-  return <h3 className={`type-eyebrow font-semibold uppercase tracking-eyebrow text-muted ${className}`}>{title}</h3>;
+  return <h3 className={`eyebrow ${className}`}>{title}</h3>;
 }

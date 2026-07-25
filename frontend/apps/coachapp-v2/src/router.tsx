@@ -15,6 +15,7 @@ import CreateCheckin from '@/checkins/create-checkin';
 import EditCheckin from '@/checkins/edit-checkin';
 import ListCheckins from '@/checkins/list-checkins';
 import ReviewCheckin from '@/checkins/review-checkin';
+import ClientScreen from '@/clients/client-screen';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
 import Dashboard from '@/dashboard/dashboard';
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.DASHBOARD, Component: Dashboard},
       {path: ROUTES.CLIENTS, Component: ListClients},
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
+      {path: ROUTES.CLIENT_DETAIL, Component: ClientScreen},
       {path: ROUTES.CLIENT_MESSAGES, Component: ClientConversation},
       {path: ROUTES.LIBRARY, Component: Library},
       {path: ROUTES.EXERCISES, Component: ListExercises},

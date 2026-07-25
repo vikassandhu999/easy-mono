@@ -630,6 +630,25 @@ svg.lucide:not([class*="size-"]) {
   }
 }
 
+/* `.eyebrow` — the small uppercase caption, 36 uses in Client Detail alone and
+   the same rule in both dc.html files:
+
+     eyebrow -> font-size:11px; font-weight:600; letter-spacing:.09em;
+                text-transform:uppercase; color:var(--muted)
+
+   A class rather than a component because the ELEMENT varies by meaning and only
+   the treatment is shared: a section caption is an `<h3>`, a stat-tile label is a
+   `<span>` and must stay out of the heading outline. A component would need an
+   `as` prop to say the same thing, which is a wider interface for no gain.
+   App-owned, like `.segmented`. */
+.eyebrow {
+  font-size: var(--type-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
 /* Segmented control: a ToggleButtonGroup drawn as one track with inset segments.
    Both builders had defined it as a pair of byte-identical `SEGMENT_*_CLASS`
    constants; it is a look, so it lives here and the call sites just name it. */

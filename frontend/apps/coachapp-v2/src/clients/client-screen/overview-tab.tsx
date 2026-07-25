@@ -91,7 +91,7 @@ export function OverviewTab({client}: {client: Client}) {
               <div className="flex justify-between gap-1">
                 {week.map((day) => (
                   <div
-                    className="flex flex-1 flex-col items-center gap-2.5"
+                    className="flex flex-1 flex-col items-center gap-3"
                     key={day}
                   >
                     <span className="eyebrow">{weekdayInitial(day)}</span>

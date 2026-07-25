@@ -67,13 +67,12 @@ check RM-136 "hand-assembled ink-selected pill (use .toggle-button--ink / --filt
 # the fossil of a step someone meant to add. `Page.Title` carried `type-metric
 # sm:type-metric`, so every page title in the app rendered 22px at every width
 # where the scale says desktop titles are 27px.
-# ponytail: client-detail excluded — 5 dead `sm:type-eyebrow` there, deferred
 # -U (multiline) is required, not optional: the halves are usually separate string
 # literals on separate lines inside one `cn()` or `+`-joined const, which is
 # exactly how the Page.Title one survived a line-based grep. `[^;{}]` keeps the
 # window inside a single className expression.
 check RM-138 "responsive pair with the same type step on both sides (dead sm: — set the real step or drop it)" \
-  '\btype-([a-z]+)\b[^;{}]{0,300}?\bsm:type-\1\b' "$COACH" -U -g '!**/client-detail*/**' -g '!**/client-detail.tsx'
+  '\btype-([a-z]+)\b[^;{}]{0,300}?\bsm:type-\1\b' "$COACH" -U
 
 # `color` never needs an arbitrary value. A literal (`[color:white]`) cannot follow
 # the theme at all; a token wrapped in one (`[color:var(--color-muted)]`) was a
@@ -82,9 +81,8 @@ check RM-138 "responsive pair with the same type step on both sides (dead sm: �
 # Sizes are `type-*` now, so the collision cannot happen and `text-*` is correct.
 # The escalation is not harmless: tailwind-merge cannot see `[color:…]` as a
 # colour, so a base string carrying one is unoverridable by a call site.
-# ponytail: client-detail excluded — deferred for redesign, its literals live there
 check RM-137 "arbitrary-value color (use a text-* token; sizes are type-*, so there is no collision to dodge)" \
-  '\[color:' "$COACH" -g '!**/client-detail*/**' -g '!**/client-detail.tsx'
+  '\[color:' "$COACH"
 
 if [ "$fail" -eq 0 ]; then echo "check-rm: all clean"; fi
 exit $fail

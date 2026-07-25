@@ -502,10 +502,10 @@ overridability on `Page.Title`/`Page.Description` and 14 other sites.
 
 The rule: **colour is a `text-*` token. There is no case for an arbitrary `color:` property.**
 
-**Enforced by:** `scripts/check-rm.sh` rejects `[color:` outright. Client Detail is excluded
-pending its redesign — **remove that exclusion when it lands**, or the rule silently stops
-covering the app's largest feature. Watch for false positives from prose: a comment that
-quotes the banned form trips the check (it did twice while this was being written).
+**Enforced by:** `scripts/check-rm.sh` rejects `[color:` outright, across the whole app —
+the Client Detail exclusion was removed when that feature was rebuilt, which is what the
+exclusion was waiting for. Watch for false positives from prose: a comment that quotes the
+banned form trips the check (it did twice while this was being written).
 
 ---
 
@@ -526,8 +526,8 @@ removable but were load-bearing because tailwind-merge had eaten the base. Check
 base actually *computes* before deleting — if the base works, the `sm:` is dead; if the base
 is being dropped, the `sm:` is the only thing holding the size up.
 
-Seven more of these existed, all `sm:type-eyebrow` over `type-eyebrow`; five are in Client
-Detail and wait for its redesign.
+Seven more of these existed, all `sm:type-eyebrow` over `type-eyebrow`. Five were in Client
+Detail and died with it; the check now runs over the whole app with no carve-out.
 
 **Enforced by:** `scripts/check-rm.sh` RM-138. The check must run **multiline** (`-U`) —
 the two halves are normally separate string literals on separate lines inside one `cn()` or

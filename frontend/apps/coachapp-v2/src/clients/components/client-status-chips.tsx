@@ -57,28 +57,38 @@ export function ClientStatusChips({client}: {client: Client}) {
       {/* Attention chips are links, not chips with an onPress: they navigate, so
           they should behave like navigation (focus, middle-click, back). */}
       {client.needs_plan && client.status === 'active' && (
-        <Link
-          className="inline-flex items-center gap-1.5 rounded-pill bg-warning-soft px-2.5 py-1 type-eyebrow font-semibold text-warning-soft-foreground"
-          to={`${clientPath(ROUTES.CLIENT_DETAIL)}?tab=training`}
-        >
-          <Dumbbell className="size-3.5" />
-          No active plan
+        <Link to={`${clientPath(ROUTES.CLIENT_DETAIL)}?tab=training`}>
+          <Chip
+            color="warning"
+            size="sm"
+            variant="soft"
+          >
+            <Dumbbell />
+            No active plan
+          </Chip>
         </Link>
       )}
       {client.expiring_soon && client.subscription_ends_on && (
-        <Link
-          className="inline-flex items-center gap-1.5 rounded-pill bg-danger-soft px-2.5 py-1 type-eyebrow font-semibold text-danger-soft-foreground"
-          to={clientPath(ROUTES.CLIENT_DETAILS)}
-        >
-          <AlarmClock className="size-3.5" />
-          Expires {formatDayMonth(client.subscription_ends_on)}
+        <Link to={clientPath(ROUTES.CLIENT_DETAILS)}>
+          <Chip
+            color="danger"
+            size="sm"
+            variant="soft"
+          >
+            <AlarmClock />
+            Expires {formatDayMonth(client.subscription_ends_on)}
+          </Chip>
         </Link>
       )}
       {client.intake_incomplete && (
-        <span className="inline-flex items-center gap-1.5 rounded-pill bg-warning-soft px-2.5 py-1 type-eyebrow font-semibold text-warning-soft-foreground">
-          <ClipboardList className="size-3.5" />
+        <Chip
+          color="warning"
+          size="sm"
+          variant="soft"
+        >
+          <ClipboardList />
           Intake pending
-        </span>
+        </Chip>
       )}
     </div>
   );

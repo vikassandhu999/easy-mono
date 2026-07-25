@@ -1,4 +1,4 @@
-import {Button, Typography} from '@heroui/react';
+import {Button, Chip, Typography} from '@heroui/react';
 import {Sparkles} from 'lucide-react';
 import {Link, useNavigate} from 'react-router-dom';
 
@@ -14,10 +14,13 @@ import {
 import {DetailRow} from '@/clients/components/detail-row';
 import {SectionCard} from '@/clients/components/section-card';
 import {
+  type AnswerType,
   completedSessionDates,
   dayOfMonth,
+  formatAnswer,
   formatDayMonth,
   formatWeight,
+  isSummarisableAnswer,
   lastNDays,
   loggedMealDates,
   relativeDay,
@@ -158,6 +161,30 @@ export function OverviewTab({client}: {client: Client}) {
                   ? ` · ${formatDayMonth(latest.latest_submission.submitted_at.slice(0, 10))}`
                   : ''}
               </Typography>
+              {/* The design summarises the first few answers here (Energy 4/5, Sleep
+                  quality 4/5, Weight 72.4 kg) so a coach can triage without opening
+                  the submission. Three is the design's count; the full set is one
+                  click away. */}
+              <dl className="mt-3 flex flex-col gap-1.5">
+                {answerSummary(latest.latest_submission).map(({answer, label}) => (
+                  <div
+                    className="flex items-baseline justify-between gap-3"
+                    key={label}
+                  >
+                    <dt className="min-w-0 truncate type-eyebrow text-muted">{label}</dt>
+                    <dd className="shrink-0 type-body font-semibold">{answer}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-3">
+                <Chip
+                  color={latest.latest_submission_reviewed_at ? 'success' : 'warning'}
+                  size="sm"
+                  variant="soft"
+                >
+                  {latest.latest_submission_reviewed_at ? 'Reviewed' : 'Needs review'}
+                </Chip>
+              </div>
             </div>
           </SectionCard>
         )}
@@ -234,4 +261,29 @@ function Dot({isOn}: {isOn: boolean}) {
       className={`size-3 rounded-pill ${isOn ? 'bg-success' : 'border border-border'}`}
     />
   );
+}
+
+/**
+ * The first three SUMMARISABLE answers of a submission, for the CD-OV card. Walks
+ * `question_snapshot` (an array of sections) so the order matches the form, and
+ * skips photo answers — those are attachment ids, not display text.
+ */
+function answerSummary(submission: {
+  answers?: Record<string, unknown> | null;
+  question_snapshot?: {questions?: {id: string; label: string; type?: AnswerType}[]}[] | null;
+}): {answer: string; label: string}[] {
+  const answers = (submission.answers ?? {}) as Record<string, unknown>;
+  const rows: {answer: string; label: string}[] = [];
+  for (const section of submission.question_snapshot ?? []) {
+    for (const question of section.questions ?? []) {
+      if (!isSummarisableAnswer(answers[question.id], question.type)) {
+        continue;
+      }
+      rows.push({answer: formatAnswer(answers[question.id], question.type), label: question.label});
+      if (rows.length === 3) {
+        return rows;
+      }
+    }
+  }
+  return rows;
 }

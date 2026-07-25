@@ -29,6 +29,11 @@ export function TrainingTab({client}: {client: Client}) {
 
   const plan = plans.data?.data?.[0];
   const scheduledDays = plan ? new Set(plan.plan_items.map((i) => i.day_of_week)).size : 0;
+  // A session records WHICH workout it performed, not its name, and
+  // `planned_snapshot` is null on sessions logged against a live plan. The name
+  // comes from the plan's own workouts. A session against an archived plan will not
+  // be in this map, which is what the fallback is for.
+  const workoutNames = new Map((plan?.workouts ?? []).map((w) => [w.id, w.name]));
 
   // Newest first, which is the order the design lists them in.
   const rows = [...(sessions.data?.data ?? [])]
@@ -92,7 +97,7 @@ export function TrainingTab({client}: {client: Client}) {
                             .join(' · ')
                         : 'No session logged'
                     }
-                    title={workoutName(session)}
+                    title={workoutNames.get(session.training_workout_id ?? '') ?? workoutName(session)}
                     to={
                       isDone
                         ? ROUTES.CLIENT_SESSION_DETAIL.replace(':clientId', client.id).replace(':sessionId', session.id)

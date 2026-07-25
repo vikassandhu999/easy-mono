@@ -78,7 +78,10 @@ export default function EditClient() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -90,7 +93,10 @@ export default function EditClient() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <ErrorState
               message="Couldn't load this client."
               onRetry={refetch}
@@ -131,7 +137,10 @@ export default function EditClient() {
     <Page>
       {header}
       <Page.Content bare>
-        <Page.Frame className="pt-4 pb-6">
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
           <FormLayout onSubmit={onSubmit}>
             <Fieldset>
               <Fieldset.Legend>Profile</Fieldset.Legend>

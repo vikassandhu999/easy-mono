@@ -12,7 +12,7 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery, useReviewFormSubmissionMutation} from '@/api/generated';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatDayMonth} from '@/clients/lib/client-detail-data';
+import {formatAnswer, formatDayMonth} from '@/clients/lib/client-detail-data';
 
 /** CD-CS — one submitted check-in, and the review action that clears it. */
 export default function CheckinSubmission() {
@@ -40,7 +40,10 @@ export default function CheckinSubmission() {
       <Page>
         {header('Check-in')}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -52,7 +55,10 @@ export default function CheckinSubmission() {
       <Page>
         {header('Check-in')}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <ErrorState
               message="Couldn't load this check-in."
               onRetry={refetch}
@@ -106,7 +112,10 @@ export default function CheckinSubmission() {
         </Page.Actions>
       </Page.Header>
       <Page.Content bare>
-        <Page.Frame className="flex flex-col gap-4 pt-4 pb-6">
+        <Page.Frame
+          className="flex flex-col gap-4 pt-4 pb-6"
+          size="content"
+        >
           {submission.question_snapshot.map((section, index) => (
             <SectionCard
               divided
@@ -123,7 +132,7 @@ export default function CheckinSubmission() {
                     className="mt-1"
                     type="body-sm"
                   >
-                    {formatAnswer(answers[question.id])}
+                    {formatAnswer(answers[question.id], question.type)}
                   </Typography>
                 </div>
               ))}
@@ -157,18 +166,4 @@ export default function CheckinSubmission() {
       </Page.Content>
     </Page>
   );
-}
-
-/** Shared shape with CD-IR: arrays join, booleans read yes/no, blanks are em dashes. */
-function formatAnswer(value: unknown): string {
-  if (value == null || value === '') {
-    return '—';
-  }
-  if (Array.isArray(value)) {
-    return value.length ? value.map(String).join(' · ') : '—';
-  }
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-  return String(value);
 }

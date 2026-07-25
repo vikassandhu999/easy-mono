@@ -11,7 +11,7 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/generated';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatDayMonth} from '@/clients/lib/client-detail-data';
+import {formatAnswer, formatDayMonth} from '@/clients/lib/client-detail-data';
 
 /**
  * CD-IR — the intake answers, read-only.
@@ -39,7 +39,10 @@ export default function IntakeResponses() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -51,7 +54,10 @@ export default function IntakeResponses() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <ErrorState
               message="Couldn't load intake responses."
               onRetry={refetch}
@@ -86,7 +92,10 @@ export default function IntakeResponses() {
         </Page.TitleGroup>
       </Page.Header>
       <Page.Content bare>
-        <Page.Frame className="pt-4 pb-6">
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
           {questionCount > 0 ? (
             <div className="flex flex-col gap-4">
               {sections.map((section, index) => (
@@ -105,7 +114,7 @@ export default function IntakeResponses() {
                         className="mt-1"
                         type="body-sm"
                       >
-                        {formatAnswer(answers[question.id])}
+                        {formatAnswer(answers[question.id], question.type)}
                       </Typography>
                     </div>
                   ))}
@@ -129,22 +138,4 @@ export default function IntakeResponses() {
       </Page.Content>
     </Page>
   );
-}
-
-/**
- * Answers are `unknown` per question type. Multi-select arrives as an array (the
- * design shows "Mon · Wed · Fri · Sat" for days available), booleans as yes/no,
- * and an unanswered question as an em dash rather than a blank row.
- */
-function formatAnswer(value: unknown): string {
-  if (value == null || value === '') {
-    return '—';
-  }
-  if (Array.isArray(value)) {
-    return value.length ? value.map(String).join(' · ') : '—';
-  }
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-  return String(value);
 }

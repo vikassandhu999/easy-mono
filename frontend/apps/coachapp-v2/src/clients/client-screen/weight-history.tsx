@@ -43,7 +43,10 @@ export default function WeightHistory() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -55,7 +58,10 @@ export default function WeightHistory() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <ErrorState
               message="Couldn't load weight entries."
               onRetry={refetch}
@@ -80,7 +86,10 @@ export default function WeightHistory() {
     <Page>
       {header}
       <Page.Content bare>
-        <Page.Frame className="flex flex-col gap-4 pt-4 pb-6">
+        <Page.Frame
+          className="flex flex-col gap-4 pt-4 pb-6"
+          size="content"
+        >
           <SectionCard
             action={
               <ToggleButtonGroup
@@ -117,7 +126,7 @@ export default function WeightHistory() {
                       polyline over at most a few dozen points. */}
                   <svg
                     aria-hidden
-                    className="h-24 w-full text-accent"
+                    className="h-24 w-full overflow-visible text-accent"
                     preserveAspectRatio="none"
                     viewBox="0 0 100 40"
                   >
@@ -170,8 +179,8 @@ export default function WeightHistory() {
                   title={formatWeight(entry.value, entry.unit)}
                   trailing={
                     <Chip
+                      className="chip--outline"
                       size="sm"
-                      variant="tertiary"
                     >
                       {/* A form_submission_id means it arrived with a check-in
                           rather than being logged in the client's app. */}

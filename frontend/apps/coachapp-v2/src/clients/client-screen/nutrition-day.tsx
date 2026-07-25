@@ -9,7 +9,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useListCoachMealLogsQuery} from '@/api/generated';
+import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/generated';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
 
@@ -18,6 +18,9 @@ export default function NutritionDay() {
   const {date = '', id = ''} = useParams<{date: string; id: string}>();
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', id)}?tab=nutrition`);
   const {data, isError, isLoading, refetch} = useListCoachMealLogsQuery({clientId: id, date});
+  // The design shows a target beside every macro, not just calories, and the
+  // targets live on the plan rather than on the day's logs.
+  const plans = useListCoachClientNutritionPlansQuery({clientId: id, status: 'active'});
 
   const header = (
     <Page.Header size="content">
@@ -33,7 +36,10 @@ export default function NutritionDay() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -45,7 +51,10 @@ export default function NutritionDay() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <ErrorState
               message="Couldn't load this day."
               onRetry={refetch}
@@ -56,7 +65,11 @@ export default function NutritionDay() {
     );
   }
 
-  const logs = data.data;
+  const plan = plans.data?.data?.[0];
+  // Meal-time order, not the order the endpoint happens to return — it came back
+  // Afternoon snack / Breakfast / Dinner / Lunch. `meal_slot` is a free-form
+  // string, so an unrecognised slot sorts last rather than being dropped.
+  const logs = [...data.data].sort((a, b) => mealSlotRank(a.meal_slot) - mealSlotRank(b.meal_slot));
   const totals = logs.reduce(
     (acc, log) => {
       acc.kcal += log.logged_calories ?? 0;
@@ -75,7 +88,10 @@ export default function NutritionDay() {
     <Page>
       {header}
       <Page.Content bare>
-        <Page.Frame className="flex flex-col gap-4 pt-4 pb-6">
+        <Page.Frame
+          className="flex flex-col gap-4 pt-4 pb-6"
+          size="content"
+        >
           <SectionCard title="Day totals">
             <div className="grid grid-cols-2 gap-4 px-4 pb-4 sm:grid-cols-4">
               <Total
@@ -85,14 +101,17 @@ export default function NutritionDay() {
               />
               <Total
                 label="Protein"
+                target={plan?.target_protein_g ? `/ ${plan.target_protein_g} g` : undefined}
                 value={`${Math.round(totals.protein)} g`}
               />
               <Total
                 label="Carbs"
+                target={plan?.target_carbs_g ? `/ ${plan.target_carbs_g} g` : undefined}
                 value={`${Math.round(totals.carbs)} g`}
               />
               <Total
                 label="Fat"
+                target={plan?.target_fat_g ? `/ ${plan.target_fat_g} g` : undefined}
                 value={`${Math.round(totals.fat)} g`}
               />
             </div>
@@ -206,6 +225,29 @@ function Total({label, target, value}: {label: string; target?: string; value: s
       )}
     </div>
   );
+}
+
+/**
+ * Meal-time order. `meal_slot` is free-form, so this ranks the slots the app
+ * actually creates and sends anything unknown to the end — a slot we have never
+ * seen should appear, just not jump the queue.
+ */
+const MEAL_ORDER = [
+  'breakfast',
+  'morning_snack',
+  'brunch',
+  'lunch',
+  'afternoon_snack',
+  'pre_workout',
+  'post_workout',
+  'dinner',
+  'evening_snack',
+  'supper',
+];
+
+function mealSlotRank(slot: string): number {
+  const i = MEAL_ORDER.indexOf(slot.toLowerCase().replace(/\s+/g, '_'));
+  return i === -1 ? MEAL_ORDER.length : i;
 }
 
 /** `meal_slot` is a free-form string from the API ("breakfast", "post_workout"). */

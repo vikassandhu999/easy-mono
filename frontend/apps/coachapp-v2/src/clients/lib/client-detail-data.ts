@@ -225,6 +225,48 @@ export function completedCheckIns(assignments: {status?: null | string}[] | unde
   return (assignments ?? []).filter((a) => a.status === 'completed').length;
 }
 
+/** The question types a form can hold, from the generated `question_snapshot`. */
+export type AnswerType =
+  | 'boolean'
+  | 'date'
+  | 'multi_select'
+  | 'number'
+  | 'photo'
+  | 'rating'
+  | 'select'
+  | 'text'
+  | 'weight';
+
+/**
+ * One answer, rendered. Shared by CD-IR, CD-CS and the CD-OV summary — they had
+ * three copies and the third one shipped a bug the other two would have too.
+ *
+ * `photo` is the reason this needs the question TYPE and not just the value: a
+ * photo answer is an attachment id, and rendering it as a string puts a raw UUID
+ * on screen (it overflowed the CD-OV card). An id is never display text.
+ */
+export function formatAnswer(value: unknown, type?: AnswerType): string {
+  if (type === 'photo') {
+    const count = Array.isArray(value) ? value.length : value ? 1 : 0;
+    return count === 0 ? '—' : count === 1 ? 'Photo attached' : `${count} photos attached`;
+  }
+  if (value == null || value === '') {
+    return '—';
+  }
+  if (Array.isArray(value)) {
+    return value.length ? value.map(String).join(' · ') : '—';
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  return String(value);
+}
+
+/** True when an answer is worth putting in a one-line summary (CD-OV). */
+export function isSummarisableAnswer(value: unknown, type?: AnswerType): boolean {
+  return type !== 'photo' && value != null && value !== '' && !(Array.isArray(value) && value.length === 0);
+}
+
 /**
  * `points` for the CD-WH trend polyline, oldest value on the left. A flat series
  * is drawn down the vertical middle rather than dividing by a zero range.

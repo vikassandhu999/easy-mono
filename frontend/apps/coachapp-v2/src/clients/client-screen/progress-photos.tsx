@@ -63,7 +63,10 @@ export default function ProgressPhotos() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -75,7 +78,10 @@ export default function ProgressPhotos() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <ErrorState
               message="Couldn't load progress photos."
               onRetry={refetch}
@@ -92,7 +98,10 @@ export default function ProgressPhotos() {
     <Page>
       {header}
       <Page.Content bare>
-        <Page.Frame className="flex flex-col gap-4 pt-4 pb-6">
+        <Page.Frame
+          className="flex flex-col gap-4 pt-4 pb-6"
+          size="content"
+        >
           {comparing && (
             <SectionCard title="Comparing">
               <div className="grid grid-cols-2 gap-3 px-4 pb-4">

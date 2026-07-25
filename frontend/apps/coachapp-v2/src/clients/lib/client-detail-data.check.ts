@@ -16,6 +16,7 @@ import {
   averageLoggedCalories,
   completedCheckIns,
   completedSessionDates,
+  formatAnswer,
   formatCompactDuration,
   formatDayMonth,
   formatDayMonthYear,
@@ -168,6 +169,19 @@ assert.equal(
   )?.direction,
   'flat',
 );
+
+// — answers: a photo answer must never render its attachment id ————————————
+assert.equal(
+  formatAnswer('84b8f540-f00e-4046-8d9a-a4db724463bd', 'photo'),
+  'Photo attached',
+  'a photo answer is an attachment id — rendering it put a raw UUID on the CD-OV card',
+);
+assert.equal(formatAnswer(['a', 'b'], 'photo'), '2 photos attached');
+assert.equal(formatAnswer(null, 'photo'), '—');
+assert.equal(formatAnswer(['Mon', 'Wed', 'Fri'], 'multi_select'), 'Mon · Wed · Fri');
+assert.equal(formatAnswer(true, 'boolean'), 'Yes');
+assert.equal(formatAnswer(4, 'rating'), '4');
+assert.equal(formatAnswer('', 'text'), '—');
 
 // — sparkline —————————————————————————————————————————————————————
 assert.equal(sparklinePoints([], 100, 20), '');

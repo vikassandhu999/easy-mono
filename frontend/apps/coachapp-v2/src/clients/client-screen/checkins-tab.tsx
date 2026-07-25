@@ -18,7 +18,16 @@ export function CheckinsTab({client}: {client: Client}) {
 
   const schedule = schedules.data?.data?.[0];
   const assignments = forms.data?.data ?? [];
-  const checkIns = assignments.filter((a) => a.purpose === 'check_in');
+  // Newest first. The endpoint does not promise an order, and it came back with
+  // 9 Jul above 16 Jul — sort on the submission date, falling back to the due date
+  // so a missed check-in still lands in the right place.
+  const checkIns = assignments
+    .filter((a) => a.purpose === 'check_in')
+    .sort((a, b) =>
+      (b.latest_submission?.submitted_at ?? b.due_date ?? '').localeCompare(
+        a.latest_submission?.submitted_at ?? a.due_date ?? '',
+      ),
+    );
   const intake = assignments.find((a) => a.purpose === 'intake');
 
   const submissionPath = (assignmentId: string) =>
@@ -41,7 +50,10 @@ export function CheckinsTab({client}: {client: Client}) {
                 color="muted"
                 type="body-xs"
               >
-                {[schedule.frequency, schedule.next_due_on ? `Next ${formatDayMonth(schedule.next_due_on)}` : null]
+                {[
+                  titleCase(schedule.frequency),
+                  schedule.next_due_on ? `Next ${formatDayMonth(schedule.next_due_on)}` : null,
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               </Typography>
@@ -131,4 +143,13 @@ export function CheckinsTab({client}: {client: Client}) {
       )}
     </div>
   );
+}
+
+/** `frequency` is a raw enum ("weekly", "every_two_weeks") — never shown as-is. */
+function titleCase(value: string): string {
+  return value
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((word, i) => (i === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+    .join(' ');
 }

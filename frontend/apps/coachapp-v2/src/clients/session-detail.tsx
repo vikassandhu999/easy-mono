@@ -42,7 +42,10 @@ export default function SessionDetail() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -54,7 +57,10 @@ export default function SessionDetail() {
       <Page>
         {header}
         <Page.Content bare>
-          <Page.Frame className="pt-4 pb-6">
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <ErrorState
               message="Couldn't load this session."
               onRetry={refetch}
@@ -92,8 +98,8 @@ export default function SessionDetail() {
           )}
           {session.soreness_rating != null && (
             <Chip
+              className="chip--outline"
               size="sm"
-              variant="tertiary"
             >
               Soreness {session.soreness_rating}/5
             </Chip>
@@ -101,7 +107,10 @@ export default function SessionDetail() {
         </Page.Actions>
       </Page.Header>
       <Page.Content bare>
-        <Page.Frame className="flex flex-col gap-4 pt-4 pb-6">
+        <Page.Frame
+          className="flex flex-col gap-4 pt-4 pb-6"
+          size="content"
+        >
           {session.notes && (
             <div className="flex gap-3 rounded-panel bg-accent-soft p-4">
               <Quote className="mt-0.5 shrink-0 text-accent" />
@@ -139,7 +148,10 @@ function ExerciseCard({group}: {group: ExerciseGroup}) {
   const total = group.sets.length || group.plannedSets.length;
 
   return (
-    <SectionCard title={`${group.exerciseName} (${done}/${total} sets)`}>
+    <SectionCard
+      title={`${group.exerciseName} (${done}/${total} sets)`}
+      titleAs="heading"
+    >
       <div className="px-4 pb-4">
         <div className={`${GRID} border-b border-border pb-2`}>
           <span className="eyebrow">Set</span>
@@ -157,8 +169,8 @@ function ExerciseCard({group}: {group: ExerciseGroup}) {
               <b>{index + 1}</b>
               {setTypeLabel(set) && (
                 <Chip
+                  className="chip--outline"
                   size="sm"
-                  variant="tertiary"
                 >
                   {setTypeLabel(set)}
                 </Chip>

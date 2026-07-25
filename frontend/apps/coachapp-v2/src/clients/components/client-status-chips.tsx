@@ -47,8 +47,8 @@ export function ClientStatusChips({client}: {client: Client}) {
       )}
       {client.status === 'inactive' && (
         <Chip
+          className="chip--outline"
           size="sm"
-          variant="tertiary"
         >
           {inactiveLabel(client.inactive_reason)}
         </Chip>

@@ -630,6 +630,28 @@ svg.lucide:not([class*="size-"]) {
   }
 }
 
+/* `.chip.out` — the design's outline chip, for a neutral fact rather than a status:
+   the weight-entry source ("Client log" / "From check-in"), a set type ("Warm-up"),
+   an inactive reason.
+
+     chip.out -> background:var(--background); border:1px solid var(--border);
+                 border-radius:7px; color:var(--foreground); font-weight:500
+
+   HeroUI ships no outline chip — `default/primary/secondary/tertiary/accent/
+   danger/success/warning` are all fills — and `tertiary` renders with no border at
+   all, so these read as bare muted text on CD-WH. An app-owned modifier following
+   the same convention as `.toggle-button--ink`. Radius 7px snaps to the chip step;
+   the size already comes from the `.chip` pin above. */
+@layer components {
+  .chip--outline {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-chip);
+    background-color: var(--color-background);
+    font-weight: 500;
+    color: var(--color-foreground);
+  }
+}
+
 /* Control radius, and the same story as control height one axis over. HeroUI ships
    `.button` as `rounded-3xl` (24px); every design says 11px — `.btnA`, `.btnG`,
    `.msgbtn`, `.iconbtn`, `.fld`, `.seg` — which is the 10px control step. So 34

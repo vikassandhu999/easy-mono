@@ -199,6 +199,28 @@
   min-height: var(--spacing-control);
 }
 
+/* The one sanctioned release from the control tier, and it is a THEME rule rather
+   than an `h-auto` at a call site on purpose — the theme owns the height either
+   way, including the exception to it.
+   A pressable ROW or TILE is not a control: it is sized by its content (a
+   two-line list row, a 64px photo tile), which is what "rows and layout wrappers
+   are not controls" in AGENTS.md already carves out. Without a named release, the
+   only way to build one is to neutralise the control height where it is used —
+   which is what the deleted Client Detail did 20 times over with `h-auto`.
+
+   Padding is zeroed here and re-stated by the component, because a row and a tile
+   want different insets. Utilities outrank this layer, so the component's
+   `px-2 py-3` wins over the `padding: 0` below without a fight. */
+@layer components {
+  .button--row {
+    height: auto;
+    min-height: 0;
+    border: 0;
+    background-color: transparent;
+    padding: 0;
+  }
+}
+
 /* Icon-only controls are square — HeroUI's own `.button--icon-only` is
    `w-10 md:w-9`, matching its height recipe, so the app's 44 hand-written
    `min-w-11` were forcing a 44x36 rectangle once the height moved to 36px. */

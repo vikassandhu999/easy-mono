@@ -126,7 +126,17 @@ Never port a prototype variable. Substitute:
 
 **The scale is closed.** The `--type-*` and `--radius-*` tokens in `frontend/apps/coachapp-v2/src/index.css` are the complete vocabulary. A port **snaps to the nearest existing token**; it may not register a new one, and `scripts/check-ui-contract.sh` fails any diff that adds one. Adding to the scale is a user decision, made in its own commit. This is the same fence §2 puts around components — a value you cannot express is a STOP-and-ask, not a licence to invent.
 
-**Design wins — within the scale.** The dc.html's rendered computed values are the target for everything the scale does not quantise (color, weight, layout, structure), verified per node/state by `scripts/style-diff.mjs` (see the `design-pro` skill). Where a HeroUI/app default disagrees, fix it at the highest sensible layer (app wrapper → screen-local token class); a difference survives only as a user-approved entry in `accepted-diffs.md`, never as agent judgment. Sizes and radii are the exception: the prototype's exact px is an *input to the scale*, not the target — snapping to within ±2px is a PASS, not a diff to chase.
+**The theme wins on conflict.** This reverses the older "design wins" rule, and the reversal is the point: the theme is no longer a transcription of the prototype, it is the system the prototype is measured against. When a dc.html value disagrees with the theme, **the theme value is the target** and the prototype's px is an *input*, not the goal.
+
+"The theme" means the scale **and the component rules built on it** — the one control height (`--spacing-control`), the field height, the selection registers (`--ink` / `--filter` / `--tab`), the tab strip, `--tracking-eyebrow`, the radius steps. So:
+
+- `.fld` 42px vs `--spacing-control` 36px → **36px**. One screen does not get a taller field tier.
+- `.msgbtn` / `.iconbtn` 38px → **36px**. `.card` 18px → `--radius-card` 17px. `.ctab` 13.5px → `--type-body` 14px.
+- A prototype that draws the same object two ways (`.pill` and `.daytab`; `.ctab` and `.mtab`) gets **one** theme treatment, because the duplication is per-page generation, not intent.
+
+The design still decides everything the theme does not quantise: **structure, layout, copy, iconography, and which register a screen uses.** A new register the theme has no rule for is a STOP-and-ask, exactly like a value off the scale — not a licence to neutralise the theme at a call site.
+
+Never resolve a conflict by writing the design's value at a call site. That is the failure this rule exists to prevent: it does not remove the disagreement, it hides it in 200 classNames. If the theme is genuinely wrong, change the theme in its own commit.
 
 ---
 

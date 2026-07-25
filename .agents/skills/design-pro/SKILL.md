@@ -11,10 +11,18 @@ deterministic computed-style comparison between the live-rendered dc.html and th
 running app, per mapped node, per state. Eyeballing screenshots explores;
 it never decides pass/fail.
 
-**Design wins.** Where a HeroUI/app default disagrees with the dc.html's computed
-values, the design value is the target (UI-CONTRACT §3). The ONLY sanctioned
-deviations live in `design-handoff/accepted-diffs.md` — and only the user writes
-entries there.
+**The theme wins.** Where the dc.html disagrees with the theme, the THEME value is
+the target and the prototype's px is an input (UI-CONTRACT §3). This reverses the
+old "design wins" rule: the theme is now the system, not a transcription of the
+prototype. It covers the scale *and* the rules built on it — one control height,
+the field height, the selection registers, `--tracking-eyebrow`, the radius steps.
+
+The design still decides structure, layout, copy, iconography, and which register a
+screen uses. A register the theme has no rule for is a STOP-and-ask.
+
+Never resolve a conflict at a call site. Writing the design's value into a
+className does not remove the disagreement, it hides it across N call sites. If the
+theme is genuinely wrong, change the theme, in its own commit.
 
 ## 0. Preconditions — fail fast, in order
 
@@ -133,7 +141,8 @@ checklist (each row PASS/ledgered), final screenshots, proposed ledger entries.
 | "I'll start coding, mapping as I go" | Phase-3 gate exists because this produced different designs. |
 | "This state is unreachable/edge-case" | Ask the user. Silent drops are missed states. |
 | "No §2 component fits, I'll style a div" | GAPS.md or stop-and-ask. The fence is the point. |
-| "Defaults are close to the design" | Design wins. Rung 1–3 the difference. |
+| "The design says 42px, so I'll write 42px here" | The theme wins. Snap to it. A call-site value hides the conflict, it does not settle it. |
+| "This row needs `h-auto` to escape the control height" | Then it is not a control. Use the theme's release modifier — never neutralise the theme at a call site. |
 
 If you hit a NEW recurring mistake: fix it, then add it to `field-notes.md` and
 `docs/agents/recurring-mistakes.md` (Log & prevent — the instance is not enough).

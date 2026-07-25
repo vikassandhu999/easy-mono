@@ -16,7 +16,10 @@ import EditCheckin from '@/checkins/edit-checkin';
 import ListCheckins from '@/checkins/list-checkins';
 import ReviewCheckin from '@/checkins/review-checkin';
 import ClientScreen from '@/clients/client-screen';
+import CheckinSubmission from '@/clients/client-screen/checkin-submission';
 import IntakeResponses from '@/clients/client-screen/intake-responses';
+import NutritionDay from '@/clients/client-screen/nutrition-day';
+import ProgressPhotos from '@/clients/client-screen/progress-photos';
 import WeightHistory from '@/clients/client-screen/weight-history';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
@@ -81,6 +84,9 @@ export const router = createBrowserRouter([
       {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},
       {path: ROUTES.CLIENT_WEIGHT, Component: WeightHistory},
       {path: ROUTES.CLIENT_INTAKE, Component: IntakeResponses},
+      {path: ROUTES.CLIENT_CHECKIN_SUBMISSION, Component: CheckinSubmission},
+      {path: ROUTES.CLIENT_NUTRITION_DAY, Component: NutritionDay},
+      {path: ROUTES.CLIENT_PHOTOS, Component: ProgressPhotos},
       {path: ROUTES.CLIENT_MESSAGES, Component: ClientConversation},
       {path: ROUTES.LIBRARY, Component: Library},
       {path: ROUTES.EXERCISES, Component: ListExercises},

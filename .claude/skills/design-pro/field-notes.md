@@ -8,9 +8,9 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **HeroUI Chip has no `outline` variant** (contract §2 is stale there). Valid:
   `primary | secondary | soft | tertiary` — all filled. The redesign's white
   outline chip = `<Chip size="sm" variant="secondary" className="rounded-chip border border-border bg-surface" />`.
-- **tw-merge eats `text-chip`** when a text-color class is also present (it
-  misreads the custom font-size token as a color). Chip `size="sm"` is 12px ≈
-  spec's 11.5px — acceptable; don't fight it.
+- **Chip `size="sm"` is 12px** ≈ spec's 11.5px — acceptable; don't fight it.
+  (The old tw-merge size-vs-colour collision is gone by construction: sizes are
+  `type-*` now, RM-134.)
 - **`Page` renders a white Surface** — ported list screens pass
   `<Page className="bg-background">` for the off-white pane until the shell flips
   the default. `ListBox` needs `p-0` and items `rounded-none` inside an R4 card.
@@ -29,9 +29,10 @@ Trust these over the handoff docs. When you discover a new one, add it here
   with `selectionMode="single"` routes activation through `onSelectionChange` ONLY.
   Wiring `onAction` fails silently. (`question-palette.tsx` avoids it with
   `selectionMode="none"`; `meal-slot-control.tsx` uses onSelectionChange.)
-- **`ToggleButton` paints a grey fill at rest** — R3 segmented controls need an
-  explicit `bg-transparent` alongside the `data-[selected=true]:bg-ink` pair, or
-  unselected segments read grey instead of the spec's white.
+- **Ink-selected pills/segments are theme variants, not class strings** — use
+  `.toggle-button--ink` (always a pill) or `.toggle-button--filter` (underline
+  below `sm`); the variant owns rest fill, selected fill and foreground.
+  Re-assembling the old `data-[selected=true]:bg-ink` string is gated (RM-136).
 - **`Button` inside a grid cell does not stretch** (it's inline-flex) — palette/tile
   grids need `w-full` on the Button or cells collapse to label width.
 - **`Page.Title` hard-codes `truncate`** — override with `whitespace-normal` when the
@@ -59,7 +60,7 @@ Trust these over the handoff docs. When you discover a new one, add it here
 
 ## style-diff convergence (learned on CD-OV, the first full run)
 
-- **Before ledgering a whole node as "design wrong", prove the rule is absent.**
+- **Before flagging a whole node as "design wrong", prove the rule is absent.**
   Cheap check: extract every class the dc.html uses and diff against the classes
   its inline `<style>` defines —
   `grep -o 'class="[^"]*"' | ...` vs `<style>` block. Client Detail used 38 and
@@ -76,9 +77,10 @@ Trust these over the handoff docs. When you discover a new one, add it here
   subtrees): `font-weight:700` becomes `font-weight: 700`. Manifest `[style*=]`
   selectors must use colon-free substrings (`[style*='700']`, `[style*='14px']`,
   `[style*='warning-soft']`) or structural paths — never `prop:value` literals.
-- **Tailwind v4 custom `--text-*` tokens default line-height to 1.5** — when the
-  design leaves line-height untouched (computed `normal`), pair every token with
-  `--text-<name>--line-height: normal` or every text node diffs.
+- **Type steps are `@utility type-*` blocks that set `line-height: normal`
+  themselves** — the old `--text-*--line-height` pairing is gone with the
+  namespace. A text node still diffing on line-height means it isn't using a
+  `type-*` step at all.
 - **Wrappers need `[line-height:normal]` + `text-foreground`** — the app body
   inherits `--default-foreground` (0.2103) and preflight's 1.5 line-height; the
   design frames compute `--foreground` (0.17) and `normal`. Set both on the
@@ -86,23 +88,24 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **HeroUI `@theme --color-*` literals drift from the redesign `:root` vars**
   (foreground, muted, surface-tertiary, success, all three soft-foregrounds).
   Pinned to the design values in `index.css @theme` — check there before
-  ledgering a color diff.
+  flagging a color diff as a design conflict.
 - **`rounded-full` computes `calc(infinity*1px)` ≈ 3.4e7px**, the designs write
   `999px` — use the `--radius-pill: 999px` token for design pills.
 - **`shadow-none` on HeroUI components computes a 5-layer transparent shadow
   stack**, not `none` — use `[box-shadow:none]`.
 - **`gap-0` computes `0px` but a design flex container without gap computes
   `normal`** — use `sm:[column-gap:normal] sm:[row-gap:normal]` to unset.
-- **tw-merge eats EITHER the size or the color** when a custom text-size token
-  and a text-color utility meet in a HeroUI `className` — apply color as
-  `[color:var(--color-…)]` alongside the size token. Plain elements (no
-  tw-merge) can combine both classes freely.
+- **Size + colour combine freely now** — sizes are `type-*` (no tw-merge group),
+  so `type-eyebrow text-muted` is safe everywhere, including inside HeroUI
+  components. The old `[color:var(--…)]` escalation is banned outright
+  (RM-137, gated) — it was scar tissue from the pre-`type-*` collision.
 - **HeroUI `Tabs.Tab` ships `w-full`** — without an explicit `w-auto` each tab
   stretches to container width and the row overflows off-screen. Style-diff
   can't see this (computed props match); only the screenshot pass catches it.
-- **Unlayered CSS beats every utility**: `.typography--h5 { letter-spacing:
-  -0.015em }` in index.css wins over any Tailwind class (layers). A node that
-  needs the design's `normal` letter-spacing can't be a `Typography` heading.
+- **Theme pins on vendor classes live in `@layer components`** — there they
+  beat HeroUI's defaults but stay overridable by call-site utilities. An
+  UNLAYERED rule in index.css beats every utility app-wide and makes the
+  property dead at call sites; treat one as a bug, not a technique.
 - **Icon-only buttons with no font rules in the design compute UA defaults**
   (Arial 13.33px 400, padding 1px 6px, gap normal) — match with
   `[font-family:Arial] [font-size:13.3333px] font-normal px-1.5 py-px` etc.;
@@ -119,10 +122,10 @@ Trust these over the handoff docs. When you discover a new one, add it here
   per-state client routes.
 - **`state.route`** (added to style-diff.mjs) points a state at its own seeded
   client — one client per lifecycle state beats mutating one client between states.
-- **`[color:…]` arbitrary property LOSES to a text-color utility in the same
-  className** (cascade order, not tw-merge) — when matching a UA-default color
-  (design buttons with no color rule compute `rgb(0,0,0)`), drop the text-*
-  color class entirely and keep only `[color:black]`.
+- **Don't chase UA-default colours from the prototype** — a design button with
+  no color rule computes `rgb(0,0,0)`, but arbitrary `color:` properties are
+  banned (RM-137, gated) and the theme wins: use the nearest `text-*` token or
+  flag the pair as a design conflict.
 - **Biome blocks `onError` on `<img>`** (`noNoninteractiveElementInteractions`) —
   use the repo's message-attachments biome-ignore precedent for broken-image
   fallbacks.
@@ -189,8 +192,8 @@ Trust these over the handoff docs. When you discover a new one, add it here
   the helper class's value**: `background: color-mix(…var(--warning)…)` computes
   `transparent` (not `.ptag`'s `var(--background)`) and `border-color` computes
   `currentColor`. When a node diffs on exactly these, check `refs/<ID>.png` — if
-  the ref shows the intended tint, the render is broken (ledger it); if the ref
-  agrees with the render, match the render.
+  the ref shows the intended tint, the render is broken (flag it as a design
+  conflict); if the ref agrees with the render, match the render.
 - **`Disclosure.Body`'s `.disclosure__body` is unlayered** — its padding beats
   every utility. Put a plain `div` inside `Disclosure.Content` instead.
 - **Collapsed `Disclosure` bodies still render** — a static `data-testid` inside
@@ -203,7 +206,7 @@ Trust these over the handoff docs. When you discover a new one, add it here
   remaining space, so it accumulates the sub-pixel text advance of every sibling
   to its left (the design page renders in a fallback font; the app renders its
   bundled Inter). NB's weekday row landed 0.53px off with every other property
-  equal. Don't map auto-margined nodes, or expect a ledger entry.
+  equal. Don't map auto-margined nodes — the diff is unfixable noise.
 - **Single-frame screens: run `--width desktop`.** The Dashboard NB section has
   no mobile frame, so every pair is `widths: ["desktop"]` — but the script still
   navigates and replays every state at 390px, doubling the run and pushing it
@@ -238,14 +241,17 @@ Trust these over the handoff docs. When you discover a new one, add it here
 ## Styling / tokens
 
 - **RECIPES.md px arbitrary values** (`rounded-[9px]`, `text-[12.5px]`) would trip
-  the §5 gate — the spec values are registered as `@theme` tokens in `index.css`
-  instead: `rounded-card/control/chip/nav`, `text-pill`, `text-chip`, `text-muted-2`.
-  Use those; register a new token for any new exact spec value (never a px literal).
+  the gate — snap them to the CLOSED scale instead: type steps via `type-*`
+  (11/14/16/19/22/27/30) and radii via `rounded-chip/control/panel/card` + pill.
+  Never register a new token for an exact spec value — that's what grew the
+  theme 81 → 164 (RM-132); nothing within ±2px means STOP and propose.
 - **RECIPES R2/R3's `selected:` Tailwind prefix is a silent NO-OP** — no such
   variant exists in this project. HeroUI ToggleButton signals selection via
-  `data-selected="true"`, so ink-selected pills/segments need
-  `data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:text-ink-foreground data-[selected=true]:font-semibold`.
-  Reference implementation: status tabs in `nutrition-plans/list-nutrition-plans.tsx`.
+  `data-selected="true"`, and the ink-selected look is the theme's
+  `.toggle-button--ink` / `--filter` variant — hand-writing the
+  `data-[selected=true]:*` string is gated (RM-136). Reference implementations:
+  `@components/browse-screen.tsx` (filter row) and
+  `training-plans/plan-builder/workout-list.tsx` (workout tabs).
 - **When the ref's own desktop/mobile treatments disagree** (e.g. uppercase mobile
   eyebrows vs title-case desktop legends), follow the accepted FO/FD/FE reference
   ports — one treatment at both widths, app convention wins.

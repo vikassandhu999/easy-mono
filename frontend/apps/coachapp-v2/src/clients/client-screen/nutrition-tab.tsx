@@ -1,17 +1,36 @@
 import {Chip} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
 
+import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/generated';
+import {
+  useListCoachClientNutritionPlansQuery,
+  useListCoachMealLogsQuery,
+  useUpdateNutritionPlanMutation,
+} from '@/api/generated';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import {DetailRow} from '@/clients/components/detail-row';
+import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
 
 /** CD-NU: the active plan, then 14 days of adherence. */
 export function NutritionTab({client}: {client: Client}) {
   const navigate = useNavigate();
+  const [updatePlan, {isLoading: isEnding}] = useUpdateNutritionPlanMutation();
+
+  // "End plan" archives it — the plan and its logged history stay, it just stops
+  // being the client's active plan. Confirmed in PlanPanel before it fires.
+  // `NutritionPlanRequest` is a full replace rather than a patch, so the name has
+  // to be sent back unchanged — omitting it fails validation.
+  const endPlan = async (planId: string, planName: string) => {
+    try {
+      await updatePlan({id: planId, nutritionPlanRequest: {name: planName, status: 'archived'}}).unwrap();
+    } catch (err) {
+      toastMutationError(err, "The plan wasn't ended. Try again.");
+    }
+  };
   const days = lastNDays(14);
   const plans = useListCoachClientNutritionPlansQuery({clientId: client.id, status: 'active'});
   const logs = useListCoachMealLogsQuery({
@@ -60,7 +79,17 @@ export function NutritionTab({client}: {client: Client}) {
                 .join(' · ')
             : null
         }
+        assignAction={
+          <PlanAssignControl
+            clientId={client.id}
+            clientName={client.first_name ?? 'this client'}
+            kind="nutrition"
+            label={plan ? 'Change plan' : 'Assign plan'}
+          />
+        }
+        isEnding={isEnding}
         name={plan?.name}
+        onEnd={plan ? () => endPlan(plan.id, plan.name) : undefined}
         onOpen={plan ? () => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
       />
 

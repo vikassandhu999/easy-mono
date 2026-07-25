@@ -73,7 +73,12 @@ export default function EditClient() {
     </Page.Header>
   );
 
-  if (isLoading) {
+  // `team.isLoading` is in here deliberately. The trainer Select resolves its
+  // selected key against its ITEMS, so rendering it before the team list arrives
+  // leaves it showing the placeholder even though the client has an assigned
+  // coach — and it does not recover when the items land. Rowan White reproduced
+  // this exactly. The form cannot be correctly populated until both have loaded.
+  if (isLoading || team.isLoading) {
     return (
       <Page>
         {header}
@@ -173,14 +178,23 @@ export default function EditClient() {
               </FieldRow>
             </Fieldset>
 
+            {/* Reassignment is owner-only on the backend (`Coaches.list_team` and
+                `reassign` both `ensure_owner`), so a non-owner sees 403 and an empty
+                trainer list. Offering the picker anyway would be a control that
+                cannot work — say why instead. */}
             <Fieldset>
               <Fieldset.Legend>Coach</Fieldset.Legend>
               <FormSelectField
                 control={form.control}
-                description="Reassigns this client to the selected trainer."
+                description={
+                  team.isError
+                    ? 'Only the business owner can reassign clients.'
+                    : 'Reassigns this client to the selected trainer.'
+                }
+                isDisabled={team.isError}
                 label="Assigned trainer"
                 name="assigned_coach_id"
-                placeholder="Select a trainer…"
+                placeholder={team.isError ? 'Not available' : 'Select a trainer…'}
               >
                 {trainers.map((member) => {
                   const label =

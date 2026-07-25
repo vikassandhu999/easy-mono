@@ -1,4 +1,4 @@
-import {Button, Typography} from '@heroui/react';
+import {AlertDialog, Button, Typography, useOverlayState} from '@heroui/react';
 import type {LucideIcon} from 'lucide-react';
 import type {ReactNode} from 'react';
 
@@ -24,11 +24,13 @@ export function PlanPanel({
   icon,
   meta,
   name,
+  isEnding = false,
   onEnd,
   onOpen,
-  onSwap,
 }: {
+  /** The app's responsive assign control — anchored popover on desktop, sheet on mobile. */
   assignAction?: ReactNode;
+  isEnding?: boolean;
   emptyBody: string;
   emptyTitle: string;
   icon?: LucideIcon;
@@ -36,8 +38,8 @@ export function PlanPanel({
   name?: null | string;
   onEnd?: () => void;
   onOpen?: () => void;
-  onSwap?: () => void;
 }) {
+  const endState = useOverlayState();
   if (!name) {
     return (
       <SectionCard>
@@ -81,23 +83,56 @@ export function PlanPanel({
               Open plan
             </Button>
           )}
-          {onSwap && (
-            <Button
-              onPress={onSwap}
-              size="sm"
-              variant="outline"
-            >
-              Change plan
-            </Button>
-          )}
+          {/* "Change plan" is the same control as "Assign plan" — picking a new one
+              replaces the current assignment, so there is no second flow. */}
+          {assignAction}
           {onEnd && (
-            <Button
-              onPress={onEnd}
-              size="sm"
-              variant="outline"
-            >
-              End plan
-            </Button>
+            <>
+              <Button
+                onPress={() => endState.open()}
+                size="sm"
+                variant="outline"
+              >
+                End plan
+              </Button>
+              <AlertDialog.Backdrop
+                isDismissable={!isEnding}
+                isOpen={endState.isOpen}
+                onOpenChange={endState.setOpen}
+              >
+                <AlertDialog.Container>
+                  <AlertDialog.Dialog>
+                    <AlertDialog.CloseTrigger />
+                    <AlertDialog.Header>
+                      <AlertDialog.Icon status="danger" />
+                      <AlertDialog.Heading>End this plan?</AlertDialog.Heading>
+                    </AlertDialog.Header>
+                    <AlertDialog.Body>
+                      {name} stops appearing in their app. Logged history stays, and you can assign a new plan any time.
+                    </AlertDialog.Body>
+                    <AlertDialog.Footer>
+                      <Button
+                        isDisabled={isEnding}
+                        slot="close"
+                        variant="tertiary"
+                      >
+                        Keep plan
+                      </Button>
+                      <Button
+                        isPending={isEnding}
+                        onPress={() => {
+                          onEnd();
+                          endState.close();
+                        }}
+                        variant="danger"
+                      >
+                        End plan
+                      </Button>
+                    </AlertDialog.Footer>
+                  </AlertDialog.Dialog>
+                </AlertDialog.Container>
+              </AlertDialog.Backdrop>
+            </>
           )}
         </div>
       </div>

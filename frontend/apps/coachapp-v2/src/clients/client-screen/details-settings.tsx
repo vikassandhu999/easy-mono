@@ -87,6 +87,11 @@ export default function DetailsSettings() {
   const client = data.data;
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ') || 'this client';
   const coach = (team.data?.data ?? []).find((member) => member.id === client.assigned_coach_id);
+  // `/v1/coach/team` is owner-only (`Coaches.list_team` calls `ensure_owner`), so a
+  // non-owner coach gets 403 and this list is empty. That is NOT the same as the
+  // client having no coach — saying "Unassigned" then would be a lie, and offering
+  // "Change" would send them to a screen where reassigning 403s too.
+  const canManageTeam = !team.isError;
   const isInactive = client.status === 'inactive';
 
   const setStatus = async (status: 'active' | 'inactive') => {
@@ -190,17 +195,21 @@ export default function DetailsSettings() {
                   type="body-sm"
                   weight="semibold"
                 >
-                  {[coach?.first_name, coach?.last_name].filter(Boolean).join(' ') || coach?.email || 'Unassigned'}
+                  {[coach?.first_name, coach?.last_name].filter(Boolean).join(' ') ||
+                    coach?.email ||
+                    (client.assigned_coach_id ? 'Assigned' : 'Unassigned')}
                 </Typography>
-                <span className="eyebrow">Assigned coach</span>
+                <span className="eyebrow">{canManageTeam ? 'Assigned coach' : 'Only the owner can see the team'}</span>
               </div>
-              <Button
-                onPress={() => navigate(ROUTES.CLIENT_EDIT.replace(':id', id))}
-                size="sm"
-                variant="outline"
-              >
-                Change
-              </Button>
+              {canManageTeam && (
+                <Button
+                  onPress={() => navigate(ROUTES.CLIENT_EDIT.replace(':id', id))}
+                  size="sm"
+                  variant="outline"
+                >
+                  Change
+                </Button>
+              )}
             </div>
           </SectionCard>
 

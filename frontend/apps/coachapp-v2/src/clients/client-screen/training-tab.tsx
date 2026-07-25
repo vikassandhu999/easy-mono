@@ -1,12 +1,18 @@
 import {Chip} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
 
+import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {useListCoachClientTrainingPlansQuery, useListCoachClientTrainingSessionsQuery} from '@/api/generated';
+import {
+  useListCoachClientTrainingPlansQuery,
+  useListCoachClientTrainingSessionsQuery,
+  useUpdateTrainingPlanMutation,
+} from '@/api/generated';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import {DetailRow} from '@/clients/components/detail-row';
+import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
 import {
   formatCompactDuration,
@@ -19,6 +25,17 @@ import {
 /** CD-TR: the active plan, then session history grouped by week. */
 export function TrainingTab({client}: {client: Client}) {
   const navigate = useNavigate();
+  const [updatePlan, {isLoading: isEnding}] = useUpdateTrainingPlanMutation();
+
+  // "End plan" archives it — the plan and its logged history stay, it just stops
+  // being the client's active plan. Confirmed in PlanPanel before it fires.
+  const endPlan = async (planId: string) => {
+    try {
+      await updatePlan({id: planId, trainingPlanUpdateRequest: {status: 'archived'}}).unwrap();
+    } catch (err) {
+      toastMutationError(err, "The plan wasn't ended. Try again.");
+    }
+  };
   const window = lastNDays(56);
   const plans = useListCoachClientTrainingPlansQuery({clientId: client.id, status: 'active'});
   const sessions = useListCoachClientTrainingSessionsQuery({
@@ -59,7 +76,17 @@ export function TrainingTab({client}: {client: Client}) {
                 .join(' · ')
             : null
         }
+        assignAction={
+          <PlanAssignControl
+            clientId={client.id}
+            clientName={client.first_name ?? 'this client'}
+            kind="training"
+            label={plan ? 'Change plan' : 'Assign plan'}
+          />
+        }
+        isEnding={isEnding}
         name={plan?.name}
+        onEnd={plan ? () => endPlan(plan.id) : undefined}
         onOpen={plan ? () => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
       />
 

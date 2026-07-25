@@ -27,11 +27,17 @@ export function FormSelectField<T extends FieldValues>({
       control={control}
       name={name}
       render={({field, fieldState}) => (
+        // `selectedKey`/`onSelectionChange`, not `value`/`onChange`: HeroUI's Select
+        // wraps react-aria's, which has no `value` prop at all — it was being
+        // dropped, so a pre-selected value never displayed and every edit form with
+        // a select opened showing its placeholder. (The prop type above already
+        // Omits these two, which is the intent that was never wired.) Found on
+        // CD-ED, where a client with an assigned coach rendered "Select a trainer…".
         <Select
           {...props}
           isInvalid={!!fieldState.error}
-          onChange={(key) => field.onChange(key ?? undefined)}
-          value={field.value || null}
+          onSelectionChange={(key) => field.onChange(key ?? undefined)}
+          selectedKey={field.value || null}
         >
           <Label>{label}</Label>
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}

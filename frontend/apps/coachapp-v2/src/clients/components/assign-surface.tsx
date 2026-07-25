@@ -12,6 +12,8 @@ import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 
 interface Props {
   label: ReactNode;
+  /** Trigger look. `ghost` by default so existing callers are unchanged. */
+  triggerVariant?: 'ghost' | 'outline';
   popoverClassName?: string;
   /** Styles the built-in trigger (ports need it to match a spec'd button). */
   triggerClassName?: string;
@@ -30,6 +32,7 @@ interface Props {
 
 export default function AssignSurface({
   label,
+  triggerVariant = 'ghost',
   popoverClassName = '',
   triggerClassName = 'text-muted',
   triggerTestId,
@@ -63,7 +66,7 @@ export default function AssignSurface({
           onPress={() => setOpen(true)}
           ref={triggerRef}
           size="sm"
-          variant="ghost"
+          variant={triggerVariant}
         >
           {label}
         </Button>

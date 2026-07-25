@@ -25,7 +25,6 @@ import {
   loggedMealDates,
   parseDay,
   relativeDay,
-  snapshotQuestions,
   sparklinePoints,
   startOfWeek,
   toDayIso,
@@ -167,15 +166,6 @@ assert.equal(
   )?.direction,
   'flat',
 );
-
-// — snapshot flattening tolerates every shape the API may send ——————————————
-assert.deepEqual(snapshotQuestions({sections: [{questions: [{id: 'q1'}]}, {questions: [{id: 'q2'}]}]}), [
-  {id: 'q1'},
-  {id: 'q2'},
-]);
-assert.deepEqual(snapshotQuestions({sections: [{}, null]}), [], 'a section without questions is skipped');
-assert.deepEqual(snapshotQuestions(null), []);
-assert.deepEqual(snapshotQuestions('nonsense'), []);
 
 // — sparkline —————————————————————————————————————————————————————
 assert.equal(sparklinePoints([], 100, 20), '');

@@ -216,27 +216,6 @@ export function completedCheckIns(assignments: {status?: null | string}[] | unde
   return (assignments ?? []).filter((a) => a.status === 'completed').length;
 }
 
-export type SnapshotQuestion = {id?: string; label?: string; type?: string};
-
-/**
- * Flatten a form snapshot's sections into a question list. The snapshot is typed
- * `unknown` by the API, so every level is checked rather than cast — a shape
- * change here would otherwise throw inside a render.
- */
-export function snapshotQuestions(snapshot: unknown): SnapshotQuestion[] {
-  if (!snapshot || typeof snapshot !== 'object') {
-    return [];
-  }
-  const sections = (snapshot as {sections?: unknown}).sections;
-  if (!Array.isArray(sections)) {
-    return [];
-  }
-  return sections.flatMap((section) => {
-    const questions = (section as {questions?: unknown})?.questions;
-    return Array.isArray(questions) ? (questions as SnapshotQuestion[]) : [];
-  });
-}
-
 /**
  * `points` for the CD-WH trend polyline, oldest value on the left. A flat series
  * is drawn down the vertical middle rather than dividing by a zero range.

@@ -16,8 +16,11 @@ import EditCheckin from '@/checkins/edit-checkin';
 import ListCheckins from '@/checkins/list-checkins';
 import ReviewCheckin from '@/checkins/review-checkin';
 import ClientScreen from '@/clients/client-screen';
+import IntakeResponses from '@/clients/client-screen/intake-responses';
+import WeightHistory from '@/clients/client-screen/weight-history';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
+import SessionDetail from '@/clients/session-detail';
 import Dashboard from '@/dashboard/dashboard';
 import CreateExercise from '@/exercises/create-exercise';
 import EditExercise from '@/exercises/edit-exercise';
@@ -75,6 +78,9 @@ export const router = createBrowserRouter([
       {path: ROUTES.CLIENTS, Component: ListClients},
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
       {path: ROUTES.CLIENT_DETAIL, Component: ClientScreen},
+      {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},
+      {path: ROUTES.CLIENT_WEIGHT, Component: WeightHistory},
+      {path: ROUTES.CLIENT_INTAKE, Component: IntakeResponses},
       {path: ROUTES.CLIENT_MESSAGES, Component: ClientConversation},
       {path: ROUTES.LIBRARY, Component: Library},
       {path: ROUTES.EXERCISES, Component: ListExercises},

@@ -411,6 +411,29 @@ svg.lucide:not([class*="size-"]) {
     display: none;
   }
 
+  /* The strip container. HeroUI's `.tabs__list` is `inline-flex bg-default p-1`
+     with a pill radius — i.e. a segmented-control track, which neither register
+     wants, so all three were being neutralised at the call site. Keying the rest
+     on orientation as well means `Tabs.List` needs no className at all. */
+  .tabs__list {
+    display: flex;
+    border-radius: 0;
+    background-color: transparent;
+    padding: 0;
+  }
+  .tabs__list[data-orientation="horizontal"] {
+    /* Intrinsic width so a long strip scrolls (the container owns the overflow)
+       instead of compressing its tabs; HeroUI sets `w-full`. */
+    width: max-content;
+    min-width: max-content;
+    gap: calc(var(--spacing) * 2);
+  }
+  .tabs__list[data-orientation="vertical"] {
+    width: 100%;
+    min-width: 0;
+    gap: calc(var(--spacing) * 0.5);
+  }
+
   /* Horizontal — the underline register. HeroUI's base is `w-full justify-center
      rounded-3xl px-4`, which is the filled-pill shape; a scrolling strip needs
      intrinsic width so the tabs sit at their label width. */

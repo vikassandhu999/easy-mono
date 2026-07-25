@@ -170,7 +170,7 @@ export function ExerciseRow({workoutExercise, planId, index, isFirst, isLast, on
 
           {trackingLabel ? (
             <Chip
-              className={`${TAG} ${NO_GAP} hidden shrink-0 [color:var(--color-foreground)] sm:inline-flex`}
+              className={`${TAG} ${NO_GAP} hidden shrink-0 text-foreground sm:inline-flex`}
               data-testid="tb-track-chip"
               size="sm"
               variant="secondary"

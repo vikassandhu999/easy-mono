@@ -28,7 +28,7 @@ export function BackButton({
     <Button
       aria-label={label}
       className={cn(
-        '  rounded-control border border-border bg-surface p-0  [color:var(--color-foreground)]',
+        '  rounded-control border border-border bg-surface p-0  text-foreground',
         AS_TEXT,
         NO_GAP,
         'sm:size-9.5   sm:p-0',

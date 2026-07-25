@@ -355,7 +355,7 @@ export function MealCard({
               </span>
               {isShared ? (
                 <Chip
-                  className={`${TAG} ${NO_GAP} border-shared-foreground bg-transparent [color:var(--color-shared-foreground)]`}
+                  className={`${TAG} ${NO_GAP} border-shared-foreground bg-transparent text-shared-foreground`}
                   data-testid="nb-shared-chip"
                   size="sm"
                 >
@@ -364,7 +364,7 @@ export function MealCard({
               ) : null}
               {swaps.length > 0 ? (
                 <Chip
-                  className={`${TAG} ${NO_GAP} [color:var(--color-muted)]`}
+                  className={`${TAG} ${NO_GAP} text-muted`}
                   data-testid="nb-swap-chip"
                   size="sm"
                 >
@@ -457,7 +457,7 @@ export function MealCard({
         >
           {isShared ? (
             <div
-              className="flex items-center gap-2 pt-2 pb-0.5 type-eyebrow [color:var(--color-shared-foreground)]"
+              className="flex items-center gap-2 pt-2 pb-0.5 type-eyebrow text-shared-foreground"
               data-testid={openId('nb-shared-note')}
             >
               <Info className="size-3.5 flex-none" />

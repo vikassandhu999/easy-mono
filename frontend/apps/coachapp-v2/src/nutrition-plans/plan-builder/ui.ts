@@ -12,9 +12,15 @@ export const TAG =
 
 /**
  * `+ Add …` affordances the design draws as accent spans. Callers add the size
- * token: pairing a custom `text-*` size with a `text-*` colour in one HeroUI
- * className makes tw-merge drop one of them, so the colour is an arbitrary
- * property here and the size stays a plain utility.
+ * token.
+ *
+ * The colour used to be written as an arbitrary `color:` property, because a
+ * custom size and a colour both lived in `text-*` and tw-merge dropped one
+ * (RM-134). Sizes are `type-*` now, so there is no collision and `text-accent` is
+ * correct — and overridable, which the arbitrary property was not.
+ *
+ * Every use is on a `Button`, so the height came from the control-height block
+ * all along; the `min-h-11 … sm:min-h-0` pair it used to carry was already dead.
  */
 export const INLINE_LINK =
-  'min-h-11 rounded-none bg-transparent px-0 font-semibold leading-[normal] [color:var(--color-accent)] [row-gap:normal] [column-gap:normal] sm:min-h-0';
+  'rounded-none bg-transparent px-0 font-semibold leading-[normal] text-accent [row-gap:normal] [column-gap:normal]';

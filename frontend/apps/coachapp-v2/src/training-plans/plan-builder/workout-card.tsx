@@ -435,7 +435,7 @@ export function WorkoutCard({workout, planId, autoRename, onRenamed}: WorkoutCar
         data-testid="tb-add-exercise-row"
       >
         <Button
-          className="gap-1.5 rounded-none bg-transparent px-0 font-btn type-body font-semibold leading-[normal] [color:var(--color-accent)]"
+          className="gap-1.5 rounded-none bg-transparent px-0 font-btn type-body font-semibold leading-[normal] text-accent"
           data-testid="tb-add-exercise"
           onPress={() => setPickerOpen(true)}
           ref={addExerciseButtonRef}

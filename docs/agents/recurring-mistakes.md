@@ -478,23 +478,34 @@ allows an app-owned `--ink`/`--filter` modifier but still verifies the BLOCK exi
 
 ---
 
-### RM-137 — A literal colour inside an arbitrary value is the one that cannot follow the theme
+### RM-137 — `color` never needs an arbitrary value; the ones that existed were RM-134 scar tissue
 
-`[color:var(--color-muted)]` is fine and there are ~45 of them: that is the token, escalated
-to an arbitrary property because a HeroUI recipe outranks the plain `text-muted` utility.
-`[color:white]` is a different thing entirely — it is a value the theme can never reach, so
-it cannot respond to light/dark and cannot be retargeted when the palette moves. Nine had
-accumulated, and the two outside Client Detail were sitting next to `bg-accent` and `bg-ink`,
-both of which have a matching foreground token.
+Two different things had accumulated, and only one was ever a real workaround.
 
-Note `--accent-foreground` is `oklch(0.9911 0 0)`, not pure white — so swapping is a real
-(imperceptible) change, not a no-op. Take the token anyway: the value of the swap is that the
-ban becomes mechanical.
+**Literal colours** (`[color:white]`, `[color:black]`) are values the theme cannot reach at
+all: they do not respond to light/dark and cannot be retargeted when the palette moves. Nine
+existed. The two outside Client Detail sat next to `bg-ink` and `bg-accent`, both of which
+have a matching foreground token. Note `--accent-foreground` is `oklch(0.9911 0 0)`, not pure
+white, so that swap is a real if imperceptible change — take it anyway, because the value of
+the swap is that the ban becomes mechanical.
 
-The rule: **arbitrary-value syntax may carry a token, never a literal colour.**
+**Tokens wrapped in an arbitrary property** (`[color:var(--color-muted)]`, 43 of them) look
+defensible and are not. `git log -S` puts every one in the Client Detail port commits, all
+before the `type-*` migration: back then a custom size and a colour both lived in `text-*`,
+so `cn('text-eyebrow', 'text-muted')` dropped one (RM-134) and the COLOUR got escalated to
+dodge the collision. `plan-builder/ui.ts` said so in a comment. Sizes are `type-*` now, the
+collision is impossible by construction, and the escalation is dead weight.
 
-**Enforced by:** `scripts/check-rm.sh` rejects `[color:` followed by `white`/`black`/`#`/
-`rgb`/`hsl`/`oklch`. Client Detail is excluded pending its redesign (8 literals live there).
+It is not harmless dead weight: tailwind-merge cannot classify `[color:…]` as a colour, so a
+base string carrying one is **unoverridable** by a call-site `text-*`. Converting restored
+overridability on `Page.Title`/`Page.Description` and 14 other sites.
+
+The rule: **colour is a `text-*` token. There is no case for an arbitrary `color:` property.**
+
+**Enforced by:** `scripts/check-rm.sh` rejects `[color:` outright. Client Detail is excluded
+pending its redesign — **remove that exclusion when it lands**, or the rule silently stops
+covering the app's largest feature. Watch for false positives from prose: a comment that
+quotes the banned form trips the check (it did twice while this was being written).
 
 ---
 

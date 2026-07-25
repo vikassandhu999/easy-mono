@@ -20,7 +20,7 @@ import {buildExerciseGroups, type ExerciseGroup, formatLoad} from '@/clients/lib
 
 /** Set · Reps · Load · RPE · done — one grid template for header and rows. */
 const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[64px_1fr_92px_60px_26px]';
-const SET_CHIP = `${CHIP} border border-border bg-transparent px-1.5 py-0.5 type-eyebrow font-semibold [color:var(--color-muted)]`;
+const SET_CHIP = `${CHIP} border border-border bg-transparent px-1.5 py-0.5 type-eyebrow font-semibold text-muted`;
 
 function setTypeLabel(set: TrainingPerformedSet): null | string {
   if (set.set_type === 'warmup') {
@@ -153,12 +153,10 @@ export default function SessionDetail() {
           right={
             <>
               {session.state === 'completed' ? (
-                <Chip className={`${CHIP} bg-success-soft [color:var(--color-success-soft-foreground)]`}>
-                  Completed
-                </Chip>
+                <Chip className={`${CHIP} bg-success-soft text-success-soft-foreground`}>Completed</Chip>
               ) : null}
               {session.soreness_rating != null ? (
-                <Chip className={`${CHIP} border border-border bg-transparent [color:var(--color-muted)]`}>
+                <Chip className={`${CHIP} border border-border bg-transparent text-muted`}>
                   Soreness {session.soreness_rating}/5
                 </Chip>
               ) : null}
@@ -190,7 +188,7 @@ export default function SessionDetail() {
 
             {groups.length === 0 ? (
               <div className={`${CARD} px-3 py-6 text-center sm:px-4`}>
-                <span className="type-eyebrow [color:var(--color-muted)]">No sets were logged in this session.</span>
+                <span className="type-eyebrow text-muted">No sets were logged in this session.</span>
               </div>
             ) : null}
           </div>

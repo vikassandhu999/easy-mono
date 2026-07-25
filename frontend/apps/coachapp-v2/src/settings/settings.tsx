@@ -249,7 +249,7 @@ function SettingsShell({
           Settings
         </Typography>
         <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto md:overflow-visible">
-          <Tabs.List className="flex w-max min-w-max gap-2 bg-transparent p-0 md:w-full md:min-w-0 md:flex-col md:gap-0.5">
+          <Tabs.List>
             {TABS.map(({icon: Icon, id, label}) => (
               <Tabs.Tab
                 id={id}

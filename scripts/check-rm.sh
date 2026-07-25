@@ -75,12 +75,16 @@ check RM-136 "hand-assembled ink-selected pill (use .toggle-button--ink / --filt
 check RM-138 "responsive pair with the same type step on both sides (dead sm: — set the real step or drop it)" \
   '\btype-([a-z]+)\b[^;{}]{0,300}?\bsm:type-\1\b' "$COACH" -U -g '!**/client-detail*/**' -g '!**/client-detail.tsx'
 
-# `[color:var(--color-*)]` is fine — it is the token, escalated to an arbitrary
-# property to outrank a HeroUI recipe that beats the `text-*` utility. A literal
-# colour is the actual bypass: it cannot follow the theme, in either mode.
-# ponytail: client-detail excluded — deferred for redesign, 8 literals live there
-check RM-137 "literal colour in an arbitrary value (use a token: text-ink-foreground, text-accent-foreground)" \
-  '\[color:(white|black|#|rgb|hsl|oklch)' "$COACH" -g '!**/client-detail*/**' -g '!**/client-detail.tsx'
+# `color` never needs an arbitrary value. A literal (`[color:white]`) cannot follow
+# the theme at all; a token wrapped in one (`[color:var(--color-muted)]`) was a
+# workaround for RM-134 — when sizes lived in `text-*`, `cn('text-eyebrow',
+# 'text-muted')` dropped one, so the COLOUR got escalated to dodge the collision.
+# Sizes are `type-*` now, so the collision cannot happen and `text-*` is correct.
+# The escalation is not harmless: tailwind-merge cannot see `[color:…]` as a
+# colour, so a base string carrying one is unoverridable by a call site.
+# ponytail: client-detail excluded — deferred for redesign, its literals live there
+check RM-137 "arbitrary-value color (use a text-* token; sizes are type-*, so there is no collision to dodge)" \
+  '\[color:' "$COACH" -g '!**/client-detail*/**' -g '!**/client-detail.tsx'
 
 if [ "$fail" -eq 0 ]; then echo "check-rm: all clean"; fi
 exit $fail

@@ -88,7 +88,7 @@ function PageTitle({children, className, testId}: PageTitleProps) {
         // responsive pair with the same token on both sides, so EVERY page title
         // in the app rendered 22px at every width. A duplicated `sm:` is never a
         // decision — it is the fossil of a step someone meant to add.
-        'block min-w-0 truncate font-grotesk type-metric font-semibold tracking-name [color:var(--color-foreground)]',
+        'block min-w-0 truncate font-grotesk type-metric font-semibold tracking-name text-foreground',
         'sm:type-display sm:tracking-page',
         className,
       )}
@@ -102,7 +102,7 @@ function PageTitle({children, className, testId}: PageTitleProps) {
 function PageDescription({children, className, testId}: PageDescriptionProps) {
   return (
     <span
-      className={cn('mt-1 block type-body leading-[normal] [color:var(--color-muted)]', className)}
+      className={cn('mt-1 block type-body leading-[normal] text-muted', className)}
       data-testid={testId}
     >
       {children}

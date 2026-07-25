@@ -5,9 +5,9 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 ## Map
 - **`frontend/`** — pnpm workspace, TypeScript/React.
   - Apps: `frontend/apps/{coachapp-v2,clientapp-v2,website,pwa-assets}`
-  - Shared packages: `frontend/packages/{utils,error-parser,hooks,ui}` — only `utils` (46 imports) and
-    `error-parser` are actually consumed by the apps. `chat`, `websocket` and `typings` are listed in
-    older docs but no longer exist.
+  - Shared packages: `frontend/packages/{utils,error-parser}` — the only two. `ui`, `hooks`, `chat`,
+    `websocket` and `typings` appear in older docs; all are deleted. `ui`/`hooks`/`typings` had zero
+    importers and `ui` broke `pnpm build`, so treat a package with no importers as dead, not pending.
   - Lint/format: Biome (`frontend/biome.json`). Run from `frontend/`.
   - Detailed FE guide: `frontend/AGENTS.md`
 - **`backend/`** — Elixir / Phoenix / Ecto API.

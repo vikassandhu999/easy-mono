@@ -9,9 +9,8 @@ This is the frontend-workspace contract: what applies to all apps and packages. 
   - `apps/coachapp-v2`: primary coach app, React 19 + Vite, port 2021.
   - `apps/clientapp-v2`: client PWA and Capacitor shell, React 19 + Vite, port 1314.
   - `apps/website`: marketing site, Next.js 16, port 3000.
-- Shared packages:
-  - `packages/ui`, `packages/hooks`, `packages/utils`.
-  - `packages/error-parser`.
+- Shared packages: `packages/utils` (46 imports) and `packages/error-parser`. Nothing else — `ui`,
+  `hooks` and `typings` were deleted for having zero importers.
 
 ## Commands
 

@@ -40,7 +40,7 @@
      of the prototype, not a design system. Adding a step is a user decision, in
      its own commit, with UI_CONTRACT_SKIP_THEME=1.
 
-     Type — 6 steps: 11 / 14 / 16 / 19 / 22 / 27. Max drift 2px.
+     Type — 7 steps: 11 / 14 / 16 / 19 / 22 / 27 / 30. Max drift 2px.
 
      16px is a step because it is the app's INHERITED baseline. Many nodes carry
      no `text-*` class at all and simply inherit 16px; a scale that omits it
@@ -53,6 +53,13 @@
   --type-heading: 19px; /* section + mobile page headings · was stat-lg 18 / title-sm 19 */
   --type-metric: 22px; /* stat values, mobile page titles · was kcal 22 / title-md 22 / stat-xl 23 */
   --type-display: 27px; /* desktop + builder page titles · was title-lg 25 / plan-title 27 */
+  /* The 7th step, added 2026-07-25 for the four design nodes that live above 27
+     and had nothing to snap to: dashboard greeting 29 (DB 144), FD/RD kcal figure
+     34 desktop / 30 mobile (FD 1489/1543, RD 1942/2004), settings seat count and
+     seat stepper 30 (ST 3255/3293). Three of the four are exactly 30.
+     The desktop kcal figure stays 4px off at 34 — outside the ±2 drift, and the
+     one node this step does not resolve. */
+  --type-hero: 30px; /* the largest thing on a screen: greeting, kcal figure, seat count */
   /* Geometry — 4 steps, chip < control < panel < card. Max drift 2px.
      8px for the same reason 16px is a type step: it is HeroUI's own `--radius`
      (0.5rem) baseline, so components that never opt in still land on the scale. */
@@ -157,6 +164,10 @@
 }
 @utility type-display {
   font-size: var(--type-display);
+  line-height: normal;
+}
+@utility type-hero {
+  font-size: var(--type-hero);
   line-height: normal;
 }
 
@@ -287,20 +298,19 @@
    line-height, and those are a reading measure rather than a scale axis —
    re-deciding them here would move layout on 187 nodes for no stated reason.
 
-   h1 and h2 are deliberately NOT pinned. The app has no h1/h2 heading — all
-   three uses are big numbers — and checking them against the dc.html says the
-   scale, not the nodes, is what is short:
+   h1 and h2 both take `--type-hero`, the 30px step. Checking them against the
+   dc.html is what established that the scale, not the nodes, was what was short —
+   the app has no h1/h2 *heading*, all three uses are big numbers:
 
-     .typography--h2  30px   seat count (ST 3255) + seat stepper (ST 3293) — the
-                             design says 30px for both. Exactly right today.
-     .typography--h1  36px   FD/RD kcal figure — design 34 desktop / 30 mobile.
-                             2px off desktop (a PASS at the scale's ±2), 6px mobile.
+     .typography--h2  was 30px  seat count (ST 3255) + seat stepper (ST 3293) —
+                                design says 30px. Already exact; 30 keeps it exact.
+     .typography--h1  was 36px  FD/RD kcal figure — design 34 desktop / 30 mobile.
+                                30 is exact on mobile, 4px light on desktop.
 
-   Pinning either to `--type-display` (27) would move three correct nodes further
-   from the design to make a gate happy. The scale simply has no step above 27,
-   and four design nodes live up there: greeting 29 (DB 144), kcal 34/30, seat 30.
-   Adding a step is a user decision in its own commit (see THE SCALE above), so
-   this stops here and leaves the two variants on HeroUI's ramp.
+   Snapping these to `--type-display` (27) was the alternative and it was wrong:
+   it would have moved two already-correct nodes further from the design to make a
+   gate happy. The desktop kcal figure at 34 is the one node the new step does not
+   resolve — it needs its own step or a ledger entry, not a call-site override.
 
    `@layer components` is load-bearing, and the one thing to not "tidy" away.
    HeroUI imports its component CSS as `layer(components)`, so a rule placed here
@@ -311,6 +321,10 @@
    that wrote `type-metric` would be silently ignored — verified in-browser:
    `typography--body-sm type-metric` computed 14px unlayered, 22px from here. */
 @layer components {
+  .typography--h1,
+  .typography--h2 {
+    font-size: var(--type-hero);
+  }
   .typography--h3 {
     font-size: var(--type-metric);
   }

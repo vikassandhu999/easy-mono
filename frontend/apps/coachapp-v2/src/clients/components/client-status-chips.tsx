@@ -21,12 +21,14 @@ import {formatDayMonth} from '@/clients/lib/client-detail-data';
  *
  * Order matters and is the design's: state first, then attention, so the row
  * reads "what this client is" before "what you owe them".
+ *
+ * They render as TWO components because the design puts them in two places: the
+ * state chip sits inline with the name, and the attention chips get their own row
+ * beneath it. Same mapping, one file.
  */
-export function ClientStatusChips({client}: {client: Client}) {
-  const clientPath = (route: string) => route.replace(':id', client.id);
-
+export function ClientStatusChip({client}: {client: Client}) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <>
       {client.status === 'active' && (
         <Chip
           color="success"
@@ -53,9 +55,25 @@ export function ClientStatusChips({client}: {client: Client}) {
           {inactiveLabel(client.inactive_reason)}
         </Chip>
       )}
+    </>
+  );
+}
 
-      {/* Attention chips are links, not chips with an onPress: they navigate, so
-          they should behave like navigation (focus, middle-click, back). */}
+/**
+ * Attention chips are links, not chips with an onPress: they navigate, so they
+ * should behave like navigation (focus, middle-click, back). Renders nothing when
+ * the client owes nothing, so the caller needs no condition of its own.
+ */
+export function ClientAttentionChips({className, client}: {className?: string; client: Client}) {
+  const clientPath = (route: string) => route.replace(':id', client.id);
+  const hasAny = (client.needs_plan && client.status === 'active') || client.expiring_soon || client.intake_incomplete;
+
+  if (!hasAny) {
+    return null;
+  }
+
+  return (
+    <div className={`flex flex-wrap items-center gap-2 ${className ?? ''}`}>
       {client.needs_plan && client.status === 'active' && (
         <Link to={`${clientPath(ROUTES.CLIENT_DETAIL)}?tab=training`}>
           <Chip

@@ -1,4 +1,5 @@
 import {Button, Typography} from '@heroui/react';
+import type {LucideIcon} from 'lucide-react';
 import {ChevronRight} from 'lucide-react';
 import type {ReactNode} from 'react';
 // react-router's Link, not HeroUI's: HeroUI's takes an `href`, this row navigates
@@ -27,6 +28,7 @@ import {Link} from 'react-router-dom';
  * behaviour and is what `check-ui-contract.sh` flags.
  */
 export function DetailRow({
+  icon: Icon,
   leading,
   meta,
   onPress,
@@ -36,6 +38,8 @@ export function DetailRow({
   trailing,
   tone = 'default',
 }: {
+  /** The design's 38px leading tile — the settings row, the invitation row. */
+  icon?: LucideIcon;
   /** Fixed-width left column — the date in CD-TR/CD-NU, an icon or dot elsewhere. */
   leading?: ReactNode;
   /** Second line under the title. */
@@ -57,6 +61,11 @@ export function DetailRow({
   const isPressable = Boolean(to || onPress);
   const body = (
     <>
+      {Icon != null && (
+        <span className="flex size-9.5 shrink-0 items-center justify-center rounded-control bg-background text-muted">
+          <Icon className="size-4.5" />
+        </span>
+      )}
       {leading != null && <div className="w-18 shrink-0 type-eyebrow font-semibold text-muted">{leading}</div>}
       <div className="min-w-0 flex-1">
         <Typography

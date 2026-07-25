@@ -187,6 +187,8 @@ export type WeightTrend = {
   latest: WeightEntry;
   /** Absolute change, already rounded to the displayed precision. */
   magnitude: number;
+  /** Every logged value, oldest first — the CD-OV chart's polyline. */
+  series: number[];
   /** Whole weeks between the compared entries — `in 4 weeks`. */
   weeks: number;
 };
@@ -203,8 +205,9 @@ export function weightTrend(entries: WeightEntry[] | undefined, goal: null | num
   const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
   const first = sorted[0]!;
   const latest = sorted[sorted.length - 1]!;
+  const series = sorted.map((entry) => Number(entry.value));
   if (sorted.length === 1) {
-    return {direction: 'flat', goal, latest, magnitude: 0, weeks: 0};
+    return {direction: 'flat', goal, latest, magnitude: 0, series, weeks: 0};
   }
   const change = Number(latest.value) - Number(first.value);
   const magnitude = Math.abs(Math.round(change * 10) / 10);
@@ -213,6 +216,7 @@ export function weightTrend(entries: WeightEntry[] | undefined, goal: null | num
     goal,
     latest,
     magnitude,
+    series,
     weeks: Math.max(
       1,
       Math.round((parseDay(latest.date).getTime() - parseDay(first.date).getTime()) / (7 * MS_PER_DAY)),
@@ -340,4 +344,36 @@ export function sparklinePoints(values: number[], width: number, height: number)
       return `${Math.round(i * stepX * 100) / 100},${Math.round(y * 100) / 100}`;
     })
     .join(' ');
+}
+
+/**
+ * The CD-OV weight chart: the polyline, its end point and the goal line all share
+ * ONE scale, so the goal is drawn in view even when it sits below every logged
+ * value — `sparklinePoints` can't do that, since it only knows the values.
+ * Inset 10 top and bottom so the extremes aren't clipped by the stroke width.
+ */
+export function weightChartGeometry(
+  values: number[],
+  goal: null | number,
+  width: number,
+  height: number,
+): null | {goalY: null | number; points: string} {
+  if (values.length === 0) {
+    return null;
+  }
+  const inset = 10;
+  const span = [...values, ...(goal == null ? [] : [goal])];
+  const min = Math.min(...span);
+  const range = Math.max(...span) - min || 1;
+  const y = (value: number) => round(height - inset - ((value - min) / range) * (height - inset * 2));
+  const stepX = values.length === 1 ? 0 : width / (values.length - 1);
+
+  return {
+    goalY: goal == null ? null : y(goal),
+    points: values.map((value, index) => `${round(index * stepX)},${y(value)}`).join(' '),
+  };
+}
+
+function round(n: number): number {
+  return Math.round(n * 100) / 100;
 }

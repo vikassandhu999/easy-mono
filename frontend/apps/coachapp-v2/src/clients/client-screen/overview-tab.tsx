@@ -1,10 +1,15 @@
-import {Button, Chip, Typography} from '@heroui/react';
-import {Sparkles} from 'lucide-react';
+import {Button, Chip, TextArea, TextField, Typography} from '@heroui/react';
+import {Settings2, Sparkles} from 'lucide-react';
+import {useEffect, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 
 import {EmptyState} from '@/@components/empty-state';
+import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
+import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import type {Client} from '@/api/clients';
+import {useUpdateClientMutation} from '@/api/clients';
+import type {ClientProfileFormAssignment} from '@/api/generated';
 import {
   useListClientFormAssignmentsForCoachQuery,
   useListClientWeightEntriesQuery,
@@ -12,6 +17,7 @@ import {
   useListCoachMealLogsQuery,
 } from '@/api/generated';
 import {DetailRow} from '@/clients/components/detail-row';
+import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
 import {
   type AnswerType,
@@ -25,10 +31,16 @@ import {
   loggedMealDates,
   relativeDay,
   weekdayInitial,
+  weightChartGeometry,
   weightTrend,
 } from '@/clients/lib/client-detail-data';
 
-/** CD-OV. */
+/**
+ * CD-OV. The two columns are the design's, and which card sits in which is part
+ * of the design rather than an accident of build order: the left column is the
+ * WEEK — what happened and what you owe the client — and the 320px rail is the
+ * client's standing context (private notes, the way in to settings).
+ */
 export function OverviewTab({client}: {client: Client}) {
   const week = lastNDays(7);
   const from = week[0]!;
@@ -53,7 +65,7 @@ export function OverviewTab({client}: {client: Client}) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_320px] sm:items-start">
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         {/* The one thing a coach owes this client, above everything else. */}
         {awaitingReview?.latest_submission && (
           <div className="flex flex-wrap items-center gap-3 rounded-card border border-warning-soft bg-warning-soft p-4">
@@ -84,30 +96,26 @@ export function OverviewTab({client}: {client: Client}) {
         )}
 
         {hasAnything ? (
-          <SectionCard title="This week">
-            <div className="px-4 pb-4">
-              <div className="flex gap-4 pb-3">
-                <span className="eyebrow">Workouts</span>
-                <span className="eyebrow">Meals</span>
-              </div>
-              {/* The adherence strip lives here rather than in a component: 43 of
-                  its elements exist, and every one of them is on this screen. One
-                  caller is a hypothetical seam. */}
-              <div className="flex justify-between gap-1">
-                {week.map((day) => (
-                  <div
-                    className="flex flex-1 flex-col items-center gap-3"
-                    key={day}
-                  >
-                    <span className="eyebrow">{weekdayInitial(day)}</span>
-                    <Dot isOn={doneDays.has(day)} />
-                    <Dot isOn={loggedDays.has(day)} />
-                    <span className="type-eyebrow text-muted-2">{dayOfMonth(day)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </SectionCard>
+          <>
+            <WeekCard
+              doneDays={doneDays}
+              loggedDays={loggedDays}
+              week={week}
+            />
+            {latest?.latest_submission && (
+              <LatestCheckInCard
+                assignment={latest}
+                to={clientPath(ROUTES.CLIENT_CHECKIN_SUBMISSION).replace(':assignmentId', latest.id)}
+                unit={trend?.latest.unit ?? 'kg'}
+              />
+            )}
+            {trend && (
+              <WeightCard
+                to={clientPath(ROUTES.CLIENT_WEIGHT)}
+                trend={trend}
+              />
+            )}
+          </>
         ) : (
           <SectionCard>
             <EmptyState
@@ -117,128 +125,18 @@ export function OverviewTab({client}: {client: Client}) {
             />
           </SectionCard>
         )}
-
-        <SectionCard title="Notes">
-          <div className="px-4 pb-4">
-            <Typography
-              color={client.notes ? 'default' : 'muted'}
-              type="body-sm"
-            >
-              {client.notes || 'No notes yet.'}
-            </Typography>
-            <Typography
-              className="mt-2"
-              color="muted"
-              type="body-xs"
-            >
-              Only you and your team can see notes.
-            </Typography>
-          </div>
-        </SectionCard>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {latest?.latest_submission && (
-          <SectionCard
-            action={
-              <Link
-                className="type-eyebrow font-semibold text-accent"
-                to={clientPath(ROUTES.CLIENT_CHECKIN_SUBMISSION).replace(':assignmentId', latest.id)}
-              >
-                View check-in →
-              </Link>
-            }
-            title="Latest check-in"
-            titleAs="heading"
-          >
-            <div className="px-4 pb-4">
-              <Typography
-                color="muted"
-                type="body-xs"
-              >
-                {latest.form_template.name}
-                {latest.latest_submission.submitted_at
-                  ? ` · ${formatDayMonth(latest.latest_submission.submitted_at.slice(0, 10))}`
-                  : ''}
-              </Typography>
-              {/* The design summarises the first few answers here (Energy 4/5, Sleep
-                  quality 4/5, Weight 72.4 kg) so a coach can triage without opening
-                  the submission. Three is the design's count; the full set is one
-                  click away. */}
-              <dl className="mt-3 flex flex-col gap-1.5">
-                {answerSummary(latest.latest_submission).map(({answer, label}) => (
-                  <div
-                    className="flex items-baseline justify-between gap-3"
-                    key={label}
-                  >
-                    <dt className="min-w-0 truncate type-eyebrow text-muted">{label}</dt>
-                    <dd className="shrink-0 type-body font-semibold">{answer}</dd>
-                  </div>
-                ))}
-              </dl>
-              <div className="mt-3">
-                <Chip
-                  color={latest.latest_submission_reviewed_at ? 'success' : 'warning'}
-                  size="sm"
-                  variant="soft"
-                >
-                  {latest.latest_submission_reviewed_at ? 'Reviewed' : 'Needs review'}
-                </Chip>
-              </div>
-            </div>
-          </SectionCard>
-        )}
-
-        <SectionCard
-          action={
-            <Link
-              className="type-eyebrow font-semibold text-accent"
-              to={clientPath(ROUTES.CLIENT_WEIGHT)}
-            >
-              All entries →
-            </Link>
-          }
-          title="Weight"
-          titleAs="heading"
-        >
-          <div className="px-4 pb-4">
-            {trend ? (
-              <>
-                <div className="font-grotesk type-metric font-bold">
-                  {formatWeight(trend.latest.value, trend.latest.unit)}
-                </div>
-                {trend.weeks > 0 && (
-                  <Typography
-                    color="muted"
-                    type="body-xs"
-                  >
-                    {trend.direction === 'down' ? '▼' : trend.direction === 'up' ? '▲' : '—'}{' '}
-                    {formatWeight(trend.magnitude, trend.latest.unit)} in {trend.weeks} weeks
-                  </Typography>
-                )}
-                {trend.goal != null && (
-                  <Typography
-                    className="mt-1"
-                    color="muted"
-                    type="body-xs"
-                  >
-                    goal {formatWeight(trend.goal, trend.latest.unit, {decimals: 0})}
-                  </Typography>
-                )}
-              </>
-            ) : (
-              <Typography
-                color="muted"
-                type="body-sm"
-              >
-                No entries yet.
-              </Typography>
-            )}
-          </div>
-        </SectionCard>
-
+      <div className="flex min-w-0 flex-col gap-4">
+        {/* Keyed on the client so switching clients remounts with their notes —
+            the effect below only has to win over a refetch. */}
+        <NotesCard
+          client={client}
+          key={client.id}
+        />
         <SectionCard>
           <DetailRow
+            icon={Settings2}
             meta="Subscription, coach, intake, invitation"
             title="Details & settings"
             to={clientPath(ROUTES.CLIENT_DETAILS)}
@@ -246,6 +144,287 @@ export function OverviewTab({client}: {client: Client}) {
         </SectionCard>
       </div>
     </div>
+  );
+}
+
+/**
+ * The adherence grid: a label column, then one column per day. The labels are ROW
+ * labels beside their own dots — reading "Workouts · · ·" across is the point of
+ * the card, and a legend above the grid loses that.
+ */
+function WeekCard({doneDays, loggedDays, week}: {doneDays: Set<string>; loggedDays: Set<string>; week: string[]}) {
+  return (
+    <SectionCard title="This week">
+      <div className="px-4 pb-4">
+        <div className="grid grid-cols-[auto_repeat(7,minmax(0,1fr))] items-center gap-x-1 gap-y-3">
+          <span />
+          {week.map((day) => (
+            <span
+              className="flex flex-col items-center"
+              key={day}
+            >
+              <span className="type-eyebrow font-semibold text-muted">{weekdayInitial(day)}</span>
+              <span className="font-grotesk type-body font-bold">{dayOfMonth(day)}</span>
+            </span>
+          ))}
+
+          <span className="pr-3 type-eyebrow font-semibold text-muted">Workouts</span>
+          {week.map((day) => (
+            <Dot
+              isOn={doneDays.has(day)}
+              key={day}
+            />
+          ))}
+
+          <span className="pr-3 type-eyebrow font-semibold text-muted">Meals</span>
+          {week.map((day) => (
+            <Dot
+              isOn={loggedDays.has(day)}
+              key={day}
+            />
+          ))}
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+/**
+ * The triage card: the first three answers across, the submitted photos, then the
+ * review state and the way in. Answers read left-to-right because a coach compares
+ * them against last week, not against each other.
+ */
+function LatestCheckInCard({
+  assignment,
+  to,
+  unit,
+}: {
+  assignment: ClientProfileFormAssignment;
+  to: string;
+  unit: string;
+}) {
+  const submission = assignment.latest_submission!;
+  const photos = (submission.attachments ?? []).filter((a) => a.content_type.startsWith('image/')).slice(0, 3);
+  const {urls} = useAttachmentDownloadUrls(photos.map((p) => p.id));
+  const reviewed = Boolean(assignment.latest_submission_reviewed_at);
+
+  return (
+    <SectionCard
+      title={
+        <span className="flex min-w-0 flex-wrap items-baseline gap-2">
+          <span>Latest check-in</span>
+          <span className="type-eyebrow font-normal text-muted">
+            {assignment.form_template.name}
+            {submission.submitted_at ? ` · ${formatDayMonth(submission.submitted_at.slice(0, 10))}` : ''}
+          </span>
+        </span>
+      }
+      titleAs="heading"
+    >
+      <div className="px-4 pb-4">
+        <div className="flex flex-wrap gap-x-8 gap-y-3">
+          {answerSummary(submission, unit).map(({answer, label, rating}) => (
+            <div key={label}>
+              <div className="type-eyebrow font-semibold text-muted">{label}</div>
+              <div className="mt-1.5 flex items-center gap-2">
+                <span className="font-grotesk type-title font-bold">{rating == null ? answer : `${rating}/5`}</span>
+                {rating != null && <RatingDots value={rating} />}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {photos.length > 0 && (
+          <div className="mt-4 flex gap-2">
+            {photos.map((photo) => (
+              <PhotoThumb
+                alt="Check-in photo"
+                key={photo.id}
+                src={urls[photo.id]}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
+          <Chip
+            color={reviewed ? 'default' : 'warning'}
+            size="sm"
+            variant="soft"
+          >
+            {reviewed ? 'Reviewed' : 'Needs review'}
+          </Chip>
+          <Link
+            className="type-eyebrow font-semibold text-accent"
+            to={to}
+          >
+            View check-in →
+          </Link>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+/** `4/5` as five 7px dots — the design's rating register, filled to the value. */
+function RatingDots({value}: {value: number}) {
+  return (
+    <span
+      aria-hidden
+      className="flex gap-1"
+    >
+      {[1, 2, 3, 4, 5].map((step) => (
+        <span
+          className={`size-1.75 rounded-pill ${step <= value ? 'bg-accent' : 'bg-surface-tertiary'}`}
+          key={step}
+        />
+      ))}
+    </span>
+  );
+}
+
+const CHART_W = 620;
+const CHART_H = 118;
+
+/**
+ * The trend at a glance: the line, the goal, and nothing else — the axis labels
+ * and per-point values live on CD-WH, which is one tap away.
+ */
+function WeightCard({to, trend}: {to: string; trend: NonNullable<ReturnType<typeof weightTrend>>}) {
+  const chart = weightChartGeometry(trend.series ?? [], trend.goal, CHART_W, CHART_H);
+  const unit = trend.latest.unit;
+
+  return (
+    <SectionCard
+      action={
+        <Link
+          className="type-eyebrow font-semibold text-accent"
+          to={to}
+        >
+          All entries →
+        </Link>
+      }
+      title={
+        <span className="flex min-w-0 flex-wrap items-baseline gap-2">
+          <span>Weight</span>
+          <span className="font-grotesk type-heading font-bold">{formatWeight(trend.latest.value, unit)}</span>
+          {trend.weeks > 0 && (
+            <Chip
+              color={trend.direction === 'down' ? 'success' : 'default'}
+              size="sm"
+              variant="soft"
+            >
+              {trend.direction === 'down' ? '▼' : trend.direction === 'up' ? '▲' : '—'}{' '}
+              {formatWeight(trend.magnitude, unit)} in {trend.weeks} weeks
+            </Chip>
+          )}
+        </span>
+      }
+      titleAs="heading"
+    >
+      <div className="relative px-4 pb-4">
+        {chart ? (
+          <>
+            {/* An inline SVG rather than a chart dependency — one polyline and one
+                dashed rule, the same call the CD-WH trend card makes. */}
+            <svg
+              aria-hidden
+              className="block h-30 w-full"
+              preserveAspectRatio="none"
+              viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+            >
+              {chart.goalY != null && (
+                <line
+                  className="text-muted"
+                  opacity="0.5"
+                  stroke="currentColor"
+                  strokeDasharray="4 4"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
+                  x1="0"
+                  x2={CHART_W}
+                  y1={chart.goalY}
+                  y2={chart.goalY}
+                />
+              )}
+              <polyline
+                className="text-accent"
+                fill="none"
+                points={chart.points}
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.5"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            {trend.goal != null && (
+              <span className="absolute right-5 bottom-5 bg-surface px-1 type-eyebrow text-muted">
+                goal {formatWeight(trend.goal, unit, {decimals: 0})}
+              </span>
+            )}
+          </>
+        ) : (
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            No entries yet.
+          </Typography>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+/**
+ * Notes are edited where they are read — the design draws a bare textarea in the
+ * card, not a field with a Save button. Saving on blur (only when the text
+ * actually changed) is what makes that honest: there is no other commit point.
+ */
+function NotesCard({client}: {client: Client}) {
+  const [value, setValue] = useState(client.notes ?? '');
+  const [updateClient] = useUpdateClientMutation();
+
+  // A refetch has to win over local state — otherwise the box keeps showing what
+  // this session typed after the server said otherwise.
+  useEffect(() => {
+    setValue(client.notes ?? '');
+  }, [client.notes]);
+
+  const save = () => {
+    const next = value.trim();
+    if (next === (client.notes ?? '').trim()) {
+      return;
+    }
+    updateClient({body: {notes: next}, id: client.id})
+      .unwrap()
+      .catch((error) => toastMutationError(error, "Couldn't save these notes. Try again."));
+  };
+
+  return (
+    <SectionCard title="Notes">
+      <div className="px-4 pb-4">
+        <TextField
+          aria-label="Client notes"
+          onBlur={save}
+          onChange={setValue}
+          value={value}
+        >
+          <TextArea
+            className="min-h-33 w-full resize-none border-0 bg-transparent p-0 [box-shadow:none]"
+            placeholder="Add private notes about this client…"
+          />
+        </TextField>
+        <Typography
+          className="mt-2"
+          color="muted"
+          type="body-xs"
+        >
+          Only you and your team can see notes.
+        </Typography>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -258,7 +437,7 @@ function Dot({isOn}: {isOn: boolean}) {
   return (
     <span
       aria-hidden
-      className={`size-3 rounded-pill ${isOn ? 'bg-success' : 'border border-border'}`}
+      className={`size-3 justify-self-center rounded-pill ${isOn ? 'bg-success' : 'border border-border'}`}
     />
   );
 }
@@ -267,19 +446,34 @@ function Dot({isOn}: {isOn: boolean}) {
  * The first three SUMMARISABLE answers of a submission, for the CD-OV card. Walks
  * `question_snapshot` (an array of sections) so the order matches the form, and
  * skips photo answers — those are attachment ids, not display text.
+ *
+ * `rating` answers carry their value through so the card can draw the design's
+ * five dots; everything else is already a string by the time it lands here.
  */
-function answerSummary(submission: {
-  answers?: Record<string, unknown> | null;
-  question_snapshot?: {questions?: {id: string; label: string; type?: AnswerType}[]}[] | null;
-}): {answer: string; label: string}[] {
+function answerSummary(
+  submission: {
+    answers?: Record<string, unknown> | null;
+    question_snapshot?: {questions?: {id: string; label: string; type?: AnswerType}[]}[] | null;
+  },
+  unit: string,
+): {answer: string; label: string; rating: null | number}[] {
   const answers = (submission.answers ?? {}) as Record<string, unknown>;
-  const rows: {answer: string; label: string}[] = [];
+  const rows: {answer: string; label: string; rating: null | number}[] = [];
   for (const section of submission.question_snapshot ?? []) {
     for (const question of section.questions ?? []) {
-      if (!isSummarisableAnswer(answers[question.id], question.type)) {
+      const value = answers[question.id];
+      if (!isSummarisableAnswer(value, question.type)) {
         continue;
       }
-      rows.push({answer: formatAnswer(answers[question.id], question.type), label: question.label});
+      const rating = question.type === 'rating' && typeof value === 'number' ? value : null;
+      // A weight ANSWER carries no unit — the design shows `72.4 kg`, so the
+      // client's logging unit is appended here rather than left off.
+      const answer = formatAnswer(value, question.type);
+      rows.push({
+        answer: question.type === 'weight' && answer !== '—' ? `${answer} ${unit}` : answer,
+        label: question.label,
+        rating,
+      });
       if (rows.length === 3) {
         return rows;
       }

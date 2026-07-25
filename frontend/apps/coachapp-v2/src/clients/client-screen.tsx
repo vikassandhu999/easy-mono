@@ -1,20 +1,33 @@
 import {getInitials} from '@easy/utils';
-import {Avatar, Button, Dropdown, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
-import {CalendarCheck, Dumbbell, LayoutGrid, MailCheck, MessageCircle, MoreHorizontal, Utensils} from 'lucide-react';
+import {Avatar, Button, Dropdown, ToggleButton, ToggleButtonGroup} from '@heroui/react';
+import {
+  CalendarCheck,
+  Dumbbell,
+  LayoutGrid,
+  Mail,
+  MailCheck,
+  MessageCircle,
+  MoreHorizontal,
+  Phone,
+  Utensils,
+} from 'lucide-react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {BackButton} from '@/@components/back-button';
 import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
+import type {Client} from '@/api/clients';
 import {useGetClientQuery} from '@/api/clients';
-import {useListCoachClientTrainingPlansQuery} from '@/api/generated';
+import {useGetCoachClientConversationQuery, useListCoachClientTrainingPlansQuery} from '@/api/generated';
 import {CheckinsTab} from '@/clients/client-screen/checkins-tab';
 import {NutritionTab} from '@/clients/client-screen/nutrition-tab';
 import {OverviewTab} from '@/clients/client-screen/overview-tab';
 import {TrainingTab} from '@/clients/client-screen/training-tab';
 import {ClientStatStrip} from '@/clients/components/client-stat-strip';
-import {ClientStatusChips} from '@/clients/components/client-status-chips';
+import {ClientAttentionChips, ClientStatusChip} from '@/clients/components/client-status-chips';
 import {getFullName} from '@/clients/lib/invite-client';
 
 /**
@@ -57,7 +70,11 @@ export default function ClientScreen() {
   const {id = ''} = useParams<{id: string}>();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.CLIENTS);
   const {data, isError, isLoading, refetch} = useGetClientQuery(id);
+  // The header's unread badge — the same count the inbox shows for this client.
+  const conversation = useGetCoachClientConversationQuery({clientId: id});
+  const unread = conversation.data?.data?.unread_count ?? 0;
 
   const requested = params.get('tab');
   const tab: TabId = TABS.some((t) => t.id === requested) ? (requested as TabId) : 'overview';
@@ -106,99 +123,142 @@ export default function ClientScreen() {
     <Page>
       <Page.Content bare>
         <Page.Frame className="flex flex-col gap-4 pt-4 pb-6">
-          <div className="rounded-card border border-border bg-surface">
-            <div className="flex flex-wrap items-start gap-3 p-4 sm:gap-4">
-              <Avatar className="size-12 shrink-0 sm:size-14">
-                <Avatar.Fallback className="bg-accent type-title font-semibold text-accent-foreground">
-                  {getInitials(client.first_name, client.last_name)}
-                </Avatar.Fallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <Page.Title>{name || 'Client'}</Page.Title>
-                <div className="mt-1.5">
-                  <ClientStatusChips client={client} />
-                </div>
-                {client.phone && (
-                  <Typography
-                    className="mt-1.5"
-                    color="muted"
-                    type="body-sm"
-                  >
-                    {client.phone}
-                  </Typography>
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
+          {/* The actions row sits ABOVE the identity, not beside it: the design
+              gives Back its own row opposite Message / Call / ⋯, so the name and
+              the contact line get the full width at 375px. */}
+          <div className="flex items-center justify-between gap-4">
+            <BackButton
+              label="Back to clients"
+              onPress={goBack}
+            />
+            <div className="flex shrink-0 items-center gap-2">
+              {hasAccess && (
                 <Button
+                  className="relative bg-ink text-ink-foreground"
                   onPress={() => navigate(detailPath(ROUTES.CLIENT_MESSAGES))}
-                  variant="primary"
                 >
                   <MessageCircle />
                   Message
+                  {unread > 0 && (
+                    <span className="-top-1 -right-1 absolute flex size-4.5 items-center justify-center rounded-pill bg-danger type-eyebrow font-bold text-danger-foreground">
+                      {unread > 9 ? '9+' : unread}
+                    </span>
+                  )}
                 </Button>
-                {/* `Dropdown`, not `Menu` — the app's existing action menus
-                    (`plan-actions-menu`) are Dropdown, and one idiom beats two. */}
-                <Dropdown>
-                  <Button
-                    aria-label="Client actions"
-                    isIconOnly
-                    variant="outline"
-                  >
-                    <MoreHorizontal />
-                  </Button>
-                  <Dropdown.Popover>
-                    <Dropdown.Menu>
-                      <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_DETAILS))}>
-                        Details &amp; settings
-                      </Dropdown.Item>
-                      <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_EDIT))}>
-                        Edit client
-                      </Dropdown.Item>
-                      <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_INTAKE))}>
-                        Intake responses
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown.Popover>
-                </Dropdown>
+              )}
+              {client.phone && (
+                <Button
+                  aria-label={`Call ${name || 'client'}`}
+                  isIconOnly
+                  onPress={() => {
+                    window.location.href = `tel:${client.phone}`;
+                  }}
+                  variant="outline"
+                >
+                  <Phone />
+                </Button>
+              )}
+              {/* `Dropdown`, not `Menu` — the app's existing action menus
+                  (`plan-actions-menu`) are Dropdown, and one idiom beats two. */}
+              <Dropdown>
+                <Button
+                  aria-label="Client actions"
+                  isIconOnly
+                  variant="outline"
+                >
+                  <MoreHorizontal />
+                </Button>
+                <Dropdown.Popover>
+                  <Dropdown.Menu>
+                    <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_DETAILS))}>
+                      Details &amp; settings
+                    </Dropdown.Item>
+                    <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_EDIT))}>Edit client</Dropdown.Item>
+                    <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_INTAKE))}>
+                      Intake responses
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown>
+            </div>
+          </div>
+
+          {/* Identity sits on the page, not in a card — the stat strip below is the
+              first card on the screen. */}
+          <div className="flex items-center gap-4">
+            <Avatar className="size-12 shrink-0 sm:size-15">
+              <Avatar.Fallback className="bg-accent type-heading font-bold text-accent-foreground">
+                {getInitials(client.first_name, client.last_name)}
+              </Avatar.Fallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <Page.Title>{name || 'Client'}</Page.Title>
+                <ClientStatusChip client={client} />
+              </div>
+              <ClientAttentionChips
+                className="mt-2"
+                client={client}
+              />
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 type-eyebrow text-muted">
+                {client.email && (
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <Mail className="size-3.5 shrink-0" />
+                    <span className="truncate">{client.email}</span>
+                  </span>
+                )}
+                {client.email && client.phone && <span className="opacity-50">·</span>}
+                {client.phone && (
+                  <span className="flex items-center gap-1.5">
+                    <Phone className="size-3.5 shrink-0" />
+                    {client.phone}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="border-t border-border">
-              <ClientStatStrip
-                client={client}
-                weeklyTarget={weeklyTarget}
-              />
-            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-card border border-border bg-surface">
+            <ClientStatStrip
+              client={client}
+              weeklyTarget={weeklyTarget}
+            />
           </div>
 
           {hasAccess ? (
             <>
               {/* `toggle-button--tab` is the theme's ghost-pill register: transparent
                   until selected, then ink-filled. The strip scrolls on mobile rather
-                  than wrapping, as `.mtab`'s `flex:none` does. */}
-              <ToggleButtonGroup
-                aria-label="Client sections"
-                className="scrollbar-hide -mx-4 flex gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0"
-                disallowEmptySelection
-                onSelectionChange={(keys) => {
-                  const next = [...keys][0];
-                  if (next) {
-                    setParams({tab: String(next)}, {replace: true});
-                  }
-                }}
-                selectedKeys={[tab]}
-                selectionMode="single"
-              >
-                {TABS.map(({Icon, id: tabId, label}) => (
-                  <ToggleButton
-                    className="toggle-button--tab shrink-0"
-                    id={tabId}
-                    key={tabId}
-                  >
-                    <Icon />
-                    {label}
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
+                  than wrapping, as `.mtab`'s `flex:none` does — and the scroller has
+                  to be this wrapper, not the group: `overflow-x-auto` on the group
+                  itself never clipped (the group sizes to its content), so the whole
+                  content column scrolled sideways at 390px instead. */}
+              <div className="scrollbar-hide -mx-4 min-w-0 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                <ToggleButtonGroup
+                  aria-label="Client sections"
+                  className="flex w-max gap-1"
+                  disallowEmptySelection
+                  onSelectionChange={(keys) => {
+                    const next = [...keys][0];
+                    if (next) {
+                      setParams({tab: String(next)}, {replace: true});
+                    }
+                  }}
+                  selectedKeys={[tab]}
+                  selectionMode="single"
+                >
+                  {TABS.map(({Icon, id: tabId, label}) => (
+                    <ToggleButton
+                      className="toggle-button--tab shrink-0"
+                      id={tabId}
+                      key={tabId}
+                    >
+                      <Icon />
+                      {label}
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
+              </div>
 
               {tab === 'overview' && <OverviewTab client={client} />}
               {tab === 'nutrition' && <NutritionTab client={client} />}
@@ -218,7 +278,7 @@ export default function ClientScreen() {
  * CD-pending. Not a separate screen — the same header and stat bar above, with the
  * tab row replaced by the one thing that can actually happen next.
  */
-function PendingBody({client}: {client: Parameters<typeof ClientStatusChips>[0]['client']}) {
+function PendingBody({client}: {client: Client}) {
   const navigate = useNavigate();
   return (
     <div className="rounded-card border border-border bg-surface">

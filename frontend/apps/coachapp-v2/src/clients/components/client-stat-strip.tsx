@@ -39,6 +39,16 @@ import {
  * a client with no plan gets "No plan", not a zero, because zero implies they had
  * a target and missed it.
  */
+/**
+ * 2x2 on mobile, four across from `sm` — the design draws both, and a stacked
+ * column of four would push the tabs off a 375px screen on its own.
+ *
+ * The hairlines are the wrapper's border colour showing through a 1px gap, not
+ * `divide-*`: `divide-x`/`divide-y` select `:not(:last-child)`, which draws the
+ * wrong lines in a 2x2 grid. It is also exactly what the design does.
+ */
+const STRIP = 'grid grid-cols-2 gap-px bg-border sm:grid-cols-4';
+
 export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyTarget: null | number}) {
   const week = lastNDays(7);
   const from = week[0]!;
@@ -70,10 +80,10 @@ export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyT
 
   if (isLoading) {
     return (
-      <div className="flex flex-col divide-y divide-border sm:flex-row sm:divide-x sm:divide-y-0">
+      <div className={STRIP}>
         {[0, 1, 2, 3].map((i) => (
           <div
-            className="flex-1 px-5 py-4"
+            className="bg-surface px-4 py-3 sm:px-5 sm:py-4"
             key={i}
           >
             <Skeleton className="h-3 w-20" />
@@ -86,7 +96,7 @@ export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyT
 
   return (
     <div
-      className="flex flex-col divide-y divide-border sm:flex-row sm:divide-x sm:divide-y-0"
+      className={STRIP}
       data-testid="cd-stats"
     >
       <StatCell
@@ -151,12 +161,12 @@ function StatCell({
   if (to) {
     return (
       <Link
-        className="flex-1 px-5 py-4 hover:bg-background"
+        className="bg-surface px-4 py-3 hover:bg-background sm:px-5 sm:py-4"
         to={to}
       >
         {body}
       </Link>
     );
   }
-  return <div className="flex-1 px-5 py-4">{body}</div>;
+  return <div className="bg-surface px-4 py-3 sm:px-5 sm:py-4">{body}</div>;
 }

@@ -14,9 +14,9 @@
    within SNAP, because the scale is the design system and the prototype is an
    input to it (UI-CONTRACT §3). Everything else compares exactly.
 
-   Exit 0 = every compared property matches (or is ledgered in accepted-diffs.md).
-   Exit 1 = drift. The report lists every mismatch — fix code or (user-only)
-   ledger it. NEVER widen EPS or SNAP to pass.
+   Exit 0 = every compared property matches. Exit 1 = drift. The report lists
+   every mismatch — fix the code. The theme wins on conflict (UI-CONTRACT §3);
+   NEVER widen EPS or SNAP to pass.
 
    Manifest shape (JSON):
    {
@@ -74,13 +74,6 @@ const asJson = args.includes('--json');
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
 const manifest = JSON.parse(fs.readFileSync(path.resolve(manifestPath), 'utf8'));
 const designUrl = 'file://' + path.resolve(root, manifest.design);
-const ledgerFile = path.join(root, 'design-handoff/accepted-diffs.md');
-// Only table rows count — the file's prose contains an example key that must not match.
-const ledger = new Set(
-  (fs.existsSync(ledgerFile) ? fs.readFileSync(ledgerFile, 'utf8') : '')
-    .split('\n').filter((l) => l.startsWith('|')).join('\n')
-    .match(/`([^`]+:[^`]+:[^`]+:[^`]+)`/g)?.map((m) => m.slice(1, -1)) ?? [],
-);
 const screenId = path.basename(manifestPath).replace(/\.json$/, '');
 
 async function runSteps(page, steps = []) {
@@ -176,7 +169,7 @@ function same(a, b) {
 }
 
 const browser = await chromium.launch();
-const findings = []; // {state, width, pair, prop, design, app, ledgered} | {state, width, pair, missing}
+const findings = []; // {state, width, pair, prop, design, app} | {state, width, pair, missing}
 
 const designCtx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 1 });
 const designPage = await designCtx.newPage();
@@ -221,21 +214,19 @@ for (const state of manifest.states) {
         if (TEXT_ONLY.has(prop) && !d._text && !a._text) continue;
         const designV = snapDesign(prop, d[prop]);
         if (same(designV, a[prop])) continue;
-        const key = `${screenId}:${state.name}:${pair.name}:${prop}`;
-        findings.push({ state: state.name, width: widthName, pair: pair.name, prop, design: designV === d[prop] ? d[prop] : `${d[prop]} → ${designV} (snapped)`, app: a[prop], ledgered: ledger.has(key), key });
+        findings.push({ state: state.name, width: widthName, pair: pair.name, prop, design: designV === d[prop] ? d[prop] : `${d[prop]} → ${designV} (snapped)`, app: a[prop], key: `${screenId}:${state.name}:${pair.name}:${prop}` });
       }
     }
   }
 }
 await browser.close();
 
-const live = findings.filter((f) => f.missing || !f.ledgered);
 if (asJson) console.log(JSON.stringify(findings, null, 2));
 else {
   for (const f of findings) {
     if (f.missing) console.log(`MISSING ${f.missing.toUpperCase()} NODE  ${f.state}/${f.width}/${f.pair}`);
-    else console.log(`${f.ledgered ? '(ledgered) ' : ''}${f.state}/${f.width}/${f.pair}  ${f.prop}: design=${f.design}  app=${f.app}`);
+    else console.log(`${f.state}/${f.width}/${f.pair}  ${f.prop}: design=${f.design}  app=${f.app}`);
   }
-  console.log(`\n${live.length} live diff(s), ${findings.length - live.length} ledgered — ${live.length ? 'FAIL' : 'PASS'}`);
+  console.log(`\n${findings.length} diff(s) — ${findings.length ? 'FAIL' : 'PASS'}`);
 }
-process.exit(live.length ? 1 : 0);
+process.exit(findings.length ? 1 : 0);

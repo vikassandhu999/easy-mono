@@ -20,7 +20,7 @@ function questionCount(template: ClientProfileFormTemplate): number {
 
 // COPY.md §FM row meta is `{Type} · {n} questions · {m} responses` — the
 // template list endpoint carries no response count, so that segment is
-// omitted rather than hand-wired; see PORT-TICKET notes for FM.
+// omitted rather than hand-wired.
 function getTemplateMeta(template: ClientProfileFormTemplate): string {
   const count = questionCount(template);
   return `${PURPOSE_LABELS[template.purpose]} · ${count} question${count === 1 ? '' : 's'}`;

@@ -676,8 +676,8 @@ Unrelated dead code is a note, not a change.
 ## Enforcement
 
 - Run `mix precommit` before finishing any backend change (format, compile --warnings-as-errors, credo, test).
-- `mix credo` (stock checks) catches mechanical issues; the `.agents/skills/review` skill's Standards axis reviews the diff against this file; the superpowers SDD review loop carries these rules in its per-task constraints.
-- Rules not yet satisfied by legacy code are tracked in `docs/superpowers/specs/2026-06-23-elixir-conventions-design.md` Part B and fixed per-context, not big-bang.
+- `mix credo` (stock checks) catches mechanical issues; reviews check the diff against this file.
+- Rules not yet satisfied by legacy code are fixed per-context when touched, not big-bang.
 
 ## Review Checklist
 

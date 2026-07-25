@@ -26,9 +26,7 @@ theme is genuinely wrong, change the theme, in its own commit.
 
 ## 0. Preconditions — fail fast, in order
 
-1. Theme merged: `grep -q 'canvas' frontend/apps/coachapp-v2/src/index.css` (else
-   STOP — merging `design-handoff/theme.css` lands first, its own change).
-2. App running on `http://localhost:2021`; `chrome-devtools-axi pages` responds;
+1. App running on `http://localhost:2021`; `chrome-devtools-axi pages` responds;
    reuse the authenticated tab, never clear storage.
 
 ## 1. Read — in this order
@@ -99,11 +97,10 @@ For EVERY reported diff, place the fix with this ladder (top rung that holds):
    scale (§1.0). Snap to the nearest one; never a px literal.
 3. **Nothing in the scale is within ±2px** → **STOP.** Propose the new token in
    the ticket and let the user land it. **You never add a token to
-   `src/index.css` yourself** — the scale is closed, exactly like
-   `accepted-diffs.md`, and `check-ui-contract.sh` fails the diff if you try.
-4. **Design wrong/impossible** → propose a ledger entry (key format
-   `` `ID:state:pair:prop` ``) in the ticket. The user decides; you never edit
-   `accepted-diffs.md` yourself.
+   `src/index.css` yourself** — the scale is closed, and `check-ui-contract.sh` fails the diff if you try.
+4. **Design wrong/impossible** → flag the conflict in the ticket (key format
+   `` `ID:state:pair:prop` ``). The theme wins on conflict (UI-CONTRACT §3);
+   the user decides, never you.
 
 Why rung 3 is a stop and not a token: the old ladder told ports to register an
 `@theme` token for any exact spec value, justified as keeping the §1 px-literal
@@ -125,19 +122,19 @@ zero differences.
 ./scripts/check-ui-contract.sh && (cd frontend && pnpm lint) && ./scripts/check-rm.sh
 ```
 
-Then UI-CONTRACT §6 DoD line-by-line, copy verbatim vs COPY.md, and fill
-`design-handoff/PORT-TICKET.md` into the PR/commit body with: the state
-checklist (each row PASS/ledgered), final screenshots, proposed ledger entries.
+Then UI-CONTRACT §6 DoD line-by-line, copy verbatim vs COPY.md. PR/commit body
+carries: the state checklist (each row PASS), final screenshots, and any
+flagged design conflicts.
 
 ## Red flags — STOP, you are rationalizing
 
 | Thought | Reality |
 |---|---|
-| "Close enough, the diff is tiny" | The script decides, not you. Fix it or propose a ledger entry. |
+| "Close enough, the diff is tiny" | The script decides, not you. Fix it or flag the conflict in the ticket. |
 | "I'll raise EPS / trim the allowlist" | Forbidden. That's deleting the test because it fails. |
 | "I'll register an `@theme` token for this exact value" | The scale is closed. Snap to the nearest token, or STOP and propose it. Per-screen tokens are what grew the theme 81 → 164. |
 | "It's not a px literal, so it's fine" | The §1 ban is on per-screen pixel values, not on the characters `[14px]`. A one-off token is the same value wearing a name. |
-| "I'll add the ledger entry myself" | Ledger is user-only. Propose in the ticket. |
+| "I'll accept the deviation myself" | Design↔theme conflicts are user decisions. Flag in the ticket. |
 | "I'll start coding, mapping as I go" | Phase-3 gate exists because this produced different designs. |
 | "This state is unreachable/edge-case" | Ask the user. Silent drops are missed states. |
 | "No §2 component fits, I'll style a div" | GAPS.md or stop-and-ask. The fence is the point. |

@@ -38,7 +38,7 @@ function isExpired(client: ListClient): boolean {
 
 // COPY.md §CL row status strings. `Active {time} ago` has no data behind it —
 // the client list carries no last-active timestamp — so active rows show the
-// dot + `Active` and leave the relative-time column empty (see PORT-TICKET).
+// dot + `Active` and leave the relative-time column empty.
 function getStatusCell(client: ListClient): StatusCell {
   if (client.status === 'active') {
     return {label: 'Active', time: null, tone: 'success'};

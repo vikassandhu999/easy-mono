@@ -4,7 +4,7 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 
 ## Map
 - **`frontend/`** — pnpm workspace, TypeScript/React.
-  - Apps: `frontend/apps/{coachapp-v2,clientapp-v2,website,pwa-assets}`
+  - Apps: `frontend/apps/{coachapp-v2,clientapp-v2,website}`
   - Shared packages: `frontend/packages/{utils,error-parser}` — the only two. `ui`, `hooks`, `chat`,
     `websocket` and `typings` appear in older docs; all are deleted. `ui`/`hooks`/`typings` had zero
     importers and `ui` broke `pnpm build`, so treat a package with no importers as dead, not pending.

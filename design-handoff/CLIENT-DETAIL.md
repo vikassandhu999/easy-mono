@@ -78,7 +78,7 @@ Empty states (reachable individually too): **no training plan** (`Dumbbell`, Ass
 - Cards / rows: `Card`, `ListBox` items (via `BrowseListBox` for fetched lists — sessions, adherence, history, weight). Session sets = `Table` (desktop) / stacked rows (mobile). Meters = `ProgressBar`. Sparkline/chart: existing `client-weight.tsx` chart pattern.
 - Overlays: sub-screens are **focused pages** (`Page` + `BackButton`), NOT modals. Confirms = `AlertDialog`. Pickers (change plan / change coach / set-up) = `Popover` desktop / `KeyboardSheet` mobile. Toasts via `mutation-toast`.
 - Empty states: `ListEmptyState` pattern; banners = `Alert` (info/success/warning/danger).
-- Forms (ED, set-up schedule): `FormLayout` + `FormTextField`/`FormSelectField` + `FormActions`; react-hook-form + zod + `applyFormErrors` (mirror `edit-client-form.tsx`, which already exists).
+- Forms (ED, set-up schedule): `FormLayout` + `FormTextField`/`FormSelectField` + `FormActions`; react-hook-form + zod + `applyFormErrors` (mirror `clients/edit-client.tsx`).
 
 ## Data (all endpoints exist — no new backend; see spec §9)
 

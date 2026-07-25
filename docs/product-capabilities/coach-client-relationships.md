@@ -99,5 +99,4 @@ A coach can establish, understand, and maintain each coaching relationship throu
 * `backend/lib/easy/billing.ex`: seat availability and awaiting-seat behavior.
 * `backend/lib/easy/identity/invitations.ex` and `backend/lib/easy/identity/session_factory.ex`: the full invitation-verification transaction and the active-client session requirement that currently prevents awaiting-seat acceptance.
 * `backend/lib/easy/coaches.ex`: owner-only team operations and trainer lifecycle.
-* `frontend/apps/coachapp-v2/src/api/clients.ts`, `frontend/apps/coachapp-v2/src/clients/invite-client.tsx`, and `frontend/apps/coachapp-v2/src/clients/client-form/edit-client-form.tsx`: interaction-visible capability behavior.
-* `docs/superpowers/specs/2026-07-09-client-lifecycle-subscription-intake-design.md` and `docs/superpowers/specs/2026-07-08-trainer-team-access-control-design.md`: functional intent, used only where consistent with code.
+* `frontend/apps/coachapp-v2/src/api/clients.ts`, `frontend/apps/coachapp-v2/src/clients/invite-client.tsx`, and `frontend/apps/coachapp-v2/src/clients/edit-client.tsx`: interaction-visible capability behavior.

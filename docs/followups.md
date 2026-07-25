@@ -4,7 +4,7 @@ Repo-local follow-up ledger (Linear paused this week). One section per feature; 
 
 ## Coach↔client messaging (merged bae41483, 2026-07-09)
 
-Spec: `docs/superpowers/specs/2026-07-08-coach-client-messaging-design.md` · SDD ledger: `.superpowers/sdd/progress.md`
+Spec: coach-client-messaging design (deleted in 2026-07-25 docs cleanup — recover via `git log -- 'docs/superpowers/**'` if needed).
 
 ### Security / correctness
 

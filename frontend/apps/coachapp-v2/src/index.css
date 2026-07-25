@@ -739,7 +739,7 @@ svg.lucide:not([class*="size-"]) {
 .default,
 [data-theme="light"],
 [data-theme="default"] {
-  /* Theme Colors (Light Mode) — redesign tokens from design-handoff/theme.css.
+  /* Theme Colors (Light Mode) — redesign tokens from the design handoff.
      Values are verbatim from the prototype's computed styles; do not "harmonize".
      The page is warm off-white; cards are pure white and sit BRIGHTER than the
      page — if the page renders white, the theme is broken. */

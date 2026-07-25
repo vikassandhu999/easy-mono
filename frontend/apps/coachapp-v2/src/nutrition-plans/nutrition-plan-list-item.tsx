@@ -13,7 +13,7 @@ const STATUS_MAP: Record<NutritionPlanStatus, {color: 'success' | 'warning'; lab
 
 // Row meta per COPY.md is `{kcal} kcal · {p}g protein · {n} clients` — the list
 // endpoint (NutritionPlan) carries no assigned-client count, so that segment is
-// omitted rather than hand-wired; see PORT-TICKET notes for NP.
+// omitted rather than hand-wired.
 function getPlanMeta(plan: NutritionPlan): string {
   return [
     plan.target_calories != null ? `${plan.target_calories} kcal` : null,

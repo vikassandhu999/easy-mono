@@ -165,7 +165,7 @@ CoachEasy realtime chat works only while connected, and only check-in due/overdu
 - a new coach-client message; and
 - a due or overdue check-in.
 
-Use the existing FCM design if its operational prerequisites are ready (`docs/superpowers/specs/2026-07-11-push-notifications-design.md`). Otherwise, email is an acceptable v1 fallback. Do not build preferences, digest rules, presence suppression, or a general automation engine yet.
+Use the existing FCM design if its operational prerequisites are ready (push-notifications design, deleted in the 2026-07-25 docs cleanup — see git history). Otherwise, email is an acceptable v1 fallback. Do not build preferences, digest rules, presence suppression, or a general automation engine yet.
 
 ### 4. Training, progress, messaging, and nutrition
 

@@ -1,7 +1,6 @@
 import {Chip} from '@heroui/react';
 import {useNavigate} from 'react-router-dom';
 
-import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/generated';
@@ -65,11 +64,10 @@ export function NutritionTab({client}: {client: Client}) {
         onOpen={plan ? () => navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', plan.id)) : undefined}
       />
 
-      <SectionCard divided>
-        <SectionHeading
-          className="px-4 pt-4 pb-1"
-          title="Adherence · last 14 days"
-        />
+      <SectionCard
+        divided
+        title="Adherence · last 14 days"
+      >
         {[...days].reverse().map((day) => {
           const totals = byDay.get(day);
           const pct = totals && totals.planned > 0 ? Math.round((totals.logged / totals.planned) * 100) : null;

@@ -1,7 +1,8 @@
 import {Button, Chip, Typography} from '@heroui/react';
+import {CalendarCheck} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
-import SectionHeading from '@/@components/section-heading';
+import {EmptyState} from '@/@components/empty-state';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import {useListCheckInSchedulesForClientQuery, useListClientFormAssignmentsForCoachQuery} from '@/api/generated';
@@ -56,32 +57,27 @@ export function CheckinsTab({client}: {client: Client}) {
         </SectionCard>
       ) : (
         <SectionCard>
-          <div className="p-6 text-center">
-            <Typography type="h5">No check-in schedule</Typography>
-            <Typography
-              className="mx-auto mt-1 max-w-100"
-              color="muted"
-              type="body-sm"
-            >
-              Set a cadence and {client.first_name ?? 'this client'} will get the form automatically.
-            </Typography>
-            <Button
-              className="mt-4"
-              onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
-              variant="outline"
-            >
-              Set up check-ins
-            </Button>
-          </div>
+          <EmptyState
+            action={
+              <Button
+                onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
+                variant="outline"
+              >
+                Set up check-ins
+              </Button>
+            }
+            body={`Set a cadence and ${client.first_name ?? 'this client'} will get the form automatically.`}
+            icon={CalendarCheck}
+            title="No check-in schedule"
+          />
         </SectionCard>
       )}
 
       {checkIns.length > 0 && (
-        <SectionCard divided>
-          <SectionHeading
-            className="px-4 pt-4 pb-1"
-            title="History"
-          />
+        <SectionCard
+          divided
+          title="History"
+        >
           {checkIns.map((assignment) => {
             const submission = assignment.latest_submission;
             const submittedOn = submission?.submitted_at?.slice(0, 10);
@@ -115,11 +111,10 @@ export function CheckinsTab({client}: {client: Client}) {
       )}
 
       {intake && (
-        <SectionCard divided>
-          <SectionHeading
-            className="px-4 pt-4 pb-1"
-            title="Intake"
-          />
+        <SectionCard
+          divided
+          title="Intake"
+        >
           <div className="px-2">
             <DetailRow
               meta={

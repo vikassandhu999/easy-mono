@@ -1,5 +1,8 @@
 import {Button, Typography} from '@heroui/react';
+import type {LucideIcon} from 'lucide-react';
 import type {ReactNode} from 'react';
+
+import {EmptyState} from '@/@components/empty-state';
 
 import {SectionCard} from '@/clients/components/section-card';
 
@@ -18,6 +21,7 @@ export function PlanPanel({
   assignAction,
   emptyBody,
   emptyTitle,
+  icon,
   meta,
   name,
   onEnd,
@@ -27,6 +31,7 @@ export function PlanPanel({
   assignAction?: ReactNode;
   emptyBody: string;
   emptyTitle: string;
+  icon?: LucideIcon;
   meta?: null | string;
   name?: null | string;
   onEnd?: () => void;
@@ -36,17 +41,12 @@ export function PlanPanel({
   if (!name) {
     return (
       <SectionCard>
-        <div className="p-6 text-center">
-          <Typography type="h5">{emptyTitle}</Typography>
-          <Typography
-            className="mx-auto mt-1 max-w-100"
-            color="muted"
-            type="body-sm"
-          >
-            {emptyBody}
-          </Typography>
-          {assignAction && <div className="mt-4 flex justify-center">{assignAction}</div>}
-        </div>
+        <EmptyState
+          action={assignAction}
+          body={emptyBody}
+          icon={icon}
+          title={emptyTitle}
+        />
       </SectionCard>
     );
   }

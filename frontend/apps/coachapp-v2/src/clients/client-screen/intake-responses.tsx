@@ -1,8 +1,10 @@
 import {Typography} from '@heroui/react';
+import {ClipboardList} from 'lucide-react';
 import {useParams} from 'react-router-dom';
-
 import {BackButton} from '@/@components/back-button';
+import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
+
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
@@ -112,18 +114,15 @@ export default function IntakeResponses() {
             </div>
           ) : (
             <SectionCard>
-              <div className="p-6 text-center">
-                <Typography type="h5">No intake yet</Typography>
-                <Typography
-                  className="mt-1"
-                  color="muted"
-                  type="body-sm"
-                >
-                  {intake
+              <EmptyState
+                body={
+                  intake
                     ? 'The intake form has been assigned but not submitted.'
-                    : 'No intake form has been assigned to this client.'}
-                </Typography>
-              </div>
+                    : 'No intake form has been assigned to this client.'
+                }
+                icon={ClipboardList}
+                title="No intake yet"
+              />
             </SectionCard>
           )}
         </Page.Frame>

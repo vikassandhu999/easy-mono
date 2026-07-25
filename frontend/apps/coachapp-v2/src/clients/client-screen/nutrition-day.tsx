@@ -1,8 +1,10 @@
 import {Chip, Typography} from '@heroui/react';
+import {Utensils} from 'lucide-react';
 import {useParams} from 'react-router-dom';
-
 import {BackButton} from '@/@components/back-button';
+import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
+
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
@@ -176,16 +178,11 @@ export default function NutritionDay() {
 
           {logs.length === 0 && (
             <SectionCard>
-              <div className="p-6 text-center">
-                <Typography type="h5">Nothing logged</Typography>
-                <Typography
-                  className="mt-1"
-                  color="muted"
-                  type="body-sm"
-                >
-                  No meals were logged on this day.
-                </Typography>
-              </div>
+              <EmptyState
+                body="No meals were logged on this day."
+                icon={Utensils}
+                title="Nothing logged"
+              />
             </SectionCard>
           )}
         </Page.Frame>

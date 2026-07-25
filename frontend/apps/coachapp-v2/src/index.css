@@ -630,6 +630,24 @@ svg.lucide:not([class*="size-"]) {
   }
 }
 
+/* Control radius, and the same story as control height one axis over. HeroUI ships
+   `.button` as `rounded-3xl` (24px); every design says 11px — `.btnA`, `.btnG`,
+   `.msgbtn`, `.iconbtn`, `.fld`, `.seg` — which is the 10px control step. So 34
+   call sites had hand-written `rounded-control`, and every button that forgot to
+   render at 24px next to one that did.
+
+   `@layer components`, not unlayered, so a call site can still choose a DIFFERENT
+   radius where the object genuinely is not a control: `DetailRow` is a
+   `rounded-panel` row and `PhotoThumb` a `rounded-panel` tile, both built on a
+   Button, and both must keep winning. Unlayered would silently flatten them to
+   10px — the exact trap the Typography pin hit. */
+@layer components {
+  .button,
+  .toggle-button {
+    border-radius: var(--radius-control);
+  }
+}
+
 /* `.eyebrow` — the small uppercase caption, 36 uses in Client Detail alone and
    the same rule in both dc.html files:
 

@@ -1,6 +1,8 @@
 import {Button, Typography} from '@heroui/react';
+import {Sparkles} from 'lucide-react';
 import {Link, useNavigate} from 'react-router-dom';
 
+import {EmptyState} from '@/@components/empty-state';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import {
@@ -105,17 +107,11 @@ export function OverviewTab({client}: {client: Client}) {
           </SectionCard>
         ) : (
           <SectionCard>
-            <div className="p-6 text-center">
-              <Typography type="h5">No activity yet</Typography>
-              <Typography
-                className="mx-auto mt-1 max-w-100"
-                color="muted"
-                type="body-sm"
-              >
-                Once {client.first_name ?? 'this client'} has a plan and starts logging, workouts, meals, weight and
-                check-ins show up here.
-              </Typography>
-            </div>
+            <EmptyState
+              body={`Once ${client.first_name ?? 'this client'} has a plan and starts logging, workouts, meals, weight and check-ins show up here.`}
+              icon={Sparkles}
+              title="No activity yet"
+            />
           </SectionCard>
         )}
 
@@ -150,6 +146,7 @@ export function OverviewTab({client}: {client: Client}) {
               </Link>
             }
             title="Latest check-in"
+            titleAs="heading"
           >
             <div className="px-4 pb-4">
               <Typography
@@ -175,6 +172,7 @@ export function OverviewTab({client}: {client: Client}) {
             </Link>
           }
           title="Weight"
+          titleAs="heading"
         >
           <div className="px-4 pb-4">
             {trend ? (

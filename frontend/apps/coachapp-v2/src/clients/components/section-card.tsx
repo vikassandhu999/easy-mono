@@ -8,17 +8,21 @@ import type {ReactNode} from 'react';
  *          border-radius:18px          -> `--radius-card` (17px, 1px inside drift)
  *   .sep   height:1px; background:var(--border)
  *
- * The optional `title` is the design's `.h5` card heading. Note `.h5` is
- * prototype naming, not a heading level: the rule sets only family, weight and
- * colour, and every instance renders at 13.5-14px inline — so it is
- * `--type-body` in Space Grotesk at 600, NOT `Typography type="h5"`, which is
- * pinned to 19px. It is an `<h3>` element because it is a real section heading in
- * the document outline.
+ * The design uses TWO card-heading registers, and counting them decides which is
+ * the default here:
  *
- * Where the design puts an uppercase label inside a card instead ("Notes",
- * "Subscription", "Trend"), the caller nests the shared `SectionHeading` — that is
- * a different register, and folding both into this interface would widen it for
- * no gain.
+ *   .eyebrow  This week · Notes · Profile · Subscription · Intake · Trend ·
+ *             Progress photos · Adherence — the overwhelming majority
+ *   .h5       Latest check-in · Weight — the two CD-OV summary cards, and nothing
+ *             else in the file
+ *
+ * So `eyebrow` is the default and `heading` is opt-in. Note `.h5` is prototype
+ * naming, not a heading level: the rule sets only family, weight and colour, and
+ * every instance renders at 13.5-14px inline — so it is `--type-body` in Space
+ * Grotesk at 600, NOT `Typography type="h5"`, which is pinned to 19px.
+ *
+ * Both render an `<h3>`: they are real section headings in the document outline,
+ * and only their treatment differs.
  */
 export function SectionCard({
   action,
@@ -27,6 +31,7 @@ export function SectionCard({
   divided = false,
   testId,
   title,
+  titleAs = 'eyebrow',
 }: {
   /** Right-aligned control in the header row — "Open plan", "All entries →". */
   action?: ReactNode;
@@ -36,6 +41,8 @@ export function SectionCard({
   divided?: boolean;
   testId?: string;
   title?: ReactNode;
+  /** `heading` is the grotesk `.h5` register — only the CD-OV summary cards use it. */
+  titleAs?: 'eyebrow' | 'heading';
 }) {
   return (
     <div
@@ -44,7 +51,17 @@ export function SectionCard({
     >
       {(title != null || action != null) && (
         <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-2">
-          {title != null && <h3 className="min-w-0 truncate font-grotesk type-body font-semibold">{title}</h3>}
+          {title != null && (
+            <h3
+              className={
+                titleAs === 'heading'
+                  ? 'min-w-0 truncate font-grotesk type-body font-semibold'
+                  : 'eyebrow min-w-0 truncate'
+              }
+            >
+              {title}
+            </h3>
+          )}
           {action != null && <div className="flex shrink-0 items-center gap-2">{action}</div>}
         </div>
       )}

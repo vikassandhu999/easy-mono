@@ -36,8 +36,14 @@ export default function ListEmptyState({
     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
       {hasFilter ? (
         <>
-          <Typography type="h5">No {nounPlural} found</Typography>
           <Typography
+            align="center"
+            type="h5"
+          >
+            No {nounPlural} found
+          </Typography>
+          <Typography
+            align="center"
             color="muted"
             type="body-xs"
           >
@@ -46,8 +52,14 @@ export default function ListEmptyState({
         </>
       ) : (
         <>
-          <Typography type="h5">No {nounPlural} yet</Typography>
           <Typography
+            align="center"
+            type="h5"
+          >
+            No {nounPlural} yet
+          </Typography>
+          <Typography
+            align="center"
             color="muted"
             type="body-xs"
           >

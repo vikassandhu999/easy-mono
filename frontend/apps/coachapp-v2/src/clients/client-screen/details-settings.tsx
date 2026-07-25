@@ -14,7 +14,7 @@ import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {useGetTeamQuery} from '@/api/team';
 import {DetailRow} from '@/clients/components/detail-row';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatDayMonth, formatWeight} from '@/clients/lib/client-detail-data';
+import {formatDayMonthYear, formatWeight} from '@/clients/lib/client-detail-data';
 
 /**
  * CD-DT — everything about the relationship rather than the training: profile
@@ -39,14 +39,14 @@ export default function DetailsSettings() {
         <BackButton onPress={goBack} />
         <Page.Title>Details &amp; settings</Page.Title>
       </Page.TitleGroup>
-      <Page.Toolbar size="content">
+      <Page.Actions>
         <Button
           onPress={() => navigate(ROUTES.CLIENT_EDIT.replace(':id', id))}
           variant="outline"
         >
           Edit
         </Button>
-      </Page.Toolbar>
+      </Page.Actions>
     </Page.Header>
   );
 
@@ -122,7 +122,7 @@ export default function DetailsSettings() {
             />
             <Fact
               label="Client since"
-              value={formatDayMonth(client.inserted_at.slice(0, 10))}
+              value={formatDayMonthYear(client.inserted_at.slice(0, 10))}
             />
           </SectionCard>
 
@@ -132,11 +132,11 @@ export default function DetailsSettings() {
           >
             <Fact
               label="Started"
-              value={client.subscription_started_on ? formatDayMonth(client.subscription_started_on) : null}
+              value={client.subscription_started_on ? formatDayMonthYear(client.subscription_started_on) : null}
             />
             <Fact
               label="Ends"
-              value={client.subscription_ends_on ? formatDayMonth(client.subscription_ends_on) : null}
+              value={client.subscription_ends_on ? formatDayMonthYear(client.subscription_ends_on) : null}
             />
             {/* The design draws two different banners: expiring soon (warning) and
                 already expired (danger, "locked out"). `expiring_soon` and the

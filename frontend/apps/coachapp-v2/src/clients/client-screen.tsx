@@ -1,8 +1,8 @@
 import {getInitials} from '@easy/utils';
 import {Avatar, Button, Dropdown, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
-import {CalendarCheck, Dumbbell, LayoutGrid, MessageCircle, MoreHorizontal, Utensils} from 'lucide-react';
+import {CalendarCheck, Dumbbell, LayoutGrid, MailCheck, MessageCircle, MoreHorizontal, Utensils} from 'lucide-react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
-
+import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
@@ -221,23 +221,20 @@ export default function ClientScreen() {
 function PendingBody({client}: {client: Parameters<typeof ClientStatusChips>[0]['client']}) {
   const navigate = useNavigate();
   return (
-    <div className="rounded-card border border-border bg-surface p-6 text-center">
-      <Typography type="h5">Invite sent</Typography>
-      <Typography
-        className="mx-auto mt-1 max-w-100"
-        color="muted"
-        type="body-sm"
-      >
-        {client.first_name ?? 'This client'} has not joined yet. Workouts, meals, weight and check-ins appear here once
-        they accept.
-      </Typography>
-      <Button
-        className="mt-4"
-        onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
-        variant="outline"
-      >
-        Manage invitation
-      </Button>
+    <div className="rounded-card border border-border bg-surface">
+      <EmptyState
+        action={
+          <Button
+            onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
+            variant="outline"
+          >
+            Manage invitation
+          </Button>
+        }
+        body={`${client.first_name ?? 'This client'} has not joined yet. Workouts, meals, weight and check-ins appear here once they accept.`}
+        icon={MailCheck}
+        title="Invite sent"
+      />
     </div>
   );
 }

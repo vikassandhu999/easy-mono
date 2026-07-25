@@ -1,9 +1,11 @@
-import {Button, Typography} from '@heroui/react';
+import {Button} from '@heroui/react';
+import {ImageIcon} from 'lucide-react';
 import {useState} from 'react';
 import {useParams} from 'react-router-dom';
-
 import {BackButton} from '@/@components/back-button';
+import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
+
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
@@ -142,16 +144,11 @@ export default function ProgressPhotos() {
 
           {groups.length === 0 && (
             <SectionCard>
-              <div className="p-6 text-center">
-                <Typography type="h5">No photos yet</Typography>
-                <Typography
-                  className="mt-1"
-                  color="muted"
-                  type="body-sm"
-                >
-                  Photos submitted with a check-in appear here.
-                </Typography>
-              </div>
+              <EmptyState
+                body="Photos submitted with a check-in appear here."
+                icon={ImageIcon}
+                title="No photos yet"
+              />
             </SectionCard>
           )}
         </Page.Frame>

@@ -86,7 +86,7 @@ export default function CheckinSubmission() {
             )}
           </div>
         </Page.TitleGroup>
-        <Page.Toolbar size="content">
+        <Page.Actions>
           <Chip
             color={isReviewed ? 'success' : 'warning'}
             size="sm"
@@ -103,7 +103,7 @@ export default function CheckinSubmission() {
               Mark reviewed
             </Button>
           )}
-        </Page.Toolbar>
+        </Page.Actions>
       </Page.Header>
       <Page.Content bare>
         <Page.Frame className="flex flex-col gap-4 pt-4 pb-6">

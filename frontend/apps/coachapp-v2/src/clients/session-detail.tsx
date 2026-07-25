@@ -1,8 +1,9 @@
 import {Chip, Typography} from '@heroui/react';
-import {Check, Minus, Quote} from 'lucide-react';
+import {Check, Dumbbell, Minus, Quote} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
+import {EmptyState} from '@/@components/empty-state';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
@@ -79,7 +80,7 @@ export default function SessionDetail() {
             {subtitle && <Page.Description>{subtitle}</Page.Description>}
           </div>
         </Page.TitleGroup>
-        <Page.Toolbar size="content">
+        <Page.Actions>
           {session.state === 'completed' && (
             <Chip
               color="success"
@@ -97,7 +98,7 @@ export default function SessionDetail() {
               Soreness {session.soreness_rating}/5
             </Chip>
           )}
-        </Page.Toolbar>
+        </Page.Actions>
       </Page.Header>
       <Page.Content bare>
         <Page.Frame className="flex flex-col gap-4 pt-4 pb-6">
@@ -117,14 +118,11 @@ export default function SessionDetail() {
 
           {groups.length === 0 && (
             <SectionCard>
-              <div className="p-6 text-center">
-                <Typography
-                  color="muted"
-                  type="body-sm"
-                >
-                  No sets were logged in this session.
-                </Typography>
-              </div>
+              <EmptyState
+                body="No sets were logged in this session."
+                icon={Dumbbell}
+                title="Nothing logged"
+              />
             </SectionCard>
           )}
         </Page.Frame>

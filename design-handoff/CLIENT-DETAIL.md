@@ -10,7 +10,7 @@
 > Known gap: check-in weight answers render the number without a unit (a form answer carries
 > none), and `DateInput` shows the browser's locale format where the design shows `3 Mar 2026`.
 
-Companion to `UI-CONTRACT.md` (read that first for the component fence) and `AGENTS.md`. This doc covers the **coach-facing client detail hub** and every screen reachable from it — the gap named in `GAPS.md` ("Client detail screen — linked from CL/DB but not designed"). The full UX spec lives at `uploads/2026-07-21-client-detail-ux-spec.md`; this is the build-oriented summary.
+Companion to `UI-CONTRACT.md` (read that first for the component fence) and `AGENTS.md`. This doc covers the **coach-facing client detail hub** and every screen reachable from it — the gap named in `GAPS.md` ("Client detail screen — linked from CL/DB but not designed"). This is the build-oriented spec; the screens are all BUILT (`clients/client-screen*`) — the app is the reference for anything this doc doesn't cover.
 
 ## Source of truth
 

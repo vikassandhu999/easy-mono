@@ -91,7 +91,7 @@ Import from `@heroui/react` — **but check the app-wrapper table first**; if a 
 ### Feedback & display
 | Need | Component | Canonical usage |
 |---|---|---|
-| Status/label pill | `Chip` | prototype `.ptag` and dot statuses. `variant="soft" color="success\|warning\|danger\|default"` for status; `variant="outline"` for neutral tags. |
+| Status/label pill | `Chip` | prototype `.ptag` and dot statuses. `variant="soft" color="success\|warning\|danger\|default"` for status; neutral outline tags use the app variant `className="chip--outline"` — Chip has NO `outline` variant in HeroUI 3.2.1. |
 | Count / dot overlay | `Badge` | nav unread counts, notification dots. |
 | User avatar | `Avatar` | initials fallback; prototype `.av`. |
 | Determinate progress | `ProgressBar` | macro meters, seat-usage meter, kcal line. |
@@ -112,12 +112,12 @@ Never port a prototype variable. Substitute:
 
 | Prototype | HeroUI token / class | Notes |
 |---|---|---|
-| `--accent`, `--accent-soft` | `primary`, `primary-soft` | one brand accent only |
-| `--ink` (dark sidebar/bottom-nav) | app shell dark surface (fixed neutral / `content` on dark) | the only dark chrome; body stays light |
+| `--accent`, `--accent-soft` | `accent`, `accent-soft` | one brand accent only. `primary`/`divider`/`content*` are DEAD v2 tokens (RM-101, gated) |
+| `--ink` (dark sidebar/bottom-nav, dark CTAs, selected fills) | `bg-ink` / `text-ink-foreground` (registered app tokens) | the only dark chrome; body stays light |
 | `--surface` | `surface` (white cards) | cards sit brighter than page |
 | `--background` | `background` (off-white) | page bg, not pure white |
 | `--surface-tertiary` | `surface-tertiary` | meter tracks, muted fills |
-| `--foreground` / `--muted` | `foreground` / `muted-foreground` | |
+| `--foreground` / `--muted` | `foreground` / `muted` (`muted-2` for tertiary) | |
 | `--border` | `border` | hairline 1px |
 | `--danger` / `--warning` / `--success` (+ `-soft`) | `danger` / `warning` / `success` (+ `-soft`) | status only |
 | radii (`border-radius:12/13/16px`) | the four registered `@theme` radius tokens (`rounded-chip/control/card/panel`) | snap to the nearest — never a px literal, and never a new token |
@@ -149,7 +149,7 @@ The helper classes are exactly where inlining creeps in. Translate class → com
 | `.frame` | app shell layout (not a component — page container) |
 | `.side` / `.navi` / bottom nav | existing `app-shell.tsx` (`@/@components/app-shell`); active state via route — extend it, don't rebuild |
 | `.card` | `Card` (+ subparts) |
-| `.ptag` | `Chip variant="outline" size="sm"` |
+| `.ptag` | `Chip size="sm" className="chip--outline"` (no HeroUI `outline` variant exists) |
 | dot status + label | `Chip variant="soft"` with status color |
 | `.segbtn` | `ToggleButtonGroup` (or `Tabs` when it switches views) |
 | `.daytab`, `.wday` | `ToggleButton` / `ToggleButtonGroup` |
@@ -168,25 +168,23 @@ The helper classes are exactly where inlining creeps in. Translate class → com
 
 ---
 
-## 5. Lint / CI gates (add before the first port PR)
+## 5. Lint / CI gates — they exist; run them
 
-The repo lints with **Biome** (`pnpm lint`), not ESLint — don't add an `.eslintrc`. Enforcement is a grep gate (same mechanism as the existing `just check-rm` recurring-mistakes ledger; add these patterns there or as a sibling CI script that fails on any match in `src/**/*.tsx`):
+The gates are BUILT and run in `just lint` / before finishing:
 
-```bash
-# style prop, onClick on components, hex colors, px/rem in arbitrary values,
-# numbered scales, v2 imports, react-aria NumberField
-rg -n --glob 'src/**/*.tsx' \
-  -e 'style=\{\{' \
-  -e 'onClick=' \
-  -e '#[0-9a-fA-F]{3,8}\b' \
-  -e '\[[0-9.]+(px|rem|em)\]' \
-  -e '(bg|text|border|ring)-(primary|neutral|default|success|warning|danger)-[0-9]{2,3}' \
-  -e '@nextui-org/' -e 'HeroUIProvider' -e 'framer-motion' \
-  -e '\bNumberField\b' \
-  && { echo 'UI-CONTRACT violation'; exit 1; } || exit 0
-```
+- `scripts/check-ui-contract.sh` — the §1 prohibitions (style prop, onClick,
+  hex, px/rem arbitrary values, numbered scales, v2 imports, `NumberField`),
+  the dead `text-<size>` utilities, and the **theme freeze** (fails any diff
+  that adds a `--type-*`/`--radius-*` token; `UI_CONTRACT_SKIP_THEME=1` for a
+  deliberate, user-approved scale change). Diff-scoped vs the branch point —
+  it does NOT see untracked files, so `git add -N` new screens before trusting
+  a green run.
+- `scripts/check-theme-selectors.sh` (in `pnpm lint`) — every theme selector
+  must match a real HeroUI class; no dangling `var(--x)`.
+- `scripts/check-rm.sh` — the graduated recurring-mistakes rules.
 
-(`onClick=` and `NumberField` matches inside allowlisted wrappers — e.g. `@/@components/number-input` — are excluded by path.) A PR that inlines styles or hardcodes values literally cannot merge.
+The repo lints with **Biome** (`pnpm lint`), not ESLint — don't add an
+`.eslintrc`, and don't re-implement the gates inline.
 
 ---
 
@@ -205,11 +203,14 @@ rg -n --glob 'src/**/*.tsx' \
 
 ## 7. Process
 
-1. Land the **lint/CI gates (§5) first** — before any UI PR.
-2. **Reference PR:** convert one screen fully (Foods list + detail — the exercise screens are already the page-anatomy reference per AGENTS.md, so Foods should match them). Review hard for §6. This PR becomes the pattern all others must match; reviewers diff against it.
-3. Fan out the rest, one module per PR, each meeting §6:
-   app shell → Clients + Invite → Builder libraries (Exercises/Foods/Recipes) → Nutrition (list + day-first builder) → Training (list/edit + program-sheet builder) → Forms (list + builder) → Settings.
-4. Any component need not in §2 → raise it, don't improvise.
+The original port campaign (all §8 badges + Client Detail) is **done** — the
+app itself is now the primary reference for every pattern. For any NEW screen
+the designer ships:
+
+1. `/port-screen XX` (drives the `design-pro` skill end-to-end: read order,
+   state inventory, mapping manifest, style-diff convergence, gates).
+2. One screen per branch, presentation only.
+3. Any component need not in §2 → raise it, don't improvise.
 
 ---
 

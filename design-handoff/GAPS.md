@@ -14,7 +14,8 @@ UI-CONTRACT §2 says: not covered → stop and ask. These are the asks, answered
 `Surface` + `Chip` per step + `Button` (primary) + `CloseButton`. Steps are static labels, not Tabs. Mobile: collapses to one row + chevron → navigates to the next incomplete step.
 
 **4. Seat-usage meter (IN header, ST Billing)**
-HeroUI `Progress` if the app already uses it; otherwise `Meter` from `@heroui/react` v3. Label + value as `Typography`. Never a hand-styled div bar.
+`ProgressBar` — and it needs compound children or it renders empty:
+`<ProgressBar value={n}><ProgressBar.Track><ProgressBar.Fill/></ProgressBar.Track></ProgressBar>`. Label + value as `Typography`. Never a hand-styled div bar.
 
 **5. Macro meters + energy line (NB) and macro ratio bar (RE)**
 Same answer as 4 — `Progress`/`Meter`, warning color when over target. The kcal headline is `Typography`. The P/C/F ratio bar in the recipe form is three `Progress` segments or one stacked Meter — if neither reads well, ship without the bar (numbers carry the info) rather than hand-rolling.
@@ -26,7 +27,7 @@ Inline `Surface` row with `FormTextField`s + small Buttons, exactly like the app
 Set rows are `ListBox` items (tap target = row). The set editor is the **existing** set-editor from `training-plans/plan-builder/*` — reuse it, don't rebuild. Segmented controls in it are `ToggleButtonGroup`; unit chips (kg/lbs/bw, m/km/mi) are `ToggleButtonGroup` too.
 
 **8. Weekday chips (NB days, TB scheduling)**
-`ToggleButtonGroup` with single-char/three-char `ToggleButton`s (44px min targets on mobile). Exclusivity rules live in the handler, not the component.
+`ToggleButtonGroup` with single-char/three-char `ToggleButton`s (height comes from the theme's control block — never written at the call site). Exclusivity rules live in the handler, not the component.
 
 **9. Slot tag on meal cards (NB)**
 `Chip` that opens a `Dropdown` (desktop) / `KeyboardSheet` list (mobile) of the 7 slots.
@@ -41,7 +42,7 @@ The prototype shows grip icons but implements **menu-based reordering (Move up /
 Prototype chrome only — never port. The app shell (`app-shell.tsx`) owns navigation.
 
 **13. Invite success card with link + WhatsApp share (IN)**
-`Card` + `Chip` + `Snippet`-style copy row: use HeroUI `Snippet` if present in v3.2.1, else `Surface` + mono `Typography` + copy `Button` with `toast('Link copied')`. WhatsApp share is a plain `Button` with `lucide` icon opening the wa.me URL.
+`Card` + `Chip` + copy row: HeroUI 3.2.1 has NO `Snippet` — always the fallback: `Surface` + mono `Typography` + copy `Button` with `toast('Link copied')`. WhatsApp share is a plain `Button` with `lucide` icon opening the wa.me URL.
 
 **14. Numbered instruction steps + check-style cues (EP)**
 Plain `Typography` list markup; number/check adornments via `Chip` size=sm or lucide `check`. No custom list component.
@@ -53,7 +54,6 @@ Plain `Typography` list markup; number/check adornments via `Chip` size=sm or lu
 The prototype contains a desktop spreadsheet-like grid variant. It's a `Table` (desktop only). On mobile this variant doesn't exist — mobile always gets the card/list builder. Only port the grid if/when the ticket asks for it; the card builder is the primary deliverable.
 
 ## Still open — genuinely stop and ask
-- Client detail screen (linked from CL/DB but not designed).
-- Messages/inbox (rail links to it; no design).
-- Check-in review flow (DB "Review" target; no design).
-- Landing-page editor (quick action; out of scope).
+(none — everything listed here has since been designed and built: Client
+Detail per `CLIENT-DETAIL.md`, messages/inbox, check-in review, landing-page
+editor. A NEW need with no §2 mapping is still a stop-and-ask.)

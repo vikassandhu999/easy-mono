@@ -2,9 +2,9 @@
 
 Full-stack monorepo for the Easy / CoachEasy product.
 
-- **`frontend/`** — pnpm workspace (TypeScript/React). Apps: coachapp-v2, clientapp-v2, website, pwa-assets. Shared packages under `frontend/packages/`.
-- **`backend/`** — Elixir / Phoenix / Ecto API. Deploys to Fly.io.
-- **`docs/`** — shared specs and handovers. The FE↔BE API contract is the backend's OpenApiSpex schemas (`backend/lib/easy_web/open_api/`).
+- **`frontend/`** — pnpm workspace (TypeScript/React). Apps: coachapp-v2, clientapp-v2, website. Shared packages under `frontend/packages/`.
+- **`backend/`** — Elixir / Phoenix / Ecto API. Deploys to Fly.io (DigitalOcean move planned — `docs/deploy-digitalocean.md`).
+- **`docs/`** — capability contracts (`product-capabilities/`), the recurring-mistakes ledger, research. The FE↔BE API contract is the backend's OpenApiSpex schemas (`backend/lib/easy_web/open_api/`).
 
 ## Quickstart
 

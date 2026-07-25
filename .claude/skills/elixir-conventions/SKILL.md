@@ -15,8 +15,7 @@ description: >
 The single source of truth is **`backend/AGENTS.md`**. Read it. This skill is the
 fast checklist + the verify step so the conventions are actually followed, not
 just documented. Don't invent rules here — if something's unclear, `AGENTS.md`
-and `docs/superpowers/specs/2026-06-23-elixir-conventions-design.md` (Part A)
-govern.
+governs.
 
 ## Before you finish ANY backend change
 
@@ -79,13 +78,9 @@ errors to `FallbackController`. No `Repo`, no query building, no workflows.
 
 1. **While writing** — this skill + `AGENTS.md` are the rules; `mix precommit`
    is the gate you run before finishing.
-2. **At review** — the `.agents/skills/review` skill's Standards axis reviews the
-   diff against `AGENTS.md`; the superpowers subagent-driven-development review
-   loop carries these rules in each task's constraints.
+2. **At review** — review the diff against `AGENTS.md`.
 3. **Mechanically** — stock `mix credo` + `mix format` catch the rote violations
    so review can focus on judgment.
 
-Rules legacy code doesn't yet satisfy are tracked in
-`docs/superpowers/specs/2026-06-23-elixir-conventions-design.md` Part B and fixed
-per-context, not big-bang — so a change is judged against these conventions for
-the code it touches.
+Rules legacy code doesn't yet satisfy are fixed per-context when touched, not
+big-bang — a change is judged against these conventions for the code it touches.

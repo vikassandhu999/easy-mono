@@ -20,3 +20,7 @@ erl_crash.dump
 .elixir_ls
 .superpowers/
 .worktrees/
+
+# Local skill copies for the `pi` harness. The same skills are tracked under
+# .agents/skills and .claude/skills; a third copy is noise. Never been tracked.
+.pi/

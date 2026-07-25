@@ -1,5 +1,15 @@
 # CLIENT-DETAIL.md — implementation handoff
 
+> **Status (2026-07-25).** Rebuilt from scratch against the revised dc.html; the previous
+> `clients/client-detail/*` implementation was deleted, not ported. Current files:
+> `clients/client-screen.tsx` (shell + 4 tabs), `clients/client-screen/*` (tab bodies and
+> sub-screens), `clients/components/{detail-row,section-card,photo-thumb,client-stat-strip,client-status-chips}.tsx`,
+> `clients/edit-client.tsx`, `clients/session-detail.tsx`, `clients/lib/client-detail-data.ts`.
+> Note the tab row has FOUR tabs — Details is a sub-route off the header menu, not a tab.
+>
+> Known gap: check-in weight answers render the number without a unit (a form answer carries
+> none), and `DateInput` shows the browser's locale format where the design shows `3 Mar 2026`.
+
 Companion to `UI-CONTRACT.md` (read that first for the component fence) and `AGENTS.md`. This doc covers the **coach-facing client detail hub** and every screen reachable from it — the gap named in `GAPS.md` ("Client detail screen — linked from CL/DB but not designed"). The full UX spec lives at `uploads/2026-07-21-client-detail-ux-spec.md`; this is the build-oriented summary.
 
 ## Source of truth
@@ -27,13 +37,16 @@ One page (`/clients/:id`) = a persistent **header + stat strip + one level of ta
 | WH | Weight history | `/clients/:id/weight` | `CD-WH-desktop` | Weight stat tile / "All entries" | new |
 | DT | Details & settings | `/clients/:id/details` | `CD-DT-desktop` | header ⋯ → Details, or Overview Details row | new |
 | IR | Intake responses | `/clients/:id/intake` | `CD-IR-desktop` | DT → Intake, or CI intake row | `checkins/review-answers.tsx` patterns |
-| ED | Edit client | `/clients/:id/edit` | `CD-ED-desktop` | header ⋯ → Edit client, or DT Edit | `clients/edit-client.tsx` (exists) |
+| ED | Edit client | `/clients/:id/edit` | `CD-ED-desktop` | header ⋯ → Edit client, or DT Edit | `clients/edit-client.tsx` |
 
 Back behavior: every sub-screen is a focused `Page` with `BackButton` + `useGoBack`, returning to the tab it came from (preserve `?tab=`). On mobile these hide the app bottom nav.
 
 ## Lifecycle states (one screen, driven by `client.status` + flags)
 
-Refs: `CD-onboarding-desktop`, `CD-pending-{desktop,mobile}`, `CD-inactive-expired-desktop`.
+Refs: `CD-pending-{desktop,mobile}`. The redesign dropped the separate `CD-onboarding-desktop`
+and `CD-inactive-expired-desktop` frames — those states are now expressed on the SAME screen
+through the status/attention chip row and stat cells reading "No plan" (prototype line 907 lists
+`pending | inact_<reason> | onboarding | expiring | active` as scenarios of one screen).
 
 | State | Trigger | What changes |
 |---|---|---|

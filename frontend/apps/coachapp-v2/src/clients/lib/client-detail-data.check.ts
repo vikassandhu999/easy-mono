@@ -16,6 +16,7 @@ import {
   averageLoggedCalories,
   completedCheckIns,
   completedSessionDates,
+  entryStatus,
   formatAnswer,
   formatCompactDuration,
   formatDayMonth,
@@ -26,7 +27,9 @@ import {
   lastNDays,
   loggedMealDates,
   parseDay,
+  plannedMealItems,
   relativeDay,
+  skippedPlannedItems,
   sparklinePoints,
   startOfWeek,
   toDayIso,
@@ -169,6 +172,36 @@ assert.equal(
   )?.direction,
   'flat',
 );
+
+// — meal reconciliation: positional against planned_snapshot.items ——————————
+const snapshot = {
+  items: [{food_name: 'Oats & whey'}, {food_name: 'Greek yogurt'}, {food_name: 'Chicken & rice'}],
+};
+assert.equal(plannedMealItems(snapshot).length, 3);
+assert.equal(plannedMealItems(null).length, 0, 'a missing snapshot degrades to no chips');
+assert.equal(plannedMealItems({items: 'nonsense'}).length, 0);
+
+const planned = plannedMealItems(snapshot);
+assert.equal(entryStatus({food_name: 'Blueberries', planned_item_index: null}, planned), 'added');
+assert.equal(entryStatus({food_name: 'Oats & whey', planned_item_index: 0}, planned), null, 'match is unremarkable');
+assert.equal(entryStatus({food_name: 'Salmon', planned_item_index: 0}, planned), 'swapped');
+assert.equal(
+  entryStatus({food_name: 'Salmon', planned_item_index: 9}, planned),
+  null,
+  'an index outside the snapshot is unknown, not a swap — claiming swapped would be a guess',
+);
+
+// Entry 0 filled, entry 2 filled, so planned slot 1 (Greek yogurt) was skipped.
+assert.deepEqual(
+  skippedPlannedItems(snapshot, [
+    {food_name: 'Oats & whey', planned_item_index: 0},
+    {food_name: 'Chicken & rice', planned_item_index: 2},
+    {food_name: 'Blueberries', planned_item_index: null},
+  ]).map((s) => s.item.food_name),
+  ['Greek yogurt'],
+  'CD-ND renders a skipped planned item as its own muted row',
+);
+assert.equal(skippedPlannedItems(snapshot, []).length, 3, 'nothing logged means everything skipped');
 
 // — answers: a photo answer must never render its attachment id ————————————
 assert.equal(

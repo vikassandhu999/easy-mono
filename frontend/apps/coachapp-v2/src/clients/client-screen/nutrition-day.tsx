@@ -11,7 +11,13 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/generated';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatKcal, formatRowDate} from '@/clients/lib/client-detail-data';
+import {
+  entryStatus,
+  formatKcal,
+  formatRowDate,
+  plannedMealItems,
+  skippedPlannedItems,
+} from '@/clients/lib/client-detail-data';
 
 /** CD-ND — one day's meal log: day totals against target, then a card per meal. */
 export default function NutritionDay() {
@@ -117,83 +123,121 @@ export default function NutritionDay() {
             </div>
           </SectionCard>
 
-          {logs.map((log) => (
-            <SectionCard
-              divided
-              key={log.id}
-              title={`${titleCase(log.meal_slot)}${log.logged_calories ? ` · ${formatKcal(log.logged_calories)} kcal` : ''}`}
-            >
-              {log.food_log_entries.map((entry) => (
-                <div
-                  className="flex items-start gap-3 px-4 py-3"
-                  key={entry.id}
-                >
-                  <div className="min-w-0 flex-1">
-                    <Typography
-                      truncate
-                      type="body-sm"
-                      weight="semibold"
-                    >
-                      {entry.food_name ?? 'Food'}
-                    </Typography>
-                    <Typography
-                      color="muted"
-                      type="body-xs"
-                    >
-                      {[
-                        entry.protein_g != null ? `P ${Math.round(entry.protein_g)} g` : null,
-                        entry.carbs_g != null ? `C ${Math.round(entry.carbs_g)} g` : null,
-                        entry.fat_g != null ? `F ${Math.round(entry.fat_g)} g` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </Typography>
-                  </div>
-                  {/* Only "Added" is claimable from this endpoint — an entry with no
-                      planned_item_index was not in the plan. The design also marks
-                      "Swapped" and "Skipped", which need reconciling against
-                      planned_snapshot by position; that is untyped here, so a wrong
-                      chip is a worse outcome than no chip. Flagged as a follow-up. */}
-                  {entry.planned_item_index == null && (
-                    <Chip
-                      size="sm"
-                      variant="tertiary"
-                    >
-                      Added
-                    </Chip>
-                  )}
-                  <div className="shrink-0 text-right">
-                    {entry.amount != null && (
+          {logs.map((log) => {
+            const planned = plannedMealItems(log.planned_snapshot);
+            const skipped = skippedPlannedItems(log.planned_snapshot, log.food_log_entries);
+            return (
+              <SectionCard
+                divided
+                key={log.id}
+                title={`${titleCase(log.meal_slot)}${log.logged_calories ? ` · ${formatKcal(log.logged_calories)} kcal` : ''}`}
+              >
+                {log.food_log_entries.map((entry) => (
+                  <div
+                    className="flex items-start gap-3 px-4 py-3"
+                    key={entry.id}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <Typography
+                        truncate
+                        type="body-sm"
+                        weight="semibold"
+                      >
+                        {entry.food_name ?? 'Food'}
+                      </Typography>
                       <Typography
                         color="muted"
                         type="body-xs"
                       >
-                        {Math.round(entry.amount)} g
+                        {[
+                          entry.protein_g != null ? `P ${Math.round(entry.protein_g)} g` : null,
+                          entry.carbs_g != null ? `C ${Math.round(entry.carbs_g)} g` : null,
+                          entry.fat_g != null ? `F ${Math.round(entry.fat_g)} g` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
                       </Typography>
+                    </div>
+                    {/* Reconciled positionally against `planned_snapshot.items`: no
+                      index means Added, a different food in a planned slot means
+                      Swapped, and a match gets no chip at all. */}
+                    {entryStatus(entry, planned) && (
+                      <Chip
+                        className="chip--outline"
+                        size="sm"
+                      >
+                        {entryStatus(entry, planned) === 'added' ? 'Added' : 'Swapped'}
+                      </Chip>
                     )}
-                    {entry.calories != null && (
+                    <div className="shrink-0 text-right">
+                      {entry.amount != null && (
+                        <Typography
+                          color="muted"
+                          type="body-xs"
+                        >
+                          {Math.round(entry.amount)} g
+                        </Typography>
+                      )}
+                      {entry.calories != null && (
+                        <Typography
+                          type="body-sm"
+                          weight="semibold"
+                        >
+                          {formatKcal(entry.calories)} kcal
+                        </Typography>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {/* A planned item nobody logged is a row in its own right — the design
+                  shows it muted with a Skipped chip and its PLANNED calories, so the
+                  coach can see what was missed rather than just what was eaten. */}
+                {skipped.map(({index, item}) => (
+                  <div
+                    className="flex items-start gap-3 px-4 py-3"
+                    key={`skipped-${index}`}
+                  >
+                    <div className="min-w-0 flex-1">
                       <Typography
+                        className="text-muted"
+                        truncate
                         type="body-sm"
                         weight="semibold"
                       >
-                        {formatKcal(entry.calories)} kcal
+                        {item.food_name ?? 'Planned item'}
                       </Typography>
+                    </div>
+                    <Chip
+                      className="chip--outline"
+                      size="sm"
+                    >
+                      Skipped
+                    </Chip>
+                    {item.calories != null && (
+                      <div className="shrink-0 text-right">
+                        <Typography
+                          color="muted"
+                          type="body-sm"
+                        >
+                          {formatKcal(item.calories)} kcal
+                        </Typography>
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
-              {log.food_log_entries.length === 0 && (
-                <div className="px-4 py-3">
-                  <Typography
-                    color="muted"
-                    type="body-sm"
-                  >
-                    Nothing logged for this meal.
-                  </Typography>
-                </div>
-              )}
-            </SectionCard>
-          ))}
+                ))}
+                {log.food_log_entries.length === 0 && skipped.length === 0 && (
+                  <div className="px-4 py-3">
+                    <Typography
+                      color="muted"
+                      type="body-sm"
+                    >
+                      Nothing logged for this meal.
+                    </Typography>
+                  </div>
+                )}
+              </SectionCard>
+            );
+          })}
 
           {logs.length === 0 && (
             <SectionCard>

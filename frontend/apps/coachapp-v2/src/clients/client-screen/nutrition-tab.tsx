@@ -13,7 +13,14 @@ import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import {DetailRow} from '@/clients/components/detail-row';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatKcal, formatRowDate, lastNDays} from '@/clients/lib/client-detail-data';
+import {
+  entryStatus,
+  formatKcal,
+  formatRowDate,
+  lastNDays,
+  plannedMealItems,
+  skippedPlannedItems,
+} from '@/clients/lib/client-detail-data';
 
 /** CD-NU: the active plan, then 14 days of adherence. */
 export function NutritionTab({client}: {client: Client}) {
@@ -43,22 +50,23 @@ export function NutritionTab({client}: {client: Client}) {
 
   // One row per day, newest first — including days with nothing logged, which the
   // design shows as "Not logged" rather than omitting.
-  const byDay = new Map<string, {added: number; logged: number; planned: number}>();
+  const byDay = new Map<string, {added: number; logged: number; planned: number; skipped: number; swapped: number}>();
   for (const log of logs.data?.data ?? []) {
     const day = log.date.slice(0, 10);
-    const acc = byDay.get(day) ?? {added: 0, logged: 0, planned: 0};
+    const acc = byDay.get(day) ?? {added: 0, logged: 0, planned: 0, skipped: 0, swapped: 0};
     acc.logged += log.logged_calories ?? 0;
     acc.planned += log.planned_calories ?? 0;
+    // Reconciled positionally against `planned_snapshot.items` — see the lib.
+    const plannedItems = plannedMealItems(log.planned_snapshot);
     for (const entry of log.food_log_entries) {
-      // "Added" is an entry with no `planned_item_index` — it was not in the plan.
-      // A `FoodLogEntry` has no `status` field, so this is the only claim the API
-      // actually supports. The design also shows "Swapped N", which needs
-      // reconciling each entry against `planned_snapshot` by position; that is not
-      // derivable from this endpoint alone, so it is left out rather than guessed.
-      if (entry.planned_item_index == null) {
+      const status = entryStatus(entry, plannedItems);
+      if (status === 'added') {
         acc.added += 1;
+      } else if (status === 'swapped') {
+        acc.swapped += 1;
       }
     }
+    acc.skipped += skippedPlannedItems(log.planned_snapshot, log.food_log_entries).length;
     byDay.set(day, acc);
   }
 
@@ -110,7 +118,9 @@ export function NutritionTab({client}: {client: Client}) {
                 meta={
                   totals
                     ? [
+                        totals.swapped ? `Swapped ${totals.swapped}` : null,
                         totals.added ? `Added ${totals.added}` : null,
+                        totals.skipped ? `Skipped ${totals.skipped}` : null,
                         totals.planned > 0 ? `${formatKcal(totals.logged)} / ${formatKcal(totals.planned)}` : null,
                       ]
                         .filter(Boolean)

@@ -11,7 +11,7 @@ This is the frontend-workspace contract: what applies to all apps and packages. 
   - `apps/website`: marketing site, Next.js 16, port 3000.
 - Shared packages:
   - `packages/ui`, `packages/hooks`, `packages/utils`.
-  - `packages/error-parser`, `packages/typings`.
+  - `packages/error-parser`.
 
 ## Commands
 

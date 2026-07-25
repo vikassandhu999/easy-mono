@@ -526,6 +526,7 @@ export function PlanDays({plan}: PlanDaysProps) {
               aria-label="Plan days"
               className="flex flex-wrap gap-2"
               data-testid="nb-daytabs"
+              isDetached
               onSelectionChange={(keys) => {
                 const next = [...keys][0];
                 if (next) {

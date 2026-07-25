@@ -102,6 +102,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
           <ToggleButtonGroup
             aria-label="Workouts"
             className="flex flex-wrap gap-2 sm:flex-nowrap"
+            isDetached
             onSelectionChange={(keys) => {
               const next = [...keys][0];
               if (next) {

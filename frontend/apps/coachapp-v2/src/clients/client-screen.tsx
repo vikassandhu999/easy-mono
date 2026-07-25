@@ -238,6 +238,7 @@ export default function ClientScreen() {
                   aria-label="Client sections"
                   className="flex w-max gap-1"
                   disallowEmptySelection
+                  isDetached
                   onSelectionChange={(keys) => {
                     const next = [...keys][0];
                     if (next) {

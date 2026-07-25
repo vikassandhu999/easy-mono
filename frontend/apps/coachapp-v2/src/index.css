@@ -558,6 +558,25 @@ svg.lucide:not([class*="size-"]) {
     font-weight: 600;
   }
 
+  /* ...and the radius above only APPLIES outside a group. HeroUI joins a
+     `ToggleButtonGroup`'s children into ONE segmented track — `.toggle-button-group
+     .toggle-button {border-radius:0}` with the outer pair restored at
+     `--radius * 3` (24px) on `:first-child`/`:last-child` — and even its
+     `isDetached` opt-out re-forces 24px on every child. All of those outrank a
+     single-class variant, so the declaration above lost at every group call site:
+     the Client Detail tab row rendered as SQUARES inside one rounded boundary, and
+     every filter pill and workout tab sat at 24px instead of the design's 9.
+
+     These three variants are individual pills, never one track, so the radius is
+     restated here at the group's own specificity. `:is()` takes the specificity of
+     its most specific argument, which is what makes the second selector (0,3,0) —
+     enough to beat the positional rules it has to override. */
+  .toggle-button-group :is(.toggle-button--ink, .toggle-button--filter, .toggle-button--tab),
+  .toggle-button-group
+    :is(.toggle-button--ink, .toggle-button--filter, .toggle-button--tab):is(:first-child, :last-child) {
+    border-radius: var(--radius-control);
+  }
+
   /* Resting: a bordered surface pill (`.pill` / `.daytab`). */
   .toggle-button--ink,
   .toggle-button--filter {
@@ -633,6 +652,13 @@ svg.lucide:not([class*="size-"]) {
     }
     .toggle-button--filter[data-selected="true"] {
       border-bottom-color: var(--color-foreground);
+    }
+    /* Same reason as the group-scoped radius above: the underline row is square,
+       and `border-radius: 0` on the bare variant loses to the group's rules. Every
+       mobile filter strip was drawing a 2px underline with 24px rounded ends. */
+    .toggle-button-group .toggle-button--filter,
+    .toggle-button-group .toggle-button--filter:is(:first-child, :last-child) {
+      border-radius: 0;
     }
   }
 }

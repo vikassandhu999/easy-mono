@@ -102,6 +102,13 @@ Trust these over the handoff docs. When you discover a new one, add it here
 - **HeroUI `Tabs.Tab` ships `w-full`** — without an explicit `w-auto` each tab
   stretches to container width and the row overflows off-screen. Style-diff
   can't see this (computed props match); only the screenshot pass catches it.
+- **`ToggleButtonGroup` JOINS its children — a pill variant must out-specify it** —
+  HeroUI sets `.toggle-button-group .toggle-button{border-radius:0}` plus a 24px
+  outer pair on `:first-child`/`:last-child`, and its `isDetached` opt-out re-forces
+  24px. All three beat a single-class variant, so `.toggle-button--ink/--filter/--tab`
+  never got their radius inside a group: the CD tab row rendered as squares inside
+  one rounded boundary and every filter pill sat at 24px. Restate the radius
+  group-scoped (`:is()` keeps it compact) AND pass `isDetached`.
 - **A release from an unlayered theme rule must be a `:not()` on that rule** —
   `.button--row` sat in `@layer components` while the control-height rule was
   unlayered, so it changed nothing and every pressable row/tile carrying it was

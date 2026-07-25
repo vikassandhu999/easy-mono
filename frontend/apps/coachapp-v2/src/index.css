@@ -508,31 +508,77 @@ svg.lucide:not([class*="size-"]) {
    `ml-1` and a non-breaking space. This is what the `[row-gap:normal]
    [column-gap:normal]` pairs at the call sites were doing by hand. */
 @layer components {
+  /* "Selected is ink" — the one thing all three variants agree on, so it is
+     stated once. What differs between them is only the RESTING state, which is
+     what a variant should be for. */
   .toggle-button--ink,
-  .toggle-button--filter {
-    --toggle-button-bg: var(--color-surface);
+  .toggle-button--filter,
+  .toggle-button--tab {
     --toggle-button-fg: var(--color-muted);
     --toggle-button-bg-selected: var(--color-ink);
     --toggle-button-fg-selected: var(--color-ink-foreground);
+    --toggle-button-bg-selected-hover: var(--color-ink);
+    --toggle-button-bg-selected-pressed: var(--color-ink);
+
+    border-radius: var(--radius-control);
+    font-weight: 500;
+  }
+  .toggle-button--ink[data-selected="true"],
+  .toggle-button--filter[data-selected="true"],
+  .toggle-button--tab[data-selected="true"] {
+    font-weight: 600;
+  }
+
+  /* Resting: a bordered surface pill (`.pill` / `.daytab`). */
+  .toggle-button--ink,
+  .toggle-button--filter {
+    --toggle-button-bg: var(--color-surface);
     /* The design gives the pill no hover. `--default-hover` (HeroUI's fallback)
        is a different colour family from `--surface`, so the pair is set to the
        next surface step to keep the affordance inside the same ramp. */
     --toggle-button-bg-hover: var(--color-surface-secondary);
     --toggle-button-bg-pressed: var(--color-surface-secondary);
-    --toggle-button-bg-selected-hover: var(--color-ink);
-    --toggle-button-bg-selected-pressed: var(--color-ink);
 
     gap: 0;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-control);
     padding-inline: calc(var(--spacing) * 3);
     font-size: var(--type-eyebrow);
-    font-weight: 500;
   }
   .toggle-button--ink[data-selected="true"],
   .toggle-button--filter[data-selected="true"] {
     border-color: var(--color-ink);
-    font-weight: 600;
+  }
+
+  /* Resting: transparent — the Client Detail tab row (`.ctab` desktop, `.mtab`
+     mobile). Same ink-selected register, no chrome until you pick it, so it reads
+     as navigation rather than as a filter you can see the extent of. Both are
+     `500 -> 600` and radius 11 -> the control step; the only real difference
+     between them is padding (15px desktop / 13px mobile) and size (13.5 / 12.5),
+     which is one responsive step, not two variants. Type collapses to
+     `--type-body` for both — 13.5 and 12.5 are equidistant from 11 and 14, and a
+     tab row that changed size across the breakpoint would be the per-page
+     variation this whole exercise removes. */
+  .toggle-button--tab {
+    --toggle-button-bg: transparent;
+    --toggle-button-bg-hover: transparent;
+    --toggle-button-bg-pressed: transparent;
+
+    gap: calc(var(--spacing) * 2);
+    border: 0;
+    padding-inline: calc(var(--spacing) * 3);
+    font-size: var(--type-body);
+  }
+  @media (width >= 40rem) {
+    .toggle-button--tab {
+      padding-inline: calc(var(--spacing) * 4);
+    }
+  }
+  /* `.ctab:hover{color:var(--foreground)}` — a text-only hover, because the
+     resting state has no background to change. */
+  @media (hover: hover) {
+    .toggle-button--tab:not([data-selected="true"]):hover {
+      color: var(--color-foreground);
+    }
   }
 
   /* A browse-list filter strip is the pill from `sm` up, and an underline row

@@ -141,7 +141,19 @@ export default function SessionDetail() {
 }
 
 /** Set · Reps · Load · RPE · done — one grid template shared by header and rows. */
-const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[64px_1fr_92px_60px_26px]';
+/**
+ * Set · Reps · Load · RPE · done — one template shared by header and rows, so the
+ * columns line up across separately-rendered grids.
+ *
+ * The set column is 88px from `sm`, not the design's 64px. The design fits a
+ * set-type chip into 64px by dropping the chip to `font-size:9.5px`, which is below
+ * the scale's smallest step — and the theme wins on type (UI-CONTRACT §3), so the
+ * COLUMN gives way instead of the type. At `--type-eyebrow` the cell measures 74px,
+ * which overflowed 64px and painted over the reps value. `1fr` on reps absorbs it.
+ *
+ * Mobile stays 52px because the design omits the chip there entirely.
+ */
+const GRID = 'grid grid-cols-[52px_1fr_76px_40px_22px] gap-2 sm:grid-cols-[88px_1fr_92px_60px_26px]';
 
 function ExerciseCard({group}: {group: ExerciseGroup}) {
   const done = group.sets.filter((set) => set.completed).length;
@@ -167,9 +179,20 @@ function ExerciseCard({group}: {group: ExerciseGroup}) {
           >
             <span className="flex items-center gap-1.5">
               <b>{index + 1}</b>
+              {/* The set column is 52px on mobile and 64px on desktop, and the
+                  design's answer to that differs by width: mobile omits the
+                  set-type entirely (dc.html 743 is just `<b>1</b><span>12</span>`),
+                  desktop keeps it but shrinks the chip hard (`padding:1px 6px;
+                  font-size:9.5px`) to fit beside the number.
+
+                  So: hidden below `sm`, and tight padding above it. 9.5px is below
+                  the scale's smallest step, so it renders at `--type-eyebrow` (11px)
+                  with `px-1` — which measures ~62px against the 64px column. A
+                  full-size chip overflowed into the reps column and painted over the
+                  value. */}
               {setTypeLabel(set) && (
                 <Chip
-                  className="chip--outline"
+                  className="chip--outline hidden shrink-0 px-1 sm:inline-flex"
                   size="sm"
                 >
                   {setTypeLabel(set)}

@@ -419,6 +419,34 @@ metric|display)` — those utilities no longer exist, so any survivor is a dead 
 
 ---
 
+### RM-135 — A renamed custom property leaves `var()` references that silently unset the property
+
+The rename in RM-134 moved the type scale from `--text-*` to `--type-*`. The gate added with
+it looks for surviving `text-<size>` *utilities*, so it caught the call sites — and missed
+`var(--text-eyebrow)` inside `index.css` itself. One survived, on `.segmented > .toggle-button`.
+
+`var(--nope)` with no fallback is not ignored and does not fall back to the inherited
+declaration: the whole declaration is invalid at computed-value time, so the property drops to
+its inherited value. Every segmented-control label therefore rendered at the inherited 14px
+instead of the design's 12.5px → 11px, in both plan builders, and nothing anywhere went red.
+
+This is RM-133's failure mode on the other half of a rule. A theme rule has two halves that
+can each miss silently — the *selector* (does it match a node?) and the *value* (does the
+token resolve?). RM-133 covered the first. Renames are when the second breaks, because the
+grep that finds the utilities is not the grep that finds the `var()`s.
+
+The rule: **renaming a custom property means grepping `var(--old-name)` too, not just the
+utilities it generated** — and reading the computed value off a real node afterwards, since a
+dangling `var()` looks exactly like "the rule is not applying" and exactly like "the design
+always looked like this".
+
+**Enforced by:** `scripts/check-theme-selectors.sh` (in `just lint`) now also fails on any
+`var(--x)` in `index.css` that nothing defines — checked against the theme itself, the
+installed `@heroui/styles`, and Tailwind's `theme.css`. Give a deliberate one a fallback.
+
+---
+
+
 ## Deploy / ops
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env

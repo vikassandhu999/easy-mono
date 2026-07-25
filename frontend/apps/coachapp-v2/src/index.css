@@ -264,10 +264,70 @@
    `.description` 12px — neither is a step (11/14/16/19/22/27), so every chip in
    the app sat off-scale and a description was 11px only where someone happened
    to write it by hand. `.label` (14) and `.fieldset__legend` (16) already land
-   on the scale and are left alone. */
+   on the scale and are left alone. `.badge__label` ships 10px, the last
+   off-scale size outside Typography. */
 .chip,
-.description {
+.description,
+.badge__label {
   font-size: var(--type-eyebrow);
+}
+
+/* `Typography` was the last component taking its size from somewhere other than
+   the scale: it carries HeroUI's own ramp (Tailwind's `text-4xl`…`text-xs`), and
+   the size arrives through the `type` prop, so NO call site can be blamed for it
+   — a census of all 187 uses found zero carrying a size class. That is why this
+   is a theme rule and not a sweep: pinning the variants fixes every site at once
+   and there is nothing left at the call sites to delete.
+
+   Off-scale before this: h3 24, h4 20, h5 18, body-xs 12 (measured rendered, on
+   6 screens × 2 widths). h6/body 16 and body-sm 14 already landed on a step and
+   are pinned anyway so the ramp cannot drift back under a HeroUI upgrade.
+
+   Only `font-size` is set. HeroUI's `@apply text-lg` also lays down a
+   line-height, and those are a reading measure rather than a scale axis —
+   re-deciding them here would move layout on 187 nodes for no stated reason.
+
+   h1 and h2 are deliberately NOT pinned. The app has no h1/h2 heading — all
+   three uses are big numbers — and checking them against the dc.html says the
+   scale, not the nodes, is what is short:
+
+     .typography--h2  30px   seat count (ST 3255) + seat stepper (ST 3293) — the
+                             design says 30px for both. Exactly right today.
+     .typography--h1  36px   FD/RD kcal figure — design 34 desktop / 30 mobile.
+                             2px off desktop (a PASS at the scale's ±2), 6px mobile.
+
+   Pinning either to `--type-display` (27) would move three correct nodes further
+   from the design to make a gate happy. The scale simply has no step above 27,
+   and four design nodes live up there: greeting 29 (DB 144), kcal 34/30, seat 30.
+   Adding a step is a user decision in its own commit (see THE SCALE above), so
+   this stops here and leaves the two variants on HeroUI's ramp.
+
+   `@layer components` is load-bearing, and the one thing to not "tidy" away.
+   HeroUI imports its component CSS as `layer(components)`, so a rule placed here
+   AFTER that import beats HeroUI's ramp on source order — while still losing to
+   Tailwind's `utilities` layer, which is where `type-*` lives. That is the
+   cascade this needs: HeroUI default < theme pin < call-site override.
+   Unlayered (like `.chip` above) would win against everything, and a call site
+   that wrote `type-metric` would be silently ignored — verified in-browser:
+   `typography--body-sm type-metric` computed 14px unlayered, 22px from here. */
+@layer components {
+  .typography--h3 {
+    font-size: var(--type-metric);
+  }
+  .typography--h4,
+  .typography--h5 {
+    font-size: var(--type-heading);
+  }
+  .typography--h6,
+  .typography--body {
+    font-size: var(--type-title);
+  }
+  .typography--body-sm {
+    font-size: var(--type-body);
+  }
+  .typography--body-xs {
+    font-size: var(--type-eyebrow);
+  }
 }
 
 /* The last two off-scale radii: HeroUI rounds a chip at 16px and a date segment
@@ -315,7 +375,7 @@ svg.lucide:not([class*="size-"]) {
   background-color: transparent;
   padding-inline: calc(var(--spacing) * 3);
   padding-block: calc(var(--spacing) * 2);
-  font-size: var(--text-eyebrow);
+  font-size: var(--type-eyebrow);
   font-weight: 500;
   color: var(--color-muted);
 }

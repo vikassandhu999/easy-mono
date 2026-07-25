@@ -55,4 +55,29 @@ if [ -n "$MISSING" ]; then
   echo "A rule on a class that does not exist changes nothing, and fails silently."
   exit 1
 fi
+
+# Same failure mode, other half of a rule: `var(--nope)` with no fallback is
+# invalid at computed-value time, so the declaration is dropped and the property
+# inherits. Nothing builds red. `9149cfd8` renamed the type scale `--text-*` ->
+# `--type-*` and left one `var(--text-eyebrow)` behind, which silently unset the
+# segmented control's font size.
+TW_THEME=$(find frontend/node_modules/.pnpm -type f -path '*/tailwindcss/theme.css' 2>/dev/null | sort -V | tail -1)
+DEFINED=$(
+  {
+    grep -ohE -- '^\s*--[a-zA-Z0-9_-]+' "$THEME"
+    grep -rohE -- '^\s*--[a-zA-Z0-9_-]+\s*:' "$(dirname "$HEROUI")" 2>/dev/null | tr -d ':'
+    [ -n "$TW_THEME" ] && grep -ohE -- '^\s*--[a-zA-Z0-9_-]+\s*:' "$TW_THEME" | tr -d ':'
+  } | tr -d ' \t' | sort -u
+)
+DANGLING=$(grep -ohE -- 'var\(--[a-zA-Z0-9_-]+\s*\)' "$THEME" | grep -oE -- '\--[a-zA-Z0-9_-]+' | sort -u |
+  while read -r v; do echo "$DEFINED" | grep -qxF -- "$v" || echo "$v"; done)
+
+if [ -n "$DANGLING" ]; then
+  echo "Theme references custom propert(ies) nothing defines:"
+  printf "  %s\n" $DANGLING
+  echo ""
+  echo "var(--x) with no fallback drops the whole declaration — the property"
+  echo "silently inherits instead. Fix the name, or give it a fallback."
+  exit 1
+fi
 exit 0

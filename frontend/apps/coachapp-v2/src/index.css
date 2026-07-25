@@ -298,9 +298,9 @@
    line-height, and those are a reading measure rather than a scale axis —
    re-deciding them here would move layout on 187 nodes for no stated reason.
 
-   h1 and h2 both take `--type-hero`, the 30px step. Checking them against the
-   dc.html is what established that the scale, not the nodes, was what was short —
-   the app has no h1/h2 *heading*, all three uses are big numbers:
+   h1 and h2 both take `--type-hero`, the 30px step added with this work. Checking
+   them against the dc.html is what established that the scale, not the nodes, was
+   what was short — the app has no h1/h2 *heading*, all three uses are big numbers:
 
      .typography--h2  was 30px  seat count (ST 3255) + seat stepper (ST 3293) —
                                 design says 30px. Already exact; 30 keeps it exact.
@@ -368,6 +368,167 @@
 svg.lucide:not([class*="size-"]) {
   width: calc(var(--spacing) * 4);
   height: calc(var(--spacing) * 4);
+}
+
+/* Tab strip. The register follows the strip's ORIENTATION, not the page's
+   breakpoint — a horizontal strip is an underline, a vertical one is a filled
+   pill, anywhere in the app. That is the whole point of putting it here: the two
+   existing strips (settings, client detail) had each spelled the look out at the
+   call site and had already drifted apart on every axis —
+
+     underline colour   `border-b-ink` (settings) vs `border-b-current` (CD) vs
+                        `border-foreground` (BrowseScreen's pills). The dc.html
+                        says `var(--foreground)` (ST 3339/3903 `mBorder`), so
+                        settings was the wrong one and only BrowseScreen matched.
+     selected fg        `text-ink-foreground` vs `[color:white]` — same computed
+                        colour, one of them bypassing the theme.
+     breakpoint         settings switched register at `md:`, BrowseScreen at `sm:`.
+     weight             `font-semibold` everywhere except one `font-bold`.
+
+   None of those differences was a decision, and keying on orientation means a
+   third strip cannot invent a fourth spelling.
+
+   Values from the dc.html: `.stnav` (desktop, filled) is radius 11px -> the 10px
+   control step, `500 13.5px/1 Inter` -> `--type-body`, muted, with
+   `background: var(--ink); color: #fff; font-weight: 600` selected and a
+   `background: var(--surface)` hover the app had never implemented. The mobile
+   strip (ST 3339) is `padding: 8px 0` with a 2px `var(--foreground)` underline. */
+@layer components {
+  /* HeroUI's default variant paints an animated `bg-segment` pill behind the
+     selected tab (`.tabs__indicator`, z-index -1). We draw the selected state on
+     the tab itself, so it is redundant — and on the horizontal strip, whose tab
+     has no background of its own, it showed THROUGH as a grey pill sitting under
+     the underline. Nothing in the app had ever overridden it. */
+  .tabs__indicator {
+    display: none;
+  }
+
+  /* Horizontal — the underline register. HeroUI's base is `w-full justify-center
+     rounded-3xl px-4`, which is the filled-pill shape; a scrolling strip needs
+     intrinsic width so the tabs sit at their label width. */
+  .tabs__list[data-orientation="horizontal"] .tabs__tab {
+    width: auto;
+    flex-shrink: 0;
+    justify-content: flex-start;
+    gap: calc(var(--spacing) * 1);
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    background-color: transparent;
+    padding: 0 0 calc(var(--spacing) * 2);
+    white-space: nowrap;
+  }
+  .tabs__list[data-orientation="horizontal"] .tabs__tab[data-selected="true"] {
+    border-bottom-color: var(--color-foreground);
+    font-weight: 600;
+    color: var(--color-foreground);
+  }
+
+  /* Vertical — the filled-ink register (`.stnav`). */
+  .tabs__list[data-orientation="vertical"] .tabs__tab {
+    justify-content: flex-start;
+    gap: calc(var(--spacing) * 2);
+    border-radius: var(--radius-control);
+    padding-inline: calc(var(--spacing) * 3);
+  }
+  .tabs__list[data-orientation="vertical"] .tabs__tab[data-selected="true"] {
+    background-color: var(--color-ink);
+    font-weight: 600;
+    color: var(--color-ink-foreground);
+  }
+
+  /* The design's hover. HeroUI ships `opacity-70`, which dims the label instead
+     of lifting the row, and reads as "disabled" next to a filled selected tab. */
+  @media (hover: hover) {
+    .tabs__tab:not([data-selected="true"]):not([data-disabled="true"]):hover {
+      opacity: 1;
+      background-color: var(--color-surface);
+      color: var(--color-foreground);
+    }
+    .tabs__list[data-orientation="horizontal"] .tabs__tab:not([data-selected="true"]):hover {
+      background-color: transparent;
+    }
+  }
+}
+
+/* ── The ink pill ───────────────────────────────────────────────────────────
+   `.pill` in the dc.html, and `.daytab`, which are byte-identical apart from 1px
+   of padding — the prototype duplicated this object too, which is the clearest
+   possible evidence it is one thing:
+
+     pill        -> padding:7px 13px; border-radius:9px; font-size:12.5px;
+                    font-weight:500; color:var(--muted);
+                    border:1px solid var(--border); background:var(--surface)
+     pill[data-on] -> background:var(--ink); color:#fff;
+                    border-color:var(--ink); font-weight:600
+
+   Written as a HeroUI variant, not a rule on `.toggle-button`: the component is
+   genuinely polymorphic (icon toggles, segmented track, these pills), so the pill
+   is a variant and the base must stay untouched. HeroUI's own variants
+   (`.toggle-button--ghost`) work by setting its `--toggle-button-*` tokens, so
+   this follows that contract for every axis it exposes, and only falls back to
+   plain declarations for what it does not tokenise (border, radius, type, weight).
+
+   Scale mapping: radius 9px -> the 10px control step (`--radius-control` records
+   "control 9"); font 12.5px -> `--type-eyebrow`, the step that already records
+   "pill 12.5"; padding 13-14px -> 12px. Height comes from `--spacing-control`.
+
+   `gap` is reset because HeroUI ships `gap-2` (8px) between a pill's label and
+   its count, where the design uses 3px — `FilterCount` owns that spacing with
+   `ml-1` and a non-breaking space. This is what the `[row-gap:normal]
+   [column-gap:normal]` pairs at the call sites were doing by hand. */
+@layer components {
+  .toggle-button--ink,
+  .toggle-button--filter {
+    --toggle-button-bg: var(--color-surface);
+    --toggle-button-fg: var(--color-muted);
+    --toggle-button-bg-selected: var(--color-ink);
+    --toggle-button-fg-selected: var(--color-ink-foreground);
+    /* The design gives the pill no hover. `--default-hover` (HeroUI's fallback)
+       is a different colour family from `--surface`, so the pair is set to the
+       next surface step to keep the affordance inside the same ramp. */
+    --toggle-button-bg-hover: var(--color-surface-secondary);
+    --toggle-button-bg-pressed: var(--color-surface-secondary);
+    --toggle-button-bg-selected-hover: var(--color-ink);
+    --toggle-button-bg-selected-pressed: var(--color-ink);
+
+    gap: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    padding-inline: calc(var(--spacing) * 3);
+    font-size: var(--type-eyebrow);
+    font-weight: 500;
+  }
+  .toggle-button--ink[data-selected="true"],
+  .toggle-button--filter[data-selected="true"] {
+    border-color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  /* A browse-list filter strip is the pill from `sm` up, and an underline row
+     below it (CL mobile, dc.html 488-492: `13.5px`, `padding:4px 0`, 2px
+     `var(--foreground)` underline, 500 -> 600). Same underline register as the
+     horizontal tab strip above; it is repeated rather than shared because the
+     two apply under different conditions — that one is unconditional, this one
+     is width-scoped. `40rem` is Tailwind's `sm`, the breakpoint the call site
+     used before this moved here. */
+  @media (width < 40rem) {
+    .toggle-button--filter {
+      --toggle-button-bg: transparent;
+      --toggle-button-bg-hover: transparent;
+      --toggle-button-bg-pressed: transparent;
+      --toggle-button-bg-selected: transparent;
+      --toggle-button-fg-selected: var(--color-foreground);
+
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      padding-inline: 0;
+      font-size: var(--type-body);
+    }
+    .toggle-button--filter[data-selected="true"] {
+      border-bottom-color: var(--color-foreground);
+    }
+  }
 }
 
 /* Segmented control: a ToggleButtonGroup drawn as one track with inset segments.

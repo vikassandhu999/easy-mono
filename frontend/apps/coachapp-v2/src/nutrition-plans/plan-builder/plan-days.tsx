@@ -511,7 +511,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 value={nameValue}
               />
               <Button
-                className="shrink-0 rounded-control border-0 bg-accent px-3 font-btn type-body font-semibold leading-none [color:white] [row-gap:normal] [column-gap:normal]"
+                className="shrink-0 rounded-control border-0 bg-accent px-3 font-btn type-body font-semibold leading-none text-accent-foreground [row-gap:normal] [column-gap:normal]"
                 data-testid="nb-rename-save"
                 onPress={() => {
                   commitRename().catch(() => undefined);
@@ -538,7 +538,7 @@ export function PlanDays({plan}: PlanDaysProps) {
             >
               {days.map((day) => (
                 <ToggleButton
-                  className="rounded-control border border-border bg-surface px-3 type-eyebrow font-medium text-muted data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:py-2 [row-gap:normal] [column-gap:normal]"
+                  className="toggle-button--ink"
                   data-testid={day.id === activeDay.id ? 'nb-daytab-on' : 'nb-daytab-off'}
                   id={day.id}
                   key={day.id}

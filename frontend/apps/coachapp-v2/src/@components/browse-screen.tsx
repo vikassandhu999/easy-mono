@@ -146,16 +146,12 @@ const DIVIDER = 'hidden h-6 self-center sm:block';
  * `data-selected="true"`; there is no `selected:` Tailwind variant registered in
  * this project, so `selected:*` classes silently no-op.
  */
-const FILTER_PILL =
-  // HeroUI's toggle-button base already ships box-shadow:none, border-width:0,
-  // font-weight:500 and font-size:14px, so `[box-shadow:none] border-0
-  // font-medium type-body` were undoing nothing. `sm:py-2` restated the base
-  // `py-2`, and `data-[selected=true]:bg-transparent` restated `bg-transparent`.
-  // Measured against the live DOM at both widths and in both states, not assumed.
-  'rounded-none border-b-2 border-transparent bg-transparent px-0 py-2 type-body leading-[normal] text-muted [row-gap:normal] [column-gap:normal] ' +
-  'data-[selected=true]:border-foreground data-[selected=true]:font-semibold data-[selected=true]:text-foreground ' +
-  'sm:rounded-control sm:border sm:border-border sm:bg-surface sm:px-3 ' +
-  'sm:data-[selected=true]:border-ink sm:data-[selected=true]:bg-ink sm:data-[selected=true]:[color:white]';
+/**
+ * The whole look is the `--filter` variant in `index.css` (underline row below
+ * `sm`, ink pill above). It used to be four lines of Tailwind here, which is how
+ * the desktop pill ended up at 14px where the dc.html's `.pill` says 12.5px.
+ */
+const FILTER_PILL = 'toggle-button--filter';
 
 /** Zero-gutter on mobile (full-bleed list); Page.Frame owns the gutter from sm up. */
 const FRAME = 'flex flex-1 flex-col px-0 pb-0 sm:px-4 sm:pb-6';

@@ -446,6 +446,57 @@ installed `@heroui/styles`, and Tailwind's `theme.css`. Give a deliberate one a 
 
 ---
 
+### RM-136 — A recurring look is a component variant, not a class string to re-type
+
+The ink-selected pill — bordered surface pill, filled `--ink` when selected — had been
+hand-assembled at five call sites: BrowseScreen's filter row, the nutrition builder's day
+tabs, the training builder's workout tabs, the settings tab strip, and `.segmented`. Eight
+to ten classes each, and they disagreed:
+
+- **type step** `type-eyebrow` (11px) in the builders vs `type-body` (14px) in BrowseScreen
+- **selected foreground** `text-ink-foreground` vs `[color:white]` — same computed
+  `oklch(1 0 0)`, one bypassing the theme
+- **radius** `rounded-control` (10px) vs `.segmented`'s `--radius-chip` (8px)
+
+The dc.html settles it and also proves the point: `.pill` and `.daytab` are byte-identical
+there apart from 1px of padding. The prototype duplicated the object, the port duplicated it
+five more times, and each copy drifted on a different axis. `12.5px` -> `--type-eyebrow`, so
+the 14px was the wrong one.
+
+The rule: **when a look repeats, define it once as a variant on the component.** For a HeroUI
+component, follow HeroUI's own convention rather than inventing one — its variants are BEM
+modifier classes that set the block's custom properties (`.toggle-button--ghost` sets
+`--toggle-button-bg` and friends), so an app variant does the same and only writes plain
+declarations for axes HeroUI does not tokenise. Do NOT put the look on the base class: a
+`ToggleButton` is also an icon toggle and a segmented segment.
+
+**Enforced by:** `scripts/check-rm.sh` rejects `data-[selected=true]:bg-ink` at a call site —
+that is the signature of re-assembling the pill. Use `.toggle-button--ink` (always a pill) or
+`.toggle-button--filter` (underline below `sm`, pill above). `check-theme-selectors.sh`
+allows an app-owned `--ink`/`--filter` modifier but still verifies the BLOCK exists, so
+`.toggle-buton--ink` is still caught.
+
+---
+
+### RM-137 — A literal colour inside an arbitrary value is the one that cannot follow the theme
+
+`[color:var(--color-muted)]` is fine and there are ~45 of them: that is the token, escalated
+to an arbitrary property because a HeroUI recipe outranks the plain `text-muted` utility.
+`[color:white]` is a different thing entirely — it is a value the theme can never reach, so
+it cannot respond to light/dark and cannot be retargeted when the palette moves. Nine had
+accumulated, and the two outside Client Detail were sitting next to `bg-accent` and `bg-ink`,
+both of which have a matching foreground token.
+
+Note `--accent-foreground` is `oklch(0.9911 0 0)`, not pure white — so swapping is a real
+(imperceptible) change, not a no-op. Take the token anyway: the value of the swap is that the
+ban becomes mechanical.
+
+The rule: **arbitrary-value syntax may carry a token, never a literal colour.**
+
+**Enforced by:** `scripts/check-rm.sh` rejects `[color:` followed by `white`/`black`/`#`/
+`rgb`/`hsl`/`oklch`. Client Detail is excluded pending its redesign (8 literals live there).
+
+---
 
 ## Deploy / ops
 

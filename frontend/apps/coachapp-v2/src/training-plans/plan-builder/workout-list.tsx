@@ -114,7 +114,7 @@ export function WorkoutList({planId}: WorkoutListProps) {
           >
             {workouts.map((workout) => (
               <ToggleButton
-                className="shrink-0 gap-2 rounded-control border border-border bg-surface px-3 type-eyebrow font-medium text-muted data-[selected=true]:border-ink data-[selected=true]:bg-ink data-[selected=true]:font-semibold data-[selected=true]:[color:white] sm:py-2"
+                className="shrink-0 toggle-button--ink"
                 data-testid={workout.id === activeWorkout?.id ? 'tb-tab-on' : 'tb-tab-off'}
                 id={workout.id}
                 key={workout.id}

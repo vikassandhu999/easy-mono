@@ -37,12 +37,25 @@ SELECTORS=$(grep -oE '^\s*\.[a-z][a-z0-9_-]*' "$THEME" | tr -d ' \t' | sort -u)
 KNOWN=$(cat "$HEROUI"/*.css | grep -oE '\.[a-z][a-z0-9_-]*' | sort -u)
 
 # App-owned classes live in the theme by design and are not HeroUI's to know.
+#
+# `<vendor-block>--<name>` is deliberate, not a typo: HeroUI's own variants are
+# BEM modifier classes that set the block's `--<block>-*` custom properties
+# (`.toggle-button--ghost`), so an app variant follows the same convention. The
+# check that matters for these is still enforced — the BLOCK must exist, so
+# `.toggle-buton--ink` is still caught. Only the modifier is app-owned.
 OURS='^\.(segmented|tap-target|scrollbar-hide|heading|light|default|dark)$'
+APP_MODIFIERS='^\.[a-z][a-z0-9-]*--(ink|filter)$'
 
 MISSING=""
 while read -r sel; do
   [ -z "$sel" ] && continue
   echo "$sel" | grep -qE "$OURS" && continue
+  # An app-owned BEM modifier is allowed, but only on a block HeroUI really has.
+  if echo "$sel" | grep -qE "$APP_MODIFIERS"; then
+    BLOCK=${sel%--*}
+    echo "$KNOWN" | grep -qxF "$BLOCK" || MISSING="$MISSING$sel (no such block: $BLOCK)\n"
+    continue
+  fi
   echo "$KNOWN" | grep -qxF "$sel" || MISSING="$MISSING$sel\n"
 done <<< "$SELECTORS"
 

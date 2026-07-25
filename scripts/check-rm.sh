@@ -56,5 +56,19 @@ check RM-125 "centered-spinner idiom (use ListSkeleton/PageSkeleton)" \
 check RM-129 "non-bare Page.Content with className (use bare + Page.Frame; gutter doubles or width unbounds)" \
   '<Page\.Content className=' "$COACH"
 
+# The ink-selected pill is `.toggle-button--ink` (always) / `--filter` (underline
+# below sm). Five call sites had hand-assembled it and disagreed on the type step
+# (11px vs 14px) and the selected foreground (`text-ink-foreground` vs
+# `[color:white]`). Naming the variant only helps if re-assembling it fails.
+check RM-136 "hand-assembled ink-selected pill (use .toggle-button--ink / --filter)" \
+  'data-\[selected=true\]:bg-ink' "$COACH"
+
+# `[color:var(--color-*)]` is fine — it is the token, escalated to an arbitrary
+# property to outrank a HeroUI recipe that beats the `text-*` utility. A literal
+# colour is the actual bypass: it cannot follow the theme, in either mode.
+# ponytail: client-detail excluded — deferred for redesign, 8 literals live there
+check RM-137 "literal colour in an arbitrary value (use a token: text-ink-foreground, text-accent-foreground)" \
+  '\[color:(white|black|#|rgb|hsl|oklch)' "$COACH" -g '!**/client-detail*/**' -g '!**/client-detail.tsx'
+
 if [ "$fail" -eq 0 ]; then echo "check-rm: all clean"; fi
 exit $fail

@@ -96,7 +96,7 @@ The fastest defensible launch is therefore a focused **1:1 coaching system for I
 
 ## Method and caveats
 
-- CoachEasy's baseline comes from [`docs/onboarding.md`](../onboarding.md), the current [`docs/product-capabilities/`](../product-capabilities/) contracts, and selected current implementation files where those contracts lag recent work.
+- CoachEasy's baseline comes from the current [`docs/product-capabilities/`](../product-capabilities/) contracts and selected current implementation files where those contracts lag recent work.
 - Competitor claims come from current first-party product, pricing, and help-centre pages. Public omission is not proof that a feature is absent; it is safe evidence of what that competitor actively sells and onboards customers around.
 - Prices below are public monthly USD prices unless stated otherwise. Taxes, annual discounts, promotions, exchange rates, payment fees, and enterprise quotes are intentionally excluded.
 - The direct comparison set is ABC Trainerize, TrueCoach, Everfit, PT Distinction, and Kahunas. Practice Better was excluded because it is a broader health-practice platform rather than one of the closest fitness-coaching delivery products.

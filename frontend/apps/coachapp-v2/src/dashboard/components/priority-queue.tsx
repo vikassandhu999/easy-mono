@@ -1,3 +1,4 @@
+import {getInitials} from '@easy/utils';
 import type {Key} from '@heroui/react';
 
 import {Avatar, Button, Chip, Description, Label, ListBox, Typography} from '@heroui/react';
@@ -90,10 +91,17 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
       chip: 'New lead',
       chipVariant: 'primary',
       id: `prospect-${prospect.id}`,
-      initials: prospect.name[0]?.toUpperCase() ?? '?',
+      // Two letters, same as a client row — the refs show `EF` / `TD`, and one
+      // letter beside four two-letter avatars reads as a rendering bug.
+      initials: prospectInitials(prospect.name),
       name: prospect.name,
       onOpen: () => navigate(ROUTES.PROSPECT_DETAIL.replace(':id', prospect.id)),
-      subtitle: [prospect.program?.name ?? 'New application', formatRelativeTime(prospect.inserted_at)]
+      // COPY.md §DB: `12-week transformation · applied 5h ago` — the verb is part
+      // of the string, not something a reader infers from a bare timestamp.
+      subtitle: [
+        prospect.program?.name ?? 'New application',
+        prospect.inserted_at ? `applied ${formatRelativeTime(prospect.inserted_at)}` : null,
+      ]
         .filter(Boolean)
         .join(' · '),
       tone: 'accent',
@@ -110,6 +118,12 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
   }
 
   return items;
+}
+
+/** `Ella Foster` -> `EF`. The API sends a prospect's name as one string. */
+function prospectInitials(name: string): string {
+  const [first, last] = name.split(/\s+/);
+  return getInitials(first, last) || '?';
 }
 
 function QueueRow({item}: {item: QueueItem}) {

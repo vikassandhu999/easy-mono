@@ -148,7 +148,8 @@ end
 # Give EVERY completed check-in submission a photo answer (3 placeholder
 # attachments each) so the Overview latest-check-in card renders thumbnails AND
 # the Check-ins photos card has more than 3 photos — it needs an overflow tile.
-# The storage objects don't exist (presigned GETs 404); the tiles still render.
+# This inserts attachment ROWS only. `dev_screen_data.exs` uploads the objects —
+# run it after this, or every photo tile renders the empty-tile placeholder.
 submissions =
   Repo.all(
     from s in FormSubmission,

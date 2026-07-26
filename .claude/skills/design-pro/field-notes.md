@@ -286,6 +286,13 @@ Trust these over the handoff docs. When you discover a new one, add it here
   setup strip auto-hides once setup is complete. Verifying those requires seeding
   an incomplete workspace or briefly stubbing conditions (mark stubs `TEMP-VERIFY`
   and grep before committing).
+- **`403 AccessDenied` on every attachment URL is a CLOCK, not a credential.** A
+  presigned URL is signed with the host clock and checked against MinIO's; Docker
+  Desktop's VM clock drifts hours behind after the host sleeps, so every URL is
+  `Request is not valid yet` and MinIO answers a bare 403. Nothing in the app is
+  wrong. Check `curl -sD - http://localhost:9000/minio/health/live | grep -i date`
+  against `date -u`; fix by restarting Docker Desktop (the VM clock — a container
+  restart does not move it). `dev_screen_data.exs` detects and prints the skew.
 - **coachapp access tokens expire in ~5 min** — grab APP_TOKEN fresh right before
   each `style-diff.mjs` run; reload the app tab first to force a refresh. The axi
   `eval` output wraps strings in escaped quotes — strip `\"` or auth silently 401s.

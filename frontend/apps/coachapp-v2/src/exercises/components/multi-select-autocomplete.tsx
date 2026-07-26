@@ -12,6 +12,7 @@ import {
   useFilter,
 } from '@heroui/react';
 import {cn} from '@heroui/styles';
+import {Filter} from 'lucide-react';
 import type {ReactNode} from 'react';
 
 export type MultiSelectOption = {
@@ -87,7 +88,15 @@ export default function MultiSelectAutocomplete({
       value={value}
     >
       {label ? <Label>{label}</Label> : null}
-      <Autocomplete.Trigger className={cn('', collapseToCount && active && 'border-ink font-medium text-foreground')}>
+      <Autocomplete.Trigger
+        className={cn(
+          collapseToCount && 'gap-2',
+          collapseToCount && active && 'border-ink font-medium text-foreground',
+        )}
+      >
+        {/* The design puts a funnel on the FILTER trigger (EX toolbar), not on the
+            form-field flavour of this control. */}
+        {collapseToCount ? <Filter className="size-4 shrink-0 text-muted" /> : null}
         <Autocomplete.Value>
           {({defaultChildren, isPlaceholder, state}: AutocompleteValueRenderProps) => {
             if (isPlaceholder || state.selectedItems.length === 0) {

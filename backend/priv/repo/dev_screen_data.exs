@@ -4,9 +4,10 @@
 # client); this one fills the gaps those two leave:
 #
 #   1. Image BLOBS for progress-photo attachments. `dev_client_states.exs` inserts
-#      attachment rows and nothing ever uploaded an object for them, so every
-#      presigned GET 403s and CD-PH / CD-CS / CD-OV / CD-CI drew placeholder
-#      tiles for a client who had "submitted" nine photos.
+#      attachment rows and never uploaded an object for them, so CD-PH / CD-CS /
+#      CD-OV / CD-CI drew placeholder tiles for a client who had "submitted" nine
+#      photos. Also prints the MinIO clock skew when there is one — see below, it
+#      looks exactly like a permissions error and is not one.
 #   2. A landing page + prospects, so the dashboard's `New lead` row exists at all.
 #      Prospects can only be created through a landing page (`landing_page_id` is
 #      required), and dev had none.
@@ -77,11 +78,9 @@ if abs(skew) > 60 do
 
   ! MinIO's clock is #{div(abs(skew), 60)} min #{if skew > 0, do: "BEHIND", else: "AHEAD OF"} this machine.
     Every presigned URL will 403 (`Request is not valid yet` / `has expired`) — in the
-    app too, not only here. Restart the container so its clock resyncs:
-
-      cd backend && docker compose -f docker-compose.minio.yml restart
-
-    Then re-run this script.
+    app too, not only here. It is Docker Desktop's VM clock, not the container's, so
+    `docker compose restart` does NOT move it (measured). Restart Docker Desktop,
+    then re-run this script.
   """)
 end
 

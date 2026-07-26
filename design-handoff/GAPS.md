@@ -56,6 +56,12 @@ The prototype contains a desktop spreadsheet-like grid variant. It's a `Table` (
 **17. `Questionnaire` form type (FB, FM) — DROPPED, user decision 2026-07-26**
 The FB frame's `Type` control offers three segments, `Check-in · Intake · Questionnaire`, and `COPY.md` § FM/FB repeats it. **There is no questionnaire purpose and there will not be one.** `FormTemplate`'s enum is `[:intake, :check_in]` and the app ships two segments — that is correct, not a gap. Do not add the third segment, do not add the enum value, and do not re-raise this. The COPY.md lines that name it (`Intake, check-in, and questionnaire forms for your clients`, and both `Type` field lists) are stale prototype copy.
 
+**18. `Draft` form state (FM) — DROPPED, user decision 2026-07-26**
+The FM frame's filter row is `All · Active · Draft · Archived` and its row chips repeat `Draft`. **There is no draft state and there will not be one.** `FormTemplate`'s status enum is `[:active, :archived]`; a form is live the moment it exists and `Save form` is the only commit. Do not add the tab, the chip, or the enum value. Same call as #17, same date.
+
+**19. `Source` as free text (FO/FD/FE) — RESOLVED read-only, user decision 2026-07-26**
+COPY.md gave `Source` the placeholder `e.g. USDA`, which reads as free-text attribution. It isn't: `Food.source` is `Ecto.Enum [:system, :imported, :custom]` and it is **load-bearing** — `Foods.ensure_editable/1` uses it to refuse edits and deletes on system and imported foods. Making it free text would delete that guard. So `source` stays server-stamped provenance and the field renders read-only (`6b81098e`), and COPY.md's placeholder was the stale half. If attribution ("this came from USDA") is ever wanted, `Food` **already has an unused `brand` field** — use that, don't overload `source`.
+
 ## Still open — genuinely stop and ask
 (none — everything listed here has since been designed and built: Client
 Detail per `CLIENT-DETAIL.md`, messages/inbox, check-in review, landing-page

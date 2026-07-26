@@ -47,7 +47,7 @@ Rows of sample data (client names, foods, plans) are NOT copy — they show data
 - List: H1 `Foods` · `Your ingredient library for building nutrition plans` · `Create food` · `Search foods…` · filter `Categories` · count `{n} foods`
 - Row meta: `{category} · system|custom` · macros `{kcal} cal  P {p}  C {c}  F {f}` (mobile: `{kcal} cal` only)
 - Create: `Create food` · `Add a custom food to your library.` · sections `Details` (`Name the food and where it came from.`), `Nutrition` (`Enter values per 100 g.`), `Serving sizes` (`Optional presets clients can log against.`)
-- Fields: `Name *` (ph `e.g. Greek Yogurt, 2%`), `Category` (ph `e.g. Dairy`), `Source` (ph `e.g. USDA`), `Notes` (ph `Prep notes, brand, or anything worth remembering…`), `Calories`, `Protein (g)`, `Carbs (g)`, `Fat (g)`, `Fiber (g)`, `Sugar (g)`
+- Fields: `Name *` (ph `e.g. Greek Yogurt, 2%`), `Category` (ph `e.g. Dairy`), `Source` (READ-ONLY, no placeholder — see GAPS.md #19), `Notes` (ph `Prep notes, brand, or anything worth remembering…`), `Calories`, `Protein (g)`, `Carbs (g)`, `Fat (g)`, `Fiber (g)`, `Sugar (g)`
 - Serving-size editor: `Unit *`, `Amount`, `Weight (g)` · `+ Add serving size` · error `Enter a serving unit`
 - Image adder: `Add image URL` → url field, `Add`/`Cancel` · error `Paste an image URL`
 - Detail (FD): `Nutrition · per 100 g` · `{kcal} kcal` · `Serving sizes` rows `1 scoop — 30 g` · `Notes` · dates
@@ -97,8 +97,8 @@ Rows of sample data (client names, foods, plans) are NOT copy — they show data
 - Day-first variant: day tabs Mon–Sun with sub `{workout}` / `Rest` · assign menu `Rest — No workout`, workouts with `On Mon, Thu`, `New workout for this day — Start empty` · shared `Used on Mon, Thu` / `Scheduled on {n} days — edits apply to all of them.` · volume `{n} sets · {m} exercises · ~{min} min` · `Show breakdown`/`Hide breakdown` (`Working`/`Warm-up`/`Drop sets`)
 
 ## FM — Forms listing
-- H1 `Forms` · `Intake and check-in forms for your clients` · `Create form` · `Search forms…` · tabs `All` `Active` `Draft` `Archived`
-- Row meta: `{Type} · {n} questions · {m} responses` · chips `Active`/`Draft`/`Archived`
+- H1 `Forms` · `Intake and check-in forms for your clients` · `Create form` · `Search forms…` · tabs `All` `Active` `Archived` — the prototype's `Draft` tab is dropped, see GAPS.md #18
+- Row meta: `{Type} · {n} questions · {m} responses` · chips `Active`/`Archived`
 - Create: `Create form` · `Name the form now, then add questions next.` · `Form details` (`Name the form and pick what it's for.`) · `Name *` (ph `e.g. Weekly Check-in`), `Type` (Check-in / Intake), `Description` (ph `What this form collects, or instructions for the client…`)
 
 ## FB — Form builder

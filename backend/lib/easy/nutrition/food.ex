@@ -121,6 +121,28 @@ defmodule Easy.Nutrition.Food do
   end
 
   @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  @spec for_categories(Ecto.Queryable.t(), [String.t()] | nil) :: Ecto.Query.t()
+  def for_categories(query \\ __MODULE__, categories)
+  def for_categories(query, nil), do: query
+  def for_categories(query, []), do: query
+
+  def for_categories(query, categories) when is_list(categories) do
+    from(f in query, where: f.category in ^categories)
+  end
+
+  # The distinct categories present in what this coach can see. `category` is a
+  # free-form string on `foods` (dev data has both `packaged` and `Supplement`), so
+  # the filter's options come from the DATA rather than from an enum.
+  @spec distinct_categories(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def distinct_categories(query \\ __MODULE__) do
+    from(f in query,
+      where: not is_nil(f.category) and f.category != "",
+      distinct: true,
+      order_by: [asc: f.category],
+      select: f.category
+    )
+  end
+
   def search(query \\ __MODULE__, term)
   def search(query, nil), do: query
   def search(query, ""), do: query

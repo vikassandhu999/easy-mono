@@ -4,9 +4,11 @@ defmodule EasyWeb.Coaches.FoodController do
 
   alias Easy.Foods
   alias OpenApiSpex.Operation
+  alias OpenApiSpex.Schema
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
+    FoodCategoryListResponse,
     FoodImpactResponse,
     FoodListResponse,
     FoodRequest,
@@ -83,10 +85,28 @@ defmodule EasyWeb.Coaches.FoodController do
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of foods to skip", required: false),
       Operation.parameter(:limit, :query, :integer, "Maximum foods to return", required: false),
-      Operation.parameter(:search, :query, :string, "Case-insensitive food name search", required: false)
+      Operation.parameter(:search, :query, :string, "Case-insensitive food name search", required: false),
+      Operation.parameter(
+        :categories,
+        :query,
+        %Schema{type: :array, items: %Schema{type: :string}},
+        "Only foods in these categories",
+        required: false,
+        explode: true
+      )
     ],
     responses: [
       ok: {"Foods", "application/json", FoodListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
+
+  operation :categories,
+    summary: "List food categories",
+    description: "The distinct categories present in the foods visible to the coach. Free-form strings, not an enum.",
+    operation_id: "listFoodCategories",
+    security: [%{"bearerAuth" => []}],
+    responses: [
+      ok: {"Categories", "application/json", FoodCategoryListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
@@ -152,6 +172,7 @@ defmodule EasyWeb.Coaches.FoodController do
   def index(conn, params) do
     opts = [
       search: Map.get(params, "search", ""),
+      categories: List.wrap(Map.get(params, "categories")),
       offset: parse_integer(params, "offset", 0),
       limit: parse_integer(params, "limit", 20)
     ]
@@ -161,6 +182,13 @@ defmodule EasyWeb.Coaches.FoodController do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, foods: foods)
+    end
+  end
+
+  @spec categories(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def categories(conn, _params) do
+    with {:ok, categories} <- Foods.list_food_categories(conn.assigns.ctx) do
+      render(conn, :categories, categories: categories)
     end
   end
 

@@ -757,6 +757,9 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/v1/coach/form-assignments/${queryArg.id}/submissions`,
       }),
     }),
+    listFoodCategories: build.query<ListFoodCategoriesApiResponse, ListFoodCategoriesApiArg>({
+      query: () => ({url: `/v1/coach/nutrition-foods/categories`}),
+    }),
     deleteFormTemplate: build.mutation<DeleteFormTemplateApiResponse, DeleteFormTemplateApiArg>({
       query: (queryArg) => ({
         url: `/v1/coach/form-templates/${queryArg.id}`,
@@ -862,6 +865,7 @@ const injectedRtkApi = api.injectEndpoints({
           offset: queryArg.offset,
           limit: queryArg.limit,
           search: queryArg.search,
+          categories: queryArg.categories,
         },
       }),
     }),
@@ -1560,6 +1564,8 @@ export type ListFormSubmissionsApiArg = {
   /** Form assignment id */
   id: string;
 };
+export type ListFoodCategoriesApiResponse = /** status 200 Categories */ FoodCategoryListResponse;
+export type ListFoodCategoriesApiArg = void;
 export type DeleteFormTemplateApiResponse = unknown;
 export type DeleteFormTemplateApiArg = {
   /** Form template id */
@@ -1656,6 +1662,8 @@ export type ListFoodsApiArg = {
   limit?: number;
   /** Case-insensitive food name search */
   search?: string;
+  /** Only foods in these categories */
+  categories?: string[];
 };
 export type CreateFoodApiResponse = /** status 201 Food created */ FoodResponse;
 export type CreateFoodApiArg = {
@@ -2967,6 +2975,9 @@ export type BillingCheckoutRequest = {
 export type ClientProfileFormSubmissionListResponse = {
   data: ClientProfileFormSubmission[];
 };
+export type FoodCategoryListResponse = {
+  data: string[];
+};
 export type ClientProfileFormTemplateUpdateRequest = {
   name?: string;
   purpose?: 'intake' | 'check_in';
@@ -3343,6 +3354,8 @@ export const {
   useCheckoutBillingMutation,
   useListFormSubmissionsQuery,
   useLazyListFormSubmissionsQuery,
+  useListFoodCategoriesQuery,
+  useLazyListFoodCategoriesQuery,
   useDeleteFormTemplateMutation,
   useGetFormTemplateQuery,
   useLazyGetFormTemplateQuery,

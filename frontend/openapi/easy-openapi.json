@@ -8255,6 +8255,35 @@
         "x-struct": null,
         "x-validate": null
       },
+      "FoodCategoryListResponse": {
+        "example": {
+          "data": [
+            "Dairy",
+            "Fruit",
+            "Grains",
+            "Poultry"
+          ]
+        },
+        "properties": {
+          "data": {
+            "items": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "FoodCategoryListResponse",
+        "type": "object",
+        "x-struct": null,
+        "x-validate": null
+      },
       "VerifyRequest": {
         "example": {
           "email": "coach@example.com",
@@ -20427,6 +20456,45 @@
         ]
       }
     },
+    "/v1/coach/nutrition-foods/categories": {
+      "get": {
+        "callbacks": {},
+        "description": "The distinct categories present in the foods visible to the coach. Free-form strings, not an enum.",
+        "operationId": "listFoodCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodCategoryListResponse"
+                }
+              }
+            },
+            "description": "Categories"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List food categories",
+        "tags": [
+          "coach foods"
+        ]
+      }
+    },
     "/v1/coach/form-templates/{id}": {
       "delete": {
         "callbacks": {},
@@ -21699,6 +21767,23 @@
             "required": false,
             "schema": {
               "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Only foods in these categories",
+            "explode": true,
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "type": "array",
               "x-struct": null,
               "x-validate": null
             }

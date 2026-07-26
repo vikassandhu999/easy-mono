@@ -9,6 +9,11 @@ defmodule EasyWeb.Coaches.FoodJSON do
   end
 
   @spec index(map()) :: map()
+  @spec categories(map()) :: map()
+  def categories(%{categories: categories}) do
+    %{data: categories}
+  end
+
   def index(%{foods: foods, count: count}) do
     %{data: Enum.map(foods, &data/1), count: count}
   end

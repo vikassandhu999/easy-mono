@@ -29,7 +29,7 @@ import {pageTags} from '@/api/shared';
 const PAGE_SIZE = 20;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachFoodsFilters = Pick<ListFoodsApiArg, 'search'>;
+export type CoachFoodsFilters = Pick<ListFoodsApiArg, 'categories' | 'search'>;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
 export type CoachRecipesFilters = Pick<ListRecipesApiArg, 'search'>;
@@ -41,6 +41,7 @@ const nutritionFoodsApi = api.injectEndpoints({
         url: '/v1/coach/nutrition-foods',
         params: {
           ...(queryArg?.search ? {search: queryArg.search} : {}),
+          ...(queryArg?.categories?.length ? {categories: queryArg.categories} : {}),
           offset: pageParam,
           limit: PAGE_SIZE,
         },

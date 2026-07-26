@@ -29,10 +29,16 @@ defmodule Easy.Foods do
           {:ok, %{count: non_neg_integer(), foods: [Food.t()]}}
   def list_visible_foods(%Ctx{} = ctx, opts \\ []) do
     search = String.trim(Keyword.get(opts, :search, "") || "")
+    categories = Keyword.get(opts, :categories)
     offset = Keyword.get(opts, :offset, 0)
     limit = min(Keyword.get(opts, :limit, 20), 100)
 
-    base = Food |> Food.for_business_or_system(ctx.business_id) |> Food.search(search)
+    base =
+      Food
+      |> Food.for_business_or_system(ctx.business_id)
+      |> Food.search(search)
+      |> Food.for_categories(categories)
+
     ordered = if search == "", do: Food.newest(base), else: base
 
     {:ok,
@@ -40,6 +46,15 @@ defmodule Easy.Foods do
        count: Repo.aggregate(base, :count, :id),
        foods: ordered |> Easy.Utils.paginate(offset, limit) |> Food.include_media() |> Repo.all()
      }}
+  end
+
+  @spec list_food_categories(Ctx.t()) :: {:ok, [String.t()]}
+  def list_food_categories(%Ctx{} = ctx) do
+    {:ok,
+     Food
+     |> Food.for_business_or_system(ctx.business_id)
+     |> Food.distinct_categories()
+     |> Repo.all()}
   end
 
   @spec create_food(Ctx.t(), map()) ::

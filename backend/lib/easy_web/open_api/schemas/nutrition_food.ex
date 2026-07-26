@@ -202,3 +202,22 @@ defmodule EasyWeb.OpenApi.Schemas.FoodImpactResponse do
     }
   })
 end
+
+defmodule EasyWeb.OpenApi.Schemas.FoodCategoryListResponse do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "FoodCategoryListResponse",
+      type: :object,
+      properties: %{
+        data: %Schema{type: :array, items: %Schema{type: :string}}
+      },
+      required: [:data],
+      example: %{"data" => ["Dairy", "Fruit", "Grains", "Poultry"]}
+    },
+    struct?: false
+  )
+end

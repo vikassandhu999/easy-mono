@@ -143,6 +143,7 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
 
     get "/nutrition-foods", FoodController, :index
+    get "/nutrition-foods/categories", FoodController, :categories
     post "/nutrition-foods", FoodController, :create
     get "/nutrition-foods/:id", FoodController, :show
     patch "/nutrition-foods/:id", FoodController, :update

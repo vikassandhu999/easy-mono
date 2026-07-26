@@ -18,7 +18,7 @@ import {useState} from 'react';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 
-import {TAG} from './ui';
+import {TAG} from '@/builder-kit/ui';
 
 /**
  * Sentence-case slot names, per COPY.md § NB. `@easy/utils`' MEAL_SLOT_LABELS

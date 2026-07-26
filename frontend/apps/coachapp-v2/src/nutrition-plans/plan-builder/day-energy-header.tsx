@@ -9,7 +9,7 @@
  */
 import {Button, Card, Meter, ProgressBar} from '@heroui/react';
 
-import {INLINE_LINK} from './ui';
+import {INLINE_LINK} from '@/builder-kit/ui';
 
 export interface DayMacroTotals {
   calories: number;

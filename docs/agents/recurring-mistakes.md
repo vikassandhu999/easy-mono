@@ -272,13 +272,18 @@ is the whole failure mode (RM-133's rule applied to app-owned classes, not just 
 ### RM-140 — Two text children of a flex control need a non-breaking space, not JSX whitespace
 Controls are `display:flex` with `gap:0`, and JSX collapses whitespace between children —
 so a label plus a count renders `Upper A3` / `Active6` with nothing between them. It has
-been written twice: `FilterCount` in `@components/browse-screen.tsx` hit it and fixed it
-with `{' '}`; TB's workout tabs in `training-plans/plan-builder/workout-list.tsx`
-shipped jammed against the ref until this sweep. Any pill, tab or chip that renders a
-label and a second span puts a literal `{' '}` between them (or an explicit `gap-*`
-on the control). **Verify by:** reading `textContent` off the live node — `"Upper A 3"`,
-not `"Upper A3"`. **Not gated:** the shape is a JSX child list, not a class string, so
-there is no reliable grep; this one stays prose until a lint rule can see it.
+been written twice: `FilterCount` in `@components/browse-screen.tsx` hit it and fixed it;
+TB's workout tabs shipped jammed against the ref until the 2026-07-26 sweep. Any pill, tab
+or chip that renders a label and a second span puts a non-breaking space between them (or
+an explicit `gap-*` on the control).
+
+**Write it as the escape — `{'\u00a0'}` — not as a pasted U+00A0.** Both compile to the
+same character, but a raw NBSP is invisible in the source: a reader cannot tell it from an
+ordinary space, and a well-meaning reformat silently deletes it.
+`training-plans/builder/components/workout-tabs.tsx` is the reference. **Verify by:**
+reading `textContent` off the live node — `"Upper A 3"`, not `"Upper A3"`. **Not gated:**
+the shape is a JSX child list, not a class string, so there is no reliable grep for the
+MISSING case; this one stays prose until a lint rule can see it.
 
 ---
 

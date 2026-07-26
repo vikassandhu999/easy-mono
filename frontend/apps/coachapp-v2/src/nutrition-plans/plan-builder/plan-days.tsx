@@ -55,13 +55,12 @@ import {
   useRemoveNutritionSlotOptionMutation,
   useUpdateNutritionPlanDayMutation,
 } from '@/api/generated';
+import {INLINE_LINK} from '@/builder-kit/ui';
 import {useAppDispatch} from '@/store';
-
 import {DayEnergyHeader} from './day-energy-header';
 import {MealCard, type MealSwap} from './meal-card';
 import {AddMealControl, type MealPaletteOption} from './meal-palette';
 import {slotLabel} from './meal-slot-control';
-import {INLINE_LINK} from './ui';
 
 // ---------------------------------------------------------------------------
 // Types (the generated fields are `{[key: string]: any}` — see file header)

@@ -1,9 +1,12 @@
 /**
- * Screen-local class recipes for the plan builder (badge NB).
- * Style fidelity: design-handoff/manifests/NB.json.
+ * Class recipes shared by the two plan builders (badges NB and TB).
  *
- * The generic "put the browser default back" recipes this screen also needs
- * live in `@/@components/ua-defaults` — they aren't NB-specific.
+ * They started in `nutrition-plans/plan-builder/ui.ts` and the training builder
+ * imported them across the feature boundary. Both builders are `builder-kit`
+ * clients, so this is where they belong.
+ *
+ * The generic "put the browser default back" recipes live in
+ * `@/@components/ua-defaults` — those aren't builder-specific.
  */
 
 /** `.ptag` — the slot tag and both meal chips start here and tint from there. */
@@ -19,8 +22,7 @@ export const TAG =
  * (RM-134). Sizes are `type-*` now, so there is no collision and `text-accent` is
  * correct — and overridable, which the arbitrary property was not.
  *
- * Every use is on a `Button`, so the height came from the control-height block
- * all along; the `min-h-11 … sm:min-h-0` pair it used to carry was already dead.
+ * Every use is on a `Button`, so the height comes from the control-height block.
  */
 export const INLINE_LINK =
   'rounded-none bg-transparent px-0 font-semibold leading-[normal] text-accent [row-gap:normal] [column-gap:normal]';

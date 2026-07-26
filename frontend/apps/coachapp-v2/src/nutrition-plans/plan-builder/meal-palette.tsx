@@ -19,7 +19,7 @@ import {type ReactNode, useRef, useState} from 'react';
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 
-import {INLINE_LINK} from './ui';
+import {INLINE_LINK} from '@/builder-kit/ui';
 
 // ---------------------------------------------------------------------------
 // Types

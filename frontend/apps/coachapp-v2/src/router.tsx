@@ -52,10 +52,10 @@ import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
 import Settings from '@/settings/settings';
+import TrainingPlanBuilder from '@/training-plans/builder';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
 import ListTrainingPlans from '@/training-plans/list-training-plans';
-import TrainingPlanDetail from '@/training-plans/plan-builder/plan-builder';
 
 const LoginScreen = withNotAuth(Login);
 const SignupScreen = withNotAuth(Signup);
@@ -111,7 +111,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.EDIT_NUTRITION_PLAN, Component: EditNutritionPlan},
       {path: ROUTES.TRAINING_PLANS, Component: ListTrainingPlans},
       {path: ROUTES.CREATE_TRAINING_PLAN, Component: CreateTrainingPlan},
-      {path: ROUTES.TRAINING_PLAN_DETAIL, Component: TrainingPlanDetail},
+      {path: ROUTES.TRAINING_PLAN_DETAIL, Component: TrainingPlanBuilder},
       {path: ROUTES.EDIT_TRAINING_PLAN, Component: EditTrainingPlan},
       {path: ROUTES.CHECKINS, Component: ListCheckins},
       {path: ROUTES.CHECKIN_REVIEW, Component: ReviewCheckin},

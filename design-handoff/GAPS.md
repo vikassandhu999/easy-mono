@@ -62,6 +62,16 @@ The FM frame's filter row is `All · Active · Draft · Archived` and its row ch
 **19. `Source` as free text (FO/FD/FE) — RESOLVED read-only, user decision 2026-07-26**
 COPY.md gave `Source` the placeholder `e.g. USDA`, which reads as free-text attribution. It isn't: `Food.source` is `Ecto.Enum [:system, :imported, :custom]` and it is **load-bearing** — `Foods.ensure_editable/1` uses it to refuse edits and deletes on system and imported foods. Making it free text would delete that guard. So `source` stays server-stamped provenance and the field renders read-only (`6b81098e`), and COPY.md's placeholder was the stale half. If attribution ("this came from USDA") is ever wanted, `Food` **already has an unused `brand` field** — use that, don't overload `source`.
 
+**20. Training-builder API fields with no UI (TB) — DELIBERATELY UNBUILT, user decision 2026-07-26**
+Three fields exist on the training API and the builder does not touch them:
+`TrainingPlanWorkoutExercise.superset_group_id`, that element's `notes`, and
+`TrainingWorkout.notes`. The TB reference draws no affordance for any of them,
+so they stay unbuilt — this is a recorded decision, not an oversight, and it was
+re-confirmed during the clean-room rebuild of the builder. Do NOT "restore" them
+on finding the fields in `generated.ts`. Building supersets in particular is a
+design task (grouping, numbering, and how a superset reads on the client's
+screen), not a matter of surfacing a column.
+
 ## Still open — genuinely stop and ask
 (none — everything listed here has since been designed and built: Client
 Detail per `CLIENT-DETAIL.md`, messages/inbox, check-in review, landing-page

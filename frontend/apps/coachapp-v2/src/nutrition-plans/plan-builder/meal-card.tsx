@@ -34,6 +34,7 @@ import {
   useGetNutritionPlanQuery,
   useUpdateMealMutation,
 } from '@/api/generated';
+import {INLINE_LINK, TAG} from '@/builder-kit/ui';
 import {useAppDispatch} from '@/store';
 import {AmountSheet} from './amount-sheet';
 import type {FoodOrRecipe} from './food-recipe-picker-sheet';
@@ -43,8 +44,6 @@ import {MealItemRow} from './meal-item-row';
 import type {MealPaletteOption} from './meal-palette';
 import {AddSwapControl} from './meal-palette';
 import {MealSlotControl} from './meal-slot-control';
-
-import {INLINE_LINK, TAG} from './ui';
 
 // ---------------------------------------------------------------------------
 // Types

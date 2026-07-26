@@ -30,6 +30,10 @@ export default function ProgressPhotos() {
   const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', id));
   const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery({clientId: id});
   const [selected, setSelected] = useState<string[]>([]);
+  // The design's compare is a MODE, not a card at the top of the grid: pick two,
+  // then open them side by side. Selecting two and being shown them immediately
+  // means the design's "Compare 2 photos" button has nothing left to do.
+  const [comparing, setComparing] = useState(false);
 
   const groups = (data?.data ?? [])
     .map((assignment) => ({
@@ -50,10 +54,7 @@ export default function ProgressPhotos() {
     <Page.Header size="content">
       <Page.TitleGroup className="flex items-center gap-1">
         <BackButton onPress={goBack} />
-        <div className="min-w-0">
-          <Page.Title>Progress photos</Page.Title>
-          <Page.Description>Select two photos to compare.</Page.Description>
-        </div>
+        <Page.Title>Progress photos</Page.Title>
       </Page.TitleGroup>
     </Page.Header>
   );
@@ -92,50 +93,85 @@ export default function ProgressPhotos() {
     );
   }
 
-  const comparing = selected.length === 2;
+  const dateOf = (photoId: string) => groups.find((g) => g.photos.includes(photoId))?.date ?? null;
+  const canCompare = selected.length === 2;
+
+  if (comparing && canCompare) {
+    return (
+      <Page>
+        <Page.Header size="content">
+          <Page.TitleGroup className="flex items-center gap-1">
+            <BackButton onPress={() => setComparing(false)} />
+            <Page.Title>Compare</Page.Title>
+          </Page.TitleGroup>
+          <Page.Actions>
+            <Button
+              onPress={() => {
+                setComparing(false);
+                setSelected([]);
+              }}
+              variant="outline"
+            >
+              Done
+            </Button>
+          </Page.Actions>
+        </Page.Header>
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            {/* Two photos, one hairline between them — the design's compare pane. */}
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card bg-border">
+              {selected.map((photoId) => (
+                <div
+                  className="flex flex-col items-center gap-2 bg-surface-tertiary p-3"
+                  key={photoId}
+                >
+                  <PhotoThumb
+                    alt={`Progress photo${dateOf(photoId) ? ` from ${formatDayMonth(dateOf(photoId)!)}` : ''}`}
+                    fill
+                    src={urls[photoId]}
+                  />
+                  {dateOf(photoId) && (
+                    <span className="type-eyebrow font-semibold text-muted">{formatDayMonth(dateOf(photoId)!)}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Page.Frame>
+        </Page.Content>
+      </Page>
+    );
+  }
 
   return (
     <Page>
       {header}
       <Page.Content bare>
         <Page.Frame
-          className="flex flex-col gap-4 pt-4 pb-6"
+          className="flex min-h-full flex-col gap-3 pt-4 pb-6"
           size="content"
         >
-          {comparing && (
-            <SectionCard title="Comparing">
-              <div className="grid grid-cols-2 gap-3 px-4 pb-4">
-                {selected.map((photoId) => (
-                  <PhotoThumb
-                    alt="Progress photo"
-                    fill
-                    key={photoId}
-                    src={urls[photoId]}
-                  />
-                ))}
-              </div>
-              <div className="flex justify-end px-4 pb-4">
-                <Button
-                  onPress={() => setSelected([])}
-                  size="sm"
-                  variant="outline"
-                >
-                  Clear selection
-                </Button>
-              </div>
-            </SectionCard>
+          {/* The design's hint is an accent-soft banner above the groups, not a page
+              description — it is an instruction for the mode, not what the page is. */}
+          {groups.length > 0 && (
+            <div className="rounded-control bg-accent-soft px-4 py-3 type-eyebrow font-semibold">
+              Select two photos to compare.
+            </div>
           )}
 
+          {/* No card per group: the design labels a date and lays its photos out on
+              the page, so a month of check-ins reads as one column of photos rather
+              than a stack of boxes. */}
           {groups.map((group) => (
-            <SectionCard
-              key={group.date}
-              title={formatDayMonth(group.date!)}
-            >
-              <div className="grid grid-cols-3 gap-3 px-4 pb-4 sm:grid-cols-4">
+            <div key={group.date}>
+              <div className="mb-2 type-eyebrow font-bold text-muted">{formatDayMonth(group.date!)}</div>
+              <div className="grid grid-cols-3 gap-3">
                 {group.photos.map((photoId) => (
                   <div
                     className={
-                      selected.includes(photoId) ? 'rounded-panel ring-2 ring-accent ring-offset-2' : undefined
+                      selected.includes(photoId) ? 'rounded-panel ring-3 ring-accent ring-offset-2' : undefined
                     }
                     key={photoId}
                   >
@@ -148,7 +184,7 @@ export default function ProgressPhotos() {
                   </div>
                 ))}
               </div>
-            </SectionCard>
+            </div>
           ))}
 
           {groups.length === 0 && (
@@ -159,6 +195,17 @@ export default function ProgressPhotos() {
                 title="No photos yet"
               />
             </SectionCard>
+          )}
+
+          {canCompare && (
+            <div className="sticky bottom-0 mt-auto flex justify-center pt-3 pb-1">
+              <Button
+                onPress={() => setComparing(true)}
+                variant="primary"
+              >
+                Compare 2 photos
+              </Button>
+            </div>
           )}
         </Page.Frame>
       </Page.Content>

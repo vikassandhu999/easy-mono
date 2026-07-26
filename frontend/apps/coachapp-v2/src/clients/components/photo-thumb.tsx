@@ -1,5 +1,6 @@
 import {Button} from '@heroui/react';
 import {ImageIcon} from 'lucide-react';
+import {useState} from 'react';
 
 /**
  * `.photo` — a progress-photo tile. 25 across CD-OV, CD-CI, CD-CS and CD-PH.
@@ -28,19 +29,27 @@ export function PhotoThumb({
   src?: null | string;
   testId?: string;
 }) {
+  // A signed URL that has expired, or an attachment whose blob was never stored,
+  // otherwise renders as the browser's broken-image icon with the alt text spilling
+  // across the tile. The design draws an empty tile for a missing photo, and this is
+  // the same thing arriving late.
+  const [failed, setFailed] = useState(false);
   const shape = `${fill ? 'aspect-square w-full' : 'size-16'} overflow-hidden rounded-panel bg-surface-tertiary`;
-  const inner = src ? (
-    <img
-      alt={alt}
-      className="size-full object-cover"
-      loading="lazy"
-      src={src}
-    />
-  ) : (
-    <span className="flex size-full items-center justify-center text-muted-2">
-      <ImageIcon aria-hidden />
-    </span>
-  );
+  const inner =
+    src && !failed ? (
+      // biome-ignore lint/a11y/noNoninteractiveElementInteractions: a failed load falls back to the placeholder tile
+      <img
+        alt={alt}
+        className="size-full object-cover"
+        loading="lazy"
+        onError={() => setFailed(true)}
+        src={src}
+      />
+    ) : (
+      <span className="flex size-full items-center justify-center text-muted-2">
+        <ImageIcon aria-hidden />
+      </span>
+    );
 
   if (!onPress) {
     return (

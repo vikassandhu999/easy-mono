@@ -26,6 +26,7 @@ defmodule EasyWeb.Clients.FoodJSON do
       carbs_g_per_100g: food.carbs_g_per_100g,
       fat_g_per_100g: food.fat_g_per_100g,
       fiber_g_per_100g: food.fiber_g_per_100g,
+      sugar_g_per_100g: food.sugar_g_per_100g,
       allergens: food.allergens || [],
       dietary_tags: food.dietary_tags || [],
       notes: food.notes,

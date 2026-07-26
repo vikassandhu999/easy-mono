@@ -1272,7 +1272,7 @@
       },
       "FoodUpdateRequest": {
         "additionalProperties": false,
-        "description": "Request body for updating a coach-owned food.",
+        "description": "Request body for updating a coach-owned food. `source` is server-owned and immutable.",
         "example": {
           "dietary_tags": [
             "high_protein"
@@ -1403,14 +1403,9 @@
             "x-struct": null,
             "x-validate": null
           },
-          "source": {
-            "enum": [
-              "system",
-              "imported",
-              "custom"
-            ],
+          "sugar_g_per_100g": {
             "nullable": true,
-            "type": "string",
+            "type": "number",
             "x-struct": null,
             "x-validate": null
           }
@@ -2637,6 +2632,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "sugar_g_per_100g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
           "updated_at": {
             "format": "date-time",
             "type": "string",
@@ -3791,7 +3792,7 @@
       },
       "FoodRequest": {
         "additionalProperties": false,
-        "description": "Request body for creating or updating a food.",
+        "description": "Request body for creating or updating a food. `source` is stamped by the server, never accepted.",
         "example": {
           "allergens": [
             "dairy"
@@ -3816,7 +3817,7 @@
               "weight_g": 100
             }
           ],
-          "source": "custom"
+          "sugar_g_per_100g": 4
         },
         "properties": {
           "allergens": {
@@ -3942,14 +3943,9 @@
             "x-struct": null,
             "x-validate": null
           },
-          "source": {
-            "enum": [
-              "system",
-              "imported",
-              "custom"
-            ],
+          "sugar_g_per_100g": {
             "nullable": true,
-            "type": "string",
+            "type": "number",
             "x-struct": null,
             "x-validate": null
           }

@@ -34,10 +34,18 @@ export const foodFormSchema = z.object({
 
 export type FoodFormValues = z.infer<typeof foodFormSchema>;
 
+// `source` is server-owned provenance: the API stamps `custom` on create and never
+// accepts it in a body. The form carries it for display only, in a read-only field.
+const SOURCE_LABELS: Record<NonNullable<Food['source']>, string> = {
+  custom: 'Custom',
+  imported: 'Imported',
+  system: 'System',
+};
+
 export const FOOD_FORM_DEFAULTS: FoodFormValues = {
   name: '',
   category: '',
-  source: '',
+  source: SOURCE_LABELS.custom,
   notes: '',
   image_url: '',
   media_id: null,
@@ -53,7 +61,7 @@ export function foodToFormValues(food: Food): FoodFormValues {
   return {
     name: food.name,
     category: food.category ?? '',
-    source: food.source ?? 'custom',
+    source: SOURCE_LABELS[food.source ?? 'custom'],
     notes: food.notes ?? '',
     image_url: food.image_url ?? '',
     media_id: food.media?.id ?? null,
@@ -62,7 +70,7 @@ export function foodToFormValues(food: Food): FoodFormValues {
     carbs_g: food.carbs_g_per_100g ?? undefined,
     fats_g: food.fat_g_per_100g ?? undefined,
     fiber_g: food.fiber_g_per_100g ?? undefined,
-    sugar_g: undefined,
+    sugar_g: food.sugar_g_per_100g ?? undefined,
   };
 }
 
@@ -71,10 +79,11 @@ export function foodToMediaValue(food: Food): LibraryMediaValue | null {
 }
 
 export function foodToDuplicateFormValues(food: Food): FoodFormValues {
+  // A copy is always coach-owned, whatever the original's provenance was.
   return {
     ...foodToFormValues(food),
     name: `${food.name} (copy)`,
-    source: '',
+    source: SOURCE_LABELS.custom,
   };
 }
 
@@ -98,7 +107,6 @@ export function foodToCreateRequest({
   return omitUndefined({
     name: values.name,
     category: toOptionalText(values.category),
-    source: toOptionalText(values.source) as FoodRequest['source'],
     notes: toOptionalText(values.notes),
     image_url: toOptionalText(values.image_url),
     media_id: values.media_id ?? undefined,
@@ -107,6 +115,7 @@ export function foodToCreateRequest({
     carbs_g_per_100g: values.carbs_g,
     fat_g_per_100g: values.fats_g,
     fiber_g_per_100g: values.fiber_g,
+    sugar_g_per_100g: values.sugar_g,
     serving_sizes: servingSizes.length > 0 ? toFoodServingSizes(servingSizes) : undefined,
   });
 }
@@ -121,7 +130,6 @@ export function foodToUpdateRequest({
   return omitUndefined({
     name: values.name,
     category: toOptionalText(values.category),
-    source: toOptionalText(values.source) as FoodUpdateRequest['source'],
     notes: toOptionalText(values.notes),
     image_url: toOptionalText(values.image_url),
     media_id: values.media_id ?? null,
@@ -130,6 +138,7 @@ export function foodToUpdateRequest({
     carbs_g_per_100g: values.carbs_g,
     fat_g_per_100g: values.fats_g,
     fiber_g_per_100g: values.fiber_g,
+    sugar_g_per_100g: values.sugar_g,
     serving_sizes: servingSizes.length > 0 ? toFoodServingSizes(servingSizes) : undefined,
   });
 }
@@ -227,7 +236,7 @@ export default function FoodForm({
               <FormTextField
                 control={control}
                 fullWidth
-                inputProps={{placeholder: 'e.g. USDA'}}
+                isReadOnly
                 label="Source"
                 name="source"
               />

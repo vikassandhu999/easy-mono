@@ -25,7 +25,9 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       assert data["carbs_g_per_100g"] == attrs["carbs_g_per_100g"]
       assert data["fat_g_per_100g"] == attrs["fat_g_per_100g"]
       assert data["fiber_g_per_100g"] == attrs["fiber_g_per_100g"]
-      assert data["source"] == attrs["source"]
+      assert data["sugar_g_per_100g"] == attrs["sugar_g_per_100g"]
+      # `source` is server-stamped, not accepted from the body.
+      assert data["source"] == "custom"
 
       assert [%{"label" => "1 cup", "unit" => "cup", "weight_g" => 100.0, "amount" => 1.0, "is_default" => true}] =
                data["serving_sizes"]
@@ -37,6 +39,13 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
 
     test "returns validation error when name is missing", %{conn: conn} do
       attrs = build(:food_attrs) |> Map.delete("name")
+
+      conn = post(conn, "/v1/coach/nutrition-foods", attrs)
+      assert json_response(conn, 422)
+    end
+
+    test "rejects a client-supplied source", %{conn: conn} do
+      attrs = build(:food_attrs) |> Map.put("source", "system")
 
       conn = post(conn, "/v1/coach/nutrition-foods", attrs)
       assert json_response(conn, 422)

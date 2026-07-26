@@ -267,12 +267,12 @@ defmodule Easy.Factory do
   def food_attrs_factory do
     %{
       "name" => sequence(:food_attr_name, &"New Food #{&1}"),
-      "source" => "custom",
       "calories_per_100g" => 150.0,
       "protein_g_per_100g" => 10.0,
       "carbs_g_per_100g" => 20.0,
       "fat_g_per_100g" => 3.0,
       "fiber_g_per_100g" => 1.0,
+      "sugar_g_per_100g" => 6.0,
       "serving_sizes" => [
         %{"label" => "1 cup", "unit" => "cup", "weight_g" => 100.0, "amount" => 1.0, "is_default" => true}
       ]

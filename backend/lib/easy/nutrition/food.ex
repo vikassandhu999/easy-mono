@@ -33,6 +33,7 @@ defmodule Easy.Nutrition.Food do
     field :carbs_g_per_100g, :float
     field :fat_g_per_100g, :float
     field :fiber_g_per_100g, :float
+    field :sugar_g_per_100g, :float
 
     field :allergens, {:array, :string}, default: []
     field :dietary_tags, {:array, :string}, default: []
@@ -54,13 +55,13 @@ defmodule Easy.Nutrition.Food do
     :name,
     :brand,
     :barcode,
-    :source,
     :category,
     :calories_per_100g,
     :protein_g_per_100g,
     :carbs_g_per_100g,
     :fat_g_per_100g,
     :fiber_g_per_100g,
+    :sugar_g_per_100g,
     :allergens,
     :dietary_tags,
     :notes,
@@ -74,6 +75,7 @@ defmodule Easy.Nutrition.Food do
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
+    |> put_change(:source, :custom)
     |> validate_required([:name, :creator_id, :business_id])
     |> validate_macros()
     |> validate_enums()
@@ -96,7 +98,14 @@ defmodule Easy.Nutrition.Food do
 
   defp validate_macros(changeset) do
     Enum.reduce(
-      [:calories_per_100g, :protein_g_per_100g, :carbs_g_per_100g, :fat_g_per_100g, :fiber_g_per_100g],
+      [
+        :calories_per_100g,
+        :protein_g_per_100g,
+        :carbs_g_per_100g,
+        :fat_g_per_100g,
+        :fiber_g_per_100g,
+        :sugar_g_per_100g
+      ],
       changeset,
       fn field, acc -> validate_number(acc, field, greater_than_or_equal_to: 0) end
     )

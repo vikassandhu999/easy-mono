@@ -1080,6 +1080,7 @@ export type Food = {
   protein_g_per_100g?: number | null;
   serving_sizes: FoodServingSize[];
   source: ('system' | 'imported' | 'custom') | null;
+  sugar_g_per_100g?: number | null;
   updated_at: string;
 };
 export type RecipeIngredient = {

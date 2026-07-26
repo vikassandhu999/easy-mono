@@ -116,7 +116,8 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate do
           name: %Schema{type: :string},
           purpose: %Schema{type: :string, enum: Common.form_purposes()},
           sections: %Schema{type: :array, items: Common.form_section_schema()},
-          status: %Schema{type: :string, enum: Common.template_statuses()}
+          status: %Schema{type: :string, enum: Common.template_statuses()},
+          response_count: %Schema{type: :integer, description: "Submissions clients have made against this form"}
         },
         Shared.timestamps()
       ),

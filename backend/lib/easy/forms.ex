@@ -21,6 +21,7 @@ defmodule Easy.Forms do
       templates =
         FormTemplate
         |> FormTemplate.for_business(ctx.business_id)
+        |> FormTemplate.join_response_count(ctx.business_id)
         |> order_by([t], asc: t.inserted_at)
         |> Repo.all()
 

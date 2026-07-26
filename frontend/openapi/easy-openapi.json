@@ -8795,6 +8795,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "response_count": {
+            "description": "Submissions clients have made against this form",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "sections": {
             "items": {
               "additionalProperties": true,

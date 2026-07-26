@@ -18,12 +18,18 @@ function questionCount(template: ClientProfileFormTemplate): number {
   );
 }
 
-// COPY.md §FM row meta is `{Type} · {n} questions · {m} responses` — the
-// template list endpoint carries no response count, so that segment is
-// omitted rather than hand-wired.
+// COPY.md §FM row meta: `{Type} · {n} questions · {m} responses`.
 function getTemplateMeta(template: ClientProfileFormTemplate): string {
   const count = questionCount(template);
-  return `${PURPOSE_LABELS[template.purpose]} · ${count} question${count === 1 ? '' : 's'}`;
+  const responses = template.response_count ?? 0;
+
+  return [
+    PURPOSE_LABELS[template.purpose],
+    `${count} question${count === 1 ? '' : 's'}`,
+    // Printed even at zero, unlike NP's client count: the ref shows `0 responses`
+    // on a draft form, and "nobody has filled this in" is the useful reading.
+    `${responses} response${responses === 1 ? '' : 's'}`,
+  ].join(' · ');
 }
 
 export default function FormTemplateListItem({template}: {template: ClientProfileFormTemplate}) {

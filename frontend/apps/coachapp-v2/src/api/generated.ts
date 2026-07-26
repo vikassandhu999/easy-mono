@@ -1817,6 +1817,8 @@ export type ClientProfileFormTemplate = {
   inserted_at: string;
   name: string;
   purpose: 'intake' | 'check_in';
+  /** Submissions clients have made against this form */
+  response_count?: number;
   sections: {
     questions: {
       id: string;

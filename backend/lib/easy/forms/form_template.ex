@@ -20,6 +20,9 @@ defmodule Easy.Forms.FormTemplate do
     field :purpose, Ecto.Enum, values: @purposes
     field :sections, {:array, :map}, default: []
     field :status, Ecto.Enum, values: @statuses, default: :active
+    # How many times clients have submitted this form. Counted through assignments,
+    # since a submission belongs to an assignment rather than to the template.
+    field :response_count, :integer, virtual: true, default: 0
     field :system_key, :string
     field :system_version, :integer
 
@@ -72,6 +75,27 @@ defmodule Easy.Forms.FormTemplate do
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(t in query, where: t.business_id == ^business_id)
+  end
+
+  # `join_*`, not `include_*`: a computed column rather than a preload (AGENTS.md
+  # query-builder taxonomy). A submission hangs off an ASSIGNMENT, so the count
+  # walks template -> assignments -> submissions, business-scoped at both hops.
+  @spec join_response_count(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def join_response_count(query \\ __MODULE__, business_id) do
+    counts =
+      from(a in Easy.Forms.FormAssignment,
+        join: s in Easy.Forms.FormSubmission,
+        on: s.form_assignment_id == a.id and s.business_id == a.business_id,
+        where: a.business_id == ^business_id,
+        group_by: a.form_template_id,
+        select: %{template_id: a.form_template_id, responses: count(s.id)}
+      )
+
+    from(t in query,
+      left_join: c in subquery(counts),
+      on: c.template_id == t.id,
+      select: %{t | response_count: coalesce(c.responses, 0)}
+    )
   end
 
   @spec with_system_key(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

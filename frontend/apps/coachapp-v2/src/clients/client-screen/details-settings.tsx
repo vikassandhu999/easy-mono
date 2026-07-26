@@ -1,6 +1,7 @@
 import {getInitials} from '@easy/utils';
 import {AlertDialog, Avatar, Button, Typography, useOverlayState} from '@heroui/react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {ClipboardList} from 'lucide-react';
+import {Link, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -33,11 +34,14 @@ export default function DetailsSettings() {
   const [updateClient, {isLoading: isSaving}] = useUpdateClientMutation();
   const confirmState = useOverlayState();
 
-  const header = (
+  const header = (subtitle?: string) => (
     <Page.Header size="content">
       <Page.TitleGroup className="flex items-center gap-1">
         <BackButton onPress={goBack} />
-        <Page.Title>Details &amp; settings</Page.Title>
+        <div className="min-w-0">
+          <Page.Title>Details &amp; settings</Page.Title>
+          {subtitle && <Page.Description>{subtitle}</Page.Description>}
+        </div>
       </Page.TitleGroup>
       <Page.Actions>
         <Button
@@ -53,7 +57,7 @@ export default function DetailsSettings() {
   if (isLoading) {
     return (
       <Page>
-        {header}
+        {header()}
         <Page.Content bare>
           <Page.Frame
             className="pt-4 pb-6"
@@ -68,7 +72,7 @@ export default function DetailsSettings() {
   if (isError || !data) {
     return (
       <Page>
-        {header}
+        {header()}
         <Page.Content bare>
           <Page.Frame
             className="pt-4 pb-6"
@@ -104,7 +108,7 @@ export default function DetailsSettings() {
 
   return (
     <Page>
-      {header}
+      {header(name)}
       <Page.Content bare>
         <Page.Frame
           className="flex flex-col gap-4 pt-4 pb-6"
@@ -177,15 +181,22 @@ export default function DetailsSettings() {
                 color="muted"
                 type="body-xs"
               >
-                Billing is per seat — manage seats in Billing.
+                Billing is per seat — manage seats in{' '}
+                <Link
+                  className="font-semibold text-accent"
+                  to={ROUTES.SETTINGS_TAB.replace(':tab', 'billing')}
+                >
+                  Billing
+                </Link>
+                .
               </Typography>
             </div>
           </SectionCard>
 
           <SectionCard title="Coach">
             <div className="flex items-center gap-3 px-4 pb-4">
-              <Avatar className="size-10 shrink-0">
-                <Avatar.Fallback className="type-eyebrow font-semibold">
+              <Avatar className="size-9.5 shrink-0">
+                <Avatar.Fallback className="bg-accent type-eyebrow font-semibold text-accent-foreground">
                   {getInitials(coach?.first_name ?? null, coach?.last_name ?? null) || '—'}
                 </Avatar.Fallback>
               </Avatar>
@@ -199,7 +210,14 @@ export default function DetailsSettings() {
                     coach?.email ||
                     (client.assigned_coach_id ? 'Assigned' : 'Unassigned')}
                 </Typography>
-                <span className="eyebrow">{canManageTeam ? 'Assigned coach' : 'Only the owner can see the team'}</span>
+                {/* `.eyebrow` is for a LABEL; this line is a sentence either way, so
+                    it reads as muted body text. */}
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  {canManageTeam ? 'Assigned coach' : 'Only the owner can see the team'}
+                </Typography>
               </div>
               {canManageTeam && (
                 <Button
@@ -215,19 +233,22 @@ export default function DetailsSettings() {
 
           <SectionCard>
             <DetailRow
+              icon={ClipboardList}
               meta={client.intake_incomplete ? 'Not submitted yet' : 'View answers'}
               title="Intake responses"
               to={ROUTES.CLIENT_INTAKE.replace(':id', id)}
             />
           </SectionCard>
 
-          <SectionCard>
-            <div className="p-4">
+          {/* The design leaves this on the page rather than in a card: a card frames
+              a section of the client's record, and this is an action on the client. */}
+          <div>
+            <div>
               {isInactive ? (
                 <Button
                   isPending={isSaving}
                   onPress={() => setStatus('active')}
-                  variant="outline"
+                  variant="primary"
                 >
                   Reactivate client
                 </Button>
@@ -237,8 +258,11 @@ export default function DetailsSettings() {
                 // app's existing destructive confirm.
                 <>
                   <Button
+                    // Danger OUTLINE, as the design draws it — a filled danger button
+                    // on an otherwise calm page reads as the primary action.
+                    className="border border-danger-soft bg-transparent text-danger-soft-foreground"
                     onPress={() => confirmState.open()}
-                    variant="danger-soft"
+                    variant="outline"
                   >
                     Deactivate client
                   </Button>
@@ -282,22 +306,34 @@ export default function DetailsSettings() {
                 </>
               )}
             </div>
-          </SectionCard>
+          </div>
         </Page.Frame>
       </Page.Content>
     </Page>
   );
 }
 
-/** A label/value row. An absent value is an em dash, never a blank row. */
+/**
+ * A label/value row. The design reads it as a ledger — plain muted label on the
+ * left, the VALUE bold and right-aligned — not an uppercase eyebrow with the value
+ * beside it: the column of right-aligned values is what makes the card scannable.
+ * An absent value is an em dash, never a blank row.
+ */
 function Fact({label, value}: {label: string; value: Client['email']}) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <span className="eyebrow w-28 shrink-0">{label}</span>
+    <div className="flex items-baseline justify-between gap-3 px-4 py-3">
       <Typography
-        className="min-w-0 flex-1"
+        className="shrink-0"
+        color="muted"
+        type="body-xs"
+      >
+        {label}
+      </Typography>
+      <Typography
+        className="min-w-0 text-right"
         truncate
-        type="body-sm"
+        type="body-xs"
+        weight="semibold"
       >
         {value || '—'}
       </Typography>

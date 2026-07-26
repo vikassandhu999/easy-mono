@@ -53,6 +53,9 @@ Plain `Typography` list markup; number/check adornments via `Chip` size=sm or lu
 **16. Program-sheet grid variant (TB "tbg" view)**
 The prototype contains a desktop spreadsheet-like grid variant. It's a `Table` (desktop only). On mobile this variant doesn't exist — mobile always gets the card/list builder. Only port the grid if/when the ticket asks for it; the card builder is the primary deliverable.
 
+**17. `Questionnaire` form type (FB, FM) — DROPPED, user decision 2026-07-26**
+The FB frame's `Type` control offers three segments, `Check-in · Intake · Questionnaire`, and `COPY.md` § FM/FB repeats it. **There is no questionnaire purpose and there will not be one.** `FormTemplate`'s enum is `[:intake, :check_in]` and the app ships two segments — that is correct, not a gap. Do not add the third segment, do not add the enum value, and do not re-raise this. The COPY.md lines that name it (`Intake, check-in, and questionnaire forms for your clients`, and both `Type` field lists) are stale prototype copy.
+
 ## Still open — genuinely stop and ask
 (none — everything listed here has since been designed and built: Client
 Detail per `CLIENT-DETAIL.md`, messages/inbox, check-in review, landing-page

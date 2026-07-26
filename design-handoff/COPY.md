@@ -97,13 +97,13 @@ Rows of sample data (client names, foods, plans) are NOT copy — they show data
 - Day-first variant: day tabs Mon–Sun with sub `{workout}` / `Rest` · assign menu `Rest — No workout`, workouts with `On Mon, Thu`, `New workout for this day — Start empty` · shared `Used on Mon, Thu` / `Scheduled on {n} days — edits apply to all of them.` · volume `{n} sets · {m} exercises · ~{min} min` · `Show breakdown`/`Hide breakdown` (`Working`/`Warm-up`/`Drop sets`)
 
 ## FM — Forms listing
-- H1 `Forms` · `Intake, check-in, and questionnaire forms for your clients` · `Create form` · `Search forms…` · tabs `All` `Active` `Draft` `Archived`
+- H1 `Forms` · `Intake and check-in forms for your clients` · `Create form` · `Search forms…` · tabs `All` `Active` `Draft` `Archived`
 - Row meta: `{Type} · {n} questions · {m} responses` · chips `Active`/`Draft`/`Archived`
-- Create: `Create form` · `Name the form now, then add questions next.` · `Form details` (`Name the form and pick what it's for.`) · `Name *` (ph `e.g. Weekly Check-in`), `Type` (Check-in / Intake / Questionnaire), `Description` (ph `What this form collects, or instructions for the client…`)
+- Create: `Create form` · `Name the form now, then add questions next.` · `Form details` (`Name the form and pick what it's for.`) · `Name *` (ph `e.g. Weekly Check-in`), `Type` (Check-in / Intake), `Description` (ph `What this form collects, or instructions for the client…`)
 
 ## FB — Form builder
 - Header: `Editing form` + summary `{n} questions · {m} required · {k} sections` · buttons `Preview`, `Save form`
-- Fields: `Form name`, `Type` seg (Check-in / Intake / Questionnaire)
+- Fields: `Form name`, `Type` seg (Check-in / Intake) — the prototype's third `Questionnaire` segment is dropped, see GAPS.md #17
 - Section menu: `Move section up`, `Move section down`, `Delete section` · `Add section` (new = `New section`)
 - Question row: placeholder `Untitled question` · `REQ` badge · menu `Move up`, `Move down`, `Duplicate`, `Remove`
 - Expanded: `Question`, `Answer type`, `Required` toggle, `Options` + `+ Add option`

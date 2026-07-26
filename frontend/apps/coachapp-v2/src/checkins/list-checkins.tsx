@@ -53,7 +53,7 @@ export default function ListCheckins() {
     <BrowseScreen
       action={{icon: <Plus />, label: 'Create form', to: ROUTES.CREATE_CHECKIN}}
       backTo={ROUTES.LIBRARY}
-      description="Intake, check-in, and questionnaire forms for your clients"
+      description="Intake and check-in forms for your clients"
       empty={
         <ListEmptyState
           createLabel="Create form"

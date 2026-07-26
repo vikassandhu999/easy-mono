@@ -16,7 +16,9 @@ const STATUS_MAP: Record<NutritionPlanStatus, {color: 'success' | 'warning'; lab
 // omitted rather than hand-wired.
 function getPlanMeta(plan: NutritionPlan): string {
   return [
-    plan.target_calories != null ? `${plan.target_calories} kcal` : null,
+    // `2,100 kcal`, as COPY.md and the ref write it — a four-digit target with no
+    // separator reads as a different order of magnitude at a glance.
+    plan.target_calories != null ? `${plan.target_calories.toLocaleString('en-US')} kcal` : null,
     plan.target_protein_g != null ? `${plan.target_protein_g}g protein` : null,
   ]
     .filter(Boolean)

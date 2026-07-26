@@ -9647,6 +9647,12 @@
       "NutritionPlan": {
         "additionalProperties": false,
         "properties": {
+          "assigned_client_count": {
+            "description": "Clients this template is currently assigned to (0 for a client's own plan)",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "client": {
             "additionalProperties": true,
             "nullable": true,

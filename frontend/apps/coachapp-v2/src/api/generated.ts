@@ -2226,6 +2226,8 @@ export type NutritionMeal = {
   updated_at: string;
 };
 export type NutritionPlan = {
+  /** Clients this template is currently assigned to (0 for a client's own plan) */
+  assigned_client_count?: number;
   client?: {
     [key: string]: any;
   } | null;

@@ -27,6 +27,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       target_fat_g: plan.target_fat_g,
       target_fiber_g: plan.target_fiber_g,
       status: plan.status,
+      assigned_client_count: plan.assigned_client_count,
       start_date: plan.start_date,
       end_date: plan.end_date,
       client_id: plan.client_id,

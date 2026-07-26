@@ -409,6 +409,10 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
           target_fat_g: %Schema{type: :number, nullable: true},
           target_fiber_g: %Schema{type: :number, nullable: true},
           status: %Schema{type: :string, enum: ["active", "archived"]},
+          assigned_client_count: %Schema{
+            type: :integer,
+            description: "Clients this template is currently assigned to (0 for a client's own plan)"
+          },
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
           client_id: %Schema{type: :string, format: :uuid, nullable: true},

@@ -11,15 +11,18 @@ const STATUS_MAP: Record<NutritionPlanStatus, {color: 'success' | 'warning'; lab
   archived: {color: 'warning', label: 'Archived'},
 };
 
-// Row meta per COPY.md is `{kcal} kcal · {p}g protein · {n} clients` — the list
-// endpoint (NutritionPlan) carries no assigned-client count, so that segment is
-// omitted rather than hand-wired.
+// Row meta per COPY.md: `{kcal} kcal · {p}g protein · {n} clients`.
 function getPlanMeta(plan: NutritionPlan): string {
+  const clients = plan.assigned_client_count ?? 0;
+
   return [
     // `2,100 kcal`, as COPY.md and the ref write it — a four-digit target with no
     // separator reads as a different order of magnitude at a glance.
     plan.target_calories != null ? `${plan.target_calories.toLocaleString('en-US')} kcal` : null,
     plan.target_protein_g != null ? `${plan.target_protein_g}g protein` : null,
+    // Only when someone is on it: `· 0 clients` on every unused template is noise,
+    // and the design's rows that show it all have assignments.
+    clients > 0 ? `${clients} ${clients === 1 ? 'client' : 'clients'}` : null,
   ]
     .filter(Boolean)
     .join(' · ');

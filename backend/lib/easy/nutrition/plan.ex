@@ -32,6 +32,11 @@ defmodule Easy.Nutrition.Plan do
     field :target_fiber_g, :float
 
     field :status, Ecto.Enum, values: @plan_statuses, default: :active
+    # How many clients are CURRENTLY on this template. Assignment copies the plan and
+    # points `source_template_id` back here, so the count is the distinct clients
+    # among those copies — the design's `· 8 clients` on a library row. Archived
+    # copies do not count: that client came off the plan.
+    field :assigned_client_count, :integer, virtual: true, default: 0
 
     field :start_date, :date
     field :end_date, :date
@@ -132,6 +137,26 @@ defmodule Easy.Nutrition.Plan do
   @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
   def templates(query \\ __MODULE__) do
     from(p in query, where: is_nil(p.client_id))
+  end
+
+  # `join_*`, not `include_*`: this adds a computed column, where `include_*` in this
+  # file means preload (AGENTS.md query-builder taxonomy).
+  @spec join_assigned_client_count(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def join_assigned_client_count(query \\ __MODULE__, business_id) do
+    counts =
+      from(copy in __MODULE__,
+        where:
+          copy.business_id == ^business_id and not is_nil(copy.client_id) and
+            not is_nil(copy.source_template_id) and copy.status == :active,
+        group_by: copy.source_template_id,
+        select: %{template_id: copy.source_template_id, clients: count(copy.client_id, :distinct)}
+      )
+
+    from(p in query,
+      left_join: c in subquery(counts),
+      on: c.template_id == p.id,
+      select: %{p | assigned_client_count: coalesce(c.clients, 0)}
+    )
   end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()

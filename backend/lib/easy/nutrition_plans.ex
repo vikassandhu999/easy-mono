@@ -59,7 +59,9 @@ defmodule Easy.NutritionPlans do
       |> Plan.for_search(search)
       |> Plan.templates()
 
-    {:ok, paginated(base, offset, limit)}
+    # The count query aggregates over `base`, so the select-adding join goes on the
+    # row branch only.
+    {:ok, paginated(base, offset, limit, &Plan.join_assigned_client_count(&1, ctx.business_id))}
   end
 
   @spec list_client_plans(Ctx.t(), keyword()) ::

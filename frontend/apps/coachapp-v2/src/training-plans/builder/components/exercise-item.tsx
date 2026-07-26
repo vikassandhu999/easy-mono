@@ -12,7 +12,7 @@ import {AS_ICON_BUTTON, NO_GAP} from '@/@components/ua-defaults';
 import type {TrainingPlanWorkoutExercise} from '@/api/generated';
 import {INLINE_LINK, TAG} from '@/builder-kit/ui';
 
-import {trackingTypeLabel} from '../model';
+import {trackingTypeLabel} from '../tracking';
 import {SetList} from './set-list';
 
 const ICON_BUTTON_CLASS = `size-11 rounded-chip bg-transparent text-muted sm:size-7 ${AS_ICON_BUTTON}`;

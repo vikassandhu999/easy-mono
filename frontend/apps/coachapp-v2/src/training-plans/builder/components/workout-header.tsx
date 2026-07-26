@@ -15,7 +15,7 @@ import {useEffect, useRef, useState} from 'react';
 
 import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
 
-import type {Day} from '../model';
+import type {Day} from '../schedule';
 import {WeekdayChips} from './weekday-chips';
 
 interface WorkoutHeaderProps {

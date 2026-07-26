@@ -56,7 +56,7 @@ export default function TrainingPlanBuilderScreen() {
   const clientName = plan.client ? `${plan.client.first_name} ${plan.client.last_name}`.trim() : null;
 
   return (
-    <Page className="text-foreground [line-height:normal]">
+    <Page className="text-foreground leading-[normal]">
       <Page.Header
         className="gap-3"
         size="wide"

@@ -8,7 +8,7 @@
 import {TRAINING_DAY_LABELS as DAY_LABELS, TRAINING_DAY_SHORT_LABELS as DAY_SHORT_LABELS} from '@easy/utils';
 import {ToggleButton, ToggleButtonGroup} from '@heroui/react';
 
-import {type Day, ORDERED_DAYS} from '../model';
+import {type Day, ORDERED_DAYS} from '../schedule';
 
 const CHIP_CLASS =
   'size-11 shrink-0 rounded-chip border border-border bg-transparent px-0 type-eyebrow font-semibold text-muted ' +

@@ -15,7 +15,7 @@ import type {FilterChip} from '@/builder-kit/search-picker-sheet';
 import {SearchPickerSheet} from '@/builder-kit/search-picker-sheet';
 import {useDebounce} from '@/hooks/use-debounce';
 
-import {trackingTypeBadge} from '../model';
+import {trackingTypeBadge} from '../tracking';
 
 /** A set of ids with a toggle — the shape both filter rows need. */
 function useIdSet() {

@@ -5,9 +5,9 @@
  * Only the selected workout renders — the tabs above pick it — so this is a
  * plain card rather than an accordion.
  *
- * It takes the whole `commands` object rather than eight bound callbacks. That
- * object is plain functions with no cache or store knowledge, so this still
- * renders in isolation; the leaves below it stay strictly props-in/callbacks-out.
+ * `actions` is the command layer already bound to THIS workout, so nothing here
+ * passes a workout id around or can reach another workout. The leaves below
+ * stay strictly props-in/callbacks-out.
  */
 import {AlertDialog, Button, Spinner, Typography, useOverlayState} from '@heroui/react';
 import {Plus} from 'lucide-react';
@@ -15,8 +15,8 @@ import {useRef, useState} from 'react';
 
 import type {TrainingPlanWorkout} from '@/api/generated';
 
-import {type Day, scheduleLabel} from '../model';
-import type {PlanBuilderCommands} from '../use-plan-builder';
+import {type Day, scheduleLabel} from '../schedule';
+import type {WorkoutActions} from '../use-plan-builder';
 import {ExerciseItem} from './exercise-item';
 import {ExercisePicker} from './exercise-picker';
 import {WorkoutHeader} from './workout-header';
@@ -27,7 +27,7 @@ interface WorkoutPanelProps {
   autoRename: boolean;
   onRenameSettled: () => void;
   onOpenSet: (elementId: string, setIndex: number, anchor: HTMLElement) => void;
-  commands: PlanBuilderCommands;
+  actions: WorkoutActions;
 }
 
 export function WorkoutPanel({
@@ -36,7 +36,7 @@ export function WorkoutPanel({
   autoRename,
   onRenameSettled,
   onOpenSet,
-  commands,
+  actions,
 }: WorkoutPanelProps) {
   const deleteAlert = useOverlayState();
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -52,9 +52,9 @@ export function WorkoutPanel({
         autoRename={autoRename}
         name={workout.name}
         onDelete={deleteAlert.open}
-        onRename={(name) => commands.renameWorkout(workout.id, name)}
+        onRename={actions.rename}
         onRenameSettled={onRenameSettled}
-        onToggleDay={(day, isSelected) => commands.scheduleDay(day, isSelected ? workout.id : null)}
+        onToggleDay={actions.toggleDay}
         scheduledDays={scheduledDays}
       />
 
@@ -101,17 +101,13 @@ export function WorkoutPanel({
               isFirst={index === 0}
               isLast={index === elements.length - 1}
               onAddSet={(anchor) => {
-                commands.addSet(element.id);
+                actions.addSet(element.id);
                 onOpenSet(element.id, element.planned_sets.length, anchor);
               }}
-              onMove={(direction) => {
-                commands.moveExercise(workout.id, index, index + direction).catch(() => undefined);
-              }}
+              onMove={(direction) => actions.moveExercise(index, index + direction)}
               onOpenSet={(setIndex, anchor) => onOpenSet(element.id, setIndex, anchor)}
-              onRemove={() => {
-                commands.removeExercise(workout.id, element.id).catch(() => undefined);
-              }}
-              onRemoveSet={(setIndex) => commands.dropSet(element.id, setIndex)}
+              onRemove={() => actions.removeExercise(element.id)}
+              onRemoveSet={(setIndex) => actions.removeSet(element.id, setIndex)}
             />
           ))
         )}
@@ -138,14 +134,12 @@ export function WorkoutPanel({
       <ExercisePicker
         anchorEl={pickerAnchor.current}
         isOpen={isPickerOpen}
-        onAdd={(exercises) => {
-          commands.addExercises(workout.id, exercises).catch(() => undefined);
-        }}
+        onAdd={actions.addExercises}
         onClose={() => setPickerOpen(false)}
       />
 
       <AlertDialog.Backdrop
-        isDismissable={!commands.isRemovingWorkout}
+        isDismissable={!actions.isRemoving}
         isOpen={deleteAlert.isOpen}
         onOpenChange={deleteAlert.setOpen}
       >
@@ -159,7 +153,7 @@ export function WorkoutPanel({
             <AlertDialog.Body>Its exercises go with it, and it comes off the weekly schedule.</AlertDialog.Body>
             <AlertDialog.Footer>
               <Button
-                isDisabled={commands.isRemovingWorkout}
+                isDisabled={actions.isRemoving}
                 slot="close"
                 variant="tertiary"
               >
@@ -167,17 +161,17 @@ export function WorkoutPanel({
               </Button>
               <Button
                 className="relative"
-                isPending={commands.isRemovingWorkout}
+                isPending={actions.isRemoving}
                 onPress={() => {
-                  commands
-                    .removeWorkout(workout.id)
+                  actions
+                    .remove()
                     .then(deleteAlert.close)
                     .catch(() => undefined);
                 }}
                 variant="danger"
               >
-                <span className={commands.isRemovingWorkout ? 'invisible' : undefined}>Delete</span>
-                {commands.isRemovingWorkout ? (
+                <span className={actions.isRemoving ? 'invisible' : undefined}>Delete</span>
+                {actions.isRemoving ? (
                   <span className="absolute inset-0 flex items-center justify-center">
                     <Spinner
                       color="current"

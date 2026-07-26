@@ -28,18 +28,9 @@ import {
 } from '@/api/generated';
 import {usePlanPatcher} from '@/api/training-plan-builder';
 
-import {
-  appendSet,
-  blankSet,
-  clearWorkoutFromSchedule,
-  type Day,
-  findWorkout,
-  moveId,
-  type PlannedSet,
-  patchSet,
-  removeSet,
-  setScheduleDay,
-} from './model';
+import {findWorkout, moveId} from './plan-tree';
+import {clearWorkoutFromSchedule, type Day, setScheduleDay} from './schedule';
+import {appendSet, blankSet, type PlannedSet, patchSet, removeSet} from './sets';
 import {SET_EDIT_DEBOUNCE_MS, useSetWriter} from './use-set-writer';
 
 export function usePlanBuilder(plan: TrainingPlan) {
@@ -279,6 +270,48 @@ export function usePlanBuilder(plan: TrainingPlan) {
 }
 
 export type PlanBuilderCommands = ReturnType<typeof usePlanBuilder>;
+
+/**
+ * The same commands, narrowed to one workout.
+ *
+ * The workout panel used to take the whole command object and pass `workout.id`
+ * back on every call — so it could reach any workout, and each call site had to
+ * remember which one it meant. Here the id is bound once and nothing below can
+ * name another workout.
+ */
+export interface WorkoutActions {
+  rename: (name: string) => void;
+  /** Awaited only so the confirm dialog can close when the delete settles. */
+  remove: () => Promise<void>;
+  isRemoving: boolean;
+  toggleDay: (day: Day, isSelected: boolean) => void;
+  addExercises: (exercises: TrainingExercise[]) => void;
+  removeExercise: (elementId: string) => void;
+  moveExercise: (from: number, to: number) => void;
+  addSet: (elementId: string) => void;
+  removeSet: (elementId: string, setIndex: number) => void;
+}
+
+/**
+ * A plain function, not a hook: the panel it feeds is not memoised, so a fresh
+ * object each render costs nothing, and skipping `useMemo` saves a nine-entry
+ * dependency array that would have to be kept in step by hand.
+ */
+export function workoutActions(commands: PlanBuilderCommands, workoutId: string): WorkoutActions {
+  const ignore = () => undefined;
+
+  return {
+    rename: (name) => commands.renameWorkout(workoutId, name).catch(ignore),
+    remove: () => commands.removeWorkout(workoutId),
+    isRemoving: commands.isRemovingWorkout,
+    toggleDay: (day, isSelected) => commands.scheduleDay(day, isSelected ? workoutId : null).catch(ignore),
+    addExercises: (exercises) => commands.addExercises(workoutId, exercises).catch(ignore),
+    removeExercise: (elementId) => commands.removeExercise(workoutId, elementId).catch(ignore),
+    moveExercise: (from, to) => commands.moveExercise(workoutId, from, to).catch(ignore),
+    addSet: commands.addSet,
+    removeSet: commands.dropSet,
+  };
+}
 
 /**
  * Which workout the builder is showing. It lives in the URL so a refresh, a

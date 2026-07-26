@@ -16,8 +16,9 @@ import {PlanPeriodCard} from './components/plan-period-card';
 import {SetEditor} from './components/set-editor';
 import {WorkoutPanel} from './components/workout-panel';
 import {WorkoutTabs} from './components/workout-tabs';
-import {daysForWorkout, findElement} from './model';
-import {useActiveWorkout, usePlanBuilder} from './use-plan-builder';
+import {findElement} from './plan-tree';
+import {daysForWorkout} from './schedule';
+import {useActiveWorkout, usePlanBuilder, workoutActions} from './use-plan-builder';
 
 export function PlanBuilder({plan}: {plan: TrainingPlan}) {
   const commands = usePlanBuilder(plan);
@@ -25,7 +26,6 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
   // first workout. That fallback is the only correction needed, and it self-heals
   // on the next tab press.
   const [activeWorkout, selectWorkout] = useActiveWorkout(plan.workouts);
-
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [editingSet, setEditingSet] = useState<{elementId: string; setIndex: number} | null>(null);
   // The row (or button) the coach pressed, captured from the press event — so
@@ -68,8 +68,8 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
       {activeWorkout ? (
         <WorkoutPanel
           key={activeWorkout.id}
+          actions={workoutActions(commands, activeWorkout.id)}
           autoRename={renamingId === activeWorkout.id}
-          commands={commands}
           onOpenSet={(elementId, setIndex, anchor) => {
             editorAnchor.current = anchor;
             setEditingSet({elementId, setIndex});

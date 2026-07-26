@@ -13,7 +13,7 @@ import {X} from 'lucide-react';
 
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 
-import {canRemoveSet, formatSetSummary, type PlannedSet} from '../model';
+import {canRemoveSet, formatSetSummary, type PlannedSet} from '../sets';
 
 interface SetListProps {
   sets: PlannedSet[];

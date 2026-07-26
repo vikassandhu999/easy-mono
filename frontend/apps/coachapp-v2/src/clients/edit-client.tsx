@@ -212,28 +212,35 @@ export default function EditClient() {
               </FormSelectField>
             </Fieldset>
 
-            <Fieldset>
-              <Fieldset.Legend>Subscription</Fieldset.Legend>
-              <Typography
-                className="mb-3"
-                color="muted"
-                type="body-xs"
-              >
-                Billing is per seat — manage seats in Billing.
-              </Typography>
-              <FieldRow>
-                <DateInput
-                  label="Subscription start"
-                  onChange={(value) => form.setValue('subscription_started_on', value ?? '', {shouldDirty: true})}
-                  value={form.watch('subscription_started_on') || null}
-                />
-                <DateInput
-                  label="Subscription end"
-                  onChange={(value) => form.setValue('subscription_ends_on', value ?? '', {shouldDirty: true})}
-                  value={form.watch('subscription_ends_on') || null}
-                />
-              </FieldRow>
-            </Fieldset>
+            {/* The design rules a hairline off above the subscription block — it is
+                the boundary between who the client is and what they are paying for.
+                On a WRAPPER, not on the `Fieldset`: a `<legend>` inside a bordered
+                `<fieldset>` notches the border, so the rule came out running from the
+                right of the word "Subscription" instead of above it. */}
+            <div className="border-t border-border pt-4">
+              <Fieldset>
+                <Fieldset.Legend>Subscription</Fieldset.Legend>
+                <Typography
+                  className="mb-3"
+                  color="muted"
+                  type="body-xs"
+                >
+                  Billing is per seat — manage seats in Billing.
+                </Typography>
+                <FieldRow>
+                  <DateInput
+                    label="Subscription start"
+                    onChange={(value) => form.setValue('subscription_started_on', value ?? '', {shouldDirty: true})}
+                    value={form.watch('subscription_started_on') || null}
+                  />
+                  <DateInput
+                    label="Subscription end"
+                    onChange={(value) => form.setValue('subscription_ends_on', value ?? '', {shouldDirty: true})}
+                    value={form.watch('subscription_ends_on') || null}
+                  />
+                </FieldRow>
+              </Fieldset>
+            </div>
 
             <FormActions
               isSubmitting={form.formState.isSubmitting}

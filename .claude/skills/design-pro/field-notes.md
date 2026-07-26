@@ -250,6 +250,12 @@ Trust these over the handoff docs. When you discover a new one, add it here
   and a 6px gap. An arbitrary `[row-gap:normal]` can't be overridden by a
   `gap-*` utility, so the odd one out states its own classes.
 
+- **A label + a count inside one control need a literal `{' '}`** — controls are
+  `display:flex` with `gap:0` and JSX collapses whitespace between children, so
+  `{name}<span>{n}</span>` renders `Upper A3`. `FilterCount` in
+  `browse-screen.tsx` documents the trap; TB's workout tabs hit it independently
+  (RM-140). Check `textContent` on the live node, not the source.
+
 ## Styling / tokens
 
 - **RECIPES.md px arbitrary values** (`rounded-[9px]`, `text-[12.5px]`) would trip

@@ -269,6 +269,17 @@ be expressed as an exclusion **in the rule it releases from**
 the modifier on a live node and reading `getComputedStyle` — a class that changes nothing
 is the whole failure mode (RM-133's rule applied to app-owned classes, not just vendor ones).
 
+### RM-140 — Two text children of a flex control need a non-breaking space, not JSX whitespace
+Controls are `display:flex` with `gap:0`, and JSX collapses whitespace between children —
+so a label plus a count renders `Upper A3` / `Active6` with nothing between them. It has
+been written twice: `FilterCount` in `@components/browse-screen.tsx` hit it and fixed it
+with `{' '}`; TB's workout tabs in `training-plans/plan-builder/workout-list.tsx`
+shipped jammed against the ref until this sweep. Any pill, tab or chip that renders a
+label and a second span puts a literal `{' '}` between them (or an explicit `gap-*`
+on the control). **Verify by:** reading `textContent` off the live node — `"Upper A 3"`,
+not `"Upper A3"`. **Not gated:** the shape is a JSX child list, not a class string, so
+there is no reliable grep; this one stays prose until a lint rule can see it.
+
 ---
 
 ## Deploy / ops

@@ -125,6 +125,11 @@ export function WorkoutList({planId}: WorkoutListProps) {
                   className="font-count type-eyebrow font-semibold opacity-60"
                   data-testid={workout.id === activeWorkout?.id ? 'tb-tab-count' : undefined}
                 >
+                  {/* A non-breaking space, not a JSX one: the tab is a flex
+                      container, so whitespace between children collapses and
+                      "Upper A 3" reads "Upper A3". Same trap, same fix as
+                      `FilterCount` in `@components/browse-screen.tsx`. */}
+                  {' '}
                   {workout.workout_elements.length}
                 </span>
               </ToggleButton>

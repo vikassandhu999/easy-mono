@@ -1,4 +1,4 @@
-import {Chip, ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
+import {ToggleButton, ToggleButtonGroup, Typography} from '@heroui/react';
 import {useState} from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -9,9 +9,11 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientWeightEntriesQuery} from '@/api/generated';
-import {DetailRow} from '@/clients/components/detail-row';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatRowDate, formatWeight, sparklinePoints, toDayIso} from '@/clients/lib/client-detail-data';
+import {formatRowDate, formatWeight, toDayIso, weightChartGeometry} from '@/clients/lib/client-detail-data';
+
+const CHART_W = 740;
+const CHART_H = 220;
 
 /** CD-WH — the trend, a range filter, and every entry. */
 const RANGES = [
@@ -29,11 +31,18 @@ export default function WeightHistory() {
   const [range, setRange] = useState<RangeId>('3M');
   const {data, isError, isLoading, refetch} = useListClientWeightEntriesQuery({clientId: id});
 
-  const header = (
+  const header = (count?: number) => (
     <Page.Header size="content">
       <Page.TitleGroup className="flex items-center gap-1">
         <BackButton onPress={goBack} />
-        <Page.Title>Weight</Page.Title>
+        <div className="min-w-0">
+          <Page.Title>Weight</Page.Title>
+          {count != null && (
+            <Page.Description>
+              {count} {count === 1 ? 'entry' : 'entries'}
+            </Page.Description>
+          )}
+        </div>
       </Page.TitleGroup>
     </Page.Header>
   );
@@ -41,7 +50,7 @@ export default function WeightHistory() {
   if (isLoading) {
     return (
       <Page>
-        {header}
+        {header()}
         <Page.Content bare>
           <Page.Frame
             className="pt-4 pb-6"
@@ -56,7 +65,7 @@ export default function WeightHistory() {
   if (isError || !data) {
     return (
       <Page>
-        {header}
+        {header()}
         <Page.Content bare>
           <Page.Frame
             className="pt-4 pb-6"
@@ -81,10 +90,20 @@ export default function WeightHistory() {
   const inRange = data.entries.filter((e) => (cutoff == null ? true : e.date >= cutoff));
   const newestFirst = [...inRange].sort((a, b) => b.date.localeCompare(a.date));
   const chronological = [...inRange].sort((a, b) => a.date.localeCompare(b.date));
+  const chart =
+    chronological.length > 1
+      ? weightChartGeometry(
+          chronological.map((e) => Number(e.value)),
+          goal,
+          CHART_W,
+          CHART_H,
+        )
+      : null;
+  const lastPoint = chart?.points.split(' ').pop()?.split(',').map(Number);
 
   return (
     <Page>
-      {header}
+      {header(data.entries.length)}
       <Page.Content bare>
         <Page.Frame
           className="flex flex-col gap-4 pt-4 pb-6"
@@ -94,7 +113,7 @@ export default function WeightHistory() {
             action={
               <ToggleButtonGroup
                 aria-label="Range"
-                className="flex gap-1"
+                className="segmented w-auto"
                 disallowEmptySelection
                 onSelectionChange={(keys) => {
                   const next = [...keys][0];
@@ -107,7 +126,6 @@ export default function WeightHistory() {
               >
                 {RANGES.map((r) => (
                   <ToggleButton
-                    className="toggle-button--tab"
                     id={r.id}
                     key={r.id}
                     size="sm"
@@ -119,29 +137,65 @@ export default function WeightHistory() {
             }
             title="Trend"
           >
-            <div className="px-4 pb-4">
-              {chronological.length > 1 ? (
+            <div className="relative px-4 pb-4">
+              {chart ? (
                 <>
-                  {/* An inline SVG rather than a chart dependency: this is one
-                      polyline over at most a few dozen points. */}
+                  {/* An inline SVG rather than a chart dependency: one polyline, one
+                      dashed goal rule, one point on the end. `weightChartGeometry`
+                      puts the line and the goal on ONE scale, so a goal below every
+                      logged value is still drawn in view. */}
                   <svg
                     aria-hidden
-                    className="h-24 w-full overflow-visible text-accent"
+                    className="block h-55 w-full"
                     preserveAspectRatio="none"
-                    viewBox="0 0 100 40"
+                    viewBox={`0 0 ${CHART_W} ${CHART_H}`}
                   >
+                    {chart.goalY != null && (
+                      <line
+                        className="text-muted"
+                        opacity="0.5"
+                        stroke="currentColor"
+                        strokeDasharray="5 5"
+                        strokeWidth="1"
+                        vectorEffect="non-scaling-stroke"
+                        x1="0"
+                        x2={CHART_W}
+                        y1={chart.goalY}
+                        y2={chart.goalY}
+                      />
+                    )}
                     <polyline
+                      className="text-accent"
                       fill="none"
-                      points={sparklinePoints(
-                        chronological.map((e) => Number(e.value)),
-                        100,
-                        40,
-                      )}
+                      points={chart.points}
                       stroke="currentColor"
-                      strokeWidth={1.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
                       vectorEffect="non-scaling-stroke"
                     />
+                    {/* The design marks where the client is now. */}
+                    {lastPoint && (
+                      <circle
+                        className="text-accent"
+                        cx={lastPoint[0]}
+                        cy={lastPoint[1]}
+                        fill="currentColor"
+                        r="5"
+                      />
+                    )}
                   </svg>
+                  {goal != null && chart.goalY != null && (
+                    <span
+                      className="-translate-y-full absolute right-5 bg-surface px-1 type-eyebrow text-muted"
+                      // The label sits ON the goal rule, as the design draws it — the
+                      // only way to place it is the line's own y, so it is a measured
+                      // position rather than a token.
+                      style={{top: `${(chart.goalY / CHART_H) * 100}%`} /* ui-contract-allow */}
+                    >
+                      goal {formatWeight(goal, unit, {decimals: 0})}
+                    </span>
+                  )}
                   <span className="sr-only">
                     {chronological.length} entries from {formatRowDate(chronological[0]!.date, {weekday: false})} to{' '}
                     {formatRowDate(chronological[chronological.length - 1]!.date, {weekday: false})}
@@ -155,15 +209,6 @@ export default function WeightHistory() {
                   Not enough entries in this range to draw a trend.
                 </Typography>
               )}
-              {goal != null && (
-                <Typography
-                  className="mt-2"
-                  color="muted"
-                  type="body-xs"
-                >
-                  goal {formatWeight(goal, unit, {decimals: 0})}
-                </Typography>
-              )}
             </div>
           </SectionCard>
 
@@ -173,21 +218,23 @@ export default function WeightHistory() {
                 className="px-2"
                 key={entry.id}
               >
-                <DetailRow
-                  leading={formatRowDate(entry.date, {weekday: false})}
-                  meta={entry.note ?? undefined}
-                  title={formatWeight(entry.value, entry.unit)}
-                  trailing={
-                    <Chip
-                      className="chip--outline"
-                      size="sm"
-                    >
-                      {/* A form_submission_id means it arrived with a check-in
-                          rather than being logged in the client's app. */}
-                      {entry.form_submission_id ? 'From check-in' : 'Client log'}
-                    </Chip>
-                  }
-                />
+                {/* The design's row is three columns — date, weight, where it came
+                    from — with the source as plain muted TEXT, not a chip on the far
+                    right: it is a fact about the row, not a status. */}
+                <div className="flex w-full items-center gap-3 rounded-panel px-2 py-3">
+                  <span className="w-20 shrink-0 type-eyebrow font-semibold text-muted">
+                    {formatRowDate(entry.date, {weekday: false})}
+                  </span>
+                  <span className="w-18 shrink-0 font-grotesk type-body font-bold">
+                    {formatWeight(entry.value, entry.unit)}
+                  </span>
+                  <span className="min-w-0 flex-1 type-eyebrow text-muted">
+                    {/* A form_submission_id means it arrived with a check-in rather
+                        than being logged in the client's app. */}
+                    {entry.form_submission_id ? 'From check-in' : 'Client log'}
+                    {entry.note ? ` · ${entry.note}` : ''}
+                  </span>
+                </div>
               </div>
             ))}
             {newestFirst.length === 0 && (

@@ -30,6 +30,7 @@ import {
   lastNDays,
   loggedMealDates,
   relativeDay,
+  submissionPhotoIds,
   weekdayInitial,
   weightChartGeometry,
   weightTrend,
@@ -204,8 +205,8 @@ function LatestCheckInCard({
   unit: string;
 }) {
   const submission = assignment.latest_submission!;
-  const photos = (submission.attachments ?? []).filter((a) => a.content_type.startsWith('image/')).slice(0, 3);
-  const {urls} = useAttachmentDownloadUrls(photos.map((p) => p.id));
+  const photos = submissionPhotoIds(submission).slice(0, 3);
+  const {urls} = useAttachmentDownloadUrls(photos);
   const reviewed = Boolean(assignment.latest_submission_reviewed_at);
 
   return (
@@ -236,11 +237,11 @@ function LatestCheckInCard({
 
         {photos.length > 0 && (
           <div className="mt-4 flex gap-2">
-            {photos.map((photo) => (
+            {photos.map((photoId) => (
               <PhotoThumb
                 alt="Check-in photo"
-                key={photo.id}
-                src={urls[photo.id]}
+                key={photoId}
+                src={urls[photoId]}
               />
             ))}
           </div>

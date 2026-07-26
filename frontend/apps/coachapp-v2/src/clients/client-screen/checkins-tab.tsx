@@ -15,7 +15,7 @@ import {
 } from '@/api/generated';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatDayMonth} from '@/clients/lib/client-detail-data';
+import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
 
 /** CD-CI: the schedule, submission history, the intake row, and the photos rail. */
 export function CheckinsTab({client}: {client: Client}) {
@@ -36,9 +36,7 @@ export function CheckinsTab({client}: {client: Client}) {
       ),
     );
   const intake = assignments.find((a) => a.purpose === 'intake');
-  const photos = checkIns
-    .flatMap((a) => a.latest_submission?.attachments ?? [])
-    .filter((a) => a.content_type.startsWith('image/'));
+  const photos = checkIns.flatMap((a) => (a.latest_submission ? submissionPhotoIds(a.latest_submission) : []));
 
   const submissionPath = (assignmentId: string) =>
     ROUTES.CLIENT_CHECKIN_SUBMISSION.replace(':id', client.id).replace(':assignmentId', assignmentId);
@@ -138,7 +136,7 @@ export function CheckinsTab({client}: {client: Client}) {
       {/* The rail is unconditional, as the design draws it — empty tiles when the
           client has not sent photos yet, so the column never collapses. */}
       <PhotosCard
-        photoIds={photos.map((p) => p.id)}
+        photoIds={photos}
         to={ROUTES.CLIENT_PHOTOS.replace(':id', client.id)}
       />
     </div>

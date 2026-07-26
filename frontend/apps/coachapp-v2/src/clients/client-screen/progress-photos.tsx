@@ -14,7 +14,7 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/generated';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatDayMonth} from '@/clients/lib/client-detail-data';
+import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
 
 /**
  * CD-PH — every progress photo the client has submitted, newest group first, with
@@ -34,12 +34,12 @@ export default function ProgressPhotos() {
   const groups = (data?.data ?? [])
     .map((assignment) => ({
       date: assignment.latest_submission?.submitted_at?.slice(0, 10) ?? null,
-      photos: (assignment.latest_submission?.attachments ?? []).filter((a) => a.content_type.startsWith('image/')),
+      photos: assignment.latest_submission ? submissionPhotoIds(assignment.latest_submission) : [],
     }))
     .filter((group) => group.date && group.photos.length > 0)
     .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 
-  const {urls} = useAttachmentDownloadUrls(groups.flatMap((g) => g.photos.map((p) => p.id)));
+  const {urls} = useAttachmentDownloadUrls(groups.flatMap((g) => g.photos));
 
   const toggle = (photoId: string) =>
     setSelected((current) =>
@@ -132,18 +132,18 @@ export default function ProgressPhotos() {
               title={formatDayMonth(group.date!)}
             >
               <div className="grid grid-cols-3 gap-3 px-4 pb-4 sm:grid-cols-4">
-                {group.photos.map((photo) => (
+                {group.photos.map((photoId) => (
                   <div
                     className={
-                      selected.includes(photo.id) ? 'rounded-panel ring-2 ring-accent ring-offset-2' : undefined
+                      selected.includes(photoId) ? 'rounded-panel ring-2 ring-accent ring-offset-2' : undefined
                     }
-                    key={photo.id}
+                    key={photoId}
                   >
                     <PhotoThumb
                       alt={`Progress photo from ${formatDayMonth(group.date!)}`}
                       fill
-                      onPress={() => toggle(photo.id)}
-                      src={urls[photo.id]}
+                      onPress={() => toggle(photoId)}
+                      src={urls[photoId]}
                     />
                   </div>
                 ))}

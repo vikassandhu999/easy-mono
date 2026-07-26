@@ -9,10 +9,20 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useListClientFormAssignmentsForCoachQuery, useReviewFormSubmissionMutation} from '@/api/generated';
+import {
+  useListClientFormAssignmentsForCoachQuery,
+  useListClientWeightEntriesQuery,
+  useReviewFormSubmissionMutation,
+} from '@/api/generated';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
-import {SectionCard} from '@/clients/components/section-card';
-import {formatAnswer, formatDayMonth} from '@/clients/lib/client-detail-data';
+import {type AnswerType, formatAnswer, formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
+
+/**
+ * The design's footer bar: full width, hairline above, on the surface, and sticky
+ * to the bottom of the scrolling pane at BOTH widths — unlike a form's actions,
+ * which only stick on mobile.
+ */
+const FOOTER = 'sticky bottom-0 z-10 -mx-4 mt-auto flex items-center border-t border-border bg-surface px-4 py-4';
 
 /** CD-CS — one submitted check-in, and the review action that clears it. */
 export default function CheckinSubmission() {
@@ -20,11 +30,15 @@ export default function CheckinSubmission() {
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', id)}?tab=checkins`);
   const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery({clientId: id});
   const [review, {isLoading: isReviewing}] = useReviewFormSubmissionMutation();
+  // A weight ANSWER carries no unit, and the design shows `72.4 kg` — the client's
+  // logging unit comes from their weight entries (RTK dedupes this with CD-OV).
+  const weights = useListClientWeightEntriesQuery({clientId: id});
+  const weightUnit = weights.data?.entries?.[0]?.unit ?? 'kg';
 
   const assignment = data?.data.find((a) => a.id === assignmentId);
   const submission = assignment?.latest_submission;
-  const photos = (submission?.attachments ?? []).filter((a) => a.content_type.startsWith('image/'));
-  const {urls} = useAttachmentDownloadUrls(photos.map((p) => p.id));
+  const photoIds = submission ? submissionPhotoIds(submission) : [];
+  const {urls} = useAttachmentDownloadUrls(photoIds);
 
   const header = (title: string) => (
     <Page.Header size="content">
@@ -88,82 +102,160 @@ export default function CheckinSubmission() {
           <div className="min-w-0">
             <Page.Title>{assignment.form_template.name}</Page.Title>
             {submission.submitted_at && (
-              <Page.Description>Submitted {formatDayMonth(submission.submitted_at.slice(0, 10))}</Page.Description>
+              <Page.Description>Submitted {formatSubmittedAt(submission.submitted_at)}</Page.Description>
             )}
           </div>
         </Page.TitleGroup>
         <Page.Actions>
           <Chip
-            color={isReviewed ? 'success' : 'warning'}
+            color={isReviewed ? 'default' : 'warning'}
             size="sm"
             variant="soft"
           >
             {isReviewed ? 'Reviewed' : 'Needs review'}
           </Chip>
-          {!isReviewed && (
-            <Button
-              isPending={isReviewing}
-              onPress={markReviewed}
-              variant="primary"
-            >
-              Mark reviewed
-            </Button>
-          )}
         </Page.Actions>
       </Page.Header>
       <Page.Content bare>
         <Page.Frame
-          className="flex flex-col gap-4 pt-4 pb-6"
+          className="flex min-h-full flex-col gap-6 pt-4 pb-6"
           size="content"
         >
+          {/* The design reads the answers as a flat list on the page — a label and
+              its value, six of them, nothing between. One card per form section put
+              three nested boxes between the coach and the numbers. Section titles
+              stay (a real form has them; the design's example form does not) but as
+              an eyebrow above their group, not a card. */}
           {submission.question_snapshot.map((section, index) => (
-            <SectionCard
-              divided
+            <div
+              className="flex flex-col gap-6"
               key={section.title ?? index}
-              title={section.title}
             >
+              {section.title && <div className="eyebrow">{section.title}</div>}
               {(section.questions ?? []).map((question) => (
-                <div
-                  className="px-4 py-3"
+                <Answer
                   key={question.id}
-                >
-                  <span className="eyebrow">{question.label}</span>
-                  <Typography
-                    className="mt-1"
-                    type="body-sm"
-                  >
-                    {formatAnswer(answers[question.id], question.type)}
-                  </Typography>
-                </div>
+                  label={question.label}
+                  photoUrls={question.type === 'photo' ? photoIds.map((photoId) => urls[photoId]) : undefined}
+                  type={question.type}
+                  value={answers[question.id]}
+                  weightUnit={weightUnit}
+                />
               ))}
-            </SectionCard>
+            </div>
           ))}
 
-          {photos.length > 0 && (
-            <SectionCard title="Progress photos">
-              <div className="grid grid-cols-3 gap-3 px-4 pb-4 sm:grid-cols-4">
-                {photos.map((photo) => (
-                  <PhotoThumb
-                    alt="Progress photo"
-                    fill
-                    key={photo.id}
-                    src={urls[photo.id]}
-                  />
-                ))}
-              </div>
-            </SectionCard>
-          )}
-
-          {isReviewed && assignment.latest_submission_reviewed_at && (
-            <Typography
-              color="muted"
-              type="body-xs"
-            >
-              Reviewed {formatDayMonth(assignment.latest_submission_reviewed_at.slice(0, 10))}
-            </Typography>
-          )}
+          {/* Mark reviewed is the design's full-width footer action, not a header
+              button: it is the one thing this screen exists to do. */}
+          <div className={FOOTER}>
+            {isReviewed ? (
+              <Typography
+                className="w-full text-center"
+                color="muted"
+                type="body-xs"
+                weight="medium"
+              >
+                Reviewed{' '}
+                {assignment.latest_submission_reviewed_at
+                  ? formatDayMonth(assignment.latest_submission_reviewed_at.slice(0, 10))
+                  : ''}
+              </Typography>
+            ) : (
+              <Button
+                className="w-full bg-ink text-ink-foreground"
+                isPending={isReviewing}
+                onPress={markReviewed}
+              >
+                Mark reviewed
+              </Button>
+            )}
+          </div>
         </Page.Frame>
       </Page.Content>
     </Page>
   );
+}
+
+/**
+ * One answer, in the register its TYPE calls for: a rating reads `4/5` beside five
+ * dots, a weight carries where it went, a photo answer shows the photos rather
+ * than the words "3 photos attached", and everything else is text.
+ */
+function Answer({
+  label,
+  photoUrls,
+  type,
+  value,
+  weightUnit,
+}: {
+  label: string;
+  photoUrls?: (string | undefined)[];
+  type?: AnswerType;
+  value: unknown;
+  weightUnit: string;
+}) {
+  return (
+    <div>
+      <div className="mb-2 type-eyebrow font-semibold text-muted">{label}</div>
+      {type === 'photo' ? (
+        photoUrls && photoUrls.length > 0 ? (
+          <div className="grid max-w-lg grid-cols-3 gap-3">
+            {photoUrls.map((url, index) => (
+              <PhotoThumb
+                alt="Progress photo"
+                fill
+                key={url ?? `photo-${index}`}
+                src={url}
+              />
+            ))}
+          </div>
+        ) : (
+          <Typography
+            color="muted"
+            type="body-sm"
+          >
+            No photos attached
+          </Typography>
+        )
+      ) : type === 'rating' && typeof value === 'number' ? (
+        <div className="flex items-center gap-3">
+          <span className="font-grotesk type-title font-bold">{value}/5</span>
+          <span
+            aria-hidden
+            className="flex gap-1"
+          >
+            {[1, 2, 3, 4, 5].map((step) => (
+              <span
+                className={`size-2.25 rounded-pill ${step <= value ? 'bg-accent' : 'bg-surface-tertiary'}`}
+                key={step}
+              />
+            ))}
+          </span>
+        </div>
+      ) : type === 'weight' ? (
+        <div className="flex items-baseline gap-2">
+          <span className="font-grotesk type-title font-bold">
+            {formatAnswer(value, type)} {weightUnit}
+          </span>
+          <Typography
+            color="muted"
+            type="body-xs"
+          >
+            Saved to weight log
+          </Typography>
+        </div>
+      ) : (
+        <Typography type="body-sm">{formatAnswer(value, type)}</Typography>
+      )}
+    </div>
+  );
+}
+
+/** `Submitted 17 Jul, 6:42 pm` — the design shows the time, not just the day. */
+function formatSubmittedAt(iso: string): string {
+  const day = formatDayMonth(iso.slice(0, 10));
+  const time = new Intl.DateTimeFormat('en-GB', {hour: 'numeric', hour12: true, minute: '2-digit'})
+    .format(new Date(iso))
+    .toLowerCase();
+  return `${day}, ${time}`;
 }

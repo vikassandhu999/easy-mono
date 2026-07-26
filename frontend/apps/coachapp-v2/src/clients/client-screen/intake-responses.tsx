@@ -1,4 +1,3 @@
-import {Typography} from '@heroui/react';
 import {ClipboardList} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
@@ -8,10 +7,12 @@ import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
+import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/generated';
+import {FormAnswer} from '@/clients/components/form-answer';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatAnswer, formatDayMonth} from '@/clients/lib/client-detail-data';
+import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
 
 /**
  * CD-IR — the intake answers, read-only.
@@ -24,6 +25,13 @@ export default function IntakeResponses() {
   const {id = ''} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', id));
   const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery({clientId: id});
+
+  const intake = data?.data.find((a) => a.purpose === 'intake');
+  const submission = intake?.latest_submission;
+  // Photo ids live in the ANSWERS, not `attachments` — see `submissionPhotoIds`.
+  // Resolved here, above the early returns: `useAttachmentDownloadUrls` is a hook.
+  const photoIds = submission ? submissionPhotoIds(submission) : [];
+  const {urls} = useAttachmentDownloadUrls(photoIds);
 
   const header = (
     <Page.Header size="content">
@@ -68,8 +76,6 @@ export default function IntakeResponses() {
     );
   }
 
-  const intake = data.data.find((a) => a.purpose === 'intake');
-  const submission = intake?.latest_submission;
   // `question_snapshot` is an ARRAY OF SECTIONS, each with its own `questions` and
   // an optional title — not a flat question list, and not a `{sections: […]}`
   // wrapper. Rendering the sections keeps the answers in the order and grouping the
@@ -97,28 +103,27 @@ export default function IntakeResponses() {
           size="content"
         >
           {questionCount > 0 ? (
-            <div className="flex flex-col gap-4">
+            // Same flat register as CD-CS: the design reads an intake as a
+            // conversation — question, answer, next — not as a stack of carded
+            // tables. Section titles stay as an eyebrow above their group.
+            <div className="flex flex-col gap-6">
               {sections.map((section, index) => (
-                <SectionCard
-                  divided
+                <div
+                  className="flex flex-col gap-6"
                   key={section.title ?? index}
-                  title={section.title}
                 >
+                  {section.title && <div className="eyebrow">{section.title}</div>}
                   {(section.questions ?? []).map((question) => (
-                    <div
-                      className="px-4 py-3"
+                    <FormAnswer
                       key={question.id}
-                    >
-                      <span className="eyebrow">{question.label}</span>
-                      <Typography
-                        className="mt-1"
-                        type="body-sm"
-                      >
-                        {formatAnswer(answers[question.id], question.type)}
-                      </Typography>
-                    </div>
+                      label={question.label}
+                      photoUrls={question.type === 'photo' ? photoIds.map((photoId) => urls[photoId]) : undefined}
+                      type={question.type}
+                      value={answers[question.id]}
+                      weightUnit="kg"
+                    />
                   ))}
-                </SectionCard>
+                </div>
               ))}
             </div>
           ) : (

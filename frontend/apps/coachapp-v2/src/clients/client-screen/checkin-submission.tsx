@@ -14,8 +14,8 @@ import {
   useListClientWeightEntriesQuery,
   useReviewFormSubmissionMutation,
 } from '@/api/generated';
-import {PhotoThumb} from '@/clients/components/photo-thumb';
-import {type AnswerType, formatAnswer, formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
+import {FormAnswer} from '@/clients/components/form-answer';
+import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
 
 /**
  * The design's footer bar: full width, hairline above, on the surface, and sticky
@@ -133,7 +133,7 @@ export default function CheckinSubmission() {
             >
               {section.title && <div className="eyebrow">{section.title}</div>}
               {(section.questions ?? []).map((question) => (
-                <Answer
+                <FormAnswer
                   key={question.id}
                   label={question.label}
                   photoUrls={question.type === 'photo' ? photoIds.map((photoId) => urls[photoId]) : undefined}
@@ -173,81 +173,6 @@ export default function CheckinSubmission() {
         </Page.Frame>
       </Page.Content>
     </Page>
-  );
-}
-
-/**
- * One answer, in the register its TYPE calls for: a rating reads `4/5` beside five
- * dots, a weight carries where it went, a photo answer shows the photos rather
- * than the words "3 photos attached", and everything else is text.
- */
-function Answer({
-  label,
-  photoUrls,
-  type,
-  value,
-  weightUnit,
-}: {
-  label: string;
-  photoUrls?: (string | undefined)[];
-  type?: AnswerType;
-  value: unknown;
-  weightUnit: string;
-}) {
-  return (
-    <div>
-      <div className="mb-2 type-eyebrow font-semibold text-muted">{label}</div>
-      {type === 'photo' ? (
-        photoUrls && photoUrls.length > 0 ? (
-          <div className="grid max-w-lg grid-cols-3 gap-3">
-            {photoUrls.map((url, index) => (
-              <PhotoThumb
-                alt="Progress photo"
-                fill
-                key={url ?? `photo-${index}`}
-                src={url}
-              />
-            ))}
-          </div>
-        ) : (
-          <Typography
-            color="muted"
-            type="body-sm"
-          >
-            No photos attached
-          </Typography>
-        )
-      ) : type === 'rating' && typeof value === 'number' ? (
-        <div className="flex items-center gap-3">
-          <span className="font-grotesk type-title font-bold">{value}/5</span>
-          <span
-            aria-hidden
-            className="flex gap-1"
-          >
-            {[1, 2, 3, 4, 5].map((step) => (
-              <span
-                className={`size-2.25 rounded-pill ${step <= value ? 'bg-accent' : 'bg-surface-tertiary'}`}
-                key={step}
-              />
-            ))}
-          </span>
-        </div>
-      ) : type === 'weight' ? (
-        <div className="flex items-baseline gap-2">
-          <span className="font-grotesk type-title font-bold">
-            {formatAnswer(value, type)} {weightUnit}
-          </span>
-          <Typography
-            color="muted"
-            type="body-xs"
-          >
-            Saved to weight log
-          </Typography>
-        </div>
-      ) : (
-        <Typography type="body-sm">{formatAnswer(value, type)}</Typography>
-      )}
-    </div>
   );
 }
 

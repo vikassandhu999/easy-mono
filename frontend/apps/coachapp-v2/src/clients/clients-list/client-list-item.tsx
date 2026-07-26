@@ -72,17 +72,24 @@ function getAttentionLabels(client: ListClient): string[] {
   ].filter((label): label is string => label !== null);
 }
 
-// The neutral grey chip. The design shows assigned plan names there; the client
-// list endpoint carries no plans, so the row shows the client's coaching stage
-// (or the inactive reason) instead — real data in the same slot.
-function getPlanChipLabel(client: ListClient): null | string {
+// The neutral grey chips: the names of the plans in force today, then the
+// coaching stage. The plan names arrive only because this list asks for them
+// (`include_plans` — see `api/clients.ts`), and are absent for a client with no
+// assigned plan, so the stage is what a bare row still shows.
+function getNeutralChipLabels(client: ListClient): string[] {
   if (client.status === 'active') {
-    return client.stage === 'coaching' ? 'Coaching' : 'Onboarding';
+    return [
+      client.training_plan_name,
+      client.nutrition_plan_name,
+      client.stage === 'coaching' ? 'Coaching' : 'Onboarding',
+    ].filter((label): label is string => Boolean(label));
   }
   if (client.status === 'inactive' && !isExpired(client)) {
-    return INACTIVE_REASON_LABEL[client.inactive_reason ?? 'manual'] ?? null;
+    return [INACTIVE_REASON_LABEL[client.inactive_reason ?? 'manual']].filter((label): label is string =>
+      Boolean(label),
+    );
   }
-  return null;
+  return [];
 }
 
 // COPY.md §CL mobile row subtitles.
@@ -104,7 +111,7 @@ function getMobileSubtitle(client: ListClient): {isAttention: boolean; text: str
   }
   // The status already reads on the name line — the subtitle carries the reason
   // (or the contact) instead of repeating it.
-  return {isAttention: false, text: getPlanChipLabel(client) ?? client.email ?? client.phone ?? '—'};
+  return {isAttention: false, text: getNeutralChipLabels(client)[0] ?? client.email ?? client.phone ?? '—'};
 }
 
 /** Chip row reused by the client detail header. */
@@ -151,7 +158,7 @@ export default function ClientListItem({client}: {client: ListClient}) {
   const initials = getInitials(client.first_name, client.last_name);
   const status = getStatusCell(client);
   const attentionLabels = getAttentionLabels(client);
-  const planChipLabel = getPlanChipLabel(client);
+  const neutralChipLabels = getNeutralChipLabels(client);
   const mobileSubtitle = getMobileSubtitle(client);
 
   // Not a BrowseRow: this row's anatomy is a 5-track grid (avatar · identity ·
@@ -200,7 +207,14 @@ export default function ClientListItem({client}: {client: ListClient}) {
       </div>
 
       <div className="hidden min-w-0 flex-wrap items-center justify-start gap-1.5 sm:flex">
-        {planChipLabel ? <span className={PLAN_CHIP_CLASS}>{planChipLabel}</span> : null}
+        {neutralChipLabels.map((label) => (
+          <span
+            className={PLAN_CHIP_CLASS}
+            key={label}
+          >
+            {label}
+          </span>
+        ))}
         {attentionLabels.map((label) => (
           <span
             className={ATTENTION_CHIP_CLASS}

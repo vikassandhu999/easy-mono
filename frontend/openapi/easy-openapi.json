@@ -6071,6 +6071,13 @@
             "x-struct": null,
             "x-validate": null
           },
+          "nutrition_plan_name": {
+            "description": "Name of the nutrition plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none.",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "phone": {
             "nullable": true,
             "type": "string",
@@ -6105,6 +6112,13 @@
           },
           "subscription_started_on": {
             "format": "date",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "training_plan_name": {
+            "description": "Name of the training plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none.",
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -18888,6 +18902,17 @@
                 "last_active"
               ],
               "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them.",
+            "in": "query",
+            "name": "include_plans",
+            "required": false,
+            "schema": {
+              "type": "boolean",
               "x-struct": null,
               "x-validate": null
             }

@@ -37,6 +37,11 @@ defmodule Easy.Clients.Client do
     # The last day the CLIENT did something — a completed session or a logged meal.
     # Not derived from `updated_at`, which moves when a coach edits the row.
     field :last_active_at, :date, virtual: true
+    # The names of the plans in force for this client TODAY, for the clients-list
+    # row chips. Only populated when the caller asks (`include_plans: true`) —
+    # they cost two extra queries per page, and no other caller wants them.
+    field :training_plan_name, :string, virtual: true
+    field :nutrition_plan_name, :string, virtual: true
 
     # Invitation
     field :invitation_token, :string

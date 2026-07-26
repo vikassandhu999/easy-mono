@@ -157,6 +157,10 @@ const clientsApi = api.injectEndpoints({
           ...(queryArg?.search && {search: queryArg.search}),
           ...(queryArg?.status && {status: queryArg.status}),
           ...(queryArg?.sort && {sort: queryArg.sort}),
+          // The CL row's plan chips. Opt-in on the endpoint because the names
+          // cost two extra queries per page; this list is the one caller that
+          // renders them.
+          include_plans: true,
           offset: pageParam,
           limit: PAGE_SIZE,
         },

@@ -152,6 +152,20 @@ defmodule Easy.Training.TrainingPlan do
     )
   end
 
+  # The plural of `active_for_client/3`, for the clients list: one query covering a
+  # whole page instead of one per row. Same in-force rule, `business_id` scoped
+  # because the caller passes ids straight from a page of clients.
+  @spec active_for_clients(Ecto.Queryable.t(), String.t(), [String.t()], Date.t()) :: Ecto.Query.t()
+  def active_for_clients(query \\ __MODULE__, business_id, client_ids, date) do
+    from(t in query,
+      where: t.business_id == ^business_id,
+      where: t.client_id in ^client_ids,
+      where: t.status == :active,
+      where: t.start_date <= ^date,
+      where: t.end_date >= ^date
+    )
+  end
+
   @spec include_workouts(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_workouts(query, business_id) do
     workout_query =

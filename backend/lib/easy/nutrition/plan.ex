@@ -174,6 +174,21 @@ defmodule Easy.Nutrition.Plan do
     )
   end
 
+  # The plural of `active_for_client/3`, for the clients list: one query covering a
+  # whole page instead of one per row. Same in-force rule (nullable dates mean
+  # open-ended), `business_id` scoped because the caller passes ids straight from
+  # a page of clients.
+  @spec active_for_clients(Ecto.Queryable.t(), String.t(), [String.t()], Date.t()) :: Ecto.Query.t()
+  def active_for_clients(query \\ __MODULE__, business_id, client_ids, date) do
+    from(p in query,
+      where: p.business_id == ^business_id,
+      where: p.client_id in ^client_ids,
+      where: p.status == :active,
+      where: is_nil(p.start_date) or p.start_date <= ^date,
+      where: is_nil(p.end_date) or p.end_date >= ^date
+    )
+  end
+
   @spec include_full(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def include_full(query \\ __MODULE__, business_id) do
     from(p in query,

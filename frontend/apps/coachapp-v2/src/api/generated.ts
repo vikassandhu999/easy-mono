@@ -625,6 +625,7 @@ const injectedRtkApi = api.injectEndpoints({
           status: queryArg.status,
           stage: queryArg.stage,
           sort: queryArg.sort,
+          include_plans: queryArg.includePlans,
         },
       }),
     }),
@@ -1450,6 +1451,8 @@ export type ListClientsApiArg = {
   stage?: 'onboarding' | 'coaching';
   /** Row order — newest first (default) or last client activity first */
   sort?: 'newest' | 'last_active';
+  /** Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them. */
+  includePlans?: boolean;
 };
 export type DeleteTrainingPlanApiResponse = unknown;
 export type DeleteTrainingPlanApiArg = {
@@ -1872,11 +1875,15 @@ export type Client = {
   last_name: string | null;
   needs_plan: boolean;
   notes: string | null;
+  /** Name of the nutrition plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none. */
+  nutrition_plan_name?: string | null;
   phone: string | null;
   stage: 'onboarding' | 'coaching';
   status: 'active' | 'pending' | 'inactive';
   subscription_ends_on: string | null;
   subscription_started_on: string | null;
+  /** Name of the training plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none. */
+  training_plan_name?: string | null;
   updated_at: string;
 };
 export type ClientResponse = {

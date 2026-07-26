@@ -81,6 +81,7 @@ defmodule Easy.Clients do
     status = Keyword.get(opts, :status)
     stage = Keyword.get(opts, :stage)
     sort = Keyword.get(opts, :sort, :newest)
+    include_plans? = Keyword.get(opts, :include_plans, false)
     offset = max(Keyword.get(opts, :offset, 0), 0)
     limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
 
@@ -107,6 +108,7 @@ defmodule Easy.Clients do
          |> Client.include_preloads(ctx.business_id)
          |> Repo.all()
          |> put_attention_flags_for_clients(ctx.business_id)
+         |> put_plan_names_for_clients(ctx.business_id, include_plans?)
      }}
   end
 
@@ -395,6 +397,39 @@ defmodule Easy.Clients do
         select: 1
 
     {open_intake, active_training, active_nutrition}
+  end
+
+  # Opt-in (`include_plans: true`): the clients list wants each row's in-force plan
+  # names for its chips. Two extra queries per PAGE, not per row, and skipped
+  # entirely for every caller that doesn't ask.
+  defp put_plan_names_for_clients(clients, _business_id, false), do: clients
+  defp put_plan_names_for_clients([], _business_id, true), do: []
+
+  defp put_plan_names_for_clients(clients, business_id, true) do
+    ids = Enum.map(clients, & &1.id)
+    today = Date.utc_today()
+
+    training = plan_names_by_client(TrainingPlan.active_for_clients(business_id, ids, today))
+    nutrition = plan_names_by_client(Plan.active_for_clients(business_id, ids, today))
+
+    Enum.map(clients, fn client ->
+      %{
+        client
+        | training_plan_name: Map.get(training, client.id),
+          nutrition_plan_name: Map.get(nutrition, client.id)
+      }
+    end)
+  end
+
+  # A client can hold more than one in-force plan of a kind; the row shows one
+  # chip, so take the newest and be deterministic about it rather than letting
+  # row order decide.
+  defp plan_names_by_client(query) do
+    query
+    |> order_by([p], desc: p.inserted_at, desc: p.id)
+    |> select([p], {p.client_id, p.name})
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {client_id, name}, acc -> Map.put_new(acc, client_id, name) end)
   end
 
   defp put_attention_flags_for_clients([], _business_id), do: []

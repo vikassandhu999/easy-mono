@@ -751,6 +751,46 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
     end
   end
 
+  describe "GET /v1/coach/clients?include_plans" do
+    setup %{coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :active)
+      today = Date.utc_today()
+
+      insert(:training_plan,
+        business: business,
+        creator: coach,
+        client: client,
+        name: "Strength base",
+        status: :active,
+        start_date: Date.add(today, -7),
+        end_date: Date.add(today, 7)
+      )
+
+      %{client: client}
+    end
+
+    test "omits plan names unless asked", %{conn: conn} do
+      conn = get(conn, "/v1/coach/clients")
+      assert %{"data" => [listed]} = json_response(conn, 200)
+      assert listed["training_plan_name"] == nil
+    end
+
+    # The param arrives as the STRING "true" over the wire, so the controller
+    # normalizes it — passing it straight through crashed the action.
+    test "includes plan names for the string param", %{conn: conn} do
+      conn = get(conn, "/v1/coach/clients?include_plans=true")
+      assert %{"data" => [listed]} = json_response(conn, 200)
+      assert listed["training_plan_name"] == "Strength base"
+      assert_schema(listed, "Client", EasyWeb.ApiSpec.spec())
+    end
+
+    test "treats any other value as off", %{conn: conn} do
+      conn = get(conn, "/v1/coach/clients?include_plans=yes-please")
+      assert %{"data" => [listed]} = json_response(conn, 200)
+      assert listed["training_plan_name"] == nil
+    end
+  end
+
   describe "GET /v1/coach/clients" do
     test "returns paginated list with summary", %{conn: conn, coach: coach, business: business} do
       insert(:client, creator: coach, business: business, status: :active)

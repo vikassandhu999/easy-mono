@@ -142,6 +142,13 @@ defmodule EasyWeb.Coaches.ClientController do
         %Schema{type: :string, enum: ["newest", "last_active"]},
         "Row order — newest first (default) or last client activity first",
         required: false
+      ),
+      Operation.parameter(
+        :include_plans,
+        :query,
+        :boolean,
+        "Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them.",
+        required: false
       )
     ],
     responses: [
@@ -239,6 +246,13 @@ defmodule EasyWeb.Coaches.ClientController do
   defp parse_sort("last_active"), do: :last_active
   defp parse_sort(_other), do: :newest
 
+  # Normalized here rather than trusted from the cast: a query param reaches the
+  # action as a string unless the spec has taught the cast otherwise, and the
+  # context matches on a real boolean. Anything that isn't an explicit yes is no.
+  defp parse_boolean(true), do: true
+  defp parse_boolean("true"), do: true
+  defp parse_boolean(_other), do: false
+
   def index(conn, params) do
     opts = [
       search: Map.get(params, "search", ""),
@@ -246,7 +260,8 @@ defmodule EasyWeb.Coaches.ClientController do
       limit: parse_integer(params, "limit", 10),
       status: Map.get(params, "status"),
       stage: Map.get(params, "stage"),
-      sort: parse_sort(Map.get(params, "sort"))
+      sort: parse_sort(Map.get(params, "sort")),
+      include_plans: parse_boolean(Map.get(params, "include_plans"))
     ]
 
     with {:ok, %{clients: clients, count: count, summary: summary}} <-

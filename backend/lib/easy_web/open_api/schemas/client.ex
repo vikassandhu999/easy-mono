@@ -100,6 +100,16 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
             nullable: true,
             description: "Last day the client completed a session or logged a meal"
           },
+          training_plan_name: %Schema{
+            type: :string,
+            nullable: true,
+            description: "Name of the training plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none."
+          },
+          nutrition_plan_name: %Schema{
+            type: :string,
+            nullable: true,
+            description: "Name of the nutrition plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none."
+          },
           assigned_coach_id: %Schema{type: :string, format: :uuid, nullable: true},
           invite_url: %Schema{type: :string, nullable: true},
           invitation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},

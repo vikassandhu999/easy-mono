@@ -15,6 +15,12 @@ import {STICKY_FOOTER_CLASS} from '@/@components/form-fields/form-classes';
 
 type FormActionsProps = {
   isSubmitting?: boolean;
+  /**
+   * For screens whose primary action lives in the page header at desktop width —
+   * the builders. Keeps the mobile sticky footer (the header button is hidden
+   * there) without drawing a second Save row beside it on desktop.
+   */
+  mobileOnly?: boolean;
   onCancel: () => void;
   submitLabel: string;
   submittingLabel: string;
@@ -25,13 +31,16 @@ type FormActionsProps = {
 export function FormActions({
   cancelLabel = 'Cancel',
   isSubmitting,
+  mobileOnly,
   onCancel,
   submitIcon,
   submitLabel,
   submittingLabel,
 }: FormActionsProps) {
   return (
-    <Fieldset.Actions className={cn(STICKY_FOOTER_CLASS, '-mb-6 sm:mt-0 sm:mb-0 sm:justify-end')}>
+    <Fieldset.Actions
+      className={cn(STICKY_FOOTER_CLASS, '-mb-6 sm:mt-0 sm:mb-0 sm:justify-end', mobileOnly && 'sm:hidden')}
+    >
       <Button
         className="border-0 text-muted shadow-none sm:border sm:text-foreground"
         onPress={onCancel}

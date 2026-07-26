@@ -712,8 +712,11 @@ export default function CheckinBuilder({
 
             {error ? <ErrorMessage>{error}</ErrorMessage> : null}
 
+            {/* Desktop's Save lives in the sticky header (FB ref); this row is
+                the mobile counterpart, so it must not draw a second one there. */}
             <FormActions
               isSubmitting={isSubmitting}
+              mobileOnly
               onCancel={onCancel}
               submitLabel={submitLabel}
               submittingLabel={submittingLabel}

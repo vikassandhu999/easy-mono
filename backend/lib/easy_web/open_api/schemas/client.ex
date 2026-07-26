@@ -94,6 +94,12 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
           intake_incomplete: %Schema{type: :boolean},
           needs_plan: %Schema{type: :boolean},
           expiring_soon: %Schema{type: :boolean},
+          last_active_at: %Schema{
+            type: :string,
+            format: :date,
+            nullable: true,
+            description: "Last day the client completed a session or logged a meal"
+          },
           assigned_coach_id: %Schema{type: :string, format: :uuid, nullable: true},
           invite_url: %Schema{type: :string, nullable: true},
           invitation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
@@ -118,6 +124,7 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
       :intake_incomplete,
       :needs_plan,
       :expiring_soon,
+      :last_active_at,
       :invite_url,
       :invitation_sent_at,
       :invitation_expires_at,

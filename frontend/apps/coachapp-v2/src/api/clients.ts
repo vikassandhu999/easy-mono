@@ -30,6 +30,12 @@ export type Client = {
   intake_incomplete: boolean;
   needs_plan: boolean;
   expiring_soon: boolean;
+  /**
+   * Last day the CLIENT did something — completed a session or logged a meal.
+   * Null when they never have. Not `updated_at`, which moves when a coach edits
+   * the row.
+   */
+  last_active_at: GeneratedClient['last_active_at'];
   /** The trainer this client is currently assigned to. */
   assigned_coach_id: null | string;
   /** Present only for pending clients. */
@@ -114,6 +120,7 @@ export type ListClientsParams = {
 
 export type ListClientsFilters = {
   search?: string;
+  sort?: 'last_active' | 'newest';
   status?: string;
 };
 
@@ -149,6 +156,7 @@ const clientsApi = api.injectEndpoints({
         params: {
           ...(queryArg?.search && {search: queryArg.search}),
           ...(queryArg?.status && {status: queryArg.status}),
+          ...(queryArg?.sort && {sort: queryArg.sort}),
           offset: pageParam,
           limit: PAGE_SIZE,
         },

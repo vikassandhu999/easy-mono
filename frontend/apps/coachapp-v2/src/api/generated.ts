@@ -624,6 +624,7 @@ const injectedRtkApi = api.injectEndpoints({
           search: queryArg.search,
           status: queryArg.status,
           stage: queryArg.stage,
+          sort: queryArg.sort,
         },
       }),
     }),
@@ -1443,6 +1444,8 @@ export type ListClientsApiArg = {
   status?: 'active' | 'pending' | 'inactive';
   /** Only clients with this stage */
   stage?: 'onboarding' | 'coaching';
+  /** Row order — newest first (default) or last client activity first */
+  sort?: 'newest' | 'last_active';
 };
 export type DeleteTrainingPlanApiResponse = unknown;
 export type DeleteTrainingPlanApiArg = {
@@ -1854,6 +1857,8 @@ export type Client = {
   invitation_expires_at: string | null;
   invitation_sent_at: string | null;
   invite_url: string | null;
+  /** Last day the client completed a session or logged a meal */
+  last_active_at: string | null;
   last_name: string | null;
   needs_plan: boolean;
   notes: string | null;

@@ -135,6 +135,13 @@ defmodule EasyWeb.Coaches.ClientController do
         %Schema{type: :string, enum: ["onboarding", "coaching"]},
         "Only clients with this stage",
         required: false
+      ),
+      Operation.parameter(
+        :sort,
+        :query,
+        %Schema{type: :string, enum: ["newest", "last_active"]},
+        "Row order — newest first (default) or last client activity first",
+        required: false
       )
     ],
     responses: [
@@ -228,13 +235,18 @@ defmodule EasyWeb.Coaches.ClientController do
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  # Mapped explicitly, never `String.to_atom/1` on a query param (AGENTS.md).
+  defp parse_sort("last_active"), do: :last_active
+  defp parse_sort(_other), do: :newest
+
   def index(conn, params) do
     opts = [
       search: Map.get(params, "search", ""),
       offset: parse_integer(params, "offset", 0),
       limit: parse_integer(params, "limit", 10),
       status: Map.get(params, "status"),
-      stage: Map.get(params, "stage")
+      stage: Map.get(params, "stage"),
+      sort: parse_sort(Map.get(params, "sort"))
     ]
 
     with {:ok, %{clients: clients, count: count, summary: summary}} <-

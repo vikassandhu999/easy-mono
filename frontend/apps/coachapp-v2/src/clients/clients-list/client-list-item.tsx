@@ -36,12 +36,17 @@ function isExpired(client: ListClient): boolean {
   );
 }
 
-// COPY.md §CL row status strings. `Active {time} ago` has no data behind it —
-// the client list carries no last-active timestamp — so active rows show the
-// dot + `Active` and leave the relative-time column empty.
+// COPY.md §CL row status strings. `last_active_at` is the client's own activity
+// (a completed session or a logged meal), which is what the design's relative
+// time in this column means — a client who has never done either shows the dot
+// and the label alone.
 function getStatusCell(client: ListClient): StatusCell {
   if (client.status === 'active') {
-    return {label: 'Active', time: null, tone: 'success'};
+    return {
+      label: 'Active',
+      time: client.last_active_at ? formatTimeAgo(client.last_active_at) : null,
+      tone: 'success',
+    };
   }
   if (client.status === 'pending') {
     return {

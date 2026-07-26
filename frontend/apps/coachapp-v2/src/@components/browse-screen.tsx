@@ -113,6 +113,7 @@ type Props<T extends object, Id extends string> = {
    * reach for it to nudge a toolbar's layout: that is how the seven exported
    * class constants this module replaced got their reach in the first place.
    */
+  toolbarEnd?: ReactNode;
   toolbarExtra?: ReactNode;
 };
 
@@ -189,6 +190,7 @@ export default function BrowseScreen<T extends object, Id extends string>({
   testId,
   title,
   total,
+  toolbarEnd,
   toolbarExtra,
 }: Props<T, Id>) {
   const navigate = useNavigate();
@@ -248,7 +250,7 @@ export default function BrowseScreen<T extends object, Id extends string>({
         ) : null}
       </Page.Header>
 
-      {search || filters || toolbarExtra ? (
+      {search || filters || toolbarExtra || toolbarEnd ? (
         <Page.Toolbar
           className={cn(TOOLBAR, filters ? 'pb-0' : 'pb-3')}
           size="content"
@@ -324,6 +326,10 @@ export default function BrowseScreen<T extends object, Id extends string>({
               </ToggleButtonGroup>
             </div>
           ) : null}
+
+          {/* The design pushes CL's sort control to the far end of this row
+              (`margin-left:auto`), after the filter pills. */}
+          {toolbarEnd ? <div className="ms-auto hidden shrink-0 sm:block">{toolbarEnd}</div> : null}
         </Page.Toolbar>
       ) : null}
 

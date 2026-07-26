@@ -4,5 +4,7 @@ export type ClientListSelection = 'all' | Set<Key>;
 
 export type ClientsListFilters = {
   search: string;
+  /** Row order. `newest` is the endpoint's default. */
+  sort?: 'last_active' | 'newest';
   status?: string;
 };

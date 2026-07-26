@@ -80,6 +80,7 @@ defmodule Easy.Clients do
     search = Keyword.get(opts, :search, "")
     status = Keyword.get(opts, :status)
     stage = Keyword.get(opts, :stage)
+    sort = Keyword.get(opts, :sort, :newest)
     offset = max(Keyword.get(opts, :offset, 0), 0)
     limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
 
@@ -97,13 +98,20 @@ defmodule Easy.Clients do
        summary: summary(Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)),
        clients:
          base
-         |> Client.newest()
+         # The join carries `last_active_at` on every row, so the list can both SHOW
+         # it and sort by it. Applied here rather than to `base`, which the count
+         # above aggregates over and must stay select-free.
+         |> Client.join_last_active(ctx.business_id)
+         |> sort_clients(sort)
          |> Easy.Utils.paginate(offset, limit)
          |> Client.include_preloads(ctx.business_id)
          |> Repo.all()
          |> put_attention_flags_for_clients(ctx.business_id)
      }}
   end
+
+  defp sort_clients(query, :last_active), do: Client.by_last_active(query)
+  defp sort_clients(query, _newest), do: Client.newest(query)
 
   @spec list_attention_clients(Ctx.t(), keyword()) ::
           {:ok, %{clients: [Client.t()], count: non_neg_integer()}}

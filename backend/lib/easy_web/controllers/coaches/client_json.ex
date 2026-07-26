@@ -34,6 +34,7 @@ defmodule EasyWeb.Coaches.ClientJSON do
       intake_incomplete: client.intake_incomplete,
       needs_plan: client.needs_plan,
       expiring_soon: client.expiring_soon,
+      last_active_at: client.last_active_at,
       assigned_coach_id: client.assigned_coach_id,
       invite_url: Client.build_invite_url(client),
       invitation_sent_at: pending_only(client, client.invitation_sent_at),

@@ -1,4 +1,5 @@
-import {UserPlus} from 'lucide-react';
+import {Button} from '@heroui/react';
+import {ArrowUpDown, UserPlus} from 'lucide-react';
 import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -44,6 +45,9 @@ export default function ListClients() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
+  // Two orders, as the design's control offers: the endpoint's default (newest
+  // first) and the client's own last activity.
+  const [sort, setSort] = useState<'last_active' | 'newest'>('newest');
 
   const deferredSearch = useDeferredValue(search);
   const isAttention = activeFilter === 'attention';
@@ -52,6 +56,7 @@ export default function ListClients() {
   const list = useClientsSearch({
     enabled: !isAttention,
     search: deferredSearch,
+    sort,
     status: activeStatus,
   });
   // "Needs attention" is not a value of the list endpoint's `status` filter —
@@ -117,6 +122,18 @@ export default function ListClients() {
       rowHasThumb
       search={{onChange: setSearch, placeholder: 'Search clients', value: search}}
       title="Clients"
+      toolbarEnd={
+        isAttention ? null : (
+          <Button
+            className="button--row gap-1.5 type-eyebrow text-muted"
+            onPress={() => setSort((current) => (current === 'last_active' ? 'newest' : 'last_active'))}
+            variant="ghost"
+          >
+            <ArrowUpDown className="size-3.5" />
+            {sort === 'last_active' ? 'Last active' : 'Newest'}
+          </Button>
+        )
+      }
     />
   );
 }

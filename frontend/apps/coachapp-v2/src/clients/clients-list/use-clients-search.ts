@@ -4,10 +4,16 @@ import {type Client, useClientsInfiniteQuery} from '@/api/clients';
 
 import type {ClientsListFilters} from './types';
 
-export default function useClientsSearch({search, status, enabled = true}: ClientsListFilters & {enabled?: boolean}) {
+export default function useClientsSearch({
+  search,
+  sort,
+  status,
+  enabled = true,
+}: ClientsListFilters & {enabled?: boolean}) {
   const list = useClientsInfiniteQuery(
     {
       search,
+      sort,
       status,
     },
     {skip: !enabled},

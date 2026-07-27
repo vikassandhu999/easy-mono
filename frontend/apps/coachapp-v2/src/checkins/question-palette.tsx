@@ -96,7 +96,6 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
                 const Icon = QUESTION_TYPE_ICONS[preset.type];
                 return (
                   <ListBox.Item
-                    className="gap-2"
                     id={preset.key}
                     key={preset.key}
                     textValue={preset.label}

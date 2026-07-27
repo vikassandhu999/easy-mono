@@ -171,7 +171,7 @@ function renderExercise(exercise: TrainingExercise, isSelected: boolean) {
   const meta = [exercise.muscles[0]?.name, exercise.equipment[0]?.name].filter(Boolean).join(' · ');
 
   return (
-    <div className="flex items-center gap-2 px-1 py-2">
+    <div className="flex items-center gap-2">
       {/* Decorative: the row Button owns the press and announces state via aria-pressed. */}
       <div
         aria-hidden="true"

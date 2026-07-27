@@ -43,7 +43,7 @@ function macroBadge(item: FoodOrRecipe): string {
 
 export function PickerItemRow({item, isSelected}: {item: FoodOrRecipe; isSelected: boolean}) {
   return (
-    <div className="flex items-center gap-2 px-1 py-2">
+    <div className="flex items-center gap-2">
       {/* Decorative: the row Button owns the press and announces state via aria-pressed. */}
       <div
         aria-hidden="true"

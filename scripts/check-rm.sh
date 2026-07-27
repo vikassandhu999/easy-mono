@@ -84,5 +84,11 @@ check RM-138 "responsive pair with the same type step on both sides (dead sm: �
 check RM-137 "arbitrary-value color (use a text-* token; sizes are type-*, so there is no collision to dodge)" \
   '\[color:' "$COACH"
 
+# The overlay gutter (16px) is pinned on the vendor dialogs in index.css. A
+# call site may RELEASE it (`p-0`) to build band anatomy (title · body · dock),
+# but restating or widening it re-opens the drift the pin closed.
+check RM-141 "padding override on a vendor dialog (overlay gutter is the theme's; only the p-0 release is allowed)" \
+  '(AlertDialog|Modal)\.Dialog[^>]{0,200}className="[^"]*\bp[xy]?-[1-9]' "$COACH" -U
+
 if [ "$fail" -eq 0 ]; then echo "check-rm: all clean"; fi
 exit $fail

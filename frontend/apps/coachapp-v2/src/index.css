@@ -278,6 +278,18 @@
   }
 }
 
+/* Overlay gutter. Every overlay surface — keyboard sheet, popover, picker
+   bands — keeps content 16px from the edge; the two vendor dialogs shipped
+   24px and were the outliers. A call site may release to p-0 for band anatomy
+   (title row · body · dock), never restate or widen (gated: RM-141). Layered,
+   so the p-0 release utility can actually win. */
+@layer components {
+  .alert-dialog__dialog,
+  .modal__dialog {
+    padding: calc(var(--spacing) * 4);
+  }
+}
+
 /* Popover surface. HeroUI's `.popover` is `rounded-3xl bg-overlay` with its own
    shadow, so all nine call sites overrode the same four things to reach the
    design's card. That is the component's look, not a per-popover choice — only

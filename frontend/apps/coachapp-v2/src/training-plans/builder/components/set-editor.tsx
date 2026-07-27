@@ -22,6 +22,7 @@ import {type ReactNode, type RefObject, useState} from 'react';
 
 import type {TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
+import {UNIT_CHIP} from '@/builder-kit/ui';
 
 import {type PlannedSet, parseRpe, parseWholeNumber} from '../sets';
 import {type FieldKey, fieldsFor} from '../tracking';
@@ -47,11 +48,6 @@ const DISTANCE_UNITS: Option<DistanceUnit>[] = [
   {value: 'km', label: 'km'},
   {value: 'miles', label: 'mi'},
 ];
-
-// Unit chips (kg/lbs/bw, m/km/mi) — GAPS #7: also a ToggleButtonGroup.
-const UNIT_BUTTON_CLASS =
-  'min-h-9 rounded-chip border border-border bg-transparent px-2 type-eyebrow font-medium text-muted ' +
-  'data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent';
 
 // min-w-0 is load-bearing: TextField is w-full, so without it the first field
 // claims its intrinsic width and pushes the rest out of the popover.
@@ -111,8 +107,8 @@ const FIELDS: Record<FieldKey, FieldUi> = {
     ...textColumn('load_value'),
     units: (set, onChange) => (
       <SingleToggle
-        buttonClassName={UNIT_BUTTON_CLASS}
-        className="mt-1.5 flex justify-center gap-1"
+        buttonClassName={UNIT_CHIP}
+        className="mt-1.5 flex justify-center gap-1.5"
         label="Weight unit"
         onChange={(unit) => onChange({load_unit: unit})}
         options={LOAD_UNITS}
@@ -128,8 +124,8 @@ const FIELDS: Record<FieldKey, FieldUi> = {
     ...textColumn('distance_value'),
     units: (set, onChange) => (
       <SingleToggle
-        buttonClassName={UNIT_BUTTON_CLASS}
-        className="mt-1.5 flex justify-center gap-1"
+        buttonClassName={UNIT_CHIP}
+        className="mt-1.5 flex justify-center gap-1.5"
         label="Distance unit"
         onChange={(unit) => onChange({distance_unit: unit})}
         options={DISTANCE_UNITS}

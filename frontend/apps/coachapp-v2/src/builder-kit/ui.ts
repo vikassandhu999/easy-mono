@@ -26,3 +26,12 @@ export const TAG =
  */
 export const INLINE_LINK =
   'rounded-none bg-transparent px-0 font-semibold leading-[normal] text-accent [row-gap:normal] [column-gap:normal]';
+
+/**
+ * Unit/serving chips under an amount input — ONE selection register for both
+ * builders (kg/lbs/bw and m/km/mi in TB, serving sizes in NB). Height comes
+ * from the control-height block.
+ */
+export const UNIT_CHIP =
+  'rounded-chip border border-border bg-transparent px-2 type-eyebrow font-medium text-muted ' +
+  'data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent';

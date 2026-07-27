@@ -285,6 +285,19 @@ reading `textContent` off the live node — `"Upper A 3"`, not `"Upper A3"`. **N
 the shape is a JSX child list, not a class string, so there is no reliable grep for the
 MISSING case; this one stays prose until a lint rule can see it.
 
+### RM-141 — The overlay gutter is one theme rule, not a per-surface choice
+Every overlay surface (keyboard sheet, popover, picker bands) keeps content 16px from the
+edge, but the two vendor dialogs shipped `p-6` and call sites were re-deciding the gutter
+per surface (24px confirm dialogs beside 16px pickers; one modal hand-set `px-6` bands
+that broke `SearchPickerBody`'s sticky-header `-mx-4` bleed). The gutter is pinned once
+in `index.css` (`.alert-dialog__dialog, .modal__dialog { padding: 16px }`). A call site
+may RELEASE it (`p-0`) to build band anatomy — title row · body · dock — never restate or
+widen it. Same rule for overlay list rows: the inset lives on the shared row wrapper
+(`SearchPickerBody`'s row button) or the vendor `ListBox.Item` default — renderItem
+content and `ListBox.Item` classNames don't re-add insets. **Gated:**
+`scripts/check-rm.sh` fails any `AlertDialog.Dialog`/`Modal.Dialog` className with a
+non-zero padding. **Verify by:** `getComputedStyle` padding on a live dialog = 16px.
+
 ---
 
 ## Deploy / ops

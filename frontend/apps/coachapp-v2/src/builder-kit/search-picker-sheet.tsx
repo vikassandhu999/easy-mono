@@ -253,7 +253,9 @@ export function SearchPickerBody<T>({
             <Button
               aria-pressed={selected}
               className={[
-                'h-auto w-full justify-start rounded-none border-b border-border px-0 py-0 text-left last:border-b-0',
+                // The row inset lives HERE, not in renderItem — every picker
+                // list shares it, so callers cannot drift apart.
+                'h-auto w-full justify-start rounded-none border-b border-border px-1 py-2 text-left last:border-b-0',
                 selected ? 'bg-accent-soft' : 'bg-transparent',
               ].join(' ')}
               key={key}

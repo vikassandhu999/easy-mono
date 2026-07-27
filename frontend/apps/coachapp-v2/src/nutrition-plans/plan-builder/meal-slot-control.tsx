@@ -1,9 +1,6 @@
 /**
- * MealSlotControl — the slot tag on a meal card (GAPS.md #9).
- *
- * The tag opens the list of meal slots: a `Dropdown` on desktop, a
- * `KeyboardSheet` list on mobile (the canonical responsive-overlay rule —
- * UI-CONTRACT §2 Overlays). Both shells render the SAME `ListBox` content.
+ * MealSlotControl — the slot tag on a meal card (GAPS.md #9). The tag opens the
+ * slot list in a `ResponsiveOverlay`; ONE `ListBox` serves both shells.
  *
  * Deviation from GAPS #9's wording: the trigger is a `Button` styled as a pill,
  * not a `Chip`. HeroUI v3 `Chip` is a display primitive with no press/focus
@@ -11,13 +8,11 @@
  */
 
 import {MEAL_SLOTS} from '@easy/utils';
-import {Button, Dropdown, Label, ListBox} from '@heroui/react';
+import {Button, Label, ListBox} from '@heroui/react';
 import {ChevronDown} from 'lucide-react';
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
-import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
-
+import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {TAG} from '@/builder-kit/ui';
 
 /**
@@ -40,75 +35,37 @@ export function slotLabel(slot: string): string {
 
 interface MealSlotControlProps {
   slot: string;
-  /** Slots already taken on this day — offered but marked, so a coach can see why a move is a swap. */
   onChange: (slot: string) => void;
 }
 
-const SHEET_TITLE = 'Meal slot';
-
 export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
-  const isDesktop = useIsDesktop();
   const [open, setOpen] = useState(false);
-
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const label = slotLabel(slot);
-
-  const trigger = (
-    <Button
-      aria-label={`Meal slot: ${label}`}
-      className={`${TAG}  gap-1 text-foreground `}
-      data-testid="nb-slot-tag"
-      onPress={isDesktop ? undefined : () => setOpen(true)}
-      size="sm"
-      variant="outline"
-    >
-      {label}
-      <ChevronDown className="size-3.5" />
-    </Button>
-  );
-
-  if (isDesktop) {
-    return (
-      <Dropdown>
-        {trigger}
-        <Dropdown.Popover>
-          {/* Selection-mode collections route activation through
-              onSelectionChange, NOT onAction — onAction never fires here. */}
-          <Dropdown.Menu
-            disallowEmptySelection
-            onSelectionChange={(keys) => {
-              const next = [...keys][0];
-              if (next) {
-                onChange(String(next));
-              }
-            }}
-            selectedKeys={[slot]}
-            selectionMode="single"
-          >
-            {MEAL_SLOTS.map((option) => (
-              <Dropdown.Item
-                id={option}
-                key={option}
-                textValue={slotLabel(option)}
-              >
-                <Label>{slotLabel(option)}</Label>
-              </Dropdown.Item>
-            ))}
-          </Dropdown.Menu>
-        </Dropdown.Popover>
-      </Dropdown>
-    );
-  }
 
   return (
     <>
-      {trigger}
-      <KeyboardSheet
-        onClose={() => setOpen(false)}
-        open={open}
-        title={SHEET_TITLE}
+      <Button
+        aria-label={`Meal slot: ${label}`}
+        className={`${TAG}  gap-1 text-foreground `}
+        data-testid="nb-slot-tag"
+        onPress={() => setOpen(true)}
+        ref={triggerRef}
+        size="sm"
+        variant="outline"
+      >
+        {label}
+        <ChevronDown className="size-3.5" />
+      </Button>
+      <ResponsiveOverlay
+        isOpen={open}
+        onOpenChange={setOpen}
+        title="Meal slot"
+        triggerRef={triggerRef}
+        width="w-64"
       >
         <ListBox
-          aria-label={SHEET_TITLE}
+          aria-label="Meal slot"
           className="p-0"
           disallowEmptySelection
           onSelectionChange={(keys) => {
@@ -132,7 +89,7 @@ export function MealSlotControl({slot, onChange}: MealSlotControlProps) {
             </ListBox.Item>
           ))}
         </ListBox>
-      </KeyboardSheet>
+      </ResponsiveOverlay>
     </>
   );
 }

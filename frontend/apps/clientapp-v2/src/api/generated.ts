@@ -906,6 +906,19 @@ export type TrainingExercise = {
 export type TrainingExerciseResponse = {
   data: TrainingExercise;
 };
+export type NutritionDayMeal = {
+  id: string;
+  meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
+  nutrition_meal_id: string;
+  nutrition_plan_day_id?: string;
+  position: number;
+};
+export type NutritionPlanDay = {
+  day_meals?: NutritionDayMeal[];
+  id: string;
+  name: string;
+  position: number;
+};
 export type NutritionMealItem = {
   amount: number | null;
   food_id: string | null;
@@ -952,9 +965,7 @@ export type NutritionPlan = {
   } | null;
   client_id?: string | null;
   creator_id?: string | null;
-  days?: {
-    [key: string]: any;
-  }[];
+  days?: NutritionPlanDay[];
   description: string | null;
   end_date: string | null;
   id: string;
@@ -971,8 +982,9 @@ export type NutritionPlan = {
   target_fiber_g?: number | null;
   target_protein_g?: number | null;
   updated_at: string;
+  /** Weekday name -> nutrition plan day id */
   weekday_assignments?: {
-    [key: string]: any;
+    [key: string]: string;
   };
 };
 export type NutritionPlanListResponse = {

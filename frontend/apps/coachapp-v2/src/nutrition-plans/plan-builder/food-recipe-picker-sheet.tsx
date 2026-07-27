@@ -91,8 +91,8 @@ function recipeMacroBadge(recipe: Recipe): string {
   return `${fmt(protein == null ? protein : protein / recipeServings(recipe))}P`;
 }
 
-/** Type guard: is the item a Recipe (has `recipe_ingredients`)? Exported so the
- * amount sheet (Task 4) can branch food (grams) vs recipe (servings) per pick. */
+/** Type guard: is the item a Recipe (has `recipe_ingredients`)? The amount
+ * sheet branches food (grams) vs recipe (servings) on it. */
 export function isRecipe(item: FoodOrRecipe): item is Recipe {
   return 'recipe_ingredients' in item;
 }
@@ -109,9 +109,9 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
 
-  // --- Selection ---
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-  const [selectedItems, setSelectedItems] = useState<Map<string, FoodOrRecipe>>(new Map());
+  // One map, not a parallel Set and Map: the keys ARE the selection.
+  const [selected, setSelected] = useState<Map<string, FoodOrRecipe>>(new Map());
+  const selectedKeys = useMemo(() => new Set(selected.keys()), [selected]);
 
   // --- Data: foods infinite query ---
   const {
@@ -171,36 +171,26 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
 
   // --- Handlers ---
   const handleToggleItem = useCallback((item: FoodOrRecipe) => {
-    setSelectedKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(item.id)) {
-        next.delete(item.id);
-      } else {
-        next.add(item.id);
-      }
-      return next;
-    });
-    setSelectedItems((prev) => {
+    setSelected((prev) => {
       const next = new Map(prev);
-      if (next.has(item.id)) {
-        next.delete(item.id);
-      } else {
+      if (!next.delete(item.id)) {
         next.set(item.id, item);
       }
       return next;
     });
   }, []);
 
-  const handleConfirm = useCallback(() => {
-    const chosen = Array.from(selectedItems.values());
-    onPick(chosen);
-    // Reset state
-    setSelectedKeys(new Set());
-    setSelectedItems(new Map());
+  const reset = useCallback(() => {
+    setSelected(new Map());
     setSearch('');
     setActiveTab('foods');
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    onPick([...selected.values()]);
+    reset();
     onClose();
-  }, [selectedItems, onPick, onClose]);
+  }, [selected, onPick, reset, onClose]);
 
   // In-flight guard — a double-tap on the create row must not POST twice.
   const creatingRef = useRef(false);
@@ -215,8 +205,7 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
         const result = await createFoodMutation.mutateAsync({name: query});
         const newFood = result.data;
         // Auto-select the newly created food
-        setSelectedKeys((prev) => new Set([...prev, newFood.id]));
-        setSelectedItems((prev) => new Map([...prev, [newFood.id, newFood]]));
+        setSelected((prev) => new Map(prev).set(newFood.id, newFood));
         setSearch('');
         setActiveTab('foods');
       } catch (e) {
@@ -231,12 +220,9 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
 
   const handleClose = useCallback(() => {
     // Reset on close so the sheet is clean next time it opens
-    setSelectedKeys(new Set());
-    setSelectedItems(new Map());
-    setSearch('');
-    setActiveTab('foods');
+    reset();
     onClose();
-  }, [onClose]);
+  }, [reset, onClose]);
 
   // --- renderItem ---
   const renderItem = useCallback((item: FoodOrRecipe, selected: boolean) => {

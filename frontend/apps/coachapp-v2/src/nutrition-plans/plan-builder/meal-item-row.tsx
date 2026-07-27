@@ -5,11 +5,6 @@
  * right-aligned, and an `×` that removes the item directly (INTERACTIONS.md
  * § NB — tapping the row opens the amount sheet in edit mode instead).
  * Rows are separated by hairlines rather than an accent rule.
- *
- * The item type here is the full hydrated form: NutritionMealItem augmented
- * with the food/recipe objects that the plan-builder's cache hydration layer
- * populates. We accept a duck-typed interface rather than importing NutritionMealItem
- * from generated (which lacks food/recipe) so we can include those fields.
  */
 
 import {Button} from '@heroui/react';
@@ -17,31 +12,18 @@ import {X} from 'lucide-react';
 import {forwardRef} from 'react';
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import type {Food, Recipe} from '@/api/nutrition-foods';
+import type {NutritionMealItem} from '@/api/nutrition-plans-list';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export interface HydratedMealItem {
-  id: string;
-  food_id: string | null;
-  recipe_id: string | null;
-  /** Server-provided display name for the item (backend now sets this). */
-  name?: string | null;
+/** A meal item plus the `food`/`recipe` objects a hydrated cache may carry —
+ *  the generated type has only the ids. */
+export type HydratedMealItem = NutritionMealItem & {
   food?: Food | null;
   recipe?: Recipe | null;
-  weight_g: number | null;
-  amount: number | null;
-  unit: string | null;
-  position: number;
-  nutrition?: {
-    calories?: number | null;
-    protein_g?: number | null;
-    carbs_g?: number | null;
-    fat_g?: number | null;
-    fiber_g?: number | null;
-  } | null;
-}
+};
 
 // ---------------------------------------------------------------------------
 // Helpers

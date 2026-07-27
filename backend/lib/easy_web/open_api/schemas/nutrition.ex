@@ -382,6 +382,48 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanAssignRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayMeal do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayMeal",
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      meal_slot: %Schema{
+        type: :string,
+        enum: ~w(breakfast morning_snack lunch afternoon_snack dinner evening_snack)
+      },
+      position: %Schema{type: :integer},
+      nutrition_meal_id: %Schema{type: :string, format: :uuid},
+      nutrition_plan_day_id: %Schema{type: :string, format: :uuid}
+    },
+    required: [:id, :meal_slot, :position, :nutrition_meal_id]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionPlanDay do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  alias EasyWeb.OpenApi.Schemas.NutritionDayMeal
+
+  OpenApiSpex.schema(%{
+    title: "NutritionPlanDay",
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      name: %Schema{type: :string},
+      position: %Schema{type: :integer},
+      day_meals: %Schema{type: :array, items: NutritionDayMeal}
+    },
+    required: [:id, :name, :position]
+  })
+end
+
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
   require OpenApiSpex
 
@@ -389,6 +431,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
 
   alias EasyWeb.OpenApi.Schemas.{
     NutritionMeal,
+    NutritionPlanDay,
     Shared
   }
 
@@ -420,8 +463,12 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
           source_template_id: %Schema{type: :string, format: :uuid, nullable: true},
           creator_id: %Schema{type: :string, format: :uuid, nullable: true},
           meals: %Schema{type: :array, items: NutritionMeal},
-          days: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
-          weekday_assignments: %Schema{type: :object, additionalProperties: true}
+          days: %Schema{type: :array, items: NutritionPlanDay},
+          weekday_assignments: %Schema{
+            type: :object,
+            description: "Weekday name -> nutrition plan day id",
+            additionalProperties: %Schema{type: :string, format: :uuid}
+          }
         },
         Shared.timestamps()
       ),
@@ -551,35 +598,17 @@ end
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlanDayResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{NutritionPlanDay, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionPlanDayResponse",
-    type: :object,
-    properties: %{
-      data: %Schema{
-        type: :object,
-        properties: %{
-          id: %Schema{type: :string},
-          name: %Schema{type: :string},
-          position: %Schema{type: :integer},
-          day_meals: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}}
-        }
-      }
-    }
-  })
+  OpenApiSpex.schema(Shared.data_response(NutritionPlanDay, "NutritionPlanDayResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionDayMealResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{NutritionDayMeal, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionDayMealResponse",
-    type: :object,
-    properties: %{data: %Schema{type: :object, additionalProperties: true}}
-  })
+  OpenApiSpex.schema(Shared.data_response(NutritionDayMeal, "NutritionDayMealResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionWeekdayAssignmentResponse do
@@ -590,7 +619,19 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionWeekdayAssignmentResponse do
   OpenApiSpex.schema(%{
     title: "NutritionWeekdayAssignmentResponse",
     type: :object,
-    properties: %{data: %Schema{type: :object, additionalProperties: true}}
+    properties: %{
+      data: %Schema{
+        type: :object,
+        properties: %{
+          day_of_week: %Schema{
+            type: :string,
+            enum: ~w(monday tuesday wednesday thursday friday saturday sunday)
+          },
+          nutrition_plan_day_id: %Schema{type: :string, format: :uuid}
+        },
+        required: [:day_of_week, :nutrition_plan_day_id]
+      }
+    }
   })
 end
 

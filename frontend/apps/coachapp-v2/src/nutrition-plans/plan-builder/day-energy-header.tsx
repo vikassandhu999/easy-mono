@@ -98,82 +98,80 @@ export function DayEnergyHeader({totals, targets, showMacros, onToggleMacros}: D
       className="flex flex-col gap-3 rounded-card border border-border bg-surface px-4 py-3 [box-shadow:none]"
       data-testid="nb-energy-card"
     >
-      <>
-        <div
-          className="flex flex-wrap items-center gap-3"
-          data-testid="nb-energy-row"
-        >
-          <div className="flex flex-none items-baseline gap-1">
-            <span
-              className="font-grotesk type-metric font-semibold text-foreground"
-              data-testid="nb-kcal"
-            >
-              {Math.round(totals.calories).toLocaleString()}
-            </span>
-            <span
-              className="type-eyebrow text-muted"
-              data-testid="nb-kcal-target"
-            >
-              {targets.calories != null ? `/ ${Math.round(targets.calories).toLocaleString()} kcal` : 'kcal'}
-            </span>
-          </div>
-
-          {targets.calories != null ? (
-            <ProgressBar
-              aria-label="Energy against target"
-              className="min-w-40 flex-1"
-              color={over ? 'warning' : 'accent'}
-              value={percent(totals.calories, targets.calories)}
-            >
-              <ProgressBar.Track
-                className="h-1.5 overflow-hidden rounded-pill bg-surface-tertiary"
-                data-testid="nb-kcal-track"
-              >
-                <ProgressBar.Fill
-                  className="h-full rounded-pill"
-                  data-testid="nb-kcal-fill"
-                />
-              </ProgressBar.Track>
-            </ProgressBar>
-          ) : (
-            <div className="flex-1" />
-          )}
-
-          <Button
-            className={`${INLINE_LINK} shrink-0 type-eyebrow`}
-            data-testid="nb-macros-toggle"
-            onPress={onToggleMacros}
-            size="sm"
-            variant="ghost"
+      <div
+        className="flex flex-wrap items-center gap-3"
+        data-testid="nb-energy-row"
+      >
+        <div className="flex flex-none items-baseline gap-1">
+          <span
+            className="font-grotesk type-metric font-semibold text-foreground"
+            data-testid="nb-kcal"
           >
-            {showMacros ? 'Hide macros' : 'Show macros'}
-          </Button>
+            {Math.round(totals.calories).toLocaleString()}
+          </span>
+          <span
+            className="type-eyebrow text-muted"
+            data-testid="nb-kcal-target"
+          >
+            {targets.calories != null ? `/ ${Math.round(targets.calories).toLocaleString()} kcal` : 'kcal'}
+          </span>
         </div>
 
-        {showMacros ? (
-          <div
-            className="grid grid-cols-1 gap-4 border-t border-border pt-3 sm:grid-cols-3"
-            data-testid="nb-macro-grid"
+        {targets.calories != null ? (
+          <ProgressBar
+            aria-label="Energy against target"
+            className="min-w-40 flex-1"
+            color={over ? 'warning' : 'accent'}
+            value={percent(totals.calories, targets.calories)}
           >
-            <MacroMeter
-              label="Protein"
-              target={targets.protein_g}
-              testIds
-              value={totals.protein_g}
-            />
-            <MacroMeter
-              label="Carbs"
-              target={targets.carbs_g}
-              value={totals.carbs_g}
-            />
-            <MacroMeter
-              label="Fat"
-              target={targets.fat_g}
-              value={totals.fat_g}
-            />
-          </div>
-        ) : null}
-      </>
+            <ProgressBar.Track
+              className="h-1.5 overflow-hidden rounded-pill bg-surface-tertiary"
+              data-testid="nb-kcal-track"
+            >
+              <ProgressBar.Fill
+                className="h-full rounded-pill"
+                data-testid="nb-kcal-fill"
+              />
+            </ProgressBar.Track>
+          </ProgressBar>
+        ) : (
+          <div className="flex-1" />
+        )}
+
+        <Button
+          className={`${INLINE_LINK} shrink-0 type-eyebrow`}
+          data-testid="nb-macros-toggle"
+          onPress={onToggleMacros}
+          size="sm"
+          variant="ghost"
+        >
+          {showMacros ? 'Hide macros' : 'Show macros'}
+        </Button>
+      </div>
+
+      {showMacros ? (
+        <div
+          className="grid grid-cols-1 gap-4 border-t border-border pt-3 sm:grid-cols-3"
+          data-testid="nb-macro-grid"
+        >
+          <MacroMeter
+            label="Protein"
+            target={targets.protein_g}
+            testIds
+            value={totals.protein_g}
+          />
+          <MacroMeter
+            label="Carbs"
+            target={targets.carbs_g}
+            value={totals.carbs_g}
+          />
+          <MacroMeter
+            label="Fat"
+            target={targets.fat_g}
+            value={totals.fat_g}
+          />
+        </div>
+      ) : null}
     </Card>
   );
 }

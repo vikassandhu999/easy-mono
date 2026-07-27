@@ -25,8 +25,8 @@ export function PlanAddToClient({plan}: Props) {
         id: plan.id,
         body: {client_id: client.id},
       });
-      // tag:false — reflect the assignment in the cached detail. Assign may
-      // return a copy (new id) — only patch when it's the same plan. meals /
+      // Reflect the assignment in the cached detail. Assign may return a copy
+      // (new id) — only patch when it's the same plan. meals /
       // days / weekday_assignments are optional on the assign response — keep
       // the hydrated ones from the detail fetch rather than wiping them.
       if (result.data.id === plan.id) {

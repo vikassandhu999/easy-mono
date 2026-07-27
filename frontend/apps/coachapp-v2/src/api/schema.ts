@@ -2059,9 +2059,7 @@ export interface components {
     };
     /** NutritionDayMealResponse */
     NutritionDayMealResponse: {
-      data?: {
-        [key: string]: unknown;
-      };
+      data: components['schemas']['NutritionDayMeal'];
     };
     /** NutritionPlanDayUpdateRequest */
     NutritionPlanDayUpdateRequest: {
@@ -2592,7 +2590,10 @@ export interface components {
     /** NutritionWeekdayAssignmentResponse */
     NutritionWeekdayAssignmentResponse: {
       data?: {
-        [key: string]: unknown;
+        /** @enum {string} */
+        day_of_week: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+        /** Format: uuid */
+        nutrition_plan_day_id: string;
       };
     };
     /** NutritionPlanResponse */
@@ -2724,6 +2725,18 @@ export interface components {
       id: string;
       /** @enum {string} */
       type: 'form_submission';
+    };
+    /** NutritionDayMeal */
+    NutritionDayMeal: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      meal_slot: 'breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack';
+      /** Format: uuid */
+      nutrition_meal_id: string;
+      /** Format: uuid */
+      nutrition_plan_day_id?: string;
+      position: number;
     };
     /** NutritionSwitchOptionRequest */
     NutritionSwitchOptionRequest: {
@@ -3667,16 +3680,17 @@ export interface components {
       count: number;
       data: components['schemas']['Recipe'][];
     };
+    /** NutritionPlanDay */
+    NutritionPlanDay: {
+      day_meals?: components['schemas']['NutritionDayMeal'][];
+      /** Format: uuid */
+      id: string;
+      name: string;
+      position: number;
+    };
     /** NutritionPlanDayResponse */
     NutritionPlanDayResponse: {
-      data?: {
-        day_meals?: {
-          [key: string]: unknown;
-        }[];
-        id?: string;
-        name?: string;
-        position?: number;
-      };
+      data: components['schemas']['NutritionPlanDay'];
     };
     /**
      * TrainerAcceptInviteVerifyRequest
@@ -4613,9 +4627,7 @@ export interface components {
       client_id?: string | null;
       /** Format: uuid */
       creator_id?: string | null;
-      days?: {
-        [key: string]: unknown;
-      }[];
+      days?: components['schemas']['NutritionPlanDay'][];
       description: string | null;
       /** Format: date */
       end_date: string | null;
@@ -4639,8 +4651,9 @@ export interface components {
       target_protein_g?: number | null;
       /** Format: date-time */
       updated_at: string;
+      /** @description Weekday name -> nutrition plan day id */
       weekday_assignments?: {
-        [key: string]: unknown;
+        [key: string]: string;
       };
     };
     /**

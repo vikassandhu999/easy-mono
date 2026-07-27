@@ -23,8 +23,8 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
   const duplicatePlan = useDuplicateNutritionPlanMutation();
   const deletePlan = useDeleteNutritionPlanMutation();
 
-  // Generated endpoints are tag:false — optimistically patch the cached detail
-  // so the dropdown flips Archive<->Restore immediately, roll back on failure.
+  // Optimistically patch the cached detail so the dropdown flips
+  // Archive<->Restore immediately, roll back on failure.
   const setStatus = async (status: 'active' | 'archived') => {
     const patch = patchQueryData<{data: NutritionPlan}>(nutritionPlanKeys.detail(plan.id), (draft) => {
       draft.data.status = status;

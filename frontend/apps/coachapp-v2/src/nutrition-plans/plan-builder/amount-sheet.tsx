@@ -1,49 +1,27 @@
 /**
- * AmountSheet — keyboard-docked amount editor for nutrition meal items.
+ * AmountSheet — the amount editor for nutrition meal items, a `ResponsiveOverlay`
+ * (anchored popover on desktop, keyboard-docked sheet on mobile).
  *
- * Modes:
- *   CREATE — item is a freshly-picked Food or Recipe (no existingItem). Shows
- *            "Add to meal" button. Posts createMealItem on confirm.
- *   EDIT   — item is an existing HydratedMealItem. Autosaves on change with
- *            600ms debounce. Flushes pending save on close AND on unmount.
+ * Modes, derived from `existingItem`:
+ *   CREATE — a freshly-picked Food or Recipe; posts createMealItem on confirm.
+ *   EDIT   — an existing item; autosaves through a debounced coalescing queue,
+ *            and a pending edit is flushed when the overlay closes (unmount).
  *
- * Food flow: tap a serving size (sets weight_g = serving.weight_g × count) or
- *            type grams directly. If weight_g cannot be resolved the confirm is
- *            disabled.
- *
- * Recipe flow: enter servings count → resolves weight_g via
- *              first serving_size.weight_g if available, else sends amount/unit
- *              per the NutritionMealItemRequest shape.
- *
- * Live preview: computeMacrosFromSnapshot(food.macros per-100g, weight_g) on
- *               every keystroke — no refetch.
- *
- * Cache: optimistic insert/patch in getNutritionPlan(planId) +
- *        reconciling refetch after settle (meal.nutrition snapshots are
- *        server-computed). patch.undo() + toast.danger on failure.
- *
- * Flush pattern mirrors training set-sheet.tsx exactly:
- *   pendingPatchRef + saveTimerRef + flushPendingSave
- *   — flushed in Done handler AND in useEffect cleanup (unmount guard).
+ * Foods resolve `weight_g` from a serving-size tap (weight × count) or typed
+ * grams; recipes resolve via serving count. The macro preview is live: edit
+ * mode scales the stored nutrition snapshot linearly, create mode mirrors the
+ * backend's MacroCalc.
  */
 
 import {computeMacrosFromSnapshot} from '@easy/utils';
-import {Popover} from '@heroui/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
-import {nutritionPlanKeys} from '@/api/keys';
 import type {Food, Recipe} from '@/api/nutrition-foods';
-import {
-  type NutritionPlan,
-  useCreateMealItemMutation,
-  useGetNutritionPlanQuery,
-  useUpdateMealItemMutation,
-} from '@/api/nutrition-plans-list';
-import {patchQueryData} from '@/api/query-client';
-import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+import {useCreateMealItemMutation, useUpdateMealItemMutation} from '@/api/nutrition-plans-list';
+import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
+import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
+import {useNutritionPlanCommit} from './use-plan-commit';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -68,8 +46,11 @@ export interface AmountSheetProps {
   anchorEl?: HTMLElement | null;
 }
 
-/** The cached shape of `useGetNutritionPlanQuery` — every optimistic patch here targets it. */
-type NutritionPlanCache = {data: NutritionPlan};
+/** What an edit-mode save writes. Every schedule passes all three keys. */
+type ItemPatch = {weight_g?: number | null; amount?: number | null; unit?: string | null};
+
+/** Long enough that a typed amount isn't sent per keystroke. */
+const SAVE_DEBOUNCE_MS = 600;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -121,7 +102,7 @@ interface ContentProps {
 function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose, onDelete}: ContentProps) {
   const createMealItemMutation = useCreateMealItemMutation();
   const updateMealItemMutation = useUpdateMealItemMutation();
-  const {refetch} = useGetNutritionPlanQuery(planId);
+  const commit = useNutritionPlanCommit(planId);
   const isCreating = createMealItemMutation.isPending;
 
   const isEditMode = existingItem !== undefined;
@@ -297,91 +278,52 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
   // ── Save logic (edit mode) ───────────────────────────────────────────────
 
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingPatchRef = useRef<{weight_g?: number | null; amount?: number | null; unit?: string | null} | null>(null);
-
   const executeSave = useCallback(
-    async (patch: {weight_g?: number | null; amount?: number | null; unit?: string | null}) => {
+    (patch: ItemPatch) => {
       if (!existingItem) {
-        return;
+        return Promise.resolve(false);
       }
-
-      // Build the optimistic item
-      const optimisticItem: HydratedMealItem = {
-        ...existingItem,
-        ...patch,
-      };
-
-      // Optimistic write into getNutritionPlan cache
-      const cachePatch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
-        const meals = draft.data.meals ?? [];
-        for (const meal of meals) {
-          const target = meal.meal_items.find((mi) => mi.id === existingItem.id);
-          if (target) {
-            target.weight_g = optimisticItem.weight_g ?? null;
-            target.amount = optimisticItem.amount ?? null;
-            target.unit = optimisticItem.unit ?? null;
-            break;
+      return commit(
+        (draft) => {
+          for (const meal of draft.data.meals ?? []) {
+            const target = meal.meal_items.find((mi) => mi.id === existingItem.id);
+            if (target) {
+              Object.assign(target, patch);
+              break;
+            }
           }
+        },
+        () => updateMealItemMutation.mutateAsync({id: existingItem.id, body: patch}),
+        "Couldn't save amount",
+      );
+    },
+    [commit, existingItem, updateMealItemMutation],
+  );
+
+  // The queue serialises saves, and its send reads `pendingRef` — so what goes
+  // out is always the latest edit, never a snapshot a timer closed over.
+  const pendingRef = useRef<ItemPatch | null>(null);
+  const executeSaveRef = useRef(executeSave);
+  executeSaveRef.current = executeSave;
+  const queue = useMemo(
+    () =>
+      createCoalescingQueue(async () => {
+        const patch = pendingRef.current;
+        pendingRef.current = null;
+        if (patch) {
+          await executeSaveRef.current(patch);
         }
-      });
-
-      try {
-        await updateMealItemMutation.mutateAsync({
-          id: existingItem.id,
-          body: {
-            ...(patch.weight_g !== undefined && {weight_g: patch.weight_g}),
-            ...(patch.amount !== undefined && {amount: patch.amount}),
-            ...(patch.unit !== undefined && {unit: patch.unit}),
-          },
-        });
-        // Reconcile: server computes meal.nutrition snapshots
-        refetch().catch(() => undefined);
-      } catch (e) {
-        cachePatch.undo();
-        toastMutationError(e, "Couldn't save amount");
-      }
-    },
-    [existingItem, planId, updateMealItemMutation, refetch],
+      }),
+    [],
   );
 
-  const scheduleSave = useCallback(
-    (patch: {weight_g?: number | null; amount?: number | null; unit?: string | null}) => {
-      pendingPatchRef.current = patch;
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-      }
-      saveTimerRef.current = setTimeout(async () => {
-        saveTimerRef.current = null;
-        pendingPatchRef.current = null;
-        await executeSave(patch);
-      }, 600);
-    },
-    [executeSave],
-  );
+  const scheduleSave = (patch: ItemPatch) => {
+    pendingRef.current = patch;
+    queue.mark('save', SAVE_DEBOUNCE_MS);
+  };
 
-  // Flush any pending debounced save — call on Done press AND on unmount.
-  // Guards double-fire: nulls both refs once flushed.
-  const flushPendingSave = useCallback(async () => {
-    if (saveTimerRef.current !== null && pendingPatchRef.current !== null) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-      const patch = pendingPatchRef.current;
-      pendingPatchRef.current = null;
-      await executeSave(patch);
-    }
-  }, [executeSave]);
-
-  // Unmount flush — prevents last edit being dropped. Via ref so the cleanup
-  // runs ONLY on unmount; a [flushPendingSave] dep would fire mid-debounce
-  // whenever existingItem's identity changes on refetch.
-  const flushRef = useRef(flushPendingSave);
-  flushRef.current = flushPendingSave;
-  useEffect(() => {
-    return () => {
-      flushRef.current().catch(() => undefined);
-    };
-  }, []);
+  // Closing the overlay unmounts this content — flush the pending edit then.
+  useEffect(() => () => queue.flushPending(), [queue]);
 
   // ── Field change handlers (edit mode autosave) ────────────────────────────
 
@@ -463,10 +405,10 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
       }),
     };
 
-    // Optimistic insert — create a provisional item
-    const provisionalId = `provisional-${Date.now()}`;
-    const provisionalItem = {
-      id: provisionalId,
+    // Optimistic insert — the server assigns the real id and computes the
+    // nutrition snapshot; the commit's refetch reconciles.
+    const provisionalItem: HydratedMealItem = {
+      id: `provisional-${Date.now()}`,
       name: food?.name ?? recipe?.name ?? null,
       food_id: food?.id ?? null,
       recipe_id: recipe?.id ?? null,
@@ -478,214 +420,161 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
       updated_at: new Date().toISOString(),
     };
 
-    const cachePatch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
-      const meals = draft.data.meals ?? [];
-      const meal = meals.find((m) => m.id === mealId);
-      if (meal) {
-        meal.meal_items.push(provisionalItem);
-      }
-    });
-
-    try {
-      await createMealItemMutation.mutateAsync({
-        mealId,
-        body,
-      });
-      // Reconcile: server assigns real id + computes nutrition snapshot
-      refetch().catch(() => undefined);
+    const ok = await commit(
+      (draft) => {
+        draft.data.meals?.find((m) => m.id === mealId)?.meal_items.push(provisionalItem);
+      },
+      () => createMealItemMutation.mutateAsync({mealId, body}),
+      "Couldn't add item",
+    );
+    if (ok) {
       onClose();
-    } catch (e) {
-      cachePatch.undo();
-      toastMutationError(e, "Couldn't add item");
     }
-  }, [
-    food,
-    recipe,
-    resolvedWeightG,
-    servingCount,
-    activeServingIdx,
-    planId,
-    mealId,
-    createMealItemMutation,
-    refetch,
-    onClose,
-  ]);
+  }, [food, recipe, resolvedWeightG, servingCount, activeServingIdx, mealId, commit, createMealItemMutation, onClose]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const itemName =
-    food?.name ??
-    recipe?.name ??
-    existingItem?.name ??
-    existingItem?.food?.name ??
-    existingItem?.recipe?.name ??
-    'Item';
   const servingSizes = food?.serving_sizes ?? recipe?.serving_sizes ?? [];
 
   // For food mode: weight_g must resolve to enable confirm
   const canConfirm = recipe ? Number.parseFloat(servingCount) > 0 : resolvedWeightG !== null && resolvedWeightG > 0;
 
   return (
-    <div className="w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
-        <span className="type-body font-semibold text-foreground truncate pr-2">{itemName}</span>
-        <button
-          className="shrink-0 type-body font-semibold text-accent hover:text-accent/80 transition-colors"
-          onClick={() => {
-            flushPendingSave()
-              .then(onClose)
-              .catch(() => undefined);
-          }}
-          type="button"
-        >
-          {/* Create mode has an explicit "Add to meal" confirm below — the
-              header action there only dismisses, so label it honestly. */}
-          {isEditMode ? 'Done' : 'Cancel'}
-        </button>
-      </div>
-
-      <div className="px-4 pb-4 space-y-3">
-        {/* ── Recipe mode: servings input ── */}
-        {isRecipeMode ? (
-          <div>
-            <SectionHeading title="Servings" />
-            <div className="rounded-chip border border-accent/40 bg-accent/5 px-3 pb-2 pt-1.5 text-center">
-              <input
-                className="w-full bg-transparent text-center type-metric font-semibold text-foreground outline-none"
-                inputMode="decimal"
-                onChange={(e) => handleServingCountChange(e.target.value)}
-                placeholder="1"
-                type="text"
-                value={servingCount}
-              />
-            </div>
+    <div className="w-full space-y-3">
+      {/* ── Recipe mode: servings input ── */}
+      {isRecipeMode ? (
+        <div>
+          <SectionHeading title="Servings" />
+          <div className="rounded-chip border border-accent/40 bg-accent/5 px-3 pb-2 pt-1.5 text-center">
+            <input
+              className="w-full bg-transparent text-center type-metric font-semibold text-foreground outline-none"
+              inputMode="decimal"
+              onChange={(e) => handleServingCountChange(e.target.value)}
+              placeholder="1"
+              type="text"
+              value={servingCount}
+            />
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
-        {/* ── Food mode: serving-size chips ── */}
-        {isFoodMode && servingSizes.length > 0 ? (
-          <div>
-            <SectionHeading title="Serving size" />
-            <div className="flex flex-wrap gap-1.5">
-              {servingSizes.map((serving, idx) => (
-                <button
-                  className={[
-                    'inline-flex  items-center rounded-chip border px-3 py-2 type-eyebrow font-medium transition-colors',
-                    activeServingIdx === idx
-                      ? 'border-accent bg-accent/10 text-accent'
-                      : 'border-border text-muted hover:border-default-hover hover:text-foreground',
-                  ].join(' ')}
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={idx}
-                  onClick={() => handleServingTap(idx)}
-                  type="button"
-                >
-                  {serving.amount != null ? `${serving.amount} ${serving.unit}` : serving.unit}
-                  {serving.weight_g != null ? ` (${serving.weight_g}g)` : ''}
-                </button>
-              ))}
-            </div>
-            {activeServingIdx !== null ? (
-              <div className="mt-2">
-                <SectionHeading title="Count" />
-                <div className="rounded-chip border border-border bg-background px-3 pb-2 pt-1.5 text-center">
-                  <input
-                    className="w-full bg-transparent text-center type-heading font-semibold text-foreground outline-none"
-                    inputMode="decimal"
-                    onChange={(e) => handleServingCountChange(e.target.value)}
-                    placeholder="1"
-                    type="text"
-                    value={servingCount}
-                  />
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {/* ── Food mode: grams direct input ── */}
-        {isFoodMode ? (
-          <div>
-            {/* "Or" only makes sense when serving chips render above */}
-            <SectionHeading title={servingSizes.length > 0 ? 'Or enter grams' : 'Grams'} />
-            <div
-              className={[
-                'rounded-chip border px-3 pb-2 pt-1.5 text-center transition-colors',
-                gramsInput !== '' ? 'border-accent/40 bg-accent/5' : 'border-border bg-background',
-              ].join(' ')}
-            >
-              <input
-                className="w-full bg-transparent text-center type-metric font-semibold text-foreground outline-none"
-                inputMode="decimal"
-                onChange={(e) => handleGramsChange(e.target.value)}
-                placeholder="—"
-                type="text"
-                value={gramsInput}
-              />
-              <div className="mt-0.5 type-eyebrow text-muted">g</div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* ── Live macro preview ── */}
-        {macroPreview ? (
-          <div className="flex items-center justify-between rounded-chip border border-border bg-surface-secondary/40 px-3 py-2">
-            <div>
-              {resolvedWeightG != null ? (
-                <div className="type-eyebrow text-muted">resolves to {fmt(resolvedWeightG)}g →</div>
-              ) : null}
-              <div className="type-body font-bold text-foreground">{macroPreview.kcal}</div>
-            </div>
-            <div className="type-eyebrow text-accent">{macroPreview.macros}</div>
-          </div>
-        ) : (
-          <div className="rounded-chip border border-border bg-surface-secondary px-3 py-2 text-center type-eyebrow text-muted">
-            {isFoodMode ? 'Select a serving or enter grams to preview macros' : 'Enter servings to preview macros'}
-          </div>
-        )}
-
-        {/* ── Create mode: confirm button ── */}
-        {!isEditMode ? (
-          <button
-            className={[
-              'w-full rounded-panel py-3 type-body font-semibold transition-colors',
-              canConfirm && !isCreating
-                ? 'bg-accent text-accent-foreground hover:bg-accent-hover'
-                : 'cursor-not-allowed bg-surface-secondary text-muted',
-            ].join(' ')}
-            disabled={!canConfirm || isCreating}
-            onClick={canConfirm && !isCreating ? handleCreate : undefined}
-            type="button"
-          >
-            {isCreating ? 'Adding to meal' : 'Add to meal'}
-          </button>
-        ) : null}
-
-        {/* ── Edit mode footer: autosave hint + remove action ── */}
-        {isEditMode ? (
-          <div className="flex items-center justify-between pt-0.5">
-            <span className="type-eyebrow text-muted">Changes save automatically</span>
-            {onDelete ? (
+      {/* ── Food mode: serving-size chips ── */}
+      {isFoodMode && servingSizes.length > 0 ? (
+        <div>
+          <SectionHeading title="Serving size" />
+          <div className="flex flex-wrap gap-1.5">
+            {servingSizes.map((serving, idx) => (
               <button
-                className="type-eyebrow font-medium text-danger-soft-foreground transition-colors hover:text-danger-soft-foreground/80"
-                onClick={() => {
-                  // Cancel any pending debounced save — the item is being removed.
-                  if (saveTimerRef.current) {
-                    clearTimeout(saveTimerRef.current);
-                    saveTimerRef.current = null;
-                    pendingPatchRef.current = null;
-                  }
-                  onDelete();
-                }}
+                className={[
+                  'inline-flex  items-center rounded-chip border px-3 py-2 type-eyebrow font-medium transition-colors',
+                  activeServingIdx === idx
+                    ? 'border-accent bg-accent/10 text-accent'
+                    : 'border-border text-muted hover:border-default-hover hover:text-foreground',
+                ].join(' ')}
+                key={idx}
+                onClick={() => handleServingTap(idx)}
                 type="button"
               >
-                Remove from meal
+                {serving.amount != null ? `${serving.amount} ${serving.unit}` : serving.unit}
+                {serving.weight_g != null ? ` (${serving.weight_g}g)` : ''}
               </button>
-            ) : null}
+            ))}
           </div>
-        ) : null}
-      </div>
+          {activeServingIdx !== null ? (
+            <div className="mt-2">
+              <SectionHeading title="Count" />
+              <div className="rounded-chip border border-border bg-background px-3 pb-2 pt-1.5 text-center">
+                <input
+                  className="w-full bg-transparent text-center type-heading font-semibold text-foreground outline-none"
+                  inputMode="decimal"
+                  onChange={(e) => handleServingCountChange(e.target.value)}
+                  placeholder="1"
+                  type="text"
+                  value={servingCount}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* ── Food mode: grams direct input ── */}
+      {isFoodMode ? (
+        <div>
+          {/* "Or" only makes sense when serving chips render above */}
+          <SectionHeading title={servingSizes.length > 0 ? 'Or enter grams' : 'Grams'} />
+          <div
+            className={[
+              'rounded-chip border px-3 pb-2 pt-1.5 text-center transition-colors',
+              gramsInput !== '' ? 'border-accent/40 bg-accent/5' : 'border-border bg-background',
+            ].join(' ')}
+          >
+            <input
+              className="w-full bg-transparent text-center type-metric font-semibold text-foreground outline-none"
+              inputMode="decimal"
+              onChange={(e) => handleGramsChange(e.target.value)}
+              placeholder="—"
+              type="text"
+              value={gramsInput}
+            />
+            <div className="mt-0.5 type-eyebrow text-muted">g</div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Live macro preview ── */}
+      {macroPreview ? (
+        <div className="flex items-center justify-between rounded-chip border border-border bg-surface-secondary/40 px-3 py-2">
+          <div>
+            {resolvedWeightG != null ? (
+              <div className="type-eyebrow text-muted">resolves to {fmt(resolvedWeightG)}g →</div>
+            ) : null}
+            <div className="type-body font-bold text-foreground">{macroPreview.kcal}</div>
+          </div>
+          <div className="type-eyebrow text-accent">{macroPreview.macros}</div>
+        </div>
+      ) : (
+        <div className="rounded-chip border border-border bg-surface-secondary px-3 py-2 text-center type-eyebrow text-muted">
+          {isFoodMode ? 'Select a serving or enter grams to preview macros' : 'Enter servings to preview macros'}
+        </div>
+      )}
+
+      {/* ── Create mode: confirm button ── */}
+      {!isEditMode ? (
+        <button
+          className={[
+            'w-full rounded-panel py-3 type-body font-semibold transition-colors',
+            canConfirm && !isCreating
+              ? 'bg-accent text-accent-foreground hover:bg-accent-hover'
+              : 'cursor-not-allowed bg-surface-secondary text-muted',
+          ].join(' ')}
+          disabled={!canConfirm || isCreating}
+          onClick={canConfirm && !isCreating ? handleCreate : undefined}
+          type="button"
+        >
+          {isCreating ? 'Adding to meal' : 'Add to meal'}
+        </button>
+      ) : null}
+
+      {/* ── Edit mode footer: autosave hint + remove action ── */}
+      {isEditMode ? (
+        <div className="flex items-center justify-between pt-0.5">
+          <span className="type-eyebrow text-muted">Changes save automatically</span>
+          {onDelete ? (
+            <button
+              className="type-eyebrow font-medium text-danger-soft-foreground transition-colors hover:text-danger-soft-foreground/80"
+              onClick={() => {
+                // Drop any pending debounced save — the item is being removed.
+                pendingRef.current = null;
+                onDelete();
+              }}
+              type="button"
+            >
+              Remove from meal
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -696,60 +585,35 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
 export function AmountSheet(props: AmountSheetProps) {
   const {open, onClose, existingItem, planId, mealId, onDelete, anchorEl} = props;
-  const isDesktop = useIsDesktop();
 
-  // Stable ref object pointing at the anchor — react-aria's Popover reads
-  // `triggerRef` on Content (same wiring as SetSheet).
+  // Stable ref object pointing at the anchor — the desktop popover reads it.
   const triggerRef = useRef<HTMLElement | null>(null);
   triggerRef.current = anchorEl ?? null;
 
-  // Resolve food/recipe from props.
-  // In edit mode, existingItem.food/recipe are legacy-typed (HydratedMealItem
-  // imports from @/api/foods|recipes) but structurally compatible for the fields
-  // we access here (name, serving_sizes). The macro preview in edit mode uses
-  // existingItem.nutrition (linear scaling) and never reads food.calories_per_100g,
-  // so the cast is safe.
-  const food = (props.food ?? (existingItem?.food as unknown as Food) ?? null) as Food | null;
-  const recipe = (props.recipe ?? (existingItem?.recipe as unknown as Recipe) ?? null) as Recipe | null;
-
-  const content = open ? (
-    <AmountSheetContent
-      existingItem={existingItem}
-      food={food}
-      mealId={mealId}
-      onClose={onClose}
-      onDelete={onDelete}
-      planId={planId}
-      recipe={recipe}
-    />
-  ) : null;
-
-  if (isDesktop && anchorEl) {
-    return (
-      <Popover
-        isOpen={open}
-        onOpenChange={(v) => {
-          if (!v) {
-            onClose();
-          }
-        }}
-      >
-        <Popover.Content
-          className="w-96 p-0"
-          triggerRef={triggerRef}
-        >
-          <Popover.Dialog className="max-h-[70vh] overflow-y-auto px-4 py-3 outline-none">{content}</Popover.Dialog>
-        </Popover.Content>
-      </Popover>
-    );
-  }
+  const food = props.food ?? existingItem?.food ?? null;
+  const recipe = props.recipe ?? existingItem?.recipe ?? null;
 
   return (
-    <KeyboardSheet
-      onClose={onClose}
-      open={open}
+    <ResponsiveOverlay
+      isOpen={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          onClose();
+        }
+      }}
+      title={food?.name ?? recipe?.name ?? existingItem?.name ?? 'Item'}
+      triggerRef={triggerRef}
+      width="w-96"
     >
-      {content}
-    </KeyboardSheet>
+      <AmountSheetContent
+        existingItem={existingItem}
+        food={food}
+        mealId={mealId}
+        onClose={onClose}
+        onDelete={onDelete}
+        planId={planId}
+        recipe={recipe}
+      />
+    </ResponsiveOverlay>
   );
 }

@@ -15,26 +15,16 @@
  * Data model note: the "meal" is a plan-level entity and the day holds an
  * ordered slot option per meal, so this component takes both — `meal` for the
  * content and `optionId` for the day assignment it is rendered under. Swaps are
- * the non-default options in the same slot.
- *
- * Cache: rename/delete → optimistic updateQueryData('getNutritionPlan', {id: planId}, …)
- *        + refetch for server-recomputed nutrition snapshots; patch.undo() + toast on failure.
+ * the non-default options in the same slot. Writes go through
+ * `useNutritionPlanCommit`.
  */
 import {Button, Chip, Disclosure, Dropdown, Label, Separator} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {ArrowLeftRight, Info, MoreHorizontal, TrashIcon, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {toastMutationError} from '@/@components/mutation-toast';
 import {AS_ICON_BUTTON, AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
-import {nutritionPlanKeys} from '@/api/keys';
-import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plans-list';
-import {
-  useDeleteMealItemMutation,
-  useDeleteMealMutation,
-  useGetNutritionPlanQuery,
-  useUpdateMealMutation,
-} from '@/api/nutrition-plans-list';
-import {patchQueryData} from '@/api/query-client';
+import type {NutritionMeal} from '@/api/nutrition-plans-list';
+import {useDeleteMealItemMutation, useDeleteMealMutation, useUpdateMealMutation} from '@/api/nutrition-plans-list';
 import {INLINE_LINK, TAG} from '@/builder-kit/ui';
 import {AmountSheet} from './amount-sheet';
 import type {FoodOrRecipe} from './food-recipe-picker-sheet';
@@ -44,6 +34,7 @@ import {MealItemRow} from './meal-item-row';
 import type {MealPaletteOption} from './meal-palette';
 import {AddSwapControl} from './meal-palette';
 import {MealSlotControl} from './meal-slot-control';
+import {useNutritionPlanCommit} from './use-plan-commit';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -78,9 +69,6 @@ interface MealCardProps {
   triggerTestId?: string;
 }
 
-/** The cached shape of `useGetNutritionPlanQuery` — every optimistic patch here targets it. */
-type NutritionPlanCache = {data: NutritionPlan};
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -114,7 +102,7 @@ export function MealCard({
   const updateMealMutation = useUpdateMealMutation();
   const deleteMealMutation = useDeleteMealMutation();
   const deleteMealItemMutation = useDeleteMealItemMutation();
-  const {refetch} = useGetNutritionPlanQuery(planId);
+  const commit = useNutritionPlanCommit(planId);
 
   // Inline rename state
   const [editingName, setEditingName] = useState(Boolean(autoRename));
@@ -157,24 +145,20 @@ export function MealCard({
       return;
     }
     setEditingName(false);
-    const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
-      const m = draft.data.meals?.find((x) => x.id === meal.id);
-      if (m) {
-        m.name = trimmed;
-      }
-    });
-    try {
-      await updateMealMutation.mutateAsync({
-        id: meal.id,
-        body: {name: trimmed},
-      });
-      refetch().catch(() => undefined);
-    } catch (e) {
-      patch.undo();
+    const ok = await commit(
+      (draft) => {
+        const m = draft.data.meals?.find((x) => x.id === meal.id);
+        if (m) {
+          m.name = trimmed;
+        }
+      },
+      () => updateMealMutation.mutateAsync({id: meal.id, body: {name: trimmed}}),
+      "Couldn't save changes",
+    );
+    if (!ok) {
       setNameValue(meal.name);
-      toastMutationError(e, "Couldn't save changes");
     }
-  }, [nameValue, meal.id, meal.name, planId, updateMealMutation, refetch]);
+  }, [commit, nameValue, meal.id, meal.name, updateMealMutation]);
 
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -192,60 +176,47 @@ export function MealCard({
   // Delete meal (from the whole plan — kept alongside "Remove from this day")
   // ---------------------------------------------------------------------------
 
-  const handleDelete = useCallback(async () => {
-    const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
-      const idx = draft.data.meals?.findIndex((x) => x.id === meal.id) ?? -1;
-      if (idx !== -1) {
-        draft.data.meals?.splice(idx, 1);
-      }
-    });
-    // The backend cascades day_meals with the meal (FK on_delete: :delete_all)
-    // — mirror that in the days cache, or a slot keeps pointing at an option
-    // whose meal no longer exists.
-    const dayMealsPatch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
-      for (const day of draft.data.days ?? []) {
-        const dayMeals = (day as {day_meals?: {nutrition_meal_id?: string}[]}).day_meals;
-        if (!dayMeals) {
-          continue;
-        }
-        const remaining = dayMeals.filter((dm) => dm.nutrition_meal_id !== meal.id);
-        (day as {day_meals?: unknown}).day_meals = remaining;
-      }
-    });
-    try {
-      await deleteMealMutation.mutateAsync(meal.id);
-      refetch().catch(() => undefined);
-    } catch (e) {
-      patch.undo();
-      dayMealsPatch.undo();
-      toastMutationError(e, "Couldn't delete meal");
-    }
-  }, [meal.id, planId, deleteMealMutation, refetch]);
+  const handleDelete = useCallback(
+    () =>
+      commit(
+        (draft) => {
+          const idx = draft.data.meals?.findIndex((x) => x.id === meal.id) ?? -1;
+          if (idx !== -1) {
+            draft.data.meals?.splice(idx, 1);
+          }
+          // The backend cascades day_meals with the meal (FK on_delete:
+          // :delete_all) — mirror that, or a slot keeps pointing at an option
+          // whose meal no longer exists.
+          for (const day of draft.data.days ?? []) {
+            if (day.day_meals) {
+              day.day_meals = day.day_meals.filter((dm) => dm.nutrition_meal_id !== meal.id);
+            }
+          }
+        },
+        () => deleteMealMutation.mutateAsync(meal.id),
+        "Couldn't delete meal",
+      ),
+    [commit, meal.id, deleteMealMutation],
+  );
 
   // ---------------------------------------------------------------------------
   // Delete meal item
   // ---------------------------------------------------------------------------
 
   const handleDeleteItem = useCallback(
-    async (itemId: string) => {
-      const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
-        const m = draft.data.meals?.find((x) => x.id === meal.id);
-        if (m) {
-          const idx = m.meal_items.findIndex((i) => i.id === itemId);
-          if (idx !== -1) {
+    (itemId: string) =>
+      commit(
+        (draft) => {
+          const m = draft.data.meals?.find((x) => x.id === meal.id);
+          const idx = m?.meal_items.findIndex((i) => i.id === itemId) ?? -1;
+          if (m && idx !== -1) {
             m.meal_items.splice(idx, 1);
           }
-        }
-      });
-      try {
-        await deleteMealItemMutation.mutateAsync(itemId);
-        refetch().catch(() => undefined);
-      } catch (e) {
-        patch.undo();
-        toastMutationError(e, "Couldn't remove item");
-      }
-    },
-    [meal.id, planId, deleteMealItemMutation, refetch],
+        },
+        () => deleteMealItemMutation.mutateAsync(itemId),
+        "Couldn't remove item",
+      ),
+    [commit, meal.id, deleteMealItemMutation],
   );
 
   // ---------------------------------------------------------------------------

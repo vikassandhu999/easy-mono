@@ -26,6 +26,8 @@ export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type NutritionPlanRequest = components['schemas']['NutritionPlanRequest'];
 export type NutritionMeal = components['schemas']['NutritionMeal'];
 export type NutritionMealItem = components['schemas']['NutritionMealItem'];
+export type NutritionPlanDay = components['schemas']['NutritionPlanDay'];
+export type NutritionDayMeal = components['schemas']['NutritionDayMeal'];
 export type MealLog = components['schemas']['MealLog'];
 
 type NutritionPlanListResponse = components['schemas']['NutritionPlanListResponse'];

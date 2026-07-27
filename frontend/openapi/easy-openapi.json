@@ -227,14 +227,15 @@
         "x-validate": null
       },
       "NutritionDayMealResponse": {
+        "additionalProperties": false,
         "properties": {
           "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "$ref": "#/components/schemas/NutritionDayMeal"
           }
         },
+        "required": [
+          "data"
+        ],
         "title": "NutritionDayMealResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayMealResponse",
@@ -2394,7 +2395,32 @@
       "NutritionWeekdayAssignmentResponse": {
         "properties": {
           "data": {
-            "additionalProperties": true,
+            "properties": {
+              "day_of_week": {
+                "enum": [
+                  "monday",
+                  "tuesday",
+                  "wednesday",
+                  "thursday",
+                  "friday",
+                  "saturday",
+                  "sunday"
+                ],
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "nutrition_plan_day_id": {
+                "format": "uuid",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "required": [
+              "day_of_week",
+              "nutrition_plan_day_id"
+            ],
             "type": "object",
             "x-struct": null,
             "x-validate": null
@@ -2904,6 +2930,56 @@
         "title": "ChatMessageEmbedRequest",
         "type": "object",
         "x-struct": null,
+        "x-validate": null
+      },
+      "NutritionDayMeal": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "meal_slot": {
+            "enum": [
+              "breakfast",
+              "morning_snack",
+              "lunch",
+              "afternoon_snack",
+              "dinner",
+              "evening_snack"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrition_meal_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "nutrition_plan_day_id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "meal_slot",
+          "position",
+          "nutrition_meal_id"
+        ],
+        "title": "NutritionDayMeal",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionDayMeal",
         "x-validate": null
       },
       "NutritionSwitchOptionRequest": {
@@ -6202,42 +6278,53 @@
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.RecipeListResponse",
         "x-validate": null
       },
-      "NutritionPlanDayResponse": {
+      "NutritionPlanDay": {
         "properties": {
-          "data": {
-            "properties": {
-              "day_meals": {
-                "items": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "x-struct": null,
-                  "x-validate": null
-                },
-                "type": "array",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "id": {
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "name": {
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
-              },
-              "position": {
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
-              }
+          "day_meals": {
+            "items": {
+              "$ref": "#/components/schemas/NutritionDayMeal"
             },
-            "type": "object",
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "position": {
+            "type": "integer",
             "x-struct": null,
             "x-validate": null
           }
         },
+        "required": [
+          "id",
+          "name",
+          "position"
+        ],
+        "title": "NutritionPlanDay",
+        "type": "object",
+        "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanDay",
+        "x-validate": null
+      },
+      "NutritionPlanDayResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NutritionPlanDay"
+          }
+        },
+        "required": [
+          "data"
+        ],
         "title": "NutritionPlanDayResponse",
         "type": "object",
         "x-struct": "Elixir.EasyWeb.OpenApi.Schemas.NutritionPlanDayResponse",
@@ -9721,10 +9808,7 @@
           },
           "days": {
             "items": {
-              "additionalProperties": true,
-              "type": "object",
-              "x-struct": null,
-              "x-validate": null
+              "$ref": "#/components/schemas/NutritionPlanDay"
             },
             "type": "array",
             "x-struct": null,
@@ -9838,7 +9922,13 @@
             "x-validate": null
           },
           "weekday_assignments": {
-            "additionalProperties": true,
+            "additionalProperties": {
+              "format": "uuid",
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            },
+            "description": "Weekday name -> nutrition plan day id",
             "type": "object",
             "x-struct": null,
             "x-validate": null

@@ -1,11 +1,17 @@
 /**
- * AmountSheet — the amount editor for nutrition meal items, a `ResponsiveOverlay`
- * (anchored popover on desktop, keyboard-docked sheet on mobile).
+ * AmountSheet — the amount editor for nutrition meal items.
  *
  * Modes, derived from `existingItem`:
  *   CREATE — a freshly-picked Food or Recipe; posts createMealItem on confirm.
  *   EDIT   — an existing item; autosaves through a debounced coalescing queue,
  *            and a pending edit is flushed when the overlay closes (unmount).
+ *
+ * Surfaces: create mode on desktop is a CENTERED MODAL — the picker hands over
+ * a queue of items and each confirm inserts a row, so an anchored popover would
+ * chase the shifting layout (and re-anchor per item); the modal holds still
+ * while only its content swaps. Edit mode keeps the anchored popover (its
+ * anchor is the tapped row, which doesn't move), and mobile keeps the keyboard
+ * sheet — both via `ResponsiveOverlay`.
  *
  * Foods resolve `weight_g` from a serving-size tap (weight × count) or typed
  * grams; recipes resolve via serving count. The macro preview is live: edit
@@ -14,8 +20,10 @@
  */
 
 import {computeMacrosFromSnapshot} from '@easy/utils';
+import {Modal} from '@heroui/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import SectionHeading from '@/@components/section-heading';
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Food, Recipe} from '@/api/nutrition-foods';
 import {useCreateMealItemMutation, useUpdateMealItemMutation} from '@/api/nutrition-plans-list';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
@@ -585,6 +593,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 
 export function AmountSheet(props: AmountSheetProps) {
   const {open, onClose, existingItem, planId, mealId, onDelete, anchorEl} = props;
+  const isDesktop = useIsDesktop();
 
   // Stable ref object pointing at the anchor — the desktop popover reads it.
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -592,6 +601,47 @@ export function AmountSheet(props: AmountSheetProps) {
 
   const food = props.food ?? existingItem?.food ?? null;
   const recipe = props.recipe ?? existingItem?.recipe ?? null;
+  const title = food?.name ?? recipe?.name ?? existingItem?.name ?? 'Item';
+
+  const content = (
+    <AmountSheetContent
+      // A new item resets the fields; the surface around them stays mounted.
+      key={existingItem?.id ?? food?.id ?? recipe?.id ?? 'item'}
+      existingItem={existingItem}
+      food={food}
+      mealId={mealId}
+      onClose={onClose}
+      onDelete={onDelete}
+      planId={planId}
+      recipe={recipe}
+    />
+  );
+
+  if (isDesktop && !existingItem) {
+    return (
+      <Modal.Backdrop
+        isOpen={open}
+        onOpenChange={(next) => {
+          if (!next) {
+            onClose();
+          }
+        }}
+      >
+        <Modal.Container
+          placement="center"
+          size="sm"
+        >
+          <Modal.Dialog>
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading>{title}</Modal.Heading>
+            </Modal.Header>
+            <Modal.Body>{open ? content : null}</Modal.Body>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    );
+  }
 
   return (
     <ResponsiveOverlay
@@ -601,19 +651,11 @@ export function AmountSheet(props: AmountSheetProps) {
           onClose();
         }
       }}
-      title={food?.name ?? recipe?.name ?? existingItem?.name ?? 'Item'}
+      title={title}
       triggerRef={triggerRef}
       width="w-96"
     >
-      <AmountSheetContent
-        existingItem={existingItem}
-        food={food}
-        mealId={mealId}
-        onClose={onClose}
-        onDelete={onDelete}
-        planId={planId}
-        recipe={recipe}
-      />
+      {content}
     </ResponsiveOverlay>
   );
 }

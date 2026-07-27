@@ -535,13 +535,12 @@ export function MealCard({
         open={pickerOpen}
       />
 
-      {/* Amount sheet — create mode (sequenced per picked item). key by the
-          current item so each queued food/recipe remounts with fresh state
-          instead of carrying the previous item's grams/serving selection. */}
+      {/* Amount sheet — create mode, sequenced per picked item. The surface
+          stays mounted across the queue (no key here — AmountSheet resets its
+          own fields per item), so the modal/sheet doesn't blink between items. */}
       <AmountSheet
         anchorEl={addItemButtonRef.current}
         food={amountFood}
-        key={currentAmountItem?.id}
         mealId={meal.id}
         onClose={handleAmountClose}
         open={currentAmountItem !== null}

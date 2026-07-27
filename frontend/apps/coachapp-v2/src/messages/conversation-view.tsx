@@ -1,12 +1,12 @@
-import {Button, Spinner, TextArea, Typography, toast} from '@heroui/react';
-import {useQueryClient} from '@tanstack/react-query';
-import {ArrowLeft, Send} from 'lucide-react';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
+import { Button, Spinner, TextArea, Typography, toast } from '@heroui/react';
+import { useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Send } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
-import {ErrorState} from '@/@components/error-state';
+import { ErrorState } from '@/@components/error-state';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
-import {useChannelEvent} from '@/@hooks/use-channel-event';
+import { useChannelEvent } from '@/@hooks/use-channel-event';
 import {
   appendMessage,
   type ChatMessage,
@@ -15,19 +15,19 @@ import {
   useCreateCoachConversationMessageMutation,
   useMarkCoachConversationReadMutation,
 } from '@/api/conversations';
-import {conversationKeys} from '@/api/keys';
-import {getApiErrorMessage} from '@/api/shared';
+import { conversationKeys } from '@/api/keys';
+import { getApiErrorMessage } from '@/api/shared';
 import AttachmentComposer from '@/messages/attachment-composer';
 import MessageAttachments from '@/messages/message-attachments';
 import MessageEmbed from '@/messages/message-embed';
-import type {AttachmentComposerState} from '@/messages/use-attachment-composer';
+import type { AttachmentComposerState } from '@/messages/use-attachment-composer';
 
 function formatDay(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
+  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
 
 function MessageBubble({
@@ -46,9 +46,8 @@ function MessageBubble({
   return (
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[80%] rounded-card px-3 py-2 ${
-          own ? 'rounded-br-sm bg-accent text-accent-foreground' : 'rounded-bl-sm bg-surface-secondary'
-        }`}
+        className={`max-w-[80%] rounded-card px-3 py-2 ${own ? 'rounded-br-sm bg-accent text-accent-foreground' : 'rounded-bl-sm bg-surface-secondary'
+          }`}
       >
         <div className="grid gap-2">
           <MessageAttachments
@@ -58,7 +57,7 @@ function MessageBubble({
             urls={urls}
           />
           {message.embed ? <MessageEmbed embed={message.embed} /> : null}
-          {message.body ? <p className="whitespace-pre-wrap break-words type-body">{message.body}</p> : null}
+          {message.body ? <p className="whitespace-pre-wrap wrap-break-word type-body">{message.body}</p> : null}
         </div>
         <p className={`mt-0.5 text-right type-eyebrow ${own ? 'text-accent-foreground/70' : 'text-muted'}`}>
           {formatTime(message.inserted_at)}
@@ -95,7 +94,7 @@ export default function ConversationView({
   const [sendLocked, setSendLocked] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} =
+  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading } =
     useConversationMessagesInfiniteQuery(conversationId);
   const sendMessageMutation = useCreateCoachConversationMessageMutation();
   const markReadMutation = useMarkCoachConversationReadMutation();
@@ -117,12 +116,12 @@ export default function ConversationView({
     'message_new',
     (payload) => {
       appendMessage(conversationId, payload as ChatMessage);
-      qc.invalidateQueries({queryKey: conversationKeys.lists()});
+      qc.invalidateQueries({ queryKey: conversationKeys.lists() });
     },
     // Refetch anything missed while the socket was down (fires on every rejoin).
     () => {
-      qc.invalidateQueries({queryKey: conversationKeys.messages(conversationId)});
-      qc.invalidateQueries({queryKey: conversationKeys.lists()});
+      qc.invalidateQueries({ queryKey: conversationKeys.messages(conversationId) });
+      qc.invalidateQueries({ queryKey: conversationKeys.lists() });
     },
   );
 
@@ -135,7 +134,7 @@ export default function ConversationView({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the message-list tail changes
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({behavior: 'instant', block: 'end'});
+    bottomRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' });
   }, [lastMessageId]);
 
   const handleSend = async () => {
@@ -154,14 +153,14 @@ export default function ConversationView({
       const result = await sendMessageMutation.mutateAsync({
         id: conversationId,
         body: {
-          ...(trimmed && {body: trimmed}),
+          ...(trimmed && { body: trimmed }),
           attachment_ids: attachmentState.attachmentIds,
-          ...(embed && {embed}),
+          ...(embed && { embed }),
         },
       });
       appendMessage(conversationId, result.data);
       setBody('');
-      setAttachmentState({attachmentIds: [], busy: false, failed: false});
+      setAttachmentState({ attachmentIds: [], busy: false, failed: false });
       setEmbed(null);
       setComposerKey((current) => current + 1);
       if (submittedEmbed) {

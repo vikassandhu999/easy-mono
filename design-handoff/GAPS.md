@@ -72,6 +72,15 @@ on finding the fields in `generated.ts`. Building supersets in particular is a
 design task (grouping, numbering, and how a superset reads on the client's
 screen), not a matter of surfacing a column.
 
+## 20. NB palette rows follow the app overlay-spacing system, not the mockup (2026-07-27)
+The add-meal/add-swap palette rows, labels and create-row now use the app-wide
+overlay spacing system (RM-141: 16px gutter, vendor ListBox row register, one
+text edge at 24px) instead of the mockup's per-panel insets (px-3/min-h-11/
+rounded-control). Deliberate user ruling: app-wide consistency wins over
+per-screen values. The `nb-reuse-*` / `create-meal-*` pairs were removed from
+`manifests/NB.json` accordingly — do not re-add them without re-opening the
+ruling.
+
 ## Still open — genuinely stop and ask
 (none — everything listed here has since been designed and built: Client
 Detail per `CLIENT-DETAIL.md`, messages/inbox, check-in review, landing-page

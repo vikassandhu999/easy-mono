@@ -8,10 +8,10 @@
  * Phase 2 — amounts: once the list is finalised, one `AmountSheetContent`
  *           per picked item ("2 of 4"), collected locally. Nothing is posted
  *           until the last item's confirm, which commits everything together:
- *           one optimistic patch, the creates in parallel, one reconciling
- *           refetch. The surface never moves or remounts between phases.
+ *           one optimistic patch, the creates (sequential — see `finish`),
+ *           one reconciling refetch. The surface never moves between phases.
  */
-import {Modal, toast} from '@heroui/react';
+import {Button, CloseButton, Modal, toast} from '@heroui/react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
@@ -40,6 +40,9 @@ interface AddItemsFlowProps {
   onClose: () => void;
 }
 
+/** The amounts phase renders as a form with this id; the dock submits it. */
+const AMOUNT_FORM_ID = 'add-items-amount-form';
+
 export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItemsFlowProps) {
   const isDesktop = useIsDesktop();
   const {refetch} = useGetNutritionPlanQuery(planId);
@@ -48,6 +51,7 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
   // --- Phase: null = picking; an array = setting amounts for these items ---
   const [picked, setPicked] = useState<FoodOrRecipe[] | null>(null);
   const [index, setIndex] = useState(0);
+  const [canConfirmAmount, setCanConfirmAmount] = useState(false);
   const drafts = useRef<MealItemDraft[]>([]);
 
   // --- Phase 1 state ---
@@ -124,9 +128,11 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
   }, [reset, onClose]);
 
   // --- The single commit ---------------------------------------------------
-  // ponytail: N parallel POSTs behind one confirm; a real batch endpoint if
-  // atomicity ever matters. Optimistic rows land at once; a partial failure
-  // undoes them, toasts, and the refetch reconciles whatever the server took.
+  // The POSTs run SEQUENTIALLY: the backend assigns `position` as max+1 under
+  // a unique (meal_id, position) index, so parallel creates collide and lose
+  // rows. One confirm, one refetch either way; a batch endpoint is the upgrade
+  // if a single atomic write ever matters. Optimistic rows land at once; any
+  // failure undoes them, toasts, and the refetch reconciles what the server took.
   const finish = useCallback(
     (finalDrafts: MealItemDraft[], finalItems: FoodOrRecipe[]) => {
       const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (cache) => {
@@ -148,20 +154,25 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
           });
         }
       });
-      Promise.allSettled(finalDrafts.map((body) => createMealItemMutation.mutateAsync({mealId, body})))
-        .then((results) => {
-          const failed = results.filter((result) => result.status === 'rejected').length;
-          if (failed > 0) {
-            patch.undo();
-            toast.danger(
-              failed === finalDrafts.length
-                ? "Couldn't add items"
-                : `Couldn't add ${failed} of ${finalDrafts.length} items`,
-            );
+      (async () => {
+        let failed = 0;
+        for (const body of finalDrafts) {
+          try {
+            await createMealItemMutation.mutateAsync({mealId, body});
+          } catch {
+            failed += 1;
           }
-          refetch().catch(() => undefined);
-        })
-        .catch(() => undefined);
+        }
+        if (failed > 0) {
+          patch.undo();
+          toast.danger(
+            failed === finalDrafts.length
+              ? "Couldn't add items"
+              : `Couldn't add ${failed} of ${finalDrafts.length} items`,
+          );
+        }
+        refetch().catch(() => undefined);
+      })().catch(() => undefined);
     },
     [createMealItemMutation, mealId, planId, refetch],
   );
@@ -176,8 +187,9 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
   const body = current ? (
     <AmountSheetContent
       key={current.id}
-      confirmLabel={index + 1 < total ? 'Next' : `Add ${total} item${total === 1 ? '' : 's'}`}
       food={isRecipe(current) ? null : current}
+      formId={AMOUNT_FORM_ID}
+      onCanConfirmChange={setCanConfirmAmount}
       onCollect={(draft) => {
         drafts.current[index] = draft;
         if (index + 1 < total) {
@@ -221,27 +233,37 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
     />
   );
 
-  const pickDock = !current ? (
-    <button
-      className={[
-        'w-full rounded-panel py-3 type-body font-semibold transition-colors',
-        selected.size > 0
-          ? 'bg-accent text-accent-foreground hover:bg-accent-hover'
-          : 'cursor-not-allowed bg-surface-secondary text-muted',
-      ].join(' ')}
-      disabled={selected.size === 0}
-      onClick={() => {
+  // One dock, both phases — the same primary button recipe as every picker dock.
+  const dock = current ? (
+    <Button
+      className="w-full font-semibold"
+      isDisabled={!canConfirmAmount}
+      onPress={() => {
+        (document.getElementById(AMOUNT_FORM_ID) as HTMLFormElement | null)?.requestSubmit();
+      }}
+      variant="primary"
+    >
+      {index + 1 < total ? 'Next' : `Add ${total} item${total === 1 ? '' : 's'}`}
+    </Button>
+  ) : (
+    <Button
+      className="w-full font-semibold"
+      isDisabled={selected.size === 0}
+      onPress={() => {
         setPicked([...selected.values()]);
         setIndex(0);
         drafts.current = [];
       }}
-      type="button"
+      variant="primary"
     >
       {selected.size === 0 ? 'Select items' : `Set amounts — ${selected.size} item${selected.size === 1 ? '' : 's'}`}
-    </button>
-  ) : null;
+    </Button>
+  );
 
   if (isDesktop) {
+    // The dialog's own p-6 is released so the modal shares the three-band
+    // anatomy of every picker surface (title row · px-4 scroll body · dock) —
+    // SearchPickerBody's sticky search assumes the px-4 gutter.
     return (
       <Modal.Backdrop
         isOpen={open}
@@ -255,15 +277,24 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
           placement="center"
           size="sm"
         >
-          <Modal.Dialog>
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>{title}</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body className="p-0">
-              {open ? <div className={current ? 'px-6 pb-6' : 'h-[60vh] overflow-y-auto px-6 pb-2'}>{body}</div> : null}
-            </Modal.Body>
-            {open && pickDock ? <div className="border-t border-separator px-6 py-3">{pickDock}</div> : null}
+          <Modal.Dialog
+            aria-label={title}
+            className="overflow-hidden p-0"
+          >
+            {open ? (
+              <>
+                <div className="flex items-center justify-between px-4 pb-1 pt-3">
+                  <span className="type-body font-semibold text-foreground">{title}</span>
+                  <CloseButton
+                    aria-label="Close"
+                    className="-mr-2 text-muted"
+                    onPress={close}
+                  />
+                </div>
+                <div className={current ? 'px-4 pb-3' : 'h-[60vh] overflow-y-auto px-4 pb-2'}>{body}</div>
+                <div className="border-t border-separator bg-background px-4 py-3">{dock}</div>
+              </>
+            ) : null}
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>
@@ -272,7 +303,7 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
 
   return (
     <KeyboardSheet
-      footer={pickDock ?? undefined}
+      footer={open ? dock : undefined}
       onClose={close}
       open={open}
       title={title}

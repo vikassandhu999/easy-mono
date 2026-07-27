@@ -26,9 +26,8 @@ import {AS_ICON_BUTTON, AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 import type {NutritionMeal} from '@/api/nutrition-plans-list';
 import {useDeleteMealItemMutation, useDeleteMealMutation, useUpdateMealMutation} from '@/api/nutrition-plans-list';
 import {INLINE_LINK, TAG} from '@/builder-kit/ui';
+import {AddItemsFlow} from './add-items-flow';
 import {AmountSheet} from './amount-sheet';
-import type {FoodOrRecipe} from './food-recipe-picker-sheet';
-import {FoodRecipePickerSheet, isRecipe} from './food-recipe-picker-sheet';
 import type {HydratedMealItem} from './meal-item-row';
 import {MealItemRow} from './meal-item-row';
 import type {MealPaletteOption} from './meal-palette';
@@ -116,15 +115,9 @@ export function MealCard({
     }
   }, [meal.name, editingName]);
 
-  // Picker + amount-sheet state — desktop popovers anchor to the "+ Add food
-  // or recipe" button (picker + create-mode amounts) or the tapped item row.
+  // Add-items flow (picker + amounts in one surface) and the edit-mode
+  // amount sheet, which anchors to the tapped item row on desktop.
   const [pickerOpen, setPickerOpen] = useState(false);
-  const addItemButtonRef = useRef<HTMLButtonElement | null>(null);
-  // Queue of picked food/recipe items waiting to be amount-edited in sequence
-  const [amountQueue, setAmountQueue] = useState<FoodOrRecipe[]>([]);
-  const [currentAmountItem, setCurrentAmountItem] = useState<FoodOrRecipe | null>(null);
-
-  // Edit-mode amount sheet state
   const [editingItem, setEditingItem] = useState<HydratedMealItem | null>(null);
   const itemRowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -220,31 +213,6 @@ export function MealCard({
   );
 
   // ---------------------------------------------------------------------------
-  // Add foods/recipes: picker → amount sheet sequence
-  // ---------------------------------------------------------------------------
-
-  const handlePick = useCallback((items: FoodOrRecipe[]) => {
-    if (items.length === 0) {
-      return;
-    }
-    const [first, ...rest] = items;
-    setCurrentAmountItem(first ?? null);
-    setAmountQueue(rest);
-  }, []);
-
-  const handleAmountClose = useCallback(() => {
-    // Advance to the next queued item, or clear
-    if (amountQueue.length > 0) {
-      const [next, ...rest] = amountQueue;
-      setCurrentAmountItem(next ?? null);
-      setAmountQueue(rest);
-    } else {
-      setCurrentAmountItem(null);
-      setAmountQueue([]);
-    }
-  }, [amountQueue]);
-
-  // ---------------------------------------------------------------------------
   // Derived
   // ---------------------------------------------------------------------------
 
@@ -255,10 +223,6 @@ export function MealCard({
   const items = meal.meal_items as HydratedMealItem[];
   const kcal = kcalLabel(meal.nutrition);
   const isShared = assignmentCount >= 2;
-
-  // Resolve food/recipe for the AmountSheet create-mode
-  const amountFood = currentAmountItem && !isRecipe(currentAmountItem) ? currentAmountItem : undefined;
-  const amountRecipe = currentAmountItem && isRecipe(currentAmountItem) ? currentAmountItem : undefined;
 
   // ---------------------------------------------------------------------------
   // Render
@@ -458,7 +422,6 @@ export function MealCard({
               className={`${INLINE_LINK} type-eyebrow`}
               data-testid={openId('nb-add-food')}
               onPress={() => setPickerOpen(true)}
-              ref={addItemButtonRef}
               size="sm"
               variant="ghost"
             >
@@ -526,33 +489,19 @@ export function MealCard({
         </div>
       </Disclosure.Content>
 
-      {/* Food/recipe picker sheet */}
-      <FoodRecipePickerSheet
-        anchorEl={addItemButtonRef.current}
+      {/* Add foods/recipes — pick the list, then amounts, one commit. */}
+      <AddItemsFlow
+        mealId={meal.id}
         mealName={meal.name}
         onClose={() => setPickerOpen(false)}
-        onPick={handlePick}
         open={pickerOpen}
-      />
-
-      {/* Amount sheet — create mode, sequenced per picked item. The surface
-          stays mounted across the queue (no key here — AmountSheet resets its
-          own fields per item), so the modal/sheet doesn't blink between items. */}
-      <AmountSheet
-        anchorEl={addItemButtonRef.current}
-        food={amountFood}
-        mealId={meal.id}
-        onClose={handleAmountClose}
-        open={currentAmountItem !== null}
         planId={planId}
-        recipe={amountRecipe}
       />
 
       {/* Amount sheet — edit mode */}
       <AmountSheet
         anchorEl={editingItem ? itemRowRefs.current[editingItem.id] : null}
         existingItem={editingItem ?? undefined}
-        mealId={meal.id}
         onClose={() => setEditingItem(null)}
         onDelete={
           editingItem

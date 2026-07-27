@@ -1,31 +1,28 @@
 /**
- * AmountSheet — the amount editor for nutrition meal items.
+ * The amount editor for nutrition meal items.
  *
- * Modes, derived from `existingItem`:
- *   CREATE — a freshly-picked Food or Recipe; posts createMealItem on confirm.
- *   EDIT   — an existing item; autosaves through a debounced coalescing queue,
- *            and a pending edit is flushed when the overlay closes (unmount).
+ * `AmountSheetContent` is the field block (serving chips · count · grams ·
+ * live macro preview) in two modes derived from `existingItem`:
+ *   COLLECT — a freshly-picked Food or Recipe; confirm hands the built
+ *             request body up via `onCollect`. The add-items flow owns the
+ *             actual POSTs and commits every picked item as one operation.
+ *   EDIT    — an existing item; autosaves through a debounced coalescing
+ *             queue, and a pending edit is flushed on unmount.
  *
- * Surfaces: create mode on desktop is a CENTERED MODAL — the picker hands over
- * a queue of items and each confirm inserts a row, so an anchored popover would
- * chase the shifting layout (and re-anchor per item); the modal holds still
- * while only its content swaps. Edit mode keeps the anchored popover (its
- * anchor is the tapped row, which doesn't move), and mobile keeps the keyboard
- * sheet — both via `ResponsiveOverlay`.
+ * `AmountSheet` is the edit-mode surface: an anchored popover on desktop (its
+ * anchor is the tapped row, which doesn't move) and a keyboard sheet on mobile.
  *
  * Foods resolve `weight_g` from a serving-size tap (weight × count) or typed
  * grams; recipes resolve via serving count. The macro preview is live: edit
- * mode scales the stored nutrition snapshot linearly, create mode mirrors the
+ * mode scales the stored nutrition snapshot linearly, collect mode mirrors the
  * backend's MacroCalc.
  */
 
 import {computeMacrosFromSnapshot} from '@easy/utils';
-import {Modal} from '@heroui/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import SectionHeading from '@/@components/section-heading';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Food, Recipe} from '@/api/nutrition-foods';
-import {useCreateMealItemMutation, useUpdateMealItemMutation} from '@/api/nutrition-plans-list';
+import {useUpdateMealItemMutation} from '@/api/nutrition-plans-list';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
@@ -35,22 +32,23 @@ import {useNutritionPlanCommit} from './use-plan-commit';
 // Types
 // ---------------------------------------------------------------------------
 
-/**
- * Mode is derived at runtime from `existingItem`:
- *   CREATE — `food` or `recipe` passed (from the picker), no `existingItem`.
- *   EDIT   — `existingItem` passed (autosaves; `onDelete` surfaces removal).
- */
+/** A createMealItem request body, built by collect mode. */
+export type MealItemDraft = {
+  food_id?: string;
+  recipe_id?: string;
+  weight_g?: number;
+  amount?: number;
+  unit?: string;
+};
+
 export interface AmountSheetProps {
-  food?: Food;
-  recipe?: Recipe;
   existingItem?: HydratedMealItem;
   planId: string;
-  mealId: string;
   open: boolean;
   onClose: () => void;
-  /** Remove the item from the meal (edit mode only). Surfaces the delete the row no longer renders. */
+  /** Remove the item from the meal. Surfaces the delete the row no longer renders. */
   onDelete?: () => void;
-  /** Desktop popover anchor — the meal-item row (edit) or "+ Add…" button (create). */
+  /** Desktop popover anchor — the tapped meal-item row. */
   anchorEl?: HTMLElement | null;
 }
 
@@ -97,21 +95,29 @@ function resolveServingWeight(weightG: number | null, amount: number | null, cou
 // AmountSheetContent — shared inner editor
 // ---------------------------------------------------------------------------
 
-interface ContentProps {
+export interface AmountSheetContentProps {
   food: Food | null;
   recipe: Recipe | null;
   existingItem?: HydratedMealItem;
   planId: string;
-  mealId: string;
-  onClose: () => void;
   onDelete?: () => void;
+  /** Collect mode: confirm hands the built request body up (no POST here). */
+  onCollect?: (draft: MealItemDraft) => void;
+  /** Collect-mode confirm label — "Next" mid-queue, "Add N items" at the end. */
+  confirmLabel?: string;
 }
 
-function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose, onDelete}: ContentProps) {
-  const createMealItemMutation = useCreateMealItemMutation();
+export function AmountSheetContent({
+  food,
+  recipe,
+  existingItem,
+  planId,
+  onDelete,
+  onCollect,
+  confirmLabel,
+}: AmountSheetContentProps) {
   const updateMealItemMutation = useUpdateMealItemMutation();
   const commit = useNutritionPlanCommit(planId);
-  const isCreating = createMealItemMutation.isPending;
 
   const isEditMode = existingItem !== undefined;
   // Mode from ids as well as hydrated objects — edit-mode items may carry only
@@ -388,9 +394,9 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     }
   };
 
-  // ── Create mode confirm ───────────────────────────────────────────────────
+  // ── Collect mode confirm ──────────────────────────────────────────────────
 
-  const handleCreate = useCallback(async () => {
+  const handleCollect = useCallback(() => {
     if (resolvedWeightG == null && !recipe) {
       return; // guard: weight_g must be resolved for foods
     }
@@ -398,7 +404,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     const count = Number.parseFloat(servingCount);
     const activeServing = food && activeServingIdx !== null ? food.serving_sizes[activeServingIdx] : null;
 
-    const body = {
+    onCollect?.({
       ...(food && {food_id: food.id}),
       ...(recipe && {recipe_id: recipe.id}),
       ...(resolvedWeightG != null && {weight_g: resolvedWeightG}),
@@ -411,34 +417,8 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         amount: Number.isNaN(count) ? 1 : count,
         unit: activeServing.unit,
       }),
-    };
-
-    // Optimistic insert — the server assigns the real id and computes the
-    // nutrition snapshot; the commit's refetch reconciles.
-    const provisionalItem: HydratedMealItem = {
-      id: `provisional-${Date.now()}`,
-      name: food?.name ?? recipe?.name ?? null,
-      food_id: food?.id ?? null,
-      recipe_id: recipe?.id ?? null,
-      weight_g: resolvedWeightG ?? null,
-      amount: body.amount ?? null,
-      unit: body.unit ?? null,
-      position: 9999,
-      inserted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const ok = await commit(
-      (draft) => {
-        draft.data.meals?.find((m) => m.id === mealId)?.meal_items.push(provisionalItem);
-      },
-      () => createMealItemMutation.mutateAsync({mealId, body}),
-      "Couldn't add item",
-    );
-    if (ok) {
-      onClose();
-    }
-  }, [food, recipe, resolvedWeightG, servingCount, activeServingIdx, mealId, commit, createMealItemMutation, onClose]);
+    });
+  }, [food, recipe, resolvedWeightG, servingCount, activeServingIdx, onCollect]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -547,20 +527,20 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         </div>
       )}
 
-      {/* ── Create mode: confirm button ── */}
+      {/* ── Collect mode: confirm button ── */}
       {!isEditMode ? (
         <button
           className={[
             'w-full rounded-panel py-3 type-body font-semibold transition-colors',
-            canConfirm && !isCreating
+            canConfirm
               ? 'bg-accent text-accent-foreground hover:bg-accent-hover'
               : 'cursor-not-allowed bg-surface-secondary text-muted',
           ].join(' ')}
-          disabled={!canConfirm || isCreating}
-          onClick={canConfirm && !isCreating ? handleCreate : undefined}
+          disabled={!canConfirm}
+          onClick={canConfirm ? handleCollect : undefined}
           type="button"
         >
-          {isCreating ? 'Adding to meal' : 'Add to meal'}
+          {confirmLabel ?? 'Add to meal'}
         </button>
       ) : null}
 
@@ -591,57 +571,13 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
 // AmountSheet — public component
 // ---------------------------------------------------------------------------
 
-export function AmountSheet(props: AmountSheetProps) {
-  const {open, onClose, existingItem, planId, mealId, onDelete, anchorEl} = props;
-  const isDesktop = useIsDesktop();
-
+export function AmountSheet({open, onClose, existingItem, planId, onDelete, anchorEl}: AmountSheetProps) {
   // Stable ref object pointing at the anchor — the desktop popover reads it.
   const triggerRef = useRef<HTMLElement | null>(null);
   triggerRef.current = anchorEl ?? null;
 
-  const food = props.food ?? existingItem?.food ?? null;
-  const recipe = props.recipe ?? existingItem?.recipe ?? null;
-  const title = food?.name ?? recipe?.name ?? existingItem?.name ?? 'Item';
-
-  const content = (
-    <AmountSheetContent
-      // A new item resets the fields; the surface around them stays mounted.
-      key={existingItem?.id ?? food?.id ?? recipe?.id ?? 'item'}
-      existingItem={existingItem}
-      food={food}
-      mealId={mealId}
-      onClose={onClose}
-      onDelete={onDelete}
-      planId={planId}
-      recipe={recipe}
-    />
-  );
-
-  if (isDesktop && !existingItem) {
-    return (
-      <Modal.Backdrop
-        isOpen={open}
-        onOpenChange={(next) => {
-          if (!next) {
-            onClose();
-          }
-        }}
-      >
-        <Modal.Container
-          placement="center"
-          size="sm"
-        >
-          <Modal.Dialog>
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>{title}</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>{open ? content : null}</Modal.Body>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    );
-  }
+  const food = existingItem?.food ?? null;
+  const recipe = existingItem?.recipe ?? null;
 
   return (
     <ResponsiveOverlay
@@ -651,11 +587,18 @@ export function AmountSheet(props: AmountSheetProps) {
           onClose();
         }
       }}
-      title={title}
+      title={existingItem?.name ?? food?.name ?? recipe?.name ?? 'Item'}
       triggerRef={triggerRef}
       width="w-96"
     >
-      {content}
+      <AmountSheetContent
+        key={existingItem?.id ?? 'item'}
+        existingItem={existingItem}
+        food={food}
+        onDelete={onDelete}
+        planId={planId}
+        recipe={recipe}
+      />
     </ResponsiveOverlay>
   );
 }

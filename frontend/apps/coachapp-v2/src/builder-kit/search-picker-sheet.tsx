@@ -98,9 +98,29 @@ export interface SearchPickerSheetProps<T> {
 // Component
 // ---------------------------------------------------------------------------
 
-export function SearchPickerSheet<T>({
-  open,
-  onClose,
+/** The scrollable search + filters + list block, shell-free — exported so a
+ *  flow that hosts the picker inside its own surface (e.g. the nutrition
+ *  add-items modal) can reuse it without forking. */
+export type SearchPickerBodyProps<T> = Pick<
+  SearchPickerSheetProps<T>,
+  | 'createLabel'
+  | 'filters'
+  | 'filtersLayout'
+  | 'hasMore'
+  | 'itemKey'
+  | 'items'
+  | 'loading'
+  | 'onCreateNoMatch'
+  | 'onLoadMore'
+  | 'onSearchChange'
+  | 'onToggleItem'
+  | 'renderItem'
+  | 'search'
+  | 'selectedKeys'
+  | 'title'
+>;
+
+export function SearchPickerBody<T>({
   title,
   search,
   onSearchChange,
@@ -111,23 +131,12 @@ export function SearchPickerSheet<T>({
   itemKey,
   selectedKeys,
   onToggleItem,
-  onConfirm,
-  confirmLabel,
   onCreateNoMatch,
   createLabel,
   loading = false,
   onLoadMore,
   hasMore = false,
-  anchorEl,
-  placement = 'right',
-}: SearchPickerSheetProps<T>) {
-  const isDesktop = useIsDesktop();
-
-  // Stable ref object pointing at the trigger element — react-aria's Popover
-  // reads `triggerRef` on Content (same wiring as SetSheet).
-  const triggerRef = useRef<HTMLElement | null>(null);
-  triggerRef.current = anchorEl ?? null;
-
+}: SearchPickerBodyProps<T>) {
   // Ref to the sentinel div at the bottom of the item list.
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   // Ref to the IntersectionObserver so we can clean it up.
@@ -171,31 +180,11 @@ export function SearchPickerSheet<T>({
     };
   }, [hasMore, loading, stableOnLoadMore]);
 
-  // ---------------------------------------------------------------------------
-  // Derived state
-  // ---------------------------------------------------------------------------
-
-  const selectedCount = selectedKeys.size;
   const showCreateRow = onCreateNoMatch !== undefined && search.trim().length > 0 && items.length === 0 && !loading;
 
-  // ---------------------------------------------------------------------------
-  // Render helpers
-  // ---------------------------------------------------------------------------
-
-  const dockButton = (
-    <Button
-      className="w-full font-semibold"
-      isDisabled={selectedCount === 0}
-      onPress={onConfirm}
-      variant="primary"
-    >
-      {confirmLabel(selectedCount)}
-    </Button>
-  );
-
-  // Body shared by both containers. The sticky search header relies on an
-  // overflow-y-auto ancestor with px-4 padding — both containers provide it.
-  const body = (
+  // The sticky search header relies on an overflow-y-auto ancestor with px-4
+  // padding — every host container provides it.
+  return (
     <>
       {/* Search + filters pinned to the top of the sheet's scroll area so they
            stay reachable as the item list scrolls. -mx-4/px-4 cancels the parent
@@ -309,6 +298,31 @@ export function SearchPickerSheet<T>({
       </div>
     </>
   );
+}
+
+export function SearchPickerSheet<T>(props: SearchPickerSheetProps<T>) {
+  const {open, onClose, title, selectedKeys, onConfirm, confirmLabel, anchorEl, placement = 'right'} = props;
+  const isDesktop = useIsDesktop();
+
+  // Stable ref object pointing at the trigger element — react-aria's Popover
+  // reads `triggerRef` on Content (same wiring as SetSheet).
+  const triggerRef = useRef<HTMLElement | null>(null);
+  triggerRef.current = anchorEl ?? null;
+
+  const selectedCount = selectedKeys.size;
+
+  const dockButton = (
+    <Button
+      className="w-full font-semibold"
+      isDisabled={selectedCount === 0}
+      onPress={onConfirm}
+      variant="primary"
+    >
+      {confirmLabel(selectedCount)}
+    </Button>
+  );
+
+  const body = <SearchPickerBody {...props} />;
 
   if (isDesktop && anchorEl) {
     return (

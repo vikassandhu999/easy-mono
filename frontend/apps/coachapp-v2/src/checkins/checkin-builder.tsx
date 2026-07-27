@@ -44,7 +44,8 @@ import {
   X,
 } from 'lucide-react';
 import {type ReactNode, useState} from 'react';
-import {FormActions, FormLayout} from '@/@components/form-fields';
+import {FormActions} from '@/@components/form-fields/form-actions';
+import {FormLayout} from '@/@components/form-fields/form-layout';
 import {Page} from '@/@components/page';
 import {
   type FormPurpose,

@@ -4,18 +4,19 @@ import {useDeferredValue, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import BrowseScreen from '@/@components/browse-screen';
+import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
+import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {
   type Client,
   type ClientStatus,
   type ClientSummary,
+  useClientsInfiniteQuery,
   useListAttentionClientsQuery,
   useListClientsQuery,
 } from '@/api/clients';
 
-import ClientEmptyState from './clients-list/client-empty-state';
 import ClientListItem from './clients-list/client-list-item';
-import useClientsSearch from './clients-list/use-clients-search';
 
 type FilterId = 'active' | 'all' | 'attention' | 'inactive' | 'invited';
 
@@ -58,12 +59,9 @@ export default function ListClients() {
   const isAttention = activeFilter === 'attention';
   const activeStatus = FILTER_OPTIONS.find((option) => option.id === activeFilter)?.status;
 
-  const list = useClientsSearch({
-    enabled: !isAttention,
-    search: deferredSearch,
-    sort,
-    status: activeStatus,
-  });
+  const list = useInfiniteItems(
+    useClientsInfiniteQuery({search: deferredSearch, sort, status: activeStatus}, {enabled: !isAttention}),
+  );
   // "Needs attention" is not a value of the list endpoint's `status` filter —
   // it has its own endpoint (the same one the dashboard uses), which is flat and
   // has no search param, so search composes client-side for that tab only.
@@ -77,7 +75,7 @@ export default function ListClients() {
     [attention.data, deferredSearch],
   );
 
-  const items: Client[] = isAttention ? attentionClients : list.clients;
+  const items: Client[] = isAttention ? attentionClients : list.items;
   const hasFilter = !!deferredSearch || activeFilter !== 'all';
   const clearFilters = () => {
     setSearch('');
@@ -103,8 +101,13 @@ export default function ListClients() {
           : 'Your coaching roster'
       }
       empty={
-        <ClientEmptyState
+        <ListEmptyState
+          createLabel="Invite Client"
+          createRoute={ROUTES.INVITE_CLIENT}
+          emptyDescription="Invite your first client to get started."
+          filterDescription="Try adjusting your search or filter to find what you're looking for."
           hasFilter={hasFilter}
+          nounPlural="clients"
           onClearFilters={clearFilters}
         />
       }

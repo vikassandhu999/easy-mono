@@ -4,7 +4,8 @@ import {Apple, ArrowDown, ArrowUp, X} from 'lucide-react';
 import {useEffect, useId, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormNumberField, FormTextField} from '@/@components/form-fields';
+import {FormNumberField} from '@/@components/form-fields/form-number-field';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 
 import type {Food} from '@/api/nutrition-foods';
 import {type ServingSize, toOptionalNumber} from '@/api/shared';

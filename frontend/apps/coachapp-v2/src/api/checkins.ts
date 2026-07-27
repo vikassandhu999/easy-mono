@@ -42,14 +42,6 @@ export const PURPOSE_LABELS: Record<FormPurpose, string> = {
 
 export const PURPOSES = Object.keys(PURPOSE_LABELS) as FormPurpose[];
 
-export const ASSIGNMENT_STATUS_LABELS: Record<string, string> = {
-  assigned: 'Assigned',
-  completed: 'Completed',
-  dismissed: 'Dismissed',
-  in_progress: 'In progress',
-  missed: 'Missed',
-};
-
 export type FormQuestionType =
   | 'boolean'
   | 'date'
@@ -269,23 +261,6 @@ export function useListCheckInSchedulesForClientQuery(clientId: string, options?
   });
 }
 
-export function useCreateCheckInScheduleMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({body, clientId}: {body: ClientProfileCheckInScheduleRequest; clientId: string}) =>
-      call(
-        client.POST('/v1/coach/clients/{client_id}/check-in-schedules', {
-          params: {path: {client_id: clientId}},
-          body,
-        }),
-      ) as Promise<ClientProfileCheckInScheduleResponse>,
-    onSuccess: (_data, {clientId}) => {
-      qc.invalidateQueries({queryKey: checkInKeys.schedules(clientId)});
-      qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
-    },
-  });
-}
-
 /**
  * Update only knows the schedule id, not its client, so refresh every cached
  * check-in query plus every form-assignment list (mirrors the old
@@ -306,17 +281,6 @@ export function useUpdateCheckInScheduleMutation() {
   });
 }
 
-export function useDeleteCheckInScheduleMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/check-in-schedules/{id}', {params: {path: {id}}})),
-    onSuccess: () => {
-      qc.invalidateQueries({queryKey: checkInKeys.all});
-      qc.invalidateQueries({queryKey: formAssignmentKeys.all});
-    },
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Form assignments
 // ---------------------------------------------------------------------------
@@ -328,31 +292,6 @@ export function useListClientFormAssignmentsForCoachQuery(clientId: string, opti
       call(
         client.GET('/v1/coach/clients/{client_id}/form-assignments', {params: {path: {client_id: clientId}}}),
       ) as Promise<ClientProfileFormAssignmentListResponse>,
-    enabled: options?.enabled ?? true,
-  });
-}
-
-/** Update only knows the assignment id, not its client, so refresh all assignment lists. */
-export function useUpdateFormAssignmentMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({body, id}: {body: ClientProfileFormAssignmentUpdateRequest; id: string}) =>
-      call(
-        client.PATCH('/v1/coach/form-assignments/{id}', {params: {path: {id}}, body}),
-      ) as Promise<ClientProfileFormAssignmentResponse>,
-    onSuccess: () => {
-      qc.invalidateQueries({queryKey: formAssignmentKeys.all});
-    },
-  });
-}
-
-export function useListFormSubmissionsQuery(assignmentId: string, options?: {enabled?: boolean}) {
-  return useQuery({
-    queryKey: formAssignmentKeys.submissions(assignmentId),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/form-assignments/{id}/submissions', {params: {path: {id: assignmentId}}}),
-      ) as Promise<ClientProfileFormSubmissionListResponse>,
     enabled: options?.enabled ?? true,
   });
 }

@@ -231,13 +231,6 @@ export function useAddNutritionSlotOptionMutation() {
   });
 }
 
-export function useMakeNutritionSlotOptionDefaultMutation() {
-  return useMutation({
-    mutationFn: (id: string) =>
-      call(client.POST('/v1/coach/nutrition-day-meals/{id}/make-default', {params: {path: {id}}})),
-  });
-}
-
 export function useRemoveNutritionSlotOptionMutation() {
   return useMutation({
     mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}})),

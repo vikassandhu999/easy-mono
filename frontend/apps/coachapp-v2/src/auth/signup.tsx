@@ -3,7 +3,8 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FieldRow, FormTextField} from '@/@components/form-fields';
+import {FieldRow} from '@/@components/form-fields/field-row';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 
 import {ROUTES} from '@/@config/routes';
 import {useSignupMutation} from '@/api/auth';

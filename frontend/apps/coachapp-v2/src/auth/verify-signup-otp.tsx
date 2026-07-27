@@ -3,7 +3,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-import {FormOtpField} from '@/@components/form-fields';
+import {FormOtpField} from '@/@components/form-fields/form-otp-field';
 
 import {ROUTES} from '@/@config/routes';
 import {useSendOtpMutation, useVerifyOtpMutation} from '@/api/auth';

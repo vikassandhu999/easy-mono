@@ -86,24 +86,6 @@ export type ClientUpdateRequest = {
   subscription_started_on?: null | string;
 };
 
-/**
- * Valid status transitions. Returns the set of statuses the coach can
- * transition to from the given current status.
- *
- *   pending  → (none) — only exits via accept-invite or revoke
- *   active   → inactive
- *   inactive → active
- *
- * Nothing can return to `pending` — once a Client has been linked to a User,
- * that link is permanent.
- */
-export function allowedStatusesFor(status: ClientStatus): AllowedUpdateStatus[] {
-  if (status === 'pending') {
-    return [];
-  }
-  return ['active', 'inactive'];
-}
-
 export type ClientSummary = {
   active: number;
   inactive: number;
@@ -175,37 +157,6 @@ export function useInviteClientMutation() {
     mutationFn: (body: ClientInviteRequest) =>
       call(client.POST('/v1/coach/clients/invite', {body})) as Promise<ApiResponse<Client>>,
     onSuccess: () => {
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
-      qc.invalidateQueries({queryKey: billingKeys.all});
-    },
-  });
-}
-
-export function useResendClientInviteMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) =>
-      call(client.POST('/v1/coach/clients/{id}/resend-invite', {params: {path: {id}}})) as Promise<ApiResponse<Client>>,
-    onSuccess: (_data, id) => {
-      qc.invalidateQueries({queryKey: clientKeys.detail(id)});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
-    },
-  });
-}
-
-/**
- * Revoke a pending invitation. Hard-deletes the Client row on 204. The
- * client's invite URL becomes invalid immediately.
- *
- * Returns 422 if the client is not pending — use updateClient with
- * status: 'inactive' instead for non-pending clients.
- */
-export function useRevokeInvitationMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/clients/{id}', {params: {path: {id}}})),
-    onSuccess: (_data, id) => {
-      qc.invalidateQueries({queryKey: clientKeys.detail(id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: billingKeys.all});
     },

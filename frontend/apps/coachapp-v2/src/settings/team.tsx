@@ -29,7 +29,8 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {ErrorState} from '@/@components/error-state';
-import {FormActions, FormTextField} from '@/@components/form-fields';
+import {FormActions} from '@/@components/form-fields/form-actions';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {useGetBillingQuery} from '@/api/billing';
 import {applyFormErrors, getApiErrorMessage} from '@/api/shared';

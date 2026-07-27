@@ -11,7 +11,6 @@ import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import type {Prospect} from '@/api/prospects';
 import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
-import {clientInitials, clientName} from '@/dashboard/lib/client-format';
 import {formatRelativeTime, formatSubscriptionEnd} from '@/dashboard/lib/date-format';
 
 type Tone = 'accent' | 'danger' | 'default' | 'warning';
@@ -60,8 +59,8 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
     items.push({
       ...item,
       id: client.id,
-      initials: clientInitials(client),
-      name: clientName(client),
+      initials: getInitials(client.first_name, client.last_name) || '?',
+      name: [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client',
       onOpen: clientPath(client),
     });
   };

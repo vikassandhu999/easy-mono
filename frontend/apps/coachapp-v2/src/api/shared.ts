@@ -1,25 +1,5 @@
 export type ApiResponse<T> = {data: T};
 
-/**
- * RTK Query `providesTags` for a list query: one tag per row plus a list-level
- * tag (default `LIST`, override for client-scoped / plan-scoped lists).
- */
-export const listTags = <T extends string>(
-  type: T,
-  result: {data: {id: string}[]} | undefined,
-  listId: string = 'LIST',
-) => (result ? [...result.data.map((entry) => ({type, id: entry.id})), {type, id: listId}] : [{type, id: listId}]);
-
-/** As `listTags`, for an `infiniteQuery` result (rows live under `pages`). */
-export const pageTags = <T extends string>(
-  type: T,
-  result: {pages: {data: {id: string}[]}[]} | undefined,
-  listId: string = 'LIST',
-) =>
-  result
-    ? [...result.pages.flatMap((page) => page.data.map((entry) => ({type, id: entry.id}))), {type, id: listId}]
-    : [{type, id: listId}];
-
 export function omitUndefined<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
 }
@@ -208,7 +188,6 @@ export const applyFormErrors = (
 };
 
 // Re-export shared nutrition utilities from @easy/utils
-export {type Macros, normalizeMacros} from '@easy/utils';
 
 export type ServingSize = {
   unit: string;

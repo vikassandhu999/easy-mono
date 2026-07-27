@@ -10,6 +10,7 @@ type Props = {
   filterDescription?: string;
   hasFilter: boolean;
   nounPlural: string;
+  onClearFilters?: () => void;
 };
 
 export default function ListEmptyState({
@@ -20,6 +21,7 @@ export default function ListEmptyState({
   filterDescription = "Try adjusting your search to find what you're looking for.",
   hasFilter,
   nounPlural,
+  onClearFilters,
 }: Props) {
   const navigate = useNavigate();
   const handleCreate = () => {
@@ -49,6 +51,16 @@ export default function ListEmptyState({
           >
             {filterDescription}
           </Typography>
+          {onClearFilters && (
+            <Button
+              className="mt-3"
+              onPress={onClearFilters}
+              size="sm"
+              variant="secondary"
+            >
+              Clear filters
+            </Button>
+          )}
         </>
       ) : (
         <>

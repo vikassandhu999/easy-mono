@@ -5,7 +5,7 @@ import {useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {z} from 'zod';
 
-import {FormOtpField} from '@/@components/form-fields';
+import {FormOtpField} from '@/@components/form-fields/form-otp-field';
 import {ROUTES} from '@/@config/routes';
 import {useTrainerAcceptInviteMutation, useTrainerAcceptInviteVerifyMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';

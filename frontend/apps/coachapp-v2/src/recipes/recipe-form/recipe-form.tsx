@@ -4,8 +4,12 @@ import {useCallback, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {FormActions} from '@/@components/form-fields/form-actions';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
+import {FormLayout} from '@/@components/form-fields/form-layout';
+import {FormNumberField} from '@/@components/form-fields/form-number-field';
+import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
 import type {

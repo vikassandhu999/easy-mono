@@ -4,7 +4,10 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
-import {FieldRow, FormActions, FormLayout, FormTextField} from '@/@components/form-fields';
+import {FieldRow} from '@/@components/form-fields/field-row';
+import {FormActions} from '@/@components/form-fields/form-actions';
+import {FormLayout} from '@/@components/form-fields/form-layout';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';

@@ -51,10 +51,7 @@ type TrainingWorkoutReorderRequest = components['schemas']['TrainingWorkoutReord
 type TrainingWorkoutExerciseArrayResponse = components['schemas']['TrainingWorkoutExerciseArrayResponse'];
 
 /**
- * General-purpose fetch for one training plan. `usePlanQuery` below is just
- * this under the builder's name — kept as a separate export because
- * non-builder screens (plan create/edit, the ⋯ menu) read and patch the same
- * entry without pulling in the rest of the builder's vocabulary.
+ * General-purpose fetch for one training plan.
  *
  * MUST key on `trainingPlanKeys.detail(id)` — every optimistic patch in this
  * file targets that exact key, so a different key here would silently split
@@ -69,10 +66,6 @@ export function useGetTrainingPlanQuery(planId: string, options?: {enabled?: boo
       ) as Promise<TrainingPlanResponse>,
     enabled: options?.enabled ?? true,
   });
-}
-
-export function usePlanQuery(planId: string) {
-  return useGetTrainingPlanQuery(planId);
 }
 
 /**

@@ -18,7 +18,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {usePlanQuery} from '@/api/training-plan-builder';
+import {useGetTrainingPlanQuery} from '@/api/training-plan-builder';
 
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
@@ -27,7 +27,7 @@ import {PlanBuilder} from './plan-builder';
 export default function TrainingPlanBuilderScreen() {
   const {id} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.TRAINING_PLANS);
-  const {data, isError, isLoading} = usePlanQuery(id ?? '');
+  const {data, isError, isLoading} = useGetTrainingPlanQuery(id ?? '');
 
   if (isLoading) {
     return (

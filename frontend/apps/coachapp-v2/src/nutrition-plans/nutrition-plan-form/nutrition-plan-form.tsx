@@ -2,15 +2,13 @@ import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {
-  FieldRow,
-  FormActions,
-  FormLayout,
-  FormNumberField,
-  FormTextAreaField,
-  FormTextField,
-} from '@/@components/form-fields';
+import {FieldRow} from '@/@components/form-fields/field-row';
+import {FormActions} from '@/@components/form-fields/form-actions';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
+import {FormLayout} from '@/@components/form-fields/form-layout';
+import {FormNumberField} from '@/@components/form-fields/form-number-field';
+import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 import type {NutritionPlan, NutritionPlanRequest} from '@/api/nutrition-plans-list';
 import {omitUndefined, toOptionalText} from '@/api/shared';
 

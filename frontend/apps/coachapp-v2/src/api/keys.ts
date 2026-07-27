@@ -10,7 +10,6 @@
  *   fooKeys.list(filters)  — one flat list entry
  *   fooKeys.infinite(f)    — one infinite list entry (separate from `list`:
  *                            the cached value is InfiniteData, not a page)
- *   fooKeys.details()      — every detail entry
  *   fooKeys.detail(id)     — one detail entry
  *
  * Old-tag mapping: `{type: 'Foo', id}` → fooKeys.detail(id);
@@ -24,13 +23,11 @@ const domain = <N extends string>(name: N) => ({
   lists: () => [name, 'list'] as const,
   list: (filters?: Filters) => [name, 'list', 'flat', filters ?? {}] as const,
   infinite: (filters?: Filters) => [name, 'list', 'infinite', filters ?? {}] as const,
-  details: () => [name, 'detail'] as const,
   detail: (id: string) => [name, 'detail', id] as const,
 });
 
 export const clientKeys = {
   ...domain('clients'),
-  summary: () => ['clients', 'summary'] as const,
   attention: () => ['clients', 'attention'] as const,
   weightEntries: (clientId: string) => [...clientKeys.detail(clientId), 'weight-entries'] as const,
 };
@@ -101,7 +98,6 @@ export const trainingPlanKeys = {
 };
 
 export const trainingSessionKeys = {
-  all: ['training-sessions'] as const,
   forClient: (clientId: string, filters?: Filters) => ['training-sessions', clientId, filters ?? {}] as const,
   detail: (clientId: string, id: string) => ['training-sessions', clientId, 'detail', id] as const,
 };
@@ -111,7 +107,6 @@ export const formTemplateKeys = domain('form-templates');
 export const formAssignmentKeys = {
   all: ['form-assignments'] as const,
   forClient: (clientId: string) => ['form-assignments', 'for-client', clientId] as const,
-  submissions: (assignmentId: string) => ['form-assignments', assignmentId, 'submissions'] as const,
 };
 
 export const checkInKeys = {
@@ -122,6 +117,5 @@ export const checkInKeys = {
 
 export const authKeys = {
   all: ['auth'] as const,
-  invitation: (token: string) => ['auth', 'invitation', token] as const,
   trainerInvitation: (token: string) => ['auth', 'trainer-invitation', token] as const,
 };

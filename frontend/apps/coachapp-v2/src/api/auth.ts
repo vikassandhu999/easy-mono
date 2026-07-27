@@ -4,8 +4,6 @@ import {call, client} from '@/api/client';
 import {authKeys, businessKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 
-export {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
-
 export type VerifyOtpRequest = {
   email: string;
   otp: string;

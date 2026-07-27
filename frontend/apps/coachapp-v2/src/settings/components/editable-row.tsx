@@ -9,7 +9,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {FormTextField} from '@/@components/form-fields';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 
 import {applyFormErrors} from '@/api/shared';
 

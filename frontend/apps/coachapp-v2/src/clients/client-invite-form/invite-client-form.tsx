@@ -3,14 +3,12 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {Send} from 'lucide-react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
-import {
-  FieldRow,
-  FormActions,
-  FormLayout,
-  FormSelectField,
-  FormTextAreaField,
-  FormTextField,
-} from '@/@components/form-fields';
+import {FieldRow} from '@/@components/form-fields/field-row';
+import {FormActions} from '@/@components/form-fields/form-actions';
+import {FormLayout} from '@/@components/form-fields/form-layout';
+import {FormSelectField} from '@/@components/form-fields/form-select-field';
+import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
+import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {useGetBillingQuery} from '@/api/billing';
 import type {ClientInviteRequest} from '@/api/clients';
 import {useGetCoachProfileQuery} from '@/api/profile';

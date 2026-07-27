@@ -2,13 +2,21 @@ import type {Key} from '@heroui/react';
 
 import {Button, SearchField, Separator, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {cn} from '@heroui/styles';
-import type {ReactNode} from 'react';
+import {type ReactNode, useSyncExternalStore} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
-import {useIsSm} from '@/@hooks/use-is-sm';
+
+/** Mirrors Tailwind's `sm` breakpoint for copy that changes with the rendered layout. */
+const SM_QUERY = '(min-width: 640px)';
+const subscribeSm = (onChange: () => void) => {
+  const mq = window.matchMedia(SM_QUERY);
+  mq.addEventListener('change', onChange);
+  return () => mq.removeEventListener('change', onChange);
+};
+const useIsSm = () => useSyncExternalStore(subscribeSm, () => window.matchMedia(SM_QUERY).matches);
 
 /**
  * A whole browse screen: header, toolbar, search, filter pills, list surface,

@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {type AttachmentDownload, useGetCoachAttachmentDownloadUrlsMutation} from '@/api/generated';
+import {type AttachmentDownload, useGetCoachAttachmentDownloadUrlsMutation} from '@/api/uploads';
 
 const BATCH_SIZE = 50;
 const REFRESH_BEFORE_MS = 60_000;
@@ -12,7 +12,7 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
   const failedIdsRef = useRef(new Set<string>());
   const [downloads, setDownloads] = useState<Record<string, AttachmentDownload>>({});
   const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
-  const [getDownloadUrls] = useGetCoachAttachmentDownloadUrlsMutation();
+  const getDownloadUrlsMutation = useGetCoachAttachmentDownloadUrlsMutation();
 
   activeIdsRef.current = new Set(uniqueIds);
 
@@ -35,7 +35,7 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
         });
         let response;
         try {
-          response = await getDownloadUrls({attachmentDownloadRequest: {attachment_ids: batch}}).unwrap();
+          response = await getDownloadUrlsMutation.mutateAsync({attachment_ids: batch});
         } catch (error) {
           setDownloads((current) => {
             const next = {...current};
@@ -66,7 +66,7 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
         throw firstError;
       }
     },
-    [getDownloadUrls],
+    [getDownloadUrlsMutation.mutateAsync],
   );
 
   useEffect(() => {

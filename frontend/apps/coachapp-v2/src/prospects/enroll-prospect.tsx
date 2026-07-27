@@ -21,8 +21,8 @@ function splitName(name: string): {first: string; last: string} {
 export default function EnrollProspect() {
   const {id = ''} = useParams();
   const navigate = useNavigate();
-  const {data, isError, isLoading} = useGetProspectQuery({id});
-  const [enroll, {isLoading: isEnrolling}] = useEnrollProspectMutation();
+  const {data, isError, isLoading} = useGetProspectQuery(id);
+  const enrollMutation = useEnrollProspectMutation();
 
   const prospect = data?.data;
   const goBack = () => navigate(ROUTES.PROSPECT_DETAIL.replace(':id', id));
@@ -42,15 +42,15 @@ export default function EnrollProspect() {
 
   const onSubmit = async (values: EnrollFormValues) => {
     try {
-      const result = await enroll({
+      const result = await enrollMutation.mutateAsync({
         id,
-        prospectEnrollRequest: {
+        body: {
           first_name: values.first_name.trim() || null,
           last_name: values.last_name.trim() || null,
           email: values.email.trim() || null,
           phone: values.phone.trim() || null,
         },
-      }).unwrap();
+      });
       toast.success(result.data.already_enrolled ? 'Already enrolled' : 'Client invited');
       navigate(ROUTES.CLIENT_DETAIL.replace(':id', result.data.prospect.client?.id ?? ''));
     } catch (error) {
@@ -176,7 +176,7 @@ export default function EnrollProspect() {
             </Fieldset>
 
             <FormActions
-              isSubmitting={isEnrolling}
+              isSubmitting={enrollMutation.isPending}
               onCancel={goBack}
               submitLabel="Send invite"
               submittingLabel="Sending invite"

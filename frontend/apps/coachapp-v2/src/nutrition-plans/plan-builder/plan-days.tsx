@@ -43,9 +43,9 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {getErrorCode, toastMutationError} from '@/@components/mutation-toast';
 import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
-import type {NutritionMeal, NutritionPlan} from '@/api/generated';
+import {nutritionPlanKeys} from '@/api/keys';
+import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plans-list';
 import {
-  coachApi,
   useAddNutritionSlotOptionMutation,
   useAssignNutritionPlanWeekdayMutation,
   useCreateMealMutation,
@@ -54,9 +54,9 @@ import {
   useGetNutritionPlanQuery,
   useRemoveNutritionSlotOptionMutation,
   useUpdateNutritionPlanDayMutation,
-} from '@/api/generated';
+} from '@/api/nutrition-plans-list';
+import {patchQueryData} from '@/api/query-client';
 import {INLINE_LINK} from '@/builder-kit/ui';
-import {useAppDispatch} from '@/store';
 import {DayEnergyHeader} from './day-energy-header';
 import {MealCard, type MealSwap} from './meal-card';
 import {AddMealControl, type MealPaletteOption} from './meal-palette';
@@ -81,6 +81,9 @@ export type NutritionPlanDay = {
 };
 
 type WeekdayAssignments = Record<string, string | undefined>;
+
+/** The cached shape of `useGetNutritionPlanQuery` — every optimistic patch here targets it. */
+type NutritionPlanCache = {data: NutritionPlan};
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -173,8 +176,7 @@ interface PlanDaysProps {
 // ---------------------------------------------------------------------------
 
 export function PlanDays({plan}: PlanDaysProps) {
-  const dispatch = useAppDispatch();
-  const {refetch} = useGetNutritionPlanQuery({id: plan.id});
+  const {refetch} = useGetNutritionPlanQuery(plan.id);
 
   const days = useMemo(() => getDays(plan), [plan]);
   const weekdayAssignments = useMemo(() => getWeekdayAssignments(plan), [plan]);
@@ -202,13 +204,15 @@ export function PlanDays({plan}: PlanDaysProps) {
 
   const deleteAlertState = useOverlayState();
 
-  const [createDay, {isLoading: creatingDay}] = useCreateNutritionPlanDayMutation();
-  const [updateDay] = useUpdateNutritionPlanDayMutation();
-  const [deleteDay, {isLoading: deletingDay}] = useDeleteNutritionPlanDayMutation();
-  const [assignWeekday] = useAssignNutritionPlanWeekdayMutation();
-  const [addOption] = useAddNutritionSlotOptionMutation();
-  const [removeOption] = useRemoveNutritionSlotOptionMutation();
-  const [createMeal] = useCreateMealMutation();
+  const createDayMutation = useCreateNutritionPlanDayMutation();
+  const updateDayMutation = useUpdateNutritionPlanDayMutation();
+  const deleteDayMutation = useDeleteNutritionPlanDayMutation();
+  const assignWeekdayMutation = useAssignNutritionPlanWeekdayMutation();
+  const addOptionMutation = useAddNutritionSlotOptionMutation();
+  const removeOptionMutation = useRemoveNutritionSlotOptionMutation();
+  const createMealMutation = useCreateMealMutation();
+  const creatingDay = createDayMutation.isPending;
+  const deletingDay = deleteDayMutation.isPending;
 
   // ---------------------------------------------------------------------------
   // Days: add / rename / delete
@@ -216,16 +220,14 @@ export function PlanDays({plan}: PlanDaysProps) {
 
   const handleAddDay = async () => {
     try {
-      const result = await createDay({planId: plan.id, nutritionPlanDayCreateRequest: {}}).unwrap();
+      const result = await createDayMutation.mutateAsync({planId: plan.id, body: {}});
       const newDay = result.data as unknown as NutritionPlanDay;
-      dispatch(
-        coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
-          if (!draft.data.days) {
-            draft.data.days = [];
-          }
-          draft.data.days.push(newDay);
-        }),
-      );
+      patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
+        if (!draft.data.days) {
+          draft.data.days = [];
+        }
+        draft.data.days.push(newDay);
+      });
       setActiveDayId(newDay.id);
       refetch().catch(() => undefined);
     } catch (e) {
@@ -242,16 +244,14 @@ export function PlanDays({plan}: PlanDaysProps) {
     }
     setEditingName(false);
     const dayId = activeDay.id;
-    const patch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
-        const d = draft.data.days?.find((x) => x.id === dayId);
-        if (d) {
-          d.name = trimmed;
-        }
-      }),
-    );
+    const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
+      const d = draft.data.days?.find((x) => x.id === dayId);
+      if (d) {
+        d.name = trimmed;
+      }
+    });
     try {
-      await updateDay({id: dayId, nutritionPlanDayUpdateRequest: {name: trimmed}}).unwrap();
+      await updateDayMutation.mutateAsync({id: dayId, body: {name: trimmed}});
       refetch().catch(() => undefined);
     } catch (e) {
       patch.undo();
@@ -267,22 +267,20 @@ export function PlanDays({plan}: PlanDaysProps) {
     const deletingId = activeDay.id;
     const fallback = days.filter((d) => d.id !== deletingId).sort((a, b) => a.position - b.position)[0];
     try {
-      await deleteDay({id: deletingId}).unwrap();
-      dispatch(
-        coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
-          const idx = draft.data.days?.findIndex((d) => d.id === deletingId) ?? -1;
-          if (idx !== -1) {
-            draft.data.days?.splice(idx, 1);
-          }
-          if (draft.data.weekday_assignments && fallback) {
-            for (const [wd, id] of Object.entries(draft.data.weekday_assignments)) {
-              if (id === deletingId) {
-                draft.data.weekday_assignments[wd] = fallback.id;
-              }
+      await deleteDayMutation.mutateAsync(deletingId);
+      patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
+        const idx = draft.data.days?.findIndex((d) => d.id === deletingId) ?? -1;
+        if (idx !== -1) {
+          draft.data.days?.splice(idx, 1);
+        }
+        if (draft.data.weekday_assignments && fallback) {
+          for (const [wd, id] of Object.entries(draft.data.weekday_assignments)) {
+            if (id === deletingId) {
+              draft.data.weekday_assignments[wd] = fallback.id;
             }
           }
-        }),
-      );
+        }
+      });
       if (fallback) {
         setActiveDayId(fallback.id);
       }
@@ -304,22 +302,20 @@ export function PlanDays({plan}: PlanDaysProps) {
   // ---------------------------------------------------------------------------
 
   const handleAssignWeekday = async (weekday: string, dayId: string) => {
-    const patch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
-        if (!draft.data.weekday_assignments) {
-          draft.data.weekday_assignments = {};
-        }
-        draft.data.weekday_assignments[weekday] = dayId;
-      }),
-    );
+    const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
+      if (!draft.data.weekday_assignments) {
+        draft.data.weekday_assignments = {};
+      }
+      draft.data.weekday_assignments[weekday] = dayId;
+    });
     try {
-      await assignWeekday({
+      await assignWeekdayMutation.mutateAsync({
         planId: plan.id,
-        nutritionWeekdayAssignRequest: {
+        body: {
           day_of_week: weekday as (typeof WEEKDAYS)[number],
           nutrition_plan_day_id: dayId,
         },
-      }).unwrap();
+      });
       refetch().catch(() => undefined);
     } catch (e) {
       patch.undo();
@@ -333,22 +329,20 @@ export function PlanDays({plan}: PlanDaysProps) {
 
   const addOptionToDay = async (dayId: string, slot: string, mealId: string) => {
     try {
-      const result = await addOption({
+      const result = await addOptionMutation.mutateAsync({
         dayId,
-        nutritionSlotOptionCreateRequest: {meal_slot: slot as (typeof MEAL_SLOTS)[number], nutrition_meal_id: mealId},
-      }).unwrap();
+        body: {meal_slot: slot as (typeof MEAL_SLOTS)[number], nutrition_meal_id: mealId},
+      });
       const newOption = result.data as unknown as NutritionDayMeal;
-      dispatch(
-        coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
-          const d = draft.data.days?.find((x) => x.id === dayId);
-          if (d) {
-            if (!d.day_meals) {
-              d.day_meals = [];
-            }
-            d.day_meals.push(newOption);
+      patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
+        const d = draft.data.days?.find((x) => x.id === dayId) as {day_meals?: NutritionDayMeal[]} | undefined;
+        if (d) {
+          if (!d.day_meals) {
+            d.day_meals = [];
           }
-        }),
-      );
+          d.day_meals.push(newOption);
+        }
+      });
       refetch().catch(() => undefined);
       return newOption;
     } catch (e) {
@@ -362,20 +356,18 @@ export function PlanDays({plan}: PlanDaysProps) {
   };
 
   const removeOptionFromDay = async (dayId: string, optionId: string) => {
-    const patch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
-        const d = draft.data.days?.find((x) => x.id === dayId);
-        const dayMeals = d?.day_meals as NutritionDayMeal[] | undefined;
-        if (dayMeals) {
-          const idx = dayMeals.findIndex((dm) => dm.id === optionId);
-          if (idx !== -1) {
-            dayMeals.splice(idx, 1);
-          }
+    const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
+      const d = draft.data.days?.find((x) => x.id === dayId);
+      const dayMeals = d?.day_meals as NutritionDayMeal[] | undefined;
+      if (dayMeals) {
+        const idx = dayMeals.findIndex((dm) => dm.id === optionId);
+        if (idx !== -1) {
+          dayMeals.splice(idx, 1);
         }
-      }),
-    );
+      }
+    });
     try {
-      await removeOption({id: optionId}).unwrap();
+      await removeOptionMutation.mutateAsync(optionId);
       refetch().catch(() => undefined);
       return true;
     } catch (e) {
@@ -395,16 +387,14 @@ export function PlanDays({plan}: PlanDaysProps) {
 
   const handleCreateMeal = async (dayId: string, slot: string) => {
     try {
-      const result = await createMeal({planId: plan.id, nutritionMealRequest: {name: 'New meal'}}).unwrap();
+      const result = await createMealMutation.mutateAsync({planId: plan.id, body: {name: 'New meal'}});
       const newMeal = result.data;
-      dispatch(
-        coachApi.util.updateQueryData('getNutritionPlan', {id: plan.id}, (draft) => {
-          if (!draft.data.meals) {
-            draft.data.meals = [];
-          }
-          draft.data.meals.push(newMeal);
-        }),
-      );
+      patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
+        if (!draft.data.meals) {
+          draft.data.meals = [];
+        }
+        draft.data.meals.push(newMeal);
+      });
       await addOptionToDay(dayId, slot, newMeal.id);
       setOpenMealId(newMeal.id);
       setAutoRenameMealId(newMeal.id);

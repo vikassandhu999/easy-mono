@@ -41,9 +41,10 @@ function Field({label, value}: {label: string; value: React.ReactNode}) {
 export default function ProspectDetail() {
   const {id = ''} = useParams();
   const navigate = useNavigate();
-  const {data, isError, isLoading, refetch} = useGetProspectQuery({id});
+  const {data, isError, isLoading, refetch} = useGetProspectQuery(id);
   const {data: pageData} = useGetLandingPageQuery();
-  const [update, {isLoading: isUpdating}] = useUpdateProspectMutation();
+  const updateMutation = useUpdateProspectMutation();
+  const isUpdating = updateMutation.isPending;
 
   const prospect = data?.data;
   const [notes, setNotes] = useState('');
@@ -65,7 +66,7 @@ export default function ProspectDetail() {
       return;
     }
     try {
-      await update({id, prospectUpdateRequest: {status, notes: prospect.notes}}).unwrap();
+      await updateMutation.mutateAsync({id, body: {status, notes: prospect.notes}});
       toast.success(`Marked ${PROSPECT_STATUS_LABEL[status].toLowerCase()}`);
     } catch (error) {
       toast.danger(getApiErrorMessage(error, "Couldn't update prospect"));
@@ -77,7 +78,7 @@ export default function ProspectDetail() {
       return;
     }
     try {
-      await update({id, prospectUpdateRequest: {status: prospect.status, notes: notes.trim() || null}}).unwrap();
+      await updateMutation.mutateAsync({id, body: {status: prospect.status, notes: notes.trim() || null}});
       toast.success('Notes saved');
     } catch (error) {
       toast.danger(getApiErrorMessage(error, "Couldn't save notes"));

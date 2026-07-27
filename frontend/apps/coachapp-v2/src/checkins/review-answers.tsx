@@ -56,48 +56,51 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                 </Typography>
                 {question.type === 'photo' ? (
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    {(question.id && Array.isArray(item.answers[question.id]) ? item.answers[question.id] : []).map(
-                      (attachmentId: unknown, photoIndex: number) => {
-                        const attachment = typeof attachmentId === 'string' ? attachments.get(attachmentId) : undefined;
-                        const url = attachment && urls[attachment.id];
-                        return url ? (
-                          <a
-                            href={url}
-                            key={attachment.id}
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            <img
-                              alt={`${question.label ?? 'Progress photo'} ${photoIndex + 1}`}
-                              className="aspect-[3/4] w-full rounded-panel border border-border object-cover"
-                              src={url}
-                            />
-                          </a>
-                        ) : (
-                          <div
-                            className="grid aspect-[3/4] place-items-center rounded-panel border border-border bg-surface text-center text-muted type-eyebrow"
-                            key={String(attachmentId)}
-                          >
-                            {!attachment ? (
-                              'Photo unavailable'
-                            ) : failedIds.has(attachment.id) ? (
-                              <div className="grid gap-2">
-                                Photo unavailable
-                                <Button
-                                  onPress={() => refresh([attachment.id]).catch(() => undefined)}
-                                  size="sm"
-                                  variant="secondary"
-                                >
-                                  Retry
-                                </Button>
-                              </div>
-                            ) : (
-                              'Loading photo…'
-                            )}
-                          </div>
-                        );
-                      },
-                    )}
+                    {/* `answers` is a loosely-typed index-signature object on the wire;
+                        read into a local so `Array.isArray` narrows it. */}
+                    {(() => {
+                      const rawAnswer: unknown = question.id ? item.answers[question.id] : undefined;
+                      return Array.isArray(rawAnswer) ? rawAnswer : [];
+                    })().map((attachmentId: unknown, photoIndex: number) => {
+                      const attachment = typeof attachmentId === 'string' ? attachments.get(attachmentId) : undefined;
+                      const url = attachment && urls[attachment.id];
+                      return url ? (
+                        <a
+                          href={url}
+                          key={attachment.id}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <img
+                            alt={`${question.label ?? 'Progress photo'} ${photoIndex + 1}`}
+                            className="aspect-[3/4] w-full rounded-panel border border-border object-cover"
+                            src={url}
+                          />
+                        </a>
+                      ) : (
+                        <div
+                          className="grid aspect-[3/4] place-items-center rounded-panel border border-border bg-surface text-center text-muted type-eyebrow"
+                          key={String(attachmentId)}
+                        >
+                          {!attachment ? (
+                            'Photo unavailable'
+                          ) : failedIds.has(attachment.id) ? (
+                            <div className="grid gap-2">
+                              Photo unavailable
+                              <Button
+                                onPress={() => refresh([attachment.id]).catch(() => undefined)}
+                                size="sm"
+                                variant="secondary"
+                              >
+                                Retry
+                              </Button>
+                            </div>
+                          ) : (
+                            'Loading photo…'
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <Typography

@@ -16,7 +16,7 @@ import {Button} from '@heroui/react';
 import {X} from 'lucide-react';
 import {forwardRef} from 'react';
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
-import type {Food, Recipe} from '@/api/generated';
+import type {Food, Recipe} from '@/api/nutrition-foods';
 
 // ---------------------------------------------------------------------------
 // Types

@@ -2,7 +2,7 @@ import {mediaKind} from '@easy/utils';
 import {Button} from '@heroui/react';
 import {useState} from 'react';
 
-import type {Attachment} from '@/api/generated';
+import type {Attachment} from '@/api/uploads';
 
 function MessageAttachment({
   attachment,

@@ -11,7 +11,7 @@ import {
   FormTextField,
 } from '@/@components/form-fields';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
-import type {NutritionPlan, NutritionPlanRequest} from '@/api/generated';
+import type {NutritionPlan, NutritionPlanRequest} from '@/api/nutrition-plans-list';
 import {omitUndefined, toOptionalText} from '@/api/shared';
 
 const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();

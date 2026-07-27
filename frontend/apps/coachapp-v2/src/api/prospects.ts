@@ -1,9 +1,20 @@
-import {coachApi, type Prospect} from '@/api/generated';
-import {listTags} from '@/api/shared';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {Prospect} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {clientKeys, prospectKeys} from '@/api/keys';
+import type {components, paths} from '@/api/schema';
 
+export type Prospect = components['schemas']['Prospect'];
 export type ProspectStatus = Prospect['status'];
+export type ProspectListResponse = components['schemas']['ProspectListResponse'];
+export type ProspectResponse = components['schemas']['ProspectResponse'];
+export type ProspectUpdateRequest = components['schemas']['ProspectUpdateRequest'];
+export type ProspectEnrollRequest = components['schemas']['ProspectEnrollRequest'];
+export type ProspectEnrollResponse = components['schemas']['ProspectEnrollResponse'];
+
+type ListProspectsQuery = NonNullable<paths['/v1/coach/prospects']['get']['parameters']['query']>;
+
+export type ListProspectsParams = Pick<ListProspectsQuery, 'limit' | 'offset' | 'status'>;
 
 export const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
   new: 'New',
@@ -19,26 +30,46 @@ export const PROSPECT_STATUS_CHIP: Record<ProspectStatus, 'accent' | 'warning' |
   lost: 'default',
 };
 
-const enhanced = coachApi.enhanceEndpoints({
-  endpoints: {
-    listProspects: {providesTags: (result) => listTags('Prospect', result, 'LIST')},
-    getProspect: {providesTags: (_r, _e, arg) => [{type: 'Prospect', id: arg.id}]},
-    updateProspect: {
-      invalidatesTags: (_r, _e, arg) => [
-        {type: 'Prospect', id: arg.id},
-        {type: 'Prospect', id: 'LIST'},
-      ],
-    },
-    enrollProspect: {
-      invalidatesTags: (_r, _e, arg) => [
-        {type: 'Prospect', id: arg.id},
-        {type: 'Prospect', id: 'LIST'},
-        {type: 'Client', id: 'LIST'},
-        {type: 'Client', id: 'CLIENT-LIST'},
-      ],
-    },
-  },
-});
+export function useListProspectsQuery(params?: ListProspectsParams, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: prospectKeys.list(params),
+    queryFn: () =>
+      call(client.GET('/v1/coach/prospects', {params: {query: params ?? undefined}})) as Promise<ProspectListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
 
-export const {useListProspectsQuery, useGetProspectQuery, useUpdateProspectMutation, useEnrollProspectMutation} =
-  enhanced;
+export function useGetProspectQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: prospectKeys.detail(id),
+    queryFn: () => call(client.GET('/v1/coach/prospects/{id}', {params: {path: {id}}})) as Promise<ProspectResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useUpdateProspectMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, id}: {body: ProspectUpdateRequest; id: string}) =>
+      call(client.PATCH('/v1/coach/prospects/{id}', {params: {path: {id}}, body})) as Promise<ProspectResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: prospectKeys.detail(id)});
+      qc.invalidateQueries({queryKey: prospectKeys.lists()});
+    },
+  });
+}
+
+export function useEnrollProspectMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, id}: {body: ProspectEnrollRequest; id: string}) =>
+      call(
+        client.POST('/v1/coach/prospects/{id}/enroll', {params: {path: {id}}, body}),
+      ) as Promise<ProspectEnrollResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: prospectKeys.detail(id)});
+      qc.invalidateQueries({queryKey: prospectKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+    },
+  });
+}

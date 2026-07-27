@@ -1,131 +1,199 @@
 /**
- * Hand-written infinite queries for /v1/coach/nutrition-foods and
- * /v1/coach/nutrition-recipes.
+ * Foods and recipes: the coach's food/recipe library.
  *
- * Codegen cannot emit `build.infiniteQuery`, so these mirror the pattern from
- * `src/api/training-exercises.ts` but target the coach-scoped nutrition
- * endpoints with the generated `Food` / `FoodListResponse` / `ListFoodsApiArg`
- * and `Recipe` / `RecipeListResponse` / `ListRecipesApiArg` types from
- * `generated.ts` so the hand-written queries stay type-synced.
- *
- * Generated endpoints are `tag: false`, so the generated `useCreateFoodMutation`
- * does NOT invalidate the foods list. We re-declare `createCoachFood` here with
- * `invalidatesTags: [{type: 'Food', id: 'LIST'}]` (same approach as
- * `createCoachTrainingExercise` in `training-exercises.ts`) so create-custom-food
- * in the picker refreshes the list. Import that hook from this module.
+ * Infinite browse queries (codegen can't emit `build.infiniteQuery`, so these
+ * stay hand-written like `clients.ts`) plus every CRUD hook `src/foods` and
+ * `src/recipes` need. In the old RTK app these detail/list CRUD endpoints were
+ * codegen'd `tag: false` and wired to detail<->list invalidation via
+ * `coachApi.enhanceEndpoints` (see `git show HEAD:.../nutrition-foods.ts`) —
+ * ported 1:1 below as `invalidateQueries` calls in each mutation's `onSuccess`.
  */
-import {api} from '@/api/base';
-import {
-  type CreateFoodApiArg,
-  type CreateFoodApiResponse,
-  coachApi,
-  type FoodListResponse,
-  type ListFoodsApiArg,
-  type ListRecipesApiArg,
-  type RecipeListResponse,
-} from '@/api/generated';
-import {pageTags} from '@/api/shared';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
+import {call, client} from '@/api/client';
+import {foodKeys, recipeKeys} from '@/api/keys';
+import type {components, paths} from '@/api/schema';
 
 const PAGE_SIZE = 20;
 
-/** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachFoodsFilters = Pick<ListFoodsApiArg, 'categories' | 'search'>;
+export type Food = components['schemas']['Food'];
+export type FoodRequest = components['schemas']['FoodRequest'];
+export type FoodUpdateRequest = components['schemas']['FoodUpdateRequest'];
+export type FoodServingSize = components['schemas']['FoodServingSize'];
+
+export type Recipe = components['schemas']['Recipe'];
+export type RecipeRequest = components['schemas']['RecipeRequest'];
+export type RecipeIngredient = components['schemas']['RecipeIngredient'];
+export type RecipeIngredientRequest = components['schemas']['RecipeIngredientRequest'];
+
+type FoodListResponse = components['schemas']['FoodListResponse'];
+type RecipeListResponse = components['schemas']['RecipeListResponse'];
+
+type ListFoodsQuery = NonNullable<paths['/v1/coach/nutrition-foods']['get']['parameters']['query']>;
+type ListRecipesQuery = NonNullable<paths['/v1/coach/nutrition-recipes']['get']['parameters']['query']>;
 
 /** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachRecipesFilters = Pick<ListRecipesApiArg, 'search'>;
+export type CoachFoodsFilters = Pick<ListFoodsQuery, 'categories' | 'search'>;
 
-const nutritionFoodsApi = api.injectEndpoints({
-  endpoints: (build) => ({
-    coachFoods: build.infiniteQuery<FoodListResponse, CoachFoodsFilters | void, number>({
-      query: ({queryArg, pageParam}) => ({
-        url: '/v1/coach/nutrition-foods',
-        params: {
-          ...(queryArg?.search ? {search: queryArg.search} : {}),
-          ...(queryArg?.categories?.length ? {categories: queryArg.categories} : {}),
-          offset: pageParam,
-          limit: PAGE_SIZE,
-        },
-      }),
-      infiniteQueryOptions: {
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-          const nextOffset = lastPageParam + PAGE_SIZE;
-          return nextOffset < lastPage.count ? nextOffset : undefined;
-        },
-      },
-      // result is InfiniteData<FoodListResponse> | undefined.
-      // pageTags expects {pages: {data: {id: string}[]}[]} which matches the
-      // InfiniteData shape directly because FoodListResponse has a `data` field
-      // of Food[].
-      providesTags: (result) => pageTags('Food', result as {pages: {data: {id: string}[]}[]} | undefined),
-    }),
+/** Filter params — offset/limit are handled by the infinite query machinery. */
+export type CoachRecipesFilters = Pick<ListRecipesQuery, 'search'>;
 
-    coachRecipes: build.infiniteQuery<RecipeListResponse, CoachRecipesFilters | void, number>({
-      query: ({queryArg, pageParam}) => ({
-        url: '/v1/coach/nutrition-recipes',
-        params: {
-          ...(queryArg?.search ? {search: queryArg.search} : {}),
-          offset: pageParam,
-          limit: PAGE_SIZE,
-        },
-      }),
-      infiniteQueryOptions: {
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-          const nextOffset = lastPageParam + PAGE_SIZE;
-          return nextOffset < lastPage.count ? nextOffset : undefined;
-        },
-      },
-      // result is InfiniteData<RecipeListResponse> | undefined.
-      // pageTags expects {pages: {data: {id: string}[]}[]} which matches the
-      // InfiniteData shape directly because RecipeListResponse has a `data`
-      // field of Recipe[].
-      providesTags: (result) => pageTags('Recipe', result as {pages: {data: {id: string}[]}[]} | undefined),
-    }),
-
-    /**
-     * Create a custom coach food. The generated `useCreateFoodMutation` posts to
-     * the same endpoint but is `tag: false`; we re-add it here with
-     * `invalidatesTags` so creating a food from the picker's "no match" flow
-     * refreshes the infinite foods list. Callers import everything from one module.
-     */
-    createCoachFood: build.mutation<CreateFoodApiResponse, CreateFoodApiArg>({
-      query: ({foodRequest}) => ({
-        url: '/v1/coach/nutrition-foods',
-        method: 'POST',
-        body: foodRequest,
-      }),
-      invalidatesTags: [{type: 'Food', id: 'LIST'}],
-    }),
-  }),
-});
-
-export const {useCoachFoodsInfiniteQuery, useCoachRecipesInfiniteQuery, useCreateCoachFoodMutation} = nutritionFoodsApi;
-
-// Generated get/update for food & recipe are tag:false. Editing is a separate
-// page that navigates back to the detail (and list) on save, so wire the
-// detail<->list tags here to avoid stale reads after an edit.
-coachApi.enhanceEndpoints({
-  endpoints: {
-    getFood: {providesTags: (_r, _e, {id}) => [{type: 'Food', id}]},
-    updateFood: {
-      invalidatesTags: (_r, _e, {id}) => [
-        {type: 'Food', id},
-        {type: 'Food', id: 'LIST'},
-      ],
+export function useCoachFoodsInfiniteQuery(filters?: CoachFoodsFilters) {
+  return useInfiniteQuery({
+    queryKey: foodKeys.infinite(filters),
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/nutrition-foods', {
+          params: {
+            query: {
+              ...(filters?.search && {search: filters.search}),
+              ...(filters?.categories?.length && {categories: filters.categories}),
+              offset: pageParam,
+              limit: PAGE_SIZE,
+            },
+          },
+        }),
+      ) as Promise<FoodListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
     },
-    deleteFood: {invalidatesTags: [{type: 'Food', id: 'LIST'}]},
-    getRecipe: {providesTags: (_r, _e, {id}) => [{type: 'Recipe', id}]},
-    createRecipe: {invalidatesTags: [{type: 'Recipe', id: 'LIST'}]},
-    updateRecipe: {
-      invalidatesTags: (_r, _e, {id}) => [
-        {type: 'Recipe', id},
-        {type: 'Recipe', id: 'LIST'},
-      ],
+  });
+}
+
+export function useCoachRecipesInfiniteQuery(filters?: CoachRecipesFilters) {
+  return useInfiniteQuery({
+    queryKey: recipeKeys.infinite(filters),
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/nutrition-recipes', {
+          params: {
+            query: {
+              ...(filters?.search && {search: filters.search}),
+              offset: pageParam,
+              limit: PAGE_SIZE,
+            },
+          },
+        }),
+      ) as Promise<RecipeListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
     },
-    deleteRecipe: {invalidatesTags: [{type: 'Recipe', id: 'LIST'}]},
-    // Copy is tag:false too — invalidate the list so the duplicate appears when
-    // the coach returns to it (mirrors createRecipe/deleteRecipe).
-    copyNutritionRecipe: {invalidatesTags: [{type: 'Recipe', id: 'LIST'}]},
-  },
-});
+  });
+}
+
+/** Create a custom coach food. Invalidates the foods list (flat + infinite) so the picker's "no match" create flow and the library list both refresh. */
+export function useCreateCoachFoodMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: FoodRequest) => call(client.POST('/v1/coach/nutrition-foods', {body})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: foodKeys.lists()});
+    },
+  });
+}
+
+export function useGetFoodQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: foodKeys.detail(id),
+    queryFn: () => call(client.GET('/v1/coach/nutrition-foods/{id}', {params: {path: {id}}})),
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useUpdateFoodMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: FoodUpdateRequest}) =>
+      call(client.PATCH('/v1/coach/nutrition-foods/{id}', {params: {path: {id}}, body})),
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: foodKeys.detail(id)});
+      qc.invalidateQueries({queryKey: foodKeys.lists()});
+    },
+  });
+}
+
+export function useDeleteFoodMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-foods/{id}', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: foodKeys.lists()});
+    },
+  });
+}
+
+export type ListFoodsParams = Pick<ListFoodsQuery, 'categories' | 'limit' | 'offset' | 'search'>;
+
+export function useListFoodsQuery(params?: ListFoodsParams, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: foodKeys.list(params),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/nutrition-foods', {params: {query: params ?? undefined}}),
+      ) as Promise<FoodListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/** Distinct category values across system + business foods — not a closed enum. */
+export function useListFoodCategoriesQuery() {
+  return useQuery({
+    queryKey: foodKeys.categories(),
+    queryFn: () => call(client.GET('/v1/coach/nutrition-foods/categories')),
+  });
+}
+
+export function useGetRecipeQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: recipeKeys.detail(id),
+    queryFn: () => call(client.GET('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}})),
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCreateRecipeMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: RecipeRequest) => call(client.POST('/v1/coach/nutrition-recipes', {body})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: recipeKeys.lists()});
+    },
+  });
+}
+
+export function useUpdateRecipeMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: RecipeRequest}) =>
+      call(client.PATCH('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}, body})),
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: recipeKeys.detail(id)});
+      qc.invalidateQueries({queryKey: recipeKeys.lists()});
+    },
+  });
+}
+
+export function useDeleteRecipeMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: recipeKeys.lists()});
+    },
+  });
+}
+
+/** Copy a recipe into the coach's own library. Invalidates the list so the duplicate shows up on return. */
+export function useCopyNutritionRecipeMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.POST('/v1/coach/nutrition-recipes/{id}/copy', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: recipeKeys.lists()});
+    },
+  });
+}

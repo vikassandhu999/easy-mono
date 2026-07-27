@@ -1,0 +1,122 @@
+import {toast} from '@heroui/react';
+import createClient, {type Middleware} from 'openapi-fetch';
+
+import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
+import type {paths} from '@/api/schema';
+import {disconnectSocket} from '@/api/socket';
+
+let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+
+if (window.location.hostname.startsWith('192.168.')) {
+  // If we're running on a local network, use the local IP for API requests to avoid CORS issues with localhost
+  const localIP = window.location.hostname;
+  baseURL = `http://${localIP}:4000`;
+}
+
+// A deployed (non-local) origin with no VITE_API_BASE_URL means every request silently
+// targets localhost and fails. Make that loud instead of a mysterious "spins then fails".
+if (!import.meta.env.VITE_API_BASE_URL && !/^(localhost|127\.0\.0\.1|192\.168\.)/.test(window.location.hostname)) {
+  console.error(
+    '[config] VITE_API_BASE_URL is not set but the app is served from a non-local origin — ' +
+      `API calls target ${baseURL} and will fail. Set VITE_API_BASE_URL at build time (see .env.example).`,
+  );
+}
+
+/**
+ * Thrown by every query/mutation on a non-2xx response. Carries the parsed
+ * error body under `data` — the shape `@/api/shared` helpers
+ * (applyFormErrors, getApiErrorMessage, getApiErrorCode) read.
+ */
+export class ApiError extends Error {
+  status: number;
+  data: unknown;
+
+  constructor(status: number, data: unknown) {
+    const message =
+      data && typeof data === 'object' && 'error_message' in data && typeof data.error_message === 'string'
+        ? data.error_message
+        : `Request failed with status ${status}`;
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+const REFRESH_THRESHOLD_MS = 60_000;
+
+const forceLogout = () => {
+  clearTokens();
+  disconnectSocket();
+  toast.danger('Session expired. Please sign in again.');
+  if (typeof window !== 'undefined') {
+    window.location.assign('/login');
+  }
+};
+
+let refreshPromise: null | Promise<void> = null;
+
+/** Refresh the access token when it's about to expire. Shared promise so concurrent requests refresh once. */
+async function refreshIfNeeded(): Promise<void> {
+  const expiresAt = getTokenExpiresAt();
+  const refreshToken = getRefreshToken();
+  const shouldRefresh = Boolean(expiresAt && refreshToken && expiresAt - Date.now() < REFRESH_THRESHOLD_MS);
+  if (!shouldRefresh) {
+    return;
+  }
+
+  refreshPromise ??= (async () => {
+    const res = await fetch(`${baseURL}/v1/auth/token`, {
+      method: 'POST',
+      headers: {'content-type': 'application/json'},
+      body: JSON.stringify({grant_type: 'refresh_token', refresh_token: refreshToken}),
+    });
+    if (!res.ok) {
+      // The server rejected the refresh token — the session is over. A network
+      // failure (fetch throws) is NOT a logout; the original request just fails.
+      forceLogout();
+      throw new ApiError(res.status, await res.json().catch(() => null));
+    }
+    setTokens(await res.json());
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
+
+const authMiddleware: Middleware = {
+  async onRequest({request}) {
+    await refreshIfNeeded();
+    const token = getAccessToken();
+    if (token) {
+      request.headers.set('authorization', `Bearer ${token}`);
+    }
+    return request;
+  },
+  async onResponse({response}) {
+    // Only a 401 (unauthenticated) ends the session. A 403 means the token is
+    // valid but lacks permission for this resource (e.g. a guest-scoped token
+    // hitting a coach-only route during onboarding) — logging out there would
+    // bounce a legitimately-signed-in user to /login.
+    if (response.status === 401) {
+      forceLogout();
+    }
+    return response;
+  },
+};
+
+export const client = createClient<paths>({baseUrl: baseURL});
+client.use(authMiddleware);
+
+/**
+ * Unwrap an openapi-fetch result for use as a React Query queryFn/mutationFn:
+ * returns `data` on success, throws `ApiError` on a non-2xx response.
+ */
+export async function call<T, E>(promise: Promise<{data?: T; error?: E; response: Response}>): Promise<T> {
+  const {data, error, response} = await promise;
+  if (error !== undefined) {
+    throw new ApiError(response.status, error);
+  }
+  return data as T;
+}

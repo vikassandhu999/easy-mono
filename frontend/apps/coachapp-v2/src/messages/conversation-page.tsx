@@ -8,7 +8,7 @@ import ConversationView from '@/messages/conversation-view';
 
 export default function ConversationPage() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading} = useGetCoachConversationQuery({id: id!}, {skip: !id});
+  const {data, isError, isLoading} = useGetCoachConversationQuery(id!, {enabled: Boolean(id)});
 
   if (isLoading) {
     return (

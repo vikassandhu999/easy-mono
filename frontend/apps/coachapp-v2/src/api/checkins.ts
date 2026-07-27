@@ -1,37 +1,37 @@
 /**
- * Check-ins (form templates + assignments + submissions). The endpoints are
- * codegen'd as `tag: false`; we enhance them with cache tags and re-export the
- * hooks. Importing hooks from this module guarantees the enhance ran.
+ * Check-ins (form templates + assignments + submissions + schedules + review
+ * queue). One domain file for the whole feature since the mappers below
+ * (builder draft <-> API request) are shared across every screen.
  */
 
-import {type ClientProfileFormTemplateRequest, coachApi} from '@/api/generated';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {
-  ClientProfileCheckInSchedule,
-  ClientProfileCheckInScheduleRequest,
-  ClientProfileFormAssignment,
-  ClientProfileFormSubmission,
-  ClientProfileFormTemplate,
-  ClientProfileFormTemplateRequest,
-  ClientProfileReviewQueueItem,
-} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {checkInKeys, formAssignmentKeys, formTemplateKeys} from '@/api/keys';
+import type {components} from '@/api/schema';
 
-export const {
-  useCreateCheckInScheduleMutation,
-  useCreateFormTemplateMutation,
-  useDeleteCheckInScheduleMutation,
-  useDeleteFormTemplateMutation,
-  useGetFormTemplateQuery,
-  useListClientFormAssignmentsForCoachQuery,
-  useListCheckInSchedulesForClientQuery,
-  useListCheckInReviewQueueQuery,
-  useListFormSubmissionsQuery,
-  useListFormTemplatesQuery,
-  useUpdateFormAssignmentMutation,
-  useUpdateCheckInScheduleMutation,
-  useUpdateFormTemplateMutation,
-  useReviewFormSubmissionMutation,
-} = coachApi;
+export type ClientProfileCheckInSchedule = components['schemas']['ClientProfileCheckInSchedule'];
+export type ClientProfileCheckInScheduleRequest = components['schemas']['ClientProfileCheckInScheduleRequest'];
+export type ClientProfileCheckInScheduleUpdateRequest =
+  components['schemas']['ClientProfileCheckInScheduleUpdateRequest'];
+export type ClientProfileCheckInScheduleResponse = components['schemas']['ClientProfileCheckInScheduleResponse'];
+export type ClientProfileCheckInScheduleListResponse =
+  components['schemas']['ClientProfileCheckInScheduleListResponse'];
+export type ClientProfileFormAssignment = components['schemas']['ClientProfileFormAssignment'];
+export type ClientProfileFormAssignmentUpdateRequest =
+  components['schemas']['ClientProfileFormAssignmentUpdateRequest'];
+export type ClientProfileFormAssignmentResponse = components['schemas']['ClientProfileFormAssignmentResponse'];
+export type ClientProfileFormAssignmentListResponse = components['schemas']['ClientProfileFormAssignmentListResponse'];
+export type ClientProfileFormSubmission = components['schemas']['ClientProfileFormSubmission'];
+export type ClientProfileFormSubmissionResponse = components['schemas']['ClientProfileFormSubmissionResponse'];
+export type ClientProfileFormSubmissionListResponse = components['schemas']['ClientProfileFormSubmissionListResponse'];
+export type ClientProfileFormTemplate = components['schemas']['ClientProfileFormTemplate'];
+export type ClientProfileFormTemplateRequest = components['schemas']['ClientProfileFormTemplateRequest'];
+export type ClientProfileFormTemplateUpdateRequest = components['schemas']['ClientProfileFormTemplateUpdateRequest'];
+export type ClientProfileFormTemplateResponse = components['schemas']['ClientProfileFormTemplateResponse'];
+export type ClientProfileFormTemplateListResponse = components['schemas']['ClientProfileFormTemplateListResponse'];
+export type ClientProfileReviewQueueItem = components['schemas']['ClientProfileReviewQueueItem'];
+export type ClientProfileReviewQueueListResponse = components['schemas']['ClientProfileReviewQueueListResponse'];
 
 export type FormPurpose = 'check_in' | 'intake';
 
@@ -196,58 +196,190 @@ export function draftToRequest(draft: TemplateDraft): ClientProfileFormTemplateR
   return {name: draft.name, purpose: draft.purpose, sections, status: 'active'};
 }
 
-coachApi.enhanceEndpoints({
-  endpoints: {
-    createCheckInSchedule: {
-      invalidatesTags: (_r, _e, {clientId}) => [
-        {type: 'CheckInSchedule', id: clientId},
-        {type: 'FormAssignment', id: clientId},
-      ],
+// ---------------------------------------------------------------------------
+// Form templates
+// ---------------------------------------------------------------------------
+
+export function useListFormTemplatesQuery(options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: formTemplateKeys.list(),
+    queryFn: () => call(client.GET('/v1/coach/form-templates')) as Promise<ClientProfileFormTemplateListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useGetFormTemplateQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: formTemplateKeys.detail(id),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/form-templates/{id}', {params: {path: {id}}}),
+      ) as Promise<ClientProfileFormTemplateResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCreateFormTemplateMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ClientProfileFormTemplateRequest) =>
+      call(client.POST('/v1/coach/form-templates', {body})) as Promise<ClientProfileFormTemplateResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: formTemplateKeys.lists()});
     },
-    createFormTemplate: {invalidatesTags: [{type: 'FormTemplate', id: 'LIST'}]},
-    deleteFormTemplate: {invalidatesTags: [{type: 'FormTemplate', id: 'LIST'}]},
-    deleteCheckInSchedule: {
-      invalidatesTags: [
-        {type: 'CheckInSchedule', id: 'LIST'},
-        {type: 'FormAssignment', id: 'LIST'},
-      ],
+  });
+}
+
+export function useUpdateFormTemplateMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, id}: {body: ClientProfileFormTemplateUpdateRequest; id: string}) =>
+      call(
+        client.PATCH('/v1/coach/form-templates/{id}', {params: {path: {id}}, body}),
+      ) as Promise<ClientProfileFormTemplateResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: formTemplateKeys.detail(id)});
+      qc.invalidateQueries({queryKey: formTemplateKeys.lists()});
     },
-    getFormTemplate: {providesTags: (_r, _e, {id}) => [{type: 'FormTemplate', id}]},
-    listClientFormAssignmentsForCoach: {
-      providesTags: (_r, _e, {clientId}) => [
-        {type: 'FormAssignment', id: clientId},
-        {type: 'FormAssignment', id: 'LIST'},
-      ],
+  });
+}
+
+export function useDeleteFormTemplateMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/form-templates/{id}', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: formTemplateKeys.lists()});
     },
-    listCheckInSchedulesForClient: {
-      providesTags: (_r, _e, {clientId}) => [
-        {type: 'CheckInSchedule', id: clientId},
-        {type: 'CheckInSchedule', id: 'LIST'},
-      ],
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Check-in schedules
+// ---------------------------------------------------------------------------
+
+export function useListCheckInSchedulesForClientQuery(clientId: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: checkInKeys.schedules(clientId),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/clients/{client_id}/check-in-schedules', {params: {path: {client_id: clientId}}}),
+      ) as Promise<ClientProfileCheckInScheduleListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCreateCheckInScheduleMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, clientId}: {body: ClientProfileCheckInScheduleRequest; clientId: string}) =>
+      call(
+        client.POST('/v1/coach/clients/{client_id}/check-in-schedules', {
+          params: {path: {client_id: clientId}},
+          body,
+        }),
+      ) as Promise<ClientProfileCheckInScheduleResponse>,
+    onSuccess: (_data, {clientId}) => {
+      qc.invalidateQueries({queryKey: checkInKeys.schedules(clientId)});
+      qc.invalidateQueries({queryKey: formAssignmentKeys.forClient(clientId)});
     },
-    listCheckInReviewQueue: {providesTags: [{type: 'CheckInReview', id: 'LIST'}]},
-    listFormSubmissions: {providesTags: (_r, _e, {id}) => [{type: 'FormSubmission', id}]},
-    listFormTemplates: {providesTags: [{type: 'FormTemplate', id: 'LIST'}]},
-    // Update only knows the assignment id, not its client, so refresh all
-    // assignment lists via the shared LIST tag.
-    updateFormAssignment: {invalidatesTags: [{type: 'FormAssignment', id: 'LIST'}]},
-    reviewFormSubmission: {
-      invalidatesTags: [
-        {type: 'CheckInReview', id: 'LIST'},
-        {type: 'FormAssignment', id: 'LIST'},
-      ],
+  });
+}
+
+/**
+ * Update only knows the schedule id, not its client, so refresh every cached
+ * check-in query plus every form-assignment list (mirrors the old
+ * `{type:'CheckInSchedule', id:'LIST'}` / `{type:'FormAssignment', id:'LIST'}`
+ * tags, which weren't client-scoped either).
+ */
+export function useUpdateCheckInScheduleMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, id}: {body: ClientProfileCheckInScheduleUpdateRequest; id: string}) =>
+      call(
+        client.PATCH('/v1/coach/check-in-schedules/{id}', {params: {path: {id}}, body}),
+      ) as Promise<ClientProfileCheckInScheduleResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: checkInKeys.all});
+      qc.invalidateQueries({queryKey: formAssignmentKeys.all});
     },
-    updateCheckInSchedule: {
-      invalidatesTags: [
-        {type: 'CheckInSchedule', id: 'LIST'},
-        {type: 'FormAssignment', id: 'LIST'},
-      ],
+  });
+}
+
+export function useDeleteCheckInScheduleMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/check-in-schedules/{id}', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: checkInKeys.all});
+      qc.invalidateQueries({queryKey: formAssignmentKeys.all});
     },
-    updateFormTemplate: {
-      invalidatesTags: (_r, _e, {id}) => [
-        {type: 'FormTemplate', id},
-        {type: 'FormTemplate', id: 'LIST'},
-      ],
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Form assignments
+// ---------------------------------------------------------------------------
+
+export function useListClientFormAssignmentsForCoachQuery(clientId: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: formAssignmentKeys.forClient(clientId),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/clients/{client_id}/form-assignments', {params: {path: {client_id: clientId}}}),
+      ) as Promise<ClientProfileFormAssignmentListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+/** Update only knows the assignment id, not its client, so refresh all assignment lists. */
+export function useUpdateFormAssignmentMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, id}: {body: ClientProfileFormAssignmentUpdateRequest; id: string}) =>
+      call(
+        client.PATCH('/v1/coach/form-assignments/{id}', {params: {path: {id}}, body}),
+      ) as Promise<ClientProfileFormAssignmentResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: formAssignmentKeys.all});
     },
-  },
-});
+  });
+}
+
+export function useListFormSubmissionsQuery(assignmentId: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: formAssignmentKeys.submissions(assignmentId),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/form-assignments/{id}/submissions', {params: {path: {id: assignmentId}}}),
+      ) as Promise<ClientProfileFormSubmissionListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Review queue
+// ---------------------------------------------------------------------------
+
+export function useListCheckInReviewQueueQuery(options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: checkInKeys.reviewQueue(),
+    queryFn: () =>
+      call(client.GET('/v1/coach/check-ins/review-queue')) as Promise<ClientProfileReviewQueueListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useReviewFormSubmissionMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(
+        client.POST('/v1/coach/form-submissions/{id}/review', {params: {path: {id}}}),
+      ) as Promise<ClientProfileFormSubmissionResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: checkInKeys.reviewQueue()});
+      qc.invalidateQueries({queryKey: formAssignmentKeys.all});
+    },
+  });
+}

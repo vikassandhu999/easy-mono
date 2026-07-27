@@ -12,7 +12,7 @@ import {
   type TrainingWeekday,
 } from '@easy/utils';
 
-import type {TrainingPlanItem} from '@/api/generated';
+import type {TrainingPlanItem} from '@/api/training-plan-builder';
 
 export type Day = TrainingWeekday;
 export {ORDERED_DAYS};

@@ -131,7 +131,8 @@ export function AddSeatsDialog({
   const [seats, setSeats] = useState(1);
   const isDesktop = useIsDesktop();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const [checkout, {isLoading}] = useCheckoutSeatsMutation();
+  const checkoutMutation = useCheckoutSeatsMutation();
+  const isLoading = checkoutMutation.isPending;
   const {data, refetch} = useGetBillingQuery();
   const price = data?.data.monthly_seat_price_inr;
 
@@ -140,7 +141,7 @@ export function AddSeatsDialog({
   const buy = async () => {
     const snapshot = data?.data;
     try {
-      const result = await checkout({seats_to_add: seats}).unwrap();
+      const result = await checkoutMutation.mutateAsync({seats_to_add: seats});
       if (result.data.action === 'checkout' && result.data.checkout) {
         await openRazorpayCheckout({
           keyId: result.data.checkout.key_id,

@@ -5,7 +5,7 @@ import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useCreateRecipeMutation} from '@/api/generated';
+import {useCreateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors, type ServingSize} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {
@@ -17,7 +17,7 @@ import RecipeForm, {
 export default function CreateRecipe() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
-  const [createRecipe, {isLoading}] = useCreateRecipeMutation();
+  const createRecipe = useCreateRecipeMutation();
   const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
   const [servingSizes, setServingSizes] = useState<ServingSize[]>([]);
   const leaveConfirm = useOverlayState();
@@ -38,9 +38,7 @@ export default function CreateRecipe() {
 
   const onSubmit = async (data: RecipeFormValues) => {
     try {
-      const result = await createRecipe({
-        recipeRequest: recipeToCreateRequest({ingredients, servingSizes, values: data}),
-      }).unwrap();
+      const result = await createRecipe.mutateAsync(recipeToCreateRequest({ingredients, servingSizes, values: data}));
       toast.success('Recipe created');
       navigate(`/library/recipes/${result.data.id}`, {replace: true});
     } catch (err) {
@@ -67,7 +65,7 @@ export default function CreateRecipe() {
           <RecipeForm
             form={form}
             ingredients={ingredients}
-            isSubmitting={isLoading}
+            isSubmitting={createRecipe.isPending}
             onCancel={attemptLeave}
             onIngredientsChange={setIngredients}
             onServingSizesChange={setServingSizes}

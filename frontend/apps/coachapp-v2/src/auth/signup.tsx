@@ -6,7 +6,7 @@ import {z} from 'zod';
 import {FieldRow, FormTextField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
-import {useSignupMutation} from '@/api/generated';
+import {useSignupMutation} from '@/api/auth';
 import {applyFormErrors} from '@/api/shared';
 import {AuthFooter} from '@/auth/components/auth-footer';
 import AuthLayout from '@/auth/components/auth-layout';
@@ -21,7 +21,7 @@ type SignupFormValues = z.infer<typeof schema>;
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [signup, {isLoading}] = useSignupMutation();
+  const signupMutation = useSignupMutation();
 
   const form = useForm<SignupFormValues>({
     defaultValues: {email: '', first_name: '', last_name: ''},
@@ -30,13 +30,11 @@ export default function Signup() {
 
   const onSubmit = async (data: SignupFormValues) => {
     try {
-      await signup({
-        signupRequest: {
-          email: data.email,
-          first_name: data.first_name || undefined,
-          last_name: data.last_name || undefined,
-        },
-      }).unwrap();
+      await signupMutation.mutateAsync({
+        email: data.email,
+        first_name: data.first_name || undefined,
+        last_name: data.last_name || undefined,
+      });
       navigate(ROUTES.VERIFY_SIGNUP_OTP, {
         state: {email: data.email},
       });
@@ -86,10 +84,10 @@ export default function Signup() {
 
         <Button
           fullWidth
-          isPending={isLoading}
+          isPending={signupMutation.isPending}
           type="submit"
         >
-          {isLoading ? (
+          {signupMutation.isPending ? (
             <>
               <Spinner
                 color="current"

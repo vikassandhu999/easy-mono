@@ -1,4 +1,4 @@
-import type {Food} from '@/api/generated';
+import type {Food} from '@/api/nutrition-foods';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 
 type IngredientLike = {

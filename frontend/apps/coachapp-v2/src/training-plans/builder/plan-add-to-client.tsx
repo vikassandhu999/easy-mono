@@ -3,16 +3,17 @@ import {toast} from '@heroui/react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {PlanAddToClientControl} from '@/@components/plan-add-to-client';
 import type {Client} from '@/api/clients';
-import {coachApi, type TrainingPlan, useAssignTrainingPlanMutation} from '@/api/generated';
-import {useAppDispatch} from '@/store';
+import type {TrainingPlan} from '@/api/training-plan-builder';
+import {usePlanPatcher} from '@/api/training-plan-builder';
+import {useAssignTrainingPlanMutation} from '@/api/training-plans-list';
 
 export type Props = {
   plan: TrainingPlan;
 };
 
 export function PlanAddToClient({plan}: Props) {
-  const dispatch = useAppDispatch();
-  const [assignTraining, {isLoading: isAssigning}] = useAssignTrainingPlanMutation();
+  const patch = usePlanPatcher(plan.id);
+  const assignTrainingMutation = useAssignTrainingPlanMutation();
 
   // Already assigned — nothing to add to.
   if (plan.client_id) {
@@ -21,19 +22,17 @@ export function PlanAddToClient({plan}: Props) {
 
   const assign = async (client: Client) => {
     try {
-      const result = await assignTraining({
+      const result = await assignTrainingMutation.mutateAsync({
         id: plan.id,
-        trainingPlanAssignRequest: {client_id: client.id},
-      }).unwrap();
-      // tag:false — reflect the assignment in the cached detail so the
-      // header/date fields update without a reload. Assign may return a copy
-      // (new id) — only patch when it's the same plan.
+        body: {client_id: client.id},
+      });
+      // Reflect the assignment in the cached detail so the header/date fields
+      // update without a reload. Assign may return a copy (new id) — only
+      // patch when it's the same plan.
       if (result.data.id === plan.id) {
-        dispatch(
-          coachApi.util.updateQueryData('getTrainingPlan', {id: plan.id}, (draft) => {
-            draft.data = result.data;
-          }),
-        );
+        patch((draft) => {
+          Object.assign(draft, result.data);
+        });
       }
       toast.success(`"${plan.name}" assigned`);
     } catch (e) {
@@ -43,7 +42,7 @@ export function PlanAddToClient({plan}: Props) {
 
   return (
     <PlanAddToClientControl
-      isAssigning={isAssigning}
+      isAssigning={assignTrainingMutation.isPending}
       onAssign={assign}
       planName={plan.name}
     />

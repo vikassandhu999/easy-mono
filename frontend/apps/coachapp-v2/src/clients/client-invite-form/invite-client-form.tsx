@@ -86,7 +86,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
 
   const {data: billing} = useGetBillingQuery();
   const isOwner = billing?.data.is_owner ?? false;
-  const {data: team} = useGetTeamQuery(undefined, {skip: !isOwner});
+  const {data: team} = useGetTeamQuery({enabled: isOwner});
   const activeTrainers = (team?.data ?? []).filter((member) => member.status === 'active');
   const {data: profile} = useGetCoachProfileQuery();
   // Unassigned means "the acting coach keeps this client", so the empty select

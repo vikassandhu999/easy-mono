@@ -15,7 +15,9 @@
  * UTC and shifts the day backwards for anyone west of Greenwich, which turns
  * "today" into "yesterday" in every adherence strip on the screen.
  */
-import type {MealLog, TrainingSession, WeightEntry} from '@/api/generated';
+import type {WeightEntry} from '@/api/clients';
+import type {MealLog} from '@/api/nutrition-plans-list';
+import type {TrainingSession} from '@/api/training-plans-list';
 
 const MS_PER_DAY = 86_400_000;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

@@ -13,7 +13,7 @@ import {AlertDialog, Button, Spinner, Typography, useOverlayState} from '@heroui
 import {Plus} from 'lucide-react';
 import {useRef, useState} from 'react';
 
-import type {TrainingPlanWorkout} from '@/api/generated';
+import type {TrainingPlanWorkout} from '@/api/training-plan-builder';
 
 import {type Day, scheduleLabel} from '../schedule';
 import type {WorkoutActions} from '../use-plan-builder';

@@ -4,7 +4,7 @@ Use this file as the app contract.
 
 ## Stack And Commands
 
-- Stack: Vite, React 19, TypeScript strict, HeroUI 3.2.1, Tailwind 4.1.18 (the HeroUI tokens version), Redux Toolkit, RTK Query, react-hook-form, zod, React Router v7 data mode.
+- Stack: Vite, React 19, TypeScript strict, HeroUI 3.2.1, Tailwind 4.1.18 (the HeroUI tokens version), TanStack React Query 5 + openapi-fetch, react-hook-form, zod, React Router v7 data mode.
 - Dev server: `pnpm -C apps/coachapp-v2 dev` on port 2021.
 - Build/type-check: `pnpm -C apps/coachapp-v2 build`.
 - Lint/format: `pnpm -C apps/coachapp-v2 lint`. This runs Biome with `--write`, so expect file changes.
@@ -14,7 +14,7 @@ Use this file as the app contract.
 
 - Feature modules own their screens and one-feature UI: `src/clients/`, `src/exercises/`, `src/foods/`, `src/nutrition-plans/`, `src/training-plans/`, etc.
 - Shared app folders:
-  - `src/api/`: RTK Query endpoints and API-facing types, one domain per file.
+  - `src/api/`: React Query hooks and API-facing types, one domain per file; `keys.ts` (query-key registry), `client.ts` (openapi-fetch + auth), `schema.ts` (generated types).
   - `src/domain/`: domain types/helpers not tied to a component render.
   - `src/@components/`: UI used by two or more features.
   - `src/@hooks/`: shared hooks.
@@ -34,11 +34,13 @@ Use this file as the app contract.
 
 ## Data And API
 
-- Use RTK Query hooks for server data. Do not fetch in `useEffect`.
-- The API layer is generated: `src/api/generated.ts` comes from the backend OpenAPI spec via `just gen-api` and is always overwritten — never hand-edit it. Regeneration and migration rules live in `frontend/AGENTS.md` § API Clients.
-- Before writing an endpoint, check `@/api/generated` — it probably already exists. Hand-written `src/api/*.ts` files only enhance or wrap generated endpoints (tags, normalization, narrowed types).
-- Keep API response normalization in the owning `src/api/{domain}.ts` file. Keep form/request conversion beside the owning form or feature.
-- Use `.unwrap()` for mutations that need navigation or form error handling.
+- Use the React Query hooks from `src/api/*.ts` for server data. Do not fetch in `useEffect`.
+- Type source of truth: `src/api/schema.ts`, generated from the backend OpenAPI spec via `just gen-api` and always overwritten — never hand-edit it. Derive request/response types from it (`components['schemas'][...]`, `paths[...]`); the owning domain file re-exports them under stable names.
+- Hooks are hand-written per domain (`useGetFooQuery`, `useUpdateFooMutation`, `useFoosInfiniteQuery` naming). Requests go through `call(client.VERB(path, ...))` from `@/api/client` — never raw fetch.
+- Query keys come ONLY from the factories in `src/api/keys.ts`. Every mutation invalidates the affected keys in `onSuccess` (`detail(id)` + `lists()` for an update) — a mutation with no invalidation and no optimistic patch is a bug (stale screens).
+- Optimistic cache writes use `patchQueryData(key, recipe)` from `@/api/query-client` (immer draft, returns `{undo}`).
+- Mutations that need navigation or form error handling use `await mutation.mutateAsync(...)` in try/catch — it throws `ApiError` (with `.status` and `.data`).
+- Pending state: `mutation.isPending` for mutations, `isLoading`/`isFetching` for queries. Conditional queries pass `{enabled}`.
 - Surface API errors through existing helpers: `applyFormErrors` or `getApiErrorMessage` from `@/api/shared`.
 
 ## Routing And Navigation
@@ -46,20 +48,20 @@ Use this file as the app contract.
 - Routes live in `src/router.tsx` with `createBrowserRouter()`.
 - Route paths live in `src/@config/routes.ts`. Add or change both the route constant and router entry together.
 - Protected app screens are wrapped through `withAuth`; guest-only screens use `withNotAuth`.
-- Do not add route loaders for server data. RTK Query owns data loading.
+- Do not add route loaders for server data. React Query owns data loading.
 - Back buttons use `useGoBack(fallback)` from `@/@hooks/use-go-back`; do not hand-roll `navigate(-1)` or plain fallback paths for Back.
 
 ## Form Navigation
 
 - Create form save: navigate to the created resource with `{replace: true}` so Back skips the empty create form.
   ```tsx
-  const result = await createFoo(body).unwrap();
+  const result = await createFooMutation.mutateAsync(body);
   navigate(`/library/foos/${result.data.id}`, {replace: true});
   ```
 - Edit form save: call `goBack()` from `useGoBack(detailPath)` after a successful mutation.
   ```tsx
   const goBack = useGoBack(`/library/foos/${id}`);
-  await updateFoo({id, body}).unwrap();
+  await updateFooMutation.mutateAsync({id, body});
   goBack();
   ```
 - Header Back and form Cancel both use `goBack(fallback)` with the same fallback — never a hardcoded list-route navigation.
@@ -73,7 +75,7 @@ Use this file as the app contract.
 - Server errors in forms go through `applyFormErrors(err, fallback, form.setError, knownFields?)`.
   ```tsx
   try {
-    await mutate(body).unwrap();
+    await mutation.mutateAsync(body);
   } catch (err) {
     applyFormErrors(err, "Thing wasn't saved. Check the details and try again", form.setError);
   }

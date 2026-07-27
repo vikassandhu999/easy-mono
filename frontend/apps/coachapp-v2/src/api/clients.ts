@@ -1,8 +1,13 @@
-import {api} from '@/api/base';
-import {coachApi, type Client as GeneratedClient} from '@/api/generated';
-import {ApiResponse, listTags, pageTags} from '@/api/shared';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
+import {call, client} from '@/api/client';
+import {billingKeys, clientKeys} from '@/api/keys';
+import type {components, paths} from '@/api/schema';
+import {ApiResponse} from '@/api/shared';
 
 const PAGE_SIZE = 50;
+
+type GeneratedClient = components['schemas']['Client'];
 
 export type ClientStatus = GeneratedClient['status'];
 
@@ -111,120 +116,142 @@ export type ClientListResponse = {
   summary: ClientSummary;
 };
 
-export type ListClientsParams = {
-  limit?: number;
-  offset?: number;
-  search?: string;
-  status?: string;
+type ListClientsQuery = NonNullable<paths['/v1/coach/clients']['get']['parameters']['query']>;
+
+export type ListClientsParams = Pick<ListClientsQuery, 'limit' | 'offset' | 'search' | 'status'>;
+
+export type ListClientsFilters = Pick<ListClientsQuery, 'search' | 'sort' | 'status'>;
+
+export function useGetClientQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: clientKeys.detail(id),
+    queryFn: () => call(client.GET('/v1/coach/clients/{id}', {params: {path: {id}}})) as Promise<ApiResponse<Client>>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useListClientsQuery(params?: ListClientsParams, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: clientKeys.list(params),
+    queryFn: () =>
+      call(client.GET('/v1/coach/clients', {params: {query: params ?? undefined}})) as Promise<ClientListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useClientsInfiniteQuery(filters?: ListClientsFilters, options?: {enabled?: boolean}) {
+  return useInfiniteQuery({
+    queryKey: clientKeys.infinite(filters),
+    enabled: options?.enabled ?? true,
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/clients', {
+          params: {
+            query: {
+              ...(filters?.search && {search: filters.search}),
+              ...(filters?.status && {status: filters.status}),
+              ...(filters?.sort && {sort: filters.sort}),
+              // The CL row's plan chips. Opt-in on the endpoint because the names
+              // cost two extra queries per page; this list is the one caller that
+              // renders them.
+              include_plans: true,
+              offset: pageParam,
+              limit: PAGE_SIZE,
+            },
+          },
+        }),
+      ) as Promise<ClientListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
+    },
+  });
+}
+
+export function useInviteClientMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ClientInviteRequest) =>
+      call(client.POST('/v1/coach/clients/invite', {body})) as Promise<ApiResponse<Client>>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: billingKeys.all});
+    },
+  });
+}
+
+export function useResendClientInviteMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(client.POST('/v1/coach/clients/{id}/resend-invite', {params: {path: {id}}})) as Promise<ApiResponse<Client>>,
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({queryKey: clientKeys.detail(id)});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+    },
+  });
+}
+
+/**
+ * Revoke a pending invitation. Hard-deletes the Client row on 204. The
+ * client's invite URL becomes invalid immediately.
+ *
+ * Returns 422 if the client is not pending — use updateClient with
+ * status: 'inactive' instead for non-pending clients.
+ */
+export function useRevokeInvitationMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/clients/{id}', {params: {path: {id}}})),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({queryKey: clientKeys.detail(id)});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: billingKeys.all});
+    },
+  });
+}
+
+export function useUpdateClientMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({body, id}: {body: ClientUpdateRequest; id: string}) =>
+      call(client.PATCH('/v1/coach/clients/{id}', {params: {path: {id}}, body})) as Promise<ApiResponse<Client>>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: clientKeys.detail(id)});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: billingKeys.all});
+    },
+  });
+}
+
+export type WeightEntry = components['schemas']['WeightEntry'];
+
+export function useListClientWeightEntriesQuery(clientId: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: clientKeys.weightEntries(clientId),
+    queryFn: () =>
+      call(client.GET('/v1/coach/clients/{client_id}/weight_entries', {params: {path: {client_id: clientId}}})),
+    enabled: options?.enabled ?? true,
+  });
+}
+
+type ListAttentionClientsQuery = NonNullable<paths['/v1/coach/clients/attention']['get']['parameters']['query']>;
+
+export type ListAttentionClientsParams = Pick<ListAttentionClientsQuery, 'limit' | 'offset'>;
+
+export type ClientAttentionListResponse = {
+  count: number;
+  data: Client[];
 };
 
-export type ListClientsFilters = {
-  search?: string;
-  sort?: 'last_active' | 'newest';
-  status?: string;
-};
-
-const clientsApi = api.injectEndpoints({
-  // These hand-managed endpoints (cache tags, infinite query, precise types)
-  // share names with the generated client. Without override, which definition
-  // wins depends on import order — override makes the richer handwritten ones
-  // authoritative and deterministic.
-  overrideExisting: true,
-  endpoints: (build) => ({
-    inviteClient: build.mutation<ApiResponse<Client>, ClientInviteRequest>({
-      query: (body) => ({
-        url: '/v1/coach/clients/invite',
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: [
-        {type: 'Client', id: 'LIST'},
-        {type: 'Billing', id: 'SUMMARY'},
-      ],
-    }),
-    getClient: build.query<ApiResponse<Client>, string>({
-      query: (id) => `/v1/coach/clients/${id}`,
-      providesTags: (_, __, id) => [{type: 'Client', id}],
-    }),
-    listClients: build.query<ClientListResponse, ListClientsParams | void>({
-      query: (params) => ({url: '/v1/coach/clients', params: params ?? undefined}),
-      providesTags: (result) => listTags('Client', result),
-    }),
-    clients: build.infiniteQuery<ClientListResponse, ListClientsFilters | void, number>({
-      query: ({queryArg, pageParam}) => ({
-        url: '/v1/coach/clients',
-        params: {
-          ...(queryArg?.search && {search: queryArg.search}),
-          ...(queryArg?.status && {status: queryArg.status}),
-          ...(queryArg?.sort && {sort: queryArg.sort}),
-          // The CL row's plan chips. Opt-in on the endpoint because the names
-          // cost two extra queries per page; this list is the one caller that
-          // renders them.
-          include_plans: true,
-          offset: pageParam,
-          limit: PAGE_SIZE,
-        },
-      }),
-      infiniteQueryOptions: {
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-          const nextOffset = lastPageParam + PAGE_SIZE;
-          return nextOffset < lastPage.count ? nextOffset : undefined;
-        },
-      },
-      providesTags: (result) => pageTags('Client', result),
-    }),
-    resendClientInvite: build.mutation<ApiResponse<Client>, string>({
-      query: (id) => ({
-        url: `/v1/coach/clients/${id}/resend-invite`,
-        method: 'POST',
-      }),
-      invalidatesTags: (_, __, id) => [
-        {type: 'Client', id},
-        {type: 'Client', id: 'LIST'},
-      ],
-    }),
-    /**
-     * Revoke a pending invitation. Hard-deletes the Client row on 204. The
-     * client's invite URL becomes invalid immediately.
-     *
-     * Returns 422 if the client is not pending — use updateClient with
-     * status: 'inactive' instead for non-pending clients.
-     */
-    revokeInvitation: build.mutation<void, string>({
-      query: (id) => ({
-        url: `/v1/coach/clients/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: (_, __, id) => [
-        {type: 'Client', id},
-        {type: 'Client', id: 'LIST'},
-        {type: 'Billing', id: 'SUMMARY'},
-      ],
-    }),
-    updateClient: build.mutation<ApiResponse<Client>, {body: ClientUpdateRequest; id: string}>({
-      query: ({body, id}) => ({
-        url: `/v1/coach/clients/${id}`,
-        method: 'PATCH',
-        body,
-      }),
-      invalidatesTags: (_, __, {id}) => [
-        {type: 'Client', id},
-        {type: 'Client', id: 'LIST'},
-        {type: 'Billing', id: 'SUMMARY'},
-      ],
-    }),
-  }),
-});
-
-export const {
-  useClientsInfiniteQuery,
-  useGetClientQuery,
-  useInviteClientMutation,
-  useListClientsQuery,
-  useResendClientInviteMutation,
-  useRevokeInvitationMutation,
-  useUpdateClientMutation,
-} = clientsApi;
-
-export const {useListClientWeightEntriesQuery} = coachApi;
+export function useListAttentionClientsQuery(params?: ListAttentionClientsParams, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: clientKeys.attention(),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/clients/attention', {params: {query: params ?? undefined}}),
+      ) as Promise<ClientAttentionListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}

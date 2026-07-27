@@ -7,8 +7,8 @@ import {z} from 'zod';
 
 import {FormOtpField} from '@/@components/form-fields';
 import {ROUTES} from '@/@config/routes';
+import {useTrainerAcceptInviteMutation, useTrainerAcceptInviteVerifyMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
-import {useTrainerAcceptInviteMutation, useTrainerAcceptInviteVerifyMutation} from '@/api/generated';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -51,8 +51,8 @@ export default function VerifyInviteOtp() {
   const navigate = useNavigate();
   const state = location.state as null | VerifyInviteOtpLocationState;
 
-  const [verifyInvite, {isLoading: isVerifying}] = useTrainerAcceptInviteVerifyMutation();
-  const [resendInvite, {isLoading: isResending}] = useTrainerAcceptInviteMutation();
+  const verifyInviteMutation = useTrainerAcceptInviteVerifyMutation();
+  const resendInviteMutation = useTrainerAcceptInviteMutation();
 
   const [cooldownRemaining, setCooldownRemaining] = useState(RESEND_COOLDOWN_SECONDS);
 
@@ -91,13 +91,11 @@ export default function VerifyInviteOtp() {
 
   const onSubmit = async (data: VerifyInviteOtpFormValues) => {
     try {
-      const result = await verifyInvite({
-        trainerAcceptInviteVerifyRequest: {
-          email: state.email,
-          invitation_token: token,
-          otp: data.otp,
-        },
-      }).unwrap();
+      const result = await verifyInviteMutation.mutateAsync({
+        email: state.email,
+        invitation_token: token,
+        otp: data.otp,
+      });
       setTokens(result);
       navigate(ROUTES.DASHBOARD, {replace: true});
     } catch (err) {
@@ -119,11 +117,11 @@ export default function VerifyInviteOtp() {
   };
 
   const handleResend = async () => {
-    if (cooldownRemaining > 0 || isResending) {
+    if (cooldownRemaining > 0 || resendInviteMutation.isPending) {
       return;
     }
     try {
-      await resendInvite({trainerAcceptInviteRequest: {email: state.email, invitation_token: token}}).unwrap();
+      await resendInviteMutation.mutateAsync({email: state.email, invitation_token: token});
       setCooldownRemaining(RESEND_COOLDOWN_SECONDS);
       reset({otp: ''});
       toast.success('A new code is on its way.');
@@ -151,8 +149,8 @@ export default function VerifyInviteOtp() {
     });
   };
 
-  const resendDisabled = cooldownRemaining > 0 || isResending;
-  const resendLabel = isResending
+  const resendDisabled = cooldownRemaining > 0 || resendInviteMutation.isPending;
+  const resendLabel = resendInviteMutation.isPending
     ? 'Sending...'
     : cooldownRemaining > 0
       ? `Resend code in ${cooldownRemaining}s`
@@ -186,10 +184,10 @@ export default function VerifyInviteOtp() {
         <Button
           fullWidth
           isDisabled={otpValue.length !== 6}
-          isPending={isVerifying}
+          isPending={verifyInviteMutation.isPending}
           type="submit"
         >
-          {isVerifying ? (
+          {verifyInviteMutation.isPending ? (
             <>
               <Spinner
                 color="current"

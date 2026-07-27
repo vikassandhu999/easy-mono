@@ -6,7 +6,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField, FormTextField} from '@/@components/form-fields';
 
-import type {Food} from '@/api/generated';
+import type {Food} from '@/api/nutrition-foods';
 import {type ServingSize, toOptionalNumber} from '@/api/shared';
 
 export type IngredientItem = {

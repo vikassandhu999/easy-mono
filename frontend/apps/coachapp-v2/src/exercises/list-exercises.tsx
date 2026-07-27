@@ -6,8 +6,7 @@ import BrowseScreen from '@/@components/browse-screen';
 import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useListMusclesQuery} from '@/api/generated';
-import {useCoachTrainingExercisesInfiniteQuery} from '@/api/training-exercises';
+import {useCoachTrainingExercisesInfiniteQuery, useListMusclesQuery} from '@/api/training-exercises';
 import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
 
 import ExerciseListItem from './exercise-list-item';

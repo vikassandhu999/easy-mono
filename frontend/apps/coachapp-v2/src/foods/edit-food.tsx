@@ -5,7 +5,7 @@ import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/generated';
+import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
 import FoodForm, {
@@ -20,8 +20,8 @@ import FoodForm, {
 // into local state (which the React Compiler lint rule forbids).
 function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
   const goBack = useGoBack(backPath);
-  const {data} = useGetFoodQuery({id: foodId});
-  const [updateFood, {isLoading: isUpdating}] = useUpdateFoodMutation();
+  const {data} = useGetFoodQuery(foodId);
+  const updateFoodMutation = useUpdateFoodMutation();
 
   const food = data!.data;
 
@@ -35,7 +35,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
   const onSubmit = async (formData: FoodFormValues) => {
     try {
-      await updateFood({id: foodId, foodUpdateRequest: foodToUpdateRequest({servingSizes, values: formData})}).unwrap();
+      await updateFoodMutation.mutateAsync({id: foodId, body: foodToUpdateRequest({servingSizes, values: formData})});
       goBack();
     } catch (err) {
       applyFormErrors(err, "Food wasn't updated. Check the details and try again", form.setError);
@@ -61,7 +61,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
           <FoodForm
             form={form}
             initialMedia={foodToMediaValue(food)}
-            isSubmitting={isUpdating}
+            isSubmitting={updateFoodMutation.isPending}
             onCancel={goBack}
             onServingSizesChange={setServingSizes}
             onSubmit={onSubmit}
@@ -77,7 +77,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
 export default function EditFood() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetFoodQuery({id: id!});
+  const {data, isError, isLoading: isFetching} = useGetFoodQuery(id!);
   const backPath = `/library/foods/${id}`;
   const goBackOuter = useGoBack(backPath);
 

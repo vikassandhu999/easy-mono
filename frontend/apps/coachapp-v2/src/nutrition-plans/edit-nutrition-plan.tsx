@@ -5,7 +5,9 @@ import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {coachApi, useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/generated';
+import {nutritionPlanKeys} from '@/api/keys';
+import {type NutritionPlan, useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
+import {patchQueryData} from '@/api/query-client';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
@@ -13,7 +15,6 @@ import NutritionPlanForm, {
   nutritionPlanToUpdateRequest,
   useNutritionPlanForm,
 } from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
-import {useAppDispatch} from '@/store';
 
 // NE/TE mobile ref shortens the title; desktop keeps the COPY.md string.
 const TITLE = (
@@ -24,10 +25,9 @@ const TITLE = (
 );
 
 export default function EditNutritionPlan() {
-  const dispatch = useAppDispatch();
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetNutritionPlanQuery({id: id!});
-  const [updatePlan, {isLoading: isUpdating}] = useUpdateNutritionPlanMutation();
+  const {data, isError, isLoading: isFetching} = useGetNutritionPlanQuery(id!);
+  const updatePlan = useUpdateNutritionPlanMutation();
 
   const plan = data?.data;
   const backPath = `/library/nutrition-plans/${id}`;
@@ -85,20 +85,18 @@ export default function EditNutritionPlan() {
 
   const onSubmit = async (formData: NutritionPlanFormValues) => {
     try {
-      const result = await updatePlan({nutritionPlanRequest: nutritionPlanToUpdateRequest(formData), id: id!}).unwrap();
+      const result = await updatePlan.mutateAsync({body: nutritionPlanToUpdateRequest(formData), id: id!});
       // tag:false — sync the cached detail so the builder shows the new values.
       // meals/days/weekday_assignments are optional on the update response —
       // keep the hydrated ones from the detail fetch rather than wiping them.
-      dispatch(
-        coachApi.util.updateQueryData('getNutritionPlan', {id: id!}, (draft) => {
-          draft.data = {
-            ...result.data,
-            meals: result.data.meals ?? draft.data.meals,
-            days: result.data.days ?? draft.data.days,
-            weekday_assignments: result.data.weekday_assignments ?? draft.data.weekday_assignments,
-          };
-        }),
-      );
+      patchQueryData<{data: NutritionPlan}>(nutritionPlanKeys.detail(id!), (draft) => {
+        draft.data = {
+          ...result.data,
+          meals: result.data.meals ?? draft.data.meals,
+          days: result.data.days ?? draft.data.days,
+          weekday_assignments: result.data.weekday_assignments ?? draft.data.weekday_assignments,
+        };
+      });
       goBack();
     } catch (err) {
       applyFormErrors(err, "Nutrition plan wasn't updated. Check the details and try again", form.setError);
@@ -123,7 +121,7 @@ export default function EditNutritionPlan() {
         >
           <NutritionPlanForm
             form={form}
-            isSubmitting={isUpdating}
+            isSubmitting={updatePlan.isPending}
             onCancel={goBack}
             onSubmit={onSubmit}
             submitLabel="Save changes"

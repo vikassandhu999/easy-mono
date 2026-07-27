@@ -10,7 +10,7 @@
 import {Typography} from '@heroui/react';
 import {useRef, useState} from 'react';
 
-import type {TrainingPlan} from '@/api/generated';
+import type {TrainingPlan} from '@/api/training-plan-builder';
 
 import {PlanPeriodCard} from './components/plan-period-card';
 import {SetEditor} from './components/set-editor';

@@ -8,7 +8,13 @@ import {FormActions, FormLayout, FormNumberField, FormTextAreaField, FormTextFie
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
-import type {Food, FoodServingSize, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/generated';
+import type {
+  Food,
+  FoodServingSize,
+  RecipeIngredient,
+  RecipeIngredientRequest,
+  RecipeRequest,
+} from '@/api/nutrition-foods';
 import {omitUndefined, type ServingSize, toOptionalNumber, toOptionalText} from '@/api/shared';
 import {
   canComputeRecipeNutrition,

@@ -68,8 +68,7 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
 
 export default function MessagesInbox() {
   const navigate = useNavigate();
-  // ponytail: flat first-100 inbox, add offset paging when a business outgrows it.
-  const {data, isError, isLoading, refetch} = useListCoachConversationsQuery({limit: 100});
+  const {data, isError, isLoading, refetch} = useListCoachConversationsQuery();
   const conversations = data?.data ?? [];
   const unreadTotal = conversations.reduce((total, conversation) => total + conversation.unread_count, 0);
 

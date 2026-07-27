@@ -6,9 +6,8 @@ import {z} from 'zod';
 import {FormOtpField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
-import {useExchangeTokenMutation} from '@/api/auth';
+import {useExchangeTokenMutation, useSendOtpMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
-import {useSendOtpMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import {AuthFooter} from '@/auth/components/auth-footer';
 import AuthLayout from '@/auth/components/auth-layout';
@@ -28,8 +27,8 @@ export default function VerifyLoginOtp() {
   const navigate = useNavigate();
   const state = location.state as null | VerifyLoginOtpLocationState;
 
-  const [exchangeToken, {isLoading}] = useExchangeTokenMutation();
-  const [sendOtp, {isLoading: isResending}] = useSendOtpMutation();
+  const exchangeTokenMutation = useExchangeTokenMutation();
+  const sendOtpMutation = useSendOtpMutation();
 
   const form = useForm<VerifyLoginOtpFormValues>({
     defaultValues: {otp: ''},
@@ -51,12 +50,12 @@ export default function VerifyLoginOtp() {
 
   const onSubmit = async (data: VerifyLoginOtpFormValues) => {
     try {
-      const result = await exchangeToken({
+      const result = await exchangeTokenMutation.mutateAsync({
         email: state.email,
         grant_type: 'otp',
         otp: data.otp,
         role: 'coach',
-      }).unwrap();
+      });
       setTokens(result);
       navigate(ROUTES.DASHBOARD, {replace: true});
     } catch (err) {
@@ -69,7 +68,7 @@ export default function VerifyLoginOtp() {
 
   const handleResend = async () => {
     try {
-      await sendOtp({otpRequest: {email: state.email, type: 'authentication'}}).unwrap();
+      await sendOtpMutation.mutateAsync({email: state.email, type: 'authentication'});
       toast.success('A new code is on its way');
     } catch (err) {
       applyFormErrors(err, "Code wasn't resent. Try again", form.setError);
@@ -96,10 +95,10 @@ export default function VerifyLoginOtp() {
         <Button
           fullWidth
           isDisabled={otpValue.length !== 6}
-          isPending={isLoading}
+          isPending={exchangeTokenMutation.isPending}
           type="submit"
         >
-          {isLoading ? (
+          {exchangeTokenMutation.isPending ? (
             <>
               <Spinner
                 color="current"
@@ -122,10 +121,10 @@ export default function VerifyLoginOtp() {
         </Typography>
         <Link
           className="type-body text-foreground underline"
-          isDisabled={isResending}
+          isDisabled={sendOtpMutation.isPending}
           onPress={handleResend}
         >
-          {isResending ? 'Sending' : 'Resend'}
+          {sendOtpMutation.isPending ? 'Sending' : 'Resend'}
         </Link>
       </AuthFooter>
     </AuthLayout>

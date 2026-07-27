@@ -158,7 +158,7 @@ export default function Dashboard() {
     isError: prospectsError,
     isLoading: prospectsLoading,
   } = useListProspectsQuery({limit: 5, status: 'new'});
-  const {data: conversationsData, isError: conversationsError} = useListCoachConversationsQuery({limit: 5});
+  const {data: conversationsData, isError: conversationsError} = useListCoachConversationsQuery();
   const {
     data: reviewQueueData,
     isError: reviewQueueError,

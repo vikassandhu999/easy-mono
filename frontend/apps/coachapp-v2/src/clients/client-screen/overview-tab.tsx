@@ -7,15 +7,12 @@ import {EmptyState} from '@/@components/empty-state';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
+import type {ClientProfileFormAssignment} from '@/api/checkins';
+import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
 import type {Client} from '@/api/clients';
-import {useUpdateClientMutation} from '@/api/clients';
-import type {ClientProfileFormAssignment} from '@/api/generated';
-import {
-  useListClientFormAssignmentsForCoachQuery,
-  useListClientWeightEntriesQuery,
-  useListCoachClientTrainingSessionsQuery,
-  useListCoachMealLogsQuery,
-} from '@/api/generated';
+import {useListClientWeightEntriesQuery, useUpdateClientMutation} from '@/api/clients';
+import {useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
+import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
 import {DetailRow} from '@/clients/components/detail-row';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
@@ -49,14 +46,16 @@ export function OverviewTab({client}: {client: Client}) {
   const navigate = useNavigate();
   const clientPath = (route: string) => route.replace(':id', client.id);
 
-  const sessions = useListCoachClientTrainingSessionsQuery({clientId: client.id, from, to});
-  const meals = useListCoachMealLogsQuery({clientId: client.id, from, to});
-  const weights = useListClientWeightEntriesQuery({clientId: client.id});
-  const forms = useListClientFormAssignmentsForCoachQuery({clientId: client.id});
+  const sessions = useListCoachClientTrainingSessionsQuery(client.id, {from, to});
+  const meals = useListCoachMealLogsQuery(client.id, {from, to});
+  const weights = useListClientWeightEntriesQuery(client.id);
+  const forms = useListClientFormAssignmentsForCoachQuery(client.id);
 
   const doneDays = completedSessionDates(sessions.data?.data);
   const loggedDays = loggedMealDates(meals.data?.data);
-  const trend = weightTrend(weights.data?.entries, weights.data?.goal?.value ?? null);
+  // `goal` is a loosely-typed index-signature object on the wire; narrow the
+  // one field this screen reads.
+  const trend = weightTrend(weights.data?.entries, (weights.data?.goal?.value as number | undefined) ?? null);
 
   const submissions = (forms.data?.data ?? []).filter((a) => a.latest_submission && a.purpose === 'check_in');
   const latest = submissions[0];
@@ -385,7 +384,7 @@ function WeightCard({to, trend}: {to: string; trend: NonNullable<ReturnType<type
  */
 function NotesCard({client}: {client: Client}) {
   const [value, setValue] = useState(client.notes ?? '');
-  const [updateClient] = useUpdateClientMutation();
+  const updateClientMutation = useUpdateClientMutation();
 
   // A refetch has to win over local state — otherwise the box keeps showing what
   // this session typed after the server said otherwise.
@@ -398,8 +397,8 @@ function NotesCard({client}: {client: Client}) {
     if (next === (client.notes ?? '').trim()) {
       return;
     }
-    updateClient({body: {notes: next}, id: client.id})
-      .unwrap()
+    updateClientMutation
+      .mutateAsync({body: {notes: next}, id: client.id})
       .catch((error) => toastMutationError(error, "Couldn't save these notes. Try again."));
   };
 

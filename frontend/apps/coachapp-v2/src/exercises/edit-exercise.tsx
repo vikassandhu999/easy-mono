@@ -5,14 +5,14 @@ import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {applyFormErrors} from '@/api/shared';
 import {
   type TrainingExercise,
   useGetExerciseQuery,
   useListEquipmentQuery,
   useListMusclesQuery,
   useUpdateExerciseMutation,
-} from '@/api/generated';
-import {applyFormErrors} from '@/api/shared';
+} from '@/api/training-exercises';
 import ExerciseForm, {
   type ExerciseFormValues,
   exerciseToFormValues,
@@ -48,7 +48,7 @@ function EditExerciseForm({
   exerciseId: string;
 }) {
   const goBack = useGoBack(backPath);
-  const [updateExercise, {isLoading: isUpdating}] = useUpdateExerciseMutation();
+  const updateExerciseMutation = useUpdateExerciseMutation();
   const {data: musclesData} = useListMusclesQuery({});
   const {data: equipmentData} = useListEquipmentQuery({});
 
@@ -58,7 +58,7 @@ function EditExerciseForm({
 
   const onSubmit = async (formData: ExerciseFormValues) => {
     try {
-      await updateExercise({id: exerciseId, trainingExerciseUpdateRequest: exerciseToUpdateRequest(formData)}).unwrap();
+      await updateExerciseMutation.mutateAsync({id: exerciseId, body: exerciseToUpdateRequest(formData)});
       goBack();
     } catch (err) {
       applyFormErrors(err, "Exercise wasn't updated. Check the details and try again", form.setError);
@@ -77,7 +77,7 @@ function EditExerciseForm({
             equipment={equipmentData?.data ?? []}
             form={form}
             initialMedia={exerciseToMediaValue(exercise)}
-            isSubmitting={isUpdating}
+            isSubmitting={updateExerciseMutation.isPending}
             muscles={musclesData?.data ?? []}
             onCancel={goBack}
             onSubmit={onSubmit}
@@ -92,7 +92,7 @@ function EditExerciseForm({
 
 export default function EditExercise() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetExerciseQuery({id: id!});
+  const {data, isError, isLoading: isFetching} = useGetExerciseQuery(id!);
 
   const exercise = data?.data;
   const backPath = `/library/exercises/${id}`;

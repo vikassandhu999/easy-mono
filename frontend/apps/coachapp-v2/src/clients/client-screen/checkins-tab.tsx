@@ -6,13 +6,13 @@ import {EmptyState} from '@/@components/empty-state';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
-import type {Client} from '@/api/clients';
-import type {ClientProfileCheckInSchedule} from '@/api/generated';
+import type {ClientProfileCheckInSchedule} from '@/api/checkins';
 import {
   useListCheckInSchedulesForClientQuery,
   useListClientFormAssignmentsForCoachQuery,
   useUpdateCheckInScheduleMutation,
-} from '@/api/generated';
+} from '@/api/checkins';
+import type {Client} from '@/api/clients';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
@@ -20,8 +20,8 @@ import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-da
 /** CD-CI: the schedule, submission history, the intake row, and the photos rail. */
 export function CheckinsTab({client}: {client: Client}) {
   const navigate = useNavigate();
-  const schedules = useListCheckInSchedulesForClientQuery({clientId: client.id});
-  const forms = useListClientFormAssignmentsForCoachQuery({clientId: client.id});
+  const schedules = useListCheckInSchedulesForClientQuery(client.id);
+  const forms = useListClientFormAssignmentsForCoachQuery(client.id);
 
   const schedule = schedules.data?.data?.[0];
   const assignments = forms.data?.data ?? [];
@@ -149,11 +149,12 @@ export function CheckinsTab({client}: {client: Client}) {
  * summary line it replaced could only be read.
  */
 function ScheduleCard({schedule}: {schedule: ClientProfileCheckInSchedule}) {
-  const [updateSchedule, {isLoading}] = useUpdateCheckInScheduleMutation();
+  const updateScheduleMutation = useUpdateCheckInScheduleMutation();
+  const isLoading = updateScheduleMutation.isPending;
 
   const save = (body: {active?: boolean; frequency?: Frequency}, done: string) =>
-    updateSchedule({clientProfileCheckInScheduleUpdateRequest: body, id: schedule.id})
-      .unwrap()
+    updateScheduleMutation
+      .mutateAsync({body, id: schedule.id})
       .then(() => toast.success(done, {timeout: 1000}))
       .catch((error) => toastMutationError(error, "The schedule wasn't updated. Try again."));
 

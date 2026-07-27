@@ -3,8 +3,12 @@ import {Button, CloseButton, Label, Typography} from '@heroui/react';
 import {ImageOff, ImagePlus, Video} from 'lucide-react';
 import {type ChangeEvent, useEffect, useId, useRef, useState} from 'react';
 
-import {type LibraryMediaUploadRequest, useCreateCoachLibraryMediaUploadMutation} from '@/api/generated';
 import {getApiErrorMessage} from '@/api/shared';
+import {
+  type LibraryMediaUploadRequest,
+  type LibraryMediaUploadResponse,
+  useCreateCoachLibraryMediaUploadMutation,
+} from '@/api/uploads';
 
 // ponytail: library media accepts only what the browser renders natively — no transcode.
 const MAX_BYTES: Record<LibraryMediaUploadRequest['content_type'], number> = {
@@ -89,7 +93,7 @@ function Thumbnail({kind, url}: {kind: 'image' | 'video'; url: string | null}) {
 export default function LibraryMediaField({disabled, initialMedia, onBusyChange, onChange}: Props) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [createUpload] = useCreateCoachLibraryMediaUploadMutation();
+  const createUploadMutation = useCreateCoachLibraryMediaUploadMutation();
   const [state, setState] = useState<State>(
     initialMedia ? {status: 'current', kind: initialMedia.kind, url: initialMedia.url} : {status: 'empty'},
   );
@@ -127,11 +131,9 @@ export default function LibraryMediaField({disabled, initialMedia, onBusyChange,
     const kind = file.type.startsWith('video/') ? 'video' : 'image';
     setState({status: 'uploading', previewUrl, kind, progress: 0});
 
-    let response: Awaited<ReturnType<ReturnType<typeof useCreateCoachLibraryMediaUploadMutation>[0]>>['data'];
+    let response: LibraryMediaUploadResponse;
     try {
-      response = await createUpload({
-        libraryMediaUploadRequest: {byte_size: file.size, content_type: file.type},
-      }).unwrap();
+      response = await createUploadMutation.mutateAsync({byte_size: file.size, content_type: file.type});
     } catch (err) {
       setState({
         status: 'error',

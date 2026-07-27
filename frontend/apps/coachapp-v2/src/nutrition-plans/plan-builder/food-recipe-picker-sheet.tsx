@@ -20,7 +20,7 @@ import {Chip} from '@heroui/react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 
-import type {Food, Recipe} from '@/api/generated';
+import type {Food, Recipe} from '@/api/nutrition-foods';
 import {
   useCoachFoodsInfiniteQuery,
   useCoachRecipesInfiniteQuery,
@@ -130,7 +130,7 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
   } = useCoachRecipesInfiniteQuery(debouncedSearch ? {search: debouncedSearch} : undefined);
 
   // --- Data: create food mutation ---
-  const [createFood] = useCreateCoachFoodMutation();
+  const createFoodMutation = useCreateCoachFoodMutation();
 
   // --- Derived: flat item lists ---
   const foods = useMemo(() => foodPages?.pages.flatMap((page) => page.data) ?? [], [foodPages]);
@@ -212,9 +212,7 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
       }
       creatingRef.current = true;
       try {
-        const result = await createFood({
-          foodRequest: {name: query},
-        }).unwrap();
+        const result = await createFoodMutation.mutateAsync({name: query});
         const newFood = result.data;
         // Auto-select the newly created food
         setSelectedKeys((prev) => new Set([...prev, newFood.id]));
@@ -228,7 +226,7 @@ export function FoodRecipePickerSheet({mealName, open, onClose, onPick, anchorEl
         creatingRef.current = false;
       }
     },
-    [createFood],
+    [createFoodMutation],
   );
 
   const handleClose = useCallback(() => {

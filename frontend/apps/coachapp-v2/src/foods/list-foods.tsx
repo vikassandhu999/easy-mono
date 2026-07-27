@@ -6,8 +6,7 @@ import BrowseScreen from '@/@components/browse-screen';
 import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useListFoodCategoriesQuery} from '@/api/generated';
-import {useCoachFoodsInfiniteQuery} from '@/api/nutrition-foods';
+import {useCoachFoodsInfiniteQuery, useListFoodCategoriesQuery} from '@/api/nutrition-foods';
 import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
 
 import FoodListItem from './food-list-item';

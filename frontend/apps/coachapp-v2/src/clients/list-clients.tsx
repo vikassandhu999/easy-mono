@@ -5,8 +5,13 @@ import {useNavigate} from 'react-router-dom';
 
 import BrowseScreen from '@/@components/browse-screen';
 import {ROUTES} from '@/@config/routes';
-import {type ClientSummary, useListClientsQuery} from '@/api/clients';
-import {type Client, useListAttentionClientsQuery} from '@/api/generated';
+import {
+  type Client,
+  type ClientStatus,
+  type ClientSummary,
+  useListAttentionClientsQuery,
+  useListClientsQuery,
+} from '@/api/clients';
 
 import ClientEmptyState from './clients-list/client-empty-state';
 import ClientListItem from './clients-list/client-list-item';
@@ -19,7 +24,7 @@ type FilterOption = {
   /** COPY.md §CL gives shorter labels for the mobile pill row. */
   label: string;
   shortLabel: string;
-  status?: string;
+  status?: ClientStatus;
   summaryKey?: keyof ClientSummary;
 };
 

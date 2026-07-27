@@ -12,8 +12,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {coachApi, useCopyExerciseMutation, useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/generated';
-import {useAppDispatch} from '@/store';
+import {useCopyExerciseMutation, useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/training-exercises';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',
@@ -41,22 +40,20 @@ function toSteps(instructions: string): string[] {
 export default function ExerciseDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const goBack = useGoBack(ROUTES.EXERCISES);
-  const {data, isError, isLoading} = useGetExerciseQuery({id: id!});
-  const [deleteExercise, {isLoading: isDeleting}] = useDeleteExerciseMutation();
-  const [copyExercise, {isLoading: isDuplicating}] = useCopyExerciseMutation();
+  const {data, isError, isLoading} = useGetExerciseQuery(id!);
+  const deleteExerciseMutation = useDeleteExerciseMutation();
+  const copyExerciseMutation = useCopyExerciseMutation();
 
   const handleDuplicate = async () => {
     const exercise = data?.data;
     try {
-      const result = await copyExercise({
+      // useCopyExerciseMutation invalidates the list itself, so the copy is
+      // present when the coach navigates back to it.
+      const result = await copyExerciseMutation.mutateAsync({
         id: id!,
-        trainingExerciseCopyRequest: {name: `${exercise?.name ?? 'Exercise'} (copy)`},
-      }).unwrap();
-      // copyExercise is tag:false — invalidate the list so the copy is present
-      // when the coach navigates back to it (mirrors handleDelete below).
-      dispatch(coachApi.util.invalidateTags([{type: 'TrainingExercise', id: 'LIST'}]));
+        body: {name: `${exercise?.name ?? 'Exercise'} (copy)`},
+      });
       toast.success('Exercise duplicated');
       navigate(`/library/exercises/${result.data.id}`);
     } catch {
@@ -66,10 +63,9 @@ export default function ExerciseDetail() {
 
   const handleDelete = async () => {
     try {
-      await deleteExercise({id: id!}).unwrap();
-      // Generated mutation is tag:false — invalidate the list so the deleted
-      // item doesn't linger when we land back on it.
-      dispatch(coachApi.util.invalidateTags([{type: 'TrainingExercise', id: 'LIST'}]));
+      // useDeleteExerciseMutation invalidates detail + list itself, so the
+      // deleted item doesn't linger when we land back on it.
+      await deleteExerciseMutation.mutateAsync(id!);
       navigate(ROUTES.EXERCISES, {replace: true});
     } catch {
       toast.danger("Couldn't delete exercise");
@@ -100,11 +96,11 @@ export default function ExerciseDetail() {
                 Cancel
               </Button>
               <Button
-                isPending={isDeleting}
+                isPending={deleteExerciseMutation.isPending}
                 onPress={handleDelete}
                 variant="danger"
               >
-                {isDeleting ? 'Deleting' : 'Delete'}
+                {deleteExerciseMutation.isPending ? 'Deleting' : 'Delete'}
               </Button>
             </AlertDialog.Footer>
           </AlertDialog.Dialog>
@@ -187,7 +183,7 @@ export default function ExerciseDetail() {
             </Button>
           )}
           <Button
-            isPending={isDuplicating}
+            isPending={copyExerciseMutation.isPending}
             onPress={handleDuplicate}
             variant="outline"
           >
@@ -398,7 +394,7 @@ export default function ExerciseDetail() {
           <Button
             isIconOnly
             aria-label="Duplicate exercise"
-            isPending={isDuplicating}
+            isPending={copyExerciseMutation.isPending}
             onPress={handleDuplicate}
             variant="outline"
           >

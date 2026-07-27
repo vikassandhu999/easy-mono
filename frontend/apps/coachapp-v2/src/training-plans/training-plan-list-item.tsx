@@ -2,7 +2,7 @@ import {Chip} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
 
 import {BrowseRow} from '@/@components/browse-list-box';
-import type {TrainingPlan} from '@/api/generated';
+import type {TrainingPlan} from '@/api/training-plan-builder';
 
 type TrainingPlanStatus = TrainingPlan['status'];
 

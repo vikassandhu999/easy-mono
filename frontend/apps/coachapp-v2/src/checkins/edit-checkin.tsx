@@ -22,16 +22,18 @@ import CheckinBuilder from '@/checkins/checkin-builder';
 function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CHECKINS);
-  const [updateTemplate, {isLoading: isUpdating}] = useUpdateFormTemplateMutation();
-  const [deleteTemplate, {isLoading: isDeleting}] = useDeleteFormTemplateMutation();
+  const updateTemplateMutation = useUpdateFormTemplateMutation();
+  const deleteTemplateMutation = useDeleteFormTemplateMutation();
+  const isUpdating = updateTemplateMutation.isPending;
+  const isDeleting = deleteTemplateMutation.isPending;
   const deleteConfirm = useOverlayState();
 
   const onSubmit = async (draft: TemplateDraft) => {
     try {
-      await updateTemplate({
+      await updateTemplateMutation.mutateAsync({
         id: template.id,
-        clientProfileFormTemplateUpdateRequest: draftToRequest(draft),
-      }).unwrap();
+        body: draftToRequest(draft),
+      });
       toast.success('Form saved');
       navigate(ROUTES.CHECKINS, {replace: true});
     } catch {
@@ -41,7 +43,7 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
 
   const handleDelete = async () => {
     try {
-      await deleteTemplate({id: template.id}).unwrap();
+      await deleteTemplateMutation.mutateAsync(template.id);
       deleteConfirm.close();
       navigate(ROUTES.CHECKINS, {replace: true});
     } catch {
@@ -117,7 +119,7 @@ function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
 export default function EditCheckin() {
   const {id} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.CHECKINS);
-  const {data, isError, isLoading} = useGetFormTemplateQuery({id: id!});
+  const {data, isError, isLoading} = useGetFormTemplateQuery(id!);
 
   if (isLoading) {
     return (

@@ -6,7 +6,7 @@ import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/generated';
+import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors, type ServingSize} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {
@@ -21,8 +21,8 @@ import RecipeForm, {
 // into local state (which the React Compiler lint rule forbids).
 function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: string}) {
   const goBack = useGoBack(backPath);
-  const {data} = useGetRecipeQuery({id: recipeId});
-  const [updateRecipe, {isLoading: isUpdating}] = useUpdateRecipeMutation();
+  const {data} = useGetRecipeQuery(recipeId);
+  const updateRecipe = useUpdateRecipeMutation();
 
   const recipe = data!.data;
   const [ingredients, setIngredients] = useState<IngredientItem[]>(() =>
@@ -62,10 +62,10 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 
   const onSubmit = async (formData: RecipeFormValues) => {
     try {
-      await updateRecipe({
+      await updateRecipe.mutateAsync({
         id: recipeId,
-        recipeRequest: recipeToUpdateRequest({ingredients, servingSizes, values: formData}),
-      }).unwrap();
+        body: recipeToUpdateRequest({ingredients, servingSizes, values: formData}),
+      });
       goBack();
     } catch (err) {
       applyFormErrors(err, "Recipe wasn't updated. Check the details and try again", form.setError);
@@ -91,7 +91,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
           <RecipeForm
             form={form}
             ingredients={ingredients}
-            isSubmitting={isUpdating}
+            isSubmitting={updateRecipe.isPending}
             onCancel={attemptLeave}
             onIngredientsChange={handleIngredientsChange}
             onServingSizesChange={handleServingSizesChange}
@@ -141,7 +141,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 
 export default function EditRecipe() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetRecipeQuery({id: id!});
+  const {data, isError, isLoading: isFetching} = useGetRecipeQuery(id!);
   const backPath = `/library/recipes/${id}`;
   const goBackOuter = useGoBack(backPath);
 

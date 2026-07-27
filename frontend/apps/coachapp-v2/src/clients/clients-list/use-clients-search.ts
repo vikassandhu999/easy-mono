@@ -16,7 +16,7 @@ export default function useClientsSearch({
       sort,
       status,
     },
-    {skip: !enabled},
+    {enabled},
   );
 
   const clients = useMemo<Client[]>(() => {

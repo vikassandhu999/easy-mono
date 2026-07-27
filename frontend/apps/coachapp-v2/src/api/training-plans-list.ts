@@ -1,82 +1,204 @@
 /**
- * Hand-written infinite query for `GET /v1/coach/training-plans`.
+ * Hand-written infinite query for `GET /v1/coach/training-plans`, plus every
+ * other training-plan-list-shaped read and the plan-level CRUD mutations that
+ * aren't part of the builder's optimistic protocol: create, update, assign,
+ * duplicate, delete, and the two client-scoped lists (a client's assigned
+ * plans, a client's training sessions).
  *
- * Codegen cannot emit `build.infiniteQuery`, so this mirrors the pattern from
- * `src/api/nutrition-plans-list.ts` (offset pagination, page size 20,
- * `pageTags`) but targets the coach-scoped training-plans list with the
- * generated `TrainingPlanListResponse` / `ListTrainingPlansApiArg` types from
- * `generated.ts` so the hand-written query stays type-synced.
- *
- * The generated slice already provides `useGetTrainingPlanQuery`,
- * `useCreateTrainingPlanMutation`, `useUpdateTrainingPlanMutation`, etc.
- * Only the infinite list is missing, so this module supplies just that.
+ * The plan DETAIL query (`getTrainingPlan`) and everything the builder writes
+ * straight through to it live in `src/api/training-plan-builder.ts` instead —
+ * this file's mutations invalidate list caches normally rather than patching
+ * that single cache entry, since none of them run inside the builder's
+ * patch-then-request flow.
  */
-import {api} from '@/api/base';
-import {coachApi, type ListTrainingPlansApiArg, type TrainingPlanListResponse} from '@/api/generated';
-import {pageTags} from '@/api/shared';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
+import {call, client} from '@/api/client';
+import {clientKeys, trainingPlanKeys, trainingSessionKeys} from '@/api/keys';
+import type {components, paths} from '@/api/schema';
 
 const PAGE_SIZE = 20;
 
+export type TrainingPlanListResponse = components['schemas']['TrainingPlanListResponse'];
+export type TrainingPlanCreateRequest = components['schemas']['TrainingPlanCreateRequest'];
+export type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
+export type TrainingPlanAssignRequest = components['schemas']['TrainingPlanAssignRequest'];
+export type ClientTrainingPlanListResponse = components['schemas']['ClientTrainingPlanListResponse'];
+export type TrainingSession = components['schemas']['TrainingSession'];
+export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
+export type TrainingSessionListResponse = components['schemas']['TrainingSessionListResponse'];
+
+type TrainingPlanResponse = components['schemas']['TrainingPlanResponse'];
+type TrainingSessionResponse = components['schemas']['TrainingSessionResponse'];
+
+type ListTrainingPlansQuery = NonNullable<paths['/v1/coach/training-plans']['get']['parameters']['query']>;
+type ListCoachClientTrainingPlansQuery = NonNullable<
+  paths['/v1/coach/clients/{client_id}/training-plans']['get']['parameters']['query']
+>;
+type ListCoachClientTrainingSessionsQuery = NonNullable<
+  paths['/v1/coach/clients/{client_id}/training-sessions']['get']['parameters']['query']
+>;
+
 /** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachTrainingPlansFilters = Pick<ListTrainingPlansApiArg, 'status'> & {
-  search?: string;
-};
+export type CoachTrainingPlansFilters = Pick<ListTrainingPlansQuery, 'status'> & {search?: string};
 
-const trainingPlansListApi = api.injectEndpoints({
-  endpoints: (build) => ({
-    coachTrainingPlans: build.infiniteQuery<TrainingPlanListResponse, CoachTrainingPlansFilters | void, number>({
-      query: ({queryArg, pageParam}) => ({
-        url: '/v1/coach/training-plans',
-        params: {
-          ...(queryArg?.search ? {search: queryArg.search} : {}),
-          ...(queryArg?.status ? {status: queryArg.status} : {}),
-          offset: pageParam,
-          limit: PAGE_SIZE,
-        },
-      }),
-      infiniteQueryOptions: {
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-          const nextOffset = lastPageParam + PAGE_SIZE;
-          return nextOffset < lastPage.count ? nextOffset : undefined;
-        },
-      },
-      // result is InfiniteData<TrainingPlanListResponse> | undefined; the
-      // InfiniteData shape matches pageTags' expected {pages: {data: {id}[]}[]}
-      // because TrainingPlanListResponse has a `data` field of TrainingPlan[].
-      providesTags: (result) => pageTags('TrainingPlan', result as {pages: {data: {id: string}[]}[]} | undefined),
-    }),
-  }),
-});
+export type ListTrainingPlansApiArg = Pick<ListTrainingPlansQuery, 'limit' | 'offset' | 'search' | 'status'>;
 
-export const {useCoachTrainingPlansInfiniteQuery} = trainingPlansListApi;
-export const {useListCoachClientTrainingPlansQuery, useListTrainingPlansQuery} = coachApi;
-
-// The builder keeps its own detail (getTrainingPlan) fresh via optimistic
-// updateQueryData, but nothing refreshes the plan LIST after a rename/status
-// change — so the list shows stale names. updateTrainingPlan is tag:false;
-// invalidate just the LIST tag (not the detail, which the builder owns).
-coachApi.enhanceEndpoints({
-  endpoints: {
-    listTrainingPlans: {providesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
-    createTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
-    updateTrainingPlan: {
-      invalidatesTags: [
-        {type: 'TrainingPlan', id: 'LIST'},
-        {type: 'TrainingPlan', id: 'CLIENT-LIST'},
-      ],
+export function useCoachTrainingPlansInfiniteQuery(filters?: CoachTrainingPlansFilters, options?: {enabled?: boolean}) {
+  return useInfiniteQuery({
+    queryKey: trainingPlanKeys.infinite(filters),
+    enabled: options?.enabled ?? true,
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/training-plans', {
+          params: {
+            query: {
+              ...(filters?.search ? {search: filters.search} : {}),
+              ...(filters?.status ? {status: filters.status} : {}),
+              offset: pageParam,
+              limit: PAGE_SIZE,
+            },
+          },
+        }),
+      ) as Promise<TrainingPlanListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
     },
-    // Duplicate is tag:false — invalidate the list so the copy shows on return.
-    duplicateTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
-    deleteTrainingPlan: {invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}]},
-    // The client's assigned-plans list + assign mutation are tag:false; wire a
-    // shared CLIENT-LIST tag so assigning refreshes the list (and the stat strip).
-    listCoachClientTrainingPlans: {providesTags: [{type: 'TrainingPlan', id: 'CLIENT-LIST'}]},
-    assignTrainingPlan: {
-      invalidatesTags: [
-        {type: 'TrainingPlan', id: 'CLIENT-LIST'},
-        {type: 'Client', id: 'LIST'},
-      ],
+  });
+}
+
+export function useListTrainingPlansQuery(params?: ListTrainingPlansApiArg, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: trainingPlanKeys.list(params),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/training-plans', {params: {query: params ?? undefined}}),
+      ) as Promise<TrainingPlanListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useListCoachClientTrainingPlansQuery(
+  clientId: string,
+  params?: ListCoachClientTrainingPlansQuery,
+  options?: {enabled?: boolean},
+) {
+  return useQuery({
+    queryKey: trainingPlanKeys.forClient(clientId),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/clients/{client_id}/training-plans', {
+          params: {path: {client_id: clientId}, query: params ?? undefined},
+        }),
+      ) as Promise<ClientTrainingPlanListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCreateTrainingPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TrainingPlanCreateRequest) =>
+      call(client.POST('/v1/coach/training-plans', {body})) as Promise<TrainingPlanResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
     },
-  },
-});
+  });
+}
+
+export function useUpdateTrainingPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: TrainingPlanUpdateRequest}) =>
+      call(
+        client.PATCH('/v1/coach/training-plans/{id}', {params: {path: {id}}, body}),
+      ) as Promise<TrainingPlanResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
+      // Old tag was one shared {type:'TrainingPlan', id:'CLIENT-LIST'} tag
+      // across EVERY client's assigned-plans list — a plan rename doesn't say
+      // which client's list shows it, so invalidate all of them by key
+      // prefix (trainingPlanKeys.forClient(id) is ['training-plans',
+      // 'for-client', id]; the prefix below matches every id).
+      qc.invalidateQueries({queryKey: ['training-plans', 'for-client']});
+    },
+  });
+}
+
+export function useDeleteTrainingPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/training-plans/{id}', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
+    },
+  });
+}
+
+export function useDuplicateTrainingPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(
+        client.POST('/v1/coach/training-plans/{id}/duplicate', {params: {path: {id}}}),
+      ) as Promise<TrainingPlanResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
+    },
+  });
+}
+
+/**
+ * Copies a template to a client. Unlike `updateTrainingPlan`, the request
+ * names the exact client — so, unlike above, only that client's list needs
+ * invalidating rather than every client's.
+ */
+export function useAssignTrainingPlanMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: TrainingPlanAssignRequest}) =>
+      call(
+        client.POST('/v1/coach/training-plans/{id}/assign', {params: {path: {id}}, body}),
+      ) as Promise<TrainingPlanResponse>,
+    onSuccess: (_data, {body}) => {
+      qc.invalidateQueries({queryKey: trainingPlanKeys.forClient(body.client_id)});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Client training sessions (logged workouts, not templates)
+// ---------------------------------------------------------------------------
+
+export function useListCoachClientTrainingSessionsQuery(
+  clientId: string,
+  filters?: ListCoachClientTrainingSessionsQuery,
+  options?: {enabled?: boolean},
+) {
+  return useQuery({
+    queryKey: trainingSessionKeys.forClient(clientId, filters),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/clients/{client_id}/training-sessions', {
+          params: {path: {client_id: clientId}, query: filters ?? undefined},
+        }),
+      ) as Promise<TrainingSessionListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useGetCoachClientTrainingSessionQuery(clientId: string, id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: trainingSessionKeys.detail(clientId, id),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/clients/{client_id}/training-sessions/{id}', {
+          params: {path: {client_id: clientId, id}},
+        }),
+      ) as Promise<TrainingSessionResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}

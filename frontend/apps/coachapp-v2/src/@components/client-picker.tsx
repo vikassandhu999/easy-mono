@@ -19,7 +19,7 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
   const deferredSearch = useDeferredValue(search);
   const shouldQuery = deferredSearch.trim().length >= 1;
 
-  const {data, isFetching} = useListClientsQuery({search: deferredSearch, limit: 10}, {skip: !shouldQuery});
+  const {data, isFetching} = useListClientsQuery({search: deferredSearch, limit: 10}, {enabled: shouldQuery});
   const clients = data?.data ?? [];
 
   return (

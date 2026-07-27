@@ -6,7 +6,7 @@ import {useNavigate} from 'react-router-dom';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {ROUTES} from '@/@config/routes';
-import type {Conversation} from '@/api/generated';
+import type {Conversation} from '@/api/conversations';
 import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
 import {compareDateStrings, formatRelativeTime} from '@/dashboard/lib/date-format';
 

@@ -17,7 +17,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetNutritionPlanQuery} from '@/api/generated';
+import {useGetNutritionPlanQuery} from '@/api/nutrition-plans-list';
 
 import {NutritionPlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
@@ -26,7 +26,7 @@ import {PlanDays} from './plan-days';
 export default function NutritionPlanBuilder() {
   const {id} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.NUTRITION_PLANS);
-  const {data, isError, isLoading} = useGetNutritionPlanQuery({id: id!});
+  const {data, isError, isLoading} = useGetNutritionPlanQuery(id!);
 
   if (isLoading) {
     return (

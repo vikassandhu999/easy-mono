@@ -4,9 +4,12 @@ import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useListEquipmentQuery, useListMusclesQuery} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
-import {useCreateCoachTrainingExerciseMutation} from '@/api/training-exercises';
+import {
+  useCreateCoachTrainingExerciseMutation,
+  useListEquipmentQuery,
+  useListMusclesQuery,
+} from '@/api/training-exercises';
 import ExerciseForm, {
   type ExerciseFormValues,
   exerciseToCreateRequest,
@@ -16,14 +19,14 @@ import ExerciseForm, {
 export default function CreateExercise() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.EXERCISES);
-  const [createExercise, {isLoading}] = useCreateCoachTrainingExerciseMutation();
+  const createExerciseMutation = useCreateCoachTrainingExerciseMutation();
   const {data: musclesData} = useListMusclesQuery({});
   const {data: equipmentData} = useListEquipmentQuery({});
   const form = useExerciseForm();
 
   const onSubmit = async (data: ExerciseFormValues) => {
     try {
-      const result = await createExercise({trainingExerciseCreateRequest: exerciseToCreateRequest(data)}).unwrap();
+      const result = await createExerciseMutation.mutateAsync(exerciseToCreateRequest(data));
       navigate(`/library/exercises/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Exercise wasn't created. Check the details and try again", form.setError);
@@ -49,7 +52,7 @@ export default function CreateExercise() {
           <ExerciseForm
             equipment={equipmentData?.data ?? []}
             form={form}
-            isSubmitting={isLoading}
+            isSubmitting={createExerciseMutation.isPending}
             muscles={musclesData?.data ?? []}
             onCancel={goBack}
             onSubmit={onSubmit}

@@ -8,9 +8,13 @@ import {Check} from 'lucide-react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
-import type {TrainingExercise} from '@/api/generated';
-import {useListEquipmentQuery, useListMusclesQuery} from '@/api/generated';
-import {useCoachTrainingExercisesInfiniteQuery, useCreateCoachTrainingExerciseMutation} from '@/api/training-exercises';
+import type {TrainingExercise} from '@/api/training-exercises';
+import {
+  useCoachTrainingExercisesInfiniteQuery,
+  useCreateCoachTrainingExerciseMutation,
+  useListEquipmentQuery,
+  useListMusclesQuery,
+} from '@/api/training-exercises';
 import type {FilterChip} from '@/builder-kit/search-picker-sheet';
 import {SearchPickerSheet} from '@/builder-kit/search-picker-sheet';
 import {useDebounce} from '@/hooks/use-debounce';
@@ -75,7 +79,7 @@ export function ExercisePicker({isOpen, onClose, onAdd, anchorEl}: ExercisePicke
     muscleIds: muscles.ids.size > 0 ? [...muscles.ids] : undefined,
     equipmentIds: equipment.ids.size > 0 ? [...equipment.ids] : undefined,
   });
-  const [createExercise] = useCreateCoachTrainingExerciseMutation();
+  const createExerciseMutation = useCreateCoachTrainingExerciseMutation();
 
   const exercises = useMemo(() => pages?.pages.flatMap((page) => page.data) ?? [], [pages]);
 
@@ -113,9 +117,7 @@ export function ExercisePicker({isOpen, onClose, onAdd, anchorEl}: ExercisePicke
       }
       isCreating.current = true;
       try {
-        const {data: exercise} = await createExercise({
-          trainingExerciseCreateRequest: {name: query},
-        }).unwrap();
+        const {data: exercise} = await createExerciseMutation.mutateAsync({name: query});
         setSelected((previous) => new Map(previous).set(exercise.id, exercise));
         // Clear the query and filters so the new exercise is visible in the list.
         setSearch('');
@@ -128,7 +130,7 @@ export function ExercisePicker({isOpen, onClose, onAdd, anchorEl}: ExercisePicke
         isCreating.current = false;
       }
     },
-    [createExercise, equipment, muscles],
+    [createExerciseMutation, equipment, muscles],
   );
 
   return (

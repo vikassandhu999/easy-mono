@@ -6,8 +6,7 @@ import BrowseScreen from '@/@components/browse-screen';
 import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useListNutritionPlansQuery} from '@/api/generated';
-import {useCoachNutritionPlansInfiniteQuery} from '@/api/nutrition-plans-list';
+import {useCoachNutritionPlansInfiniteQuery, useListNutritionPlansQuery} from '@/api/nutrition-plans-list';
 
 import NutritionPlanListItem from './nutrition-plan-list-item';
 

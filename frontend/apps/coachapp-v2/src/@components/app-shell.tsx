@@ -1,5 +1,6 @@
 import {getInitials} from '@easy/utils';
 import {Button, Chip, CloseButton, Toast} from '@heroui/react';
+import {useQueryClient} from '@tanstack/react-query';
 import {
   ChefHat,
   ClipboardCheck,
@@ -20,11 +21,10 @@ import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom'
 import {useInstallPrompt} from '@/@components/use-install-prompt';
 import {ROUTES} from '@/@config/routes';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
-import {api} from '@/api/base';
 import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
+import {conversationKeys} from '@/api/keys';
 import {useGetCoachProfileQuery} from '@/api/profile';
-import {useAppDispatch} from '@/store';
 
 const ICON = 18;
 
@@ -95,8 +95,7 @@ function ClientCountBadge() {
 }
 
 function UnreadBadge() {
-  // ponytail: totals the first 100 conversations; matches the inbox page cap.
-  const {data} = useListCoachConversationsQuery({limit: 100});
+  const {data} = useListCoachConversationsQuery();
   const count = (data?.data ?? []).reduce((sum, c) => sum + c.unread_count, 0);
   if (count === 0) {
     return null;
@@ -168,10 +167,10 @@ export default function AppShell() {
     MOBILE_FRAME_PATHS.has(location.pathname) ||
     (location.pathname.startsWith(`${ROUTES.SETTINGS}/`) && location.pathname !== ROUTES.SETTINGS_LANDING_PAGE);
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
-  const dispatch = useAppDispatch();
+  const qc = useQueryClient();
   useChannelEvent('inbox', 'conversation_updated', () => {
     // Payload is id-only; refetch over HTTP where visibility is enforced.
-    dispatch(api.util.invalidateTags([{type: 'Conversation', id: 'LIST'}]));
+    qc.invalidateQueries({queryKey: conversationKeys.lists()});
   });
 
   return (

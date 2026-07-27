@@ -5,9 +5,9 @@ import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {coachApi, useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
-import {useAppDispatch} from '@/store';
+import {useGetTrainingPlanQuery, usePlanPatcher} from '@/api/training-plan-builder';
+import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
   trainingPlanToFormValues,
@@ -35,10 +35,10 @@ function EditTrainingPlanHeader({goBack}: {goBack: () => void}) {
 }
 
 function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
-  const dispatch = useAppDispatch();
+  const patch = usePlanPatcher(planId);
   const goBack = useGoBack(backPath);
-  const {data} = useGetTrainingPlanQuery({id: planId});
-  const [updatePlan, {isLoading: isUpdating}] = useUpdateTrainingPlanMutation();
+  const {data} = useGetTrainingPlanQuery(planId);
+  const updatePlanMutation = useUpdateTrainingPlanMutation();
 
   const plan = data!.data;
 
@@ -48,16 +48,14 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
   const onSubmit = async (formData: TrainingPlanFormValues) => {
     try {
-      const result = await updatePlan({
+      const result = await updatePlanMutation.mutateAsync({
         id: planId,
-        trainingPlanUpdateRequest: trainingPlanToUpdateRequest(formData),
-      }).unwrap();
-      // tag:false — sync the cached detail so the builder shows the new values.
-      dispatch(
-        coachApi.util.updateQueryData('getTrainingPlan', {id: planId}, (draft) => {
-          draft.data = result.data;
-        }),
-      );
+        body: trainingPlanToUpdateRequest(formData),
+      });
+      // Sync the cached detail so the builder shows the new values.
+      patch((draft) => {
+        Object.assign(draft, result.data);
+      });
       goBack();
     } catch (err) {
       applyFormErrors(err, "Training plan wasn't updated. Check the details and try again", form.setError);
@@ -74,7 +72,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
         >
           <TrainingPlanForm
             form={form}
-            isSubmitting={isUpdating}
+            isSubmitting={updatePlanMutation.isPending}
             onCancel={goBack}
             onSubmit={onSubmit}
             submitLabel="Save changes"
@@ -88,7 +86,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
 export default function EditTrainingPlan() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetTrainingPlanQuery({id: id!});
+  const {data, isError, isLoading: isFetching} = useGetTrainingPlanQuery(id ?? '');
   const backPath = `/library/training-plans/${id}`;
   const goBack = useGoBack(backPath);
 

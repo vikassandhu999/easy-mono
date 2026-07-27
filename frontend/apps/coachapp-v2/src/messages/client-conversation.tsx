@@ -10,7 +10,7 @@ import ConversationView from '@/messages/conversation-view';
 export default function ClientConversation() {
   const {id} = useParams<{id: string}>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const {data, isError, isLoading} = useGetCoachClientConversationQuery({clientId: id!}, {skip: !id});
+  const {data, isError, isLoading} = useGetCoachClientConversationQuery(id!, {enabled: Boolean(id)});
   const embedId = searchParams.get('embed_id');
   const initialEmbed =
     searchParams.get('embed_type') === 'form_submission' && embedId

@@ -58,6 +58,8 @@ openapi:
     node frontend/scripts/split-openapi.mjs
 
 # regenerate the OpenAPI spec + both app clients end-to-end
+# coachapp: openapi-typescript type schema (React Query hooks are hand-written);
+# clientapp: RTK Query codegen client.
 gen-api: openapi
     cd frontend && pnpm --filter coachapp-v2 gen:api && pnpm --filter clientapp-v2 gen:api
-    cd frontend && pnpm exec biome check --write apps/coachapp-v2/src/api/generated.ts apps/clientapp-v2/src/api/generated.ts
+    cd frontend && pnpm exec biome check --write apps/coachapp-v2/src/api/schema.ts apps/clientapp-v2/src/api/generated.ts

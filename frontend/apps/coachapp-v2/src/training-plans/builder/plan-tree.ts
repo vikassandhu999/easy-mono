@@ -2,7 +2,7 @@
  * Finding things in a plan. Used against both the live plan and an immer draft
  * of it, which is why these take the plan rather than closing over one.
  */
-import type {TrainingPlan, TrainingPlanWorkout} from '@/api/generated';
+import type {TrainingPlan, TrainingPlanWorkout} from '@/api/training-plan-builder';
 
 export function findWorkout(plan: TrainingPlan, workoutId: string): TrainingPlanWorkout | undefined {
   return plan.workouts.find((workout) => workout.id === workoutId);

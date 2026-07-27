@@ -9,7 +9,7 @@ import {
   useListCoachClientNutritionPlansQuery,
   useListCoachMealLogsQuery,
   useUpdateNutritionPlanMutation,
-} from '@/api/generated';
+} from '@/api/nutrition-plans-list';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
 import {SectionCard} from '@/clients/components/section-card';
@@ -25,7 +25,8 @@ import {
 /** CD-NU: the active plan, then 14 days of adherence. */
 export function NutritionTab({client}: {client: Client}) {
   const navigate = useNavigate();
-  const [updatePlan, {isLoading: isEnding}] = useUpdateNutritionPlanMutation();
+  const updatePlanMutation = useUpdateNutritionPlanMutation();
+  const isEnding = updatePlanMutation.isPending;
 
   // "End plan" archives it — the plan and its logged history stay, it just stops
   // being the client's active plan. Confirmed in PlanPanel before it fires.
@@ -33,15 +34,14 @@ export function NutritionTab({client}: {client: Client}) {
   // to be sent back unchanged — omitting it fails validation.
   const endPlan = async (planId: string, planName: string) => {
     try {
-      await updatePlan({id: planId, nutritionPlanRequest: {name: planName, status: 'archived'}}).unwrap();
+      await updatePlanMutation.mutateAsync({id: planId, body: {name: planName, status: 'archived'}});
     } catch (err) {
       toastMutationError(err, "The plan wasn't ended. Try again.");
     }
   };
   const days = lastNDays(14);
-  const plans = useListCoachClientNutritionPlansQuery({clientId: client.id, status: 'active'});
-  const logs = useListCoachMealLogsQuery({
-    clientId: client.id,
+  const plans = useListCoachClientNutritionPlansQuery(client.id, {status: 'active'});
+  const logs = useListCoachMealLogsQuery(client.id, {
     from: days[0]!,
     to: days[days.length - 1]!,
   });

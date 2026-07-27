@@ -4,8 +4,8 @@ import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useCreateTrainingPlanMutation} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
+import {useCreateTrainingPlanMutation} from '@/api/training-plans-list';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
   trainingPlanToCreateRequest,
@@ -15,13 +15,13 @@ import TrainingPlanForm, {
 export default function CreateTrainingPlan() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.TRAINING_PLANS);
-  const [createPlan, {isLoading}] = useCreateTrainingPlanMutation();
+  const createPlanMutation = useCreateTrainingPlanMutation();
 
   const form = useTrainingPlanForm();
 
   const onSubmit = async (data: TrainingPlanFormValues) => {
     try {
-      const result = await createPlan({trainingPlanCreateRequest: trainingPlanToCreateRequest(data)}).unwrap();
+      const result = await createPlanMutation.mutateAsync(trainingPlanToCreateRequest(data));
       navigate(`/library/training-plans/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Training plan wasn't created. Check the details and try again", form.setError);
@@ -46,7 +46,7 @@ export default function CreateTrainingPlan() {
         >
           <TrainingPlanForm
             form={form}
-            isSubmitting={isLoading}
+            isSubmitting={createPlanMutation.isPending}
             onCancel={goBack}
             onSubmit={onSubmit}
             submitLabel="Create plan"

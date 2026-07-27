@@ -1,6 +1,6 @@
 import {formatDuration} from '@easy/utils';
 
-import type {TrainingSession} from '@/api/generated';
+import type {TrainingSession} from '@/api/training-plans-list';
 
 /**
  * Shape of the opaque `planned_snapshot` blob the backend embeds on a

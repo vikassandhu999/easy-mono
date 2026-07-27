@@ -2,8 +2,8 @@ import {Button, ListBox, SearchField, Spinner, Typography} from '@heroui/react';
 import {Apple, ArrowRight, X} from 'lucide-react';
 import {type KeyboardEvent, useDeferredValue, useMemo, useState} from 'react';
 
-import type {Food} from '@/api/generated';
-import {useListFoodsQuery} from '@/api/generated';
+import type {Food} from '@/api/nutrition-foods';
+import {useListFoodsQuery} from '@/api/nutrition-foods';
 
 interface Props {
   onSelect: (food: Food) => void;
@@ -23,7 +23,7 @@ export default function FoodPickerContent({onSelect, onClose, excludeIds = []}: 
   const deferredSearch = useDeferredValue(search);
   const shouldQuery = deferredSearch.trim().length >= 1;
 
-  const {data, isFetching} = useListFoodsQuery({search: deferredSearch, limit: 20}, {skip: !shouldQuery});
+  const {data, isFetching} = useListFoodsQuery({search: deferredSearch, limit: 20}, {enabled: shouldQuery});
   const foods = useMemo(() => (data?.data ?? []).filter((f) => !excludeIds.includes(f.id)), [data, excludeIds]);
 
   const [highlightedIndex, setHighlightedIndex] = useState(0);

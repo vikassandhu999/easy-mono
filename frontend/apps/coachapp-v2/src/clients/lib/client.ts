@@ -1,5 +1,6 @@
 import type {Client, ClientStatus} from '@/api/clients';
-import type {NutritionPlan, TrainingPlan} from '@/api/generated';
+import type {NutritionPlan} from '@/api/nutrition-plans-list';
+import type {TrainingPlan} from '@/api/training-plan-builder';
 
 type NutritionPlanStatus = NutritionPlan['status'];
 type TrainingPlanStatus = TrainingPlan['status'];

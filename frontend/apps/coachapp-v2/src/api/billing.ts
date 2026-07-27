@@ -1,46 +1,54 @@
-import {api} from '@/api/base';
-import type {BillingCheckoutRequest, BillingCheckoutResponse, BillingResponse, BillingSummary} from '@/api/generated';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {BillingEvent, BillingSummary} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {billingKeys, clientKeys} from '@/api/keys';
+import type {components} from '@/api/schema';
 
-const billingApi = api.injectEndpoints({
-  // Hand-managed endpoints (cache tags, precise types) that share names with
-  // the generated client — override makes these authoritative regardless of
-  // import order.
-  overrideExisting: true,
-  endpoints: (build) => ({
-    getBilling: build.query<BillingResponse, void>({
-      query: () => '/v1/coach/billing',
-      providesTags: [{type: 'Billing', id: 'SUMMARY'}],
-    }),
-    checkoutBilling: build.mutation<BillingCheckoutResponse, BillingCheckoutRequest>({
-      query: (body) => ({
-        url: '/v1/coach/billing/checkout',
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: [
-        {type: 'Billing', id: 'SUMMARY'},
-        {type: 'Client', id: 'LIST'},
-      ],
-    }),
-    cancelBilling: build.mutation<BillingResponse, void>({
-      query: () => ({url: '/v1/coach/billing/cancel', method: 'POST'}),
-      invalidatesTags: [{type: 'Billing', id: 'SUMMARY'}],
-    }),
-    syncBilling: build.mutation<BillingResponse, void>({
-      query: () => ({url: '/v1/coach/billing/sync', method: 'POST'}),
-      invalidatesTags: [{type: 'Billing', id: 'SUMMARY'}],
-    }),
-  }),
-});
+export type BillingEvent = components['schemas']['BillingEvent'];
+export type BillingSummary = components['schemas']['BillingSummary'];
+export type BillingResponse = components['schemas']['BillingResponse'];
+export type BillingCheckoutRequest = components['schemas']['BillingCheckoutRequest'];
+export type BillingCheckoutResponse = components['schemas']['BillingCheckoutResponse'];
 
-export const {
-  useGetBillingQuery,
-  useCheckoutBillingMutation: useCheckoutSeatsMutation,
-  useCancelBillingMutation,
-  useSyncBillingMutation,
-} = billingApi;
+export function useGetBillingQuery(options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: billingKeys.all,
+    queryFn: () => call(client.GET('/v1/coach/billing')) as Promise<BillingResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useCheckoutSeatsMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: BillingCheckoutRequest) =>
+      call(client.POST('/v1/coach/billing/checkout', {body})) as Promise<BillingCheckoutResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: billingKeys.all});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+    },
+  });
+}
+
+export function useCancelBillingMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => call(client.POST('/v1/coach/billing/cancel')) as Promise<BillingResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: billingKeys.all});
+    },
+  });
+}
+
+export function useSyncBillingMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => call(client.POST('/v1/coach/billing/sync')) as Promise<BillingResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: billingKeys.all});
+    },
+  });
+}
 
 /** Extract the seat summary from a 409 seat_limit_reached error, or null. */
 export function getSeatLimitError(err: unknown): {seatSummary: BillingSummary} | null {

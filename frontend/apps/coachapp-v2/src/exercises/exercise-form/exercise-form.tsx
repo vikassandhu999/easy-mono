@@ -13,13 +13,13 @@ import {
 } from '@/@components/form-fields';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
+import {omitUndefined, toOptionalText} from '@/api/shared';
 import type {
   TrainingExercise,
   TrainingExerciseCreateRequest,
   TrainingExerciseRelation,
   TrainingExerciseUpdateRequest,
-} from '@/api/generated';
-import {omitUndefined, toOptionalText} from '@/api/shared';
+} from '@/api/training-exercises';
 import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
 
 type ExerciseMechanics = 'compound' | 'isolation' | 'isometric';

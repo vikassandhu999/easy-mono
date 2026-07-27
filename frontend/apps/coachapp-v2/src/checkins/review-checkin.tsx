@@ -21,7 +21,7 @@ export default function ReviewCheckin() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.DASHBOARD);
   const {data, isError, isLoading} = useListCheckInReviewQueueQuery();
-  const [review, {isLoading: isReviewing}] = useReviewFormSubmissionMutation();
+  const reviewMutation = useReviewFormSubmissionMutation();
   const item = data?.data.find((submission) => submission.id === id);
 
   if (isLoading) {
@@ -72,7 +72,7 @@ export default function ReviewCheckin() {
 
   const markReviewed = async () => {
     try {
-      await review({id: item.id}).unwrap();
+      await reviewMutation.mutateAsync(item.id);
       toast.success('Check-in reviewed');
       navigate(ROUTES.DASHBOARD, {replace: true});
     } catch {
@@ -102,11 +102,11 @@ export default function ReviewCheckin() {
             <ReviewAnswers item={item} />
             <div className="mt-6 flex flex-col gap-3 border-border border-t pt-5 sm:flex-row">
               <Button
-                isPending={isReviewing}
+                isPending={reviewMutation.isPending}
                 onPress={markReviewed}
               >
                 <Check size={17} />
-                {isReviewing ? 'Marking reviewed' : 'Mark reviewed'}
+                {reviewMutation.isPending ? 'Marking reviewed' : 'Mark reviewed'}
               </Button>
               <Button
                 onPress={() =>

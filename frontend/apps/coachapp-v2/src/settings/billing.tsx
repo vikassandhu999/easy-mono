@@ -54,7 +54,7 @@ function purchaseLanded(summary: BillingSummary, snapshot: BillingSummary): bool
  * "slow copy" banner state for the caller to render.
  */
 function useActivationSync() {
-  const [syncBilling] = useSyncBillingMutation();
+  const syncBillingMutation = useSyncBillingMutation();
   const [pending, setPending] = useState<{snapshot: BillingSummary; timedOut: boolean} | null>(null);
   const timersRef = useRef<{interval?: ReturnType<typeof setInterval>; timeout?: ReturnType<typeof setTimeout>}>({});
 
@@ -73,7 +73,7 @@ function useActivationSync() {
   const attemptSync = useCallback(
     async (snapshot: BillingSummary) => {
       try {
-        const result = await syncBilling().unwrap();
+        const result = await syncBillingMutation.mutateAsync();
         if (purchaseLanded(result.data, snapshot)) {
           stopPolling();
           setPending(null);
@@ -82,7 +82,7 @@ function useActivationSync() {
         // keep polling; the banner already communicates the pending state
       }
     },
-    [stopPolling, syncBilling],
+    [stopPolling, syncBillingMutation],
   );
 
   const start = useCallback(
@@ -168,11 +168,12 @@ function activityLabel(event: BillingEvent): string {
 }
 
 function CancelSubscriptionButton({billing}: {billing: BillingSummary}) {
-  const [cancelBilling, {isLoading}] = useCancelBillingMutation();
+  const cancelBillingMutation = useCancelBillingMutation();
+  const isLoading = cancelBillingMutation.isPending;
 
   const handleCancel = async (close: () => void) => {
     try {
-      await cancelBilling().unwrap();
+      await cancelBillingMutation.mutateAsync();
       toast.success('Cancellation scheduled');
       close();
     } catch (err) {

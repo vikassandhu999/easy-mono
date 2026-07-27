@@ -15,18 +15,19 @@ import {useCallback} from 'react';
 import {useSearchParams} from 'react-router-dom';
 
 import {toastMutationError} from '@/@components/mutation-toast';
-import type {TrainingExercise, TrainingPlan, TrainingPlanWorkout} from '@/api/generated';
+import type {TrainingExercise} from '@/api/training-exercises';
+import type {TrainingPlan, TrainingPlanWorkout} from '@/api/training-plan-builder';
 import {
   useCreateWorkoutElementMutation,
   useCreateWorkoutMutation,
   useDeleteWorkoutElementMutation,
   useDeleteWorkoutMutation,
+  usePlanPatcher,
   useReorderWorkoutElementsMutation,
   useSetTrainingPlanDayScheduleMutation,
-  useUpdateTrainingPlanMutation,
   useUpdateWorkoutMutation,
-} from '@/api/generated';
-import {usePlanPatcher} from '@/api/training-plan-builder';
+} from '@/api/training-plan-builder';
+import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
 
 import {findWorkout, moveId} from './plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from './schedule';
@@ -38,14 +39,16 @@ export function usePlanBuilder(plan: TrainingPlan) {
   const patch = usePlanPatcher(planId);
   const writeSets = useSetWriter(planId);
 
-  const [createWorkout, {isLoading: isAddingWorkout}] = useCreateWorkoutMutation();
-  const [updateWorkout] = useUpdateWorkoutMutation();
-  const [deleteWorkout, {isLoading: isRemovingWorkout}] = useDeleteWorkoutMutation();
-  const [setDaySchedule] = useSetTrainingPlanDayScheduleMutation();
-  const [createElement] = useCreateWorkoutElementMutation();
-  const [deleteElement] = useDeleteWorkoutElementMutation();
-  const [reorderElements] = useReorderWorkoutElementsMutation();
-  const [updatePlan] = useUpdateTrainingPlanMutation();
+  const createWorkoutMutation = useCreateWorkoutMutation();
+  const updateWorkoutMutation = useUpdateWorkoutMutation();
+  const deleteWorkoutMutation = useDeleteWorkoutMutation();
+  const setDayScheduleMutation = useSetTrainingPlanDayScheduleMutation();
+  const createElementMutation = useCreateWorkoutElementMutation();
+  const deleteElementMutation = useDeleteWorkoutElementMutation();
+  const reorderElementsMutation = useReorderWorkoutElementsMutation();
+  const updatePlanMutation = useUpdateTrainingPlanMutation();
+  const isAddingWorkout = createWorkoutMutation.isPending;
+  const isRemovingWorkout = deleteWorkoutMutation.isPending;
 
   /** Show the change at once; put it back and say so if the server refuses. */
   const commit = useCallback(
@@ -68,10 +71,10 @@ export function usePlanBuilder(plan: TrainingPlan) {
   /** Resolves to the created workout so the caller can select and rename it. */
   const addWorkout = useCallback(async (): Promise<TrainingPlanWorkout | undefined> => {
     try {
-      const {data: workout} = await createWorkout({
+      const {data: workout} = await createWorkoutMutation.mutateAsync({
         planId,
-        trainingWorkoutRequest: {name: 'New workout'},
-      }).unwrap();
+        body: {name: 'New workout'},
+      });
       patch((draft) => {
         draft.workouts.push(workout);
       });
@@ -80,7 +83,7 @@ export function usePlanBuilder(plan: TrainingPlan) {
       toastMutationError(error, "Couldn't add workout");
       return undefined;
     }
-  }, [createWorkout, patch, planId]);
+  }, [createWorkoutMutation, patch, planId]);
 
   const renameWorkout = useCallback(
     (workoutId: string, name: string) =>
@@ -91,10 +94,10 @@ export function usePlanBuilder(plan: TrainingPlan) {
             workout.name = name;
           }
         },
-        () => updateWorkout({id: workoutId, trainingWorkoutUpdateRequest: {name}}).unwrap(),
+        () => updateWorkoutMutation.mutateAsync({id: workoutId, body: {name}}),
         "Couldn't save changes",
       ),
-    [commit, updateWorkout],
+    [commit, updateWorkoutMutation],
   );
 
   const removeWorkout = useCallback(
@@ -106,10 +109,10 @@ export function usePlanBuilder(plan: TrainingPlan) {
           // chips keep pointing at a workout that no longer exists.
           draft.plan_items = clearWorkoutFromSchedule(draft.plan_items, workoutId);
         },
-        () => deleteWorkout({id: workoutId}).unwrap(),
+        () => deleteWorkoutMutation.mutateAsync(workoutId),
         "Couldn't delete workout",
       ),
-    [commit, deleteWorkout],
+    [commit, deleteWorkoutMutation],
   );
 
   // -------------------------------------------------------------------------
@@ -128,14 +131,14 @@ export function usePlanBuilder(plan: TrainingPlan) {
           draft.plan_items = setScheduleDay(draft.plan_items, day, workoutId, planId);
         },
         () =>
-          setDaySchedule({
+          setDayScheduleMutation.mutateAsync({
             planId,
             day,
-            trainingDayScheduleRequest: {training_workout_id: workoutId},
-          }).unwrap(),
+            body: {training_workout_id: workoutId},
+          }),
         "Couldn't save changes",
       ),
-    [commit, planId, setDaySchedule],
+    [commit, planId, setDayScheduleMutation],
   );
 
   // -------------------------------------------------------------------------
@@ -146,10 +149,10 @@ export function usePlanBuilder(plan: TrainingPlan) {
     async (workoutId: string, exercises: TrainingExercise[]) => {
       for (const exercise of exercises) {
         try {
-          const {data: element} = await createElement({
+          const {data: element} = await createElementMutation.mutateAsync({
             workoutId,
-            trainingWorkoutExerciseRequest: {exercise_id: exercise.id, planned_sets: [blankSet()]},
-          }).unwrap();
+            body: {exercise_id: exercise.id, planned_sets: [blankSet()]},
+          });
           patch((draft) => {
             findWorkout(draft, workoutId)?.workout_elements.push(element);
           });
@@ -158,7 +161,7 @@ export function usePlanBuilder(plan: TrainingPlan) {
         }
       }
     },
-    [createElement, patch],
+    [createElementMutation, patch],
   );
 
   const removeExercise = useCallback(
@@ -170,10 +173,10 @@ export function usePlanBuilder(plan: TrainingPlan) {
             workout.workout_elements = workout.workout_elements.filter((element) => element.id !== elementId);
           }
         },
-        () => deleteElement({id: elementId}).unwrap(),
+        () => deleteElementMutation.mutateAsync(elementId),
         "Couldn't remove exercise",
       ),
-    [commit, deleteElement],
+    [commit, deleteElementMutation],
   );
 
   const moveExercise = useCallback(
@@ -199,11 +202,11 @@ export function usePlanBuilder(plan: TrainingPlan) {
             return element ? [{...element, position}] : [];
           });
         },
-        () => reorderElements({workoutId, trainingWorkoutReorderRequest: {element_ids: order}}).unwrap(),
+        () => reorderElementsMutation.mutateAsync({workoutId, body: {element_ids: order}}),
         "Couldn't reorder exercises",
       );
     },
-    [commit, plan, reorderElements],
+    [commit, plan, reorderElementsMutation],
   );
 
   // -------------------------------------------------------------------------
@@ -245,11 +248,11 @@ export function usePlanBuilder(plan: TrainingPlan) {
         (draft) => {
           draft[field] = value;
         },
-        () => updatePlan({id: planId, trainingPlanUpdateRequest: {[field]: value}}).unwrap(),
+        () => updatePlanMutation.mutateAsync({id: planId, body: {[field]: value}}),
         "Couldn't save changes",
       ).catch(() => undefined);
     },
-    [commit, plan, planId, updatePlan],
+    [commit, plan, planId, updatePlanMutation],
   );
 
   return {

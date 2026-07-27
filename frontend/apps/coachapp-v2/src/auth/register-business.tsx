@@ -6,9 +6,8 @@ import {z} from 'zod';
 import {FormTextField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
-import {useExchangeTokenMutation} from '@/api/auth';
+import {useCreateBusinessMutation, useExchangeTokenMutation, useGetCurrentBusinessQuery} from '@/api/auth';
 import {getRefreshToken, setTokens} from '@/api/authStorage';
-import {useCreateBusinessMutation, useGetCurrentBusinessQuery} from '@/api/generated';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -34,9 +33,9 @@ function generateHandle(name: string) {
 
 export default function RegisterBusiness() {
   const navigate = useNavigate();
-  const [createBusiness, {isLoading: isCreating}] = useCreateBusinessMutation();
-  const [exchangeToken, {isLoading: isExchanging}] = useExchangeTokenMutation();
-  const isLoading = isCreating || isExchanging;
+  const createBusinessMutation = useCreateBusinessMutation();
+  const exchangeTokenMutation = useExchangeTokenMutation();
+  const isLoading = createBusinessMutation.isPending || exchangeTokenMutation.isPending;
 
   // Already-onboarded coaches shouldn't see the registration form again.
   const {data: business, isLoading: isCheckingBusiness} = useGetCurrentBusinessQuery();
@@ -71,15 +70,15 @@ export default function RegisterBusiness() {
 
   const onSubmit = async (data: RegisterBusinessFormValues) => {
     try {
-      await createBusiness({businessRequest: {name: data.name, handle: data.handle}}).unwrap();
+      await createBusinessMutation.mutateAsync({name: data.name, handle: data.handle});
 
       const refreshToken = getRefreshToken();
       if (refreshToken) {
-        const tokens = await exchangeToken({
+        const tokens = await exchangeTokenMutation.mutateAsync({
           grant_type: 'refresh_token',
           refresh_token: refreshToken,
           role: 'coach',
-        }).unwrap();
+        });
         setTokens(tokens);
       }
 

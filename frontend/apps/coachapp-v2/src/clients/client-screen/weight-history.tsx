@@ -8,7 +8,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useListClientWeightEntriesQuery} from '@/api/generated';
+import {useListClientWeightEntriesQuery} from '@/api/clients';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatRowDate, formatWeight, toDayIso, weightChartGeometry} from '@/clients/lib/client-detail-data';
 
@@ -29,7 +29,7 @@ export default function WeightHistory() {
   const {id = ''} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', id));
   const [range, setRange] = useState<RangeId>('3M');
-  const {data, isError, isLoading, refetch} = useListClientWeightEntriesQuery({clientId: id});
+  const {data, isError, isLoading, refetch} = useListClientWeightEntriesQuery(id);
 
   const header = (count?: number) => (
     <Page.Header size="content">
@@ -81,7 +81,9 @@ export default function WeightHistory() {
     );
   }
 
-  const goal = data.goal?.value ?? null;
+  // `goal` is a loosely-typed index-signature object on the wire; narrow the
+  // one field this screen reads.
+  const goal = (data.goal?.value as number | undefined) ?? null;
   const unit = data.entries[0]?.unit ?? 'kg';
   const cutoffDays = RANGES.find((r) => r.id === range)?.days ?? null;
   const cutoff = cutoffDays == null ? null : toDayIso(new Date(Date.now() - cutoffDays * 86_400_000));

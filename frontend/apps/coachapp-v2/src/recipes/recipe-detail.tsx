@@ -13,8 +13,8 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Recipe} from '@/api/generated';
-import {useCopyNutritionRecipeMutation, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/generated';
+import type {Recipe} from '@/api/nutrition-foods';
+import {useCopyNutritionRecipeMutation, useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/nutrition-foods';
 
 // recipe.nutrition holds the recipe's total computed macros (not per-100g).
 // The backend derives it from recipe_ingredients; it is null when no ingredient
@@ -31,13 +31,15 @@ export default function RecipeDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
-  const {data, isError, isLoading} = useGetRecipeQuery({id: id!});
-  const [deleteRecipe, {isLoading: isDeleting}] = useDeleteRecipeMutation();
-  const [copyRecipe, {isLoading: isDuplicating}] = useCopyNutritionRecipeMutation();
+  const {data, isError, isLoading} = useGetRecipeQuery(id!);
+  const deleteRecipe = useDeleteRecipeMutation();
+  const copyRecipe = useCopyNutritionRecipeMutation();
+  const isDeleting = deleteRecipe.isPending;
+  const isDuplicating = copyRecipe.isPending;
 
   const handleDuplicate = async () => {
     try {
-      const result = await copyRecipe({id: id!}).unwrap();
+      const result = await copyRecipe.mutateAsync(id!);
       toast.success('Recipe duplicated');
       navigate(`/library/recipes/${result.data.id}`);
     } catch {
@@ -47,7 +49,7 @@ export default function RecipeDetail() {
 
   const handleDelete = async () => {
     try {
-      await deleteRecipe({id: id!}).unwrap();
+      await deleteRecipe.mutateAsync(id!);
       navigate(ROUTES.RECIPES, {replace: true});
     } catch {
       toast.danger("Couldn't delete recipe");

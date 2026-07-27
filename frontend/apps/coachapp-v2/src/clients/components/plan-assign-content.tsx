@@ -13,16 +13,13 @@ import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 import {
-  coachApi,
   type NutritionPlan,
-  type TrainingPlan,
   useAssignNutritionPlanMutation,
-  useAssignTrainingPlanMutation,
-} from '@/api/generated';
-import {useCoachNutritionPlansInfiniteQuery} from '@/api/nutrition-plans-list';
-import {useCoachTrainingPlansInfiniteQuery} from '@/api/training-plans-list';
+  useCoachNutritionPlansInfiniteQuery,
+} from '@/api/nutrition-plans-list';
+import type {TrainingPlan} from '@/api/training-plan-builder';
+import {useAssignTrainingPlanMutation, useCoachTrainingPlansInfiniteQuery} from '@/api/training-plans-list';
 import PlanScheduleStep from '@/clients/components/plan-schedule-step';
-import {useAppDispatch} from '@/store';
 
 export type PlanKind = 'nutrition' | 'training';
 
@@ -63,7 +60,6 @@ function assignErrorMessage(error: unknown, kind: PlanKind, clientName: string):
 }
 
 export default function PlanAssignContent({kind, clientId, clientName, onClose}: Props) {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const isNutrition = kind === 'nutrition';
 
@@ -73,16 +69,16 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
   const [selected, setSelected] = useState<NutritionPlan | TrainingPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const nutritionQuery = useCoachNutritionPlansInfiniteQuery({search: deferredSearch}, {skip: !isNutrition});
-  const trainingQuery = useCoachTrainingPlansInfiniteQuery({search: deferredSearch}, {skip: isNutrition});
+  const nutritionQuery = useCoachNutritionPlansInfiniteQuery({search: deferredSearch}, {enabled: isNutrition});
+  const trainingQuery = useCoachTrainingPlansInfiniteQuery({search: deferredSearch}, {enabled: !isNutrition});
   const query = isNutrition ? nutritionQuery : trainingQuery;
   const items: (NutritionPlan | TrainingPlan)[] = isNutrition
     ? (nutritionQuery.data?.pages.flatMap((page) => page.data) ?? [])
     : (trainingQuery.data?.pages.flatMap((page) => page.data) ?? []);
 
-  const [assignNutrition, {isLoading: assigningNutrition}] = useAssignNutritionPlanMutation();
-  const [assignTraining, {isLoading: assigningTraining}] = useAssignTrainingPlanMutation();
-  const assigning = isNutrition ? assigningNutrition : assigningTraining;
+  const assignNutritionMutation = useAssignNutritionPlanMutation();
+  const assignTrainingMutation = useAssignTrainingPlanMutation();
+  const assigning = isNutrition ? assignNutritionMutation.isPending : assignTrainingMutation.isPending;
 
   const Icon = isNutrition ? Utensils : Dumbbell;
   const iconWrap = isNutrition ? 'bg-success-soft text-success' : 'bg-accent-soft text-accent';
@@ -101,20 +97,17 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
     setError(null);
     try {
       if (isNutrition) {
-        await assignNutrition({
+        await assignNutritionMutation.mutateAsync({
           id: selected.id,
-          nutritionPlanAssignRequest: {client_id: clientId, start_date: startDate, end_date: endDate},
-        }).unwrap();
+          body: {client_id: clientId, start_date: startDate, end_date: endDate},
+        });
       } else {
-        await assignTraining({
+        await assignTrainingMutation.mutateAsync({
           id: selected.id,
-          trainingPlanAssignRequest: {client_id: clientId, start_date: startDate, end_date: endDate},
-        }).unwrap();
+          body: {client_id: clientId, start_date: startDate, end_date: endDate},
+        });
       }
       toast.success(`"${selected.name}" assigned to ${clientName}`);
-      dispatch(
-        coachApi.util.invalidateTags([{type: isNutrition ? 'NutritionPlan' : 'TrainingPlan', id: 'CLIENT-LIST'}]),
-      );
       onClose();
     } catch (e) {
       setError(assignErrorMessage(e, kind, clientName));

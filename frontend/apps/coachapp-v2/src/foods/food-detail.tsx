@@ -13,9 +13,8 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Food} from '@/api/generated';
-import {coachApi, useDeleteFoodMutation, useGetFoodQuery} from '@/api/generated';
-import {useAppDispatch} from '@/store';
+import type {Food} from '@/api/nutrition-foods';
+import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/nutrition-foods';
 
 const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food; label: string}[] = [
   {color: 'accent', key: 'protein_g_per_100g', label: 'Protein'},
@@ -26,17 +25,15 @@ const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food;
 export default function FoodDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const goBack = useGoBack(ROUTES.FOODS);
-  const {data, isError, isLoading} = useGetFoodQuery({id: id!});
-  const [deleteFood, {isLoading: isDeleting}] = useDeleteFoodMutation();
+  const {data, isError, isLoading} = useGetFoodQuery(id!);
+  const deleteFoodMutation = useDeleteFoodMutation();
 
   const handleDelete = async () => {
     try {
-      await deleteFood({id: id!}).unwrap();
-      // Generated mutation is tag:false — invalidate the list so the deleted
+      // useDeleteFoodMutation invalidates the list itself, so the deleted
       // item doesn't linger when we land back on it.
-      dispatch(coachApi.util.invalidateTags([{type: 'Food', id: 'LIST'}]));
+      await deleteFoodMutation.mutateAsync(id!);
       navigate(ROUTES.FOODS, {replace: true});
     } catch {
       toast.danger("Couldn't delete food");
@@ -67,11 +64,11 @@ export default function FoodDetail() {
                 Cancel
               </Button>
               <Button
-                isPending={isDeleting}
+                isPending={deleteFoodMutation.isPending}
                 onPress={handleDelete}
                 variant="danger"
               >
-                {isDeleting ? 'Deleting' : 'Delete'}
+                {deleteFoodMutation.isPending ? 'Deleting' : 'Delete'}
               </Button>
             </AlertDialog.Footer>
           </AlertDialog.Dialog>

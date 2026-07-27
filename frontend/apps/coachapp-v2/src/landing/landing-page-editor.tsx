@@ -103,7 +103,8 @@ export default function LandingPageEditor() {
   const navigate = useNavigate();
   const {data, isError, isLoading, refetch} = useGetLandingPageQuery();
   const {data: profile} = useGetCoachProfileQuery();
-  const [save, {isLoading: isSaving}] = useSaveLandingPageMutation();
+  const saveMutation = useSaveLandingPageMutation();
+  const isSaving = saveMutation.isPending;
 
   const [draft, setDraft] = useState<LandingDraft | null>(null);
   const [slugError, setSlugError] = useState<string | null>(null);
@@ -127,7 +128,7 @@ export default function LandingPageEditor() {
     const next = {...draft, status};
     setDraft(next);
     try {
-      await save({landingPageUpsertRequest: draftToRequest(next)}).unwrap();
+      await saveMutation.mutateAsync(draftToRequest(next));
       toast.success(status === 'published' ? 'Page published' : 'Draft saved');
     } catch (error) {
       // Surface a taken slug / second-published-page conflict inline on the field.

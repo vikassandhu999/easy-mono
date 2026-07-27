@@ -10,7 +10,7 @@ import {
   useListCoachClientTrainingPlansQuery,
   useListCoachClientTrainingSessionsQuery,
   useUpdateTrainingPlanMutation,
-} from '@/api/generated';
+} from '@/api/training-plans-list';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
 import {DetailRow} from '@/clients/components/detail-row';
 import PlanAssignControl from '@/clients/components/plan-assign-control';
@@ -27,21 +27,21 @@ import {sessionWorkoutName} from '@/clients/lib/session';
 /** CD-TR: the active plan, then session history grouped by week. */
 export function TrainingTab({client}: {client: Client}) {
   const navigate = useNavigate();
-  const [updatePlan, {isLoading: isEnding}] = useUpdateTrainingPlanMutation();
+  const updatePlanMutation = useUpdateTrainingPlanMutation();
+  const isEnding = updatePlanMutation.isPending;
 
   // "End plan" archives it — the plan and its logged history stay, it just stops
   // being the client's active plan. Confirmed in PlanPanel before it fires.
   const endPlan = async (planId: string) => {
     try {
-      await updatePlan({id: planId, trainingPlanUpdateRequest: {status: 'archived'}}).unwrap();
+      await updatePlanMutation.mutateAsync({id: planId, body: {status: 'archived'}});
     } catch (err) {
       toastMutationError(err, "The plan wasn't ended. Try again.");
     }
   };
   const window = lastNDays(56);
-  const plans = useListCoachClientTrainingPlansQuery({clientId: client.id, status: 'active'});
-  const sessions = useListCoachClientTrainingSessionsQuery({
-    clientId: client.id,
+  const plans = useListCoachClientTrainingPlansQuery(client.id, {status: 'active'});
+  const sessions = useListCoachClientTrainingSessionsQuery(client.id, {
     from: window[0]!,
     to: window[window.length - 1]!,
   });

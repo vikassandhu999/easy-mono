@@ -3,7 +3,7 @@ import {cn} from '@heroui/styles';
 import {ChefHat} from 'lucide-react';
 
 import {BrowseRow, OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
-import type {Recipe} from '@/api/generated';
+import type {Recipe} from '@/api/nutrition-foods';
 
 export default function RecipeListItem({recipe}: {recipe: Recipe}) {
   const ingredientCount = recipe.recipe_ingredients.length;

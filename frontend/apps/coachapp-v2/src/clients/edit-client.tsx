@@ -45,8 +45,8 @@ export default function EditClient() {
   const goBack = useGoBack(ROUTES.CLIENT_DETAILS.replace(':id', id));
   const {data, isError, isLoading, refetch} = useGetClientQuery(id);
   const team = useGetTeamQuery();
-  const [updateClient] = useUpdateClientMutation();
-  const [reassignClient] = useReassignClientMutation();
+  const updateClientMutation = useUpdateClientMutation();
+  const reassignClientMutation = useReassignClientMutation();
 
   const client = data?.data;
   const form = useForm<EditClientValues>({
@@ -114,7 +114,7 @@ export default function EditClient() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await updateClient({
+      await updateClientMutation.mutateAsync({
         body: {
           email: values.email || null,
           first_name: values.first_name,
@@ -124,11 +124,11 @@ export default function EditClient() {
           subscription_started_on: values.subscription_started_on || null,
         },
         id: client.id,
-      }).unwrap();
+      });
 
       // Only when it changed — see the note on the module.
       if (values.assigned_coach_id && values.assigned_coach_id !== (client.assigned_coach_id ?? '')) {
-        await reassignClient({body: {coach_id: values.assigned_coach_id}, clientId: client.id}).unwrap();
+        await reassignClientMutation.mutateAsync({body: {coach_id: values.assigned_coach_id}, clientId: client.id});
       }
       goBack();
     } catch (err) {

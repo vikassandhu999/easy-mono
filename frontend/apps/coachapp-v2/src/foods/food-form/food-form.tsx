@@ -14,7 +14,7 @@ import {
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
 import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
-import type {Food, FoodRequest, FoodUpdateRequest} from '@/api/generated';
+import type {Food, FoodRequest, FoodServingSize, FoodUpdateRequest} from '@/api/nutrition-foods';
 import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
 
 export const foodFormSchema = z.object({
@@ -87,7 +87,7 @@ export function foodToDuplicateFormValues(food: Food): FoodFormValues {
   };
 }
 
-function toFoodServingSizes(sizes: ServingSize[]): import('@/api/generated').FoodServingSize[] {
+function toFoodServingSizes(sizes: ServingSize[]): FoodServingSize[] {
   return sizes.map((s) => ({
     unit: s.unit,
     amount: s.amount ?? 1,

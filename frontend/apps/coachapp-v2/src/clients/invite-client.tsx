@@ -236,8 +236,8 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 
 export default function InviteClient() {
   const goBack = useGoBack(ROUTES.CLIENTS);
-  const [inviteClient, {isLoading}] = useInviteClientMutation();
-  const [reassignClient] = useReassignClientMutation();
+  const inviteClientMutation = useInviteClientMutation();
+  const reassignClientMutation = useReassignClientMutation();
   const [inviteResult, setInviteResult] = useState<Client | null>(null);
   const [seatLimit, setSeatLimit] = useState<BillingSummary | null>(null);
   const {data: billing} = useGetBillingQuery();
@@ -251,15 +251,15 @@ export default function InviteClient() {
 
   const onSubmit = async (data: InviteClientFormValues) => {
     try {
-      const result = await inviteClient(inviteClientToRequest(data)).unwrap();
+      const result = await inviteClientMutation.mutateAsync(inviteClientToRequest(data));
       // The invite always creates the client under the acting coach. Only
       // reassign when the owner explicitly picked a different trainer.
       if (data.assigned_trainer_id) {
         try {
-          await reassignClient({
+          await reassignClientMutation.mutateAsync({
             clientId: result.data.id,
             body: {coach_id: data.assigned_trainer_id},
-          }).unwrap();
+          });
         } catch {
           toast.danger('Client was invited, but assigning the trainer failed. Reassign it from the client page.');
         }
@@ -330,7 +330,7 @@ export default function InviteClient() {
               {seatSummary && <SeatUsageCard summary={seatSummary} />}
               <InviteClientForm
                 form={form}
-                isSubmitting={isLoading}
+                isSubmitting={inviteClientMutation.isPending}
                 onCancel={goBack}
                 onSubmit={onSubmit}
               />

@@ -14,8 +14,12 @@
 import {useCallback, useEffect, useMemo} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
-import {useUpdateWorkoutElementMutation} from '@/api/generated';
-import {usePlanPatcher, usePlanReader, usePlanRefetch} from '@/api/training-plan-builder';
+import {
+  usePlanPatcher,
+  usePlanReader,
+  usePlanRefetch,
+  useUpdateWorkoutElementMutation,
+} from '@/api/training-plan-builder';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
 
 import {findElement} from './plan-tree';
@@ -30,7 +34,7 @@ export function useSetWriter(planId: string) {
   const patch = usePlanPatcher(planId);
   const readPlan = usePlanReader(planId);
   const refetchPlan = usePlanRefetch(planId);
-  const [updateElement] = useUpdateWorkoutElementMutation();
+  const updateElementMutation = useUpdateWorkoutElementMutation();
 
   const queue = useMemo(
     () =>
@@ -41,13 +45,13 @@ export function useSetWriter(planId: string) {
           return;
         }
         try {
-          await updateElement({id: elementId, trainingWorkoutExerciseRequest: {planned_sets: sets}}).unwrap();
+          await updateElementMutation.mutateAsync({id: elementId, body: {planned_sets: sets}});
         } catch (error) {
           toastMutationError(error, "Couldn't save set");
           refetchPlan();
         }
       }),
-    [readPlan, refetchPlan, updateElement],
+    [readPlan, refetchPlan, updateElementMutation],
   );
 
   /** Applies `recipe` to the element's sets, then schedules the write. */

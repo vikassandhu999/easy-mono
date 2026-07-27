@@ -26,16 +26,16 @@ import {ArrowLeftRight, Info, MoreHorizontal, TrashIcon, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {AS_ICON_BUTTON, AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
-import type {NutritionMeal} from '@/api/generated';
+import {nutritionPlanKeys} from '@/api/keys';
+import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plans-list';
 import {
-  coachApi,
   useDeleteMealItemMutation,
   useDeleteMealMutation,
   useGetNutritionPlanQuery,
   useUpdateMealMutation,
-} from '@/api/generated';
+} from '@/api/nutrition-plans-list';
+import {patchQueryData} from '@/api/query-client';
 import {INLINE_LINK, TAG} from '@/builder-kit/ui';
-import {useAppDispatch} from '@/store';
 import {AmountSheet} from './amount-sheet';
 import type {FoodOrRecipe} from './food-recipe-picker-sheet';
 import {FoodRecipePickerSheet, isRecipe} from './food-recipe-picker-sheet';
@@ -78,6 +78,9 @@ interface MealCardProps {
   triggerTestId?: string;
 }
 
+/** The cached shape of `useGetNutritionPlanQuery` — every optimistic patch here targets it. */
+type NutritionPlanCache = {data: NutritionPlan};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -108,11 +111,10 @@ export function MealCard({
   cardTestId,
   triggerTestId,
 }: MealCardProps) {
-  const dispatch = useAppDispatch();
-  const [updateMeal] = useUpdateMealMutation();
-  const [deleteMeal] = useDeleteMealMutation();
-  const [deleteMealItem] = useDeleteMealItemMutation();
-  const {refetch} = useGetNutritionPlanQuery({id: planId});
+  const updateMealMutation = useUpdateMealMutation();
+  const deleteMealMutation = useDeleteMealMutation();
+  const deleteMealItemMutation = useDeleteMealItemMutation();
+  const {refetch} = useGetNutritionPlanQuery(planId);
 
   // Inline rename state
   const [editingName, setEditingName] = useState(Boolean(autoRename));
@@ -155,26 +157,24 @@ export function MealCard({
       return;
     }
     setEditingName(false);
-    const patch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
-        const m = draft.data.meals?.find((x) => x.id === meal.id);
-        if (m) {
-          m.name = trimmed;
-        }
-      }),
-    );
+    const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
+      const m = draft.data.meals?.find((x) => x.id === meal.id);
+      if (m) {
+        m.name = trimmed;
+      }
+    });
     try {
-      await updateMeal({
+      await updateMealMutation.mutateAsync({
         id: meal.id,
-        nutritionMealRequest: {name: trimmed},
-      }).unwrap();
+        body: {name: trimmed},
+      });
       refetch().catch(() => undefined);
     } catch (e) {
       patch.undo();
       setNameValue(meal.name);
       toastMutationError(e, "Couldn't save changes");
     }
-  }, [nameValue, meal.id, meal.name, planId, updateMeal, dispatch, refetch]);
+  }, [nameValue, meal.id, meal.name, planId, updateMealMutation, refetch]);
 
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -193,38 +193,34 @@ export function MealCard({
   // ---------------------------------------------------------------------------
 
   const handleDelete = useCallback(async () => {
-    const patch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
-        const idx = draft.data.meals?.findIndex((x) => x.id === meal.id) ?? -1;
-        if (idx !== -1) {
-          draft.data.meals?.splice(idx, 1);
-        }
-      }),
-    );
+    const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
+      const idx = draft.data.meals?.findIndex((x) => x.id === meal.id) ?? -1;
+      if (idx !== -1) {
+        draft.data.meals?.splice(idx, 1);
+      }
+    });
     // The backend cascades day_meals with the meal (FK on_delete: :delete_all)
     // — mirror that in the days cache, or a slot keeps pointing at an option
     // whose meal no longer exists.
-    const dayMealsPatch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
-        for (const day of draft.data.days ?? []) {
-          const dayMeals = (day as {day_meals?: {nutrition_meal_id?: string}[]}).day_meals;
-          if (!dayMeals) {
-            continue;
-          }
-          const remaining = dayMeals.filter((dm) => dm.nutrition_meal_id !== meal.id);
-          (day as {day_meals?: unknown}).day_meals = remaining;
+    const dayMealsPatch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
+      for (const day of draft.data.days ?? []) {
+        const dayMeals = (day as {day_meals?: {nutrition_meal_id?: string}[]}).day_meals;
+        if (!dayMeals) {
+          continue;
         }
-      }),
-    );
+        const remaining = dayMeals.filter((dm) => dm.nutrition_meal_id !== meal.id);
+        (day as {day_meals?: unknown}).day_meals = remaining;
+      }
+    });
     try {
-      await deleteMeal({id: meal.id}).unwrap();
+      await deleteMealMutation.mutateAsync(meal.id);
       refetch().catch(() => undefined);
     } catch (e) {
       patch.undo();
       dayMealsPatch.undo();
       toastMutationError(e, "Couldn't delete meal");
     }
-  }, [meal.id, planId, deleteMeal, dispatch, refetch]);
+  }, [meal.id, planId, deleteMealMutation, refetch]);
 
   // ---------------------------------------------------------------------------
   // Delete meal item
@@ -232,26 +228,24 @@ export function MealCard({
 
   const handleDeleteItem = useCallback(
     async (itemId: string) => {
-      const patch = dispatch(
-        coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
-          const m = draft.data.meals?.find((x) => x.id === meal.id);
-          if (m) {
-            const idx = m.meal_items.findIndex((i) => i.id === itemId);
-            if (idx !== -1) {
-              m.meal_items.splice(idx, 1);
-            }
+      const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
+        const m = draft.data.meals?.find((x) => x.id === meal.id);
+        if (m) {
+          const idx = m.meal_items.findIndex((i) => i.id === itemId);
+          if (idx !== -1) {
+            m.meal_items.splice(idx, 1);
           }
-        }),
-      );
+        }
+      });
       try {
-        await deleteMealItem({id: itemId}).unwrap();
+        await deleteMealItemMutation.mutateAsync(itemId);
         refetch().catch(() => undefined);
       } catch (e) {
         patch.undo();
         toastMutationError(e, "Couldn't remove item");
       }
     },
-    [meal.id, planId, deleteMealItem, dispatch, refetch],
+    [meal.id, planId, deleteMealItemMutation, refetch],
   );
 
   // ---------------------------------------------------------------------------

@@ -6,8 +6,14 @@ import {ChevronRight} from 'lucide-react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import type {Client} from '@/api/clients';
-import type {Client as ListClient} from '@/api/generated';
+// The hand-written `Client` type in `@/api/clients` does not yet carry the
+// `training_plan_name`/`nutrition_plan_name` fields the schema exposes
+// (opt-in via `include_plans`), so this row derives its own type straight
+// from the schema rather than widening the shared type for one consumer.
+import type {components} from '@/api/schema';
 import {INACTIVE_REASON_LABEL, stageChip} from '@/clients/lib/client';
+
+type ListClient = components['schemas']['Client'];
 
 // RECIPES.md R5 — plan chip (neutral grey) and attention chip (warning-soft).
 // Plain spans, not `Chip`: the spec chip is 7px radius / 11.5px / 600, and the

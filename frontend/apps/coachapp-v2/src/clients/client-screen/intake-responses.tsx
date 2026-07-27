@@ -9,7 +9,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useListClientFormAssignmentsForCoachQuery} from '@/api/generated';
+import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
 import {FormAnswer} from '@/clients/components/form-answer';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
@@ -24,7 +24,7 @@ import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-da
 export default function IntakeResponses() {
   const {id = ''} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', id));
-  const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery({clientId: id});
+  const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery(id);
 
   const intake = data?.data.find((a) => a.purpose === 'intake');
   const submission = intake?.latest_submission;

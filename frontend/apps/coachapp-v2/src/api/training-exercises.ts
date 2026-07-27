@@ -1,89 +1,136 @@
 /**
- * Hand-written infinite query for /v1/coach/training-exercises.
+ * Every hook the coach-scoped exercise library needs: the hand-written
+ * infinite list for `/v1/coach/training-exercises` (React Query has no
+ * infinite-query codegen, same reason the old RTK slice hand-wrote it), plus
+ * get/create/update/delete/copy for one exercise and the muscle/equipment
+ * reference lists the exercise form and the builder's picker filter by.
  *
- * Codegen cannot emit `build.infiniteQuery`, so this mirrors the pattern from
- * `src/api/exercises.ts` (the existing infiniteQuery for the global exercise
- * library) but targets the coach-scoped endpoint with the generated
- * `TrainingExercise` / `TrainingExerciseListResponse` / `ListCoachExercisesApiArg`
- * types from `generated.ts` so the hand-written query stays type-synced.
+ * `getExercise`/`updateExercise` used to be generated with no cache tags, and
+ * a hand-rolled `enhanceEndpoints` block wired detail<->list invalidation on
+ * top. There's no separate generated layer to enhance anymore, so that wiring
+ * is just written directly into the mutations below.
  */
-import {api} from '@/api/base';
-import {
-  type CreateExerciseApiArg,
-  type CreateExerciseApiResponse,
-  coachApi,
-  type ListCoachExercisesApiArg,
-  type TrainingExerciseListResponse,
-} from '@/api/generated';
-import {pageTags} from '@/api/shared';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
+import {call, client} from '@/api/client';
+import {equipmentKeys, exerciseKeys, muscleKeys} from '@/api/keys';
+import type {components, paths} from '@/api/schema';
 
 const PAGE_SIZE = 20;
 
+export type TrainingExercise = components['schemas']['TrainingExercise'];
+export type TrainingExerciseRelation = components['schemas']['TrainingExerciseRelation'];
+export type TrainingExerciseCreateRequest = components['schemas']['TrainingExerciseCreateRequest'];
+export type TrainingExerciseUpdateRequest = components['schemas']['TrainingExerciseUpdateRequest'];
+export type TrainingExerciseCopyRequest = components['schemas']['TrainingExerciseCopyRequest'];
+export type TrainingExerciseListResponse = components['schemas']['TrainingExerciseListResponse'];
+
+type ListCoachExercisesQuery = NonNullable<paths['/v1/coach/training-exercises']['get']['parameters']['query']>;
+
 /** Filter params — offset/limit are handled by the infinite query machinery. */
-export type CoachTrainingExercisesFilters = Pick<ListCoachExercisesApiArg, 'search' | 'muscleIds' | 'equipmentIds'>;
+export type CoachTrainingExercisesFilters = {
+  search?: string;
+  muscleIds?: string[];
+  equipmentIds?: string[];
+};
 
-const trainingExercisesApi = api.injectEndpoints({
-  endpoints: (build) => ({
-    coachTrainingExercises: build.infiniteQuery<
-      TrainingExerciseListResponse,
-      CoachTrainingExercisesFilters | void,
-      number
-    >({
-      query: ({queryArg, pageParam}) => ({
-        url: '/v1/coach/training-exercises',
-        params: {
-          ...(queryArg?.search ? {search: queryArg.search} : {}),
-          ...(queryArg?.muscleIds?.length ? {muscle_ids: queryArg.muscleIds.join(',')} : {}),
-          ...(queryArg?.equipmentIds?.length ? {equipment_ids: queryArg.equipmentIds.join(',')} : {}),
-          offset: pageParam,
-          limit: PAGE_SIZE,
-        },
-      }),
-      infiniteQueryOptions: {
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-          const nextOffset = lastPageParam + PAGE_SIZE;
-          return nextOffset < lastPage.count ? nextOffset : undefined;
-        },
-      },
-      // result is InfiniteData<TrainingExerciseListResponse> | undefined.
-      // pageTags expects {pages: {data: {id: string}[]}[]} which matches the
-      // InfiniteData shape directly because TrainingExerciseListResponse has
-      // a `data` field of TrainingExercise[].
-      providesTags: (result) => pageTags('TrainingExercise', result as {pages: {data: {id: string}[]}[]} | undefined),
-    }),
-
-    /**
-     * Create a custom coach training exercise.
-     * The generated `useCreateExerciseMutation` posts to the same endpoint, but
-     * we re-add it here so callers can import everything from one module.
-     * If generated types drift, this endpoint will catch it at the `CreateExerciseApiArg`
-     * boundary rather than silently mis-typing.
-     */
-    createCoachTrainingExercise: build.mutation<CreateExerciseApiResponse, CreateExerciseApiArg>({
-      query: ({trainingExerciseCreateRequest}) => ({
-        url: '/v1/coach/training-exercises',
-        method: 'POST',
-        body: trainingExerciseCreateRequest,
-      }),
-      invalidatesTags: [{type: 'TrainingExercise', id: 'LIST'}],
-    }),
-  }),
-});
-
-export const {useCoachTrainingExercisesInfiniteQuery, useCreateCoachTrainingExerciseMutation} = trainingExercisesApi;
-
-// The generated getExercise/updateExercise are tag:false. Editing happens on a
-// separate page that navigates back to the detail (and list) on save, so without
-// cache coherence both show stale data. Wire the detail<->list tags here.
-coachApi.enhanceEndpoints({
-  endpoints: {
-    getExercise: {providesTags: (_r, _e, {id}) => [{type: 'TrainingExercise', id}]},
-    updateExercise: {
-      invalidatesTags: (_r, _e, {id}) => [
-        {type: 'TrainingExercise', id},
-        {type: 'TrainingExercise', id: 'LIST'},
-      ],
+export function useCoachTrainingExercisesInfiniteQuery(filters?: CoachTrainingExercisesFilters) {
+  return useInfiniteQuery({
+    queryKey: exerciseKeys.infinite(filters),
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/training-exercises', {
+          params: {
+            query: {
+              ...(filters?.search ? {search: filters.search} : {}),
+              // The backend takes one comma-joined id list per filter, not a
+              // repeated query key — openapi-fetch's default array serializer
+              // repeats the key, so join by hand (mirrors the old RTK query,
+              // which did the same before handing params to fetchBaseQuery).
+              ...(filters?.muscleIds?.length ? {muscle_ids: filters.muscleIds.join(',')} : {}),
+              ...(filters?.equipmentIds?.length ? {equipment_ids: filters.equipmentIds.join(',')} : {}),
+              offset: pageParam,
+              limit: PAGE_SIZE,
+            } as ListCoachExercisesQuery,
+          },
+        }),
+      ) as Promise<TrainingExerciseListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
     },
-  },
-});
+  });
+}
+
+export function useCreateCoachTrainingExerciseMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TrainingExerciseCreateRequest) => call(client.POST('/v1/coach/training-exercises', {body})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: exerciseKeys.lists()});
+    },
+  });
+}
+
+export function useGetExerciseQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: exerciseKeys.detail(id),
+    queryFn: () => call(client.GET('/v1/coach/training-exercises/{id}', {params: {path: {id}}})),
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useUpdateExerciseMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: TrainingExerciseUpdateRequest}) =>
+      call(client.PATCH('/v1/coach/training-exercises/{id}', {params: {path: {id}}, body})),
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: exerciseKeys.detail(id)});
+      qc.invalidateQueries({queryKey: exerciseKeys.lists()});
+    },
+  });
+}
+
+/**
+ * The generated `deleteExercise`/`copyExercise` used to be tag:false, with the
+ * exercise-detail screen invalidating the list tag by hand after each call.
+ * Baking the invalidation into the mutation itself (like every other domain
+ * file) means every future caller gets cache coherence for free.
+ */
+export function useDeleteExerciseMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/training-exercises/{id}', {params: {path: {id}}})),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({queryKey: exerciseKeys.detail(id)});
+      qc.invalidateQueries({queryKey: exerciseKeys.lists()});
+    },
+  });
+}
+
+export function useCopyExerciseMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, body}: {id: string; body: TrainingExerciseCopyRequest}) =>
+      call(client.POST('/v1/coach/training-exercises/{id}/copy', {params: {path: {id}}, body})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: exerciseKeys.lists()});
+    },
+  });
+}
+
+export function useListMusclesQuery(params?: {search?: string}) {
+  return useQuery({
+    queryKey: muscleKeys.all,
+    queryFn: () => call(client.GET('/v1/coach/training-muscles', {params: {query: params ?? undefined}})),
+  });
+}
+
+export function useListEquipmentQuery(params?: {search?: string}) {
+  return useQuery({
+    queryKey: equipmentKeys.all,
+    queryFn: () => call(client.GET('/v1/coach/training-equipment', {params: {query: params ?? undefined}})),
+  });
+}

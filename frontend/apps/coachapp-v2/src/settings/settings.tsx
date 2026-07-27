@@ -16,14 +16,13 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {clearTokens} from '@/api/authStorage';
-import {coachApi} from '@/api/generated';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
+import {queryClient} from '@/api/query-client';
 import {disconnectSocket} from '@/api/socket';
 import BillingSection from '@/settings/billing';
 import EditableRow from '@/settings/components/editable-row';
 import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
 import TeamSection from '@/settings/team';
-import {store} from '@/store';
 
 const TABS = [
   {icon: User, id: 'profile', label: 'Profile'},
@@ -40,9 +39,7 @@ function ProfilePanel({
   onUpdate,
   profile,
 }: {
-  onUpdate: (
-    body: Parameters<ReturnType<typeof useUpdateCoachProfileMutation>[0]>[0],
-  ) => ReturnType<ReturnType<typeof useUpdateCoachProfileMutation>[0]>;
+  onUpdate: ReturnType<typeof useUpdateCoachProfileMutation>['mutateAsync'];
   profile: CoachProfile;
 }) {
   const navigate = useNavigate();
@@ -52,28 +49,28 @@ function ProfilePanel({
   const handleNameSave = useCallback(
     async (value: string) => {
       const [firstName = '', ...lastName] = value.trim().split(/\s+/);
-      await onUpdate({first_name: firstName, last_name: lastName.join(' ')}).unwrap();
+      await onUpdate({first_name: firstName, last_name: lastName.join(' ')});
     },
     [onUpdate],
   );
 
   const handleBusinessSave = useCallback(
     async (value: string) => {
-      await onUpdate({business_name: value.trim()}).unwrap();
+      await onUpdate({business_name: value.trim()});
     },
     [onUpdate],
   );
 
   const handlePhoneSave = useCallback(
     async (value: string) => {
-      await onUpdate({phone: value.trim()}).unwrap();
+      await onUpdate({phone: value.trim()});
     },
     [onUpdate],
   );
 
   const handleWhatsappSave = useCallback(
     async (value: string) => {
-      await onUpdate({whatsapp_number: value.trim()}).unwrap();
+      await onUpdate({whatsapp_number: value.trim()});
     },
     [onUpdate],
   );
@@ -274,7 +271,7 @@ function SettingsShell({
 
 export default function Settings() {
   const {data, isError, isLoading, refetch} = useGetCoachProfileQuery();
-  const [updateProfile] = useUpdateCoachProfileMutation();
+  const updateProfileMutation = useUpdateCoachProfileMutation();
   const navigate = useNavigate();
   // The URL is the source of truth: /settings/billing opens (and survives a
   // refresh on) the Billing tab. Unknown tab segments fall back to Profile.
@@ -290,7 +287,7 @@ export default function Settings() {
   const handleLogout = useCallback(() => {
     clearTokens();
     disconnectSocket();
-    store.dispatch(coachApi.util.resetApiState());
+    queryClient.clear();
     navigate('/login', {replace: true});
   }, [navigate]);
 
@@ -345,7 +342,7 @@ export default function Settings() {
               id="profile"
             >
               <ProfilePanel
-                onUpdate={updateProfile}
+                onUpdate={updateProfileMutation.mutateAsync}
                 profile={profile}
               />
             </Tabs.Panel>

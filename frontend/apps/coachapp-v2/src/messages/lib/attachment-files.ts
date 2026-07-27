@@ -1,6 +1,6 @@
 import {AUDIO_CONTENT_TYPES, IMAGE_CONTENT_TYPES, VIDEO_CONTENT_TYPES} from '@easy/utils';
 
-import type {AttachmentUploadRequest} from '@/api/generated';
+import type {AttachmentUploadRequest} from '@/api/uploads';
 
 export const MAX_ATTACHMENTS = 4;
 export const MAX_RECORDING_MS = 300_000;

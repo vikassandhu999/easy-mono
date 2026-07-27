@@ -9,7 +9,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/generated';
+import {useListCoachClientNutritionPlansQuery, useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
 import {SectionCard} from '@/clients/components/section-card';
 import {
   entryStatus,
@@ -30,10 +30,10 @@ const KCAL_COL = 'min-w-16 shrink-0 whitespace-nowrap text-right';
 export default function NutritionDay() {
   const {date = '', id = ''} = useParams<{date: string; id: string}>();
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', id)}?tab=nutrition`);
-  const {data, isError, isLoading, refetch} = useListCoachMealLogsQuery({clientId: id, date});
+  const {data, isError, isLoading, refetch} = useListCoachMealLogsQuery(id, {date});
   // The design shows a target beside every macro, not just calories, and the
   // targets live on the plan rather than on the day's logs.
-  const plans = useListCoachClientNutritionPlansQuery({clientId: id, status: 'active'});
+  const plans = useListCoachClientNutritionPlansQuery(id, {status: 'active'});
 
   const header = (subtitle?: string) => (
     <Page.Header size="content">

@@ -24,7 +24,7 @@ import {
 import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {type ReactNode, type RefObject, useState} from 'react';
 
-import type {TrainingPlanWorkoutExercise} from '@/api/generated';
+import type {TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 
 import {type PlannedSet, parseRpe, parseWholeNumber} from '../sets';

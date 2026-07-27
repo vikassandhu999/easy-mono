@@ -1,4 +1,5 @@
 import {Button, Spinner, TextArea, Typography, toast} from '@heroui/react';
+import {useQueryClient} from '@tanstack/react-query';
 import {ArrowLeft, Send} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -6,21 +7,20 @@ import {Link} from 'react-router-dom';
 import {ErrorState} from '@/@components/error-state';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
-import {api} from '@/api/base';
 import {
-  appendMessageAction,
+  appendMessage,
   type ChatMessage,
+  type ChatMessageEmbedRequest,
   useConversationMessagesInfiniteQuery,
   useCreateCoachConversationMessageMutation,
   useMarkCoachConversationReadMutation,
 } from '@/api/conversations';
-import type {ChatMessageEmbedRequest} from '@/api/generated';
+import {conversationKeys} from '@/api/keys';
 import {getApiErrorMessage} from '@/api/shared';
 import AttachmentComposer from '@/messages/attachment-composer';
 import MessageAttachments from '@/messages/message-attachments';
 import MessageEmbed from '@/messages/message-embed';
 import type {AttachmentComposerState} from '@/messages/use-attachment-composer';
-import {useAppDispatch} from '@/store';
 
 function formatDay(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
@@ -83,7 +83,7 @@ export default function ConversationView({
   onEmbedSent?: () => void;
   title: string;
 }) {
-  const dispatch = useAppDispatch();
+  const qc = useQueryClient();
   const [body, setBody] = useState('');
   const [embed, setEmbed] = useState(initialEmbed);
   const [attachmentState, setAttachmentState] = useState<AttachmentComposerState>({
@@ -96,9 +96,9 @@ export default function ConversationView({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} =
-    useConversationMessagesInfiniteQuery({conversationId});
-  const [sendMessage, {isLoading: isSendingMessage}] = useCreateCoachConversationMessageMutation();
-  const [markRead] = useMarkCoachConversationReadMutation();
+    useConversationMessagesInfiniteQuery(conversationId);
+  const sendMessageMutation = useCreateCoachConversationMessageMutation();
+  const markReadMutation = useMarkCoachConversationReadMutation();
 
   // Pages arrive newest-chunk-first, each chunk ascending → reverse pages, keep chunks.
   const messages = [...(data?.pages ?? [])].reverse().flatMap((page) => page.data);
@@ -109,32 +109,29 @@ export default function ConversationView({
     urls: attachmentUrls,
   } = useAttachmentDownloadUrls(attachmentIds);
   const lastMessageId = messages[messages.length - 1]?.id;
-  const isSending = sendLocked || isSendingMessage;
+  const isSending = sendLocked || sendMessageMutation.isPending;
   const conversationUnavailable = isError && !data;
 
   useChannelEvent(
     `conversation:${conversationId}`,
     'message_new',
     (payload) => {
-      dispatch(appendMessageAction(conversationId, payload as ChatMessage));
-      dispatch(api.util.invalidateTags([{type: 'Conversation', id: 'LIST'}]));
+      appendMessage(conversationId, payload as ChatMessage);
+      qc.invalidateQueries({queryKey: conversationKeys.lists()});
     },
     // Refetch anything missed while the socket was down (fires on every rejoin).
-    () =>
-      dispatch(
-        api.util.invalidateTags([
-          {type: 'ChatMessage', id: conversationId},
-          {type: 'Conversation', id: 'LIST'},
-        ]),
-      ),
+    () => {
+      qc.invalidateQueries({queryKey: conversationKeys.messages(conversationId)});
+      qc.invalidateQueries({queryKey: conversationKeys.lists()});
+    },
   );
 
   // Everything currently loaded is on screen → advance the read cursor.
   useEffect(() => {
     if (lastMessageId) {
-      markRead({id: conversationId});
+      markReadMutation.mutate(conversationId);
     }
-  }, [conversationId, lastMessageId, markRead]);
+  }, [conversationId, lastMessageId, markReadMutation.mutate]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the message-list tail changes
   useEffect(() => {
@@ -154,15 +151,15 @@ export default function ConversationView({
     const submittedEmbed = embed;
     setSendLocked(true);
     try {
-      const result = await sendMessage({
+      const result = await sendMessageMutation.mutateAsync({
         id: conversationId,
-        coachChatMessageCreateRequest: {
+        body: {
           ...(trimmed && {body: trimmed}),
           attachment_ids: attachmentState.attachmentIds,
           ...(embed && {embed}),
         },
-      }).unwrap();
-      dispatch(appendMessageAction(conversationId, result.data));
+      });
+      appendMessage(conversationId, result.data);
       setBody('');
       setAttachmentState({attachmentIds: [], busy: false, failed: false});
       setEmbed(null);

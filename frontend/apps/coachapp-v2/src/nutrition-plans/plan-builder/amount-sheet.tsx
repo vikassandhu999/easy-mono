@@ -33,16 +33,17 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
-import type {Food, Recipe} from '@/api/generated';
+import {nutritionPlanKeys} from '@/api/keys';
+import type {Food, Recipe} from '@/api/nutrition-foods';
 import {
-  coachApi,
+  type NutritionPlan,
   useCreateMealItemMutation,
   useGetNutritionPlanQuery,
   useUpdateMealItemMutation,
-} from '@/api/generated';
+} from '@/api/nutrition-plans-list';
+import {patchQueryData} from '@/api/query-client';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
-import {useAppDispatch} from '@/store';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +67,9 @@ export interface AmountSheetProps {
   /** Desktop popover anchor — the meal-item row (edit) or "+ Add…" button (create). */
   anchorEl?: HTMLElement | null;
 }
+
+/** The cached shape of `useGetNutritionPlanQuery` — every optimistic patch here targets it. */
+type NutritionPlanCache = {data: NutritionPlan};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -115,10 +119,10 @@ interface ContentProps {
 }
 
 function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose, onDelete}: ContentProps) {
-  const dispatch = useAppDispatch();
-  const [createMealItem, {isLoading: isCreating}] = useCreateMealItemMutation();
-  const [updateMealItem] = useUpdateMealItemMutation();
-  const {refetch} = useGetNutritionPlanQuery({id: planId});
+  const createMealItemMutation = useCreateMealItemMutation();
+  const updateMealItemMutation = useUpdateMealItemMutation();
+  const {refetch} = useGetNutritionPlanQuery(planId);
+  const isCreating = createMealItemMutation.isPending;
 
   const isEditMode = existingItem !== undefined;
   // Mode from ids as well as hydrated objects — edit-mode items may carry only
@@ -309,30 +313,28 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
       };
 
       // Optimistic write into getNutritionPlan cache
-      const cachePatch = dispatch(
-        coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
-          const meals = draft.data.meals ?? [];
-          for (const meal of meals) {
-            const target = meal.meal_items.find((mi) => mi.id === existingItem.id);
-            if (target) {
-              target.weight_g = optimisticItem.weight_g ?? null;
-              target.amount = optimisticItem.amount ?? null;
-              target.unit = optimisticItem.unit ?? null;
-              break;
-            }
+      const cachePatch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
+        const meals = draft.data.meals ?? [];
+        for (const meal of meals) {
+          const target = meal.meal_items.find((mi) => mi.id === existingItem.id);
+          if (target) {
+            target.weight_g = optimisticItem.weight_g ?? null;
+            target.amount = optimisticItem.amount ?? null;
+            target.unit = optimisticItem.unit ?? null;
+            break;
           }
-        }),
-      );
+        }
+      });
 
       try {
-        await updateMealItem({
+        await updateMealItemMutation.mutateAsync({
           id: existingItem.id,
-          nutritionMealItemRequest: {
+          body: {
             ...(patch.weight_g !== undefined && {weight_g: patch.weight_g}),
             ...(patch.amount !== undefined && {amount: patch.amount}),
             ...(patch.unit !== undefined && {unit: patch.unit}),
           },
-        }).unwrap();
+        });
         // Reconcile: server computes meal.nutrition snapshots
         refetch().catch(() => undefined);
       } catch (e) {
@@ -340,7 +342,7 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
         toastMutationError(e, "Couldn't save amount");
       }
     },
-    [existingItem, dispatch, planId, updateMealItem, refetch],
+    [existingItem, planId, updateMealItemMutation, refetch],
   );
 
   const scheduleSave = useCallback(
@@ -476,21 +478,19 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
       updated_at: new Date().toISOString(),
     };
 
-    const cachePatch = dispatch(
-      coachApi.util.updateQueryData('getNutritionPlan', {id: planId}, (draft) => {
-        const meals = draft.data.meals ?? [];
-        const meal = meals.find((m) => m.id === mealId);
-        if (meal) {
-          meal.meal_items.push(provisionalItem);
-        }
-      }),
-    );
+    const cachePatch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (draft) => {
+      const meals = draft.data.meals ?? [];
+      const meal = meals.find((m) => m.id === mealId);
+      if (meal) {
+        meal.meal_items.push(provisionalItem);
+      }
+    });
 
     try {
-      await createMealItem({
+      await createMealItemMutation.mutateAsync({
         mealId,
-        nutritionMealItemRequest: body,
-      }).unwrap();
+        body,
+      });
       // Reconcile: server assigns real id + computes nutrition snapshot
       refetch().catch(() => undefined);
       onClose();
@@ -504,10 +504,9 @@ function AmountSheetContent({food, recipe, existingItem, planId, mealId, onClose
     resolvedWeightG,
     servingCount,
     activeServingIdx,
-    dispatch,
     planId,
     mealId,
-    createMealItem,
+    createMealItemMutation,
     refetch,
     onClose,
   ]);

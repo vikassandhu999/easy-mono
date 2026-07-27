@@ -1,76 +1,76 @@
-import {api} from '@/api/base';
-import type {
-  DeactivateTrainerApiArg,
-  InviteTrainerApiArg,
-  ReassignClientApiArg,
-  ResendTrainerInviteApiArg,
-  RevokeTrainerInviteApiArg,
-  TeamMemberResponse,
-  TeamResponse,
-} from '@/api/generated';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {TeamMember} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {clientKeys, teamKeys} from '@/api/keys';
+import type {components} from '@/api/schema';
 
-const teamApi = api.injectEndpoints({
-  // Hand-managed endpoints (cache tags) that share names with the generated
-  // client — override makes these authoritative regardless of import order.
-  overrideExisting: true,
-  endpoints: (build) => ({
-    getTeam: build.query<TeamResponse, void>({
-      query: () => '/v1/coach/team',
-      providesTags: [{type: 'Team', id: 'LIST'}],
-    }),
-    inviteTrainer: build.mutation<TeamMemberResponse, InviteTrainerApiArg['trainerInviteRequest']>({
-      query: (body) => ({
-        url: '/v1/coach/team/invite',
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: [{type: 'Team', id: 'LIST'}],
-    }),
-    resendTrainerInvite: build.mutation<TeamMemberResponse, ResendTrainerInviteApiArg['id']>({
-      query: (id) => ({
-        url: `/v1/coach/team/${id}/resend-invite`,
-        method: 'POST',
-      }),
-      invalidatesTags: [{type: 'Team', id: 'LIST'}],
-    }),
-    revokeTrainerInvite: build.mutation<TeamMemberResponse, RevokeTrainerInviteApiArg['id']>({
-      query: (id) => ({
-        url: `/v1/coach/team/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: [{type: 'Team', id: 'LIST'}],
-    }),
-    deactivateTrainer: build.mutation<TeamMemberResponse, DeactivateTrainerApiArg['id']>({
-      query: (id) => ({
-        url: `/v1/coach/team/${id}/deactivate`,
-        method: 'POST',
-      }),
-      invalidatesTags: [
-        {type: 'Team', id: 'LIST'},
-        {type: 'Client', id: 'LIST'},
-      ],
-    }),
-    reassignClient: build.mutation<void, {clientId: string; body: ReassignClientApiArg['reassignClientRequest']}>({
-      query: ({clientId, body}) => ({
-        url: `/v1/coach/clients/${clientId}/reassign`,
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: (_, __, {clientId}) => [
-        {type: 'Client', id: clientId},
-        {type: 'Client', id: 'LIST'},
-      ],
-    }),
-  }),
-});
+export type TeamMember = components['schemas']['TeamMember'];
+export type TeamResponse = components['schemas']['TeamResponse'];
+export type TeamMemberResponse = components['schemas']['TeamMemberResponse'];
+export type TrainerInviteRequest = components['schemas']['TrainerInviteRequest'];
+export type ReassignClientRequest = components['schemas']['ReassignClientRequest'];
 
-export const {
-  useGetTeamQuery,
-  useInviteTrainerMutation,
-  useResendTrainerInviteMutation,
-  useRevokeTrainerInviteMutation,
-  useDeactivateTrainerMutation,
-  useReassignClientMutation,
-} = teamApi;
+export function useGetTeamQuery(options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: teamKeys.all,
+    queryFn: () => call(client.GET('/v1/coach/team')) as Promise<TeamResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useInviteTrainerMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TrainerInviteRequest) =>
+      call(client.POST('/v1/coach/team/invite', {body})) as Promise<TeamMemberResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: teamKeys.all});
+    },
+  });
+}
+
+export function useResendTrainerInviteMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(client.POST('/v1/coach/team/{id}/resend-invite', {params: {path: {id}}})) as Promise<TeamMemberResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: teamKeys.all});
+    },
+  });
+}
+
+export function useRevokeTrainerInviteMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(client.DELETE('/v1/coach/team/{id}', {params: {path: {id}}})) as Promise<TeamMemberResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: teamKeys.all});
+    },
+  });
+}
+
+export function useDeactivateTrainerMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(client.POST('/v1/coach/team/{id}/deactivate', {params: {path: {id}}})) as Promise<TeamMemberResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: teamKeys.all});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+    },
+  });
+}
+
+export function useReassignClientMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({clientId, body}: {clientId: string; body: ReassignClientRequest}) =>
+      call(client.POST('/v1/coach/clients/{id}/reassign', {params: {path: {id: clientId}}, body})),
+    onSuccess: (_data, {clientId}) => {
+      qc.invalidateQueries({queryKey: clientKeys.detail(clientId)});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+    },
+  });
+}

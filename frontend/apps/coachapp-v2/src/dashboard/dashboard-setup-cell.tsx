@@ -27,9 +27,9 @@ type SetupProgress =
   | {doneCount: number; status: 'ready'; steps: SetupStep[]};
 
 function useDashboardSetupProgress(skip: boolean): SetupProgress {
-  const clients = useListClientsQuery({limit: 100}, {skip});
-  const trainingPlans = useListTrainingPlansQuery({limit: 1}, {skip});
-  const nutritionPlans = useListNutritionPlansQuery({limit: 1}, {skip});
+  const clients = useListClientsQuery({limit: 100}, {enabled: !skip});
+  const trainingPlans = useListTrainingPlansQuery({limit: 1}, {enabled: !skip});
+  const nutritionPlans = useListNutritionPlansQuery({limit: 1}, {enabled: !skip});
 
   if (
     clients.isLoading ||
@@ -306,7 +306,7 @@ function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDis
 export function DashboardSetupCell({hiddenReason}: {hiddenReason: HiddenReason}) {
   const [locallyCompleted, setLocallyCompleted] = useState(false);
   const [locallyDismissed, setLocallyDismissed] = useState(false);
-  const [updateDashboardSetup] = useUpdateDashboardSetupMutation();
+  const updateDashboardSetupMutation = useUpdateDashboardSetupMutation();
   const completionAttempted = useRef(false);
   const hidden = hiddenReason !== null || locallyCompleted || locallyDismissed;
   const progress = useDashboardSetupProgress(hidden);
@@ -322,21 +322,17 @@ export function DashboardSetupCell({hiddenReason}: {hiddenReason: HiddenReason})
     }
 
     completionAttempted.current = true;
-    updateDashboardSetup({
-      dashboardSetupUpdateRequest: {dashboard_setup_hidden_reason: 'completed'},
-    })
-      .unwrap()
+    updateDashboardSetupMutation
+      .mutateAsync({dashboard_setup_hidden_reason: 'completed'})
       .then(() => setLocallyCompleted(true))
       .catch(() => toast.danger("Couldn't save setup completion. Try again later."));
-  }, [hidden, progress, updateDashboardSetup]);
+  }, [hidden, progress, updateDashboardSetupMutation]);
 
   const dismiss = () => {
     setLocallyDismissed(true);
     let undoRequested = false;
 
-    const dismissRequest = updateDashboardSetup({
-      dashboardSetupUpdateRequest: {dashboard_setup_hidden_reason: 'dismissed'},
-    }).unwrap();
+    const dismissRequest = updateDashboardSetupMutation.mutateAsync({dashboard_setup_hidden_reason: 'dismissed'});
 
     const toastId = toast.info('Setup guide dismissed.', {
       timeout: 5000,
@@ -347,11 +343,7 @@ export function DashboardSetupCell({hiddenReason}: {hiddenReason: HiddenReason})
           setLocallyDismissed(false);
 
           dismissRequest
-            .then(() =>
-              updateDashboardSetup({
-                dashboardSetupUpdateRequest: {dashboard_setup_hidden_reason: null},
-              }).unwrap(),
-            )
+            .then(() => updateDashboardSetupMutation.mutateAsync({dashboard_setup_hidden_reason: null}))
             .catch(() => {
               setLocallyDismissed(true);
               toast.danger("Couldn't restore the setup guide.");

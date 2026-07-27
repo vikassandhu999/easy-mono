@@ -3,7 +3,7 @@
  * row. No React, no cache — this is the part that used to be written three
  * times, once per component, each from a different snapshot.
  */
-import type {TrainingPlanPlannedSet} from '@/api/generated';
+import type {TrainingPlanPlannedSet} from '@/api/training-plan-builder';
 
 import {tracks} from './tracking';
 

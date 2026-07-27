@@ -5,7 +5,7 @@
 import {Button, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {Plus} from 'lucide-react';
 
-import type {TrainingPlanWorkout} from '@/api/generated';
+import type {TrainingPlanWorkout} from '@/api/training-plan-builder';
 
 interface WorkoutTabsProps {
   workouts: TrainingPlanWorkout[];

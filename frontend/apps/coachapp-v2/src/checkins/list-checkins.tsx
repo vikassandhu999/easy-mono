@@ -27,8 +27,8 @@ export default function ListCheckins() {
   const [status, setStatus] = useState<StatusFilter>('all');
   const deferredSearch = useDeferredValue(search);
 
-  // The form-templates endpoint has no query params (see `listFormTemplates`
-  // in `api/generated.ts`) — it always returns the full set, so search/status
+  // The form-templates endpoint has no query params (see `useListFormTemplatesQuery`
+  // in `api/checkins.ts`) — it always returns the full set, so search/status
   // filtering composes client-side, same as clients' "attention" tab.
   const counts = useMemo(
     () => ({

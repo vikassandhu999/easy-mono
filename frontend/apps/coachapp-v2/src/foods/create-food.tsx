@@ -4,7 +4,7 @@ import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {Food} from '@/api/generated';
+import type {Food} from '@/api/nutrition-foods';
 import {useCreateCoachFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
@@ -20,7 +20,7 @@ export default function CreateFood() {
   const navigate = useNavigate();
   const location = useLocation();
   const goBack = useGoBack(ROUTES.FOODS);
-  const [createFood, {isLoading}] = useCreateCoachFoodMutation();
+  const createFoodMutation = useCreateCoachFoodMutation();
 
   // Duplicate pre-fill: read food data passed via route state
   const duplicateFrom = (location.state as null | {duplicateFrom?: Food})?.duplicateFrom ?? null;
@@ -42,7 +42,7 @@ export default function CreateFood() {
 
   const onSubmit = async (data: FoodFormValues) => {
     try {
-      const result = await createFood({foodRequest: foodToCreateRequest({servingSizes, values: data})}).unwrap();
+      const result = await createFoodMutation.mutateAsync(foodToCreateRequest({servingSizes, values: data}));
       navigate(`/library/foods/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Food wasn't created. Check the details and try again", form.setError);
@@ -68,7 +68,7 @@ export default function CreateFood() {
           <FoodForm
             form={form}
             initialMedia={duplicateFrom ? foodToMediaValue(duplicateFrom) : null}
-            isSubmitting={isLoading}
+            isSubmitting={createFoodMutation.isPending}
             onCancel={goBack}
             onServingSizesChange={setServingSizes}
             onSubmit={onSubmit}

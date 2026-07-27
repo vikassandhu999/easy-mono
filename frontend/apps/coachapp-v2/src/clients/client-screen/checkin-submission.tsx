@@ -9,11 +9,8 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {
-  useListClientFormAssignmentsForCoachQuery,
-  useListClientWeightEntriesQuery,
-  useReviewFormSubmissionMutation,
-} from '@/api/generated';
+import {useListClientFormAssignmentsForCoachQuery, useReviewFormSubmissionMutation} from '@/api/checkins';
+import {useListClientWeightEntriesQuery} from '@/api/clients';
 import {FormAnswer} from '@/clients/components/form-answer';
 import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
 
@@ -28,11 +25,11 @@ const FOOTER = 'sticky bottom-0 z-10 -mx-4 mt-auto flex items-center border-t bo
 export default function CheckinSubmission() {
   const {assignmentId = '', id = ''} = useParams<{assignmentId: string; id: string}>();
   const goBack = useGoBack(`${ROUTES.CLIENT_DETAIL.replace(':id', id)}?tab=checkins`);
-  const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery({clientId: id});
-  const [review, {isLoading: isReviewing}] = useReviewFormSubmissionMutation();
+  const {data, isError, isLoading, refetch} = useListClientFormAssignmentsForCoachQuery(id);
+  const reviewMutation = useReviewFormSubmissionMutation();
   // A weight ANSWER carries no unit, and the design shows `72.4 kg` — the client's
   // logging unit comes from their weight entries (RTK dedupes this with CD-OV).
-  const weights = useListClientWeightEntriesQuery({clientId: id});
+  const weights = useListClientWeightEntriesQuery(id);
   const weightUnit = weights.data?.entries?.[0]?.unit ?? 'kg';
 
   const assignment = data?.data.find((a) => a.id === assignmentId);
@@ -88,7 +85,7 @@ export default function CheckinSubmission() {
 
   const markReviewed = async () => {
     try {
-      await review({id: submission.id}).unwrap();
+      await reviewMutation.mutateAsync(submission.id);
     } catch (err) {
       toastMutationError(err, "The check-in wasn't marked reviewed. Try again.");
     }
@@ -163,7 +160,7 @@ export default function CheckinSubmission() {
             ) : (
               <Button
                 className="w-full bg-ink text-ink-foreground"
-                isPending={isReviewing}
+                isPending={reviewMutation.isPending}
                 onPress={markReviewed}
               >
                 Mark reviewed

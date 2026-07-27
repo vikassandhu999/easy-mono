@@ -5,7 +5,7 @@ import type {ComponentProps} from 'react';
 import {useRef, useState} from 'react';
 
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
-import type {Food} from '@/api/generated';
+import type {Food} from '@/api/nutrition-foods';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import FoodPickerContent from '@/foods/components/food-picker-content';
 

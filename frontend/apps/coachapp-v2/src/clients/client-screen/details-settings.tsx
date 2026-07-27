@@ -31,7 +31,8 @@ export default function DetailsSettings() {
   const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', id));
   const {data, isError, isLoading, refetch} = useGetClientQuery(id);
   const team = useGetTeamQuery();
-  const [updateClient, {isLoading: isSaving}] = useUpdateClientMutation();
+  const updateClientMutation = useUpdateClientMutation();
+  const isSaving = updateClientMutation.isPending;
   const confirmState = useOverlayState();
 
   const header = (subtitle?: string) => (
@@ -100,7 +101,7 @@ export default function DetailsSettings() {
 
   const setStatus = async (status: 'active' | 'inactive') => {
     try {
-      await updateClient({body: {status}, id: client.id}).unwrap();
+      await updateClientMutation.mutateAsync({body: {status}, id: client.id});
     } catch (err) {
       toastMutationError(err, "The client's status wasn't changed. Try again.");
     }

@@ -1,8 +1,8 @@
 import {putFileToSignedUrl, startVoiceRecording} from '@easy/utils';
 import {type ChangeEvent, useEffect, useId, useRef, useState} from 'react';
 
-import {type AttachmentUploadRequest, useCreateCoachClientUploadMutation} from '@/api/generated';
 import {getApiErrorMessage} from '@/api/shared';
+import {type AttachmentUploadRequest, useCreateCoachClientUploadMutation} from '@/api/uploads';
 import {
   isAcceptedAttachmentType,
   MAX_ATTACHMENTS,
@@ -26,7 +26,7 @@ type Options = {
 
 export default function useAttachmentComposer({clientId, disabled, onChange}: Options) {
   const inputId = useId();
-  const [createUpload] = useCreateCoachClientUploadMutation();
+  const createUploadMutation = useCreateCoachClientUploadMutation();
   const [items, setItems] = useState<UploadItem[]>([]);
   const [fieldError, setFieldError] = useState<string>();
   const [recordingMs, setRecordingMs] = useState(0);
@@ -109,14 +109,14 @@ export default function useAttachmentComposer({clientId, disabled, onChange}: Op
 
     let response;
     try {
-      response = await createUpload({
+      response = await createUploadMutation.mutateAsync({
         clientId,
-        attachmentUploadRequest: {
+        body: {
           byte_size: file.size,
           content_type: file.type,
           ...(durationMs && {duration_ms: durationMs}),
         },
-      }).unwrap();
+      });
     } catch (error) {
       updateItem(localId, {
         errorMessage: getApiErrorMessage(error, "Couldn't prepare this upload. Try again."),

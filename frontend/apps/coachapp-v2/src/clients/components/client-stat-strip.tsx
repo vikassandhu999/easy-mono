@@ -5,11 +5,9 @@ import {Link} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {
-  useListClientWeightEntriesQuery,
-  useListCoachClientTrainingSessionsQuery,
-  useListCoachMealLogsQuery,
-} from '@/api/generated';
+import {useListClientWeightEntriesQuery} from '@/api/clients';
+import {useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
+import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
 import {
   averageLoggedCalories,
   completedSessionDates,
@@ -54,16 +52,18 @@ export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyT
   const from = week[0]!;
   const to = week[6]!;
 
-  const sessions = useListCoachClientTrainingSessionsQuery({clientId: client.id, from, to});
-  const meals = useListCoachMealLogsQuery({clientId: client.id, from, to});
-  const weights = useListClientWeightEntriesQuery({clientId: client.id});
+  const sessions = useListCoachClientTrainingSessionsQuery(client.id, {from, to});
+  const meals = useListCoachMealLogsQuery(client.id, {from, to});
+  const weights = useListClientWeightEntriesQuery(client.id);
 
   const isLoading = sessions.isLoading || meals.isLoading || weights.isLoading;
 
   const doneDays = completedSessionDates(sessions.data?.data);
   const loggedDays = loggedMealDates(meals.data?.data);
   const avgKcal = averageLoggedCalories(meals.data?.data);
-  const trend = weightTrend(weights.data?.entries, weights.data?.goal?.value ?? null);
+  // `goal` is a loosely-typed index-signature object on the wire; narrow the
+  // one field this screen reads.
+  const trend = weightTrend(weights.data?.entries, (weights.data?.goal?.value as number | undefined) ?? null);
 
   // "Last active" is the most recent thing the client did, whichever it was — the
   // design labels the value with which kind it came from ("meal log").

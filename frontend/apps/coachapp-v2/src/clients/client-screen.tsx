@@ -21,7 +21,8 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {Client} from '@/api/clients';
 import {useGetClientQuery} from '@/api/clients';
-import {useGetCoachClientConversationQuery, useListCoachClientTrainingPlansQuery} from '@/api/generated';
+import {useGetCoachClientConversationQuery} from '@/api/conversations';
+import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
 import {CheckinsTab} from '@/clients/client-screen/checkins-tab';
 import {NutritionTab} from '@/clients/client-screen/nutrition-tab';
 import {OverviewTab} from '@/clients/client-screen/overview-tab';
@@ -73,7 +74,7 @@ export default function ClientScreen() {
   const goBack = useGoBack(ROUTES.CLIENTS);
   const {data, isError, isLoading, refetch} = useGetClientQuery(id);
   // The header's unread badge — the same count the inbox shows for this client.
-  const conversation = useGetCoachClientConversationQuery({clientId: id});
+  const conversation = useGetCoachClientConversationQuery(id);
   const unread = conversation.data?.data?.unread_count ?? 0;
 
   const requested = params.get('tab');
@@ -82,7 +83,7 @@ export default function ClientScreen() {
   // "3 of 4": the target is how many DISTINCT weekdays the active plan schedules,
   // which is what the design's "4 days a week" counts. There is no `days_per_week`
   // field on a plan — it is derived from the plan items' `day_of_week`.
-  const plans = useListCoachClientTrainingPlansQuery({clientId: id, status: 'active'});
+  const plans = useListCoachClientTrainingPlansQuery(id, {status: 'active'});
   const activePlan = plans.data?.data?.[0];
   const weeklyTarget = activePlan ? new Set(activePlan.plan_items.map((item) => item.day_of_week)).size || null : null;
 

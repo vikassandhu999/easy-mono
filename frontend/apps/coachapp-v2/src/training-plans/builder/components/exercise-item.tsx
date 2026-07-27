@@ -9,7 +9,7 @@ import {Button, Chip} from '@heroui/react';
 import {ChevronDown, ChevronUp, X} from 'lucide-react';
 
 import {AS_ICON_BUTTON, NO_GAP} from '@/@components/ua-defaults';
-import type {TrainingPlanWorkoutExercise} from '@/api/generated';
+import type {TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
 import {INLINE_LINK, TAG} from '@/builder-kit/ui';
 
 import {trackingTypeLabel} from '../tracking';

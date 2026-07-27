@@ -70,7 +70,7 @@ type InviteTrainerFormValues = z.infer<typeof inviteTrainerSchema>;
 const INVITE_TRAINER_FORM_FIELDS = ['email', 'first_name', 'last_name'] as const;
 
 function InviteTrainerForm({onDone}: {onDone: () => void}) {
-  const [inviteTrainer, {isLoading}] = useInviteTrainerMutation();
+  const inviteTrainerMutation = useInviteTrainerMutation();
 
   const form = useForm<InviteTrainerFormValues>({
     defaultValues: {email: '', first_name: '', last_name: ''},
@@ -79,11 +79,11 @@ function InviteTrainerForm({onDone}: {onDone: () => void}) {
 
   const onSubmit = async (values: InviteTrainerFormValues) => {
     try {
-      await inviteTrainer({
+      await inviteTrainerMutation.mutateAsync({
         email: values.email,
         first_name: values.first_name || undefined,
         last_name: values.last_name || undefined,
-      }).unwrap();
+      });
       toast.success('Invite sent');
       onDone();
     } catch (err) {
@@ -134,7 +134,7 @@ function InviteTrainerForm({onDone}: {onDone: () => void}) {
       {form.formState.errors.root ? <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage> : null}
 
       <FormActions
-        isSubmitting={isLoading}
+        isSubmitting={inviteTrainerMutation.isPending}
         onCancel={onDone}
         submitLabel="Send invite"
         submittingLabel="Sending invite"
@@ -208,14 +208,15 @@ function DeactivateTrainerDialog({
   member: null | TeamMember;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [deactivateTrainer, {isLoading}] = useDeactivateTrainerMutation();
+  const deactivateTrainerMutation = useDeactivateTrainerMutation();
+  const isLoading = deactivateTrainerMutation.isPending;
 
   const handleDeactivate = async () => {
     if (!member) {
       return;
     }
     try {
-      await deactivateTrainer(member.id).unwrap();
+      await deactivateTrainerMutation.mutateAsync(member.id);
       toast.success('Trainer deactivated');
       onOpenChange(false);
     } catch (err) {
@@ -268,14 +269,16 @@ function memberName(member: TeamMember): string {
 }
 
 function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate: () => void}) {
-  const [resendInvite, {isLoading: isResending}] = useResendTrainerInviteMutation();
-  const [revokeInvite, {isLoading: isRevoking}] = useRevokeTrainerInviteMutation();
+  const resendInviteMutation = useResendTrainerInviteMutation();
+  const revokeInviteMutation = useRevokeTrainerInviteMutation();
+  const isResending = resendInviteMutation.isPending;
+  const isRevoking = revokeInviteMutation.isPending;
 
   const name = memberName(member);
 
   const handleResend = async () => {
     try {
-      await resendInvite(member.id).unwrap();
+      await resendInviteMutation.mutateAsync(member.id);
       toast.success('Invite resent');
     } catch (err) {
       toast.danger(getApiErrorMessage(err, "Couldn't resend invite"));
@@ -284,7 +287,7 @@ function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate
 
   const handleRevoke = async () => {
     try {
-      await revokeInvite(member.id).unwrap();
+      await revokeInviteMutation.mutateAsync(member.id);
       toast.success('Invite revoked');
     } catch (err) {
       toast.danger(getApiErrorMessage(err, "Couldn't revoke invite"));
@@ -378,7 +381,7 @@ function TeamMemberRow({member, onDeactivate}: {member: TeamMember; onDeactivate
 
 export default function TeamSection() {
   const {data: billing} = useGetBillingQuery();
-  const {data, isError, isLoading, refetch} = useGetTeamQuery(undefined, {skip: !billing?.data.is_owner});
+  const {data, isError, isLoading, refetch} = useGetTeamQuery({enabled: !!billing?.data.is_owner});
   const [deactivateTarget, setDeactivateTarget] = useState<null | TeamMember>(null);
 
   if (!billing?.data.is_owner) {

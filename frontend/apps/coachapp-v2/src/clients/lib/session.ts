@@ -1,4 +1,4 @@
-import type {TrainingPerformedSet, TrainingSession} from '@/api/generated';
+import type {TrainingPerformedSet, TrainingSession} from '@/api/training-plans-list';
 
 import {getPlannedSnapshot, type PlannedSnapshotExercise} from '@/domain/workout-sessions';
 

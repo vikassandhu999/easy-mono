@@ -3,7 +3,7 @@ import {ClipboardCheck} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
-import type {ChatMessageEmbed} from '@/api/generated';
+import type {ChatMessageEmbed} from '@/api/conversations';
 
 export default function MessageEmbed({embed}: {embed: ChatMessageEmbed}) {
   return (

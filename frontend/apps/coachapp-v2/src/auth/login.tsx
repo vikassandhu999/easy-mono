@@ -6,7 +6,7 @@ import {z} from 'zod';
 import {FormTextField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
-import {useSendOtpMutation} from '@/api/generated';
+import {useSendOtpMutation} from '@/api/auth';
 import {applyFormErrors} from '@/api/shared';
 import {AuthFooter} from '@/auth/components/auth-footer';
 import AuthLayout from '@/auth/components/auth-layout';
@@ -19,7 +19,7 @@ type LoginFormValues = z.infer<typeof schema>;
 
 export default function Login() {
   const navigate = useNavigate();
-  const [sendOtp, {isLoading}] = useSendOtpMutation();
+  const sendOtpMutation = useSendOtpMutation();
 
   const form = useForm<LoginFormValues>({
     defaultValues: {email: ''},
@@ -28,7 +28,7 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      await sendOtp({otpRequest: {email: data.email, type: 'authentication'}}).unwrap();
+      await sendOtpMutation.mutateAsync({email: data.email, type: 'authentication'});
       navigate(ROUTES.VERIFY_LOGIN_OTP, {
         state: {email: data.email},
       });
@@ -67,10 +67,10 @@ export default function Login() {
 
         <Button
           fullWidth
-          isPending={isLoading}
+          isPending={sendOtpMutation.isPending}
           type="submit"
         >
-          {isLoading ? (
+          {sendOtpMutation.isPending ? (
             <>
               <Spinner
                 color="current"

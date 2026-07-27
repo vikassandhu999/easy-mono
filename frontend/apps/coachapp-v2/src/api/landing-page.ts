@@ -1,6 +1,12 @@
-import {coachApi, type LandingPage, type LandingPageUpsertRequest} from '@/api/generated';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {LandingPage} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {landingPageKeys} from '@/api/keys';
+import type {components} from '@/api/schema';
+
+export type LandingPage = components['schemas']['LandingPage'];
+export type LandingPageResponse = components['schemas']['LandingPageResponse'];
+export type LandingPageUpsertRequest = components['schemas']['LandingPageUpsertRequest'];
 
 export type Template = 'proof_first' | 'problem_fit' | 'coach_story';
 export type QuestionType = 'short_text' | 'long_text' | 'single_select';
@@ -135,11 +141,21 @@ export function draftToRequest(draft: LandingDraft): LandingPageUpsertRequest {
   };
 }
 
-const enhanced = coachApi.enhanceEndpoints({
-  endpoints: {
-    getLandingPage: {providesTags: [{type: 'LandingPage', id: 'CURRENT'}]},
-    saveLandingPage: {invalidatesTags: [{type: 'LandingPage', id: 'CURRENT'}]},
-  },
-});
+export function useGetLandingPageQuery(options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: landingPageKeys.all,
+    queryFn: () => call(client.GET('/v1/coach/landing-page')) as Promise<LandingPageResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
 
-export const {useGetLandingPageQuery, useSaveLandingPageMutation} = enhanced;
+export function useSaveLandingPageMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: LandingPageUpsertRequest) =>
+      call(client.PUT('/v1/coach/landing-page', {body})) as Promise<LandingPageResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: landingPageKeys.all});
+    },
+  });
+}

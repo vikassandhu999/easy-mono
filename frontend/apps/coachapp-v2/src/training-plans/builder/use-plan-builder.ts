@@ -1,14 +1,9 @@
 /**
- * Every write the training builder can perform, in one place.
- *
- * Components below this call these functions and render what they are given;
- * none of them import `coachApi`, dispatch, or know a cache key exists. The
- * optimistic protocol — patch, request, undo on failure, toast — is written
- * once in `commit` rather than at each of the ten call sites that used to
- * repeat it.
- *
- * Set writes are the exception and go through `useSetWriter`, because the whole
- * array is replaced on every edit and that needs serialising. See that file.
+ * Every write the training builder can perform, in one place. Components call
+ * these and render what they are given; none of them touch the cache directly.
+ * The optimistic protocol — patch, request, undo on failure, toast — lives in
+ * `commit`. Set writes go through `useSetWriter` because the whole array is
+ * replaced on every edit and needs serialising.
  */
 import {toast} from '@heroui/react';
 import {useCallback} from 'react';
@@ -273,48 +268,6 @@ export function usePlanBuilder(plan: TrainingPlan) {
 }
 
 export type PlanBuilderCommands = ReturnType<typeof usePlanBuilder>;
-
-/**
- * The same commands, narrowed to one workout.
- *
- * The workout panel used to take the whole command object and pass `workout.id`
- * back on every call — so it could reach any workout, and each call site had to
- * remember which one it meant. Here the id is bound once and nothing below can
- * name another workout.
- */
-export interface WorkoutActions {
-  rename: (name: string) => void;
-  /** Awaited only so the confirm dialog can close when the delete settles. */
-  remove: () => Promise<void>;
-  isRemoving: boolean;
-  toggleDay: (day: Day, isSelected: boolean) => void;
-  addExercises: (exercises: TrainingExercise[]) => void;
-  removeExercise: (elementId: string) => void;
-  moveExercise: (from: number, to: number) => void;
-  addSet: (elementId: string) => void;
-  removeSet: (elementId: string, setIndex: number) => void;
-}
-
-/**
- * A plain function, not a hook: the panel it feeds is not memoised, so a fresh
- * object each render costs nothing, and skipping `useMemo` saves a nine-entry
- * dependency array that would have to be kept in step by hand.
- */
-export function workoutActions(commands: PlanBuilderCommands, workoutId: string): WorkoutActions {
-  const ignore = () => undefined;
-
-  return {
-    rename: (name) => commands.renameWorkout(workoutId, name).catch(ignore),
-    remove: () => commands.removeWorkout(workoutId),
-    isRemoving: commands.isRemovingWorkout,
-    toggleDay: (day, isSelected) => commands.scheduleDay(day, isSelected ? workoutId : null).catch(ignore),
-    addExercises: (exercises) => commands.addExercises(workoutId, exercises).catch(ignore),
-    removeExercise: (elementId) => commands.removeExercise(workoutId, elementId).catch(ignore),
-    moveExercise: (from, to) => commands.moveExercise(workoutId, from, to).catch(ignore),
-    addSet: commands.addSet,
-    removeSet: commands.dropSet,
-  };
-}
 
 /**
  * Which workout the builder is showing. It lives in the URL so a refresh, a

@@ -1,19 +1,14 @@
 /**
  * The planned sets of one exercise (badge TB). Each row opens the set editor;
- * the `×` removes the set.
- *
- * GAPS.md #7 calls for `ListBox` items here, but an option can't host its own
- * interactive `×`, and the workaround — a parallel column of buttons beside the
- * list — drifts out of alignment as soon as the two columns' row heights differ,
- * which the design's 22px `×` guarantees. So rows are plain elements, mirroring
- * the nutrition builder's meal-item rows.
+ * the `×` removes the set. Rows are plain elements, not the `ListBox` GAPS.md
+ * #7 calls for — an option can't host its own interactive `×`.
  */
 import {Button} from '@heroui/react';
 import {X} from 'lucide-react';
 
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
 
-import {canRemoveSet, formatSetSummary, type PlannedSet} from '../sets';
+import {formatSetSummary, type PlannedSet} from '../sets';
 
 interface SetListProps {
   sets: PlannedSet[];
@@ -25,7 +20,8 @@ interface SetListProps {
 }
 
 export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSet}: SetListProps) {
-  const isRemovable = canRemoveSet(sets);
+  // `planned_sets` requires at least one — the last set is not removable.
+  const isRemovable = sets.length > 1;
 
   return (
     <div className="flex flex-col">

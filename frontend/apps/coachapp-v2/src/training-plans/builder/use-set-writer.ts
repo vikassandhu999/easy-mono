@@ -1,11 +1,7 @@
 /**
- * Writes to one exercise's `planned_sets`.
- *
- * The API replaces the whole array, so the editor, "add set" and "remove set"
- * used to build payloads from three different snapshots and lose one another's
- * edits. The fix is `createCoalescingQueue` — one request per exercise in
- * flight, and the send reads the cache rather than a captured payload. Its file
- * carries the reasoning; this one only wires it up.
+ * Writes to one exercise's `planned_sets`. The API replaces the whole array,
+ * so writes go through `createCoalescingQueue` — one request per exercise in
+ * flight, and the send reads the cache rather than a captured payload.
  *
  * Recovery is a re-read, not `patch.undo()`: a failed write can be the tail of
  * a coalesced chain, so reversing one patch out of order would leave the cache

@@ -1,11 +1,8 @@
 /**
- * The training builder's composition root.
- *
- * It owns the three pieces of screen state — which workout is showing, which
- * workout is being renamed, which set is being edited — and hands everything
- * else down as props. There is exactly ONE set editor for the screen: it used
- * to be mounted per exercise row, which meant an editor, a set index and an
- * anchor-ref array per row, all of which had to be kept in step by hand.
+ * The training builder's composition root. It owns the three pieces of screen
+ * state — which workout is showing, which is being renamed, which set is being
+ * edited — and hands everything else down as props. There is exactly ONE set
+ * editor for the whole screen.
  */
 import {Typography} from '@heroui/react';
 import {useRef, useState} from 'react';
@@ -18,7 +15,7 @@ import {WorkoutPanel} from './components/workout-panel';
 import {WorkoutTabs} from './components/workout-tabs';
 import {findElement} from './plan-tree';
 import {daysForWorkout} from './schedule';
-import {useActiveWorkout, usePlanBuilder, workoutActions} from './use-plan-builder';
+import {useActiveWorkout, usePlanBuilder} from './use-plan-builder';
 
 export function PlanBuilder({plan}: {plan: TrainingPlan}) {
   const commands = usePlanBuilder(plan);
@@ -68,8 +65,8 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
       {activeWorkout ? (
         <WorkoutPanel
           key={activeWorkout.id}
-          actions={workoutActions(commands, activeWorkout.id)}
           autoRename={renamingId === activeWorkout.id}
+          commands={commands}
           onOpenSet={(elementId, setIndex, anchor) => {
             editorAnchor.current = anchor;
             setEditingSet({elementId, setIndex});

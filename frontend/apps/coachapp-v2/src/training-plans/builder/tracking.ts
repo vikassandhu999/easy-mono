@@ -3,8 +3,7 @@
  *
  * One list per tracking type, and it drives both the editor (which fields to
  * show) and the row summary (which measures to print) — so the two can never
- * disagree. It used to be nine records of five booleans, which is the same
- * information written five times as wide.
+ * disagree.
  */
 
 /** The measures a set can carry. `load` and `distance` also own a unit. */

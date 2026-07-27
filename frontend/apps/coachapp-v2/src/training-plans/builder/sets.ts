@@ -1,7 +1,6 @@
 /**
- * A set list, as values. The array algebra plus the one-line summary under each
- * row. No React, no cache — this is the part that used to be written three
- * times, once per component, each from a different snapshot.
+ * A set list, as values: the array algebra plus the one-line summary under each
+ * row. No React, no cache.
  */
 import type {TrainingPlanPlannedSet} from '@/api/training-plan-builder';
 
@@ -42,11 +41,6 @@ export function appendSet(sets: PlannedSet[]): PlannedSet[] {
 
 export function removeSet(sets: PlannedSet[], index: number): PlannedSet[] {
   return sets.filter((_, i) => i !== index);
-}
-
-/** `planned_sets` requires at least one — the last set is not removable. */
-export function canRemoveSet(sets: PlannedSet[]): boolean {
-  return sets.length > 1;
 }
 
 // ---------------------------------------------------------------------------

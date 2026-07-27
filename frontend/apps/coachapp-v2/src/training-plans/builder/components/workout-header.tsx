@@ -1,13 +1,9 @@
 /**
  * The active workout's header row: name (rename in place) · weekday chips · ⋯.
- *
- * The three children are ordered by CSS, not by a breakpoint hook. Below `sm`
- * the chips wrap onto their own scrolling line — seven 44px targets don't fit
- * beside the name at 390px, and wrapping them mid-week reads as two broken
- * weeks — with the ⋯ staying beside the name. From `sm` the row is name · chips
- * · ⋯. One menu node either way: rendering a hidden per-width duplicate makes
- * every `[data-testid]` lookup ambiguous, and reaching for `useIsDesktop` here
- * would put a JS media query in the way of a pure layout decision.
+ * The three children are ordered by CSS, not a breakpoint hook: below `sm` the
+ * chips wrap onto their own scrolling line (seven 44px targets don't fit beside
+ * the name at 390px) with the ⋯ staying beside the name; from `sm` the row is
+ * name · chips · ⋯. One menu node either way.
  */
 import {Button, Dropdown, Label, Separator} from '@heroui/react';
 import {MoreHorizontal, TrashIcon} from 'lucide-react';

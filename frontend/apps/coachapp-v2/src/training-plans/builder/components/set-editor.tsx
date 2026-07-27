@@ -2,13 +2,9 @@
  * The set value editor (badge TB) — a `ResponsiveOverlay`, so it is an anchored
  * popover on desktop and a keyboard-docked sheet on mobile.
  *
- * There is no draft object and no save button. Every control writes straight
- * through `onChange`, which patches the cache at once and lets the set writer
- * decide when to send; the row behind the editor updates as the coach types.
- *
- * Which fields appear is `tracking.ts`'s answer, and each one is a descriptor
- * below rather than its own block of JSX — five near-identical conditionals is
- * how they drift apart.
+ * There is no draft object and no save button: every control writes straight
+ * through `onChange`, and the set writer decides when to send. Which fields
+ * appear is `tracking.ts`'s answer; each one is a descriptor in `FIELDS`.
  */
 import {
   Button,
@@ -72,7 +68,8 @@ type Patch = Partial<PlannedSet>;
 
 interface FieldUi {
   label: string;
-  mode: 'decimal' | 'numeric';
+  /** `inputMode` for the soft keyboard; the multiline notes field has none. */
+  mode?: 'decimal' | 'numeric';
   /** The text to show for this set. */
   read: (set: PlannedSet) => string;
   /** The patch to save, or `undefined` while the text isn't saveable yet. */
@@ -106,12 +103,6 @@ function numberColumn(
   };
 }
 
-/** The editor offers m/km/mi; a stored `none` (or null) reads as meters, which
- *  is also how the row summary renders it. */
-function editorDistanceUnit(unit: DistanceUnit | null | undefined): DistanceUnit {
-  return unit === 'km' || unit === 'miles' ? unit : 'meters';
-}
-
 const FIELDS: Record<FieldKey, FieldUi> = {
   reps: {label: 'Reps', mode: 'numeric', ...textColumn('reps')},
   load: {
@@ -142,7 +133,8 @@ const FIELDS: Record<FieldKey, FieldUi> = {
         label="Distance unit"
         onChange={(unit) => onChange({distance_unit: unit})}
         options={DISTANCE_UNITS}
-        value={editorDistanceUnit(set.distance_unit)}
+        // A stored `none` (or null) reads as meters, matching the row summary.
+        value={set.distance_unit === 'km' || set.distance_unit === 'miles' ? set.distance_unit : 'meters'}
       />
     ),
   },
@@ -158,7 +150,6 @@ const REST: FieldUi = {
 
 const NOTES: FieldUi = {
   label: 'Notes',
-  mode: 'numeric',
   multiline: true,
   placeholder: 'Tempo, cues, %1RM targets…',
   ...textColumn('notes'),
@@ -281,11 +272,9 @@ export function SetEditor({element, setIndex, anchorRef, isOpen, onClose, onSele
 // ---------------------------------------------------------------------------
 
 /**
- * Holds what the coach typed and reports up only what parses.
- *
- * `8.` and `` are not values yet, but they are what is on screen. The buffer is
- * per FIELD, so a half-typed RPE cannot touch the reps beside it — which a
- * shared per-set draft object could, and did.
+ * Holds what the coach typed and reports up only what parses — `8.` and `` are
+ * on screen but not saveable yet. The buffer is per FIELD, so a half-typed RPE
+ * cannot touch the reps beside it.
  */
 function useFieldText(field: FieldUi, set: PlannedSet, onChange: (patch: Patch) => void) {
   const [text, setText] = useState(() => field.read(set));

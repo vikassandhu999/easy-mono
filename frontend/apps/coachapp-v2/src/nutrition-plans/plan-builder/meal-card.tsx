@@ -503,14 +503,6 @@ export function MealCard({
         anchorEl={editingItem ? itemRowRefs.current[editingItem.id] : null}
         existingItem={editingItem ?? undefined}
         onClose={() => setEditingItem(null)}
-        onDelete={
-          editingItem
-            ? () => {
-                handleDeleteItem(editingItem.id).catch(() => undefined);
-                setEditingItem(null);
-              }
-            : undefined
-        }
         open={editingItem !== null}
         planId={planId}
       />

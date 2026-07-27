@@ -23,7 +23,7 @@
  */
 
 import {computeMacrosFromSnapshot} from '@easy/utils';
-import {Button, Spinner, ToggleButton, ToggleButtonGroup} from '@heroui/react';
+import {Spinner, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import SectionHeading from '@/@components/section-heading';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
@@ -32,7 +32,7 @@ import {useGetFoodQuery, useGetRecipeQuery} from '@/api/nutrition-foods';
 import {useUpdateMealItemMutation} from '@/api/nutrition-plans-list';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
-import {INLINE_LINK, UNIT_CHIP} from '@/builder-kit/ui';
+import {UNIT_CHIP} from '@/builder-kit/ui';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
 import {useNutritionPlanCommit} from './use-plan-commit';
 
@@ -58,8 +58,6 @@ export interface AmountSheetProps {
   planId: string;
   open: boolean;
   onClose: () => void;
-  /** Remove the item from the meal. Surfaces the delete the row no longer renders. */
-  onDelete?: () => void;
   /** Desktop popover anchor — the tapped meal-item row. */
   anchorEl?: HTMLElement | null;
 }
@@ -112,7 +110,6 @@ export interface AmountSheetContentProps {
   recipe: Recipe | null;
   existingItem?: HydratedMealItem;
   planId: string;
-  onDelete?: () => void;
   /** Collect mode: submit hands the built request body up (no POST here). */
   onCollect?: (draft: MealItemDraft) => void;
   /** Collect mode: the fields render as a form with this id, so the host's
@@ -131,7 +128,6 @@ export function AmountSheetContent({
   recipe,
   existingItem,
   planId,
-  onDelete,
   onCollect,
   formId,
   onCanConfirmChange,
@@ -579,25 +575,8 @@ export function AmountSheetContent({
         </div>
       )}
 
-      {/* ── Edit mode footer: autosave hint + remove action ── */}
-      {isEditMode ? (
-        <div className="flex items-center justify-between pt-0.5">
-          <span className="type-eyebrow text-muted">Changes save automatically</span>
-          {onDelete ? (
-            <Button
-              className={`${INLINE_LINK} type-eyebrow font-medium text-danger-soft-foreground`}
-              onPress={() => {
-                // Drop any pending debounced save — the item is being removed.
-                pendingRef.current = null;
-                onDelete();
-              }}
-              variant="ghost"
-            >
-              Remove from meal
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
+      {/* ── Edit mode footer — removal lives on the row's ×, not in here ── */}
+      {isEditMode ? <div className="pt-0.5 type-eyebrow text-muted">Changes save automatically</div> : null}
     </>
   );
 
@@ -625,7 +604,7 @@ export function AmountSheetContent({
 // AmountSheet — public component
 // ---------------------------------------------------------------------------
 
-export function AmountSheet({open, onClose, existingItem, planId, onDelete, anchorEl}: AmountSheetProps) {
+export function AmountSheet({open, onClose, existingItem, planId, anchorEl}: AmountSheetProps) {
   const isDesktop = useIsDesktop();
 
   // Stable ref object pointing at the anchor — the desktop popover reads it.
@@ -666,7 +645,6 @@ export function AmountSheet({open, onClose, existingItem, planId, onDelete, anch
           key={existingItem?.id ?? 'item'}
           existingItem={existingItem}
           food={food}
-          onDelete={onDelete}
           planId={planId}
           recipe={recipe}
           showName={isDesktop}

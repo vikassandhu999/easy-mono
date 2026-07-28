@@ -20,7 +20,9 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     parameters: [
       Operation.parameter(:client_id, :path, :string, "Client id"),
       Operation.parameter(:from, :query, :string, "Start date (YYYY-MM-DD)", required: false),
-      Operation.parameter(:to, :query, :string, "End date (YYYY-MM-DD)", required: false)
+      Operation.parameter(:to, :query, :string, "End date (YYYY-MM-DD)", required: false),
+      Operation.parameter(:offset, :query, :integer, "Number of training sessions to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum training sessions to return (max 100)", required: false)
     ],
     responses: [
       ok: {"Training sessions", "application/json", TrainingSessionListResponse},
@@ -47,11 +49,14 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
 
     opts = [
       from: Easy.Utils.safe_date(params["from"]),
-      to: Easy.Utils.safe_date(params["to"])
+      to: Easy.Utils.safe_date(params["to"]),
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 20)
     ]
 
-    with {:ok, sessions} <- Sessions.list_sessions_for_client(conn.assigns.ctx, client_id, opts) do
-      render(conn, :index, sessions: sessions, count: length(sessions))
+    with {:ok, %{sessions: sessions, count: count}} <-
+           Sessions.list_sessions_for_client(conn.assigns.ctx, client_id, opts) do
+      render(conn, :index, sessions: sessions, count: count)
     end
   end
 

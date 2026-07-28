@@ -43,6 +43,9 @@ export function TrainingTab({client}: {client: Client}) {
   const plans = useListCoachClientTrainingPlansQuery(client.id, {status: 'active'});
   const sessions = useListCoachClientTrainingSessionsQuery(client.id, {
     from: window[0]!,
+    // An eight-week window can hold more than the server's 20-row default page, and
+    // this list is meant to show every session in it.
+    limit: 100,
     to: window[window.length - 1]!,
   });
 

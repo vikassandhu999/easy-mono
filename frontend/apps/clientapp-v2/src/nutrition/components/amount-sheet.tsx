@@ -46,9 +46,17 @@ export default function AmountSheet({
   const busy = creating || updating || deleting;
 
   const {loggedEntry, plannedItem} = target;
-  const plannedWeight = loggedEntry?.weight_g ?? plannedItem?.weight_g ?? 100;
+  // Servings mode: recipe items the plan sizes by servings (no weight) — the sheet
+  // then edits the serving count and logs {amount, unit}, never a fabricated weight.
+  const servings = loggedEntry
+    ? loggedEntry.weight_g == null && loggedEntry.amount != null
+    : plannedItem != null && plannedItem.weight_g == null && plannedItem.amount != null;
+  const unitLabel = servings ? (loggedEntry?.unit ?? plannedItem?.unit) || 'serving' : 'g';
+  const plannedPortion = servings
+    ? (loggedEntry?.amount ?? plannedItem?.amount ?? 1)
+    : (loggedEntry?.weight_g ?? plannedItem?.weight_g ?? 100);
   // raw string so decimals (0.5) and a cleared field stay typeable; parse on use.
-  const [raw, setRaw] = useState<string>(String(plannedWeight));
+  const [raw, setRaw] = useState<string>(String(plannedPortion));
   const [free, setFree] = useState(false);
   const weight = Math.max(0, Number(raw) || 0);
 
@@ -64,8 +72,9 @@ export default function AmountSheet({
         p: ((per100.protein_g_per_100g ?? 0) * w) / 100,
       };
     }
-    if (loggedEntry?.weight_g) {
-      const k = w / loggedEntry.weight_g;
+    const base = servings ? loggedEntry?.amount : loggedEntry?.weight_g;
+    if (loggedEntry && base) {
+      const k = w / base;
       return {
         c: (loggedEntry.carbs_g ?? 0) * k,
         cal: (loggedEntry.calories ?? 0) * k,
@@ -79,8 +88,9 @@ export default function AmountSheet({
 
   const logIt = async () => {
     try {
+      const portion = servings ? {amount: weight, unit: unitLabel} : {unit: 'g', weight_g: weight};
       if (loggedEntry) {
-        await updateEntry({foodLogEntryRequest: {unit: 'g', weight_g: weight}, id: loggedEntry.id}).unwrap();
+        await updateEntry({foodLogEntryRequest: portion, id: loggedEntry.id}).unwrap();
       } else if (plannedItem) {
         await createEntry({
           foodLogEntryRequest: {
@@ -92,8 +102,7 @@ export default function AmountSheet({
             planned_item_index: target.plannedIndex ?? undefined,
             recipe_id: plannedItem.recipe_id ?? undefined,
             source: 'planned',
-            unit: 'g',
-            weight_g: weight,
+            ...portion,
           },
         }).unwrap();
       }
@@ -144,11 +153,12 @@ export default function AmountSheet({
             }`}
             onClick={() => {
               setFree(false);
-              setRaw(String(plannedWeight));
+              setRaw(String(plannedPortion));
             }}
             type="button"
           >
-            as planned · {plannedWeight}g
+            as planned · {plannedPortion}
+            {servings ? ` ${unitLabel}` : 'g'}
           </button>
           <button
             aria-pressed={free}
@@ -158,7 +168,7 @@ export default function AmountSheet({
             onClick={() => setFree(true)}
             type="button"
           >
-            grams
+            {servings ? unitLabel : 'grams'}
           </button>
         </div>
 
@@ -173,7 +183,7 @@ export default function AmountSheet({
               type="text"
               value={raw}
             />
-            <span className="text-sm text-muted">g</span>
+            <span className="text-sm text-muted">{unitLabel}</span>
           </span>
         </label>
 

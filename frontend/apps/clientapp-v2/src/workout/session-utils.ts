@@ -38,34 +38,47 @@ function plannedKey(p: TrainingPerformedSet): string {
   return p.swapped_from_exercise_id ?? p.exercise_id ?? '';
 }
 
-// Assign performed sets to exercise occurrences. A performed set carries only its
-// (planned-slot) exercise id — no per-occurrence key — so a workout with the same
-// exercise twice can't tell its occurrences apart by id alone. Consume them greedily
-// in logged (position) order: each occurrence claims up to its planned set count.
-// Swapped sets map back to the slot they replaced via plannedKey, so they fill it.
-// ponytail: relies on sets being logged in occurrence order — the linear logger
-// (current = first incomplete exercise) guarantees it. Add a workout_element_id
-// to the performed set if free-order logging is ever added.
+// Assign performed sets to exercise occurrences.
+//
+// A set logged by the current app carries `planned_exercise_index` — the snapshot
+// slot it was logged under — so it maps back exactly, even when the same exercise
+// appears twice in a workout, and even when the slot was swapped.
+//
+// Rows written before that field existed carry only their (planned-slot) exercise
+// id, with no per-occurrence key, so they fall back to the original scheme: consume
+// them greedily in logged (position) order, each occurrence claiming up to its
+// planned set count. Swapped legacy sets map back via plannedKey.
 export function assignPerformed(
   exercises: SnapshotExercise[],
   performed: TrainingPerformedSet[],
 ): TrainingPerformedSet[][] {
+  const bySlot: TrainingPerformedSet[][] = exercises.map(() => []);
   const queues = new Map<string, TrainingPerformedSet[]>();
   for (const p of [...performed].sort((a, b) => a.position - b.position)) {
+    const slot = p.planned_exercise_index;
+    if (slot != null) {
+      bySlot[slot]?.push(p);
+      continue;
+    }
     const key = plannedKey(p);
     const q = queues.get(key) ?? [];
     q.push(p);
     queues.set(key, q);
   }
-  return exercises.map((ex) => {
+  return exercises.map((ex, index) => {
+    const exact = bySlot[index] ?? [];
+    if (exact.length > 0) {
+      return exact;
+    }
     const q = queues.get(ex.exercise_id ?? '');
     return q ? q.splice(0, (ex.sets ?? []).length) : [];
   });
 }
 
-// Performed sets whose planned slot wasn't in the plan — extras added during the
-// workout (grouped by the exercise actually performed). Swapped sets are excluded
-// (their plannedKey is a planned slot).
+// Performed sets that belong to no planned slot — extras added during the workout
+// (grouped by the exercise actually performed). A set with a planned_exercise_index
+// is by definition in a slot; a legacy set is excluded when its plannedKey names a
+// planned exercise, which is also how swapped legacy sets stay out.
 export function addedExercises(
   exercises: SnapshotExercise[],
   performed: TrainingPerformedSet[],
@@ -73,7 +86,7 @@ export function addedExercises(
   const planned = new Set(exercises.map((e) => e.exercise_id ?? ''));
   const extra = new Map<string, TrainingPerformedSet[]>();
   for (const p of [...performed].sort((a, b) => a.position - b.position)) {
-    if (planned.has(plannedKey(p))) {
+    if (p.planned_exercise_index != null || planned.has(plannedKey(p))) {
       continue;
     }
     const key = p.exercise_id ?? '';

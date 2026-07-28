@@ -38,6 +38,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionJSON do
       exercise_name: set.exercise_name,
       set_type: set.set_type,
       position: set.position,
+      planned_exercise_index: set.planned_exercise_index,
       reps: set.reps,
       load_value: set.load_value,
       load_unit: set.load_unit,

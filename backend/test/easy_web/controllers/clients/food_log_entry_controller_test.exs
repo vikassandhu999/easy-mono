@@ -222,6 +222,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       entry =
         insert(:food_log_entry,
           meal_log: meal_log,
+          business: ctx.business,
           food: ctx.food,
           food_name: "Oats",
           weight_g: 100.0,
@@ -250,6 +251,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       entry =
         insert(:food_log_entry,
           meal_log: meal_log,
+          business: ctx.business,
           food: ctx.food,
           food_name: "Oats",
           weight_g: 100.0,
@@ -269,7 +271,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
     test "returns 404 for other client's entry", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
       meal_log = insert(:meal_log, client: other_client, business: ctx.business)
-      entry = insert(:food_log_entry, meal_log: meal_log, food: ctx.food)
+      entry = insert(:food_log_entry, meal_log: meal_log, business: ctx.business, food: ctx.food)
 
       conn =
         patch(ctx.conn, "/v1/client/nutrition-food-log-entries/#{entry.id}", %{"amount" => 200})
@@ -281,7 +283,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
   describe "DELETE /v1/client/nutrition-food-log-entries/:id" do
     test "deletes entry and updates logged_calories", ctx do
       meal_log = insert(:meal_log, client: ctx.client, business: ctx.business)
-      entry = insert(:food_log_entry, meal_log: meal_log, food: ctx.food)
+      entry = insert(:food_log_entry, meal_log: meal_log, business: ctx.business, food: ctx.food)
 
       conn = delete(ctx.conn, "/v1/client/nutrition-food-log-entries/#{entry.id}")
       assert response(conn, 204)
@@ -290,7 +292,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
     test "returns 404 for other client's entry", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
       meal_log = insert(:meal_log, client: other_client, business: ctx.business)
-      entry = insert(:food_log_entry, meal_log: meal_log, food: ctx.food)
+      entry = insert(:food_log_entry, meal_log: meal_log, business: ctx.business, food: ctx.food)
 
       conn = delete(ctx.conn, "/v1/client/nutrition-food-log-entries/#{entry.id}")
       assert json_response(conn, 404)

@@ -57,16 +57,17 @@ defmodule EasyWeb.OpenApi.Schemas.FoodLogEntry do
           protein_g: %Schema{type: :number, nullable: true},
           carbs_g: %Schema{type: :number, nullable: true},
           fat_g: %Schema{type: :number, nullable: true},
+          fiber_g: %Schema{type: :number, nullable: true},
           notes: %Schema{type: :string, nullable: true},
           source: %Schema{type: :string, nullable: true},
           planned_item_index: %Schema{type: :integer, nullable: true},
           food_id: %Schema{type: :string, format: :uuid, nullable: true},
           recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
-          meal_log_id: %Schema{type: :string, format: :uuid}
+          nutrition_meal_log_id: %Schema{type: :string, format: :uuid}
         },
         Shared.timestamps()
       ),
-    required: [:id, :food_name, :amount, :unit, :weight_g, :meal_log_id, :inserted_at, :updated_at]
+    required: [:id, :food_name, :amount, :unit, :weight_g, :nutrition_meal_log_id, :inserted_at, :updated_at]
   })
 end
 

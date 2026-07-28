@@ -502,6 +502,9 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
           exercise_name: card.name,
           load_unit: values.load_value == null ? 'none' : ((plannedSet?.load_unit as 'kg' | 'lbs' | null) ?? 'kg'),
           load_value: values.load_value,
+          // Which snapshot slot this set belongs to — null for an exercise added
+          // mid-workout. Lets the reader map sets back exactly instead of guessing.
+          planned_exercise_index: card.plannedIndex ?? undefined,
           position: cardPosition + setIndex,
           reps: values.reps ?? undefined,
           set_type: (plannedSet?.set_type as 'dropset' | 'warmup' | 'working' | null) ?? 'working',

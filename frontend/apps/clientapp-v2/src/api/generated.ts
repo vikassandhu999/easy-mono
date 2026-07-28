@@ -37,6 +37,8 @@ const injectedRtkApi = api.injectEndpoints({
         params: {
           from: queryArg['from'],
           to: queryArg.to,
+          offset: queryArg.offset,
+          limit: queryArg.limit,
         },
       }),
     }),
@@ -410,6 +412,10 @@ export type ListClientTrainingSessionsApiArg = {
   from?: string;
   /** End date (YYYY-MM-DD) */
   to?: string;
+  /** Number of training sessions to skip */
+  offset?: number;
+  /** Maximum training sessions to return (max 100) */
+  limit?: number;
 };
 export type CreateClientTrainingSessionApiResponse = /** status 201 Training session created */ TrainingSessionResponse;
 export type CreateClientTrainingSessionApiArg = {
@@ -683,12 +689,13 @@ export type FoodLogEntry = {
   calories?: number | null;
   carbs_g?: number | null;
   fat_g?: number | null;
+  fiber_g?: number | null;
   food_id?: string | null;
   food_name: string | null;
   id: string;
   inserted_at: string;
-  meal_log_id: string;
   notes?: string | null;
+  nutrition_meal_log_id: string;
   planned_item_index?: number | null;
   protein_g?: number | null;
   recipe_id?: string | null;
@@ -809,6 +816,7 @@ export type TrainingPerformedSet = {
   load_unit: string | null;
   load_value: number | null;
   notes?: string | null;
+  planned_exercise_index: number | null;
   position: number;
   reps: string | null;
   rpe?: number | null;
@@ -819,7 +827,7 @@ export type TrainingPerformedSet = {
 };
 export type TrainingSession = {
   client_id?: string | null;
-  date?: string | null;
+  date: string;
   ended_at: string | null;
   id: string;
   inserted_at: string;
@@ -1322,6 +1330,8 @@ export type TrainingPerformedSetRequest = {
   load_unit?: ('kg' | 'lbs' | 'bodyweight' | 'none') | null;
   load_value?: number | null;
   notes?: string | null;
+  /** Index of the planned_snapshot exercise this set was logged under; null when added on the fly */
+  planned_exercise_index?: number | null;
   position?: number;
   reps?: string | null;
   rpe?: number | null;

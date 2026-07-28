@@ -45,19 +45,6 @@ defmodule Easy.MealLogs do
   end
 
   # ---------------------------------------------------------------------------
-  # Coach getter — scoped by business only (used internally / by coach paths)
-  # ---------------------------------------------------------------------------
-
-  @spec get_business_food_log_entry(Ctx.t(), String.t()) ::
-          {:ok, FoodLogEntry.t()} | {:error, :not_found}
-  def get_business_food_log_entry(%Ctx{} = ctx, entry_id) do
-    FoodLogEntry
-    |> FoodLogEntry.for_business(ctx.business_id)
-    |> Repo.get(entry_id)
-    |> ok_or_not_found()
-  end
-
-  # ---------------------------------------------------------------------------
   # Client self fns (Case-3: Ctx-first, resolves client via private get_client/1)
   # ---------------------------------------------------------------------------
 
@@ -110,12 +97,11 @@ defmodule Easy.MealLogs do
   @spec log_client_meal(Ctx.t(), map()) ::
           {:ok, [FoodLogEntry.t()]} | {:error, any()}
   def log_client_meal(%Ctx{} = ctx, attrs) do
-    date_str = attrs[:date]
     meal_slot = attrs[:meal_slot]
     meal_id = attrs[:meal_id]
 
     with {:ok, client} <- get_client(ctx),
-         {:ok, date} <- parse_required_date(to_string_date(date_str)) do
+         {:ok, date} <- fetch_date(attrs) do
       log_meal(ctx.business_id, client.id, date, meal_slot, meal_id)
     end
   end
@@ -123,11 +109,10 @@ defmodule Easy.MealLogs do
   @spec log_client_day(Ctx.t(), map()) ::
           {:ok, [FoodLogEntry.t()]} | {:error, any()}
   def log_client_day(%Ctx{} = ctx, attrs) do
-    date_str = attrs[:date]
     plan_id = attrs[:plan_id]
 
     with {:ok, client} <- get_client(ctx),
-         {:ok, date} <- parse_required_date(to_string_date(date_str)) do
+         {:ok, date} <- fetch_date(attrs) do
       log_day(ctx.business_id, client.id, date, plan_id)
     end
   end
@@ -139,7 +124,7 @@ defmodule Easy.MealLogs do
     meal_slot = attrs[:meal_slot]
 
     with {:ok, client} <- get_client(ctx),
-         {:ok, date} <- parse_required_date(to_string_date(attrs[:date])),
+         {:ok, date} <- fetch_date(attrs),
          meal when not is_nil(meal) <- load_meal_with_items(ctx.business_id, client.id, meal_id) do
       case get_existing_meal_log(ctx.business_id, client.id, date, meal_slot) do
         %MealLog{nutrition_meal_id: existing_meal_id} = existing when existing_meal_id == meal_id ->
@@ -256,11 +241,10 @@ defmodule Easy.MealLogs do
   # ---------------------------------------------------------------------------
 
   defp log_entry(business_id, client_id, attrs) do
-    date = parse_date(attrs)
     meal_slot = attrs[:meal_slot]
     explicit_meal_id = attrs[:meal_id]
 
-    with {:ok, date} <- require_date(date) do
+    with {:ok, date} <- fetch_date(attrs) do
       Repo.transaction(fn ->
         log_entry_transaction(business_id, client_id, date, meal_slot, explicit_meal_id, attrs)
       end)
@@ -274,7 +258,7 @@ defmodule Easy.MealLogs do
     validate_snapshot!(meal_id, snapshot)
     meal_log = get_or_create_meal_log!(business_id, client_id, date, meal_slot, snapshot, meal_id)
 
-    with {:ok, entry} <- create_food_log_entry(meal_log.id, business_id, attrs),
+    with {:ok, entry} <- create_food_log_entry(business_id, meal_log.id, attrs),
          {:ok, _meal_log} <- recalculate_logged_calories(meal_log) do
       entry
     else
@@ -480,15 +464,15 @@ defmodule Easy.MealLogs do
     if MapSet.member?(already_logged, item.position) do
       acc
     else
-      case create_food_log_entry(meal_log_id, business_id, build_entry_attrs(item)) do
+      case create_food_log_entry(business_id, meal_log_id, build_entry_attrs(item)) do
         {:ok, entry} -> [entry | acc]
         {:error, reason} -> Repo.rollback(reason)
       end
     end
   end
 
-  defp create_food_log_entry(meal_log_id, business_id, attrs) do
-    changeset = FoodLogEntry.insert_changeset(meal_log_id, attrs)
+  defp create_food_log_entry(business_id, meal_log_id, attrs) do
+    changeset = FoodLogEntry.insert_changeset(business_id, meal_log_id, attrs)
 
     if changeset.valid? do
       changeset
@@ -501,25 +485,23 @@ defmodule Easy.MealLogs do
   end
 
   defp update_food_log_entry(%FoodLogEntry{} = entry, business_id, attrs) do
-    changeset = FoodLogEntry.update_changeset(entry, attrs)
-    weight_g = get_field(changeset, :weight_g)
-
-    changeset
-    |> maybe_recompute_macros(entry, business_id, weight_g)
+    entry
+    |> FoodLogEntry.update_changeset(attrs)
+    |> maybe_recompute_macros(entry, business_id)
     |> Repo.update()
   end
 
   defp resolve_and_compute(changeset, business_id) do
     food_id = get_field(changeset, :food_id)
     recipe_id = get_field(changeset, :recipe_id)
-    weight_g = get_field(changeset, :weight_g) || 0.0
+    weight_g = get_field(changeset, :weight_g)
 
     cond do
       not is_nil(food_id) ->
         resolve_food(changeset, food_id, business_id, weight_g)
 
       not is_nil(recipe_id) ->
-        resolve_recipe(changeset, recipe_id, business_id, weight_g)
+        resolve_recipe(changeset, recipe_id, business_id, weight_g, get_field(changeset, :amount))
 
       true ->
         changeset
@@ -538,7 +520,7 @@ defmodule Easy.MealLogs do
     end
   end
 
-  defp resolve_recipe(changeset, recipe_id, business_id, weight_g) do
+  defp resolve_recipe(changeset, recipe_id, business_id, weight_g, amount) do
     case load_recipe_with_ingredients(business_id, recipe_id) do
       nil ->
         add_error(changeset, :recipe_id, "recipe not found")
@@ -546,9 +528,13 @@ defmodule Easy.MealLogs do
       recipe ->
         changeset
         |> put_change(:food_name, get_field(changeset, :food_name) || recipe.name)
-        |> put_macros(MacroCalc.for_recipe(recipe, weight_g))
+        |> put_macros(recipe_macros(recipe, weight_g, amount))
     end
   end
+
+  # A recipe with no logged grams is priced in servings, matching MacroCalc.for_meal_item/1.
+  defp recipe_macros(recipe, nil, amount), do: MacroCalc.for_recipe_servings(recipe, amount)
+  defp recipe_macros(recipe, weight_g, _amount), do: MacroCalc.for_recipe(recipe, weight_g)
 
   defp load_recipe_with_ingredients(business_id, recipe_id) do
     food_query = Food.for_business_or_system(Food, business_id)
@@ -568,27 +554,34 @@ defmodule Easy.MealLogs do
     |> put_change(:fiber_g, macros.fiber_g)
   end
 
-  defp maybe_recompute_macros(changeset, entry, business_id, weight_g) do
-    if get_change(changeset, :weight_g) do
-      entry =
-        Repo.preload(entry,
-          food: Food.for_business_or_system(Food, business_id),
-          recipe: Recipe.for_business(Recipe, business_id)
-        )
-
-      case {entry.food, entry.recipe} do
-        {%Food{} = food, _} ->
-          put_macros(changeset, MacroCalc.for_food(food, weight_g))
-
-        {_, %Recipe{} = recipe} ->
-          recipe = load_recipe_with_ingredients(business_id, recipe.id)
-          put_macros(changeset, MacroCalc.for_recipe(recipe, weight_g))
-
-        _ ->
-          changeset
-      end
+  defp maybe_recompute_macros(changeset, entry, business_id) do
+    if get_change(changeset, :weight_g) || get_change(changeset, :amount) do
+      recompute_macros(changeset, entry, business_id)
     else
       changeset
+    end
+  end
+
+  defp recompute_macros(changeset, entry, business_id) do
+    weight_g = get_field(changeset, :weight_g)
+    amount = get_field(changeset, :amount)
+
+    entry =
+      Repo.preload(entry,
+        food: Food.for_business_or_system(Food, business_id),
+        recipe: Recipe.for_business(Recipe, business_id)
+      )
+
+    case {entry.food, entry.recipe} do
+      {%Food{} = food, _} ->
+        put_macros(changeset, MacroCalc.for_food(food, weight_g))
+
+      {_, %Recipe{} = recipe} ->
+        recipe = load_recipe_with_ingredients(business_id, recipe.id)
+        put_macros(changeset, recipe_macros(recipe, weight_g, amount))
+
+      _ ->
+        changeset
     end
   end
 
@@ -720,36 +713,10 @@ defmodule Easy.MealLogs do
     |> ok_or_not_found()
   end
 
-  defp parse_date(%{"date" => date}) when is_binary(date) do
-    case Date.from_iso8601(date) do
-      {:ok, d} -> d
-      _ -> nil
-    end
-  end
-
-  defp parse_date(%{"date" => %Date{} = date}), do: date
-  defp parse_date(%{date: %Date{} = date}), do: date
-  defp parse_date(_), do: nil
-
-  defp parse_required_date(date_str) when is_binary(date_str) do
-    case Date.from_iso8601(date_str) do
-      {:ok, _date} = ok -> ok
-      _ -> {:error, :invalid_date}
-    end
-  end
-
-  defp parse_required_date(_) do
-    {:error, :date_required}
-  end
-
-  defp require_date(%Date{} = date), do: {:ok, date}
-
-  defp require_date(nil),
-    do: {:error, :invalid_date}
-
-  defp to_string_date(%Date{} = d), do: Date.to_iso8601(d)
-  defp to_string_date(s) when is_binary(s), do: s
-  defp to_string_date(nil), do: nil
+  # CastAndValidate turns `format: :date` request fields into a Date struct on an
+  # atom-keyed map, so there is exactly one shape to read.
+  defp fetch_date(%{date: %Date{} = date}), do: {:ok, date}
+  defp fetch_date(_attrs), do: {:error, :date_required}
 
   defp sum_field(items, field) do
     items

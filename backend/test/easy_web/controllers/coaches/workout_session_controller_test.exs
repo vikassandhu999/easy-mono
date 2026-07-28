@@ -35,6 +35,26 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       assert length(data) == 1
     end
 
+    test "paginates with offset/limit while count stays the total", %{conn: conn, business: business, client: client} do
+      for day <- 0..24 do
+        insert(:workout_session,
+          client: client,
+          business: business,
+          state: :completed,
+          date: Date.add(Date.utc_today(), -day),
+          started_at: DateTime.add(DateTime.utc_now(:second), -day, :day)
+        )
+      end
+
+      page = get(conn, "/v1/coach/clients/#{client.id}/training-sessions")
+      assert %{"data" => data, "count" => 25} = json_response(page, 200)
+      assert length(data) == 20
+
+      rest = get(conn, "/v1/coach/clients/#{client.id}/training-sessions?offset=20&limit=100")
+      assert %{"data" => tail, "count" => 25} = json_response(rest, 200)
+      assert length(tail) == 5
+    end
+
     test "returns empty list for client with no sessions", %{conn: conn, client: client} do
       conn = get(conn, "/v1/coach/clients/#{client.id}/training-sessions")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)

@@ -569,6 +569,7 @@ defmodule Easy.Factory do
       source: :planned,
       planned_item_index: 0,
       meal_log: meal_log,
+      business: meal_log.business,
       food: food
     }
   end

@@ -19,21 +19,10 @@ defmodule Easy.Sessions do
   # ---------------------------------------------------------------------------
 
   @spec list_sessions_for_client(Ctx.t(), String.t(), keyword()) ::
-          {:ok, [TrainingSession.t()]} | {:error, :not_found}
+          {:ok, %{count: non_neg_integer(), sessions: [TrainingSession.t()]}} | {:error, :not_found}
   def list_sessions_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
     with :ok <- Clients.authorize_client_id(ctx, client_id) do
-      from = Keyword.get(opts, :from)
-      to = Keyword.get(opts, :to)
-
-      sessions =
-        TrainingSession
-        |> TrainingSession.for_client(ctx.business_id, client_id)
-        |> maybe_for_date_range(from, to)
-        |> TrainingSession.newest()
-        |> TrainingSession.include_sets(ctx.business_id)
-        |> Repo.all()
-
-      {:ok, sessions}
+      {:ok, paginated_sessions(ctx.business_id, client_id, opts)}
     end
   end
 
@@ -54,10 +43,10 @@ defmodule Easy.Sessions do
   # ---------------------------------------------------------------------------
 
   @spec list_client_sessions(Ctx.t(), keyword()) ::
-          {:ok, [TrainingSession.t()]} | {:error, :not_found}
+          {:ok, %{count: non_neg_integer(), sessions: [TrainingSession.t()]}} | {:error, :not_found}
   def list_client_sessions(%Ctx{} = ctx, opts \\ []) do
     with {:ok, client} <- get_client(ctx) do
-      list_sessions_for_client_by_id(ctx.business_id, client.id, opts)
+      {:ok, paginated_sessions(ctx.business_id, client.id, opts)}
     end
   end
 
@@ -129,19 +118,24 @@ defmodule Easy.Sessions do
     |> ok_or_not_found()
   end
 
-  defp list_sessions_for_client_by_id(business_id, client_id, opts) do
-    from = Keyword.get(opts, :from)
-    to = Keyword.get(opts, :to)
+  defp paginated_sessions(business_id, client_id, opts) do
+    offset = Keyword.get(opts, :offset, 0)
+    limit = min(Keyword.get(opts, :limit, 20), 100)
 
-    sessions =
+    base =
       TrainingSession
       |> TrainingSession.for_client(business_id, client_id)
-      |> maybe_for_date_range(from, to)
-      |> TrainingSession.newest()
-      |> TrainingSession.include_sets(business_id)
-      |> Repo.all()
+      |> maybe_for_date_range(Keyword.get(opts, :from), Keyword.get(opts, :to))
 
-    {:ok, sessions}
+    %{
+      count: Repo.aggregate(base, :count, :id),
+      sessions:
+        base
+        |> TrainingSession.newest()
+        |> Easy.Utils.paginate(offset, limit)
+        |> TrainingSession.include_sets(business_id)
+        |> Repo.all()
+    }
   end
 
   defp fetch_client_session(business_id, client_id, session_id) do
@@ -371,6 +365,7 @@ defmodule Easy.Sessions do
   defp create_performed_set(session_id, business_id, attrs) do
     with {:ok, _session} <- get_session(business_id, session_id),
          {:ok, attrs} <- put_exercise_name(attrs, business_id),
+         attrs = put_next_position(attrs, session_id),
          {:ok, changeset} <-
            business_id
            |> TrainingPerformedSet.insert_changeset(session_id, attrs)
@@ -378,6 +373,22 @@ defmodule Easy.Sessions do
       changeset
       |> Repo.insert()
       |> preload_set()
+    end
+  end
+
+  # Position is display order. A caller that names one keeps it; one that does not
+  # appends after the session's current last set.
+  defp put_next_position(attrs, session_id) do
+    if present?(Map.get(attrs, :position)) do
+      attrs
+    else
+      last =
+        TrainingPerformedSet
+        |> TrainingPerformedSet.for_session(session_id)
+        |> select([s], max(s.position))
+        |> Repo.one()
+
+      Map.put(attrs, :position, (last || -1) + 1)
     end
   end
 

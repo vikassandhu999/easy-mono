@@ -3876,6 +3876,7 @@ export interface components {
       load_unit: string | null;
       load_value: number | null;
       notes?: string | null;
+      planned_exercise_index: number | null;
       position: number;
       reps: string | null;
       rpe?: number | null;
@@ -4141,6 +4142,7 @@ export interface components {
       calories?: number | null;
       carbs_g?: number | null;
       fat_g?: number | null;
+      fiber_g?: number | null;
       /** Format: uuid */
       food_id?: string | null;
       food_name: string | null;
@@ -4148,9 +4150,9 @@ export interface components {
       id: string;
       /** Format: date-time */
       inserted_at: string;
-      /** Format: uuid */
-      meal_log_id: string;
       notes?: string | null;
+      /** Format: uuid */
+      nutrition_meal_log_id: string;
       planned_item_index?: number | null;
       protein_g?: number | null;
       /** Format: uuid */
@@ -4359,6 +4361,7 @@ export interface components {
      *       "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
      *       "load_unit": "kg",
      *       "load_value": 80,
+     *       "planned_exercise_index": 0,
      *       "position": 0,
      *       "reps": "10"
      *     }
@@ -4376,6 +4379,8 @@ export interface components {
       load_unit?: 'kg' | 'lbs' | 'bodyweight' | 'none' | null;
       load_value?: number | null;
       notes?: string | null;
+      /** @description Index of the planned_snapshot exercise this set was logged under; null when added on the fly */
+      planned_exercise_index?: number | null;
       position?: number;
       reps?: string | null;
       rpe?: number | null;
@@ -4565,7 +4570,7 @@ export interface components {
       /** Format: uuid */
       client_id?: string | null;
       /** Format: date */
-      date?: string | null;
+      date: string;
       /** Format: date-time */
       ended_at: string | null;
       /** Format: uuid */
@@ -5411,6 +5416,10 @@ export interface operations {
         from?: string;
         /** @description End date (YYYY-MM-DD) */
         to?: string;
+        /** @description Number of training sessions to skip */
+        offset?: number;
+        /** @description Maximum training sessions to return (max 100) */
+        limit?: number;
       };
       header?: never;
       path: {

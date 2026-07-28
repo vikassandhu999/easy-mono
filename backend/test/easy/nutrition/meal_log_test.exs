@@ -195,6 +195,86 @@ defmodule Easy.Nutrition.MealLogTest do
     end
   end
 
+  describe "servings-sized recipe items" do
+    test "log_client_meal logs a recipe item sized by servings only (no weight_g)" do
+      %{client_ctx: client_ctx, dal: dal} = build_scenario()
+
+      assert {:ok, [entry]} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "dinner", meal_id: dal.id})
+
+      assert entry.food_name == "Dal Tadka"
+      assert is_nil(entry.weight_g)
+      assert entry.amount == 1.0
+      # recipe totals 800 kcal across 2 servings -> 1 serving = 400 kcal
+      assert entry.calories == 400.0
+    end
+
+    test "create_client_food_log_entry accepts a recipe with amount and no weight_g" do
+      %{client_ctx: client_ctx, dal_recipe: dal_recipe} = build_scenario()
+
+      assert {:ok, entry} =
+               MealLogs.create_client_food_log_entry(client_ctx, %{
+                 date: @date,
+                 meal_slot: "dinner",
+                 recipe_id: dal_recipe.id,
+                 amount: 0.5,
+                 unit: "serving",
+                 source: :unplanned
+               })
+
+      assert is_nil(entry.weight_g)
+      assert entry.food_name == "Dal Tadka"
+      # 800 kcal / 2 servings * 0.5 = 200
+      assert entry.calories == 200.0
+    end
+
+    test "update recomputes macros when only amount changes on a servings-sized recipe entry" do
+      %{client_ctx: client_ctx, dal: dal} = build_scenario()
+
+      {:ok, [entry]} =
+        MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "dinner", meal_id: dal.id})
+
+      assert {:ok, updated} =
+               MealLogs.update_client_food_log_entry(client_ctx, entry.id, %{amount: 2.0})
+
+      assert updated.amount == 2.0
+      assert is_nil(updated.weight_g)
+      # 800 kcal / 2 servings * 2 = 800
+      assert updated.calories == 800.0
+    end
+
+    test "create_client_food_log_entry rejects a food without weight_g" do
+      %{client_ctx: client_ctx, snack_food: snack_food} = build_scenario()
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               MealLogs.create_client_food_log_entry(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 food_id: snack_food.id,
+                 amount: 1.0,
+                 unit: "unit",
+                 source: :unplanned
+               })
+
+      assert "is required for food items" in errors_on(changeset).weight_g
+    end
+
+    test "create_client_food_log_entry rejects a recipe without weight_g or amount" do
+      %{client_ctx: client_ctx, dal_recipe: dal_recipe} = build_scenario()
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               MealLogs.create_client_food_log_entry(client_ctx, %{
+                 date: @date,
+                 meal_slot: "dinner",
+                 recipe_id: dal_recipe.id,
+                 unit: "serving",
+                 source: :unplanned
+               })
+
+      assert "either weight_g or amount is required for recipe items" in errors_on(changeset).weight_g
+    end
+  end
+
   defp ctx_for(plan) do
     Ctx.new(plan.business_id, plan.creator.user_id, plan.creator.id, false)
   end
@@ -254,6 +334,34 @@ defmodule Easy.Nutrition.MealLogTest do
     snack_food =
       insert(:food, creator: plan.creator, business: plan.business, name: "Banana", calories_per_100g: 90.0)
 
+    # A recipe with no cooked weight can only be sized in servings.
+    dal_food =
+      insert(:food, creator: plan.creator, business: plan.business, name: "Dal", calories_per_100g: 800.0)
+
+    dal_recipe =
+      insert(:recipe,
+        creator: plan.creator,
+        business: plan.business,
+        name: "Dal Tadka",
+        servings_count: 2,
+        cooked_weight_g: nil
+      )
+
+    insert(:recipe_ingredient, business: plan.business, recipe: dal_recipe, food: dal_food, weight_g: 100.0)
+
+    dal = insert(:meal, plan: assigned_plan, creator: plan.creator, business: plan.business, name: "Dal Dinner")
+
+    insert(:meal_item,
+      meal: dal,
+      business: plan.business,
+      food: nil,
+      recipe: dal_recipe,
+      amount: 1.0,
+      unit: "serving",
+      weight_g: nil,
+      position: 0
+    )
+
     {:ok, _} =
       NutritionPlans.add_day_meal(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: oats.id})
 
@@ -273,6 +381,8 @@ defmodule Easy.Nutrition.MealLogTest do
       oats: oats,
       eggs: eggs,
       rice: rice,
+      dal: dal,
+      dal_recipe: dal_recipe,
       snack_food: snack_food
     }
   end

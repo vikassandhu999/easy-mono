@@ -15,7 +15,7 @@ defmodule EasyWeb.Clients.MealLogControllerTest do
       meal_log =
         insert(:meal_log, client: ctx.client, business: ctx.business, date: ~D[2026-03-25])
 
-      insert(:food_log_entry, meal_log: meal_log, food: ctx.food, food_name: "Oats")
+      insert(:food_log_entry, meal_log: meal_log, business: ctx.business, food: ctx.food, food_name: "Oats")
 
       # Different date -- should not appear
       insert(:meal_log,

@@ -193,6 +193,28 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert count == 1
       assert length(data) == 1
     end
+
+    test "paginates with offset/limit while count stays the total", ctx do
+      today = Date.utc_today()
+
+      for day <- 0..24 do
+        insert(:workout_session,
+          client: ctx.client,
+          business: ctx.business,
+          state: :completed,
+          date: Date.add(today, -day),
+          started_at: DateTime.add(DateTime.utc_now(:second), -day, :day)
+        )
+      end
+
+      conn = get(ctx.conn, "/v1/client/training-sessions")
+      assert %{"data" => page, "count" => 25} = json_response(conn, 200)
+      assert length(page) == 20
+
+      conn = get(ctx.conn, "/v1/client/training-sessions?offset=20&limit=100")
+      assert %{"data" => rest, "count" => 25} = json_response(conn, 200)
+      assert length(rest) == 5
+    end
   end
 
   describe "GET /v1/client/training-sessions/:id" do

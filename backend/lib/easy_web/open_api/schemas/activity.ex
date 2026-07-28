@@ -12,6 +12,12 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetRequest do
         exercise_name: %Schema{type: :string, nullable: true},
         set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
         position: %Schema{type: :integer, minimum: 0},
+        planned_exercise_index: %Schema{
+          type: :integer,
+          minimum: 0,
+          nullable: true,
+          description: "Index of the planned_snapshot exercise this set was logged under; null when added on the fly"
+        },
         reps: %Schema{type: :string, nullable: true},
         load_value: %Schema{type: :number, nullable: true},
         load_unit: %Schema{type: :string, enum: ["kg", "lbs", "bodyweight", "none"], nullable: true},
@@ -26,6 +32,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSetRequest do
       },
       example: %{
         "position" => 0,
+        "planned_exercise_index" => 0,
         "exercise_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
         "reps" => "10",
         "load_value" => 80,
@@ -54,6 +61,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSet do
           exercise_name: %Schema{type: :string, nullable: true},
           set_type: %Schema{type: :string, enum: ["working", "warmup", "dropset"], nullable: true},
           position: %Schema{type: :integer},
+          planned_exercise_index: %Schema{type: :integer, nullable: true},
           reps: %Schema{type: :string, nullable: true},
           load_value: %Schema{type: :number, nullable: true},
           load_unit: %Schema{type: :string, nullable: true},
@@ -73,6 +81,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingPerformedSet do
     required: [
       :id,
       :position,
+      :planned_exercise_index,
       :reps,
       :load_value,
       :load_unit,
@@ -143,11 +152,11 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingSession do
       Map.merge(
         %{
           id: %Schema{type: :string, format: :uuid},
-          date: %Schema{type: :string, format: :date, nullable: true},
+          date: %Schema{type: :string, format: :date},
           started_at: %Schema{type: :string, format: :"date-time"},
           ended_at: %Schema{type: :string, format: :"date-time", nullable: true},
           state: %Schema{type: :string, enum: ["active", "completed", "discarded"]},
-          soreness_rating: %Schema{type: :integer, nullable: true},
+          soreness_rating: %Schema{type: :integer, minimum: 1, maximum: 5, nullable: true},
           notes: %Schema{type: :string, nullable: true},
           client_id: %Schema{type: :string, format: :uuid, nullable: true},
           training_workout_id: %Schema{type: :string, format: :uuid, nullable: true},
@@ -156,7 +165,7 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingSession do
         },
         Shared.timestamps()
       ),
-    required: [:id, :started_at, :ended_at, :state, :performed_sets, :inserted_at, :updated_at]
+    required: [:id, :date, :started_at, :ended_at, :state, :performed_sets, :inserted_at, :updated_at]
   })
 end
 

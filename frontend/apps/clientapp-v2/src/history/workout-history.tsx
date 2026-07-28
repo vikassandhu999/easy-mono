@@ -54,7 +54,9 @@ function SessionRow({session}: {session: TrainingSession}) {
 }
 
 export default function WorkoutHistory() {
-  const {data, isLoading} = useListClientTrainingSessionsQuery({});
+  // The whole point of this screen is the full history, so it asks for the server's
+  // maximum page rather than the 20-row default.
+  const {data, isLoading} = useListClientTrainingSessionsQuery({limit: 100});
 
   if (isLoading) {
     return (

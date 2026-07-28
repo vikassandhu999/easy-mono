@@ -7234,6 +7234,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "planned_exercise_index": {
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "position": {
             "type": "integer",
             "x-struct": null,
@@ -7286,6 +7292,7 @@
         "required": [
           "id",
           "position",
+          "planned_exercise_index",
           "reps",
           "load_value",
           "load_unit",
@@ -8187,6 +8194,12 @@
             "x-struct": null,
             "x-validate": null
           },
+          "fiber_g": {
+            "nullable": true,
+            "type": "number",
+            "x-struct": null,
+            "x-validate": null
+          },
           "food_id": {
             "format": "uuid",
             "nullable": true,
@@ -8212,14 +8225,14 @@
             "x-struct": null,
             "x-validate": null
           },
-          "meal_log_id": {
-            "format": "uuid",
+          "notes": {
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
-          "notes": {
-            "nullable": true,
+          "nutrition_meal_log_id": {
+            "format": "uuid",
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -8274,7 +8287,7 @@
           "amount",
           "unit",
           "weight_g",
-          "meal_log_id",
+          "nutrition_meal_log_id",
           "inserted_at",
           "updated_at"
         ],
@@ -8855,6 +8868,7 @@
           "exercise_id": "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
           "load_unit": "kg",
           "load_value": 80,
+          "planned_exercise_index": 0,
           "position": 0,
           "reps": "10"
         },
@@ -8923,6 +8937,14 @@
             "maxLength": 5000,
             "nullable": true,
             "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "planned_exercise_index": {
+            "description": "Index of the planned_snapshot exercise this set was logged under; null when added on the fly",
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
@@ -9637,7 +9659,6 @@
           },
           "date": {
             "format": "date",
-            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
@@ -9683,6 +9704,8 @@
             "x-validate": null
           },
           "soreness_rating": {
+            "maximum": 5,
+            "minimum": 1,
             "nullable": true,
             "type": "integer",
             "x-struct": null,
@@ -9720,6 +9743,7 @@
         },
         "required": [
           "id",
+          "date",
           "started_at",
           "ended_at",
           "state",
@@ -11874,6 +11898,28 @@
               "x-struct": null,
               "x-validate": null
             }
+          },
+          {
+            "description": "Number of training sessions to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Maximum training sessions to return (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
           }
         ],
         "responses": {
@@ -11932,6 +11978,28 @@
             "required": false,
             "schema": {
               "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Number of training sessions to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Maximum training sessions to return (max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
               "x-struct": null,
               "x-validate": null
             }

@@ -198,13 +198,15 @@ export default function NutritionDay() {
                         {entryStatus(entry, planned) === 'added' ? 'Added' : 'Swapped'}
                       </Chip>
                     )}
-                    {entry.amount != null && (
+                    {(entry.weight_g != null || entry.amount != null) && (
                       <Typography
                         className="shrink-0"
                         color="muted"
                         type="body-xs"
                       >
-                        {Math.round(entry.amount)} g
+                        {entry.weight_g != null
+                          ? `${Math.round(entry.weight_g)} g`
+                          : `${entry.amount} ${entry.unit ?? 'serving'}`}
                       </Typography>
                     )}
                     {entry.calories != null && (

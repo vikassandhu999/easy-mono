@@ -4,6 +4,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Recipe
+  alias Easy.Orgs
 
   import Ecto.Changeset
   import Ecto.Query
@@ -29,6 +30,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
     field :source, Ecto.Enum, values: @sources, default: :planned
     field :planned_item_index, :integer
 
+    belongs_to :business, Orgs.Business
     belongs_to :meal_log, MealLog, foreign_key: :nutrition_meal_log_id
     belongs_to :food, Food
     belongs_to :recipe, Recipe
@@ -48,14 +50,25 @@ defmodule Easy.Nutrition.FoodLogEntry do
     :recipe_id
   ]
 
-  @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(meal_log_id, attrs) do
+  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(business_id, meal_log_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
+    |> put_change(:business_id, business_id)
     |> put_change(:nutrition_meal_log_id, meal_log_id)
-    |> validate_required([:source, :nutrition_meal_log_id, :weight_g])
+    |> validate_required([:source, :nutrition_meal_log_id, :business_id])
     |> validate_number(:weight_g, greater_than: 0)
+    |> validate_number(:amount, greater_than: 0)
     |> validate_food_or_recipe()
+    |> validate_sizing()
+    |> check_constraint(:weight_g,
+      name: :nutrition_food_log_entries_weight_positive,
+      message: "must be greater than 0"
+    )
+    |> check_constraint(:source,
+      name: :nutrition_food_log_entries_source_check,
+      message: "is invalid"
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -63,6 +76,26 @@ defmodule Easy.Nutrition.FoodLogEntry do
     entry
     |> cast(attrs, [:amount, :unit, :weight_g, :notes])
     |> validate_number(:weight_g, greater_than: 0)
+    |> validate_number(:amount, greater_than: 0)
+    |> validate_sizing()
+  end
+
+  # Mirrors MealItem.validate_sizing/1: food entries are always weighed, recipe
+  # entries may be weighed OR sized in servings (amount/unit).
+  defp validate_sizing(changeset) do
+    weight_g = get_field(changeset, :weight_g)
+    amount = get_field(changeset, :amount)
+
+    cond do
+      not is_nil(get_field(changeset, :food_id)) and is_nil(weight_g) ->
+        add_error(changeset, :weight_g, "is required for food items")
+
+      not is_nil(get_field(changeset, :recipe_id)) and is_nil(weight_g) and is_nil(amount) ->
+        add_error(changeset, :weight_g, "either weight_g or amount is required for recipe items")
+
+      true ->
+        changeset
+    end
   end
 
   defp validate_food_or_recipe(changeset) do
@@ -103,11 +136,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
-    from(e in query,
-      join: ml in MealLog,
-      on: e.nutrition_meal_log_id == ml.id,
-      where: ml.business_id == ^business_id
-    )
+    from(e in query, where: e.business_id == ^business_id)
   end
 
   @spec planned_indices(Ecto.Queryable.t()) :: Ecto.Query.t()

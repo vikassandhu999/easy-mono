@@ -1,22 +1,21 @@
 defmodule Easy.Training.PlannedSet do
   use Ecto.Schema
+
+  alias Easy.SetVocab
+
   import Ecto.Changeset
 
   @type t() :: %__MODULE__{}
 
-  @set_types [:working, :warmup, :dropset]
-  @load_units [:kg, :lbs, :bodyweight, :none]
-  @distance_units [:meters, :km, :miles, :none]
-
   @primary_key false
   embedded_schema do
-    field :set_type, Ecto.Enum, values: @set_types, default: :working
+    field :set_type, Ecto.Enum, values: SetVocab.set_types(), default: :working
     field :reps, :string
     field :load_value, :decimal
-    field :load_unit, Ecto.Enum, values: @load_units
+    field :load_unit, Ecto.Enum, values: SetVocab.load_units()
     field :duration_seconds, :integer
     field :distance_value, :decimal
-    field :distance_unit, Ecto.Enum, values: @distance_units
+    field :distance_unit, Ecto.Enum, values: SetVocab.distance_units()
     field :rpe, :decimal
     field :rest_seconds, :integer
     field :notes, :string

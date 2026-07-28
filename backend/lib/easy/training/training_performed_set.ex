@@ -2,6 +2,7 @@ defmodule Easy.Training.TrainingPerformedSet do
   use Ecto.Schema
 
   alias Easy.Orgs
+  alias Easy.SetVocab
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingSession
 
@@ -13,27 +14,24 @@ defmodule Easy.Training.TrainingPerformedSet do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @set_types [:working, :warmup, :dropset]
-  @load_units [:kg, :lbs, :bodyweight, :none]
-  @distance_units [:meters, :km, :miles, :none]
-
   schema "training_performed_sets" do
     field :exercise_name, :string
-    field :set_type, Ecto.Enum, values: @set_types, default: :working
+    field :set_type, Ecto.Enum, values: SetVocab.set_types(), default: :working
     field :position, :integer, default: 0
+    field :planned_exercise_index, :integer
     field :reps, :string
     field :load_value, :decimal
-    field :load_unit, Ecto.Enum, values: @load_units
+    field :load_unit, Ecto.Enum, values: SetVocab.load_units()
     field :duration_seconds, :integer
     field :distance_value, :decimal
-    field :distance_unit, Ecto.Enum, values: @distance_units
+    field :distance_unit, Ecto.Enum, values: SetVocab.distance_units()
     field :rpe, :decimal
     field :completed, :boolean, default: false
     field :notes, :string
-    field :swapped_from_exercise_id, :binary_id
 
     belongs_to :session, TrainingSession, foreign_key: :training_session_id
     belongs_to :exercise, TrainingExercise
+    belongs_to :swapped_from_exercise, TrainingExercise, foreign_key: :swapped_from_exercise_id
     belongs_to :business, Orgs.Business
 
     timestamps(type: :utc_datetime)
@@ -43,6 +41,7 @@ defmodule Easy.Training.TrainingPerformedSet do
     :exercise_name,
     :set_type,
     :position,
+    :planned_exercise_index,
     :reps,
     :load_value,
     :load_unit,
@@ -63,16 +62,15 @@ defmodule Easy.Training.TrainingPerformedSet do
     |> put_change(:training_session_id, session_id)
     |> put_change(:business_id, business_id)
     |> validate_required([:training_session_id, :business_id, :set_type, :position])
-    |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
-    |> unique_constraint([:training_session_id, :position],
-      name: :training_performed_sets_training_session_id_position_index
-    )
+    |> validate_set()
+    |> foreign_key_constraint(:swapped_from_exercise_id)
   end
 
   @update_fields [
     :exercise_name,
     :set_type,
     :position,
+    :planned_exercise_index,
     :reps,
     :load_value,
     :load_unit,
@@ -88,10 +86,13 @@ defmodule Easy.Training.TrainingPerformedSet do
   def update_changeset(performed_set, attrs) do
     performed_set
     |> cast(attrs, @update_fields)
+    |> validate_set()
+  end
+
+  defp validate_set(changeset) do
+    changeset
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
-    |> unique_constraint([:training_session_id, :position],
-      name: :training_performed_sets_training_session_id_position_index
-    )
+    |> validate_number(:planned_exercise_index, greater_than_or_equal_to: 0)
   end
 
   @spec for_session(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

@@ -50,6 +50,36 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
       assert data["exercise"]["name"] == ctx.exercise.name
     end
 
+    test "carries planned_exercise_index and auto-appends position when omitted", ctx do
+      log = fn body ->
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/v1/client/training-sessions/#{ctx.session.id}/performed-sets", Jason.encode!(body))
+        |> json_response(201)
+        |> Map.fetch!("data")
+      end
+
+      first = log.(%{"exercise_id" => ctx.exercise.id, "reps" => "10", "planned_exercise_index" => 2})
+      assert first["planned_exercise_index"] == 2
+      assert first["position"] == 0
+
+      second = log.(%{"exercise_id" => ctx.exercise.id, "reps" => "10"})
+      assert second["planned_exercise_index"] == nil
+      assert second["position"] == 1
+    end
+
+    test "rejects a negative planned_exercise_index", ctx do
+      conn =
+        ctx.conn
+        |> put_req_header("content-type", "application/json")
+        |> post(
+          "/v1/client/training-sessions/#{ctx.session.id}/performed-sets",
+          Jason.encode!(%{"exercise_id" => ctx.exercise.id, "reps" => "10", "planned_exercise_index" => -1})
+        )
+
+      assert json_response(conn, 422)
+    end
+
     test "logs a skipped set (completed: false)", ctx do
       conn =
         ctx.conn

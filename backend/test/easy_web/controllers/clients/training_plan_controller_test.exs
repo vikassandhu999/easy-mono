@@ -116,7 +116,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           end_date: ~D[2026-03-31]
         )
 
-      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
+      workout = insert(:workout, plan: plan, business: ctx.business)
       exercise = insert(:exercise, business: ctx.business)
 
       _element =
@@ -141,7 +141,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       assert data["id"] == plan.id
       assert data["name"] == plan.name
       refute Map.has_key?(data, "rest_days")
-      assert is_list(data["plan_items"])
+      assert is_map(data["schedule"])
 
       [workout_data] = data["workouts"]
       assert workout_data["name"] == workout.name
@@ -213,16 +213,8 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           end_date: Date.add(today, 30)
         )
 
-      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
       day = Easy.Utils.weekday_name(today)
-
-      _entry =
-        insert(:training_plan_item,
-          plan: plan,
-          business: ctx.business,
-          day_of_week: day,
-          workout: workout
-        )
+      workout = insert(:workout, plan: plan, business: ctx.business, weekdays: [day])
 
       conn = get(ctx.conn, "/v1/client/training-plans/today")
       assert %{"data" => data} = json_response(conn, 200)

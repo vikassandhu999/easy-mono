@@ -4,7 +4,6 @@ defmodule Easy.Nutrition.Plan do
   alias Easy.Clients.Client
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.PlanDay
-  alias Easy.Nutrition.WeekdayAssignment
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -47,7 +46,6 @@ defmodule Easy.Nutrition.Plan do
     belongs_to :source_template, __MODULE__, foreign_key: :source_template_id
     has_many :meals, Meal, foreign_key: :nutrition_plan_id
     has_many :days, Easy.Nutrition.PlanDay, foreign_key: :nutrition_plan_id
-    has_many :weekday_assignments, Easy.Nutrition.WeekdayAssignment, foreign_key: :nutrition_plan_id
 
     timestamps(type: :utc_datetime)
   end
@@ -195,7 +193,6 @@ defmodule Easy.Nutrition.Plan do
       preload: [
         meals: ^Meal.include_items(Meal, business_id),
         days: ^PlanDay.include_day_meals(PlanDay.by_position(), business_id),
-        weekday_assignments: ^WeekdayAssignment.for_business(WeekdayAssignment, business_id),
         client: ^Client.for_business(business_id)
       ]
     )

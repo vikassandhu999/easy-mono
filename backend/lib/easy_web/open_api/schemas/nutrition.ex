@@ -267,18 +267,10 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealRequest do
       additionalProperties: false,
       properties: %{
         name: %Schema{type: :string, maxLength: 255},
-        notes: %Schema{type: :string, nullable: true},
-        default_meal_slot: %Schema{
-          type: :string,
-          enum: ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "evening_snack"],
-          nullable: true
-        }
+        notes: %Schema{type: :string, nullable: true}
       },
       required: [:name],
-      example: %{
-        "name" => "Breakfast",
-        "default_meal_slot" => "breakfast"
-      }
+      example: %{"name" => "Breakfast"}
     },
     struct?: false
   )
@@ -300,11 +292,6 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMeal do
           id: %Schema{type: :string, format: :uuid},
           name: %Schema{type: :string},
           notes: %Schema{type: :string, nullable: true},
-          default_meal_slot: %Schema{
-            type: :string,
-            enum: ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "evening_snack"],
-            nullable: true
-          },
           nutrition: %Schema{
             type: :object,
             nullable: true,
@@ -418,9 +405,37 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanDay do
       id: %Schema{type: :string, format: :uuid},
       name: %Schema{type: :string},
       position: %Schema{type: :integer},
+      weekdays: %Schema{
+        type: :array,
+        items: %Schema{type: :string, enum: ~w(monday tuesday wednesday thursday friday saturday sunday)}
+      },
       day_meals: %Schema{type: :array, items: NutritionDayMeal}
     },
-    required: [:id, :name, :position]
+    required: [:id, :name, :position, :weekdays, :day_meals]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayMealWithMeal do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionMeal
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionDayMealWithMeal",
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      meal_slot: %Schema{
+        type: :string,
+        enum: ~w(breakfast morning_snack lunch afternoon_snack dinner evening_snack)
+      },
+      position: %Schema{type: :integer},
+      nutrition_meal_id: %Schema{type: :string, format: :uuid},
+      nutrition_plan_day_id: %Schema{type: :string, format: :uuid},
+      meal: NutritionMeal
+    },
+    required: [:id, :meal_slot, :position, :nutrition_meal_id, :meal]
   })
 end
 
@@ -459,7 +474,17 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
           start_date: %Schema{type: :string, format: :date, nullable: true},
           end_date: %Schema{type: :string, format: :date, nullable: true},
           client_id: %Schema{type: :string, format: :uuid, nullable: true},
-          client: %Schema{type: :object, additionalProperties: true, nullable: true},
+          client: %Schema{
+            type: :object,
+            nullable: true,
+            additionalProperties: false,
+            properties: %{
+              id: %Schema{type: :string, format: :uuid},
+              first_name: %Schema{type: :string, nullable: true},
+              last_name: %Schema{type: :string, nullable: true}
+            },
+            required: [:id, :first_name, :last_name]
+          },
           source_template_id: %Schema{type: :string, format: :uuid, nullable: true},
           creator_id: %Schema{type: :string, format: :uuid, nullable: true},
           meals: %Schema{type: :array, items: NutritionMeal},
@@ -510,14 +535,6 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealResponse do
   OpenApiSpex.schema(Shared.data_response(NutritionMeal, "NutritionMealResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionMealListResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{NutritionMeal, Shared}
-
-  OpenApiSpex.schema(Shared.list_response(NutritionMeal, "NutritionMealListResponse"))
-end
-
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemResponse do
   require OpenApiSpex
 
@@ -557,42 +574,146 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanDayUpdateRequest do
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionWeekdayAssignRequest do
+defmodule EasyWeb.OpenApi.Schemas.NutritionScheduleRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
+  @weekday %Schema{type: :string, format: :uuid}
+
   OpenApiSpex.schema(
     %{
-      title: "NutritionWeekdayAssignRequest",
+      title: "NutritionScheduleRequest",
       type: :object,
+      additionalProperties: false,
+      description: "The plan's full weekday map. Every weekday must point at a day of this plan.",
       properties: %{
-        day_of_week: %Schema{type: :string, enum: ~w(monday tuesday wednesday thursday friday saturday sunday)},
-        nutrition_plan_day_id: %Schema{type: :string}
+        monday: @weekday,
+        tuesday: @weekday,
+        wednesday: @weekday,
+        thursday: @weekday,
+        friday: @weekday,
+        saturday: @weekday,
+        sunday: @weekday
       },
-      required: [:day_of_week, :nutrition_plan_day_id]
+      required: [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
     },
     struct?: false
   )
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionSlotOptionCreateRequest do
+defmodule EasyWeb.OpenApi.Schemas.NutritionScheduleResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.Shared
+  alias OpenApiSpex.Schema
+
+  @weekday %Schema{type: :string, format: :uuid}
+
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{
+        title: "NutritionSchedule",
+        type: :object,
+        additionalProperties: false,
+        properties: %{
+          monday: @weekday,
+          tuesday: @weekday,
+          wednesday: @weekday,
+          thursday: @weekday,
+          friday: @weekday,
+          saturday: @weekday,
+          sunday: @weekday
+        },
+        required: [:monday, :tuesday, :wednesday, :thursday, :friday, :saturday, :sunday]
+      },
+      "NutritionScheduleResponse"
+    )
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayMealCreateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
     %{
-      title: "NutritionSlotOptionCreateRequest",
+      title: "NutritionDayMealCreateRequest",
       type: :object,
+      additionalProperties: false,
+      description:
+        "Places a meal on a day's slot. Give exactly one of `nutrition_meal_id` (place an existing " <>
+          "meal of this plan) or `name` (create a new meal in the plan and place it).",
       properties: %{
         meal_slot: %Schema{type: :string, enum: ~w(breakfast morning_snack lunch afternoon_snack dinner evening_snack)},
-        nutrition_meal_id: %Schema{type: :string}
+        nutrition_meal_id: %Schema{type: :string, format: :uuid, nullable: true},
+        name: %Schema{type: :string, maxLength: 255, nullable: true}
       },
-      required: [:meal_slot, :nutrition_meal_id]
+      required: [:meal_slot]
     },
     struct?: false
   )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionSlotOptionMoveRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionSlotOptionMoveRequest",
+      type: :object,
+      additionalProperties: false,
+      description: "Re-slots and/or repositions a day meal. Omitted `position` appends to the target slot.",
+      properties: %{
+        meal_slot: %Schema{type: :string, enum: ~w(breakfast morning_snack lunch afternoon_snack dinner evening_snack)},
+        position: %Schema{type: :integer, minimum: 0}
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemsCreateRequest do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionMealItemRequest
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "NutritionMealItemsCreateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        items: %Schema{type: :array, items: NutritionMealItemRequest, minItems: 1}
+      },
+      required: [:items],
+      example: %{
+        "items" => [
+          %{"food_id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c", "weight_g" => 120}
+        ]
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemListResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.NutritionMealItem
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "NutritionMealItemListResponse",
+    type: :object,
+    additionalProperties: false,
+    properties: %{data: %Schema{type: :array, items: NutritionMealItem}},
+    required: [:data]
+  })
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlanDayResponse do
@@ -611,28 +732,12 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionDayMealResponse do
   OpenApiSpex.schema(Shared.data_response(NutritionDayMeal, "NutritionDayMealResponse"))
 end
 
-defmodule EasyWeb.OpenApi.Schemas.NutritionWeekdayAssignmentResponse do
+defmodule EasyWeb.OpenApi.Schemas.NutritionDayMealWithMealResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{NutritionDayMealWithMeal, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionWeekdayAssignmentResponse",
-    type: :object,
-    properties: %{
-      data: %Schema{
-        type: :object,
-        properties: %{
-          day_of_week: %Schema{
-            type: :string,
-            enum: ~w(monday tuesday wednesday thursday friday saturday sunday)
-          },
-          nutrition_plan_day_id: %Schema{type: :string, format: :uuid}
-        },
-        required: [:day_of_week, :nutrition_plan_day_id]
-      }
-    }
-  })
+  OpenApiSpex.schema(Shared.data_response(NutritionDayMealWithMeal, "NutritionDayMealWithMealResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionSwitchOptionRequest do

@@ -22,7 +22,6 @@ defmodule EasyWeb.Coaches.WorkoutSessionJSON do
       notes: session.notes,
       client_id: session.client_id,
       training_workout_id: session.training_workout_id,
-      training_schedule_entry_id: session.training_schedule_entry_id,
       planned_snapshot: session.planned_snapshot,
       performed_sets: performed_sets_data(session.performed_sets),
       inserted_at: session.inserted_at,

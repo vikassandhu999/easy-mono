@@ -52,7 +52,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert data["creator_id"] == coach.id
       assert data["source_template_id"] == nil
       assert data["workouts"] == []
-      assert data["plan_items"] == []
+      assert data["schedule"] == Map.new(~w(monday tuesday wednesday thursday friday saturday sunday), &{&1, nil})
     end
 
     test "rejects trusted identifiers in the request body", %{conn: conn} do
@@ -156,30 +156,22 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
   end
 
   describe "GET /v1/coach/training-plans/:id" do
-    test "shows a template with workouts and plan items", %{
+    test "shows a template with workouts and the derived schedule", %{
       conn: conn,
       coach: coach,
       business: business
     } do
       plan = insert(:training_plan, creator: coach, business: business)
-
-      workout = insert(:workout, plan: plan, creator: coach, business: business, name: "Push")
-
-      insert(:training_plan_item,
-        plan: plan,
-        workout: workout,
-        business: business,
-        creator: coach,
-        day_of_week: "monday"
-      )
+      workout = insert(:workout, plan: plan, business: business, name: "Push", weekdays: ["monday"])
 
       conn = get(conn, "/v1/coach/training-plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert data["client"] == nil
-      assert [%{"id" => workout_id, "name" => "Push"}] = data["workouts"]
+      assert [%{"id" => workout_id, "name" => "Push", "weekdays" => ["monday"]}] = data["workouts"]
       assert workout_id == workout.id
-      assert [%{"day_of_week" => "monday", "training_workout_id" => ^workout_id}] = data["plan_items"]
+      assert data["schedule"]["monday"] == workout.id
+      assert data["schedule"]["sunday"] == nil
     end
 
     test "returns 404 for another business plan", %{conn: conn} do
@@ -210,15 +202,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       business: business
     } do
       plan = insert(:training_plan, creator: coach, business: business)
-      workout = insert(:workout, plan: plan, creator: coach, business: business, name: "Pull")
-
-      insert(:training_plan_item,
-        plan: plan,
-        workout: workout,
-        business: business,
-        creator: coach,
-        day_of_week: "tuesday"
-      )
+      workout = insert(:workout, plan: plan, business: business, name: "Pull", weekdays: ["tuesday"])
 
       conn =
         conn
@@ -233,8 +217,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert data["description"] == "Updated description"
       assert [%{"id" => workout_id}] = data["workouts"]
       assert workout_id == workout.id
-      assert [%{"training_workout_id" => item_workout_id}] = data["plan_items"]
-      assert item_workout_id == workout.id
+      assert data["schedule"]["tuesday"] == workout.id
     end
 
     test "rejects trusted identifiers in the request body", %{
@@ -311,22 +294,13 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
   end
 
   describe "POST /v1/coach/training-plans/:id/assign" do
-    test "assigns a template to a client with copied workouts and plan items", %{
+    test "assigns a template to a client with copied workouts and schedule", %{
       conn: conn,
       coach: coach,
       business: business
     } do
       plan = insert(:training_plan, creator: coach, business: business)
-
-      workout = insert(:workout, plan: plan, creator: coach, business: business, name: "Push")
-
-      insert(:training_plan_item,
-        plan: plan,
-        workout: workout,
-        business: business,
-        creator: coach,
-        day_of_week: "monday"
-      )
+      workout = insert(:workout, plan: plan, business: business, name: "Push", weekdays: ["monday"])
 
       client_user = insert(:user, email: "assign-plan-client-#{Ecto.UUID.generate()}@test.com")
 
@@ -355,8 +329,8 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert data["end_date"] == "2026-01-31"
       assert [%{"name" => "Push"} = copied_workout] = data["workouts"]
       assert copied_workout["id"] != workout.id
-      assert [%{"day_of_week" => "monday", "training_workout_id" => copied_workout_id}] = data["plan_items"]
-      assert copied_workout_id == copied_workout["id"]
+      assert copied_workout["weekdays"] == ["monday"]
+      assert data["schedule"]["monday"] == copied_workout["id"]
     end
 
     test "assigns a template to a client with only client_id (no dates)", %{
@@ -446,23 +420,8 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
           name: "PPL #{Ecto.UUID.generate()}"
         )
 
-      shared_workout = insert(:workout, plan: plan, creator: coach, business: business, name: "Push")
-
-      insert(:training_plan_item,
-        plan: plan,
-        workout: shared_workout,
-        business: business,
-        creator: coach,
-        day_of_week: "monday"
-      )
-
-      insert(:training_plan_item,
-        plan: plan,
-        workout: shared_workout,
-        business: business,
-        creator: coach,
-        day_of_week: "thursday"
-      )
+      shared_workout =
+        insert(:workout, plan: plan, business: business, name: "Push", weekdays: ["monday", "thursday"])
 
       conn = post(conn, "/v1/coach/training-plans/#{plan.id}/duplicate")
       assert %{"data" => data} = json_response(conn, 201)
@@ -474,9 +433,9 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert copied_workout["name"] == "Push"
       assert copied_workout["id"] != shared_workout.id
 
-      assert length(data["plan_items"]) == 2
-      assert data["plan_items"] |> Enum.map(& &1["training_workout_id"]) |> Enum.uniq() == [copied_workout["id"]]
-      assert data["plan_items"] |> Enum.map(& &1["day_of_week"]) |> Enum.sort() == ["monday", "thursday"]
+      assert copied_workout["weekdays"] == ["monday", "thursday"]
+      assert data["schedule"]["monday"] == copied_workout["id"]
+      assert data["schedule"]["thursday"] == copied_workout["id"]
     end
 
     test "returns 404 for another business template", %{conn: conn} do

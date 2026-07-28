@@ -310,6 +310,10 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(changeset)})
   end
 
+  def call(conn, {:error, :invalid_schedule}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{schedule: ["must name every weekday"]}})})
+  end
+
   def call(conn, {:error, :invalid_day}) do
     call(conn, {:error, Error.unprocessable(%{fields: %{day: ["is invalid"]}})})
   end

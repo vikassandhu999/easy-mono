@@ -8,8 +8,8 @@
  * Phase 2 — amounts: once the list is finalised, one `AmountSheetContent`
  *           per picked item ("2 of 4"), collected locally. Nothing is posted
  *           until the last item's confirm, which commits everything together:
- *           one optimistic patch, the creates (sequential — see `finish`),
- *           one reconciling refetch. The surface never moves between phases.
+ *           one optimistic patch, one batch create, one reconciling refetch.
+ *           The surface never moves between phases.
  */
 import {Button, CloseButton, Modal, toast} from '@heroui/react';
 import {useCallback, useMemo, useRef, useState} from 'react';
@@ -22,7 +22,7 @@ import {
   useCoachRecipesInfiniteQuery,
   useCreateCoachFoodMutation,
 } from '@/api/nutrition-foods';
-import {useCreateMealItemMutation, useGetNutritionPlanQuery} from '@/api/nutrition-plans-list';
+import {useCreateMealItemsMutation, useGetNutritionPlanQuery} from '@/api/nutrition-plans-list';
 import {patchQueryData} from '@/api/query-client';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import {type FilterChip, SearchPickerBody} from '@/builder-kit/search-picker-sheet';
@@ -46,7 +46,7 @@ const AMOUNT_FORM_ID = 'add-items-amount-form';
 export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItemsFlowProps) {
   const isDesktop = useIsDesktop();
   const {refetch} = useGetNutritionPlanQuery(planId);
-  const createMealItemMutation = useCreateMealItemMutation();
+  const createMealItemsMutation = useCreateMealItemsMutation();
 
   // --- Phase: null = picking; an array = setting amounts for these items ---
   const [picked, setPicked] = useState<FoodOrRecipe[] | null>(null);
@@ -128,11 +128,10 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
   }, [reset, onClose]);
 
   // --- The single commit ---------------------------------------------------
-  // The POSTs run SEQUENTIALLY: the backend assigns `position` as max+1 under
-  // a unique (meal_id, position) index, so parallel creates collide and lose
-  // rows. One confirm, one refetch either way; a batch endpoint is the upgrade
-  // if a single atomic write ever matters. Optimistic rows land at once; any
-  // failure undoes them, toasts, and the refetch reconciles what the server took.
+  // One request: the backend inserts the whole batch in one transaction, in the
+  // order given, appending after the meal's existing items. All-or-nothing, so
+  // a failure undoes the whole optimistic patch and toasts once. The refetch
+  // reconciles server-computed positions and nutrition either way.
   const finish = useCallback(
     (finalDrafts: MealItemDraft[], finalItems: FoodOrRecipe[]) => {
       const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (cache) => {
@@ -154,27 +153,17 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
           });
         }
       });
-      (async () => {
-        let failed = 0;
-        for (const body of finalDrafts) {
-          try {
-            await createMealItemMutation.mutateAsync({mealId, body});
-          } catch {
-            failed += 1;
-          }
-        }
-        if (failed > 0) {
+      createMealItemsMutation
+        .mutateAsync({mealId, body: {items: finalDrafts}})
+        .catch(() => {
           patch.undo();
-          toast.danger(
-            failed === finalDrafts.length
-              ? "Couldn't add items"
-              : `Couldn't add ${failed} of ${finalDrafts.length} items`,
-          );
-        }
-        refetch().catch(() => undefined);
-      })().catch(() => undefined);
+          toast.danger("Couldn't add items");
+        })
+        .finally(() => {
+          refetch().catch(() => undefined);
+        });
     },
-    [createMealItemMutation, mealId, planId, refetch],
+    [createMealItemsMutation, mealId, planId, refetch],
   );
 
   // --- Phase content -------------------------------------------------------

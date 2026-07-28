@@ -166,9 +166,6 @@ defmodule EasyWeb.Router do
     delete "/nutrition-plans/:id", NutritionPlanController, :delete
     post "/nutrition-plans/:id/assign", NutritionPlanController, :assign
     post "/nutrition-plans/:id/duplicate", NutritionPlanController, :duplicate
-    get "/nutrition-plans/:plan_id/meals", MealController, :index
-    post "/nutrition-plans/:plan_id/meals", MealController, :create
-    get "/nutrition-meals/:id", MealController, :show
     patch "/nutrition-meals/:id", MealController, :update
     delete "/nutrition-meals/:id", MealController, :delete
 
@@ -179,10 +176,10 @@ defmodule EasyWeb.Router do
     post "/nutrition-plans/:plan_id/days", PlanDayController, :create
     patch "/nutrition-days/:id", PlanDayController, :update
     delete "/nutrition-days/:id", PlanDayController, :delete
-    put "/nutrition-plans/:plan_id/weekday-assignments", PlanDayController, :assign_weekday
-    post "/nutrition-days/:day_id/options", PlanDayController, :add_option
+    put "/nutrition-plans/:plan_id/schedule", PlanDayController, :update_schedule
+    post "/nutrition-days/:day_id/meals", PlanDayController, :add_meal
+    patch "/nutrition-day-meals/:id", PlanDayController, :move_option
     delete "/nutrition-day-meals/:id", PlanDayController, :remove_option
-    post "/nutrition-day-meals/:id/make-default", PlanDayController, :make_default
 
     get "/training-exercises", ExerciseController, :index
     post "/training-exercises", ExerciseController, :create
@@ -202,14 +199,11 @@ defmodule EasyWeb.Router do
     post "/training-plans/:id/assign", TrainingPlanController, :assign
     post "/training-plans/:id/duplicate", TrainingPlanController, :duplicate
 
-    get "/training-plans/:plan_id/training-workouts", WorkoutController, :index
     post "/training-plans/:plan_id/training-workouts", WorkoutController, :create
-    get "/training-workouts/:id", WorkoutController, :show
     patch "/training-workouts/:id", WorkoutController, :update
     delete "/training-workouts/:id", WorkoutController, :delete
 
-    get "/training-plans/:plan_id/schedule", TrainingScheduleController, :show
-    put "/training-plans/:plan_id/schedule/:day", TrainingScheduleController, :update
+    put "/training-plans/:plan_id/schedule", TrainingScheduleController, :update
 
     post "/training-workouts/:workout_id/exercises", WorkoutElementController, :create
     put "/training-workouts/:workout_id/exercises/reorder", WorkoutElementController, :reorder

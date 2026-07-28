@@ -151,7 +151,6 @@ defmodule EasyWeb.OpenApi.Schemas.TrainingSession do
           notes: %Schema{type: :string, nullable: true},
           client_id: %Schema{type: :string, format: :uuid, nullable: true},
           training_workout_id: %Schema{type: :string, format: :uuid, nullable: true},
-          training_schedule_entry_id: %Schema{type: :string, format: :uuid, nullable: true},
           planned_snapshot: %Schema{type: :object, additionalProperties: true, nullable: true},
           performed_sets: %Schema{type: :array, items: TrainingPerformedSet}
         },

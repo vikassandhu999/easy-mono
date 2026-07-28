@@ -9,11 +9,6 @@ defmodule Easy.Workouts do
   alias Easy.Training.TrainingWorkout
   alias Easy.Training.TrainingWorkoutExercise
 
-  # Offset that lifts every element clear of the 0..n-1 target range during a
-  # reorder, so the (training_workout_id, position) unique index never collides
-  # mid-reassignment.
-  @position_reorder_offset 1_000_000
-
   @spec get_workout(Ctx.t(), String.t()) :: {:ok, TrainingWorkout.t()} | {:error, :not_found}
   def get_workout(%Ctx{} = ctx, workout_id) do
     workout =
@@ -24,52 +19,6 @@ defmodule Easy.Workouts do
     with {:ok, workout} <- ok_or_not_found(workout),
          {:ok, _plan} <- get_plan(ctx, workout.training_plan_id) do
       {:ok, workout}
-    end
-  end
-
-  @spec get_workout_with_elements(Ctx.t(), String.t()) ::
-          {:ok, TrainingWorkout.t()} | {:error, :not_found}
-  def get_workout_with_elements(%Ctx{} = ctx, workout_id) do
-    with {:ok, _workout} <- get_workout(ctx, workout_id) do
-      TrainingWorkout
-      |> TrainingWorkout.for_business(ctx.business_id)
-      |> TrainingWorkout.include_exercises(ctx.business_id)
-      |> Repo.get(workout_id)
-      |> ok_or_not_found()
-    end
-  end
-
-  @spec get_workout_for_plan(Ctx.t(), String.t(), String.t()) ::
-          {:ok, TrainingWorkout.t()} | {:error, :not_found}
-  def get_workout_for_plan(%Ctx{} = ctx, plan_id, workout_id) do
-    with {:ok, _plan} <- get_plan(ctx, plan_id) do
-      TrainingWorkout
-      |> TrainingWorkout.for_business(ctx.business_id)
-      |> TrainingWorkout.for_plan(plan_id)
-      |> Repo.get(workout_id)
-      |> ok_or_not_found()
-    end
-  end
-
-  @spec list_workouts(Ctx.t(), String.t(), keyword()) ::
-          {:ok, %{count: non_neg_integer(), workouts: [TrainingWorkout.t()]}} | {:error, :not_found}
-  def list_workouts(%Ctx{} = ctx, plan_id, opts \\ []) do
-    offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
-
-    with {:ok, plan} <- get_plan(ctx, plan_id) do
-      base = TrainingWorkout |> TrainingWorkout.for_business(ctx.business_id) |> TrainingWorkout.for_plan(plan.id)
-
-      {:ok,
-       %{
-         count: Repo.aggregate(base, :count, :id),
-         workouts:
-           base
-           |> TrainingWorkout.oldest()
-           |> Easy.Utils.paginate(offset, limit)
-           |> TrainingWorkout.include_exercises(ctx.business_id)
-           |> Repo.all()
-       }}
     end
   end
 
@@ -103,7 +52,7 @@ defmodule Easy.Workouts do
           {:ok, TrainingWorkout.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_workout(%Ctx{} = ctx, plan_id, attrs) do
     with {:ok, plan} <- get_plan(ctx, plan_id) do
-      TrainingWorkout.insert_changeset(ctx.business_id, nil, plan.id, attrs)
+      TrainingWorkout.insert_changeset(ctx.business_id, plan.id, attrs)
       |> Repo.insert()
     end
   end
@@ -126,15 +75,34 @@ defmodule Easy.Workouts do
     end
   end
 
-  @spec create_workout_element(Ctx.t(), String.t(), map()) ::
-          {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def create_workout_element(%Ctx{} = ctx, workout_id, attrs) do
-    with {:ok, workout} <- get_workout(ctx, workout_id),
-         {:ok, changeset} <-
-           TrainingWorkoutExercise.insert_changeset(ctx.business_id, workout.id, attrs)
+  @spec create_workout_elements(Ctx.t(), String.t(), [map()]) ::
+          {:ok, [TrainingWorkoutExercise.t()]} | {:error, :not_found | Ecto.Changeset.t()}
+  def create_workout_elements(%Ctx{} = ctx, workout_id, elements) do
+    with {:ok, workout} <- get_workout(ctx, workout_id) do
+      Repo.transaction(fn -> insert_workout_elements!(ctx.business_id, workout.id, elements) end)
+    end
+  end
+
+  defp insert_workout_elements!(business_id, workout_id, elements) do
+    start = next_position(business_id, workout_id)
+
+    elements
+    |> Enum.with_index(start)
+    |> Enum.map(fn {attrs, position} ->
+      case insert_workout_element(business_id, workout_id, attrs, position) do
+        {:ok, element} -> element
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp insert_workout_element(business_id, workout_id, attrs, position) do
+    with {:ok, changeset} <-
+           business_id
+           |> TrainingWorkoutExercise.insert_changeset(workout_id, attrs)
            |> validate_exercise_in_business() do
       changeset
-      |> maybe_put_next_position(ctx.business_id, workout.id, attrs)
+      |> Ecto.Changeset.put_change(:position, position)
       |> Repo.insert()
       |> preload_element()
     end
@@ -184,14 +152,6 @@ defmodule Easy.Workouts do
     end
   end
 
-  defp maybe_put_next_position(changeset, business_id, workout_id, attrs) do
-    if changeset.valid? and not Map.has_key?(attrs, :position) do
-      Ecto.Changeset.put_change(changeset, :position, next_position(business_id, workout_id))
-    else
-      changeset
-    end
-  end
-
   defp next_position(business_id, workout_id) do
     query =
       TrainingWorkoutExercise
@@ -222,18 +182,12 @@ defmodule Easy.Workouts do
     end
   end
 
-  # Collision-free position reassignment under the unique index: shift every
-  # element clear of the 0..n-1 range, then set each to its final index.
   defp reassign_positions(business_id, workout_id, ordered_ids) do
-    TrainingWorkoutExercise
-    |> TrainingWorkoutExercise.for_business(business_id)
-    |> TrainingWorkoutExercise.for_workout(workout_id)
-    |> Repo.update_all(inc: [position: @position_reorder_offset])
-
     ordered_ids
     |> Enum.with_index()
     |> Enum.each(fn {id, index} ->
       TrainingWorkoutExercise
+      |> TrainingWorkoutExercise.for_business(business_id)
       |> TrainingWorkoutExercise.for_workout(workout_id)
       |> where([e], e.id == ^id)
       |> Repo.update_all(set: [position: index])

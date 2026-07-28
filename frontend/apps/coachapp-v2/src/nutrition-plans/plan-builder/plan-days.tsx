@@ -12,8 +12,8 @@
  *
  * The slot options model maps onto the redesign directly: the position-0 option
  * of a slot is the meal card, and the remaining options are that meal's
- * `Client can swap with` alternates. Re-slotting a meal has no dedicated
- * endpoint, so it is a remove-then-add of the day option.
+ * `Client can swap with` alternates. Re-slotting a meal is one PATCH on the
+ * day option.
  *
  * Writes follow `useNutritionPlanCommit`: optimistic cache patch, request,
  * reconciling refetch on success. Create-shaped writes (add day, add option)
@@ -39,16 +39,23 @@ import {useEffect, useMemo, useState} from 'react';
 import {getErrorCode, toastMutationError} from '@/@components/mutation-toast';
 import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
 import {nutritionPlanKeys} from '@/api/keys';
-import type {NutritionDayMeal, NutritionMeal, NutritionPlan, NutritionPlanDay} from '@/api/nutrition-plans-list';
+import type {
+  NutritionDayMeal,
+  NutritionDayMealCreateRequest,
+  NutritionMeal,
+  NutritionPlan,
+  NutritionPlanDay,
+  NutritionScheduleRequest,
+} from '@/api/nutrition-plans-list';
 import {
-  useAddNutritionSlotOptionMutation,
-  useAssignNutritionPlanWeekdayMutation,
-  useCreateMealMutation,
+  useAddDayMealMutation,
   useCreateNutritionPlanDayMutation,
   useDeleteNutritionPlanDayMutation,
   useGetNutritionPlanQuery,
+  useMoveNutritionSlotOptionMutation,
   useRemoveNutritionSlotOptionMutation,
   useUpdateNutritionPlanDayMutation,
+  useUpdateNutritionPlanScheduleMutation,
 } from '@/api/nutrition-plans-list';
 import {patchQueryData} from '@/api/query-client';
 import {INLINE_LINK} from '@/builder-kit/ui';
@@ -73,7 +80,7 @@ function getWeekdayAssignments(plan: NutritionPlan): WeekdayAssignments {
 }
 
 function optionsForSlot(day: NutritionPlanDay, slot: string): NutritionDayMeal[] {
-  return (day.day_meals ?? []).filter((dm) => dm.meal_slot === slot).sort((a, b) => a.position - b.position);
+  return day.day_meals.filter((dm) => dm.meal_slot === slot).sort((a, b) => a.position - b.position);
 }
 
 /** Day rows in slot order: the position-0 option plus its alternates. */
@@ -110,14 +117,14 @@ function firstFreeSlot(day: NutritionPlanDay): string {
 /** "On Mon, Tue · Lunch" — where a plan meal already sits, for the reuse list. */
 function mealPlacementSummary(mealId: string, days: NutritionPlanDay[], weekdays: WeekdayAssignments): string {
   const parts: string[] = [];
-  const dayNames = days.filter((d) => (d.day_meals ?? []).some((dm) => dm.nutrition_meal_id === mealId));
+  const dayNames = days.filter((d) => d.day_meals.some((dm) => dm.nutrition_meal_id === mealId));
   if (dayNames.length > 0) {
     const labels = WEEKDAYS.filter((w) => dayNames.some((d) => weekdays[w] === d.id)).map(
       (w) => WEEKDAY_SHORT_LABELS[w] ?? w,
     );
     parts.push(`On ${labels.length > 0 ? labels.join(', ') : dayNames.map((d) => d.name).join(', ')}`);
   }
-  const slot = dayNames.flatMap((d) => d.day_meals ?? []).find((dm) => dm.nutrition_meal_id === mealId)?.meal_slot;
+  const slot = dayNames.flatMap((d) => d.day_meals).find((dm) => dm.nutrition_meal_id === mealId)?.meal_slot;
   if (slot) {
     parts.push(slotLabel(slot));
   }
@@ -183,10 +190,10 @@ export function PlanDays({plan}: PlanDaysProps) {
   const createDayMutation = useCreateNutritionPlanDayMutation();
   const updateDayMutation = useUpdateNutritionPlanDayMutation();
   const deleteDayMutation = useDeleteNutritionPlanDayMutation();
-  const assignWeekdayMutation = useAssignNutritionPlanWeekdayMutation();
-  const addOptionMutation = useAddNutritionSlotOptionMutation();
+  const updateScheduleMutation = useUpdateNutritionPlanScheduleMutation();
+  const addDayMealMutation = useAddDayMealMutation();
   const removeOptionMutation = useRemoveNutritionSlotOptionMutation();
-  const createMealMutation = useCreateMealMutation();
+  const moveOptionMutation = useMoveNutritionSlotOptionMutation();
   const creatingDay = createDayMutation.isPending;
   const deletingDay = deleteDayMutation.isPending;
 
@@ -274,95 +281,112 @@ export function PlanDays({plan}: PlanDaysProps) {
   // ---------------------------------------------------------------------------
   // Weekday assignment — a weekday belongs to exactly one day, so assigning it
   // here implicitly takes it off whichever day held it (INTERACTIONS.md § NB).
+  // The endpoint takes the FULL Mon..Sun map, so one toggle sends all seven.
   // ---------------------------------------------------------------------------
 
-  const handleAssignWeekday = (weekday: string, dayId: string) =>
-    commit(
+  const handleAssignWeekday = (weekday: string, dayId: string) => {
+    const body = Object.fromEntries(
+      WEEKDAYS.map((w) => [w, w === weekday ? dayId : (weekdayAssignments[w] ?? days[0]?.id ?? dayId)]),
+    ) as NutritionScheduleRequest;
+
+    return commit(
       (draft) => {
         if (!draft.data.weekday_assignments) {
           draft.data.weekday_assignments = {};
         }
         draft.data.weekday_assignments[weekday] = dayId;
       },
-      () =>
-        assignWeekdayMutation.mutateAsync({
-          planId: plan.id,
-          body: {
-            day_of_week: weekday as (typeof WEEKDAYS)[number],
-            nutrition_plan_day_id: dayId,
-          },
-        }),
+      () => updateScheduleMutation.mutateAsync({planId: plan.id, body}),
       "Couldn't assign day",
     );
+  };
 
   // ---------------------------------------------------------------------------
   // Day options: add / remove / re-slot
   // ---------------------------------------------------------------------------
 
-  const addOptionToDay = async (dayId: string, slot: string, mealId: string) => {
+  // One endpoint for both "place an existing plan meal" and "create a meal and
+  // place it" — the response embeds the meal, so the cache gets both rows.
+  const addDayMeal = async (
+    dayId: string,
+    body: NutritionDayMealCreateRequest,
+    failMessage: string,
+  ): Promise<NutritionMeal | null> => {
     try {
-      const result = await addOptionMutation.mutateAsync({
-        dayId,
-        body: {meal_slot: slot as (typeof MEAL_SLOTS)[number], nutrition_meal_id: mealId},
-      });
-      const newOption = result.data;
+      const {meal, ...option} = (await addDayMealMutation.mutateAsync({dayId, body})).data;
       patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
-        const d = draft.data.days?.find((x) => x.id === dayId);
-        if (d) {
-          if (!d.day_meals) {
-            d.day_meals = [];
-          }
-          d.day_meals.push(newOption);
+        if (!draft.data.meals) {
+          draft.data.meals = [];
         }
+        if (!draft.data.meals.some((m) => m.id === meal.id)) {
+          draft.data.meals.push(meal);
+        }
+        draft.data.days?.find((x) => x.id === dayId)?.day_meals.push(option);
       });
       refetch().catch(() => undefined);
-      return newOption;
+      return meal;
     } catch (e) {
       if (getErrorCode(e) === 'max_options') {
         toast.danger('Only 3 options are allowed per slot.');
       } else {
-        toastMutationError(e, "Couldn't add meal to this day");
+        toastMutationError(e, failMessage);
       }
       return null;
     }
   };
 
+  const addOptionToDay = (dayId: string, slot: string, mealId: string) =>
+    addDayMeal(
+      dayId,
+      {meal_slot: slot as (typeof MEAL_SLOTS)[number], nutrition_meal_id: mealId},
+      "Couldn't add meal to this day",
+    );
+
   const removeOptionFromDay = (dayId: string, optionId: string) =>
     commit(
       (draft) => {
         const d = draft.data.days?.find((x) => x.id === dayId);
-        const idx = d?.day_meals?.findIndex((dm) => dm.id === optionId) ?? -1;
+        const idx = d?.day_meals.findIndex((dm) => dm.id === optionId) ?? -1;
         if (idx !== -1) {
-          d?.day_meals?.splice(idx, 1);
+          d?.day_meals.splice(idx, 1);
         }
       },
       () => removeOptionMutation.mutateAsync(optionId),
       "Couldn't remove meal from this day",
     );
 
-  /** No re-slot endpoint exists — move the option by removing and re-adding it. */
-  const handleChangeSlot = async (dayId: string, optionId: string, mealId: string, nextSlot: string) => {
-    const removed = await removeOptionFromDay(dayId, optionId);
-    if (removed) {
-      await addOptionToDay(dayId, nextSlot, mealId);
+  const handleChangeSlot = async (dayId: string, optionId: string, nextSlot: string) => {
+    try {
+      const result = await moveOptionMutation.mutateAsync({
+        id: optionId,
+        body: {meal_slot: nextSlot as (typeof MEAL_SLOTS)[number]},
+      });
+      patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
+        const dm = draft.data.days?.find((x) => x.id === dayId)?.day_meals.find((x) => x.id === optionId);
+        if (dm) {
+          dm.meal_slot = result.data.meal_slot;
+          dm.position = result.data.position;
+        }
+      });
+      refetch().catch(() => undefined);
+    } catch (e) {
+      if (getErrorCode(e) === 'max_options') {
+        toast.danger('Only 3 options are allowed per slot.');
+      } else {
+        toastMutationError(e, "Couldn't move this meal");
+      }
     }
   };
 
   const handleCreateMeal = async (dayId: string, slot: string) => {
-    try {
-      const result = await createMealMutation.mutateAsync({planId: plan.id, body: {name: 'New meal'}});
-      const newMeal = result.data;
-      patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(plan.id), (draft) => {
-        if (!draft.data.meals) {
-          draft.data.meals = [];
-        }
-        draft.data.meals.push(newMeal);
-      });
-      await addOptionToDay(dayId, slot, newMeal.id);
+    const newMeal = await addDayMeal(
+      dayId,
+      {meal_slot: slot as (typeof MEAL_SLOTS)[number], name: 'New meal'},
+      "Couldn't add meal",
+    );
+    if (newMeal) {
       setOpenMealId(newMeal.id);
       setAutoRenameMealId(newMeal.id);
-    } catch (e) {
-      toastMutationError(e, "Couldn't add meal");
     }
   };
 
@@ -373,7 +397,7 @@ export function PlanDays({plan}: PlanDaysProps) {
     if (!activeDay) {
       return null;
     }
-    const dayMealIds = new Set((activeDay.day_meals ?? []).map((dm) => dm.nutrition_meal_id));
+    const dayMealIds = new Set(activeDay.day_meals.map((dm) => dm.nutrition_meal_id));
     const reusable: MealPaletteOption[] = (plan.meals ?? [])
       .filter((m) => !dayMealIds.has(m.id))
       .map((m) => ({
@@ -385,7 +409,7 @@ export function PlanDays({plan}: PlanDaysProps) {
     // Every day-slot option across the plan that points at a meal — drives "Used in n places".
     const counts = new Map<string, number>();
     for (const day of days) {
-      for (const dm of day.day_meals ?? []) {
+      for (const dm of day.day_meals) {
         counts.set(dm.nutrition_meal_id, (counts.get(dm.nutrition_meal_id) ?? 0) + 1);
       }
     }
@@ -640,7 +664,7 @@ export function PlanDays({plan}: PlanDaysProps) {
                 }}
                 onChangeSlot={(nextSlot) => {
                   if (nextSlot !== slot) {
-                    handleChangeSlot(activeDay.id, primary.id, meal.id, nextSlot).catch(() => undefined);
+                    handleChangeSlot(activeDay.id, primary.id, nextSlot).catch(() => undefined);
                   }
                 }}
                 onRemoveFromDay={() => {

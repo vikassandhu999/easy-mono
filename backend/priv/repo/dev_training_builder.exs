@@ -19,7 +19,6 @@ alias Easy.Repo
 
 alias Easy.Training.{
   PlannedSet,
-  ScheduleEntry,
   TrainingExercise,
   TrainingPlan,
   TrainingWorkout,
@@ -80,18 +79,18 @@ if length(exercises) < 3 do
   raise "need 3 weight_reps exercises in the dev DB — run priv/repo/seeds.exs first"
 end
 
-# `list_workouts` orders by `oldest()` — inserted_at then id. utc_datetime
+# Workouts are read in `oldest()` order — inserted_at then id. utc_datetime
 # truncates to the second, so three workouts written in the same second tie and
 # fall back to a random UUID: the builder opened a different tab each run.
 # Stagger the timestamps so tab order is fixed and matches the frame.
 base_time = DateTime.utc_now() |> DateTime.add(-3600, :second) |> DateTime.truncate(:second)
 
-add_workout = fn name, rank ->
+add_workout = fn name, rank, weekdays ->
   Repo.insert!(%TrainingWorkout{
     name: name,
+    weekdays: weekdays,
     training_plan_id: plan.id,
     business_id: business.id,
-    creator_id: coach.id,
     inserted_at: DateTime.add(base_time, rank, :second),
     updated_at: DateTime.add(base_time, rank, :second)
   })
@@ -120,9 +119,9 @@ end
 
 [e1, e2, e3] = exercises
 
-upper = add_workout.("Upper A", 0)
-lower = add_workout.("Lower A", 1)
-_conditioning = add_workout.("Conditioning", 2)
+upper = add_workout.("Upper A", 0, ["monday", "thursday"])
+lower = add_workout.("Lower A", 1, [])
+_conditioning = add_workout.("Conditioning", 2, [])
 
 add_exercise.(upper, e1, 0, [
   set.(:warmup, "8", "40", nil),
@@ -134,15 +133,5 @@ add_exercise.(upper, e2, 1, [set.(:working, "10", "60", "7"), set.(:working, "10
 add_exercise.(upper, e3, 2, [set.(:working, "8", "40", "8"), set.(:working, "8", "40", "8")])
 
 add_exercise.(lower, e1, 0, [set.(:working, "5", "100", "8")])
-
-for {weekday, workout} <- [monday: upper, thursday: upper] do
-  Repo.insert!(%ScheduleEntry{
-    training_plan_id: plan.id,
-    training_workout_id: workout.id,
-    business_id: business.id,
-    creator_id: coach.id,
-    day_of_week: weekday
-  })
-end
 
 IO.puts("TB fixture ready — /library/training-plans/#{plan.id}")

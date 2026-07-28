@@ -28,7 +28,7 @@ defmodule Easy.Nutrition.MealItemTest do
     end
   end
 
-  describe "create/3" do
+  describe "create_meal_items/3" do
     test "assigns the next position in the action boundary" do
       coach = insert_coach()
       plan = insert(:plan, business: coach.business, creator: coach)
@@ -38,32 +38,10 @@ defmodule Easy.Nutrition.MealItemTest do
 
       ctx = Easy.Ctx.new(meal.business_id, coach.user_id)
 
-      assert {:ok, meal_item} =
-               Meals.create_meal_item(ctx, meal.id, %{
-                 food_id: food.id,
-                 weight_g: 100.0
-               })
+      assert {:ok, [meal_item]} =
+               Meals.create_meal_items(ctx, meal.id, [%{food_id: food.id, weight_g: 100.0}])
 
       assert meal_item.position == 1
-    end
-
-    test "keeps an explicit zero position" do
-      coach = insert_coach()
-      plan = insert(:plan, business: coach.business, creator: coach)
-      meal = insert(:meal, business: coach.business, creator: coach, plan: plan)
-      food = insert(:food, business: coach.business, creator: coach)
-      insert(:meal_item, meal: meal, business: meal.business, food: food, position: 1)
-
-      ctx = Easy.Ctx.new(meal.business_id, coach.user_id)
-
-      assert {:ok, meal_item} =
-               Meals.create_meal_item(ctx, meal.id, %{
-                 food_id: food.id,
-                 weight_g: 100.0,
-                 position: 0
-               })
-
-      assert meal_item.position == 0
     end
   end
 
@@ -81,21 +59,21 @@ defmodule Easy.Nutrition.MealItemTest do
     end
 
     test "a recipe item can be created with amount and no weight_g", %{ctx: ctx, meal: meal, recipe: recipe} do
-      assert {:ok, item} =
-               Meals.create_meal_item(ctx, meal.id, %{recipe_id: recipe.id, amount: 2.0, unit: "serving"})
+      assert {:ok, [item]} =
+               Meals.create_meal_items(ctx, meal.id, [%{recipe_id: recipe.id, amount: 2.0, unit: "serving"}])
 
       assert item.weight_g == nil
       assert item.amount == 2.0
     end
 
     test "a recipe item without weight_g or amount is invalid", %{ctx: ctx, meal: meal, recipe: recipe} do
-      assert {:error, changeset} = Meals.create_meal_item(ctx, meal.id, %{recipe_id: recipe.id})
+      assert {:error, changeset} = Meals.create_meal_items(ctx, meal.id, [%{recipe_id: recipe.id}])
       assert %{weight_g: [_message]} = errors_on(changeset)
     end
 
     test "a food item still requires weight_g", %{ctx: ctx, meal: meal, coach: coach} do
       food = insert(:food, business: coach.business, creator: coach)
-      assert {:error, changeset} = Meals.create_meal_item(ctx, meal.id, %{food_id: food.id, amount: 1.0})
+      assert {:error, changeset} = Meals.create_meal_items(ctx, meal.id, [%{food_id: food.id, amount: 1.0}])
       assert %{weight_g: [_message]} = errors_on(changeset)
     end
   end

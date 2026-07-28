@@ -10,9 +10,9 @@ defmodule Easy.MealLogs do
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Plan
+  alias Easy.Nutrition.PlanDay
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
-  alias Easy.Nutrition.WeekdayAssignment
   alias Easy.Repo
 
   import Ecto.Changeset
@@ -349,14 +349,14 @@ defmodule Easy.MealLogs do
   end
 
   defp slot_meals(business_id, client_id, plan_id, date) do
-    case weekday_assignment(business_id, plan_id, date) do
+    case plan_day_for_date(business_id, plan_id, date) do
       nil ->
         []
 
-      assignment ->
+      day ->
         DayMeal
         |> DayMeal.for_business(business_id)
-        |> DayMeal.for_plan_day(assignment.nutrition_plan_day_id)
+        |> DayMeal.for_plan_day(day.id)
         |> DayMeal.by_slot_position()
         |> Repo.all()
         |> Enum.group_by(& &1.meal_slot)
@@ -389,10 +389,10 @@ defmodule Easy.MealLogs do
 
   defp default_option_meal_id(business_id, client_id, date, meal_slot) do
     with %Plan{} = plan <- active_plan(business_id, client_id, date),
-         %{} = wa <- weekday_assignment(business_id, plan.id, date) do
+         %PlanDay{} = day <- plan_day_for_date(business_id, plan.id, date) do
       DayMeal
       |> DayMeal.for_business(business_id)
-      |> DayMeal.for_plan_day(wa.nutrition_plan_day_id)
+      |> DayMeal.for_plan_day(day.id)
       |> DayMeal.for_meal_slot(meal_slot)
       |> DayMeal.by_slot_position()
       |> limit(1)
@@ -406,13 +406,12 @@ defmodule Easy.MealLogs do
     end
   end
 
-  defp weekday_assignment(business_id, plan_id, date) do
-    day = Easy.Utils.weekday_name(date)
-
-    WeekdayAssignment
-    |> WeekdayAssignment.for_business(business_id)
-    |> WeekdayAssignment.for_plan(plan_id)
-    |> WeekdayAssignment.for_day(day)
+  defp plan_day_for_date(business_id, plan_id, date) do
+    PlanDay
+    |> PlanDay.for_business(business_id)
+    |> PlanDay.for_plan(plan_id)
+    |> PlanDay.for_weekday(Easy.Utils.weekday_name(date))
+    |> limit(1)
     |> Repo.one()
   end
 

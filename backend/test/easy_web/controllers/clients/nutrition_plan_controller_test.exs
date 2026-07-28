@@ -149,14 +149,8 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       today = Date.utc_today()
       day = Easy.Utils.weekday_name(today)
 
-      plan_day = insert(:plan_day, plan: plan, business: ctx.business, name: "Everyday", position: 0)
-
-      insert(:weekday_assignment,
-        plan: plan,
-        plan_day: plan_day,
-        business: ctx.business,
-        day_of_week: day
-      )
+      plan_day =
+        insert(:plan_day, plan: plan, business: ctx.business, name: "Everyday", position: 0, weekdays: [day])
 
       insert(:day_meal,
         plan_day: plan_day,
@@ -226,14 +220,14 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
 
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)
 
-      plan_day = insert(:plan_day, plan: plan, business: ctx.business, name: "Everyday", position: 0)
-
-      insert(:weekday_assignment,
-        plan: plan,
-        plan_day: plan_day,
-        business: ctx.business,
-        day_of_week: "monday"
-      )
+      plan_day =
+        insert(:plan_day,
+          plan: plan,
+          business: ctx.business,
+          name: "Everyday",
+          position: 0,
+          weekdays: ["monday"]
+        )
 
       insert(:day_meal,
         plan_day: plan_day,

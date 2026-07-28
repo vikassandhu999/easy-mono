@@ -2,6 +2,7 @@ defmodule Easy.Nutrition.MealLog do
   use Ecto.Schema
 
   alias Easy.Clients.Client
+  alias Easy.MealSlot
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.Meal
   alias Easy.Orgs
@@ -17,16 +18,7 @@ defmodule Easy.Nutrition.MealLog do
   schema "nutrition_meal_logs" do
     field(:date, :date)
 
-    field(:meal_slot, Ecto.Enum,
-      values: [
-        :breakfast,
-        :morning_snack,
-        :lunch,
-        :afternoon_snack,
-        :dinner,
-        :evening_snack
-      ]
-    )
+    field(:meal_slot, Ecto.Enum, values: MealSlot.values())
 
     field(:planned_snapshot, :map)
     field(:planned_calories, :float)
@@ -73,7 +65,7 @@ defmodule Easy.Nutrition.MealLog do
     from(ml in query, where: ml.date >= ^from_date and ml.date <= ^to_date)
   end
 
-  @valid_meal_slots ~w(breakfast morning_snack lunch afternoon_snack dinner evening_snack)
+  @valid_meal_slots MealSlot.names()
 
   @spec for_meal_slot(Ecto.Queryable.t(), atom() | String.t() | nil) :: Ecto.Query.t()
   def for_meal_slot(query \\ __MODULE__, meal_slot)

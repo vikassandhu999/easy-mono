@@ -11,8 +11,6 @@ defmodule Easy.Training.TrainingWorkoutExercise do
 
   schema "training_workout_exercises" do
     field :position, :integer, default: 0
-    field :superset_group_id, :string
-    field :notes, :string
 
     embeds_many :planned_sets, PlannedSet, on_replace: :delete
 
@@ -23,14 +21,12 @@ defmodule Easy.Training.TrainingWorkoutExercise do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:position, :superset_group_id, :notes, :exercise_id]
+  @cast_fields [:position, :exercise_id]
 
   @spec copy_attrs(t()) :: map()
   def copy_attrs(%__MODULE__{} = element) do
     %{
       position: element.position,
-      superset_group_id: element.superset_group_id,
-      notes: element.notes,
       exercise_id: element.exercise_id,
       planned_sets: Enum.map(element.planned_sets, &PlannedSet.to_attrs/1)
     }
@@ -44,19 +40,13 @@ defmodule Easy.Training.TrainingWorkoutExercise do
     |> put_change(:training_workout_id, workout_id)
     |> validate_required([:training_workout_id, :business_id, :exercise_id])
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
-    |> unique_constraint([:training_workout_id, :position],
-      name: :training_workout_exercises_training_workout_id_position_index
-    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(element, attrs) do
     element
-    |> cast(attrs, [:position, :superset_group_id, :notes, :exercise_id])
+    |> cast(attrs, @cast_fields)
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
-    |> unique_constraint([:training_workout_id, :position],
-      name: :training_workout_exercises_training_workout_id_position_index
-    )
   end
 
   @spec for_workout(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

@@ -85,7 +85,7 @@ export default function ClientScreen() {
   // field on a plan — it is derived from the plan items' `day_of_week`.
   const plans = useListCoachClientTrainingPlansQuery(id, {status: 'active'});
   const activePlan = plans.data?.data?.[0];
-  const weeklyTarget = activePlan ? new Set(activePlan.plan_items.map((item) => item.day_of_week)).size || null : null;
+  const weeklyTarget = activePlan ? Object.values(activePlan.schedule).filter(Boolean).length || null : null;
 
   if (isLoading) {
     return (

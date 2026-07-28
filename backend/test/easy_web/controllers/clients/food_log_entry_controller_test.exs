@@ -450,14 +450,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       )
 
       # 2026-03-30 is a Monday
-      day = insert(:plan_day, plan: plan, business: ctx.business)
-
-      insert(:weekday_assignment,
-        plan: plan,
-        plan_day: day,
-        business: ctx.business,
-        day_of_week: "monday"
-      )
+      day = insert(:plan_day, plan: plan, business: ctx.business, weekdays: ["monday"])
 
       insert(:day_meal,
         plan_day: day,

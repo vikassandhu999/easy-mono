@@ -10,6 +10,7 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
     TrainingWorkoutExerciseArrayResponse,
     TrainingWorkoutExerciseRequest,
     TrainingWorkoutExerciseResponse,
+    TrainingWorkoutExercisesCreateRequest,
     TrainingWorkoutReorderRequest
   }
 
@@ -19,16 +20,16 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   tags ["coach workout elements"]
 
   operation :create,
-    summary: "Create workout element",
-    description: "Creates a workout element with planned sets.",
-    operation_id: "createWorkoutElement",
+    summary: "Create workout elements",
+    description: "Appends one or more workout elements with their planned sets, in one transaction.",
+    operation_id: "createWorkoutElements",
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:workout_id, :path, :string, "Workout id")
     ],
-    request_body: {"Workout element request", "application/json", TrainingWorkoutExerciseRequest, required: true},
+    request_body: {"Workout elements create request", "application/json", TrainingWorkoutExercisesCreateRequest, required: true},
     responses: [
-      created: {"Workout element created", "application/json", TrainingWorkoutExerciseResponse},
+      created: {"Workout elements created", "application/json", TrainingWorkoutExerciseArrayResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -84,10 +85,11 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   def create(conn, _params) do
     workout_id = conn.path_params["workout_id"]
 
-    with {:ok, element} <- Workouts.create_workout_element(conn.assigns.ctx, workout_id, conn.body_params) do
+    with {:ok, elements} <-
+           Workouts.create_workout_elements(conn.assigns.ctx, workout_id, conn.body_params.exercises) do
       conn
       |> put_status(:created)
-      |> render(:show, element: element)
+      |> render(:index, elements: elements)
     end
   end
 

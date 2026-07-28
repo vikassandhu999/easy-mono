@@ -4,7 +4,6 @@ defmodule Easy.TrainingPlans do
   alias Easy.Ctx
   alias Easy.Orgs.Coach
   alias Easy.Repo
-  alias Easy.Training.ScheduleEntry
   alias Easy.Training.TrainingPlan
   alias Easy.Training.TrainingWorkout
   alias Easy.Training.TrainingWorkoutExercise
@@ -21,7 +20,6 @@ defmodule Easy.TrainingPlans do
       TrainingPlan
       |> TrainingPlan.for_business(business_id)
       |> TrainingPlan.include_workouts(business_id)
-      |> TrainingPlan.include_schedule_entries(business_id)
       |> preload(client: ^Client.for_business(business_id))
       |> Repo.get(plan_id)
 
@@ -40,7 +38,6 @@ defmodule Easy.TrainingPlans do
       TrainingPlan
       |> TrainingPlan.for_client(business_id, client.id)
       |> TrainingPlan.include_workouts(business_id)
-      |> TrainingPlan.include_schedule_entries(business_id)
       |> Repo.get(plan_id)
       |> ok_or_not_found()
     end
@@ -71,9 +68,7 @@ defmodule Easy.TrainingPlans do
       |> TrainingPlan.for_search(search)
 
     preload_fun = fn query ->
-      query
-      |> TrainingPlan.include_workouts(business_id)
-      |> TrainingPlan.include_schedule_entries(business_id)
+      TrainingPlan.include_workouts(query, business_id)
     end
 
     {:ok, paginated(base, offset, limit, preload_fun)}
@@ -97,7 +92,6 @@ defmodule Easy.TrainingPlans do
       preload_fun = fn query ->
         query
         |> TrainingPlan.include_workouts(business_id)
-        |> TrainingPlan.include_schedule_entries(business_id)
         |> preload(client: ^Client.for_business(business_id))
       end
 
@@ -122,7 +116,6 @@ defmodule Easy.TrainingPlans do
       preload_fun = fn query ->
         query
         |> TrainingPlan.include_workouts(business_id)
-        |> TrainingPlan.include_schedule_entries(business_id)
         |> preload(client: ^Client.for_business(business_id))
       end
 
@@ -199,58 +192,71 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec get_schedule(Ctx.t(), String.t()) ::
-          {:ok, %{optional(String.t()) => ScheduleEntry.t()}} | {:error, :not_found}
-  def get_schedule(%Ctx{} = ctx, plan_id) do
-    with {:ok, plan} <- get_plan(ctx, plan_id) do
-      schedule =
-        ScheduleEntry
-        |> ScheduleEntry.for_business(ctx.business_id)
-        |> ScheduleEntry.for_plan(plan.id)
-        |> ScheduleEntry.include_workout(ctx.business_id)
-        |> Repo.all()
-        |> Map.new(fn entry -> {entry.day_of_week, entry} end)
-
-      {:ok, schedule}
+  @spec update_plan_schedule(Ctx.t(), String.t(), map()) ::
+          {:ok, %{optional(String.t()) => String.t() | nil}}
+          | {:error, :not_found | :invalid_schedule}
+  def update_plan_schedule(%Ctx{} = ctx, plan_id, attrs) do
+    with {:ok, plan} <- get_plan(ctx, plan_id),
+         {:ok, schedule} <- build_schedule(attrs),
+         :ok <- ensure_workouts_in_plan(ctx.business_id, plan.id, schedule) do
+      Repo.transaction(fn -> write_schedule!(ctx.business_id, plan.id, schedule) end)
     end
   end
 
-  @spec set_day_schedule(Ctx.t(), String.t(), String.t(), String.t() | nil) ::
-          {:ok, ScheduleEntry.t() | nil} | {:error, :not_found | :invalid_day | Ecto.Changeset.t()}
-  def set_day_schedule(%Ctx{} = ctx, plan_id, day, workout_id) do
-    with {:ok, coach} <- get_coach(ctx),
-         {:ok, plan} <- get_plan(ctx, plan_id),
-         :ok <- validate_schedule_day(day) do
-      Repo.transaction(fn ->
-        set_day_schedule!(ctx.business_id, coach.id, plan.id, day, workout_id)
-      end)
-    end
-  end
-
-  defp set_day_schedule!(business_id, coach_id, plan_id, day, workout_id) do
-    ScheduleEntry
-    |> ScheduleEntry.for_business(business_id)
-    |> ScheduleEntry.for_plan(plan_id)
-    |> ScheduleEntry.for_day(day)
-    |> Repo.delete_all()
-
-    insert_schedule_entry!(business_id, coach_id, plan_id, day, workout_id)
-  end
-
-  defp insert_schedule_entry!(_business_id, _coach_id, _plan_id, _day, nil), do: nil
-
-  defp insert_schedule_entry!(business_id, coach_id, plan_id, day, workout_id) do
-    with :ok <- ensure_workout_for_plan(plan_id, business_id, workout_id),
-         {:ok, entry} <-
-           ScheduleEntry.insert_changeset(business_id, coach_id, plan_id, workout_id, %{
-             day_of_week: day
-           })
-           |> Repo.insert() do
-      Repo.preload(entry, workout: TrainingWorkout |> TrainingWorkout.for_business(business_id))
+  defp build_schedule(attrs) do
+    if Enum.all?(TrainingWorkout.days(), &Map.has_key?(attrs, &1)) do
+      {:ok, Map.new(TrainingWorkout.days(), fn day -> {Atom.to_string(day), attrs[day]} end)}
     else
-      {:error, reason} -> Repo.rollback(reason)
+      {:error, :invalid_schedule}
     end
   end
+
+  defp ensure_workouts_in_plan(business_id, plan_id, schedule) do
+    ids = schedule |> Map.values() |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    if Enum.all?(ids, &match?({:ok, _}, Ecto.UUID.cast(&1))) and
+         plan_owns_workouts?(business_id, plan_id, ids) do
+      :ok
+    else
+      {:error, :not_found}
+    end
+  end
+
+  defp plan_owns_workouts?(_business_id, _plan_id, []), do: true
+
+  defp plan_owns_workouts?(business_id, plan_id, ids) do
+    found =
+      TrainingWorkout
+      |> TrainingWorkout.for_business(business_id)
+      |> TrainingWorkout.for_plan(plan_id)
+      |> where([w], w.id in ^ids)
+      |> select([w], w.id)
+      |> Repo.all()
+
+    MapSet.new(found) == MapSet.new(ids)
+  end
+
+  defp write_schedule!(business_id, plan_id, schedule) do
+    TrainingWorkout
+    |> TrainingWorkout.for_business(business_id)
+    |> TrainingWorkout.for_plan(plan_id)
+    |> Repo.update_all(set: [weekdays: []])
+
+    schedule
+    |> Enum.reject(fn {_weekday, workout_id} -> is_nil(workout_id) end)
+    |> Enum.group_by(fn {_weekday, workout_id} -> workout_id end, fn {weekday, _} -> weekday end)
+    |> Enum.each(fn {workout_id, weekdays} ->
+      TrainingWorkout
+      |> TrainingWorkout.for_business(business_id)
+      |> TrainingWorkout.for_plan(plan_id)
+      |> where([w], w.id == ^workout_id)
+      |> Repo.update_all(set: [weekdays: Enum.sort_by(weekdays, &weekday_order/1)])
+    end)
+
+    schedule
+  end
+
+  defp weekday_order(weekday), do: Enum.find_index(TrainingWorkout.day_names(), &(&1 == weekday))
 
   defp get_client(%Ctx{} = ctx) do
     Client
@@ -294,35 +300,17 @@ defmodule Easy.TrainingPlans do
       plan ->
         day = Easy.Utils.weekday_name(date)
 
-        schedule_entry =
-          ScheduleEntry
-          |> ScheduleEntry.for_business(business_id)
-          |> ScheduleEntry.for_plan(plan.id)
-          |> ScheduleEntry.for_day(day)
-          |> ScheduleEntry.include_workout(business_id)
+        workout =
+          TrainingWorkout
+          |> TrainingWorkout.for_business(business_id)
+          |> TrainingWorkout.for_plan(plan.id)
+          |> TrainingWorkout.for_weekday(day)
+          |> TrainingWorkout.include_exercises(business_id)
+          |> limit(1)
           |> Repo.one()
 
-        workout = schedule_entry && schedule_entry.workout
-
-        {:ok, %{plan: plan, schedule_entry: schedule_entry, workout: workout, date: date, day: day}}
+        {:ok, %{plan: plan, workout: workout, date: date, day: day}}
     end
-  end
-
-  defp ensure_workout_for_plan(plan_id, business_id, workout_id) do
-    if workout_for_plan?(plan_id, business_id, workout_id), do: :ok, else: {:error, :not_found}
-  end
-
-  defp validate_schedule_day(day) do
-    valid = ScheduleEntry.days() |> Enum.map(&Atom.to_string/1)
-    if day in valid, do: :ok, else: {:error, :invalid_day}
-  end
-
-  defp workout_for_plan?(plan_id, business_id, workout_id) do
-    TrainingWorkout
-    |> TrainingWorkout.for_business(business_id)
-    |> TrainingWorkout.for_plan(plan_id)
-    |> where([w], w.id == ^workout_id)
-    |> Repo.exists?()
   end
 
   defp clone_plan(plan, attrs, relationship_changes) do
@@ -333,8 +321,7 @@ defmodule Easy.TrainingPlans do
         workouts:
           TrainingWorkout
           |> TrainingWorkout.for_business(plan.business_id)
-          |> TrainingWorkout.include_exercises(plan.business_id),
-        plan_items: ScheduleEntry |> ScheduleEntry.for_business(plan.business_id)
+          |> TrainingWorkout.include_exercises(plan.business_id)
       )
 
     Repo.transaction(fn ->
@@ -350,8 +337,7 @@ defmodule Easy.TrainingPlans do
 
   defp insert_plan_copy!(changeset, plan) do
     with {:ok, new_plan} <- Repo.insert(changeset),
-         {:ok, workout_id_map} <- copy_workouts(plan.workouts, new_plan),
-         :ok <- copy_plan_items(plan.plan_items, new_plan, workout_id_map) do
+         :ok <- copy_workouts(plan.workouts, new_plan) do
       reload_plan(new_plan)
     else
       {:error, reason} -> Repo.rollback(reason)
@@ -365,19 +351,19 @@ defmodule Easy.TrainingPlans do
   end
 
   defp copy_workouts(workouts, new_plan) do
-    Enum.reduce_while(workouts, {:ok, %{}}, fn workout, {:ok, id_map} ->
+    Enum.reduce_while(workouts, :ok, fn workout, :ok ->
       case copy_workout_into(workout, new_plan.id) do
-        {:ok, new_workout} -> {:cont, {:ok, Map.put(id_map, workout.id, new_workout.id)}}
+        {:ok, _new_workout} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
   end
 
   defp copy_workout_into(workout, dest_plan_id) do
-    attrs = %{name: workout.name, notes: workout.notes}
+    attrs = %{name: workout.name, weekdays: workout.weekdays}
 
     with {:ok, new_workout} <-
-           TrainingWorkout.insert_changeset(workout.business_id, nil, dest_plan_id, attrs)
+           TrainingWorkout.insert_changeset(workout.business_id, dest_plan_id, attrs)
            |> Repo.insert(),
          :ok <-
            copy_workout_elements(workout.workout_elements, new_workout.id, workout.business_id) do
@@ -392,28 +378,6 @@ defmodule Easy.TrainingPlans do
           business_id,
           new_workout_id,
           TrainingWorkoutExercise.copy_attrs(element)
-        )
-        |> Repo.insert()
-
-      case result do
-        {:ok, _} -> {:cont, :ok}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-  end
-
-  defp copy_plan_items(plan_items, new_plan, workout_id_map) do
-    Enum.reduce_while(plan_items, :ok, fn item, :ok ->
-      new_workout_id =
-        Map.get(workout_id_map, item.training_workout_id, item.training_workout_id)
-
-      result =
-        ScheduleEntry.insert_changeset(
-          new_plan.business_id,
-          item.creator_id,
-          new_plan.id,
-          new_workout_id,
-          %{day_of_week: item.day_of_week}
         )
         |> Repo.insert()
 
@@ -463,7 +427,6 @@ defmodule Easy.TrainingPlans do
         TrainingWorkout
         |> TrainingWorkout.for_business(business_id)
         |> TrainingWorkout.include_exercises(business_id),
-      plan_items: ScheduleEntry |> ScheduleEntry.for_business(business_id),
       client: Client.for_business(business_id)
     )
   end

@@ -6,13 +6,15 @@ defmodule EasyWeb.Coaches.PlanDayController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
+    NutritionDayMealCreateRequest,
     NutritionDayMealResponse,
+    NutritionDayMealWithMealResponse,
     NutritionPlanDayCreateRequest,
     NutritionPlanDayResponse,
     NutritionPlanDayUpdateRequest,
-    NutritionSlotOptionCreateRequest,
-    NutritionWeekdayAssignmentResponse,
-    NutritionWeekdayAssignRequest
+    NutritionScheduleRequest,
+    NutritionScheduleResponse,
+    NutritionSlotOptionMoveRequest
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
@@ -21,10 +23,10 @@ defmodule EasyWeb.Coaches.PlanDayController do
               :create,
               :update,
               :delete,
-              :assign_weekday,
-              :add_option,
-              :remove_option,
-              :make_default
+              :update_schedule,
+              :add_meal,
+              :move_option,
+              :remove_option
             ]
 
   tags ["coach nutrition plan days"]
@@ -56,7 +58,7 @@ defmodule EasyWeb.Coaches.PlanDayController do
 
   operation :delete,
     summary: "Delete a nutrition plan day",
-    description: "The last remaining day of a plan cannot be deleted.",
+    description: "The last remaining day of a plan cannot be deleted. Its weekdays move to the first remaining day.",
     operation_id: "deleteNutritionPlanDay",
     security: [%{"bearerAuth" => []}],
     parameters: [id: [in: :path, type: :string, required: true]],
@@ -67,27 +69,43 @@ defmodule EasyWeb.Coaches.PlanDayController do
       conflict: {"Last day", "application/json", ErrorResponse}
     ]
 
-  operation :assign_weekday,
-    summary: "Assign a weekday to a nutrition plan day",
-    operation_id: "assignNutritionPlanWeekday",
+  operation :update_schedule,
+    summary: "Replace a nutrition plan's weekday schedule",
+    description: "Takes the full Mon..Sun map; every weekday must point at a day of this plan.",
+    operation_id: "updateNutritionPlanSchedule",
     security: [%{"bearerAuth" => []}],
     parameters: [plan_id: [in: :path, type: :string, required: true]],
-    request_body: {"Weekday assignment", "application/json", NutritionWeekdayAssignRequest, required: true},
+    request_body: {"Schedule", "application/json", NutritionScheduleRequest, required: true},
     responses: [
-      ok: {"Assignment", "application/json", NutritionWeekdayAssignmentResponse},
+      ok: {"Schedule", "application/json", NutritionScheduleResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
-  operation :add_option,
-    summary: "Add a meal option to a plan day's slot",
-    operation_id: "addNutritionSlotOption",
+  operation :add_meal,
+    summary: "Place a meal on a plan day's slot",
+    description: "Creates a new plan meal (`name`) or places an existing one (`nutrition_meal_id`) — exactly one.",
+    operation_id: "addNutritionDayMeal",
     security: [%{"bearerAuth" => []}],
     parameters: [day_id: [in: :path, type: :string, required: true]],
-    request_body: {"Option", "application/json", NutritionSlotOptionCreateRequest, required: true},
+    request_body: {"Day meal", "application/json", NutritionDayMealCreateRequest, required: true},
     responses: [
-      created: {"Option", "application/json", NutritionDayMealResponse},
+      created: {"Day meal", "application/json", NutritionDayMealWithMealResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Too many options", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :move_option,
+    summary: "Move a meal option to another slot or position on the same day",
+    operation_id: "moveNutritionSlotOption",
+    security: [%{"bearerAuth" => []}],
+    parameters: [id: [in: :path, type: :string, required: true]],
+    request_body: {"Option", "application/json", NutritionSlotOptionMoveRequest, required: true},
+    responses: [
+      ok: {"Option", "application/json", NutritionDayMealResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       conflict: {"Too many options", "application/json", ErrorResponse}
@@ -100,17 +118,6 @@ defmodule EasyWeb.Coaches.PlanDayController do
     parameters: [id: [in: :path, type: :string, required: true]],
     responses: [
       no_content: "Option deleted",
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
-  operation :make_default,
-    summary: "Make a meal option the default choice for its slot",
-    operation_id: "makeNutritionSlotOptionDefault",
-    security: [%{"bearerAuth" => []}],
-    parameters: [id: [in: :path, type: :string, required: true]],
-    responses: [
-      ok: {"Option", "application/json", NutritionDayMealResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
@@ -142,21 +149,30 @@ defmodule EasyWeb.Coaches.PlanDayController do
     end
   end
 
-  @spec assign_weekday(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def assign_weekday(conn, _params) do
+  @spec update_schedule(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_schedule(conn, _params) do
     %{"plan_id" => plan_id} = conn.path_params
 
-    with {:ok, assignment} <- NutritionPlans.assign_weekday(conn.assigns.ctx, plan_id, conn.body_params) do
-      render(conn, :assignment, assignment: assignment)
+    with {:ok, schedule} <- NutritionPlans.update_plan_schedule(conn.assigns.ctx, plan_id, conn.body_params) do
+      render(conn, :schedule, schedule: schedule)
     end
   end
 
-  @spec add_option(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def add_option(conn, _params) do
+  @spec add_meal(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def add_meal(conn, _params) do
     %{"day_id" => day_id} = conn.path_params
 
-    with {:ok, day_meal} <- NutritionPlans.add_slot_option(conn.assigns.ctx, day_id, conn.body_params) do
-      conn |> put_status(:created) |> render(:option, day_meal: day_meal)
+    with {:ok, day_meal} <- NutritionPlans.add_day_meal(conn.assigns.ctx, day_id, conn.body_params) do
+      conn |> put_status(:created) |> render(:day_meal, day_meal: day_meal)
+    end
+  end
+
+  @spec move_option(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def move_option(conn, _params) do
+    %{"id" => day_meal_id} = conn.path_params
+
+    with {:ok, day_meal} <- NutritionPlans.move_slot_option(conn.assigns.ctx, day_meal_id, conn.body_params) do
+      render(conn, :option, day_meal: day_meal)
     end
   end
 
@@ -166,15 +182,6 @@ defmodule EasyWeb.Coaches.PlanDayController do
 
     with {:ok, _deleted} <- NutritionPlans.remove_slot_option(conn.assigns.ctx, day_meal_id) do
       send_resp(conn, :no_content, "")
-    end
-  end
-
-  @spec make_default(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def make_default(conn, _params) do
-    %{"id" => day_meal_id} = conn.path_params
-
-    with {:ok, day_meal} <- NutritionPlans.make_default_option(conn.assigns.ctx, day_meal_id) do
-      render(conn, :option, day_meal: day_meal)
     end
   end
 end

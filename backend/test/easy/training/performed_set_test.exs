@@ -69,7 +69,7 @@ defmodule Easy.Training.TrainingPerformedSetTest do
     coach = insert(:coach, business: business)
     client = insert(:client, user: insert(:user), creator: coach, business: business)
     plan = insert(:training_plan, creator: coach, business: business, client_id: client.id)
-    workout = insert(:workout, plan: plan, creator: coach, business: business)
+    workout = insert(:workout, plan: plan, business: business)
     exercise = insert(:exercise, business: business)
 
     insert(:workout_element,

@@ -1,6 +1,7 @@
 defmodule Easy.Nutrition.DayMeal do
   use Ecto.Schema
 
+  alias Easy.MealSlot
   alias Easy.Nutrition.Meal
   alias Easy.Orgs
 
@@ -12,13 +13,8 @@ defmodule Easy.Nutrition.DayMeal do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @meal_slots [:breakfast, :morning_snack, :lunch, :afternoon_snack, :dinner, :evening_snack]
-
-  @spec meal_slots() :: [atom()]
-  def meal_slots, do: @meal_slots
-
   schema "nutrition_day_meals" do
-    field :meal_slot, Ecto.Enum, values: @meal_slots
+    field :meal_slot, Ecto.Enum, values: MealSlot.values()
     field :position, :integer
 
     belongs_to :business, Orgs.Business
@@ -35,9 +31,13 @@ defmodule Easy.Nutrition.DayMeal do
     |> put_change(:business_id, business_id)
     |> put_change(:nutrition_plan_day_id, plan_day_id)
     |> validate_required([:meal_slot, :position, :nutrition_meal_id, :nutrition_plan_day_id, :business_id])
-    |> unique_constraint([:nutrition_plan_day_id, :meal_slot, :position],
-      name: :nutrition_day_meals_day_slot_position_index
-    )
+  end
+
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(day_meal, attrs) do
+    day_meal
+    |> cast(attrs, [:meal_slot, :position])
+    |> validate_required([:meal_slot, :position])
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

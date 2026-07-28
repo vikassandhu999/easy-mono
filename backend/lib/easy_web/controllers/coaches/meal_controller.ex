@@ -7,57 +7,14 @@ defmodule EasyWeb.Coaches.MealController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    NutritionMealListResponse,
     NutritionMealRequest,
     NutritionMealResponse
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
-       [json_render_error_v2: true] when action in [:create, :update, :delete]
+       [json_render_error_v2: true] when action in [:update, :delete]
 
   tags ["coach meals"]
-
-  operation :create,
-    summary: "Create meal",
-    description: "Creates a meal in a nutrition plan.",
-    operation_id: "createMeal",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:plan_id, :path, :string, "Nutrition plan id")],
-    request_body: {"Meal request", "application/json", NutritionMealRequest, required: true},
-    responses: [
-      created: {"Meal created", "application/json", NutritionMealResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse},
-      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :index,
-    summary: "List meals",
-    description: "Lists meals in a nutrition plan.",
-    operation_id: "listMeals",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:plan_id, :path, :string, "Nutrition plan id"),
-      Operation.parameter(:offset, :query, :integer, "Number of meals to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum meals to return", required: false)
-    ],
-    responses: [
-      ok: {"Meals", "application/json", NutritionMealListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
-  operation :show,
-    summary: "Get meal",
-    description: "Loads one meal with meal items.",
-    operation_id: "getMeal",
-    security: [%{"bearerAuth" => []}],
-    parameters: [Operation.parameter(:id, :path, :string, "Meal id")],
-    responses: [
-      ok: {"Meal", "application/json", NutritionMealResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
 
   operation :update,
     summary: "Update meal",
@@ -85,24 +42,6 @@ defmodule EasyWeb.Coaches.MealController do
       not_found: {"Not found", "application/json", ErrorResponse}
     ]
 
-  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, _params) do
-    plan_id = conn.path_params["plan_id"]
-
-    with {:ok, meal} <- Meals.create_meal(conn.assigns.ctx, plan_id, conn.body_params) do
-      conn
-      |> put_status(:created)
-      |> render(:show, meal: meal)
-    end
-  end
-
-  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"id" => meal_id}) do
-    with {:ok, meal} <- Meals.get_meal_with_items(conn.assigns.ctx, meal_id) do
-      render(conn, :show, meal: meal)
-    end
-  end
-
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
     meal_id = conn.path_params["id"]
@@ -118,19 +57,6 @@ defmodule EasyWeb.Coaches.MealController do
 
     with {:ok, _deleted} <- Meals.delete_meal(conn.assigns.ctx, meal_id) do
       send_resp(conn, :no_content, "")
-    end
-  end
-
-  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, %{"plan_id" => plan_id} = params) do
-    offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 20)
-
-    with {:ok, %{count: count, meals: meals}} <-
-           Meals.list_meals(conn.assigns.ctx, plan_id, offset: offset, limit: limit) do
-      conn
-      |> put_status(:ok)
-      |> render(:index, count: count, meals: meals)
     end
   end
 end

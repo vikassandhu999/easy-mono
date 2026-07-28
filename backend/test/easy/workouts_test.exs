@@ -14,8 +14,8 @@ defmodule Easy.WorkoutsTest do
       template = insert(:training_plan, business: business, creator: trainer_a)
       client_plan = insert(:training_plan, business: business, creator: trainer_b, client: client_b)
 
-      template_workout = insert(:workout, plan: template, business: business, creator: trainer_a)
-      client_workout = insert(:workout, plan: client_plan, business: business, creator: trainer_b)
+      template_workout = insert(:workout, plan: template, business: business)
+      client_workout = insert(:workout, plan: client_plan, business: business)
 
       client_exercise = insert(:exercise, business: business)
 
@@ -35,10 +35,9 @@ defmodule Easy.WorkoutsTest do
       }
     end
 
-    test "get_workout_with_elements returns :not_found for a workout on another trainer's client's plan",
+    test "get_workout returns :not_found for a workout on another trainer's client's plan",
          %{trainer_a: trainer_a, client_workout: client_workout} do
-      assert {:error, :not_found} =
-               Workouts.get_workout_with_elements(trainer_ctx(trainer_a), client_workout.id)
+      assert {:error, :not_found} = Workouts.get_workout(trainer_ctx(trainer_a), client_workout.id)
     end
 
     test "update_workout returns :not_found for a workout on another trainer's client's plan", %{
@@ -56,13 +55,6 @@ defmodule Easy.WorkoutsTest do
       assert {:error, :not_found} = Workouts.delete_workout(trainer_ctx(trainer_a), client_workout.id)
     end
 
-    test "list_workouts returns :not_found for a plan belonging to another trainer's client", %{
-      trainer_a: trainer_a,
-      client_plan: client_plan
-    } do
-      assert {:error, :not_found} = Workouts.list_workouts(trainer_ctx(trainer_a), client_plan.id)
-    end
-
     test "create_workout returns :not_found for a plan belonging to another trainer's client", %{
       trainer_a: trainer_a,
       client_plan: client_plan
@@ -71,18 +63,18 @@ defmodule Easy.WorkoutsTest do
                Workouts.create_workout(trainer_ctx(trainer_a), client_plan.id, %{"name" => "New Workout"})
     end
 
-    test "create_workout_element returns :not_found for a workout on another trainer's client's plan",
-         %{trainer_a: trainer_a, client_workout: client_workout} do
+    test "create_workout_elements returns :not_found for a workout on another trainer's client's plan",
+         %{trainer_a: trainer_a, client_workout: client_workout, client_element: client_element} do
       assert {:error, :not_found} =
-               Workouts.create_workout_element(trainer_ctx(trainer_a), client_workout.id, %{
-                 "position" => 0
-               })
+               Workouts.create_workout_elements(trainer_ctx(trainer_a), client_workout.id, [
+                 %{exercise_id: client_element.exercise_id}
+               ])
     end
 
     test "update_workout_element returns :not_found for an element on another trainer's client's workout",
          %{trainer_a: trainer_a, client_element: client_element} do
       assert {:error, :not_found} =
-               Workouts.update_workout_element(trainer_ctx(trainer_a), client_element.id, %{"notes" => "x"})
+               Workouts.update_workout_element(trainer_ctx(trainer_a), client_element.id, %{"position" => 3})
     end
 
     test "delete_workout_element returns :not_found for an element on another trainer's client's workout",
@@ -103,11 +95,11 @@ defmodule Easy.WorkoutsTest do
     } do
       ctx = owner_ctx(business)
 
-      assert {:ok, %{id: id}} = Workouts.get_workout_with_elements(ctx, client_workout.id)
+      assert {:ok, %{id: id}} = Workouts.get_workout(ctx, client_workout.id)
       assert id == client_workout.id
 
       assert {:ok, _} = Workouts.update_workout(ctx, client_workout.id, %{"name" => "Renamed"})
-      assert {:ok, _} = Workouts.update_workout_element(ctx, client_element.id, %{"notes" => "y"})
+      assert {:ok, _} = Workouts.update_workout_element(ctx, client_element.id, %{"position" => 2})
       assert {:ok, _} = Workouts.delete_workout_element(ctx, client_element.id)
       assert {:ok, _} = Workouts.delete_workout(ctx, client_workout.id)
     end
@@ -116,8 +108,89 @@ defmodule Easy.WorkoutsTest do
       trainer_a: trainer_a,
       template_workout: template_workout
     } do
-      assert {:ok, %{id: id}} = Workouts.get_workout_with_elements(trainer_ctx(trainer_a), template_workout.id)
+      assert {:ok, %{id: id}} = Workouts.get_workout(trainer_ctx(trainer_a), template_workout.id)
       assert id == template_workout.id
+    end
+  end
+
+  describe "create_workout_elements/3" do
+    setup do
+      coach = insert(:coach)
+      plan = insert(:training_plan, creator: coach, business: coach.business)
+      workout = insert(:workout, plan: plan, business: coach.business)
+      exercise = insert(:exercise, business: coach.business)
+      other_exercise = insert(:exercise, business: coach.business)
+
+      %{
+        ctx: Easy.Ctx.new(coach.business_id, coach.user_id),
+        workout: workout,
+        exercise: exercise,
+        other_exercise: other_exercise
+      }
+    end
+
+    test "appends in the given order, after the workout's existing elements", %{
+      ctx: ctx,
+      workout: workout,
+      exercise: exercise,
+      other_exercise: other_exercise
+    } do
+      insert(:workout_element, workout: workout, business: workout.business, position: 0)
+
+      assert {:ok, [first, second]} =
+               Workouts.create_workout_elements(ctx, workout.id, [
+                 %{exercise_id: exercise.id, planned_sets: [%{"reps" => "8"}]},
+                 %{exercise_id: other_exercise.id, planned_sets: []}
+               ])
+
+      assert [first.position, second.position] == [1, 2]
+      assert [first.exercise_id, second.exercise_id] == [exercise.id, other_exercise.id]
+      assert first.exercise.id == exercise.id
+    end
+
+    test "writes nothing when one element names an unreachable exercise", %{
+      ctx: ctx,
+      workout: workout,
+      exercise: exercise
+    } do
+      foreign = insert(:exercise, business: insert(:business))
+
+      assert {:error, :not_found} =
+               Workouts.create_workout_elements(ctx, workout.id, [
+                 %{exercise_id: exercise.id},
+                 %{exercise_id: foreign.id}
+               ])
+
+      assert {:ok, []} = Workouts.reorder_workout_elements(ctx, workout.id, [])
+    end
+
+    test "returns :not_found for a workout in another business", %{ctx: ctx, exercise: exercise} do
+      foreign_coach = insert(:coach)
+      foreign_plan = insert(:training_plan, creator: foreign_coach, business: foreign_coach.business)
+      foreign_workout = insert(:workout, plan: foreign_plan, business: foreign_coach.business)
+
+      assert {:error, :not_found} =
+               Workouts.create_workout_elements(ctx, foreign_workout.id, [%{exercise_id: exercise.id}])
+    end
+  end
+
+  describe "reorder_workout_elements/3" do
+    test "renumbers straight to 0..n-1" do
+      coach = insert(:coach)
+      plan = insert(:training_plan, creator: coach, business: coach.business)
+      workout = insert(:workout, plan: plan, business: coach.business)
+      ctx = Easy.Ctx.new(coach.business_id, coach.user_id)
+
+      elements =
+        for position <- 0..2 do
+          insert(:workout_element, workout: workout, business: workout.business, position: position)
+        end
+
+      order = elements |> Enum.reverse() |> Enum.map(& &1.id)
+
+      assert {:ok, reordered} = Workouts.reorder_workout_elements(ctx, workout.id, order)
+      assert Enum.map(reordered, & &1.id) == order
+      assert Enum.map(reordered, & &1.position) == [0, 1, 2]
     end
   end
 end

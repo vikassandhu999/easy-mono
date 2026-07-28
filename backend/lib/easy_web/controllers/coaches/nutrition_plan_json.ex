@@ -44,7 +44,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
     |> Map.merge(%{
       meals: meals_data(plan.meals),
       days: days_data(plan.days),
-      weekday_assignments: assignments_data(plan.weekday_assignments)
+      weekday_assignments: assignments_data(plan.days)
     })
   end
 
@@ -56,6 +56,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       id: day.id,
       name: day.name,
       position: day.position,
+      weekdays: day.weekdays,
       day_meals:
         Enum.map(day.day_meals, fn dm ->
           %{id: dm.id, meal_slot: dm.meal_slot, position: dm.position, nutrition_meal_id: dm.nutrition_meal_id}
@@ -63,8 +64,8 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
     }
   end
 
-  defp assignments_data(assignments) when is_list(assignments) do
-    Map.new(assignments, fn wa -> {to_string(wa.day_of_week), wa.nutrition_plan_day_id} end)
+  defp assignments_data(days) when is_list(days) do
+    for day <- days, weekday <- day.weekdays, into: %{}, do: {weekday, day.id}
   end
 
   defp assignments_data(_), do: %{}
@@ -80,7 +81,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       id: meal.id,
       name: meal.name,
       notes: meal.notes,
-      default_meal_slot: meal.default_meal_slot,
       nutrition: MacroCalc.meal_totals(meal.meal_items),
       meal_items: meal_items_data(meal.meal_items),
       creator_id: meal.creator_id,

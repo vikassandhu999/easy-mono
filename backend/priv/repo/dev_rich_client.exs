@@ -9,7 +9,7 @@ import Ecto.Query
 alias Easy.Repo
 
 alias Easy.Clients.Client
-alias Easy.Training.{TrainingPlan, TrainingWorkout, TrainingWorkoutExercise, PlannedSet, ScheduleEntry, TrainingSession, TrainingPerformedSet, TrainingExercise}
+alias Easy.Training.{TrainingPlan, TrainingWorkout, TrainingWorkoutExercise, PlannedSet, TrainingSession, TrainingPerformedSet, TrainingExercise}
 alias Easy.Nutrition.{Plan, MealLog, FoodLogEntry, Food}
 alias Easy.Fitness.WeightEntry
 alias Easy.Forms.{FormTemplate, FormAssignment, FormSubmission, CheckInSchedule}
@@ -81,8 +81,14 @@ else
     end
   end
 
-  make_workout = fn name, exercises ->
-    w = Repo.insert!(%TrainingWorkout{name: name, business_id: bid, creator_id: coach_id, training_plan_id: plan.id})
+  make_workout = fn name, weekdays, exercises ->
+    w =
+      Repo.insert!(%TrainingWorkout{
+        name: name,
+        weekdays: weekdays,
+        business_id: bid,
+        training_plan_id: plan.id
+      })
 
     elements =
       exercises
@@ -104,22 +110,12 @@ else
     {w, elements}
   end
 
-  {push_w, push_els} = make_workout.("Push", Enum.slice(ex_pool, 0, 3))
-  {pull_w, pull_els} = make_workout.("Pull", Enum.slice(ex_pool, 3, 3))
-  {legs_w, legs_els} = make_workout.("Legs", Enum.slice(ex_pool, 6, 3))
+  # ~4 days/week, written straight onto each workout
+  {push_w, push_els} = make_workout.("Push", ["monday", "saturday"], Enum.slice(ex_pool, 0, 3))
+  {pull_w, pull_els} = make_workout.("Pull", ["tuesday"], Enum.slice(ex_pool, 3, 3))
+  {legs_w, legs_els} = make_workout.("Legs", ["thursday"], Enum.slice(ex_pool, 6, 3))
 
   workout_for = %{monday: {push_w, push_els}, tuesday: {pull_w, pull_els}, thursday: {legs_w, legs_els}, saturday: {push_w, push_els}}
-
-  # schedule entries (~4 days/week)
-  for {day, {w, _els}} <- workout_for do
-    Repo.insert!(%ScheduleEntry{
-      day_of_week: day,
-      business_id: bid,
-      creator_id: coach_id,
-      training_plan_id: plan.id,
-      training_workout_id: w.id
-    })
-  end
 
   scheduled_days = MapSet.new([:monday, :tuesday, :thursday, :saturday])
 

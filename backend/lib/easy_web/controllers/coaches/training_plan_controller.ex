@@ -58,7 +58,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
 
   operation :show,
     summary: "Get training plan",
-    description: "Loads one training plan from the authenticated business with workouts, workout elements, plan items, and assigned client summary.",
+    description: "Loads one training plan from the authenticated business with workouts, workout elements, the weekday schedule, and assigned client summary.",
     operation_id: "getTrainingPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [
@@ -118,7 +118,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
 
   operation :duplicate,
     summary: "Duplicate training plan",
-    description: "Copies a training plan template in the authenticated business, including workouts and scheduled plan items.",
+    description: "Copies a training plan template in the authenticated business, including workouts and their weekdays.",
     operation_id: "duplicateTrainingPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [

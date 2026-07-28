@@ -3,8 +3,8 @@ import {getTrainingWeekdayFromDate, TRAINING_WEEKDAYS, type TrainingWeekday} fro
 import type {ClientTrainingPlan, TrainingPlanWorkout} from '@/api/training';
 
 export function workoutForDay(plan: ClientTrainingPlan, day: TrainingWeekday): null | TrainingPlanWorkout {
-  const item = plan.plan_items.find((candidate) => candidate.day_of_week === day);
-  return item ? (plan.workouts.find((workout) => workout.id === item.training_workout_id) ?? null) : null;
+  const workoutId = plan.schedule[day];
+  return workoutId ? (plan.workouts.find((workout) => workout.id === workoutId) ?? null) : null;
 }
 
 export function estimatedMinutes(workout: TrainingPlanWorkout): null | number {

@@ -16,7 +16,7 @@
 # It prints the plan id; paste it into the manifest's `app.route` if it changes.
 
 import Ecto.Query
-alias Easy.Nutrition.{DayMeal, Food, Meal, MealItem, Plan, PlanDay, WeekdayAssignment}
+alias Easy.Nutrition.{DayMeal, Food, Meal, MealItem, Plan, PlanDay}
 alias Easy.Repo
 
 plan_name = "NB fixture — Lean Bulk"
@@ -80,10 +80,11 @@ if foods == [] do
   raise "no foods in the dev DB — run priv/repo/seeds.exs first"
 end
 
-add_day = fn name, position ->
+add_day = fn name, position, weekdays ->
   Repo.insert!(%PlanDay{
     name: name,
     position: position,
+    weekdays: weekdays,
     nutrition_plan_id: plan.id,
     business_id: business.id
   })
@@ -123,8 +124,8 @@ end
 
 [f1, f2, f3, f4, f5, f6] = foods
 
-training = add_day.("Training day", 0)
-rest = add_day.("Rest day", 1)
+training = add_day.("Training day", 0, ~w(monday tuesday wednesday thursday friday))
+rest = add_day.("Rest day", 1, ~w(saturday sunday))
 
 oats = add_meal.("Protein oats + berries", [{f1, 80}, {f2, 150}])
 yogurt = add_meal.("Greek yogurt + almonds", [{f3, 170}, {f4, 20}])
@@ -141,22 +142,5 @@ place.(training, chili, :dinner, 1)
 # Rest day: the shared meal again (drives "Used in 2 places") + an empty meal.
 place.(rest, yogurt, :breakfast, 0)
 place.(rest, empty_meal, :lunch, 0)
-
-for {weekday, day} <- [
-      monday: training,
-      tuesday: training,
-      wednesday: training,
-      thursday: training,
-      friday: training,
-      saturday: rest,
-      sunday: rest
-    ] do
-  Repo.insert!(%WeekdayAssignment{
-    nutrition_plan_id: plan.id,
-    nutrition_plan_day_id: day.id,
-    business_id: business.id,
-    day_of_week: weekday
-  })
-end
 
 IO.puts("NB fixture ready — /library/nutrition-plans/#{plan.id}")

@@ -255,13 +255,13 @@ defmodule Easy.Nutrition.MealLogTest do
       insert(:food, creator: plan.creator, business: plan.business, name: "Banana", calories_per_100g: 90.0)
 
     {:ok, _} =
-      NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: oats.id})
+      NutritionPlans.add_day_meal(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: oats.id})
 
     {:ok, _} =
-      NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: eggs.id})
+      NutritionPlans.add_day_meal(ctx, day.id, %{meal_slot: "breakfast", nutrition_meal_id: eggs.id})
 
     {:ok, _} =
-      NutritionPlans.add_slot_option(ctx, day.id, %{meal_slot: "lunch", nutrition_meal_id: rice.id})
+      NutritionPlans.add_day_meal(ctx, day.id, %{meal_slot: "lunch", nutrition_meal_id: rice.id})
 
     %{
       ctx: ctx,

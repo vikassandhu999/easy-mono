@@ -3,7 +3,7 @@ defmodule Easy.Training.TrainingSession do
 
   alias Easy.Clients
   alias Easy.Orgs
-  alias Easy.Training.{ScheduleEntry, TrainingPerformedSet, TrainingWorkout}
+  alias Easy.Training.{TrainingPerformedSet, TrainingWorkout}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -30,7 +30,6 @@ defmodule Easy.Training.TrainingSession do
     belongs_to :client, Clients.Client
     belongs_to :business, Orgs.Business
     belongs_to :workout, TrainingWorkout, foreign_key: :training_workout_id
-    belongs_to :schedule_entry, ScheduleEntry, foreign_key: :training_schedule_entry_id
     has_many :performed_sets, TrainingPerformedSet, foreign_key: :training_session_id
 
     timestamps(type: :utc_datetime)
@@ -55,7 +54,6 @@ defmodule Easy.Training.TrainingSession do
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:training_workout_id)
-    |> foreign_key_constraint(:training_schedule_entry_id)
     |> unique_constraint(:client_id,
       name: :training_sessions_active_client_index,
       message: "you already have an active workout session — finish or discard it first"

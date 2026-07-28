@@ -181,9 +181,7 @@ export function MealCard({
           // :delete_all) — mirror that, or a slot keeps pointing at an option
           // whose meal no longer exists.
           for (const day of draft.data.days ?? []) {
-            if (day.day_meals) {
-              day.day_meals = day.day_meals.filter((dm) => dm.nutrition_meal_id !== meal.id);
-            }
+            day.day_meals = day.day_meals.filter((dm) => dm.nutrition_meal_id !== meal.id);
           }
         },
         () => deleteMealMutation.mutateAsync(meal.id),

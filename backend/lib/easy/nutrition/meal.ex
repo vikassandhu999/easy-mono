@@ -15,12 +15,9 @@ defmodule Easy.Nutrition.Meal do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @meal_slots [:breakfast, :morning_snack, :lunch, :afternoon_snack, :dinner, :evening_snack]
-
   schema "nutrition_meals" do
     field :name, :string
     field :notes, :string
-    field :default_meal_slot, Ecto.Enum, values: @meal_slots
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
@@ -30,7 +27,7 @@ defmodule Easy.Nutrition.Meal do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:name, :notes, :default_meal_slot]
+  @cast_fields [:name, :notes]
 
   @spec insert_changeset(String.t(), String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, creator_id, plan_id, attrs) do
@@ -74,7 +71,9 @@ defmodule Easy.Nutrition.Meal do
 
     from(m in query,
       where: m.business_id == ^business_id,
-      order_by: [asc: m.inserted_at],
+      # `inserted_at` is second-precision, so a duplicated plan's meals all tie —
+      # without the id tie-break the plan detail's meal order is arbitrary.
+      order_by: [asc: m.inserted_at, asc: m.id],
       preload: [meal_items: ^MealItem.include_food_and_recipe(MealItem, business_id, food_query, recipe_query)]
     )
   end

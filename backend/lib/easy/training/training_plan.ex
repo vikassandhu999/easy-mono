@@ -3,7 +3,7 @@ defmodule Easy.Training.TrainingPlan do
 
   alias Easy.Clients.Client
   alias Easy.Orgs
-  alias Easy.Training.{ScheduleEntry, TrainingWorkout}
+  alias Easy.Training.TrainingWorkout
 
   import Ecto.Changeset
   import Ecto.Query
@@ -32,7 +32,6 @@ defmodule Easy.Training.TrainingPlan do
     belongs_to :client, Client
     belongs_to :source_template, __MODULE__, foreign_key: :source_template_id
     has_many :workouts, TrainingWorkout, foreign_key: :training_plan_id
-    has_many :plan_items, ScheduleEntry, foreign_key: :training_plan_id
 
     timestamps(type: :utc_datetime)
   end
@@ -175,11 +174,5 @@ defmodule Easy.Training.TrainingPlan do
       |> TrainingWorkout.include_exercises(business_id)
 
     from(t in query, preload: [workouts: ^workout_query])
-  end
-
-  @spec include_schedule_entries(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_schedule_entries(query, business_id) do
-    item_query = ScheduleEntry |> ScheduleEntry.for_business(business_id)
-    from(t in query, preload: [plan_items: ^item_query])
   end
 end

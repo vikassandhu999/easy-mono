@@ -1,8 +1,8 @@
 /**
  * Client training — new schema (generated client). Replaces the old hand-written
- * trainingPlans.ts/workoutSessions.ts wrappers. plan_items are schedule entries
- * (day_of_week, training_workout_id; missing day = rest, no workout_type/rest_days);
- * sessions have state active/completed/discarded with performed_sets vs planned_snapshot.
+ * trainingPlans.ts/workoutSessions.ts wrappers. `schedule` is the plan's Mon..Sun
+ * map of weekday -> workout id, where a null weekday is a rest day; sessions have
+ * state active/completed/discarded with performed_sets vs planned_snapshot.
  */
 import {
   clientApi,
@@ -21,7 +21,6 @@ export type {
   ClientTrainingPlan,
   TrainingPerformedSet,
   TrainingPlanExercise,
-  TrainingPlanItem,
   TrainingPlanPlannedSet,
   TrainingPlanWorkout,
   TrainingPlanWorkoutExercise,

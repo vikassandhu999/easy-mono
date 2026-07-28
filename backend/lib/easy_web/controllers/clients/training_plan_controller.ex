@@ -53,7 +53,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   operation :show,
     summary: "Get client training plan",
-    description: "Loads one training plan assigned to the authenticated client with workouts, workout elements, and plan items.",
+    description: "Loads one training plan assigned to the authenticated client with workouts, workout elements, and the weekday schedule.",
     operation_id: "getClientTrainingPlan",
     security: [%{"bearerAuth" => []}],
     parameters: [

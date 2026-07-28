@@ -15,8 +15,6 @@ defmodule EasyWeb.Coaches.WorkoutElementJSON do
     %{
       id: element.id,
       position: element.position,
-      superset_group_id: element.superset_group_id,
-      notes: element.notes,
       exercise_id: element.exercise_id,
       training_workout_id: element.training_workout_id,
       exercise: exercise_data(element.exercise),

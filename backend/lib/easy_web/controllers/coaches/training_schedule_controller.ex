@@ -6,8 +6,7 @@ defmodule EasyWeb.Coaches.TrainingScheduleController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
-    TrainingDayScheduleRequest,
-    TrainingScheduleDayResponse,
+    TrainingScheduleRequest,
     TrainingScheduleResponse
   }
 
@@ -15,47 +14,26 @@ defmodule EasyWeb.Coaches.TrainingScheduleController do
 
   tags ["coach training schedule"]
 
-  operation :show,
-    summary: "Get a training plan's weekly schedule",
-    operation_id: "getTrainingPlanSchedule",
+  operation :update,
+    summary: "Replace a training plan's weekday schedule",
+    description: "Takes the full Mon..Sun map; a null weekday is a rest day and every workout must belong to this plan.",
+    operation_id: "updateTrainingPlanSchedule",
     security: [%{"bearerAuth" => []}],
     parameters: [plan_id: [in: :path, type: :string, required: true]],
+    request_body: {"Schedule", "application/json", TrainingScheduleRequest, required: true},
     responses: [
       ok: {"Schedule", "application/json", TrainingScheduleResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
-    ]
-
-  operation :update,
-    summary: "Set a day's workout (desired state)",
-    operation_id: "setTrainingPlanDaySchedule",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      plan_id: [in: :path, type: :string, required: true],
-      day: [in: :path, type: :string, required: true]
-    ],
-    request_body: {"Day schedule", "application/json", TrainingDayScheduleRequest, required: true},
-    responses: [
-      ok: {"Updated day", "application/json", TrainingScheduleDayResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
     ]
 
-  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def show(conn, %{"plan_id" => plan_id}) do
-    with {:ok, schedule} <- TrainingPlans.get_schedule(conn.assigns.ctx, plan_id) do
-      render(conn, :show, schedule: schedule)
-    end
-  end
-
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, _params) do
-    %{"plan_id" => plan_id, "day" => day} = conn.path_params
-    workout_id = conn.body_params[:training_workout_id]
+    %{"plan_id" => plan_id} = conn.path_params
 
-    with {:ok, entry} <- TrainingPlans.set_day_schedule(conn.assigns.ctx, plan_id, day, workout_id) do
-      render(conn, :day, entry: entry)
+    with {:ok, schedule} <- TrainingPlans.update_plan_schedule(conn.assigns.ctx, plan_id, conn.body_params) do
+      render(conn, :show, schedule: schedule)
     end
   end
 end

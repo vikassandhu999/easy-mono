@@ -2,6 +2,8 @@ defmodule Easy.TrainingPlansTest do
   use Easy.DataCase, async: true
 
   alias Easy.Clients.Client
+  alias Easy.Ctx
+  alias Easy.Training.TrainingWorkout
   alias Easy.TrainingPlans
 
   describe "client visibility (trainer-team access control)" do
@@ -117,5 +119,136 @@ defmodule Easy.TrainingPlansTest do
 
       assert id == template_b.id
     end
+  end
+
+  describe "update_plan_schedule/3" do
+    setup do
+      coach = insert(:coach)
+      plan = insert(:training_plan, creator: coach, business: coach.business)
+      upper = insert(:workout, plan: plan, business: coach.business)
+      lower = insert(:workout, plan: plan, business: coach.business)
+
+      %{
+        ctx: Ctx.new(coach.business_id, coach.user_id),
+        coach: coach,
+        plan: plan,
+        upper: upper,
+        lower: lower
+      }
+    end
+
+    test "writes the whole map and empties workouts it no longer names", %{
+      ctx: ctx,
+      plan: plan,
+      upper: upper,
+      lower: lower
+    } do
+      {:ok, _} = TrainingPlans.update_plan_schedule(ctx, plan.id, rest_week(monday: lower.id))
+
+      {:ok, schedule} =
+        TrainingPlans.update_plan_schedule(
+          ctx,
+          plan.id,
+          rest_week(monday: upper.id, thursday: upper.id)
+        )
+
+      assert schedule["monday"] == upper.id
+      assert schedule["thursday"] == upper.id
+      assert schedule["sunday"] == nil
+
+      assert Repo.get!(TrainingWorkout, upper.id).weekdays == ["monday", "thursday"]
+      assert Repo.get!(TrainingWorkout, lower.id).weekdays == []
+    end
+
+    test "rejects a map missing a weekday", %{ctx: ctx, plan: plan, upper: upper} do
+      attrs = rest_week(monday: upper.id) |> Map.delete(:sunday)
+      assert {:error, :invalid_schedule} = TrainingPlans.update_plan_schedule(ctx, plan.id, attrs)
+    end
+
+    test "rejects a workout from another plan", %{ctx: ctx, coach: coach, plan: plan, upper: upper} do
+      other_plan = insert(:training_plan, creator: coach, business: coach.business)
+      other_workout = insert(:workout, plan: other_plan, business: coach.business)
+
+      assert {:error, :not_found} =
+               TrainingPlans.update_plan_schedule(ctx, plan.id, rest_week(monday: other_workout.id))
+
+      assert Repo.get!(TrainingWorkout, upper.id).weekdays == []
+    end
+
+    test "returns :not_found for a plan in another business", %{ctx: ctx} do
+      foreign_coach = insert(:coach)
+      foreign_plan = insert(:training_plan, creator: foreign_coach, business: foreign_coach.business)
+
+      assert {:error, :not_found} = TrainingPlans.update_plan_schedule(ctx, foreign_plan.id, rest_week())
+    end
+  end
+
+  describe "duplicate_plan/2" do
+    test "copies each workout's weekdays" do
+      coach = insert(:coach)
+      plan = insert(:training_plan, creator: coach, business: coach.business)
+      workout = insert(:workout, plan: plan, business: coach.business, weekdays: ["tuesday", "friday"])
+      ctx = Ctx.new(coach.business_id, coach.user_id)
+
+      assert {:ok, copy} = TrainingPlans.duplicate_plan(ctx, plan.id)
+      assert [copied] = copy.workouts
+      refute copied.id == workout.id
+      assert copied.weekdays == ["tuesday", "friday"]
+    end
+  end
+
+  describe "get_client_active_plan_day/2" do
+    test "resolves the day's workout from the workout's weekdays" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      today = Date.utc_today()
+      weekday = Easy.Utils.weekday_name(today)
+
+      plan =
+        insert(:training_plan,
+          creator: coach,
+          business: coach.business,
+          client: client,
+          start_date: Date.add(today, -1),
+          end_date: Date.add(today, 7)
+        )
+
+      workout = insert(:workout, plan: plan, business: coach.business, weekdays: [weekday])
+      _rest = insert(:workout, plan: plan, business: coach.business, weekdays: [])
+
+      ctx = Ctx.new(coach.business_id, client.user_id)
+
+      assert {:ok, %{plan: found_plan, workout: found_workout, day: ^weekday}} =
+               TrainingPlans.get_client_active_plan_day(ctx, today)
+
+      assert found_plan.id == plan.id
+      assert found_workout.id == workout.id
+    end
+
+    test "returns a nil workout on a rest day" do
+      coach = insert(:coach)
+      client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+      today = Date.utc_today()
+
+      plan =
+        insert(:training_plan,
+          creator: coach,
+          business: coach.business,
+          client: client,
+          start_date: Date.add(today, -1),
+          end_date: Date.add(today, 7)
+        )
+
+      insert(:workout, plan: plan, business: coach.business, weekdays: [])
+      ctx = Ctx.new(coach.business_id, client.user_id)
+
+      assert {:ok, %{workout: nil}} = TrainingPlans.get_client_active_plan_day(ctx, today)
+    end
+  end
+
+  defp rest_week(overrides \\ []) do
+    TrainingWorkout.days()
+    |> Map.new(&{&1, nil})
+    |> Map.merge(Map.new(overrides))
   end
 end

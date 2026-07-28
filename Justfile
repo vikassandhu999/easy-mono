@@ -57,6 +57,10 @@ openapi:
     cd backend && mix openapi.spec.json --spec EasyWeb.ApiSpec --pretty=true ../frontend/openapi/easy-openapi.json
     node frontend/scripts/split-openapi.mjs
 
+# browse the coach API in Scalar (http://localhost:4444) — edit index.html's data-url for client.openapi.json
+api-docs: openapi
+    cd frontend/openapi && python3 -m http.server 4444
+
 # regenerate the OpenAPI spec + both app clients end-to-end
 # coachapp: openapi-typescript type schema (React Query hooks are hand-written);
 # clientapp: RTK Query codegen client.

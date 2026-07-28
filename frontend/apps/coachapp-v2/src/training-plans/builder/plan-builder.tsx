@@ -72,7 +72,7 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
             setEditingSet({elementId, setIndex});
           }}
           onRenameSettled={() => setRenamingId(null)}
-          scheduledDays={daysForWorkout(plan.plan_items, activeWorkout.id)}
+          scheduledDays={daysForWorkout(plan.schedule, activeWorkout.id)}
           workout={activeWorkout}
         />
       ) : (

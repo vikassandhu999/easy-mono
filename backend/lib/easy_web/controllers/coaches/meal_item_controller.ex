@@ -7,8 +7,10 @@ defmodule EasyWeb.Coaches.MealItemController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ErrorResponse,
+    NutritionMealItemListResponse,
     NutritionMealItemRequest,
-    NutritionMealItemResponse
+    NutritionMealItemResponse,
+    NutritionMealItemsCreateRequest
   }
 
   plug OpenApiSpex.Plug.CastAndValidate,
@@ -17,14 +19,14 @@ defmodule EasyWeb.Coaches.MealItemController do
   tags ["coach meal items"]
 
   operation :create,
-    summary: "Create meal item",
-    description: "Adds a food or recipe item to a meal.",
-    operation_id: "createMealItem",
+    summary: "Create meal items",
+    description: "Adds one or more food/recipe items to a meal in a single transaction, in the order given.",
+    operation_id: "createMealItems",
     security: [%{"bearerAuth" => []}],
     parameters: [Operation.parameter(:meal_id, :path, :string, "Meal id")],
-    request_body: {"Meal item request", "application/json", NutritionMealItemRequest, required: true},
+    request_body: {"Meal items request", "application/json", NutritionMealItemsCreateRequest, required: true},
     responses: [
-      created: {"Meal item created", "application/json", NutritionMealItemResponse},
+      created: {"Meal items created", "application/json", NutritionMealItemListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       not_found: {"Not found", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
@@ -60,10 +62,10 @@ defmodule EasyWeb.Coaches.MealItemController do
   def create(conn, _params) do
     meal_id = conn.path_params["meal_id"]
 
-    with {:ok, meal_item} <- Meals.create_meal_item(conn.assigns.ctx, meal_id, conn.body_params) do
+    with {:ok, meal_items} <- Meals.create_meal_items(conn.assigns.ctx, meal_id, conn.body_params[:items]) do
       conn
       |> put_status(:created)
-      |> render(:show, meal_item: meal_item)
+      |> render(:index, meal_items: meal_items)
     end
   end
 

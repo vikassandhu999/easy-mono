@@ -13,13 +13,13 @@ import {toastMutationError} from '@/@components/mutation-toast';
 import type {TrainingExercise} from '@/api/training-exercises';
 import type {TrainingPlan, TrainingPlanWorkout} from '@/api/training-plan-builder';
 import {
-  useCreateWorkoutElementMutation,
+  useCreateWorkoutElementsMutation,
   useCreateWorkoutMutation,
   useDeleteWorkoutElementMutation,
   useDeleteWorkoutMutation,
   usePlanPatcher,
   useReorderWorkoutElementsMutation,
-  useSetTrainingPlanDayScheduleMutation,
+  useUpdateTrainingPlanScheduleMutation,
   useUpdateWorkoutMutation,
 } from '@/api/training-plan-builder';
 import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
@@ -37,8 +37,8 @@ export function usePlanBuilder(plan: TrainingPlan) {
   const createWorkoutMutation = useCreateWorkoutMutation();
   const updateWorkoutMutation = useUpdateWorkoutMutation();
   const deleteWorkoutMutation = useDeleteWorkoutMutation();
-  const setDayScheduleMutation = useSetTrainingPlanDayScheduleMutation();
-  const createElementMutation = useCreateWorkoutElementMutation();
+  const updateScheduleMutation = useUpdateTrainingPlanScheduleMutation();
+  const createElementsMutation = useCreateWorkoutElementsMutation();
   const deleteElementMutation = useDeleteWorkoutElementMutation();
   const reorderElementsMutation = useReorderWorkoutElementsMutation();
   const updatePlanMutation = useUpdateTrainingPlanMutation();
@@ -100,9 +100,9 @@ export function usePlanBuilder(plan: TrainingPlan) {
       commit(
         (draft) => {
           draft.workouts = draft.workouts.filter((workout) => workout.id !== workoutId);
-          // The backend cascades the schedule entries; mirror it, or the weekday
-          // chips keep pointing at a workout that no longer exists.
-          draft.plan_items = clearWorkoutFromSchedule(draft.plan_items, workoutId);
+          // The backend deletes the workout, and its weekdays go with it; mirror
+          // that, or the weekday chips keep pointing at a workout that is gone.
+          draft.schedule = clearWorkoutFromSchedule(draft.schedule, workoutId);
         },
         () => deleteWorkoutMutation.mutateAsync(workoutId),
         "Couldn't delete workout",
@@ -115,48 +115,57 @@ export function usePlanBuilder(plan: TrainingPlan) {
   // -------------------------------------------------------------------------
 
   /**
-   * A weekday holds at most one workout, so assigning a day implicitly takes it
-   * off whichever workout held it. That rule is the server's, and both sides of
-   * `setScheduleDay` encode it.
+   * The schedule is written whole: one PUT carrying all seven weekdays. A
+   * weekday holds at most one workout, so assigning a day implicitly takes it
+   * off whichever workout held it — that falls out of building the next map
+   * rather than being a rule either side has to remember.
    */
   const scheduleDay = useCallback(
-    (day: Day, workoutId: string | null) =>
-      commit(
+    (day: Day, workoutId: null | string) => {
+      const next = setScheduleDay(plan.schedule, day, workoutId);
+      return commit(
         (draft) => {
-          draft.plan_items = setScheduleDay(draft.plan_items, day, workoutId, planId);
+          draft.schedule = next;
         },
-        () =>
-          setDayScheduleMutation.mutateAsync({
-            planId,
-            day,
-            body: {training_workout_id: workoutId},
-          }),
+        () => updateScheduleMutation.mutateAsync({planId, body: next}),
         "Couldn't save changes",
-      ),
-    [commit, planId, setDayScheduleMutation],
+      );
+    },
+    [commit, plan.schedule, planId, updateScheduleMutation],
   );
 
   // -------------------------------------------------------------------------
   // Exercises
   // -------------------------------------------------------------------------
 
+  /**
+   * One request for the whole pick. The server appends them in the order given
+   * inside a single transaction, so there is no half-added state to reconcile:
+   * either every exercise lands or none does, and one toast covers the failure.
+   */
   const addExercises = useCallback(
     async (workoutId: string, exercises: TrainingExercise[]) => {
-      for (const exercise of exercises) {
-        try {
-          const {data: element} = await createElementMutation.mutateAsync({
-            workoutId,
-            body: {exercise_id: exercise.id, planned_sets: [blankSet()]},
-          });
-          patch((draft) => {
-            findWorkout(draft, workoutId)?.workout_elements.push(element);
-          });
-        } catch (error) {
-          toastMutationError(error, "Couldn't add exercise");
-        }
+      if (exercises.length === 0) {
+        return;
+      }
+      try {
+        const {data: elements} = await createElementsMutation.mutateAsync({
+          workoutId,
+          body: {
+            exercises: exercises.map((exercise) => ({
+              exercise_id: exercise.id,
+              planned_sets: [blankSet()],
+            })),
+          },
+        });
+        patch((draft) => {
+          findWorkout(draft, workoutId)?.workout_elements.push(...elements);
+        });
+      } catch (error) {
+        toastMutationError(error, "Couldn't add exercises");
       }
     },
-    [createElementMutation, patch],
+    [createElementsMutation, patch],
   );
 
   const removeExercise = useCallback(

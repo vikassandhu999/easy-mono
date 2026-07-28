@@ -26,10 +26,16 @@ Severity of the rule isn't the point; recurrence is.
 
 ## Backend (Elixir)
 
-### RM-001 — Ordering query builders must carry an id tie-break
+### RM-001 — Every `order_by` must be a total order, tie-break included
 `newest`/`oldest`/etc. must be `order_by: [desc: inserted_at, desc: id]` — without `:id`,
-offset/limit pagination is non-deterministic on same-second timestamps. **Enforced by:**
-review (credo doesn't catch it).
+offset/limit pagination is non-deterministic on same-second timestamps. The rule covers
+`order_by` written INLINE inside an `include_*` preload builder too, which is how
+`Meal.include_items` shipped a bare `[asc: inserted_at]`: `timestamps(type: :utc_datetime)`
+is second-precision, so every meal of a duplicated plan ties and the plan detail's meal
+order varied between reads of the same plan. If the sort key isn't unique, add `:id`.
+**Enforced by:** review (credo doesn't catch it; the multi-line forms defeat grep).
+Known outstanding: `Food.search` orders by `ts_rank` alone, so paginated food search can
+repeat or skip equally-ranked foods across pages.
 
 ### RM-002 — OpenApiSpex schema ↔ JSON view parity
 Schema generates the FE types; the view produces the response; they drift when edited

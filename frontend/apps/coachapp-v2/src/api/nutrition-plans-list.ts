@@ -29,15 +29,17 @@ export type NutritionMealItem = components['schemas']['NutritionMealItem'];
 export type NutritionPlanDay = components['schemas']['NutritionPlanDay'];
 export type NutritionDayMeal = components['schemas']['NutritionDayMeal'];
 export type MealLog = components['schemas']['MealLog'];
+export type NutritionScheduleRequest = components['schemas']['NutritionScheduleRequest'];
 
 type NutritionPlanListResponse = components['schemas']['NutritionPlanListResponse'];
 type NutritionMealItemRequest = components['schemas']['NutritionMealItemRequest'];
+type NutritionMealItemsCreateRequest = components['schemas']['NutritionMealItemsCreateRequest'];
 type NutritionMealRequest = components['schemas']['NutritionMealRequest'];
 type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
 type NutritionPlanDayCreateRequest = components['schemas']['NutritionPlanDayCreateRequest'];
 type NutritionPlanDayUpdateRequest = components['schemas']['NutritionPlanDayUpdateRequest'];
-type NutritionSlotOptionCreateRequest = components['schemas']['NutritionSlotOptionCreateRequest'];
-type NutritionWeekdayAssignRequest = components['schemas']['NutritionWeekdayAssignRequest'];
+export type NutritionDayMealCreateRequest = components['schemas']['NutritionDayMealCreateRequest'];
+type NutritionSlotOptionMoveRequest = components['schemas']['NutritionSlotOptionMoveRequest'];
 
 type ListNutritionPlansQuery = NonNullable<paths['/v1/coach/nutrition-plans']['get']['parameters']['query']>;
 type ListCoachClientNutritionPlansQuery = NonNullable<
@@ -194,11 +196,12 @@ export function useAssignNutritionPlanMutation() {
 // these invalidate anything.
 // ---------------------------------------------------------------------------
 
-export function useAssignNutritionPlanWeekdayMutation() {
+/** Full Mon..Sun map — the server replaces the plan's whole schedule with it. */
+export function useUpdateNutritionPlanScheduleMutation() {
   return useMutation({
-    mutationFn: ({body, planId}: {body: NutritionWeekdayAssignRequest; planId: string}) =>
+    mutationFn: ({body, planId}: {body: NutritionScheduleRequest; planId: string}) =>
       call(
-        client.PUT('/v1/coach/nutrition-plans/{plan_id}/weekday-assignments', {
+        client.PUT('/v1/coach/nutrition-plans/{plan_id}/schedule', {
           params: {path: {plan_id: planId}},
           body,
         }),
@@ -226,23 +229,28 @@ export function useDeleteNutritionPlanDayMutation() {
   });
 }
 
-export function useAddNutritionSlotOptionMutation() {
+/**
+ * One endpoint for both "place this plan meal here" (`nutrition_meal_id`) and
+ * "create a meal and place it" (`name`) — exactly one of the two. The response
+ * embeds the full meal, so the builder can push it into `draft.data.meals`.
+ */
+export function useAddDayMealMutation() {
   return useMutation({
-    mutationFn: ({body, dayId}: {body: NutritionSlotOptionCreateRequest; dayId: string}) =>
-      call(client.POST('/v1/coach/nutrition-days/{day_id}/options', {params: {path: {day_id: dayId}}, body})),
+    mutationFn: ({body, dayId}: {body: NutritionDayMealCreateRequest; dayId: string}) =>
+      call(client.POST('/v1/coach/nutrition-days/{day_id}/meals', {params: {path: {day_id: dayId}}, body})),
+  });
+}
+
+export function useMoveNutritionSlotOptionMutation() {
+  return useMutation({
+    mutationFn: ({body, id}: {body: NutritionSlotOptionMoveRequest; id: string}) =>
+      call(client.PATCH('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}, body})),
   });
 }
 
 export function useRemoveNutritionSlotOptionMutation() {
   return useMutation({
     mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}})),
-  });
-}
-
-export function useCreateMealMutation() {
-  return useMutation({
-    mutationFn: ({body, planId}: {body: NutritionMealRequest; planId: string}) =>
-      call(client.POST('/v1/coach/nutrition-plans/{plan_id}/meals', {params: {path: {plan_id: planId}}, body})),
   });
 }
 
@@ -259,9 +267,10 @@ export function useDeleteMealMutation() {
   });
 }
 
-export function useCreateMealItemMutation() {
+/** Batch create — one transaction, items land in the order given. */
+export function useCreateMealItemsMutation() {
   return useMutation({
-    mutationFn: ({body, mealId}: {body: NutritionMealItemRequest; mealId: string}) =>
+    mutationFn: ({body, mealId}: {body: NutritionMealItemsCreateRequest; mealId: string}) =>
       call(client.POST('/v1/coach/nutrition-meals/{meal_id}/items', {params: {path: {meal_id: mealId}}, body})),
   });
 }

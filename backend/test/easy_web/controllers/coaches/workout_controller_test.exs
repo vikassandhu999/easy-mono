@@ -25,21 +25,10 @@ defmodule EasyWeb.Coaches.WorkoutControllerTest do
     end
   end
 
-  describe "GET /v1/coach/training-plans/:plan_id/training-workouts" do
-    test "lists workouts", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, creator: coach, business: business)
-      insert(:workout, plan: plan, creator: coach, business: business)
-
-      conn = get(conn, "/v1/coach/training-plans/#{plan.id}/training-workouts")
-      assert %{"data" => data, "count" => 1} = json_response(conn, 200)
-      assert length(data) == 1
-    end
-  end
-
   describe "PATCH /v1/coach/training-workouts/:id" do
     test "updates workout", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, creator: coach, business: business)
-      workout = insert(:workout, plan: plan, creator: coach, business: business)
+      workout = insert(:workout, plan: plan, business: business)
 
       conn =
         conn

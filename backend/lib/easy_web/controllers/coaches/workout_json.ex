@@ -6,16 +6,11 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
     %{data: data(workout)}
   end
 
-  @spec index(map()) :: map()
-  def index(%{workouts: workouts, count: count}) do
-    %{data: Enum.map(workouts, &data/1), count: count}
-  end
-
   defp data(%TrainingWorkout{} = workout) do
     %{
       id: workout.id,
       name: workout.name,
-      notes: workout.notes,
+      weekdays: workout.weekdays,
       training_plan_id: workout.training_plan_id,
       workout_elements: elements_data(workout.workout_elements),
       inserted_at: workout.inserted_at,
@@ -30,8 +25,6 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
     %{
       id: element.id,
       position: element.position,
-      superset_group_id: element.superset_group_id,
-      notes: element.notes,
       exercise_id: element.exercise_id,
       training_workout_id: element.training_workout_id,
       exercise: exercise_data(element.exercise),

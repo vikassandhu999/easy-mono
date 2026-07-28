@@ -210,7 +210,9 @@ export default function TodayHome() {
         <div className="flex items-center">
           <div className="flex-1">
             <b className="text-[22px] font-extrabold">{completedThisWeek}</b>
-            <span className="text-[13px] font-bold text-muted">/{Math.max(1, plan?.plan_items.length ?? 0)}</span>
+            <span className="text-[13px] font-bold text-muted">
+              /{Math.max(1, plan ? Object.values(plan.schedule).filter(Boolean).length : 0)}
+            </span>
             <span className="mt-1 block text-[10px] font-semibold text-muted">Sessions</span>
           </div>
           <div className="h-8 w-px bg-separator" />

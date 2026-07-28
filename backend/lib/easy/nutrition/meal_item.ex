@@ -50,7 +50,6 @@ defmodule Easy.Nutrition.MealItem do
       name: :nutrition_meal_items_food_xor_recipe,
       message: "exactly one of food_id or recipe_id must be set"
     )
-    |> unique_constraint(:position, name: :nutrition_meal_items_nutrition_meal_id_position_index)
   end
 
   @update_fields [:weight_g, :amount, :unit, :position]
@@ -62,7 +61,6 @@ defmodule Easy.Nutrition.MealItem do
     |> validate_number(:weight_g, greater_than: 0)
     |> validate_number(:amount, greater_than: 0)
     |> validate_sizing()
-    |> unique_constraint(:position, name: :nutrition_meal_items_nutrition_meal_id_position_index)
   end
 
   # Food items are always weighed. Recipe items may be weighed OR sized in

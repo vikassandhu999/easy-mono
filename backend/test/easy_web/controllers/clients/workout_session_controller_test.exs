@@ -37,7 +37,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
           end_date: Date.add(Date.utc_today(), 30)
         )
 
-      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
+      workout = insert(:workout, plan: plan, business: ctx.business)
       exercise = insert(:exercise, business: ctx.business)
 
       _element =
@@ -98,7 +98,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
           end_date: Date.add(Date.utc_today(), 30)
         )
 
-      workout = insert(:workout, plan: plan, creator: ctx.coach, business: ctx.business)
+      workout = insert(:workout, plan: plan, business: ctx.business)
 
       system_exercise =
         insert(:exercise, source: "system", business: nil, name: "System Squat")

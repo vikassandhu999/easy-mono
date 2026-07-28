@@ -5,20 +5,15 @@ defmodule EasyWeb.Coaches.MealJSON do
 
   @spec show(map()) :: map()
   def show(%{meal: meal}) do
-    %{data: data(meal)}
+    %{data: meal_data(meal)}
   end
 
-  @spec index(map()) :: map()
-  def index(%{meals: meals, count: count}) do
-    %{data: Enum.map(meals, &data/1), count: count}
-  end
-
-  defp data(%Meal{} = meal) do
+  @spec meal_data(Meal.t()) :: map()
+  def meal_data(%Meal{} = meal) do
     %{
       id: meal.id,
       name: meal.name,
       notes: meal.notes,
-      default_meal_slot: meal.default_meal_slot,
       nutrition: MacroCalc.meal_totals(meal.meal_items),
       meal_items: meal_items_data(meal.meal_items),
       creator_id: meal.creator_id,

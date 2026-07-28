@@ -831,7 +831,6 @@ export type TrainingSession = {
   soreness_rating?: number | null;
   started_at: string;
   state: 'active' | 'completed' | 'discarded';
-  training_schedule_entry_id?: string | null;
   training_workout_id?: string | null;
   updated_at: string;
 };
@@ -914,10 +913,11 @@ export type NutritionDayMeal = {
   position: number;
 };
 export type NutritionPlanDay = {
-  day_meals?: NutritionDayMeal[];
+  day_meals: NutritionDayMeal[];
   id: string;
   name: string;
   position: number;
+  weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
 };
 export type NutritionMealItem = {
   amount: number | null;
@@ -941,7 +941,6 @@ export type NutritionMealItem = {
 };
 export type NutritionMeal = {
   creator_id?: string | null;
-  default_meal_slot?: ('breakfast' | 'morning_snack' | 'lunch' | 'afternoon_snack' | 'dinner' | 'evening_snack') | null;
   id: string;
   inserted_at: string;
   meal_items: NutritionMealItem[];
@@ -961,7 +960,9 @@ export type NutritionPlan = {
   /** Clients this template is currently assigned to (0 for a client's own plan) */
   assigned_client_count?: number;
   client?: {
-    [key: string]: any;
+    first_name: string | null;
+    id: string;
+    last_name: string | null;
   } | null;
   client_id?: string | null;
   creator_id?: string | null;
@@ -1153,14 +1154,14 @@ export type Conversation = {
 export type ConversationResponse = {
   data: Conversation;
 };
-export type TrainingPlanItem = {
-  creator_id?: string;
-  day_of_week: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-  id: string;
-  inserted_at: string;
-  training_plan_id: string;
-  training_workout_id: string;
-  updated_at: string;
+export type TrainingSchedule = {
+  friday: string | null;
+  monday: string | null;
+  saturday: string | null;
+  sunday: string | null;
+  thursday: string | null;
+  tuesday: string | null;
+  wednesday: string | null;
 };
 export type TrainingPlanPlannedSet = {
   distance_unit: ('meters' | 'km' | 'miles' | 'none') | null;
@@ -1179,10 +1180,8 @@ export type TrainingPlanWorkoutExercise = {
   exercise_id: string;
   id: string;
   inserted_at: string;
-  notes: string | null;
   planned_sets: TrainingPlanPlannedSet[];
   position: number;
-  superset_group_id: string | null;
   updated_at: string;
   workout_id?: string;
 };
@@ -1190,9 +1189,9 @@ export type TrainingPlanWorkout = {
   id: string;
   inserted_at: string;
   name: string;
-  notes: string | null;
   training_plan_id?: string;
   updated_at: string;
+  weekdays: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[];
   workout_elements: TrainingPlanWorkoutExercise[];
 };
 export type ClientTrainingPlan = {
@@ -1201,7 +1200,7 @@ export type ClientTrainingPlan = {
   id: string;
   inserted_at: string;
   name: string;
-  plan_items: TrainingPlanItem[];
+  schedule: TrainingSchedule;
   start_date: string | null;
   status: 'active' | 'archived';
   updated_at: string;

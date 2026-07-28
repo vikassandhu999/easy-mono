@@ -6,7 +6,8 @@
  * One entry, one key: `trainingPlanKeys.detail(planId)`. `getTrainingPlan`
  * already returns the whole tree: workouts, their elements, each element's
  * exercise (with `tracking_type`), the planned sets, and the weekday schedule
- * as `plan_items` — server-ordered by `TrainingWorkout.oldest()` and
+ * as `schedule` (a Mon..Sun map derived from each workout's `weekdays`) —
+ * server-ordered by `TrainingWorkout.oldest()` and
  * `TrainingWorkoutExercise.by_position()`. The builder used to fetch
  * `listWorkouts` and `getTrainingPlanSchedule` on top of it, which put the
  * literal `{planId, limit: 100}` at nine hand-written call sites. Query keys
@@ -37,15 +38,17 @@ import type {components} from '@/api/schema';
 export type TrainingPlan = components['schemas']['TrainingPlan'];
 export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
 export type TrainingPlanWorkoutExercise = components['schemas']['TrainingPlanWorkoutExercise'];
-export type TrainingPlanItem = components['schemas']['TrainingPlanItem'];
+export type TrainingSchedule = components['schemas']['TrainingSchedule'];
 export type TrainingPlanPlannedSet = components['schemas']['TrainingPlanPlannedSet'];
 
 type TrainingPlanResponse = components['schemas']['TrainingPlanResponse'];
 type TrainingWorkoutRequest = components['schemas']['TrainingWorkoutRequest'];
 type TrainingWorkoutUpdateRequest = components['schemas']['TrainingWorkoutUpdateRequest'];
 type TrainingWorkoutResponse = components['schemas']['TrainingWorkoutResponse'];
-type TrainingDayScheduleRequest = components['schemas']['TrainingDayScheduleRequest'];
+type TrainingScheduleRequest = components['schemas']['TrainingScheduleRequest'];
+type TrainingScheduleResponse = components['schemas']['TrainingScheduleResponse'];
 type TrainingWorkoutExerciseRequest = components['schemas']['TrainingWorkoutExerciseRequest'];
+type TrainingWorkoutExercisesCreateRequest = components['schemas']['TrainingWorkoutExercisesCreateRequest'];
 type TrainingWorkoutExerciseResponse = components['schemas']['TrainingWorkoutExerciseResponse'];
 type TrainingWorkoutReorderRequest = components['schemas']['TrainingWorkoutReorderRequest'];
 type TrainingWorkoutExerciseArrayResponse = components['schemas']['TrainingWorkoutExerciseArrayResponse'];
@@ -148,15 +151,16 @@ export function useDeleteWorkoutMutation() {
 // Weekly schedule
 // ---------------------------------------------------------------------------
 
-export function useSetTrainingPlanDayScheduleMutation() {
+/** Full Mon..Sun map — the server replaces the plan's whole schedule with it. */
+export function useUpdateTrainingPlanScheduleMutation() {
   return useMutation({
-    mutationFn: ({planId, day, body}: {planId: string; day: string; body: TrainingDayScheduleRequest}) =>
+    mutationFn: ({planId, body}: {planId: string; body: TrainingScheduleRequest}) =>
       call(
-        client.PUT('/v1/coach/training-plans/{plan_id}/schedule/{day}', {
-          params: {path: {plan_id: planId, day}},
+        client.PUT('/v1/coach/training-plans/{plan_id}/schedule', {
+          params: {path: {plan_id: planId}},
           body,
         }),
-      ),
+      ) as Promise<TrainingScheduleResponse>,
   });
 }
 
@@ -164,15 +168,16 @@ export function useSetTrainingPlanDayScheduleMutation() {
 // Workout elements (exercises + their planned sets)
 // ---------------------------------------------------------------------------
 
-export function useCreateWorkoutElementMutation() {
+/** Batch create — one transaction, elements land in the order given. */
+export function useCreateWorkoutElementsMutation() {
   return useMutation({
-    mutationFn: ({workoutId, body}: {workoutId: string; body: TrainingWorkoutExerciseRequest}) =>
+    mutationFn: ({workoutId, body}: {workoutId: string; body: TrainingWorkoutExercisesCreateRequest}) =>
       call(
         client.POST('/v1/coach/training-workouts/{workout_id}/exercises', {
           params: {path: {workout_id: workoutId}},
           body,
         }),
-      ) as Promise<TrainingWorkoutExerciseResponse>,
+      ) as Promise<TrainingWorkoutExerciseArrayResponse>,
   });
 }
 

@@ -23,10 +23,8 @@ defmodule Easy.Factory do
   alias Easy.Nutrition.PlanDay
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
-  alias Easy.Nutrition.WeekdayAssignment
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
-  alias Easy.Training.ScheduleEntry, as: TrainingPlanItem
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingMuscle
@@ -361,17 +359,9 @@ defmodule Easy.Factory do
     %Meal{
       name: sequence(:meal_name, &"Meal #{&1}"),
       notes: nil,
-      default_meal_slot: "breakfast",
       creator: plan.creator,
       business: plan.business,
       plan: plan
-    }
-  end
-
-  def meal_attrs_factory do
-    %{
-      "name" => sequence(:meal_attr_name, &"New Meal #{&1}"),
-      "default_meal_slot" => "lunch"
     }
   end
 
@@ -381,6 +371,7 @@ defmodule Easy.Factory do
     %PlanDay{
       name: "Everyday",
       position: sequence(:plan_day_position, & &1),
+      weekdays: [],
       business: plan.business,
       plan: plan
     }
@@ -396,17 +387,6 @@ defmodule Easy.Factory do
       business: day.plan.business,
       plan_day: day,
       meal: meal
-    }
-  end
-
-  def weekday_assignment_factory do
-    day = build(:plan_day)
-
-    %WeekdayAssignment{
-      day_of_week: "monday",
-      business: day.plan.business,
-      plan: day.plan,
-      plan_day: day
     }
   end
 
@@ -501,38 +481,14 @@ defmodule Easy.Factory do
 
     %Workout{
       name: sequence(:workout_name, &"Workout #{&1}"),
-      notes: "Push day",
+      weekdays: [],
       plan: training_plan,
-      creator: training_plan.creator,
       business: training_plan.business
     }
   end
 
   def workout_attrs_factory do
-    %{
-      "name" => sequence(:workout_attr_name, &"Workout Attr #{&1}"),
-      "notes" => "Workout from test"
-    }
-  end
-
-  def training_plan_item_factory do
-    training_plan = build(:training_plan)
-    workout = build(:workout, plan: training_plan, business: training_plan.business)
-    creator = training_plan.creator
-
-    %TrainingPlanItem{
-      day_of_week: "monday",
-      plan: training_plan,
-      workout: workout,
-      business: training_plan.business,
-      creator: creator
-    }
-  end
-
-  def training_plan_item_attrs_factory do
-    %{
-      "day_of_week" => "monday"
-    }
+    %{"name" => sequence(:workout_attr_name, &"Workout Attr #{&1}")}
   end
 
   def workout_element_factory do
@@ -541,7 +497,6 @@ defmodule Easy.Factory do
 
     %WorkoutElement{
       position: 0,
-      notes: "Top set",
       workout: workout,
       exercise: exercise,
       business: workout.business,
@@ -551,8 +506,6 @@ defmodule Easy.Factory do
 
   def workout_element_attrs_factory do
     %{
-      "position" => 0,
-      "notes" => "Created via test",
       "planned_sets" => [
         %{
           "set_type" => "working",

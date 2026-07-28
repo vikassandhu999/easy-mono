@@ -5,8 +5,7 @@ import type {components} from '@/api/schema';
 
 export type Attachment = components['schemas']['Attachment'];
 export type AttachmentDownload = components['schemas']['AttachmentDownload'];
-export type AttachmentDownloadRequest = components['schemas']['AttachmentDownloadRequest'];
-export type AttachmentUpload = components['schemas']['AttachmentUpload'];
+type AttachmentDownloadRequest = components['schemas']['AttachmentDownloadRequest'];
 export type AttachmentUploadRequest = components['schemas']['AttachmentUploadRequest'];
 export type ChatMessageEmbed = components['schemas']['ChatMessageEmbed'];
 

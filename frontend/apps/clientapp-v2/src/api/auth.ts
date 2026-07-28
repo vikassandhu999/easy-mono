@@ -27,17 +27,17 @@ export type InvitationLookup =
 
 // ── Two-phase invitation acceptance ──────────────────────────
 
-export type AcceptInviteRequest = components['schemas']['AcceptInviteRequest'];
-export type AcceptInviteVerifyRequest = components['schemas']['AcceptInviteVerifyRequest'];
-export type OtpRequest = components['schemas']['OtpRequest'];
-export type AuthTokenResponse = components['schemas']['AuthTokenResponse'];
+type AcceptInviteRequest = components['schemas']['AcceptInviteRequest'];
+type AcceptInviteVerifyRequest = components['schemas']['AcceptInviteVerifyRequest'];
+type OtpRequest = components['schemas']['OtpRequest'];
+type AuthTokenResponse = components['schemas']['AuthTokenResponse'];
 
 // ── Returning-client login ───────────────────────────────────
 
 type TokenRequest = paths['/v1/auth/token']['post']['requestBody']['content']['application/json'];
 
-export type TokenOtpRequest = Extract<TokenRequest, {grant_type: 'otp'}>;
-export type TokenRefreshRequest = Extract<TokenRequest, {grant_type: 'refresh_token'}>;
+type TokenOtpRequest = Extract<TokenRequest, {grant_type: 'otp'}>;
+type TokenRefreshRequest = Extract<TokenRequest, {grant_type: 'refresh_token'}>;
 
 // ── Hooks ────────────────────────────────────────────────────
 

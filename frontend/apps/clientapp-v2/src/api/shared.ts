@@ -1,14 +1,7 @@
-export type ApiResponse<T> = {data: T};
-export type ApiListResponse<T> = {data: T[]; count: number};
-
-export type ErrorResponse = {
+type ErrorResponse = {
   error_code: string;
   error_message: string;
   error_detail?: null | Record<string, unknown>;
-};
-
-export type ValidationErrorResponse = {
-  errors: Record<string, string[]>;
 };
 
 /**
@@ -47,7 +40,7 @@ function normalizeFieldMap(raw: Record<string, unknown>): null | Record<string, 
  *
  * The third shape is new in onboarding-v2 and was missed by the previous parser.
  */
-export const getValidationErrors = (error: unknown): null | Record<string, string[]> => {
+const getValidationErrors = (error: unknown): null | Record<string, string[]> => {
   if (!error || typeof error !== 'object' || !('data' in error)) {
     return null;
   }
@@ -81,12 +74,12 @@ export const getValidationErrors = (error: unknown): null | Record<string, strin
   return null;
 };
 
-export type FormErrorResult = {
+type FormErrorResult = {
   formError: string;
   fieldErrors: null | Record<string, string[]>;
 };
 
-export const handleFormError = (error: unknown, fallbackMessage: string): FormErrorResult => {
+const handleFormError = (error: unknown, fallbackMessage: string): FormErrorResult => {
   const fieldErrors = getValidationErrors(error);
   const errorMessage =
     error && typeof error === 'object' && 'data' in error

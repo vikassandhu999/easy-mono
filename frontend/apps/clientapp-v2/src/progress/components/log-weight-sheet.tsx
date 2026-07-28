@@ -1,3 +1,4 @@
+import {formatDateISO} from '@easy/utils';
 import {toast} from '@heroui/react';
 import {Minus, Plus} from 'lucide-react';
 import {useState} from 'react';
@@ -9,7 +10,7 @@ function dateFor(when: 'Today' | 'Yesterday'): string {
   if (when === 'Yesterday') {
     date.setDate(date.getDate() - 1);
   }
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return formatDateISO(date);
 }
 
 export default function LogWeightSheet({
@@ -60,7 +61,7 @@ export default function LogWeightSheet({
         className="rounded-t-[28px] bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
         role="dialog"
       >
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#c3c7ce]" />
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--scrollbar)]" />
         <h2 className="mb-4 text-xl font-extrabold tracking-[-0.02em]">Log weight</h2>
         <div className="mb-3 flex items-center gap-2">
           <button

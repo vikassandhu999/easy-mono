@@ -11,8 +11,7 @@ import type {components, paths} from '@/api/schema';
 
 export type Food = components['schemas']['Food'];
 export type FoodLogEntry = components['schemas']['FoodLogEntry'];
-export type FoodLogEntryRequest = components['schemas']['FoodLogEntryRequest'];
-export type FoodServingSize = components['schemas']['FoodServingSize'];
+type FoodLogEntryRequest = components['schemas']['FoodLogEntryRequest'];
 export type MealLog = components['schemas']['MealLog'];
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type Recipe = components['schemas']['Recipe'];
@@ -165,7 +164,7 @@ export type TodayPlanOption = {
   meal_name: null | string;
   position: number;
 };
-export type TodayPlanSlot = {
+type TodayPlanSlot = {
   chosen_meal_id: null | string;
   meal_slot: string;
   options: TodayPlanOption[];

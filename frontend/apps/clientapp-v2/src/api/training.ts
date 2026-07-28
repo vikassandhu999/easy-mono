@@ -10,23 +10,18 @@ import {exerciseKeys, sessionKeys, trainingPlanKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 
 export type ClientTrainingPlan = components['schemas']['ClientTrainingPlan'];
-export type TrainingExercise = components['schemas']['TrainingExercise'];
 export type TrainingPerformedSet = components['schemas']['TrainingPerformedSet'];
-export type TrainingPlanExercise = components['schemas']['TrainingPlanExercise'];
-export type TrainingPlanPlannedSet = components['schemas']['TrainingPlanPlannedSet'];
 export type TrainingPlanWorkout = components['schemas']['TrainingPlanWorkout'];
-export type TrainingPlanWorkoutExercise = components['schemas']['TrainingPlanWorkoutExercise'];
 export type TrainingSession = components['schemas']['TrainingSession'];
-export type TrainingSessionRequest = components['schemas']['TrainingSessionRequest'];
-export type TrainingSessionUpdateRequest = components['schemas']['TrainingSessionUpdateRequest'];
-export type TrainingPerformedSetRequest = components['schemas']['TrainingPerformedSetRequest'];
+type TrainingSessionRequest = components['schemas']['TrainingSessionRequest'];
+type TrainingSessionUpdateRequest = components['schemas']['TrainingSessionUpdateRequest'];
+type TrainingPerformedSetRequest = components['schemas']['TrainingPerformedSetRequest'];
 
 type PlanListQuery = paths['/v1/client/training-plans']['get']['parameters']['query'];
 type SessionListQuery = paths['/v1/client/training-sessions']['get']['parameters']['query'];
 type ExerciseListQuery = paths['/v1/client/training-exercises']['get']['parameters']['query'];
 
 type PlanListResponse = components['schemas']['ClientTrainingPlanListResponse'];
-type PlanResponse = components['schemas']['ClientTrainingPlanResponse'];
 type SessionListResponse = components['schemas']['TrainingSessionListResponse'];
 type SessionResponse = components['schemas']['TrainingSessionResponse'];
 type ExerciseListResponse = components['schemas']['TrainingExerciseListResponse'];
@@ -37,14 +32,6 @@ export function useListClientTrainingPlansQuery(query: PlanListQuery = {}) {
   return useQuery({
     queryKey: trainingPlanKeys.list(query),
     queryFn: () => call(client.GET('/v1/client/training-plans', {params: {query}})) as Promise<PlanListResponse>,
-  });
-}
-
-export function useGetClientTrainingPlanQuery(id: string, options?: {enabled?: boolean}) {
-  return useQuery({
-    queryKey: trainingPlanKeys.detail(id),
-    queryFn: () => call(client.GET('/v1/client/training-plans/{id}', {params: {path: {id}}})) as Promise<PlanResponse>,
-    enabled: options?.enabled ?? true,
   });
 }
 

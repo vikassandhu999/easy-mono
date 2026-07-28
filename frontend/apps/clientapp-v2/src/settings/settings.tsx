@@ -1,7 +1,9 @@
+import {getInitials} from '@easy/utils';
 import {Avatar, Button, Separator, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
+import ErrorState from '@/@components/error-state';
 
 import PageLayout from '@/@components/page-layout';
 import SectionHeading from '@/@components/section-heading';
@@ -17,12 +19,6 @@ import {disconnectSocket} from '@/api/socket';
 import EditableRow from '@/settings/components/editable-row';
 
 // ── Helpers ─────────────────────────────────────────────────
-
-function getInitials(firstName: null | string, lastName: null | string): string {
-  const f = firstName?.charAt(0) ?? '';
-  const l = lastName?.charAt(0) ?? '';
-  return (f + l).toUpperCase() || '?';
-}
 
 function getFullName(firstName: null | string, lastName: null | string): string {
   return [firstName, lastName].filter(Boolean).join(' ');
@@ -51,7 +47,7 @@ function ProfileSection({
   profile: ClientProfile;
 }) {
   const fullName = getFullName(profile.first_name, profile.last_name);
-  const initials = getInitials(profile.first_name, profile.last_name);
+  const initials = getInitials(profile.first_name, profile.last_name) || '?';
 
   const handleNameSave = useCallback(
     async (value: string) => {
@@ -105,7 +101,7 @@ function ProfileSection({
 
 function CoachSection({coach}: {coach: ClientCoach}) {
   const coachName = getFullName(coach.first_name, coach.last_name);
-  const coachInitials = getInitials(coach.first_name, coach.last_name);
+  const coachInitials = getInitials(coach.first_name, coach.last_name) || '?';
 
   return (
     <section className="mt-6">
@@ -162,7 +158,7 @@ function MembershipSection({profile}: {profile: ClientProfile}) {
             {getFullName(profile.coach?.first_name ?? null, profile.coach?.last_name ?? null) || 'your coach'}
           </span>
           <span
-            className={`rounded-lg border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.04em] ${active ? 'border-success-border bg-[#eaf7f0] text-success-secondary' : 'border-border bg-surface-secondary text-muted'}`}
+            className={`rounded-lg border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.04em] ${active ? 'border-success-border bg-success-soft text-success-secondary' : 'border-border bg-surface-secondary text-muted'}`}
           >
             {profile.status.replaceAll('_', ' ')}
           </span>
@@ -230,16 +226,10 @@ export default function Settings() {
   if (isError || !data) {
     return (
       <PageLayout title="Settings">
-        <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <p className="text-sm text-muted">Couldn&apos;t load your settings. Check your connection and try again.</p>
-          <Button
-            onPress={() => refetch()}
-            size="sm"
-            variant="secondary"
-          >
-            Retry
-          </Button>
-        </div>
+        <ErrorState
+          message="Couldn't load your settings."
+          onRetry={() => refetch()}
+        />
       </PageLayout>
     );
   }

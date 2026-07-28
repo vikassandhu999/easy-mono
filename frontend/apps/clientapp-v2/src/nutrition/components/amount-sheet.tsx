@@ -137,7 +137,7 @@ export default function AmountSheet({
         className="rounded-t-[28px] bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-[0_-18px_50px_rgba(8,8,11,0.22)]"
         role="dialog"
       >
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#c3c7ce]" />
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--scrollbar)]" />
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="min-w-0 truncate font-semibold">{target.name}</span>
           <span className="shrink-0 text-[11px] text-muted">{target.slotLabel}</span>

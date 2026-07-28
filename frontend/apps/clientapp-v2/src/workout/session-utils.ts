@@ -160,7 +160,7 @@ export function unitLabel(unit?: null | string): string {
   return unit === 'lbs' ? 'lb' : unit === 'kg' ? 'kg' : '';
 }
 
-export function distanceUnitLabel(unit?: null | string): string {
+function distanceUnitLabel(unit?: null | string): string {
   return unit === 'km' ? 'km' : unit === 'miles' ? 'mi' : 'm';
 }
 

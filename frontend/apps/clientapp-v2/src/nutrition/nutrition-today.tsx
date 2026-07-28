@@ -3,11 +3,13 @@
  * screen: macro hero (consumed vs target, live) + meal slots logged into. No session.
  * A past date renders the same screen; future dates are read-only. Dark + periwinkle.
  */
-import {formatMacroValue} from '@easy/utils';
+
+import {formatDateISO, formatMacroValue} from '@easy/utils';
 import {Spinner, toast} from '@heroui/react';
 import {Check, ChevronDown, ChevronLeft, ChevronRight, Plus} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
+import ErrorState from '@/@components/error-state';
 
 import {ROUTES} from '@/@config/routes';
 import {
@@ -30,6 +32,7 @@ import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
 import MacroHero from '@/nutrition/components/macro-hero';
 import OptionSheet from '@/nutrition/components/option-sheet';
 import {
+  ADHERENCE_TEXT,
   adherence,
   buildSlots,
   dayTotals,
@@ -39,12 +42,6 @@ import {
 } from '@/nutrition/nutrition-utils';
 
 const VERDICT_LABEL: Record<string, string> = {on: 'on target ✓', over: 'over target', under: 'under target'};
-const VERDICT_COLOR: Record<string, string> = {on: '#127c4e', over: '#c0392b', under: '#b8770f'};
-
-function localToday(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 function shiftDate(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00`);
@@ -80,7 +77,7 @@ function Checkbox({on, disabled, onPress}: {disabled?: boolean; on: boolean; onP
 export default function NutritionToday() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const today = localToday();
+  const today = formatDateISO(new Date());
   const date = params.get('date') ?? today;
   const tomorrow = shiftDate(today, 1);
   const isPast = date < today;
@@ -288,7 +285,7 @@ export default function NutritionToday() {
     isPast && consumed.calories > 0 && targets.calories != null && adh !== 'none' ? (
       <p
         className="mt-1.5 text-[11px] font-semibold"
-        style={{color: VERDICT_COLOR[adh]}}
+        style={{color: ADHERENCE_TEXT[adh]}}
       >
         {VERDICT_LABEL[adh]}
       </p>
@@ -306,19 +303,13 @@ export default function NutritionToday() {
 
   if (logsError) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-        <p className="text-sm text-muted">Couldn't load your day. Check your connection.</p>
-        <button
-          className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground active:opacity-90"
-          onClick={() => {
-            refetchLogs();
-            refetchPlan();
-          }}
-          type="button"
-        >
-          Retry
-        </button>
-      </div>
+      <ErrorState
+        message="Couldn't load your day."
+        onRetry={() => {
+          refetchLogs();
+          refetchPlan();
+        }}
+      />
     );
   }
 

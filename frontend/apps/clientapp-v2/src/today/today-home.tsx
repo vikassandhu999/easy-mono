@@ -1,3 +1,4 @@
+import {formatDateISO, getInitials} from '@easy/utils';
 import {Spinner} from '@heroui/react';
 import {ChevronRight, Dumbbell, MessageCircle, Play, TrendingUp, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
@@ -16,22 +17,13 @@ import IntakeCard from '@/checkins/intake-card';
 import {dayTotals, planTargets} from '@/nutrition/nutrition-utils';
 import {estimatedMinutes, todayWorkout, totalSets, workoutPreviewPath} from '@/training/training-utils';
 
-function localToday(): string {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function initials(firstName?: null | string, lastName?: null | string) {
-  return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase() || '?';
-}
-
 export default function TodayHome() {
   const navigate = useNavigate();
   const {data: profileData} = useGetClientProfileQuery();
   const {data: plansData, isLoading: plansLoading} = useListClientTrainingPlansQuery({status: 'active'});
   const {data: sessionsData, isLoading: sessionsLoading} = useListClientTrainingSessionsQuery({});
   const {data: nutritionPlans} = useListClientNutritionPlansQuery({status: 'active'});
-  const {data: mealLogs, isLoading: nutritionLoading} = useListClientMealLogsQuery({date: localToday()});
+  const {data: mealLogs, isLoading: nutritionLoading} = useListClientMealLogsQuery({date: formatDateISO(new Date())});
   const {data: assignments} = useListClientFormAssignmentsQuery();
   const createSession = useCreateClientTrainingSessionMutation();
   const starting = createSession.isPending;
@@ -87,7 +79,7 @@ export default function TodayHome() {
           onClick={() => navigate(ROUTES.SETTINGS)}
           type="button"
         >
-          {initials(profile?.first_name, profile?.last_name)}
+          {getInitials(profile?.first_name, profile?.last_name) || '?'}
         </button>
       </header>
 
@@ -192,7 +184,7 @@ export default function TodayHome() {
                       {Math.round(numericValue)} / {numericTarget == null ? '—' : Math.round(numericTarget)}g
                     </span>
                   </div>
-                  <div className="h-1 overflow-hidden rounded-full bg-[#e6e7e4]">
+                  <div className="h-1 overflow-hidden rounded-full bg-[var(--border)]">
                     <div
                       className="h-full rounded-full bg-[#9aa3b2]"
                       style={{width: `${numericTarget ? Math.min(100, (numericValue / numericTarget) * 100) : 0}%`}}

@@ -3,10 +3,12 @@
  * goal, a log-weight sheet, and a recent-entries list. No mockup; follows the
  * dark + periwinkle patterns from Training/Nutrition. (Photos deferred — no photo API.)
  */
+
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft, Plus, Trash2, TrendingUp} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
+import ErrorState from '@/@components/error-state';
 
 import PageLayout from '@/@components/page-layout';
 import {asGoal, useDeleteWeightEntryMutation, useListWeightEntriesQuery, type WeightEntry} from '@/api/progress';
@@ -67,16 +69,10 @@ export default function ProgressHome() {
   if (isError) {
     return (
       <PageLayout title="Progress">
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <p className="text-sm text-muted">Couldn't load your progress.</p>
-          <button
-            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground active:opacity-90"
-            onClick={() => refetch()}
-            type="button"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorState
+          message="Couldn't load your progress."
+          onRetry={() => refetch()}
+        />
       </PageLayout>
     );
   }

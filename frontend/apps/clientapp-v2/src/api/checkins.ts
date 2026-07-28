@@ -8,8 +8,7 @@ import {formAssignmentKeys} from '@/api/keys';
 import type {components} from '@/api/schema';
 
 export type ClientProfileFormAssignment = components['schemas']['ClientProfileFormAssignment'];
-export type ClientProfileFormSubmissionRequest = components['schemas']['ClientProfileFormSubmissionRequest'];
-export type ClientProfileFormTemplate = components['schemas']['ClientProfileFormTemplate'];
+type ClientProfileFormSubmissionRequest = components['schemas']['ClientProfileFormSubmissionRequest'];
 
 type ListResponse = components['schemas']['ClientProfileFormAssignmentListResponse'];
 type AssignmentResponse = components['schemas']['ClientProfileFormAssignmentResponse'];
@@ -44,8 +43,6 @@ export function useSubmitClientFormAssignmentMutation() {
     },
   });
 }
-
-export type FormPurpose = 'check_in' | 'intake';
 
 export const PURPOSE_LABELS: Record<string, string> = {
   check_in: 'Check-in',

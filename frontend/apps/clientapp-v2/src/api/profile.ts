@@ -6,8 +6,8 @@ import type {components} from '@/api/schema';
 
 export type ClientCoach = components['schemas']['ClientProfileCoach'];
 export type ClientProfile = components['schemas']['ClientProfile'];
-export type ClientProfileResponse = components['schemas']['ClientProfileResponse'];
-export type UpdateClientProfileRequest = components['schemas']['ClientProfileUpdateRequest'];
+type ClientProfileResponse = components['schemas']['ClientProfileResponse'];
+type UpdateClientProfileRequest = components['schemas']['ClientProfileUpdateRequest'];
 
 export function useGetClientProfileQuery(options?: {enabled?: boolean}) {
   return useQuery({

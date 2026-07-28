@@ -15,7 +15,7 @@ import {
 
 function statusClass(status: AssignmentDisplayStatus): string {
   if (status.startsWith('Completed')) {
-    return 'bg-[#eaf7f0] text-success-secondary';
+    return 'bg-success-soft text-success-secondary';
   }
   if (status === 'Overdue' || status === 'Missed') {
     return 'bg-danger/10 text-danger';

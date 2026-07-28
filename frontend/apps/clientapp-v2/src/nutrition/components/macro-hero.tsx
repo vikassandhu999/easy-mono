@@ -7,9 +7,9 @@ import type {MacroTotals} from '@easy/utils';
 
 import type {Targets} from '@/nutrition/nutrition-utils';
 
-const PROTEIN = '#0485f7';
+const PROTEIN = 'var(--accent)';
 const CARBS = '#9aa3b2';
-const FAT = '#17a768';
+const FAT = 'var(--success)';
 
 function pct(value: number, target: null | number): number {
   return target ? Math.min(100, Math.round((value / target) * 100)) : 0;
@@ -24,7 +24,7 @@ function Bar({label, value, target, color}: {color: string; label: string; targe
           {Math.round(value)}/{target ?? '—'}g
         </span>
       </div>
-      <div className="mt-1 h-[5px] overflow-hidden rounded-[3px] bg-[#e6e7e4]">
+      <div className="mt-1 h-[5px] overflow-hidden rounded-[3px] bg-[var(--border)]">
         <div
           className="h-full rounded-[3px]"
           style={{background: color, width: `${pct(value, target)}%`}}
@@ -54,7 +54,7 @@ export default function MacroHero({
     <div className="mb-3 flex items-center gap-3.5 rounded-[20px] bg-[var(--ink-card)] p-4 text-white">
       <div
         className={`grid ${ring} shrink-0 place-items-center rounded-full`}
-        style={{background: `conic-gradient(#0485f7 0% ${calPct}%, #34383f ${calPct}% 100%)`}}
+        style={{background: `conic-gradient(var(--accent) 0% ${calPct}%, #34383f ${calPct}% 100%)`}}
       >
         <div className={`grid ${inner} place-items-center rounded-full bg-[var(--ink-card)] text-center`}>
           <div className="leading-none">

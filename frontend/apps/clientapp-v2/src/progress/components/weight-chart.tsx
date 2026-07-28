@@ -45,19 +45,19 @@ export default function WeightChart({entries, goal}: {entries: WeightEntry[]; go
         >
           <stop
             offset="0%"
-            stopColor="#0485f7"
+            stopColor="var(--accent)"
             stopOpacity="0.25"
           />
           <stop
             offset="100%"
-            stopColor="#0485f7"
+            stopColor="var(--accent)"
             stopOpacity="0"
           />
         </linearGradient>
       </defs>
       {goal != null ? (
         <line
-          stroke="#17a768"
+          stroke="var(--success)"
           strokeDasharray="4 4"
           strokeWidth="1"
           x1={PAD}
@@ -73,7 +73,7 @@ export default function WeightChart({entries, goal}: {entries: WeightEntry[]; go
       <path
         d={line}
         fill="none"
-        stroke="#0485f7"
+        stroke="var(--accent)"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
@@ -82,10 +82,10 @@ export default function WeightChart({entries, goal}: {entries: WeightEntry[]; go
         <circle
           cx={x(i)}
           cy={y(p.value)}
-          fill={i === pts.length - 1 ? '#0485f7' : '#fff'}
+          fill={i === pts.length - 1 ? 'var(--accent)' : 'var(--surface)'}
           key={p.id}
           r={i === pts.length - 1 ? 3.5 : 2.5}
-          stroke="#0485f7"
+          stroke="var(--accent)"
           strokeWidth="1.5"
         />
       ))}

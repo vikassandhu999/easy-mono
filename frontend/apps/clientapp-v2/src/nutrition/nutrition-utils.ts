@@ -145,6 +145,26 @@ export function planTargets(plan: NutritionPlan | undefined): Targets {
 
 export type Adherence = 'none' | 'on' | 'over' | 'under';
 
+/**
+ * The adherence palette, keyed by the bucket that decides it. Lived twice —
+ * History owned a ring + text pair, Today owned a near-copy of the text one —
+ * so the two screens could drift on what "under target" looks like.
+ * `under` and `none` have no theme token; every other entry does.
+ */
+export const ADHERENCE_RING: Record<Adherence, string> = {
+  none: '#d6d8dc',
+  on: 'var(--success)',
+  over: 'var(--danger)',
+  under: '#e2a33c',
+};
+
+export const ADHERENCE_TEXT: Record<Adherence, string> = {
+  none: 'var(--field-placeholder)',
+  on: 'var(--success-secondary)',
+  over: 'var(--danger)',
+  under: 'var(--warning)',
+};
+
 // consumed-vs-target calorie bucket (mockup thresholds: <90% under, >110% over).
 export function adherence(consumedCalories: number, targetCalories: null | number): Adherence {
   if (consumedCalories <= 0) {

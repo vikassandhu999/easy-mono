@@ -228,23 +228,3 @@ export default function CheckinField({
       );
   }
 }
-
-/** A read-only "label: value" line (used after submit). */
-export function AnswerDisplay({label, value}: {label: string; value: AnswerValue}) {
-  const text =
-    value == null || value === ''
-      ? '—'
-      : typeof value === 'boolean'
-        ? value
-          ? 'Yes'
-          : 'No'
-        : Array.isArray(value)
-          ? value.join(', ') || '—'
-          : String(value);
-  return (
-    <div>
-      <p className="text-sm text-muted">{label}</p>
-      <p className="text-sm">{text}</p>
-    </div>
-  );
-}

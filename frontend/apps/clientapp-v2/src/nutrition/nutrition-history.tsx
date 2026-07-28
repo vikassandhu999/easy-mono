@@ -3,35 +3,37 @@
  * rings) + a recent-days list. Tapping a day opens Today at that date. Reads meal-logs
  * over the week range and buckets each day on consumed-vs-target calories. Dark + periwinkle.
  */
+
+import {formatDateISO} from '@easy/utils';
 import {Spinner} from '@heroui/react';
 import {ArrowLeft, ChevronLeft, ChevronRight} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
+import ErrorState from '@/@components/error-state';
 
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {type MealLog, useListClientMealLogsQuery, useListClientNutritionPlansQuery} from '@/api/nutrition';
-import {type Adherence, adherence, dayTotals, planTargets} from '@/nutrition/nutrition-utils';
+import {
+  ADHERENCE_RING,
+  ADHERENCE_TEXT,
+  type Adherence,
+  adherence,
+  dayTotals,
+  planTargets,
+} from '@/nutrition/nutrition-utils';
 
-const RING_COLOR: Record<Adherence, string> = {none: '#d6d8dc', on: '#17a768', over: '#c0392b', under: '#e2a33c'};
-const TEXT_COLOR: Record<Adherence, string> = {none: '#9498a1', on: '#127c4e', over: '#c0392b', under: '#b8770f'};
 const SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-function fmt(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-function localToday(): string {
-  return fmt(new Date());
-}
 function mondayOf(date: string): string {
   const d = new Date(`${date}T00:00:00`);
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return fmt(d);
+  return formatDateISO(d);
 }
 function shiftDate(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00`);
   d.setDate(d.getDate() + days);
-  return fmt(d);
+  return formatDateISO(d);
 }
 // "Jun 13"
 function shortDate(date: string): string {
@@ -51,7 +53,7 @@ type DayStat = {
 export default function NutritionHistory() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.NUTRITION);
-  const today = localToday();
+  const today = formatDateISO(new Date());
   const thisWeek = mondayOf(today);
   const [weekStart, setWeekStart] = useState(thisWeek);
   const weekEnd = shiftDate(weekStart, 6);
@@ -70,7 +72,7 @@ export default function NutritionHistory() {
   const days: DayStat[] = Array.from({length: 7}, (_, i) => {
     const d = new Date(`${weekStart}T00:00:00`);
     d.setDate(d.getDate() + i);
-    const date = fmt(d);
+    const date = formatDateISO(d);
     const totals = dayTotals(byDate.get(date) ?? []);
     return {
       adh: adherence(totals.calories, target),
@@ -124,16 +126,10 @@ export default function NutritionHistory() {
           <Spinner />
         </div>
       ) : isError ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <p className="text-sm text-muted">Couldn't load your history.</p>
-          <button
-            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground active:opacity-90"
-            onClick={() => refetch()}
-            type="button"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorState
+          message="Couldn't load your history."
+          onRetry={() => refetch()}
+        />
       ) : (
         <>
           {/* week adherence strip */}
@@ -152,9 +148,9 @@ export default function NutritionHistory() {
                   <span
                     className="grid size-[30px] place-items-center rounded-full text-[8px] font-bold"
                     style={{
-                      background: `conic-gradient(${RING_COLOR[d.adh]} 0% ${Math.min(100, pct || (d.adh === 'over' ? 100 : 0))}%, #ececef 0)`,
-                      color: TEXT_COLOR[d.adh],
-                      outline: d.isToday ? '2px solid #0485f7' : undefined,
+                      background: `conic-gradient(${ADHERENCE_RING[d.adh]} 0% ${Math.min(100, pct || (d.adh === 'over' ? 100 : 0))}%, var(--border) 0)`,
+                      color: ADHERENCE_TEXT[d.adh],
+                      outline: d.isToday ? '2px solid var(--accent)' : undefined,
                       outlineOffset: d.isToday ? '1px' : undefined,
                     }}
                   >
@@ -166,19 +162,20 @@ export default function NutritionHistory() {
           </div>
 
           {/* legend */}
+          {/* Swatches come from the same palette the rings do, so the legend cannot drift from what it labels. */}
           <div className="mb-4 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted">
-            <span>
-              <span style={{color: '#17a768'}}>●</span> on target
-            </span>
-            <span>
-              <span style={{color: '#e2a33c'}}>●</span> under
-            </span>
-            <span>
-              <span style={{color: '#c0392b'}}>●</span> over
-            </span>
-            <span>
-              <span style={{color: '#9498a1'}}>●</span> no log
-            </span>
+            {(
+              [
+                ['on', 'on target'],
+                ['under', 'under'],
+                ['over', 'over'],
+                ['none', 'no log'],
+              ] as const
+            ).map(([key, label]) => (
+              <span key={key}>
+                <span style={{color: ADHERENCE_RING[key]}}>●</span> {label}
+              </span>
+            ))}
           </div>
 
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Recent days</p>

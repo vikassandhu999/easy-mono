@@ -1,9 +1,9 @@
-import {Button, Toast} from '@heroui/react';
+import {Toast} from '@heroui/react';
 import {CalendarDays, ClipboardCheck, Dumbbell, MessageCircle, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
-
 import {AwaitingSeatScreen} from '@/@components/awaiting-seat-screen';
+import ErrorState from '@/@components/error-state';
 import SplashScreen from '@/@components/splash-screen';
 import {ROUTES} from '@/@config/routes';
 import {useGetClientConversationQuery} from '@/api/conversation';
@@ -94,17 +94,11 @@ export default function AppShell() {
   // a genuinely awaiting_seat client on a flaky network must not see the shell.
   if (isProfileError && !profile) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background px-6 text-center">
-        <h1 className="text-xl font-semibold text-foreground">Couldn't load your profile</h1>
-        <p className="text-sm text-muted">Check your connection and try again.</p>
-        <Button
-          className="mt-4"
-          onPress={() => refetchProfile()}
-          size="sm"
-          variant="ghost"
-        >
-          Retry
-        </Button>
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <ErrorState
+          message="Couldn't load your profile."
+          onRetry={() => refetchProfile()}
+        />
       </div>
     );
   }

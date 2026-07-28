@@ -203,7 +203,7 @@ function SetRow({
 
   return (
     <div
-      className={`grid grid-cols-[28px_1fr_42px] items-center gap-2 rounded-[13px] p-1.5 ${logged ? 'bg-[#eef7f1]' : 'bg-surface-secondary'}`}
+      className={`grid grid-cols-[28px_1fr_42px] items-center gap-2 rounded-[13px] p-1.5 ${logged ? 'bg-success-soft' : 'bg-surface-secondary'}`}
     >
       <span className="text-center text-xs font-extrabold text-muted">{index + 1}</span>
       <div className="flex min-w-0 gap-1.5">
@@ -596,7 +596,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
             <ElapsedClock startedAt={session.started_at} />
           </div>
           <button
-            className="shrink-0 rounded-[11px] border border-success-border bg-[#eaf7f0] px-4 py-2 text-[13px] font-extrabold text-success-secondary"
+            className="shrink-0 rounded-[11px] border border-success-border bg-success-soft px-4 py-2 text-[13px] font-extrabold text-success-secondary"
             onClick={finishOverlay.open}
             type="button"
           >
@@ -604,7 +604,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
           </button>
         </div>
         <div className="mt-3 flex items-center gap-2.5">
-          <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[#e6e7e4]">
+          <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--border)]">
             <div
               className="h-full rounded-full bg-accent transition-[width]"
               style={{width: `${overallTotal ? (overallDone / overallTotal) * 100 : 0}%`}}
@@ -649,7 +649,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
         {cards.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted">This workout has no exercises.</p>
         ) : currentCard ? (
-          <div className="mb-5 rounded-3xl bg-surface p-4 shadow-[0_0_0_1.5px_#0485f7,0_10px_24px_-18px_rgba(18,20,26,0.28)]">
+          <div className="mb-5 rounded-3xl bg-surface p-4 shadow-[0_0_0_1.5px_var(--accent),0_10px_24px_-18px_rgba(18,20,26,0.28)]">
             <div className="mb-3 flex items-center justify-between">
               <span className="rounded-lg bg-accent-soft px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.06em] text-accent">
                 Exercise {currentPosition + 1} of {cards.length}
@@ -715,7 +715,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
             </div>
           </div>
         ) : (
-          <div className="mb-4 rounded-2xl border border-success-border bg-[#eef7f1] p-4 text-center text-success-secondary">
+          <div className="mb-4 rounded-2xl border border-success-border bg-success-soft p-4 text-center text-success-secondary">
             <Check
               className="mx-auto mb-1"
               size={24}
@@ -801,7 +801,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
             className="rounded-t-[28px] bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
             role="dialog"
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#c3c7ce]" />
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--scrollbar)]" />
             <h2 className="mb-4 text-[21px] font-extrabold tracking-[-0.02em]">Nice work — finish up?</h2>
             <div className="mb-4 grid grid-cols-3 gap-2">
               {[

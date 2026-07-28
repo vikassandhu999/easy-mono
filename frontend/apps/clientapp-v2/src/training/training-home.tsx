@@ -53,7 +53,7 @@ function PlanCard({plan}: {plan: ClientTrainingPlan}) {
       <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted">Current plan</p>
       <h2 className="mt-2 text-lg font-extrabold tracking-[-0.02em]">{plan.name}</h2>
       <div className="mt-3 flex items-center gap-2.5">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#e6e7e4]">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--border)]">
           <div
             className="h-full rounded-full bg-accent"
             style={{width: `${Math.min(100, (week.current / week.total) * 100)}%`}}

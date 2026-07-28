@@ -10,13 +10,13 @@ import {weightEntryKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 
 export type WeightEntry = components['schemas']['WeightEntry'];
-export type WeightEntryRequest = components['schemas']['WeightEntryRequest'];
+type WeightEntryRequest = components['schemas']['WeightEntryRequest'];
 
 type ListQuery = paths['/v1/client/weight_entries']['get']['parameters']['query'];
 type ListResponse = components['schemas']['WeightEntryListResponse'];
 type EntryResponse = components['schemas']['WeightEntryResponse'];
 
-export type WeightGoal = {unit?: null | string; value?: null | number};
+type WeightGoal = {unit?: null | string; value?: null | number};
 
 export function asGoal(goal: unknown): null | WeightGoal {
   return goal && typeof goal === 'object' ? (goal as WeightGoal) : null;

@@ -35,6 +35,7 @@ lint:
     ./scripts/check-rm.sh
     ./scripts/check-ui-contract.sh
     ./scripts/check-theme-selectors.sh
+    ./scripts/check-color-utilities.sh
 
 # mechanical checks from docs/agents/recurring-mistakes.md
 check-rm:

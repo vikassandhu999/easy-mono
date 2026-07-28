@@ -411,7 +411,7 @@ function SectionCard({
               boxed field, until focused. */}
           <Input
             className={cn(
-              'border-transparent bg-transparent px-0 font-semibold focus:border-border focus:bg-field-background focus:px-3',
+              'border-transparent bg-transparent px-0 font-semibold focus:border-border focus:bg-surface focus:px-3',
             )}
             placeholder="Section title"
           />

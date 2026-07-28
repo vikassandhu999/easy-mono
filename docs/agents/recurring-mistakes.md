@@ -291,6 +291,19 @@ reading `textContent` off the live node — `"Upper A 3"`, not `"Upper A3"`. **N
 the shape is a JSX child list, not a class string, so there is no reliable grep for the
 MISSING case; this one stays prose until a lint rule can see it.
 
+### RM-142 — A colour utility needs a `--color-*` alias, not just the var
+Declaring `--success-secondary: #127c4e` does NOT make `text-success-secondary`
+work. Tailwind generates the utility from the `--color-*` alias, and HeroUI ships
+that alias for most of its vars but not all. clientapp declared the var, used the
+utility in 12 places, and rendered inherited near-black in all 12 — chat "Online",
+completed-set ticks, weight deltas, the membership badge, the workout finish
+banner. coachapp had the same shape on `bg-field-background`. It fails silently and
+does not *look* broken: dead colour reads as "that text is dark", not as a bug.
+Fix is one line in the app's `@theme inline`: `--color-x: var(--x);`. **Gated:**
+`scripts/check-color-utilities.sh` (in `just lint`) flags any token the app
+declares that is used as a utility and has no alias. **Verify by:**
+`getComputedStyle` on a probe element, never by eye.
+
 ### RM-141 — The overlay gutter is one theme rule, not a per-surface choice
 Every overlay surface (keyboard sheet, popover, picker bands) keeps content 16px from the
 edge, but the two vendor dialogs shipped `p-6` and call sites were re-deciding the gutter

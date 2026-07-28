@@ -3,6 +3,18 @@
 
 @theme inline {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* HeroUI ships a `--color-*` alias for most of its vars, which is what makes
+     `text-muted` / `bg-accent` resolve. It ships NONE for these three, so
+     `text-success-secondary` and `border-success-border` were silently no-ops —
+     twelve and three call sites rendering inherited near-black / default grey
+     instead of green (chat "Online", completed-set ✓, weight deltas, the
+     membership badge, the workout finish banner). Registering the alias here is
+     what generates the utility. Verify with getComputedStyle, not by eye: a dead
+     colour utility looks like "inherited", not like "broken". */
+  --color-success-secondary: var(--success-secondary);
+  --color-success-border: var(--success-border);
+  --color-success-soft: var(--success-soft);
 }
 
 @layer base {
@@ -47,6 +59,7 @@
     --success-foreground: #fff;
     --success-secondary: #127c4e;
     --success-border: #b9e2cc;
+    --success-soft: #eaf7f0;
     --warning: #b8770f;
     --warning-foreground: #12141a;
     --danger: #c0392b;

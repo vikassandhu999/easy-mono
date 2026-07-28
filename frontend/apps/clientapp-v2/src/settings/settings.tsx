@@ -6,16 +6,15 @@ import {useNavigate} from 'react-router-dom';
 import PageLayout from '@/@components/page-layout';
 import SectionHeading from '@/@components/section-heading';
 import {clearTokens} from '@/api/authStorage';
-import {api} from '@/api/base';
 import {
   type ClientCoach,
   type ClientProfile,
   useGetClientProfileQuery,
   useUpdateClientProfileMutation,
 } from '@/api/profile';
+import {queryClient} from '@/api/query-client';
 import {disconnectSocket} from '@/api/socket';
 import EditableRow from '@/settings/components/editable-row';
-import {store} from '@/store';
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -48,7 +47,7 @@ function ProfileSection({
   onUpdate,
   profile,
 }: {
-  onUpdate: ReturnType<typeof useUpdateClientProfileMutation>[0];
+  onUpdate: ReturnType<typeof useUpdateClientProfileMutation>['mutateAsync'];
   profile: ClientProfile;
 }) {
   const fullName = getFullName(profile.first_name, profile.last_name);
@@ -57,14 +56,14 @@ function ProfileSection({
   const handleNameSave = useCallback(
     async (value: string) => {
       const {firstName, lastName} = splitName(value.trim());
-      await onUpdate({first_name: firstName, last_name: lastName}).unwrap();
+      await onUpdate({first_name: firstName, last_name: lastName});
     },
     [onUpdate],
   );
 
   const handlePhoneSave = useCallback(
     async (value: string) => {
-      await onUpdate({phone: value.trim()}).unwrap();
+      await onUpdate({phone: value.trim()});
     },
     [onUpdate],
   );
@@ -159,7 +158,8 @@ function MembershipSection({profile}: {profile: ClientProfile}) {
       <div className="overflow-hidden rounded-[20px] border border-border bg-surface">
         <div className="flex items-center gap-3 p-4">
           <span className="min-w-0 flex-1 text-sm font-extrabold">
-            Coaching with {getFullName(profile.coach.first_name, profile.coach.last_name) || 'your coach'}
+            Coaching with{' '}
+            {getFullName(profile.coach?.first_name ?? null, profile.coach?.last_name ?? null) || 'your coach'}
           </span>
           <span
             className={`rounded-lg border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.04em] ${active ? 'border-success-border bg-[#eaf7f0] text-success-secondary' : 'border-border bg-surface-secondary text-muted'}`}
@@ -207,13 +207,13 @@ function AccountSection({email}: {email: null | string}) {
 
 export default function Settings() {
   const {data, isError, isLoading, refetch} = useGetClientProfileQuery();
-  const [updateProfile] = useUpdateClientProfileMutation();
+  const {mutateAsync: updateProfile} = useUpdateClientProfileMutation();
   const navigate = useNavigate();
 
   const handleLogout = useCallback(() => {
     clearTokens();
     disconnectSocket();
-    store.dispatch(api.util.resetApiState());
+    queryClient.clear();
     navigate('/login');
   }, [navigate]);
 
@@ -267,7 +267,7 @@ export default function Settings() {
           profile={profile}
         />
         <MembershipSection profile={profile} />
-        <CoachSection coach={profile.coach} />
+        {profile.coach ? <CoachSection coach={profile.coach} /> : null}
         <AccountSection email={profile.email} />
 
         {/* Logout */}

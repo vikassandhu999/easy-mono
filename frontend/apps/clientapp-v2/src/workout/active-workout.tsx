@@ -15,12 +15,12 @@ import {Check, ChevronDown, Minus, Pause, Play, Plus, Repeat2, SkipForward, X} f
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
-import {useListClientExercisesQuery} from '@/api/generated';
 import {
   type TrainingSession,
   useCreateClientPerformedSetMutation,
   useDeleteClientPerformedSetMutation,
   useGetClientTrainingSessionQuery,
+  useListClientExercisesQuery,
   useListClientTrainingSessionsQuery,
   useUpdateClientPerformedSetMutation,
   useUpdateClientTrainingSessionMutation,
@@ -375,10 +375,14 @@ const SORENESS_OPTIONS = [
 
 function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; session: TrainingSession}) {
   const navigate = useNavigate();
-  const [createSet, {isLoading: isLogging}] = useCreateClientPerformedSetMutation();
-  const [updateSet, {isLoading: isUpdating}] = useUpdateClientPerformedSetMutation();
-  const [deleteSet, {isLoading: isDeleting}] = useDeleteClientPerformedSetMutation();
-  const [updateSession, {isLoading: isFinishing}] = useUpdateClientTrainingSessionMutation();
+  const createSet = useCreateClientPerformedSetMutation();
+  const updateSet = useUpdateClientPerformedSetMutation();
+  const deleteSet = useDeleteClientPerformedSetMutation();
+  const updateSession = useUpdateClientTrainingSessionMutation();
+  const isLogging = createSet.isPending;
+  const isUpdating = updateSet.isPending;
+  const isDeleting = deleteSet.isPending;
+  const isFinishing = updateSession.isPending;
   const finishOverlay = useOverlayState();
 
   // Client-side session edits — the planned_snapshot is immutable, so swap/skip/add
@@ -488,29 +492,27 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
       .slice(0, cards.indexOf(card))
       .reduce((total, item) => total + (item.total ?? item.done.length + 1), 0);
     try {
-      await createSet({
+      await createSet.mutateAsync({
         sessionId: session.id,
-        trainingPerformedSetRequest: {
-          completed: true,
-          distance_unit:
-            values.distance_value == null
-              ? 'none'
-              : ((plannedSet?.distance_unit as 'km' | 'meters' | 'miles' | null) ?? 'meters'),
-          distance_value: values.distance_value,
-          duration_seconds: values.duration_seconds,
-          exercise_id: card.exercise.exercise_id ?? undefined,
-          exercise_name: card.name,
-          load_unit: values.load_value == null ? 'none' : ((plannedSet?.load_unit as 'kg' | 'lbs' | null) ?? 'kg'),
-          load_value: values.load_value,
-          // Which snapshot slot this set belongs to — null for an exercise added
-          // mid-workout. Lets the reader map sets back exactly instead of guessing.
-          planned_exercise_index: card.plannedIndex ?? undefined,
-          position: cardPosition + setIndex,
-          reps: values.reps ?? undefined,
-          set_type: (plannedSet?.set_type as 'dropset' | 'warmup' | 'working' | null) ?? 'working',
-          swapped_from_exercise_id: card.logSwappedFrom ?? undefined,
-        },
-      }).unwrap();
+        completed: true,
+        distance_unit:
+          values.distance_value == null
+            ? 'none'
+            : ((plannedSet?.distance_unit as 'km' | 'meters' | 'miles' | null) ?? 'meters'),
+        distance_value: values.distance_value,
+        duration_seconds: values.duration_seconds,
+        exercise_id: card.exercise.exercise_id ?? undefined,
+        exercise_name: card.name,
+        load_unit: values.load_value == null ? 'none' : ((plannedSet?.load_unit as 'kg' | 'lbs' | null) ?? 'kg'),
+        load_value: values.load_value,
+        // Which snapshot slot this set belongs to — null for an exercise added
+        // mid-workout. Lets the reader map sets back exactly instead of guessing.
+        planned_exercise_index: card.plannedIndex ?? undefined,
+        position: cardPosition + setIndex,
+        reps: values.reps ?? undefined,
+        set_type: (plannedSet?.set_type as 'dropset' | 'warmup' | 'working' | null) ?? 'working',
+        swapped_from_exercise_id: card.logSwappedFrom ?? undefined,
+      });
       setRest({left: restSeconds, total: restSeconds});
     } catch {
       toast.danger("Couldn't log set. Try again.");
@@ -519,7 +521,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
 
   const handleUpdate = async (id: string, values: LoggedSet) => {
     try {
-      await updateSet({id, trainingPerformedSetRequest: {...values, completed: true}}).unwrap();
+      await updateSet.mutateAsync({id, ...values, completed: true});
       await refetch();
     } catch {
       toast.danger("Couldn't update set. Try again.");
@@ -528,7 +530,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteSet({id}).unwrap();
+      await deleteSet.mutateAsync(id);
       setRest(null);
       await refetch();
     } catch {
@@ -568,7 +570,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
       }
     }
     try {
-      await updateSession({id: session.id, trainingSessionUpdateRequest: body}).unwrap();
+      await updateSession.mutateAsync({id: session.id, ...body});
       finishOverlay.close();
       toast.success(state === 'completed' ? 'Workout saved' : 'Workout discarded');
       navigate(ROUTES.TRAINING);
@@ -874,7 +876,7 @@ export default function ActiveWorkoutScreen() {
   const navigate = useNavigate();
   const {data: sessionsData, isLoading: isLoadingList} = useListClientTrainingSessionsQuery({});
   const activeId = sessionsData?.data.find((s) => s.state === 'active')?.id;
-  const {data, isLoading, refetch} = useGetClientTrainingSessionQuery({id: activeId!}, {skip: !activeId});
+  const {data, isLoading, refetch} = useGetClientTrainingSessionQuery(activeId ?? '', {enabled: Boolean(activeId)});
 
   if (isLoadingList || (activeId && isLoading)) {
     return (

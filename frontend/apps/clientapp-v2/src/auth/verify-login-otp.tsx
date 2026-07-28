@@ -6,9 +6,8 @@ import {z} from 'zod';
 import {FormOtpField} from '@/@components/form-otp-field';
 
 import {ROUTES} from '@/@config/routes';
-import {useExchangeTokenMutation} from '@/api/auth';
+import {useExchangeTokenMutation, useSendOtpMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
-import {useSendOtpMutation} from '@/api/generated';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -41,8 +40,10 @@ export default function VerifyLoginOtp() {
   const navigate = useNavigate();
   const state = location.state as null | VerifyLoginOtpLocationState;
 
-  const [exchangeToken, {isLoading}] = useExchangeTokenMutation();
-  const [sendOtp, {isLoading: isResending}] = useSendOtpMutation();
+  const exchangeToken = useExchangeTokenMutation();
+  const sendOtp = useSendOtpMutation();
+  const isLoading = exchangeToken.isPending;
+  const isResending = sendOtp.isPending;
 
   const {
     control,
@@ -71,12 +72,12 @@ export default function VerifyLoginOtp() {
 
   const onSubmit = async (data: VerifyLoginOtpFormValues) => {
     try {
-      const result = await exchangeToken({
+      const result = await exchangeToken.mutateAsync({
         email: state.email,
         grant_type: 'otp',
         otp: data.otp,
         role: 'client',
-      }).unwrap();
+      });
       setTokens(result);
       // Restore the path the user was trying to reach before login.
       // Falls back to Training (home) if not set or empty.
@@ -92,7 +93,7 @@ export default function VerifyLoginOtp() {
 
   const handleResend = async () => {
     try {
-      await sendOtp({otpRequest: {email: state.email, type: 'authentication'}}).unwrap();
+      await sendOtp.mutateAsync({email: state.email, type: 'authentication'});
       toast.success('A new code is on its way.');
     } catch {
       // Resend failures go to toast, not the form root — otherwise they

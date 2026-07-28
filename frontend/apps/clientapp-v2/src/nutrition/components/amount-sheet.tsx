@@ -40,10 +40,10 @@ export default function AmountSheet({
   onReplace: (target: SheetTarget) => void;
   target: SheetTarget;
 }) {
-  const [createEntry, {isLoading: creating}] = useCreateFoodLogEntryMutation();
-  const [updateEntry, {isLoading: updating}] = useUpdateFoodLogEntryMutation();
-  const [deleteEntry, {isLoading: deleting}] = useDeleteFoodLogEntryMutation();
-  const busy = creating || updating || deleting;
+  const createEntry = useCreateFoodLogEntryMutation();
+  const updateEntry = useUpdateFoodLogEntryMutation();
+  const deleteEntry = useDeleteFoodLogEntryMutation();
+  const busy = createEntry.isPending || updateEntry.isPending || deleteEntry.isPending;
 
   const {loggedEntry, plannedItem} = target;
   // Servings mode: recipe items the plan sizes by servings (no weight) — the sheet
@@ -90,25 +90,23 @@ export default function AmountSheet({
     try {
       const portion = servings ? {amount: weight, unit: unitLabel} : {unit: 'g', weight_g: weight};
       if (loggedEntry) {
-        await updateEntry({foodLogEntryRequest: portion, id: loggedEntry.id}).unwrap();
+        await updateEntry.mutateAsync({...portion, id: loggedEntry.id});
       } else if (plannedItem) {
-        await createEntry({
-          foodLogEntryRequest: {
-            date: target.date,
-            food_id: plannedItem.food_id ?? undefined,
-            meal_id: target.mealId ?? undefined,
-            meal_slot: target.slot,
-            plan_id: target.planId,
-            planned_item_index: target.plannedIndex ?? undefined,
-            recipe_id: plannedItem.recipe_id ?? undefined,
-            source: 'planned',
-            ...portion,
-          },
-        }).unwrap();
+        await createEntry.mutateAsync({
+          date: target.date,
+          food_id: plannedItem.food_id ?? undefined,
+          meal_id: target.mealId ?? undefined,
+          meal_slot: target.slot,
+          plan_id: target.planId,
+          planned_item_index: target.plannedIndex ?? undefined,
+          recipe_id: plannedItem.recipe_id ?? undefined,
+          source: 'planned',
+          ...portion,
+        });
       }
       onClose();
     } catch {
-      // surfaced by RTK Query
+      // the mutation's error state surfaces the failure
     }
   };
 
@@ -118,10 +116,10 @@ export default function AmountSheet({
       return;
     }
     try {
-      await deleteEntry({id: loggedEntry.id}).unwrap();
+      await deleteEntry.mutateAsync(loggedEntry.id);
       onClose();
     } catch {
-      // surfaced by RTK Query
+      // the mutation's error state surfaces the failure
     }
   };
 

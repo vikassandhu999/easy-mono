@@ -11,7 +11,7 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
   const activeIdsRef = useRef(new Set(uniqueIds));
   const [downloads, setDownloads] = useState<Record<string, AttachmentDownload>>({});
   const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
-  const [getDownloadUrls] = useGetClientAttachmentDownloadUrlsMutation();
+  const {mutateAsync: getDownloadUrls} = useGetClientAttachmentDownloadUrlsMutation();
 
   activeIdsRef.current = new Set(uniqueIds);
 
@@ -31,7 +31,7 @@ export default function useAttachmentDownloadUrls(ids: string[]) {
         });
         let response;
         try {
-          response = await getDownloadUrls({attachmentDownloadRequest: {attachment_ids: batch}}).unwrap();
+          response = await getDownloadUrls({attachment_ids: batch});
         } catch (error) {
           setFailedIds((current) => new Set([...current, ...batch]));
           failed = true;

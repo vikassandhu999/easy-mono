@@ -7,9 +7,8 @@ import {z} from 'zod';
 import {FormOtpField} from '@/@components/form-otp-field';
 
 import {ROUTES} from '@/@config/routes';
-import {useAcceptInviteVerifyMutation} from '@/api/auth';
+import {useAcceptInviteMutation, useAcceptInviteVerifyMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
-import {useAcceptInviteMutation} from '@/api/generated';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -57,8 +56,10 @@ export default function VerifyInviteOtp() {
   const navigate = useNavigate();
   const state = location.state as null | VerifyInviteOtpLocationState;
 
-  const [verifyInvite, {isLoading: isVerifying}] = useAcceptInviteVerifyMutation();
-  const [resendInvite, {isLoading: isResending}] = useAcceptInviteMutation();
+  const verifyInvite = useAcceptInviteVerifyMutation();
+  const resendInvite = useAcceptInviteMutation();
+  const isVerifying = verifyInvite.isPending;
+  const isResending = resendInvite.isPending;
 
   const [cooldownRemaining, setCooldownRemaining] = useState(RESEND_COOLDOWN_SECONDS);
 
@@ -97,11 +98,11 @@ export default function VerifyInviteOtp() {
 
   const onSubmit = async (data: VerifyInviteOtpFormValues) => {
     try {
-      const result = await verifyInvite({
+      const result = await verifyInvite.mutateAsync({
         email: state.email,
         invitation_token: token,
         otp: data.otp,
-      }).unwrap();
+      });
       setTokens(result);
       // Post-verify, land on Training home per product decision.
       navigate(ROUTES.TODAY, {replace: true});
@@ -128,7 +129,7 @@ export default function VerifyInviteOtp() {
       return;
     }
     try {
-      await resendInvite({acceptInviteRequest: {email: state.email, invitation_token: token}}).unwrap();
+      await resendInvite.mutateAsync({email: state.email, invitation_token: token});
       setCooldownRemaining(RESEND_COOLDOWN_SECONDS);
       reset({otp: ''});
       toast.success('A new code is on its way.');

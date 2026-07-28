@@ -33,12 +33,13 @@ export default function TodayHome() {
   const {data: nutritionPlans} = useListClientNutritionPlansQuery({status: 'active'});
   const {data: mealLogs, isLoading: nutritionLoading} = useListClientMealLogsQuery({date: localToday()});
   const {data: assignments} = useListClientFormAssignmentsQuery();
-  const [createSession, {isLoading: starting}] = useCreateClientTrainingSessionMutation();
+  const createSession = useCreateClientTrainingSessionMutation();
+  const starting = createSession.isPending;
   const profile = profileData?.data;
   const plan = plansData?.data[0];
   const workout = todayWorkout(plan);
   const activeSession = sessionsData?.data.find((session) => session.state === 'active');
-  const coachName = profile?.coach.first_name || 'your coach';
+  const coachName = profile?.coach?.first_name || 'your coach';
   const firstName = profile?.first_name || 'there';
 
   const openWorkout = async () => {
@@ -51,10 +52,10 @@ export default function TodayHome() {
       return;
     }
     try {
-      await createSession({trainingSessionRequest: {training_workout_id: workout.id}}).unwrap();
+      await createSession.mutateAsync({training_workout_id: workout.id});
       navigate(ROUTES.WORKOUT_ACTIVE);
     } catch {
-      // RTK Query surfaces the request error.
+      // the mutation's error state surfaces the failure.
     }
   };
 

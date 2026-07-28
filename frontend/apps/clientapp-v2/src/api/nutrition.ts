@@ -1,47 +1,148 @@
 /**
- * Client nutrition — new schema (generated client). Replaces the old hand-written
- * foods/mealLogs/nutritionPlans/recipes wrappers. The "today" endpoint returns an
- * opaque map; `asTodayPlan` hand-types it. Targets come from the active plan summary
- * (target_* columns); consumed totals are summed FE-side from logged entries.
+ * Client nutrition. The "today" endpoint returns an opaque map; `asTodayPlan`
+ * hand-types it. Targets come from the active plan summary (target_* columns);
+ * consumed totals are summed FE-side from logged entries.
  */
-import {
-  clientApi,
-  useCreateFoodLogEntryMutation,
-  useDeleteFoodLogEntryMutation,
-  useGetTodayNutritionPlanQuery,
-  useLazyListClientFoodsQuery,
-  useLazyListClientRecipesQuery,
-  useListClientMealLogsQuery,
-  useListClientNutritionPlansQuery,
-  useLogDayMutation,
-  useLogMealMutation,
-  useSwitchNutritionMealOptionMutation,
-  useUpdateFoodLogEntryMutation,
-} from '@/api/generated';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {
-  Food,
-  FoodLogEntry,
-  FoodLogEntryRequest,
-  FoodServingSize,
-  MealLog,
-  NutritionPlan,
-  Recipe,
-} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {foodKeys, mealLogKeys, nutritionPlanKeys, recipeKeys} from '@/api/keys';
+import type {components, paths} from '@/api/schema';
 
-export {
-  useCreateFoodLogEntryMutation,
-  useDeleteFoodLogEntryMutation,
-  useGetTodayNutritionPlanQuery,
-  useLazyListClientFoodsQuery,
-  useLazyListClientRecipesQuery,
-  useListClientMealLogsQuery,
-  useListClientNutritionPlansQuery,
-  useLogDayMutation,
-  useLogMealMutation,
-  useSwitchNutritionMealOptionMutation,
-  useUpdateFoodLogEntryMutation,
-};
+export type Food = components['schemas']['Food'];
+export type FoodLogEntry = components['schemas']['FoodLogEntry'];
+export type FoodLogEntryRequest = components['schemas']['FoodLogEntryRequest'];
+export type FoodServingSize = components['schemas']['FoodServingSize'];
+export type MealLog = components['schemas']['MealLog'];
+export type NutritionPlan = components['schemas']['NutritionPlan'];
+export type Recipe = components['schemas']['Recipe'];
+export type SwitchOptionRequest = components['schemas']['NutritionSwitchOptionRequest'];
+
+type PlanListQuery = paths['/v1/client/nutrition-plans']['get']['parameters']['query'];
+type MealLogListQuery = paths['/v1/client/nutrition-meal-logs']['get']['parameters']['query'];
+type FoodListQuery = paths['/v1/client/nutrition-foods']['get']['parameters']['query'];
+type RecipeListQuery = paths['/v1/client/nutrition-recipes']['get']['parameters']['query'];
+type TodayQuery = paths['/v1/client/nutrition-plans/today']['get']['parameters']['query'];
+
+type PlanListResponse = components['schemas']['NutritionPlanListResponse'];
+type MealLogListResponse = components['schemas']['MealLogListResponse'];
+type FoodListResponse = components['schemas']['FoodListResponse'];
+type RecipeListResponse = components['schemas']['RecipeListResponse'];
+type NutritionMapResponse = components['schemas']['NutritionMapResponse'];
+type FoodLogEntryResponse = components['schemas']['FoodLogEntryResponse'];
+type FoodLogEntryListResponse = components['schemas']['FoodLogEntryListResponse'];
+type NutritionMealLogResponse = components['schemas']['NutritionMealLogResponse'];
+
+// ── Queries ──────────────────────────────────────────────────
+
+export function useListClientNutritionPlansQuery(query: PlanListQuery = {}) {
+  return useQuery({
+    queryKey: nutritionPlanKeys.list(query),
+    queryFn: () => call(client.GET('/v1/client/nutrition-plans', {params: {query}})) as Promise<PlanListResponse>,
+  });
+}
+
+export function useGetTodayNutritionPlanQuery(query: TodayQuery = {}) {
+  return useQuery({
+    queryKey: [...nutritionPlanKeys.today(), query],
+    queryFn: () =>
+      call(client.GET('/v1/client/nutrition-plans/today', {params: {query}})) as Promise<NutritionMapResponse>,
+  });
+}
+
+export function useListClientMealLogsQuery(query: MealLogListQuery = {}) {
+  return useQuery({
+    queryKey: mealLogKeys.list(query),
+    queryFn: () =>
+      call(client.GET('/v1/client/nutrition-meal-logs', {params: {query}})) as Promise<MealLogListResponse>,
+  });
+}
+
+export function useListClientFoodsQuery(query: FoodListQuery = {}, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: foodKeys.list(query),
+    queryFn: () => call(client.GET('/v1/client/nutrition-foods', {params: {query}})) as Promise<FoodListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useListClientRecipesQuery(query: RecipeListQuery = {}, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: recipeKeys.list(query),
+    queryFn: () => call(client.GET('/v1/client/nutrition-recipes', {params: {query}})) as Promise<RecipeListResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// ── Log writes ───────────────────────────────────────────────
+// Every write changes the day's meal logs → refresh the diary list.
+
+/** Invalidate the meal-log lists after any write. */
+function useInvalidateMealLogs() {
+  const qc = useQueryClient();
+  return () => qc.invalidateQueries({queryKey: mealLogKeys.lists()});
+}
+
+export function useCreateFoodLogEntryMutation() {
+  const invalidate = useInvalidateMealLogs();
+  return useMutation({
+    mutationFn: (body: FoodLogEntryRequest) =>
+      call(client.POST('/v1/client/nutrition-food-log-entries', {body})) as Promise<FoodLogEntryResponse>,
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateFoodLogEntryMutation() {
+  const invalidate = useInvalidateMealLogs();
+  return useMutation({
+    mutationFn: ({id, ...body}: FoodLogEntryRequest & {id: string}) =>
+      call(
+        client.PATCH('/v1/client/nutrition-food-log-entries/{id}', {params: {path: {id}}, body}),
+      ) as Promise<FoodLogEntryResponse>,
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteFoodLogEntryMutation() {
+  const invalidate = useInvalidateMealLogs();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(client.DELETE('/v1/client/nutrition-food-log-entries/{id}', {params: {path: {id}}})),
+    onSuccess: invalidate,
+  });
+}
+
+export function useLogMealMutation() {
+  const invalidate = useInvalidateMealLogs();
+  return useMutation({
+    mutationFn: (body: FoodLogEntryRequest) =>
+      call(client.POST('/v1/client/nutrition-food-log-entries/log-meal', {body})) as Promise<FoodLogEntryListResponse>,
+    onSuccess: invalidate,
+  });
+}
+
+export function useLogDayMutation() {
+  const invalidate = useInvalidateMealLogs();
+  return useMutation({
+    mutationFn: (body: FoodLogEntryRequest) =>
+      call(client.POST('/v1/client/nutrition-food-log-entries/log-day', {body})) as Promise<FoodLogEntryListResponse>,
+    onSuccess: invalidate,
+  });
+}
+
+export function useSwitchNutritionMealOptionMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SwitchOptionRequest) =>
+      call(
+        client.POST('/v1/client/nutrition-food-log-entries/switch-option', {body}),
+      ) as Promise<NutritionMealLogResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: mealLogKeys.lists()});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.today()});
+    },
+  });
+}
 
 // ── Hand-typed view-model over the opaque `today` payload ─────────────────────
 // GET /nutrition-plans/today returns {data: object}; its real shape is below.
@@ -96,23 +197,3 @@ export function plannedItemCalories(item: TodayPlanItem): null | number {
   const per100 = n.calories_per_100g;
   return per100 != null && item.weight_g != null ? (per100 * item.weight_g) / 100 : null;
 }
-
-clientApi.enhanceEndpoints({
-  endpoints: {
-    // Every log write changes the day's meal logs → refresh the diary list.
-    createFoodLogEntry: {invalidatesTags: [{id: 'LIST', type: 'MealLog'}]},
-    deleteFoodLogEntry: {invalidatesTags: [{id: 'LIST', type: 'MealLog'}]},
-    getTodayNutritionPlan: {providesTags: [{id: 'TODAY', type: 'NutritionPlan'}]},
-    listClientMealLogs: {providesTags: [{id: 'LIST', type: 'MealLog'}]},
-    listClientNutritionPlans: {providesTags: [{id: 'LIST', type: 'NutritionPlan'}]},
-    logDay: {invalidatesTags: [{id: 'LIST', type: 'MealLog'}]},
-    logMeal: {invalidatesTags: [{id: 'LIST', type: 'MealLog'}]},
-    switchNutritionMealOption: {
-      invalidatesTags: [
-        {id: 'LIST', type: 'MealLog'},
-        {id: 'TODAY', type: 'NutritionPlan'},
-      ],
-    },
-    updateFoodLogEntry: {invalidatesTags: [{id: 'LIST', type: 'MealLog'}]},
-  },
-});

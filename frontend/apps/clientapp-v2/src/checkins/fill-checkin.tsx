@@ -43,7 +43,8 @@ function BackButton({onPress}: {onPress: () => void}) {
 function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
   const navigate = useNavigate();
   const goBack = () => navigate(ROUTES.CHECKINS);
-  const [submit, {isLoading}] = useSubmitClientFormAssignmentMutation();
+  const submit = useSubmitClientFormAssignmentMutation();
+  const isLoading = submit.isPending;
   const {data: profileData} = useGetClientProfileQuery();
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [error, setError] = useState<null | string>(null);
@@ -51,7 +52,9 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
 
   const sections = (assignment.form_template?.sections ?? []) as Section[];
   const questions = sections.flatMap((s) => s.questions ?? []);
-  const weightUnit = profileData?.data.goal_weight_unit ?? profileData?.data.default_weight_unit ?? 'kg';
+  const weightUnit = (profileData?.data.goal_weight_unit ?? profileData?.data.default_weight_unit ?? 'kg') as
+    | 'kg'
+    | 'lbs';
   const photoUploadBusy = Object.values(photoUploadStates).some((state) => state.busy);
   const photoUploadFailed = Object.values(photoUploadStates).some((state) => state.failed);
 
@@ -100,7 +103,7 @@ function FillForm({assignment}: {assignment: ClientProfileFormAssignment}) {
     }
 
     try {
-      await submit({id: assignment.id, clientProfileFormSubmissionRequest: {answers: payload}}).unwrap();
+      await submit.mutateAsync({id: assignment.id, answers: payload});
       toast.success('Check-in submitted');
       navigate(ROUTES.CHECKINS);
     } catch {
@@ -267,7 +270,7 @@ function ClosedState({assignment}: {assignment: ClientProfileFormAssignment}) {
 export default function FillCheckin() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
-  const {data, isError, isLoading} = useGetClientFormAssignmentQuery({id: id!});
+  const {data, isError, isLoading} = useGetClientFormAssignmentQuery(id ?? '', {enabled: Boolean(id)});
 
   if (isLoading) {
     return (

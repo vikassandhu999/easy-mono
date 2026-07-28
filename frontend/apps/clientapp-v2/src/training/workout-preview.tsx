@@ -15,7 +15,8 @@ export default function WorkoutPreview() {
   const navigate = useNavigate();
   const {data, isLoading} = useListClientTrainingPlansQuery({status: 'active'});
   const {data: sessions} = useListClientTrainingSessionsQuery({});
-  const [createSession, {isLoading: starting}] = useCreateClientTrainingSessionMutation();
+  const createSession = useCreateClientTrainingSessionMutation();
+  const starting = createSession.isPending;
   const workout = data?.data.flatMap((plan) => plan.workouts).find((candidate) => candidate.id === workoutId);
   const scheduledToday = data?.data.some((plan) => todayWorkout(plan)?.id === workoutId) ?? false;
   const active = sessions?.data.find((session) => session.state === 'active');
@@ -29,10 +30,10 @@ export default function WorkoutPreview() {
       return;
     }
     try {
-      await createSession({trainingSessionRequest: {training_workout_id: workout.id}}).unwrap();
+      await createSession.mutateAsync({training_workout_id: workout.id});
       navigate(ROUTES.WORKOUT_ACTIVE);
     } catch {
-      // RTK Query surfaces the request error.
+      // the mutation's error state surfaces the failure.
     }
   };
 
@@ -66,12 +67,6 @@ export default function WorkoutPreview() {
         {estimatedMinutes(workout) ? ` · ~${estimatedMinutes(workout)} min` : ''}
       </p>
 
-      {workout.notes ? (
-        <div className="my-5 rounded-2xl bg-accent-soft p-3.5 text-xs leading-[1.45] text-accent-soft-foreground">
-          <b className="mb-1 block text-[11px]">Note from your coach</b>
-          {workout.notes}
-        </div>
-      ) : null}
       <p className="mb-3 mt-5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted">Exercises</p>
       <div className="overflow-hidden rounded-[20px] border border-border bg-surface">
         {workout.workout_elements.map((element, index) => (

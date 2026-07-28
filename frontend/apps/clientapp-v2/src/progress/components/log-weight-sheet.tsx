@@ -21,7 +21,8 @@ export default function LogWeightSheet({
   defaultValue?: number;
   onClose: () => void;
 }) {
-  const [create, {isLoading}] = useCreateWeightEntryMutation();
+  const create = useCreateWeightEntryMutation();
+  const isLoading = create.isPending;
   const [value, setValue] = useState(defaultValue ?? 80);
   const [unit, setUnit] = useState<'kg' | 'lbs'>(defaultUnit);
   const [when, setWhen] = useState<'Today' | 'Yesterday'>('Today');
@@ -37,7 +38,7 @@ export default function LogWeightSheet({
   const adjust = (delta: number) => setValue((current) => Math.max(1, Math.round((current + delta) * 10) / 10));
   const save = async () => {
     try {
-      await create({weightEntryRequest: {date: dateFor(when), note: note.trim() || null, unit, value}}).unwrap();
+      await create.mutateAsync({date: dateFor(when), note: note.trim() || null, unit, value});
       toast.success('Weight logged');
       onClose();
     } catch {

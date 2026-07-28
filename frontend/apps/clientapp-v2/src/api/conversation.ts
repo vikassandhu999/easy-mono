@@ -1,47 +1,78 @@
-import {api} from '@/api/base';
-import type {ChatMessage, ListClientConversationMessagesApiResponse} from '@/api/generated';
-import {clientApi} from '@/api/generated';
+import {type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {ChatMessage, Conversation} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {conversationKeys} from '@/api/keys';
+import {patchQueryData, queryClient} from '@/api/query-client';
+import type {components, paths} from '@/api/schema';
+
+export type ChatMessage = components['schemas']['ChatMessage'];
+export type Conversation = components['schemas']['Conversation'];
+export type CreateMessageBody =
+  paths['/v1/client/conversation/messages']['post']['requestBody']['content']['application/json'];
+
+type MessagesPage = {data: ChatMessage[]; has_more: boolean};
+type ConversationResponse = components['schemas']['ConversationResponse'];
+type ChatMessageResponse = components['schemas']['ChatMessageResponse'];
 
 const PAGE_SIZE = 50;
 
-export const conversationApi = api.injectEndpoints({
-  endpoints: (build) => ({
-    clientMessages: build.infiniteQuery<ListClientConversationMessagesApiResponse, void, string | undefined>({
-      query: ({pageParam}) => ({
-        url: '/v1/client/conversation/messages',
-        params: {limit: PAGE_SIZE, ...(pageParam && {before: pageParam})},
-      }),
-      infiniteQueryOptions: {
-        initialPageParam: undefined,
-        getNextPageParam: (lastPage) => (lastPage.has_more ? lastPage.data[0]?.id : undefined),
-      },
-      providesTags: [{type: 'ChatMessage', id: 'MINE'}],
-    }),
-  }),
-});
+export function useGetClientConversationQuery(options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: conversationKeys.detail(),
+    queryFn: () => call(client.GET('/v1/client/conversation')) as Promise<ConversationResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
 
-const enhanced = clientApi.enhanceEndpoints({
-  endpoints: {
-    getClientConversation: {providesTags: [{type: 'Conversation', id: 'LIST'}]},
-    createClientConversationMessage: {invalidatesTags: [{type: 'Conversation', id: 'LIST'}]},
-    markClientConversationRead: {invalidatesTags: [{type: 'Conversation', id: 'LIST'}]},
-  },
-});
+// Cursor-paginated chat history. pageParam is the oldest loaded message id;
+// the backend returns messages older than it, ascending.
+export function useClientMessagesInfiniteQuery() {
+  return useInfiniteQuery({
+    queryKey: conversationKeys.messages(),
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/client/conversation/messages', {
+          params: {query: {limit: PAGE_SIZE, ...(pageParam && {before: pageParam})}},
+        }),
+      ) as Promise<MessagesPage>,
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => (lastPage.has_more ? lastPage.data[0]?.id : undefined),
+  });
+}
 
-export const appendClientMessageAction = (message: ChatMessage) =>
-  conversationApi.util.updateQueryData('clientMessages', undefined, (draft) => {
+export function useCreateClientConversationMessageMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateMessageBody) =>
+      call(client.POST('/v1/client/conversation/messages', {body})) as Promise<ChatMessageResponse>,
+    // Only the header — the sent message is appended optimistically by the caller.
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: conversationKeys.detail()});
+    },
+  });
+}
+
+export function useMarkClientConversationReadMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => call(client.POST('/v1/client/conversation/read')) as Promise<ConversationResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: conversationKeys.detail()});
+    },
+  });
+}
+
+/** Append a message to the cached history (no-op if already present, e.g. own send echoed back over the channel). */
+export function appendClientMessage(message: ChatMessage) {
+  const cached = queryClient.getQueryData<InfiniteData<MessagesPage>>(conversationKeys.messages());
+  if (!cached) {
+    // Nothing cached to append to — a later mount will fetch fresh history.
+    return;
+  }
+  patchQueryData<InfiniteData<MessagesPage>>(conversationKeys.messages(), (draft) => {
     const exists = draft.pages.some((page) => page.data.some((m) => m.id === message.id));
     if (!exists) {
       draft.pages[0]?.data.push(message);
     }
   });
-
-export const {
-  useGetClientConversationQuery,
-  useCreateClientConversationMessageMutation,
-  useMarkClientConversationReadMutation,
-} = enhanced;
-
-export const {useClientMessagesInfiniteQuery} = conversationApi;
+}

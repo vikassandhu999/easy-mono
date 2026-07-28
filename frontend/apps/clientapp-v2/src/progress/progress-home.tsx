@@ -33,7 +33,7 @@ function LogButton({onPress, label}: {label: string; onPress: () => void}) {
 export default function ProgressHome() {
   const navigate = useNavigate();
   const {data, isLoading, isError, refetch} = useListWeightEntriesQuery({});
-  const [deleteEntry] = useDeleteWeightEntryMutation();
+  const {mutateAsync: deleteEntry} = useDeleteWeightEntryMutation();
   const [sheet, setSheet] = useState(false);
 
   const entries: WeightEntry[] = data?.entries ?? [];
@@ -48,9 +48,9 @@ export default function ProgressHome() {
 
   const remove = async (id: string) => {
     try {
-      await deleteEntry({id}).unwrap();
+      await deleteEntry(id);
     } catch {
-      // surfaced by RTK Query
+      // the list refetch will show the row still there
     }
   };
 

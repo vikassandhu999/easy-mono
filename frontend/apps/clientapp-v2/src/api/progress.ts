@@ -1,18 +1,20 @@
 /**
- * Client progress — weight tracking (generated client). The list endpoint returns
+ * Client progress — weight tracking. The list endpoint returns
  * {entries, summary, goal, adherence}; we drive off the typed `entries[]` and read
  * the opaque `goal` (the client's target weight from their coaching profile) defensively.
  */
-import {
-  clientApi,
-  useCreateWeightEntryMutation,
-  useDeleteWeightEntryMutation,
-  useListWeightEntriesQuery,
-} from '@/api/generated';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {WeightEntry, WeightEntryRequest} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {weightEntryKeys} from '@/api/keys';
+import type {components, paths} from '@/api/schema';
 
-export {useCreateWeightEntryMutation, useDeleteWeightEntryMutation, useListWeightEntriesQuery};
+export type WeightEntry = components['schemas']['WeightEntry'];
+export type WeightEntryRequest = components['schemas']['WeightEntryRequest'];
+
+type ListQuery = paths['/v1/client/weight_entries']['get']['parameters']['query'];
+type ListResponse = components['schemas']['WeightEntryListResponse'];
+type EntryResponse = components['schemas']['WeightEntryResponse'];
 
 export type WeightGoal = {unit?: null | string; value?: null | number};
 
@@ -20,10 +22,30 @@ export function asGoal(goal: unknown): null | WeightGoal {
   return goal && typeof goal === 'object' ? (goal as WeightGoal) : null;
 }
 
-clientApi.enhanceEndpoints({
-  endpoints: {
-    createWeightEntry: {invalidatesTags: [{id: 'LIST', type: 'WeightEntry'}]},
-    deleteWeightEntry: {invalidatesTags: [{id: 'LIST', type: 'WeightEntry'}]},
-    listWeightEntries: {providesTags: [{id: 'LIST', type: 'WeightEntry'}]},
-  },
-});
+export function useListWeightEntriesQuery(query: ListQuery = {}) {
+  return useQuery({
+    queryKey: weightEntryKeys.list(query),
+    queryFn: () => call(client.GET('/v1/client/weight_entries', {params: {query}})) as Promise<ListResponse>,
+  });
+}
+
+export function useCreateWeightEntryMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: WeightEntryRequest) =>
+      call(client.POST('/v1/client/weight_entries', {body})) as Promise<EntryResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: weightEntryKeys.lists()});
+    },
+  });
+}
+
+export function useDeleteWeightEntryMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/client/weight_entries/{id}', {params: {path: {id}}})),
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: weightEntryKeys.lists()});
+    },
+  });
+}

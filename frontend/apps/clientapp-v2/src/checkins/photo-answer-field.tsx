@@ -35,7 +35,7 @@ export default function PhotoAnswerField({
   value: string[];
 }) {
   const inputId = useId();
-  const [createUpload] = useCreateClientUploadMutation();
+  const {mutateAsync: createUpload} = useCreateClientUploadMutation();
   const [items, setItems] = useState<PhotoItem[]>([]);
   const [fieldError, setFieldError] = useState<null | string>(null);
   const itemsRef = useRef(items);
@@ -74,11 +74,9 @@ export default function PhotoAnswerField({
 
     try {
       const response = await createUpload({
-        attachmentUploadRequest: {
-          byte_size: file.size,
-          content_type: file.type as 'image/heic' | 'image/jpeg' | 'image/png' | 'image/webp',
-        },
-      }).unwrap();
+        byte_size: file.size,
+        content_type: file.type as 'image/heic' | 'image/jpeg' | 'image/png' | 'image/webp',
+      });
 
       await putFileToSignedUrl(response.data.upload_url, file, response.data.upload_headers, (progress) =>
         updateItem(localId, {progress}),

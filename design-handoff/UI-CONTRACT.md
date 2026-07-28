@@ -247,4 +247,4 @@ the designer ships:
 | FB | FORMS · BUILDER | `checkins/checkin-builder.tsx`, `checkins/question-presets.ts`, `api/checkins.ts` |
 | ST | SETTINGS | `settings/*` (`billing`, `team`, `add-seats-dialog`, `components/editable-row`) |
 
-Data hooks (**RTK Query** — `src/api/*`, generated endpoints in `src/api/generated.ts`) already exist — reuse them; the prototype's local arrays only show data *shape*. Never fetch in `useEffect`.
+Data hooks (**React Query** — hand-written hooks in `src/api/*` over the generated `src/api/schema.ts` types) already exist — reuse them; the prototype's local arrays only show data *shape*. Never fetch in `useEffect`.

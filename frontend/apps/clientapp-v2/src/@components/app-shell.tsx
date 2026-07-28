@@ -53,7 +53,7 @@ function BottomNavItem({item}: {item: NavItem}) {
       end={item.path === '/'}
       to={item.path}
     >
-      {({isActive}) => (
+      {() => (
         <>
           {item.icon}
           <span>{item.label}</span>
@@ -99,7 +99,7 @@ export default function AppShell() {
         <p className="text-sm text-muted">Check your connection and try again.</p>
         <Button
           className="mt-4"
-          onPress={refetchProfile}
+          onPress={() => refetchProfile()}
           size="sm"
           variant="ghost"
         >

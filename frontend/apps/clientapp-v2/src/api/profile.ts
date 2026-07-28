@@ -1,57 +1,29 @@
-import {api} from '@/api/base';
-import {ApiResponse} from '@/api/shared';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-// ── Types ───────────────────────────────────────────────────
+import {call, client} from '@/api/client';
+import {profileKeys} from '@/api/keys';
+import type {components} from '@/api/schema';
 
-export type ClientCoach = {
-  first_name: null | string;
-  last_name: null | string;
-  phone: null | string;
-  business_name: string;
-};
+export type ClientCoach = components['schemas']['ClientProfileCoach'];
+export type ClientProfile = components['schemas']['ClientProfile'];
+export type ClientProfileResponse = components['schemas']['ClientProfileResponse'];
+export type UpdateClientProfileRequest = components['schemas']['ClientProfileUpdateRequest'];
 
-export type ClientProfile = {
-  default_weight_unit: 'kg' | 'lbs';
-  id: string;
-  first_name: null | string;
-  last_name: null | string;
-  email: null | string;
-  phone: null | string;
-  goal_weight_unit: 'kg' | 'lbs' | null;
-  goal_weight_value: null | number;
-  status: string;
-  subscription_ends_on: null | string;
-  subscription_started_on: null | string;
-  coach: ClientCoach;
-};
+export function useGetClientProfileQuery(options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: profileKeys.all,
+    queryFn: () => call(client.GET('/v1/client/me')) as Promise<ClientProfileResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
 
-export type UpdateClientProfileRequest = {
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-};
-
-// ── Endpoints ───────────────────────────────────────────────
-
-export const profileApi = api.injectEndpoints({
-  // Hand-managed endpoints (cache tags, precise types) that share names with
-  // the generated client — override makes these authoritative regardless of
-  // import order.
-  overrideExisting: true,
-  endpoints: (build) => ({
-    getClientProfile: build.query<ApiResponse<ClientProfile>, void>({
-      query: () => '/v1/client/me',
-      providesTags: [{type: 'ClientProfile', id: 'ME'}],
-    }),
-    updateClientProfile: build.mutation<ApiResponse<ClientProfile>, UpdateClientProfileRequest>({
-      query: (body) => ({
-        body,
-        method: 'PATCH',
-        url: '/v1/client/me',
-      }),
-      invalidatesTags: [{type: 'ClientProfile', id: 'ME'}],
-    }),
-  }),
-});
-
-export const {useGetClientProfileQuery, useUpdateClientProfileMutation} = profileApi;
+export function useUpdateClientProfileMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateClientProfileRequest) =>
+      call(client.PATCH('/v1/client/me', {body})) as Promise<ClientProfileResponse>,
+    onSuccess: () => {
+      qc.invalidateQueries({queryKey: profileKeys.all});
+    },
+  });
+}

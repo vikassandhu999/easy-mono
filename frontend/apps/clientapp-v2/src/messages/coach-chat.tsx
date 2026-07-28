@@ -1,11 +1,11 @@
 import {Button, Spinner, TextArea, toast} from '@heroui/react';
 import {Send} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useDispatch} from 'react-redux';
 
 import {
-  appendClientMessageAction,
+  appendClientMessage,
   type ChatMessage,
+  type CreateMessageBody,
   useClientMessagesInfiniteQuery,
   useCreateClientConversationMessageMutation,
   useMarkClientConversationReadMutation,
@@ -63,7 +63,6 @@ function MessageBubble({
 }
 
 export default function CoachChat() {
-  const dispatch = useDispatch();
   const [body, setBody] = useState('');
   const [attachmentState, setAttachmentState] = useState({attachmentIds: [] as string[], busy: false, failed: false});
   const [composerKey, setComposerKey] = useState(0);
@@ -71,8 +70,9 @@ export default function CoachChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClientMessagesInfiniteQuery();
-  const [sendMessage, {isLoading: isSendingMessage}] = useCreateClientConversationMessageMutation();
-  const [markRead] = useMarkClientConversationReadMutation();
+  const sendMessage = useCreateClientConversationMessageMutation();
+  const isSendingMessage = sendMessage.isPending;
+  const {mutate: markRead} = useMarkClientConversationReadMutation();
   const {data: profile} = useGetClientProfileQuery();
   const coach = profile?.data.coach;
   const coachName = [coach?.first_name, coach?.last_name].filter(Boolean).join(' ') || 'Your coach';
@@ -113,13 +113,11 @@ export default function CoachChat() {
     }
     setSendLocked(true);
     try {
-      const result = await sendMessage({
-        clientChatMessageCreateRequest: {
-          ...(trimmed && {body: trimmed}),
-          attachment_ids: attachmentState.attachmentIds,
-        },
-      }).unwrap();
-      dispatch(appendClientMessageAction(result.data));
+      const result = await sendMessage.mutateAsync({
+        ...(trimmed && {body: trimmed}),
+        attachment_ids: attachmentState.attachmentIds,
+      } as CreateMessageBody);
+      appendClientMessage(result.data);
       setBody('');
       setAttachmentState({attachmentIds: [], busy: false, failed: false});
       setComposerKey((current) => current + 1);

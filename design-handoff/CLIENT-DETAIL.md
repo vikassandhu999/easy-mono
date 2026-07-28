@@ -82,7 +82,7 @@ Empty states (reachable individually too): **no training plan** (`Dumbbell`, Ass
 
 ## Data (all endpoints exist — no new backend; see spec §9)
 
-`GET/PATCH /v1/coach/clients/:id` (client, flags `intake_incomplete`/`needs_plan`/`expiring_soon`, notes, goal weight, subscription dates) · `…/conversation` (unread) · `…/training-plans` · `…/training-sessions[/:id]` · `…/nutrition-plans` · `…/nutrition-meal-logs` · `…/weight_entries` · `…/check-in-schedules` (GET/POST/PATCH) · `…/form-assignments` (check-in + intake) · `/form-assignments/:id/submissions` + `/form-submissions/:id/review` · `/v1/coach/team` (reassign) · `/v1/coach/billing` (seats) · invite resend/revoke. Reuse RTK Query hooks in `src/api/*`; the prototype's local arrays only show data **shape**.
+`GET/PATCH /v1/coach/clients/:id` (client, flags `intake_incomplete`/`needs_plan`/`expiring_soon`, notes, goal weight, subscription dates) · `…/conversation` (unread) · `…/training-plans` · `…/training-sessions[/:id]` · `…/nutrition-plans` · `…/nutrition-meal-logs` · `…/weight_entries` · `…/check-in-schedules` (GET/POST/PATCH) · `…/form-assignments` (check-in + intake) · `/form-assignments/:id/submissions` + `/form-submissions/:id/review` · `/v1/coach/team` (reassign) · `/v1/coach/billing` (seats) · invite resend/revoke. Reuse React Query hooks in `src/api/*`; the prototype's local arrays only show data **shape**.
 
 ## Finding a screen's markup in `Client Detail.dc.html`
 

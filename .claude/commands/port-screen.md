@@ -9,7 +9,7 @@ order, the state inventory, the mapping-before-code gate, the style-diff
 convergence loop, and the gates. This command only pins the inputs:
 
 - Target app: `frontend/apps/coachapp-v2`. Presentation-only port: routing and
-  data hooks (RTK Query in `src/api/*`) already exist — never re-architect data,
+  data hooks (React Query in `src/api/*`) already exist — never re-architect data,
   never port more than this one screen. One screen per branch.
 - Design file: Dashboard badges → `design-handoff/design/Dashboard Redesign.dc.html`
   (find your slice via `grep -n 'data-screen-label="XX"'` — never read it whole).

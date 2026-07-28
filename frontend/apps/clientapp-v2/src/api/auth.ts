@@ -1,5 +1,8 @@
-import {api} from '@/api/base';
-import {type ApiResponse} from '@/api/shared';
+import {useMutation, useQuery} from '@tanstack/react-query';
+
+import {call, client} from '@/api/client';
+import {authKeys} from '@/api/keys';
+import type {components, paths} from '@/api/schema';
 
 // ── Invitation lookup (public, pre-auth) ─────────────────────
 
@@ -7,7 +10,8 @@ import {type ApiResponse} from '@/api/shared';
  * State-discriminated body returned by GET /v1/auth/invitations/:token.
  * Only the `pending` branch carries business/coach details — the other three
  * states intentionally omit them so used/expired/invalid tokens don't leak
- * which business they belonged to.
+ * which business they belonged to. The spec types every field as nullable, so
+ * this hand-written union is what gives callers real narrowing.
  */
 export type InvitationLookup =
   | {
@@ -23,67 +27,66 @@ export type InvitationLookup =
 
 // ── Two-phase invitation acceptance ──────────────────────────
 
-export type AcceptInviteVerifyRequest = {
-  email: string;
-  invitation_token: string;
-  otp: string;
-};
+export type AcceptInviteRequest = components['schemas']['AcceptInviteRequest'];
+export type AcceptInviteVerifyRequest = components['schemas']['AcceptInviteVerifyRequest'];
+export type OtpRequest = components['schemas']['OtpRequest'];
+export type AuthTokenResponse = components['schemas']['AuthTokenResponse'];
 
 // ── Returning-client login ───────────────────────────────────
 
-export type TokenOtpRequest = {
-  email: string;
-  grant_type: 'otp';
-  otp: string;
-  role: 'client' | 'coach' | 'guest' | 'owner';
-};
+type TokenRequest = paths['/v1/auth/token']['post']['requestBody']['content']['application/json'];
 
-export type TokenRefreshRequest = {
-  grant_type: 'refresh_token';
-  refresh_token: string;
-  role?: 'client' | 'coach' | 'guest' | 'owner';
-};
+export type TokenOtpRequest = Extract<TokenRequest, {grant_type: 'otp'}>;
+export type TokenRefreshRequest = Extract<TokenRequest, {grant_type: 'refresh_token'}>;
 
-export type AuthTokenResponse = {
-  access_token: string;
-  expires_in: number;
-  refresh_token: string;
-  scope: string;
-  token_type: string;
-};
+// ── Hooks ────────────────────────────────────────────────────
 
-export const authApi = api.injectEndpoints({
-  endpoints: (build) => ({
-    /**
-     * Public lookup for Screen 1. Always returns 200 — switch on data.state.
-     * Used to render the welcome form or a state-specific "already used /
-     * expired / invalid" screen.
-     */
-    lookupInvitation: build.query<ApiResponse<InvitationLookup>, string>({
-      query: (token) => `/v1/auth/invitations/${token}`,
-    }),
+/**
+ * Public lookup for Screen 1. Always returns 200 — switch on data.state.
+ * Used to render the welcome form or a state-specific "already used /
+ * expired / invalid" screen. Always refetches: invitation state can change
+ * between visits (revoked, accepted elsewhere).
+ */
+export function useLookupInvitationQuery(token: string) {
+  return useQuery({
+    queryKey: authKeys.invitation(token),
+    queryFn: async () => {
+      const body = await call(client.GET('/v1/auth/invitations/{token}', {params: {path: {token}}}));
+      return body as {data: InvitationLookup};
+    },
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+}
 
-    /**
-     * Phase 2 of acceptance. Verifies the OTP against the (token, email, otp)
-     * tuple. On success, atomically creates/links the User, flips the Client
-     * to active, and issues a scope=client session.
-     */
-    acceptInviteVerify: build.mutation<AuthTokenResponse, AcceptInviteVerifyRequest>({
-      query: (body) => ({
-        url: '/v1/auth/accept-invite/verify',
-        method: 'POST',
-        body,
-      }),
-    }),
+/** Phase 1 of acceptance — sends the OTP to the invited email. */
+export function useAcceptInviteMutation() {
+  return useMutation({
+    mutationFn: (body: AcceptInviteRequest) => call(client.POST('/v1/auth/accept-invite', {body})),
+  });
+}
 
-    exchangeToken: build.mutation<AuthTokenResponse, TokenOtpRequest | TokenRefreshRequest>({
-      query: (body) => ({
-        url: '/v1/auth/token',
-        method: 'POST',
-        body,
-      }),
-    }),
-  }),
-});
+/**
+ * Phase 2 of acceptance. Verifies the OTP against the (token, email, otp)
+ * tuple. On success, atomically creates/links the User, flips the Client
+ * to active, and issues a scope=client session.
+ */
+export function useAcceptInviteVerifyMutation() {
+  return useMutation({
+    mutationFn: (body: AcceptInviteVerifyRequest) =>
+      call(client.POST('/v1/auth/accept-invite/verify', {body})) as Promise<AuthTokenResponse>,
+  });
+}
 
-export const {useAcceptInviteVerifyMutation, useExchangeTokenMutation, useLookupInvitationQuery} = authApi;
+export function useSendOtpMutation() {
+  return useMutation({
+    mutationFn: (body: OtpRequest) => call(client.POST('/v1/auth/otp', {body})),
+  });
+}
+
+export function useExchangeTokenMutation() {
+  return useMutation({
+    mutationFn: (body: TokenOtpRequest | TokenRefreshRequest) =>
+      call(client.POST('/v1/auth/token', {body})) as Promise<AuthTokenResponse>,
+  });
+}

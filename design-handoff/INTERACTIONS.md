@@ -1,6 +1,6 @@
 # INTERACTIONS.md — what happens when, per screen
 
-The prototype's logic class encodes real behavior. This is the distilled "what happens when" — the part markup and screenshots can't show. Data structures shown are **shape only**; wire to RTK Query hooks.
+The prototype's logic class encodes real behavior. This is the distilled "what happens when" — the part markup and screenshots can't show. Data structures shown are **shape only**; wire to React Query hooks.
 
 ## Conventions used everywhere
 - Enter in any inline-rename/small input commits by blurring (`Enter → blur → commit`).

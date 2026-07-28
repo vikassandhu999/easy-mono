@@ -1,23 +1,49 @@
 /**
  * Client-side check-ins: the assignments the client must fill + submission.
- * Generated endpoints are `tag: false`; enhance them with cache tags so
- * submitting refreshes the list. Importing hooks here guarantees the enhance ran.
  */
-import {
-  type ClientProfileFormAssignment,
-  clientApi,
-  useGetClientFormAssignmentQuery,
-  useListClientFormAssignmentsQuery,
-  useSubmitClientFormAssignmentMutation,
-} from '@/api/generated';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-export type {
-  ClientProfileFormAssignment,
-  ClientProfileFormSubmissionRequest,
-  ClientProfileFormTemplate,
-} from '@/api/generated';
+import {call, client} from '@/api/client';
+import {formAssignmentKeys} from '@/api/keys';
+import type {components} from '@/api/schema';
 
-export {useGetClientFormAssignmentQuery, useListClientFormAssignmentsQuery, useSubmitClientFormAssignmentMutation};
+export type ClientProfileFormAssignment = components['schemas']['ClientProfileFormAssignment'];
+export type ClientProfileFormSubmissionRequest = components['schemas']['ClientProfileFormSubmissionRequest'];
+export type ClientProfileFormTemplate = components['schemas']['ClientProfileFormTemplate'];
+
+type ListResponse = components['schemas']['ClientProfileFormAssignmentListResponse'];
+type AssignmentResponse = components['schemas']['ClientProfileFormAssignmentResponse'];
+type SubmissionResponse = components['schemas']['ClientProfileFormSubmissionResponse'];
+
+export function useListClientFormAssignmentsQuery() {
+  return useQuery({
+    queryKey: formAssignmentKeys.list(),
+    queryFn: () => call(client.GET('/v1/client/form-assignments')) as Promise<ListResponse>,
+  });
+}
+
+export function useGetClientFormAssignmentQuery(id: string, options?: {enabled?: boolean}) {
+  return useQuery({
+    queryKey: formAssignmentKeys.detail(id),
+    queryFn: () =>
+      call(client.GET('/v1/client/form-assignments/{id}', {params: {path: {id}}})) as Promise<AssignmentResponse>,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useSubmitClientFormAssignmentMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, ...body}: ClientProfileFormSubmissionRequest & {id: string}) =>
+      call(
+        client.POST('/v1/client/form-assignments/{id}/submit', {params: {path: {id}}, body}),
+      ) as Promise<SubmissionResponse>,
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: formAssignmentKeys.detail(id)});
+      qc.invalidateQueries({queryKey: formAssignmentKeys.lists()});
+    },
+  });
+}
 
 export type FormPurpose = 'check_in' | 'intake';
 
@@ -69,16 +95,3 @@ export function assignmentDisplayStatus(
   }
   return 'To do';
 }
-
-clientApi.enhanceEndpoints({
-  endpoints: {
-    getClientFormAssignment: {providesTags: (_r, _e, {id}) => [{type: 'FormAssignment', id}]},
-    listClientFormAssignments: {providesTags: [{type: 'FormAssignment', id: 'LIST'}]},
-    submitClientFormAssignment: {
-      invalidatesTags: (_r, _e, {id}) => [
-        {type: 'FormAssignment', id},
-        {type: 'FormAssignment', id: 'LIST'},
-      ],
-    },
-  },
-});

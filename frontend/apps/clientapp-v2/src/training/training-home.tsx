@@ -1,4 +1,4 @@
-import {TRAINING_DAY_LABELS, type TrainingWeekday} from '@easy/utils';
+import {TRAINING_DAY_LABELS} from '@easy/utils';
 import {Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Eye, Play} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
@@ -148,17 +148,18 @@ export default function TrainingHome() {
   const navigate = useNavigate();
   const {data: plans, isLoading: loadingPlans} = useListClientTrainingPlansQuery({status: 'active'});
   const {data: sessions, isLoading: loadingSessions} = useListClientTrainingSessionsQuery({});
-  const [createSession, {isLoading: starting}] = useCreateClientTrainingSessionMutation();
+  const createSession = useCreateClientTrainingSessionMutation();
+  const starting = createSession.isPending;
   const plan = plans?.data[0];
   const active = sessions?.data.find((session) => session.state === 'active');
   const recent = (sessions?.data ?? []).filter((session) => session.state === 'completed').slice(0, 3);
 
   const start = async (workout: TrainingPlanWorkout) => {
     try {
-      await createSession({trainingSessionRequest: {training_workout_id: workout.id}}).unwrap();
+      await createSession.mutateAsync({training_workout_id: workout.id});
       navigate(ROUTES.WORKOUT_ACTIVE);
     } catch {
-      // RTK Query surfaces the request error.
+      // the mutation's error state surfaces the failure.
     }
   };
 

@@ -64,7 +64,7 @@ function validateFiles(files: File[], available: number): string | undefined {
 
 export default function AttachmentComposer({disabled, onChange}: AttachmentComposerProps) {
   const inputId = useId();
-  const [createUpload] = useCreateClientUploadMutation();
+  const {mutateAsync: createUpload} = useCreateClientUploadMutation();
   const [items, setItems] = useState<UploadItem[]>([]);
   const [fieldError, setFieldError] = useState<string>();
   const [recordingMs, setRecordingMs] = useState(0);
@@ -147,12 +147,10 @@ export default function AttachmentComposer({disabled, onChange}: AttachmentCompo
     let response;
     try {
       response = await createUpload({
-        attachmentUploadRequest: {
-          byte_size: file.size,
-          content_type: file.type,
-          ...(durationMs && {duration_ms: durationMs}),
-        },
-      }).unwrap();
+        byte_size: file.size,
+        content_type: file.type as AttachmentUploadRequest['content_type'],
+        ...(durationMs && {duration_ms: durationMs}),
+      });
     } catch (error) {
       updateItem(localId, {
         errorMessage: getApiErrorMessage(error, "Couldn't prepare this upload. Try again."),

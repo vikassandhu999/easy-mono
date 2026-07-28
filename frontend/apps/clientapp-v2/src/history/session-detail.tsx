@@ -177,7 +177,7 @@ function Detail({session}: {session: TrainingSession}) {
 export default function SessionDetail() {
   const {sessionId} = useParams<{sessionId: string}>();
   const goBack = useGoBack(ROUTES.WORKOUT_HISTORY);
-  const {data, isLoading} = useGetClientTrainingSessionQuery({id: sessionId!}, {skip: !sessionId});
+  const {data, isLoading} = useGetClientTrainingSessionQuery(sessionId ?? '', {enabled: Boolean(sessionId)});
 
   if (isLoading) {
     return (

@@ -310,8 +310,18 @@ non-zero padding. **Verify by:** `getComputedStyle` padding on a live dialog = 1
 
 ### RM-201 — Deployable frontends need documented + guarded build-time env
 Vite inlines `VITE_API_BASE_URL` at build time; unset on a deployed origin silently hits
-`localhost:4000`. Each Vite app ships `.env.example`, and `api/base.ts` `console.error`s
+`localhost:4000`. Each Vite app ships `.env.example`, and `api/client.ts` `console.error`s
 on a non-local origin with the var unset. Keep both when adding a deployable FE.
+
+### RM-202 — A verification command that can no-op is not verification
+`clientapp-v2`'s build script ran bare `tsc --noEmit`, but its root `tsconfig.json` is a
+solution file (`"files": []`, only `references`). Bare `tsc` on a solution config compiles
+nothing and exits 0, so `pnpm build` "typechecked" the app for months while 183 type errors
+accumulated — including dead code (`workout.notes`, a field the API never returns) that
+looked live. A typecheck must name the project that holds the sources:
+`tsc --noEmit -p tsconfig.app.json` (coachapp always did). **Verify by:** breaking a type on
+purpose and confirming the command fails. Applies to any "check" command — if you can't make
+it fail, it isn't checking.
 
 ---
 

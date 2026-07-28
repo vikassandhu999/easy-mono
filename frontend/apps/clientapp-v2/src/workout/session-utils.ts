@@ -12,6 +12,7 @@ export type SnapshotSet = {
   load_unit?: null | string;
   load_value?: null | string;
   reps?: null | string;
+  rest_seconds?: null | number;
   rpe?: null | number | string;
   set_type?: null | string;
 };

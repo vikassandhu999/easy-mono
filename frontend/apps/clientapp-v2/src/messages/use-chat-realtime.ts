@@ -1,12 +1,12 @@
-import {useDispatch} from 'react-redux';
+import {useQueryClient} from '@tanstack/react-query';
 
 import {useChannelEvent} from '@/@hooks/use-channel-event';
-import {api} from '@/api/base';
-import {appendClientMessageAction, type ChatMessage, useGetClientConversationQuery} from '@/api/conversation';
+import {appendClientMessage, type ChatMessage, useGetClientConversationQuery} from '@/api/conversation';
+import {conversationKeys} from '@/api/keys';
 
 /** Mounted once in AppShell — the single join of the conversation topic. */
 export function useChatRealtime() {
-  const dispatch = useDispatch();
+  const qc = useQueryClient();
   const {data} = useGetClientConversationQuery();
   const conversationId = data?.data.id ?? null;
 
@@ -14,16 +14,11 @@ export function useChatRealtime() {
     conversationId ? `conversation:${conversationId}` : null,
     'message_new',
     (payload) => {
-      dispatch(appendClientMessageAction(payload as ChatMessage));
-      dispatch(api.util.invalidateTags([{type: 'Conversation', id: 'LIST'}]));
+      appendClientMessage(payload as ChatMessage);
+      qc.invalidateQueries({queryKey: conversationKeys.detail()});
     },
-    // Refetch anything missed while the socket was down (fires on every rejoin).
-    () =>
-      dispatch(
-        api.util.invalidateTags([
-          {type: 'ChatMessage', id: 'MINE'},
-          {type: 'Conversation', id: 'LIST'},
-        ]),
-      ),
+    // Refetch anything missed while the socket was down (fires on every rejoin) —
+    // history AND header, hence `all` rather than just `detail()`.
+    () => qc.invalidateQueries({queryKey: conversationKeys.all}),
   );
 }

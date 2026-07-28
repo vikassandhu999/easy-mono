@@ -14,6 +14,7 @@ import {
   asTodayPlan,
   type FoodLogEntry,
   plannedItemCalories,
+  type SwitchOptionRequest,
   type TodayPlanOption,
   useCreateFoodLogEntryMutation,
   useDeleteFoodLogEntryMutation,
@@ -95,11 +96,14 @@ export default function NutritionToday() {
   } = useListClientMealLogsQuery({date});
   const {data: plansResp} = useListClientNutritionPlansQuery({status: 'active'});
 
-  const [createEntry] = useCreateFoodLogEntryMutation();
-  const [deleteEntry] = useDeleteFoodLogEntryMutation();
-  const [logMeal, {isLoading: loggingMeal}] = useLogMealMutation();
-  const [logDay, {isLoading: loggingDay}] = useLogDayMutation();
-  const [switchOption, {isLoading: switchingOption}] = useSwitchNutritionMealOptionMutation();
+  const {mutateAsync: createEntry} = useCreateFoodLogEntryMutation();
+  const {mutateAsync: deleteEntry} = useDeleteFoodLogEntryMutation();
+  const logMeal = useLogMealMutation();
+  const logDay = useLogDayMutation();
+  const switchOption = useSwitchNutritionMealOptionMutation();
+  const loggingMeal = logMeal.isPending;
+  const loggingDay = logDay.isPending;
+  const switchingOption = switchOption.isPending;
   const [sheet, setSheet] = useState<null | SheetTarget>(null);
   const [pickerMode, setPickerMode] = useState<'add' | 'replace' | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<null | SheetTarget>(null);
@@ -126,20 +130,18 @@ export default function NutritionToday() {
   const logPlanned = async (slot: SlotView, row: PlannedRow) => {
     try {
       await createEntry({
-        foodLogEntryRequest: {
-          amount: row.item.amount,
-          date,
-          food_id: row.item.food_id ?? undefined,
-          meal_id: slot.mealId ?? undefined,
-          meal_slot: slot.slot,
-          plan_id: plan?.plan_id,
-          planned_item_index: row.position,
-          recipe_id: row.item.recipe_id ?? undefined,
-          source: 'planned',
-          unit: row.item.unit,
-          weight_g: row.item.weight_g,
-        },
-      }).unwrap();
+        amount: row.item.amount,
+        date,
+        food_id: row.item.food_id ?? undefined,
+        meal_id: slot.mealId ?? undefined,
+        meal_slot: slot.slot,
+        plan_id: plan?.plan_id,
+        planned_item_index: row.position,
+        recipe_id: row.item.recipe_id ?? undefined,
+        source: 'planned',
+        unit: row.item.unit,
+        weight_g: row.item.weight_g,
+      });
     } catch {
       toast.danger("Couldn't log it. Try again.");
     }
@@ -147,7 +149,7 @@ export default function NutritionToday() {
 
   const removeEntry = async (entry: FoodLogEntry) => {
     try {
-      await deleteEntry({id: entry.id}).unwrap();
+      await deleteEntry(entry.id);
     } catch {
       toast.danger("Couldn't remove it. Try again.");
     }
@@ -158,7 +160,7 @@ export default function NutritionToday() {
       return;
     }
     try {
-      await logMeal({foodLogEntryRequest: {date, meal_id: slot.mealId, meal_slot: slot.slot}}).unwrap();
+      await logMeal.mutateAsync({date, meal_id: slot.mealId, meal_slot: slot.slot});
     } catch {
       toast.danger("Couldn't log the meal. Try again.");
     }
@@ -205,32 +207,28 @@ export default function NutritionToday() {
         // Delete the old entry first so the planned slot never holds two entries
         // (which dayTotals would double-count); a failed create then just reverts to unlogged.
         if (replacing.loggedEntry) {
-          await deleteEntry({id: replacing.loggedEntry.id}).unwrap();
+          await deleteEntry(replacing.loggedEntry.id);
         }
         await createEntry({
-          foodLogEntryRequest: {
-            date,
-            food_id: picked.kind === 'food' ? picked.id : undefined,
-            meal_id: replacing.mealId ?? undefined,
-            meal_slot: replacing.slot,
-            plan_id: replacing.planId,
-            planned_item_index: replacing.plannedIndex ?? undefined,
-            recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
-            source: 'replacement',
-            weight_g: picked.defaultWeightG,
-          },
-        }).unwrap();
+          date,
+          food_id: picked.kind === 'food' ? picked.id : undefined,
+          meal_id: replacing.mealId ?? undefined,
+          meal_slot: replacing.slot,
+          plan_id: replacing.planId,
+          planned_item_index: replacing.plannedIndex ?? undefined,
+          recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
+          source: 'replacement',
+          weight_g: picked.defaultWeightG,
+        });
       } else {
         await createEntry({
-          foodLogEntryRequest: {
-            date,
-            food_id: picked.kind === 'food' ? picked.id : undefined,
-            meal_slot: picked.slot,
-            recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
-            source: 'unplanned',
-            weight_g: picked.defaultWeightG,
-          },
-        }).unwrap();
+          date,
+          food_id: picked.kind === 'food' ? picked.id : undefined,
+          meal_slot: picked.slot,
+          recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
+          source: 'unplanned',
+          weight_g: picked.defaultWeightG,
+        });
       }
     } catch {
       toast.danger("Couldn't save it. Try again.");
@@ -242,7 +240,7 @@ export default function NutritionToday() {
       return;
     }
     try {
-      await logDay({foodLogEntryRequest: {date, plan_id: plan.plan_id}}).unwrap();
+      await logDay.mutateAsync({date, plan_id: plan.plan_id});
     } catch {
       toast.danger("Couldn't log the day. Try again.");
     }
@@ -266,9 +264,11 @@ export default function NutritionToday() {
     }
     const {option, slot} = confirmSwitch;
     try {
-      await switchOption({
-        nutritionSwitchOptionRequest: {date, meal_id: option.meal_id, meal_slot: slot.slot},
-      }).unwrap();
+      await switchOption.mutateAsync({
+        date,
+        meal_id: option.meal_id,
+        meal_slot: slot.slot as SwitchOptionRequest['meal_slot'],
+      });
       setSelections((prev) => {
         const next = {...prev};
         delete next[slot.slot];

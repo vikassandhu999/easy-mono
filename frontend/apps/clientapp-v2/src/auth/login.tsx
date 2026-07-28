@@ -5,7 +5,7 @@ import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
-import {useSendOtpMutation} from '@/api/generated';
+import {useSendOtpMutation} from '@/api/auth';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -21,10 +21,11 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const sessionExpired = searchParams.get('session_expired') === 'true';
   // Prefer in-app navigation state (set by withAuth on protected route hit),
-  // fall back to query param (set by base.ts on session expiry — survives hard reload).
+  // fall back to query param (set by client.ts on session expiry — survives hard reload).
   const stateRedirect = (location.state as null | {redirectTo?: string})?.redirectTo;
   const redirectTo = stateRedirect ?? searchParams.get('redirect_to') ?? undefined;
-  const [sendOtp, {isLoading}] = useSendOtpMutation();
+  const sendOtp = useSendOtpMutation();
+  const isLoading = sendOtp.isPending;
 
   const {
     formState: {errors},
@@ -37,7 +38,7 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      await sendOtp({otpRequest: {email: data.email, type: 'authentication'}}).unwrap();
+      await sendOtp.mutateAsync({email: data.email, type: 'authentication'});
       navigate(ROUTES.VERIFY_LOGIN_OTP, {
         state: {email: data.email, redirectTo},
       });

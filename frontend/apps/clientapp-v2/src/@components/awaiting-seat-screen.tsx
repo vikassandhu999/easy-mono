@@ -3,9 +3,8 @@ import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import {clearTokens} from '@/api/authStorage';
-import {api} from '@/api/base';
 import {useGetClientProfileQuery} from '@/api/profile';
-import {store} from '@/store';
+import {queryClient} from '@/api/query-client';
 
 /**
  * Shown instead of the app shell when the client's status is `awaiting_seat`
@@ -15,11 +14,11 @@ import {store} from '@/store';
 export function AwaitingSeatScreen() {
   const {data: profile, refetch, isFetching} = useGetClientProfileQuery();
   const navigate = useNavigate();
-  const businessName = profile?.data.coach.business_name;
+  const businessName = profile?.data.coach?.business_name;
 
   const handleLogout = useCallback(() => {
     clearTokens();
-    store.dispatch(api.util.resetApiState());
+    queryClient.clear();
     navigate(ROUTES.LOGIN);
   }, [navigate]);
 

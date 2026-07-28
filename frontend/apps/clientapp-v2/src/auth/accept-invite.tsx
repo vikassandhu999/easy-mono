@@ -2,15 +2,13 @@ import {Alert, Button, Input, Label, Link, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {useDispatch} from 'react-redux';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
-import {useLookupInvitationQuery} from '@/api/auth';
+import {useAcceptInviteMutation, useLookupInvitationQuery} from '@/api/auth';
 import {clearTokens, getAccessToken} from '@/api/authStorage';
-import {api} from '@/api/base';
-import {useAcceptInviteMutation} from '@/api/generated';
+import {queryClient} from '@/api/query-client';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
@@ -62,14 +60,13 @@ export default function AcceptInvite() {
 
 function AlreadyLoggedInGuard({onLoggedOut}: {onLoggedOut: () => void}) {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const handleLogOut = () => {
-    // Clear persisted tokens + drop any cached authed data from RTK Query.
-    // Without the cache reset, a subsequent authed query could return stale
-    // data from the previous session before a fresh 401 triggers re-login.
+    // Clear persisted tokens + drop any cached authed data. Without the cache
+    // reset, a subsequent authed query could return stale data from the
+    // previous session before a fresh 401 triggers re-login.
     clearTokens();
-    dispatch(api.util.resetApiState());
+    queryClient.clear();
     onLoggedOut();
   };
 
@@ -105,11 +102,9 @@ function AlreadyLoggedInGuard({onLoggedOut}: {onLoggedOut: () => void}) {
 }
 
 function AcceptInviteWithToken({token}: {token: string}) {
-  // Skip cache on re-mount — invitation state can change between visits
+  // Always refetches on mount — invitation state can change between visits
   // (e.g. another device accepted, coach revoked).
-  const {data, isError, isFetching} = useLookupInvitationQuery(token, {
-    refetchOnMountOrArgChange: true,
-  });
+  const {data, isError, isFetching} = useLookupInvitationQuery(token);
 
   if (isFetching) {
     // Minimal full-screen spinner while we look up the invitation — no
@@ -187,7 +182,7 @@ function WelcomeForm({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [acceptInvite, {isLoading}] = useAcceptInviteMutation();
+  const acceptInvite = useAcceptInviteMutation();
 
   // Priority: user-typed email (from Change-it) > coach prefill > empty.
   const locationState = location.state as AcceptInviteLocationState | null;
@@ -206,7 +201,7 @@ function WelcomeForm({
 
   const onSubmit = async (data: AcceptInviteFormValues) => {
     try {
-      await acceptInvite({acceptInviteRequest: {invitation_token: token, email: data.email}}).unwrap();
+      await acceptInvite.mutateAsync({invitation_token: token, email: data.email});
       navigate(`/invite/${token}/verify`, {state: {email: data.email}});
     } catch (err) {
       const code = getApiErrorCode(err);
@@ -250,10 +245,10 @@ function WelcomeForm({
 
         <Button
           fullWidth
-          isPending={isLoading}
+          isPending={acceptInvite.isPending}
           type="submit"
         >
-          {isLoading ? (
+          {acceptInvite.isPending ? (
             <>
               <Spinner
                 color="current"

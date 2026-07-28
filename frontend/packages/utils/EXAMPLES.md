@@ -143,43 +143,30 @@ function LoginForm() {
 }
 ```
 
-## Example 6: RTK Query Integration
+## Example 6: React Query Integration
 
 ```typescript
 import { AppError } from '@easy/utils';
-import { createApi } from '@reduxjs/toolkit/query/react';
+import { useMutation } from '@tanstack/react-query';
 
-export const authApi = createApi({
-  reducerPath: 'authApi',
-  baseQuery: axiosBaseQuery(),
-  endpoints: (builder) => ({
-    login: builder.mutation({
-      query: (credentials) => ({
-        url: '/api/auth/login',
-        method: 'POST',
-        data: credentials,
-      }),
-      transformErrorResponse: (error) => {
-        const appError = AppError.fromAxiosError(error);
-        return {
-          message: appError.message,
-          code: appError.code,
-        };
-      },
-    }),
-  }),
-});
+import { call, client } from '@/api/client';
+
+export function useLoginMutation() {
+  return useMutation({
+    mutationFn: (credentials: LoginRequest) => call(client.POST('/v1/auth/token', { body: credentials })),
+  });
+}
 
 // Usage in component
 function LoginPage() {
-  const [login, { isLoading, error }] = useLoginMutation();
-  
-  const handleLogin = async (data) => {
+  const login = useLoginMutation();
+
+  const handleLogin = async (data: LoginRequest) => {
     try {
-      await login(data).unwrap();
+      await login.mutateAsync(data);
     } catch (err) {
       const errorCode = getApiErrorCode(err);
-      
+
       if (errorCode === ApiErrorCode.INVALID_OTP) {
         // Show OTP error
       } else if (errorCode === ApiErrorCode.RATE_LIMIT_EXCEEDED) {
@@ -187,6 +174,8 @@ function LoginPage() {
       }
     }
   };
+
+  return <form onSubmit={...}>{/* login.isPending drives the button */}</form>;
 }
 ```
 

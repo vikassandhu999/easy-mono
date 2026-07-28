@@ -8,7 +8,7 @@ import {Spinner} from '@heroui/react';
 import {X} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 
-import {type Food, type Recipe, useLazyListClientFoodsQuery, useLazyListClientRecipesQuery} from '@/api/nutrition';
+import {type Food, type Recipe, useListClientFoodsQuery, useListClientRecipesQuery} from '@/api/nutrition';
 
 export type Picked = {
   defaultWeightG: number;
@@ -51,15 +51,10 @@ export default function FoodPicker({
     return () => clearTimeout(id);
   }, [q]);
 
-  const [fetchFoods, foods] = useLazyListClientFoodsQuery();
-  const [fetchRecipes, recipes] = useLazyListClientRecipesQuery();
-  useEffect(() => {
-    if (tab === 'foods') {
-      fetchFoods({limit: 30, search: search || undefined});
-    } else {
-      fetchRecipes({limit: 30, search: search || undefined});
-    }
-  }, [tab, search, fetchFoods, fetchRecipes]);
+  // Only the visible tab fetches; switching tabs re-uses whatever is cached for it.
+  const query = {limit: 30, search: search || undefined};
+  const foods = useListClientFoodsQuery(query, {enabled: tab === 'foods'});
+  const recipes = useListClientRecipesQuery(query, {enabled: tab === 'recipes'});
 
   const loading = tab === 'foods' ? foods.isFetching : recipes.isFetching;
   const foodItems = (foods.data?.data ?? []) as Food[];

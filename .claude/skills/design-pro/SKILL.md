@@ -156,7 +156,7 @@ literals, numbered scales. `onPress` not `onClick`; `aria-label` on icon-only
 buttons; responsive overlays (`Popover` desktop / `KeyboardSheet` mobile,
 `AlertDialog` confirms). All loading (`ListSkeleton`/`PageSkeleton`), empty,
 error states — the prototype never shows these; UI-CONTRACT §6 defines them.
-Data through existing RTK Query hooks; never `useEffect` fetching.
+Data through existing React Query hooks; never `useEffect` fetching.
 
 Watch for these fossils in your own diff before finishing:
 - a responsive pair with the same token both sides (`type-x … sm:type-x`) is a

@@ -81,10 +81,17 @@ defmodule Easy.Identity.OneTimeTokens do
     generate_token_hash(otp <> "|" <> email <> "|" <> invitation_token)
   end
 
-  @spec invitation_acceptance_token_expired?(Identity.OneTimeToken.t()) :: boolean()
-  def invitation_acceptance_token_expired?(%Identity.OneTimeToken{inserted_at: inserted_at}) do
-    otp_validity_minutes = 10
-    NaiveDateTime.diff(NaiveDateTime.utc_now(), inserted_at, :minute) > otp_validity_minutes
+  # How long any one-time code stays good — login, invitation acceptance, all of
+  # them. ONE constant on purpose: this was previously a local in an
+  # invitation-only helper, and the authentication path simply never got an
+  # equivalent, so login codes never expired at all. A per-type TTL is how that
+  # gap opened; if a type ever genuinely needs its own, make it an argument
+  # rather than a second function.
+  @otp_validity_minutes 10
+
+  @spec expired?(Identity.OneTimeToken.t()) :: boolean()
+  def expired?(%Identity.OneTimeToken{inserted_at: inserted_at}) do
+    NaiveDateTime.diff(NaiveDateTime.utc_now(), inserted_at, :minute) > @otp_validity_minutes
   end
 
   @spec generate_token_hash(String.t()) :: String.t()

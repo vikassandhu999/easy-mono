@@ -1,6 +1,8 @@
 defmodule EasyWeb.Auth.TokenTest do
   use Easy.ConnCase, async: true
 
+  import Ecto.Query
+
   alias EasyWeb.OpenApi.Schemas.{TokenRequest, VerifyRequest}
 
   describe "TokenRequest" do
@@ -56,6 +58,75 @@ defmodule EasyWeb.Auth.TokenTest do
 
       assert conn.status in 400..499
     end
+
+    # Regression: a hash miss used to roll back the raw `:token_not_found`, which
+    # FallbackController has no clause for, so every mistyped login code answered
+    # 500 "An internal error occurred". Both apps map `invalid_otp` to real copy
+    # ("Invalid code. Please check and try again."), and that copy was unreachable.
+    test "returns 400 invalid_otp for a wrong OTP, not a 500", %{conn: conn} do
+      user = insert(:user)
+
+      conn =
+        post(conn, "/v1/auth/token", %{
+          "grant_type" => "otp",
+          "email" => user.email,
+          "otp" => "999999",
+          "role" => "client"
+        })
+
+      assert %{"error_code" => "invalid_otp"} = json_response(conn, 400)
+    end
+
+    # Pairs with the expiry test below: proves the freshness check lets a fresh
+    # code through. `guest` because role resolution is a separate concern from
+    # OTP validity and a client role would need a whole business/coach fixture.
+    test "exchanges a fresh OTP for a session", %{conn: conn} do
+      user = confirmed_user_with_otp("123456")
+
+      conn =
+        post(conn, "/v1/auth/token", %{
+          "grant_type" => "otp",
+          "email" => user.email,
+          "otp" => "123456",
+          "role" => "guest"
+        })
+
+      assert %{"access_token" => _, "scope" => "guest"} = json_response(conn, 200)
+    end
+
+    # Regression: only invitation-acceptance codes were checked for freshness, so
+    # a login OTP nobody re-requested stayed valid forever — a 2-day-old code
+    # still minted a session.
+    test "rejects an OTP older than its 10-minute validity", %{conn: conn} do
+      user = confirmed_user_with_otp("123456")
+      backdate_tokens(user, minutes: 11)
+
+      conn =
+        post(conn, "/v1/auth/token", %{
+          "grant_type" => "otp",
+          "email" => user.email,
+          "otp" => "123456",
+          "role" => "client"
+        })
+
+      assert %{"error_code" => "otp_expired"} = json_response(conn, 410)
+    end
+  end
+
+  defp confirmed_user_with_otp(otp) do
+    user = insert(:user)
+    {:ok, user} = Easy.Identity.Users.confirm_user_email(user)
+    {:ok, _} = Easy.Identity.OneTimeTokens.create_token(user, :authentication, otp)
+    user
+  end
+
+  defp backdate_tokens(user, minutes: minutes) do
+    stale = NaiveDateTime.utc_now() |> NaiveDateTime.add(-minutes * 60) |> NaiveDateTime.truncate(:second)
+
+    Easy.Repo.update_all(
+      from(t in Easy.Identity.OneTimeToken, where: t.user_id == ^user.id),
+      set: [inserted_at: stale]
+    )
   end
 
   describe "POST /v1/auth/verify" do

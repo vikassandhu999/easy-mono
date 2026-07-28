@@ -172,7 +172,7 @@ defmodule Easy.Identity.Invitations do
   end
 
   defp validate_invitation_ott_fresh(ott) do
-    if OneTimeTokens.invitation_acceptance_token_expired?(ott) do
+    if OneTimeTokens.expired?(ott) do
       {:error, :otp_expired}
     else
       :ok

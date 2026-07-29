@@ -95,7 +95,8 @@ defmodule EasyWeb.Coaches.ExerciseController do
     responses: [
       no_content: "Exercise deleted",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Still in use — an exercise still used by a workout", "application/json", ErrorResponse}
     ]
 
   operation :create,

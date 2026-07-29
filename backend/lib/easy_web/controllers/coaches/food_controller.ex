@@ -74,7 +74,8 @@ defmodule EasyWeb.Coaches.FoodController do
     responses: [
       no_content: "Food deleted",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Still in use — a food still used by a plan or recipe", "application/json", ErrorResponse}
     ]
 
   operation :index,

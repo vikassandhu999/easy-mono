@@ -5,6 +5,7 @@ defmodule Easy.Exercises do
   alias Easy.Training.TrainingEquipment
   alias Easy.Training.TrainingExercise
   alias Easy.Training.TrainingMuscle
+  alias Easy.Training.TrainingWorkoutExercise
   alias Easy.Utils
 
   import Ecto.Query
@@ -135,11 +136,22 @@ defmodule Easy.Exercises do
     end
   end
 
-  @spec delete_exercise(Ctx.t(), String.t()) :: exercise_response()
+  @spec delete_exercise(Ctx.t(), String.t()) ::
+          {:ok, TrainingExercise.t()} | {:error, :not_found | :in_use | Ecto.Changeset.t()}
   def delete_exercise(%Ctx{} = ctx, exercise_id) do
-    with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id) do
+    with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
+         :ok <- ensure_exercise_not_in_use(exercise.id) do
       Repo.delete(exercise)
     end
+  end
+
+  # A workout element pointing at no exercise is unrenderable, so an exercise still
+  # used by a plan is a conflict rather than a cascade. Performed sets are different:
+  # they denormalise `exercise_name`, so logged history nilifies safely and survives.
+  defp ensure_exercise_not_in_use(exercise_id) do
+    if Repo.exists?(from(e in TrainingWorkoutExercise, where: e.exercise_id == ^exercise_id)),
+      do: {:error, :in_use},
+      else: :ok
   end
 
   @spec duplicate_exercise(Ctx.t(), String.t(), map()) ::

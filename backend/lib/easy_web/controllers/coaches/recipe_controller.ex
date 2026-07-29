@@ -65,7 +65,8 @@ defmodule EasyWeb.Coaches.RecipeController do
     responses: [
       no_content: "Recipe deleted",
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
-      not_found: {"Not found", "application/json", ErrorResponse}
+      not_found: {"Not found", "application/json", ErrorResponse},
+      conflict: {"Still in use — a recipe still used by a plan", "application/json", ErrorResponse}
     ]
 
   operation :index,

@@ -46,6 +46,7 @@ defmodule Easy.Training.TrainingWorkoutExercise do
   def update_changeset(element, attrs) do
     element
     |> cast(attrs, @cast_fields)
+    |> validate_required([:exercise_id])
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
   end
 

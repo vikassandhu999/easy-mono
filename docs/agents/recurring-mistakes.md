@@ -116,6 +116,9 @@ assertion still hold in a year?"
 Every ilike filter goes through `Easy.Search.like_pattern/1` (searching `%` matched every
 row). **Enforced by:** review — grep `%#{term}%` should return nothing under `backend/lib`.
 
+### RM-020 — A required-on-create FK must also be required on update and on delete
+`validate_required` in `insert_changeset` alone is one door out of three. `training_workout_exercises.exercise_id` was required on create but nilify-on-delete with no NOT NULL, and `update_changeset` never required it — so deleting an exercise, or `PATCH`ing the element with `exercise_id: nil`, silently left a plan row pointing at nothing that still rendered its `planned_sets` as a nameless movement. Whenever a parent reference is mandatory, cover all three doors: `validate_required` in **both** changesets, a `:restrict` FK (not nilify + NOT NULL — that trips RM-019), and a context guard returning `{:error, :in_use}` so the user gets a 409 instead of a constraint error. Deciding rule: nilify is for rows that denormalise what they need to survive (`food_name`, `exercise_name` on log entries); restrict is for structural rows that are meaningless without the parent.
+
 ### RM-019 — `ON DELETE SET NULL` + a CHECK over the same columns = deletes raise
 SET NULL is an UPDATE, and Postgres evaluates CHECK constraints on UPDATE. A
 `num_nonnulls(a, b) = 1` check over nilify-on-delete FKs therefore makes deleting the

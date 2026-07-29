@@ -32,11 +32,11 @@ defmodule Easy.Storage do
 
     with :ok <- validate_expiry(expires_in),
          {:ok, config} <- storage_config(store) do
-      {:ok, build_signed_url(method, storage_key, now, expires_in, config)}
+      {:ok, build_signed_url(method, storage_key, now, expires_in, config, store)}
     end
   end
 
-  defp build_signed_url(method, storage_key, now, expires_in, config) do
+  defp build_signed_url(method, storage_key, now, expires_in, config, store) do
     endpoint = URI.parse(config.endpoint)
     host = authority(endpoint)
     date_time = Calendar.strftime(now, "%Y%m%dT%H%M%SZ")
@@ -44,14 +44,22 @@ defmodule Easy.Storage do
     scope = "#{date}/#{config.region}/#{@service}/#{@request_type}"
     canonical_uri = canonical_uri(endpoint.path, config.bucket, storage_key)
 
+    # Public-bucket PUTs sign x-amz-acl=public-read into the URL: S3-compatible
+    # stores like DO Spaces keep objects private by default, so without it
+    # public_url/1 links would 403.
+    acl_params =
+      if method == "PUT" and store == :public, do: [{"x-amz-acl", "public-read"}], else: []
+
     query =
-      canonical_query([
-        {"X-Amz-Algorithm", @algorithm},
-        {"X-Amz-Credential", "#{config.access_key_id}/#{scope}"},
-        {"X-Amz-Date", date_time},
-        {"X-Amz-Expires", Integer.to_string(expires_in)},
-        {"X-Amz-SignedHeaders", "host"}
-      ])
+      canonical_query(
+        [
+          {"X-Amz-Algorithm", @algorithm},
+          {"X-Amz-Credential", "#{config.access_key_id}/#{scope}"},
+          {"X-Amz-Date", date_time},
+          {"X-Amz-Expires", Integer.to_string(expires_in)},
+          {"X-Amz-SignedHeaders", "host"}
+        ] ++ acl_params
+      )
 
     canonical_request =
       [method, canonical_uri, query, "host:#{host}\n", "host", "UNSIGNED-PAYLOAD"]

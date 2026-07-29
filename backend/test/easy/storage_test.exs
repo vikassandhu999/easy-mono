@@ -53,6 +53,19 @@ defmodule Easy.StorageTest do
     refute put_query["X-Amz-Signature"] == get_query["X-Amz-Signature"]
   end
 
+  test "public-store PUTs sign x-amz-acl=public-read; private PUTs and public GETs do not" do
+    config = Application.get_env(:easy, Storage)
+    Application.put_env(:easy, Storage, Keyword.put(config, :public_bucket, "coach-public"))
+
+    assert {:ok, public_put} = Storage.presign_put("media/a.jpg", now: @now, store: :public)
+    assert {:ok, private_put} = Storage.presign_put("media/a.jpg", now: @now)
+    assert {:ok, public_get} = Storage.presign_get("media/a.jpg", now: @now, store: :public)
+
+    assert URI.decode_query(URI.parse(public_put.url).query)["x-amz-acl"] == "public-read"
+    refute URI.parse(private_put.url).query =~ "x-amz-acl"
+    refute URI.parse(public_get.url).query =~ "x-amz-acl"
+  end
+
   test "rejects invalid expiry values" do
     assert {:error, :invalid_expiry} = Storage.presign_get("photo.jpg", now: @now, expires_in: 0)
     assert {:error, :invalid_expiry} = Storage.presign_get("photo.jpg", now: @now, expires_in: 604_801)

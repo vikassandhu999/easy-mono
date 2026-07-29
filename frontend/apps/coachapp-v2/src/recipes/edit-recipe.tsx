@@ -7,7 +7,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
-import {applyFormErrors, type ServingSize} from '@/api/shared';
+import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {
   type RecipeFormValues,
@@ -28,27 +28,19 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
   const [ingredients, setIngredients] = useState<IngredientItem[]>(() =>
     recipeIngredientsToDrafts(recipe.recipe_ingredients),
   );
-  const [servingSizes, setServingSizes] = useState<ServingSize[]>(() =>
-    recipe.serving_sizes.map((s) => ({unit: s.unit, amount: s.amount ?? null, weight_g: s.weight_g ?? null})),
-  );
   // Ingredients and serving sizes aren't react-hook-form fields, so track their
   // edits separately from form.formState.isDirty for the unsaved-changes guard.
   const [contentChanged, setContentChanged] = useState(false);
   const leaveConfirm = useOverlayState();
 
   const form = useRecipeForm({
-    values: recipeToFormValues(recipe),
+    values: recipeToFormValues({...recipe, servings_count: recipe.servings_count ?? null}),
   });
 
   const hasUnsavedChanges = form.formState.isDirty || contentChanged;
 
   const handleIngredientsChange = (items: IngredientItem[]) => {
     setIngredients(items);
-    setContentChanged(true);
-  };
-
-  const handleServingSizesChange = (sizes: ServingSize[]) => {
-    setServingSizes(sizes);
     setContentChanged(true);
   };
 
@@ -64,7 +56,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
     try {
       await updateRecipe.mutateAsync({
         id: recipeId,
-        body: recipeToUpdateRequest({ingredients, servingSizes, values: formData}),
+        body: recipeToUpdateRequest({ingredients, values: formData}),
       });
       goBack();
     } catch (err) {
@@ -94,9 +86,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
             isSubmitting={updateRecipe.isPending}
             onCancel={attemptLeave}
             onIngredientsChange={handleIngredientsChange}
-            onServingSizesChange={handleServingSizesChange}
             onSubmit={onSubmit}
-            servingSizes={servingSizes}
             submitLabel="Save changes"
             submittingLabel="Saving changes"
           />

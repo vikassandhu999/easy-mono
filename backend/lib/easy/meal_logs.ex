@@ -128,7 +128,7 @@ defmodule Easy.MealLogs do
          meal when not is_nil(meal) <- load_meal_with_items(ctx.business_id, client.id, meal_id) do
       case get_existing_meal_log(ctx.business_id, client.id, date, meal_slot) do
         %MealLog{nutrition_meal_id: existing_meal_id} = existing when existing_meal_id == meal_id ->
-          {:ok, Repo.preload(existing, food_log_entries: FoodLogEntry.by_position())}
+          {:ok, Repo.preload(existing, food_log_entries: FoodLogEntry.oldest())}
 
         _ ->
           do_switch_meal_option(ctx, client.id, date, meal_slot, meal_id)
@@ -257,7 +257,7 @@ defmodule Easy.MealLogs do
     snapshot = build_planned_snapshot(business_id, meal_id)
     validate_snapshot!(meal_id, snapshot)
     meal_log = get_or_create_meal_log!(business_id, client_id, date, meal_slot, snapshot, meal_id)
-    meal_item_id = resolve_planned_meal_item_id(business_id, meal_id, attrs[:planned_item_index])
+    meal_item_id = resolve_meal_item_id(business_id, meal_id, attrs[:meal_item_id])
 
     with {:ok, entry} <- create_food_log_entry(business_id, meal_log.id, attrs, meal_item_id),
          {:ok, _meal_log} <- recalculate_logged_calories(meal_log) do
@@ -491,23 +491,18 @@ defmodule Easy.MealLogs do
   defp put_meal_item(changeset, nil), do: changeset
   defp put_meal_item(changeset, meal_item_id), do: put_change(changeset, :nutrition_meal_item_id, meal_item_id)
 
-  # The client still identifies a planned item by its position. Positions are not
-  # unique — the builder redesign renounced that — so pin the entry to a concrete
-  # item id here; lowest id wins, matching the migration's backfill. Reconciliation
-  # keys on the id from this point on, so a same-position twin is no longer
-  # mistaken for an item that was already logged.
-  defp resolve_planned_meal_item_id(_business_id, nil, _position), do: nil
-  defp resolve_planned_meal_item_id(_business_id, _meal_id, nil), do: nil
+  # The client names the planned item it is fulfilling by id. Scoped to the meal
+  # already resolved for this slot, so a client cannot point an entry at another
+  # business's item; an unknown id simply logs unreconciled rather than failing.
+  defp resolve_meal_item_id(_business_id, nil, _meal_item_id), do: nil
+  defp resolve_meal_item_id(_business_id, _meal_id, nil), do: nil
 
-  defp resolve_planned_meal_item_id(business_id, meal_id, position) do
+  defp resolve_meal_item_id(business_id, meal_id, meal_item_id) do
     MealItem
     |> MealItem.for_business(business_id)
     |> MealItem.for_meal(meal_id)
-    |> MealItem.for_position(position)
-    |> order_by([mi], asc: mi.id)
-    |> limit(1)
     |> select([mi], mi.id)
-    |> Repo.one()
+    |> Repo.get(meal_item_id)
   end
 
   defp update_food_log_entry(%FoodLogEntry{} = entry, business_id, attrs) do
@@ -554,9 +549,21 @@ defmodule Easy.MealLogs do
       recipe ->
         changeset
         |> put_change(:food_name, get_field(changeset, :food_name) || recipe.name)
+        |> validate_recipe_weighable(recipe, weight_g)
         |> put_macros(recipe_macros(recipe, weight_g, amount))
     end
   end
+
+  # Mirrors Meals.validate_recipe_weighable/2: no cooked weight -> no gram
+  # denominator, so the entry can only be sized in servings.
+  defp validate_recipe_weighable(changeset, _recipe, nil), do: changeset
+
+  defp validate_recipe_weighable(changeset, %Recipe{cooked_weight_g: cooked}, _weight_g)
+       when is_number(cooked) and cooked > 0,
+       do: changeset
+
+  defp validate_recipe_weighable(changeset, _recipe, _weight_g),
+    do: add_error(changeset, :weight_g, "this recipe has no cooked weight — size it in servings")
 
   # A recipe with no logged grams is priced in servings, matching MacroCalc.for_meal_item/1.
   defp recipe_macros(recipe, nil, amount), do: MacroCalc.for_recipe_servings(recipe, amount)
@@ -604,7 +611,10 @@ defmodule Easy.MealLogs do
 
       {_, %Recipe{} = recipe} ->
         recipe = load_recipe_with_ingredients(business_id, recipe.id)
-        put_macros(changeset, recipe_macros(recipe, weight_g, amount))
+
+        changeset
+        |> validate_recipe_weighable(recipe, weight_g)
+        |> put_macros(recipe_macros(recipe, weight_g, amount))
 
       _ ->
         changeset
@@ -685,8 +695,7 @@ defmodule Easy.MealLogs do
       "amount" => item.amount,
       "unit" => item.unit,
       "weight_g" => item.weight_g,
-      "source" => "planned",
-      "planned_item_index" => item.position
+      "source" => "planned"
     }
   end
 

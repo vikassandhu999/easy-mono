@@ -36,7 +36,7 @@ defmodule EasyWeb.Clients.MealLogJSON do
       fiber_g: e.fiber_g,
       notes: e.notes,
       source: e.source,
-      planned_item_index: e.planned_item_index,
+      nutrition_meal_item_id: e.nutrition_meal_item_id,
       food_id: e.food_id,
       recipe_id: e.recipe_id,
       nutrition_meal_log_id: e.nutrition_meal_log_id,

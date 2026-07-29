@@ -1,7 +1,7 @@
 defmodule Easy.Foods do
   alias Easy.Ctx
   alias Easy.LibraryMedia
-  alias Easy.Nutrition.{Food, Meal, MealItem, Plan}
+  alias Easy.Nutrition.{Food, Meal, MealItem, Plan, RecipeIngredient}
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
@@ -79,12 +79,26 @@ defmodule Easy.Foods do
   end
 
   @spec delete_food(Ctx.t(), String.t()) ::
-          {:ok, Food.t()} | {:error, :not_found | :read_only_source | Ecto.Changeset.t()}
+          {:ok, Food.t()} | {:error, :not_found | :read_only_source | :in_use | Ecto.Changeset.t()}
   def delete_food(%Ctx{} = ctx, food_id) do
     with {:ok, food} <- get_visible_food(ctx, food_id),
-         :ok <- ensure_editable(food) do
+         :ok <- ensure_editable(food),
+         :ok <- ensure_food_not_in_use(food.id) do
       Repo.delete(food)
     end
+  end
+
+  # `food_id` is `ON DELETE SET NULL` everywhere, but nulling it is only safe in the
+  # diary: a log entry keeps `food_name` and its frozen macros, so history survives.
+  # A meal item would violate the food-xor-recipe check (raising, not erroring), and
+  # a recipe ingredient would silently drop that food's macros from the recipe total.
+  # So a food still used by a plan or recipe is a conflict, not a cascade.
+  defp ensure_food_not_in_use(food_id) do
+    in_use? =
+      Repo.exists?(from(mi in MealItem, where: mi.food_id == ^food_id)) or
+        Repo.exists?(from(ri in RecipeIngredient, where: ri.food_id == ^food_id))
+
+    if in_use?, do: {:error, :in_use}, else: :ok
   end
 
   @spec get_food_impact(Ctx.t(), String.t()) ::

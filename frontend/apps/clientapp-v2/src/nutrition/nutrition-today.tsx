@@ -133,7 +133,7 @@ export default function NutritionToday() {
         meal_id: slot.mealId ?? undefined,
         meal_slot: slot.slot,
         plan_id: plan?.plan_id,
-        planned_item_index: row.position,
+        meal_item_id: row.item.meal_item_id,
         recipe_id: row.item.recipe_id ?? undefined,
         source: 'planned',
         unit: row.item.unit,
@@ -170,7 +170,7 @@ export default function NutritionToday() {
       mealId: slot.mealId,
       name: row.replaced && row.logged ? (row.logged.food_name ?? 'Food') : (row.item.food_name ?? 'Food'),
       planId: plan?.plan_id,
-      plannedIndex: row.position,
+      mealItemId: row.item.meal_item_id,
       plannedItem: row.item,
       slot: slot.slot,
       slotLabel: slot.label,
@@ -183,7 +183,7 @@ export default function NutritionToday() {
       mealId: slot.mealId,
       name: entry.food_name ?? 'Food',
       planId: plan?.plan_id,
-      plannedIndex: null,
+      mealItemId: null,
       plannedItem: null,
       slot: slot.slot,
       slotLabel: slot.label,
@@ -199,6 +199,12 @@ export default function NutritionToday() {
     const replacing = pickerMode === 'replace' ? replaceTarget : null;
     setPickerMode(null);
     setReplaceTarget(null);
+    // A servings-sized recipe carries no grams; the server rejects weight_g for one.
+    const portion =
+      picked.defaultWeightG != null
+        ? {weight_g: picked.defaultWeightG}
+        : {amount: picked.defaultAmount ?? 1, unit: 'serving'};
+
     try {
       if (replacing) {
         // Delete the old entry first so the planned slot never holds two entries
@@ -212,10 +218,10 @@ export default function NutritionToday() {
           meal_id: replacing.mealId ?? undefined,
           meal_slot: replacing.slot,
           plan_id: replacing.planId,
-          planned_item_index: replacing.plannedIndex ?? undefined,
+          meal_item_id: replacing.mealItemId ?? undefined,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
           source: 'replacement',
-          weight_g: picked.defaultWeightG,
+          ...portion,
         });
       } else {
         await createEntry({
@@ -224,7 +230,7 @@ export default function NutritionToday() {
           meal_slot: picked.slot,
           recipe_id: picked.kind === 'recipe' ? picked.id : undefined,
           source: 'unplanned',
-          weight_g: picked.defaultWeightG,
+          ...portion,
         });
       }
     } catch {

@@ -284,35 +284,6 @@ export default function RecipeDetail() {
             </section>
           )}
 
-          {recipe.serving_sizes.length > 0 && (
-            <section className={DETAIL_SECTION_CLASS}>
-              <DetailSectionHeading title="Serving sizes" />
-              <div className="mt-3 flex flex-col gap-2">
-                {recipe.serving_sizes.map((serving, i) => (
-                  <div
-                    className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3"
-                    key={i}
-                  >
-                    <Typography
-                      type="body-sm"
-                      weight="semibold"
-                    >
-                      {serving.amount ?? 1} {serving.unit}
-                    </Typography>
-                    {serving.weight_g != null && serving.weight_g > 0 && (
-                      <Typography
-                        color="muted"
-                        type="body-sm"
-                      >
-                        {serving.weight_g} g
-                      </Typography>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
           <section className="mt-8 border-t border-separator pt-5">
             <div className="grid grid-cols-2 gap-3">
               <div>

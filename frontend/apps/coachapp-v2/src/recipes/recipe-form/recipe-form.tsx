@@ -11,15 +11,8 @@ import {FormNumberField} from '@/@components/form-fields/form-number-field';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
-import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
-import type {
-  Food,
-  FoodServingSize,
-  RecipeIngredient,
-  RecipeIngredientRequest,
-  RecipeRequest,
-} from '@/api/nutrition-foods';
-import {omitUndefined, type ServingSize, toOptionalNumber, toOptionalText} from '@/api/shared';
+import type {Food, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/nutrition-foods';
+import {omitUndefined, toOptionalNumber, toOptionalText} from '@/api/shared';
 import {
   canComputeRecipeNutrition,
   computeRecipeTotalsFromIngredients,
@@ -42,6 +35,10 @@ const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();
 export const recipeFormSchema = z.object({
   name: z.string().min(1, 'Enter recipe name'),
   instructions: z.string().optional(),
+  // A recipe's portion is its yield: one serving = cooked_weight_g / servings_count.
+  // servings_count is always answerable, so it is required; cooked weight needs a
+  // scale, so it stays optional and simply gates logging the recipe by grams.
+  servings_count: z.number().int().min(1, 'Enter at least 1 serving'),
   cooked_weight_g: optionalNumber,
 });
 
@@ -50,6 +47,7 @@ export type RecipeFormValues = z.infer<typeof recipeFormSchema>;
 export const RECIPE_FORM_DEFAULTS: RecipeFormValues = {
   name: '',
   instructions: '',
+  servings_count: 1,
   cooked_weight_g: undefined,
 };
 
@@ -81,43 +79,34 @@ function recipeIngredientDraftToApi(item: IngredientItem, index: number): Recipe
   }) as RecipeIngredientRequest;
 }
 
-function toRecipeServingSizes(sizes: ServingSize[]): FoodServingSize[] {
-  return sizes.map((s) => ({
-    unit: s.unit,
-    amount: s.amount ?? 1,
-    weight_g: s.weight_g ?? 0,
-    is_default: false,
-    label: s.unit,
-  }));
-}
-
 export function recipeToFormValues(recipe: {
   name: string;
   instructions: string | null;
+  servings_count: number | null;
   cooked_weight_g: number | null;
 }): RecipeFormValues {
   return {
     name: recipe.name,
     instructions: recipe.instructions ?? '',
+    servings_count: recipe.servings_count ?? 1,
     cooked_weight_g: recipe.cooked_weight_g ?? undefined,
   };
 }
 
 type RecipeRequestArgs = {
   ingredients: IngredientItem[];
-  servingSizes: ServingSize[];
   values: RecipeFormValues;
 };
 
 // Create and update build the request identically: a full replace of the
-// ingredients array (position: index on each) and the serving sizes.
-function buildRecipeRequest({ingredients, servingSizes, values}: RecipeRequestArgs): RecipeRequest {
+// ingredients array (position: index on each).
+function buildRecipeRequest({ingredients, values}: RecipeRequestArgs): RecipeRequest {
   return omitUndefined({
     name: values.name,
     instructions: toOptionalText(values.instructions),
+    servings_count: values.servings_count,
     cooked_weight_g: values.cooked_weight_g,
     recipe_ingredients: ingredients.map(recipeIngredientDraftToApi),
-    serving_sizes: servingSizes.length > 0 ? toRecipeServingSizes(servingSizes) : undefined,
   }) as RecipeRequest;
 }
 
@@ -143,9 +132,7 @@ type RecipeFormProps = {
   isSubmitting: boolean;
   onCancel: () => void;
   onIngredientsChange: (items: IngredientItem[]) => void;
-  onServingSizesChange: (sizes: ServingSize[]) => void;
   onSubmit: (data: RecipeFormValues) => void;
-  servingSizes: ServingSize[];
   submitLabel: string;
   submittingLabel: string;
 };
@@ -156,9 +143,7 @@ export default function RecipeForm({
   isSubmitting,
   onCancel,
   onIngredientsChange,
-  onServingSizesChange,
   onSubmit,
-  servingSizes,
   submitLabel,
   submittingLabel,
 }: RecipeFormProps) {
@@ -233,7 +218,16 @@ export default function RecipeForm({
 
             <FormNumberField
               control={control}
-              description="Optional — total cooked weight"
+              description="How many portions this recipe makes"
+              fullWidth
+              label="Servings"
+              minValue={1}
+              name="servings_count"
+            />
+
+            <FormNumberField
+              control={control}
+              description="Optional — weigh the finished dish to log it in grams"
               fullWidth
               label="Cooked weight (g)"
               minValue={0}
@@ -281,15 +275,6 @@ export default function RecipeForm({
         )}
 
         <div className="my-6 border-t border-separator" />
-
-        <Fieldset>
-          <Fieldset.Legend>Serving sizes</Fieldset.Legend>
-          <Description>Optional presets clients can log against.</Description>
-          <ServingSizesEditor
-            onChange={onServingSizesChange}
-            value={servingSizes}
-          />
-        </Fieldset>
       </div>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}

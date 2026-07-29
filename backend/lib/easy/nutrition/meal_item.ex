@@ -108,11 +108,6 @@ defmodule Easy.Nutrition.MealItem do
     from(m in query, where: m.business_id == ^business_id)
   end
 
-  @spec for_position(Ecto.Queryable.t(), integer() | nil) :: Ecto.Query.t()
-  def for_position(query \\ __MODULE__, position)
-  def for_position(query, nil), do: query
-  def for_position(query, position), do: from(m in query, where: m.position == ^position)
-
   @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
   def by_position(query \\ __MODULE__) do
     from(m in query, order_by: [asc: m.position, asc: m.inserted_at, asc: m.id])

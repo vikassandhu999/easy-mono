@@ -37,6 +37,7 @@ defmodule Easy.Nutrition.RecipeTest do
 
       attrs = %{
         "name" => "Cross tenant recipe",
+        "servings_count" => 2,
         "recipe_ingredients" => [
           %{"food_id" => other_food.id, "weight_g" => 100.0}
         ]

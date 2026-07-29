@@ -152,7 +152,6 @@ export type TodayPlanItem = {
   food_name: null | string;
   meal_item_id: string;
   nutrition: null | Record<string, null | number>;
-  // the planned item's position — matches the food log entry's planned_item_index
   position: number;
   recipe_id: null | string;
   unit: null | string;

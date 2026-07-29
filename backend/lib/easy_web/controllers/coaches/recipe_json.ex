@@ -30,7 +30,6 @@ defmodule EasyWeb.Coaches.RecipeJSON do
       allergens: recipe.allergens || [],
       dietary_tags: recipe.dietary_tags || [],
       nutrition: MacroCalc.recipe_totals(recipe),
-      serving_sizes: serving_sizes_data(recipe.serving_sizes),
       recipe_ingredients: recipe_ingredients_data(recipe.recipe_ingredients),
       foods: foods_data(recipe.foods),
       creator_id: recipe.creator_id,

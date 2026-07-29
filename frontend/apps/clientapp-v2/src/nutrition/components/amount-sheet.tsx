@@ -23,7 +23,7 @@ export type SheetTarget = {
   mealId: null | string;
   name: string;
   planId: string | undefined;
-  plannedIndex: null | number;
+  mealItemId: null | string;
   plannedItem: null | TodayPlanItem;
   slot: string;
   slotLabel: string;
@@ -98,7 +98,7 @@ export default function AmountSheet({
           meal_id: target.mealId ?? undefined,
           meal_slot: target.slot,
           plan_id: target.planId,
-          planned_item_index: target.plannedIndex ?? undefined,
+          meal_item_id: target.mealItemId ?? undefined,
           recipe_id: plannedItem.recipe_id ?? undefined,
           source: 'planned',
           ...portion,

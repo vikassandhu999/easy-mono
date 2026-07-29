@@ -35,8 +35,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "amount" => 100.0,
         "unit" => "g",
         "weight_g" => 100.0,
-        "source" => "planned",
-        "planned_item_index" => 0
+        "source" => "planned"
       }
 
       conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
@@ -48,7 +47,6 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       # 10.6 fiber/100g x 100g / 100 = 10.6
       assert data["fiber_g"] == 10.6
       assert data["source"] == "planned"
-      assert data["planned_item_index"] == 0
       assert data["nutrition_meal_log_id"] != nil
     end
 
@@ -98,8 +96,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         "amount" => 1.0,
         "unit" => "serving",
         "weight_g" => 250.0,
-        "source" => "planned",
-        "planned_item_index" => 0
+        "source" => "planned"
       }
 
       conn = post(ctx.conn, "/v1/client/nutrition-food-log-entries", attrs)
@@ -186,8 +183,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
           "/v1/client/nutrition-food-log-entries",
           Map.merge(base_attrs, %{
             "food_id" => ctx.food.id,
-            "food_name" => "Oats",
-            "planned_item_index" => 0
+            "food_name" => "Oats"
           })
         )
 
@@ -199,8 +195,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
           "/v1/client/nutrition-food-log-entries",
           Map.merge(base_attrs, %{
             "food_id" => food2.id,
-            "food_name" => "Milk",
-            "planned_item_index" => 1
+            "food_name" => "Milk"
           })
         )
 

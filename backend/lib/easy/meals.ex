@@ -68,6 +68,7 @@ defmodule Easy.Meals do
       business_id
       |> MealItem.insert_changeset(meal_id, attrs)
       |> put_change(:position, position)
+      |> validate_recipe_weighable(business_id)
       |> Repo.insert()
     end
   end
@@ -79,6 +80,7 @@ defmodule Easy.Meals do
          {:ok, :valid} <- ensure_food_or_recipe(attrs, ctx.business_id) do
       meal_item
       |> MealItem.update_changeset(attrs)
+      |> validate_recipe_weighable(ctx.business_id)
       |> Repo.update()
     end
   end
@@ -140,6 +142,27 @@ defmodule Easy.Meals do
 
       true ->
         {:ok, :valid}
+    end
+  end
+
+  # A recipe with no measured cooked weight has no gram denominator, so it can only be
+  # sized in servings. Rejected here rather than left to MacroCalc, which would have to
+  # invent a number.
+  defp validate_recipe_weighable(changeset, business_id) do
+    recipe_id = get_field(changeset, :recipe_id)
+    weight_g = get_field(changeset, :weight_g)
+
+    if is_nil(recipe_id) or is_nil(weight_g) or recipe_weighable?(recipe_id, business_id) do
+      changeset
+    else
+      add_error(changeset, :weight_g, "this recipe has no cooked weight — size it in servings")
+    end
+  end
+
+  defp recipe_weighable?(recipe_id, business_id) do
+    case Recipe |> Recipe.for_business(business_id) |> Repo.get(recipe_id) do
+      %Recipe{cooked_weight_g: cooked} when is_number(cooked) and cooked > 0 -> true
+      _ -> false
     end
   end
 

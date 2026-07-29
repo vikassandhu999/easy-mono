@@ -33,15 +33,15 @@ export type PlannedRow = {
   item: TodayPlanItem;
   // the entry that fulfils this planned item, if logged (planned or replacement)
   logged: FoodLogEntry | null;
-  // the planned item's position = the entry's planned_item_index
-  position: number;
+  // the planned item this row stands for = the entry's nutrition_meal_item_id
+  mealItemId: string;
   replaced: boolean;
 };
 
 export type SlotView = {
   activeMealId: null | string;
   allPlannedLogged: boolean;
-  // off-plan entries (source unplanned / no planned index)
+  // off-plan entries (source unplanned / not tied to a planned item)
   extras: FoodLogEntry[];
   hasLog: boolean;
   // true only if a planned/replacement entry is logged for this slot — switching options
@@ -92,19 +92,21 @@ export function buildSlots(
     const ml = logBySlot.get(slot) ?? null;
     const entries = ml?.food_log_entries ?? [];
 
-    const byIndex = new Map<number, FoodLogEntry>();
+    // Keyed on the meal item's id, not its position: positions are not unique, so
+    // two items sharing one would collapse into a single row here.
+    const byItemId = new Map<string, FoodLogEntry>();
     const extras: FoodLogEntry[] = [];
     for (const e of entries) {
-      if (e.planned_item_index != null) {
-        byIndex.set(e.planned_item_index, e);
+      if (e.nutrition_meal_item_id != null) {
+        byItemId.set(e.nutrition_meal_item_id, e);
       } else {
         extras.push(e);
       }
     }
 
     const planned: PlannedRow[] = (option?.items ?? []).map((item) => {
-      const logged = byIndex.get(item.position) ?? null;
-      return {item, logged, position: item.position, replaced: logged?.source === 'replacement'};
+      const logged = byItemId.get(item.meal_item_id) ?? null;
+      return {item, logged, mealItemId: item.meal_item_id, replaced: logged?.source === 'replacement'};
     });
 
     return {

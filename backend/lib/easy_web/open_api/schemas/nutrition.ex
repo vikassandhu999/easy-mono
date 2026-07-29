@@ -49,7 +49,6 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeRequest do
   alias OpenApiSpex.Schema
 
   alias EasyWeb.OpenApi.Schemas.{
-    FoodServingSize,
     RecipeIngredientRequest,
     Shared
   }
@@ -67,7 +66,6 @@ defmodule EasyWeb.OpenApi.Schemas.RecipeRequest do
         cooked_weight_g: %Schema{type: :number, nullable: true},
         allergens: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.allergens()}},
         dietary_tags: %Schema{type: :array, items: %Schema{type: :string, enum: Shared.dietary_tags()}},
-        serving_sizes: %Schema{type: :array, items: FoodServingSize},
         recipe_ingredients: %Schema{type: :array, items: RecipeIngredientRequest}
       },
       required: [:name],
@@ -91,7 +89,6 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
 
   alias EasyWeb.OpenApi.Schemas.{
     Food,
-    FoodServingSize,
     RecipeIngredient,
     Shared
   }
@@ -122,7 +119,6 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
               fiber_g: %Schema{type: :number, nullable: true}
             }
           },
-          serving_sizes: %Schema{type: :array, items: FoodServingSize},
           recipe_ingredients: %Schema{type: :array, items: RecipeIngredient},
           foods: %Schema{type: :array, items: Food},
           creator_id: %Schema{type: :string, format: :uuid, nullable: true}
@@ -134,7 +130,6 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
       :name,
       :instructions,
       :cooked_weight_g,
-      :serving_sizes,
       :recipe_ingredients,
       :inserted_at,
       :updated_at

@@ -29,7 +29,6 @@ defmodule Easy.Nutrition.FoodLogEntry do
     field :fiber_g, :float
     field :notes, :string
     field :source, Ecto.Enum, values: @sources, default: :planned
-    field :planned_item_index, :integer
 
     belongs_to :business, Orgs.Business
     belongs_to :meal_log, MealLog, foreign_key: :nutrition_meal_log_id
@@ -50,7 +49,6 @@ defmodule Easy.Nutrition.FoodLogEntry do
     :weight_g,
     :notes,
     :source,
-    :planned_item_index,
     :food_id,
     :recipe_id
   ]
@@ -124,9 +122,9 @@ defmodule Easy.Nutrition.FoodLogEntry do
     from(e in query, where: e.nutrition_meal_log_id == ^meal_log_id)
   end
 
-  @spec by_position(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def by_position(query \\ __MODULE__) do
-    from(e in query, order_by: [asc: e.planned_item_index, asc: e.inserted_at, asc: e.id])
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__) do
+    from(e in query, order_by: [asc: e.inserted_at, asc: e.id])
   end
 
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()

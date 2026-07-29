@@ -21,7 +21,7 @@ defmodule EasyWeb.OpenApi.Schemas.FoodLogEntryRequest do
         weight_g: %Schema{type: :number, nullable: true},
         notes: %Schema{type: :string, nullable: true},
         source: %Schema{type: :string, nullable: true},
-        planned_item_index: %Schema{type: :integer, nullable: true}
+        meal_item_id: %Schema{type: :string, format: :uuid, nullable: true}
       },
       example: %{
         "date" => "2026-05-31",
@@ -60,7 +60,7 @@ defmodule EasyWeb.OpenApi.Schemas.FoodLogEntry do
           fiber_g: %Schema{type: :number, nullable: true},
           notes: %Schema{type: :string, nullable: true},
           source: %Schema{type: :string, nullable: true},
-          planned_item_index: %Schema{type: :integer, nullable: true},
+          nutrition_meal_item_id: %Schema{type: :string, format: :uuid, nullable: true},
           food_id: %Schema{type: :string, format: :uuid, nullable: true},
           recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
           nutrition_meal_log_id: %Schema{type: :string, format: :uuid}

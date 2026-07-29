@@ -94,6 +94,17 @@ function formatMacroPreview(macros: ReturnType<typeof computeMacrosFromSnapshot>
  * serving.weight_g is per `serving.amount` of `serving.unit`.
  * Multiplied by count to get the total.
  */
+// A recipe's portion comes from its yield, not from a stored serving row:
+// one serving = cooked_weight_g / servings_count. Null when it was never weighed.
+function recipeServingWeightG(
+  recipe: {cooked_weight_g: null | number; servings_count?: null | number} | null | undefined,
+): null | number {
+  if (!recipe?.cooked_weight_g || !recipe.servings_count) {
+    return null;
+  }
+  return recipe.cooked_weight_g / recipe.servings_count;
+}
+
 function resolveServingWeight(weightG: number | null, amount: number | null, count: number): number | null {
   if (weightG == null || amount == null || amount === 0) {
     return null;
@@ -191,18 +202,15 @@ export function AmountSheetContent({
     }
 
     if (isRecipeMode) {
-      // Recipe mode: try to resolve via first serving size that has weight_g
-      const sizes = recipe?.serving_sizes ?? [];
+      // A recipe's portion comes from its yield: cooked_weight_g / servings_count.
+      // Without a measured cooked weight there is no gram equivalent, so we send
+      // amount/unit instead and leave weight_g null.
       const count = Number.parseFloat(servingCount);
       if (Number.isNaN(count) || count <= 0) {
         return null;
       }
-      const servingWithWeight = sizes.find((s) => s.weight_g != null && s.amount != null);
-      if (servingWithWeight) {
-        return resolveServingWeight(servingWithWeight.weight_g, servingWithWeight.amount, count);
-      }
-      // No weight_g available — will send amount/unit instead (weight_g stays null)
-      return null;
+      const perServing = recipeServingWeightG(recipe);
+      return perServing == null ? null : perServing * count;
     }
 
     // Serving tap
@@ -381,7 +389,7 @@ export function AmountSheetContent({
     setActiveServingIdx(idx);
     setGramsInput(''); // clear grams field when a serving is tapped
     if (isEditMode) {
-      const sizes = food?.serving_sizes ?? recipe?.serving_sizes ?? [];
+      const sizes = food?.serving_sizes ?? [];
       const serving = sizes[idx];
       if (!serving) {
         return;
@@ -407,11 +415,8 @@ export function AmountSheetContent({
         return;
       }
       if (isRecipeMode) {
-        const sizes = recipe?.serving_sizes ?? [];
-        const servingWithWeight = sizes.find((s) => s.weight_g != null && s.amount != null);
-        const wg = servingWithWeight
-          ? resolveServingWeight(servingWithWeight.weight_g, servingWithWeight.amount, count)
-          : null;
+        const perServing = recipeServingWeightG(recipe);
+        const wg = perServing == null ? null : perServing * count;
         scheduleSave({weight_g: wg, amount: count, unit: 'serving'});
       } else if (activeServingIdx !== null && food) {
         const serving = food.serving_sizes[activeServingIdx];
@@ -451,7 +456,7 @@ export function AmountSheetContent({
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const servingSizes = food?.serving_sizes ?? recipe?.serving_sizes ?? [];
+  const servingSizes = food?.serving_sizes ?? [];
 
   // For food mode: weight_g must resolve to enable confirm
   const canConfirm = recipe ? Number.parseFloat(servingCount) > 0 : resolvedWeightG !== null && resolvedWeightG > 0;

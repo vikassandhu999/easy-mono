@@ -11,13 +11,24 @@ import {useEffect, useRef, useState} from 'react';
 import {type Food, type Recipe, useListClientFoodsQuery, useListClientRecipesQuery} from '@/api/nutrition';
 
 export type Picked = {
-  defaultWeightG: number;
+  // A recipe with no cooked weight has no gram equivalent, so it is sized in
+  // servings instead: exactly one of these two is set.
+  defaultAmount: null | number;
+  defaultWeightG: null | number;
   id: string;
   kind: 'food' | 'recipe';
   name: string;
   perUnit: string;
   slot: string;
 };
+
+// A recipe's portion comes from its yield: cooked_weight_g / servings_count.
+function servingWeightG(r: Recipe): null | number {
+  if (!r.cooked_weight_g || !r.servings_count) {
+    return null;
+  }
+  return r.cooked_weight_g / r.servings_count;
+}
 
 function defaultServingWeight(sizes: {is_default: boolean; weight_g: number}[] | undefined): null | number {
   if (!sizes?.length) {
@@ -62,6 +73,7 @@ export default function FoodPicker({
 
   const pickFood = (f: Food) =>
     onPick({
+      defaultAmount: null,
       defaultWeightG: defaultServingWeight(f.serving_sizes) ?? 100,
       id: f.id,
       kind: 'food',
@@ -71,7 +83,9 @@ export default function FoodPicker({
     });
   const pickRecipe = (r: Recipe) =>
     onPick({
-      defaultWeightG: defaultServingWeight(r.serving_sizes) ?? r.cooked_weight_g ?? 100,
+      // One serving in grams, when the recipe has a measured yield; otherwise servings.
+      defaultAmount: servingWeightG(r) == null ? 1 : null,
+      defaultWeightG: servingWeightG(r),
       id: r.id,
       kind: 'recipe',
       name: r.name,

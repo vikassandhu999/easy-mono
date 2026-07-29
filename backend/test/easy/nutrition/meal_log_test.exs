@@ -3,6 +3,8 @@ defmodule Easy.Nutrition.MealLogTest do
 
   alias Easy.Ctx
   alias Easy.MealLogs
+  alias Easy.Nutrition.Food
+  alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.PlanDay
@@ -274,6 +276,22 @@ defmodule Easy.Nutrition.MealLogTest do
 
       assert "either weight_g or amount is required for recipe items" in errors_on(changeset).weight_g
     end
+
+    test "create_client_food_log_entry rejects grams for a recipe with no cooked_weight_g" do
+      %{client_ctx: client_ctx, dal_recipe: dal_recipe} = build_scenario()
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               MealLogs.create_client_food_log_entry(client_ctx, %{
+                 date: @date,
+                 meal_slot: "dinner",
+                 recipe_id: dal_recipe.id,
+                 weight_g: 150.0,
+                 source: :unplanned
+               })
+
+      assert [message] = errors_on(changeset).weight_g
+      assert message =~ "no cooked weight"
+    end
   end
 
   defp ctx_for(plan) do
@@ -290,37 +308,47 @@ defmodule Easy.Nutrition.MealLogTest do
 
       raisins = insert(:food, business: business, creator: creator, name: "Raisins", calories_per_100g: 300.0)
 
-      insert(:meal_item,
-        meal: oats,
-        business: business,
-        food: raisins,
-        amount: 30.0,
-        unit: "g",
-        weight_g: 30.0,
-        position: 0
-      )
+      twin =
+        insert(:meal_item,
+          meal: oats,
+          business: business,
+          food: raisins,
+          amount: 30.0,
+          unit: "g",
+          weight_g: 30.0,
+          position: 0
+        )
 
-      # The client logs one planned item on its own — the app identifies it by position.
+      # The client logs one planned item on its own, naming it by id.
       assert {:ok, logged} =
                MealLogs.create_client_food_log_entry(client_ctx, %{
                  date: @date,
                  meal_slot: "breakfast",
                  meal_id: oats.id,
+                 meal_item_id: oat_flakes.id,
                  food_id: oat_flakes.food_id,
                  amount: 100.0,
                  unit: "g",
                  weight_g: 100.0,
-                 source: :planned,
-                 planned_item_index: 0
+                 source: :planned
                })
 
       assert logged.nutrition_meal_item_id == oat_flakes.id
 
-      # Tapping "log meal" must still log the twin, not skip it as already logged.
+      # Tapping "log meal" must still log the other twin, not skip it as already logged.
       assert {:ok, entries} =
                MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
 
       assert [%{food_name: "Raisins"}] = entries
+
+      pinned =
+        FoodLogEntry
+        |> FoodLogEntry.for_meal_log(logged.nutrition_meal_log_id)
+        |> Repo.all()
+        |> MapSet.new(& &1.nutrition_meal_item_id)
+
+      # The invariant: both items logged exactly once, neither silently dropped.
+      assert pinned == MapSet.new([oat_flakes.id, twin.id])
     end
 
     test "re-logging the same meal adds nothing" do
@@ -333,6 +361,72 @@ defmodule Easy.Nutrition.MealLogTest do
 
       assert {:ok, []} =
                MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+    end
+  end
+
+  # The builder and the diary were designed against each other, and every bug found
+  # in this domain has lived in the gap between them. These pin the contract.
+  describe "builder <-> logging seam" do
+    test "reordering meal items does not re-point logged history" do
+      %{client_ctx: client_ctx, business: business, creator: creator, oats: oats} = build_scenario()
+
+      milk = insert(:food, business: business, creator: creator, name: "Milk", calories_per_100g: 60.0)
+      first = Repo.get_by!(MealItem, nutrition_meal_id: oats.id, position: 0)
+
+      second =
+        insert(:meal_item, meal: oats, business: business, food: milk, weight_g: 200.0, position: 1)
+
+      assert {:ok, entries} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      assert length(entries) == 2
+
+      # The coach drags the items into a new order — positions are renumbered.
+      Repo.update!(Ecto.Changeset.change(first, position: 1))
+      Repo.update!(Ecto.Changeset.change(second, position: 0))
+
+      pinned =
+        FoodLogEntry
+        |> FoodLogEntry.for_meal_log(hd(entries).nutrition_meal_log_id)
+        |> Repo.all()
+        |> MapSet.new(& &1.nutrition_meal_item_id)
+
+      # Reconciliation keys on ids, so yesterday's log still means what it meant.
+      assert pinned == MapSet.new([first.id, second.id])
+
+      # And nothing looks un-logged now that the numbering moved.
+      assert {:ok, []} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+    end
+
+    test "editing a food leaves already-logged macros frozen" do
+      %{client_ctx: client_ctx, oats: oats} = build_scenario()
+
+      assert {:ok, [entry]} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      # Oat Flakes is 300 kcal/100g, logged at 100g.
+      assert entry.calories == 300.0
+
+      food = Repo.get!(Food, entry.food_id)
+      Repo.update!(Ecto.Changeset.change(food, calories_per_100g: 999.0))
+
+      # The plan would recompute; the diary must not. History is a fact, not a view.
+      assert Repo.get!(FoodLogEntry, entry.id).calories == 300.0
+    end
+
+    test "deleting a meal item leaves its logged entry readable" do
+      %{client_ctx: client_ctx, oats: oats} = build_scenario()
+
+      assert {:ok, [entry]} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      Repo.delete!(Repo.get!(MealItem, entry.nutrition_meal_item_id))
+
+      kept = Repo.get!(FoodLogEntry, entry.id)
+      assert kept.nutrition_meal_item_id == nil
+      assert kept.food_name == "Oat Flakes"
+      assert kept.calories == 300.0
     end
   end
 

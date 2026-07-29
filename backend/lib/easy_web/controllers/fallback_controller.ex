@@ -91,6 +91,19 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  def call(conn, {:error, :in_use}) do
+    call(
+      conn,
+      {:error,
+       Error.new(
+         :in_use,
+         "This item is still used by a plan or recipe. Remove it there first.",
+         %{},
+         :conflict
+       )}
+    )
+  end
+
   def call(conn, {:error, :invalid_otp}) do
     call(conn, {:error, Error.new(:invalid_otp, "Invalid code. Please check and try again.", %{}, :bad_request)})
   end

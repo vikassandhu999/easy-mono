@@ -1,7 +1,6 @@
 defmodule Easy.Nutrition.Recipe do
   use Ecto.Schema
 
-  alias Easy.Nutrition
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs
 
@@ -25,8 +24,6 @@ defmodule Easy.Nutrition.Recipe do
 
     field :allergens, {:array, :string}, default: []
     field :dietary_tags, {:array, :string}, default: []
-
-    embeds_many :serving_sizes, Nutrition.ServingSize, on_replace: :delete
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
@@ -55,10 +52,10 @@ defmodule Easy.Nutrition.Recipe do
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
-    |> validate_required([:name, :creator_id, :business_id])
+    |> validate_required([:name, :creator_id, :business_id, :servings_count])
+    |> validate_number(:servings_count, greater_than: 0)
     |> validate_subset(:allergens, @allergens)
     |> validate_subset(:dietary_tags, @dietary_tags)
-    |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
     |> cast_assoc(:recipe_ingredients,
       with: fn ingredient, ingredient_attrs ->
         RecipeIngredient.update_changeset(ingredient, business_id, ingredient_attrs)
@@ -70,9 +67,10 @@ defmodule Easy.Nutrition.Recipe do
   def update_changeset(recipe, attrs) do
     recipe
     |> cast(attrs, @cast_fields)
+    |> validate_required([:servings_count])
+    |> validate_number(:servings_count, greater_than: 0)
     |> validate_subset(:allergens, @allergens)
     |> validate_subset(:dietary_tags, @dietary_tags)
-    |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
     |> cast_assoc(:recipe_ingredients,
       with: fn ingredient, ingredient_attrs ->
         RecipeIngredient.update_changeset(ingredient, recipe.business_id, ingredient_attrs)

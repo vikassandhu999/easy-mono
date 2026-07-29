@@ -932,7 +932,6 @@ export interface components {
         protein_g?: number | null;
       } | null;
       recipe_ingredients: components['schemas']['RecipeIngredient'][];
-      serving_sizes: components['schemas']['FoodServingSize'][];
       servings_count?: number | null;
       /** Format: date-time */
       updated_at: string;
@@ -1601,11 +1600,12 @@ export interface components {
       food_name?: string | null;
       /** Format: uuid */
       meal_id?: string | null;
+      /** Format: uuid */
+      meal_item_id?: string | null;
       meal_slot?: string | null;
       notes?: string | null;
       /** Format: uuid */
       plan_id?: string | null;
-      planned_item_index?: number | null;
       /** Format: uuid */
       recipe_id?: string | null;
       source?: string | null;
@@ -2490,7 +2490,6 @@ export interface components {
       instructions?: string | null;
       name: string;
       recipe_ingredients?: components['schemas']['RecipeIngredientRequest'][];
-      serving_sizes?: components['schemas']['FoodServingSize'][];
       servings_count?: number | null;
     };
     /** ProspectListResponse */
@@ -3092,8 +3091,9 @@ export interface components {
       inserted_at: string;
       notes?: string | null;
       /** Format: uuid */
+      nutrition_meal_item_id?: string | null;
+      /** Format: uuid */
       nutrition_meal_log_id: string;
-      planned_item_index?: number | null;
       protein_g?: number | null;
       /** Format: uuid */
       recipe_id?: string | null;

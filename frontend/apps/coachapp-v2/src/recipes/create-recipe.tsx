@@ -6,7 +6,7 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateRecipeMutation} from '@/api/nutrition-foods';
-import {applyFormErrors, type ServingSize} from '@/api/shared';
+import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {
   type RecipeFormValues,
@@ -19,14 +19,13 @@ export default function CreateRecipe() {
   const goBack = useGoBack(ROUTES.RECIPES);
   const createRecipe = useCreateRecipeMutation();
   const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
-  const [servingSizes, setServingSizes] = useState<ServingSize[]>([]);
   const leaveConfirm = useOverlayState();
 
   const form = useRecipeForm();
 
   // Unsaved-changes guard: the form's own dirtiness plus the ingredient and
   // serving-size props (which aren't react-hook-form fields).
-  const hasUnsavedChanges = form.formState.isDirty || ingredients.length > 0 || servingSizes.length > 0;
+  const hasUnsavedChanges = form.formState.isDirty || ingredients.length > 0;
 
   const attemptLeave = () => {
     if (hasUnsavedChanges) {
@@ -38,7 +37,7 @@ export default function CreateRecipe() {
 
   const onSubmit = async (data: RecipeFormValues) => {
     try {
-      const result = await createRecipe.mutateAsync(recipeToCreateRequest({ingredients, servingSizes, values: data}));
+      const result = await createRecipe.mutateAsync(recipeToCreateRequest({ingredients, values: data}));
       toast.success('Recipe created');
       navigate(`/library/recipes/${result.data.id}`, {replace: true});
     } catch (err) {
@@ -68,9 +67,7 @@ export default function CreateRecipe() {
             isSubmitting={createRecipe.isPending}
             onCancel={attemptLeave}
             onIngredientsChange={setIngredients}
-            onServingSizesChange={setServingSizes}
             onSubmit={onSubmit}
-            servingSizes={servingSizes}
             submitLabel="Create recipe"
             submittingLabel="Creating recipe"
           />

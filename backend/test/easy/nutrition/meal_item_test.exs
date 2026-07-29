@@ -52,7 +52,7 @@ defmodule Easy.Nutrition.MealItemTest do
       meal = insert(:meal, business: coach.business, creator: coach, plan: plan)
 
       recipe =
-        insert(:recipe, business: coach.business, creator: coach, servings_count: nil, cooked_weight_g: nil)
+        insert(:recipe, business: coach.business, creator: coach, servings_count: 2, cooked_weight_g: nil)
 
       ctx = Easy.Ctx.new(meal.business_id, coach.user_id)
       %{ctx: ctx, meal: meal, recipe: recipe, coach: coach}
@@ -69,6 +69,24 @@ defmodule Easy.Nutrition.MealItemTest do
     test "a recipe item without weight_g or amount is invalid", %{ctx: ctx, meal: meal, recipe: recipe} do
       assert {:error, changeset} = Meals.create_meal_items(ctx, meal.id, [%{recipe_id: recipe.id}])
       assert %{weight_g: [_message]} = errors_on(changeset)
+    end
+
+    test "a recipe with no cooked_weight_g cannot be weighed", %{ctx: ctx, meal: meal, recipe: recipe} do
+      assert {:error, changeset} =
+               Meals.create_meal_items(ctx, meal.id, [%{recipe_id: recipe.id, weight_g: 150.0}])
+
+      assert %{weight_g: [message]} = errors_on(changeset)
+      assert message =~ "no cooked weight"
+    end
+
+    test "a recipe with a cooked_weight_g can be weighed", %{ctx: ctx, meal: meal, coach: coach} do
+      weighable =
+        insert(:recipe, business: coach.business, creator: coach, servings_count: 2, cooked_weight_g: 400.0)
+
+      assert {:ok, [item]} =
+               Meals.create_meal_items(ctx, meal.id, [%{recipe_id: weighable.id, weight_g: 150.0}])
+
+      assert item.weight_g == 150.0
     end
 
     test "a food item still requires weight_g", %{ctx: ctx, meal: meal, coach: coach} do

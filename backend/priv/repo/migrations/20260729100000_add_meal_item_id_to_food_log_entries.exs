@@ -15,8 +15,8 @@ defmodule Easy.Repo.Migrations.AddMealItemIdToFoodLogEntries do
     create index(:nutrition_food_log_entries, [:nutrition_meal_item_id])
 
     # Best-effort backfill for entries already logged. Where a position is
-    # ambiguous the lowest id wins — the same item the old skip-list would
-    # have matched.
+    # ambiguous the oldest item wins; ids are random UUIDs, so ordering by id
+    # alone would pick an arbitrary twin.
     execute("""
     UPDATE nutrition_food_log_entries AS e
     SET nutrition_meal_item_id = (
@@ -25,7 +25,7 @@ defmodule Easy.Repo.Migrations.AddMealItemIdToFoodLogEntries do
       JOIN nutrition_meal_logs AS ml ON ml.id = e.nutrition_meal_log_id
       WHERE mi.nutrition_meal_id = ml.nutrition_meal_id
         AND mi.position = e.planned_item_index
-      ORDER BY mi.id
+      ORDER BY mi.inserted_at, mi.id
       LIMIT 1
     )
     WHERE e.planned_item_index IS NOT NULL

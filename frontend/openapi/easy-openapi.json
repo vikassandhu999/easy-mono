@@ -190,14 +190,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "serving_sizes": {
-            "items": {
-              "$ref": "#/components/schemas/FoodServingSize"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
           "servings_count": {
             "nullable": true,
             "type": "integer",
@@ -216,7 +208,6 @@
           "name",
           "instructions",
           "cooked_weight_g",
-          "serving_sizes",
           "recipe_ingredients",
           "inserted_at",
           "updated_at"
@@ -2882,6 +2873,13 @@
             "x-struct": null,
             "x-validate": null
           },
+          "meal_item_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
           "meal_slot": {
             "nullable": true,
             "type": "string",
@@ -2898,12 +2896,6 @@
             "format": "uuid",
             "nullable": true,
             "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "planned_item_index": {
-            "nullable": true,
-            "type": "integer",
             "x-struct": null,
             "x-validate": null
           },
@@ -5874,14 +5866,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "serving_sizes": {
-            "items": {
-              "$ref": "#/components/schemas/FoodServingSize"
-            },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
-          },
           "servings_count": {
             "nullable": true,
             "type": "integer",
@@ -8231,15 +8215,16 @@
             "x-struct": null,
             "x-validate": null
           },
-          "nutrition_meal_log_id": {
+          "nutrition_meal_item_id": {
             "format": "uuid",
+            "nullable": true,
             "type": "string",
             "x-struct": null,
             "x-validate": null
           },
-          "planned_item_index": {
-            "nullable": true,
-            "type": "integer",
+          "nutrition_meal_log_id": {
+            "format": "uuid",
+            "type": "string",
             "x-struct": null,
             "x-validate": null
           },

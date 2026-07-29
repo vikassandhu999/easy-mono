@@ -89,7 +89,7 @@ defmodule Easy.MacroCalcTest do
     assert MacroCalc.for_meal_item(%{item | amount: 3.0}).calories == 600.0
   end
 
-  test "for_meal_item treats a recipe without servings_count as one serving" do
+  test "for_meal_item returns zero for a recipe with no servings_count" do
     recipe = %Recipe{
       servings_count: nil,
       recipe_ingredients: [
@@ -97,8 +97,24 @@ defmodule Easy.MacroCalcTest do
       ]
     }
 
+    # No denominator -> no portion size. Zero is wrong-and-visible; the old fallback
+    # priced 2 servings as 2x the whole 400 kcal recipe (800.0) and said nothing.
     item = %MealItem{food: nil, recipe: recipe, weight_g: nil, amount: 2.0}
-    assert MacroCalc.for_meal_item(item).calories == 800.0
+    assert MacroCalc.for_meal_item(item).calories == 0.0
+  end
+
+  test "for_meal_item returns zero for a weighed recipe with no cooked_weight_g" do
+    recipe = %Recipe{
+      servings_count: 2,
+      cooked_weight_g: nil,
+      recipe_ingredients: [
+        %RecipeIngredient{food: food(calories_per_100g: 100.0), weight_g: 400.0}
+      ]
+    }
+
+    # Writes are blocked upstream; legacy rows must not price 150 g as the whole pot.
+    item = %MealItem{food: nil, recipe: recipe, weight_g: 150.0}
+    assert MacroCalc.for_meal_item(item).calories == 0.0
   end
 
   test "meal_totals sums items" do

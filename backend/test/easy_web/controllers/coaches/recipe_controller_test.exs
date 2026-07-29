@@ -26,8 +26,9 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       assert data["cooked_weight_g"] == attrs["cooked_weight_g"]
       assert data["nutrition"]
 
-      assert [%{"label" => "1 serving", "unit" => "serving", "weight_g" => 200.0, "amount" => 1.0, "is_default" => true}] =
-               data["serving_sizes"]
+      # A recipe's portion comes from its yield (cooked_weight_g / servings_count),
+      # so it carries no serving_sizes of its own.
+      refute Map.has_key?(data, "serving_sizes")
 
       assert data["id"]
       assert data["creator_id"]

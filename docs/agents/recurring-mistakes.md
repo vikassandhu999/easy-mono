@@ -116,6 +116,17 @@ assertion still hold in a year?"
 Every ilike filter goes through `Easy.Search.like_pattern/1` (searching `%` matched every
 row). **Enforced by:** review — grep `%#{term}%` should return nothing under `backend/lib`.
 
+### RM-019 — `ON DELETE SET NULL` + a CHECK over the same columns = deletes raise
+SET NULL is an UPDATE, and Postgres evaluates CHECK constraints on UPDATE. A
+`num_nonnulls(a, b) = 1` check over nilify-on-delete FKs therefore makes deleting the
+parent raise `Ecto.ConstraintError` (a 500), not fail gracefully. Deleting any food that
+had ever been logged was impossible for this reason. Decide per table which the row
+needs: history rows (`nutrition_food_log_entries`) relax to `<= 1` because they
+denormalise `food_name` and freeze macros, so they outlive the library row; structural
+rows (`nutrition_meal_items`) keep `= 1` and the delete is blocked up front as
+`{:error, :in_use}`. Review question: "for every nilify-on-delete FK, is there a CHECK
+or NOT NULL over that column — and is exactly-one a write rule or a lifetime invariant?"
+
 ### RM-018 — Dropping a uniqueness guarantee is an API change for every reader of that column
 Relaxing a constraint is never local. Before dropping a unique index, grep the column and
 every column copied from it across the whole repo — other code may be using it as an

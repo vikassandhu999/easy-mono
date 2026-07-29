@@ -54,23 +54,26 @@ defmodule Easy.MacroCalc do
       cooked when is_number(cooked) and cooked > 0 ->
         round_all(scale(totals, num(weight_g) / cooked))
 
-      # ponytail: without cooked_weight_g we cannot resolve per-gram macros,
-      # so return the whole-recipe totals. Plan 2 / UX should require cooked_weight_g.
+      # No measured cooked weight -> no gram denominator. Weighing such a recipe is
+      # rejected at write time, so this only covers legacy rows: return zero rather
+      # than silently pricing a 150 g portion as the whole pot.
       _ ->
-        totals
+        @zero
     end
   end
 
   @spec for_recipe_servings(Recipe.t(), float() | nil) :: macros()
   def for_recipe_servings(%Recipe{} = recipe, amount) do
-    servings =
-      case recipe.servings_count do
-        n when is_integer(n) and n > 0 -> n
-        _ -> 1
-      end
+    case recipe.servings_count do
+      servings when is_integer(servings) and servings > 0 ->
+        amount = if is_number(amount) and amount > 0, do: amount, else: 1.0
+        round_all(scale(recipe_totals(recipe), amount / servings))
 
-    amount = if is_number(amount) and amount > 0, do: amount, else: 1.0
-    round_all(scale(recipe_totals(recipe), amount / servings))
+      # Same rule as for_recipe/2: a missing denominator used to mean "1 serving =
+      # the whole dish". `servings_count` is required now, so this is legacy rows only.
+      _ ->
+        @zero
+    end
   end
 
   @spec for_meal_item(MealItem.t()) :: macros()

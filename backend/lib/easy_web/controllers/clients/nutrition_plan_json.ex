@@ -186,8 +186,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     %{
       id: recipe.id,
       name: recipe.name,
-      nutrition: MacroCalc.recipe_totals(recipe),
-      serving_sizes: serving_sizes_data(recipe.serving_sizes)
+      nutrition: MacroCalc.recipe_totals(recipe)
     }
   end
 

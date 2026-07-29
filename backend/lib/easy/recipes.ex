@@ -77,11 +77,21 @@ defmodule Easy.Recipes do
   end
 
   @spec delete_recipe(Ctx.t(), String.t()) ::
-          {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, Recipe.t()} | {:error, :not_found | :in_use | Ecto.Changeset.t()}
   def delete_recipe(%Ctx{} = ctx, recipe_id) do
-    with {:ok, recipe} <- get_recipe_plain(ctx, recipe_id) do
+    with {:ok, recipe} <- get_recipe_plain(ctx, recipe_id),
+         :ok <- ensure_recipe_not_in_use(recipe.id) do
       Repo.delete(recipe)
     end
+  end
+
+  # Same rule as Foods.delete_food/2: a meal item pointing at neither a food nor a
+  # recipe violates the xor check, so a recipe still used by a plan is a conflict.
+  # Log entries nilify safely — they keep food_name and frozen macros.
+  defp ensure_recipe_not_in_use(recipe_id) do
+    if Repo.exists?(from(mi in MealItem, where: mi.recipe_id == ^recipe_id)),
+      do: {:error, :in_use},
+      else: :ok
   end
 
   @spec get_recipe_impact(Ctx.t(), String.t()) ::
@@ -115,16 +125,6 @@ defmodule Easy.Recipes do
 
       attrs =
         Map.merge(scalars, %{
-          "serving_sizes" =>
-            Enum.map(recipe.serving_sizes, fn s ->
-              %{
-                "label" => s.label,
-                "amount" => s.amount,
-                "unit" => s.unit,
-                "weight_g" => s.weight_g,
-                "is_default" => s.is_default
-              }
-            end),
           "recipe_ingredients" =>
             Enum.map(recipe.recipe_ingredients, fn ri ->
               %{

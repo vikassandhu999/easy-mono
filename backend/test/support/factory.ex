@@ -286,7 +286,6 @@ defmodule Easy.Factory do
       cooked_weight_g: 400.0,
       allergens: [],
       dietary_tags: [],
-      serving_sizes: [],
       recipe_ingredients: [],
       creator: build(:coach),
       business: build(:business)
@@ -309,10 +308,7 @@ defmodule Easy.Factory do
       "description" => "New recipe",
       "instructions" => "Cook",
       "servings_count" => 2,
-      "cooked_weight_g" => 400.0,
-      "serving_sizes" => [
-        %{"label" => "1 serving", "unit" => "serving", "weight_g" => 200.0, "amount" => 1.0, "is_default" => true}
-      ]
+      "cooked_weight_g" => 400.0
     }
   end
 
@@ -567,7 +563,6 @@ defmodule Easy.Factory do
       carbs_g: 66.3,
       fat_g: 6.9,
       source: :planned,
-      planned_item_index: 0,
       meal_log: meal_log,
       business: meal_log.business,
       food: food

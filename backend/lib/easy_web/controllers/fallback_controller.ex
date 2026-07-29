@@ -28,6 +28,13 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unauthorized("Only the business owner can do this.")})
   end
 
+  def call(conn, {:error, :billing_disabled}) do
+    call(
+      conn,
+      {:error, Error.unprocessable("Paid seats aren't available yet. Contact us to add more seats.")}
+    )
+  end
+
   def call(conn, {:error, :coach_not_active}) do
     call(
       conn,

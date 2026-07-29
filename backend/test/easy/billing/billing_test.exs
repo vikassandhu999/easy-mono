@@ -46,16 +46,16 @@ defmodule Easy.BillingTest do
   end
 
   describe "seat_summary/1" do
-    test "a new business has two free seats and no billing row yet" do
+    test "a new business has ten free seats and no billing row yet" do
       business = insert(:business)
 
       summary = summary(ctx_for(business))
 
-      assert summary.free_seats == 2
+      assert summary.free_seats == 10
       assert summary.paid_seats == 0
-      assert summary.seat_limit == 2
+      assert summary.seat_limit == 10
       assert summary.used_seats == 0
-      assert summary.available_seats == 2
+      assert summary.available_seats == 10
       assert summary.status == :free
       assert summary.is_owner == true
     end
@@ -105,6 +105,7 @@ defmodule Easy.BillingTest do
   describe "ensure_seat_available/1" do
     test "ok below the limit, seat_limit_reached at the limit" do
       business = insert(:business)
+      insert(:business_billing, business: business, free_seats: 2)
       insert(:client, business: business, status: :active)
 
       assert :ok = Billing.ensure_seat_available(ctx_for(business))
@@ -164,6 +165,7 @@ defmodule Easy.BillingTest do
 
     test "the seat-consuming write is skipped entirely at the limit" do
       business = insert(:business)
+      insert(:business_billing, business: business, free_seats: 2)
       insert(:client, business: business, status: :active)
       insert(:client, business: business, status: :active)
 

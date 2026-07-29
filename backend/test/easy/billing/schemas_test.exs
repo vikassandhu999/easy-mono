@@ -7,12 +7,12 @@ defmodule Easy.Billing.SchemasTest do
 
   import Easy.Factory
 
-  test "business_billing defaults to 2 free seats, 0 paid, status free" do
+  test "business_billing defaults to 10 free seats, 0 paid, status free" do
     business = insert(:business)
 
     billing = Repo.insert!(%BusinessBilling{business_id: business.id})
 
-    assert billing.free_seats == 2
+    assert billing.free_seats == 10
     assert billing.paid_seats == 0
     assert billing.status == :free
   end

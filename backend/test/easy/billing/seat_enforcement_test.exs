@@ -47,6 +47,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
 
   test "invite is blocked at the seat limit" do
     business = insert(:business)
+    insert(:business_billing, business: business, free_seats: 2)
     fill_free_seats(business)
 
     assert {:error, :seat_limit_reached} =
@@ -55,6 +56,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
 
   test "invite succeeds below the limit and a pending invite reserves a seat" do
     business = insert(:business)
+    insert(:business_billing, business: business, free_seats: 2)
     insert(:client, business: business, status: :active)
 
     assert {:ok, _client} = Clients.invite_client(ctx_for(business), params_for(:client_attrs))
@@ -66,6 +68,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
 
   test "reactivation is blocked at the seat limit" do
     business = insert(:business)
+    insert(:business_billing, business: business, free_seats: 2)
     fill_free_seats(business)
     inactive = insert(:client, business: business, status: :inactive)
 
@@ -113,6 +116,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
 
   test "accept-invite becomes awaiting_seat when capacity does not exist" do
     business = insert(:business)
+    insert(:business_billing, business: business, free_seats: 2)
     {:ok, invited} = Clients.invite_client(ctx_for(business), params_for(:client_attrs))
     # Capacity disappears after the invite: fill both free seats over the pending one.
     fill_free_seats(business)
@@ -144,6 +148,7 @@ defmodule Easy.Billing.SeatEnforcementTest do
 
   test "reactivating an inactive client at the seat limit is rejected" do
     business = insert(:business)
+    insert(:business_billing, business: business, free_seats: 2)
     ctx = ctx_for(business)
     # free limit is 2; fill both with active clients
     insert(:client, business: business, status: :active)

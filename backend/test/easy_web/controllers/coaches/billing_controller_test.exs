@@ -20,9 +20,9 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
       conn = get(conn, "/v1/coach/billing")
 
       assert %{"data" => data} = json_response(conn, 200)
-      assert data["free_seats"] == 2
+      assert data["free_seats"] == 10
       assert data["used_seats"] == 1
-      assert data["seat_limit"] == 2
+      assert data["seat_limit"] == 10
       assert data["is_owner"] == true
       assert is_list(data["recent_events"])
       # RM-002: rendered entity matches the OpenApiSpex schema
@@ -118,6 +118,7 @@ defmodule EasyWeb.Coaches.BillingControllerTest do
 
   describe "seat-limit conflict on invite" do
     test "invite at the limit returns 409 with the seat summary", %{conn: conn, business: business} do
+      insert(:business_billing, business: business, free_seats: 2)
       insert(:client, business: business, status: :active)
       insert(:client, business: business, status: :active)
 

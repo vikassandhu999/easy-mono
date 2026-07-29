@@ -101,6 +101,12 @@ defmodule Easy.Billing do
     if owner?(ctx), do: :ok, else: {:error, :not_owner}
   end
 
+  defp ensure_billing_enabled do
+    if Application.get_env(:easy, Easy.Razorpay)[:key_id],
+      do: :ok,
+      else: {:error, :billing_disabled}
+  end
+
   # pending -> active does not change used_seats (pending already counts),
   # so "no capacity at accept" means usage already exceeds the limit
   # (seats were reduced since the invite).
@@ -173,10 +179,11 @@ defmodule Easy.Billing do
   end
 
   @spec checkout(Ctx.t(), pos_integer()) ::
-          {:ok, map()} | {:error, :not_owner} | {:error, :razorpay_error}
+          {:ok, map()} | {:error, :billing_disabled | :not_owner | :razorpay_error}
   def checkout(%Ctx{business_id: business_id} = ctx, seats_to_add)
       when is_integer(seats_to_add) and seats_to_add > 0 do
-    with :ok <- ensure_owner(ctx) do
+    with :ok <- ensure_billing_enabled(),
+         :ok <- ensure_owner(ctx) do
       billing = billing_for(business_id)
       target_quantity = billing.paid_seats + seats_to_add
 

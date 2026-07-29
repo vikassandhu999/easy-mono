@@ -11,7 +11,9 @@ defmodule Easy.Billing.BusinessBilling do
   @statuses [:free, :active, :past_due, :cancel_at_period_end, :cancelled]
 
   schema "business_billing" do
-    field :free_seats, :integer, default: 2
+    # ponytail: 10 free seats while billing is disabled for first users; drop back
+    # to 2 when Razorpay goes live and paid seats become the growth path.
+    field :free_seats, :integer, default: 10
     field :paid_seats, :integer, default: 0
     field :status, Ecto.Enum, values: @statuses, default: :free
     field :razorpay_subscription_id, :string

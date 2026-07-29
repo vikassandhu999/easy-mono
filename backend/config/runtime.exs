@@ -108,7 +108,10 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :easy, Easy.Repo,
-    # ssl: true,
+    # ponytail: verify_none — TLS encrypts the hop but skips peer verification;
+    # fine over the provider's private network, switch to the provider CA cert
+    # (cacertfile) if the DB ever sits outside it.
+    ssl: System.get_env("DATABASE_SSL") in ~w(true 1) && [verify: :verify_none],
     url: database_url,
     pool_size: 5,
     connect_timeout: 10_000,

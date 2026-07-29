@@ -44,7 +44,7 @@ config :swoosh, :api_client, false
 
 config :easy, Easy.Mailer,
   adapter: Resend.Swoosh.Adapter,
-  api_key: "REMOVED"
+  api_key: System.get_env("RESEND_API_KEY", "")
 
 # Authentication and JWT configuration for development
 config :easy, :jwt_secret, "dev-secret-key-minimum-32-characters-long-for-hs256"

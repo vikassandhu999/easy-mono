@@ -116,6 +116,17 @@ assertion still hold in a year?"
 Every ilike filter goes through `Easy.Search.like_pattern/1` (searching `%` matched every
 row). **Enforced by:** review — grep `%#{term}%` should return nothing under `backend/lib`.
 
+### RM-018 — Dropping a uniqueness guarantee is an API change for every reader of that column
+Relaxing a constraint is never local. Before dropping a unique index, grep the column and
+every column copied from it across the whole repo — other code may be using it as an
+identity key. `20260728100000` dropped unique `(nutrition_meal_id, position)` for the
+builder ("no position uniqueness anywhere"), but logging reconciliation keyed its
+already-logged skip-list on `planned_item_index`, a copy of that position — so two items
+sharing a position made "log meal" skip one silently, losing a client's food log. Fix was
+to key reconciliation on `meal_item_id`. Review question: "who treats this column as an
+identifier, not a value?" Mutable display order and stable identity must never be the same
+column.
+
 ---
 
 ## Frontend

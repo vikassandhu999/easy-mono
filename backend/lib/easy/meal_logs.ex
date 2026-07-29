@@ -257,8 +257,9 @@ defmodule Easy.MealLogs do
     snapshot = build_planned_snapshot(business_id, meal_id)
     validate_snapshot!(meal_id, snapshot)
     meal_log = get_or_create_meal_log!(business_id, client_id, date, meal_slot, snapshot, meal_id)
+    meal_item_id = resolve_planned_meal_item_id(business_id, meal_id, attrs[:planned_item_index])
 
-    with {:ok, entry} <- create_food_log_entry(business_id, meal_log.id, attrs),
+    with {:ok, entry} <- create_food_log_entry(business_id, meal_log.id, attrs, meal_item_id),
          {:ok, _meal_log} <- recalculate_logged_calories(meal_log) do
       entry
     else
@@ -444,7 +445,7 @@ defmodule Easy.MealLogs do
     already_logged =
       FoodLogEntry
       |> FoodLogEntry.for_meal_log(meal_log.id)
-      |> FoodLogEntry.planned_indices()
+      |> FoodLogEntry.logged_meal_item_ids()
       |> Repo.all()
       |> MapSet.new()
 
@@ -461,18 +462,21 @@ defmodule Easy.MealLogs do
   end
 
   defp log_meal_item(item, acc, already_logged, meal_log_id, business_id) do
-    if MapSet.member?(already_logged, item.position) do
+    if MapSet.member?(already_logged, item.id) do
       acc
     else
-      case create_food_log_entry(business_id, meal_log_id, build_entry_attrs(item)) do
+      case create_food_log_entry(business_id, meal_log_id, build_entry_attrs(item), item.id) do
         {:ok, entry} -> [entry | acc]
         {:error, reason} -> Repo.rollback(reason)
       end
     end
   end
 
-  defp create_food_log_entry(business_id, meal_log_id, attrs) do
-    changeset = FoodLogEntry.insert_changeset(business_id, meal_log_id, attrs)
+  defp create_food_log_entry(business_id, meal_log_id, attrs, meal_item_id) do
+    changeset =
+      business_id
+      |> FoodLogEntry.insert_changeset(meal_log_id, attrs)
+      |> put_meal_item(meal_item_id)
 
     if changeset.valid? do
       changeset
@@ -482,6 +486,28 @@ defmodule Easy.MealLogs do
     else
       {:error, %{changeset | action: :insert}}
     end
+  end
+
+  defp put_meal_item(changeset, nil), do: changeset
+  defp put_meal_item(changeset, meal_item_id), do: put_change(changeset, :nutrition_meal_item_id, meal_item_id)
+
+  # The client still identifies a planned item by its position. Positions are not
+  # unique — the builder redesign renounced that — so pin the entry to a concrete
+  # item id here; lowest id wins, matching the migration's backfill. Reconciliation
+  # keys on the id from this point on, so a same-position twin is no longer
+  # mistaken for an item that was already logged.
+  defp resolve_planned_meal_item_id(_business_id, nil, _position), do: nil
+  defp resolve_planned_meal_item_id(_business_id, _meal_id, nil), do: nil
+
+  defp resolve_planned_meal_item_id(business_id, meal_id, position) do
+    MealItem
+    |> MealItem.for_business(business_id)
+    |> MealItem.for_meal(meal_id)
+    |> MealItem.for_position(position)
+    |> order_by([mi], asc: mi.id)
+    |> limit(1)
+    |> select([mi], mi.id)
+    |> Repo.one()
   end
 
   defp update_food_log_entry(%FoodLogEntry{} = entry, business_id, attrs) do

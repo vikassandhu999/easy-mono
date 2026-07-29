@@ -3,6 +3,7 @@ defmodule Easy.Nutrition.MealLogTest do
 
   alias Easy.Ctx
   alias Easy.MealLogs
+  alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.PlanDay
   alias Easy.NutritionPlans
@@ -277,6 +278,62 @@ defmodule Easy.Nutrition.MealLogTest do
 
   defp ctx_for(plan) do
     Ctx.new(plan.business_id, plan.creator.user_id, plan.creator.id, false)
+  end
+
+  describe "planned-item reconciliation" do
+    test "a same-position twin still logs after one item was logged individually" do
+      %{client_ctx: client_ctx, business: business, creator: creator, oats: oats} = build_scenario()
+
+      # The builder renounced position uniqueness, so a second item can land on
+      # position 0 beside the first.
+      oat_flakes = Repo.get_by!(MealItem, nutrition_meal_id: oats.id, position: 0)
+
+      raisins = insert(:food, business: business, creator: creator, name: "Raisins", calories_per_100g: 300.0)
+
+      insert(:meal_item,
+        meal: oats,
+        business: business,
+        food: raisins,
+        amount: 30.0,
+        unit: "g",
+        weight_g: 30.0,
+        position: 0
+      )
+
+      # The client logs one planned item on its own — the app identifies it by position.
+      assert {:ok, logged} =
+               MealLogs.create_client_food_log_entry(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 meal_id: oats.id,
+                 food_id: oat_flakes.food_id,
+                 amount: 100.0,
+                 unit: "g",
+                 weight_g: 100.0,
+                 source: :planned,
+                 planned_item_index: 0
+               })
+
+      assert logged.nutrition_meal_item_id == oat_flakes.id
+
+      # Tapping "log meal" must still log the twin, not skip it as already logged.
+      assert {:ok, entries} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      assert [%{food_name: "Raisins"}] = entries
+    end
+
+    test "re-logging the same meal adds nothing" do
+      %{client_ctx: client_ctx, oats: oats} = build_scenario()
+
+      assert {:ok, [entry]} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+
+      assert entry.nutrition_meal_item_id
+
+      assert {:ok, []} =
+               MealLogs.log_client_meal(client_ctx, %{date: @date, meal_slot: "breakfast", meal_id: oats.id})
+    end
   end
 
   defp build_scenario do

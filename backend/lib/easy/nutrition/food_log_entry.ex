@@ -2,6 +2,7 @@ defmodule Easy.Nutrition.FoodLogEntry do
   use Ecto.Schema
 
   alias Easy.Nutrition.Food
+  alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Recipe
   alias Easy.Orgs
@@ -32,6 +33,10 @@ defmodule Easy.Nutrition.FoodLogEntry do
 
     belongs_to :business, Orgs.Business
     belongs_to :meal_log, MealLog, foreign_key: :nutrition_meal_log_id
+    # Which planned item this entry fulfils. Server-set, never cast: reconciliation
+    # keys on it, so a client must not be able to point an entry at another
+    # business's meal item.
+    belongs_to :meal_item, MealItem, foreign_key: :nutrition_meal_item_id
     belongs_to :food, Food
     belongs_to :recipe, Recipe
 
@@ -139,11 +144,11 @@ defmodule Easy.Nutrition.FoodLogEntry do
     from(e in query, where: e.business_id == ^business_id)
   end
 
-  @spec planned_indices(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def planned_indices(query \\ __MODULE__) do
+  @spec logged_meal_item_ids(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def logged_meal_item_ids(query \\ __MODULE__) do
     from(e in query,
-      where: not is_nil(e.planned_item_index),
-      select: e.planned_item_index
+      where: not is_nil(e.nutrition_meal_item_id),
+      select: e.nutrition_meal_item_id
     )
   end
 end

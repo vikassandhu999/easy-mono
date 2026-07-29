@@ -1,123 +1,205 @@
-# Backend Deployment — DigitalOcean App Platform + Managed Postgres
+# Production on DigitalOcean — what runs where, why, and how it got there
 
-Plan for a fresh **backend-only** production deployment including the two features merged this week: **business billing/seats (Razorpay)** and the **nutrition day-types + meal-options builder**. Frontends (coachapp, clientapp, website) stay on **Vercel** with their existing push-to-main CI — they only need env/CORS alignment (section 5). Written 2026-07-07 against main `2d603f48`.
+As-built record of the first production deployment, executed 2026-07-29/30. This replaces the
+2026-07-07 plan that used to live in this file; the main differences from that plan are called out
+in "Decisions and why". Use this document to understand the production topology, to operate it,
+and to redo any step from scratch.
 
 ## Topology
 
-| Component | Source | Where |
+| Component | Where | Name / address |
 |---|---|---|
-| API (Phoenix release) | `backend/` (has `Dockerfile`, listens on **8080**, health check `GET /api/health`) | DO App Platform **service** (Dockerfile build) |
-| Database | — | DO **Managed Postgres** cluster |
-| Coach app / client app / website | `frontend/apps/*` | Vercel (already wired, out of scope here) |
+| API (Phoenix release) | DO App Platform, region `blr` | app `lionfish-app`, `https://api.coacheasy.app` (ingress `lionfish-app-gz5ma.ondigitalocean.app`) |
+| Database | DO Managed Postgres 18, `blr1` | cluster `db-pgsql-blr1-55598`, database `easy-backend-prod`, app user `easy-app-admin` |
+| Private uploads | DO Spaces, `sgp1` | bucket `coacheasy-private` (presigned PUT/GET only) |
+| Public library media | DO Spaces + CDN, `sgp1` | bucket `coacheasy-public`, served at `https://coacheasy-public.sgp1.cdn.digitaloceanspaces.com` |
+| Coach app | Vercel | `https://admin.coacheasy.app` |
+| Client app | Vercel | `https://client.coacheasy.app` |
+| DNS | DO zone `coacheasy.app` | registrar (Namecheap) points nameservers at `ns1-3.digitalocean.com` |
+| Email (login OTPs, invites) | Resend, domain `coacheasy.app` verified | DKIM/SPF/MX records in the DO zone |
+| Billing | disabled | no Razorpay keys in prod; every business gets 10 free seats |
 
-Suggested API domain: `api.coacheasy.app`. The Vercel production domains appear in the backend env below — fill in the real ones.
+Monthly cost: roughly $32 (app $12, Postgres $15, Spaces $5). Vercel and DNS are free tiers.
 
-## 1. Managed Postgres
+## Decisions and why
 
-1. Create a PG **16** cluster (basic, 1 node is fine to start), same region as the app (e.g. `blr1`).
-2. Create database `easy_prod` and a dedicated user; **do not** use `doadmin`.
-3. Use the **connection pool** (PgBouncer, *transaction* mode, size ~10) connection string for the app; keep the direct string for migrations/console.
-4. Managed PG requires TLS. The release already reads `DATABASE_URL`; add `ssl=true`:
-   - `DATABASE_URL=ecto://USER:PASS@POOL_HOST:25061/easy_prod?ssl=true`
-   - If connects fail with cert errors, verify `config/runtime.exs` repo `ssl:` options accept DO's CA (set `ssl: [verify: :verify_none]` fallback or ship DO's CA cert — check on first boot, don't guess).
-5. Restrict the cluster's **trusted sources** to the App Platform app once attached.
+* One provider for API + database + storage (DigitalOcean), chosen by the owner. The backend never
+  cared: it speaks `DATABASE_URL` and the S3 API, so the move from the old Fly.io/Tigris setup was
+  env vars plus two small code changes (ACL signing and DB TLS, below).
+* Frontends stayed on Vercel. Push-to-main CI already existed there; duplicating the SPAs on App
+  Platform added nothing. Two DO static-site apps were created during the day and deleted the same
+  day when this became clear.
+* Billing is off for the first cohort. Instead of configuring Razorpay (plan, webhook, KYC), prod
+  runs without Razorpay keys: `Billing.checkout` returns `:billing_disabled` (a 422 with a clear
+  message) and the `free_seats` default is 10. The first coaches get 10 client seats and cannot
+  buy more. Re-enabling is a config change, not a rewrite; see "Re-enabling Razorpay".
+* The coach app lives at `admin.coacheasy.app`, not `app.` — that is what the pre-existing Vercel
+  domain setup used, so backend CORS, invite links, and email links follow it.
+* Postgres 18 in prod vs 15 in local Docker: kept. Skew in this direction is safe (everything that
+  works on 15 works on 18). Local can move to `postgres:18-alpine` whenever convenient.
+* Spaces lives in `sgp1` because `blr1` has no Spaces region. Public media is CDN-cached, so the
+  extra distance is invisible.
 
-Fresh DB = all migrations run from zero. The nutrition backfill migration (`20260706120000`) is a no-op on an empty DB; billing tables (`20260706000100`) and nutrition day tables + indexes (`202607061…`, `20260707100000`) just create.
+## Code changes that made prod possible
 
-## 2. Backend service (API)
+All on `main`, 2026-07-29:
 
-- Build: Dockerfile at `backend/Dockerfile` (monorepo: set source dir `backend`). HTTP port **8080**. Health check path `/api/health`.
-- **Pre-deploy job**: run `bin/migrate` (the release overlay in `backend/rel/overlays/bin/migrate`) with the same env, using the **direct** (non-pooled) `DATABASE_URL`. App Platform supports a `PRE_DEPLOY` job component — use it so migrations gate each deploy.
-- Auto-deploy on push to `main` (App Platform GitHub integration, watch path `backend/`), matching the frontend's push-to-main flow. Note the ordering caveat in section 6.
-- Instance: 1× basic (512MB–1GB) to start; scale later.
+* Secret scrub. A live Resend API key sat in `backend/config/dev.exs` and in a tracked
+  `backend/.env` (tracked since before the ignore rule existed). GitHub push protection blocked the
+  first push. Fix: `dev.exs` reads `RESEND_API_KEY` from the environment, `git filter-repo`
+  rewrote the key out of the unpushed range, `backend/.env` is untracked, and the key itself was
+  rotated in the Resend dashboard. Rule: a leaked credential gets rotated, not just deleted from
+  the tip.
+* Billing-disabled mode (`feat(billing): run without Razorpay`). Razorpay env vars are optional in
+  prod; absence turns checkout off cleanly. `BusinessBilling.free_seats` default went 2 → 10 (drop
+  it back when billing goes live). Seat-limit tests pin their own 2-seat billing rows so they do
+  not depend on the global default.
+* Public-bucket ACL signing (`feat(storage)`). Tigris made whole buckets public; Spaces keeps
+  objects private unless each PUT carries `x-amz-acl=public-read`. `Easy.Storage` signs that param
+  into presigned PUTs for the `:public` store. Without it, every library-media URL 403s.
+* DB TLS (`feat(prod): DATABASE_SSL`). Managed Postgres requires TLS; `DATABASE_SSL=true` enables
+  it with `verify: :verify_none` (encrypted hop, no peer verification — acceptable inside the
+  provider network; switch to the DO CA cert if the DB ever sits outside it).
 
-### Required env vars (boot **raises** if missing)
+## The backend app
 
-| Var | Notes |
-|---|---|
-| `DATABASE_URL` | pooled string for the service; direct string for the migrate job |
-| `SECRET_KEY_BASE` | `mix phx.gen.secret` |
-| `JWT_SECRET` | ≥32 chars; **losing/rotating it invalidates all sessions** |
-| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | from Razorpay dashboard (start with test keys, swap to live) |
-| `RAZORPAY_WEBHOOK_SECRET` | the secret you set when registering the webhook (step 3) |
-| `RAZORPAY_PLAN_ID` | created manually in the Razorpay dashboard (step 3) |
-| `RESEND_API_KEY` | login is email-OTP — no key, no logins. Verify the sender domain in Resend. (Or `MAILER_ADAPTER=smtp` + `SMTP_*`.) |
+App Platform app `lionfish-app` (id `41f68af9-19c2-44bc-bc01-4fa8d4eaa1f5`), one service plus one
+job, both built from `backend/Dockerfile` (context `backend/`), auto-deploy on push to `main`:
 
-### Other env vars
+* Service `easy-mono-backend`: port 8080, `apps-s-1vcpu-1gb`, health check `GET /api/health`.
+* Job `migrate`: `PRE_DEPLOY`, runs `/app/bin/migrate` with the same env, so migrations gate every
+  deploy. It needs the full env set (the release loads all of `runtime.exs`, storage vars
+  included), which is why env vars live at the app level, not per-component.
+
+The full spec (with secret values) is applied with
+`doctl apps update 41f68af9-... --spec <file>`; a sanitized copy of the env list:
 
 | Var | Value |
 |---|---|
-| `PHX_HOST` | `api.coacheasy.app` |
-| `PORT` | `8080` |
-| `APP_URL` | `https://api.coacheasy.app` |
-| `FRONTEND_URL` | Vercel coach-app production URL |
-| `CLIENT_FRONTEND_URL` | Vercel client-app production URL |
-| `CORS_ALLOWED_ORIGINS` | comma-separated Vercel production domains (coach, client, website). Add Vercel preview domains only if you want previews hitting prod API — better: leave them out. |
-| `BILLING_SEAT_PRICE_INR` | optional, defaults `499` — **must match the Razorpay plan amount** |
+| `DATABASE_URL` | `ecto://easy-app-admin:...@db-pgsql-blr1-55598-...:25060/easy-backend-prod` (secret) |
+| `DATABASE_SSL` | `true` |
+| `SECRET_KEY_BASE`, `JWT_SECRET` | generated with `mix phx.gen.secret` (secret; rotating `JWT_SECRET` logs everyone out) |
+| `PHX_HOST` / `PORT` / `APP_URL` | `api.coacheasy.app` / `8080` / `https://api.coacheasy.app` |
+| `FRONTEND_URL` | `https://admin.coacheasy.app` |
+| `CLIENT_FRONTEND_URL` | `https://client.coacheasy.app` (invite links) |
+| `CORS_ALLOWED_ORIGINS` | `https://admin.coacheasy.app,https://client.coacheasy.app` |
+| `MAILER_ADAPTER` / `RESEND_API_KEY` | `resend` / rotated key (secret) |
 | `EMAIL_FROM_NAME` / `EMAIL_FROM_ADDRESS` | `Coach Easy` / `noreply@coacheasy.app` |
-| `POOL_SIZE` | ≤ PgBouncer pool size (e.g. `10`) |
+| `AWS_ENDPOINT_URL_S3` / `AWS_REGION` | `https://sgp1.digitaloceanspaces.com` / `sgp1` |
+| `BUCKET_NAME` / `PUBLIC_BUCKET_NAME` | `coacheasy-private` / `coacheasy-public` |
+| `PUBLIC_STORAGE_URL` | `https://coacheasy-public.sgp1.cdn.digitaloceanspaces.com` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Spaces key `coacheasy-backend` (secret) |
 
-(`PHX_SERVER` is set by the release's `bin/server`; don't set it on the migrate job.)
+No `RAZORPAY_*` vars — their absence is what disables billing.
 
-## 3. Razorpay setup (billing feature)
+## Database
 
-Do this once per environment (test mode first, then live):
+Cluster `db-pgsql-blr1-55598` (PG 18, `blr1`, 1 GB). The app connects as `easy-app-admin` to
+`easy-backend-prod`. Trusted sources: only the App Platform app.
 
-1. **Create the subscription plan** in the Razorpay dashboard: period *monthly*, amount = seat price (₹499 → `49900` paise), currency INR. Put its id in `RAZORPAY_PLAN_ID`.
-2. **Register the webhook**: URL `https://api.coacheasy.app/v1/webhooks/razorpay`, events: `subscription.activated`, `subscription.charged`, `subscription.updated`, `subscription.halted`, `subscription.cancelled`, `payment.failed`. Set a strong secret and mirror it in `RAZORPAY_WEBHOOK_SECRET`.
-3. After first deploy, verify signature handling: a test webhook with a bad signature must return **401**; a valid duplicate event must 200 as a no-op (dedupe on event id).
-4. Reminder from the feature's ship notes: the real checkout modal and the cancel happy path were never exercised against live keys — run one **manual test-mode purchase** end-to-end (buy 2 seats, watch `subscription.charged` land, seat limit rise, awaiting client auto-activate) before going live.
+Gotcha that broke the first deploy: on PG 15+ the `public` schema is writable only by the database
+owner, and the database had been created by `doadmin`. Migrations failed with
+`ERROR 42501 (insufficient_privilege) permission denied for schema public`. Fix (as `doadmin`):
 
-## 4. DNS + TLS
+```sql
+ALTER DATABASE "easy-backend-prod" OWNER TO "easy-app-admin";
+```
 
-Add `api.coacheasy.app` to the App Platform app and point a CNAME at it; Let's Encrypt is automatic. Do this before the Razorpay webhook registration and the Vercel env update (both depend on the final hostname).
+To run ad-hoc SQL from a laptop: temporarily add your IP to trusted sources
+(`doctl databases firewalls append <cluster-id> --rule ip_addr:<ip>`), connect with `psql`,
+then remove the rule. Do not leave personal IPs in the firewall.
 
-## 5. Vercel side (config only, no redeploy pipeline changes)
+Not used yet, deliberately: the PgBouncer connection pool. Pool size 5 direct connections is fine
+at first-user scale; add the pool when connection counts say so.
 
-- Set `VITE_API_BASE_URL=https://api.coacheasy.app` on **both** SPA projects (production env). The apps hard-warn and fail silently to localhost without it (`src/api/base.ts` guard).
-- Website: point whatever API-origin env it uses (landing-funnel pages call the public `/v1/public` API) at the same host — audit `apps/website` env before cutover.
-- Trigger one redeploy of each project after setting envs (Vite bakes them at build time).
-- Give the backend's `CORS_ALLOWED_ORIGINS` exactly these production domains.
+## Storage
 
-## 6. Deploy order
+Two Spaces buckets in `sgp1`, created via the S3 API with the `coacheasy-backend` Spaces key
+(`doctl spaces keys create` — note the key API only lists secrets at creation time). Both carry a
+CORS policy allowing `GET`/`PUT`/`HEAD` from the two app origins (browser uploads go straight to
+presigned URLs). The public bucket has a CDN endpoint enabled
+(`doctl compute cdn create coacheasy-public.sgp1.digitaloceanspaces.com`).
 
-1. Postgres cluster + db/user → note both connection strings.
-2. Backend service + migrate pre-deploy job with full env (test-mode Razorpay values) → deploy → `GET /api/health` 200, logs clean.
-3. API domain + DNS.
-4. Razorpay dashboard plan + webhook (step 3) → update secrets → redeploy.
-5. Vercel env vars (step 5) → redeploy frontends.
-6. Smoke (section 7), then swap Razorpay test → live keys.
+## DNS and email
 
-**Ongoing ordering caveat**: both sides auto-deploy on push to main, but Vercel builds usually finish before an App Platform image build + migrate job. For API-contract changes (new endpoints/fields), the frontends may briefly hit an older API. Our convention (delete-then-use, both sides in one push) makes this a short window, not a correctness bug — but for destructive API changes, push backend-first, wait for DO to go green, then push the frontend change.
+The zone for `coacheasy.app` lives in DO (`doctl compute domain ...`); Namecheap only holds the
+registration and the nameserver delegation. Records:
 
-## 7. Post-deploy smoke checklist
+| Type | Host | Value |
+|---|---|---|
+| CNAME | `api` | `lionfish-app-gz5ma.ondigitalocean.app.` |
+| CNAME | `admin` | `7da8ea8e7b8b0e12.vercel-dns-017.com.` |
+| CNAME | `client` | `e8fb5dec8e1c4b47.vercel-dns-017.com.` |
+| TXT | `resend._domainkey` | DKIM public key |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` |
+| MX | `send` | `feedback-smtp.ap-northeast-1.amazonses.com` (priority 10) |
+| TXT | `_dmarc` | `v=DMARC1; p=none;` |
 
-Auth/base: sign up a coach (OTP email arrives — proves Resend), log in on both apps.
+The cutover copied every record out of Namecheap into the DO zone before switching nameservers, so
+the Vercel apps and Resend verification never went dark. The old `api` A/AAAA records pointed at
+the retired Fly.io deploy and were dropped, not copied.
 
-**Billing/seats** (test keys):
-- Settings → Billing shows the free state (2 seats).
-- Invite 2 clients, then a 3rd → blocked-invite panel with seat summary (409 path).
-- Buy seats via checkout modal (test card) → webhook lands, plan shows paid seats, awaiting client auto-activates oldest-first.
-- Cancel → status `cancel_at_period_end`, period end shown.
+Two App Platform domain gotchas:
 
-**Nutrition builder**:
-- New plan → single-day builder (six slots, no tabs), add 2 meals, add both as breakfast options → "Default" tag + "Totals use default options." caption.
-- "Add day" → tabs + weekday chips; assign Sat/Sun; delete day → confirm shows reassignment.
-- Assign to a client; client app Today: option switcher, switch-before-log instant, switch-after-log shows "Switching clears what you've logged for this meal", off-plan extra survives a switch.
+* Do not set `zone:` on the app's domain spec when the DO zone already exists with records — the
+  managed-zone step wedges on `DomainZoneInvalid`. A plain `PRIMARY` domain plus a manual CNAME
+  works.
+* After a nameserver switch, App Platform's `verify-cname` step can sit on a stale resolver cache
+  and report `DomainCNAMEMismatch` even when every public resolver returns the right answer. It
+  retries on its own; the fix is patience, not more DNS edits.
 
-**Webhook hardening**: bad-signature POST → 401; replayed event → 200 no-op.
+## Day-to-day deploys
 
-## 8. Rollback / ops notes
+Push to `main`. Vercel rebuilds the frontends; App Platform rebuilds the image, runs the migrate
+job, then swaps the service. Vercel usually finishes first, so for API-contract changes the
+frontends can briefly hit the older API. The delete-then-use convention keeps that window
+harmless; for a destructive API change, push backend-first, wait for DO to go green, then push the
+frontend change.
 
-- App Platform keeps prior deployments — rollback is one click; DB migrations are the constraint. The nutrition drop-schedule-entries migration (`20260706140000`) **raises on down** — on a fresh environment this never matters (no old code exists to roll back to), but never point a pre-nutrition build at this schema.
-- Managed PG: enable daily backups (on by default) + PITR; set the maintenance window off-peak IST.
-- Alerts: App Platform deploy-failure + CPU/mem alerts; PG connection/disk alerts.
-- Logs: `doctl apps logs <app-id> --type run` while smoke-testing; watch for Razorpay `:razorpay_error` normalizations and CORS rejections.
+Vercel needs `VITE_API_BASE_URL=https://api.coacheasy.app` in both SPA projects (production env).
+Vite bakes it at build time; changing it requires a redeploy.
 
-## Open items before this plan runs
+## Ops runbook
 
-1. Razorpay **live** KYC/activation done? (Test mode works without it.)
-2. Resend domain verification for `coacheasy.app`.
-3. `apps/website` env audit on Vercel (which var carries the API origin for the public landing-funnel calls).
-4. The old Fly.io deployment (`just deploy`): retire or keep as staging? If retired, remove its Razorpay webhook so events only hit one environment.
-5. Confirm the actual Vercel production domains to fill into `FRONTEND_URL` / `CLIENT_FRONTEND_URL` / `CORS_ALLOWED_ORIGINS`.
+* Logs: `doctl apps logs 41f68af9-... <component> --type run` (components: `easy-mono-backend`,
+  `migrate`). Deployment forensics: `doctl apps list-deployments` + `doctl apps get-deployment`.
+* Rollback: App Platform keeps prior deployments (one click). Migrations are the constraint — the
+  drop-schedule-entries migration (`20260706140000`) raises on down; never point a pre-nutrition
+  build at this schema.
+* Grant more seats to a business: attach a console to the service
+  (`doctl apps console 41f68af9-... easy-mono-backend`), then in IEx:
+  `Easy.Billing.grant_free_seats(Easy.Ctx.new("<business-id>", "<owner-user-id>"), 20)`.
+* Backups: managed PG daily backups are on by default; set the maintenance window off-peak IST.
+* Alerts configured on the app: deployment failed, domain failed.
+
+## Re-enabling Razorpay (when billing turns on)
+
+1. Razorpay dashboard: create the monthly plan (amount must match `BILLING_SEAT_PRICE_INR`,
+   default 499 → `49900` paise) and register the webhook at
+   `https://api.coacheasy.app/v1/webhooks/razorpay` (events: `subscription.activated`, `.charged`,
+   `.updated`, `.halted`, `.cancelled`, `payment.failed`) with a strong secret.
+2. Set all four `RAZORPAY_*` vars (plus `BILLING_SEAT_PRICE_INR` if not 499) on the app and
+   redeploy. Their presence re-enables checkout; nothing else changes.
+3. Drop the `free_seats` default in `BusinessBilling` back from 10 to 2 (existing businesses keep
+   whatever their row says; adjust per business with `grant_free_seats`).
+4. Verify webhook hardening: bad-signature POST → 401, replayed event id → 200 no-op.
+5. Run one test-mode purchase end-to-end before swapping to live keys — the checkout modal and
+   cancel path were never exercised against live keys.
+
+## Smoke checklist (run after any big change)
+
+* Sign up a coach at `admin.coacheasy.app` → OTP email arrives (proves Resend + DNS), login works.
+* Invite a client → invite email link points at `client.coacheasy.app`, accept works.
+* Billing page shows 10 free seats; "add seats" fails with the "not available yet" message.
+* Upload an exercise image (public media) → renders via the CDN URL. Upload a client photo
+  (private) → renders via presigned GET.
+* Client logs a workout and a meal; coach sees both.
+
+## State as of 2026-07-30
+
+* Deployed and healthy on the direct ingress URL; `api.coacheasy.app` TLS certificate was still
+  issuing (the `verify-cname` stale-cache wait above).
+* Full smoke checklist not yet run — it gates sending links to the first coaches.
+* Old Fly.io deployment still up; retire it after cutover is proven (and remove its Razorpay
+  webhook if one exists, so events only ever hit one environment).
+* Local dev Postgres is 15; bump to 18 when convenient.

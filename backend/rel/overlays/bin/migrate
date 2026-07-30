@@ -2,4 +2,5 @@
 set -eu
 
 cd -P -- "$(dirname -- "$0")"
-exec ./easy eval Easy.Release.migrate
+./easy eval Easy.Release.migrate
+exec ./easy eval Easy.Release.seed

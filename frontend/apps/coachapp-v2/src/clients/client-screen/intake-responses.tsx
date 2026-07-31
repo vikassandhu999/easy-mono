@@ -12,7 +12,8 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
 import {FormAnswer} from '@/clients/components/form-answer';
 import {SectionCard} from '@/clients/components/section-card';
-import {formatDayMonth, submissionPhotoIds} from '@/clients/lib/client-detail-data';
+import {formatDayMonth} from '@/clients/lib/client-detail-data';
+import {submissionPhotoIds} from '@/domain/form-answers';
 
 /**
  * CD-IR — the intake answers, read-only.

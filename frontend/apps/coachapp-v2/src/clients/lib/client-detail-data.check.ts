@@ -1,7 +1,8 @@
 /**
- * Self-check for client-detail-data.ts. Run it:
+ * Self-check for client-detail-data.ts (and the formatAnswer it re-checks from
+ * domain/form-answers.ts). Runs on every `pnpm build` via the `check` script:
  *
- *   node --experimental-strip-types src/clients/lib/client-detail-data.check.ts
+ *   pnpm run check
  *
  * Not a test-framework suite — the app has none, and this needs none. It exists
  * because these functions were rewritten from scratch and every one of them fails
@@ -12,12 +13,13 @@
  * A fixed `today` is passed everywhere a function accepts one, so this cannot
  * start failing tomorrow.
  */
+
+import {formatAnswer} from '../../domain/form-answers.ts';
 import {
   averageLoggedCalories,
   completedCheckIns,
   completedSessionDates,
   entryStatus,
-  formatAnswer,
   formatCompactDuration,
   formatDayMonth,
   formatDayMonthYear,

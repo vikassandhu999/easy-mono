@@ -17,21 +17,18 @@ import {DetailRow} from '@/clients/components/detail-row';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
 import {
-  type AnswerType,
   completedSessionDates,
   dayOfMonth,
-  formatAnswer,
   formatDayMonth,
   formatWeight,
-  isSummarisableAnswer,
   lastNDays,
   loggedMealDates,
   relativeDay,
-  submissionPhotoIds,
   weekdayInitial,
   weightChartGeometry,
   weightTrend,
 } from '@/clients/lib/client-detail-data';
+import {type AnswerType, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/domain/form-answers';
 
 /**
  * CD-OV. The two columns are the design's, and which card sits in which is part

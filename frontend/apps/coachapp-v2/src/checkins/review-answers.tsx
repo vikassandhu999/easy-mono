@@ -2,25 +2,10 @@ import {Button, Typography} from '@heroui/react';
 
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import type {ClientProfileReviewQueueItem} from '@/api/checkins';
+import {type AnswerType, formatAnswer} from '@/domain/form-answers';
 
-type SnapshotQuestion = {id?: string; label?: string; type?: string};
+type SnapshotQuestion = {id?: string; label?: string; type?: AnswerType};
 type SnapshotSection = {questions?: SnapshotQuestion[]; title?: string};
-
-function formatAnswer(value: unknown): string {
-  if (value == null || value === '') {
-    return '—';
-  }
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-  if (Array.isArray(value)) {
-    return value.length > 0 ? value.map(String).join(', ') : '—';
-  }
-  if (typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  return String(value);
-}
 
 export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueItem}) {
   const sections = item.question_snapshot as SnapshotSection[];
@@ -108,7 +93,7 @@ export default function ReviewAnswers({item}: {item: ClientProfileReviewQueueIte
                     type="body-sm"
                     weight="semibold"
                   >
-                    {formatAnswer(question.id ? item.answers[question.id] : undefined)}
+                    {formatAnswer(question.id ? item.answers[question.id] : undefined, question.type)}
                   </Typography>
                 )}
               </div>

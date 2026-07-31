@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 2021 --host",
-    "build": "tsc --noEmit -p tsconfig.app.json && vite build",
+    "build": "tsc --noEmit -p tsconfig.app.json && pnpm run check && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "check": "node --experimental-strip-types src/clients/lib/client-detail-data.check.ts",
     "gen:api": "openapi-typescript ../../openapi/coach.openapi.json -o src/api/schema.ts",
     "lint": "biome check --write .",
     "preview": "vite preview"

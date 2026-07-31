@@ -138,20 +138,26 @@ export function useCreateNutritionPlanMutation() {
 }
 
 /**
- * tag:false in the old app — the builder/detail screens keep the cached
- * `getNutritionPlan` entry fresh themselves via `patchQueryData`. Invalidate
- * the plan LIST (flat + infinite share the `lists()` prefix) plus every
- * client's plan list, since the client detail card edits macro targets
- * through this mutation too.
+ * The mutation owns every cache effect of a plan update — call sites never
+ * invalidate. Screens that patch `detail(id)` optimistically (builder/edit)
+ * keep doing so for instant UI; the invalidation here reconciles them.
+ * Client keys are included because a plan update can flip client-visible
+ * fields: archiving flips `needs_plan` (chips on the list, attention tab and
+ * the open client detail), and a rename changes the plan-name columns on
+ * client rows. The mutation doesn't know which client shows this plan, so
+ * details are invalidated by prefix.
  */
 export function useUpdateNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({body, id}: {body: NutritionPlanRequest; id: string}) =>
       call(client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, body})),
-    onSuccess: () => {
+    onSuccess: (_data, {id}) => {
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.details()});
     },
   });
 }
@@ -160,8 +166,12 @@ export function useDeleteNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}})),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      qc.removeQueries({queryKey: nutritionPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.details()});
     },
   });
 }

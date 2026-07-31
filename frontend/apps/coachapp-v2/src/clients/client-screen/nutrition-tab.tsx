@@ -1,12 +1,10 @@
 import {Chip, ProgressBar} from '@heroui/react';
-import {useQueryClient} from '@tanstack/react-query';
 import {UtensilsCrossed} from 'lucide-react';
 import {Link, useNavigate} from 'react-router-dom';
 
 import {toastMutationError} from '@/@components/mutation-toast';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {clientKeys, nutritionPlanKeys} from '@/api/keys';
 import {
   useListCoachClientNutritionPlansQuery,
   useListCoachMealLogsQuery,
@@ -27,7 +25,6 @@ import {
 /** CD-NU: the active plan, then 14 days of adherence. */
 export function NutritionTab({client}: {client: Client}) {
   const navigate = useNavigate();
-  const qc = useQueryClient();
   const updatePlanMutation = useUpdateNutritionPlanMutation();
   const isEnding = updatePlanMutation.isPending;
 
@@ -38,12 +35,6 @@ export function NutritionTab({client}: {client: Client}) {
   const endPlan = async (planId: string, planName: string) => {
     try {
       await updatePlanMutation.mutateAsync({id: planId, body: {name: planName, status: 'archived'}});
-      // The update mutation leaves detail(id) to the builders' optimistic
-      // patches; nothing patches here, so refetch the plan (Open is one tap
-      // away) and the client (archiving flips the server-derived needs_plan).
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.detail(planId)});
-      qc.invalidateQueries({queryKey: clientKeys.detail(client.id)});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
     } catch (err) {
       toastMutationError(err, "The plan wasn't ended. Try again.");
     }

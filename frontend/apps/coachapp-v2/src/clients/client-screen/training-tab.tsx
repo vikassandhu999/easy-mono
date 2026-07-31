@@ -1,5 +1,4 @@
 import {Chip} from '@heroui/react';
-import {useQueryClient} from '@tanstack/react-query';
 import {Dumbbell} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
@@ -7,7 +6,6 @@ import {toastMutationError} from '@/@components/mutation-toast';
 import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
-import {clientKeys, trainingPlanKeys} from '@/api/keys';
 import {
   useListCoachClientTrainingPlansQuery,
   useListCoachClientTrainingSessionsQuery,
@@ -29,7 +27,6 @@ import {sessionWorkoutName} from '@/clients/lib/session';
 /** CD-TR: the active plan, then session history grouped by week. */
 export function TrainingTab({client}: {client: Client}) {
   const navigate = useNavigate();
-  const qc = useQueryClient();
   const updatePlanMutation = useUpdateTrainingPlanMutation();
   const isEnding = updatePlanMutation.isPending;
 
@@ -38,12 +35,6 @@ export function TrainingTab({client}: {client: Client}) {
   const endPlan = async (planId: string) => {
     try {
       await updatePlanMutation.mutateAsync({id: planId, body: {status: 'archived'}});
-      // The update mutation leaves detail(id) to the builders' optimistic
-      // patches; nothing patches here, so refetch the plan (Open is one tap
-      // away) and the client (archiving flips the server-derived needs_plan).
-      qc.invalidateQueries({queryKey: trainingPlanKeys.detail(planId)});
-      qc.invalidateQueries({queryKey: clientKeys.detail(client.id)});
-      qc.invalidateQueries({queryKey: clientKeys.lists()});
     } catch (err) {
       toastMutationError(err, "The plan wasn't ended. Try again.");
     }

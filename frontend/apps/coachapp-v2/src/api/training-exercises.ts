@@ -104,7 +104,7 @@ export function useDeleteExerciseMutation() {
   return useMutation({
     mutationFn: (id: string) => call(client.DELETE('/v1/coach/training-exercises/{id}', {params: {path: {id}}})),
     onSuccess: (_data, id) => {
-      qc.invalidateQueries({queryKey: exerciseKeys.detail(id)});
+      qc.removeQueries({queryKey: exerciseKeys.detail(id)});
       qc.invalidateQueries({queryKey: exerciseKeys.lists()});
     },
   });

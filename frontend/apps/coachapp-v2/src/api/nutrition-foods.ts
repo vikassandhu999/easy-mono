@@ -120,7 +120,8 @@ export function useDeleteFoodMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-foods/{id}', {params: {path: {id}}})),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      qc.removeQueries({queryKey: foodKeys.detail(id)});
       qc.invalidateQueries({queryKey: foodKeys.lists()});
     },
   });
@@ -181,7 +182,8 @@ export function useDeleteRecipeMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-recipes/{id}', {params: {path: {id}}})),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      qc.removeQueries({queryKey: recipeKeys.detail(id)});
       qc.invalidateQueries({queryKey: recipeKeys.lists()});
     },
   });

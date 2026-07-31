@@ -115,11 +115,17 @@ export function useUpdateTrainingPlanMutation() {
       call(
         client.PATCH('/v1/coach/training-plans/{id}', {params: {path: {id}}, body}),
       ) as Promise<TrainingPlanResponse>,
-    onSuccess: () => {
+    onSuccess: (_data, {id}) => {
+      // The mutation owns every cache effect (see the nutrition twin for the
+      // full rationale): the plan's own entries, plus client keys because
+      // archiving flips `needs_plan` and a rename changes the plan-name
+      // columns on client rows. It doesn't know which client shows this
+      // plan, so client-scoped caches are invalidated by prefix.
+      qc.invalidateQueries({queryKey: trainingPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
-      // A plan rename doesn't say which client's assigned-plans list shows
-      // it, so invalidate every client's by prefix.
       qc.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.details()});
     },
   });
 }
@@ -128,8 +134,12 @@ export function useDeleteTrainingPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => call(client.DELETE('/v1/coach/training-plans/{id}', {params: {path: {id}}})),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      qc.removeQueries({queryKey: trainingPlanKeys.detail(id)});
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
+      qc.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.details()});
     },
   });
 }

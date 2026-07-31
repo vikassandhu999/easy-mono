@@ -1,4 +1,4 @@
-import {formatIsoDateShort, formatTimeAgo, parseIsoDateToDate} from '@easy/utils';
+import {formatTimeAgo, parseIsoDateToDate} from '@easy/utils';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -16,11 +16,6 @@ function toDate(value: null | string | undefined): Date | null {
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-export function isInCurrentCalendarMonth(value: null | string | undefined, now = new Date()): boolean {
-  const date = toDate(value);
-  return Boolean(date && date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth());
 }
 
 export function compareDateStrings(a: null | string | undefined, b: null | string | undefined): number {
@@ -60,11 +55,7 @@ export function formatSubscriptionEnd(value: null | string | undefined, now = ne
   return `Subscription ends in ${days} days`;
 }
 
-/** Null-guarding wrappers over @easy/utils — the API fields these read are nullable. */
-export function formatShortDate(value: null | string | undefined): string {
-  return value ? formatIsoDateShort(value) : 'No date';
-}
-
+/** Null-guarding wrapper over @easy/utils — the API fields this reads are nullable. */
 export function formatRelativeTime(value: null | string | undefined): string {
   return value ? formatTimeAgo(value) : '';
 }

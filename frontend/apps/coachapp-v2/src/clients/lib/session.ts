@@ -121,30 +121,6 @@ export function buildExerciseGroups(session: TrainingSession): ExerciseGroup[] {
   return groups;
 }
 
-export function getAdherenceSummary(
-  session: TrainingSession,
-  groups: ExerciseGroup[],
-): {added: number; completed: number; skipped: number; totalPlanned: number; totalSets: number} {
-  const totalPlanned = getPlannedSnapshot(session)?.exercises?.length ?? 0;
-  let completed = 0;
-  let skipped = 0;
-  let added = 0;
-  let totalSets = 0;
-
-  for (const group of groups) {
-    totalSets += group.sets.length;
-    if (group.isAdded) {
-      added++;
-    } else if (group.sets.length === 0) {
-      skipped++;
-    } else {
-      completed++;
-    }
-  }
-
-  return {added, completed, skipped, totalPlanned, totalSets};
-}
-
 /**
  * What to call a performed session. A session records WHICH workout it performed,
  * not its name: `planned_snapshot` carries the name for a session logged against a

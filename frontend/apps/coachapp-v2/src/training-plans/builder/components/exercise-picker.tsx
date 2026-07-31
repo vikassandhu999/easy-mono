@@ -8,6 +8,7 @@ import {Check} from 'lucide-react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
+import {useDebounce} from '@/@hooks/use-debounce';
 import type {TrainingExercise} from '@/api/training-exercises';
 import {
   useCoachTrainingExercisesInfiniteQuery,
@@ -17,7 +18,6 @@ import {
 } from '@/api/training-exercises';
 import type {FilterChip} from '@/builder-kit/search-picker-sheet';
 import {SearchPickerSheet} from '@/builder-kit/search-picker-sheet';
-import {useDebounce} from '@/hooks/use-debounce';
 
 import {trackingTypeBadge} from '../tracking';
 

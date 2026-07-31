@@ -1,5 +1,3 @@
-import {formatDuration} from '@easy/utils';
-
 import type {TrainingSession} from '@/api/training-plans-list';
 
 /**
@@ -36,43 +34,4 @@ export type PlannedSnapshot = {
 /** Read the (untyped) planned_snapshot blob as the narrowed PlannedSnapshot shape. */
 export function getPlannedSnapshot(session: TrainingSession): null | PlannedSnapshot {
   return (session.planned_snapshot as null | PlannedSnapshot) ?? null;
-}
-
-export function getWorkoutSessionTitle(session: TrainingSession): string {
-  // The kebab snapshot no longer carries a workout_name; a planned session is
-  // titled generically, freestyle sessions keep their label.
-  return getPlannedSnapshot(session) ? 'Planned workout' : 'Freestyle workout';
-}
-
-function getWorkoutSessionExerciseCount(session: TrainingSession): number {
-  const exerciseIds = new Set<string>();
-  for (const set of session.performed_sets) {
-    exerciseIds.add(set.exercise_id);
-  }
-  return exerciseIds.size;
-}
-
-function getWorkoutSessionPlannedExerciseCount(session: TrainingSession): null | number {
-  const snapshot = getPlannedSnapshot(session);
-  return snapshot?.exercises ? snapshot.exercises.length : null;
-}
-
-export function buildWorkoutSessionSubtitle(session: TrainingSession): string {
-  const parts: string[] = [];
-
-  const duration = formatDuration(session.started_at, session.ended_at);
-  if (duration) {
-    parts.push(duration);
-  }
-
-  const plannedCount = getWorkoutSessionPlannedExerciseCount(session);
-  const actualCount = getWorkoutSessionExerciseCount(session);
-
-  if (plannedCount !== null) {
-    parts.push(`${actualCount}/${plannedCount} exercises`);
-  } else if (actualCount > 0) {
-    parts.push(`${actualCount} exercise${actualCount !== 1 ? 's' : ''}`);
-  }
-
-  return parts.join(' · ');
 }

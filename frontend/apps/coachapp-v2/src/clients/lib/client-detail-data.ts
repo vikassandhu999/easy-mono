@@ -135,11 +135,6 @@ export function formatWeight(value: number | string, unit: string, {decimals = 1
   return `${Number(value).toFixed(decimals)} ${unit}`;
 }
 
-/** The plan a client is currently on, or undefined when they have none. */
-export function activePlan<T extends {status?: null | string}>(plans: T[] | undefined): T | undefined {
-  return plans?.find((p) => p.status === 'active');
-}
-
 /** Day-strings on which a session was completed — drives the CD-OV workout dots. */
 export function completedSessionDates(sessions: TrainingSession[] | undefined): Set<string> {
   const dates = new Set<string>();

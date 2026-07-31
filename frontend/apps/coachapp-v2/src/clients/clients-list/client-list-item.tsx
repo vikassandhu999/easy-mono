@@ -1,17 +1,16 @@
 import {formatIsoDateShort, formatTimeAgo, getInitials} from '@easy/utils';
-import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
+import {Avatar, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 
 import {ChevronRight} from 'lucide-react';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
-import type {Client} from '@/api/clients';
 // The hand-written `Client` type in `@/api/clients` does not yet carry the
 // `training_plan_name`/`nutrition_plan_name` fields the schema exposes
 // (opt-in via `include_plans`), so this row derives its own type straight
 // from the schema rather than widening the shared type for one consumer.
 import type {components} from '@/api/schema';
-import {INACTIVE_REASON_LABEL, stageChip} from '@/clients/lib/client';
+import {INACTIVE_REASON_LABEL} from '@/clients/lib/client';
 
 type ListClient = components['schemas']['Client'];
 
@@ -118,45 +117,6 @@ function getMobileSubtitle(client: ListClient): {isAttention: boolean; text: str
   // The status already reads on the name line — the subtitle carries the reason
   // (or the contact) instead of repeating it.
   return {isAttention: false, text: getNeutralChipLabels(client)[0] ?? client.email ?? client.phone ?? '—'};
-}
-
-/** Chip row reused by the client detail header. */
-export function RowChips({client}: {client: Client}) {
-  if (client.status === 'active') {
-    const stage = stageChip(client);
-    return (
-      <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-        {getAttentionLabels(client).map((label) => (
-          <Chip
-            color="warning"
-            key={label}
-            size="sm"
-            variant="soft"
-          >
-            {label}
-          </Chip>
-        ))}
-        <Chip
-          color={stage.color}
-          size="sm"
-          variant="soft"
-        >
-          {stage.label}
-        </Chip>
-      </span>
-    );
-  }
-
-  const status = getStatusCell(client);
-  return (
-    <Chip
-      color={status.tone === 'success' ? 'success' : 'default'}
-      size="sm"
-      variant="soft"
-    >
-      {status.label}
-    </Chip>
-  );
 }
 
 export default function ClientListItem({client}: {client: ListClient}) {

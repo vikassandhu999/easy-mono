@@ -15,6 +15,7 @@ import {Button, CloseButton, Modal, toast} from '@heroui/react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
+import {useDebounce} from '@/@hooks/use-debounce';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {nutritionPlanKeys} from '@/api/keys';
 import {
@@ -26,7 +27,6 @@ import {useCreateMealItemsMutation, useGetNutritionPlanQuery} from '@/api/nutrit
 import {patchQueryData} from '@/api/query-client';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import {type FilterChip, SearchPickerBody} from '@/builder-kit/search-picker-sheet';
-import {useDebounce} from '@/hooks/use-debounce';
 
 import {AmountSheetContent, type MealItemDraft} from './amount-sheet';
 import {type FoodOrRecipe, isRecipe, PickerItemRow} from './picker-item-row';

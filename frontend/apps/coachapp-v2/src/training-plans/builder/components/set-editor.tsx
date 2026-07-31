@@ -24,30 +24,28 @@ import type {TrainingPlanWorkoutExercise} from '@/api/training-plan-builder';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {UNIT_CHIP} from '@/builder-kit/ui';
 
-import {type PlannedSet, parseRpe, parseWholeNumber} from '../sets';
+import {
+  DISTANCE_UNIT_LABELS,
+  LOAD_UNIT_LABELS,
+  type PlannedSet,
+  parseRpe,
+  parseWholeNumber,
+  SET_TYPE_LABELS,
+} from '../sets';
 import {type FieldKey, fieldsFor} from '../tracking';
 
 type LoadUnit = NonNullable<PlannedSet['load_unit']>;
 type DistanceUnit = NonNullable<PlannedSet['distance_unit']>;
 type SetType = NonNullable<PlannedSet['set_type']>;
 
-const SET_TYPES: Option<SetType>[] = [
-  {value: 'working', label: 'Working'},
-  {value: 'warmup', label: 'Warm-up'},
-  {value: 'dropset', label: 'Drop'},
-];
+// Options come from the vocabulary tables in sets.ts, so the editor's chips
+// can never drift from the summary line's labels.
+const toOptions = <V extends string>(labels: Record<V, string>): Option<V>[] =>
+  (Object.entries(labels) as [V, string][]).map(([value, label]) => ({label, value}));
 
-const LOAD_UNITS: Option<LoadUnit>[] = [
-  {value: 'kg', label: 'kg'},
-  {value: 'lbs', label: 'lbs'},
-  {value: 'bodyweight', label: 'bw'},
-];
-
-const DISTANCE_UNITS: Option<DistanceUnit>[] = [
-  {value: 'meters', label: 'm'},
-  {value: 'km', label: 'km'},
-  {value: 'miles', label: 'mi'},
-];
+const SET_TYPES: Option<SetType>[] = toOptions(SET_TYPE_LABELS);
+const LOAD_UNITS: Option<LoadUnit>[] = toOptions<Exclude<LoadUnit, 'none'>>(LOAD_UNIT_LABELS);
+const DISTANCE_UNITS: Option<DistanceUnit>[] = toOptions(DISTANCE_UNIT_LABELS);
 
 // min-w-0 is load-bearing: TextField is w-full, so without it the first field
 // claims its intrinsic width and pushes the rest out of the popover.

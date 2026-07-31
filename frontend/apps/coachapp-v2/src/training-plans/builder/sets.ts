@@ -71,14 +71,14 @@ export function parseRpe(text: string): number | null | undefined {
 // Summary — the one line under each set row
 // ---------------------------------------------------------------------------
 
-const SET_TYPE_LABELS: Record<string, string> = {
-  working: 'Working',
-  warmup: 'Warm-up',
-  dropset: 'Drop',
-};
-
-const LOAD_UNIT_LABELS: Record<string, string> = {kg: 'kg', lbs: 'lbs', bodyweight: 'bw'};
-const DISTANCE_UNIT_LABELS: Record<string, string> = {km: 'km', miles: 'mi'};
+// The builder's set vocabulary, once — the summary line and the set editor's
+// toggle/unit chips both read these (COPY.md: `Working|Warm-up|Drop`, `80kg`,
+// units kg/lbs/bw and m/km/mi). Entry order is the editor's display order.
+// The session-detail screen deliberately says `Drop set` / `80 kg` — that is
+// the Client Detail design's copy, not a drifted copy of this table.
+export const SET_TYPE_LABELS = {working: 'Working', warmup: 'Warm-up', dropset: 'Drop'} as const;
+export const LOAD_UNIT_LABELS = {kg: 'kg', lbs: 'lbs', bodyweight: 'bw'} as const;
+export const DISTANCE_UNIT_LABELS = {meters: 'm', km: 'km', miles: 'mi'} as const;
 
 function formatLoad(set: PlannedSet): string | null {
   if (set.load_value == null || set.load_unit == null || set.load_unit === 'none') {
@@ -104,7 +104,8 @@ export function formatSetSummary(set: PlannedSet, trackingType: string | null): 
   }
 
   if (tracks(trackingType, 'distance') && set.distance_value != null) {
-    parts.push(`${set.distance_value}${DISTANCE_UNIT_LABELS[set.distance_unit ?? ''] ?? 'm'}`);
+    const unit = set.distance_unit == null || set.distance_unit === 'none' ? 'meters' : set.distance_unit;
+    parts.push(`${set.distance_value}${DISTANCE_UNIT_LABELS[unit]}`);
   }
 
   if (tracks(trackingType, 'rpe') && set.rpe != null) {

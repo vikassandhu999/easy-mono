@@ -43,6 +43,32 @@ export type RecipeTotals = {
   protein_g: number;
 };
 
+/**
+ * Macros contributed by `weightG` grams of a food, scaled from its per-100g
+ * values. Unrounded — every consumer rounds at its own display edge (the
+ * ingredient preview to integers, the totals card to one decimal).
+ */
+export function scaleFoodMacros(food: IngredientLike['food'], weightG: number): RecipeTotals {
+  const factor = weightG / 100;
+  return {
+    calories: (food.calories_per_100g ?? 0) * factor,
+    carbs_g: (food.carbs_g_per_100g ?? 0) * factor,
+    fats_g: (food.fat_g_per_100g ?? 0) * factor,
+    fiber_g: (food.fiber_g_per_100g ?? 0) * factor,
+    protein_g: (food.protein_g_per_100g ?? 0) * factor,
+  };
+}
+
+/**
+ * How many servings `recipe.nutrition` covers. No (or zero) servings_count
+ * means the recipe IS one serving — this is a division denominator, so the
+ * zero case must map to 1, never 0.
+ */
+export function recipeServings(recipe: {servings_count?: null | number}): number {
+  const count = recipe.servings_count ?? 0;
+  return count > 0 ? count : 1;
+}
+
 // Raw recipe totals (sum across ingredients) for the form's live "recipe totals"
 // nutrition card. Cooked weight does not affect totals.
 export function computeRecipeTotalsFromIngredients(ingredients: IngredientLike[]): null | RecipeTotals {
@@ -55,13 +81,12 @@ export function computeRecipeTotalsFromIngredients(ingredients: IngredientLike[]
       continue;
     }
     totalWeight += weightG;
-    const factor = weightG / 100;
-    const {food} = ingredient;
-    totals.calories += (food.calories_per_100g ?? 0) * factor;
-    totals.protein_g += (food.protein_g_per_100g ?? 0) * factor;
-    totals.carbs_g += (food.carbs_g_per_100g ?? 0) * factor;
-    totals.fats_g += (food.fat_g_per_100g ?? 0) * factor;
-    totals.fiber_g += (food.fiber_g_per_100g ?? 0) * factor;
+    const scaled = scaleFoodMacros(ingredient.food, weightG);
+    totals.calories += scaled.calories;
+    totals.protein_g += scaled.protein_g;
+    totals.carbs_g += scaled.carbs_g;
+    totals.fats_g += scaled.fats_g;
+    totals.fiber_g += scaled.fiber_g;
   }
 
   if (totalWeight === 0) {

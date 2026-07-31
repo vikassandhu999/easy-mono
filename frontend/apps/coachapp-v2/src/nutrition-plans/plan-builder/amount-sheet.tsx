@@ -33,7 +33,9 @@ import {useUpdateMealItemMutation} from '@/api/nutrition-plans-list';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {UNIT_CHIP} from '@/builder-kit/ui';
+import {recipeServings} from '@/domain/recipes';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
+import {fmt} from './format';
 import {useNutritionPlanCommit} from './use-plan-commit';
 
 /** The bordered value boxes (servings · count · grams) — one recipe, three uses. */
@@ -71,11 +73,6 @@ const SAVE_DEBOUNCE_MS = 600;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function fmt(n: number): string {
-  const rounded = Math.round(n * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
-}
 
 interface MacroPreview {
   kcal: string;
@@ -274,10 +271,7 @@ export function AmountSheetContent({
         if (Number.isNaN(servingsEntered) || servingsEntered <= 0) {
           return null;
         }
-        // Servings — totals cover servings_count servings; no servings_count
-        // means the recipe IS one serving.
-        const totalServings = (recipe.servings_count ?? 0) > 0 ? (recipe.servings_count as number) : 1;
-        const scale = servingsEntered / totalServings;
+        const scale = servingsEntered / recipeServings(recipe);
         const computed = {
           calories: (n.calories ?? 0) * scale,
           protein: (n.protein_g ?? 0) * scale,

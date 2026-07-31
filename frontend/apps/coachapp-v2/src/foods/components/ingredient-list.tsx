@@ -9,6 +9,7 @@ import {FormTextField} from '@/@components/form-fields/form-text-field';
 
 import type {Food} from '@/api/nutrition-foods';
 import {type ServingSize, toOptionalNumber} from '@/api/shared';
+import {scaleFoodMacros} from '@/domain/recipes';
 
 export type IngredientItem = {
   food: Food;
@@ -67,11 +68,8 @@ function formatServingLabel(s: ServingSize): string {
 
 // Per-ingredient macro preview scaled from the food's per-100g values.
 function formatIngredientMacros(food: Food, weightG: number): string {
-  const factor = weightG / 100;
-  const cal = Math.round((food.calories_per_100g ?? 0) * factor);
-  const protein = Math.round((food.protein_g_per_100g ?? 0) * factor);
-  const carbs = Math.round((food.carbs_g_per_100g ?? 0) * factor);
-  const fat = Math.round((food.fat_g_per_100g ?? 0) * factor);
+  const scaled = scaleFoodMacros(food, weightG);
+  const [cal, protein, carbs, fat] = [scaled.calories, scaled.protein_g, scaled.carbs_g, scaled.fats_g].map(Math.round);
   return `${cal} kcal · ${protein}P · ${carbs}C · ${fat}F`;
 }
 

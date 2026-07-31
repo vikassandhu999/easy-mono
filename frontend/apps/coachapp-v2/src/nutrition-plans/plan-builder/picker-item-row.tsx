@@ -5,26 +5,15 @@
 import {Chip} from '@heroui/react';
 
 import type {Food, Recipe} from '@/api/nutrition-foods';
+import {recipeServings} from '@/domain/recipes';
+
+import {fmt} from './format';
 
 export type FoodOrRecipe = Food | Recipe;
 
 /** Type guard: is the item a Recipe (has `recipe_ingredients`)? */
 export function isRecipe(item: FoodOrRecipe): item is Recipe {
   return 'recipe_ingredients' in item;
-}
-
-/** Round to one decimal place and strip trailing ".0". */
-function fmt(n: number | null | undefined): string {
-  if (n == null) {
-    return '—';
-  }
-  const rounded = Math.round(n * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
-}
-
-/** recipe.nutrition covers servings_count servings (default: the whole recipe = 1). */
-function recipeServings(recipe: Recipe): number {
-  return (recipe.servings_count ?? 0) > 0 ? (recipe.servings_count as number) : 1;
 }
 
 function perServingCalories(recipe: Recipe): number | null | undefined {

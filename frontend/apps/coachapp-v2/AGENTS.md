@@ -56,14 +56,15 @@ Use this file as the app contract.
 - Create form save: navigate to the created resource with `{replace: true}` so Back skips the empty create form.
   ```tsx
   const result = await createFooMutation.mutateAsync(body);
-  navigate(`/library/foos/${result.data.id}`, {replace: true});
+  navigate(generatePath(ROUTES.FOO_DETAIL, {id: result.data.id}), {replace: true});
   ```
 - Edit form save: call `goBack()` from `useGoBack(detailPath)` after a successful mutation.
   ```tsx
-  const goBack = useGoBack(`/library/foos/${id}`);
+  const goBack = useGoBack(generatePath(ROUTES.FOO_DETAIL, {id: id!}));
   await updateFooMutation.mutateAsync({id, body});
   goBack();
   ```
+- Paths never appear as string literals: static paths are `ROUTES.X`, parameterized ones go through `generatePath(ROUTES.X, params)` (or the older `ROUTES.X.replace(':id', id)` idiom). Enforced by `just check-rm` (RM-102).
 - Header Back and form Cancel both use `goBack(fallback)` with the same fallback — never a hardcoded list-route navigation.
 - Exceptions are rare: in-place confirmations, live-preview editors, and multi-step flows where the next step must remain reachable through browser Back.
 

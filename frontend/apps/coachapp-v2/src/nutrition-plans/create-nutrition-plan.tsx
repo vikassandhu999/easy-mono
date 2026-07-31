@@ -1,4 +1,4 @@
-import {useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
@@ -22,7 +22,7 @@ export default function CreateNutritionPlan() {
   const onSubmit = async (data: NutritionPlanFormValues) => {
     try {
       const result = await createPlan.mutateAsync(nutritionPlanToCreateRequest(data));
-      navigate(`/library/nutrition-plans/${result.data.id}`, {replace: true});
+      navigate(generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: result.data.id}), {replace: true});
     } catch (err) {
       applyFormErrors(err, "Nutrition plan wasn't created. Check the details and try again", form.setError);
     }

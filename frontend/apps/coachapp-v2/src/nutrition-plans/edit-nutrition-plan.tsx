@@ -1,9 +1,10 @@
-import {useParams} from 'react-router-dom';
+import {generatePath, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
+import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {nutritionPlanKeys} from '@/api/keys';
 import {type NutritionPlan, useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
@@ -30,7 +31,7 @@ export default function EditNutritionPlan() {
   const updatePlan = useUpdateNutritionPlanMutation();
 
   const plan = data?.data;
-  const backPath = `/library/nutrition-plans/${id}`;
+  const backPath = generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: id!});
   const goBack = useGoBack(backPath);
 
   const form = useNutritionPlanForm({

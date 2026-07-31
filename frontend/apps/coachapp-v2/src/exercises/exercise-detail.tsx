@@ -2,7 +2,7 @@ import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
 import {Copy, Dumbbell, Image as ImageIcon, Pencil, Trash2} from 'lucide-react';
 import type {ReactNode} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
@@ -55,7 +55,7 @@ export default function ExerciseDetail() {
         body: {name: `${exercise?.name ?? 'Exercise'} (copy)`},
       });
       toast.success('Exercise duplicated');
-      navigate(`/library/exercises/${result.data.id}`);
+      navigate(generatePath(ROUTES.EXERCISE_DETAIL, {id: result.data.id}));
     } catch {
       toast.danger("Exercise wasn't duplicated");
     }
@@ -176,7 +176,7 @@ export default function ExerciseDetail() {
           {!isSystemExercise && (
             <Button
               className="bg-ink text-ink-foreground"
-              onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
+              onPress={() => navigate(generatePath(ROUTES.EDIT_EXERCISE, {id: exercise.id}))}
             >
               <Pencil />
               Edit
@@ -384,7 +384,7 @@ export default function ExerciseDetail() {
           {!isSystemExercise && (
             <Button
               className="flex-1"
-              onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
+              onPress={() => navigate(generatePath(ROUTES.EDIT_EXERCISE, {id: exercise.id}))}
               variant="primary"
             >
               <Pencil />

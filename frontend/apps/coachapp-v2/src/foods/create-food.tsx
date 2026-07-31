@@ -1,5 +1,5 @@
 import {useMemo, useState} from 'react';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {generatePath, useLocation, useNavigate} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
@@ -43,7 +43,7 @@ export default function CreateFood() {
   const onSubmit = async (data: FoodFormValues) => {
     try {
       const result = await createFoodMutation.mutateAsync(foodToCreateRequest({servingSizes, values: data}));
-      navigate(`/library/foods/${result.data.id}`, {replace: true});
+      navigate(generatePath(ROUTES.FOOD_DETAIL, {id: result.data.id}), {replace: true});
     } catch (err) {
       applyFormErrors(err, "Food wasn't created. Check the details and try again", form.setError);
     }

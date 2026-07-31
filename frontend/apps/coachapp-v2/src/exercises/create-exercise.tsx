@@ -1,4 +1,4 @@
-import {useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
@@ -27,7 +27,7 @@ export default function CreateExercise() {
   const onSubmit = async (data: ExerciseFormValues) => {
     try {
       const result = await createExerciseMutation.mutateAsync(exerciseToCreateRequest(data));
-      navigate(`/library/exercises/${result.data.id}`, {replace: true});
+      navigate(generatePath(ROUTES.EXERCISE_DETAIL, {id: result.data.id}), {replace: true});
     } catch (err) {
       applyFormErrors(err, "Exercise wasn't created. Check the details and try again", form.setError);
     }

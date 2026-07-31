@@ -1,6 +1,6 @@
 import {AlertDialog, Button, toast, useOverlayState} from '@heroui/react';
 import {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
@@ -39,7 +39,7 @@ export default function CreateRecipe() {
     try {
       const result = await createRecipe.mutateAsync(recipeToCreateRequest({ingredients, values: data}));
       toast.success('Recipe created');
-      navigate(`/library/recipes/${result.data.id}`, {replace: true});
+      navigate(generatePath(ROUTES.RECIPE_DETAIL, {id: result.data.id}), {replace: true});
     } catch (err) {
       applyFormErrors(err, "Recipe wasn't created. Check the details and try again", form.setError);
     }

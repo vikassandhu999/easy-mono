@@ -2,7 +2,7 @@ import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
 import {ChefHat, Copy, Pencil, Trash2} from 'lucide-react';
 import type {ReactNode} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
@@ -41,7 +41,7 @@ export default function RecipeDetail() {
     try {
       const result = await copyRecipe.mutateAsync(id!);
       toast.success('Recipe duplicated');
-      navigate(`/library/recipes/${result.data.id}`);
+      navigate(generatePath(ROUTES.RECIPE_DETAIL, {id: result.data.id}));
     } catch {
       toast.danger("Recipe wasn't duplicated");
     }
@@ -156,7 +156,7 @@ export default function RecipeDetail() {
         <Page.Actions className="hidden sm:flex">
           <Button
             className="bg-ink text-ink-foreground"
-            onPress={() => navigate(`/library/recipes/${recipe.id}/edit`)}
+            onPress={() => navigate(generatePath(ROUTES.EDIT_RECIPE, {id: recipe.id}))}
           >
             <Pencil />
             Edit
@@ -311,7 +311,7 @@ export default function RecipeDetail() {
         <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
           <Button
             className="flex-1"
-            onPress={() => navigate(`/library/recipes/${recipe.id}/edit`)}
+            onPress={() => navigate(generatePath(ROUTES.EDIT_RECIPE, {id: recipe.id}))}
             variant="primary"
           >
             <Pencil />

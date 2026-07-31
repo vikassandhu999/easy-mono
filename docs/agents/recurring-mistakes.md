@@ -147,8 +147,7 @@ column.
 
 ### RM-101 — No dead HeroUI v2 Tailwind tokens (`primary`/`divider`/`content1..4`/`foreground-NNN`). **Enforced by:** `just check-rm`.
 
-### RM-102 — Use the ROUTES constant, never a hardcoded path string
-A literal silently rots into a dead link on any route rename.
+### RM-102 — Use the ROUTES constant (+ `generatePath`), never a hardcoded path string. **Enforced by:** `just check-rm`.
 
 ### RM-103 — No orphan routes / no dead screens
 Every route needs an inbound link, wired in the SAME change. Conversely, check an

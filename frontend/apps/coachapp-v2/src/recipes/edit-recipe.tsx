@@ -1,10 +1,11 @@
 import {AlertDialog, Button, useOverlayState} from '@heroui/react';
 import {useState} from 'react';
-import {useParams} from 'react-router-dom';
+import {generatePath, useParams} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
+import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
@@ -132,7 +133,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 export default function EditRecipe() {
   const {id} = useParams<{id: string}>();
   const {data, isError, isLoading: isFetching} = useGetRecipeQuery(id!);
-  const backPath = `/library/recipes/${id}`;
+  const backPath = generatePath(ROUTES.RECIPE_DETAIL, {id: id!});
   const goBackOuter = useGoBack(backPath);
 
   if (isError) {

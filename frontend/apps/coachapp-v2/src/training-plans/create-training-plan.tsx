@@ -1,4 +1,4 @@
-import {useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
@@ -22,7 +22,7 @@ export default function CreateTrainingPlan() {
   const onSubmit = async (data: TrainingPlanFormValues) => {
     try {
       const result = await createPlanMutation.mutateAsync(trainingPlanToCreateRequest(data));
-      navigate(`/library/training-plans/${result.data.id}`, {replace: true});
+      navigate(generatePath(ROUTES.TRAINING_PLAN_DETAIL, {id: result.data.id}), {replace: true});
     } catch (err) {
       applyFormErrors(err, "Training plan wasn't created. Check the details and try again", form.setError);
     }

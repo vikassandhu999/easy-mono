@@ -3,7 +3,7 @@ import {Avatar, Button, Card, Chip, Label, Separator, Surface, Typography, toast
 import {cn} from '@heroui/styles';
 import {CheckCircle2, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 import {BackButton} from '@/@components/back-button';
 import {STICKY_FOOTER_CLASS} from '@/@components/form-fields/form-classes';
 import {Page} from '@/@components/page';
@@ -225,7 +225,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
         </Button>
         <Button
           className="order-2 flex-1 sm:order-1 sm:flex-none"
-          onPress={() => navigate(`/clients/${client.id}`, {replace: true})}
+          onPress={() => navigate(generatePath(ROUTES.CLIENT_DETAIL, {id: client.id}), {replace: true})}
         >
           View client
         </Button>

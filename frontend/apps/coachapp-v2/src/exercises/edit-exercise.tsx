@@ -1,9 +1,10 @@
-import {Navigate, useParams} from 'react-router-dom';
+import {generatePath, Navigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
+import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {
@@ -95,7 +96,7 @@ export default function EditExercise() {
   const {data, isError, isLoading: isFetching} = useGetExerciseQuery(id!);
 
   const exercise = data?.data;
-  const backPath = `/library/exercises/${id}`;
+  const backPath = generatePath(ROUTES.EXERCISE_DETAIL, {id: id!});
   const goBack = useGoBack(backPath);
 
   if (isFetching) {

@@ -8,7 +8,7 @@ import {getInitials} from '@easy/utils';
 import {Avatar, Button, Tabs, Typography} from '@heroui/react';
 import {ChevronRight, CreditCard, Globe, Shield, User, Users} from 'lucide-react';
 import {useCallback} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {ErrorState} from '@/@components/error-state';
 import {Page} from '@/@components/page';
@@ -279,7 +279,7 @@ export default function Settings() {
   const tab: SettingsTab = TABS.some(({id}) => id === tabParam) ? (tabParam as SettingsTab) : 'profile';
   const setTab = useCallback(
     (next: SettingsTab) => {
-      navigate(next === 'profile' ? ROUTES.SETTINGS : `/settings/${next}`, {replace: true});
+      navigate(next === 'profile' ? ROUTES.SETTINGS : generatePath(ROUTES.SETTINGS_TAB, {tab: next}), {replace: true});
     },
     [navigate],
   );
@@ -288,7 +288,7 @@ export default function Settings() {
     clearTokens();
     disconnectSocket();
     queryClient.clear();
-    navigate('/login', {replace: true});
+    navigate(ROUTES.LOGIN, {replace: true});
   }, [navigate]);
 
   if (isLoading) {

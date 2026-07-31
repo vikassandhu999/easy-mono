@@ -1,5 +1,6 @@
 import {Navigate} from 'react-router-dom';
 
+import {ROUTES} from '@/@config/routes';
 import {getAccessToken} from '@/api/authStorage';
 
 export function withAuth<P extends object>(Component: React.ComponentType<P>) {
@@ -10,7 +11,7 @@ export function withAuth<P extends object>(Component: React.ComponentType<P>) {
       return (
         <Navigate
           replace
-          to="/login"
+          to={ROUTES.LOGIN}
         />
       );
     }

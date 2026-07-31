@@ -2,7 +2,7 @@ import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Typography, toast} from '@heroui/react';
 import {Copy, HandPlatter, Pencil, Trash2, Video} from 'lucide-react';
 import type {ReactNode} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {OUTLINE_CHIP_CLASS} from '@/@components/browse-list-box';
@@ -137,7 +137,7 @@ export default function FoodDetail() {
           {!isSystemFood && (
             <Button
               className="bg-ink text-ink-foreground"
-              onPress={() => navigate(`/library/foods/${food.id}/edit`)}
+              onPress={() => navigate(generatePath(ROUTES.EDIT_FOOD, {id: food.id}))}
             >
               <Pencil />
               Edit
@@ -287,7 +287,7 @@ export default function FoodDetail() {
           {!isSystemFood && (
             <Button
               className="flex-1"
-              onPress={() => navigate(`/library/foods/${food.id}/edit`)}
+              onPress={() => navigate(generatePath(ROUTES.EDIT_FOOD, {id: food.id}))}
               variant="primary"
             >
               <Pencil />

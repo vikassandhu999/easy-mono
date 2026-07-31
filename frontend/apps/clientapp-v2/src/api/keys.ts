@@ -53,7 +53,10 @@ export const exerciseKeys = domain('training-exercises');
 /** Old tags: NutritionPlan/{LIST,TODAY}. */
 export const nutritionPlanKeys = {
   ...domain('nutrition-plans'),
-  today: () => ['nutrition-plans', 'today'] as const,
+  // Nested under lists() on purpose (RM-143): today IS a list-shaped view of
+  // the day's slots. As a sibling key, only one mutation ever remembered to
+  // invalidate it; under the prefix, every lists() invalidation sweeps it.
+  today: () => [...nutritionPlanKeys.lists(), 'today'] as const,
 };
 
 /** Old tag: MealLog/LIST. */

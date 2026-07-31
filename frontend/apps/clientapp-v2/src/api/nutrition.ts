@@ -76,10 +76,18 @@ export function useListClientRecipesQuery(query: RecipeListQuery = {}, options?:
 // ── Log writes ───────────────────────────────────────────────
 // Every write changes the day's meal logs → refresh the diary list.
 
-/** Invalidate the meal-log lists after any write. */
+/**
+ * Invalidate everything a log write can change: the diary list, and the today
+ * plan — logging into an unlogged slot pins `MealLog.nutrition_meal_id`
+ * server-side, which flips that slot's `chosen_meal_id` in the today payload
+ * (the option header and the option sheet's checkmark read it).
+ */
 function useInvalidateMealLogs() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({queryKey: mealLogKeys.lists()});
+  return () => {
+    qc.invalidateQueries({queryKey: mealLogKeys.lists()});
+    qc.invalidateQueries({queryKey: nutritionPlanKeys.today()});
+  };
 }
 
 export function useCreateFoodLogEntryMutation() {
@@ -130,16 +138,13 @@ export function useLogDayMutation() {
 }
 
 export function useSwitchNutritionMealOptionMutation() {
-  const qc = useQueryClient();
+  const invalidate = useInvalidateMealLogs();
   return useMutation({
     mutationFn: (body: SwitchOptionRequest) =>
       call(
         client.POST('/v1/client/nutrition-food-log-entries/switch-option', {body}),
       ) as Promise<NutritionMealLogResponse>,
-    onSuccess: () => {
-      qc.invalidateQueries({queryKey: mealLogKeys.lists()});
-      qc.invalidateQueries({queryKey: nutritionPlanKeys.today()});
-    },
+    onSuccess: invalidate,
   });
 }
 

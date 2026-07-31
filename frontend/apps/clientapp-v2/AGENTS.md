@@ -46,6 +46,13 @@ contract. The parts that bite:
   directly: `mutateAsync(body)`, or `{id, ...body}` when the path needs an id.
 - Query keys come ONLY from `src/api/keys.ts`. Every mutation invalidates the affected
   keys in `onSuccess` — a mutation with no invalidation and no optimistic patch is a bug.
+- Invalidation lives IN the mutation hook, never at a call site: screens call
+  `mutateAsync` and are done. When the path doesn't carry the affected id (the
+  performed-set routes), the mutation takes it as an extra variable instead of pushing a
+  `refetch()` to the caller. The only cache calls outside `src/api/` are the socket
+  handlers in `use-chat-realtime.ts` and the `queryClient.clear()` session resets.
+- List-shaped keys nest under their domain's `lists()` prefix (RM-143) — see
+  `nutritionPlanKeys.today()`. A sibling key is invisible to every existing invalidation.
 - `conversationKeys.detail()` and `.messages()` are SIBLINGS on purpose: sending a
   message must not refetch the loaded infinite chat history out from under the optimistic
   `appendClientMessage()`. Only a socket rejoin invalidates `conversationKeys.all`.

@@ -4,7 +4,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {formAssignmentKeys} from '@/api/keys';
+import {formAssignmentKeys, weightEntryKeys} from '@/api/keys';
 import type {components} from '@/api/schema';
 
 export type ClientProfileFormAssignment = components['schemas']['ClientProfileFormAssignment'];
@@ -40,6 +40,9 @@ export function useSubmitClientFormAssignmentMutation() {
     onSuccess: (_data, {id}) => {
       qc.invalidateQueries({queryKey: formAssignmentKeys.detail(id)});
       qc.invalidateQueries({queryKey: formAssignmentKeys.lists()});
+      // Submitting appends real WeightEntry rows for every weight-type answer
+      // (backend `Forms.submit_assignment!`) — the Progress screen must see them.
+      qc.invalidateQueries({queryKey: weightEntryKeys.lists()});
     },
   });
 }

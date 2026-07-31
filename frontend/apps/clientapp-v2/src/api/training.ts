@@ -88,25 +88,43 @@ export function useCreateClientPerformedSetMutation() {
           body,
         }),
       ),
-    // create carries sessionId, so it refreshes the active session query directly.
-    // update/delete only carry the set id — the active screen refetches the
-    // session after those instead.
+    // lists() too: the session INDEX payload embeds performed_sets, so the
+    // set counts/volume on Training, History and Today read the list cache.
     onSuccess: (_data, {sessionId}) => {
       qc.invalidateQueries({queryKey: sessionKeys.detail(sessionId)});
+      qc.invalidateQueries({queryKey: sessionKeys.lists()});
     },
   });
 }
 
+/**
+ * The set paths only need the set id, but the cache effect is on the session —
+ * callers pass `sessionId` so the mutation owns its own invalidation.
+ * `onSuccess` returns the detail invalidation, so `mutateAsync` resolves only
+ * after the session refetch settles (the active screen used to `await
+ * refetch()` by hand for this); the list refresh doesn't need to block.
+ */
 export function useUpdateClientPerformedSetMutation() {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({id, ...body}: TrainingPerformedSetRequest & {id: string}) =>
+    mutationFn: ({id, sessionId: _sessionId, ...body}: TrainingPerformedSetRequest & {id: string; sessionId: string}) =>
       call(client.PATCH('/v1/client/training-performed-sets/{id}', {params: {path: {id}}, body})),
+    onSuccess: (_data, {sessionId}) => {
+      qc.invalidateQueries({queryKey: sessionKeys.lists()});
+      return qc.invalidateQueries({queryKey: sessionKeys.detail(sessionId)});
+    },
   });
 }
 
 export function useDeleteClientPerformedSetMutation() {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/client/training-performed-sets/{id}', {params: {path: {id}}})),
+    mutationFn: ({id}: {id: string; sessionId: string}) =>
+      call(client.DELETE('/v1/client/training-performed-sets/{id}', {params: {path: {id}}})),
+    onSuccess: (_data, {sessionId}) => {
+      qc.invalidateQueries({queryKey: sessionKeys.lists()});
+      return qc.invalidateQueries({queryKey: sessionKeys.detail(sessionId)});
+    },
   });
 }
 

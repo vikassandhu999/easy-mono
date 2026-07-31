@@ -373,7 +373,7 @@ const SORENESS_OPTIONS = [
   {rating: 5, emoji: '💀', label: 'Brutal'},
 ];
 
-function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; session: TrainingSession}) {
+function ActiveWorkout({session}: {session: TrainingSession}) {
   const navigate = useNavigate();
   const createSet = useCreateClientPerformedSetMutation();
   const updateSet = useUpdateClientPerformedSetMutation();
@@ -521,8 +521,7 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
 
   const handleUpdate = async (id: string, values: LoggedSet) => {
     try {
-      await updateSet.mutateAsync({id, ...values, completed: true});
-      await refetch();
+      await updateSet.mutateAsync({id, sessionId: session.id, ...values, completed: true});
     } catch {
       toast.danger("Couldn't update set. Try again.");
     }
@@ -530,9 +529,8 @@ function ActiveWorkout({session, refetch}: {refetch: () => Promise<unknown>; ses
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteSet.mutateAsync(id);
+      await deleteSet.mutateAsync({id, sessionId: session.id});
       setRest(null);
-      await refetch();
     } catch {
       toast.danger("Couldn't update set. Try again.");
     }
@@ -876,7 +874,7 @@ export default function ActiveWorkoutScreen() {
   const navigate = useNavigate();
   const {data: sessionsData, isLoading: isLoadingList} = useListClientTrainingSessionsQuery({});
   const activeId = sessionsData?.data.find((s) => s.state === 'active')?.id;
-  const {data, isLoading, refetch} = useGetClientTrainingSessionQuery(activeId ?? '', {enabled: Boolean(activeId)});
+  const {data, isLoading} = useGetClientTrainingSessionQuery(activeId ?? '', {enabled: Boolean(activeId)});
 
   if (isLoadingList || (activeId && isLoading)) {
     return (
@@ -900,10 +898,5 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  return (
-    <ActiveWorkout
-      refetch={refetch}
-      session={data.data}
-    />
-  );
+  return <ActiveWorkout session={data.data} />;
 }

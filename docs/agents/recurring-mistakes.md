@@ -315,6 +315,16 @@ reading `textContent` off the live node — `"Upper A 3"`, not `"Upper A3"`. **N
 the shape is a JSX child list, not a class string, so there is no reliable grep for the
 MISSING case; this one stays prose until a lint rule can see it.
 
+### RM-143 — A list-shaped query key must nest under its domain's `lists()` prefix
+React Query invalidates by key prefix, so nesting is what lets existing
+`invalidateQueries({queryKey: fooKeys.lists()})` calls cover a new list for free. A
+SIBLING key is invisible to all of them: `clientKeys.attention()` was
+`['clients','attention']`, so invite/update/assign/enroll/reassign all refreshed the
+client lists while the Needs-attention tab and its count served stale rows for the whole
+staleTime. When adding a key to `keys.ts`, ask "which existing invalidations must reach
+this?" and place it under that prefix — don't mint a new root. **Enforced by:** review of
+`keys.ts` diffs; the factory doc comment states the rule.
+
 ### RM-142 — A colour utility needs a `--color-*` alias, not just the var
 Declaring `--success-secondary: #127c4e` does NOT make `text-success-secondary`
 work. Tailwind generates the utility from the `--color-*` alias, and HeroUI ships

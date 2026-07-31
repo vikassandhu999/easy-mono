@@ -33,8 +33,8 @@ import {useUpdateMealItemMutation} from '@/api/nutrition-plans-list';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {UNIT_CHIP} from '@/builder-kit/ui';
-import {recipeServings} from '@/domain/recipes';
 import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
+import {recipeServings} from '@/recipes/lib/recipe-math';
 import {fmt} from './format';
 import {useNutritionPlanCommit} from './use-plan-commit';
 

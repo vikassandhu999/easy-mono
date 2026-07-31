@@ -5,7 +5,7 @@
 import {Chip} from '@heroui/react';
 
 import type {Food, Recipe} from '@/api/nutrition-foods';
-import {recipeServings} from '@/domain/recipes';
+import {recipeServings} from '@/recipes/lib/recipe-math';
 
 import {fmt} from './format';
 

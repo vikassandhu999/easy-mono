@@ -11,9 +11,9 @@ import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery, useReviewFormSubmissionMutation} from '@/api/checkins';
 import {useListClientWeightEntriesQuery} from '@/api/clients';
+import {submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {FormAnswer} from '@/clients/components/form-answer';
 import {formatDayMonth} from '@/clients/lib/client-detail-data';
-import {submissionPhotoIds} from '@/domain/form-answers';
 
 /**
  * The design's footer bar: full width, hairline above, on the surface, and sticky

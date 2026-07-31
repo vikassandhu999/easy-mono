@@ -13,10 +13,10 @@ import {
   useUpdateCheckInScheduleMutation,
 } from '@/api/checkins';
 import type {Client} from '@/api/clients';
+import {submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatDayMonth} from '@/clients/lib/client-detail-data';
-import {submissionPhotoIds} from '@/domain/form-answers';
 
 /** CD-CI: the schedule, submission history, the intake row, and the photos rail. */
 export function CheckinsTab({client}: {client: Client}) {

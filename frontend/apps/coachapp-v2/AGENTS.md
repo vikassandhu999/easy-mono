@@ -15,7 +15,6 @@ Use this file as the app contract.
 - Feature modules own their screens and one-feature UI: `src/clients/`, `src/exercises/`, `src/foods/`, `src/nutrition-plans/`, `src/training-plans/`, etc.
 - Shared app folders:
   - `src/api/`: React Query hooks and API-facing types, one domain per file; `keys.ts` (query-key registry), `client.ts` (openapi-fetch + auth), `schema.ts` (generated types).
-  - `src/domain/`: domain types/helpers not tied to a component render.
   - `src/@components/`: UI used by two or more features.
   - `src/@hooks/`: shared hooks.
   - `src/@hoc/`: route guards and screen wrappers.
@@ -23,7 +22,8 @@ Use this file as the app contract.
 - New screen for an existing feature: `src/{feature}/screen-name.tsx`.
 - Component used by one feature: `src/{feature}/components/component-name.tsx`.
 - Component used by two or more features: `src/@components/component-name.tsx`.
-- Pure helpers and non-trivial constants: `src/{feature}/lib/topic.ts`, `src/domain/*.ts`, or the owning form/API file, depending on ownership.
+- Pure helpers and non-trivial constants: `src/{feature}/lib/topic.ts` or the owning form/API file. Generic, product-agnostic helpers (name/date/number formatting) go in `@easy/utils` — check it before writing one.
+- **Every shared concept has an owning feature — there is no neutral `domain/`/`utils/` bucket.** Check-ins own the form-answer vocabulary (`checkins/lib/form-answers.ts`); recipes own recipe math (`recipes/lib/recipe-math.ts`). A feature's `lib/` is its public surface: other features may import it (`nutrition-plans` imports `recipes/lib/recipe-math` — the arrow mirrors the product). A feature's `components/`, `screens` and form files are internals — never imported across features; if two features need the UI, it moves to `@components/`. Enforced by `just check-rm` (RM-144).
 
 ## Names, Types, And Imports
 

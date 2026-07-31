@@ -12,10 +12,10 @@ import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
+import {submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatDayMonth} from '@/clients/lib/client-detail-data';
-import {submissionPhotoIds} from '@/domain/form-answers';
 
 /**
  * CD-PH — every progress photo the client has submitted, newest group first, with

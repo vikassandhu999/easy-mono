@@ -10,10 +10,10 @@ import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useListClientFormAssignmentsForCoachQuery} from '@/api/checkins';
+import {submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {FormAnswer} from '@/clients/components/form-answer';
 import {SectionCard} from '@/clients/components/section-card';
 import {formatDayMonth} from '@/clients/lib/client-detail-data';
-import {submissionPhotoIds} from '@/domain/form-answers';
 
 /**
  * CD-IR — the intake answers, read-only.

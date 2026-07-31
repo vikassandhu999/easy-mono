@@ -9,7 +9,7 @@ import {FormTextField} from '@/@components/form-fields/form-text-field';
 
 import type {Food} from '@/api/nutrition-foods';
 import {type ServingSize, toOptionalNumber} from '@/api/shared';
-import {type IngredientItem, scaleFoodMacros} from '@/domain/recipes';
+import {type IngredientItem, scaleFoodMacros} from '@/recipes/lib/recipe-math';
 
 type IngredientListProps = {
   value: IngredientItem[];

@@ -223,6 +223,10 @@ export class Result<T> {
 export const getInitials = (firstName?: null | string, lastName?: null | string): string =>
   `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
 
+/** "First Last" from nullable API name fields; '' when both are missing. */
+export const getFullName = (firstName?: null | string, lastName?: null | string): string =>
+  [firstName, lastName].filter(Boolean).join(' ');
+
 export * from './date';
 export * from './format-start-end';
 export * from './media';

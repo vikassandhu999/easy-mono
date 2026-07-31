@@ -36,7 +36,7 @@ import {
   type SnapshotSet,
   sessionVolumeKg,
   snapshotExercises,
-} from '@/domain/session-utils';
+} from '@/workout/session-utils';
 
 type LoggedSet = {
   distance_value: null | number;

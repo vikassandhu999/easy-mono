@@ -1,6 +1,6 @@
 /**
  * Self-check for client-detail-data.ts (and the formatAnswer it re-checks from
- * domain/form-answers.ts). Runs on every `pnpm build` via the `check` script:
+ * checkins/lib/form-answers.ts). Runs on every `pnpm build` via the `check` script:
  *
  *   pnpm run check
  *
@@ -14,7 +14,7 @@
  * start failing tomorrow.
  */
 
-import {formatAnswer} from '../../domain/form-answers.ts';
+import {formatAnswer} from '../../checkins/lib/form-answers.ts';
 import {
   averageLoggedCalories,
   completedCheckIns,

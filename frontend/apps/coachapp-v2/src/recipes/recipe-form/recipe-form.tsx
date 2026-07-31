@@ -13,15 +13,15 @@ import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import type {Food, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/nutrition-foods';
 import {omitUndefined, toOptionalNumber, toOptionalText} from '@/api/shared';
+import FoodPickerControl from '@/recipes/components/food-picker-control';
+import IngredientList from '@/recipes/components/ingredient-list';
 import {
   canComputeRecipeNutrition,
   computeRecipeTotalsFromIngredients,
   createIngredientDraft,
   type IngredientItem,
   type RecipeTotals,
-} from '@/domain/recipes';
-import FoodPickerControl from '@/recipes/components/food-picker-control';
-import IngredientList from '@/recipes/components/ingredient-list';
+} from '@/recipes/lib/recipe-math';
 
 // P/C/F ratio-bar segments (grams drive segment widths), mirroring the recipe
 // detail page's nutrition card. Fiber shows as a legend stat only, not a segment.

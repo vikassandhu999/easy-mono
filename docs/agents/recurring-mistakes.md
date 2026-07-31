@@ -315,6 +315,18 @@ reading `textContent` off the live node — `"Upper A 3"`, not `"Upper A3"`. **N
 the shape is a JSX child list, not a class string, so there is no reliable grep for the
 MISSING case; this one stays prose until a lint rule can see it.
 
+### RM-144 — Every shared concept has an owning feature; never a neutral bucket
+A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
+owns it, and it erases the dependency information that matters (history depends on
+workout; nutrition-plans depends on recipes). When 2+ features need a concept, the
+OWNING feature publishes it (`{feature}/lib/*` in coachapp, feature-root files in
+clientapp) and consumers import across — that arrow mirrors the product. Internals
+(`components/`, screens, form files) are never imported across features; shared UI goes
+to `@components/`, shared hooks to `@hooks/`, product-agnostic helpers to `@easy/utils`.
+Instance: a `src/domain/` bucket existed in coachapp and got dutifully replicated into
+clientapp before being recognized as the anti-pattern. **Enforced by:** `just check-rm`
+(bans `@/domain/` and cross-feature internals imports).
+
 ### RM-143 — A list-shaped query key must nest under its domain's `lists()` prefix
 React Query invalidates by key prefix, so nesting is what lets existing
 `invalidateQueries({queryKey: fooKeys.lists()})` calls cover a new list for free. A

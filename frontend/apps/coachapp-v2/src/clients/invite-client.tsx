@@ -1,4 +1,4 @@
-import {getInitials} from '@easy/utils';
+import {getFullName, getInitials} from '@easy/utils';
 import {Avatar, Button, Card, Chip, Label, Separator, Surface, Typography, toast} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {CheckCircle2, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
@@ -22,7 +22,6 @@ import InviteClientForm, {
 } from '@/clients/client-invite-form/invite-client-form';
 import {SeatUsageCard} from '@/clients/client-invite-form/seat-usage-card';
 import {getWhatsAppUrl} from '@/clients/lib/invite-client';
-import {getFullName} from '@/domain/names';
 
 function SeatLimitBlocked({
   onBack,

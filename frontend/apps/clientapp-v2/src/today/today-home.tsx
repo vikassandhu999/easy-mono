@@ -14,8 +14,8 @@ import {
 } from '@/api/training';
 import CheckinNudgeCard from '@/checkins/checkin-nudge-card';
 import IntakeCard from '@/checkins/intake-card';
-import {dayTotals, planTargets} from '@/domain/nutrition-utils';
-import {estimatedMinutes, todayWorkout, totalSets, workoutPreviewPath} from '@/domain/training-utils';
+import {dayTotals, planTargets} from '@/nutrition/nutrition-utils';
+import {estimatedMinutes, todayWorkout, totalSets, workoutPreviewPath} from '@/training/training-utils';
 
 export default function TodayHome() {
   const navigate = useNavigate();

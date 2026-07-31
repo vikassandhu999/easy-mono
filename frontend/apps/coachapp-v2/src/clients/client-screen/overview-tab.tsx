@@ -13,6 +13,7 @@ import type {Client} from '@/api/clients';
 import {useListClientWeightEntriesQuery, useUpdateClientMutation} from '@/api/clients';
 import {useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
+import {type AnswerType, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/checkins/lib/form-answers';
 import {DetailRow} from '@/clients/components/detail-row';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
@@ -28,7 +29,6 @@ import {
   weightChartGeometry,
   weightTrend,
 } from '@/clients/lib/client-detail-data';
-import {type AnswerType, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/domain/form-answers';
 
 /**
  * CD-OV. The two columns are the design's, and which card sits in which is part

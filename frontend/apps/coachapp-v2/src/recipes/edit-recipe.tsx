@@ -9,7 +9,7 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
-import type {IngredientItem} from '@/domain/recipes';
+import type {IngredientItem} from '@/recipes/lib/recipe-math';
 import RecipeForm, {
   type RecipeFormValues,
   recipeIngredientsToDrafts,

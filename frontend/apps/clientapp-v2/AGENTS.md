@@ -27,12 +27,15 @@ model are different, and several coachapp rules deliberately do NOT apply here (
   `src/workout/`, `src/nutrition/`, `src/progress/`, `src/checkins/`, `src/messages/`,
   `src/history/`, `src/settings/`, `src/auth/`.
 - Shared app folders: `src/api/`, `src/@components/`, `src/@hooks/`, `src/@hoc/`,
-  `src/@config/`, and `src/domain/` (pure helpers/types shared by two or more features —
-  `session-utils`, `training-utils`, `nutrition-utils`; mirrors coachapp's `src/domain/`).
-  A feature importing another feature's file is a misplaced file, with one sanctioned
-  exception: aggregator screens (`today/`, `@components/app-shell`) may import
-  feature-owned CARDS (`checkins/intake-card` etc.) — the arrow points from aggregator to
-  feature, never sideways between features.
+  `src/@config/`. There is deliberately no neutral `domain/`/`utils/` bucket.
+- **Every shared concept has an owning feature.** Workout owns the session model
+  (`workout/session-utils.ts` — history and training import it); nutrition owns
+  adherence/targets (`nutrition/nutrition-utils.ts` — today imports it). A feature's
+  root-level `*.ts` files are its public surface, importable across features; its
+  `components/` and screens are internals — never imported across features (shared UI
+  moves to `@components/`, shared hooks to `@hooks/`). Aggregators (`today/`,
+  `@components/app-shell`) composing feature-owned cards is the same healthy arrow.
+  Enforced by `just check-rm` (RM-144).
 - Component used by one feature: `src/{feature}/components/name.tsx`. Used by two or
   more: `src/@components/name.tsx`.
 - Files are kebab-case. Use direct `@/...` imports; no barrel files.
@@ -88,7 +91,7 @@ One component per job — don't hand-roll these:
   Three screens had hand-rolled `localToday()` and two had their own `getInitials`
   before this rule; check the package before writing a helper.
 - **Adherence colours**: `ADHERENCE_RING` / `ADHERENCE_TEXT` in
-  `src/domain/nutrition-utils.ts`, beside the `Adherence` type that keys them.
+  `src/nutrition/nutrition-utils.ts`, beside the `Adherence` type that keys them.
 
 ## Theme And Styling
 

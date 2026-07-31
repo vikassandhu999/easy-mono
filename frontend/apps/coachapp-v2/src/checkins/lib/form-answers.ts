@@ -1,7 +1,8 @@
 /**
- * Check-in / intake form answers, rendered. Owned here (not a feature lib)
- * because both the client-detail screens and the check-ins review queue read
- * the same `question_snapshot` + `answers` shape.
+ * Check-in / intake form answers, rendered. The check-ins feature OWNS the
+ * form vocabulary (`question_snapshot` + `answers`); the client-detail screens
+ * consume it from here. Feature `lib/` files are the feature's public surface —
+ * importable across features, unlike its components/screens.
  */
 
 /** The question types a form can hold, from the generated `question_snapshot`. */

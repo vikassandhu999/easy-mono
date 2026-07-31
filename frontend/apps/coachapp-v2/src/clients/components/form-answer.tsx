@@ -1,6 +1,6 @@
 import {Chip, Typography} from '@heroui/react';
+import {type AnswerType, formatAnswer} from '@/checkins/lib/form-answers';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
-import {type AnswerType, formatAnswer} from '@/domain/form-answers';
 
 /**
  * One form answer, in the register its TYPE calls for: a rating reads `4/5` beside five

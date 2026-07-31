@@ -97,5 +97,27 @@ check RM-137 "arbitrary-value color (use a text-* token; sizes are type-*, so th
 check RM-141 "padding override on a vendor dialog (overlay gutter is the theme's; only the p-0 release is allowed)" \
   '(AlertDialog|Modal)\.Dialog[^>]{0,200}className="[^"]*\bp[xy]?-[1-9]' "$COACH" -U
 
+# RM-144 — every shared concept has an owning feature; no neutral bucket.
+# (a) The domain/ layer-bucket must not come back.
+check RM-144 "neutral domain/ bucket (concepts live in their owning feature's lib/)" \
+  "@/domain/" "$COACH" "$CLIENT"
+
+# (b) A feature's subdirectories (components/, *-form/, screens' folders) are its
+# INTERNALS. Cross-feature imports may only target the owner's public surface —
+# `{feature}/lib/*` in coachapp, root-level files in clientapp. router.tsx is
+# exempt (it mounts nested screens by design).
+for app in "$COACH" "$CLIENT"; do
+  for dir in "$app"/*/; do
+    feat=$(basename "$dir")
+    case "$feat" in @*|api|assets) continue ;; esac
+    hits=$(rg -n -g '*.tsx' -g '*.ts' -g '!router.tsx' "from '@/$feat/[^']+/" "$app" | grep -v "^$dir" | grep -v "@/$feat/lib/")
+    if [ -n "$hits" ]; then
+      echo "FAIL RM-144 — $feat internals imported across features (see docs/agents/recurring-mistakes.md)"
+      echo "$hits" | head -10
+      fail=1
+    fi
+  done
+done
+
 if [ "$fail" -eq 0 ]; then echo "check-rm: all clean"; fi
 exit $fail

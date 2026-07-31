@@ -24,7 +24,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-
+import {AddSeatsDialog} from '@/@components/add-seats-dialog';
 import {ErrorState} from '@/@components/error-state';
 import {ListSkeleton} from '@/@components/list-skeleton';
 import SectionHeading from '@/@components/section-heading';
@@ -36,7 +36,6 @@ import {
   useSyncBillingMutation,
 } from '@/api/billing';
 import {getApiErrorMessage} from '@/api/shared';
-import {AddSeatsDialog} from '@/settings/add-seats-dialog';
 import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
 
 const SYNC_POLL_INTERVAL_MS = 5_000;

@@ -27,7 +27,12 @@ model are different, and several coachapp rules deliberately do NOT apply here (
   `src/workout/`, `src/nutrition/`, `src/progress/`, `src/checkins/`, `src/messages/`,
   `src/history/`, `src/settings/`, `src/auth/`.
 - Shared app folders: `src/api/`, `src/@components/`, `src/@hooks/`, `src/@hoc/`,
-  `src/@config/`.
+  `src/@config/`, and `src/domain/` (pure helpers/types shared by two or more features —
+  `session-utils`, `training-utils`, `nutrition-utils`; mirrors coachapp's `src/domain/`).
+  A feature importing another feature's file is a misplaced file, with one sanctioned
+  exception: aggregator screens (`today/`, `@components/app-shell`) may import
+  feature-owned CARDS (`checkins/intake-card` etc.) — the arrow points from aggregator to
+  feature, never sideways between features.
 - Component used by one feature: `src/{feature}/components/name.tsx`. Used by two or
   more: `src/@components/name.tsx`.
 - Files are kebab-case. Use direct `@/...` imports; no barrel files.
@@ -83,7 +88,7 @@ One component per job — don't hand-roll these:
   Three screens had hand-rolled `localToday()` and two had their own `getInitials`
   before this rule; check the package before writing a helper.
 - **Adherence colours**: `ADHERENCE_RING` / `ADHERENCE_TEXT` in
-  `src/nutrition/nutrition-utils.ts`, beside the `Adherence` type that keys them.
+  `src/domain/nutrition-utils.ts`, beside the `Adherence` type that keys them.
 
 ## Theme And Styling
 

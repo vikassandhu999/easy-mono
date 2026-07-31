@@ -11,9 +11,9 @@ import {FormNumberField} from '@/@components/form-fields/form-number-field';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
-import {ServingSizesEditor} from '@/@components/serving-sizes-editor';
 import type {Food, FoodRequest, FoodServingSize, FoodUpdateRequest} from '@/api/nutrition-foods';
 import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
+import {ServingSizesEditor} from '@/foods/components/serving-sizes-editor';
 
 export const foodFormSchema = z.object({
   name: z.string().min(1, 'Enter food name'),

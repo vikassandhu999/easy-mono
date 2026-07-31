@@ -17,10 +17,9 @@ import {
 } from 'lucide-react';
 import type {ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
-
-import {useInstallPrompt} from '@/@components/use-install-prompt';
 import {ROUTES} from '@/@config/routes';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
+import {useInstallPrompt} from '@/@hooks/use-install-prompt';
 import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import {conversationKeys} from '@/api/keys';

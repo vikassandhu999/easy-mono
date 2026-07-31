@@ -17,10 +17,11 @@ import {
   canComputeRecipeNutrition,
   computeRecipeTotalsFromIngredients,
   createIngredientDraft,
+  type IngredientItem,
   type RecipeTotals,
 } from '@/domain/recipes';
-import FoodPickerControl from '@/foods/components/food-picker-control';
-import IngredientList, {type IngredientItem} from '@/foods/components/ingredient-list';
+import FoodPickerControl from '@/recipes/components/food-picker-control';
+import IngredientList from '@/recipes/components/ingredient-list';
 
 // P/C/F ratio-bar segments (grams drive segment widths), mirroring the recipe
 // detail page's nutrition card. Fiber shows as a legend stat only, not a segment.

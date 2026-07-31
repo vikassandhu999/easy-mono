@@ -4,6 +4,7 @@ import {cn} from '@heroui/styles';
 import {CheckCircle2, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {generatePath, useNavigate} from 'react-router-dom';
+import {AddSeatsDialog} from '@/@components/add-seats-dialog';
 import {BackButton} from '@/@components/back-button';
 import {STICKY_FOOTER_CLASS} from '@/@components/form-fields/form-classes';
 import {Page} from '@/@components/page';
@@ -20,8 +21,8 @@ import InviteClientForm, {
   useInviteClientForm,
 } from '@/clients/client-invite-form/invite-client-form';
 import {SeatUsageCard} from '@/clients/client-invite-form/seat-usage-card';
-import {getFullName, getWhatsAppUrl} from '@/clients/lib/invite-client';
-import {AddSeatsDialog} from '@/settings/add-seats-dialog';
+import {getWhatsAppUrl} from '@/clients/lib/invite-client';
+import {getFullName} from '@/domain/names';
 
 function SeatLimitBlocked({
   onBack,

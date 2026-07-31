@@ -7,7 +7,7 @@ import {useRef, useState} from 'react';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Food} from '@/api/nutrition-foods';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
-import FoodPickerContent from '@/foods/components/food-picker-content';
+import FoodPickerContent from '@/recipes/components/food-picker-content';
 
 interface Props {
   onSelect: (food: Food) => void;

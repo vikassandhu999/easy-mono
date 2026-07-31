@@ -3,7 +3,7 @@ import {Users} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 
 import {type Client, useListClientsQuery} from '@/api/clients';
-import {getFullName} from '@/clients/lib/invite-client';
+import {getFullName} from '@/domain/names';
 
 type ClientPickerContentProps = {
   onSelect: (client: Client) => void;

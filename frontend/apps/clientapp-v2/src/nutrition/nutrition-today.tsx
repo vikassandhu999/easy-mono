@@ -27,10 +27,6 @@ import {
   useLogMealMutation,
   useSwitchNutritionMealOptionMutation,
 } from '@/api/nutrition';
-import AmountSheet, {type SheetTarget} from '@/nutrition/components/amount-sheet';
-import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
-import MacroHero from '@/nutrition/components/macro-hero';
-import OptionSheet from '@/nutrition/components/option-sheet';
 import {
   ADHERENCE_TEXT,
   adherence,
@@ -39,7 +35,11 @@ import {
   type PlannedRow,
   planTargets,
   type SlotView,
-} from '@/nutrition/nutrition-utils';
+} from '@/domain/nutrition-utils';
+import AmountSheet, {type SheetTarget} from '@/nutrition/components/amount-sheet';
+import FoodPicker, {type Picked} from '@/nutrition/components/food-picker';
+import MacroHero from '@/nutrition/components/macro-hero';
+import OptionSheet from '@/nutrition/components/option-sheet';
 
 const VERDICT_LABEL: Record<string, string> = {on: 'on target ✓', over: 'over target', under: 'under target'};
 

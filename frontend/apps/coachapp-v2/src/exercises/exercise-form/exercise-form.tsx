@@ -11,6 +11,7 @@ import {FormSelectField} from '@/@components/form-fields/form-select-field';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
+import MultiSelectAutocomplete from '@/@components/multi-select-autocomplete';
 import {omitUndefined, toOptionalText} from '@/api/shared';
 import type {
   TrainingExercise,
@@ -18,7 +19,6 @@ import type {
   TrainingExerciseRelation,
   TrainingExerciseUpdateRequest,
 } from '@/api/training-exercises';
-import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
 
 type ExerciseMechanics = 'compound' | 'isolation' | 'isometric';
 type ExerciseForce = 'push' | 'pull' | 'static';

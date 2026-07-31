@@ -6,6 +6,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {
   type ClientProfileFormAssignment,
   useGetClientFormAssignmentQuery,
@@ -14,7 +15,6 @@ import {
 import {useGetClientProfileQuery} from '@/api/profile';
 import CheckinField, {type AnswerValue, type CheckinQuestion} from '@/checkins/checkin-field';
 import type {PhotoUploadState} from '@/checkins/photo-answer-field';
-import useAttachmentDownloadUrls from '@/messages/use-attachment-download-urls';
 
 type Section = {questions?: CheckinQuestion[]; title?: string};
 

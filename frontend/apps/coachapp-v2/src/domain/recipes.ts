@@ -1,5 +1,17 @@
 import type {Food} from '@/api/nutrition-foods';
-import type {IngredientItem} from '@/foods/components/ingredient-list';
+
+/**
+ * One row of a recipe's ingredient editor. `amount`/`weight_g` are `string`
+ * while the coach is mid-typing. Owned here (not by the component) so the
+ * domain layer never imports from a component file.
+ */
+export type IngredientItem = {
+  food: Food;
+  food_id: string;
+  amount: number | string;
+  unit: string;
+  weight_g: number | string;
+};
 
 type IngredientLike = {
   food: Pick<

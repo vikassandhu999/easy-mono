@@ -12,10 +12,6 @@ export function splitName(name: string): {firstName: string; lastName?: string} 
   };
 }
 
-export function getFullName(firstName: null | string, lastName: null | string): string {
-  return [firstName, lastName].filter(Boolean).join(' ') || '';
-}
-
 export function getWhatsAppUrl(phone: string | undefined, name: string, inviteUrl: string): string {
   const message = name
     ? `Hi ${name}, I've set up your coaching profile! Use this link to get started: ${inviteUrl}`

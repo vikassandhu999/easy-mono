@@ -5,7 +5,7 @@
  */
 import type {MacroTotals} from '@easy/utils';
 
-import type {Targets} from '@/nutrition/nutrition-utils';
+import type {Targets} from '@/domain/nutrition-utils';
 
 const PROTEIN = 'var(--accent)';
 const CARBS = '#9aa3b2';

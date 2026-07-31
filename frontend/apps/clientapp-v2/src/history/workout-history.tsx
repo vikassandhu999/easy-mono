@@ -10,7 +10,7 @@ import {Link} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {type TrainingSession, useListClientTrainingSessionsQuery} from '@/api/training';
-import {formatDayDate, formatVolume, sessionVolumeKg, snapshotOf, sorenessEmoji} from '@/workout/session-utils';
+import {formatDayDate, formatVolume, sessionVolumeKg, snapshotOf, sorenessEmoji} from '@/domain/session-utils';
 
 function monthOf(iso: string): {key: string; label: string} {
   const d = new Date(iso);

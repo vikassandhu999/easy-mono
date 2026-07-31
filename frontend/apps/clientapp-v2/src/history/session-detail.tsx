@@ -24,7 +24,7 @@ import {
   snapshotOf,
   sorenessEmoji,
   swapOf,
-} from '@/workout/session-utils';
+} from '@/domain/session-utils';
 
 // ↑ beat / ↓ missed / ✓ matched — compared like-for-like on the first dimension the
 // plan prescribes (load → duration → distance → reps). No mark if none is set.

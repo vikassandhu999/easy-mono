@@ -21,7 +21,7 @@ import {
   adherence,
   dayTotals,
   planTargets,
-} from '@/nutrition/nutrition-utils';
+} from '@/domain/nutrition-utils';
 
 const SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 

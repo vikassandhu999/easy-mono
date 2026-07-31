@@ -8,7 +8,7 @@ import {
   useListClientTrainingPlansQuery,
   useListClientTrainingSessionsQuery,
 } from '@/api/training';
-import {estimatedMinutes, todayWorkout, totalSets} from '@/training/training-utils';
+import {estimatedMinutes, todayWorkout, totalSets} from '@/domain/training-utils';
 
 export default function WorkoutPreview() {
   const {workoutId} = useParams();

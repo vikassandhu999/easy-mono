@@ -6,9 +6,9 @@ import {AwaitingSeatScreen} from '@/@components/awaiting-seat-screen';
 import ErrorState from '@/@components/error-state';
 import SplashScreen from '@/@components/splash-screen';
 import {ROUTES} from '@/@config/routes';
+import {useChatRealtime} from '@/@hooks/use-chat-realtime';
 import {useGetClientConversationQuery} from '@/api/conversation';
 import {useGetClientProfileQuery} from '@/api/profile';
-import {useChatRealtime} from '@/messages/use-chat-realtime';
 
 const ICON_SIZE = 22;
 

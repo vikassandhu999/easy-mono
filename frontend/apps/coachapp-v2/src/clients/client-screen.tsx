@@ -29,7 +29,7 @@ import {OverviewTab} from '@/clients/client-screen/overview-tab';
 import {TrainingTab} from '@/clients/client-screen/training-tab';
 import {ClientStatStrip} from '@/clients/components/client-stat-strip';
 import {ClientAttentionChips, ClientStatusChip} from '@/clients/components/client-status-chips';
-import {getFullName} from '@/clients/lib/invite-client';
+import {getFullName} from '@/domain/names';
 
 /**
  * The single-client workspace: identity header, live stat bar, and pill tabs

@@ -5,7 +5,7 @@
 import {Check} from 'lucide-react';
 
 import type {TodayPlanOption} from '@/api/nutrition';
-import {optionCalories} from '@/nutrition/nutrition-utils';
+import {optionCalories} from '@/domain/nutrition-utils';
 
 export default function OptionSheet({
   activeMealId,

@@ -13,6 +13,7 @@ import {
   useListClientTrainingPlansQuery,
   useListClientTrainingSessionsQuery,
 } from '@/api/training';
+import {formatDayDate, snapshotOf} from '@/domain/session-utils';
 import {
   currentPlanWeek,
   currentWeekDates,
@@ -21,8 +22,7 @@ import {
   totalSets,
   workoutForDay,
   workoutPreviewPath,
-} from '@/training/training-utils';
-import {formatDayDate, snapshotOf} from '@/workout/session-utils';
+} from '@/domain/training-utils';
 
 function ResumeBanner({session, onResume}: {onResume: () => void; session: TrainingSession}) {
   return (

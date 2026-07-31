@@ -28,7 +28,11 @@ const domain = <N extends string>(name: N) => ({
 
 export const clientKeys = {
   ...domain('clients'),
-  attention: () => ['clients', 'attention'] as const,
+  // Nested under lists() on purpose: it IS a list of clients, so every mutation
+  // that already invalidates clientKeys.lists() (invite, update, assign, enroll,
+  // reassign) refreshes the attention tab + count for free. As a sibling key it
+  // was invalidated by nothing and served stale rows for the whole staleTime.
+  attention: () => [...clientKeys.lists(), 'attention'] as const,
   weightEntries: (clientId: string) => [...clientKeys.detail(clientId), 'weight-entries'] as const,
 };
 
@@ -38,8 +42,10 @@ export const billingKeys = {
 
 export const conversationKeys = {
   ...domain('conversations'),
+  /** Prefix over every client-scoped conversation record — for mutations that only know the conversation id. */
+  forClients: () => ['conversations', 'for-client'] as const,
   /** The conversation for a given client (GET /clients/{client_id}/conversation). */
-  forClient: (clientId: string) => ['conversations', 'for-client', clientId] as const,
+  forClient: (clientId: string) => [...conversationKeys.forClients(), clientId] as const,
   /** Cursor-paginated message history (InfiniteData). */
   messages: (conversationId: string) => ['conversations', 'messages', conversationId] as const,
 };
@@ -73,18 +79,15 @@ export const equipmentKeys = {
 export const foodKeys = {
   ...domain('nutrition-foods'),
   categories: () => ['nutrition-foods', 'categories'] as const,
-  /** Plans affected by editing this food (GET /nutrition-foods/{id}/impact). */
-  impact: (id: string) => [...foodKeys.detail(id), 'impact'] as const,
 };
 
-export const recipeKeys = {
-  ...domain('nutrition-recipes'),
-  impact: (id: string) => [...recipeKeys.detail(id), 'impact'] as const,
-};
+export const recipeKeys = domain('nutrition-recipes');
 
 export const nutritionPlanKeys = {
   ...domain('nutrition-plans'),
-  forClient: (clientId: string) => ['nutrition-plans', 'for-client', clientId] as const,
+  /** Prefix over every client's assigned-plans list — for mutations that don't know which client. */
+  forClients: () => ['nutrition-plans', 'for-client'] as const,
+  forClient: (clientId: string) => [...nutritionPlanKeys.forClients(), clientId] as const,
 };
 
 export const mealLogKeys = {
@@ -94,7 +97,9 @@ export const mealLogKeys = {
 
 export const trainingPlanKeys = {
   ...domain('training-plans'),
-  forClient: (clientId: string) => ['training-plans', 'for-client', clientId] as const,
+  /** Prefix over every client's assigned-plans list — for mutations that don't know which client. */
+  forClients: () => ['training-plans', 'for-client'] as const,
+  forClient: (clientId: string) => [...trainingPlanKeys.forClients(), clientId] as const,
 };
 
 export const trainingSessionKeys = {

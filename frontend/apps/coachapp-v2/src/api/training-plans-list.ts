@@ -117,12 +117,9 @@ export function useUpdateTrainingPlanMutation() {
       ) as Promise<TrainingPlanResponse>,
     onSuccess: () => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.lists()});
-      // Old tag was one shared {type:'TrainingPlan', id:'CLIENT-LIST'} tag
-      // across EVERY client's assigned-plans list — a plan rename doesn't say
-      // which client's list shows it, so invalidate all of them by key
-      // prefix (trainingPlanKeys.forClient(id) is ['training-plans',
-      // 'for-client', id]; the prefix below matches every id).
-      qc.invalidateQueries({queryKey: ['training-plans', 'for-client']});
+      // A plan rename doesn't say which client's assigned-plans list shows
+      // it, so invalidate every client's by prefix.
+      qc.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
     },
   });
 }
@@ -165,6 +162,9 @@ export function useAssignTrainingPlanMutation() {
     onSuccess: (_data, {body}) => {
       qc.invalidateQueries({queryKey: trainingPlanKeys.forClient(body.client_id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
+      // Assignment flips the server-derived `needs_plan` chip and can
+      // auto-advance `stage` on the open client screen.
+      qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});
     },
   });
 }

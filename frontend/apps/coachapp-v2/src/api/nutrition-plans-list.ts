@@ -151,7 +151,7 @@ export function useUpdateNutritionPlanMutation() {
       call(client.PATCH('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}, body})),
     onSuccess: () => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
-      qc.invalidateQueries({queryKey: [...nutritionPlanKeys.all, 'for-client']});
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.forClients()});
     },
   });
 }
@@ -176,7 +176,11 @@ export function useDuplicateNutritionPlanMutation() {
   });
 }
 
-/** Invalidates that client's plan list + the client list (stat strip's "needs plan" flag). */
+/**
+ * Invalidates that client's plan list, the client lists (stat strip's "needs
+ * plan" flag) and the client detail — assignment flips the server-derived
+ * `needs_plan` chip and can auto-advance `stage` on the open client screen.
+ */
 export function useAssignNutritionPlanMutation() {
   const qc = useQueryClient();
   return useMutation({
@@ -185,6 +189,7 @@ export function useAssignNutritionPlanMutation() {
     onSuccess: (_data, {body}) => {
       qc.invalidateQueries({queryKey: nutritionPlanKeys.forClient(body.client_id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});
     },
   });
 }

@@ -80,6 +80,9 @@ export function useMarkCoachConversationReadMutation() {
     onSuccess: (_data, id) => {
       qc.invalidateQueries({queryKey: conversationKeys.lists()});
       qc.invalidateQueries({queryKey: conversationKeys.detail(id)});
+      // The client screen's unread badge reads the client-scoped record, and
+      // this mutation only knows the conversation id — invalidate the prefix.
+      qc.invalidateQueries({queryKey: conversationKeys.forClients()});
     },
   });
 }

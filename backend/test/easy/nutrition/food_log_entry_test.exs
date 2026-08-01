@@ -71,6 +71,25 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
       assert {:ok, _} = insert_entry_sql(meal_log, business, food, "planned", nil)
     end
 
+    test "rejects logging the same planned meal item twice" do
+      %{meal_log: meal_log, business: business, food: food, coach: coach} = scenario()
+      meal = insert(:meal, business: business, creator: coach)
+      meal_item = insert(:meal_item, business: business, meal: meal, food: food)
+
+      attrs = %{food_id: food.id, food_name: food.name, weight_g: 100.0, source: :planned}
+
+      insert = fn ->
+        business.id
+        |> FoodLogEntry.insert_changeset(meal_log.id, attrs)
+        |> Ecto.Changeset.put_change(:nutrition_meal_item_id, meal_item.id)
+        |> Repo.insert()
+      end
+
+      assert {:ok, _entry} = insert.()
+      assert {:error, changeset} = insert.()
+      assert "has already been taken" in errors_on(changeset).nutrition_meal_item_id
+    end
+
     test "rejects an unknown meal_slot on the meal log" do
       %{business: business, client: client} = scenario()
 
@@ -111,6 +130,7 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
       business: coach.business,
       client: client,
       client_ctx: %Ctx{business_id: coach.business_id, user_id: client.user_id},
+      coach: coach,
       food: food,
       meal_log: meal_log
     }

@@ -77,4 +77,18 @@ defmodule Easy.Nutrition.Meal do
       preload: [meal_items: ^MealItem.include_food_and_recipe(MealItem, business_id, food_query, recipe_query)]
     )
   end
+
+  @spec include_logging_items(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_logging_items(query \\ __MODULE__) do
+    from(m in query,
+      left_join: item in assoc(m, :meal_items),
+      on: item.business_id == m.business_id,
+      left_join: food in assoc(item, :food),
+      on: is_nil(food.business_id) or food.business_id == m.business_id,
+      left_join: recipe in assoc(item, :recipe),
+      on: recipe.business_id == m.business_id,
+      order_by: [asc: m.id, asc: item.position, asc: item.inserted_at, asc: item.id],
+      preload: [meal_items: {item, food: food, recipe: recipe}]
+    )
+  end
 end

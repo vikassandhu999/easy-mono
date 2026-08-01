@@ -312,52 +312,267 @@ defmodule Easy.MealLogs do
   end
 
   defp log_day(business_id, client_id, date, plan_id) do
-    plan =
+    Repo.transaction(fn ->
+      slots = load_day_slots!(business_id, client_id, date, plan_id)
+      meals_by_id = load_day_meals!(business_id, plan_id, slots)
+      now = DateTime.utc_now(:second)
+      logs_by_slot = upsert_day_meal_logs(slots, meals_by_id, business_id, client_id, date, now)
+      {slots, meals_by_id} = sync_day_slots(slots, meals_by_id, logs_by_slot, business_id, plan_id)
+      entries = insert_day_entries(slots, meals_by_id, logs_by_slot, business_id, now)
+      recalculate_day_calories(logs_by_slot, business_id)
+      entries
+    end)
+  end
+
+  defp load_day_slots!(business_id, client_id, date, plan_id) do
+    day_id_query =
+      PlanDay
+      |> PlanDay.for_business(business_id)
+      |> PlanDay.for_plan(plan_id)
+      |> PlanDay.for_weekday(Easy.Utils.weekday_name(date))
+      |> PlanDay.by_position()
+      |> limit(1)
+      |> select([day], day.id)
+
+    rows =
       Plan
-      |> Plan.for_business(business_id)
       |> Plan.for_client(business_id, client_id)
-      |> Repo.get(plan_id)
+      |> where([plan], plan.id == ^plan_id)
+      |> join(:left, [plan], day in subquery(day_id_query), on: true)
+      |> join(:left, [plan, day], option in DayMeal,
+        on:
+          option.business_id == ^business_id and
+            option.nutrition_plan_day_id == day.id
+      )
+      |> join(:left, [plan, day, option], meal_log in MealLog,
+        on:
+          meal_log.business_id == ^business_id and meal_log.client_id == ^client_id and
+            meal_log.date == ^date and meal_log.meal_slot == option.meal_slot
+      )
+      |> order_by([plan, day, option], asc: option.meal_slot, asc: option.position, asc: option.id)
+      |> select([plan, day, option, meal_log], %{
+        option_id: option.id,
+        meal_slot: option.meal_slot,
+        option_meal_id: option.nutrition_meal_id,
+        pinned_meal_id: meal_log.nutrition_meal_id
+      })
+      |> Repo.all()
 
-    case plan do
-      nil ->
-        {:error, :not_found}
-
-      plan ->
-        slot_meals = slot_meals(business_id, client_id, plan.id, date)
-        Repo.transaction(fn -> log_slot_meals(business_id, client_id, date, slot_meals) end)
+    case rows do
+      [] -> Repo.rollback(:not_found)
+      [%{option_id: nil}] -> []
+      rows -> choose_day_slots(rows)
     end
   end
 
-  defp slot_meals(business_id, client_id, plan_id, date) do
-    case plan_day_for_date(business_id, plan_id, date) do
-      nil ->
+  defp choose_day_slots(rows) do
+    rows
+    |> Enum.group_by(& &1.meal_slot)
+    |> Enum.map(fn {meal_slot, options} ->
+      first = hd(options)
+
+      %{
+        meal_slot: meal_slot,
+        meal_id: first.pinned_meal_id || first.option_meal_id
+      }
+    end)
+    |> Enum.sort_by(& &1.meal_slot)
+  end
+
+  defp load_day_meals!(_business_id, _plan_id, []), do: %{}
+
+  defp load_day_meals!(business_id, plan_id, slots) do
+    meal_ids = slots |> Enum.map(& &1.meal_id) |> Enum.uniq()
+
+    meals =
+      Meal
+      |> Meal.for_business(business_id)
+      |> Meal.for_plan(plan_id)
+      |> where([meal], meal.id in ^meal_ids)
+      |> Meal.include_logging_items()
+      |> Repo.all()
+      |> include_logging_recipe_ingredients(business_id)
+
+    if MapSet.new(meal_ids) == MapSet.new(meals, & &1.id) do
+      Map.new(meals, &{&1.id, &1})
+    else
+      Repo.rollback(:not_found)
+    end
+  end
+
+  defp include_logging_recipe_ingredients(meals, business_id) do
+    recipe_ids =
+      meals
+      |> Enum.flat_map(& &1.meal_items)
+      |> Enum.map(& &1.recipe_id)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    ingredients_by_recipe =
+      if recipe_ids == [] do
+        %{}
+      else
+        RecipeIngredient
+        |> RecipeIngredient.for_business(business_id)
+        |> RecipeIngredient.for_recipes(recipe_ids)
+        |> RecipeIngredient.include_food()
+        |> Repo.all()
+        |> Enum.group_by(& &1.recipe_id)
+      end
+
+    Enum.map(meals, fn meal ->
+      items =
+        Enum.map(meal.meal_items, fn
+          %MealItem{recipe: %Recipe{} = recipe} = item ->
+            %{item | recipe: %{recipe | recipe_ingredients: Map.get(ingredients_by_recipe, recipe.id, [])}}
+
+          item ->
+            item
+        end)
+
+      %{meal | meal_items: items}
+    end)
+  end
+
+  defp upsert_day_meal_logs([], _meals_by_id, _business_id, _client_id, _date, _now), do: %{}
+
+  defp upsert_day_meal_logs(slots, meals_by_id, business_id, client_id, date, now) do
+    rows =
+      Enum.map(slots, fn slot ->
+        snapshot = meals_by_id |> Map.fetch!(slot.meal_id) |> build_planned_snapshot()
+
+        %{
+          id: Ecto.UUID.generate(),
+          date: date,
+          meal_slot: slot.meal_slot,
+          planned_snapshot: snapshot,
+          planned_calories: snapshot.total_calories * 1.0,
+          logged_calories: 0.0,
+          business_id: business_id,
+          client_id: client_id,
+          nutrition_meal_id: slot.meal_id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    preserve_pin =
+      from(meal_log in MealLog,
+        update: [
+          set: [
+            nutrition_meal_id: fragment("coalesce(?, EXCLUDED.nutrition_meal_id)", meal_log.nutrition_meal_id),
+            planned_snapshot:
+              fragment(
+                "CASE WHEN ? IS NULL THEN EXCLUDED.planned_snapshot ELSE ? END",
+                meal_log.nutrition_meal_id,
+                meal_log.planned_snapshot
+              ),
+            planned_calories:
+              fragment(
+                "CASE WHEN ? IS NULL THEN EXCLUDED.planned_calories ELSE ? END",
+                meal_log.nutrition_meal_id,
+                meal_log.planned_calories
+              ),
+            updated_at:
+              fragment(
+                "CASE WHEN ? IS NULL THEN EXCLUDED.updated_at ELSE ? END",
+                meal_log.nutrition_meal_id,
+                meal_log.updated_at
+              )
+          ]
+        ]
+      )
+
+    {_count, meal_logs} =
+      Repo.insert_all(MealLog, rows,
+        conflict_target: [:client_id, :date, :meal_slot],
+        on_conflict: preserve_pin,
+        returning: [:id, :meal_slot, :nutrition_meal_id]
+      )
+
+    Map.new(meal_logs, &{&1.meal_slot, &1})
+  end
+
+  defp sync_day_slots(slots, meals_by_id, logs_by_slot, business_id, plan_id) do
+    actual_slots =
+      Enum.map(slots, fn slot ->
+        %{slot | meal_id: Map.fetch!(logs_by_slot, slot.meal_slot).nutrition_meal_id}
+      end)
+
+    if actual_slots == slots do
+      {slots, meals_by_id}
+    else
+      {actual_slots, load_day_meals!(business_id, plan_id, actual_slots)}
+    end
+  end
+
+  defp insert_day_entries([], _meals_by_id, _logs_by_slot, _business_id, _now), do: []
+
+  defp insert_day_entries(slots, meals_by_id, logs_by_slot, business_id, now) do
+    rows =
+      Enum.flat_map(slots, fn slot ->
+        meal = Map.fetch!(meals_by_id, slot.meal_id)
+        meal_log = Map.fetch!(logs_by_slot, slot.meal_slot)
+
+        Enum.map(meal.meal_items, &day_entry_row(&1, meal_log.id, business_id, now))
+      end)
+
+    case rows do
+      [] ->
         []
 
-      day ->
-        # All of the day's pins in one query, not one per slot.
-        pinned =
-          MealLog
-          |> MealLog.for_client(business_id, client_id)
-          |> MealLog.for_date(date)
-          |> Repo.all()
-          |> Map.new(&{&1.meal_slot, &1.nutrition_meal_id})
-
-        DayMeal
-        |> DayMeal.for_business(business_id)
-        |> DayMeal.for_plan_day(day.id)
-        |> DayMeal.by_slot_position()
-        |> Repo.all()
-        |> Enum.group_by(& &1.meal_slot)
-        |> Enum.map(fn {slot, [default | _]} ->
-          {slot, Map.get(pinned, slot) || default.nutrition_meal_id}
-        end)
+      rows ->
+        {_count, entries} = Repo.insert_all(FoodLogEntry, rows, on_conflict: :nothing, returning: true)
+        entries
     end
   end
 
-  defp log_slot_meals(business_id, client_id, date, slot_meals) do
-    Enum.flat_map(slot_meals, fn {slot, meal_id} ->
-      do_log_meal(business_id, client_id, date, slot, meal_id)
-    end)
+  defp day_entry_row(item, meal_log_id, business_id, now) do
+    macros = MacroCalc.for_meal_item(item)
+    {food_name, _kind} = item_name(item)
+
+    %{
+      id: Ecto.UUID.generate(),
+      food_name: food_name,
+      amount: item.amount,
+      unit: item.unit,
+      weight_g: item.weight_g,
+      calories: macros.calories,
+      protein_g: macros.protein_g,
+      carbs_g: macros.carbs_g,
+      fat_g: macros.fat_g,
+      fiber_g: macros.fiber_g,
+      source: :planned,
+      business_id: business_id,
+      nutrition_meal_log_id: meal_log_id,
+      nutrition_meal_item_id: item.id,
+      food_id: item.food_id,
+      recipe_id: item.recipe_id,
+      inserted_at: now,
+      updated_at: now
+    }
+  end
+
+  defp recalculate_day_calories(logs_by_slot, _business_id) when map_size(logs_by_slot) == 0, do: :ok
+
+  defp recalculate_day_calories(logs_by_slot, business_id) do
+    meal_log_ids = Enum.map(logs_by_slot, fn {_slot, meal_log} -> meal_log.id end)
+
+    from(meal_log in MealLog,
+      where: meal_log.business_id == ^business_id and meal_log.id in ^meal_log_ids,
+      update: [
+        set: [
+          logged_calories:
+            fragment(
+              "(SELECT coalesce(sum(calories), 0.0) FROM nutrition_food_log_entries WHERE nutrition_meal_log_id = ?)",
+              meal_log.id
+            )
+        ]
+      ]
+    )
+    |> Repo.update_all([])
+
+    :ok
   end
 
   # chosen meal for a slot: explicit meal_id > existing pin > default option

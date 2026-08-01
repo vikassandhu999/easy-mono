@@ -72,6 +72,9 @@ defmodule Easy.Nutrition.FoodLogEntry do
       name: :nutrition_food_log_entries_source_check,
       message: "is invalid"
     )
+    |> unique_constraint(:nutrition_meal_item_id,
+      name: :nutrition_food_log_entries_meal_log_item_index
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()

@@ -3,6 +3,7 @@ defmodule Easy.Nutrition.MealLogTest do
 
   alias Easy.Ctx
   alias Easy.MealLogs
+  alias Easy.Nutrition.DayMeal
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.MealItem
@@ -183,7 +184,7 @@ defmodule Easy.Nutrition.MealLogTest do
     end
 
     test "log_client_day logs the pinned option for a slot, falling back to the default for others" do
-      %{client_ctx: client_ctx, plan: plan, eggs: eggs} = build_scenario()
+      %{client_ctx: client_ctx, client: client, plan: plan, eggs: eggs} = build_scenario()
 
       # pin breakfast to the non-default option (eggs) without pre-logging any items
       {:ok, _switched} =
@@ -195,6 +196,66 @@ defmodule Easy.Nutrition.MealLogTest do
       assert "Egg" in food_names
       refute "Oat Flakes" in food_names
       assert "Rice" in food_names
+
+      assert {:ok, []} = MealLogs.log_client_day(client_ctx, %{date: @date, plan_id: plan.id})
+
+      assert FoodLogEntry
+             |> FoodLogEntry.for_client(client_ctx.business_id, client.id)
+             |> Repo.aggregate(:count) == 2
+    end
+
+    test "log_client_day query count stays flat as slot count grows" do
+      %{client_ctx: client_ctx, plan: plan, rice: rice, business: business} = build_scenario()
+      day = PlanDay |> PlanDay.for_plan(plan.id) |> Repo.one!()
+
+      DayMeal
+      |> DayMeal.for_business(business.id)
+      |> DayMeal.for_plan_day(day.id)
+      |> DayMeal.for_meal_slot(:lunch)
+      |> Repo.delete_all()
+
+      {{:ok, [_breakfast]}, one_slot_queries} =
+        count_queries(fn -> MealLogs.log_client_day(client_ctx, %{date: @date, plan_id: plan.id}) end)
+
+      insert(:day_meal,
+        plan_day: day,
+        meal: rice,
+        business: business,
+        meal_slot: :lunch,
+        position: 0
+      )
+
+      next_week = Date.add(@date, 7)
+
+      {{:ok, entries}, two_slot_queries} =
+        count_queries(fn -> MealLogs.log_client_day(client_ctx, %{date: next_week, plan_id: plan.id}) end)
+
+      assert length(entries) == 2
+      assert two_slot_queries == one_slot_queries
+      assert two_slot_queries in 7..8
+    end
+
+    test "log_client_day computes servings-sized recipe entries from one loaded batch" do
+      %{client_ctx: client_ctx, plan: plan, dal: dal, business: business} = build_scenario()
+      day = PlanDay |> PlanDay.for_plan(plan.id) |> Repo.one!()
+
+      insert(:day_meal,
+        plan_day: day,
+        meal: dal,
+        business: business,
+        meal_slot: :dinner,
+        position: 0
+      )
+
+      {{:ok, entries}, recipe_queries} =
+        count_queries(fn -> MealLogs.log_client_day(client_ctx, %{date: @date, plan_id: plan.id}) end)
+
+      entry = Enum.find(entries, &(&1.food_name == "Dal Tadka"))
+
+      assert recipe_queries in 8..9
+      assert entry.amount == 1.0
+      assert entry.weight_g == nil
+      assert entry.calories == 400.0
     end
   end
 
@@ -552,5 +613,34 @@ defmodule Easy.Nutrition.MealLogTest do
 
   defp unique_email do
     "user-#{System.unique_integer([:positive])}@test.com"
+  end
+
+  defp count_queries(fun) do
+    parent = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:easy, :repo, :query],
+      fn _event, _measurements, _metadata, _config -> send(parent, :query) end,
+      nil
+    )
+
+    result =
+      try do
+        fun.()
+      after
+        :telemetry.detach(handler_id)
+      end
+
+    {result, received_query_count()}
+  end
+
+  defp received_query_count(count \\ 0) do
+    receive do
+      :query -> received_query_count(count + 1)
+    after
+      0 -> count
+    end
   end
 end

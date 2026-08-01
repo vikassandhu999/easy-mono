@@ -3637,8 +3637,8 @@ export interface components {
       invitation_sent_at: string | null;
       invite_url: string | null;
       /**
-       * Format: date
-       * @description Last day the client completed a session or logged a meal
+       * Format: date-time
+       * @description UTC time of the client's latest workout completion, food log, check-in submission, or weight entry
        */
       last_active_at: string | null;
       last_name: string | null;
@@ -9465,7 +9465,12 @@ export interface operations {
   };
   listCheckInReviewQueue: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Offset (default 0) */
+        offset?: number;
+        /** @description Max results (default and max 100) */
+        limit?: number;
+      };
       header?: never;
       path?: never;
       cookie?: never;

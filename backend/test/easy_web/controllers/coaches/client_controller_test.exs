@@ -176,7 +176,8 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
           first_name: "Vikas",
           last_name: "Sandhu",
           phone: "+91 98765 43210",
-          notes: "Test notes"
+          notes: "Test notes",
+          last_active_at: ~U[2026-08-01 10:30:00Z]
         )
 
       conn = get(conn, "/v1/coach/clients/#{client.id}")
@@ -196,6 +197,7 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["goal_weight_unit"] == nil
       assert data["status"] == "active"
       assert data["assigned_coach_id"] == coach.id
+      assert data["last_active_at"] == "2026-08-01T10:30:00Z"
       assert data["inserted_at"]
       assert data["updated_at"]
 

@@ -12,6 +12,36 @@ defmodule Easy.Clients.ClientTest do
     end
   end
 
+  describe "last_active_stamp/4" do
+    test "stores the greatest timestamp without crossing businesses" do
+      business = insert(:business)
+      client = insert(:client, business: business)
+      older = ~U[2026-08-01 08:00:00Z]
+      newer = ~U[2026-08-01 09:00:00Z]
+
+      assert {1, nil} =
+               Client
+               |> Client.last_active_stamp(business.id, client.id, newer)
+               |> Repo.update_all([])
+
+      assert {1, nil} =
+               Client
+               |> Client.last_active_stamp(business.id, client.id, older)
+               |> Repo.update_all([])
+
+      assert Repo.reload(client).last_active_at == newer
+
+      other_business = insert(:business)
+
+      assert {0, nil} =
+               Client
+               |> Client.last_active_stamp(other_business.id, client.id, DateTime.add(newer, 60))
+               |> Repo.update_all([])
+
+      assert Repo.reload(client).last_active_at == newer
+    end
+  end
+
   describe "for_stage/2" do
     test "filters clients by stage" do
       business = insert(:business)

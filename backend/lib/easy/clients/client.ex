@@ -34,9 +34,7 @@ defmodule Easy.Clients.Client do
     field :intake_incomplete, :boolean, virtual: true, default: false
     field :needs_plan, :boolean, virtual: true, default: false
     field :expiring_soon, :boolean, virtual: true, default: false
-    # The last day the CLIENT did something — a completed session or a logged meal.
-    # Not derived from `updated_at`, which moves when a coach edits the row.
-    field :last_active_at, :date, virtual: true
+    field :last_active_at, :utc_datetime
     # The names of the plans in force for this client TODAY, for the clients-list
     # row chips. Only populated when the caller asks (`include_plans: true`) —
     # they cost two extra queries per page, and no other caller wants them.
@@ -331,54 +329,28 @@ defmodule Easy.Clients.Client do
     from(c in query, order_by: [desc: c.inserted_at, desc: c.id])
   end
 
-  # Joins the client's last activity and selects it into the virtual field. Named
-  # `join_*` rather than `include_*` on purpose: `include_*` is this file's preload
-  # prefix (AGENTS.md query-builder taxonomy) and this adds a computed COLUMN, not an
-  # association. The binding is named so `by_last_active/1` can order by it — a
-  # virtual field cannot appear in `order_by`.
-  @spec join_last_active(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def join_last_active(query \\ __MODULE__, business_id) do
-    from(c in query,
-      left_join: a in subquery(last_activity(business_id)),
-      as: :last_active,
-      on: a.client_id == c.id,
-      select: %{c | last_active_at: a.at}
+  @spec last_active_stamp(Ecto.Queryable.t(), String.t(), String.t(), DateTime.t()) :: Ecto.Query.t()
+  def last_active_stamp(query \\ __MODULE__, business_id, client_id, occurred_at) do
+    from(client in query,
+      where: client.business_id == ^business_id and client.id == ^client_id,
+      update: [
+        set: [
+          last_active_at:
+            fragment(
+              "GREATEST(COALESCE(?, ?), ?)",
+              client.last_active_at,
+              type(^occurred_at, :utc_datetime),
+              type(^occurred_at, :utc_datetime)
+            )
+        ]
+      ]
     )
   end
 
   @spec by_last_active(Ecto.Queryable.t()) :: Ecto.Query.t()
   def by_last_active(query \\ __MODULE__) do
-    # Never active sorts last, not first — `desc` alone puts NULL on top in Postgres.
-    from([c, last_active: a] in query, order_by: [desc_nulls_last: a.at, desc: c.inserted_at, desc: c.id])
-  end
-
-  # One row per client: the latest of "completed a session" and "logged a meal",
-  # which is what the design's `Last active` column and the CD stat cell both mean.
-  # Both halves are business-scoped; a UNION keeps it to a single grouped pass.
-  # Grouping the whole business is expensive, so the context only uses the
-  # ungated form when it must rank every client (sort: :last_active); plain
-  # lists decorate the paginated page via `last_activity_for_clients/2`.
-  @spec last_activity_for_clients(String.t(), [String.t()]) :: Ecto.Query.t()
-  def last_activity_for_clients(business_id, client_ids) do
-    from(a in last_activity(business_id), where: a.client_id in ^client_ids)
-  end
-
-  defp last_activity(business_id) do
-    sessions =
-      from(s in Easy.Training.TrainingSession,
-        where: s.business_id == ^business_id and s.state == :completed and not is_nil(s.date),
-        select: %{client_id: s.client_id, at: s.date}
-      )
-
-    meals =
-      from(m in Easy.Nutrition.MealLog,
-        where: m.business_id == ^business_id and m.logged_calories > 0.0,
-        select: %{client_id: m.client_id, at: m.date}
-      )
-
-    from(a in subquery(union_all(sessions, ^meals)),
-      group_by: a.client_id,
-      select: %{client_id: a.client_id, at: max(a.at)}
+    from(c in query,
+      order_by: [desc_nulls_last: c.last_active_at, desc: c.inserted_at, desc: c.id]
     )
   end
 

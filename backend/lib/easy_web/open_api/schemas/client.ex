@@ -96,9 +96,9 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
           expiring_soon: %Schema{type: :boolean},
           last_active_at: %Schema{
             type: :string,
-            format: :date,
+            format: :"date-time",
             nullable: true,
-            description: "Last day the client completed a session or logged a meal"
+            description: "UTC time of the client's latest workout completion, food log, check-in submission, or weight entry"
           },
           training_plan_name: %Schema{
             type: :string,

@@ -108,36 +108,17 @@ defmodule Easy.Clients do
        summary: summary(Client |> Client.for_business(ctx.business_id) |> Client.visible_to(ctx)),
        clients:
          base
-         |> sort_clients(sort, ctx.business_id)
+         |> sort_clients(sort)
          |> Easy.Utils.paginate(offset, limit)
          |> Client.include_preloads(ctx.business_id)
          |> Repo.all()
-         |> put_last_active_for_clients(ctx.business_id, sort)
          |> put_attention_flags_for_clients(ctx.business_id)
          |> put_plan_names_for_clients(ctx.business_id, include_plans?)
      }}
   end
 
-  # Ranking by last activity needs the aggregate over every matching client, so
-  # only that sort pays for the business-wide join; every other sort decorates
-  # the already-paginated page with one small IN-query instead.
-  defp sort_clients(query, :last_active, business_id) do
-    query |> Client.join_last_active(business_id) |> Client.by_last_active()
-  end
-
-  defp sort_clients(query, _newest, _business_id), do: Client.newest(query)
-
-  defp put_last_active_for_clients(clients, _business_id, :last_active), do: clients
-
-  defp put_last_active_for_clients(clients, business_id, _sort) do
-    at_by_client =
-      business_id
-      |> Client.last_activity_for_clients(Enum.map(clients, & &1.id))
-      |> Repo.all()
-      |> Map.new(&{&1.client_id, &1.at})
-
-    Enum.map(clients, &%{&1 | last_active_at: Map.get(at_by_client, &1.id)})
-  end
+  defp sort_clients(query, :last_active), do: Client.by_last_active(query)
+  defp sort_clients(query, _newest), do: Client.newest(query)
 
   @spec list_attention_clients(Ctx.t(), keyword()) ::
           {:ok, %{clients: [Client.t()], count: non_neg_integer()}}

@@ -6206,8 +6206,8 @@
             "x-validate": null
           },
           "last_active_at": {
-            "description": "Last day the client completed a session or logged a meal",
-            "format": "date",
+            "description": "UTC time of the client's latest workout completion, food log, check-in submission, or weight entry",
+            "format": "date-time",
             "nullable": true,
             "type": "string",
             "x-struct": null,
@@ -19897,7 +19897,30 @@
       "get": {
         "callbacks": {},
         "operationId": "listCheckInReviewQueue",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Offset (default 0)",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Max results (default and max 100)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {

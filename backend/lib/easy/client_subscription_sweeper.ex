@@ -5,8 +5,10 @@ defmodule Easy.ClientSubscriptionSweeper do
 
   alias Easy.Clients.Client
   alias Easy.Repo
+  alias Easy.SweeperLock
 
   @day_ms 24 * 60 * 60 * 1000
+  @lock_name "easy-client-subscription-sweeper"
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
@@ -23,7 +25,7 @@ defmodule Easy.ClientSubscriptionSweeper do
   @impl true
   @spec handle_info(:sweep, map()) :: {:noreply, map()}
   def handle_info(:sweep, state) do
-    sweep()
+    SweeperLock.run(@lock_name, &sweep/0)
     Process.send_after(self(), :sweep, @day_ms)
     {:noreply, state}
   end

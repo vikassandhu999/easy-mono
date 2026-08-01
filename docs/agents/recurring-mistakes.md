@@ -161,6 +161,13 @@ inside the write transaction so only siblings under that parent contend. **Enfor
 `test/easy/training/performed_set_concurrency_test.exs` releases same-session appends together
 and requires contiguous positions.
 
+### RM-023 — A process timer is not a cluster-wide singleton
+Every Fly machine starts its own GenServer, and rolling deploys overlap machines, so a
+`Process.send_after` sweeper can run twice even when the steady-state machine count is one.
+Guard the automatic tick with a named database lock; keep external I/O outside a database
+transaction. **Enforced by:** `test/easy/sweeper_lock_test.exs` proves only one database
+connection can enter a named sweep and that the lock is reusable after release.
+
 ---
 
 ## Frontend

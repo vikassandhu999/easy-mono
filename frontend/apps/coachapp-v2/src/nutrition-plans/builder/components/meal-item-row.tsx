@@ -9,10 +9,9 @@
 
 import {Button} from '@heroui/react';
 import {X} from 'lucide-react';
-import {forwardRef} from 'react';
 import {AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
+import type {NutritionMealItem} from '@/api/nutrition-plan-builder';
 import type {Food, Recipe} from '@/api/nutrition-foods';
-import type {NutritionMealItem} from '@/api/nutrition-plans-list';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,18 +72,16 @@ function formatMacroContribution(
 
 export interface MealItemRowProps {
   item: HydratedMealItem;
-  /** Tap opens the AmountSheet, where the item can be edited. */
-  onTap: () => void;
+  /** Tap opens the AmountSheet in edit mode. The pressed row IS the desktop
+   *  popover's anchor, so it arrives with the event — no ref registry. */
+  onTap: (anchor: HTMLElement) => void;
   /** `×` removes the item from the meal without opening the sheet. */
   onRemove: () => void;
   /** Collapsed meal bodies still render — only the open card carries the anchors. */
   showTestIds?: boolean;
 }
 
-export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(function MealItemRow(
-  {item, onTap, onRemove, showTestIds},
-  ref,
-) {
+export function MealItemRow({item, onTap, onRemove, showTestIds}: MealItemRowProps) {
   const name = item.name ?? item.food?.name ?? item.recipe?.name ?? (item.food_id ? 'Food' : 'Recipe');
   const amount = formatAmount(item);
   const macro = formatMacroContribution(item.nutrition);
@@ -94,14 +91,12 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
       className="flex items-center gap-2 border-b border-border py-2"
       data-testid={showTestIds ? 'nb-item-row' : undefined}
     >
-      {/* Main tap target — "{name} · {amount}". Ref exposes the button as the
-          desktop anchor for the edit-mode AmountSheet popover. A HeroUI Button
-          used as a row imposes its own type scale on the label, so the row's
-          text size/weight/colour are restated here. */}
+      {/* Main tap target — "{name} · {amount}". A HeroUI Button used as a row
+          imposes its own type scale on the label, so the row's text
+          size/weight/colour are restated here. */}
       <Button
         className="h-auto min-w-0 flex-1 justify-start p-0 text-left type-eyebrow font-normal leading-[normal] text-foreground"
-        onPress={onTap}
-        ref={ref}
+        onPress={(event) => onTap(event.target as HTMLElement)}
         variant="ghost"
       >
         <span
@@ -135,4 +130,4 @@ export const MealItemRow = forwardRef<HTMLButtonElement, MealItemRowProps>(funct
       </Button>
     </div>
   );
-});
+}

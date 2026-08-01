@@ -1,0 +1,309 @@
+/**
+ * The nutrition builder's composition root (badge NB).
+ *
+ * A plan has 1..N named days; each day holds ordered meal options per slot and
+ * a weekday map assigns Mon..Sun to exactly one day. The redesign renders one
+ * day at a time:
+ *
+ *   day tabs · + Day · ⋯          |  weekday chips
+ *   energy line + macro meters (DayEnergyHeader)
+ *   meal cards in slot order (MealCard)
+ *   Add meal
+ *
+ * This file owns the screen state — which day is showing (`?d=`), which meal
+ * is open, which item is being edited — and hands everything else down as
+ * props. Every write lives in `usePlanBuilder`; there is exactly ONE add-items
+ * flow and ONE amount sheet for the whole screen.
+ */
+import {Typography, useOverlayState} from '@heroui/react';
+import {useMemo, useRef, useState} from 'react';
+
+import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plan-builder';
+
+import {AddItemsFlow} from './components/add-items-flow';
+import {AmountSheet} from './components/amount-sheet';
+import {DayEnergyHeader} from './components/day-energy-header';
+import {DayTabs} from './components/day-tabs';
+import {DeleteDayDialog} from './components/delete-day-dialog';
+import {MealCard, type MealSwap} from './components/meal-card';
+import type {HydratedMealItem} from './components/meal-item-row';
+import {AddMealControl, type MealPaletteOption} from './components/meal-palette';
+import {WeekdayChips} from './components/weekday-chips';
+import {computeDayTotals} from './macros';
+import {
+  assignmentCounts,
+  firstFreeSlot,
+  getDays,
+  getWeekdayAssignments,
+  mealPlacementSummary,
+  slotRows,
+} from './plan-tree';
+import {useActiveDay, usePlanBuilder} from './use-plan-builder';
+import {useItemWriter} from './use-item-writer';
+
+export function PlanBuilder({plan}: {plan: NutritionPlan}) {
+  const commands = usePlanBuilder(plan);
+  const writeItem = useItemWriter(plan.id);
+
+  const days = useMemo(() => getDays(plan), [plan]);
+  const weekdayAssignments = useMemo(() => getWeekdayAssignments(plan), [plan]);
+  const meals = plan.meals ?? [];
+  const mealById = useMemo(() => new Map((plan.meals ?? []).map((m) => [m.id, m])), [plan.meals]);
+
+  const [activeDay, selectDay] = useActiveDay(days);
+
+  const [openMealId, setOpenMealId] = useState<string | null>(null);
+  const [autoRenameMealId, setAutoRenameMealId] = useState<string | null>(null);
+  const [showMacros, setShowMacros] = useState(false);
+
+  // The root-mounted editors: which meal the add-items flow is filling, and
+  // which item the amount sheet is editing. The anchor is the row the coach
+  // pressed, captured from the press event — so the desktop popover has an
+  // anchor without any ref registry.
+  const [addingItemsTo, setAddingItemsTo] = useState<NutritionMeal | null>(null);
+  const [editingItem, setEditingItem] = useState<HydratedMealItem | null>(null);
+  const editorAnchor = useRef<HTMLElement | null>(null);
+
+  const deleteAlertState = useOverlayState();
+
+  const showDay = (dayId: string) => {
+    selectDay(dayId);
+    setOpenMealId(null);
+  };
+
+  const addDay = async () => {
+    const day = await commands.addDay();
+    if (day) {
+      showDay(day.id);
+    }
+  };
+
+  const confirmDeleteDay = async () => {
+    if (!activeDay) {
+      return;
+    }
+    const fallback = await commands.removeDay(activeDay.id);
+    deleteAlertState.close();
+    if (fallback) {
+      showDay(fallback.id);
+    }
+  };
+
+  const createMeal = async () => {
+    if (!activeDay) {
+      return;
+    }
+    const meal = await commands.createMeal(activeDay.id, firstFreeSlot(activeDay));
+    if (meal) {
+      setOpenMealId(meal.id);
+      setAutoRenameMealId(meal.id);
+    }
+  };
+
+  // Derived per-day views of the plan. Memoized because this component
+  // re-renders per keystroke (day rename, meal rename) and reusableMeals /
+  // counts are O(meals x days) placement scans over the whole plan.
+  const derived = useMemo(() => {
+    if (!activeDay) {
+      return null;
+    }
+    const dayMealIds = new Set(activeDay.day_meals.map((dm) => dm.nutrition_meal_id));
+    const reusable: MealPaletteOption[] = (plan.meals ?? [])
+      .filter((m) => !dayMealIds.has(m.id))
+      .map((m) => ({
+        id: m.id,
+        meta: m.nutrition?.calories != null ? `${Math.round(m.nutrition.calories)} kcal` : undefined,
+        name: m.name,
+        sub: mealPlacementSummary(m.id, days, weekdayAssignments),
+      }));
+    return {
+      counts: assignmentCounts(days),
+      reusableMeals: reusable,
+      rows: slotRows(activeDay),
+      totals: computeDayTotals(activeDay, mealById),
+    };
+  }, [activeDay, days, mealById, plan.meals, weekdayAssignments]);
+
+  if (!activeDay || !derived) {
+    return (
+      <Typography
+        color="muted"
+        type="body-sm"
+      >
+        No days yet.
+      </Typography>
+    );
+  }
+
+  const {counts, reusableMeals, rows, totals} = derived;
+
+  // Style-diff anchors (design-handoff/manifests/NB.json): one card per visual
+  // variant carries the id the manifest pairs against. First match wins, so a
+  // card that is both shared and swapped only anchors the higher-priority id —
+  // the script reports the other as MISSING rather than comparing the wrong node.
+  const sharedRow = rows.findIndex((r) => (counts.get(r.primary.nutrition_meal_id) ?? 0) >= 2);
+  const plainRow = rows.findIndex((r) => (counts.get(r.primary.nutrition_meal_id) ?? 0) < 2);
+  const swapRow = rows.findIndex((r) => r.alternates.length > 0);
+  const emptyRow = rows.findIndex((r) => (mealById.get(r.primary.nutrition_meal_id)?.meal_items.length ?? 0) === 0);
+  const triggerTestId = (index: number) =>
+    index === swapRow
+      ? 'nb-card-open-trigger'
+      : index === sharedRow
+        ? 'nb-card-shared-trigger'
+        : index === emptyRow
+          ? 'nb-card-empty-trigger'
+          : undefined;
+
+  return (
+    <div className="mx-auto flex w-full max-w-195 flex-col gap-3 pb-4">
+      {/* Day switcher + weekday chips */}
+      <div
+        className="flex flex-wrap items-center justify-between gap-2"
+        data-testid="nb-daytabs-row"
+      >
+        <DayTabs
+          activeDay={activeDay}
+          creating={commands.isAddingDay}
+          days={days}
+          onAdd={() => {
+            addDay().catch(() => undefined);
+          }}
+          onRename={(name) => commands.renameDay(activeDay.id, name)}
+          onRequestDelete={deleteAlertState.open}
+          onSelect={showDay}
+        />
+        <WeekdayChips
+          activeDay={activeDay}
+          assignments={weekdayAssignments}
+          onAssign={(weekday) => {
+            commands.scheduleWeekday(weekday, activeDay.id).catch(() => undefined);
+          }}
+        />
+      </div>
+
+      {/* Energy line + macro meters */}
+      <DayEnergyHeader
+        onToggleMacros={() => setShowMacros((v) => !v)}
+        showMacros={showMacros}
+        targets={{
+          calories: plan.target_calories,
+          protein_g: plan.target_protein_g,
+          carbs_g: plan.target_carbs_g,
+          fat_g: plan.target_fat_g,
+        }}
+        totals={totals}
+      />
+
+      {/* Meal cards */}
+      {rows.length === 0 ? (
+        <div
+          className="rounded-panel border border-dashed border-border p-5 text-center type-eyebrow text-muted"
+          data-testid="nb-day-empty"
+        >
+          No meals on this day yet — add the first one below.
+        </div>
+      ) : (
+        <div
+          className="flex flex-col gap-2"
+          data-testid="nb-meals"
+        >
+          {rows.map(({slot, primary, alternates}, rowIndex) => {
+            const meal = mealById.get(primary.nutrition_meal_id);
+            if (!meal) {
+              return null;
+            }
+            const slotMealIds = new Set([primary, ...alternates].map((o) => o.nutrition_meal_id));
+            const swaps: MealSwap[] = alternates
+              .map((option) => {
+                const alternate = mealById.get(option.nutrition_meal_id);
+                return alternate ? {optionId: option.id, meal: alternate} : null;
+              })
+              .filter((s): s is MealSwap => s !== null);
+
+            return (
+              <MealCard
+                assignmentCount={counts.get(meal.id) ?? 0}
+                autoRename={autoRenameMealId === meal.id}
+                cardTestId={rowIndex === plainRow ? 'nb-card' : rowIndex === sharedRow ? 'nb-card-shared' : undefined}
+                commands={commands}
+                dayId={activeDay.id}
+                key={primary.id}
+                meal={meal}
+                onAddItems={() => setAddingItemsTo(meal)}
+                onEditItem={(item, anchor) => {
+                  editorAnchor.current = anchor;
+                  setEditingItem(item);
+                }}
+                onToggle={() => {
+                  setOpenMealId((current) => (current === meal.id ? null : meal.id));
+                  setAutoRenameMealId(null);
+                }}
+                open={openMealId === meal.id}
+                optionId={primary.id}
+                slot={slot}
+                triggerTestId={triggerTestId(rowIndex)}
+                swapCandidates={meals
+                  .filter((m) => !slotMealIds.has(m.id))
+                  .map((m) => ({
+                    id: m.id,
+                    name: m.name,
+                    sub: m.nutrition?.calories != null ? `${Math.round(m.nutrition.calories)} kcal` : undefined,
+                  }))}
+                swaps={swaps}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add meal */}
+      <AddMealControl
+        onCreate={() => {
+          createMeal().catch(() => undefined);
+        }}
+        onReuse={(mealId) => {
+          commands.addOption(activeDay.id, firstFreeSlot(activeDay), mealId).catch(() => undefined);
+        }}
+        reusable={reusableMeals}
+      />
+
+      {/* Delete day confirm */}
+      <DeleteDayDialog
+        assignments={weekdayAssignments}
+        day={activeDay}
+        days={days}
+        deleting={commands.isRemovingDay}
+        isOpen={deleteAlertState.isOpen}
+        onConfirm={() => {
+          confirmDeleteDay().catch(() => undefined);
+        }}
+        onOpenChange={deleteAlertState.setOpen}
+      />
+
+      {/* Add foods/recipes — pick the list, then amounts, one commit. */}
+      <AddItemsFlow
+        mealName={addingItemsTo?.name ?? ''}
+        onAdd={(items) => {
+          if (addingItemsTo) {
+            commands.addItems(addingItemsTo.id, items);
+          }
+        }}
+        onClose={() => setAddingItemsTo(null)}
+        open={addingItemsTo !== null}
+      />
+
+      {/* Amount sheet — edit mode */}
+      <AmountSheet
+        anchorEl={editorAnchor.current}
+        existingItem={editingItem ?? undefined}
+        onClose={() => setEditingItem(null)}
+        onEditAmount={(patch) => {
+          if (editingItem) {
+            writeItem(editingItem.id, patch);
+          }
+        }}
+        open={editingItem !== null}
+      />
+    </div>
+  );
+}

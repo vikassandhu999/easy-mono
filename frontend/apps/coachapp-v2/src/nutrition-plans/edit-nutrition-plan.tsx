@@ -7,7 +7,8 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {nutritionPlanKeys} from '@/api/keys';
-import {type NutritionPlan, useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
+import {useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
+import {type NutritionPlan, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
 import {patchQueryData} from '@/api/query-client';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {

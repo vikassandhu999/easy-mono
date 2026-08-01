@@ -15,25 +15,26 @@
  * Data model note: the "meal" is a plan-level entity and the day holds an
  * ordered slot option per meal, so this component takes both — `meal` for the
  * content and `optionId` for the day assignment it is rendered under. Swaps are
- * the non-default options in the same slot. Writes go through
- * `useNutritionPlanCommit`.
+ * the non-default options in the same slot. Every write goes through
+ * `commands`; the card renders what it is given and never touches the cache.
+ * The add-items flow and the edit-mode amount sheet are mounted ONCE at the
+ * composition root — this card only reports intent (`onAddItems`, `onEditItem`).
  */
 import {Button, Chip, Disclosure, Dropdown, Label, Separator} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {ArrowLeftRight, Info, MoreHorizontal, TrashIcon, X} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {AS_ICON_BUTTON, AS_TEXT, NO_GAP} from '@/@components/ua-defaults';
-import type {NutritionMeal} from '@/api/nutrition-plans-list';
-import {useDeleteMealItemMutation, useDeleteMealMutation, useUpdateMealMutation} from '@/api/nutrition-plans-list';
+import type {NutritionMeal} from '@/api/nutrition-plan-builder';
 import {INLINE_LINK, TAG} from '@/builder-kit/ui';
-import {AddItemsFlow} from './add-items-flow';
-import {AmountSheet} from './amount-sheet';
+
+import {kcalLabel} from '../macros';
+import type {PlanBuilderCommands} from '../use-plan-builder';
 import type {HydratedMealItem} from './meal-item-row';
 import {MealItemRow} from './meal-item-row';
 import type {MealPaletteOption} from './meal-palette';
 import {AddSwapControl} from './meal-palette';
 import {MealSlotControl} from './meal-slot-control';
-import {useNutritionPlanCommit} from './use-plan-commit';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,20 +48,22 @@ export interface MealSwap {
 
 interface MealCardProps {
   meal: NutritionMeal;
-  planId: string;
+  commands: PlanBuilderCommands;
+  /** The day this card is rendered under, and the slot option binding it there. */
+  dayId: string;
+  optionId: string;
   open: boolean;
   onToggle: () => void;
   /** Meal slot this meal occupies on the active day. */
   slot: string;
-  onChangeSlot: (slot: string) => void;
-  /** Removes the meal from this day; the meal itself survives in the plan. */
-  onRemoveFromDay: () => void;
   /** How many day-slot options across the plan point at this meal. */
   assignmentCount: number;
   swaps: MealSwap[];
   swapCandidates: MealPaletteOption[];
-  onAddSwap: (mealId: string) => void;
-  onRemoveSwap: (optionId: string) => void;
+  /** Opens the root-mounted add-items flow for this meal. */
+  onAddItems: () => void;
+  /** Opens the root-mounted amount sheet on this item, anchored to the tapped row. */
+  onEditItem: (item: HydratedMealItem, anchor: HTMLElement) => void;
   /** Newly created meals open straight into rename mode (INTERACTIONS.md § NB). */
   autoRename?: boolean;
   /** Style-diff anchors (manifests/NB.json) — one card per variant carries them. */
@@ -69,40 +72,26 @@ interface MealCardProps {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function kcalLabel(nutrition: NutritionMeal['nutrition']): string | null {
-  const kcal = nutrition?.calories;
-  return kcal == null ? null : `${Math.round(kcal)} kcal`;
-}
-
-// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function MealCard({
   meal,
-  planId,
+  commands,
+  dayId,
+  optionId,
   open,
   onToggle,
   slot,
-  onChangeSlot,
-  onRemoveFromDay,
   assignmentCount,
   swaps,
   swapCandidates,
-  onAddSwap,
-  onRemoveSwap,
+  onAddItems,
+  onEditItem,
   autoRename,
   cardTestId,
   triggerTestId,
 }: MealCardProps) {
-  const updateMealMutation = useUpdateMealMutation();
-  const deleteMealMutation = useDeleteMealMutation();
-  const deleteMealItemMutation = useDeleteMealItemMutation();
-  const commit = useNutritionPlanCommit(planId);
-
   // Inline rename state
   const [editingName, setEditingName] = useState(Boolean(autoRename));
   const [nameValue, setNameValue] = useState(meal.name);
@@ -114,12 +103,6 @@ export function MealCard({
       setNameValue(meal.name);
     }
   }, [meal.name, editingName]);
-
-  // Add-items flow (picker + amounts in one surface) and the edit-mode
-  // amount sheet, which anchors to the tapped item row on desktop.
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<HydratedMealItem | null>(null);
-  const itemRowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // ---------------------------------------------------------------------------
   // Rename handlers
@@ -138,20 +121,11 @@ export function MealCard({
       return;
     }
     setEditingName(false);
-    const ok = await commit(
-      (draft) => {
-        const m = draft.data.meals?.find((x) => x.id === meal.id);
-        if (m) {
-          m.name = trimmed;
-        }
-      },
-      () => updateMealMutation.mutateAsync({id: meal.id, body: {name: trimmed}}),
-      "Couldn't save changes",
-    );
+    const ok = await commands.renameMeal(meal.id, trimmed);
     if (!ok) {
       setNameValue(meal.name);
     }
-  }, [commit, nameValue, meal.id, meal.name, updateMealMutation]);
+  }, [commands, nameValue, meal.id, meal.name]);
 
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -163,51 +137,6 @@ export function MealCard({
       }
     },
     [commitRename, meal.name],
-  );
-
-  // ---------------------------------------------------------------------------
-  // Delete meal (from the whole plan — kept alongside "Remove from this day")
-  // ---------------------------------------------------------------------------
-
-  const handleDelete = useCallback(
-    () =>
-      commit(
-        (draft) => {
-          const idx = draft.data.meals?.findIndex((x) => x.id === meal.id) ?? -1;
-          if (idx !== -1) {
-            draft.data.meals?.splice(idx, 1);
-          }
-          // The backend cascades day_meals with the meal (FK on_delete:
-          // :delete_all) — mirror that, or a slot keeps pointing at an option
-          // whose meal no longer exists.
-          for (const day of draft.data.days ?? []) {
-            day.day_meals = day.day_meals.filter((dm) => dm.nutrition_meal_id !== meal.id);
-          }
-        },
-        () => deleteMealMutation.mutateAsync(meal.id),
-        "Couldn't delete meal",
-      ),
-    [commit, meal.id, deleteMealMutation],
-  );
-
-  // ---------------------------------------------------------------------------
-  // Delete meal item
-  // ---------------------------------------------------------------------------
-
-  const handleDeleteItem = useCallback(
-    (itemId: string) =>
-      commit(
-        (draft) => {
-          const m = draft.data.meals?.find((x) => x.id === meal.id);
-          const idx = m?.meal_items.findIndex((i) => i.id === itemId) ?? -1;
-          if (m && idx !== -1) {
-            m.meal_items.splice(idx, 1);
-          }
-        },
-        () => deleteMealItemMutation.mutateAsync(itemId),
-        "Couldn't remove item",
-      ),
-    [commit, meal.id, deleteMealItemMutation],
   );
 
   // ---------------------------------------------------------------------------
@@ -248,7 +177,11 @@ export function MealCard({
       >
         <div className="flex-1 shrink-0 sm:flex-none">
           <MealSlotControl
-            onChange={onChangeSlot}
+            onChange={(nextSlot) => {
+              if (nextSlot !== slot) {
+                commands.changeSlot(dayId, optionId, nextSlot).catch(() => undefined);
+              }
+            }}
             slot={slot}
           />
         </div>
@@ -329,9 +262,9 @@ export function MealCard({
                 if (key === 'rename-meal') {
                   startEditing();
                 } else if (key === 'remove-from-day') {
-                  onRemoveFromDay();
+                  commands.removeOption(dayId, optionId).catch(() => undefined);
                 } else if (key === 'delete-meal') {
-                  handleDelete().catch(() => undefined);
+                  commands.removeMeal(meal.id).catch(() => undefined);
                 }
               }}
             >
@@ -403,14 +336,11 @@ export function MealCard({
               <MealItemRow
                 key={item.id}
                 showTestIds={open}
-                ref={(el) => {
-                  itemRowRefs.current[item.id] = el;
-                }}
                 item={item}
                 onRemove={() => {
-                  handleDeleteItem(item.id).catch(() => undefined);
+                  commands.removeItem(meal.id, item.id).catch(() => undefined);
                 }}
-                onTap={() => setEditingItem(item)}
+                onTap={(anchor) => onEditItem(item, anchor)}
               />
             ))
           )}
@@ -419,7 +349,7 @@ export function MealCard({
             <Button
               className={`${INLINE_LINK} type-eyebrow`}
               data-testid={openId('nb-add-food')}
-              onPress={() => setPickerOpen(true)}
+              onPress={onAddItems}
               size="sm"
               variant="ghost"
             >
@@ -466,7 +396,9 @@ export function MealCard({
                     className={`  shrink-0 rounded-chip bg-transparent p-0 text-muted  sm:size-5.5   ${AS_TEXT} ${NO_GAP}`}
                     data-testid={openId('nb-swap-remove')}
                     isIconOnly
-                    onPress={() => onRemoveSwap(swap.optionId)}
+                    onPress={() => {
+                      commands.removeOption(dayId, swap.optionId).catch(() => undefined);
+                    }}
                     size="sm"
                     variant="ghost"
                   >
@@ -478,7 +410,9 @@ export function MealCard({
 
             <div className="mt-2">
               <AddSwapControl
-                onAdd={onAddSwap}
+                onAdd={(mealId) => {
+                  commands.addOption(dayId, slot, mealId).catch(() => undefined);
+                }}
                 options={swapCandidates}
                 testId={openId('nb-add-swap')}
               />
@@ -486,24 +420,6 @@ export function MealCard({
           </div>
         </div>
       </Disclosure.Content>
-
-      {/* Add foods/recipes — pick the list, then amounts, one commit. */}
-      <AddItemsFlow
-        mealId={meal.id}
-        mealName={meal.name}
-        onClose={() => setPickerOpen(false)}
-        open={pickerOpen}
-        planId={planId}
-      />
-
-      {/* Amount sheet — edit mode */}
-      <AmountSheet
-        anchorEl={editingItem ? itemRowRefs.current[editingItem.id] : null}
-        existingItem={editingItem ?? undefined}
-        onClose={() => setEditingItem(null)}
-        open={editingItem !== null}
-        planId={planId}
-      />
     </Disclosure>
   );
 }

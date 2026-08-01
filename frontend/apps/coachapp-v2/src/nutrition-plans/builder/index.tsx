@@ -1,9 +1,10 @@
 /**
- * NutritionPlanBuilder — the nutrition plan builder screen (badge NB).
+ * The nutrition plan builder screen (badge NB).
  *
- * Day-first: the header carries the plan name and its actions, and the body is
- * the active day — day switcher, energy line, meal cards, add meal. Everything
- * below the header lives in `PlanDays`.
+ * This file is the shell only: fetch the plan once, draw the header, and hand
+ * the loaded plan to `PlanBuilder`. Everything the builder reads comes from
+ * that single query — `getNutritionPlan` returns the meals, the days with
+ * their slot options and the weekday assignments together.
  *
  * Plan name and macro targets are edited on the plan edit screen (badge NE),
  * reachable from the ⋯ menu — the builder shows the targets as the energy
@@ -17,13 +18,13 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useGetNutritionPlanQuery} from '@/api/nutrition-plans-list';
+import {useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
 
 import {NutritionPlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
-import {PlanDays} from './plan-days';
+import {PlanBuilder} from './plan-builder';
 
-export default function NutritionPlanBuilder() {
+export default function NutritionPlanBuilderScreen() {
   const {id} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.NUTRITION_PLANS);
   const {data, isError, isLoading} = useGetNutritionPlanQuery(id!);
@@ -92,7 +93,7 @@ export default function NutritionPlanBuilder() {
         className="pb-10"
       >
         <Page.Frame size="wide">
-          <PlanDays plan={plan} />
+          <PlanBuilder plan={plan} />
         </Page.Frame>
       </Page.Content>
     </Page>

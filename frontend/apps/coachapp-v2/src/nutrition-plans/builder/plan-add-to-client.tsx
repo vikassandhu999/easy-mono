@@ -3,15 +3,16 @@ import {toast} from '@heroui/react';
 import {toastMutationError} from '@/@components/mutation-toast';
 import {PlanAddToClientControl} from '@/@components/plan-add-to-client';
 import type {Client} from '@/api/clients';
-import {nutritionPlanKeys} from '@/api/keys';
-import {type NutritionPlan, useAssignNutritionPlanMutation} from '@/api/nutrition-plans-list';
-import {patchQueryData} from '@/api/query-client';
+import type {NutritionPlan} from '@/api/nutrition-plan-builder';
+import {usePlanPatcher} from '@/api/nutrition-plan-builder';
+import {useAssignNutritionPlanMutation} from '@/api/nutrition-plans-list';
 
 export type Props = {
   plan: NutritionPlan;
 };
 
 export function PlanAddToClient({plan}: Props) {
+  const patch = usePlanPatcher(plan.id);
   const assignNutrition = useAssignNutritionPlanMutation();
 
   // Already assigned — nothing to add to.
@@ -30,13 +31,13 @@ export function PlanAddToClient({plan}: Props) {
       // days / weekday_assignments are optional on the assign response — keep
       // the hydrated ones from the detail fetch rather than wiping them.
       if (result.data.id === plan.id) {
-        patchQueryData<{data: NutritionPlan}>(nutritionPlanKeys.detail(plan.id), (draft) => {
-          draft.data = {
+        patch((draft) => {
+          Object.assign(draft, {
             ...result.data,
-            meals: result.data.meals ?? draft.data.meals,
-            days: result.data.days ?? draft.data.days,
-            weekday_assignments: result.data.weekday_assignments ?? draft.data.weekday_assignments,
-          };
+            meals: result.data.meals ?? draft.meals,
+            days: result.data.days ?? draft.days,
+            weekday_assignments: result.data.weekday_assignments ?? draft.weekday_assignments,
+          });
         });
       }
       toast.success(`"${plan.name}" assigned`);

@@ -6,47 +6,41 @@
  *           create a custom food when nothing matches. `SearchPickerBody`
  *           provides the list mechanics; this file owns the data.
  * Phase 2 — amounts: once the list is finalised, one `AmountSheetContent`
- *           per picked item ("2 of 4"), collected locally. Nothing is posted
- *           until the last item's confirm, which commits everything together:
- *           one optimistic patch, one batch create, one reconciling refetch.
+ *           per picked item ("2 of 4"), collected locally. Nothing leaves
+ *           until the last item's confirm, which hands the whole batch up
+ *           through `onAdd` — the builder commits it as one operation.
  *           The surface never moves between phases.
  */
-import {Button, CloseButton, Modal, toast} from '@heroui/react';
+import {Button, CloseButton, Modal} from '@heroui/react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
 import {useDebounce} from '@/@hooks/use-debounce';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
-import {nutritionPlanKeys} from '@/api/keys';
 import {
   useCoachFoodsInfiniteQuery,
   useCoachRecipesInfiniteQuery,
   useCreateCoachFoodMutation,
 } from '@/api/nutrition-foods';
-import {useCreateMealItemsMutation, useGetNutritionPlanQuery} from '@/api/nutrition-plans-list';
-import {patchQueryData} from '@/api/query-client';
 import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 import {type FilterChip, SearchPickerBody} from '@/builder-kit/search-picker-sheet';
 
 import {AmountSheetContent, type MealItemDraft} from './amount-sheet';
 import {type FoodOrRecipe, isRecipe, PickerItemRow} from './picker-item-row';
-import type {NutritionPlanCache} from './use-plan-commit';
 
 interface AddItemsFlowProps {
-  planId: string;
-  mealId: string;
   mealName: string;
   open: boolean;
   onClose: () => void;
+  /** The finished batch, in pick order — the builder posts it as one commit. */
+  onAdd: (items: {body: MealItemDraft; name: string | null}[]) => void;
 }
 
 /** The amounts phase renders as a form with this id; the dock submits it. */
 const AMOUNT_FORM_ID = 'add-items-amount-form';
 
-export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItemsFlowProps) {
+export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps) {
   const isDesktop = useIsDesktop();
-  const {refetch} = useGetNutritionPlanQuery(planId);
-  const createMealItemsMutation = useCreateMealItemsMutation();
 
   // --- Phase: null = picking; an array = setting amounts for these items ---
   const [picked, setPicked] = useState<FoodOrRecipe[] | null>(null);
@@ -127,45 +121,6 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
     onClose();
   }, [reset, onClose]);
 
-  // --- The single commit ---------------------------------------------------
-  // One request: the backend inserts the whole batch in one transaction, in the
-  // order given, appending after the meal's existing items. All-or-nothing, so
-  // a failure undoes the whole optimistic patch and toasts once. The refetch
-  // reconciles server-computed positions and nutrition either way.
-  const finish = useCallback(
-    (finalDrafts: MealItemDraft[], finalItems: FoodOrRecipe[]) => {
-      const patch = patchQueryData<NutritionPlanCache>(nutritionPlanKeys.detail(planId), (cache) => {
-        const meal = cache.data.meals?.find((m) => m.id === mealId);
-        if (meal) {
-          finalDrafts.forEach((draft, position) => {
-            meal.meal_items.push({
-              id: `provisional-${Date.now()}-${position}`,
-              name: finalItems[position]?.name ?? null,
-              food_id: draft.food_id ?? null,
-              recipe_id: draft.recipe_id ?? null,
-              weight_g: draft.weight_g ?? null,
-              amount: draft.amount ?? null,
-              unit: draft.unit ?? null,
-              position: 9999 + position,
-              inserted_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
-          });
-        }
-      });
-      createMealItemsMutation
-        .mutateAsync({mealId, body: {items: finalDrafts}})
-        .catch(() => {
-          patch.undo();
-          toast.danger("Couldn't add items");
-        })
-        .finally(() => {
-          refetch().catch(() => undefined);
-        });
-    },
-    [createMealItemsMutation, mealId, planId, refetch],
-  );
-
   // --- Phase content -------------------------------------------------------
 
   const current = picked?.[index];
@@ -184,11 +139,10 @@ export function AddItemsFlow({planId, mealId, mealName, open, onClose}: AddItems
         if (index + 1 < total) {
           setIndex(index + 1);
         } else if (picked) {
-          finish([...drafts.current], picked);
+          onAdd(drafts.current.map((body, position) => ({body, name: picked[position]?.name ?? null})));
           close();
         }
       }}
-      planId={planId}
       recipe={isRecipe(current) ? current : null}
     />
   ) : (

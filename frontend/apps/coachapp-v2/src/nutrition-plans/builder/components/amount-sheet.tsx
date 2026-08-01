@@ -6,8 +6,9 @@
  *   COLLECT — a freshly-picked Food or Recipe; confirm hands the built
  *             request body up via `onCollect`. The add-items flow owns the
  *             actual POSTs and commits every picked item as one operation.
- *   EDIT    — an existing item; autosaves through a debounced coalescing
- *             queue, and a pending edit is flushed on unmount.
+ *   EDIT    — an existing item; every change goes up through `onEditAmount`,
+ *             and the item writer behind it debounces and serialises the
+ *             saves. No cache access in here.
  *
  * `AmountSheet` is the edit-mode surface: an anchored popover on desktop (its
  * anchor is the tapped row, which doesn't move) and a keyboard sheet on mobile.
@@ -29,14 +30,14 @@ import SectionHeading from '@/@components/section-heading';
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Food, Recipe} from '@/api/nutrition-foods';
 import {useGetFoodQuery, useGetRecipeQuery} from '@/api/nutrition-foods';
-import {useUpdateMealItemMutation} from '@/api/nutrition-plans-list';
-import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
+import type {NutritionMealItemRequest} from '@/api/nutrition-plan-builder';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {UNIT_CHIP} from '@/builder-kit/ui';
-import type {HydratedMealItem} from '@/nutrition-plans/plan-builder/meal-item-row';
 import {recipeServings} from '@/recipes/lib/recipe-math';
-import {fmt} from './format';
-import {useNutritionPlanCommit} from './use-plan-commit';
+
+import {fmt} from '../macros';
+import type {ItemAmountPatch} from '../use-item-writer';
+import type {HydratedMealItem} from './meal-item-row';
 
 /** The bordered value boxes (servings · count · grams) — one recipe, three uses. */
 const AMOUNT_BOX = 'rounded-control border px-2 pb-2 pt-1.5 text-center';
@@ -47,28 +48,17 @@ const AMOUNT_INPUT = 'w-full bg-transparent text-center type-heading font-semibo
 // ---------------------------------------------------------------------------
 
 /** A createMealItem request body, built by collect mode. */
-export type MealItemDraft = {
-  food_id?: string;
-  recipe_id?: string;
-  weight_g?: number;
-  amount?: number;
-  unit?: string;
-};
+export type MealItemDraft = NutritionMealItemRequest;
 
 export interface AmountSheetProps {
   existingItem?: HydratedMealItem;
-  planId: string;
   open: boolean;
   onClose: () => void;
+  /** Edit-mode saves — the composition root binds this to the item writer. */
+  onEditAmount: (patch: ItemAmountPatch) => void;
   /** Desktop popover anchor — the tapped meal-item row. */
   anchorEl?: HTMLElement | null;
 }
-
-/** What an edit-mode save writes. Every schedule passes all three keys. */
-type ItemPatch = {weight_g?: number | null; amount?: number | null; unit?: string | null};
-
-/** Long enough that a typed amount isn't sent per keystroke. */
-const SAVE_DEBOUNCE_MS = 600;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -86,11 +76,6 @@ function formatMacroPreview(macros: ReturnType<typeof computeMacrosFromSnapshot>
   };
 }
 
-/**
- * Resolve weight_g from a serving-size tap.
- * serving.weight_g is per `serving.amount` of `serving.unit`.
- * Multiplied by count to get the total.
- */
 // A recipe's portion comes from its yield, not from a stored serving row:
 // one serving = cooked_weight_g / servings_count. Null when it was never weighed.
 function recipeServingWeightG(
@@ -102,6 +87,11 @@ function recipeServingWeightG(
   return recipe.cooked_weight_g / recipe.servings_count;
 }
 
+/**
+ * Resolve weight_g from a serving-size tap.
+ * serving.weight_g is per `serving.amount` of `serving.unit`.
+ * Multiplied by count to get the total.
+ */
 function resolveServingWeight(weightG: number | null, amount: number | null, count: number): number | null {
   if (weightG == null || amount == null || amount === 0) {
     return null;
@@ -117,7 +107,9 @@ export interface AmountSheetContentProps {
   food: Food | null;
   recipe: Recipe | null;
   existingItem?: HydratedMealItem;
-  planId: string;
+  /** Edit mode: each change hands the full amount triple up; the item writer
+   *  behind it owns the debounce, the optimistic patch and the request. */
+  onEditAmount?: (patch: ItemAmountPatch) => void;
   /** Collect mode: submit hands the built request body up (no POST here). */
   onCollect?: (draft: MealItemDraft) => void;
   /** Collect mode: the fields render as a form with this id, so the host's
@@ -135,15 +127,12 @@ export function AmountSheetContent({
   food,
   recipe,
   existingItem,
-  planId,
+  onEditAmount,
   onCollect,
   formId,
   onCanConfirmChange,
   showName,
 }: AmountSheetContentProps) {
-  const updateMealItemMutation = useUpdateMealItemMutation();
-  const commit = useNutritionPlanCommit(planId);
-
   const isEditMode = existingItem !== undefined;
   // Mode from ids as well as hydrated objects — edit-mode items may carry only
   // food_id/recipe_id (+ server-set name) and must still get amount controls.
@@ -318,55 +307,6 @@ export function AmountSheetContent({
     return null;
   }, [food, recipe, resolvedWeightG, isEditMode, existingItem, servingCount, gramsInput]);
 
-  // ── Save logic (edit mode) ───────────────────────────────────────────────
-
-  const executeSave = useCallback(
-    (patch: ItemPatch) => {
-      if (!existingItem) {
-        return Promise.resolve(false);
-      }
-      return commit(
-        (draft) => {
-          for (const meal of draft.data.meals ?? []) {
-            const target = meal.meal_items.find((mi) => mi.id === existingItem.id);
-            if (target) {
-              Object.assign(target, patch);
-              break;
-            }
-          }
-        },
-        () => updateMealItemMutation.mutateAsync({id: existingItem.id, body: patch}),
-        "Couldn't save amount",
-      );
-    },
-    [commit, existingItem, updateMealItemMutation],
-  );
-
-  // The queue serialises saves, and its send reads `pendingRef` — so what goes
-  // out is always the latest edit, never a snapshot a timer closed over.
-  const pendingRef = useRef<ItemPatch | null>(null);
-  const executeSaveRef = useRef(executeSave);
-  executeSaveRef.current = executeSave;
-  const queue = useMemo(
-    () =>
-      createCoalescingQueue(async () => {
-        const patch = pendingRef.current;
-        pendingRef.current = null;
-        if (patch) {
-          await executeSaveRef.current(patch);
-        }
-      }),
-    [],
-  );
-
-  const scheduleSave = (patch: ItemPatch) => {
-    pendingRef.current = patch;
-    queue.mark('save', SAVE_DEBOUNCE_MS);
-  };
-
-  // Closing the overlay unmounts this content — flush the pending edit then.
-  useEffect(() => () => queue.flushPending(), [queue]);
-
   // ── Field change handlers (edit mode autosave) ────────────────────────────
 
   const handleGramsChange = (value: string) => {
@@ -375,7 +315,7 @@ export function AmountSheetContent({
     if (isEditMode) {
       const n = Number.parseFloat(value);
       const weight = Number.isNaN(n) || n <= 0 ? null : n;
-      scheduleSave({weight_g: weight, amount: null, unit: null});
+      onEditAmount?.({weight_g: weight, amount: null, unit: null});
     }
   };
 
@@ -390,11 +330,7 @@ export function AmountSheetContent({
       }
       const count = Number.parseFloat(servingCount) || 1;
       const wg = resolveServingWeight(serving.weight_g, serving.amount, count);
-      scheduleSave({
-        weight_g: wg,
-        amount: count,
-        unit: serving.unit,
-      });
+      onEditAmount?.({weight_g: wg, amount: count, unit: serving.unit});
     }
   };
 
@@ -411,12 +347,12 @@ export function AmountSheetContent({
       if (isRecipeMode) {
         const perServing = recipeServingWeightG(recipe);
         const wg = perServing == null ? null : perServing * count;
-        scheduleSave({weight_g: wg, amount: count, unit: 'serving'});
+        onEditAmount?.({weight_g: wg, amount: count, unit: 'serving'});
       } else if (activeServingIdx !== null && food) {
         const serving = food.serving_sizes[activeServingIdx];
         if (serving) {
           const wg = resolveServingWeight(serving.weight_g, serving.amount, count);
-          scheduleSave({weight_g: wg, amount: count, unit: serving.unit});
+          onEditAmount?.({weight_g: wg, amount: count, unit: serving.unit});
         }
       }
     }
@@ -603,7 +539,7 @@ export function AmountSheetContent({
 // AmountSheet — public component
 // ---------------------------------------------------------------------------
 
-export function AmountSheet({open, onClose, existingItem, planId, anchorEl}: AmountSheetProps) {
+export function AmountSheet({open, onClose, existingItem, onEditAmount, anchorEl}: AmountSheetProps) {
   const isDesktop = useIsDesktop();
 
   // Stable ref object pointing at the anchor — the desktop popover reads it.
@@ -644,7 +580,7 @@ export function AmountSheet({open, onClose, existingItem, planId, anchorEl}: Amo
           key={existingItem?.id ?? 'item'}
           existingItem={existingItem}
           food={food}
-          planId={planId}
+          onEditAmount={onEditAmount}
           recipe={recipe}
           showName={isDesktop}
         />

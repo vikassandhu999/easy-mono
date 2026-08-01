@@ -3,14 +3,13 @@ import {useNavigate} from 'react-router-dom';
 
 import {PlanActionsMenu} from '@/@components/plan-actions-menu';
 import {ROUTES} from '@/@config/routes';
-import {nutritionPlanKeys} from '@/api/keys';
+import type {NutritionPlan} from '@/api/nutrition-plan-builder';
+import {usePlanPatcher} from '@/api/nutrition-plan-builder';
 import {
-  type NutritionPlan,
   useDeleteNutritionPlanMutation,
   useDuplicateNutritionPlanMutation,
   useUpdateNutritionPlanMutation,
 } from '@/api/nutrition-plans-list';
-import {patchQueryData} from '@/api/query-client';
 
 export type Props = {
   plan: NutritionPlan;
@@ -19,6 +18,7 @@ export type Props = {
 
 export function NutritionPlanActions({plan, onDeleted}: Props) {
   const navigate = useNavigate();
+  const patch = usePlanPatcher(plan.id);
   const updatePlan = useUpdateNutritionPlanMutation();
   const duplicatePlan = useDuplicateNutritionPlanMutation();
   const deletePlan = useDeleteNutritionPlanMutation();
@@ -26,13 +26,13 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
   // Optimistically patch the cached detail so the dropdown flips
   // Archive<->Restore immediately, roll back on failure.
   const setStatus = async (status: 'active' | 'archived') => {
-    const patch = patchQueryData<{data: NutritionPlan}>(nutritionPlanKeys.detail(plan.id), (draft) => {
-      draft.data.status = status;
+    const patched = patch((draft) => {
+      draft.status = status;
     });
     try {
       await updatePlan.mutateAsync({id: plan.id, body: {name: plan.name, status}});
     } catch (e) {
-      patch.undo();
+      patched.undo();
       throw e;
     }
   };

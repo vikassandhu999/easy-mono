@@ -43,7 +43,7 @@ import MessagesInbox from '@/messages/messages-inbox';
 import CreateNutritionPlan from '@/nutrition-plans/create-nutrition-plan';
 import EditNutritionPlan from '@/nutrition-plans/edit-nutrition-plan';
 import ListNutritionPlans from '@/nutrition-plans/list-nutrition-plans';
-import NutritionPlanBuilder from '@/nutrition-plans/plan-builder/nutrition-plan-builder';
+import NutritionPlanBuilder from '@/nutrition-plans/builder';
 import EnrollProspect from '@/prospects/enroll-prospect';
 import ListProspects from '@/prospects/list-prospects';
 import ProspectDetail from '@/prospects/prospect-detail';

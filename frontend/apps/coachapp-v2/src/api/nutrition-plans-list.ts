@@ -1,18 +1,15 @@
 /**
- * Nutrition plans: the flat/infinite plan lists plus every hook the plan
- * builder (`src/nutrition-plans/plan-builder/*`) and the plan CRUD screens use.
+ * Nutrition plans: the flat/infinite plan lists, plan-level CRUD and the
+ * client meal logs. All of it invalidates normally.
+ *
+ * The plan DETAIL query (`getNutritionPlan`) and everything the builder writes
+ * through optimistically — days, schedule, slot options, meals, meal items —
+ * live in `src/api/nutrition-plan-builder.ts` instead, because those are
+ * invalidation-free by design (the builder patches its own cache entry).
  *
  * The infinite list is hand-written because codegen can't emit
  * `build.infiniteQuery` (mirrors `nutrition-foods.ts`: offset pagination, page
- * size 20). Everything else here used to be generated `tag: false` endpoints;
- * `git show HEAD:.../nutrition-plans-list.ts` wired the ones below via
- * `coachApi.enhanceEndpoints` — ported 1:1 as `invalidateQueries` calls.
- *
- * The day/meal/option/item builder mutations were genuinely tag:false in the
- * old app (no enhanceEndpoints entry) — the builder patches its own cached
- * `getNutritionPlan` entry optimistically (see `nutritionPlanKeys.detail(id)`
- * usage below) and calls `refetch()` itself, so those mutations stay
- * invalidation-free here too.
+ * size 20).
  */
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
@@ -24,22 +21,10 @@ const PAGE_SIZE = 20;
 
 export type NutritionPlan = components['schemas']['NutritionPlan'];
 export type NutritionPlanRequest = components['schemas']['NutritionPlanRequest'];
-export type NutritionMeal = components['schemas']['NutritionMeal'];
-export type NutritionMealItem = components['schemas']['NutritionMealItem'];
-export type NutritionPlanDay = components['schemas']['NutritionPlanDay'];
-export type NutritionDayMeal = components['schemas']['NutritionDayMeal'];
 export type MealLog = components['schemas']['MealLog'];
-export type NutritionScheduleRequest = components['schemas']['NutritionScheduleRequest'];
 
 type NutritionPlanListResponse = components['schemas']['NutritionPlanListResponse'];
-type NutritionMealItemRequest = components['schemas']['NutritionMealItemRequest'];
-type NutritionMealItemsCreateRequest = components['schemas']['NutritionMealItemsCreateRequest'];
-type NutritionMealRequest = components['schemas']['NutritionMealRequest'];
 type NutritionPlanAssignRequest = components['schemas']['NutritionPlanAssignRequest'];
-type NutritionPlanDayCreateRequest = components['schemas']['NutritionPlanDayCreateRequest'];
-type NutritionPlanDayUpdateRequest = components['schemas']['NutritionPlanDayUpdateRequest'];
-export type NutritionDayMealCreateRequest = components['schemas']['NutritionDayMealCreateRequest'];
-type NutritionSlotOptionMoveRequest = components['schemas']['NutritionSlotOptionMoveRequest'];
 
 type ListNutritionPlansQuery = NonNullable<paths['/v1/coach/nutrition-plans']['get']['parameters']['query']>;
 type ListCoachClientNutritionPlansQuery = NonNullable<
@@ -111,18 +96,6 @@ export function useListCoachClientNutritionPlansQuery(
           params: {path: {client_id: clientId}, query: params ?? undefined},
         }),
       ) as Promise<NutritionPlanListResponse>,
-    enabled: options?.enabled ?? true,
-  });
-}
-
-/**
- * The builder patches this exact cache entry optimistically via
- * `patchQueryData(nutritionPlanKeys.detail(id), …)` — do not change this key.
- */
-export function useGetNutritionPlanQuery(id: string, options?: {enabled?: boolean}) {
-  return useQuery({
-    queryKey: nutritionPlanKeys.detail(id),
-    queryFn: () => call(client.GET('/v1/coach/nutrition-plans/{id}', {params: {path: {id}}})),
     enabled: options?.enabled ?? true,
   });
 }
@@ -201,105 +174,6 @@ export function useAssignNutritionPlanMutation() {
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});
     },
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Plan builder — days, weekday assignments, meals, slot options, meal items.
-// tag:false: the builder owns its own optimistic patch of
-// nutritionPlanKeys.detail(planId) plus a reconciling refetch(), so none of
-// these invalidate anything.
-// ---------------------------------------------------------------------------
-
-/** Full Mon..Sun map — the server replaces the plan's whole schedule with it. */
-export function useUpdateNutritionPlanScheduleMutation() {
-  return useMutation({
-    mutationFn: ({body, planId}: {body: NutritionScheduleRequest; planId: string}) =>
-      call(
-        client.PUT('/v1/coach/nutrition-plans/{plan_id}/schedule', {
-          params: {path: {plan_id: planId}},
-          body,
-        }),
-      ),
-  });
-}
-
-export function useCreateNutritionPlanDayMutation() {
-  return useMutation({
-    mutationFn: ({body, planId}: {body: NutritionPlanDayCreateRequest; planId: string}) =>
-      call(client.POST('/v1/coach/nutrition-plans/{plan_id}/days', {params: {path: {plan_id: planId}}, body})),
-  });
-}
-
-export function useUpdateNutritionPlanDayMutation() {
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionPlanDayUpdateRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-days/{id}', {params: {path: {id}}, body})),
-  });
-}
-
-export function useDeleteNutritionPlanDayMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-days/{id}', {params: {path: {id}}})),
-  });
-}
-
-/**
- * One endpoint for both "place this plan meal here" (`nutrition_meal_id`) and
- * "create a meal and place it" (`name`) — exactly one of the two. The response
- * embeds the full meal, so the builder can push it into `draft.data.meals`.
- */
-export function useAddDayMealMutation() {
-  return useMutation({
-    mutationFn: ({body, dayId}: {body: NutritionDayMealCreateRequest; dayId: string}) =>
-      call(client.POST('/v1/coach/nutrition-days/{day_id}/meals', {params: {path: {day_id: dayId}}, body})),
-  });
-}
-
-export function useMoveNutritionSlotOptionMutation() {
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionSlotOptionMoveRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}, body})),
-  });
-}
-
-export function useRemoveNutritionSlotOptionMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}})),
-  });
-}
-
-export function useUpdateMealMutation() {
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionMealRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-meals/{id}', {params: {path: {id}}, body})),
-  });
-}
-
-export function useDeleteMealMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-meals/{id}', {params: {path: {id}}})),
-  });
-}
-
-/** Batch create — one transaction, items land in the order given. */
-export function useCreateMealItemsMutation() {
-  return useMutation({
-    mutationFn: ({body, mealId}: {body: NutritionMealItemsCreateRequest; mealId: string}) =>
-      call(client.POST('/v1/coach/nutrition-meals/{meal_id}/items', {params: {path: {meal_id: mealId}}, body})),
-  });
-}
-
-export function useUpdateMealItemMutation() {
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionMealItemRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-meal-items/{id}', {params: {path: {id}}, body})),
-  });
-}
-
-export function useDeleteMealItemMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-meal-items/{id}', {params: {path: {id}}})),
   });
 }
 

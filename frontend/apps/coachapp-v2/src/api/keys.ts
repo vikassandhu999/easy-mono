@@ -34,7 +34,7 @@ export const clientKeys = {
   // that already invalidates clientKeys.lists() (invite, update, assign, enroll,
   // reassign) refreshes the attention tab + count for free. As a sibling key it
   // was invalidated by nothing and served stale rows for the whole staleTime.
-  attention: () => [...clientKeys.lists(), 'attention'] as const,
+  attention: (filters?: Filters) => [...clientKeys.lists(), 'attention', filters ?? {}] as const,
   weightEntries: (clientId: string) => [...clientKeys.detail(clientId), 'weight-entries'] as const,
 };
 

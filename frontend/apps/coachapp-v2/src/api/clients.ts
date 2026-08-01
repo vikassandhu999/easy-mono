@@ -198,7 +198,7 @@ export type ClientAttentionListResponse = {
 
 export function useListAttentionClientsQuery(params?: ListAttentionClientsParams, options?: {enabled?: boolean}) {
   return useQuery({
-    queryKey: clientKeys.attention(),
+    queryKey: clientKeys.attention(params),
     queryFn: () =>
       call(
         client.GET('/v1/coach/clients/attention', {params: {query: params ?? undefined}}),

@@ -83,5 +83,50 @@ defmodule EasyWeb.Clients.MealLogControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert length(data) == 2
     end
+
+    test "accepts an inclusive 31-day range", ctx do
+      conn =
+        get(ctx.conn, "/v1/client/nutrition-meal-logs", %{
+          "from" => "2026-03-01",
+          "to" => "2026-03-31"
+        })
+
+      assert %{"data" => []} = json_response(conn, 200)
+    end
+
+    test "rejects a range wider than 31 days", ctx do
+      conn =
+        get(ctx.conn, "/v1/client/nutrition-meal-logs", %{
+          "from" => "2026-03-01",
+          "to" => "2026-04-01"
+        })
+
+      assert %{
+               "error_code" => "invalid_input",
+               "error_detail" => %{"fields" => %{"range" => ["must span 31 days or less"]}}
+             } = json_response(conn, 422)
+    end
+
+    test "rejects a reversed range", ctx do
+      conn =
+        get(ctx.conn, "/v1/client/nutrition-meal-logs", %{
+          "from" => "2026-03-31",
+          "to" => "2026-03-01"
+        })
+
+      assert %{
+               "error_code" => "invalid_input",
+               "error_detail" => %{"fields" => %{"range" => ["from must be on or before to"]}}
+             } = json_response(conn, 422)
+    end
+
+    test "rejects a range with a missing bound", ctx do
+      conn = get(ctx.conn, "/v1/client/nutrition-meal-logs", %{"from" => "2026-03-01"})
+
+      assert %{
+               "error_code" => "invalid_input",
+               "error_detail" => %{"fields" => %{"range" => ["from and to must be provided together"]}}
+             } = json_response(conn, 422)
+    end
   end
 end

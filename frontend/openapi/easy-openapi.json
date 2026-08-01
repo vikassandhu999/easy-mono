@@ -20447,7 +20447,7 @@
         "operationId": "listClientMealLogs",
         "parameters": [
           {
-            "description": "Exact date",
+            "description": "Exact date (YYYY-MM-DD); overrides from/to",
             "in": "query",
             "name": "date",
             "required": false,
@@ -20458,7 +20458,7 @@
             }
           },
           {
-            "description": "Start date",
+            "description": "Inclusive start date; required with to",
             "in": "query",
             "name": "from",
             "required": false,
@@ -20469,7 +20469,7 @@
             }
           },
           {
-            "description": "End date",
+            "description": "Inclusive end date; required with from; range max 31 days",
             "in": "query",
             "name": "to",
             "required": false,
@@ -20500,6 +20500,16 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid date range"
           }
         },
         "security": [
@@ -21177,7 +21187,7 @@
             }
           },
           {
-            "description": "Exact date",
+            "description": "Exact date (YYYY-MM-DD); overrides from/to",
             "in": "query",
             "name": "date",
             "required": false,
@@ -21188,7 +21198,7 @@
             }
           },
           {
-            "description": "Start date",
+            "description": "Inclusive start date; required with to",
             "in": "query",
             "name": "from",
             "required": false,
@@ -21199,7 +21209,7 @@
             }
           },
           {
-            "description": "End date",
+            "description": "Inclusive end date; required with from; range max 31 days",
             "in": "query",
             "name": "to",
             "required": false,
@@ -21240,6 +21250,16 @@
               }
             },
             "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid date range"
           }
         },
         "security": [
@@ -22229,7 +22249,7 @@
   "security": [],
   "servers": [
     {
-      "url": "http://localhost:4000",
+      "url": "http://localhost:4002",
       "variables": {}
     }
   ],

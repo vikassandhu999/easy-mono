@@ -10171,11 +10171,11 @@ export interface operations {
   listCoachMealLogs: {
     parameters: {
       query?: {
-        /** @description Exact date */
+        /** @description Exact date (YYYY-MM-DD); overrides from/to */
         date?: string;
-        /** @description Start date */
+        /** @description Inclusive start date; required with to */
         from?: string;
-        /** @description End date */
+        /** @description Inclusive end date; required with from; range max 31 days */
         to?: string;
       };
       header?: never;
@@ -10207,6 +10207,15 @@ export interface operations {
       };
       /** @description Not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Invalid date range */
+      422: {
         headers: {
           [name: string]: unknown;
         };

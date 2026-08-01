@@ -298,6 +298,18 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unprocessable(%{fields: %{date: ["cannot be in the future"]}})})
   end
 
+  def call(conn, {:error, :invalid_date_range}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{range: ["from must be on or before to"]}})})
+  end
+
+  def call(conn, {:error, :date_range_too_wide}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{range: ["must span 31 days or less"]}})})
+  end
+
+  def call(conn, {:error, :incomplete_date_range}) do
+    call(conn, {:error, Error.unprocessable(%{fields: %{range: ["from and to must be provided together"]}})})
+  end
+
   def call(conn, {:error, :no_subscription}) do
     call(
       conn,

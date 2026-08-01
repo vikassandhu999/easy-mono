@@ -13,11 +13,15 @@ defmodule EasyWeb.Clients.MealLogController do
     operation_id: "listClientMealLogs",
     security: [%{"bearerAuth" => []}],
     parameters: [
-      Operation.parameter(:date, :query, :string, "Exact date", required: false),
-      Operation.parameter(:from, :query, :string, "Start date", required: false),
-      Operation.parameter(:to, :query, :string, "End date", required: false)
+      Operation.parameter(:date, :query, :string, "Exact date (YYYY-MM-DD); overrides from/to", required: false),
+      Operation.parameter(:from, :query, :string, "Inclusive start date; required with to", required: false),
+      Operation.parameter(:to, :query, :string, "Inclusive end date; required with from; range max 31 days", required: false)
     ],
-    responses: [ok: {"Meal logs", "application/json", MealLogListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+    responses: [
+      ok: {"Meal logs", "application/json", MealLogListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Invalid date range", "application/json", ErrorResponse}
+    ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

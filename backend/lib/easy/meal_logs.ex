@@ -26,17 +26,20 @@ defmodule Easy.MealLogs do
   # query is always bounded by date / date-range (a per-day or per-week read);
   # apply_date_filters/4 falls back to today when no bound is given.
   @spec list_meal_logs_for_client(Ctx.t(), String.t(), keyword()) ::
-          {:ok, [MealLog.t()]} | {:error, :not_found}
+          {:ok, [MealLog.t()]}
+          | {:error, :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range}
   def list_meal_logs_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
     date = Keyword.get(opts, :date)
     from_date = Keyword.get(opts, :from)
     to_date = Keyword.get(opts, :to)
 
-    with {:ok, _client} <- Clients.authorize_client(ctx, client_id) do
+    with {:ok, _client} <- Clients.authorize_client(ctx, client_id),
+         {:ok, query} <-
+           MealLog
+           |> MealLog.for_client(ctx.business_id, client_id)
+           |> apply_date_filters(date, from_date, to_date) do
       meal_logs =
-        MealLog
-        |> MealLog.for_client(ctx.business_id, client_id)
-        |> apply_date_filters(date, from_date, to_date)
+        query
         |> MealLog.oldest()
         |> MealLog.include_entries()
         |> Repo.all()
@@ -50,17 +53,20 @@ defmodule Easy.MealLogs do
   # ---------------------------------------------------------------------------
 
   @spec list_client_meal_logs(Ctx.t(), keyword()) ::
-          {:ok, [MealLog.t()]} | {:error, :not_found}
+          {:ok, [MealLog.t()]}
+          | {:error, :not_found | :invalid_date_range | :date_range_too_wide | :incomplete_date_range}
   def list_client_meal_logs(%Ctx{} = ctx, opts \\ []) do
     date = Keyword.get(opts, :date)
     from_date = Keyword.get(opts, :from)
     to_date = Keyword.get(opts, :to)
 
-    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, query} <-
+           MealLog
+           |> MealLog.for_client(ctx.business_id, client_id)
+           |> apply_date_filters(date, from_date, to_date) do
       meal_logs =
-        MealLog
-        |> MealLog.for_client(ctx.business_id, client_id)
-        |> apply_date_filters(date, from_date, to_date)
+        query
         |> MealLog.oldest()
         |> MealLog.include_entries()
         |> Repo.all()
@@ -980,19 +986,27 @@ defmodule Easy.MealLogs do
   defp item_name(_), do: {nil, :unknown}
 
   defp apply_date_filters(query, date, _from, _to) when not is_nil(date) do
-    MealLog.for_date(query, date)
+    {:ok, MealLog.for_date(query, date)}
   end
 
   defp apply_date_filters(query, _date, from_date, to_date)
        when not is_nil(from_date) and not is_nil(to_date) do
-    MealLog.for_date_range(query, from_date, to_date)
+    cond do
+      Date.compare(from_date, to_date) == :gt -> {:error, :invalid_date_range}
+      Date.diff(to_date, from_date) > 30 -> {:error, :date_range_too_wide}
+      true -> {:ok, MealLog.for_date_range(query, from_date, to_date)}
+    end
   end
+
+  defp apply_date_filters(_query, _date, from_date, to_date)
+       when not is_nil(from_date) or not is_nil(to_date),
+       do: {:error, :incomplete_date_range}
 
   # No filter given -> today's logs. This is what keeps these list endpoints
   # bounded (per-day/per-week reads); without it "no params" returned the
   # client's entire history with every entry preloaded.
   defp apply_date_filters(query, _date, _from_date, _to_date),
-    do: MealLog.for_date(query, Date.utc_today())
+    do: {:ok, MealLog.for_date(query, Date.utc_today())}
 
   # Entry getter scoped to a specific client.
   defp get_client_food_log_entry_scoped(business_id, client_id, entry_id) do

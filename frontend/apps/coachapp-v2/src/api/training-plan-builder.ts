@@ -1,37 +1,38 @@
 /**
  * The training builder's data layer — the ONLY module that names the builder's
- * cache entry or writes to it. Everything above works in plan-shaped values and
+ * cache entry or touches it. Everything above works in plan-shaped values and
  * never imports `queryClient` or a query key directly.
  *
  * One entry, one key: `trainingPlanKeys.detail(planId)`. `getTrainingPlan`
- * already returns the whole tree: workouts, their elements, each element's
- * exercise (with `tracking_type`), the planned sets, and the weekday schedule
- * as `schedule` (a Mon..Sun map derived from each workout's `weekdays`) —
- * server-ordered by `TrainingWorkout.oldest()` and
- * `TrainingWorkoutExercise.by_position()`. The builder used to fetch
- * `listWorkouts` and `getTrainingPlanSchedule` on top of it, which put the
- * literal `{planId, limit: 100}` at nine hand-written call sites. Query keys
- * are compared by VALUE, so changing that limit would have pointed every
- * optimistic write at an entry nobody reads — silently, with no type error.
- * There is now no second key left to get wrong.
+ * returns the whole tree — workouts, their elements, each element's exercise
+ * (with `tracking_type`), the planned sets, and the weekday schedule as one
+ * Mon..Sun map — server-ordered, so the builder needs no second query and
+ * there is no second key to get wrong.
  *
- * This file also owns every mutation the builder writes through directly:
- * workouts, the weekday schedule, and workout elements (exercises + their
- * planned sets). All of them are invalidation-free by design — the builder
- * patches `trainingPlanKeys.detail(planId)` itself via `usePlanPatcher`
- * before the request even lands (see `use-plan-builder.ts` /
- * `use-set-writer.ts`), and invalidating here too would just cause a
- * redundant refetch that could clobber an in-flight optimistic edit or a
- * still-debouncing set write. Plan-level CRUD that ISN'T part of that
- * optimistic protocol — create/update/assign/duplicate/delete/list — lives in
+ * The read is a React Query hook; everything else here is a PLAIN FUNCTION.
+ * The builder's writes are optimistic and invalidation-free by design — the
+ * command layer patches the cache itself and reconciles from replies (see
+ * `builder/commands.ts`) — so `useMutation` would contribute nothing here:
+ * its `onSuccess` invalidation is deliberately unused, retry is off
+ * app-wide, `isPending` is tracked by the two commands that surface it, and
+ * its per-render result objects are exactly the footgun RM-142 exists for. A
+ * write layer with no hooks can't re-grow that bug, and plain functions need
+ * no dependency arrays to keep honest. (`patchPlan`/`readPlan`/`refetchPlan`
+ * are plain for the same reason — `queryClient` is a module singleton, and
+ * wrapping module state in hooks only manufactures identities.)
+ *
+ * Plan-level CRUD that ISN'T part of the optimistic protocol —
+ * create/update/assign/duplicate/delete/list — lives in
  * `src/api/training-plans-list.ts` instead, since it invalidates normally.
+ * `updatePlanPeriod` is the one hybrid: the builder edits an assigned plan's
+ * dates optimistically, but list rows show them, so it re-runs the same
+ * invalidations `useUpdateTrainingPlanMutation` would.
  */
 
-import {useMutation, useQuery} from '@tanstack/react-query';
-import {useCallback} from 'react';
+import {useQuery} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {trainingPlanKeys} from '@/api/keys';
+import {clientKeys, trainingPlanKeys} from '@/api/keys';
 import {patchQueryData, queryClient} from '@/api/query-client';
 import type {components} from '@/api/schema';
 
@@ -42,15 +43,14 @@ export type TrainingSchedule = components['schemas']['TrainingSchedule'];
 export type TrainingPlanPlannedSet = components['schemas']['TrainingPlanPlannedSet'];
 
 type TrainingPlanResponse = components['schemas']['TrainingPlanResponse'];
+type TrainingPlanUpdateRequest = components['schemas']['TrainingPlanUpdateRequest'];
 type TrainingWorkoutRequest = components['schemas']['TrainingWorkoutRequest'];
 type TrainingWorkoutUpdateRequest = components['schemas']['TrainingWorkoutUpdateRequest'];
 type TrainingWorkoutResponse = components['schemas']['TrainingWorkoutResponse'];
-type TrainingScheduleRequest = components['schemas']['TrainingScheduleRequest'];
 type TrainingScheduleResponse = components['schemas']['TrainingScheduleResponse'];
 type TrainingWorkoutExerciseRequest = components['schemas']['TrainingWorkoutExerciseRequest'];
 type TrainingWorkoutExercisesCreateRequest = components['schemas']['TrainingWorkoutExercisesCreateRequest'];
 type TrainingWorkoutExerciseResponse = components['schemas']['TrainingWorkoutExerciseResponse'];
-type TrainingWorkoutReorderRequest = components['schemas']['TrainingWorkoutReorderRequest'];
 type TrainingWorkoutExerciseArrayResponse = components['schemas']['TrainingWorkoutExerciseArrayResponse'];
 
 /**
@@ -71,140 +71,125 @@ export function useGetTrainingPlanQuery(planId: string, options?: {enabled?: boo
   });
 }
 
+// ---------------------------------------------------------------------------
+// The cached plan
+// ---------------------------------------------------------------------------
+
 /**
  * Applies `recipe` to the cached plan and returns a token whose `.undo()`
  * reverses exactly that patch.
  */
-export function usePlanPatcher(planId: string) {
-  return useCallback(
-    (recipe: (plan: TrainingPlan) => void) =>
-      patchQueryData<TrainingPlanResponse>(trainingPlanKeys.detail(planId), (draft) => {
-        recipe(draft.data);
-      }),
-    [planId],
-  );
+export function patchPlan(planId: string, recipe: (plan: TrainingPlan) => void) {
+  return patchQueryData<TrainingPlanResponse>(trainingPlanKeys.detail(planId), (draft) => {
+    recipe(draft.data);
+  });
 }
 
 /**
  * The plan as it is cached RIGHT NOW — not as a component last rendered it.
- *
- * This is what lets the set writer build every payload from one moving base
- * instead of from three components' stale props. Reading through the query
- * cache rather than a closure is also why the writer's callbacks are stable:
- * they close over nothing that changes.
+ * Commands build payloads from this so two quick edits compose instead of the
+ * second one being computed off a stale prop.
  */
-export function usePlanReader(planId: string) {
-  return useCallback(
-    () => queryClient.getQueryData<TrainingPlanResponse>(trainingPlanKeys.detail(planId))?.data,
-    [planId],
-  );
+export function readPlan(planId: string): TrainingPlan | undefined {
+  return queryClient.getQueryData<TrainingPlanResponse>(trainingPlanKeys.detail(planId))?.data;
 }
 
 /**
- * Throws away local state and re-reads the plan from the server.
- *
- * The recovery path for a failed set write. A single set command can be the
- * tail of a coalesced chain, so undoing one patch out of order would leave
- * the cache describing a state neither the client nor the server believes
- * in; re-reading is the one move that is always correct. (These mutations
- * are invalidation-free by design, so this can't go through
+ * Throws away local state and re-reads the plan from the server — the
+ * recovery move for a failed coalesced write, where undoing one patch out of
+ * order would leave the cache describing a state neither side believes in.
+ * (Builder writes are invalidation-free, so this can't go through
  * `invalidateQueries` — it has to force a real refetch.)
  */
-export function usePlanRefetch(planId: string) {
-  return useCallback(() => {
-    queryClient.refetchQueries({queryKey: trainingPlanKeys.detail(planId)});
-  }, [planId]);
+export function refetchPlan(planId: string) {
+  queryClient.refetchQueries({queryKey: trainingPlanKeys.detail(planId)});
 }
 
 // ---------------------------------------------------------------------------
-// Workouts
+// Requests — thin, unwrapped, no cache effects
 // ---------------------------------------------------------------------------
 
-export function useCreateWorkoutMutation() {
-  return useMutation({
-    mutationFn: ({planId, body}: {planId: string; body: TrainingWorkoutRequest}) =>
-      call(
-        client.POST('/v1/coach/training-plans/{plan_id}/training-workouts', {
-          params: {path: {plan_id: planId}},
-          body,
-        }),
-      ) as Promise<TrainingWorkoutResponse>,
-  });
+export async function createWorkout(planId: string, body: TrainingWorkoutRequest): Promise<TrainingPlanWorkout> {
+  const response = (await call(
+    client.POST('/v1/coach/training-plans/{plan_id}/training-workouts', {
+      params: {path: {plan_id: planId}},
+      body,
+    }),
+  )) as TrainingWorkoutResponse;
+  return response.data;
 }
 
-export function useUpdateWorkoutMutation() {
-  return useMutation({
-    mutationFn: ({id, body}: {id: string; body: TrainingWorkoutUpdateRequest}) =>
-      call(
-        client.PATCH('/v1/coach/training-workouts/{id}', {params: {path: {id}}, body}),
-      ) as Promise<TrainingWorkoutResponse>,
-  });
+export async function updateWorkout(id: string, body: TrainingWorkoutUpdateRequest): Promise<TrainingPlanWorkout> {
+  const response = (await call(
+    client.PATCH('/v1/coach/training-workouts/{id}', {params: {path: {id}}, body}),
+  )) as TrainingWorkoutResponse;
+  return response.data;
 }
 
-export function useDeleteWorkoutMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/training-workouts/{id}', {params: {path: {id}}})),
-  });
+export async function deleteWorkout(id: string): Promise<void> {
+  await call(client.DELETE('/v1/coach/training-workouts/{id}', {params: {path: {id}}}));
 }
-
-// ---------------------------------------------------------------------------
-// Weekly schedule
-// ---------------------------------------------------------------------------
 
 /** Full Mon..Sun map — the server replaces the plan's whole schedule with it. */
-export function useUpdateTrainingPlanScheduleMutation() {
-  return useMutation({
-    mutationFn: ({planId, body}: {planId: string; body: TrainingScheduleRequest}) =>
-      call(
-        client.PUT('/v1/coach/training-plans/{plan_id}/schedule', {
-          params: {path: {plan_id: planId}},
-          body,
-        }),
-      ) as Promise<TrainingScheduleResponse>,
-  });
+export async function replaceSchedule(planId: string, schedule: TrainingSchedule): Promise<TrainingSchedule> {
+  const response = (await call(
+    client.PUT('/v1/coach/training-plans/{plan_id}/schedule', {
+      params: {path: {plan_id: planId}},
+      body: schedule,
+    }),
+  )) as TrainingScheduleResponse;
+  return response.data;
 }
-
-// ---------------------------------------------------------------------------
-// Workout elements (exercises + their planned sets)
-// ---------------------------------------------------------------------------
 
 /** Batch create — one transaction, elements land in the order given. */
-export function useCreateWorkoutElementsMutation() {
-  return useMutation({
-    mutationFn: ({workoutId, body}: {workoutId: string; body: TrainingWorkoutExercisesCreateRequest}) =>
-      call(
-        client.POST('/v1/coach/training-workouts/{workout_id}/exercises', {
-          params: {path: {workout_id: workoutId}},
-          body,
-        }),
-      ) as Promise<TrainingWorkoutExerciseArrayResponse>,
-  });
+export async function createElements(
+  workoutId: string,
+  body: TrainingWorkoutExercisesCreateRequest,
+): Promise<TrainingPlanWorkoutExercise[]> {
+  const response = (await call(
+    client.POST('/v1/coach/training-workouts/{workout_id}/exercises', {
+      params: {path: {workout_id: workoutId}},
+      body,
+    }),
+  )) as TrainingWorkoutExerciseArrayResponse;
+  return response.data;
 }
 
-export function useUpdateWorkoutElementMutation() {
-  return useMutation({
-    mutationFn: ({id, body}: {id: string; body: TrainingWorkoutExerciseRequest}) =>
-      call(
-        client.PATCH('/v1/coach/training-workout-exercises/{id}', {params: {path: {id}}, body}),
-      ) as Promise<TrainingWorkoutExerciseResponse>,
-  });
+export async function updateElement(
+  id: string,
+  body: TrainingWorkoutExerciseRequest,
+): Promise<TrainingPlanWorkoutExercise> {
+  const response = (await call(
+    client.PATCH('/v1/coach/training-workout-exercises/{id}', {params: {path: {id}}, body}),
+  )) as TrainingWorkoutExerciseResponse;
+  return response.data;
 }
 
-export function useDeleteWorkoutElementMutation() {
-  return useMutation({
-    mutationFn: (id: string) =>
-      call(client.DELETE('/v1/coach/training-workout-exercises/{id}', {params: {path: {id}}})),
-  });
+export async function deleteElement(id: string): Promise<void> {
+  await call(client.DELETE('/v1/coach/training-workout-exercises/{id}', {params: {path: {id}}}));
 }
 
-export function useReorderWorkoutElementsMutation() {
-  return useMutation({
-    mutationFn: ({workoutId, body}: {workoutId: string; body: TrainingWorkoutReorderRequest}) =>
-      call(
-        client.PUT('/v1/coach/training-workouts/{workout_id}/exercises/reorder', {
-          params: {path: {workout_id: workoutId}},
-          body,
-        }),
-      ) as Promise<TrainingWorkoutExerciseArrayResponse>,
-  });
+export async function reorderElements(workoutId: string, elementIds: string[]): Promise<TrainingPlanWorkoutExercise[]> {
+  const response = (await call(
+    client.PUT('/v1/coach/training-workouts/{workout_id}/exercises/reorder', {
+      params: {path: {workout_id: workoutId}},
+      body: {element_ids: elementIds},
+    }),
+  )) as TrainingWorkoutExerciseArrayResponse;
+  return response.data;
+}
+
+/**
+ * The one builder write with cache effects beyond the detail entry: assigned
+ * plans' dates show on list rows and client cards, so this mirrors
+ * `useUpdateTrainingPlanMutation`'s invalidations (detail included — the
+ * refetch confirms the optimistic patch, same as the screens' flow).
+ */
+export async function updatePlanPeriod(planId: string, body: TrainingPlanUpdateRequest): Promise<void> {
+  await call(client.PATCH('/v1/coach/training-plans/{id}', {params: {path: {id: planId}}, body}));
+  queryClient.invalidateQueries({queryKey: trainingPlanKeys.detail(planId)});
+  queryClient.invalidateQueries({queryKey: trainingPlanKeys.lists()});
+  queryClient.invalidateQueries({queryKey: trainingPlanKeys.forClients()});
+  queryClient.invalidateQueries({queryKey: clientKeys.lists()});
+  queryClient.invalidateQueries({queryKey: clientKeys.details()});
 }

@@ -7,7 +7,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
-import {useGetTrainingPlanQuery, usePlanPatcher} from '@/api/training-plan-builder';
+import {patchPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
 import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
@@ -36,7 +36,6 @@ function EditTrainingPlanHeader({goBack}: {goBack: () => void}) {
 }
 
 function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
-  const patch = usePlanPatcher(planId);
   const goBack = useGoBack(backPath);
   const {data} = useGetTrainingPlanQuery(planId);
   const updatePlanMutation = useUpdateTrainingPlanMutation();
@@ -54,7 +53,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
         body: trainingPlanToUpdateRequest(formData),
       });
       // Sync the cached detail so the builder shows the new values.
-      patch((draft) => {
+      patchPlan(planId, (draft) => {
         Object.assign(draft, result.data);
       });
       goBack();

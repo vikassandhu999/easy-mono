@@ -3,8 +3,9 @@
  * day's weekdays go: meals always survive in the plan, and any weekdays the
  * day held move to the first remaining day (the server does the same).
  */
-import {AlertDialog, Button, Spinner} from '@heroui/react';
+
 import {WEEKDAY_SHORT_LABELS, WEEKDAYS} from '@easy/utils';
+import {AlertDialog, Button, Spinner} from '@heroui/react';
 
 import type {NutritionPlanDay} from '@/api/nutrition-plan-builder';
 
@@ -30,7 +31,15 @@ interface DeleteDayDialogProps {
   onConfirm: () => void;
 }
 
-export function DeleteDayDialog({day, days, assignments, deleting, isOpen, onOpenChange, onConfirm}: DeleteDayDialogProps) {
+export function DeleteDayDialog({
+  day,
+  days,
+  assignments,
+  deleting,
+  isOpen,
+  onOpenChange,
+  onConfirm,
+}: DeleteDayDialogProps) {
   return (
     <AlertDialog.Backdrop
       isDismissable={!deleting}

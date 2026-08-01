@@ -4,7 +4,7 @@ import {useNavigate} from 'react-router-dom';
 import {PlanActionsMenu} from '@/@components/plan-actions-menu';
 import {ROUTES} from '@/@config/routes';
 import type {TrainingPlan} from '@/api/training-plan-builder';
-import {usePlanPatcher} from '@/api/training-plan-builder';
+import {patchPlan} from '@/api/training-plan-builder';
 import {
   useDeleteTrainingPlanMutation,
   useDuplicateTrainingPlanMutation,
@@ -18,7 +18,6 @@ export type Props = {
 
 export function PlanActions({plan, onDeleted}: Props) {
   const navigate = useNavigate();
-  const patch = usePlanPatcher(plan.id);
   const updatePlanMutation = useUpdateTrainingPlanMutation();
   const duplicatePlanMutation = useDuplicateTrainingPlanMutation();
   const deletePlanMutation = useDeleteTrainingPlanMutation();
@@ -26,7 +25,7 @@ export function PlanActions({plan, onDeleted}: Props) {
   // Optimistically patch the cached detail so the dropdown flips
   // Archive<->Restore immediately, roll back on failure.
   const setStatus = async (status: 'active' | 'archived') => {
-    const patched = patch((draft) => {
+    const patched = patchPlan(plan.id, (draft) => {
       draft.status = status;
     });
     try {

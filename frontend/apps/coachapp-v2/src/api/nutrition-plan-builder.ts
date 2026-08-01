@@ -1,6 +1,6 @@
 /**
  * The nutrition builder's data layer — the ONLY module that names the builder's
- * cache entry or writes to it. Everything above works in plan-shaped values and
+ * cache entry or touches it. Everything above works in plan-shaped values and
  * never imports `queryClient` or a query key directly (mirrors
  * `training-plan-builder.ts`).
  *
@@ -9,20 +9,24 @@
  * nutrition), the days with their ordered slot options, and the Mon..Sun
  * weekday assignments.
  *
- * This file also owns every mutation the builder writes through directly:
- * days, the weekday schedule, slot options, meals and meal items. All of them
- * are invalidation-free by design — the builder patches
- * `nutritionPlanKeys.detail(planId)` itself before the request lands and
- * reconciles with a refetch (positions and nutrition snapshots are
- * server-computed), so invalidating here too would just cause a redundant
- * refetch that could clobber an in-flight optimistic edit or a still-debouncing
- * amount write. Plan-level CRUD that ISN'T part of that optimistic protocol —
+ * The read is a React Query hook; everything else here is a PLAIN FUNCTION.
+ * The builder's writes are optimistic and invalidation-free by design — the
+ * command layer patches the cache itself and reconciles with a refetch, since
+ * positions and nutrition snapshots are server-computed (see
+ * `builder/commands.ts`) — so `useMutation` would contribute nothing here:
+ * its `onSuccess` invalidation is deliberately unused, retry is off app-wide,
+ * `isPending` is tracked by the two commands that surface it, and its
+ * per-render result objects are exactly the footgun RM-142 exists for.
+ * (`patchPlan`/`readPlan`/`refetchPlan` are plain for the same reason —
+ * `queryClient` is a module singleton, and wrapping module state in hooks
+ * only manufactures identities.)
+ *
+ * Plan-level CRUD that ISN'T part of the optimistic protocol —
  * create/update/assign/duplicate/delete/list — lives in
  * `src/api/nutrition-plans-list.ts` instead, since it invalidates normally.
  */
 
-import {useMutation, useQuery} from '@tanstack/react-query';
-import {useCallback} from 'react';
+import {useQuery} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {nutritionPlanKeys} from '@/api/keys';
@@ -41,7 +45,6 @@ export type NutritionMealItemRequest = components['schemas']['NutritionMealItemR
 type NutritionPlanResponse = {data: NutritionPlan};
 type NutritionMealItemsCreateRequest = components['schemas']['NutritionMealItemsCreateRequest'];
 type NutritionMealRequest = components['schemas']['NutritionMealRequest'];
-type NutritionPlanDayCreateRequest = components['schemas']['NutritionPlanDayCreateRequest'];
 type NutritionPlanDayUpdateRequest = components['schemas']['NutritionPlanDayUpdateRequest'];
 type NutritionSlotOptionMoveRequest = components['schemas']['NutritionSlotOptionMoveRequest'];
 
@@ -60,18 +63,27 @@ export function useGetNutritionPlanQuery(id: string, options?: {enabled?: boolea
   });
 }
 
+// ---------------------------------------------------------------------------
+// The cached plan
+// ---------------------------------------------------------------------------
+
 /**
  * Applies `recipe` to the cached plan and returns a token whose `.undo()`
  * reverses exactly that patch.
  */
-export function usePlanPatcher(planId: string) {
-  return useCallback(
-    (recipe: (plan: NutritionPlan) => void) =>
-      patchQueryData<NutritionPlanResponse>(nutritionPlanKeys.detail(planId), (draft) => {
-        recipe(draft.data);
-      }),
-    [planId],
-  );
+export function patchPlan(planId: string, recipe: (plan: NutritionPlan) => void) {
+  return patchQueryData<NutritionPlanResponse>(nutritionPlanKeys.detail(planId), (draft) => {
+    recipe(draft.data);
+  });
+}
+
+/**
+ * The plan as it is cached RIGHT NOW — not as a component last rendered it.
+ * Commands build payloads from this so two quick edits compose instead of the
+ * second one being computed off a stale prop.
+ */
+export function readPlan(planId: string): NutritionPlan | undefined {
+  return queryClient.getQueryData<NutritionPlanResponse>(nutritionPlanKeys.detail(planId))?.data;
 }
 
 /**
@@ -79,121 +91,78 @@ export function usePlanPatcher(planId: string) {
  *
  * Two jobs: the reconciling refetch after a successful structural write
  * (positions and nutrition snapshots are server-computed), and the recovery
- * path for a failed coalesced amount write — undoing one patch out of a chain
- * would leave the cache describing a state neither side believes in. (These
- * mutations are invalidation-free by design, so this can't go through
- * `invalidateQueries` — it has to force a real refetch.)
+ * path for a failed coalesced write — undoing one patch out of a chain would
+ * leave the cache describing a state neither side believes in. (Builder
+ * writes are invalidation-free, so this can't go through `invalidateQueries`
+ * — it has to force a real refetch.)
  */
-export function usePlanRefetch(planId: string) {
-  return useCallback(() => {
-    queryClient.refetchQueries({queryKey: nutritionPlanKeys.detail(planId)}).catch(() => undefined);
-  }, [planId]);
+export function refetchPlan(planId: string) {
+  queryClient.refetchQueries({queryKey: nutritionPlanKeys.detail(planId)}).catch(() => undefined);
 }
 
 // ---------------------------------------------------------------------------
-// Weekly schedule
+// Requests — thin, unwrapped, no cache effects
 // ---------------------------------------------------------------------------
 
 /** Full Mon..Sun map — the server replaces the plan's whole schedule with it. */
-export function useUpdateNutritionPlanScheduleMutation() {
-  return useMutation({
-    mutationFn: ({body, planId}: {body: NutritionScheduleRequest; planId: string}) =>
-      call(
-        client.PUT('/v1/coach/nutrition-plans/{plan_id}/schedule', {
-          params: {path: {plan_id: planId}},
-          body,
-        }),
-      ),
-  });
+export async function replaceSchedule(planId: string, body: NutritionScheduleRequest) {
+  await call(client.PUT('/v1/coach/nutrition-plans/{plan_id}/schedule', {params: {path: {plan_id: planId}}, body}));
 }
 
-// ---------------------------------------------------------------------------
-// Days
-// ---------------------------------------------------------------------------
-
-export function useCreateNutritionPlanDayMutation() {
-  return useMutation({
-    mutationFn: ({body, planId}: {body: NutritionPlanDayCreateRequest; planId: string}) =>
-      call(client.POST('/v1/coach/nutrition-plans/{plan_id}/days', {params: {path: {plan_id: planId}}, body})),
-  });
+export async function createDay(planId: string): Promise<NutritionPlanDay> {
+  const response = await call(
+    client.POST('/v1/coach/nutrition-plans/{plan_id}/days', {params: {path: {plan_id: planId}}, body: {}}),
+  );
+  return response.data;
 }
 
-export function useUpdateNutritionPlanDayMutation() {
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionPlanDayUpdateRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-days/{id}', {params: {path: {id}}, body})),
-  });
+export async function updateDay(id: string, body: NutritionPlanDayUpdateRequest): Promise<NutritionPlanDay> {
+  const response = await call(client.PATCH('/v1/coach/nutrition-days/{id}', {params: {path: {id}}, body}));
+  return response.data;
 }
 
-export function useDeleteNutritionPlanDayMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-days/{id}', {params: {path: {id}}})),
-  });
+export async function deleteDay(id: string): Promise<void> {
+  await call(client.DELETE('/v1/coach/nutrition-days/{id}', {params: {path: {id}}}));
 }
-
-// ---------------------------------------------------------------------------
-// Slot options (day meals)
-// ---------------------------------------------------------------------------
 
 /**
  * One endpoint for both "place this plan meal here" (`nutrition_meal_id`) and
  * "create a meal and place it" (`name`) — exactly one of the two. The response
  * embeds the full meal, so the builder can push it into `plan.meals`.
  */
-export function useAddDayMealMutation() {
-  return useMutation({
-    mutationFn: ({body, dayId}: {body: NutritionDayMealCreateRequest; dayId: string}) =>
-      call(client.POST('/v1/coach/nutrition-days/{day_id}/meals', {params: {path: {day_id: dayId}}, body})),
-  });
+export async function addDayMeal(dayId: string, body: NutritionDayMealCreateRequest) {
+  const response = await call(
+    client.POST('/v1/coach/nutrition-days/{day_id}/meals', {params: {path: {day_id: dayId}}, body}),
+  );
+  return response.data;
 }
 
-export function useMoveNutritionSlotOptionMutation() {
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionSlotOptionMoveRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}, body})),
-  });
+export async function moveSlotOption(id: string, body: NutritionSlotOptionMoveRequest) {
+  const response = await call(client.PATCH('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}, body}));
+  return response.data;
 }
 
-export function useRemoveNutritionSlotOptionMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}})),
-  });
+export async function removeSlotOption(id: string): Promise<void> {
+  await call(client.DELETE('/v1/coach/nutrition-day-meals/{id}', {params: {path: {id}}}));
 }
 
-// ---------------------------------------------------------------------------
-// Meals and meal items
-// ---------------------------------------------------------------------------
-
-export function useUpdateMealMutation() {
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionMealRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-meals/{id}', {params: {path: {id}}, body})),
-  });
+export async function updateMeal(id: string, body: NutritionMealRequest): Promise<void> {
+  await call(client.PATCH('/v1/coach/nutrition-meals/{id}', {params: {path: {id}}, body}));
 }
 
-export function useDeleteMealMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-meals/{id}', {params: {path: {id}}})),
-  });
+export async function deleteMeal(id: string): Promise<void> {
+  await call(client.DELETE('/v1/coach/nutrition-meals/{id}', {params: {path: {id}}}));
 }
 
 /** Batch create — one transaction, items land in the order given. */
-export function useCreateMealItemsMutation() {
-  return useMutation({
-    mutationFn: ({body, mealId}: {body: NutritionMealItemsCreateRequest; mealId: string}) =>
-      call(client.POST('/v1/coach/nutrition-meals/{meal_id}/items', {params: {path: {meal_id: mealId}}, body})),
-  });
+export async function createMealItems(mealId: string, body: NutritionMealItemsCreateRequest): Promise<void> {
+  await call(client.POST('/v1/coach/nutrition-meals/{meal_id}/items', {params: {path: {meal_id: mealId}}, body}));
 }
 
-export function useUpdateMealItemMutation() {
-  return useMutation({
-    mutationFn: ({body, id}: {body: NutritionMealItemRequest; id: string}) =>
-      call(client.PATCH('/v1/coach/nutrition-meal-items/{id}', {params: {path: {id}}, body})),
-  });
+export async function updateMealItem(id: string, body: NutritionMealItemRequest): Promise<void> {
+  await call(client.PATCH('/v1/coach/nutrition-meal-items/{id}', {params: {path: {id}}, body}));
 }
 
-export function useDeleteMealItemMutation() {
-  return useMutation({
-    mutationFn: (id: string) => call(client.DELETE('/v1/coach/nutrition-meal-items/{id}', {params: {path: {id}}})),
-  });
+export async function deleteMealItem(id: string): Promise<void> {
+  await call(client.DELETE('/v1/coach/nutrition-meal-items/{id}', {params: {path: {id}}}));
 }

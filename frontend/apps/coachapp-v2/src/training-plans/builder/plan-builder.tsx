@@ -18,7 +18,7 @@ import {daysForWorkout} from './schedule';
 import {useActiveWorkout, usePlanBuilder} from './use-plan-builder';
 
 export function PlanBuilder({plan}: {plan: TrainingPlan}) {
-  const commands = usePlanBuilder(plan);
+  const commands = usePlanBuilder(plan.id);
   // A stale `?w=` — after deleting the workout it named — falls through to the
   // first workout. That fallback is the only correction needed, and it self-heals
   // on the next tab press.

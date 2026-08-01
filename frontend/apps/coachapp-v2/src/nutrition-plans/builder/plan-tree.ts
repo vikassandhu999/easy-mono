@@ -47,7 +47,9 @@ export function optionsForSlot(day: NutritionPlanDay, slot: string): NutritionDa
 }
 
 /** Day rows in slot order: the position-0 option plus its alternates. */
-export function slotRows(day: NutritionPlanDay): {slot: string; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] {
+export function slotRows(
+  day: NutritionPlanDay,
+): {slot: string; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] {
   const rows: {slot: string; primary: NutritionDayMeal; alternates: NutritionDayMeal[]}[] = [];
   for (const slot of MEAL_SLOTS) {
     const options = optionsForSlot(day, slot);

@@ -39,11 +39,9 @@ import {
   slotRows,
 } from './plan-tree';
 import {useActiveDay, usePlanBuilder} from './use-plan-builder';
-import {useItemWriter} from './use-item-writer';
 
 export function PlanBuilder({plan}: {plan: NutritionPlan}) {
-  const commands = usePlanBuilder(plan);
-  const writeItem = useItemWriter(plan.id);
+  const commands = usePlanBuilder(plan.id);
 
   const days = useMemo(() => getDays(plan), [plan]);
   const weekdayAssignments = useMemo(() => getWeekdayAssignments(plan), [plan]);
@@ -178,7 +176,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
           activeDay={activeDay}
           assignments={weekdayAssignments}
           onAssign={(weekday) => {
-            commands.scheduleWeekday(weekday, activeDay.id).catch(() => undefined);
+            commands.scheduleWeekday(weekday, activeDay.id);
           }}
         />
       </div>
@@ -301,7 +299,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
         onClose={() => setEditingItem(null)}
         onEditAmount={(patch) => {
           if (editingItem) {
-            writeItem(editingItem.id, patch);
+            commands.writeItem(editingItem.id, patch);
           }
         }}
         open={editingItem !== null}

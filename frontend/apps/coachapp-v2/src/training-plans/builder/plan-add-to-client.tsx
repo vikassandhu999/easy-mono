@@ -4,7 +4,7 @@ import {toastMutationError} from '@/@components/mutation-toast';
 import {PlanAddToClientControl} from '@/@components/plan-add-to-client';
 import type {Client} from '@/api/clients';
 import type {TrainingPlan} from '@/api/training-plan-builder';
-import {usePlanPatcher} from '@/api/training-plan-builder';
+import {patchPlan} from '@/api/training-plan-builder';
 import {useAssignTrainingPlanMutation} from '@/api/training-plans-list';
 
 export type Props = {
@@ -12,7 +12,6 @@ export type Props = {
 };
 
 export function PlanAddToClient({plan}: Props) {
-  const patch = usePlanPatcher(plan.id);
   const assignTrainingMutation = useAssignTrainingPlanMutation();
 
   // Already assigned — nothing to add to.
@@ -30,7 +29,7 @@ export function PlanAddToClient({plan}: Props) {
       // update without a reload. Assign may return a copy (new id) — only
       // patch when it's the same plan.
       if (result.data.id === plan.id) {
-        patch((draft) => {
+        patchPlan(plan.id, (draft) => {
           Object.assign(draft, result.data);
         });
       }

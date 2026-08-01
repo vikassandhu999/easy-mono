@@ -34,9 +34,8 @@ import type {NutritionMealItemRequest} from '@/api/nutrition-plan-builder';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {UNIT_CHIP} from '@/builder-kit/ui';
 import {recipeServings} from '@/recipes/lib/recipe-math';
-
+import type {ItemAmountPatch} from '../commands';
 import {fmt} from '../macros';
-import type {ItemAmountPatch} from '../use-item-writer';
 import type {HydratedMealItem} from './meal-item-row';
 
 /** The bordered value boxes (servings · count · grams) — one recipe, three uses. */

@@ -65,22 +65,24 @@ defmodule Easy.Clients do
     end
   end
 
-  @spec active_client?(Ctx.t()) :: boolean()
-  def active_client?(%Ctx{} = ctx) do
+  @spec get_active_client(Ctx.t()) :: {:ok, Client.t()} | {:error, :not_found}
+  def get_active_client(%Ctx{} = ctx) do
     Client
     |> Client.for_business(ctx.business_id)
     |> Client.for_user(ctx.user_id)
     |> Client.accepted()
-    |> Repo.exists?()
+    |> Repo.one()
+    |> ok_or_not_found()
   end
 
   @spec get_client_account(Ctx.t()) :: {:ok, Client.t()} | {:error, :not_found}
   def get_client_account(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      Client
+      |> Client.for_business(ctx.business_id)
+      |> Repo.get(client_id)
+      |> ok_or_not_found()
+    end
   end
 
   @spec list_clients(Ctx.t(), keyword()) ::

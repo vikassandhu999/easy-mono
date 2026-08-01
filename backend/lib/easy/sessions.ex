@@ -39,38 +39,38 @@ defmodule Easy.Sessions do
   end
 
   # ---------------------------------------------------------------------------
-  # Client self fns (Case-3: Ctx-first, resolves client via private get_client/1)
+  # Client self fns (Case-3: Ctx-first, target from ctx.client_id)
   # ---------------------------------------------------------------------------
 
   @spec list_client_sessions(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), sessions: [TrainingSession.t()]}} | {:error, :not_found}
   def list_client_sessions(%Ctx{} = ctx, opts \\ []) do
-    with {:ok, client} <- get_client(ctx) do
-      {:ok, paginated_sessions(ctx.business_id, client.id, opts)}
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      {:ok, paginated_sessions(ctx.business_id, client_id, opts)}
     end
   end
 
   @spec get_client_session(Ctx.t(), String.t()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found}
   def get_client_session(%Ctx{} = ctx, session_id) do
-    with {:ok, client} <- get_client(ctx) do
-      fetch_client_session_preloaded(ctx.business_id, client.id, session_id)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      fetch_client_session_preloaded(ctx.business_id, client_id, session_id)
     end
   end
 
   @spec create_client_session(Ctx.t(), String.t() | nil, map()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found | :active_session_exists | Ecto.Changeset.t()}
   def create_client_session(%Ctx{} = ctx, workout_id, attrs) do
-    with {:ok, client} <- get_client(ctx) do
-      create_client_workout_session(ctx.business_id, client.id, workout_id, attrs)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      create_client_workout_session(ctx.business_id, client_id, workout_id, attrs)
     end
   end
 
   @spec update_client_session(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingSession.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_client_session(%Ctx{} = ctx, session_id, attrs) do
-    with {:ok, client} <- get_client(ctx),
-         {:ok, session} <- fetch_client_session_preloaded(ctx.business_id, client.id, session_id) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, session} <- fetch_client_session_preloaded(ctx.business_id, client_id, session_id) do
       case to_string(attrs[:state] || "") do
         "completed" when session.state == :completed -> update_client_workout_session(session, attrs)
         "completed" -> complete_workout_session(session, attrs)
@@ -83,8 +83,8 @@ defmodule Easy.Sessions do
   @spec create_client_performed_set(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_client_performed_set(%Ctx{} = ctx, session_id, attrs) do
-    with {:ok, client} <- get_client(ctx),
-         {:ok, _session} <- fetch_client_session(ctx.business_id, client.id, session_id) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, _session} <- fetch_client_session(ctx.business_id, client_id, session_id) do
       create_performed_set(session_id, ctx.business_id, attrs)
     end
   end
@@ -92,8 +92,8 @@ defmodule Easy.Sessions do
   @spec update_client_performed_set(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_client_performed_set(%Ctx{} = ctx, set_id, attrs) do
-    with {:ok, client} <- get_client(ctx),
-         {:ok, set} <- get_client_performed_set(ctx.business_id, client.id, set_id) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, set} <- get_client_performed_set(ctx.business_id, client_id, set_id) do
       update_performed_set(set, attrs)
     end
   end
@@ -101,8 +101,8 @@ defmodule Easy.Sessions do
   @spec delete_client_performed_set(Ctx.t(), String.t()) ::
           {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_client_performed_set(%Ctx{} = ctx, set_id) do
-    with {:ok, client} <- get_client(ctx),
-         {:ok, set} <- get_client_performed_set(ctx.business_id, client.id, set_id) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, set} <- get_client_performed_set(ctx.business_id, client_id, set_id) do
       delete_performed_set(set)
     end
   end
@@ -110,14 +110,6 @@ defmodule Easy.Sessions do
   # ---------------------------------------------------------------------------
   # Private helpers
   # ---------------------------------------------------------------------------
-
-  defp get_client(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
-  end
 
   defp paginated_sessions(business_id, client_id, opts) do
     offset = Keyword.get(opts, :offset, 0)

@@ -1,6 +1,5 @@
 defmodule Easy.NutritionPlans do
   alias Easy.Clients
-  alias Easy.Clients.Client
   alias Easy.Ctx
   alias Easy.MealSlot
   alias Easy.Nutrition.DayMeal
@@ -34,10 +33,10 @@ defmodule Easy.NutritionPlans do
   @spec get_client_plan_full(Ctx.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found}
   def get_client_plan_full(%Ctx{} = ctx, plan_id) do
-    with {:ok, client} <- get_client(ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       Plan
       |> Plan.for_business(ctx.business_id)
-      |> Plan.for_client(ctx.business_id, client.id)
+      |> Plan.for_client(ctx.business_id, client_id)
       |> Plan.include_full(ctx.business_id)
       |> Repo.get(plan_id)
       |> ok_or_not_found()
@@ -71,11 +70,11 @@ defmodule Easy.NutritionPlans do
     limit = min(Keyword.get(opts, :limit, 20), 100)
     status = Keyword.get(opts, :status)
 
-    with {:ok, client} <- get_client(ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       base =
         Plan
         |> Plan.for_business(ctx.business_id)
-        |> Plan.for_client(ctx.business_id, client.id)
+        |> Plan.for_client(ctx.business_id, client_id)
         |> Plan.for_status(status)
 
       {:ok, paginated(base, offset, limit)}
@@ -115,8 +114,8 @@ defmodule Easy.NutritionPlans do
            }}
           | {:error, :not_found}
   def get_client_active_plan_day(%Ctx{} = ctx, date) do
-    with {:ok, client} <- get_client(ctx) do
-      get_active_plan_day(ctx.business_id, client.id, date)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      get_active_plan_day(ctx.business_id, client_id, date)
     end
   end
 
@@ -600,14 +599,6 @@ defmodule Easy.NutritionPlans do
     |> Plan.newest()
     |> limit(1)
     |> Repo.one()
-  end
-
-  defp get_client(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
   end
 
   defp get_coach(%Ctx{} = ctx) do

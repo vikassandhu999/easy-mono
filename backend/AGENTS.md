@@ -213,7 +213,7 @@ Contexts expose application verbs.
 
 ### Actor context (`Ctx`)
 
-`%Easy.Ctx{business_id: uuid, user_id: uuid, coach_id: uuid | nil, owner?: boolean}` is built once in the auth plug from JWT claims and router scope. `coach_id` is set when the user has a coach membership; `owner?` marks the business owner. Client actors carry no id on `Ctx` — contexts resolve the client row from `ctx.user_id` (`Client.for_business/2` + `Client.for_user/2`). Every tenant-scoped public context function takes `%Ctx{}` as its first argument. Pure reference reads with no tenant scope (e.g. `list_muscles`, `list_equipment`) may take plain args.
+`%Easy.Ctx{business_id: uuid, user_id: uuid, coach_id: uuid | nil, client_id: uuid | nil, owner?: boolean}` is built once from JWT claims and router scope. `coach_id` is set when the user has a coach membership; `owner?` marks the business owner. For client actors, the active-client HTTP plug or socket boundary loads the accepted tenant-scoped client once and sets `client_id`; client-self contexts use `ctx.client_id` directly and never resolve identity again from `ctx.user_id`. Coach actors carry `client_id: nil`. Non-HTTP callers constructing a client `Ctx` must provide the trusted client id. Every tenant-scoped public context function takes `%Ctx{}` as its first argument. Pure reference reads with no tenant scope (e.g. `list_muscles`, `list_equipment`) may take plain args.
 
 ### Three-case naming convention
 

@@ -126,10 +126,10 @@ defmodule Easy.Forms do
   @spec list_client_form_assignments(Ctx.t()) ::
           {:ok, [FormAssignment.t()]} | {:error, :not_found}
   def list_client_form_assignments(%Ctx{} = ctx) do
-    with {:ok, client} <- get_client(ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       assignments =
         FormAssignment
-        |> FormAssignment.for_client(ctx.business_id, client.id)
+        |> FormAssignment.for_client(ctx.business_id, client_id)
         |> include_form_template(ctx.business_id)
         |> include_submission_reviews(ctx.business_id)
         |> order_by([a, _t], asc: a.inserted_at)
@@ -292,9 +292,9 @@ defmodule Easy.Forms do
   @spec get_client_form_assignment(Ctx.t(), String.t()) ::
           {:ok, FormAssignment.t()} | {:error, :not_found}
   def get_client_form_assignment(%Ctx{} = ctx, assignment_id) do
-    with {:ok, client} <- get_client(ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       FormAssignment
-      |> FormAssignment.for_client(ctx.business_id, client.id)
+      |> FormAssignment.for_client(ctx.business_id, client_id)
       |> include_form_template(ctx.business_id)
       |> include_submission_reviews(ctx.business_id)
       |> Repo.get(assignment_id)
@@ -720,11 +720,12 @@ defmodule Easy.Forms do
   end
 
   defp get_client(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      Client
+      |> Client.for_business(ctx.business_id)
+      |> Repo.get(client_id)
+      |> ok_or_not_found()
+    end
   end
 
   defp fetch_client(business_id, client_id) do

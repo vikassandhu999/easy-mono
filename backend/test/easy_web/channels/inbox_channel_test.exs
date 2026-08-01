@@ -14,7 +14,11 @@ defmodule EasyWeb.InboxChannelTest do
     {:ok, socket} = connect(EasyWeb.UserSocket, %{"token" => coach_token(coach)})
     {:ok, _reply, _socket} = subscribe_and_join(socket, "inbox")
 
-    {:ok, _message} = Chat.send_client_message(Ctx.new(client.business_id, client.user_id), %{"body" => "yo"})
+    {:ok, _message} =
+      Chat.send_client_message(
+        %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id},
+        %{"body" => "yo"}
+      )
 
     assert_push "conversation_updated", payload
     assert %{conversation_id: conversation_id} = payload
@@ -27,7 +31,11 @@ defmodule EasyWeb.InboxChannelTest do
     {:ok, socket} = connect(EasyWeb.UserSocket, %{"token" => coach_token(other_coach)})
     {:ok, _reply, _socket} = subscribe_and_join(socket, "inbox")
 
-    {:ok, _message} = Chat.send_client_message(Ctx.new(client.business_id, client.user_id), %{"body" => "yo"})
+    {:ok, _message} =
+      Chat.send_client_message(
+        %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id},
+        %{"body" => "yo"}
+      )
 
     refute_push "conversation_updated", %{conversation_id: _}
   end

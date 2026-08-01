@@ -7,7 +7,7 @@ defmodule Easy.WeightEntries do
   alias Easy.Repo
 
   # ---------------------------------------------------------------------------
-  # Case-3: Client self (target resolved via get_client/1 from ctx.user_id)
+  # Case-3: Client self (target from ctx.client_id)
   # ---------------------------------------------------------------------------
 
   @spec list_client_weight_entries(Ctx.t(), keyword()) ::
@@ -16,7 +16,7 @@ defmodule Easy.WeightEntries do
   def list_client_weight_entries(%Ctx{} = ctx, opts \\ []) do
     since = Keyword.get(opts, :since)
 
-    with {:ok, client} <- get_client(ctx),
+    with {:ok, client} <- get_client_account(ctx),
          {:ok, since_date} <- parse_since(since) do
       {:ok, %{client: client, entries: list_entries(ctx.business_id, client.id, since_date)}}
     end
@@ -26,18 +26,18 @@ defmodule Easy.WeightEntries do
           {:ok, WeightEntry.t()}
           | {:error, :not_found | :date_required | :invalid_date | :future_date | Ecto.Changeset.t()}
   def upsert_client_weight_entry(%Ctx{} = ctx, attrs) do
-    with {:ok, client} <- get_client(ctx),
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
          {:ok, date} <- parse_date(attrs[:date]),
          :ok <- ensure_not_future(date) do
-      upsert_and_stamp(ctx.business_id, client.id, date, attrs)
+      upsert_and_stamp(ctx.business_id, client_id, date, attrs)
     end
   end
 
   @spec delete_client_weight_entry(Ctx.t(), String.t()) ::
           {:ok, WeightEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_client_weight_entry(%Ctx{} = ctx, entry_id) do
-    with {:ok, client} <- get_client(ctx),
-         {:ok, entry} <- get_entry(ctx.business_id, client.id, entry_id) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, entry} <- get_entry(ctx.business_id, client_id, entry_id) do
       delete_entry(entry)
     end
   end
@@ -120,13 +120,13 @@ defmodule Easy.WeightEntries do
   # Private
   # ---------------------------------------------------------------------------
 
-  # Resolves the client for the authenticated user (Case-3 / client self path).
-  defp get_client(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
+  defp get_client_account(%Ctx{} = ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      Client
+      |> Client.for_business(ctx.business_id)
+      |> Repo.get(client_id)
+      |> ok_or_not_found()
+    end
   end
 
   # Resolves a client by explicit id, scoped to the business and visible to the

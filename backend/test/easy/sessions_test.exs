@@ -10,7 +10,7 @@ defmodule Easy.SessionsTest do
       business = insert(:business)
       client = insert(:client, business: business)
       session = insert(:workout_session, business: business, client: client, state: :active)
-      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id}
+      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
 
       assert {:ok, completed} =
                Sessions.update_client_session(client_ctx, session.id, %{
@@ -36,7 +36,7 @@ defmodule Easy.SessionsTest do
           ended_at: stamped_at
         )
 
-      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id}
+      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
 
       {result, queries} =
         capture_queries(fn ->
@@ -55,7 +55,7 @@ defmodule Easy.SessionsTest do
       business = insert(:business)
       client = insert(:client, business: business)
       session = insert(:workout_session, business: business, client: client, state: :active)
-      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id}
+      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
 
       {result, queries} =
         capture_queries(fn ->
@@ -138,7 +138,11 @@ defmodule Easy.SessionsTest do
         )
       end
 
-      %{business: business, client: client, client_ctx: %Ctx{business_id: business.id, user_id: client.user_id}}
+      %{
+        business: business,
+        client: client,
+        client_ctx: %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id}
+      }
     end
 
     test "defaults to 20 rows and reports the full count", %{business: business, client: client} do

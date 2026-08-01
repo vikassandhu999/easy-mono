@@ -208,7 +208,11 @@ defmodule Easy.FormsTest do
 
       assert {:ok, []} = Forms.list_form_assignments_for_client(ctx, client.id)
 
-      client_self_ctx = %Ctx{business_id: client.business_id, user_id: client.user_id}
+      client_self_ctx = %Ctx{
+        business_id: client.business_id,
+        user_id: client.user_id,
+        client_id: client.id
+      }
 
       assert {:error, :not_found} =
                Forms.submit_client_form_assignment(client_self_ctx, assignment.id, %{
@@ -1117,7 +1121,7 @@ defmodule Easy.FormsTest do
   end
 
   defp client_ctx(client) do
-    %Ctx{business_id: client.business_id, user_id: client.user_id}
+    %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
   end
 
   defp valid_required_answers(sections) do

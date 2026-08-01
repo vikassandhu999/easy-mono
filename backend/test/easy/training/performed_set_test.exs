@@ -184,7 +184,7 @@ defmodule Easy.Training.TrainingPerformedSetTest do
     )
 
     session = insert(:workout_session, client: client, business: business, state: :active)
-    ctx = %Ctx{user_id: client.user_id, business_id: client.business_id}
+    ctx = %Ctx{user_id: client.user_id, business_id: client.business_id, client_id: client.id}
 
     %{business: business, ctx: ctx, session: session, exercise: exercise}
   end

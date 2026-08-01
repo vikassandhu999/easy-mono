@@ -32,11 +32,11 @@ defmodule Easy.TrainingPlans do
   @spec get_client_plan_full(Ctx.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found}
   def get_client_plan_full(%Ctx{} = ctx, plan_id) do
-    with {:ok, client} <- get_client(ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       business_id = ctx.business_id
 
       TrainingPlan
-      |> TrainingPlan.for_client(business_id, client.id)
+      |> TrainingPlan.for_client(business_id, client_id)
       |> TrainingPlan.include_workouts(business_id)
       |> Repo.get(plan_id)
       |> ok_or_not_found()
@@ -46,8 +46,8 @@ defmodule Easy.TrainingPlans do
   @spec get_client_active_plan_day(Ctx.t(), Date.t()) ::
           {:ok, map()} | {:error, :not_found}
   def get_client_active_plan_day(%Ctx{} = ctx, date) do
-    with {:ok, client} <- get_client(ctx) do
-      get_active_plan_day_for_client(ctx.business_id, client.id, date)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      get_active_plan_day_for_client(ctx.business_id, client_id, date)
     end
   end
 
@@ -81,12 +81,12 @@ defmodule Easy.TrainingPlans do
     limit = min(Keyword.get(opts, :limit, 20), 100)
     status = Keyword.get(opts, :status)
 
-    with {:ok, client} <- get_client(ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       business_id = ctx.business_id
 
       base =
         TrainingPlan
-        |> TrainingPlan.for_client(business_id, client.id)
+        |> TrainingPlan.for_client(business_id, client_id)
         |> TrainingPlan.for_status(status)
 
       preload_fun = fn query ->
@@ -257,14 +257,6 @@ defmodule Easy.TrainingPlans do
   end
 
   defp weekday_order(weekday), do: Enum.find_index(TrainingWorkout.day_names(), &(&1 == weekday))
-
-  defp get_client(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
-  end
 
   defp get_coach(%Ctx{} = ctx) do
     Coach

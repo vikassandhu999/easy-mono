@@ -23,6 +23,7 @@ defmodule EasyWeb.ConversationChannelTest do
 
   test "client can join their own conversation and receives message_new", ctx do
     {:ok, socket} = connect(EasyWeb.UserSocket, %{"token" => client_token(ctx.client)})
+    assert socket.assigns.ctx.client_id == ctx.client.id
     {:ok, _reply, _socket} = subscribe_and_join(socket, "conversation:#{ctx.conversation.id}")
 
     coach_ctx = Ctx.new(ctx.coach.business_id, ctx.coach.user_id, ctx.coach.id, true)
@@ -90,5 +91,17 @@ defmodule EasyWeb.ConversationChannelTest do
     other = insert(:client, business: ctx.coach.business, creator: ctx.coach, user: insert(:user))
     {:ok, socket} = connect(EasyWeb.UserSocket, %{"token" => client_token(other)})
     assert {:error, %{reason: "unauthorized"}} = subscribe_and_join(socket, "conversation:#{ctx.conversation.id}")
+  end
+
+  test "inactive client cannot connect", ctx do
+    inactive =
+      insert(:client,
+        business: ctx.coach.business,
+        creator: ctx.coach,
+        user: insert(:user),
+        status: :inactive
+      )
+
+    assert :error = connect(EasyWeb.UserSocket, %{"token" => client_token(inactive)})
   end
 end

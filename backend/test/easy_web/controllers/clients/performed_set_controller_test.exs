@@ -185,7 +185,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
     test "updates a logged set", ctx do
       {:ok, set} =
         Sessions.create_client_performed_set(
-          %Easy.Ctx{user_id: ctx.client.user_id, business_id: ctx.business.id},
+          %Easy.Ctx{user_id: ctx.client.user_id, business_id: ctx.business.id, client_id: ctx.client.id},
           ctx.session.id,
           %{
             exercise_id: ctx.exercise.id,
@@ -218,7 +218,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
 
       {:ok, other_set} =
         Sessions.create_client_performed_set(
-          %Easy.Ctx{user_id: other_client.user_id, business_id: ctx.business.id},
+          %Easy.Ctx{user_id: other_client.user_id, business_id: ctx.business.id, client_id: other_client.id},
           other_session.id,
           %{
             exercise_id: ctx.exercise.id,
@@ -245,7 +245,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
     test "deletes a logged set", ctx do
       {:ok, set} =
         Sessions.create_client_performed_set(
-          %Easy.Ctx{user_id: ctx.client.user_id, business_id: ctx.business.id},
+          %Easy.Ctx{user_id: ctx.client.user_id, business_id: ctx.business.id, client_id: ctx.client.id},
           ctx.session.id,
           %{
             exercise_id: ctx.exercise.id,
@@ -266,7 +266,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
 
       {:ok, other_set} =
         Sessions.create_client_performed_set(
-          %Easy.Ctx{user_id: other_client.user_id, business_id: ctx.business.id},
+          %Easy.Ctx{user_id: other_client.user_id, business_id: ctx.business.id, client_id: other_client.id},
           other_session.id,
           %{
             exercise_id: ctx.exercise.id,

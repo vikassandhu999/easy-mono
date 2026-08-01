@@ -216,7 +216,7 @@ defmodule Easy.TrainingPlansTest do
       workout = insert(:workout, plan: plan, business: coach.business, weekdays: [weekday])
       _rest = insert(:workout, plan: plan, business: coach.business, weekdays: [])
 
-      ctx = Ctx.new(coach.business_id, client.user_id)
+      ctx = %Ctx{business_id: coach.business_id, user_id: client.user_id, client_id: client.id}
 
       assert {:ok, %{plan: found_plan, workout: found_workout, day: ^weekday}} =
                TrainingPlans.get_client_active_plan_day(ctx, today)
@@ -240,7 +240,7 @@ defmodule Easy.TrainingPlansTest do
         )
 
       insert(:workout, plan: plan, business: coach.business, weekdays: [])
-      ctx = Ctx.new(coach.business_id, client.user_id)
+      ctx = %Ctx{business_id: coach.business_id, user_id: client.user_id, client_id: client.id}
 
       assert {:ok, %{workout: nil}} = TrainingPlans.get_client_active_plan_day(ctx, today)
     end

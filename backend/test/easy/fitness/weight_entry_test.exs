@@ -301,7 +301,9 @@ defmodule Easy.Fitness.WeightEntryTest do
     insert(:client, creator: coach, business: coach.business, user: insert(:user))
   end
 
-  defp client_ctx(client), do: Easy.Ctx.new(client.business_id, client.user_id)
+  defp client_ctx(client) do
+    %Easy.Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
+  end
 
   defp insert_weight_entry(attrs \\ []) do
     client = Keyword.get(attrs, :client) || insert_client()

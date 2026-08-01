@@ -89,8 +89,8 @@ defmodule Easy.Chat do
 
   @spec get_client_conversation(Ctx.t()) :: {:ok, Conversation.t()} | {:error, :not_found}
   def get_client_conversation(%Ctx{} = ctx) do
-    with {:ok, client} <- get_client_account(ctx) do
-      upsert_conversation(ctx.business_id, client.id, :client)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      upsert_conversation(ctx.business_id, client_id, :client)
     end
   end
 
@@ -105,9 +105,9 @@ defmodule Easy.Chat do
   @spec send_client_message(Ctx.t(), map()) ::
           {:ok, Message.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def send_client_message(%Ctx{} = ctx, attrs) do
-    with {:ok, client} <- get_client_account(ctx),
-         {:ok, conversation} <- upsert_conversation(ctx.business_id, client.id, :client) do
-      insert_message(ctx, conversation, :client, client.id, attrs, :reject_embed)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, conversation} <- upsert_conversation(ctx.business_id, client_id, :client) do
+      insert_message(ctx, conversation, :client, client_id, attrs, :reject_embed)
     end
   end
 
@@ -416,14 +416,6 @@ defmodule Easy.Chat do
   # Fail closed: coach routes always provide owner? or coach_id. A ctx with
   # neither is malformed and must see nothing.
   defp constrain_to_visible_clients(query, %Ctx{}), do: where(query, false)
-
-  defp get_client_account(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
-  end
 
   defp get_coach(%Ctx{} = ctx) do
     Coach

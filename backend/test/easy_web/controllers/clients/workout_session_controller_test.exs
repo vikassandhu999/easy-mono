@@ -8,7 +8,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     client = insert(:client, creator: coach, business: coach.business)
     conn = build_conn() |> authenticate_client(client)
 
-    ctx = %Ctx{user_id: client.user_id, business_id: coach.business_id}
+    ctx = %Ctx{user_id: client.user_id, business_id: coach.business_id, client_id: client.id}
 
     %{conn: conn, coach: coach, client: client, business: coach.business, ctx: ctx}
   end
@@ -134,6 +134,30 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
   end
 
   describe "GET /v1/client/training-sessions" do
+    test "resolves client identity once with a query count independent of session count", ctx do
+      insert(:workout_session, client: ctx.client, business: ctx.business)
+
+      {_conn, one_session_queries} =
+        capture_queries(fn -> get(ctx.conn, "/v1/client/training-sessions") end)
+
+      insert(:workout_session,
+        client: ctx.client,
+        business: ctx.business,
+        state: :completed
+      )
+
+      {_conn, two_session_queries} =
+        capture_queries(fn ->
+          build_conn()
+          |> authenticate_client(ctx.client)
+          |> get("/v1/client/training-sessions")
+        end)
+
+      assert length(two_session_queries) == length(one_session_queries)
+      assert Enum.count(one_session_queries, &client_identity_query?/1) == 1
+      assert Enum.count(two_session_queries, &client_identity_query?/1) == 1
+    end
+
     test "lists only this client's sessions (no date filter)", ctx do
       insert(:workout_session, client: ctx.client, business: ctx.business)
 
@@ -326,6 +350,36 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
         )
 
       assert json_response(conn, 404)
+    end
+  end
+
+  defp client_identity_query?(query) do
+    String.starts_with?(query, "SELECT") and String.contains?(query, ~s(FROM "clients"))
+  end
+
+  defp capture_queries(fun) do
+    parent = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:easy, :repo, :query],
+      fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
+      nil
+    )
+
+    try do
+      {fun.(), received_queries()}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp received_queries(queries \\ []) do
+    receive do
+      {:query, query} -> received_queries([query | queries])
+    after
+      0 -> Enum.reverse(queries)
     end
   end
 end

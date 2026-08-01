@@ -597,7 +597,7 @@ defmodule Easy.Nutrition.MealLogTest do
 
     {:ok, template} = NutritionPlans.create_plan(ctx, %{"name" => "Template"})
     client = insert(:client, business: plan.business, assigned_coach: plan.creator)
-    client_ctx = %Ctx{business_id: plan.business_id, user_id: client.user_id}
+    client_ctx = %Ctx{business_id: plan.business_id, user_id: client.user_id, client_id: client.id}
     {:ok, assigned_plan} = NutritionPlans.assign_plan_to_client(ctx, client.id, template.id, %{})
 
     [day] = PlanDay |> PlanDay.for_plan(assigned_plan.id) |> Repo.all()

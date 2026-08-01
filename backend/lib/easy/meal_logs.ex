@@ -46,7 +46,7 @@ defmodule Easy.MealLogs do
   end
 
   # ---------------------------------------------------------------------------
-  # Client self fns (Case-3: Ctx-first, resolves client via private get_client/1)
+  # Client self fns (Case-3: Ctx-first, target from ctx.client_id)
   # ---------------------------------------------------------------------------
 
   @spec list_client_meal_logs(Ctx.t(), keyword()) ::
@@ -56,10 +56,10 @@ defmodule Easy.MealLogs do
     from_date = Keyword.get(opts, :from)
     to_date = Keyword.get(opts, :to)
 
-    with {:ok, client} <- get_client(ctx) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       meal_logs =
         MealLog
-        |> MealLog.for_client(ctx.business_id, client.id)
+        |> MealLog.for_client(ctx.business_id, client_id)
         |> apply_date_filters(date, from_date, to_date)
         |> MealLog.oldest()
         |> MealLog.include_entries()
@@ -72,25 +72,25 @@ defmodule Easy.MealLogs do
   @spec create_client_food_log_entry(Ctx.t(), map()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
   def create_client_food_log_entry(%Ctx{} = ctx, attrs) do
-    with {:ok, client} <- get_client(ctx) do
-      log_entry(ctx.business_id, client.id, attrs)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      log_entry(ctx.business_id, client_id, attrs)
     end
   end
 
   @spec update_client_food_log_entry(Ctx.t(), String.t(), map()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
   def update_client_food_log_entry(%Ctx{} = ctx, entry_id, attrs) do
-    with {:ok, client} <- get_client(ctx),
-         {:ok, entry} <- get_client_food_log_entry_scoped(ctx.business_id, client.id, entry_id) do
-      update_entry(entry, ctx.business_id, client.id, attrs)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, entry} <- get_client_food_log_entry_scoped(ctx.business_id, client_id, entry_id) do
+      update_entry(entry, ctx.business_id, client_id, attrs)
     end
   end
 
   @spec delete_client_food_log_entry(Ctx.t(), String.t()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
   def delete_client_food_log_entry(%Ctx{} = ctx, entry_id) do
-    with {:ok, client} <- get_client(ctx),
-         {:ok, entry} <- get_client_food_log_entry_scoped(ctx.business_id, client.id, entry_id) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         {:ok, entry} <- get_client_food_log_entry_scoped(ctx.business_id, client_id, entry_id) do
       delete_entry(entry, ctx.business_id)
     end
   end
@@ -101,9 +101,9 @@ defmodule Easy.MealLogs do
     meal_slot = attrs[:meal_slot]
     meal_id = attrs[:meal_id]
 
-    with {:ok, client} <- get_client(ctx),
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
          {:ok, date} <- fetch_date(attrs) do
-      log_meal(ctx.business_id, client.id, date, meal_slot, meal_id)
+      log_meal(ctx.business_id, client_id, date, meal_slot, meal_id)
     end
   end
 
@@ -112,9 +112,9 @@ defmodule Easy.MealLogs do
   def log_client_day(%Ctx{} = ctx, attrs) do
     plan_id = attrs[:plan_id]
 
-    with {:ok, client} <- get_client(ctx),
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
          {:ok, date} <- fetch_date(attrs) do
-      log_day(ctx.business_id, client.id, date, plan_id)
+      log_day(ctx.business_id, client_id, date, plan_id)
     end
   end
 
@@ -124,15 +124,15 @@ defmodule Easy.MealLogs do
     meal_id = attrs[:meal_id]
     meal_slot = attrs[:meal_slot]
 
-    with {:ok, client} <- get_client(ctx),
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
          {:ok, date} <- fetch_date(attrs),
-         meal when not is_nil(meal) <- load_meal_with_items(ctx.business_id, client.id, meal_id) do
-      case get_existing_meal_log(ctx.business_id, client.id, date, meal_slot) do
+         meal when not is_nil(meal) <- load_meal_with_items(ctx.business_id, client_id, meal_id) do
+      case get_existing_meal_log(ctx.business_id, client_id, date, meal_slot) do
         %MealLog{nutrition_meal_id: existing_meal_id} = existing when existing_meal_id == meal_id ->
           {:ok, Repo.preload(existing, food_log_entries: FoodLogEntry.oldest())}
 
         _ ->
-          do_switch_meal_option(ctx, client.id, date, meal_slot, meal)
+          do_switch_meal_option(ctx, client_id, date, meal_slot, meal)
       end
     else
       nil -> {:error, :not_found}
@@ -994,16 +994,7 @@ defmodule Easy.MealLogs do
   defp apply_date_filters(query, _date, _from_date, _to_date),
     do: MealLog.for_date(query, Date.utc_today())
 
-  # Resolves the client record for the authenticated user (client self path).
-  defp get_client(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> ok_or_not_found()
-  end
-
-  # Entry getter scoped to a specific client (used internally after resolving client).
+  # Entry getter scoped to a specific client.
   defp get_client_food_log_entry_scoped(business_id, client_id, entry_id) do
     FoodLogEntry
     |> FoodLogEntry.for_client(business_id, client_id)

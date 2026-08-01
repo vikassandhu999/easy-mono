@@ -176,7 +176,10 @@ defmodule Easy.ChatTest do
     # Easy.DataCase already imports owner_ctx/1 (for a %Business{}), so this
     # owner-privileged ctx built from a coach row gets its own name.
     defp owner_coach_ctx(coach), do: Easy.Ctx.new(coach.business_id, coach.user_id, coach.id, true)
-    defp client_ctx(client), do: Ctx.new(client.business_id, client.user_id)
+
+    defp client_ctx(client) do
+      %Ctx{business_id: client.business_id, user_id: client.user_id, client_id: client.id}
+    end
 
     setup do
       coach = insert(:coach)

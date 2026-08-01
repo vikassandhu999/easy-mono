@@ -81,7 +81,7 @@ defmodule Easy.Nutrition.LibraryDeleteTest do
 
     %{
       ctx: Ctx.new(business.id, coach.user_id, coach.id, true),
-      client_ctx: %Ctx{business_id: business.id, user_id: client.user_id},
+      client_ctx: %Ctx{business_id: business.id, user_id: client.user_id, client_id: client.id},
       business: business,
       coach: coach,
       meal: meal

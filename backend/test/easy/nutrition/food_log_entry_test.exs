@@ -129,7 +129,7 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
     %{
       business: coach.business,
       client: client,
-      client_ctx: %Ctx{business_id: coach.business_id, user_id: client.user_id},
+      client_ctx: %Ctx{business_id: coach.business_id, user_id: client.user_id, client_id: client.id},
       coach: coach,
       food: food,
       meal_log: meal_log

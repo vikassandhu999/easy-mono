@@ -437,7 +437,7 @@ defmodule Easy.NutritionPlanDaysTest do
         })
 
       client = insert(:client, business: plan.business, assigned_coach: plan.creator)
-      client_ctx = %Easy.Ctx{business_id: plan.business_id, user_id: client.user_id}
+      client_ctx = %Easy.Ctx{business_id: plan.business_id, user_id: client.user_id, client_id: client.id}
 
       {:ok, assigned_plan} =
         NutritionPlans.assign_plan_to_client(ctx, client.id, template.id, %{})

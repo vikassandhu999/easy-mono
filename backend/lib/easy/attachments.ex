@@ -29,8 +29,8 @@ defmodule Easy.Attachments do
 
   @spec create_client_upload(Ctx.t(), map()) :: upload_result()
   def create_client_upload(%Ctx{} = ctx, attrs) do
-    with {:ok, client} <- get_client(ctx) do
-      create_upload_transaction(ctx.business_id, client.id, :client, client.id, attrs)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      create_upload_transaction(ctx.business_id, client_id, :client, client_id, attrs)
     end
   end
 
@@ -147,8 +147,8 @@ defmodule Easy.Attachments do
   defp authorize_coach_attachments(%Ctx{}, _attachments), do: {:error, :not_found}
 
   defp authorize_client_attachments(%Ctx{} = ctx, attachments) do
-    with {:ok, client} <- get_client(ctx),
-         true <- Enum.all?(attachments, &(&1.client_id == client.id)) do
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
+         true <- Enum.all?(attachments, &(&1.client_id == client_id)) do
       :ok
     else
       _ -> {:error, :not_found}
@@ -174,17 +174,6 @@ defmodule Easy.Attachments do
     |> case do
       {:ok, downloads} -> {:ok, Enum.reverse(downloads)}
       error -> error
-    end
-  end
-
-  defp get_client(%Ctx{} = ctx) do
-    Client
-    |> Client.for_business(ctx.business_id)
-    |> Client.for_user(ctx.user_id)
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      client -> {:ok, client}
     end
   end
 

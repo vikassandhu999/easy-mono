@@ -254,10 +254,17 @@ defmodule Easy.FormsTest do
 
       assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
 
-      assert {:ok, submission} =
-               Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
-                 answers: %{"weight" => 179.4, "weight-2" => 179.2}
-               })
+      {result, queries} =
+        capture_queries(fn ->
+          Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
+            answers: %{"weight" => 179.4, "weight-2" => 179.2}
+          })
+        end)
+
+      assert {:ok, submission} = result
+      assert Repo.reload(client).last_active_at == submission.submitted_at
+
+      assert Enum.count(queries, &String.starts_with?(&1, ~s(UPDATE "clients"))) == 1
 
       derived =
         WeightEntry
@@ -366,6 +373,8 @@ defmodule Easy.FormsTest do
                Forms.submit_client_form_assignment(client_ctx(client), assignment.id, %{
                  answers: %{"photos" => [audio.id]}
                })
+
+      assert is_nil(Repo.reload(client).last_active_at)
     end
 
     test "rejects photo attachments outside the submitting client" do
@@ -1071,6 +1080,32 @@ defmodule Easy.FormsTest do
       assert {:ok, _assignments} = Forms.list_form_assignments_for_client(ctx, client_b.id)
       assert {:ok, _updated} = Forms.update_form_assignment(ctx, assignment_b.id, %{"priority" => "high"})
       assert {:ok, _submissions} = Forms.list_form_submissions(ctx, assignment_b.id)
+    end
+  end
+
+  defp capture_queries(fun) do
+    parent = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:easy, :repo, :query],
+      fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
+      nil
+    )
+
+    try do
+      {fun.(), received_queries()}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp received_queries(queries \\ []) do
+    receive do
+      {:query, query} -> received_queries([query | queries])
+    after
+      0 -> Enum.reverse(queries)
     end
   end
 

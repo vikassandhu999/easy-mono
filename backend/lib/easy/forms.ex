@@ -345,7 +345,19 @@ defmodule Easy.Forms do
 
     submission = insert_submission!(ctx.business_id, client.id, assignment.id, attrs)
     append_weight_entries!(ctx.business_id, client, template.sections, answers, submission)
-    complete_assignment!(assignment, submission)
+    submission = complete_assignment!(assignment, submission)
+    stamp_client_activity!(ctx.business_id, client.id, submitted_at)
+    submission
+  end
+
+  defp stamp_client_activity!(business_id, client_id, occurred_at) do
+    Client
+    |> Client.last_active_stamp(business_id, client_id, occurred_at)
+    |> Repo.update_all([])
+    |> case do
+      {1, nil} -> :ok
+      {0, nil} -> Repo.rollback(:not_found)
+    end
   end
 
   defp insert_submission!(business_id, client_id, assignment_id, attrs) do

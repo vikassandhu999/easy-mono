@@ -89,12 +89,13 @@ defmodule Easy.Forms do
   def assign_form_template_to_client(%Ctx{} = ctx, client_id, template_id, attrs) do
     with {:ok, template} <- get_form_template(ctx, template_id),
          {:ok, client} <- Clients.authorize_client(ctx, client_id) do
-      attrs = %{
-        "priority" => Map.get(attrs, :priority, "normal"),
-        "due_date" => Map.get(attrs, :due_date),
-        "purpose" => template.purpose,
-        "status" => "assigned"
-      }
+      # Body carries only the editable fields; purpose and status are
+      # server-decided. FormTemplate.purpose and FormAssignment.purpose are
+      # both Ecto.Enum, so the atom passes straight through cast.
+      attrs =
+        attrs
+        |> Map.take([:priority, :due_date])
+        |> Map.merge(%{purpose: template.purpose, status: :assigned})
 
       with {:ok, assignment} <-
              ctx.business_id
@@ -254,8 +255,13 @@ defmodule Easy.Forms do
     end
   end
 
-  @spec list_unreviewed_check_in_submissions(Ctx.t()) :: {:ok, [FormSubmission.t()]}
-  def list_unreviewed_check_in_submissions(%Ctx{} = ctx) do
+  @spec list_unreviewed_check_in_submissions(Ctx.t(), keyword()) :: {:ok, [FormSubmission.t()]}
+  def list_unreviewed_check_in_submissions(%Ctx{} = ctx, opts \\ []) do
+    offset = max(Keyword.get(opts, :offset, 0), 0)
+    # Default 100 (not the usual 20): the queue renders whole in the coach app,
+    # so this is a runaway bound, not page size. A queue past 100 is stale work.
+    limit = min(max(Keyword.get(opts, :limit, 100), 0), 100)
+
     submissions =
       FormSubmission
       |> FormSubmission.for_business(ctx.business_id)
@@ -264,6 +270,7 @@ defmodule Easy.Forms do
       |> FormSubmission.for_visible_clients(ctx)
       |> FormSubmission.include_review_context(ctx.business_id)
       |> FormSubmission.newest()
+      |> Easy.Utils.paginate(offset, limit)
       |> Repo.all()
       |> attach_submission_attachments(ctx.business_id)
 
@@ -279,18 +286,6 @@ defmodule Easy.Forms do
         {:ok, reviewed} -> {:ok, attach_submission_attachment(ctx.business_id, reviewed)}
         error -> error
       end
-    end
-  end
-
-  @spec get_form_assignment_for_client(Ctx.t(), String.t(), String.t()) ::
-          {:ok, FormAssignment.t()} | {:error, :not_found}
-  def get_form_assignment_for_client(%Ctx{} = ctx, client_id, assignment_id) do
-    with :ok <- Clients.authorize_client_id(ctx, client_id) do
-      FormAssignment
-      |> FormAssignment.for_client(ctx.business_id, client_id)
-      |> include_form_template(ctx.business_id)
-      |> Repo.get(assignment_id)
-      |> ok_or_not_found()
     end
   end
 
@@ -520,28 +515,41 @@ defmodule Easy.Forms do
     end
   end
 
+  # Sends run concurrently (bounded) so one slow SMTP round-trip doesn't block
+  # the sweep serially — 2k reminders at 300ms each is 10 minutes single-file.
+  # Each reminder is stamped only after its own send, so a crash re-sends at
+  # most the in-flight batch on the next sweep.
   defp send_check_in_reminders(assignments, reminder_type) do
-    Enum.reduce(assignments, {0, 0}, &send_check_in_reminder(&1, reminder_type, &2))
+    Easy.TaskSupervisor
+    |> Task.Supervisor.async_stream_nolink(
+      assignments,
+      &deliver_check_in_reminder(&1, reminder_type),
+      max_concurrency: 10,
+      ordered: false,
+      timeout: 60_000,
+      on_timeout: :kill_task
+    )
+    |> Enum.reduce({0, 0}, fn
+      {:ok, :sent}, counts -> increment_count(counts, 0)
+      _skipped_or_crashed, counts -> increment_count(counts, 1)
+    end)
   end
 
-  defp send_check_in_reminder(%FormAssignment{client: %Client{email: email}} = assignment, type, counts)
+  defp deliver_check_in_reminder(%FormAssignment{client: %Client{email: email}} = assignment, type)
        when is_binary(email) do
     name = [assignment.client.first_name, assignment.client.last_name] |> Enum.filter(&is_binary/1) |> Enum.join(" ")
     email_message = reminder_email(type, email, name, assignment.id)
 
-    case Easy.MailerDelivery.deliver_sync(email_message, metadata: %{assignment_id: assignment.id}) do
-      {:ok, _response} ->
-        case stamp_reminder(assignment, type) do
-          {:ok, _assignment} -> increment_count(counts, 0)
-          {:error, _changeset} -> increment_count(counts, 1)
-        end
-
-      {:error, _reason} ->
-        increment_count(counts, 1)
+    with {:ok, _response} <-
+           Easy.MailerDelivery.deliver_sync(email_message, metadata: %{assignment_id: assignment.id}),
+         {:ok, _assignment} <- stamp_reminder(assignment, type) do
+      :sent
+    else
+      _error -> :skipped
     end
   end
 
-  defp send_check_in_reminder(_assignment, _type, counts), do: increment_count(counts, 1)
+  defp deliver_check_in_reminder(_assignment, _type), do: :skipped
 
   defp reminder_email(:due, email, name, assignment_id),
     do: Easy.Emails.check_in_due_email(email, name, assignment_id)
@@ -811,7 +819,7 @@ defmodule Easy.Forms do
   defp default_check_in_template(business_id) do
     FormTemplate
     |> FormTemplate.for_business(business_id)
-    |> FormTemplate.with_system_key("weekly_check_in")
+    |> FormTemplate.for_system_key("weekly_check_in")
     |> Repo.one()
   end
 

@@ -334,38 +334,6 @@ defmodule Easy.Clients.ReadBoundaryTest do
       assert {:ok, client} = Clients.invite_client(trainer_ctx(trainer), params_for(:client_attrs))
       assert client.assigned_coach_id == trainer.id
     end
-
-    test "create_inquiry/2 (public funnel) assigns the business owner's coach row" do
-      business = insert(:business)
-      owner_coach = insert(:coach, business: business, user: business.owner, status: :active)
-
-      ctx = Easy.Ctx.new(business.id, nil)
-
-      assert {:ok, client} =
-               Clients.create_inquiry(ctx, %{
-                 first_name: "Prospect",
-                 email: "prospect@test.com",
-                 phone: "123-000-0000"
-               })
-
-      assert client.assigned_coach_id == owner_coach.id
-    end
-
-    test "create_inquiry/2 leaves assigned_coach_id nil (fail closed) when the owner has no coach row" do
-      business = insert(:business)
-      ctx = Easy.Ctx.new(business.id, nil)
-
-      assert {:ok, client} =
-               Clients.create_inquiry(ctx, %{
-                 first_name: "Prospect",
-                 email: "no-owner-coach@test.com",
-                 phone: "123-000-0001"
-               })
-
-      assert client.assigned_coach_id == nil
-      # The owner still sees this client via visible_to's owner? clause.
-      assert {:ok, _} = Clients.get_client(owner_ctx(business), client.id)
-    end
   end
 
   describe "reassign_client/3" do

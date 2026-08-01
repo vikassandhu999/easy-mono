@@ -83,30 +83,54 @@ defmodule Easy.Workouts do
     end
   end
 
+  # The batch's exercises are fetched once up front and reused for validation
+  # and the response preload, instead of 2 lookups per element.
   defp insert_workout_elements!(business_id, workout_id, elements) do
     start = next_position(business_id, workout_id)
+    exercises = load_referenced_exercises(business_id, elements)
 
     elements
     |> Enum.with_index(start)
     |> Enum.map(fn {attrs, position} ->
-      case insert_workout_element(business_id, workout_id, attrs, position) do
+      case insert_workout_element(business_id, workout_id, attrs, position, exercises) do
         {:ok, element} -> element
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
   end
 
-  defp insert_workout_element(business_id, workout_id, attrs, position) do
-    with {:ok, changeset} <-
-           business_id
-           |> TrainingWorkoutExercise.insert_changeset(workout_id, attrs)
-           |> validate_exercise_in_business() do
+  defp load_referenced_exercises(business_id, elements) do
+    ids = elements |> Enum.map(&Map.get(&1, :exercise_id)) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    if ids == [] do
+      %{}
+    else
+      TrainingExercise
+      |> TrainingExercise.for_business_or_system(business_id)
+      |> where([e], e.id in ^ids)
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+    end
+  end
+
+  defp insert_workout_element(business_id, workout_id, attrs, position, exercises) do
+    changeset = TrainingWorkoutExercise.insert_changeset(business_id, workout_id, attrs)
+    exercise_id = Ecto.Changeset.get_field(changeset, :exercise_id)
+
+    if changeset.valid? and not is_nil(exercise_id) and not Map.has_key?(exercises, exercise_id) do
+      {:error, :not_found}
+    else
       changeset
       |> Ecto.Changeset.put_change(:position, position)
       |> Repo.insert()
-      |> preload_element()
+      |> put_element_exercise(exercises)
     end
   end
+
+  defp put_element_exercise({:ok, %TrainingWorkoutExercise{} = element}, exercises),
+    do: {:ok, %{element | exercise: Map.get(exercises, element.exercise_id)}}
+
+  defp put_element_exercise(error, _exercises), do: error
 
   @spec update_workout_element(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
@@ -182,16 +206,23 @@ defmodule Easy.Workouts do
     end
   end
 
+  # One UPDATE for the whole permutation: position = index of the row's id in
+  # ordered_ids (0-based), instead of one UPDATE per element.
   defp reassign_positions(business_id, workout_id, ordered_ids) do
-    ordered_ids
-    |> Enum.with_index()
-    |> Enum.each(fn {id, index} ->
-      TrainingWorkoutExercise
-      |> TrainingWorkoutExercise.for_business(business_id)
-      |> TrainingWorkoutExercise.for_workout(workout_id)
-      |> where([e], e.id == ^id)
-      |> Repo.update_all(set: [position: index])
-    end)
+    TrainingWorkoutExercise
+    |> TrainingWorkoutExercise.for_business(business_id)
+    |> TrainingWorkoutExercise.for_workout(workout_id)
+    |> update([e],
+      set: [
+        position:
+          fragment(
+            "array_position(?::uuid[], ?) - 1",
+            type(^ordered_ids, {:array, Ecto.UUID}),
+            e.id
+          )
+      ]
+    )
+    |> Repo.update_all([])
   end
 
   defp ordered_workout_elements(business_id, workout_id) do

@@ -99,14 +99,6 @@ defmodule EasyWeb.OpenApi.Schemas.MealLog do
   })
 end
 
-defmodule EasyWeb.OpenApi.Schemas.MealLogResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.{MealLog, Shared}
-
-  OpenApiSpex.schema(Shared.data_response(MealLog, "MealLogResponse"))
-end
-
 defmodule EasyWeb.OpenApi.Schemas.MealLogListResponse do
   require OpenApiSpex
 

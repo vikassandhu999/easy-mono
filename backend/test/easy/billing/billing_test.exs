@@ -102,29 +102,6 @@ defmodule Easy.BillingTest do
     end
   end
 
-  describe "ensure_seat_available/1" do
-    test "ok below the limit, seat_limit_reached at the limit" do
-      business = insert(:business)
-      insert(:business_billing, business: business, free_seats: 2)
-      insert(:client, business: business, status: :active)
-
-      assert :ok = Billing.ensure_seat_available(ctx_for(business))
-
-      insert(:client, business: business, status: :pending)
-
-      assert {:error, :seat_limit_reached} = Billing.ensure_seat_available(ctx_for(business))
-    end
-
-    test "paid seats raise the limit" do
-      business = insert(:business)
-      insert(:business_billing, business: business, paid_seats: 1, status: :active)
-      insert(:client, business: business, status: :active)
-      insert(:client, business: business, status: :active)
-
-      assert :ok = Billing.ensure_seat_available(ctx_for(business))
-    end
-  end
-
   describe "owner-only operations" do
     test "reject a non-owner before doing any work" do
       business = insert(:business)

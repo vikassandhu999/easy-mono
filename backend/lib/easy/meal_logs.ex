@@ -23,7 +23,8 @@ defmodule Easy.MealLogs do
   # ---------------------------------------------------------------------------
 
   # Date-bounded lists return {:ok, [items]} — no pagination needed since the
-  # query is always bounded by date / date-range (a per-day or per-week read).
+  # query is always bounded by date / date-range (a per-day or per-week read);
+  # apply_date_filters/4 falls back to today when no bound is given.
   @spec list_meal_logs_for_client(Ctx.t(), String.t(), keyword()) ::
           {:ok, [MealLog.t()]} | {:error, :not_found}
   def list_meal_logs_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
@@ -131,7 +132,7 @@ defmodule Easy.MealLogs do
           {:ok, Repo.preload(existing, food_log_entries: FoodLogEntry.oldest())}
 
         _ ->
-          do_switch_meal_option(ctx, client.id, date, meal_slot, meal_id)
+          do_switch_meal_option(ctx, client.id, date, meal_slot, meal)
       end
     else
       nil -> {:error, :not_found}
@@ -139,12 +140,12 @@ defmodule Easy.MealLogs do
     end
   end
 
-  defp do_switch_meal_option(ctx, client_id, date, meal_slot, meal_id) do
-    snapshot = build_planned_snapshot(ctx.business_id, meal_id)
+  defp do_switch_meal_option(ctx, client_id, date, meal_slot, %Meal{} = meal) do
+    snapshot = build_planned_snapshot(meal)
 
     Repo.transaction(fn ->
       meal_log =
-        case find_or_create_meal_log(ctx.business_id, client_id, date, meal_slot, snapshot, meal_id) do
+        case find_or_create_meal_log(ctx.business_id, client_id, date, meal_slot, snapshot, meal.id) do
           {:ok, ml} -> ml
           {:error, reason} -> Repo.rollback(reason)
         end
@@ -252,9 +253,9 @@ defmodule Easy.MealLogs do
   end
 
   defp log_entry_transaction(business_id, client_id, date, meal_slot, explicit_meal_id, attrs) do
-    validate_explicit_meal!(business_id, client_id, explicit_meal_id)
     meal_id = resolve_slot_meal_id(business_id, client_id, date, meal_slot, explicit_meal_id)
-    snapshot = build_planned_snapshot(business_id, meal_id)
+    meal = meal_id && load_meal_with_items(business_id, client_id, meal_id)
+    snapshot = build_planned_snapshot(meal)
     validate_snapshot!(meal_id, snapshot)
     meal_log = get_or_create_meal_log!(business_id, client_id, date, meal_slot, snapshot, meal_id)
     meal_item_id = resolve_meal_item_id(business_id, meal_id, attrs[:meal_item_id])
@@ -265,12 +266,6 @@ defmodule Easy.MealLogs do
     else
       {:error, reason} -> Repo.rollback(reason)
     end
-  end
-
-  defp validate_explicit_meal!(_business_id, _client_id, nil), do: :ok
-
-  defp validate_explicit_meal!(business_id, client_id, meal_id) do
-    if is_nil(load_meal_with_items(business_id, client_id, meal_id)), do: Repo.rollback(:not_found)
   end
 
   defp validate_snapshot!(meal_id, snapshot) do
@@ -339,18 +334,25 @@ defmodule Easy.MealLogs do
         []
 
       day ->
+        # All of the day's pins in one query, not one per slot.
+        pinned =
+          MealLog
+          |> MealLog.for_client(business_id, client_id)
+          |> MealLog.for_date(date)
+          |> Repo.all()
+          |> Map.new(&{&1.meal_slot, &1.nutrition_meal_id})
+
         DayMeal
         |> DayMeal.for_business(business_id)
         |> DayMeal.for_plan_day(day.id)
         |> DayMeal.by_slot_position()
         |> Repo.all()
         |> Enum.group_by(& &1.meal_slot)
-        |> Enum.map(&slot_meal(&1, business_id, client_id, date))
+        |> Enum.map(fn {slot, [default | _]} ->
+          {slot, Map.get(pinned, slot) || default.nutrition_meal_id}
+        end)
     end
   end
-
-  defp slot_meal({slot, [default | _]}, business_id, client_id, date),
-    do: {slot, pinned_meal_id(business_id, client_id, date, slot) || default.nutrition_meal_id}
 
   defp log_slot_meals(business_id, client_id, date, slot_meals) do
     Enum.flat_map(slot_meals, fn {slot, meal_id} ->
@@ -409,32 +411,27 @@ defmodule Easy.MealLogs do
     |> Repo.one()
   end
 
-  defp build_planned_snapshot(_business_id, nil), do: nil
+  # Takes the meal already loaded (with items + food/recipe preloaded) — building
+  # the snapshot must not re-query what the caller just fetched.
+  defp build_planned_snapshot(nil), do: nil
 
-  defp build_planned_snapshot(business_id, meal_id) do
-    case Meal |> Meal.for_business(business_id) |> Repo.get(meal_id) do
-      nil ->
-        nil
+  defp build_planned_snapshot(%Meal{} = meal) do
+    items = meal.meal_items |> Enum.sort_by(& &1.position) |> Enum.map(&snapshot_item/1)
 
-      meal ->
-        meal = Repo.preload(meal, meal_items: MealItem.include_food_and_recipe(MealItem, business_id))
-        items = meal.meal_items |> Enum.sort_by(& &1.position) |> Enum.map(&snapshot_item/1)
-
-        %{
-          meal_name: meal.name,
-          items: items,
-          total_calories: sum_field(items, :calories),
-          total_protein_g: sum_field(items, :protein_g),
-          total_carbs_g: sum_field(items, :carbs_g),
-          total_fat_g: sum_field(items, :fat_g),
-          total_fiber_g: sum_field(items, :fiber_g)
-        }
-    end
+    %{
+      meal_name: meal.name,
+      items: items,
+      total_calories: sum_field(items, :calories),
+      total_protein_g: sum_field(items, :protein_g),
+      total_carbs_g: sum_field(items, :carbs_g),
+      total_fat_g: sum_field(items, :fat_g),
+      total_fiber_g: sum_field(items, :fiber_g)
+    }
   end
 
   defp do_log_meal(business_id, client_id, date, meal_slot, meal_id) do
     meal = load_meal_with_items(business_id, client_id, meal_id) || Repo.rollback(:not_found)
-    snapshot = build_planned_snapshot(business_id, meal_id)
+    snapshot = build_planned_snapshot(meal)
 
     meal_log =
       case find_or_create_meal_log(business_id, client_id, date, meal_slot, snapshot, meal_id) do
@@ -465,14 +462,16 @@ defmodule Easy.MealLogs do
     if MapSet.member?(already_logged, item.id) do
       acc
     else
-      case create_food_log_entry(business_id, meal_log_id, build_entry_attrs(item), item.id) do
+      case create_food_log_entry(business_id, meal_log_id, build_entry_attrs(item), item.id, item) do
         {:ok, entry} -> [entry | acc]
         {:error, reason} -> Repo.rollback(reason)
       end
     end
   end
 
-  defp create_food_log_entry(business_id, meal_log_id, attrs, meal_item_id) do
+  # `item` is the planned MealItem with food/recipe already preloaded, when the
+  # caller has one — it saves re-fetching rows loaded two frames up the stack.
+  defp create_food_log_entry(business_id, meal_log_id, attrs, meal_item_id, item \\ nil) do
     changeset =
       business_id
       |> FoodLogEntry.insert_changeset(meal_log_id, attrs)
@@ -480,7 +479,7 @@ defmodule Easy.MealLogs do
 
     if changeset.valid? do
       changeset
-      |> resolve_and_compute(business_id)
+      |> resolve_and_compute(business_id, item)
       |> validate_required([:food_name])
       |> Repo.insert()
     else
@@ -512,25 +511,40 @@ defmodule Easy.MealLogs do
     |> Repo.update()
   end
 
-  defp resolve_and_compute(changeset, business_id) do
+  defp resolve_and_compute(changeset, business_id, item) do
     food_id = get_field(changeset, :food_id)
     recipe_id = get_field(changeset, :recipe_id)
     weight_g = get_field(changeset, :weight_g)
 
     cond do
       not is_nil(food_id) ->
-        resolve_food(changeset, food_id, business_id, weight_g)
+        resolve_food(changeset, food_id, business_id, weight_g, preloaded_food(item, food_id))
 
       not is_nil(recipe_id) ->
-        resolve_recipe(changeset, recipe_id, business_id, weight_g, get_field(changeset, :amount))
+        resolve_recipe(
+          changeset,
+          recipe_id,
+          business_id,
+          weight_g,
+          get_field(changeset, :amount),
+          preloaded_recipe(item, recipe_id)
+        )
 
       true ->
         changeset
     end
   end
 
-  defp resolve_food(changeset, food_id, business_id, weight_g) do
-    case Food |> Food.for_business_or_system(business_id) |> Repo.get(food_id) do
+  defp preloaded_food(%MealItem{food: %Food{id: id} = food}, id), do: food
+  defp preloaded_food(_item, _food_id), do: nil
+
+  defp preloaded_recipe(%MealItem{recipe: %Recipe{id: id} = recipe}, id), do: recipe
+  defp preloaded_recipe(_item, _recipe_id), do: nil
+
+  defp resolve_food(changeset, food_id, business_id, weight_g, preloaded) do
+    food = preloaded || Food |> Food.for_business_or_system(business_id) |> Repo.get(food_id)
+
+    case food do
       nil ->
         add_error(changeset, :food_id, "food not found")
 
@@ -541,8 +555,10 @@ defmodule Easy.MealLogs do
     end
   end
 
-  defp resolve_recipe(changeset, recipe_id, business_id, weight_g, amount) do
-    case load_recipe_with_ingredients(business_id, recipe_id) do
+  defp resolve_recipe(changeset, recipe_id, business_id, weight_g, amount, preloaded) do
+    recipe = preloaded || load_recipe_with_ingredients(business_id, recipe_id)
+
+    case recipe do
       nil ->
         add_error(changeset, :recipe_id, "recipe not found")
 
@@ -729,7 +745,11 @@ defmodule Easy.MealLogs do
     MealLog.for_date_range(query, from_date, to_date)
   end
 
-  defp apply_date_filters(query, _date, _from_date, _to_date), do: query
+  # No filter given -> today's logs. This is what keeps these list endpoints
+  # bounded (per-day/per-week reads); without it "no params" returned the
+  # client's entire history with every entry preloaded.
+  defp apply_date_filters(query, _date, _from_date, _to_date),
+    do: MealLog.for_date(query, Date.utc_today())
 
   # Resolves the client record for the authenticated user (client self path).
   defp get_client(%Ctx{} = ctx) do

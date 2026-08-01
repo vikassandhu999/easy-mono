@@ -219,13 +219,6 @@ defmodule Easy.Sessions do
     end
   end
 
-  defp get_session(business_id, session_id) do
-    TrainingSession
-    |> TrainingSession.for_business(business_id)
-    |> Repo.get(session_id)
-    |> ok_or_not_found()
-  end
-
   defp maybe_for_date_range(query, nil, nil), do: query
   defp maybe_for_date_range(query, from, nil), do: TrainingSession.for_date_from(query, from)
   defp maybe_for_date_range(query, nil, to), do: TrainingSession.for_date_to(query, to)
@@ -316,23 +309,13 @@ defmodule Easy.Sessions do
     end
   end
 
-  defp put_exercise_name(attrs, business_id) do
-    has_name? = present?(Map.get(attrs, :exercise_name))
+  defp put_exercise_name(attrs, nil), do: attrs
 
-    exercise_id = attrs[:exercise_id]
-
-    cond do
-      has_name? ->
-        {:ok, attrs}
-
-      is_nil(exercise_id) ->
-        {:ok, attrs}
-
-      true ->
-        case TrainingExercise |> TrainingExercise.for_business_or_system(business_id) |> Repo.get(exercise_id) do
-          nil -> {:error, :not_found}
-          exercise -> {:ok, Map.put(attrs, :exercise_name, exercise.name)}
-        end
+  defp put_exercise_name(attrs, %TrainingExercise{} = exercise) do
+    if present?(Map.get(attrs, :exercise_name)) do
+      attrs
+    else
+      Map.put(attrs, :exercise_name, exercise.name)
     end
   end
 
@@ -362,19 +345,37 @@ defmodule Easy.Sessions do
     end
   end
 
+  # This runs once per logged set (every 30-60s during a workout), so it loads
+  # the exercise exactly once and reuses it for the name default, the
+  # business-visibility check, and the response preload. The caller has already
+  # authorized the session (fetch_client_session), so it is not re-fetched.
   defp create_performed_set(session_id, business_id, attrs) do
-    with {:ok, _session} <- get_session(business_id, session_id),
-         {:ok, attrs} <- put_exercise_name(attrs, business_id),
-         attrs = put_next_position(attrs, session_id),
-         {:ok, changeset} <-
-           business_id
-           |> TrainingPerformedSet.insert_changeset(session_id, attrs)
-           |> validate_performed_set_context() do
-      changeset
+    with {:ok, exercise} <- fetch_set_exercise(business_id, attrs[:exercise_id]) do
+      attrs =
+        attrs
+        |> put_exercise_name(exercise)
+        |> put_next_position(session_id)
+
+      business_id
+      |> TrainingPerformedSet.insert_changeset(session_id, attrs)
       |> Repo.insert()
-      |> preload_set()
+      |> put_preloaded_exercise(exercise)
     end
   end
+
+  defp fetch_set_exercise(_business_id, nil), do: {:ok, nil}
+
+  defp fetch_set_exercise(business_id, exercise_id) do
+    TrainingExercise
+    |> TrainingExercise.for_business_or_system(business_id)
+    |> Repo.get(exercise_id)
+    |> ok_or_not_found()
+  end
+
+  defp put_preloaded_exercise({:ok, %TrainingPerformedSet{} = set}, exercise),
+    do: {:ok, %{set | exercise: exercise}}
+
+  defp put_preloaded_exercise(error, _exercise), do: error
 
   # Position is display order. A caller that names one keeps it; one that does not
   # appends after the session's current last set.

@@ -50,13 +50,6 @@ defmodule Easy.Coaches do
     Coach.for_user(user_id) |> Coach.active() |> Repo.one()
   end
 
-  @spec update(Coach.t(), map()) :: {:ok, Coach.t()} | {:error, Ecto.Changeset.t()}
-  def update(coach, attrs) do
-    coach
-    |> Coach.update_changeset(attrs)
-    |> Repo.update()
-  end
-
   @spec list_team(Ctx.t()) ::
           {:ok, %{coaches: [Coach.t()], owner_id: String.t()}} | {:error, :not_owner}
   def list_team(%Ctx{} = ctx) do

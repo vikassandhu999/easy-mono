@@ -45,13 +45,6 @@ defmodule Easy.Billing do
     }
   end
 
-  @spec ensure_seat_available(Ctx.t()) :: :ok | {:error, :seat_limit_reached}
-  def ensure_seat_available(%Ctx{business_id: business_id}) do
-    if within_seat_limit?(business_id, billing_for(business_id)),
-      do: :ok,
-      else: {:error, :seat_limit_reached}
-  end
-
   # Runs a seat-consuming write atomically with the capacity check. Locks the
   # business billing row so two concurrent invites/reactivations can't both pass
   # the check and exceed the limit: whichever commits first, the second re-reads

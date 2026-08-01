@@ -16,15 +16,6 @@ defmodule Easy.Foods do
     |> ok_or_not_found()
   end
 
-  @spec get_business_food(Ctx.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
-  def get_business_food(%Ctx{} = ctx, food_id) do
-    Food
-    |> Food.for_business(ctx.business_id)
-    |> Food.include_media()
-    |> Repo.get(food_id)
-    |> ok_or_not_found()
-  end
-
   @spec list_visible_foods(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), foods: [Food.t()]}}
   def list_visible_foods(%Ctx{} = ctx, opts \\ []) do
@@ -83,7 +74,7 @@ defmodule Easy.Foods do
   def delete_food(%Ctx{} = ctx, food_id) do
     with {:ok, food} <- get_visible_food(ctx, food_id),
          :ok <- ensure_editable(food),
-         :ok <- ensure_food_not_in_use(food.id) do
+         :ok <- ensure_food_not_in_use(ctx.business_id, food.id) do
       Repo.delete(food)
     end
   end
@@ -93,10 +84,10 @@ defmodule Easy.Foods do
   # A meal item would violate the food-xor-recipe check (raising, not erroring), and
   # a recipe ingredient would silently drop that food's macros from the recipe total.
   # So a food still used by a plan or recipe is a conflict, not a cascade.
-  defp ensure_food_not_in_use(food_id) do
+  defp ensure_food_not_in_use(business_id, food_id) do
     in_use? =
-      Repo.exists?(from(mi in MealItem, where: mi.food_id == ^food_id)) or
-        Repo.exists?(from(ri in RecipeIngredient, where: ri.food_id == ^food_id))
+      Repo.exists?(from(mi in MealItem.for_business(business_id), where: mi.food_id == ^food_id)) or
+        Repo.exists?(from(ri in RecipeIngredient.for_business(business_id), where: ri.food_id == ^food_id))
 
     if in_use?, do: {:error, :in_use}, else: :ok
   end

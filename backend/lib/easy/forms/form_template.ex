@@ -98,8 +98,8 @@ defmodule Easy.Forms.FormTemplate do
     )
   end
 
-  @spec with_system_key(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def with_system_key(query \\ __MODULE__, system_key) do
+  @spec for_system_key(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_system_key(query \\ __MODULE__, system_key) do
     from(t in query, where: t.system_key == ^system_key)
   end
 

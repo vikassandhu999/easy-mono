@@ -15,9 +15,6 @@ defmodule Easy.MacroCalc do
           fiber_g: float()
         }
 
-  @spec macro_keys() :: [atom()]
-  def macro_keys, do: @macros
-
   @spec for_food(Food.t(), float() | nil) :: macros()
   def for_food(%Food{} = food, weight_g) do
     factor = num(weight_g) / 100.0

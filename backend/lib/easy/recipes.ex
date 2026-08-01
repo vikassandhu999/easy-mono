@@ -5,7 +5,6 @@ defmodule Easy.Recipes do
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.Recipe
-  alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
@@ -16,7 +15,7 @@ defmodule Easy.Recipes do
   def get_recipe(%Ctx{} = ctx, recipe_id) do
     Recipe
     |> Recipe.for_business(ctx.business_id)
-    |> with_ingredients(ctx.business_id)
+    |> Recipe.include_ingredients(ctx.business_id)
     |> Repo.get(recipe_id)
     |> ok_or_not_found()
   end
@@ -45,7 +44,7 @@ defmodule Easy.Recipes do
        recipes:
          ordered
          |> Easy.Utils.paginate(offset, limit)
-         |> with_ingredients(ctx.business_id)
+         |> Recipe.include_ingredients(ctx.business_id)
          |> Repo.all()
      }}
   end
@@ -80,7 +79,7 @@ defmodule Easy.Recipes do
           {:ok, Recipe.t()} | {:error, :not_found | :in_use | Ecto.Changeset.t()}
   def delete_recipe(%Ctx{} = ctx, recipe_id) do
     with {:ok, recipe} <- get_recipe_plain(ctx, recipe_id),
-         :ok <- ensure_recipe_not_in_use(recipe.id) do
+         :ok <- ensure_recipe_not_in_use(ctx.business_id, recipe.id) do
       Repo.delete(recipe)
     end
   end
@@ -88,8 +87,8 @@ defmodule Easy.Recipes do
   # Same rule as Foods.delete_food/2: a meal item pointing at neither a food nor a
   # recipe violates the xor check, so a recipe still used by a plan is a conflict.
   # Log entries nilify safely — they keep food_name and frozen macros.
-  defp ensure_recipe_not_in_use(recipe_id) do
-    if Repo.exists?(from(mi in MealItem, where: mi.recipe_id == ^recipe_id)),
+  defp ensure_recipe_not_in_use(business_id, recipe_id) do
+    if Repo.exists?(from(mi in MealItem.for_business(business_id), where: mi.recipe_id == ^recipe_id)),
       do: {:error, :in_use},
       else: :ok
   end
@@ -171,13 +170,6 @@ defmodule Easy.Recipes do
 
   defp maybe_add_ingredient_error(_invalid_food_ids, changeset) do
     add_error(changeset, :recipe_ingredients, "has invalid food")
-  end
-
-  defp with_ingredients(query, business_id) do
-    food_query = Food.for_business_or_system(Food, business_id)
-    ingredient_query = from(ri in RecipeIngredient, preload: [food: ^food_query])
-
-    from(r in query, preload: [foods: ^food_query, recipe_ingredients: ^ingredient_query])
   end
 
   defp get_coach(%Ctx{} = ctx) do

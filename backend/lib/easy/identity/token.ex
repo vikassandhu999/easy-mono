@@ -42,9 +42,4 @@ defmodule Easy.Identity.Token do
   def verify_access_token(token) do
     Joken.verify_and_validate(token_config(), token, signer())
   end
-
-  @spec has_role?(map(), atom()) :: boolean()
-  def has_role?(claims, role) do
-    Map.get(claims, "role") == Atom.to_string(role)
-  end
 end

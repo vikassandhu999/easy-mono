@@ -50,26 +50,88 @@ defmodule Easy.Meals do
     end
   end
 
+  # The whole batch's foods and recipes are fetched in two IN-queries up front,
+  # instead of 2-3 lookups per item.
   defp insert_meal_items!(business_id, meal_id, items) do
     start = next_position(business_id, meal_id)
+    {foods, recipes} = load_referenced_library(business_id, items)
 
     items
     |> Enum.with_index(start)
     |> Enum.map(fn {attrs, position} ->
-      case insert_meal_item(business_id, meal_id, attrs, position) do
+      case insert_meal_item(business_id, meal_id, attrs, position, foods, recipes) do
         {:ok, item} -> item
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
   end
 
-  defp insert_meal_item(business_id, meal_id, attrs, position) do
-    with {:ok, :valid} <- ensure_food_or_recipe(attrs, business_id) do
+  defp load_referenced_library(business_id, items) do
+    food_ids = items |> Enum.map(&Map.get(&1, :food_id)) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    recipe_ids =
+      items |> Enum.map(&Map.get(&1, :recipe_id)) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+    foods =
+      if food_ids == [] do
+        %{}
+      else
+        Food
+        |> Food.for_business_or_system(business_id)
+        |> where([f], f.id in ^food_ids)
+        |> Repo.all()
+        |> Map.new(&{&1.id, &1})
+      end
+
+    recipes =
+      if recipe_ids == [] do
+        %{}
+      else
+        Recipe
+        |> Recipe.for_business(business_id)
+        |> where([r], r.id in ^recipe_ids)
+        |> Repo.all()
+        |> Map.new(&{&1.id, &1})
+      end
+
+    {foods, recipes}
+  end
+
+  defp insert_meal_item(business_id, meal_id, attrs, position, foods, recipes) do
+    with :ok <- ensure_referenced(attrs, foods, recipes) do
       business_id
       |> MealItem.insert_changeset(meal_id, attrs)
       |> put_change(:position, position)
-      |> validate_recipe_weighable(business_id)
+      |> validate_recipe_weighable_with(recipes)
       |> Repo.insert()
+    end
+  end
+
+  defp ensure_referenced(attrs, foods, recipes) do
+    food_id = Map.get(attrs, :food_id)
+    recipe_id = Map.get(attrs, :recipe_id)
+
+    cond do
+      food_id && not Map.has_key?(foods, food_id) -> {:error, :not_found}
+      recipe_id && not Map.has_key?(recipes, recipe_id) -> {:error, :not_found}
+      true -> :ok
+    end
+  end
+
+  defp validate_recipe_weighable_with(changeset, recipes) do
+    recipe_id = get_field(changeset, :recipe_id)
+    weight_g = get_field(changeset, :weight_g)
+
+    weighable? =
+      match?(
+        %Recipe{cooked_weight_g: cooked} when is_number(cooked) and cooked > 0,
+        Map.get(recipes, recipe_id)
+      )
+
+    if is_nil(recipe_id) or is_nil(weight_g) or weighable? do
+      changeset
+    else
+      add_error(changeset, :weight_g, "this recipe has no cooked weight — size it in servings")
     end
   end
 

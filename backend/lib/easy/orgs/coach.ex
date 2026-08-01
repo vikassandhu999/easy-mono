@@ -62,16 +62,6 @@ defmodule Easy.Orgs.Coach do
     |> unique_constraint(:user_id)
   end
 
-  @spec accept_changeset(t(), String.t()) :: Ecto.Changeset.t()
-  def accept_changeset(coach, user_id) do
-    coach
-    |> change()
-    |> put_change(:user_id, user_id)
-    |> put_change(:status, :active)
-    |> put_change(:invitation_token, nil)
-    |> unique_constraint(:user_id)
-  end
-
   @spec resend_invite_changeset(t()) :: Ecto.Changeset.t()
   def resend_invite_changeset(coach) do
     coach

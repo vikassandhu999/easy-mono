@@ -7,7 +7,6 @@ defmodule Easy.Clients.SchemaBoundaryTest do
 
   @context_verbs [
     "accept_invite",
-    "create_inquiry",
     "get_for_user",
     "get_profile",
     "invite",

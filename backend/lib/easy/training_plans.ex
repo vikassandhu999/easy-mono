@@ -350,42 +350,48 @@ defmodule Easy.TrainingPlans do
     end)
   end
 
+  # Bulk copy: rows are clones of already-valid persisted rows, so the whole
+  # plan costs 2 INSERTs (workouts, elements) instead of one per row.
   defp copy_workouts(workouts, new_plan) do
-    Enum.reduce_while(workouts, :ok, fn workout, :ok ->
-      case copy_workout_into(workout, new_plan.id) do
-        {:ok, _new_workout} -> {:cont, :ok}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-  end
+    now = DateTime.utc_now(:second)
 
-  defp copy_workout_into(workout, dest_plan_id) do
-    attrs = %{name: workout.name, weekdays: workout.weekdays}
+    workout_rows =
+      Enum.map(workouts, fn workout ->
+        %{
+          id: Ecto.UUID.generate(),
+          name: workout.name,
+          weekdays: workout.weekdays,
+          business_id: workout.business_id,
+          training_plan_id: new_plan.id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
 
-    with {:ok, new_workout} <-
-           TrainingWorkout.insert_changeset(workout.business_id, dest_plan_id, attrs)
-           |> Repo.insert(),
-         :ok <-
-           copy_workout_elements(workout.workout_elements, new_workout.id, workout.business_id) do
-      {:ok, new_workout}
-    end
-  end
+    workout_id_map =
+      workouts
+      |> Enum.zip(workout_rows)
+      |> Map.new(fn {old, row} -> {old.id, row.id} end)
 
-  defp copy_workout_elements(elements, new_workout_id, business_id) do
-    Enum.reduce_while(elements, :ok, fn element, :ok ->
-      result =
-        TrainingWorkoutExercise.insert_changeset(
-          business_id,
-          new_workout_id,
-          TrainingWorkoutExercise.copy_attrs(element)
-        )
-        |> Repo.insert()
+    element_rows =
+      Enum.flat_map(workouts, fn workout ->
+        Enum.map(workout.workout_elements, fn element ->
+          %{
+            id: Ecto.UUID.generate(),
+            position: element.position,
+            exercise_id: element.exercise_id,
+            planned_sets: element.planned_sets,
+            business_id: workout.business_id,
+            training_workout_id: Map.fetch!(workout_id_map, workout.id),
+            inserted_at: now,
+            updated_at: now
+          }
+        end)
+      end)
 
-      case result do
-        {:ok, _} -> {:cont, :ok}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
+    Repo.insert_all(TrainingWorkout, workout_rows)
+    Repo.insert_all(TrainingWorkoutExercise, element_rows)
+    :ok
   end
 
   defp generate_copy_name(original_name, business_id) do

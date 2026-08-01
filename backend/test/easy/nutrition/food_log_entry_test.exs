@@ -46,27 +46,6 @@ defmodule Easy.Nutrition.FoodLogEntryTest do
     end
   end
 
-  describe "for_business/2" do
-    test "scopes on the entry's own column and does not leak across tenants" do
-      %{business: business, meal_log: meal_log, food: food} = scenario()
-      other = scenario()
-
-      mine = insert(:food_log_entry, meal_log: meal_log, business: business, food: food)
-      theirs = insert(:food_log_entry, meal_log: other.meal_log, business: other.business, food: other.food)
-
-      ids =
-        FoodLogEntry
-        |> FoodLogEntry.for_business(business.id)
-        |> Repo.all()
-        |> Enum.map(& &1.id)
-
-      assert mine.id in ids
-      refute theirs.id in ids
-
-      refute FoodLogEntry |> FoodLogEntry.for_business(business.id) |> Repo.get(theirs.id)
-    end
-  end
-
   describe "database constraints" do
     test "rejects an unknown source" do
       %{meal_log: meal_log, business: business, food: food} = scenario()

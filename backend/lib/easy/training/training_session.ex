@@ -15,9 +15,6 @@ defmodule Easy.Training.TrainingSession do
 
   @states [:active, :completed, :discarded]
 
-  @spec states() :: [atom()]
-  def states, do: @states
-
   schema "training_sessions" do
     field :date, :date
     field :started_at, :utc_datetime
@@ -107,11 +104,6 @@ defmodule Easy.Training.TrainingSession do
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(s in query, order_by: [desc: s.started_at, desc: s.id])
-  end
-
-  @spec active(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def active(query \\ __MODULE__) do
-    from(s in query, where: s.state == :active)
   end
 
   @spec include_sets(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

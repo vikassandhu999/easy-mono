@@ -27,14 +27,6 @@ defmodule EasyWeb.ControllerHelpers do
     end
   end
 
-  @spec parse_boolean(map(), String.t()) :: boolean() | nil
-  def parse_boolean(params, key) do
-    case Map.get(params, key) do
-      nil -> nil
-      value -> Easy.Utils.parse_boolean(value)
-    end
-  end
-
   @spec parse_list(map(), String.t()) :: [String.t()] | nil
   def parse_list(params, key) do
     case Map.get(params, key) do

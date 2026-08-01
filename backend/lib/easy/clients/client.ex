@@ -70,7 +70,6 @@ defmodule Easy.Clients.Client do
     :subscription_ends_on
   ]
   @self_update_cast_fields [:first_name, :last_name, :phone]
-  @inquiry_cast_fields [:email, :first_name, :last_name, :phone]
 
   # Allowed manual status transitions (coach-driven).
   # pending -> active is reserved for accept_invite/3 (the accept flow) only.
@@ -236,17 +235,6 @@ defmodule Easy.Clients.Client do
     |> cast(attrs, @self_update_cast_fields)
   end
 
-  @spec inquiry_changeset(String.t(), map()) :: Ecto.Changeset.t()
-  def inquiry_changeset(business_id, attrs) do
-    %__MODULE__{}
-    |> cast(attrs, @inquiry_cast_fields)
-    |> put_change(:business_id, business_id)
-    |> put_change(:status, :pending)
-    |> validate_required([:first_name, :email, :phone, :business_id])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
-    |> unique_constraint(:email, name: :clients_business_id_email_index)
-  end
-
   defp validate_email_or_phone(changeset) do
     email = get_field(changeset, :email)
     phone = get_field(changeset, :phone)
@@ -367,6 +355,14 @@ defmodule Easy.Clients.Client do
   # One row per client: the latest of "completed a session" and "logged a meal",
   # which is what the design's `Last active` column and the CD stat cell both mean.
   # Both halves are business-scoped; a UNION keeps it to a single grouped pass.
+  # Grouping the whole business is expensive, so the context only uses the
+  # ungated form when it must rank every client (sort: :last_active); plain
+  # lists decorate the paginated page via `last_activity_for_clients/2`.
+  @spec last_activity_for_clients(String.t(), [String.t()]) :: Ecto.Query.t()
+  def last_activity_for_clients(business_id, client_ids) do
+    from(a in last_activity(business_id), where: a.client_id in ^client_ids)
+  end
+
   defp last_activity(business_id) do
     sessions =
       from(s in Easy.Training.TrainingSession,
@@ -391,6 +387,9 @@ defmodule Easy.Clients.Client do
     from(c in query, preload: [:user, :business, :creator])
   end
 
+  # Deliberately global (no business_id): the product rule is one active coaching
+  # relationship per email across ALL businesses, asserted by the invite controller
+  # test "rejects invite when email is already an active client of another business".
   @spec active_for_email(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def active_for_email(query \\ __MODULE__, email) do
     from(c in query,

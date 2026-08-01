@@ -29,7 +29,7 @@ defmodule EasyWeb.Coaches.BillingController do
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
     with {:ok, summary} <- Billing.get_billing(conn.assigns.ctx) do
-      json(conn, %{data: render_summary(summary)})
+      render(conn, :show, summary: summary)
     end
   end
 
@@ -52,13 +52,7 @@ defmodule EasyWeb.Coaches.BillingController do
     %{seats_to_add: seats_to_add} = conn.body_params
 
     with {:ok, result} <- Billing.checkout(conn.assigns.ctx, seats_to_add) do
-      json(conn, %{
-        data: %{
-          action: to_string(result.action),
-          checkout: Map.get(result, :checkout),
-          billing: render_summary(result.billing)
-        }
-      })
+      render(conn, :checkout, result: result)
     end
   end
 
@@ -78,7 +72,7 @@ defmodule EasyWeb.Coaches.BillingController do
   @spec cancel(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def cancel(conn, _params) do
     with {:ok, summary} <- Billing.cancel(conn.assigns.ctx) do
-      json(conn, %{data: render_summary(summary)})
+      render(conn, :show, summary: summary)
     end
   end
 
@@ -98,25 +92,7 @@ defmodule EasyWeb.Coaches.BillingController do
   @spec sync(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def sync(conn, _params) do
     with {:ok, summary} <- Billing.sync_billing(conn.assigns.ctx) do
-      json(conn, %{data: render_summary(summary)})
+      render(conn, :show, summary: summary)
     end
-  end
-
-  defp render_summary(summary) do
-    case Map.get(summary, :recent_events) do
-      nil -> Map.put(summary, :recent_events, nil)
-      events -> Map.put(summary, :recent_events, Enum.map(events, &render_event/1))
-    end
-  end
-
-  defp render_event(event) do
-    %{
-      id: event.id,
-      kind: event.kind,
-      seat_delta: event.seat_delta,
-      amount_paid: event.amount_paid,
-      currency: event.currency,
-      occurred_at: event.occurred_at
-    }
   end
 end

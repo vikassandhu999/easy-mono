@@ -1,7 +1,6 @@
 defmodule Easy.Training.TrainingMuscle do
   use Ecto.Schema
 
-  import Ecto.Changeset
   import Ecto.Query
 
   @type t() :: %__MODULE__{}
@@ -14,27 +13,6 @@ defmodule Easy.Training.TrainingMuscle do
     field :description, :string
 
     timestamps(type: :utc_datetime)
-  end
-
-  @cast_fields [:name, :description]
-
-  @spec insert_changeset(map()) :: Ecto.Changeset.t()
-  def insert_changeset(attrs) do
-    %__MODULE__{}
-    |> cast(attrs, @cast_fields)
-    |> validate_required([:name])
-    |> validate_length(:name, max: 255)
-    |> validate_length(:description, max: 5000)
-    |> unique_constraint(:name)
-  end
-
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(muscle, attrs) do
-    muscle
-    |> cast(attrs, @cast_fields)
-    |> validate_length(:name, max: 255)
-    |> validate_length(:description, max: 5000)
-    |> unique_constraint(:name)
   end
 
   @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()

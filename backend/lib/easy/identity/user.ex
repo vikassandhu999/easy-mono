@@ -63,9 +63,4 @@ defmodule Easy.Identity.User do
   @spec email_confirmed?(t()) :: boolean()
   def email_confirmed?(%__MODULE__{email_confirmed_at: nil}), do: false
   def email_confirmed?(%__MODULE__{email_confirmed_at: _}), do: true
-
-  @spec full_name(t()) :: String.t()
-  def full_name(%__MODULE__{first_name: first_name, last_name: last_name}) do
-    String.trim("#{first_name} #{last_name}")
-  end
 end

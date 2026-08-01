@@ -141,6 +141,19 @@ to key reconciliation on `meal_item_id`. Review question: "who treats this colum
 identifier, not a value?" Mutable display order and stable identity must never be the same
 column.
 
+### RM-021 — Existence guards are tenant-scoped queries too
+`Repo.exists?` / `Repo.aggregate` guards ("is this row still referenced?") must carry
+`business_id` like any other tenant-owned read. Four delete guards
+(`ensure_food_not_in_use`, `ensure_recipe_not_in_use`, `ensure_exercise_not_in_use` — over
+`nutrition_meal_items`, `nutrition_recipe_ingredients`, `training_workout_exercises`)
+shipped unscoped: another tenant's row could veto your delete, the check was a cross-tenant
+existence oracle, and the query couldn't use the `business_id`-leading indexes. The
+tenant-isolation rule has no "it's only a boolean" exception — pipe the schema's
+`for_business/2` into every existence probe. **Enforced by:** review; grep
+`Repo.exists?(` and confirm each pipeline includes a `for_business`/`for_client`/
+`for_coach` builder (deliberate cross-tenant checks, e.g. the global
+active-client-email rule, carry a comment saying so).
+
 ---
 
 ## Frontend

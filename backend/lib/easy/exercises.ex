@@ -140,7 +140,7 @@ defmodule Easy.Exercises do
           {:ok, TrainingExercise.t()} | {:error, :not_found | :in_use | Ecto.Changeset.t()}
   def delete_exercise(%Ctx{} = ctx, exercise_id) do
     with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id),
-         :ok <- ensure_exercise_not_in_use(exercise.id) do
+         :ok <- ensure_exercise_not_in_use(ctx.business_id, exercise.id) do
       Repo.delete(exercise)
     end
   end
@@ -148,10 +148,14 @@ defmodule Easy.Exercises do
   # A workout element pointing at no exercise is unrenderable, so an exercise still
   # used by a plan is a conflict rather than a cascade. Performed sets are different:
   # they denormalise `exercise_name`, so logged history nilifies safely and survives.
-  defp ensure_exercise_not_in_use(exercise_id) do
-    if Repo.exists?(from(e in TrainingWorkoutExercise, where: e.exercise_id == ^exercise_id)),
-      do: {:error, :in_use},
-      else: :ok
+  defp ensure_exercise_not_in_use(business_id, exercise_id) do
+    if Repo.exists?(
+         from(e in TrainingWorkoutExercise.for_business(business_id),
+           where: e.exercise_id == ^exercise_id
+         )
+       ),
+       do: {:error, :in_use},
+       else: :ok
   end
 
   @spec duplicate_exercise(Ctx.t(), String.t(), map()) ::
@@ -174,41 +178,6 @@ defmodule Easy.Exercises do
       |> preload_exercise()
     end
   end
-
-  @spec create_muscle(map()) :: {:ok, TrainingMuscle.t()} | {:error, Ecto.Changeset.t()}
-  def create_muscle(attrs) do
-    attrs
-    |> TrainingMuscle.insert_changeset()
-    |> Repo.insert()
-  end
-
-  @spec update_muscle(TrainingMuscle.t(), map()) :: {:ok, TrainingMuscle.t()} | {:error, Ecto.Changeset.t()}
-  def update_muscle(%TrainingMuscle{} = muscle, attrs) do
-    muscle
-    |> TrainingMuscle.update_changeset(attrs)
-    |> Repo.update()
-  end
-
-  @spec delete_muscle(TrainingMuscle.t()) :: {:ok, TrainingMuscle.t()} | {:error, Ecto.Changeset.t()}
-  def delete_muscle(%TrainingMuscle{} = muscle), do: Repo.delete(muscle)
-
-  @spec create_equipment(map()) :: {:ok, TrainingEquipment.t()} | {:error, Ecto.Changeset.t()}
-  def create_equipment(attrs) do
-    attrs
-    |> TrainingEquipment.insert_changeset()
-    |> Repo.insert()
-  end
-
-  @spec update_equipment(TrainingEquipment.t(), map()) ::
-          {:ok, TrainingEquipment.t()} | {:error, Ecto.Changeset.t()}
-  def update_equipment(%TrainingEquipment{} = equipment, attrs) do
-    equipment
-    |> TrainingEquipment.update_changeset(attrs)
-    |> Repo.update()
-  end
-
-  @spec delete_equipment(TrainingEquipment.t()) :: {:ok, TrainingEquipment.t()} | {:error, Ecto.Changeset.t()}
-  def delete_equipment(%TrainingEquipment{} = equipment), do: Repo.delete(equipment)
 
   defp preload_exercise({:ok, %TrainingExercise{} = exercise}) do
     {:ok, Repo.preload(exercise, [:muscles, :equipment, :media])}

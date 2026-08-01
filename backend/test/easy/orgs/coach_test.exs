@@ -91,26 +91,6 @@ defmodule Easy.Orgs.CoachTest do
     end
   end
 
-  describe "accept_changeset/2" do
-    test "sets user_id and :active status, and clears the invitation token" do
-      business = insert(:business)
-      inviter = insert(:coach, business: business)
-
-      coach =
-        business.id
-        |> Coach.invite_changeset(inviter.id, %{"email" => "invitee@test.com"})
-        |> Repo.insert!()
-
-      user = insert(:user)
-      cs = Coach.accept_changeset(coach, user.id)
-
-      assert cs.valid?
-      assert Ecto.Changeset.get_field(cs, :user_id) == user.id
-      assert Ecto.Changeset.get_field(cs, :status) == :active
-      assert Ecto.Changeset.get_field(cs, :invitation_token) == nil
-    end
-  end
-
   describe "active/1" do
     test "filters to status == :active" do
       business = insert(:business)

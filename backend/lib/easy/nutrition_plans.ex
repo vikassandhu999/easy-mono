@@ -433,13 +433,18 @@ defmodule Easy.NutritionPlans do
     business_id |> slot_options(day_id, slot) |> Enum.map(& &1.id) |> then(&renumber(business_id, &1))
   end
 
+  # One UPDATE for the whole permutation: position = index of the row's id in
+  # ids (0-based), instead of one UPDATE per row.
   defp renumber(business_id, ids) do
-    ids
-    |> Enum.with_index()
-    |> Enum.each(fn {id, index} ->
-      from(dm in DayMeal, where: dm.business_id == ^business_id and dm.id == ^id)
-      |> Repo.update_all(set: [position: index])
-    end)
+    from(dm in DayMeal,
+      where: dm.business_id == ^business_id and dm.id in ^ids,
+      update: [
+        set: [
+          position: fragment("array_position(?::uuid[], ?) - 1", type(^ids, {:array, Ecto.UUID}), dm.id)
+        ]
+      ]
+    )
+    |> Repo.update_all([])
   end
 
   # Private
@@ -666,80 +671,103 @@ defmodule Easy.NutritionPlans do
     end)
   end
 
+  # The copies are bulk inserts, not per-row changesets: every row is cloned
+  # from an already-valid persisted row, so a big plan costs 4 INSERTs
+  # (meals, items, days, day-meals) instead of one per row.
   defp copy_meals(meals, new_plan_id, business_id, creator_id) do
-    Enum.reduce_while(meals, {:ok, %{}}, fn meal, {:ok, acc} ->
-      copy_meal(meal, acc, new_plan_id, business_id, creator_id)
-    end)
-  end
+    now = DateTime.utc_now(:second)
 
-  defp copy_meal(meal, acc, new_plan_id, business_id, creator_id) do
-    attrs = %{name: meal.name, notes: meal.notes}
-
-    with {:ok, new_meal} <- Meal.insert_changeset(business_id, creator_id, new_plan_id, attrs) |> Repo.insert(),
-         {:ok, _items} <- copy_meal_items(meal.meal_items, new_meal.id, business_id) do
-      {:cont, {:ok, Map.put(acc, meal.id, new_meal)}}
-    else
-      {:error, reason} -> {:halt, {:error, reason}}
-    end
-  end
-
-  defp copy_meal_items(meal_items, new_meal_id, business_id) do
-    Enum.reduce_while(meal_items, {:ok, []}, fn meal_item, {:ok, acc} ->
-      attrs = %{
-        weight_g: meal_item.weight_g,
-        amount: meal_item.amount,
-        unit: meal_item.unit,
-        position: meal_item.position,
-        recipe_id: meal_item.recipe_id,
-        food_id: meal_item.food_id
-      }
-
-      case MealItem.insert_changeset(business_id, new_meal_id, attrs) |> Repo.insert() do
-        {:ok, new_item} -> {:cont, {:ok, [new_item | acc]}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-  end
-
-  defp copy_days(days, new_plan, meal_map) do
-    Enum.reduce_while(days, {:ok, %{}}, fn day, {:ok, acc} ->
-      with {:ok, new_day} <-
-             PlanDay.insert_changeset(new_plan.business_id, new_plan.id, %{
-               "name" => day.name,
-               "position" => day.position,
-               "weekdays" => day.weekdays
-             })
-             |> Repo.insert(),
-           :ok <- copy_day_meals(day.day_meals, new_day, meal_map) do
-        {:cont, {:ok, Map.put(acc, day.id, new_day)}}
-      else
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-  end
-
-  defp copy_day_meals(day_meals, new_day, meal_map) do
-    Enum.reduce_while(day_meals, :ok, &copy_day_meal(&1, &2, new_day, meal_map))
-  end
-
-  defp copy_day_meal(day_meal, :ok, new_day, meal_map) do
-    case Map.get(meal_map, day_meal.nutrition_meal_id) do
-      nil ->
-        {:halt, {:error, :meal_not_found_in_plan}}
-
-      new_meal ->
-        attrs = %{
-          "meal_slot" => to_string(day_meal.meal_slot),
-          "position" => day_meal.position,
-          "nutrition_meal_id" => new_meal.id
+    meal_rows =
+      Enum.map(meals, fn meal ->
+        %{
+          id: Ecto.UUID.generate(),
+          name: meal.name,
+          notes: meal.notes,
+          business_id: business_id,
+          creator_id: creator_id,
+          nutrition_plan_id: new_plan_id,
+          inserted_at: now,
+          updated_at: now
         }
+      end)
 
-        continue_insert(DayMeal.insert_changeset(new_day.business_id, new_day.id, attrs) |> Repo.insert())
-    end
+    meal_id_map =
+      meals
+      |> Enum.zip(meal_rows)
+      |> Map.new(fn {old, row} -> {old.id, row.id} end)
+
+    item_rows =
+      Enum.flat_map(meals, fn meal ->
+        Enum.map(meal.meal_items, fn item ->
+          %{
+            id: Ecto.UUID.generate(),
+            weight_g: item.weight_g,
+            amount: item.amount,
+            unit: item.unit,
+            position: item.position,
+            recipe_id: item.recipe_id,
+            food_id: item.food_id,
+            business_id: business_id,
+            nutrition_meal_id: Map.fetch!(meal_id_map, meal.id),
+            inserted_at: now,
+            updated_at: now
+          }
+        end)
+      end)
+
+    Repo.insert_all(Meal, meal_rows)
+    Repo.insert_all(MealItem, item_rows)
+
+    {:ok, meal_id_map}
   end
 
-  defp continue_insert({:ok, _record}), do: {:cont, :ok}
-  defp continue_insert({:error, reason}), do: {:halt, {:error, reason}}
+  defp copy_days(days, new_plan, meal_id_map) do
+    now = DateTime.utc_now(:second)
+
+    day_rows =
+      Enum.map(days, fn day ->
+        %{
+          id: Ecto.UUID.generate(),
+          name: day.name,
+          position: day.position,
+          weekdays: day.weekdays,
+          business_id: new_plan.business_id,
+          nutrition_plan_id: new_plan.id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    day_id_map =
+      days
+      |> Enum.zip(day_rows)
+      |> Map.new(fn {old, row} -> {old.id, row.id} end)
+
+    day_meals = Enum.flat_map(days, fn day -> Enum.map(day.day_meals, &{day.id, &1}) end)
+
+    if Enum.any?(day_meals, fn {_day_id, dm} -> not Map.has_key?(meal_id_map, dm.nutrition_meal_id) end) do
+      {:error, :meal_not_found_in_plan}
+    else
+      day_meal_rows =
+        Enum.map(day_meals, fn {day_id, dm} ->
+          %{
+            id: Ecto.UUID.generate(),
+            meal_slot: dm.meal_slot,
+            position: dm.position,
+            business_id: new_plan.business_id,
+            nutrition_plan_day_id: Map.fetch!(day_id_map, day_id),
+            nutrition_meal_id: Map.fetch!(meal_id_map, dm.nutrition_meal_id),
+            inserted_at: now,
+            updated_at: now
+          }
+        end)
+
+      Repo.insert_all(PlanDay, day_rows)
+      Repo.insert_all(DayMeal, day_meal_rows)
+
+      {:ok, day_id_map}
+    end
+  end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

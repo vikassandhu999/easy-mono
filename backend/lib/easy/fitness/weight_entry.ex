@@ -62,11 +62,6 @@ defmodule Easy.Fitness.WeightEntry do
 
   # Queries
 
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id) do
-    from(e in query, where: e.business_id == ^business_id)
-  end
-
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_client(query \\ __MODULE__, business_id, client_id) do
     from(e in query, where: e.business_id == ^business_id and e.client_id == ^client_id)

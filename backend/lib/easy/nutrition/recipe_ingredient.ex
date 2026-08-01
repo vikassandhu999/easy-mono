@@ -4,6 +4,7 @@ defmodule Easy.Nutrition.RecipeIngredient do
   alias Easy.Orgs.Business
 
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   @type t() :: %__MODULE__{}
 
@@ -19,6 +20,11 @@ defmodule Easy.Nutrition.RecipeIngredient do
     belongs_to :recipe, Nutrition.Recipe
     belongs_to :food, Nutrition.Food
     belongs_to :business, Business
+  end
+
+  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business(query \\ __MODULE__, business_id) do
+    from(ri in query, where: ri.business_id == ^business_id)
   end
 
   @spec update_changeset(t(), String.t(), map()) :: Ecto.Changeset.t()

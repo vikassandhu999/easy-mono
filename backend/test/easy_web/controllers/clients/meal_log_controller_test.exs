@@ -33,8 +33,8 @@ defmodule EasyWeb.Clients.MealLogControllerTest do
       assert hd(hd(data)["food_log_entries"])["food_name"] == "Oats"
     end
 
-    test "lists all logs without date filter", ctx do
-      insert(:meal_log, client: ctx.client, business: ctx.business, date: ~D[2026-03-25])
+    test "no date filter defaults to today, not the whole history", ctx do
+      insert(:meal_log, client: ctx.client, business: ctx.business, date: Date.utc_today())
 
       insert(:meal_log,
         client: ctx.client,
@@ -45,7 +45,8 @@ defmodule EasyWeb.Clients.MealLogControllerTest do
 
       conn = get(ctx.conn, "/v1/client/nutrition-meal-logs")
       assert %{"data" => data} = json_response(conn, 200)
-      assert length(data) == 2
+      assert length(data) == 1
+      assert hd(data)["date"] == Date.to_iso8601(Date.utc_today())
     end
 
     test "does not show other client's logs", ctx do

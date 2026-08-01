@@ -137,11 +137,6 @@ defmodule Easy.Nutrition.FoodLogEntry do
     )
   end
 
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id) do
-    from(e in query, where: e.business_id == ^business_id)
-  end
-
   @spec logged_meal_item_ids(Ecto.Queryable.t()) :: Ecto.Query.t()
   def logged_meal_item_ids(query \\ __MODULE__) do
     from(e in query,

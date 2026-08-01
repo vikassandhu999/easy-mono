@@ -1045,15 +1045,6 @@ defmodule Easy.FormsTest do
                Forms.list_form_assignments_for_client(trainer_ctx(trainer_a), client_b.id)
     end
 
-    test "get_form_assignment_for_client returns :not_found for a client assigned to another trainer", %{
-      trainer_a: trainer_a,
-      client_b: client_b,
-      assignment_b: assignment_b
-    } do
-      assert {:error, :not_found} =
-               Forms.get_form_assignment_for_client(trainer_ctx(trainer_a), client_b.id, assignment_b.id)
-    end
-
     test "update_form_assignment returns :not_found for an assignment belonging to another trainer's client",
          %{trainer_a: trainer_a, assignment_b: assignment_b} do
       assert {:error, :not_found} =
@@ -1078,8 +1069,6 @@ defmodule Easy.FormsTest do
 
       assert {:ok, _assignment} = Forms.assign_form_template_to_client(ctx, client_b.id, template.id, %{})
       assert {:ok, _assignments} = Forms.list_form_assignments_for_client(ctx, client_b.id)
-      assert {:ok, %{id: id}} = Forms.get_form_assignment_for_client(ctx, client_b.id, assignment_b.id)
-      assert id == assignment_b.id
       assert {:ok, _updated} = Forms.update_form_assignment(ctx, assignment_b.id, %{"priority" => "high"})
       assert {:ok, _submissions} = Forms.list_form_submissions(ctx, assignment_b.id)
     end

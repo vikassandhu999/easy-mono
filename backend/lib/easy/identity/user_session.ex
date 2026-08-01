@@ -71,15 +71,4 @@ defmodule Easy.Identity.UserSession do
   @spec revoked?(t()) :: boolean()
   def revoked?(%__MODULE__{revoked_at: nil}), do: false
   def revoked?(%__MODULE__{revoked_at: _}), do: true
-
-  @spec bump_refreshed_at(t()) :: Ecto.Changeset.t()
-  def bump_refreshed_at(%__MODULE__{} = session) do
-    session
-    |> change(%{refreshed_at: DateTime.utc_now(:second)})
-  end
-
-  @spec roles() :: [role()]
-  def roles do
-    @roles
-  end
 end

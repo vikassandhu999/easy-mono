@@ -1,8 +1,72 @@
 defmodule Easy.SessionsTest do
-  use Easy.DataCase, async: true
+  use Easy.DataCase
 
   alias Easy.Ctx
+  alias Easy.Repo
   alias Easy.Sessions
+
+  describe "client workout activity" do
+    test "completing an active session stamps the client with the completion time" do
+      business = insert(:business)
+      client = insert(:client, business: business)
+      session = insert(:workout_session, business: business, client: client, state: :active)
+      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id}
+
+      assert {:ok, completed} =
+               Sessions.update_client_session(client_ctx, session.id, %{
+                 state: "completed",
+                 soreness_rating: 4,
+                 notes: "Great"
+               })
+
+      assert completed.state == :completed
+      assert Repo.reload(client).last_active_at == completed.ended_at
+    end
+
+    test "editing an already-completed session does not stamp again" do
+      business = insert(:business)
+      stamped_at = ~U[2026-08-01 10:30:00Z]
+      client = insert(:client, business: business, last_active_at: stamped_at)
+
+      session =
+        insert(:workout_session,
+          business: business,
+          client: client,
+          state: :completed,
+          ended_at: stamped_at
+        )
+
+      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id}
+
+      {result, queries} =
+        capture_queries(fn ->
+          Sessions.update_client_session(client_ctx, session.id, %{
+            state: "completed",
+            notes: "Corrected note"
+          })
+        end)
+
+      assert {:ok, %{notes: "Corrected note"}} = result
+      assert Repo.reload(client).last_active_at == stamped_at
+      refute Enum.any?(queries, &String.contains?(&1, ~s(UPDATE "clients")))
+    end
+
+    test "discarding a session does not stamp activity" do
+      business = insert(:business)
+      client = insert(:client, business: business)
+      session = insert(:workout_session, business: business, client: client, state: :active)
+      client_ctx = %Ctx{business_id: business.id, user_id: client.user_id}
+
+      {result, queries} =
+        capture_queries(fn ->
+          Sessions.update_client_session(client_ctx, session.id, %{state: "discarded"})
+        end)
+
+      assert {:ok, %{state: :discarded}} = result
+      assert is_nil(Repo.reload(client).last_active_at)
+      refute Enum.any?(queries, &String.contains?(&1, ~s(UPDATE "clients")))
+    end
+  end
 
   describe "client visibility (trainer-team access control)" do
     setup do
@@ -117,6 +181,32 @@ defmodule Easy.SessionsTest do
     test "list_client_sessions paginates the client's own sessions", %{client_ctx: client_ctx} do
       assert {:ok, %{count: 25, sessions: sessions}} = Sessions.list_client_sessions(client_ctx, limit: 3)
       assert length(sessions) == 3
+    end
+  end
+
+  defp capture_queries(fun) do
+    parent = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:easy, :repo, :query],
+      fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
+      nil
+    )
+
+    try do
+      {fun.(), received_queries()}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp received_queries(queries \\ []) do
+    receive do
+      {:query, query} -> received_queries([query | queries])
+    after
+      0 -> Enum.reverse(queries)
     end
   end
 end

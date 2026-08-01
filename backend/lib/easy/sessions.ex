@@ -72,6 +72,7 @@ defmodule Easy.Sessions do
     with {:ok, client} <- get_client(ctx),
          {:ok, session} <- fetch_client_session_preloaded(ctx.business_id, client.id, session_id) do
       case to_string(attrs[:state] || "") do
+        "completed" when session.state == :completed -> update_client_workout_session(session, attrs)
         "completed" -> complete_workout_session(session, attrs)
         "discarded" -> discard_workout_session(session)
         _ -> update_client_workout_session(session, attrs)
@@ -190,12 +191,28 @@ defmodule Easy.Sessions do
   end
 
   defp complete_workout_session(%TrainingSession{} = session, attrs) do
-    attrs = Map.merge(attrs, %{ended_at: DateTime.utc_now(), state: :completed})
+    occurred_at = DateTime.utc_now(:second)
+    attrs = Map.merge(attrs, %{ended_at: occurred_at, state: :completed})
 
-    session
-    |> TrainingSession.update_changeset(attrs)
-    |> Repo.update()
+    Repo.transaction(fn ->
+      with {:ok, updated} <- session |> TrainingSession.update_changeset(attrs) |> Repo.update(),
+           :ok <- stamp_client_activity(session.business_id, session.client_id, occurred_at) do
+        updated
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
     |> preload_session()
+  end
+
+  defp stamp_client_activity(business_id, client_id, occurred_at) do
+    Client
+    |> Client.last_active_stamp(business_id, client_id, occurred_at)
+    |> Repo.update_all([])
+    |> case do
+      {1, nil} -> :ok
+      {0, nil} -> {:error, :not_found}
+    end
   end
 
   defp discard_workout_session(%TrainingSession{} = session) do

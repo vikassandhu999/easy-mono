@@ -8,8 +8,10 @@ defmodule EasyWeb.Plugs.Authenticate do
 
   @allowed_roles ["owner", "coach", "client", "guest"]
 
+  @spec init(term()) :: term()
   def init(opts), do: opts
 
+  @spec call(Plug.Conn.t(), term()) :: Plug.Conn.t()
   def call(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
          {:ok, %{} = claims} <- Token.verify_access_token(token),

@@ -77,7 +77,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of nutrition plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum nutrition plans to return", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(:search, :query, :string, "Case-insensitive nutrition plan name search", required: false),
       Operation.parameter(
         :status,
@@ -169,7 +169,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 10)
+    limit = parse_integer(params, "limit", 20)
     search = Map.get(params, "search", "")
     status = parse_enum(params, "status", Plan.statuses())
 

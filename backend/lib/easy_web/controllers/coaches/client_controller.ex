@@ -120,7 +120,7 @@ defmodule EasyWeb.Coaches.ClientController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of clients to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum clients to return", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(:search, :query, :string, "Case-insensitive client search", required: false),
       Operation.parameter(
         :status,
@@ -164,7 +164,7 @@ defmodule EasyWeb.Coaches.ClientController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of clients to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum clients to return", required: false)
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false)
     ],
     responses: [
       ok: {"Attention clients", "application/json", ClientAttentionListResponse},
@@ -257,7 +257,7 @@ defmodule EasyWeb.Coaches.ClientController do
     opts = [
       search: Map.get(params, "search", ""),
       offset: parse_integer(params, "offset", 0),
-      limit: parse_integer(params, "limit", 10),
+      limit: parse_integer(params, "limit", 20),
       status: Map.get(params, "status"),
       stage: Map.get(params, "stage"),
       sort: parse_sort(Map.get(params, "sort")),

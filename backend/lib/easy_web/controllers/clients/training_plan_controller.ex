@@ -36,7 +36,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of training plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum training plans to return", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(
         :status,
         :query,
@@ -77,7 +77,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
+    limit = parse_integer(params, "limit", 20)
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-

@@ -6,6 +6,7 @@ defmodule EasyWeb.FallbackController do
   alias EasyWeb.ErrorJSON
   alias Plug.Conn.Status
 
+  @spec call(Plug.Conn.t(), {:error, term()}) :: Plug.Conn.t()
   def call(conn, {:error, %Error{} = error}) do
     http_status = Status.code(error.status)
 
@@ -412,6 +413,7 @@ defmodule EasyWeb.FallbackController do
     )
   end
 
+  @spec send_unauthorized_response(Plug.Conn.t(), String.t()) :: Plug.Conn.t()
   def send_unauthorized_response(
         conn,
         message \\ "Insufficient permissions to perform this action."
@@ -419,6 +421,7 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Error.unauthorized(message)})
   end
 
+  @spec send_unauthenticated_response(Plug.Conn.t(), String.t()) :: Plug.Conn.t()
   def send_unauthenticated_response(
         conn,
         message \\ "You must be authenticated to access this resource."

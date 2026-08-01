@@ -164,7 +164,9 @@ defmodule Easy.Nutrition.Food do
                 "ts_rank(search_vector, to_tsquery('simple', ?)) / greatest(length(?), 1)",
                 ^tsquery,
                 f.name
-              )
+              ),
+            asc: f.name,
+            asc: f.id
           ]
         )
     end

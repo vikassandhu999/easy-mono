@@ -155,6 +155,7 @@ defmodule Easy.Chat do
   end
 
   defp page_messages(business_id, conversation_id, opts) do
+    # Message history is deliberately denser than ordinary entity lists.
     limit = min(max(Keyword.get(opts, :limit, 50), 1), 100)
 
     ids =

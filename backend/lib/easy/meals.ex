@@ -16,7 +16,7 @@ defmodule Easy.Meals do
     with {:ok, _meal} <- get_meal(ctx, meal_id) do
       Meal
       |> Meal.for_business(ctx.business_id)
-      |> preload(meal_items: ^MealItem.include_food_and_recipe(MealItem, ctx.business_id))
+      |> Meal.include_items(ctx.business_id)
       |> Repo.get(meal_id)
       |> ok_or_not_found()
     end

@@ -113,9 +113,9 @@ defmodule Easy.Forms do
       assignments =
         FormAssignment
         |> FormAssignment.for_client(ctx.business_id, client_id)
-        |> include_form_template(ctx.business_id)
-        |> include_submission_reviews(ctx.business_id)
-        |> order_by([a, _t], asc: a.inserted_at)
+        |> FormAssignment.include_form_template(ctx.business_id)
+        |> FormAssignment.include_submission_reviews(ctx.business_id)
+        |> order_by([a, _template], asc: a.inserted_at, asc: a.id)
         |> Repo.all()
         |> put_latest_submission_reviews()
 
@@ -130,9 +130,9 @@ defmodule Easy.Forms do
       assignments =
         FormAssignment
         |> FormAssignment.for_client(ctx.business_id, client_id)
-        |> include_form_template(ctx.business_id)
-        |> include_submission_reviews(ctx.business_id)
-        |> order_by([a, _t], asc: a.inserted_at)
+        |> FormAssignment.include_form_template(ctx.business_id)
+        |> FormAssignment.include_submission_reviews(ctx.business_id)
+        |> order_by([a, _template], asc: a.inserted_at, asc: a.id)
         |> Repo.all()
         |> attach_assignment_submission_attachments(ctx.business_id)
         |> put_latest_submission_reviews()
@@ -218,7 +218,7 @@ defmodule Easy.Forms do
       assignment.purpose == :check_in and assignment.due_date == ^today and
         is_nil(assignment.due_reminder_sent_at)
     )
-    |> include_assignment_client()
+    |> FormAssignment.include_client()
     |> Repo.all()
     |> send_check_in_reminders(:due)
   end
@@ -234,7 +234,7 @@ defmodule Easy.Forms do
       assignment.purpose == :check_in and assignment.due_date <= ^cutoff and
         is_nil(assignment.overdue_reminder_sent_at)
     )
-    |> include_assignment_client()
+    |> FormAssignment.include_client()
     |> Repo.all()
     |> send_check_in_reminders(:overdue)
   end
@@ -297,8 +297,8 @@ defmodule Easy.Forms do
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
       FormAssignment
       |> FormAssignment.for_client(ctx.business_id, client_id)
-      |> include_form_template(ctx.business_id)
-      |> include_submission_reviews(ctx.business_id)
+      |> FormAssignment.include_form_template(ctx.business_id)
+      |> FormAssignment.include_submission_reviews(ctx.business_id)
       |> Repo.get(assignment_id)
       |> attach_assignment_submission_attachments(ctx.business_id)
       |> put_latest_submission_review()
@@ -576,14 +576,6 @@ defmodule Easy.Forms do
     assignment |> Ecto.Changeset.change([{field, DateTime.utc_now(:second)}]) |> Repo.update()
   end
 
-  defp include_assignment_client(query) do
-    from(assignment in query,
-      join: client in Client,
-      on: client.id == assignment.client_id and client.business_id == assignment.business_id,
-      preload: [client: client]
-    )
-  end
-
   defp generate_due_check_in_transaction(schedule_id, today) do
     schedule =
       CheckInSchedule
@@ -841,7 +833,7 @@ defmodule Easy.Forms do
   defp get_form_assignment(business_id, assignment_id) do
     FormAssignment
     |> FormAssignment.for_business(business_id)
-    |> include_form_template(business_id)
+    |> FormAssignment.include_form_template(business_id)
     |> Repo.get(assignment_id)
     |> ok_or_not_found()
   end
@@ -866,21 +858,6 @@ defmodule Easy.Forms do
     |> FormAssignment.for_business(business_id)
     |> where([a], a.form_template_id == ^template_id)
     |> Repo.exists?()
-  end
-
-  defp include_form_template(query, business_id) do
-    query
-    |> join(:inner, [a], t in FormTemplate, on: t.id == a.form_template_id and t.business_id == ^business_id)
-    |> preload([_a, t], form_template: t)
-  end
-
-  defp include_submission_reviews(query, business_id) do
-    submissions =
-      FormSubmission
-      |> FormSubmission.for_business(business_id)
-      |> FormSubmission.newest()
-
-    preload(query, form_submissions: ^submissions)
   end
 
   defp put_latest_submission_reviews(assignments), do: Enum.map(assignments, &put_latest_submission_review/1)

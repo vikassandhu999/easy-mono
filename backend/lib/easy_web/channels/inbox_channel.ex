@@ -2,6 +2,8 @@ defmodule EasyWeb.InboxChannel do
   use Phoenix.Channel
 
   @impl true
+  @spec join(String.t(), map(), Phoenix.Socket.t()) ::
+          {:ok, Phoenix.Socket.t()} | {:error, %{reason: String.t()}}
   def join("inbox", _payload, socket) do
     %{ctx: ctx, role: role} = socket.assigns
 
@@ -18,6 +20,7 @@ defmodule EasyWeb.InboxChannel do
   # Payload is id-only by design: trainers in the business may not be allowed to
   # see this client; the frontend refetches over HTTP, where visibility filters.
   @impl true
+  @spec handle_info(term(), Phoenix.Socket.t()) :: {:noreply, Phoenix.Socket.t()}
   def handle_info({:conversation_updated, conversation_id}, socket) do
     push(socket, "conversation_updated", %{conversation_id: conversation_id})
     {:noreply, socket}

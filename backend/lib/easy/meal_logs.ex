@@ -835,11 +835,9 @@ defmodule Easy.MealLogs do
   defp recipe_macros(recipe, weight_g, _amount), do: MacroCalc.for_recipe(recipe, weight_g)
 
   defp load_recipe_with_ingredients(business_id, recipe_id) do
-    food_query = Food.for_business_or_system(Food, business_id)
-
     Recipe
     |> Recipe.for_business(business_id)
-    |> preload(recipe_ingredients: ^from(ri in RecipeIngredient, preload: [food: ^food_query]))
+    |> Recipe.include_ingredient_foods(business_id)
     |> Repo.get(recipe_id)
   end
 

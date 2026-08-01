@@ -2,6 +2,7 @@ defmodule Easy.Forms.FormAssignment do
   use Ecto.Schema
 
   alias Easy.Clients.Client
+  alias Easy.Forms.FormSubmission
   alias Easy.Forms.FormTemplate
   alias Easy.Orgs
 
@@ -118,4 +119,28 @@ defmodule Easy.Forms.FormAssignment do
 
   @spec open(Ecto.Queryable.t()) :: Ecto.Query.t()
   def open(query \\ __MODULE__), do: from(a in query, where: a.status in [:assigned, :in_progress])
+
+  @spec include_form_template(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_form_template(query \\ __MODULE__, business_id) do
+    from(a in query,
+      join: template in FormTemplate,
+      on: template.id == a.form_template_id and template.business_id == ^business_id,
+      preload: [form_template: template]
+    )
+  end
+
+  @spec include_submission_reviews(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_submission_reviews(query \\ __MODULE__, business_id) do
+    submissions = FormSubmission |> FormSubmission.for_business(business_id) |> FormSubmission.newest()
+    from(a in query, preload: [form_submissions: ^submissions])
+  end
+
+  @spec include_client(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_client(query \\ __MODULE__) do
+    from(a in query,
+      join: client in Client,
+      on: client.id == a.client_id and client.business_id == a.business_id,
+      preload: [client: client]
+    )
+  end
 end

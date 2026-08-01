@@ -166,7 +166,7 @@ defmodule Easy.Training.TrainingPlan do
   end
 
   @spec include_workouts(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def include_workouts(query, business_id) do
+  def include_workouts(query \\ __MODULE__, business_id) do
     workout_query =
       TrainingWorkout
       |> TrainingWorkout.for_business(business_id)
@@ -174,5 +174,10 @@ defmodule Easy.Training.TrainingPlan do
       |> TrainingWorkout.include_exercises(business_id)
 
     from(t in query, preload: [workouts: ^workout_query])
+  end
+
+  @spec include_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_client(query \\ __MODULE__, business_id) do
+    from(t in query, preload: [client: ^Easy.Clients.Client.for_business(Easy.Clients.Client, business_id)])
   end
 end

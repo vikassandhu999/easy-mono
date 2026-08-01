@@ -91,4 +91,9 @@ defmodule Easy.Landing.Prospect do
   def newest(query \\ __MODULE__) do
     from(p in query, order_by: [desc: p.inserted_at, desc: p.id])
   end
+
+  @spec include_details(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_details(query \\ __MODULE__) do
+    from(p in query, preload: [:landing_program, :landing_page, :client])
+  end
 end

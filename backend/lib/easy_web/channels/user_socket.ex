@@ -10,6 +10,7 @@ defmodule EasyWeb.UserSocket do
   channel "inbox", EasyWeb.InboxChannel
 
   @impl true
+  @spec connect(map(), Phoenix.Socket.t(), map()) :: {:ok, Phoenix.Socket.t()} | :error
   def connect(%{"token" => token}, socket, _connect_info) do
     with {:ok, claims} <- Token.verify_access_token(token),
          role when not is_nil(role) <- Utils.safe_to_atom(claims["role"], ~w(coach client)) do
@@ -23,6 +24,7 @@ defmodule EasyWeb.UserSocket do
   def connect(_params, _socket, _connect_info), do: :error
 
   @impl true
+  @spec id(Phoenix.Socket.t()) :: String.t()
   def id(socket), do: "user_socket:#{socket.assigns.ctx.user_id}"
 
   defp assign_actor(socket, :coach, ctx), do: {:ok, assign(socket, ctx: ctx, role: :coach)}

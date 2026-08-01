@@ -26,7 +26,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     parameters: [
       Operation.parameter(:client_id, :path, :string, "Client id"),
       Operation.parameter(:offset, :query, :integer, "Number of plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum plans to return", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(
         :status,
         :query,
@@ -48,7 +48,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     parameters: [
       Operation.parameter(:client_id, :path, :string, "Client id"),
       Operation.parameter(:offset, :query, :integer, "Number of plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum plans to return", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(
         :status,
         :query,
@@ -66,7 +66,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   @spec training_plans(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def training_plans(conn, %{"client_id" => client_id} = params) do
     offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 50)
+    limit = parse_integer(params, "limit", 20)
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
@@ -86,7 +86,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   @spec nutrition_plans(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def nutrition_plans(conn, %{"client_id" => client_id} = params) do
     offset = parse_integer(params, "offset", 0)
-    limit = parse_integer(params, "limit", 10)
+    limit = parse_integer(params, "limit", 20)
     status = parse_enum(params, "status", Plan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-

@@ -15,7 +15,7 @@ defmodule EasyWeb.Clients.RecipeController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of recipes to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum recipes to return", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(:search, :query, :string, "Case-insensitive recipe search", required: false)
     ],
     responses: [
@@ -40,7 +40,7 @@ defmodule EasyWeb.Clients.RecipeController do
     opts = [
       search: Map.get(params, "search", ""),
       offset: parse_integer(params, "offset", 0),
-      limit: parse_integer(params, "limit", 50)
+      limit: parse_integer(params, "limit", 20)
     ]
 
     with {:ok, %{recipes: recipes, count: count}} <-

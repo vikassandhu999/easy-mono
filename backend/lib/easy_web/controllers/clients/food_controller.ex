@@ -15,7 +15,7 @@ defmodule EasyWeb.Clients.FoodController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of foods to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum foods to return", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
       Operation.parameter(:search, :query, :string, "Case-insensitive food name search", required: false)
     ],
     responses: [
@@ -42,7 +42,7 @@ defmodule EasyWeb.Clients.FoodController do
     opts = [
       search: Map.get(params, "search", ""),
       offset: parse_integer(params, "offset", 0),
-      limit: parse_integer(params, "limit", 50)
+      limit: parse_integer(params, "limit", 20)
     ]
 
     with {:ok, %{foods: foods, count: count}} <-

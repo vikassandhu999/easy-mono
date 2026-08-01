@@ -5,6 +5,8 @@ defmodule EasyWeb.ConversationChannel do
   alias EasyWeb.Coaches.ConversationJSON
 
   @impl true
+  @spec join(String.t(), map(), Phoenix.Socket.t()) ::
+          {:ok, Phoenix.Socket.t()} | {:error, %{reason: String.t()}}
   def join("conversation:" <> conversation_id, _payload, socket) do
     case authorize(socket, conversation_id) do
       :ok -> {:ok, socket}
@@ -13,6 +15,7 @@ defmodule EasyWeb.ConversationChannel do
   end
 
   @impl true
+  @spec handle_info(term(), Phoenix.Socket.t()) :: {:noreply, Phoenix.Socket.t()}
   def handle_info({:chat_message_created, message}, socket) do
     push(socket, "message_new", ConversationJSON.message_data(message))
     {:noreply, socket}

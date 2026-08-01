@@ -20,7 +20,7 @@ defmodule Easy.TrainingPlans do
       TrainingPlan
       |> TrainingPlan.for_business(business_id)
       |> TrainingPlan.include_workouts(business_id)
-      |> preload(client: ^Client.for_business(business_id))
+      |> TrainingPlan.include_client(business_id)
       |> Repo.get(plan_id)
 
     with {:ok, plan} <- ok_or_not_found(plan),
@@ -92,7 +92,7 @@ defmodule Easy.TrainingPlans do
       preload_fun = fn query ->
         query
         |> TrainingPlan.include_workouts(business_id)
-        |> preload(client: ^Client.for_business(business_id))
+        |> TrainingPlan.include_client(business_id)
       end
 
       {:ok, paginated(base, offset, limit, preload_fun)}
@@ -116,7 +116,7 @@ defmodule Easy.TrainingPlans do
       preload_fun = fn query ->
         query
         |> TrainingPlan.include_workouts(business_id)
-        |> preload(client: ^Client.for_business(business_id))
+        |> TrainingPlan.include_client(business_id)
       end
 
       {:ok, paginated(base, offset, limit, preload_fun)}

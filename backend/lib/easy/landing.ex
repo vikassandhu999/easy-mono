@@ -23,7 +23,7 @@ defmodule Easy.Landing do
       |> LandingPage.for_business(ctx.business_id)
       |> order_by(asc: :inserted_at, asc: :id)
       |> limit(1)
-      |> preload(:programs)
+      |> LandingPage.include_programs()
       |> Repo.one()
 
     {:ok, page}
@@ -90,7 +90,8 @@ defmodule Easy.Landing do
       LandingPage
       |> LandingPage.for_slug(slug)
       |> LandingPage.published()
-      |> preload([:programs, :business])
+      |> LandingPage.include_programs()
+      |> LandingPage.include_business()
       |> Repo.one()
 
     case page do
@@ -146,7 +147,7 @@ defmodule Easy.Landing do
          base
          |> Prospect.newest()
          |> Easy.Utils.paginate(offset, limit)
-         |> preload([:landing_program, :landing_page, :client])
+         |> Prospect.include_details()
          |> Repo.all()
      }}
   end
@@ -155,7 +156,7 @@ defmodule Easy.Landing do
   def get_prospect(%Ctx{} = ctx, id) do
     Prospect
     |> Prospect.for_business(ctx.business_id)
-    |> preload([:landing_program, :landing_page, :client])
+    |> Prospect.include_details()
     |> Repo.get(id)
     |> ok_or_not_found()
   end

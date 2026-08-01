@@ -101,4 +101,12 @@ defmodule Easy.Nutrition.Recipe do
 
     from(r in query, preload: [foods: ^food_query, recipe_ingredients: ^ingredient_query])
   end
+
+  @spec include_ingredient_foods(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def include_ingredient_foods(query \\ __MODULE__, business_id) do
+    food_query = Easy.Nutrition.Food.for_business_or_system(Easy.Nutrition.Food, business_id)
+    ingredient_query = from(ri in RecipeIngredient, preload: [food: ^food_query])
+
+    from(r in query, preload: [recipe_ingredients: ^ingredient_query])
+  end
 end

@@ -98,4 +98,10 @@ defmodule Easy.Landing.LandingPage do
   def published(query \\ __MODULE__) do
     from(p in query, where: p.status == :published)
   end
+
+  @spec include_programs(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_programs(query \\ __MODULE__), do: from(p in query, preload: [:programs])
+
+  @spec include_business(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def include_business(query \\ __MODULE__), do: from(p in query, preload: [:business])
 end

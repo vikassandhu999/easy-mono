@@ -1,6 +1,7 @@
 defmodule EasyWeb.Coaches.EquipmentJSON do
   alias Easy.Training.TrainingEquipment
 
+  @spec index(%{equipment: [TrainingEquipment.t()]}) :: map()
   def index(%{equipment: equipment}) do
     %{data: for(item <- equipment, do: data(item))}
   end

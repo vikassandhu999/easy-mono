@@ -2,6 +2,8 @@ defmodule Easy.Foods.CategoryFilterTest do
   use Easy.SchemaCase
 
   alias Easy.Foods
+  alias Easy.Nutrition.Food
+  alias Easy.Repo
 
   # `category` is a free-form string on `foods`, so the FO toolbar's options come
   # from the data. Both halves — the filter and the option list — are scoped to what
@@ -48,6 +50,13 @@ defmodule Easy.Foods.CategoryFilterTest do
                Foods.list_visible_foods(owner_ctx(business), categories: ["Grains"], search: "rice")
 
       assert food.name == "Brown Rice"
+    end
+
+    test "search has deterministic tie-breakers" do
+      {sql, _params} = Repo.to_sql(:all, Food.search("rice"))
+
+      assert sql =~ ~s(ORDER BY ts_rank)
+      assert sql =~ ~r/, \w0\."name", \w0\."id"$/
     end
   end
 

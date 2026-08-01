@@ -16,6 +16,7 @@ import {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import {
+  type TrainingPerformedSet,
   type TrainingSession,
   useCreateClientPerformedSetMutation,
   useDeleteClientPerformedSetMutation,
@@ -26,8 +27,9 @@ import {
   useUpdateClientTrainingSessionMutation,
 } from '@/api/training';
 import {
-  addedExercises,
-  assignPerformed,
+  type ActiveExerciseCard,
+  activeExerciseCards,
+  type ExercisePick,
   type FieldKind,
   fieldsFor,
   formatSeconds,
@@ -35,7 +37,6 @@ import {
   type SnapshotExercise,
   type SnapshotSet,
   sessionVolumeKg,
-  snapshotExercises,
 } from '@/workout/session-utils';
 
 type LoggedSet = {
@@ -44,9 +45,6 @@ type LoggedSet = {
   load_value: null | number;
   reps: null | string;
 };
-
-// An exercise picked from the library, for swap or add.
-type Picked = {id: string; name: string; tracking_type: string};
 
 function ElapsedClock({startedAt}: {startedAt: string}) {
   const [now, setNow] = useState(() => Date.now());
@@ -164,7 +162,7 @@ function SetRow({
   busy: boolean;
   exercise: SnapshotExercise;
   index: number;
-  logged?: ReturnType<typeof assignPerformed>[number][number];
+  logged?: TrainingPerformedSet;
   onComplete: (values: LoggedSet, restSeconds: number) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, values: LoggedSet) => void;
@@ -254,7 +252,7 @@ function EditableSetTable({
   onUpdate,
 }: {
   busy: boolean;
-  card: Card;
+  card: ActiveExerciseCard;
   onComplete: (index: number, values: LoggedSet, restSeconds: number) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, values: LoggedSet) => void;
@@ -293,7 +291,15 @@ function ActionButton({label, onPress, children}: {children: React.ReactNode; la
 }
 
 // Full-screen library search for swap / add. Debounced name search.
-function ExercisePicker({title, onPick, onClose}: {onClose: () => void; onPick: (e: Picked) => void; title: string}) {
+function ExercisePicker({
+  title,
+  onPick,
+  onClose,
+}: {
+  onClose: () => void;
+  onPick: (e: ExercisePick) => void;
+  title: string;
+}) {
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   useEffect(() => {
@@ -350,20 +356,6 @@ function ExercisePicker({title, onPick, onClose}: {onClose: () => void; onPick: 
   );
 }
 
-type Card = {
-  added: boolean;
-  badge: null | {from: string} | 'added';
-  done: ReturnType<typeof assignPerformed>[number];
-  id: string;
-  // synthetic exercise driving the set block (swap/added substitute the planned one)
-  exercise: SnapshotExercise;
-  logSwappedFrom: null | string;
-  name: string;
-  plannedIndex: null | number;
-  removable: boolean;
-  total: null | number;
-};
-
 // Soft-intake soreness scale (1–5) shown on the finish wrap-up.
 const SORENESS_OPTIONS = [
   {rating: 1, emoji: '😎', label: 'Fresh'},
@@ -388,8 +380,8 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   // Client-side session edits — the planned_snapshot is immutable, so swap/skip/add
   // live in component state for the session (a reload re-derives from performed_sets).
   const [skipped, setSkipped] = useState<Set<number>>(() => new Set());
-  const [swaps, setSwaps] = useState<Map<number, Picked>>(() => new Map());
-  const [added, setAdded] = useState<Picked[]>([]);
+  const [swaps, setSwaps] = useState<Map<number, ExercisePick>>(() => new Map());
+  const [added, setAdded] = useState<ExercisePick[]>([]);
   const [doneAdded, setDoneAdded] = useState<Set<string>>(() => new Set());
   const [picker, setPicker] = useState<null | {index: number; mode: 'swap'} | {mode: 'add'}>(null);
   const [soreness, setSoreness] = useState<number | null>(null);
@@ -412,54 +404,13 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   }, [rest?.left]);
 
   const workoutName = (session.planned_snapshot as {workout_name?: string} | null)?.workout_name ?? 'Workout';
-  const planned = snapshotExercises(session);
   const performed = session.performed_sets;
   const summary = {
     sets: performed.length,
     exercises: new Set(performed.map((p) => p.exercise_id)).size,
     volume: formatVolume(sessionVolumeKg(performed)),
   };
-  const assigned = assignPerformed(planned, performed);
-  const extra = addedExercises(planned, performed);
-
-  const cards: Card[] = planned.map((ex, i) => {
-    const swap = swaps.get(i) ?? null;
-    const total = (ex.sets ?? []).length;
-    return {
-      added: false,
-      badge: swap ? {from: ex.name ?? 'planned'} : null,
-      done: assigned[i] ?? [],
-      exercise: swap
-        ? {
-            exercise_id: swap.id,
-            name: swap.name,
-            sets: Array.from({length: total}, () => ({})),
-            tracking_type: swap.tracking_type,
-          }
-        : ex,
-      id: `p${i}`,
-      logSwappedFrom: swap ? (ex.exercise_id ?? null) : null,
-      name: swap ? swap.name : (ex.name ?? 'Exercise'),
-      plannedIndex: i,
-      removable: false,
-      total,
-    };
-  });
-  for (const a of added) {
-    const done = extra.get(a.id) ?? [];
-    cards.push({
-      added: true,
-      badge: 'added',
-      done,
-      exercise: {exercise_id: a.id, name: a.name, sets: [], tracking_type: a.tracking_type},
-      id: `a${a.id}`,
-      logSwappedFrom: null,
-      name: a.name,
-      plannedIndex: null,
-      removable: done.length === 0,
-      total: null,
-    });
-  }
+  const cards = activeExerciseCards(session, {added, swaps});
 
   const currentId = (() => {
     for (const c of cards) {
@@ -486,7 +437,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   const overallTotal = cards.reduce((total, card) => total + (card.total ?? card.done.length), 0);
   const overallDone = cards.reduce((total, card) => total + card.done.length, 0);
 
-  const handleLog = async (card: Card, setIndex: number, values: LoggedSet, restSeconds: number) => {
+  const handleLog = async (card: ActiveExerciseCard, setIndex: number, values: LoggedSet, restSeconds: number) => {
     const plannedSet = (card.exercise.sets ?? [])[setIndex];
     const cardPosition = cards
       .slice(0, cards.indexOf(card))
@@ -536,7 +487,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
     }
   };
 
-  const onPick = (e: Picked) => {
+  const onPick = (e: ExercisePick) => {
     if (!picker) {
       return;
     }

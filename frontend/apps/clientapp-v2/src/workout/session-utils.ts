@@ -23,6 +23,19 @@ export type SnapshotExercise = {
   sets?: SnapshotSet[];
   tracking_type?: null | string;
 };
+export type ExercisePick = {id: string; name: string; tracking_type: null | string};
+export type ActiveExerciseCard = {
+  added: boolean;
+  badge: null | {from: string} | 'added';
+  done: TrainingPerformedSet[];
+  exercise: SnapshotExercise;
+  id: string;
+  logSwappedFrom: null | string;
+  name: string;
+  plannedIndex: null | number;
+  removable: boolean;
+  total: null | number;
+};
 type Snapshot = {exercises?: SnapshotExercise[]; workout_name?: string};
 
 export function snapshotOf(session: TrainingSession): Snapshot {
@@ -99,11 +112,91 @@ export function addedExercises(
 }
 
 // If a planned slot's logged sets were swapped, the exercise actually performed.
-export function swapOf(sets: TrainingPerformedSet[]): null | {name: string; trackingType: null | string} {
+export function swapOf(sets: TrainingPerformedSet[]): null | {
+  id: string;
+  name: string;
+  trackingType: null | string;
+} {
   const swapped = sets.find((p) => p.swapped_from_exercise_id != null);
   return swapped
-    ? {name: swapped.exercise_name ?? 'Exercise', trackingType: swapped.exercise?.tracking_type ?? null}
+    ? {
+        id: swapped.exercise_id,
+        name: swapped.exercise_name ?? 'Exercise',
+        trackingType: swapped.exercise?.tracking_type ?? null,
+      }
     : null;
+}
+
+export function activeExerciseCards(
+  session: TrainingSession,
+  edits: {added: readonly ExercisePick[]; swaps: ReadonlyMap<number, ExercisePick>},
+): ActiveExerciseCard[] {
+  const planned = snapshotExercises(session);
+  const assigned = assignPerformed(planned, session.performed_sets);
+  const extra = addedExercises(planned, session.performed_sets);
+  const cards = planned.map((exercise, index): ActiveExerciseCard => {
+    const persistedSwap = swapOf(assigned[index] ?? []);
+    const swap =
+      edits.swaps.get(index) ??
+      (persistedSwap && {
+        id: persistedSwap.id,
+        name: persistedSwap.name,
+        tracking_type: persistedSwap.trackingType,
+      });
+    const total = (exercise.sets ?? []).length;
+    return {
+      added: false,
+      badge: swap ? {from: exercise.name ?? 'planned'} : null,
+      done: assigned[index] ?? [],
+      exercise: swap
+        ? {
+            exercise_id: swap.id,
+            name: swap.name,
+            sets: Array.from({length: total}, () => ({})),
+            tracking_type: swap.tracking_type,
+          }
+        : exercise,
+      id: `p${index}`,
+      logSwappedFrom: swap ? (exercise.exercise_id ?? null) : null,
+      name: swap?.name ?? exercise.name ?? 'Exercise',
+      plannedIndex: index,
+      removable: false,
+      total,
+    };
+  });
+
+  const additions = new Map<string, ExercisePick>();
+  for (const [id, sets] of extra) {
+    additions.set(id, {
+      id,
+      name: sets[0]?.exercise_name ?? 'Exercise',
+      tracking_type: sets[0]?.exercise?.tracking_type ?? null,
+    });
+  }
+  for (const exercise of edits.added) {
+    additions.set(exercise.id, exercise);
+  }
+  for (const exercise of additions.values()) {
+    const done = extra.get(exercise.id) ?? [];
+    cards.push({
+      added: true,
+      badge: 'added',
+      done,
+      exercise: {
+        exercise_id: exercise.id,
+        name: exercise.name,
+        sets: [],
+        tracking_type: exercise.tracking_type,
+      },
+      id: `a${exercise.id}`,
+      logSwappedFrom: null,
+      name: exercise.name,
+      plannedIndex: null,
+      removable: done.length === 0,
+      total: null,
+    });
+  }
+  return cards;
 }
 
 export function sessionVolumeKg(performed: TrainingPerformedSet[]): number {

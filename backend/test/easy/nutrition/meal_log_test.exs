@@ -14,6 +14,106 @@ defmodule Easy.Nutrition.MealLogTest do
 
   @date ~D[2026-07-06]
 
+  describe "client activity stamping" do
+    test "successful entry create and edit stamp, while failure and delete do not" do
+      %{client_ctx: client_ctx, client: client, snack_food: snack_food} = build_scenario()
+
+      invalid_attrs = %{
+        date: @date,
+        meal_slot: "afternoon_snack",
+        food_id: snack_food.id,
+        amount: 1.0,
+        unit: "unit",
+        source: :unplanned
+      }
+
+      assert {:error, %Ecto.Changeset{}} =
+               MealLogs.create_client_food_log_entry(client_ctx, invalid_attrs)
+
+      assert is_nil(Repo.reload(client).last_active_at)
+
+      assert {:ok, entry} =
+               MealLogs.create_client_food_log_entry(
+                 client_ctx,
+                 Map.put(invalid_attrs, :weight_g, 120.0)
+               )
+
+      assert %DateTime{} = Repo.reload(client).last_active_at
+
+      old_stamp = ~U[2026-07-01 10:30:00Z]
+      client |> Ecto.Changeset.change(last_active_at: old_stamp) |> Repo.update!()
+
+      assert {:ok, _updated} =
+               MealLogs.update_client_food_log_entry(client_ctx, entry.id, %{weight_g: 100.0})
+
+      updated_stamp = Repo.reload(client).last_active_at
+      assert DateTime.after?(updated_stamp, old_stamp)
+
+      assert {:ok, _deleted} = MealLogs.delete_client_food_log_entry(client_ctx, entry.id)
+      assert Repo.reload(client).last_active_at == updated_stamp
+    end
+
+    test "meal logging stamps only when it creates entries" do
+      %{client_ctx: client_ctx, client: client, oats: oats} = build_scenario()
+
+      assert {:ok, [_entry]} =
+               MealLogs.log_client_meal(client_ctx, %{
+                 date: @date,
+                 meal_slot: "breakfast",
+                 meal_id: oats.id
+               })
+
+      stamp = Repo.reload(client).last_active_at
+      assert %DateTime{} = stamp
+
+      {replay, queries} =
+        capture_queries(fn ->
+          MealLogs.log_client_meal(client_ctx, %{
+            date: @date,
+            meal_slot: "breakfast",
+            meal_id: oats.id
+          })
+        end)
+
+      assert {:ok, []} = replay
+      assert Repo.reload(client).last_active_at == stamp
+      refute Enum.any?(queries, &String.contains?(&1, ~s(UPDATE "clients")))
+    end
+
+    test "day logging stamps new entries, while replay and option switching do not" do
+      %{client_ctx: client_ctx, client: client, plan: plan, eggs: eggs} = build_scenario()
+
+      {switch_result, switch_queries} =
+        capture_queries(fn ->
+          MealLogs.switch_client_meal_option(client_ctx, %{
+            date: @date,
+            meal_slot: "breakfast",
+            meal_id: eggs.id
+          })
+        end)
+
+      assert {:ok, _meal_log} = switch_result
+      assert is_nil(Repo.reload(client).last_active_at)
+      refute Enum.any?(switch_queries, &String.contains?(&1, ~s(UPDATE "clients")))
+
+      assert {:ok, entries} =
+               MealLogs.log_client_day(client_ctx, %{date: @date, plan_id: plan.id})
+
+      assert entries != []
+      stamp = Repo.reload(client).last_active_at
+      assert %DateTime{} = stamp
+
+      {replay, replay_queries} =
+        capture_queries(fn ->
+          MealLogs.log_client_day(client_ctx, %{date: @date, plan_id: plan.id})
+        end)
+
+      assert {:ok, []} = replay
+      assert Repo.reload(client).last_active_at == stamp
+      refute Enum.any?(replay_queries, &String.contains?(&1, ~s(UPDATE "clients")))
+    end
+  end
+
   describe "recalculate_logged_calories/1" do
     test "returns not found when the meal log no longer exists" do
       coach = insert_coach()
@@ -232,7 +332,7 @@ defmodule Easy.Nutrition.MealLogTest do
 
       assert length(entries) == 2
       assert two_slot_queries == one_slot_queries
-      assert two_slot_queries in 7..8
+      assert two_slot_queries in 8..9
     end
 
     test "log_client_day computes servings-sized recipe entries from one loaded batch" do
@@ -252,7 +352,7 @@ defmodule Easy.Nutrition.MealLogTest do
 
       entry = Enum.find(entries, &(&1.food_name == "Dal Tadka"))
 
-      assert recipe_queries in 8..9
+      assert recipe_queries in 9..10
       assert entry.amount == 1.0
       assert entry.weight_g == nil
       assert entry.calories == 400.0
@@ -616,13 +716,18 @@ defmodule Easy.Nutrition.MealLogTest do
   end
 
   defp count_queries(fun) do
+    {result, queries} = capture_queries(fun)
+    {result, length(queries)}
+  end
+
+  defp capture_queries(fun) do
     parent = self()
     handler_id = {__MODULE__, make_ref()}
 
     :telemetry.attach(
       handler_id,
       [:easy, :repo, :query],
-      fn _event, _measurements, _metadata, _config -> send(parent, :query) end,
+      fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
       nil
     )
 
@@ -633,14 +738,14 @@ defmodule Easy.Nutrition.MealLogTest do
         :telemetry.detach(handler_id)
       end
 
-    {result, received_query_count()}
+    {result, received_queries()}
   end
 
-  defp received_query_count(count \\ 0) do
+  defp received_queries(queries \\ []) do
     receive do
-      :query -> received_query_count(count + 1)
+      {:query, query} -> received_queries([query | queries])
     after
-      0 -> count
+      0 -> Enum.reverse(queries)
     end
   end
 end

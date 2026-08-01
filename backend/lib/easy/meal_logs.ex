@@ -82,7 +82,7 @@ defmodule Easy.MealLogs do
   def update_client_food_log_entry(%Ctx{} = ctx, entry_id, attrs) do
     with {:ok, client} <- get_client(ctx),
          {:ok, entry} <- get_client_food_log_entry_scoped(ctx.business_id, client.id, entry_id) do
-      update_entry(entry, ctx.business_id, attrs)
+      update_entry(entry, ctx.business_id, client.id, attrs)
     end
   end
 
@@ -253,6 +253,7 @@ defmodule Easy.MealLogs do
   end
 
   defp log_entry_transaction(business_id, client_id, date, meal_slot, explicit_meal_id, attrs) do
+    occurred_at = DateTime.utc_now(:second)
     meal_id = resolve_slot_meal_id(business_id, client_id, date, meal_slot, explicit_meal_id)
     meal = meal_id && load_meal_with_items(business_id, client_id, meal_id)
     snapshot = build_planned_snapshot(meal)
@@ -261,7 +262,8 @@ defmodule Easy.MealLogs do
     meal_item_id = resolve_meal_item_id(business_id, meal_id, attrs[:meal_item_id])
 
     with {:ok, entry} <- create_food_log_entry(business_id, meal_log.id, attrs, meal_item_id),
-         {:ok, _meal_log} <- recalculate_logged_calories(meal_log) do
+         {:ok, _meal_log} <- recalculate_logged_calories(meal_log),
+         :ok <- stamp_client_activity(business_id, client_id, occurred_at) do
       entry
     else
       {:error, reason} -> Repo.rollback(reason)
@@ -279,13 +281,16 @@ defmodule Easy.MealLogs do
     end
   end
 
-  defp update_entry(%FoodLogEntry{} = entry, business_id, attrs) do
-    Repo.transaction(fn -> update_entry_transaction(entry, business_id, attrs) end)
+  defp update_entry(%FoodLogEntry{} = entry, business_id, client_id, attrs) do
+    Repo.transaction(fn -> update_entry_transaction(entry, business_id, client_id, attrs) end)
   end
 
-  defp update_entry_transaction(entry, business_id, attrs) do
+  defp update_entry_transaction(entry, business_id, client_id, attrs) do
+    occurred_at = DateTime.utc_now(:second)
+
     with {:ok, updated} <- update_food_log_entry(entry, business_id, attrs),
-         {:ok, _meal_log} <- recalculate_entry_meal_log(updated, business_id) do
+         {:ok, _meal_log} <- recalculate_entry_meal_log(updated, business_id),
+         :ok <- stamp_client_activity(business_id, client_id, occurred_at) do
       updated
     else
       {:error, reason} -> Repo.rollback(reason)
@@ -305,9 +310,22 @@ defmodule Easy.MealLogs do
     end
   end
 
+  defp stamp_client_activity(business_id, client_id, occurred_at) do
+    Client
+    |> Client.last_active_stamp(business_id, client_id, occurred_at)
+    |> Repo.update_all([])
+    |> case do
+      {1, nil} -> :ok
+      {0, nil} -> {:error, :not_found}
+    end
+  end
+
   defp log_meal(business_id, client_id, date, meal_slot, meal_id) do
     Repo.transaction(fn ->
-      do_log_meal(business_id, client_id, date, meal_slot, meal_id)
+      occurred_at = DateTime.utc_now(:second)
+      entries = do_log_meal(business_id, client_id, date, meal_slot, meal_id)
+      stamp_new_entries(entries, business_id, client_id, occurred_at)
+      entries
     end)
   end
 
@@ -320,8 +338,18 @@ defmodule Easy.MealLogs do
       {slots, meals_by_id} = sync_day_slots(slots, meals_by_id, logs_by_slot, business_id, plan_id)
       entries = insert_day_entries(slots, meals_by_id, logs_by_slot, business_id, now)
       recalculate_day_calories(logs_by_slot, business_id)
+      stamp_new_entries(entries, business_id, client_id, now)
       entries
     end)
+  end
+
+  defp stamp_new_entries([], _business_id, _client_id, _occurred_at), do: :ok
+
+  defp stamp_new_entries(_entries, business_id, client_id, occurred_at) do
+    case stamp_client_activity(business_id, client_id, occurred_at) do
+      :ok -> :ok
+      {:error, reason} -> Repo.rollback(reason)
+    end
   end
 
   defp load_day_slots!(business_id, client_id, date, plan_id) do

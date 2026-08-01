@@ -154,6 +154,13 @@ tenant-isolation rule has no "it's only a boolean" exception — pipe the schema
 `for_coach` builder (deliberate cross-tenant checks, e.g. the global
 active-client-email rule, carry a comment saying so).
 
+### RM-022 — `max(position) + 1` needs a stable parent-row lock
+Moving `max(position) + 1` into an INSERT does not serialize concurrent appends: two
+transactions can still read the same maximum. Lock the owning parent row with `FOR UPDATE`
+inside the write transaction so only siblings under that parent contend. **Enforced by:**
+`test/easy/training/performed_set_concurrency_test.exs` releases same-session appends together
+and requires contiguous positions.
+
 ---
 
 ## Frontend

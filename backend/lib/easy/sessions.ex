@@ -83,9 +83,8 @@ defmodule Easy.Sessions do
   @spec create_client_performed_set(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingPerformedSet.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_client_performed_set(%Ctx{} = ctx, session_id, attrs) do
-    with {:ok, client_id} <- Ctx.fetch_client_id(ctx),
-         {:ok, _session} <- fetch_client_session(ctx.business_id, client_id, session_id) do
-      create_performed_set(session_id, ctx.business_id, attrs)
+    with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
+      Repo.transaction(fn -> create_performed_set_transaction(ctx.business_id, client_id, session_id, attrs) end)
     end
   end
 
@@ -134,6 +133,7 @@ defmodule Easy.Sessions do
   defp fetch_client_session(business_id, client_id, session_id) do
     TrainingSession
     |> TrainingSession.for_client(business_id, client_id)
+    |> lock("FOR UPDATE")
     |> Repo.get(session_id)
     |> ok_or_not_found()
   end
@@ -144,6 +144,15 @@ defmodule Easy.Sessions do
     |> TrainingSession.include_sets(business_id)
     |> Repo.get(session_id)
     |> ok_or_not_found()
+  end
+
+  defp create_performed_set_transaction(business_id, client_id, session_id, attrs) do
+    with {:ok, _session} <- fetch_client_session(business_id, client_id, session_id),
+         {:ok, set} <- create_performed_set(session_id, business_id, attrs) do
+      set
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
   end
 
   defp get_client_performed_set(business_id, client_id, set_id) do

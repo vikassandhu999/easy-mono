@@ -82,6 +82,21 @@ defmodule Easy.Training.TrainingPerformedSetTest do
       assert Enum.map(reloaded.performed_sets, & &1.position) == [3, 3]
     end
 
+    test "uses four data statements and does not resolve client identity again" do
+      %{ctx: ctx, session: session, exercise: exercise} = session_with_element()
+
+      {result, queries} = capture_queries(fn -> log(ctx, session, exercise, %{}) end)
+      data_queries = Enum.reject(queries, &(&1 in ["begin", "commit"]))
+
+      assert {:ok, %{position: 0}} = result
+      assert length(data_queries) == 4
+      assert Enum.count(data_queries, &String.contains?(&1, ~s(FROM "training_sessions"))) == 1
+      assert Enum.count(data_queries, &String.contains?(&1, ~s(FROM "training_exercises"))) == 1
+      assert Enum.count(data_queries, &String.contains?(&1, ~s(FROM "training_performed_sets"))) == 1
+      assert Enum.count(data_queries, &String.starts_with?(&1, ~s(INSERT INTO "training_performed_sets"))) == 1
+      refute Enum.any?(data_queries, &String.contains?(&1, ~s(FROM "clients")))
+    end
+
     test "planned_exercise_index round-trips and defaults to nil" do
       %{ctx: ctx, session: session, exercise: exercise} = session_with_element()
 
@@ -187,5 +202,31 @@ defmodule Easy.Training.TrainingPerformedSetTest do
     ctx = %Ctx{user_id: client.user_id, business_id: client.business_id, client_id: client.id}
 
     %{business: business, ctx: ctx, session: session, exercise: exercise}
+  end
+
+  defp capture_queries(fun) do
+    parent = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:easy, :repo, :query],
+      fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
+      nil
+    )
+
+    try do
+      {fun.(), received_queries()}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp received_queries(queries \\ []) do
+    receive do
+      {:query, query} -> received_queries([query | queries])
+    after
+      0 -> Enum.reverse(queries)
+    end
   end
 end

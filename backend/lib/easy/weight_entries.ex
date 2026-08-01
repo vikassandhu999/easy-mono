@@ -26,8 +26,10 @@ defmodule Easy.WeightEntries do
           {:ok, WeightEntry.t()}
           | {:error, :not_found | :date_required | :invalid_date | :future_date | Ecto.Changeset.t()}
   def upsert_client_weight_entry(%Ctx{} = ctx, attrs) do
-    with {:ok, client} <- get_client(ctx) do
-      upsert(ctx.business_id, client.id, attrs)
+    with {:ok, client} <- get_client(ctx),
+         {:ok, date} <- parse_date(attrs[:date]),
+         :ok <- ensure_not_future(date) do
+      upsert_and_stamp(ctx.business_id, client.id, date, attrs)
     end
   end
 
@@ -81,16 +83,36 @@ defmodule Easy.WeightEntries do
     end
   end
 
-  defp upsert(business_id, client_id, attrs) do
-    with {:ok, date} <- parse_date(attrs[:date]),
-         :ok <- ensure_not_future(date) do
-      case existing_entry(business_id, client_id, date) do
-        nil ->
-          insert_entry(business_id, client_id, date, attrs)
+  defp upsert_and_stamp(business_id, client_id, date, attrs) do
+    Repo.transaction(fn ->
+      occurred_at = DateTime.utc_now(:second)
 
-        existing ->
-          WeightEntry.update_changeset(existing, normalize_attrs(attrs)) |> Repo.update()
+      with {:ok, entry} <- upsert(business_id, client_id, date, attrs),
+           :ok <- stamp_client_activity(business_id, client_id, occurred_at) do
+        entry
+      else
+        {:error, reason} -> Repo.rollback(reason)
       end
+    end)
+  end
+
+  defp upsert(business_id, client_id, date, attrs) do
+    case existing_entry(business_id, client_id, date) do
+      nil ->
+        insert_entry(business_id, client_id, date, attrs)
+
+      existing ->
+        WeightEntry.update_changeset(existing, normalize_attrs(attrs)) |> Repo.update()
+    end
+  end
+
+  defp stamp_client_activity(business_id, client_id, occurred_at) do
+    Client
+    |> Client.last_active_stamp(business_id, client_id, occurred_at)
+    |> Repo.update_all([])
+    |> case do
+      {1, nil} -> :ok
+      {0, nil} -> {:error, :not_found}
     end
   end
 

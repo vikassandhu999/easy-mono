@@ -198,6 +198,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       assert Decimal.eq?(entry.value, Decimal.new("91.40"))
       assert entry.unit == :kg
       assert entry.note == "morning"
+      assert %DateTime{} = Repo.reload(client).last_active_at
     end
 
     test "updates an existing entry for the same date" do
@@ -211,6 +212,9 @@ defmodule Easy.Fitness.WeightEntryTest do
           note: "first"
         )
 
+      old_stamp = ~U[2026-01-01 00:00:00Z]
+      client |> Ecto.Changeset.change(last_active_at: old_stamp) |> Repo.update!()
+
       assert {:ok, updated} =
                WeightEntries.upsert_client_weight_entry(client_ctx(client), %{
                  date: "2026-04-22",
@@ -222,6 +226,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       assert updated.id == original.id
       assert Decimal.eq?(updated.value, Decimal.new("91.40"))
       assert updated.note == "updated"
+      assert DateTime.after?(Repo.reload(client).last_active_at, old_stamp)
     end
 
     test "self logging ignores a submission-backed entry on the same date" do
@@ -259,6 +264,8 @@ defmodule Easy.Fitness.WeightEntryTest do
                  value: 91.4,
                  unit: "kg"
                })
+
+      assert is_nil(Repo.reload(client).last_active_at)
     end
 
     test "returns validation error for a future date beyond the timezone buffer" do
@@ -270,17 +277,22 @@ defmodule Easy.Fitness.WeightEntryTest do
                  value: 91.4,
                  unit: "kg"
                })
+
+      assert is_nil(Repo.reload(client).last_active_at)
     end
   end
 
   describe "delete_client_weight_entry/2" do
     test "deletes the entry" do
       entry = insert_weight_entry()
+      stamp = ~U[2026-08-01 10:30:00Z]
+      entry.client |> Ecto.Changeset.change(last_active_at: stamp) |> Repo.update!()
 
       assert {:ok, _deleted} =
                WeightEntries.delete_client_weight_entry(client_ctx(entry.client), entry.id)
 
       assert Repo.get(WeightEntry, entry.id) == nil
+      assert Repo.reload(entry.client).last_active_at == stamp
     end
   end
 

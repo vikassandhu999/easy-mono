@@ -52,34 +52,4 @@ defmodule Easy.Chat.Conversation do
 
   @spec include_client(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__), do: from(c in query, preload: [:client])
-
-  @spec select_coach_unread(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def select_coach_unread(query \\ __MODULE__) do
-    from(c in query,
-      select_merge: %{
-        unread_count:
-          fragment(
-            "(SELECT count(*)::int FROM chat_messages m WHERE m.conversation_id = ? AND m.sender_type = 'client' AND (? IS NULL OR m.inserted_at > ?))",
-            c.id,
-            c.coach_last_read_at,
-            c.coach_last_read_at
-          )
-      }
-    )
-  end
-
-  @spec select_client_unread(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def select_client_unread(query \\ __MODULE__) do
-    from(c in query,
-      select_merge: %{
-        unread_count:
-          fragment(
-            "(SELECT count(*)::int FROM chat_messages m WHERE m.conversation_id = ? AND m.sender_type = 'coach' AND (? IS NULL OR m.inserted_at > ?))",
-            c.id,
-            c.client_last_read_at,
-            c.client_last_read_at
-          )
-      }
-    )
-  end
 end

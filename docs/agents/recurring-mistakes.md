@@ -168,6 +168,13 @@ Guard the automatic tick with a named database lock; keep external I/O outside a
 transaction. **Enforced by:** `test/easy/sweeper_lock_test.exs` proves only one database
 connection can enter a named sweep and that the lock is reusable after release.
 
+### RM-024 — One SQL statement can still hide one aggregate per result row
+A correlated count in a paginated parent query executes once per returned parent. The coach
+inbox ran its unread subplan 20 times for a 20-row page. Load the bounded page first, then
+attach child aggregates with one tenant-scoped `GROUP BY` query over those parent IDs.
+**Enforced by:** `test/easy/chat_test.exs` requires one grouped unread query and covers both
+a null read cursor and an advanced cursor across page boundaries.
+
 ---
 
 ## Frontend

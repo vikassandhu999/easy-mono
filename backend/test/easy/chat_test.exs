@@ -195,6 +195,71 @@ defmodule Easy.ChatTest do
       assert a.client.id == client.id
     end
 
+    test "batches unread counts for a deterministic conversation page", %{coach: coach, client: client} do
+      other_client = insert(:client, business: coach.business, creator: coach, assigned_coach: coach)
+
+      [first, second] =
+        Enum.map([client, other_client], fn page_client ->
+          insert(:conversation, business: coach.business, client: page_client)
+        end)
+
+      now = DateTime.utc_now()
+
+      for seconds_ago <- [50, 40] do
+        insert(:chat_message,
+          business: coach.business,
+          conversation: first,
+          sender_type: :client,
+          sender_id: first.client_id,
+          inserted_at: DateTime.add(now, -seconds_ago)
+        )
+      end
+
+      old =
+        insert(:chat_message,
+          business: coach.business,
+          conversation: second,
+          sender_type: :client,
+          sender_id: second.client_id,
+          inserted_at: DateTime.add(now, -70)
+        )
+
+      insert(:chat_message,
+        business: coach.business,
+        conversation: second,
+        sender_type: :client,
+        sender_id: second.client_id,
+        inserted_at: DateTime.add(now, -60)
+      )
+
+      first |> Ecto.Changeset.change(last_message_at: now) |> Repo.update!()
+
+      second
+      |> Ecto.Changeset.change(
+        last_message_at: DateTime.add(now, -10),
+        coach_last_read_at: old.inserted_at
+      )
+      |> Repo.update!()
+
+      {result, queries} =
+        capture_queries(fn -> Chat.list_conversations(owner_coach_ctx(coach), limit: 1) end)
+
+      assert {:ok, %{count: 2, conversations: [%{id: first_id, unread_count: 2}]}} = result
+      assert first_id == first.id
+
+      assert {:ok, %{count: 2, conversations: [%{id: second_id, unread_count: 1}]}} =
+               Chat.list_conversations(owner_coach_ctx(coach), offset: 1, limit: 1)
+
+      assert second_id == second.id
+
+      assert [unread_query] =
+               Enum.filter(queries, fn query ->
+                 String.contains?(query, ~s(FROM "chat_messages"))
+               end)
+
+      assert String.contains?(unread_query, "GROUP BY")
+    end
+
     test "404s for a client in another business", %{coach: coach} do
       other_coach = insert(:coach)
       other = insert(:client, business: other_coach.business, creator: other_coach)
@@ -466,6 +531,32 @@ defmodule Easy.ChatTest do
       assert message_id == message.id
       assert_receive {:conversation_updated, conversation_id}
       assert conversation_id == conversation.id
+    end
+  end
+
+  defp capture_queries(fun) do
+    parent = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:easy, :repo, :query],
+      fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
+      nil
+    )
+
+    try do
+      {fun.(), received_queries()}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp received_queries(queries \\ []) do
+    receive do
+      {:query, query} -> received_queries([query | queries])
+    after
+      0 -> Enum.reverse(queries)
     end
   end
 end

@@ -95,6 +95,27 @@ defmodule Easy.Chat.Message do
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__), do: from(m in query, order_by: [desc: m.inserted_at, desc: m.id])
 
+  @spec unread_counts(Ecto.Queryable.t(), String.t(), [String.t()], :coach | :client) :: Ecto.Query.t()
+  def unread_counts(query \\ __MODULE__, business_id, conversation_ids, reader) do
+    {sender_type, cursor_field} =
+      case reader do
+        :coach -> {:client, :coach_last_read_at}
+        :client -> {:coach, :client_last_read_at}
+      end
+
+    from(m in query,
+      join: conversation in Conversation,
+      on: conversation.id == m.conversation_id and conversation.business_id == m.business_id,
+      where:
+        m.business_id == ^business_id and m.conversation_id in ^conversation_ids and
+          m.sender_type == ^sender_type and
+          (is_nil(field(conversation, ^cursor_field)) or
+             m.inserted_at > field(conversation, ^cursor_field)),
+      group_by: m.conversation_id,
+      select: {m.conversation_id, count(m.id)}
+    )
+  end
+
   @spec before_message(Ecto.Queryable.t(), t()) :: Ecto.Query.t()
   def before_message(query \\ __MODULE__, %__MODULE__{} = cursor) do
     from(m in query,

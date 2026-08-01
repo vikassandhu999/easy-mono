@@ -31,11 +31,11 @@ defmodule Easy.Chat do
     conversations =
       base
       |> Conversation.include_client()
-      |> Conversation.select_coach_unread()
       |> Conversation.recent()
       |> offset(^offset)
       |> limit(^limit)
       |> Repo.all()
+      |> attach_unread_counts(ctx.business_id, :coach)
 
     {:ok, %{count: count, conversations: conversations}}
   end
@@ -46,12 +46,11 @@ defmodule Easy.Chat do
       Conversation
       |> Conversation.for_business(ctx.business_id)
       |> Conversation.include_client()
-      |> Conversation.select_coach_unread()
       |> Repo.get(conversation_id)
 
     with {:ok, conversation} <- ok_or_not_found(conversation),
          :ok <- Clients.authorize_client_id(ctx, conversation.client_id) do
-      {:ok, conversation}
+      {:ok, attach_unread_count(conversation, ctx.business_id, :coach)}
     end
   end
 
@@ -125,16 +124,35 @@ defmodule Easy.Chat do
     |> Conversation.insert_changeset(client_id)
     |> Repo.insert(on_conflict: :nothing)
 
-    Conversation
-    |> Conversation.for_client(business_id, client_id)
-    |> Conversation.include_client()
-    |> unread_select(unread_for)
-    |> Repo.one()
-    |> ok_or_not_found()
+    conversation =
+      Conversation
+      |> Conversation.for_client(business_id, client_id)
+      |> Conversation.include_client()
+      |> Repo.one()
+
+    with {:ok, conversation} <- ok_or_not_found(conversation) do
+      {:ok, attach_unread_count(conversation, business_id, unread_for)}
+    end
   end
 
-  defp unread_select(query, :coach), do: Conversation.select_coach_unread(query)
-  defp unread_select(query, :client), do: Conversation.select_client_unread(query)
+  defp attach_unread_count(conversation, business_id, reader) do
+    [conversation] = attach_unread_counts([conversation], business_id, reader)
+    conversation
+  end
+
+  defp attach_unread_counts([], _business_id, _reader), do: []
+
+  defp attach_unread_counts(conversations, business_id, reader) do
+    ids = Enum.map(conversations, & &1.id)
+
+    counts =
+      business_id
+      |> Message.unread_counts(ids, reader)
+      |> Repo.all()
+      |> Map.new()
+
+    Enum.map(conversations, &Map.put(&1, :unread_count, Map.get(counts, &1.id, 0)))
+  end
 
   defp page_messages(business_id, conversation_id, opts) do
     limit = min(max(Keyword.get(opts, :limit, 50), 1), 100)

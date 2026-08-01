@@ -148,6 +148,23 @@ defmodule Easy.WorkoutsTest do
       assert first.exercise.id == exercise.id
     end
 
+    test "uses one insert for the whole batch", %{ctx: ctx, workout: workout, exercise: exercise} do
+      {result, queries} =
+        capture_queries(fn ->
+          Workouts.create_workout_elements(ctx, workout.id, [
+            %{exercise_id: exercise.id},
+            %{exercise_id: exercise.id},
+            %{exercise_id: exercise.id}
+          ])
+        end)
+
+      assert {:ok, [_, _, _]} = result
+
+      assert Enum.count(queries, fn query ->
+               String.starts_with?(query, ~s(INSERT INTO "training_workout_exercises"))
+             end) == 1
+    end
+
     test "writes nothing when one element names an unreachable exercise", %{
       ctx: ctx,
       workout: workout,
@@ -191,6 +208,32 @@ defmodule Easy.WorkoutsTest do
       assert {:ok, reordered} = Workouts.reorder_workout_elements(ctx, workout.id, order)
       assert Enum.map(reordered, & &1.id) == order
       assert Enum.map(reordered, & &1.position) == [0, 1, 2]
+    end
+  end
+
+  defp capture_queries(fun) do
+    parent = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:easy, :repo, :query],
+      fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
+      nil
+    )
+
+    try do
+      {fun.(), received_queries()}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp received_queries(queries \\ []) do
+    receive do
+      {:query, query} -> received_queries([query | queries])
+    after
+      0 -> Enum.reverse(queries)
     end
   end
 end

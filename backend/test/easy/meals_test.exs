@@ -134,6 +134,23 @@ defmodule Easy.MealsTest do
       assert Enum.map(items, & &1.food_id) == [other_food.id, food.id]
     end
 
+    test "uses one insert for the whole batch", %{ctx: ctx, meal: meal, food: food} do
+      {result, queries} =
+        capture_queries(fn ->
+          Meals.create_meal_items(ctx, meal.id, [
+            %{weight_g: 50.0, food_id: food.id},
+            %{weight_g: 75.0, food_id: food.id},
+            %{weight_g: 100.0, food_id: food.id}
+          ])
+        end)
+
+      assert {:ok, [_, _, _]} = result
+
+      assert Enum.count(queries, fn query ->
+               String.starts_with?(query, ~s(INSERT INTO "nutrition_meal_items"))
+             end) == 1
+    end
+
     test "a request-supplied position is ignored — the server appends", %{ctx: ctx, meal: meal, food: food} do
       assert {:ok, [item]} =
                Meals.create_meal_items(ctx, meal.id, [%{weight_g: 100.0, food_id: food.id, position: 7}])
@@ -177,6 +194,32 @@ defmodule Easy.MealsTest do
 
       assert {:ok, [item]} = Meals.create_meal_items(ctx, meal.id, [%{weight_g: 100.0, food_id: system_food.id}])
       assert item.food_id == system_food.id
+    end
+  end
+
+  defp capture_queries(fun) do
+    parent = self()
+    handler_id = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler_id,
+      [:easy, :repo, :query],
+      fn _event, _measurements, metadata, _config -> send(parent, {:query, metadata.query}) end,
+      nil
+    )
+
+    try do
+      {fun.(), received_queries()}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp received_queries(queries \\ []) do
+    receive do
+      {:query, query} -> received_queries([query | queries])
+    after
+      0 -> Enum.reverse(queries)
     end
   end
 end

@@ -88,15 +88,44 @@ defmodule Easy.Workouts do
   defp insert_workout_elements!(business_id, workout_id, elements) do
     start = next_position(business_id, workout_id)
     exercises = load_referenced_exercises(business_id, elements)
+    now = DateTime.utc_now(:second)
 
-    elements
-    |> Enum.with_index(start)
-    |> Enum.map(fn {attrs, position} ->
-      case insert_workout_element(business_id, workout_id, attrs, position, exercises) do
-        {:ok, element} -> element
-        {:error, reason} -> Repo.rollback(reason)
-      end
+    rows =
+      elements
+      |> Enum.with_index(start)
+      |> Enum.map(fn {attrs, position} ->
+        case build_workout_element(business_id, workout_id, attrs, position, exercises) do
+          {:ok, element} -> workout_element_row(element, now)
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+    insert_workout_elements(rows, exercises)
+  end
+
+  defp insert_workout_elements([], _exercises), do: []
+
+  defp insert_workout_elements(rows, exercises) do
+    {_count, inserted} = Repo.insert_all(TrainingWorkoutExercise, rows, returning: true)
+    inserted_by_id = Map.new(inserted, &{&1.id, &1})
+
+    Enum.map(rows, fn row ->
+      element = Map.fetch!(inserted_by_id, row.id)
+      %{element | exercise: Map.get(exercises, element.exercise_id)}
     end)
+  end
+
+  defp workout_element_row(element, now) do
+    %{
+      id: Ecto.UUID.generate(),
+      position: element.position,
+      planned_sets: element.planned_sets,
+      exercise_id: element.exercise_id,
+      training_workout_id: element.training_workout_id,
+      business_id: element.business_id,
+      inserted_at: now,
+      updated_at: now
+    }
   end
 
   defp load_referenced_exercises(business_id, elements) do
@@ -113,7 +142,7 @@ defmodule Easy.Workouts do
     end
   end
 
-  defp insert_workout_element(business_id, workout_id, attrs, position, exercises) do
+  defp build_workout_element(business_id, workout_id, attrs, position, exercises) do
     changeset = TrainingWorkoutExercise.insert_changeset(business_id, workout_id, attrs)
     exercise_id = Ecto.Changeset.get_field(changeset, :exercise_id)
 
@@ -122,15 +151,9 @@ defmodule Easy.Workouts do
     else
       changeset
       |> Ecto.Changeset.put_change(:position, position)
-      |> Repo.insert()
-      |> put_element_exercise(exercises)
+      |> Ecto.Changeset.apply_action(:insert)
     end
   end
-
-  defp put_element_exercise({:ok, %TrainingWorkoutExercise{} = element}, exercises),
-    do: {:ok, %{element | exercise: Map.get(exercises, element.exercise_id)}}
-
-  defp put_element_exercise(error, _exercises), do: error
 
   @spec update_workout_element(Ctx.t(), String.t(), map()) ::
           {:ok, TrainingWorkoutExercise.t()} | {:error, :not_found | Ecto.Changeset.t()}

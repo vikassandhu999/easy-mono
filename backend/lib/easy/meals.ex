@@ -55,15 +55,43 @@ defmodule Easy.Meals do
   defp insert_meal_items!(business_id, meal_id, items) do
     start = next_position(business_id, meal_id)
     {foods, recipes} = load_referenced_library(business_id, items)
+    now = DateTime.utc_now(:second)
 
-    items
-    |> Enum.with_index(start)
-    |> Enum.map(fn {attrs, position} ->
-      case insert_meal_item(business_id, meal_id, attrs, position, foods, recipes) do
-        {:ok, item} -> item
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+    rows =
+      items
+      |> Enum.with_index(start)
+      |> Enum.map(fn {attrs, position} ->
+        case build_meal_item(business_id, meal_id, attrs, position, foods, recipes) do
+          {:ok, item} -> meal_item_row(item, now)
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+    insert_meal_items(rows)
+  end
+
+  defp insert_meal_items([]), do: []
+
+  defp insert_meal_items(rows) do
+    {_count, inserted} = Repo.insert_all(MealItem, rows, returning: true)
+    inserted_by_id = Map.new(inserted, &{&1.id, &1})
+    Enum.map(rows, &Map.fetch!(inserted_by_id, &1.id))
+  end
+
+  defp meal_item_row(item, now) do
+    %{
+      id: Ecto.UUID.generate(),
+      weight_g: item.weight_g,
+      amount: item.amount,
+      unit: item.unit,
+      position: item.position,
+      recipe_id: item.recipe_id,
+      food_id: item.food_id,
+      nutrition_meal_id: item.nutrition_meal_id,
+      business_id: item.business_id,
+      inserted_at: now,
+      updated_at: now
+    }
   end
 
   defp load_referenced_library(business_id, items) do
@@ -97,13 +125,13 @@ defmodule Easy.Meals do
     {foods, recipes}
   end
 
-  defp insert_meal_item(business_id, meal_id, attrs, position, foods, recipes) do
+  defp build_meal_item(business_id, meal_id, attrs, position, foods, recipes) do
     with :ok <- ensure_referenced(attrs, foods, recipes) do
       business_id
       |> MealItem.insert_changeset(meal_id, attrs)
       |> put_change(:position, position)
       |> validate_recipe_weighable_with(recipes)
-      |> Repo.insert()
+      |> apply_action(:insert)
     end
   end
 

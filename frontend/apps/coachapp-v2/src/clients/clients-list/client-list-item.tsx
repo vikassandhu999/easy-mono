@@ -41,10 +41,9 @@ function isExpired(client: ListClient): boolean {
   );
 }
 
-// COPY.md §CL row status strings. `last_active_at` is the client's own activity
-// (a completed session or a logged meal), which is what the design's relative
-// time in this column means — a client who has never done either shows the dot
-// and the label alone.
+// COPY.md §CL row status strings. `last_active_at` is the latest successful
+// workout completion, food log, check-in submission, or weight upsert. A client
+// who has never done one shows the dot and label alone.
 function getStatusCell(client: ListClient): StatusCell {
   if (client.status === 'active') {
     return {

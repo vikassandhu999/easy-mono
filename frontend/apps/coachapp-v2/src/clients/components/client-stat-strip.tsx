@@ -1,3 +1,4 @@
+import {formatTimeAgo} from '@easy/utils';
 import {Skeleton} from '@heroui/react';
 import {ChevronRight} from 'lucide-react';
 import type {ReactNode} from 'react';
@@ -15,7 +16,6 @@ import {
   formatWeight,
   lastNDays,
   loggedMealDates,
-  relativeDay,
   weightTrend,
 } from '@/clients/lib/client-detail-data';
 
@@ -65,19 +65,6 @@ export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyT
   // one field this screen reads.
   const trend = weightTrend(weights.data?.entries, (weights.data?.goal?.value as number | undefined) ?? null);
 
-  // "Last active" is the most recent thing the client did, whichever it was — the
-  // design labels the value with which kind it came from ("meal log").
-  // `Array.at` is ES2022 and this app's tsconfig target is older, so index from
-  // the end by hand rather than widening `lib` for one call.
-  const newest = (days: Set<string>): string | undefined => {
-    const sorted = [...days].sort();
-    return sorted[sorted.length - 1];
-  };
-  const lastSession = newest(doneDays);
-  const lastMeal = newest(loggedDays);
-  const lastActive = newest(new Set([lastSession, lastMeal].filter((d): d is string => Boolean(d))));
-  const lastActiveKind = lastActive && lastActive === lastMeal ? 'meal log' : 'workout';
-
   if (isLoading) {
     return (
       <div className={STRIP}>
@@ -123,8 +110,7 @@ export function ClientStatStrip({client, weeklyTarget}: {client: Client; weeklyT
       />
       <StatCell
         label="Last active"
-        note={lastActive ? lastActiveKind : undefined}
-        value={lastActive ? (relativeDay(lastActive) ?? '—') : 'Never'}
+        value={client.last_active_at ? formatTimeAgo(client.last_active_at) : 'Never'}
       />
     </div>
   );

@@ -36,9 +36,9 @@ export type Client = {
   needs_plan: boolean;
   expiring_soon: boolean;
   /**
-   * Last day the CLIENT did something — completed a session or logged a meal.
-   * Null when they never have. Not `updated_at`, which moves when a coach edits
-   * the row.
+   * UTC time of the client's latest successful workout completion, food log,
+   * check-in submission, or weight upsert. Null when they never have. Not
+   * `updated_at`, which moves when a coach edits the row.
    */
   last_active_at: GeneratedClient['last_active_at'];
   /** The trainer this client is currently assigned to. */

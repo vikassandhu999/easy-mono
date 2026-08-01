@@ -75,20 +75,6 @@ export function usePlanPatcher(planId: string) {
 }
 
 /**
- * The plan as it is cached RIGHT NOW — not as a component last rendered it.
- *
- * This is what lets the item writer build every payload from one moving base
- * instead of a captured snapshot; reading through the query cache is also why
- * the writer's callbacks are stable — they close over nothing that changes.
- */
-export function usePlanReader(planId: string) {
-  return useCallback(
-    () => queryClient.getQueryData<NutritionPlanResponse>(nutritionPlanKeys.detail(planId))?.data,
-    [planId],
-  );
-}
-
-/**
  * Throws away local state and re-reads the plan from the server.
  *
  * Two jobs: the reconciling refetch after a successful structural write

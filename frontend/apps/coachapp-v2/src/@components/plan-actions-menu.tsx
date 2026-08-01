@@ -118,11 +118,11 @@ export function PlanActionsMenu({
               <Dropdown.Item
                 id="edit-plan"
                 isDisabled={blocking}
-                textValue="Edit details"
+                textValue="Edit"
               >
                 <ItemBody
                   icon={<Pencil className="shrink-0 text-muted" />}
-                  label="Edit details"
+                  label="Edit"
                 />
               </Dropdown.Item>
 

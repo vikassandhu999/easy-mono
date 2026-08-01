@@ -39,6 +39,13 @@ export function useItemWriter(planId: string): ItemWriter {
   const updateMealItemMutation = useUpdateMealItemMutation();
 
   const pending = useRef(new Map<string, ItemAmountPatch>());
+  // The mutation RESULT is a new object every render, so it must not be a
+  // memo dependency — a per-render queue would let the unmount-flush effect
+  // fire the old queue's timer on every keystroke, defeating the debounce and
+  // the one-in-flight guarantee. The queue depends only on the plan-stable
+  // refetch and reads the send function through a ref.
+  const sendItemRef = useRef(updateMealItemMutation.mutateAsync);
+  sendItemRef.current = updateMealItemMutation.mutateAsync;
   const queue = useMemo(
     () =>
       createCoalescingQueue(async (itemId) => {
@@ -48,14 +55,14 @@ export function useItemWriter(planId: string): ItemWriter {
           return;
         }
         try {
-          await updateMealItemMutation.mutateAsync({id: itemId, body});
+          await sendItemRef.current({id: itemId, body});
           refetchPlan();
         } catch (error) {
           toastMutationError(error, "Couldn't save amount");
           refetchPlan();
         }
       }),
-    [refetchPlan, updateMealItemMutation],
+    [refetchPlan],
   );
 
   /** Applies the values to the cached item, then schedules the write. */

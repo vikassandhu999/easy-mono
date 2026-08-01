@@ -60,10 +60,10 @@ export default function NutritionPlanBuilderScreen() {
   const plan = data.data;
 
   return (
-    <Page className="text-foreground [line-height:normal]">
+    <Page className="text-foreground leading-[normal]">
       <Page.Header
-        className="gap-3"
-        size="wide"
+        className="gap-3 pb-10"
+        size="builder"
       >
         <Page.TitleGroup className="flex min-w-0 items-center gap-3">
           <BackButton

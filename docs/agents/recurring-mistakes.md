@@ -376,6 +376,23 @@ content and `ListBox.Item` classNames don't re-add insets. **Gated:**
 `scripts/check-rm.sh` fails any `AlertDialog.Dialog`/`Modal.Dialog` className with a
 non-zero padding. **Verify by:** `getComputedStyle` padding on a live dialog = 16px.
 
+### RM-142 — A useMutation RESULT is a new object every render; never key a stateful memo on it
+TanStack's `useMutation` returns a fresh result object each render (only
+`mutate`/`mutateAsync` are stable). Putting that object in the deps of a `useMemo`
+that creates a STATEFUL value — a coalescing queue, a debouncer, anything holding
+timers or in-flight state — rebuilds the value every render. Both plan-builder
+writers hit this: `write()` patches the cache → re-render → new queue, and the
+unmount-flush `useEffect` fired the OLD queue's pending timer, so every keystroke
+sent a request and two could be in flight per item (out-of-order last-write-wins
+against the server). It passed tsc, biome AND a single-edit browser smoke — one
+change event can't distinguish "debounced" from "sent immediately". Fix: the queue's
+deps are only planId-stable callbacks; the send function is read through a ref
+(`sendRef.current = mutation.mutateAsync`). Not mechanically gated: mutation objects
+in `useCallback` deps are ubiquitous and merely re-create the callback, so a grep
+can't separate the harmful stateful-memo case from noise. **Verify by:** typing
+several characters into the debounced field and counting the network requests —
+exactly one after the debounce window.
+
 ---
 
 ## Deploy / ops

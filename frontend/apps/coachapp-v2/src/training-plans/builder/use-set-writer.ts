@@ -7,7 +7,7 @@
  * a coalesced chain, so reversing one patch out of order would leave the cache
  * describing a state neither side believes in.
  */
-import {useCallback, useEffect, useMemo} from 'react';
+import {useCallback, useEffect, useMemo, useRef} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
 import {
@@ -32,6 +32,13 @@ export function useSetWriter(planId: string) {
   const refetchPlan = usePlanRefetch(planId);
   const updateElementMutation = useUpdateWorkoutElementMutation();
 
+  // The mutation RESULT is a new object every render, so it must not be a
+  // memo dependency — a per-render queue would let the unmount-flush effect
+  // fire the old queue's timer on every keystroke, defeating the debounce and
+  // the one-in-flight guarantee. The queue depends only on the plan-stable
+  // callbacks and reads the send function through a ref.
+  const sendElementRef = useRef(updateElementMutation.mutateAsync);
+  sendElementRef.current = updateElementMutation.mutateAsync;
   const queue = useMemo(
     () =>
       createCoalescingQueue(async (elementId) => {
@@ -41,13 +48,13 @@ export function useSetWriter(planId: string) {
           return;
         }
         try {
-          await updateElementMutation.mutateAsync({id: elementId, body: {planned_sets: sets}});
+          await sendElementRef.current({id: elementId, body: {planned_sets: sets}});
         } catch (error) {
           toastMutationError(error, "Couldn't save set");
           refetchPlan();
         }
       }),
-    [readPlan, refetchPlan, updateElementMutation],
+    [readPlan, refetchPlan],
   );
 
   /** Applies `recipe` to the element's sets, then schedules the write. */

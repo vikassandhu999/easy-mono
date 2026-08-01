@@ -71,10 +71,12 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     setOpenMealId(null);
   };
 
+  // Only a TAB press closes the open meal card (showDay); add-day and
+  // delete-day keep it, so switching back finds the card as it was.
   const addDay = async () => {
     const day = await commands.addDay();
     if (day) {
-      showDay(day.id);
+      selectDay(day.id);
     }
   };
 
@@ -85,7 +87,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     const fallback = await commands.removeDay(activeDay.id);
     deleteAlertState.close();
     if (fallback) {
-      showDay(fallback.id);
+      selectDay(fallback.id);
     }
   };
 

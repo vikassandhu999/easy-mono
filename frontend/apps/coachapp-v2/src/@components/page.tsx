@@ -16,13 +16,14 @@ interface PageLayoutProps extends PageProps {
 
 // One content width for every read/write screen — lists, forms and detail views
 // all sit in the same column so navigating between them doesn't jump. `wide` is
-// only for the plan builders' headers and the dashboard grid.
+// only for the plan builders and the dashboard grid.
 //
-// `builder` is the training builder's narrower body column, under a `wide`
-// header. It lives here because width is Page's job — the screen used to write
-// `mx-auto max-w-235` on its own Frame. The nutrition builder's body is still
-// `wide`, so the two builders do not agree; that is a real design question for
-// the user, not something to settle by editing one screen's className.
+// `builder` is the plan builders' narrow column. It lives here because width is
+// Page's job — the training builder used to write `mx-auto max-w-235` on its
+// own Frame. The two builders use it differently, BY DESIGN (user decision,
+// 2026-08-01): TB puts it on the body Frame under a `wide` header; NB puts it
+// on the HEADER, over a `wide` Frame whose PlanBuilder self-frames narrower —
+// so the NB title/actions hug the meal column instead of stretching page-wide.
 const PAGE_SIZE_CLASS: Record<PageSize, string> = {
   builder: 'mx-auto max-w-235',
   content: 'mx-auto max-w-5xl',

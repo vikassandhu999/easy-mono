@@ -324,9 +324,9 @@ export function usePlanBuilder(plan: NutritionPlan) {
       });
       createMealItemsMutation
         .mutateAsync({mealId, body: {items: items.map(({body}) => body)}})
-        .catch((error) => {
+        .catch(() => {
           patched.undo();
-          toastMutationError(error, "Couldn't add items");
+          toast.danger("Couldn't add items");
         })
         .finally(() => {
           refetch();

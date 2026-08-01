@@ -20,15 +20,19 @@ import {daysSince, formatDashboardDate} from '@/dashboard/lib/date-format';
 
 /**
  * COPY.md §DB check-ins card subtitle — `Oldest waiting 2 days · Sam, Priya, Devon +2`.
- * Both halves come from the review-queue rows; nothing is invented.
+ * The age and names come from the oldest-first page; the total comes from the
+ * review-queue count.
  */
-function reviewSummary(queue: {client: {first_name: null | string}; id: string; inserted_at: string}[]) {
+function reviewSummary(
+  queue: {client: {first_name: null | string}; id: string; inserted_at: string}[],
+  totalCount: number,
+) {
   const names = queue
     .map((entry) => entry.client.first_name?.trim())
     .filter((name): name is string => Boolean(name))
     .filter((name, index, all) => all.indexOf(name) === index);
   const shown = names.slice(0, 3).join(', ');
-  const overflow = names.length - 3;
+  const overflow = totalCount - Math.min(names.length, 3);
   const oldest = [...queue].sort((a, b) => a.inserted_at.localeCompare(b.inserted_at))[0];
 
   return {
@@ -175,7 +179,7 @@ export default function Dashboard() {
   const clientSummary = clientsData?.summary;
   const clients = clientsData?.data ?? [];
   const newProspects = prospectsError ? [] : (prospectsData?.data ?? []);
-  const review = reviewSummary(reviewQueueData?.data ?? []);
+  const review = reviewSummary(reviewQueueData?.data ?? [], reviewQueueData?.count ?? 0);
 
   return (
     <Page>
@@ -229,7 +233,7 @@ export default function Dashboard() {
               clients={clients}
               isError={clientsError}
               prospects={newProspects}
-              reviewCount={reviewQueueLoading || reviewQueueError ? null : (reviewQueueData?.data.length ?? 0)}
+              reviewCount={reviewQueueLoading || reviewQueueError ? null : (reviewQueueData?.count ?? 0)}
               reviewError={reviewQueueError}
               reviewNames={review.names}
               reviewOldestDays={review.oldestDays}

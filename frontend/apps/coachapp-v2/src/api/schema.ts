@@ -3989,6 +3989,7 @@ export interface components {
     };
     /** ClientProfileReviewQueueListResponse */
     ClientProfileReviewQueueListResponse: {
+      count: number;
       data: components['schemas']['ClientProfileReviewQueueItem'][];
     };
     /** NutritionMealLogResponse */
@@ -9468,7 +9469,7 @@ export interface operations {
       query?: {
         /** @description Offset (default 0) */
         offset?: number;
-        /** @description Max results (default and max 100) */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
       };
       header?: never;

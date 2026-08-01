@@ -44,12 +44,13 @@ defmodule EasyWeb.Coaches.CheckInReviewControllerTest do
   } do
     conn = get(conn, "/v1/coach/check-ins/review-queue")
 
-    assert %{"data" => [item]} = json_response(conn, 200)
+    assert %{"count" => 1, "data" => [item]} = response = json_response(conn, 200)
     assert item["id"] == submission.id
     assert item["client"]["id"] == client.id
     assert item["form_assignment"]["id"] == assignment.id
     assert item["form_assignment"]["form_template"]["id"] == template.id
     assert_schema(item, "ClientProfileReviewQueueItem", ApiSpec.spec())
+    assert_schema(response, "ClientProfileReviewQueueListResponse", ApiSpec.spec())
   end
 
   test "reviews a submission idempotently", %{conn: conn, submission: submission} do
@@ -66,7 +67,7 @@ defmodule EasyWeb.Coaches.CheckInReviewControllerTest do
     assert reviewed_again["reviewed_by_id"] == reviewed["reviewed_by_id"]
 
     conn = get(recycle(conn), "/v1/coach/check-ins/review-queue")
-    assert %{"data" => []} = json_response(conn, 200)
+    assert %{"count" => 0, "data" => []} = json_response(conn, 200)
   end
 
   test "returns not found for another tenant's submission", %{conn: conn} do

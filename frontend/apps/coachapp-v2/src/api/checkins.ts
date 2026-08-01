@@ -8,7 +8,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {checkInKeys, formAssignmentKeys, formTemplateKeys} from '@/api/keys';
-import type {components} from '@/api/schema';
+import type {components, operations} from '@/api/schema';
 
 export type ClientProfileCheckInSchedule = components['schemas']['ClientProfileCheckInSchedule'];
 export type ClientProfileCheckInScheduleRequest = components['schemas']['ClientProfileCheckInScheduleRequest'];
@@ -32,6 +32,7 @@ export type ClientProfileFormTemplateResponse = components['schemas']['ClientPro
 export type ClientProfileFormTemplateListResponse = components['schemas']['ClientProfileFormTemplateListResponse'];
 export type ClientProfileReviewQueueItem = components['schemas']['ClientProfileReviewQueueItem'];
 export type ClientProfileReviewQueueListResponse = components['schemas']['ClientProfileReviewQueueListResponse'];
+export type ListCheckInReviewQueueParams = NonNullable<operations['listCheckInReviewQueue']['parameters']['query']>;
 
 export type FormPurpose = 'check_in' | 'intake';
 
@@ -301,11 +302,16 @@ export function useListClientFormAssignmentsForCoachQuery(clientId: string, opti
 // Review queue
 // ---------------------------------------------------------------------------
 
-export function useListCheckInReviewQueueQuery(options?: {enabled?: boolean}) {
+export function useListCheckInReviewQueueQuery(
+  params: ListCheckInReviewQueueParams = {},
+  options?: {enabled?: boolean},
+) {
   return useQuery({
-    queryKey: checkInKeys.reviewQueue(),
+    queryKey: checkInKeys.reviewQueue(params),
     queryFn: () =>
-      call(client.GET('/v1/coach/check-ins/review-queue')) as Promise<ClientProfileReviewQueueListResponse>,
+      call(
+        client.GET('/v1/coach/check-ins/review-queue', {params: {query: params}}),
+      ) as Promise<ClientProfileReviewQueueListResponse>,
     enabled: options?.enabled ?? true,
   });
 }

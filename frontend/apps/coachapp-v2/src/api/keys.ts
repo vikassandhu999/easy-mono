@@ -119,7 +119,8 @@ export const formAssignmentKeys = {
 export const checkInKeys = {
   all: ['check-ins'] as const,
   schedules: (clientId: string) => ['check-ins', 'schedules', clientId] as const,
-  reviewQueue: (filters?: Filters) => ['check-ins', 'review-queue', filters ?? {}] as const,
+  reviewQueue: (filters?: Filters) =>
+    filters ? (['check-ins', 'review-queue', filters] as const) : (['check-ins', 'review-queue'] as const),
 };
 
 export const authKeys = {

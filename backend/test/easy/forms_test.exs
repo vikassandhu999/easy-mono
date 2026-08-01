@@ -764,7 +764,7 @@ defmodule Easy.FormsTest do
   end
 
   describe "check-in review loop" do
-    test "lists only unreviewed check-in submissions newest first with review context" do
+    test "paginates unreviewed check-ins oldest first with a total count" do
       business = insert(:business)
       coach = insert(:coach, business: business, user: business.owner)
       client = insert(:client, business: business, creator: coach, assigned_coach: coach)
@@ -838,13 +838,18 @@ defmodule Easy.FormsTest do
         reviewed_by_id: business.owner_id
       )
 
-      assert {:ok, [listed_newer, listed_older]} =
+      assert {:ok, %{count: 2, submissions: [listed_older, listed_newer]}} =
                Forms.list_unreviewed_check_in_submissions(owner_ctx(business))
 
-      assert [listed_newer.id, listed_older.id] == [newer.id, older.id]
-      assert listed_newer.client.id == client.id
-      assert listed_newer.form_assignment.id == newer_assignment.id
-      assert listed_newer.form_assignment.form_template.id == check_in_template.id
+      assert [listed_older.id, listed_newer.id] == [older.id, newer.id]
+      assert listed_older.client.id == client.id
+      assert listed_older.form_assignment.id == older_assignment.id
+      assert listed_older.form_assignment.form_template.id == check_in_template.id
+
+      assert {:ok, %{count: 2, submissions: [second_page]}} =
+               Forms.list_unreviewed_check_in_submissions(owner_ctx(business), offset: 1, limit: 1)
+
+      assert second_page.id == newer.id
     end
 
     test "queue is limited to clients visible to the trainer" do
@@ -883,7 +888,7 @@ defmodule Easy.FormsTest do
 
       insert(:form_submission, business: business, client: hidden_client, form_assignment: hidden_assignment)
 
-      assert {:ok, [submission]} =
+      assert {:ok, %{count: 1, submissions: [submission]}} =
                Forms.list_unreviewed_check_in_submissions(trainer_ctx(trainer_a))
 
       assert submission.id == visible.id

@@ -7642,6 +7642,12 @@
       "ClientProfileReviewQueueListResponse": {
         "additionalProperties": false,
         "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
           "data": {
             "items": {
               "$ref": "#/components/schemas/ClientProfileReviewQueueItem"
@@ -7652,7 +7658,8 @@
           }
         },
         "required": [
-          "data"
+          "data",
+          "count"
         ],
         "title": "ClientProfileReviewQueueListResponse",
         "type": "object",
@@ -19910,7 +19917,7 @@
             }
           },
           {
-            "description": "Max results (default and max 100)",
+            "description": "Page size (default 20, max 100)",
             "in": "query",
             "name": "limit",
             "required": false,

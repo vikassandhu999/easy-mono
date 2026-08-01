@@ -21,7 +21,7 @@ defmodule EasyWeb.Coaches.CheckInReviewController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Offset (default 0)", required: false),
-      Operation.parameter(:limit, :query, :integer, "Max results (default and max 100)", required: false)
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false)
     ],
     responses: [
       ok: {"Review queue", "application/json", ClientProfileReviewQueueListResponse},
@@ -43,12 +43,12 @@ defmodule EasyWeb.Coaches.CheckInReviewController do
   def index(conn, params) do
     opts = [
       offset: parse_integer(params, "offset", 0),
-      limit: parse_integer(params, "limit", 100)
+      limit: parse_integer(params, "limit", 20)
     ]
 
-    with {:ok, submissions} <-
+    with {:ok, page} <-
            Forms.list_unreviewed_check_in_submissions(conn.assigns.ctx, opts) do
-      render(conn, :index, submissions: submissions)
+      render(conn, :index, count: page.count, submissions: page.submissions)
     end
   end
 

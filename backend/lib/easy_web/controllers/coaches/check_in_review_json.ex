@@ -2,8 +2,13 @@ defmodule EasyWeb.Coaches.CheckInReviewJSON do
   alias Easy.Forms.FormSubmission
   alias EasyWeb.Coaches.FormAssignmentJSON
 
-  @spec index(%{submissions: [FormSubmission.t()]}) :: %{data: [map()]}
-  def index(%{submissions: submissions}), do: %{data: Enum.map(submissions, &queue_data/1)}
+  @spec index(%{count: non_neg_integer(), submissions: [FormSubmission.t()]}) :: %{
+          count: non_neg_integer(),
+          data: [map()]
+        }
+  def index(%{count: count, submissions: submissions}) do
+    %{count: count, data: Enum.map(submissions, &queue_data/1)}
+  end
 
   @spec show(%{submission: FormSubmission.t()}) :: %{data: map()}
   def show(%{submission: submission}), do: %{data: FormAssignmentJSON.submission_data(submission)}

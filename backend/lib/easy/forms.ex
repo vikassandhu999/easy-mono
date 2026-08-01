@@ -255,26 +255,28 @@ defmodule Easy.Forms do
     end
   end
 
-  @spec list_unreviewed_check_in_submissions(Ctx.t(), keyword()) :: {:ok, [FormSubmission.t()]}
+  @spec list_unreviewed_check_in_submissions(Ctx.t(), keyword()) ::
+          {:ok, %{count: non_neg_integer(), submissions: [FormSubmission.t()]}}
   def list_unreviewed_check_in_submissions(%Ctx{} = ctx, opts \\ []) do
     offset = max(Keyword.get(opts, :offset, 0), 0)
-    # Default 100 (not the usual 20): the queue renders whole in the coach app,
-    # so this is a runaway bound, not page size. A queue past 100 is stale work.
-    limit = min(max(Keyword.get(opts, :limit, 100), 0), 100)
+    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
 
-    submissions =
+    base =
       FormSubmission
       |> FormSubmission.for_business(ctx.business_id)
       |> FormSubmission.unreviewed()
       |> FormSubmission.for_check_ins()
       |> FormSubmission.for_visible_clients(ctx)
+
+    submissions =
+      base
       |> FormSubmission.include_review_context(ctx.business_id)
-      |> FormSubmission.newest()
+      |> FormSubmission.oldest()
       |> Easy.Utils.paginate(offset, limit)
       |> Repo.all()
       |> attach_submission_attachments(ctx.business_id)
 
-    {:ok, submissions}
+    {:ok, %{count: Repo.aggregate(base, :count, :id), submissions: submissions}}
   end
 
   @spec review_form_submission(Ctx.t(), String.t()) ::

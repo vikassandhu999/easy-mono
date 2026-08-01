@@ -2929,6 +2929,7 @@ export interface components {
     };
     /** ClientProfileReviewQueueListResponse */
     ClientProfileReviewQueueListResponse: {
+      count: number;
       data: components['schemas']['ClientProfileReviewQueueItem'][];
     };
     /** NutritionMealLogResponse */

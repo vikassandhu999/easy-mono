@@ -459,14 +459,8 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileReviewQueueListResponse do
   require OpenApiSpex
   alias EasyWeb.OpenApi.Schemas.{ClientProfileReviewQueueItem, Shared}
-  alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(
-    Shared.data_response(
-      %Schema{type: :array, items: ClientProfileReviewQueueItem},
-      "ClientProfileReviewQueueListResponse"
-    )
-  )
+  OpenApiSpex.schema(Shared.list_response(ClientProfileReviewQueueItem, "ClientProfileReviewQueueListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionResponse do

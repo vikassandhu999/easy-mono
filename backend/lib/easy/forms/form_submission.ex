@@ -145,6 +145,11 @@ defmodule Easy.Forms.FormSubmission do
     from(s in query, order_by: [desc: s.submitted_at, desc: s.id])
   end
 
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__) do
+    from(s in query, order_by: [asc: s.submitted_at, asc: s.id])
+  end
+
   defp missing_required?(%{"required" => true, "id" => id}, answers),
     do: blank_answer?(Map.get(answers, id))
 

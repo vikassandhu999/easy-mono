@@ -2,7 +2,7 @@ import type {Key} from '@heroui/react';
 import {Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import type {LucideIcon} from 'lucide-react';
-import {ChevronRight, Dumbbell, Globe, UserPlus, UtensilsCrossed} from 'lucide-react';
+import {ChevronRight, Dumbbell, UserPlus, UtensilsCrossed} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
@@ -19,7 +19,6 @@ const ACTIONS: Action[] = [
   {icon: UserPlus, label: 'Invite a client', route: ROUTES.INVITE_CLIENT},
   {icon: Dumbbell, label: 'New training plan', route: ROUTES.CREATE_TRAINING_PLAN},
   {icon: UtensilsCrossed, label: 'New nutrition plan', route: ROUTES.CREATE_NUTRITION_PLAN},
-  {icon: Globe, label: 'Edit landing page', route: ROUTES.SETTINGS_LANDING_PAGE},
 ];
 
 export function QuickActionsRow() {

@@ -6,7 +6,7 @@
  */
 import {getInitials} from '@easy/utils';
 import {Avatar, Button, Tabs, Typography} from '@heroui/react';
-import {ChevronRight, CreditCard, Globe, Shield, User, Users} from 'lucide-react';
+import {CreditCard, Shield, User, Users} from 'lucide-react';
 import {useCallback} from 'react';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
@@ -42,7 +42,6 @@ function ProfilePanel({
   onUpdate: ReturnType<typeof useUpdateCoachProfileMutation>['mutateAsync'];
   profile: CoachProfile;
 }) {
-  const navigate = useNavigate();
   const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
   const initials = getInitials(profile.first_name, profile.last_name);
 
@@ -122,28 +121,6 @@ function ProfilePanel({
           onSave={handleWhatsappSave}
           value={profile.business.whatsapp_number}
         />
-      </div>
-
-      {/* Kept from the pre-redesign screen: the landing-page editor has no home
-          in the ST refs, but it is a live feature reachable only from here. */}
-      <div className={CARD_CLASS}>
-        <Button
-          className="h-auto w-full justify-start gap-3 rounded-none px-4 py-3 text-left"
-          onPress={() => navigate(ROUTES.SETTINGS_LANDING_PAGE)}
-          variant="ghost"
-        >
-          <Globe className="shrink-0 text-muted" />
-          <span className="min-w-0 flex-1">
-            <Typography type="body-sm">Landing page</Typography>
-            <Typography
-              color="muted"
-              type="body-xs"
-            >
-              Your public page that turns visitors into prospects
-            </Typography>
-          </span>
-          <ChevronRight className="shrink-0 text-muted-2" />
-        </Button>
       </div>
     </div>
   );

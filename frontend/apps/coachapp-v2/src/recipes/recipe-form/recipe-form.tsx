@@ -165,12 +165,20 @@ export default function RecipeForm({
   );
   const segments = totals ? MACRO_SEGMENTS.map((s) => ({...s, value: totals[s.key]})).filter((s) => s.value > 0) : [];
 
-  const handleFoodSelect = useCallback(
-    (food: Food) => {
-      onIngredientsChange([...ingredients, createIngredientDraft(food)]);
-      setAutoExpandId(food.id);
+  // Batch, not per-food: appending one at a time from a loop would spread the
+  // same stale `ingredients` array and keep only the last pick.
+  const handleFoodsSelect = useCallback(
+    (foods: Food[]) => {
+      if (foods.length === 0) {
+        return;
+      }
+      onIngredientsChange([...ingredients, ...foods.map(createIngredientDraft)]);
+      setAutoExpandId(foods[foods.length - 1]?.id ?? null);
+      // The "add at least one ingredient" root error is satisfied now — don't
+      // make the coach resubmit to find out.
+      clearErrors('root');
     },
-    [ingredients, onIngredientsChange],
+    [clearErrors, ingredients, onIngredientsChange],
   );
 
   // Ingredients are a separate prop (not a zod field), so the "at least one"
@@ -181,10 +189,11 @@ export default function RecipeForm({
         setError('root', {message: 'Add at least one ingredient'});
         return;
       }
-      // The backend rejects a recipe whose ingredients can't be costed into macros;
-      // catch it here with an actionable message instead of a generic 422.
+      // The backend rejects a recipe whose ingredients can't be costed into
+      // macros — which in practice means no ingredient has a weight yet (fresh
+      // rows start empty). Say that, instead of a generic 422.
       if (!canComputeRecipeNutrition(ingredients)) {
-        setError('root', {message: 'An ingredient is missing nutrition data — edit that food to add its macros.'});
+        setError('root', {message: 'Set a weight (g) on at least one ingredient.'});
         return;
       }
       clearErrors('root');
@@ -251,7 +260,7 @@ export default function RecipeForm({
             />
             <FoodPickerControl
               excludeIds={excludeIds}
-              onSelect={handleFoodSelect}
+              onSelect={handleFoodsSelect}
               triggerClassName="w-full rounded-panel border border-dashed border-border text-muted"
               triggerVariant="ghost"
             />
@@ -274,8 +283,6 @@ export default function RecipeForm({
             </Fieldset>
           </>
         )}
-
-        <div className="my-6 border-t border-separator" />
       </div>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}

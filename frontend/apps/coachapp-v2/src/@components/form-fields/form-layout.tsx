@@ -11,15 +11,16 @@ type FormLayoutProps = {
   children: ReactNode;
   className?: string;
   onSubmit: ComponentProps<typeof Form>['onSubmit'];
-  // Defaults to react-aria's native validation. Pass "aria" for forms that
-  // surface server errors via setError: native validation marks the field
-  // customInvalid and blocks the browser submit event before onSubmit can run,
-  // which strands the form after a fixed 422. "aria" shows the errors without
-  // blocking resubmission.
+  // "aria", not react-aria's native default: every form here validates through
+  // react-hook-form + zod, and native validation blocks the browser submit
+  // event before handleSubmit can run — an empty required field just silently
+  // refocused with no message (the zod copy never fired), and a fixed 422
+  // stranded the form because setError marked it customInvalid. "aria" lets
+  // the submit reach RHF, whose errors render through each field's FieldError.
   validationBehavior?: ComponentProps<typeof Form>['validationBehavior'];
 };
 
-export function FormLayout({children, className, onSubmit, validationBehavior}: FormLayoutProps) {
+export function FormLayout({children, className, onSubmit, validationBehavior = 'aria'}: FormLayoutProps) {
   return (
     <Form
       className={cn('flex w-full flex-col gap-8', className)}

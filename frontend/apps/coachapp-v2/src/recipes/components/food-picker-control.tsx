@@ -15,7 +15,9 @@ import {type Food, useListFoodsQuery} from '@/api/nutrition-foods';
 import {SearchPickerSheet} from '@/builder-kit/search-picker-sheet';
 
 interface Props {
-  onSelect: (food: Food) => void;
+  /** Batch: one callback with every confirmed food, so the caller appends them
+   *  in a single state update (per-food calls would each see stale state). */
+  onSelect: (foods: Food[]) => void;
   /** Foods already in the recipe — hidden from results. */
   excludeIds?: string[];
   triggerClassName?: string;
@@ -58,9 +60,7 @@ export default function FoodPickerControl({onSelect, excludeIds = [], triggerCla
         loading={isFetching || search !== debouncedSearch}
         onClose={close}
         onConfirm={() => {
-          for (const food of selected.values()) {
-            onSelect(food);
-          }
+          onSelect([...selected.values()]);
           close();
         }}
         onSearchChange={setSearch}

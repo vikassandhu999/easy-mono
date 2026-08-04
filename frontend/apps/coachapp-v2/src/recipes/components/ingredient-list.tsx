@@ -22,7 +22,10 @@ const ingredientFieldsSchema = z
   .object({
     amount: z.number().min(0, 'Use 0 or higher').optional(),
     unit: z.string().optional(),
-    weight_g: z.number().min(0.1, 'Weight must be greater than 0'),
+    // Optional at the field level so a fresh row renders an EMPTY input, not a
+    // literal 0 the coach has to fight ("030"); the recipe can't be saved
+    // without a weight anyway (canComputeRecipeNutrition gates submit).
+    weight_g: z.number().min(0.1, 'Weight must be greater than 0').optional(),
   })
   .refine((data) => !data.amount || (data.unit != null && data.unit.trim() !== ''), {
     message: 'Add a unit',
@@ -77,7 +80,7 @@ function IngredientFieldsForm({
     values: {
       amount: toOptionalNumber(item.amount),
       unit: item.unit,
-      weight_g: toOptionalNumber(item.weight_g) ?? 0,
+      weight_g: toOptionalNumber(item.weight_g),
     },
   });
 
@@ -178,10 +181,12 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
   };
 
   const toggleExpand = (foodId: string) => {
-    // Manually toggling the auto-expanded row hands control back to the parent.
-    if (foodId === autoExpandId) {
+    // ANY manual toggle hands control back to the parent — while autoExpandId
+    // is set it wins over expandedId, so leaving it standing would make
+    // clicks on every other row silent no-ops.
+    if (autoExpandId) {
       onAutoExpandConsumed?.();
-      setExpandedId(null);
+      setExpandedId(foodId === autoExpandId ? null : foodId);
       return;
     }
     setExpandedId((prev) => (prev === foodId ? null : foodId));
@@ -217,7 +222,10 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
               <Button
                 aria-expanded={isExpanded}
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.food.name}`}
-                className="-mx-1 flex min-w-0 flex-1 items-center justify-start gap-3 rounded-chip px-1 py-1.5 text-left font-normal hover:bg-surface-hover"
+                // HeroUI's press effect is `transform: scale(0.97)` (a transform,
+                // not the `scale` property) — `transform-none` is the override
+                // that actually neutralises it.
+                className="-mx-1 flex min-w-0 flex-1 items-center justify-start gap-3 rounded-chip px-1 py-1.5 text-left font-normal transition-none! hover:bg-surface-hover active:transform-none! data-[pressed=true]:transform-none!"
                 onPress={() => toggleExpand(item.food_id)}
                 variant="ghost"
               >

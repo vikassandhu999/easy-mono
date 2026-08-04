@@ -179,6 +179,14 @@ a null read cursor and an advanced cursor across page boundaries.
 
 ## Frontend
 
+### RM-145 — HeroUI's press scale is a `transform`; neutralise it with `transform-none`, not `scale-100`
+The button recipe's pressed state is `transform: scale(0.97)` (`&:active, &[data-pressed="true"]`).
+A `scale-100!` override targets the separate CSS `scale` property and is a silent no-op — the
+row still shrinks (hit on the recipe ingredient row, 2026-08-04; first fix shipped wrong).
+Use `active:transform-none! data-[pressed=true]:transform-none!` (plus `transition-none!` for
+the ease). **Verify by:** setting `data-pressed="true"` on the element in the console —
+computed `transform` must be `none` (a stock button reads `matrix(0.97…)`).
+
 ### RM-101 — No dead HeroUI v2 Tailwind tokens (`primary`/`divider`/`content1..4`/`foreground-NNN`). **Enforced by:** `just check-rm`.
 
 ### RM-102 — Use the ROUTES constant (+ `generatePath`), never a hardcoded path string. **Enforced by:** `just check-rm`.

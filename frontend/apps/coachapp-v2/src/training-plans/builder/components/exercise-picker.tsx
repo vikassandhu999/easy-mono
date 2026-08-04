@@ -53,11 +53,9 @@ interface ExercisePickerProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (exercises: TrainingExercise[]) => void;
-  /** Desktop popover anchor — the `+ Add exercise` button. */
-  anchorEl?: HTMLElement | null;
 }
 
-export function ExercisePicker({isOpen, onClose, onAdd, anchorEl}: ExercisePickerProps) {
+export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const muscles = useIdSet();
@@ -135,7 +133,6 @@ export function ExercisePicker({isOpen, onClose, onAdd, anchorEl}: ExercisePicke
 
   return (
     <SearchPickerSheet<TrainingExercise>
-      anchorEl={anchorEl}
       confirmLabel={(count) => (count === 0 ? 'Add exercises' : `Add ${count} exercise${count === 1 ? '' : 's'}`)}
       filters={filters}
       hasMore={hasNextPage ?? false}
@@ -158,7 +155,6 @@ export function ExercisePicker({isOpen, onClose, onAdd, anchorEl}: ExercisePicke
       onSearchChange={setSearch}
       onToggleItem={toggleExercise}
       open={isOpen}
-      placement="bottom"
       renderItem={renderExercise}
       search={search}
       selectedKeys={selectedKeys}

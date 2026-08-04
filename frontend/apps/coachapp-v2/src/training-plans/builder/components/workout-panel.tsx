@@ -5,7 +5,7 @@
  */
 import {AlertDialog, Button, Spinner, Typography, useOverlayState} from '@heroui/react';
 import {Plus} from 'lucide-react';
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 
 import type {TrainingPlanWorkout} from '@/api/training-plan-builder';
 
@@ -34,7 +34,6 @@ export function WorkoutPanel({
 }: WorkoutPanelProps) {
   const deleteAlert = useOverlayState();
   const [isPickerOpen, setPickerOpen] = useState(false);
-  const pickerAnchor = useRef<HTMLElement | null>(null);
   const elements = workout.workout_elements;
 
   return (
@@ -112,10 +111,7 @@ export function WorkoutPanel({
         <Button
           className="gap-1.5 rounded-none bg-transparent px-0 font-btn type-body font-semibold leading-[normal] text-accent"
           data-testid="tb-add-exercise"
-          onPress={(event) => {
-            pickerAnchor.current = event.target as HTMLElement;
-            setPickerOpen(true);
-          }}
+          onPress={() => setPickerOpen(true)}
           variant="ghost"
         >
           <Plus />
@@ -124,7 +120,6 @@ export function WorkoutPanel({
       </div>
 
       <ExercisePicker
-        anchorEl={pickerAnchor.current}
         isOpen={isPickerOpen}
         onAdd={(exercises) => commands.addExercises(workout.id, exercises)}
         onClose={() => setPickerOpen(false)}

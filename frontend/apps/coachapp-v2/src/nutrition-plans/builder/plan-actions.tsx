@@ -43,7 +43,7 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
   };
 
   const remove = () => deletePlan.mutateAsync(plan.id);
-  
+
   return (
     <PlanActionsMenu
       deleteBody="Are you sure you want to delete this nutrition plan permanently?"

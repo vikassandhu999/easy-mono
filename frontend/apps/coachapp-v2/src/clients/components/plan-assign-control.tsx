@@ -1,5 +1,3 @@
-import type {RefObject} from 'react';
-
 import AssignSurface from '@/clients/components/assign-surface';
 import PlanAssignContent, {type PlanKind} from '@/clients/components/plan-assign-content';
 
@@ -11,15 +9,13 @@ interface Props {
   label?: string;
   /**
    * Controlled mode — `PlanPanel` opens this from its ⋯ menu (or its empty-state
-   * button) and owns the anchor, so the surface renders no trigger of its own.
+   * button), so the surface renders no trigger of its own.
    */
-  anchorRef?: RefObject<HTMLButtonElement | null>;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
 export default function PlanAssignControl({
-  anchorRef,
   clientId,
   clientName,
   isOpen,
@@ -29,7 +25,6 @@ export default function PlanAssignControl({
 }: Props) {
   return (
     <AssignSurface
-      anchorRef={anchorRef}
       isOpen={isOpen}
       label={label}
       onOpenChange={onOpenChange}

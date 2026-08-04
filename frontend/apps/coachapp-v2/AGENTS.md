@@ -93,7 +93,7 @@ One shared primitive per job — never hand-roll these (graduated from the recur
 - **Browse/search lists**: `BrowseListBox` (`@/@components/browse-list-box`) — bakes in skeleton loading, error+Retry, empty state, infinite load-more. Flat queries pass `fetchNextPage={() => undefined}`.
 - **Errors**: page-level fetch errors use the shared `ErrorState` card; inline load errors say "Couldn't load X", never "Failed to load X".
 - **Loading**: first-load renders a layout-approximating skeleton (`ListSkeleton` via BrowseListBox, `PageSkeleton` for detail/settings with the real `Page.Header`), never a centered spinner. Pending buttons keep constant width — overlay the spinner on an `invisible` copy of the label (see `form-actions.tsx`), never swap label text.
-- **Pickers**: one content component, one responsive wrapper — anchored `Popover` on desktop, `KeyboardSheet` on mobile (mirror `plan-assign-control.tsx` / `food-picker-control.tsx`). Never desktop-only or centered-modal pickers.
+- **Pickers**: one content component in the canonical shell `PickerModal` (`@/builder-kit/picker-modal`) — centered modal on desktop, `KeyboardSheet` on mobile (decision 2026-08-04: pickers get one stable, predictable position; never anchored to the trigger). Search pickers go through `SearchPickerSheet`, which composes it. Anchored `Popover`s (via `ResponsiveOverlay`) are only for select-like controls (meal slot) and inline editors (set editor, amount sheet). Never desktop-only pickers.
 
 ## Page Anatomy
 

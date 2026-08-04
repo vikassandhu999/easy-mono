@@ -1,96 +1,101 @@
-import {Button, Popover} from '@heroui/react';
+/**
+ * "Add ingredient" button + its food-search picker — the canonical picker
+ * anatomy (centered PickerModal via SearchPickerSheet): search · multi-select
+ * rows · confirm dock, same as the nutrition builder's add-items flow.
+ * Confirming appends every selected food as an ingredient (default amount);
+ * amounts are edited inline in the ingredient list.
+ */
+import {Button, Chip} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {Plus} from 'lucide-react';
 import type {ComponentProps} from 'react';
-import {useRef, useState} from 'react';
-
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
-import type {Food} from '@/api/nutrition-foods';
-import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
-import FoodPickerContent from '@/recipes/components/food-picker-content';
+import {useMemo, useState} from 'react';
+import {useDebounce} from '@/@hooks/use-debounce';
+import {type Food, useListFoodsQuery} from '@/api/nutrition-foods';
+import {SearchPickerSheet} from '@/builder-kit/search-picker-sheet';
 
 interface Props {
   onSelect: (food: Food) => void;
+  /** Foods already in the recipe — hidden from results. */
   excludeIds?: string[];
   triggerClassName?: string;
   triggerVariant?: ComponentProps<typeof Button>['variant'];
 }
 
-/**
- * "Add ingredient" button + its food-search surface, RESPONSIVE the same way as
- * the nutrition/training PlanAssignControl: an anchored Popover on desktop, a
- * bottom KeyboardSheet on mobile. Body is FoodPickerContent.
- *
- * Keeps its own shell rather than composing `ResponsiveOverlay`: the desktop
- * panel is content-sized (`max-w-md`, no height cap — FoodPickerContent owns its
- * own scroll region) and the mobile sheet is deliberately title-less, so all
- * three of the wrapper's fixed decisions would have to become knobs.
- * The popover chrome tokens still match the wrapper's.
- */
-export default function FoodPickerControl({onSelect, excludeIds, triggerClassName, triggerVariant}: Props) {
+export default function FoodPickerControl({onSelect, excludeIds = [], triggerClassName, triggerVariant}: Props) {
   const [open, setOpen] = useState(false);
-  const isDesktop = useIsDesktop();
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const [selected, setSelected] = useState<Map<string, Food>>(new Map());
+  const selectedKeys = useMemo(() => new Set(selected.keys()), [selected]);
+
+  const {data, isFetching} = useListFoodsQuery({search: debouncedSearch || undefined, limit: 20}, {enabled: open});
+  const foods = useMemo(() => (data?.data ?? []).filter((f) => !excludeIds.includes(f.id)), [data, excludeIds]);
 
   const close = () => {
     setOpen(false);
-    // Return focus to the trigger so keyboard users aren't dropped at the top
-    // of the document after the picker closes.
-    triggerRef.current?.focus();
+    setSearch('');
+    setSelected(new Map());
   };
-  const content = (
-    <FoodPickerContent
-      excludeIds={excludeIds}
-      onClose={close}
-      onSelect={onSelect}
-    />
-  );
 
   return (
     <>
       <Button
         aria-expanded={open}
-        aria-haspopup="listbox"
+        aria-haspopup="dialog"
         className={cn(' ', triggerClassName)}
         onPress={() => setOpen(true)}
-        ref={triggerRef}
         variant={triggerVariant ?? 'secondary'}
       >
         <Plus size={16} />
         Add ingredient
       </Button>
 
-      {isDesktop ? (
-        <Popover
-          isOpen={open}
-          onOpenChange={(v) => {
-            if (!v) {
-              close();
+      <SearchPickerSheet<Food>
+        confirmLabel={(count) => (count === 0 ? 'Add ingredients' : `Add ${count} ingredient${count === 1 ? '' : 's'}`)}
+        itemKey={(food) => food.id}
+        items={foods}
+        loading={isFetching || search !== debouncedSearch}
+        onClose={close}
+        onConfirm={() => {
+          for (const food of selected.values()) {
+            onSelect(food);
+          }
+          close();
+        }}
+        onSearchChange={setSearch}
+        onToggleItem={(food) => {
+          setSelected((previous) => {
+            const next = new Map(previous);
+            if (!next.delete(food.id)) {
+              next.set(food.id, food);
             }
-          }}
-        >
-          <Popover.Content
-            className="max-w-md"
-            triggerRef={triggerRef}
-          >
-            {/* `max-h-[inherit]` like ResponsiveOverlay: react-aria caps the panel
-                to the space around the trigger, and an uncapped dialog spills. */}
-            <Popover.Dialog
-              aria-label="Add ingredient"
-              className="max-h-[inherit] overflow-y-auto p-4 outline-none"
+            return next;
+          });
+        }}
+        open={open}
+        renderItem={(food) => (
+          <span className="flex items-center gap-2">
+            <span className="min-w-0 flex-1">
+              <span className="block truncate type-body font-medium text-foreground">{food.name}</span>
+              <span className="block truncate type-eyebrow text-muted">
+                per 100g · {food.calories_per_100g ?? '—'} kcal
+              </span>
+            </span>
+            <Chip
+              className="shrink-0"
+              color="accent"
+              size="sm"
+              variant="soft"
             >
-              {open ? content : null}
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
-      ) : (
-        <KeyboardSheet
-          onClose={close}
-          open={open}
-        >
-          {open ? content : null}
-        </KeyboardSheet>
-      )}
+              {food.protein_g_per_100g ?? 0}P
+            </Chip>
+          </span>
+        )}
+        search={search}
+        selectedKeys={selectedKeys}
+        title="Add ingredient"
+      />
     </>
   );
 }

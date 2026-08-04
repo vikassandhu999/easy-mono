@@ -11,18 +11,17 @@
  *           through `onAdd` — the builder commits it as one operation.
  *           The surface never moves between phases.
  */
-import {Button, CloseButton, Modal} from '@heroui/react';
+import {Button} from '@heroui/react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 
 import {toastMutationError} from '@/@components/mutation-toast';
 import {useDebounce} from '@/@hooks/use-debounce';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import {
   useCoachFoodsInfiniteQuery,
   useCoachRecipesInfiniteQuery,
   useCreateCoachFoodMutation,
 } from '@/api/nutrition-foods';
-import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+import {PickerModal} from '@/builder-kit/picker-modal';
 import {type FilterChip, SearchPickerBody} from '@/builder-kit/search-picker-sheet';
 
 import {AmountSheetContent, type MealItemDraft} from './amount-sheet';
@@ -40,8 +39,6 @@ interface AddItemsFlowProps {
 const AMOUNT_FORM_ID = 'add-items-amount-form';
 
 export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps) {
-  const isDesktop = useIsDesktop();
-
   // --- Phase: null = picking; an array = setting amounts for these items ---
   const [picked, setPicked] = useState<FoodOrRecipe[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -203,55 +200,17 @@ export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps
     </Button>
   );
 
-  if (isDesktop) {
-    // The dialog's own p-6 is released so the modal shares the three-band
-    // anatomy of every picker surface (title row · px-4 scroll body · dock) —
-    // SearchPickerBody's sticky search assumes the px-4 gutter.
-    return (
-      <Modal.Backdrop
-        isOpen={open}
-        onOpenChange={(next) => {
-          if (!next) {
-            close();
-          }
-        }}
-      >
-        <Modal.Container
-          placement="center"
-          size="sm"
-        >
-          <Modal.Dialog
-            aria-label={title}
-            className="overflow-hidden p-0"
-          >
-            {open ? (
-              <>
-                <div className="flex items-center justify-between px-4 pb-1 pt-3">
-                  <span className="type-body font-semibold text-foreground">{title}</span>
-                  <CloseButton
-                    aria-label="Close"
-                    className="-mr-2 text-muted"
-                    onPress={close}
-                  />
-                </div>
-                <div className={current ? 'px-4 pb-3' : 'h-[60vh] overflow-y-auto px-4 pb-2'}>{body}</div>
-                <div className="border-t border-separator bg-background px-4 py-3">{dock}</div>
-              </>
-            ) : null}
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    );
-  }
-
   return (
-    <KeyboardSheet
-      footer={open ? dock : undefined}
+    <PickerModal
+      // The amount step is content-sized; the pick step is the standard
+      // fixed-height scroll body (PickerModal's default).
+      bodyClassName={current ? 'px-4 pb-3' : undefined}
+      footer={dock}
       onClose={close}
       open={open}
       title={title}
     >
-      {open ? body : null}
-    </KeyboardSheet>
+      {body}
+    </PickerModal>
   );
 }

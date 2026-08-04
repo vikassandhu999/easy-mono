@@ -1,11 +1,10 @@
-import {Button, Popover} from '@heroui/react';
+import {Button} from '@heroui/react';
 import {UserPlus} from 'lucide-react';
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 
 import ClientPickerContent from '@/@components/client-picker';
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
 import type {Client} from '@/api/clients';
-import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+import {PickerModal} from '@/builder-kit/picker-modal';
 
 export type PlanAddToClientControlProps = {
   planName: string;
@@ -16,21 +15,14 @@ export type PlanAddToClientControlProps = {
 
 /**
  * "Add to client" button + client-search surface shared by the training and
- * nutrition plan builders. Responsive the same way as FoodPickerControl: an
- * anchored Popover on desktop, a bottom KeyboardSheet on mobile. Body is
- * ClientPickerContent.
+ * nutrition plan builders. Renders in the canonical picker shell (centered
+ * PickerModal on desktop, KeyboardSheet on mobile). Body is ClientPickerContent;
+ * picking a client assigns immediately.
  */
 export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAddToClientControlProps) {
   const [open, setOpen] = useState(false);
-  const isDesktop = useIsDesktop();
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const close = () => {
-    setOpen(false);
-    // Return focus to the trigger so keyboard users aren't dropped at the top
-    // of the document after the picker closes.
-    triggerRef.current?.focus();
-  };
+  const close = () => setOpen(false);
 
   const content = (
     <ClientPickerContent
@@ -53,7 +45,6 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
         data-testid="nb-add-client"
         isPending={isAssigning}
         onPress={() => setOpen(true)}
-        ref={triggerRef}
         size="sm"
         variant="secondary"
       >
@@ -61,35 +52,14 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
         Add to client
       </Button>
 
-      {isDesktop ? (
-        <Popover
-          isOpen={open}
-          onOpenChange={(v) => {
-            if (!v) {
-              close();
-            }
-          }}
-        >
-          <Popover.Content
-            className="w-80 p-0"
-            triggerRef={triggerRef}
-          >
-            <Popover.Dialog
-              aria-label={`Add ${planName} to client`}
-              className="max-h-[inherit] overflow-y-auto outline-none"
-            >
-              {open ? content : null}
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
-      ) : (
-        <KeyboardSheet
-          onClose={close}
-          open={open}
-        >
-          {open ? content : null}
-        </KeyboardSheet>
-      )}
+      <PickerModal
+        bodyClassName="max-h-[60vh] overflow-y-auto px-4 pb-4 pt-1"
+        onClose={close}
+        open={open}
+        title={`Add "${planName}" to client`}
+      >
+        {content}
+      </PickerModal>
     </>
   );
 }

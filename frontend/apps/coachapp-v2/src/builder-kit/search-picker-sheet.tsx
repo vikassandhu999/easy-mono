@@ -12,22 +12,15 @@
  *   to prevent redundant fetches and is cleaned up on unmount / prop changes.
  * - Layout matches `04-picker-and-set-sheet.html`: grip → title/close → search →
  *   filter chips (h-scroll) → item list → "+ Create" row → confirm dock (footer).
- * - Responsive container (canonical picker rule): anchored Popover on desktop
- *   when the caller passes `anchorEl`, KeyboardSheet otherwise — same split as
- *   SetSheet / food-picker-control.
- *
- * Keeps its own shell rather than composing `ResponsiveOverlay`: its desktop
- * panel is a three-part flex column (in-dialog title row, scroll body, sticky
- * confirm dock) with a caller-chosen `placement`, none of which the wrapper's
- * single padded scroll body can express. The popover chrome tokens match it.
+ * - Container: `PickerModal` — centered modal on desktop, KeyboardSheet on
+ *   mobile (the canonical picker shell).
  */
 
-import {Button, CloseButton, Popover, SearchField, Spinner} from '@heroui/react';
+import {Button, SearchField, Spinner} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {type ReactNode, useCallback, useEffect, useRef} from 'react';
 
-import {useIsDesktop} from '@/@hooks/use-is-desktop';
-import {KeyboardSheet} from './keyboard-sheet';
+import {PickerModal} from './picker-modal';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -83,15 +76,6 @@ export interface SearchPickerSheetProps<T> {
   loading?: boolean;
   onLoadMore?: () => void;
   hasMore?: boolean;
-
-  // --- Responsive container ---
-  /** Desktop only: the element the popover anchors to (usually the "+ Add …"
-   *  button that opened the picker). Absent → bottom sheet on all widths. */
-  anchorEl?: HTMLElement | null;
-  /** Desktop popover placement. Defaults to `right`, which suits a narrow
-   *  "+ Add …" text button; a full-width trigger needs `bottom` or react-aria
-   *  flips the panel off the left edge of the viewport. */
-  placement?: 'right' | 'bottom';
 }
 
 // ---------------------------------------------------------------------------
@@ -303,14 +287,7 @@ export function SearchPickerBody<T>({
 }
 
 export function SearchPickerSheet<T>(props: SearchPickerSheetProps<T>) {
-  const {open, onClose, title, selectedKeys, onConfirm, confirmLabel, anchorEl, placement = 'right'} = props;
-  const isDesktop = useIsDesktop();
-
-  // Stable ref object pointing at the trigger element — react-aria's Popover
-  // reads `triggerRef` on Content (same wiring as SetSheet).
-  const triggerRef = useRef<HTMLElement | null>(null);
-  triggerRef.current = anchorEl ?? null;
-
+  const {open, onClose, title, selectedKeys, onConfirm, confirmLabel} = props;
   const selectedCount = selectedKeys.size;
 
   const dockButton = (
@@ -324,49 +301,14 @@ export function SearchPickerSheet<T>(props: SearchPickerSheetProps<T>) {
     </Button>
   );
 
-  const body = <SearchPickerBody {...props} />;
-
-  if (isDesktop && anchorEl) {
-    return (
-      <Popover
-        isOpen={open}
-        onOpenChange={(v) => {
-          if (!v) {
-            onClose();
-          }
-        }}
-      >
-        <Popover.Content
-          className="w-96 p-0"
-          triggerRef={triggerRef}
-          placement={placement}
-        >
-          <Popover.Dialog className="flex max-h-[70vh] flex-col outline-none p-0">
-            {/* Title row — KeyboardSheet renders its own; the popover needs one */}
-            <div className="flex items-center justify-between px-4 pb-1 pt-3">
-              <span className="type-body font-semibold text-foreground">{title}</span>
-              <CloseButton
-                aria-label="Close"
-                className="-mr-2 text-muted"
-                onPress={onClose}
-              />
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">{body}</div>
-            <div className="border-t border-separator bg-background px-4 py-3">{dockButton}</div>
-          </Popover.Dialog>
-        </Popover.Content>
-      </Popover>
-    );
-  }
-
   return (
-    <KeyboardSheet
+    <PickerModal
       footer={dockButton}
       onClose={onClose}
       open={open}
       title={title}
     >
-      {body}
-    </KeyboardSheet>
+      <SearchPickerBody {...props} />
+    </PickerModal>
   );
 }

@@ -1,14 +1,13 @@
 import {AlertDialog, Button, Dropdown, Typography, useOverlayState} from '@heroui/react';
 import type {LucideIcon} from 'lucide-react';
 import {MoreHorizontal} from 'lucide-react';
-import {type ReactNode, type RefObject, useRef, useState} from 'react';
+import {type ReactNode, useState} from 'react';
 
 import {EmptyState} from '@/@components/empty-state';
 import {SectionCard} from '@/clients/components/section-card';
 
 /** What a caller needs to render its assign surface without a trigger of its own. */
 export type AssignControl = {
-  anchorRef: RefObject<HTMLButtonElement | null>;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -56,8 +55,6 @@ export function PlanPanel({
   const [assignOpen, setAssignOpen] = useState(false);
   // Two anchors, one per branch: the ⋯ button on an active plan, the Assign
   // button on the empty state. The popover has to point at whatever opened it.
-  const menuRef = useRef<HTMLButtonElement | null>(null);
-  const emptyRef = useRef<HTMLButtonElement | null>(null);
 
   if (!name) {
     return (
@@ -68,12 +65,11 @@ export function PlanPanel({
               <>
                 <Button
                   onPress={() => setAssignOpen(true)}
-                  ref={emptyRef}
                   variant="primary"
                 >
                   {assignLabel ?? 'Assign plan'}
                 </Button>
-                {assign({anchorRef: emptyRef, isOpen: assignOpen, onOpenChange: setAssignOpen})}
+                {assign({isOpen: assignOpen, onOpenChange: setAssignOpen})}
               </>
             )
           }
@@ -125,7 +121,6 @@ export function PlanPanel({
               <Button
                 aria-label="Plan options"
                 isIconOnly
-                ref={menuRef}
                 variant="outline"
               >
                 <MoreHorizontal />
@@ -158,7 +153,7 @@ export function PlanPanel({
               </Dropdown.Popover>
             </Dropdown>
           )}
-          {assign?.({anchorRef: menuRef, isOpen: assignOpen, onOpenChange: setAssignOpen})}
+          {assign?.({isOpen: assignOpen, onOpenChange: setAssignOpen})}
           {onEnd && (
             <AlertDialog.Backdrop
               isDismissable={!isEnding}

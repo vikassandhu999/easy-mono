@@ -1,0 +1,94 @@
+/**
+ * PickerModal — the one responsive shell for picker surfaces (decision
+ * 2026-08-04: pickers are CENTERED MODALS on desktop, not anchored popovers —
+ * a stable, predictable position instead of panels popping up wherever the
+ * trigger happens to sit).
+ *
+ * Desktop: centered `Modal` with the three-band picker anatomy the nutrition
+ * add-items flow established — title row · scrollable body · sticky footer.
+ * Mobile: `KeyboardSheet` (which renders its own title row and footer dock).
+ *
+ * Children mount only while open, so search state and autofocus reset per
+ * opening. Anchored popovers remain correct for select-like controls (meal
+ * slot) and inline editors (set editor, amount sheet) via `ResponsiveOverlay`.
+ */
+import {CloseButton, Modal} from '@heroui/react';
+import type {ReactNode} from 'react';
+
+import {useIsDesktop} from '@/@hooks/use-is-desktop';
+import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
+
+export interface PickerModalProps {
+  open: boolean;
+  /** Receives the dismiss (backdrop, Esc, close button). */
+  onClose: () => void;
+  /** Title band on both shells; also the dialog's accessible name. Omit when
+   *  the content renders its own header row. */
+  title?: string;
+  /** Sticky confirm dock. Omit for instant-select pickers. */
+  footer?: ReactNode;
+  /** Desktop body override. Default is the fixed-height scroll body every
+   *  search picker uses; a content-sized step (e.g. an amount form) passes its
+   *  own padding instead. */
+  bodyClassName?: string;
+  children: ReactNode;
+}
+
+export function PickerModal({open, onClose, title, footer, bodyClassName, children}: PickerModalProps) {
+  const isDesktop = useIsDesktop();
+
+  if (isDesktop) {
+    return (
+      <Modal.Backdrop
+        isOpen={open}
+        onOpenChange={(next) => {
+          if (!next) {
+            onClose();
+          }
+        }}
+      >
+        <Modal.Container
+          placement="center"
+          size="sm"
+        >
+          {/* p-0: the bands own their insets (SearchPickerBody's sticky search
+              assumes the px-4 gutter). */}
+          <Modal.Dialog
+            aria-label={title}
+            className="overflow-hidden p-0"
+          >
+            {open ? (
+              <>
+                {title !== undefined ? (
+                  <div className="flex items-center justify-between px-4 pb-1 pt-3">
+                    <span className="type-body font-semibold text-foreground">{title}</span>
+                    <CloseButton
+                      aria-label="Close"
+                      className="-mr-2 text-muted"
+                      onPress={onClose}
+                    />
+                  </div>
+                ) : null}
+                <div className={bodyClassName ?? 'h-[60vh] overflow-y-auto px-4 pb-2'}>{children}</div>
+                {footer !== undefined ? (
+                  <div className="border-t border-separator bg-background px-4 py-3">{footer}</div>
+                ) : null}
+              </>
+            ) : null}
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    );
+  }
+
+  return (
+    <KeyboardSheet
+      footer={open ? footer : undefined}
+      onClose={onClose}
+      open={open}
+      title={title}
+    >
+      {open ? children : null}
+    </KeyboardSheet>
+  );
+}

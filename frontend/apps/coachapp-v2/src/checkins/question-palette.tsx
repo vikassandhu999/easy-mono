@@ -1,11 +1,10 @@
 /**
  * AddQuestionControl — the FB "Add question" palette.
  *
- * GAPS.md #10: the palette is a picker, so it follows the canonical responsive
- * overlay rule — `ResponsiveOverlay` wraps ONE shared content component
- * (`QuestionPaletteContent`) in an anchored `Popover` on desktop and a
- * `KeyboardSheet` on mobile. Preset lists are a `ListBox` with a `Header` per
- * category.
+ * GAPS.md #10: the palette is a picker, so it renders in the canonical picker
+ * shell — `PickerModal` (centered modal on desktop, `KeyboardSheet` on mobile)
+ * wrapping ONE shared content component (`QuestionPaletteContent`). Preset
+ * lists are a `ListBox` with a `Header` per category.
  *
  * Two parts, per INTERACTIONS.md § FM/FB: a blank-type grid (`New question`)
  * and the `Common questions` presets grouped by category. Picking either appends
@@ -13,10 +12,10 @@
  */
 import {Button, Header, Label, ListBox, Typography} from '@heroui/react';
 import {Plus} from 'lucide-react';
-import {useRef, useState} from 'react';
+import {useState} from 'react';
 
 import {type FormQuestionType, newQuestion, type QuestionDraft} from '@/api/checkins';
-import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
+import {PickerModal} from '@/builder-kit/picker-modal';
 import {QUESTION_PRESET_CATEGORIES, QUESTION_PRESETS} from '@/checkins/question-presets';
 import {
   QUESTION_TYPE_ICONS,
@@ -119,36 +118,30 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
 
 export default function AddQuestionControl({onAdd}: {onAdd: (question: QuestionDraft) => void}) {
   const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const pick = (question: QuestionDraft) => {
     setOpen(false);
     onAdd(question);
   };
 
-  const trigger = (
-    <Button
-      className="w-full rounded-control border border-dashed border-border text-accent"
-      onPress={() => setOpen(true)}
-      ref={triggerRef}
-      variant="ghost"
-    >
-      <Plus />
-      {PALETTE_TITLE}
-    </Button>
-  );
-
   return (
     <>
-      {trigger}
-      <ResponsiveOverlay
-        isOpen={open}
-        onOpenChange={setOpen}
+      <Button
+        className="w-full rounded-control border border-dashed border-border text-accent"
+        onPress={() => setOpen(true)}
+        variant="ghost"
+      >
+        <Plus />
+        {PALETTE_TITLE}
+      </Button>
+      <PickerModal
+        bodyClassName="h-[60vh] overflow-y-auto px-4 pb-4 pt-1"
+        onClose={() => setOpen(false)}
+        open={open}
         title={PALETTE_TITLE}
-        triggerRef={triggerRef}
       >
         <QuestionPaletteContent onPick={pick} />
-      </ResponsiveOverlay>
+      </PickerModal>
     </>
   );
 }

@@ -357,6 +357,22 @@ reading `textContent` off the live node — `"Upper A 3"`, not `"Upper A3"`. **N
 the shape is a JSX child list, not a class string, so there is no reliable grep for the
 MISSING case; this one stays prose until a lint rule can see it.
 
+### RM-147 — An action verb must land at the workflow it promises, not the entity default
+Dashboard `Renew`, `Assign`, and `Nudge` rows all reused one generic client-detail target,
+so three distinct actions silently opened Overview. When row verbs differ, their targets
+are item-specific: renewal opens the subscription edit surface, assignment opens the plan
+assignment tab, and nudge opens the client conversation. **Verify by:** AXI-click every
+verb on seeded `Test` rows and assert the destination URL and named destination control.
+Not mechanically gated: the defect is a semantic mismatch between copy and destination.
+
+### RM-148 — Composite progress inside a button needs an explicit action name
+A nested `Meter` replaced the dashboard setup row's accessible name with only `33%`,
+hiding both the purpose and destination from screen-reader users. A pressable composite
+sets an explicit action-oriented `aria-label`; the inner meter keeps its own progress
+label. **Verify by:** AXI snapshot before activating it — the button must announce the
+action and next step, not only a percentage. Not mechanically gated: the accessible name
+depends on the rendered compound-component tree.
+
 ### RM-144 — Every shared concept has an owning feature; never a neutral bucket
 A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
 owns it, and it erases the dependency information that matters (history depends on

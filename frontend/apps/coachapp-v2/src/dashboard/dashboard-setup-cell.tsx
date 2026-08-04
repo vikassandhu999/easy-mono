@@ -219,7 +219,8 @@ function ReadySetupCell({doneCount, onDismiss, steps}: {doneCount: number; onDis
       {/* Mobile: GAPS #3 collapses the strip to one row + a chevron that
           navigates to the next incomplete step. */}
       <Button
-        className="h-auto w-full justify-start gap-3 rounded-none px-0 py-0 md:hidden"
+        aria-label={`Continue setup: ${current?.label ?? 'Next step'}`}
+        className="button--row w-full justify-start gap-3 rounded-none px-0 py-0 md:hidden"
         onPress={() => navigate(nextRoute)}
         variant="ghost"
       >

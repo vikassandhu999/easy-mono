@@ -47,11 +47,11 @@ const STRIPE_TONE: Record<Tone, string> = {
 };
 
 function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: string) => void): QueueItem[] {
-  const clientPath = (client: Client) => () => navigate(ROUTES.CLIENT_DETAIL.replace(':id', client.id));
+  const clientPath = (route: string, client: Client) => route.replace(':id', client.id);
   const seen = new Set<string>();
   const items: QueueItem[] = [];
 
-  const pushClient = (client: Client, item: Omit<QueueItem, 'id' | 'initials' | 'name' | 'onOpen'>) => {
+  const pushClient = (client: Client, item: Omit<QueueItem, 'id' | 'initials' | 'name'>) => {
     if (seen.has(client.id)) {
       return;
     }
@@ -61,7 +61,6 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
       id: client.id,
       initials: getInitials(client.first_name, client.last_name) || '?',
       name: [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client',
-      onOpen: clientPath(client),
     });
   };
 
@@ -71,6 +70,7 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
       action: 'Renew',
       chip: 'Expiring',
       chipVariant: 'soft',
+      onOpen: () => navigate(clientPath(ROUTES.CLIENT_EDIT, client)),
       subtitle: formatSubscriptionEnd(client.subscription_ends_on),
       tone: 'danger',
     });
@@ -80,6 +80,7 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
       action: 'Assign',
       chip: 'Needs plan',
       chipVariant: 'soft',
+      onOpen: () => navigate(`${clientPath(ROUTES.CLIENT_DETAIL, client)}?tab=training`),
       subtitle: 'No plan assigned yet',
       tone: 'warning',
     });
@@ -111,6 +112,7 @@ function buildItems(clients: Client[], prospects: Prospect[], navigate: (to: str
       action: 'Nudge',
       chip: 'Intake',
       chipVariant: 'soft',
+      onOpen: () => navigate(clientPath(ROUTES.CLIENT_MESSAGES, client)),
       subtitle: 'Intake form incomplete',
       tone: 'default',
     });

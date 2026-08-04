@@ -163,6 +163,30 @@ export function useInviteClientMutation() {
   });
 }
 
+export function useResendClientInviteMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      call(client.POST('/v1/coach/clients/{id}/resend-invite', {params: {path: {id}}})) as Promise<ApiResponse<Client>>,
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({queryKey: clientKeys.detail(id)});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+    },
+  });
+}
+
+export function useRevokeClientInviteMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call(client.DELETE('/v1/coach/clients/{id}', {params: {path: {id}}})),
+    onSuccess: (_data, id) => {
+      qc.removeQueries({queryKey: clientKeys.detail(id)});
+      qc.invalidateQueries({queryKey: clientKeys.lists()});
+      qc.invalidateQueries({queryKey: billingKeys.all});
+    },
+  });
+}
+
 export function useUpdateClientMutation() {
   const qc = useQueryClient();
   return useMutation({

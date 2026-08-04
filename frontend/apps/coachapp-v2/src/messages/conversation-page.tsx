@@ -8,7 +8,7 @@ import ConversationView from '@/messages/conversation-view';
 
 export default function ConversationPage() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading} = useGetCoachConversationQuery(id!, {enabled: Boolean(id)});
+  const {data, isError, isLoading, refetch} = useGetCoachConversationQuery(id!, {enabled: Boolean(id)});
 
   if (isLoading) {
     return (
@@ -21,7 +21,10 @@ export default function ConversationPage() {
   if (isError || !data) {
     return (
       <div className="grid h-dvh place-items-center p-4">
-        <ErrorState message="Couldn't load this conversation." />
+        <ErrorState
+          message="Couldn't load this conversation."
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }

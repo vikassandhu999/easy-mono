@@ -10,7 +10,7 @@ import ConversationView from '@/messages/conversation-view';
 export default function ClientConversation() {
   const {id} = useParams<{id: string}>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const {data, isError, isLoading} = useGetCoachClientConversationQuery(id!, {enabled: Boolean(id)});
+  const {data, isError, isLoading, refetch} = useGetCoachClientConversationQuery(id!, {enabled: Boolean(id)});
   const embedId = searchParams.get('embed_id');
   const initialEmbed =
     searchParams.get('embed_type') === 'form_submission' && embedId
@@ -39,7 +39,10 @@ export default function ClientConversation() {
   if (isError || !data) {
     return (
       <div className="grid h-dvh place-items-center p-4">
-        <ErrorState message="Couldn't load this conversation." />
+        <ErrorState
+          message="Couldn't load this conversation."
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }

@@ -6,11 +6,12 @@
  *  Step 1 "pick"     — search + browse plan templates.
  *  Step 2 "schedule" — start/end dates (PlanScheduleStep), then assign.
  */
-import {SearchField, Spinner, Typography, toast} from '@heroui/react';
+import {Button, SearchField, Spinner, Typography, toast} from '@heroui/react';
 import {ArrowRight, Dumbbell, Plus, Utensils, X} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {ErrorState} from '@/@components/error-state';
 import {ROUTES} from '@/@config/routes';
 import {
   type NutritionPlan,
@@ -123,14 +124,16 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
         >
           {title}
         </Typography>
-        <button
+        <Button
           aria-label="Close"
-          className="grid size-9 place-items-center rounded-panel text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          onClick={onClose}
-          type="button"
+          className="text-muted hover:text-foreground"
+          isIconOnly
+          onPress={onClose}
+          size="sm"
+          variant="ghost"
         >
           <X size={16} />
-        </button>
+        </Button>
       </div>
 
       {step === 'pick' ? (
@@ -160,6 +163,11 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
             <div className="flex justify-center py-8">
               <Spinner size="sm" />
             </div>
+          ) : query.isError ? (
+            <ErrorState
+              message={`Couldn't load ${isNutrition ? 'nutrition' : 'training'} plans.`}
+              onRetry={() => query.refetch()}
+            />
           ) : items.length === 0 ? (
             <Typography
               align="center"
@@ -172,11 +180,11 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
           ) : (
             <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
               {items.map((plan) => (
-                <button
-                  className="group flex items-center gap-3 rounded-card p-2 text-left hover:bg-surface-hover"
+                <Button
+                  className="group h-auto w-full justify-start gap-3 p-2 text-left"
                   key={plan.id}
-                  onClick={() => handlePick(plan)}
-                  type="button"
+                  onPress={() => handlePick(plan)}
+                  variant="ghost"
                 >
                   <span className={`grid size-9 shrink-0 place-items-center rounded-panel ${iconWrap}`}>
                     <Icon size={16} />
@@ -201,21 +209,21 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
                     className="shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100"
                     size={16}
                   />
-                </button>
+                </Button>
               ))}
             </div>
           )}
 
-          <button
-            className="flex w-full items-center gap-2 rounded-card border border-separator p-2 type-body font-medium hover:bg-surface-hover"
-            onClick={() => navigate(isNutrition ? ROUTES.CREATE_NUTRITION_PLAN : ROUTES.CREATE_TRAINING_PLAN)}
-            type="button"
+          <Button
+            className="h-auto w-full justify-start gap-2 p-2"
+            onPress={() => navigate(isNutrition ? ROUTES.CREATE_NUTRITION_PLAN : ROUTES.CREATE_TRAINING_PLAN)}
+            variant="outline"
           >
             <span className="grid size-6 place-items-center rounded-panel bg-accent-soft text-accent">
               <Plus size={14} />
             </span>
             Create a new {isNutrition ? 'nutrition' : 'training'} plan
-          </button>
+          </Button>
         </div>
       ) : selected ? (
         <PlanScheduleStep

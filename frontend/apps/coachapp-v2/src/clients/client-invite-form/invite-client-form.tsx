@@ -1,6 +1,7 @@
 import {Description, ErrorMessage, Fieldset, ListBox} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Send} from 'lucide-react';
+import {useEffect} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FieldRow} from '@/@components/form-fields/field-row';
@@ -77,10 +78,18 @@ type InviteClientFormProps = {
 
 export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit}: InviteClientFormProps) {
   const {
+    clearErrors,
     control,
     formState: {errors},
     handleSubmit,
   } = form;
+  const phone = form.watch('phone');
+
+  useEffect(() => {
+    if (phone) {
+      clearErrors('email');
+    }
+  }, [clearErrors, phone]);
 
   const {data: billing} = useGetBillingQuery();
   const isOwner = billing?.data.is_owner ?? false;

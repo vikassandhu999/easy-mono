@@ -12,6 +12,21 @@ defmodule Easy.Clients.ClientTest do
     end
   end
 
+  describe "search/2" do
+    test "matches the displayed full name" do
+      business = insert(:business)
+      client = insert(:client, business: business, first_name: "Nora", last_name: "Field")
+
+      assert [found] =
+               Client
+               |> Client.for_business(business.id)
+               |> Client.search("Nora Field")
+               |> Repo.all()
+
+      assert found.id == client.id
+    end
+  end
+
   describe "last_active_stamp/4" do
     test "stores the greatest timestamp without crossing businesses" do
       business = insert(:business)

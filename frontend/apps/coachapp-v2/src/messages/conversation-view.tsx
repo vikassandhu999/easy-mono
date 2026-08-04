@@ -1,4 +1,4 @@
-import {Button, Spinner, TextArea, Typography, toast} from '@heroui/react';
+import {Button, Spinner, TextArea, toast} from '@heroui/react';
 import {useQueryClient} from '@tanstack/react-query';
 import {ArrowLeft, Send} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -95,7 +95,7 @@ export default function ConversationView({
   const [sendLocked, setSendLocked] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} =
+  const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading, refetch} =
     useConversationMessagesInfiniteQuery(conversationId);
   const sendMessageMutation = useCreateCoachConversationMessageMutation();
   const markReadMutation = useMarkCoachConversationReadMutation();
@@ -188,13 +188,7 @@ export default function ConversationView({
         >
           <ArrowLeft size={18} />
         </Link>
-        <Typography
-          truncate
-          type="body-sm"
-          weight="semibold"
-        >
-          {title}
-        </Typography>
+        <h1 className="min-w-0 truncate type-body-sm font-semibold">{title}</h1>
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-3">
@@ -204,7 +198,10 @@ export default function ConversationView({
           </div>
         ) : conversationUnavailable ? (
           <div className="py-12">
-            <ErrorState message="Couldn't load messages." />
+            <ErrorState
+              message="Couldn't load messages."
+              onRetry={() => refetch()}
+            />
           </div>
         ) : (
           <div className="flex flex-col gap-2">

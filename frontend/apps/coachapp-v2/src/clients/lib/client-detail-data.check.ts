@@ -15,6 +15,7 @@
  */
 
 import {formatAnswer} from '../../checkins/lib/form-answers.ts';
+import {subscriptionDatesAreOrdered} from './client.ts';
 import {
   averageLoggedCalories,
   completedCheckIns,
@@ -66,6 +67,10 @@ const assert = {
 
 // The design's reference day: Tuesday 21 July 2026.
 const TODAY = new Date(2026, 6, 21);
+
+assert.equal(subscriptionDatesAreOrdered('2026-03-03', '2026-11-22'), true);
+assert.equal(subscriptionDatesAreOrdered('2026-03-03', '2025-11-22'), false);
+assert.equal(subscriptionDatesAreOrdered('2026-03-03', ''), true);
 
 // — day strings are local, not UTC —————————————————————————————————————————
 // The bug this guards: `new Date('2026-07-21')` is UTC MIDNIGHT, which is

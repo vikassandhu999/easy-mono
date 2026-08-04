@@ -5,3 +5,7 @@ export const INACTIVE_REASON_LABEL: Record<string, string> = {
   subscription_expired: 'Subscription ended',
   awaiting_seat: 'Needs a seat',
 };
+
+export function subscriptionDatesAreOrdered(start: string, end: string): boolean {
+  return !start || !end || end >= start;
+}

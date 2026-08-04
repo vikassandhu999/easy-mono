@@ -296,12 +296,13 @@ defmodule Easy.Clients.Client do
   def search(query, ""), do: query
 
   def search(query, term) do
+    pattern = Easy.Search.like_pattern(term)
+
     from(c in query,
       where:
-        ilike(c.first_name, ^Easy.Search.like_pattern(term)) or
-          ilike(c.last_name, ^Easy.Search.like_pattern(term)) or
-          ilike(c.email, ^Easy.Search.like_pattern(term)) or
-          ilike(c.phone, ^Easy.Search.like_pattern(term))
+        ilike(fragment("concat_ws(' ', ?, ?)", c.first_name, c.last_name), ^pattern) or
+          ilike(c.email, ^pattern) or
+          ilike(c.phone, ^pattern)
     )
   end
 

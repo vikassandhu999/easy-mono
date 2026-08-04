@@ -5,7 +5,7 @@
  * editor, plan scheduling, and the training-plan header so date entry is
  * consistent across the app.
  */
-import {Calendar, DateField, DatePicker, Label} from '@heroui/react';
+import {Calendar, DateField, DatePicker, FieldError, Label} from '@heroui/react';
 import {type DateValue, parseDate} from '@internationalized/date';
 import type {ReactNode} from 'react';
 
@@ -23,6 +23,7 @@ function toDateValue(iso: null | string): DateValue | null {
 
 interface DateInputProps {
   ariaLabel?: string;
+  errorMessage?: ReactNode;
   isRequired?: boolean;
   label?: ReactNode;
   /** Override the default label styling (e.g. compact muted labels). */
@@ -31,10 +32,19 @@ interface DateInputProps {
   value: null | string;
 }
 
-export default function DateInput({ariaLabel, isRequired, label, labelClassName, onChange, value}: DateInputProps) {
+export default function DateInput({
+  ariaLabel,
+  errorMessage,
+  isRequired,
+  label,
+  labelClassName,
+  onChange,
+  value,
+}: DateInputProps) {
   return (
     <DatePicker
       aria-label={label ? undefined : ariaLabel}
+      isInvalid={Boolean(errorMessage)}
       isRequired={isRequired}
       onChange={(date: DateValue | null) => onChange(date ? date.toString() : null)}
       value={toDateValue(value)}
@@ -48,6 +58,7 @@ export default function DateInput({ariaLabel, isRequired, label, labelClassName,
           </DatePicker.Trigger>
         </DateField.Suffix>
       </DateField.Group>
+      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
       <DatePicker.Popover className="max-w-[calc(100vw-1rem)] p-2">
         <Calendar aria-label={ariaLabel ?? (typeof label === 'string' ? label : 'Choose date')}>
           <Calendar.Header>

@@ -19,6 +19,7 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 import {useGetTeamQuery, useReassignClientMutation} from '@/api/team';
+import {subscriptionDatesAreOrdered} from '@/clients/lib/client';
 
 /**
  * CD-ED — edit a client. A NEW screen: the design specifies it, and
@@ -32,15 +33,25 @@ import {useGetTeamQuery, useReassignClientMutation} from '@/api/team';
  * would reassign a client to the coach they already have on every save, and each
  * reassignment is a real event on the client's history.
  */
-const editClientSchema = z.object({
-  assigned_coach_id: z.string(),
-  email: z.string().email('Enter a valid email').or(z.literal('')),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string(),
-  phone: z.string(),
-  subscription_ends_on: z.string(),
-  subscription_started_on: z.string(),
-});
+const editClientSchema = z
+  .object({
+    assigned_coach_id: z.string(),
+    email: z.string().email('Enter a valid email').or(z.literal('')),
+    first_name: z.string().min(1, 'First name is required'),
+    last_name: z.string(),
+    phone: z.string(),
+    subscription_ends_on: z.string(),
+    subscription_started_on: z.string(),
+  })
+  .superRefine((values, ctx) => {
+    if (!subscriptionDatesAreOrdered(values.subscription_started_on, values.subscription_ends_on)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'End date must be on or after the start date',
+        path: ['subscription_ends_on'],
+      });
+    }
+  });
 
 type EditClientValues = z.infer<typeof editClientSchema>;
 
@@ -121,8 +132,10 @@ export default function EditClient() {
       await updateClientMutation.mutateAsync({
         body: {
           email: values.email || null,
-          first_name: values.first_name,
-          last_name: values.last_name,
+          ...(client.status === 'pending' && {
+            first_name: values.first_name,
+            last_name: values.last_name,
+          }),
           phone: values.phone || null,
           subscription_ends_on: values.subscription_ends_on || null,
           subscription_started_on: values.subscription_started_on || null,
@@ -153,15 +166,26 @@ export default function EditClient() {
           <FormLayout onSubmit={onSubmit}>
             <Fieldset>
               <Fieldset.Legend>Profile</Fieldset.Legend>
+              {client.status !== 'pending' && (
+                <Typography
+                  className="mb-3"
+                  color="muted"
+                  type="body-xs"
+                >
+                  Name is managed by the client from their account.
+                </Typography>
+              )}
               <FieldRow>
                 <FormTextField
                   control={form.control}
+                  isDisabled={client.status !== 'pending'}
                   isRequired
                   label="First name"
                   name="first_name"
                 />
                 <FormTextField
                   control={form.control}
+                  isDisabled={client.status !== 'pending'}
                   label="Last name"
                   name="last_name"
                 />
@@ -238,6 +262,7 @@ export default function EditClient() {
                     value={form.watch('subscription_started_on') || null}
                   />
                   <DateInput
+                    errorMessage={form.formState.errors.subscription_ends_on?.message}
                     label="Subscription end"
                     onChange={(value) => form.setValue('subscription_ends_on', value ?? '', {shouldDirty: true})}
                     value={form.watch('subscription_ends_on') || null}

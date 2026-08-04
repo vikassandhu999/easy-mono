@@ -178,20 +178,22 @@ export default function BrowseListBox<T extends object>({
       selectionMode="none"
     >
       <Collection items={items}>{renderItem}</Collection>
-      <ListBoxLoadMoreItem
-        isLoading={isLoading}
-        onLoadMore={fetchNextPage}
-      >
-        <div className="flex items-center justify-center gap-2 py-2">
-          <Spinner size="sm" />
-          <Typography
-            color="muted"
-            type="body-sm"
-          >
-            Loading more...
-          </Typography>
-        </div>
-      </ListBoxLoadMoreItem>
+      {items.length > 0 && !isError ? (
+        <ListBoxLoadMoreItem
+          isLoading={isLoading}
+          onLoadMore={fetchNextPage}
+        >
+          <div className="flex items-center justify-center gap-2 py-2">
+            <Spinner size="sm" />
+            <Typography
+              color="muted"
+              type="body-sm"
+            >
+              Loading more...
+            </Typography>
+          </div>
+        </ListBoxLoadMoreItem>
+      ) : null}
     </ListBox>
   );
 }

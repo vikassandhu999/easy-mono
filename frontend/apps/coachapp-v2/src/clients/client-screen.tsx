@@ -1,5 +1,5 @@
 import {getFullName, getInitials} from '@easy/utils';
-import {Avatar, Button, Dropdown, ToggleButton, ToggleButtonGroup} from '@heroui/react';
+import {AlertDialog, Avatar, Button, Dropdown, ToggleButton, ToggleButtonGroup, Typography, toast} from '@heroui/react';
 import {
   CalendarCheck,
   Dumbbell,
@@ -20,7 +20,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {Client} from '@/api/clients';
-import {useGetClientQuery} from '@/api/clients';
+import {useGetClientQuery, useResendClientInviteMutation, useRevokeClientInviteMutation} from '@/api/clients';
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
 import {CheckinsTab} from '@/clients/client-screen/checkins-tab';
@@ -29,6 +29,7 @@ import {OverviewTab} from '@/clients/client-screen/overview-tab';
 import {TrainingTab} from '@/clients/client-screen/training-tab';
 import {ClientStatStrip} from '@/clients/components/client-stat-strip';
 import {ClientAttentionChips, ClientStatusChip} from '@/clients/components/client-status-chips';
+import {getWhatsAppUrl} from '@/clients/lib/invite-client';
 
 /**
  * The single-client workspace: identity header, live stat bar, and pill tabs
@@ -52,10 +53,8 @@ import {ClientAttentionChips, ClientStatusChip} from '@/clients/components/clien
  * The design (prototype line 907) treats pending / onboarding / expiring /
  * inactive as SCENARIOS of this screen rather than separate screens: the same
  * chrome throughout, with the state expressed by the chip row and by stat cells
- * reading "No plan". So there is no branch to a different layout here — only
- * `hasAccess`, which decides whether the tabs are meaningful at all. An invited
- * client has never logged anything, so tabs over empty bodies would be four ways
- * to see nothing.
+ * reading "No plan". The invited state is the one exception: it has neither
+ * activity stats nor tabs because the client has not joined yet.
  */
 const TABS = [
   {Icon: LayoutGrid, id: 'overview', label: 'Overview'},
@@ -72,8 +71,9 @@ export default function ClientScreen() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CLIENTS);
   const {data, isError, isLoading, refetch} = useGetClientQuery(id);
+  const canLoadActivity = data?.data.status != null && data.data.status !== 'pending';
   // The header's unread badge — the same count the inbox shows for this client.
-  const conversation = useGetCoachClientConversationQuery(id);
+  const conversation = useGetCoachClientConversationQuery(id, {enabled: canLoadActivity});
   const unread = conversation.data?.data?.unread_count ?? 0;
 
   const requested = params.get('tab');
@@ -82,7 +82,7 @@ export default function ClientScreen() {
   // "3 of 4": the target is how many DISTINCT weekdays the active plan schedules,
   // which is what the design's "4 days a week" counts. There is no `days_per_week`
   // field on a plan — it is derived from the plan items' `day_of_week`.
-  const plans = useListCoachClientTrainingPlansQuery(id, {status: 'active'});
+  const plans = useListCoachClientTrainingPlansQuery(id, {status: 'active'}, {enabled: canLoadActivity});
   const activePlan = plans.data?.data?.[0];
   const weeklyTarget = activePlan ? Object.values(activePlan.schedule).filter(Boolean).length || null : null;
 
@@ -116,8 +116,8 @@ export default function ClientScreen() {
   const name = getFullName(client.first_name, client.last_name);
   const detailPath = (route: string) => route.replace(':id', client.id);
   // A client who has not accepted their invite has no sessions, meals, weight or
-  // check-ins by definition — the design shows the header and stat bar, not tabs.
-  const hasAccess = client.status !== 'pending';
+  // check-ins by definition, so activity stats and tabs are both meaningless.
+  const hasAccess = canLoadActivity;
 
   return (
     <Page>
@@ -218,12 +218,14 @@ export default function ClientScreen() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-card border border-border bg-surface">
-            <ClientStatStrip
-              client={client}
-              weeklyTarget={weeklyTarget}
-            />
-          </div>
+          {hasAccess && (
+            <div className="overflow-hidden rounded-card border border-border bg-surface">
+              <ClientStatStrip
+                client={client}
+                weeklyTarget={weeklyTarget}
+              />
+            </div>
+          )}
 
           {hasAccess ? (
             <>
@@ -276,21 +278,118 @@ export default function ClientScreen() {
 }
 
 /**
- * CD-pending. Not a separate screen — the same header and stat bar above, with the
- * tab row replaced by the one thing that can actually happen next.
+ * CD-pending. Not a separate screen — the same identity header, with activity
+ * chrome replaced by the one thing that can actually happen next.
  */
 function PendingBody({client}: {client: Client}) {
   const navigate = useNavigate();
+  const resend = useResendClientInviteMutation();
+  const revoke = useRevokeClientInviteMutation();
+  const inviteUrl = client.invite_url;
+
+  const handleResend = async () => {
+    try {
+      await resend.mutateAsync(client.id);
+      toast.success('Invite resent');
+    } catch {
+      toast.danger("Couldn't resend invite");
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!inviteUrl) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success('Link copied');
+    } catch {
+      toast.danger("Couldn't copy invite link");
+    }
+  };
+
+  const handleRevoke = async () => {
+    try {
+      await revoke.mutateAsync(client.id);
+      toast.success('Invite revoked');
+      navigate(ROUTES.CLIENTS, {replace: true});
+    } catch {
+      toast.danger("Couldn't revoke invite");
+    }
+  };
+
   return (
     <div className="rounded-card border border-border bg-surface">
       <EmptyState
         action={
-          <Button
-            onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
-            variant="outline"
-          >
-            Manage invitation
-          </Button>
+          <div className="flex flex-wrap justify-center gap-2">
+            {client.email && (
+              <Button
+                isPending={resend.isPending}
+                onPress={handleResend}
+                variant="outline"
+              >
+                {resend.isPending ? 'Resending' : 'Resend invite'}
+              </Button>
+            )}
+            {client.phone && inviteUrl && (
+              <Button
+                onPress={() =>
+                  window.open(
+                    getWhatsAppUrl(client.phone ?? undefined, client.first_name ?? '', inviteUrl),
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
+                }
+                variant="outline"
+              >
+                Share via WhatsApp
+              </Button>
+            )}
+            {inviteUrl && (
+              <Button
+                onPress={handleCopy}
+                variant="outline"
+              >
+                Copy link
+              </Button>
+            )}
+            <AlertDialog>
+              <Button variant="danger">Revoke invite</Button>
+              <AlertDialog.Backdrop isDismissable={!revoke.isPending}>
+                <AlertDialog.Container>
+                  <AlertDialog.Dialog>
+                    <AlertDialog.CloseTrigger />
+                    <AlertDialog.Header>
+                      <AlertDialog.Icon status="danger" />
+                      <AlertDialog.Heading>Revoke invitation?</AlertDialog.Heading>
+                    </AlertDialog.Header>
+                    <AlertDialog.Body>
+                      <Typography>
+                        This removes {client.first_name ?? 'this client'} and invalidates their invite link.
+                      </Typography>
+                    </AlertDialog.Body>
+                    <AlertDialog.Footer>
+                      <Button
+                        isDisabled={revoke.isPending}
+                        slot="close"
+                        variant="tertiary"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        isPending={revoke.isPending}
+                        onPress={handleRevoke}
+                        variant="danger"
+                      >
+                        {revoke.isPending ? 'Revoking' : 'Revoke invitation'}
+                      </Button>
+                    </AlertDialog.Footer>
+                  </AlertDialog.Dialog>
+                </AlertDialog.Container>
+              </AlertDialog.Backdrop>
+            </AlertDialog>
+          </div>
         }
         body={`${client.first_name ?? 'This client'} has not joined yet. Workouts, meals, weight and check-ins appear here once they accept.`}
         icon={MailCheck}

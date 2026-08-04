@@ -88,7 +88,7 @@ function PageTitleGroup({children, className}: PageProps) {
 
 function PageTitle({children, className, testId}: PageTitleProps) {
   return (
-    <span
+    <h1
       className={cn(
         // 22 on mobile, 27 from `sm` — which is what the scale itself declares:
         // `--type-metric` is "mobile page titles", `--type-display` is "desktop +
@@ -103,7 +103,7 @@ function PageTitle({children, className, testId}: PageTitleProps) {
       data-testid={testId}
     >
       {children}
-    </span>
+    </h1>
   );
 }
 

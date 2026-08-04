@@ -321,6 +321,7 @@ function PhotosCard({photoIds, to}: {photoIds: string[]; to: string}) {
   return (
     <SectionCard title="Progress photos">
       <Link
+        aria-label={`View ${photoIds.length} progress photos`}
         className="block px-4 pb-4"
         to={to}
       >

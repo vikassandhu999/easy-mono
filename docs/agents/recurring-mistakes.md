@@ -373,6 +373,112 @@ label. **Verify by:** AXI snapshot before activating it — the button must anno
 action and next step, not only a percentage. Not mechanically gated: the accessible name
 depends on the rendered compound-component tree.
 
+### RM-149 — Search must match the composite label the list displays
+A client row displays `First Last`, but the API searched the entire term against each
+column separately, so copying the visible full name returned no result. When list identity
+is composed from multiple fields, the shared query searches that same composed identity in
+addition to alternate identifiers such as email and phone. **Verify by:** enter an impossible
+control term, then the exact visible full name, and assert the result count changes from zero
+to one. Mechanically gated by the schema-query regression test.
+
+### RM-150 — Alternative-field validation must clear when either alternative becomes valid
+The invite form correctly required email or phone, but attached the shared error to Email;
+entering a phone left Email announced invalid until another submit. Cross-field validation
+must clear stale errors as soon as the alternative field satisfies the rule. **Verify by:**
+submit the form empty, enter only the alternate field, and assert the original field is no
+longer invalid before resubmitting. Not mechanically gated: it depends on live form state.
+
+### RM-151 — Lifecycle gates must cover every dependent surface, not only navigation
+Pending clients correctly hid activity tabs but still rendered workout, meal, weight, and
+last-active stats that cannot exist before invite acceptance. A lifecycle capability gate
+must wrap every surface whose data depends on that capability. **Verify by:** open a freshly
+invited `Test` client and assert activity stat labels and tabs are absent while invitation
+management remains available. Not mechanically gated: this is rendered lifecycle behavior.
+
+### RM-152 — A management surface must expose the lifecycle actions the API already owns
+Pending client UI linked to “Manage invitation,” but no CoachApp code called the existing
+resend or revoke endpoints, leaving invitations unmanageable and test data undeletable.
+For every state-specific management surface, trace the backend lifecycle endpoints and expose
+the applicable actions with outcome-driven cache invalidation. **Verify by:** resend a fresh
+`Test` invite and observe its timestamp/link update, then revoke it and assert list and seat
+counts return to their starting values. Not mechanically gated: endpoint reachability is an
+end-to-end ownership check.
+
+### RM-153 — Action eligibility must mirror endpoint preconditions
+The resend endpoint requires an email, but a phone-only pending client was still offered
+Resend and predictably received a 422. State-specific controls must be gated by the same
+preconditions as their endpoint, with the valid alternative exposed instead. **Verify by:**
+create phone-only and email invitations; the former offers WhatsApp/copy, the latter offers
+Resend, and neither can invoke an inapplicable action. Not mechanically gated: the contract
+spans response data, rendered controls, and endpoint validation.
+
+### RM-154 — Async media must not define a navigation control's name
+A Check-ins photo link inherited its accessible name from lazy thumbnails and an overflow
+count, so before signed URLs resolved it was announced only as “+2.” A media-backed
+navigation control sets a stable action label on the control itself; image alt text still
+describes loaded media but never owns the destination name. **Verify by:** snapshot the
+control before and after image resolution and assert both expose the same destination and
+total count. Not mechanically gated: the failure depends on asynchronous rendered state.
+
+### RM-155 — A shared page-title component must carry heading semantics
+`Page.Title` styled a generic span, so client detail sub-screens and most browse/form
+routes had no page-level heading despite displaying a visual title. The shared primitive
+renders an `h1`; call sites supply only title content and never rebuild semantics locally.
+**Verify by:** query every audited route for exactly one `h1` whose text matches the visual
+page title. Not mechanically gated: some full-canvas routes intentionally own their title.
+
+### RM-156 — An edit form must not offer fields its read contract overrides
+Coach client reads intentionally use the linked User's name, but the edit form submitted
+name changes only to the Client fallback row; Save returned 200 while the visible name
+never changed. When read authority makes a field client-owned, the coach form renders it
+read-only with ownership copy and omits it from the mutation. Pending invitation names
+remain editable because no User owns them yet. **Verify by:** inspect the PATCH body and
+round-trip the detail response, not the 200 status. Not mechanically gated: ownership is
+split across lifecycle state and response projection.
+
+### RM-157 — Infinite-scroll sentinels must not compete with terminal states
+The shared browse list mounted its load-more sentinel even when the initial query had no
+items and had failed. The sentinel immediately called `fetchNextPage`, changed the query
+back to loading, and repeated the failed request, so the intended error and Retry controls
+never rendered. Mount pagination only after at least one row exists and never while the
+query is in its terminal error state. **Verify by:** force the first page to fail, assert
+one request and visible Retry copy, then remove the failure and assert Retry restores the
+real row count. Not mechanically gated: the loop depends on the observer and rendered
+sentinel lifecycle.
+
+### RM-158 — A recoverable query error must own a Retry outcome
+The conversation lookup and message-history queries rendered shared `ErrorState` cards
+without passing their available `refetch`, leaving a transient network failure as a dead
+end. Every query-backed error surface passes its query's retry action unless the state is
+intentionally terminal (for example, a submission already reviewed elsewhere). **Verify
+by:** force one request to fail, assert Retry is present, remove the fault, activate Retry,
+and assert the exact real record returns. Not mechanically gated: terminal and transient
+states use the same visual primitive, so review must follow the query contract.
+
+### RM-159 — Query failure is not an empty collection
+The client plan picker treated a failed plan request as “No plan templates yet” because it
+checked only loading and item count. Custom collection surfaces check query error before
+empty data and expose Retry; empty copy is reserved for a successful zero-count response.
+**Verify by:** fail the exact list request and assert error/Retry, then remove the fault and
+assert Retry restores the known template count. Not mechanically gated: custom pickers do
+not share one collection component, so the state ordering must be reviewed at each owner.
+
+### RM-160 — Custom form controls must render their field errors
+The client editor submitted an end date before its start date; the backend correctly
+returned a field error, but the custom `DateInput` had no error prop, so the form appeared
+to do nothing. Mirror cheap cross-field invariants in the form schema and make every custom
+control render and announce its React Hook Form error. **Gated:** the client self-check
+covers ordered, reversed, and open-ended date pairs. **Verify by:** submit a reversed pair,
+assert the named end-date error appears without a PATCH, then restore the valid dates.
+
+### RM-161 — Feature pickers use the canonical button primitive
+The client plan picker built its close, row, and create actions from styled raw buttons,
+bypassing the app's press, focus, pending, and disabled contracts. Every feature action
+uses HeroUI `Button` with `onPress`; list semantics still come from `BrowseListBox` when
+the canonical fetched-list wrapper fits. **Gated:** `scripts/check-ui-contract.sh` rejects
+raw buttons and `onClick` in changed UI files. **Verify by:** keyboard-activate close, a
+plan row, and create-new, and assert each reaches its exact state or route.
+
 ### RM-144 — Every shared concept has an owning feature; never a neutral bucket
 A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
 owns it, and it erases the dependency information that matters (history depends on

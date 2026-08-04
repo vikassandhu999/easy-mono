@@ -212,7 +212,7 @@ importers:
         specifier: 7.13.0
         version: 7.13.0(typescript@5.6.3)
       playwright:
-        specifier: ^1.61.0
+        specifier: 1.61.0
         version: 1.61.0
       typescript:
         specifier: ^5.5.3

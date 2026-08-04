@@ -29,6 +29,13 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 - `just lint` / `just test` / `just build`
 - `just deploy` — deploy backend to Fly (from `backend/`)
 
+## Whole-application UI quality
+
+For broad UI/UX audits and repair passes, follow `.claude/skills/ui-quality-loop/SKILL.md`
+end-to-end. It owns route/state coverage, AXI-vs-Playwright selection, live verification,
+and branch/commit safety. Its default is no commits; a run may commit only with explicit
+user authorization.
+
 ## UI redesign ports
 
 All redesign work follows `design-handoff/UI-CONTRACT.md` — read it before touching any screen.

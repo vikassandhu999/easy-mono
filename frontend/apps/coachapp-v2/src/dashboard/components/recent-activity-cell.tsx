@@ -25,8 +25,8 @@ function ConversationRow({conversation}: {conversation: Conversation}) {
     <ListBox.Item
       className={cn(
         LIST_ITEM_CLASS,
-        'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none border-b border-separator py-3',
-        'last:border-0 sm:px-4',
+        'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none py-3',
+        'sm:px-4',
         // The unread row is the accent-tinted one in the reference.
         unread ? 'bg-accent-soft' : 'hover:bg-surface-secondary',
       )}

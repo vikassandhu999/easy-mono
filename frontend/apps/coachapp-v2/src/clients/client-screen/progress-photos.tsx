@@ -53,7 +53,7 @@ export default function ProgressPhotos() {
 
   const header = (
     <Page.Header size="content">
-      <Page.TitleGroup className="flex items-center gap-1">
+      <Page.TitleGroup className="flex items-center">
         <BackButton onPress={goBack} />
         <Page.Title>Progress photos</Page.Title>
       </Page.TitleGroup>
@@ -101,7 +101,7 @@ export default function ProgressPhotos() {
     return (
       <Page>
         <Page.Header size="content">
-          <Page.TitleGroup className="flex items-center gap-1">
+          <Page.TitleGroup className="flex items-center">
             <BackButton onPress={() => setComparing(false)} />
             <Page.Title>Compare</Page.Title>
           </Page.TitleGroup>

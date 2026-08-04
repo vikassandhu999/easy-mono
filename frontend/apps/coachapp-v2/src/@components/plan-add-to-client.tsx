@@ -76,7 +76,7 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
           >
             <Popover.Dialog
               aria-label={`Add ${planName} to client`}
-              className="outline-none"
+              className="max-h-[inherit] overflow-y-auto outline-none"
             >
               {open ? content : null}
             </Popover.Dialog>

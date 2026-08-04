@@ -70,7 +70,7 @@ export default function EditClient() {
 
   const header = (
     <Page.Header size="content">
-      <Page.TitleGroup className="flex items-center gap-1">
+      <Page.TitleGroup className="flex items-center">
         <BackButton onPress={goBack} />
         <Page.Title>Edit client</Page.Title>
       </Page.TitleGroup>

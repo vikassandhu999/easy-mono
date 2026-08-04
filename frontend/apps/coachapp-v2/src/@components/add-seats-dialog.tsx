@@ -209,7 +209,7 @@ export function AddSeatsDialog({
             className="w-80"
             triggerRef={triggerRef}
           >
-            <Popover.Dialog className="p-4 outline-none">
+            <Popover.Dialog className="max-h-[inherit] overflow-y-auto p-4 outline-none">
               <Typography
                 className="mb-3 font-grotesk"
                 type="h5"

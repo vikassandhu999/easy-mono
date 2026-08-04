@@ -40,7 +40,7 @@ export default function CheckinSubmission() {
 
   const header = (title: string) => (
     <Page.Header size="content">
-      <Page.TitleGroup className="flex items-center gap-1">
+      <Page.TitleGroup className="flex items-center">
         <BackButton onPress={goBack} />
         <Page.Title>{title}</Page.Title>
       </Page.TitleGroup>
@@ -95,7 +95,7 @@ export default function CheckinSubmission() {
   return (
     <Page>
       <Page.Header size="content">
-        <Page.TitleGroup className="flex items-center gap-1">
+        <Page.TitleGroup className="flex items-center">
           <BackButton onPress={goBack} />
           <div className="min-w-0">
             <Page.Title>{assignment.form_template.name}</Page.Title>

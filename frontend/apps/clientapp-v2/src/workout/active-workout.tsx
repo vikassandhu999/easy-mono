@@ -10,11 +10,11 @@
  *
  * Deferred to a follow-up: rest timer, tap-to-type keypad, RPE field.
  */
-import {Button, Spinner, toast, useOverlayState} from '@heroui/react';
-import {Check, ChevronDown, Minus, Pause, Play, Plus, Repeat2, SkipForward, X} from 'lucide-react';
-import {useEffect, useRef, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {ROUTES} from '@/@config/routes';
+import { Button, Spinner, toast, useOverlayState } from '@heroui/react';
+import { Check, ChevronDown, Minus, Pause, Play, Plus, Repeat2, SkipForward, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/@config/routes';
 import {
   type TrainingPerformedSet,
   type TrainingSession,
@@ -46,7 +46,7 @@ type LoggedSet = {
   reps: null | string;
 };
 
-function ElapsedClock({startedAt}: {startedAt: string}) {
+function ElapsedClock({ startedAt }: { startedAt: string }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -64,7 +64,7 @@ function ElapsedClock({startedAt}: {startedAt: string}) {
 
 // Duration field: ± 5s steppers plus a live hold-timer (▶ counts up → fills the
 // value, ⏸ stops) so planks / timed carries need no typing (spec 04).
-function DurationField({value, onChange}: {onChange: (v: number) => void; value: number}) {
+function DurationField({ value, onChange }: { onChange: (v: number) => void; value: number }) {
   const [running, setRunning] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -132,7 +132,7 @@ function DurationField({value, onChange}: {onChange: (v: number) => void; value:
   );
 }
 
-const LABEL: Record<FieldKind, string> = {distance: 'METERS', duration: 'TIME', reps: 'REPS', weight: 'KG'};
+const LABEL: Record<FieldKind, string> = { distance: 'METERS', duration: 'TIME', reps: 'REPS', weight: 'KG' };
 function plannedValue(planned: SnapshotSet | undefined, kind: FieldKind): null | number {
   if (!planned) {
     return null;
@@ -148,7 +148,7 @@ function plannedValue(planned: SnapshotSet | undefined, kind: FieldKind): null |
   return raw == null || raw === '' ? null : Number(raw);
 }
 
-const FALLBACK: Record<FieldKind, number> = {distance: 0, duration: 30, reps: 10, weight: 0};
+const FALLBACK: Record<FieldKind, number> = { distance: 0, duration: 30, reps: 10, weight: 0 };
 
 function SetRow({
   exercise,
@@ -197,7 +197,7 @@ function SetRow({
     load_value: fields.includes('weight') ? values.weight : null,
     reps: fields.includes('reps') ? String(values.reps) : null,
   });
-  const change = (kind: FieldKind, value: number) => setValues((current) => ({...current, [kind]: Math.max(0, value)}));
+  const change = (kind: FieldKind, value: number) => setValues((current) => ({ ...current, [kind]: Math.max(0, value) }));
 
   return (
     <div
@@ -260,7 +260,7 @@ function EditableSetTable({
   const count = card.total ?? Math.max(card.done.length + 1, 1);
   return (
     <div className="mt-4 space-y-1.5">
-      {Array.from({length: count}, (_, index) => (
+      {Array.from({ length: count }, (_, index) => (
         <SetRow
           busy={busy}
           exercise={card.exercise}
@@ -277,7 +277,7 @@ function EditableSetTable({
 }
 
 // Labeled, full-word action button on the current card (spec 05, option A).
-function ActionButton({label, onPress, children}: {children: React.ReactNode; label: string; onPress: () => void}) {
+function ActionButton({ label, onPress, children }: { children: React.ReactNode; label: string; onPress: () => void }) {
   return (
     <button
       className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border py-2.5 text-xs font-semibold text-foreground active:bg-surface-secondary"
@@ -306,7 +306,7 @@ function ExercisePicker({
     const id = setTimeout(() => setSearch(q.trim()), 250);
     return () => clearTimeout(id);
   }, [q]);
-  const {data, isFetching} = useListClientExercisesQuery({limit: 30, search: search || undefined});
+  const { data, isFetching } = useListClientExercisesQuery({ limit: 30, search: search || undefined });
   const items = data?.data ?? [];
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -343,7 +343,7 @@ function ExercisePicker({
             <button
               className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 text-left active:bg-surface-secondary"
               key={e.id}
-              onClick={() => onPick({id: e.id, name: e.name, tracking_type: e.tracking_type ?? 'weight_reps'})}
+              onClick={() => onPick({ id: e.id, name: e.name, tracking_type: e.tracking_type ?? 'weight_reps' })}
               type="button"
             >
               <span className="min-w-0 truncate font-medium">{e.name}</span>
@@ -358,14 +358,14 @@ function ExercisePicker({
 
 // Soft-intake soreness scale (1–5) shown on the finish wrap-up.
 const SORENESS_OPTIONS = [
-  {rating: 1, emoji: '😎', label: 'Fresh'},
-  {rating: 2, emoji: '🙂', label: 'Easy'},
-  {rating: 3, emoji: '😮‍💨', label: 'Worked'},
-  {rating: 4, emoji: '🥵', label: 'Hard'},
-  {rating: 5, emoji: '💀', label: 'Brutal'},
+  { rating: 1, emoji: '😎', label: 'Fresh' },
+  { rating: 2, emoji: '🙂', label: 'Easy' },
+  { rating: 3, emoji: '😮‍💨', label: 'Worked' },
+  { rating: 4, emoji: '🥵', label: 'Hard' },
+  { rating: 5, emoji: '💀', label: 'Brutal' },
 ];
 
-function ActiveWorkout({session}: {session: TrainingSession}) {
+function ActiveWorkout({ session }: { session: TrainingSession }) {
   const navigate = useNavigate();
   const createSet = useCreateClientPerformedSetMutation();
   const updateSet = useUpdateClientPerformedSetMutation();
@@ -383,16 +383,16 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
   const [swaps, setSwaps] = useState<Map<number, ExercisePick>>(() => new Map());
   const [added, setAdded] = useState<ExercisePick[]>([]);
   const [doneAdded, setDoneAdded] = useState<Set<string>>(() => new Set());
-  const [picker, setPicker] = useState<null | {index: number; mode: 'swap'} | {mode: 'add'}>(null);
+  const [picker, setPicker] = useState<null | { index: number; mode: 'swap' } | { mode: 'add' }>(null);
   const [soreness, setSoreness] = useState<number | null>(null);
   const [note, setNote] = useState('');
-  const [rest, setRest] = useState<null | {left: number; total: number}>(null);
+  const [rest, setRest] = useState<null | { left: number; total: number }>(null);
   useEffect(() => {
     if (!rest || rest.left <= 0) {
       return;
     }
     const timer = window.setTimeout(
-      () => setRest((current) => (current ? {...current, left: Math.max(0, current.left - 1)} : null)),
+      () => setRest((current) => (current ? { ...current, left: Math.max(0, current.left - 1) } : null)),
       1000,
     );
     return () => window.clearTimeout(timer);
@@ -403,14 +403,14 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
     }
   }, [rest?.left]);
 
-  const workoutName = (session.planned_snapshot as {workout_name?: string} | null)?.workout_name ?? 'Workout';
+  const workoutName = (session.planned_snapshot as { workout_name?: string } | null)?.workout_name ?? 'Workout';
   const performed = session.performed_sets;
   const summary = {
     sets: performed.length,
     exercises: new Set(performed.map((p) => p.exercise_id)).size,
     volume: formatVolume(sessionVolumeKg(performed)),
   };
-  const cards = activeExerciseCards(session, {added, swaps});
+  const cards = activeExerciseCards(session, { added, swaps });
 
   const currentId = (() => {
     for (const c of cards) {
@@ -464,7 +464,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
         set_type: (plannedSet?.set_type as 'dropset' | 'warmup' | 'working' | null) ?? 'working',
         swapped_from_exercise_id: card.logSwappedFrom ?? undefined,
       });
-      setRest({left: restSeconds, total: restSeconds});
+      setRest({ left: restSeconds, total: restSeconds });
     } catch {
       toast.danger("Couldn't log set. Try again.");
     }
@@ -472,7 +472,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
   const handleUpdate = async (id: string, values: LoggedSet) => {
     try {
-      await updateSet.mutateAsync({id, sessionId: session.id, ...values, completed: true});
+      await updateSet.mutateAsync({ id, sessionId: session.id, ...values, completed: true });
     } catch {
       toast.danger("Couldn't update set. Try again.");
     }
@@ -480,7 +480,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteSet.mutateAsync({id, sessionId: session.id});
+      await deleteSet.mutateAsync({ id, sessionId: session.id });
       setRest(null);
     } catch {
       toast.danger("Couldn't update set. Try again.");
@@ -506,7 +506,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
   const finish = async (state: 'completed' | 'discarded') => {
     // Soft intake: soreness + note are captured on save but never required.
-    const body: {ended_at: string; state: 'completed' | 'discarded'; soreness_rating?: number; notes?: string} = {
+    const body: { ended_at: string; state: 'completed' | 'discarded'; soreness_rating?: number; notes?: string } = {
       ended_at: new Date().toISOString(),
       state,
     };
@@ -519,7 +519,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
       }
     }
     try {
-      await updateSession.mutateAsync({id: session.id, ...body});
+      await updateSession.mutateAsync({ id: session.id, ...body });
       finishOverlay.close();
       toast.success(state === 'completed' ? 'Workout saved' : 'Workout discarded');
       navigate(ROUTES.TRAINING);
@@ -553,10 +553,10 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
           </button>
         </div>
         <div className="mt-3 flex items-center gap-2.5">
-          <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--border)]">
+          <div className="h-1.25 flex-1 overflow-hidden rounded-full bg-border">
             <div
               className="h-full rounded-full bg-accent transition-[width]"
-              style={{width: `${overallTotal ? (overallDone / overallTotal) * 100 : 0}%`}}
+              style={{ width: `${overallTotal ? (overallDone / overallTotal) * 100 : 0}%` }}
             />
           </div>
           <span className="text-[11px] font-bold text-muted">
@@ -579,7 +579,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
               className="rounded-[10px] border border-border bg-white px-3 py-2 text-xs font-extrabold"
               onClick={() =>
                 setRest((current) =>
-                  current ? {...current, left: Math.min(current.total + 60, current.left + 15)} : null,
+                  current ? { ...current, left: Math.min(current.total + 60, current.left + 15) } : null,
                 )
               }
               type="button"
@@ -649,7 +649,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
                 <>
                   <ActionButton
                     label="Swap"
-                    onPress={() => setPicker({index: currentCard.plannedIndex as number, mode: 'swap'})}
+                    onPress={() => setPicker({ index: currentCard.plannedIndex as number, mode: 'swap' })}
                   >
                     <Repeat2 size={14} />
                   </ActionButton>
@@ -708,7 +708,7 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
         <button
           className="mb-2.5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-surface/50 py-2.5 text-sm font-medium text-muted active:bg-surface-secondary"
-          onClick={() => setPicker({mode: 'add'})}
+          onClick={() => setPicker({ mode: 'add' })}
           type="button"
         >
           <Plus size={16} />
@@ -750,13 +750,13 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
             className="rounded-t-[28px] bg-background p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
             role="dialog"
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--scrollbar)]" />
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-(--scrollbar)" />
             <h2 className="mb-4 text-[21px] font-extrabold tracking-[-0.02em]">Nice work — finish up?</h2>
             <div className="mb-4 grid grid-cols-3 gap-2">
               {[
-                {label: 'SETS', value: String(summary.sets)},
-                {label: 'EX', value: String(summary.exercises)},
-                {label: 'VOL', value: summary.volume},
+                { label: 'SETS', value: String(summary.sets) },
+                { label: 'EX', value: String(summary.exercises) },
+                { label: 'VOL', value: summary.volume },
               ].map((stat) => (
                 <div
                   className="rounded-xl border border-border bg-surface p-2 text-center"
@@ -823,9 +823,9 @@ function ActiveWorkout({session}: {session: TrainingSession}) {
 
 export default function ActiveWorkoutScreen() {
   const navigate = useNavigate();
-  const {data: sessionsData, isLoading: isLoadingList} = useListClientTrainingSessionsQuery({});
+  const { data: sessionsData, isLoading: isLoadingList } = useListClientTrainingSessionsQuery({});
   const activeId = sessionsData?.data.find((s) => s.state === 'active')?.id;
-  const {data, isLoading} = useGetClientTrainingSessionQuery(activeId ?? '', {enabled: Boolean(activeId)});
+  const { data, isLoading } = useGetClientTrainingSessionQuery(activeId ?? '', { enabled: Boolean(activeId) });
 
   if (isLoadingList || (activeId && isLoading)) {
     return (

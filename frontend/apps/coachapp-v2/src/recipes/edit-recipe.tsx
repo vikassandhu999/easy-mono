@@ -69,7 +69,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
     <Page>
       <Page.Header size="content">
         <Page.TitleGroup>
-          <div className={'flex items-center gap-1'}>
+          <div className={'flex items-center'}>
             <BackButton onPress={attemptLeave} />
             <Page.Title>Edit recipe</Page.Title>
           </div>
@@ -141,7 +141,7 @@ export default function EditRecipe() {
       <Page>
         <Page.Header size="content">
           <Page.TitleGroup>
-            <div className={'flex items-center gap-1'}>
+            <div className={'flex items-center'}>
               <BackButton onPress={goBackOuter} />
               <Page.Title>Edit recipe</Page.Title>
             </div>
@@ -164,7 +164,7 @@ export default function EditRecipe() {
       <Page>
         <Page.Header size="content">
           <Page.TitleGroup>
-            <div className={'flex items-center gap-1'}>
+            <div className={'flex items-center'}>
               <BackButton onPress={goBackOuter} />
               <Page.Title>Edit recipe</Page.Title>
             </div>

@@ -38,7 +38,7 @@ export function QuickActionsRow() {
             className={cn(
               LIST_ITEM_CLASS,
               'grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-none',
-              'border-b border-separator py-3 last:border-0 hover:bg-surface-secondary sm:px-4',
+              'py-3 hover:bg-surface-secondary sm:px-4',
             )}
             id={action.route}
             key={action.route}

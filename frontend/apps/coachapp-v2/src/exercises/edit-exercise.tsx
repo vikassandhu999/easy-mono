@@ -28,7 +28,7 @@ function EditExerciseHeader({goBack}: {goBack: () => void}) {
   return (
     <Page.Header size="content">
       <Page.TitleGroup>
-        <div className={'flex items-center gap-1'}>
+        <div className={'flex items-center'}>
           <BackButton onPress={goBack} />
           <Page.Title>Edit exercise</Page.Title>
         </div>

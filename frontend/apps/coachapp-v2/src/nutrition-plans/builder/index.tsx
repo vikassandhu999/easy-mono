@@ -65,7 +65,7 @@ export default function NutritionPlanBuilderScreen() {
         className="gap-3 pb-10"
         size="builder"
       >
-        <Page.TitleGroup className="flex min-w-0 items-center gap-3">
+        <Page.TitleGroup className="flex min-w-0 items-center">
           <BackButton
             onPress={goBack}
             testId="nb-back"

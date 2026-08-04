@@ -49,7 +49,7 @@ export default function CreateRecipe() {
     <Page>
       <Page.Header size="content">
         <Page.TitleGroup>
-          <div className={'flex items-center gap-1'}>
+          <div className={'flex items-center'}>
             <BackButton onPress={attemptLeave} />
             <Page.Title>Create recipe</Page.Title>
           </div>

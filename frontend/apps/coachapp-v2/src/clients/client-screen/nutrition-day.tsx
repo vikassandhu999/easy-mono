@@ -37,7 +37,7 @@ export default function NutritionDay() {
 
   const header = (subtitle?: string) => (
     <Page.Header size="content">
-      <Page.TitleGroup className="flex items-center gap-1">
+      <Page.TitleGroup className="flex items-center">
         <BackButton onPress={goBack} />
         <div className="min-w-0">
           <Page.Title>{date ? formatRowDate(date) : 'Day'}</Page.Title>

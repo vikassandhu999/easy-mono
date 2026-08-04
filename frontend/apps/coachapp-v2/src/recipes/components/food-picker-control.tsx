@@ -70,12 +70,14 @@ export default function FoodPickerControl({onSelect, excludeIds, triggerClassNam
           }}
         >
           <Popover.Content
-            className="max-w-md p-4"
+            className="max-w-md"
             triggerRef={triggerRef}
           >
+            {/* `max-h-[inherit]` like ResponsiveOverlay: react-aria caps the panel
+                to the space around the trigger, and an uncapped dialog spills. */}
             <Popover.Dialog
               aria-label="Add ingredient"
-              className="outline-none"
+              className="max-h-[inherit] overflow-y-auto p-4 outline-none"
             >
               {open ? content : null}
             </Popover.Dialog>

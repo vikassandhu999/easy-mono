@@ -47,7 +47,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
     <Page>
       <Page.Header size="content">
         <Page.TitleGroup>
-          <div className={'flex items-center gap-1'}>
+          <div className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Edit food</Page.Title>
           </div>
@@ -87,7 +87,7 @@ export default function EditFood() {
       <Page>
         <Page.Header size="content">
           <Page.TitleGroup>
-            <div className={'flex items-center gap-1'}>
+            <div className={'flex items-center'}>
               <BackButton onPress={goBackOuter} />
               <Page.Title>Edit food</Page.Title>
             </div>
@@ -110,7 +110,7 @@ export default function EditFood() {
       <Page>
         <Page.Header size="content">
           <Page.TitleGroup>
-            <div className={'flex items-center gap-1'}>
+            <div className={'flex items-center'}>
               <BackButton onPress={goBackOuter} />
               <Page.Title>Edit food</Page.Title>
             </div>

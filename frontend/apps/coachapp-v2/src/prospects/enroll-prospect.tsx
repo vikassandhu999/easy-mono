@@ -64,7 +64,7 @@ export default function EnrollProspect() {
   const header = (
     <Page.Header size="content">
       <Page.TitleGroup>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center">
           <BackButton onPress={goBack} />
           <Page.Title>Enroll prospect</Page.Title>
         </div>

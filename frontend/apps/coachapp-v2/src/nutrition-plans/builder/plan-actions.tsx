@@ -42,11 +42,8 @@ export function NutritionPlanActions({plan, onDeleted}: Props) {
     navigate(ROUTES.NUTRITION_PLAN_DETAIL.replace(':id', result.data.id));
   };
 
-  const remove = async () => {
-    // The delete mutation already invalidates nutritionPlanKeys.lists() onSuccess.
-    await deletePlan.mutateAsync(plan.id);
-  };
-
+  const remove = () => deletePlan.mutateAsync(plan.id);
+  
   return (
     <PlanActionsMenu
       deleteBody="Are you sure you want to delete this nutrition plan permanently?"

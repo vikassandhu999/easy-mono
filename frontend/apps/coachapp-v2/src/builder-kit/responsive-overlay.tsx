@@ -29,8 +29,10 @@ import {KeyboardSheet} from '@/builder-kit/keyboard-sheet';
 /** Desktop popover chrome, minus the width. The single source of truth. */
 const POPOVER_CHROME = 'max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface shadow-xl';
 
-/** Desktop dialog body: padded, capped, scrollable. */
-const POPOVER_DIALOG = 'max-h-[70vh] overflow-y-auto p-4 outline-none';
+/** Desktop dialog body: padded, capped, scrollable. `inherit`, not a fixed vh:
+ *  react-aria sets the positioned panel's max-height to the actual space below
+ *  the trigger, and a taller fixed cap makes the body spill past the panel. */
+const POPOVER_DIALOG = 'max-h-[inherit] overflow-y-auto p-4 outline-none';
 
 export interface ResponsiveOverlayProps {
   isOpen: boolean;

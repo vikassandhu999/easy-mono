@@ -35,7 +35,7 @@ export default function SessionDetail() {
 
   const header = (
     <Page.Header size="content">
-      <Page.TitleGroup className="flex items-center gap-1">
+      <Page.TitleGroup className="flex items-center">
         <BackButton onPress={goBack} />
         <Page.Title>Workout</Page.Title>
       </Page.TitleGroup>
@@ -84,7 +84,7 @@ export default function SessionDetail() {
   return (
     <Page>
       <Page.Header size="content">
-        <Page.TitleGroup className="flex items-center gap-1">
+        <Page.TitleGroup className="flex items-center">
           <BackButton onPress={goBack} />
           <div className="min-w-0">
             <Page.Title>{sessionWorkoutName(session, workoutNames)}</Page.Title>

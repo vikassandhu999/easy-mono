@@ -61,7 +61,7 @@ export default function TrainingPlanBuilderScreen() {
         className="gap-3"
         size="wide"
       >
-        <Page.TitleGroup className="flex min-w-0 items-center gap-3">
+        <Page.TitleGroup className="flex min-w-0 items-center">
           <BackButton
             onPress={goBack}
             testId="tb-back"

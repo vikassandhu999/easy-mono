@@ -37,7 +37,7 @@ export default function CreateExercise() {
     <Page>
       <Page.Header size="content">
         <Page.TitleGroup>
-          <div className={'flex items-center gap-1'}>
+          <div className={'flex items-center'}>
             <BackButton onPress={goBack} />
             <Page.Title>Create exercise</Page.Title>
           </div>

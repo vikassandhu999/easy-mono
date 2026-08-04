@@ -28,7 +28,10 @@ export function BackButton({
     <Button
       aria-label={label}
       className={cn(
-        '  rounded-control border border-border bg-surface p-0  text-foreground',
+        // The title gap lives here, not as `gap` on 36 header rows: the button is
+        // always followed by a title, and margin travels with it (and disappears
+        // with `lg:hidden`). Containers must NOT also set `gap` — they stack.
+        'me-3 rounded-control border border-border bg-surface p-0 text-foreground',
         AS_TEXT,
         NO_GAP,
         'sm:size-9.5   sm:p-0',

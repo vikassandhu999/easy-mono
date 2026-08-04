@@ -173,7 +173,7 @@ function InviteTrainerControl() {
             className="w-96"
             triggerRef={triggerRef}
           >
-            <Popover.Dialog className="max-h-[70vh] overflow-y-auto p-4 outline-none">
+            <Popover.Dialog className="max-h-[inherit] overflow-y-auto p-4 outline-none">
               <Typography
                 className="mb-1 font-grotesk"
                 type="h5"

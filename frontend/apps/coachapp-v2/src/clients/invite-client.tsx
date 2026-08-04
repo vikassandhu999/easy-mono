@@ -292,7 +292,7 @@ export default function InviteClient() {
         size="content"
       >
         <Page.TitleGroup>
-          <div className="flex items-center gap-1.5 sm:gap-3">
+          <div className="flex items-center">
             <BackButton
               className="sm:border sm:border-border sm:bg-surface"
               onPress={goBack}

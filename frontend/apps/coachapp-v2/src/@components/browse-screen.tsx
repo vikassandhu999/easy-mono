@@ -212,7 +212,7 @@ export default function BrowseScreen<T extends object, Id extends string>({
         className={HEADER}
         size="content"
       >
-        <Page.TitleGroup className={backTo ? 'flex min-w-0 items-center gap-1' : undefined}>
+        <Page.TitleGroup className={backTo ? 'flex min-w-0 items-center' : undefined}>
           {backTo ? (
             // Below lg there is no sidebar and no bottom nav on library lists,
             // so this is the only way back to the hub.

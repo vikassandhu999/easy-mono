@@ -314,7 +314,9 @@
 
 /* Small control tier — buttons that were hand-written as h-8/h-8.5 belong here,
    expressed as `size="sm"` rather than a pixel. */
-.button--sm,
+/* Same `button--row` release as the md tier above — without it a small tile
+   is crushed to 32px and its content overflows (the FB question palette). */
+.button--sm:not(.button--row),
 .toggle-button--sm {
   height: var(--spacing-control-sm);
   min-height: var(--spacing-control-sm);

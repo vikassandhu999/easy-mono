@@ -85,7 +85,7 @@ export default function AssignSurface({
             className={`w-104 max-w-[calc(100vw-2rem)] rounded-card [border-width:1.5px] border-separator bg-surface shadow-xl ${popoverClassName}`}
             triggerRef={triggerRef}
           >
-            <Popover.Dialog className="outline-none">{open ? children(close) : null}</Popover.Dialog>
+            <Popover.Dialog className="max-h-[inherit] overflow-y-auto outline-none">{open ? children(close) : null}</Popover.Dialog>
           </Popover.Content>
         </Popover>
       ) : (

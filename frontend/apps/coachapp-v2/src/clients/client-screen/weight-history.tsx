@@ -33,7 +33,7 @@ export default function WeightHistory() {
 
   const header = (count?: number) => (
     <Page.Header size="content">
-      <Page.TitleGroup className="flex items-center gap-1">
+      <Page.TitleGroup className="flex items-center">
         <BackButton onPress={goBack} />
         <div className="min-w-0">
           <Page.Title>Weight</Page.Title>

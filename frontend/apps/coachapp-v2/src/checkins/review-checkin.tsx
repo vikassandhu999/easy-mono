@@ -49,7 +49,7 @@ export default function ReviewCheckin() {
       <Page>
         <Page.Header size="content">
           <Page.TitleGroup>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center">
               <BackButton onPress={goBack} />
               <Page.Title>Review check-in</Page.Title>
             </div>
@@ -84,7 +84,7 @@ export default function ReviewCheckin() {
     <Page>
       <Page.Header size="content">
         <Page.TitleGroup>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             <BackButton onPress={goBack} />
             <Page.Title>{item.form_assignment.form_template.name}</Page.Title>
           </div>

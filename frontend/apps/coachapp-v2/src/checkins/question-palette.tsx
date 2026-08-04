@@ -55,7 +55,11 @@ function QuestionPaletteContent({onPick}: {onPick: (question: QuestionDraft) => 
             const Icon = QUESTION_TYPE_ICONS[type];
             return (
               <Button
-                className="h-auto w-full flex-col gap-1 rounded-control px-2 py-2 text-center"
+                // `button--row` = the theme's release from the control tier: a
+                // two-line tile is sized by its content, not the 32px sm height
+                // (which made `h-auto` here a no-op and the label overflow).
+                // The release zeroes border/background, so the tile re-states them.
+                className="button--row w-full flex-col gap-1 rounded-control border border-border px-2 py-2 text-center hover:bg-surface-secondary"
                 key={type}
                 onPress={() => onPick(questionOfType(type))}
                 size="sm"

@@ -19,7 +19,7 @@ import {ListSkeleton} from '@/@components/list-skeleton';
  * card edge.
  */
 export const LIST_ITEM_CLASS =
-  'relative min-h-fit gap-3 rounded-none border-b-0 px-3 py-3 leading-[normal] transition-none! text-foreground sm:px-4 ' +
+  'relative mt-0 min-h-fit gap-3 rounded-none border-b-0 px-3 py-3 leading-[normal] transition-none! text-foreground sm:px-4 ' +
   "after:pointer-events-none after:absolute after:inset-x-0 after:top-0 after:start-16 after:h-px after:bg-separator after:content-[''] " +
   'first:after:hidden sm:border-t sm:border-separator sm:after:hidden sm:first:border-t-0 ' +
   'hover:bg-surface-secondary active:scale-100! data-[pressed=true]:scale-100!';
@@ -56,7 +56,7 @@ type BrowseRowProps = {
 export function BrowseRow({icon, iconClassName, id, meta, testId, textValue, title, trailing}: BrowseRowProps) {
   return (
     <ListBox.Item
-      className={cn(LIST_ITEM_CLASS, 'mt-0')}
+      className={LIST_ITEM_CLASS}
       data-testid={testId}
       id={id}
       textValue={textValue}

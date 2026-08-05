@@ -13,8 +13,7 @@ import type {TrainingExercise} from '@/api/training-exercises';
 import {
   useCoachTrainingExercisesInfiniteQuery,
   useCreateCoachTrainingExerciseMutation,
-  useListEquipmentQuery,
-  useListMusclesQuery,
+  useExerciseOptionsQueries,
 } from '@/api/training-exercises';
 import type {FilterChip} from '@/builder-kit/search-picker-sheet';
 import {SearchPickerSheet} from '@/builder-kit/search-picker-sheet';
@@ -65,8 +64,7 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
   const [selected, setSelected] = useState<Map<string, TrainingExercise>>(new Map());
   const selectedKeys = useMemo(() => new Set(selected.keys()), [selected]);
 
-  const musclesQuery = useListMusclesQuery({});
-  const equipmentQuery = useListEquipmentQuery({});
+  const options = useExerciseOptionsQueries();
   const {
     data: pages,
     isFetching,
@@ -86,8 +84,8 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
   // Equipment first — a short, finite set, so it stays reachable instead of
   // being buried past ~20 muscle chips in the scroll row.
   const filters: FilterChip[] = [
-    ...toChips(equipmentQuery.data?.data ?? [], equipment.ids, equipment.toggle),
-    ...toChips(musclesQuery.data?.data ?? [], muscles.ids, muscles.toggle),
+    ...toChips(options.equipment, equipment.ids, equipment.toggle),
+    ...toChips(options.muscles, muscles.ids, muscles.toggle),
   ];
 
   const reset = useCallback(() => {
@@ -136,7 +134,7 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
   return (
     <SearchPickerSheet<TrainingExercise>
       confirmLabel={(count) => (count === 0 ? 'Add exercises' : `Add ${count} exercise${count === 1 ? '' : 's'}`)}
-      error={exercisesError || musclesQuery.isError || equipmentQuery.isError}
+      error={exercisesError || options.isError}
       filters={filters}
       hasMore={hasNextPage ?? false}
       itemKey={(exercise) => exercise.id}
@@ -159,12 +157,7 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
         if (exercisesError) {
           refetchExercises().catch(() => undefined);
         }
-        if (musclesQuery.isError) {
-          musclesQuery.refetch().catch(() => undefined);
-        }
-        if (equipmentQuery.isError) {
-          equipmentQuery.refetch().catch(() => undefined);
-        }
+        options.retry();
       }}
       onSearchChange={setSearch}
       onToggleItem={toggleExercise}

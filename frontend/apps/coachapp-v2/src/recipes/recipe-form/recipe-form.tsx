@@ -22,16 +22,6 @@ import {
 } from '@/recipes/lib/recipe-math';
 import {RECIPE_FORM_DEFAULTS, type RecipeFormValues, recipeFormSchema} from '@/recipes/recipe-form/recipe-form-data';
 
-export {
-  RECIPE_FORM_DEFAULTS,
-  type RecipeFormValues,
-  recipeFormSchema,
-  recipeIngredientsToDrafts,
-  recipeToCreateRequest,
-  recipeToFormValues,
-  recipeToUpdateRequest,
-} from '@/recipes/recipe-form/recipe-form-data';
-
 // P/C/F ratio-bar segments (grams drive segment widths), mirroring the recipe
 // detail page's nutrition card. Fiber shows as a legend stat only, not a segment.
 const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof RecipeTotals; label: string}[] = [

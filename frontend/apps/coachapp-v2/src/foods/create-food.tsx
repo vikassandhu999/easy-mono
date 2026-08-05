@@ -8,13 +8,8 @@ import type {Food} from '@/api/nutrition-foods';
 import {useCreateCoachFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
-import FoodForm, {
-  type FoodFormValues,
-  foodToCreateRequest,
-  foodToDuplicateFormValues,
-  foodToMediaValue,
-  useFoodForm,
-} from '@/foods/food-form/food-form';
+import FoodForm, {foodToDuplicateFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form/food-form';
+import {type FoodFormValues, foodToCreateRequest} from '@/foods/food-form/food-form-data';
 
 export default function CreateFood() {
   const navigate = useNavigate();

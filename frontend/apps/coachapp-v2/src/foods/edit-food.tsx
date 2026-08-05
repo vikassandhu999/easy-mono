@@ -9,14 +9,8 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/nutrition-foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
-import FoodForm, {
-  type FoodFormValues,
-  foodToFormValues,
-  foodToMediaValue,
-  foodToUpdateRequest,
-  useFoodForm,
-} from '@/foods/food-form/food-form';
-import {isFoodEditable} from '@/foods/food-form/food-form-data';
+import FoodForm, {foodToFormValues, foodToMediaValue, useFoodForm} from '@/foods/food-form/food-form';
+import {type FoodFormValues, foodToUpdateRequest, isFoodEditable} from '@/foods/food-form/food-form-data';
 
 // Rendered only when food data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).

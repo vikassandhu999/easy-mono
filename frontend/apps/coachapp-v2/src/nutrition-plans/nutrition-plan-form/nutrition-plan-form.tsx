@@ -14,15 +14,6 @@ import {
   nutritionPlanFormSchema,
 } from './nutrition-plan-form-data';
 
-export {
-  NUTRITION_PLAN_FORM_DEFAULTS,
-  type NutritionPlanFormValues,
-  nutritionPlanFormSchema,
-  nutritionPlanToCreateRequest,
-  nutritionPlanToFormValues,
-  nutritionPlanToUpdateRequest,
-} from './nutrition-plan-form-data';
-
 export function useNutritionPlanForm(options?: {defaultValues?: NutritionPlanFormValues}) {
   return useForm<NutritionPlanFormValues>({
     defaultValues: options?.defaultValues ?? NUTRITION_PLAN_FORM_DEFAULTS,

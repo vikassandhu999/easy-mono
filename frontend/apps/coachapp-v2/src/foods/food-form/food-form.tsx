@@ -15,12 +15,6 @@ import type {ServingSize} from '@/api/shared';
 import {ServingSizesEditor} from '@/foods/components/serving-sizes-editor';
 import {FOOD_FORM_DEFAULTS, type FoodFormValues, foodFormSchema} from '@/foods/food-form/food-form-data';
 
-export {
-  type FoodFormValues,
-  foodToCreateRequest,
-  foodToUpdateRequest,
-} from '@/foods/food-form/food-form-data';
-
 // `source` is server-owned provenance: the API stamps `custom` on create and never
 // accepts it in a body. The form carries it for display only, in a read-only field.
 const SOURCE_LABELS: Record<NonNullable<Food['source']>, string> = {

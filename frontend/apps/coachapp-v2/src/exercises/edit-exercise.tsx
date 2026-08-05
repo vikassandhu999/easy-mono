@@ -9,18 +9,17 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {
   type TrainingExercise,
+  useExerciseOptionsQueries,
   useGetExerciseQuery,
-  useListEquipmentQuery,
-  useListMusclesQuery,
   useUpdateExerciseMutation,
 } from '@/api/training-exercises';
 import ExerciseForm, {
-  type ExerciseFormValues,
   exerciseToFormValues,
   exerciseToMediaValue,
   exerciseToUpdateRequest,
   useExerciseForm,
 } from '@/exercises/exercise-form/exercise-form';
+import type {ExerciseFormValues} from '@/exercises/exercise-form/exercise-form-schema';
 
 // One header for every state (loading / error / loaded) so the back button,
 // title, and description slot never shift between them.
@@ -50,8 +49,7 @@ function EditExerciseForm({
 }) {
   const goBack = useGoBack(backPath);
   const updateExerciseMutation = useUpdateExerciseMutation();
-  const musclesQuery = useListMusclesQuery({});
-  const equipmentQuery = useListEquipmentQuery({});
+  const options = useExerciseOptionsQueries();
 
   const form = useExerciseForm({
     values: exerciseToFormValues(exercise),
@@ -66,13 +64,6 @@ function EditExerciseForm({
     }
   };
 
-  const retryReferences = async () => {
-    await Promise.all([
-      ...(musclesQuery.isError ? [musclesQuery.refetch()] : []),
-      ...(equipmentQuery.isError ? [equipmentQuery.refetch()] : []),
-    ]);
-  };
-
   return (
     <Page>
       <EditExerciseHeader goBack={goBack} />
@@ -81,20 +72,20 @@ function EditExerciseForm({
         className="pt-4 pb-6"
       >
         <Page.Frame size="content">
-          {musclesQuery.isError || equipmentQuery.isError ? (
+          {options.isError ? (
             <ErrorState
               message="Couldn't load exercise options."
-              onRetry={retryReferences}
+              onRetry={options.retry}
             />
-          ) : musclesQuery.isLoading || equipmentQuery.isLoading ? (
+          ) : options.isLoading ? (
             <PageSkeleton />
           ) : (
             <ExerciseForm
-              equipment={equipmentQuery.data?.data ?? []}
+              equipment={options.equipment}
               form={form}
               initialMedia={exerciseToMediaValue(exercise)}
               isSubmitting={updateExerciseMutation.isPending}
-              muscles={musclesQuery.data?.data ?? []}
+              muscles={options.muscles}
               onCancel={goBack}
               onSubmit={onSubmit}
               submitLabel="Save changes"

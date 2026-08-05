@@ -8,11 +8,8 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/recipes/lib/recipe-math';
-import RecipeForm, {
-  type RecipeFormValues,
-  recipeToCreateRequest,
-  useRecipeForm,
-} from '@/recipes/recipe-form/recipe-form';
+import RecipeForm, {useRecipeForm} from '@/recipes/recipe-form/recipe-form';
+import {type RecipeFormValues, recipeToCreateRequest} from '@/recipes/recipe-form/recipe-form-data';
 
 export default function CreateRecipe() {
   const navigate = useNavigate();

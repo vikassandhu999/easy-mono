@@ -10,13 +10,13 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/nutrition-foods';
 import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/recipes/lib/recipe-math';
-import RecipeForm, {
+import RecipeForm, {useRecipeForm} from '@/recipes/recipe-form/recipe-form';
+import {
   type RecipeFormValues,
   recipeIngredientsToDrafts,
   recipeToFormValues,
   recipeToUpdateRequest,
-  useRecipeForm,
-} from '@/recipes/recipe-form/recipe-form';
+} from '@/recipes/recipe-form/recipe-form-data';
 
 // Rendered only when recipe data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).

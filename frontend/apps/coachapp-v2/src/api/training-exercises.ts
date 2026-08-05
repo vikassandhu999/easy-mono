@@ -134,3 +134,24 @@ export function useListEquipmentQuery(params?: {search?: string}) {
     queryFn: () => call(client.GET('/v1/coach/training-equipment', {params: {query: params ?? undefined}})),
   });
 }
+
+// Muscles and equipment travel together on every exercise surface (form,
+// picker filters), so load/error/retry handling lives here once.
+export function useExerciseOptionsQueries() {
+  const muscles = useListMusclesQuery({});
+  const equipment = useListEquipmentQuery({});
+  return {
+    equipment: equipment.data?.data ?? [],
+    isError: muscles.isError || equipment.isError,
+    isLoading: muscles.isLoading || equipment.isLoading,
+    muscles: muscles.data?.data ?? [],
+    retry: () => {
+      if (muscles.isError) {
+        muscles.refetch().catch(() => undefined);
+      }
+      if (equipment.isError) {
+        equipment.refetch().catch(() => undefined);
+      }
+    },
+  };
+}

@@ -9,12 +9,12 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {patchPlan, type TrainingPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
 import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
-import TrainingPlanForm, {
+import TrainingPlanForm, {useTrainingPlanForm} from '@/training-plans/training-plan-form/training-plan-form';
+import {
   type TrainingPlanFormValues,
   trainingPlanToFormValues,
   trainingPlanToUpdateRequest,
-  useTrainingPlanForm,
-} from '@/training-plans/training-plan-form/training-plan-form';
+} from '@/training-plans/training-plan-form/training-plan-form-data';
 
 // The one header for every state (loading / error / loaded). Keeps the back
 // button, title, and description identical so only the body swaps.

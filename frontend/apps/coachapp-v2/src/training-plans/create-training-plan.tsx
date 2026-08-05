@@ -6,11 +6,11 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {useCreateTrainingPlanMutation} from '@/api/training-plans-list';
-import TrainingPlanForm, {
+import TrainingPlanForm, {useTrainingPlanForm} from '@/training-plans/training-plan-form/training-plan-form';
+import {
   type TrainingPlanFormValues,
   trainingPlanToCreateRequest,
-  useTrainingPlanForm,
-} from '@/training-plans/training-plan-form/training-plan-form';
+} from '@/training-plans/training-plan-form/training-plan-form-data';
 
 export default function CreateTrainingPlan() {
   const navigate = useNavigate();

@@ -6,11 +6,11 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateNutritionPlanMutation} from '@/api/nutrition-plans-list';
 import {applyFormErrors} from '@/api/shared';
-import NutritionPlanForm, {
+import NutritionPlanForm, {useNutritionPlanForm} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
+import {
   type NutritionPlanFormValues,
   nutritionPlanToCreateRequest,
-  useNutritionPlanForm,
-} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
+} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form-data';
 
 export default function CreateNutritionPlan() {
   const navigate = useNavigate();

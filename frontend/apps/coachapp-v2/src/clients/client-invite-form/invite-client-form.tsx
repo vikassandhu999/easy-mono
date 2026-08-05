@@ -1,7 +1,6 @@
 import {Description, ErrorMessage, Fieldset, ListBox} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Send} from 'lucide-react';
-import {useEffect} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FieldRow} from '@/@components/form-fields/field-row';
@@ -83,13 +82,6 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
     formState: {errors},
     handleSubmit,
   } = form;
-  const phone = form.watch('phone');
-
-  useEffect(() => {
-    if (phone) {
-      clearErrors('email');
-    }
-  }, [clearErrors, phone]);
 
   const {data: billing} = useGetBillingQuery();
   const isOwner = billing?.data.is_owner ?? false;
@@ -144,6 +136,13 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
                 }}
                 label="Phone"
                 name="phone"
+                // The "Add email or phone" issue lands on the email field, so
+                // typing a phone number must dismiss it from there.
+                onValueChange={(value) => {
+                  if (value) {
+                    clearErrors('email');
+                  }
+                }}
                 type="tel"
               />
             </FieldRow>

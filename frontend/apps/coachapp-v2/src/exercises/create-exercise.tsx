@@ -14,14 +14,10 @@ import {applyFormErrors} from '@/api/shared';
 import {
   useCopyExerciseMutation,
   useCreateCoachTrainingExerciseMutation,
-  useListEquipmentQuery,
-  useListMusclesQuery,
+  useExerciseOptionsQueries,
 } from '@/api/training-exercises';
-import ExerciseForm, {
-  type ExerciseFormValues,
-  exerciseToCreateRequest,
-  useExerciseForm,
-} from '@/exercises/exercise-form/exercise-form';
+import ExerciseForm, {exerciseToCreateRequest, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
+import type {ExerciseFormValues} from '@/exercises/exercise-form/exercise-form-schema';
 
 export default function CreateExercise() {
   const {state} = useLocation();
@@ -94,16 +90,8 @@ function NewExercise() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.EXERCISES);
   const createExerciseMutation = useCreateCoachTrainingExerciseMutation();
-  const musclesQuery = useListMusclesQuery({});
-  const equipmentQuery = useListEquipmentQuery({});
+  const options = useExerciseOptionsQueries();
   const form = useExerciseForm();
-
-  const retryReferences = async () => {
-    await Promise.all([
-      ...(musclesQuery.isError ? [musclesQuery.refetch()] : []),
-      ...(equipmentQuery.isError ? [equipmentQuery.refetch()] : []),
-    ]);
-  };
 
   const onSubmit = async (data: ExerciseFormValues) => {
     try {
@@ -130,19 +118,19 @@ function NewExercise() {
           className="pt-4 pb-6"
           size="content"
         >
-          {musclesQuery.isError || equipmentQuery.isError ? (
+          {options.isError ? (
             <ErrorState
               message="Couldn't load exercise options."
-              onRetry={retryReferences}
+              onRetry={options.retry}
             />
-          ) : musclesQuery.isLoading || equipmentQuery.isLoading ? (
+          ) : options.isLoading ? (
             <PageSkeleton />
           ) : (
             <ExerciseForm
-              equipment={equipmentQuery.data?.data ?? []}
+              equipment={options.equipment}
               form={form}
               isSubmitting={createExerciseMutation.isPending}
-              muscles={musclesQuery.data?.data ?? []}
+              muscles={options.muscles}
               onCancel={goBack}
               onSubmit={onSubmit}
               submitLabel="Create exercise"

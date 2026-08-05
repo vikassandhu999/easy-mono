@@ -12,15 +12,6 @@ import {
   trainingPlanFormSchema,
 } from './training-plan-form-data';
 
-export {
-  TRAINING_PLAN_FORM_DEFAULTS,
-  type TrainingPlanFormValues,
-  trainingPlanFormSchema,
-  trainingPlanToCreateRequest,
-  trainingPlanToFormValues,
-  trainingPlanToUpdateRequest,
-} from './training-plan-form-data';
-
 export function useTrainingPlanForm(options?: {defaultValues?: TrainingPlanFormValues}) {
   return useForm<TrainingPlanFormValues>({
     defaultValues: options?.defaultValues ?? TRAINING_PLAN_FORM_DEFAULTS,

@@ -24,8 +24,6 @@ import {
   exerciseFormSchema,
 } from '@/exercises/exercise-form/exercise-form-schema';
 
-export type {ExerciseFormValues} from '@/exercises/exercise-form/exercise-form-schema';
-
 type ExerciseMechanics = 'compound' | 'isolation' | 'isometric';
 type ExerciseForce = 'push' | 'pull' | 'static';
 

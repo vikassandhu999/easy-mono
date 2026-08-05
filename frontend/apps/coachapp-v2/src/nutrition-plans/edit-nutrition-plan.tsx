@@ -11,12 +11,12 @@ import {useGetNutritionPlanQuery} from '@/api/nutrition-plan-builder';
 import {type NutritionPlan, useUpdateNutritionPlanMutation} from '@/api/nutrition-plans-list';
 import {patchQueryData} from '@/api/query-client';
 import {applyFormErrors} from '@/api/shared';
-import NutritionPlanForm, {
+import NutritionPlanForm, {useNutritionPlanForm} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
+import {
   type NutritionPlanFormValues,
   nutritionPlanToFormValues,
   nutritionPlanToUpdateRequest,
-  useNutritionPlanForm,
-} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
+} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form-data';
 
 // NE/TE mobile ref shortens the title; desktop keeps the COPY.md string.
 const TITLE = (

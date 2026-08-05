@@ -6,7 +6,7 @@
  * Library templates have no period, so a template renders nothing.
  */
 import {Button} from '@heroui/react';
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 
 import DateInput from '@/@components/date-input';
 
@@ -18,19 +18,15 @@ interface PlanPeriodCardProps {
   onSave: (startDate: string | null, endDate: string | null) => Promise<void>;
 }
 
+// No prop→draft sync: this card is the only writer of the period, so after a
+// successful save the props simply catch up to the drafts, and after a failed
+// one keeping the coach's drafts (dirty, retryable) is exactly what we want.
 export function PlanPeriodCard({startDate, endDate, onSave}: PlanPeriodCardProps) {
   const [draftStart, setDraftStart] = useState(startDate);
   const [draftEnd, setDraftEnd] = useState(endDate);
   const [isSaving, setIsSaving] = useState(false);
   const dirty = draftStart !== startDate || draftEnd !== endDate;
   const error = periodError(draftStart, draftEnd);
-
-  useEffect(() => {
-    if (!dirty) {
-      setDraftStart(startDate);
-      setDraftEnd(endDate);
-    }
-  }, [dirty, endDate, startDate]);
 
   const save = async () => {
     if (!dirty || error) {

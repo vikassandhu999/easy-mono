@@ -172,8 +172,7 @@ export function SearchPickerBody<T>({
     };
   }, [hasMore, loading, stableOnLoadMore]);
 
-  const showCreateRow =
-    !error && onCreateNoMatch !== undefined && search.trim().length > 0 && items.length === 0 && !loading;
+  const showCreateRow = onCreateNoMatch !== undefined && search.trim().length > 0 && items.length === 0 && !loading;
 
   // The sticky search header relies on an overflow-y-auto ancestor with px-4
   // padding — every host container provides it.
@@ -239,6 +238,8 @@ export function SearchPickerBody<T>({
         className="flex flex-col"
         role="group"
       >
+        {/* The error state replaces the whole list body: stale rows, create-row
+            and spinner would all lie about a load that failed. */}
         {error ? (
           <div className="py-4">
             <ErrorState
@@ -246,60 +247,63 @@ export function SearchPickerBody<T>({
               onRetry={onRetry}
             />
           </div>
-        ) : null}
+        ) : (
+          <>
+            {items.map((item) => {
+              const key = itemKey(item);
+              const selected = selectedKeys.has(key);
+              return (
+                <Button
+                  aria-pressed={selected}
+                  className={[
+                    // The row inset lives HERE, not in renderItem — every picker
+                    // list shares it, so callers cannot drift apart.
+                    'h-auto w-full justify-start rounded-none border-b border-border px-1 py-2 text-left last:border-b-0',
+                    selected ? 'bg-accent-soft' : 'bg-transparent',
+                  ].join(' ')}
+                  key={key}
+                  onPress={() => onToggleItem(item)}
+                  variant="ghost"
+                >
+                  <span className="block w-full min-w-0">{renderItem(item, selected)}</span>
+                </Button>
+              );
+            })}
 
-        {!error &&
-          items.map((item) => {
-            const key = itemKey(item);
-            const selected = selectedKeys.has(key);
-            return (
+            {/* Create-from-no-match row */}
+            {showCreateRow ? (
               <Button
-                aria-pressed={selected}
-                className={[
-                  // The row inset lives HERE, not in renderItem — every picker
-                  // list shares it, so callers cannot drift apart.
-                  'h-auto w-full justify-start rounded-none border-b border-border px-1 py-2 text-left last:border-b-0',
-                  selected ? 'bg-accent-soft' : 'bg-transparent',
-                ].join(' ')}
-                key={key}
-                onPress={() => onToggleItem(item)}
+                className="h-auto w-full min-w-0 justify-start gap-2 px-0 py-3 text-left type-body text-accent"
+                onPress={() => onCreateNoMatch?.(search)}
                 variant="ghost"
               >
-                <span className="block w-full min-w-0">{renderItem(item, selected)}</span>
+                <Plus className="shrink-0" />
+                <span className="min-w-0 flex-1 truncate">
+                  {createLabel ? createLabel(search) : `Create "${search}"`}
+                </span>
               </Button>
-            );
-          })}
+            ) : null}
 
-        {/* Create-from-no-match row */}
-        {showCreateRow ? (
-          <Button
-            className="h-auto w-full min-w-0 justify-start gap-2 px-0 py-3 text-left type-body text-accent"
-            onPress={() => onCreateNoMatch?.(search)}
-            variant="ghost"
-          >
-            <Plus className="shrink-0" />
-            <span className="min-w-0 flex-1 truncate">{createLabel ? createLabel(search) : `Create "${search}"`}</span>
-          </Button>
-        ) : null}
+            {/* No-results state — distinct from the loading + create-row cases */}
+            {!loading && items.length === 0 && !showCreateRow ? (
+              <div className="py-8 text-center type-body text-muted">No results found.</div>
+            ) : null}
 
-        {/* No-results state — distinct from the loading + create-row cases */}
-        {!error && !loading && items.length === 0 && !showCreateRow ? (
-          <div className="py-8 text-center type-body text-muted">No results found.</div>
-        ) : null}
+            {/* Infinite scroll sentinel — observed by IntersectionObserver */}
+            <div
+              aria-hidden="true"
+              className="h-1"
+              ref={sentinelRef}
+            />
 
-        {/* Infinite scroll sentinel — observed by IntersectionObserver */}
-        <div
-          aria-hidden="true"
-          className="h-1"
-          ref={sentinelRef}
-        />
-
-        {/* Loading indicator */}
-        {!error && loading ? (
-          <div className="flex justify-center py-4">
-            <Spinner size="sm" />
-          </div>
-        ) : null}
+            {/* Loading indicator */}
+            {loading ? (
+              <div className="flex justify-center py-4">
+                <Spinner size="sm" />
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
     </>
   );

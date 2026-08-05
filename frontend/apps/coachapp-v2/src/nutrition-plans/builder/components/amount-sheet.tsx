@@ -34,6 +34,7 @@ import type {NutritionMealItemRequest} from '@/api/nutrition-plan-builder';
 import {ResponsiveOverlay} from '@/builder-kit/responsive-overlay';
 import {UNIT_CHIP} from '@/builder-kit/ui';
 import {recipeServings} from '@/recipes/lib/recipe-math';
+import {buildMealItemDraft} from '../amount-draft';
 import type {ItemAmountPatch} from '../commands';
 import {fmt} from '../macros';
 import type {HydratedMealItem} from './meal-item-row';
@@ -364,23 +365,17 @@ export function AmountSheetContent({
       return; // guard: weight_g must be resolved for foods
     }
 
-    const count = Number.parseFloat(servingCount);
-    const activeServing = food && activeServingIdx !== null ? food.serving_sizes[activeServingIdx] : null;
+    const activeServing = food && activeServingIdx !== null ? (food.serving_sizes[activeServingIdx] ?? null) : null;
 
-    onCollect?.({
-      ...(food && {food_id: food.id}),
-      ...(recipe && {recipe_id: recipe.id}),
-      ...(resolvedWeightG != null && {weight_g: resolvedWeightG}),
-      ...(recipe &&
-        !resolvedWeightG && {
-          amount: Number.isNaN(count) ? 1 : count,
-          unit: 'serving',
-        }),
-      ...(activeServing && {
-        amount: Number.isNaN(count) ? 1 : count,
-        unit: activeServing.unit,
+    onCollect?.(
+      buildMealItemDraft({
+        activeServing,
+        foodId: food?.id,
+        recipeId: recipe?.id,
+        resolvedWeightG,
+        servingCount,
       }),
-    });
+    );
   }, [food, recipe, resolvedWeightG, servingCount, activeServingIdx, onCollect]);
 
   // ── Render ────────────────────────────────────────────────────────────────

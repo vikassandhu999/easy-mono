@@ -27,7 +27,7 @@ import {PlanBuilder} from './plan-builder';
 export default function NutritionPlanBuilderScreen() {
   const {id} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.NUTRITION_PLANS);
-  const {data, isError, isLoading} = useGetNutritionPlanQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetNutritionPlanQuery(id!);
 
   if (isLoading) {
     return (
@@ -50,7 +50,10 @@ export default function NutritionPlanBuilderScreen() {
         </Page.Header>
         <Page.Content bare>
           <Page.Frame size="wide">
-            <ErrorState message="Couldn't load nutrition plan." />
+            <ErrorState
+              message="Couldn't load nutrition plan."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>
@@ -70,14 +73,12 @@ export default function NutritionPlanBuilderScreen() {
             onPress={goBack}
             testId="nb-back"
           />
-          {/* Not Page.Title: `.typography--h3` is unlayered, so its letter-spacing
-              beats any utility and the design's -0.02em can't be applied there. */}
-          <span
+          <h1
             className="min-w-0 flex-1 truncate font-grotesk type-display font-semibold tracking-title text-foreground"
             data-testid="nb-title"
           >
             {plan.name}
-          </span>
+          </h1>
         </Page.TitleGroup>
         <Page.Actions>
           <PlanAddToClient plan={plan} />

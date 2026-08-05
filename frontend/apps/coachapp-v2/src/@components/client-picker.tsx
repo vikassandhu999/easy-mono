@@ -1,7 +1,8 @@
 import {getFullName} from '@easy/utils';
-import {Description, Label, SearchField, Spinner, Typography} from '@heroui/react';
+import {Button, Description, Label, SearchField, Spinner, Typography} from '@heroui/react';
 import {Users} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
+import {ErrorState} from '@/@components/error-state';
 import {type Client, useListClientsQuery} from '@/api/clients';
 
 type ClientPickerContentProps = {
@@ -18,7 +19,10 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
   const deferredSearch = useDeferredValue(search);
   const shouldQuery = deferredSearch.trim().length >= 1;
 
-  const {data, isFetching} = useListClientsQuery({search: deferredSearch, limit: 10}, {enabled: shouldQuery});
+  const {data, isError, isFetching, refetch} = useListClientsQuery(
+    {search: deferredSearch, limit: 10},
+    {enabled: shouldQuery},
+  );
   const clients = data?.data ?? [];
 
   return (
@@ -37,7 +41,12 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
         </SearchField.Group>
       </SearchField>
 
-      {isFetching ? (
+      {isError ? (
+        <ErrorState
+          message="Couldn't load clients."
+          onRetry={refetch}
+        />
+      ) : isFetching ? (
         <div className="flex justify-center py-6">
           <Spinner size="sm" />
         </div>
@@ -53,11 +62,11 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
       ) : (
         <div className="flex max-h-70 flex-col overflow-y-auto">
           {clients.map((client) => (
-            <button
-              className="flex w-full items-center gap-2 rounded-chip px-2 py-2 text-left transition-colors hover:bg-surface-secondary"
+            <Button
+              className="h-auto w-full justify-start gap-2 px-2 py-2 text-left"
               key={client.id}
-              onClick={() => onSelect(client)}
-              type="button"
+              onPress={() => onSelect(client)}
+              variant="ghost"
             >
               <div className="flex size-7 shrink-0 items-center justify-center rounded-chip bg-surface-secondary">
                 <Users
@@ -69,7 +78,7 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
                 <Label className="truncate">{getFullName(client.first_name, client.last_name) || 'No name'}</Label>
                 <Description className="truncate">{client.email}</Description>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       )}

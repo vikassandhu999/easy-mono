@@ -564,6 +564,15 @@ context test copies both an original and its copy and asserts distinct names whi
 other scalar remains unchanged. **Verify by:** duplicate a Test-prefixed record twice,
 assert three distinct list names and exact inherited content, then delete every Test row.
 
+### RM-170 — A resolved weight must not erase the amount the coach selected
+The nutrition builder converted a recipe serving to grams before creation but omitted the
+entered serving amount and unit. Reopening the amount editor therefore showed `1 serving`
+plus raw grams instead of the selected fraction. When a serving resolves to weight, persist
+both representations; weight prices the item and amount/unit reconstruct the coach's input.
+**Gated:** the nutrition amount-draft self-check asserts a half-serving recipe retains
+`0.5 serving` alongside its resolved grams. **Verify by:** add a weighed recipe as a
+fractional serving, reopen its amount editor, and assert the same fraction is selected.
+
 ### RM-144 — Every shared concept has an owning feature; never a neutral bucket
 A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
 owns it, and it erases the dependency information that matters (history depends on

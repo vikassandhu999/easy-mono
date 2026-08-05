@@ -1,7 +1,6 @@
 import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
-import {z} from 'zod';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormActions} from '@/@components/form-fields/form-actions';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
@@ -9,82 +8,25 @@ import {FormLayout} from '@/@components/form-fields/form-layout';
 import {FormNumberField} from '@/@components/form-fields/form-number-field';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
-import {numberFieldSchema} from '@/@components/form-fields/number-field-value';
-import type {NutritionPlan, NutritionPlanRequest} from '@/api/nutrition-plans-list';
-import {omitUndefined, toOptionalText} from '@/api/shared';
+import {
+  NUTRITION_PLAN_FORM_DEFAULTS,
+  type NutritionPlanFormValues,
+  nutritionPlanFormSchema,
+} from './nutrition-plan-form-data';
 
-const optionalNumber = numberFieldSchema(z.number().min(0, 'Use 0 or higher').optional());
+export {
+  NUTRITION_PLAN_FORM_DEFAULTS,
+  type NutritionPlanFormValues,
+  nutritionPlanFormSchema,
+  nutritionPlanToCreateRequest,
+  nutritionPlanToFormValues,
+  nutritionPlanToUpdateRequest,
+} from './nutrition-plan-form-data';
 
-export const nutritionPlanFormSchema = z.object({
-  calories: optionalNumber,
-  carbs_g: optionalNumber,
-  description: z.string().optional(),
-  fats_g: optionalNumber,
-  fiber_g: optionalNumber,
-  name: z.string().min(1, 'Enter plan name'),
-  protein_g: optionalNumber,
-});
-
-export type NutritionPlanFormValues = z.infer<typeof nutritionPlanFormSchema>;
-
-export const NUTRITION_PLAN_FORM_DEFAULTS: NutritionPlanFormValues = {
-  calories: undefined,
-  carbs_g: undefined,
-  description: '',
-  fats_g: undefined,
-  fiber_g: undefined,
-  name: '',
-  protein_g: undefined,
-};
-
-/**
- * Map the form's macro fields (`calories`/`protein_g`/`carbs_g`/`fats_g`/`fiber_g`)
- * onto the backend's `target_*` request fields. Undefined entries are stripped
- * by `omitUndefined` on the caller side.
- */
-function toTargetFields(values: NutritionPlanFormValues): Partial<NutritionPlanRequest> {
-  return {
-    target_calories: values.calories,
-    target_protein_g: values.protein_g,
-    target_carbs_g: values.carbs_g,
-    target_fat_g: values.fats_g,
-    target_fiber_g: values.fiber_g,
-  };
-}
-
-export function nutritionPlanToFormValues(plan: NutritionPlan): NutritionPlanFormValues {
-  return {
-    calories: plan.target_calories ?? undefined,
-    carbs_g: plan.target_carbs_g ?? undefined,
-    description: plan.description ?? '',
-    fats_g: plan.target_fat_g ?? undefined,
-    fiber_g: plan.target_fiber_g ?? undefined,
-    name: plan.name,
-    protein_g: plan.target_protein_g ?? undefined,
-  };
-}
-
-export function nutritionPlanToCreateRequest(values: NutritionPlanFormValues): NutritionPlanRequest {
-  return omitUndefined({
-    name: values.name,
-    description: toOptionalText(values.description),
-    ...toTargetFields(values),
-  });
-}
-
-export function nutritionPlanToUpdateRequest(values: NutritionPlanFormValues): NutritionPlanRequest {
-  return omitUndefined({
-    name: values.name,
-    description: toOptionalText(values.description),
-    ...toTargetFields(values),
-  });
-}
-
-export function useNutritionPlanForm(options?: {values?: NutritionPlanFormValues}) {
+export function useNutritionPlanForm(options?: {defaultValues?: NutritionPlanFormValues}) {
   return useForm<NutritionPlanFormValues>({
-    defaultValues: options?.values ? undefined : NUTRITION_PLAN_FORM_DEFAULTS,
+    defaultValues: options?.defaultValues ?? NUTRITION_PLAN_FORM_DEFAULTS,
     resolver: zodResolver(nutritionPlanFormSchema),
-    values: options?.values,
   });
 }
 

@@ -150,6 +150,7 @@ export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps
       hasMore={activeQuery.hasNextPage ?? false}
       itemKey={(item) => item.id}
       items={items}
+      error={activeQuery.isError}
       loading={loading}
       onCreateNoMatch={
         activeTab === 'foods'
@@ -159,6 +160,7 @@ export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps
           : undefined
       }
       onLoadMore={activeQuery.fetchNextPage}
+      onRetry={activeQuery.refetch}
       onSearchChange={setSearch}
       onToggleItem={toggleItem}
       renderItem={(item, isSelected) => (

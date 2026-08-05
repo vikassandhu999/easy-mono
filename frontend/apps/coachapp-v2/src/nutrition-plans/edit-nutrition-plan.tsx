@@ -26,72 +26,16 @@ const TITLE = (
   </>
 );
 
-export default function EditNutritionPlan() {
-  const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetNutritionPlanQuery(id!);
-  const updatePlan = useUpdateNutritionPlanMutation();
-
-  const plan = data?.data;
-  const backPath = generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: id!});
+function EditNutritionPlanForm({backPath, plan, planId}: {backPath: string; plan: NutritionPlan; planId: string}) {
   const goBack = useGoBack(backPath);
-
-  const form = useNutritionPlanForm({
-    values: plan ? nutritionPlanToFormValues(plan) : undefined,
-  });
-
-  if (isFetching) {
-    return (
-      <Page>
-        <Page.Header size="content">
-          <Page.TitleGroup>
-            <div className={'flex items-center'}>
-              <BackButton onPress={goBack} />
-              <Page.Title>{TITLE}</Page.Title>
-            </div>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content bare>
-          <Page.Frame
-            className="pt-4 pb-6"
-            size="content"
-          >
-            <PageSkeleton />
-          </Page.Frame>
-        </Page.Content>
-      </Page>
-    );
-  }
-
-  if (isError || !plan) {
-    return (
-      <Page>
-        <Page.Header size="content">
-          <Page.TitleGroup>
-            <div className={'flex items-center'}>
-              <BackButton onPress={goBack} />
-              <Page.Title>{TITLE}</Page.Title>
-            </div>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content bare>
-          <Page.Frame
-            className="pt-4 pb-6"
-            size="content"
-          >
-            <ErrorState message="Couldn't load nutrition plan." />
-          </Page.Frame>
-        </Page.Content>
-      </Page>
-    );
-  }
+  const updatePlan = useUpdateNutritionPlanMutation();
+  const form = useNutritionPlanForm({defaultValues: nutritionPlanToFormValues(plan)});
 
   const onSubmit = async (formData: NutritionPlanFormValues) => {
     try {
-      const result = await updatePlan.mutateAsync({body: nutritionPlanToUpdateRequest(formData), id: id!});
-      // tag:false — sync the cached detail so the builder shows the new values.
-      // meals/days/weekday_assignments are optional on the update response —
-      // keep the hydrated ones from the detail fetch rather than wiping them.
-      patchQueryData<{data: NutritionPlan}>(nutritionPlanKeys.detail(id!), (draft) => {
+      const result = await updatePlan.mutateAsync({body: nutritionPlanToUpdateRequest(formData), id: planId});
+      // Keep the hydrated builder tree when the metadata response omits it.
+      patchQueryData<{data: NutritionPlan}>(nutritionPlanKeys.detail(planId), (draft) => {
         draft.data = {
           ...result.data,
           meals: result.data.meals ?? draft.data.meals,
@@ -132,5 +76,71 @@ export default function EditNutritionPlan() {
         </Page.Frame>
       </Page.Content>
     </Page>
+  );
+}
+
+export default function EditNutritionPlan() {
+  const {id} = useParams<{id: string}>();
+  const {data, isError, isLoading: isFetching, refetch} = useGetNutritionPlanQuery(id!);
+
+  const plan = data?.data;
+  const backPath = generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: id!});
+  const goBack = useGoBack(backPath);
+
+  if (isFetching) {
+    return (
+      <Page>
+        <Page.Header size="content">
+          <Page.TitleGroup>
+            <div className={'flex items-center'}>
+              <BackButton onPress={goBack} />
+              <Page.Title>{TITLE}</Page.Title>
+            </div>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <PageSkeleton />
+          </Page.Frame>
+        </Page.Content>
+      </Page>
+    );
+  }
+
+  if (isError || !plan) {
+    return (
+      <Page>
+        <Page.Header size="content">
+          <Page.TitleGroup>
+            <div className={'flex items-center'}>
+              <BackButton onPress={goBack} />
+              <Page.Title>{TITLE}</Page.Title>
+            </div>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <ErrorState
+              message="Couldn't load nutrition plan."
+              onRetry={refetch}
+            />
+          </Page.Frame>
+        </Page.Content>
+      </Page>
+    );
+  }
+
+  return (
+    <EditNutritionPlanForm
+      backPath={backPath}
+      plan={plan}
+      planId={id!}
+    />
   );
 }

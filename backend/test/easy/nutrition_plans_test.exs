@@ -4,6 +4,31 @@ defmodule Easy.NutritionPlansTest do
   alias Easy.Clients.Client
   alias Easy.NutritionPlans
 
+  describe "plan names" do
+    test "normalizes and bounds create, update, and duplicate names" do
+      business = insert(:business)
+      coach = insert(:coach, business: business, user: business.owner)
+      ctx = owner_ctx(business)
+
+      assert {:ok, plan} = NutritionPlans.create_plan(ctx, %{"name" => "  Test Plan  "})
+      assert plan.name == "Test Plan"
+
+      assert {:error, blank_changeset} = NutritionPlans.update_plan(ctx, plan.id, %{"name" => "   "})
+      assert "can't be blank" in errors_on(blank_changeset).name
+
+      assert {:error, long_changeset} =
+               NutritionPlans.create_plan(ctx, %{"name" => String.duplicate("x", 256)})
+
+      assert "should be at most 255 character(s)" in errors_on(long_changeset).name
+
+      assert {:ok, copy} = NutritionPlans.duplicate_plan(ctx, plan.id)
+      assert {:ok, second_copy} = NutritionPlans.duplicate_plan(ctx, copy.id)
+      assert copy.name == "Test Plan (Copy)"
+      assert second_copy.name == "Test Plan (Copy 2)"
+      assert copy.creator_id == coach.id
+    end
+  end
+
   describe "client visibility (trainer-team access control)" do
     setup do
       business = insert(:business)

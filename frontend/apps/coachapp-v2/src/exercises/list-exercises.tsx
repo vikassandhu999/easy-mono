@@ -8,22 +8,26 @@ import ListEmptyState from '@/@components/list-empty-state';
 import MultiSelectAutocomplete from '@/@components/multi-select-autocomplete';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useCoachTrainingExercisesInfiniteQuery, useListMusclesQuery} from '@/api/training-exercises';
+import {useCoachTrainingExercisesInfiniteQuery, useExerciseOptionsQueries} from '@/api/training-exercises';
 
 import ExerciseListItem from './exercise-list-item';
 
 export default function ListExercises() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
+  const [muscleIds, setMuscleIds] = useState<string[]>([]);
+  const [equipmentIds, setEquipmentIds] = useState<string[]>([]);
 
   const deferredSearch = useDeferredValue(search);
-  const list = useCoachTrainingExercisesInfiniteQuery({muscleIds: selectedMuscleIds, search: deferredSearch});
+  const list = useCoachTrainingExercisesInfiniteQuery({equipmentIds, muscleIds, search: deferredSearch});
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
   const total = list.data?.pages[0]?.count;
 
-  const musclesQuery = useListMusclesQuery({});
-  const muscles = musclesQuery.data?.data ?? [];
+  // Both filters come from one hook: an exercise is described by muscle AND
+  // equipment everywhere else in the app (form, picker), and the backend has
+  // taken `equipment_ids` on this endpoint all along — only the control was
+  // missing. One load/error/retry for the pair, which the hook already owns.
+  const options = useExerciseOptionsQueries();
 
   return (
     <BrowseScreen
@@ -35,7 +39,7 @@ export default function ListExercises() {
           createLabel="Create exercise"
           createRoute={ROUTES.CREATE_EXERCISE}
           emptyDescription="Create your first exercise to get started."
-          hasFilter={!!deferredSearch || selectedMuscleIds.length > 0}
+          hasFilter={!!deferredSearch || muscleIds.length > 0 || equipmentIds.length > 0}
           nounPlural="exercises"
         />
       }
@@ -46,26 +50,42 @@ export default function ListExercises() {
       title="Exercises"
       total={total ?? undefined}
       toolbarExtra={
-        musclesQuery.isError ? (
+        options.isError ? (
           <Button
-            onPress={() => musclesQuery.refetch()}
+            onPress={options.retry}
             size="sm"
             variant="secondary"
           >
-            Retry muscle groups
+            Retry filters
           </Button>
-        ) : muscles.length > 0 ? (
-          <MultiSelectAutocomplete
-            collapseToCount
-            emptyMessage="No muscles found"
-            items={muscles}
-            name="muscle_ids"
-            onChange={setSelectedMuscleIds}
-            placeholder="Muscle groups"
-            searchPlaceholder="Search muscles"
-            value={selectedMuscleIds}
-          />
-        ) : null
+        ) : (
+          <>
+            {options.muscles.length > 0 ? (
+              <MultiSelectAutocomplete
+                collapseToCount
+                emptyMessage="No muscles found"
+                items={options.muscles}
+                name="muscle_ids"
+                onChange={setMuscleIds}
+                placeholder="Muscles"
+                searchPlaceholder="Search muscles"
+                value={muscleIds}
+              />
+            ) : null}
+            {options.equipment.length > 0 ? (
+              <MultiSelectAutocomplete
+                collapseToCount
+                emptyMessage="No equipment found"
+                items={options.equipment}
+                name="equipment_ids"
+                onChange={setEquipmentIds}
+                placeholder="Equipment"
+                searchPlaceholder="Search equipment"
+                value={equipmentIds}
+              />
+            ) : null}
+          </>
+        )
       }
     />
   );

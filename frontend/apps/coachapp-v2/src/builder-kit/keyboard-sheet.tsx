@@ -39,6 +39,8 @@ export interface KeyboardSheetProps {
   onClose: () => void;
   /** Optional header title rendered in the title row. */
   title?: ReactNode;
+  /** Optional committed action replacing the generic close icon. */
+  headerAction?: ReactNode;
   /**
    * Sticky footer slot — rendered as a dock pinned to the bottom of the sheet
    * (above the keyboard). Intended for primary action buttons like "Add N" or
@@ -54,7 +56,7 @@ export interface KeyboardSheetProps {
 // Component
 // ---------------------------------------------------------------------------
 
-export function KeyboardSheet({open, onClose, title, footer, children, className}: KeyboardSheetProps) {
+export function KeyboardSheet({open, onClose, title, headerAction, footer, children, className}: KeyboardSheetProps) {
   const {keyboardHeight} = useVisualViewport();
 
   // Track mount state for the slide-in animation: mount immediately on open,
@@ -199,14 +201,16 @@ export function KeyboardSheet({open, onClose, title, footer, children, className
             >
               {title}
             </span>
-            <button
-              aria-label="Close"
-              className="-mr-2 flex items-center justify-center rounded-chip text-muted transition-colors hover:text-foreground"
-              onClick={onClose}
-              type="button"
-            >
-              ✕
-            </button>
+            {headerAction ?? (
+              <button
+                aria-label="Close"
+                className="-mr-2 flex items-center justify-center rounded-chip text-muted transition-colors hover:text-foreground"
+                onClick={onClose}
+                type="button"
+              >
+                ✕
+              </button>
+            )}
           </div>
         ) : null}
 

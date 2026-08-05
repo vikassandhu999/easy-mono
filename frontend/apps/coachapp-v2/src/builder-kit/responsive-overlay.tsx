@@ -20,7 +20,7 @@
  * during KeyboardSheet's 300ms slide-out.
  */
 
-import {Popover} from '@heroui/react';
+import {Button, Popover} from '@heroui/react';
 import type {ReactNode, RefObject} from 'react';
 
 import {useIsDesktop} from '@/@hooks/use-is-desktop';
@@ -42,6 +42,8 @@ export interface ResponsiveOverlayProps {
   triggerRef: RefObject<HTMLElement | null>;
   /** Visible title row on mobile; the accessible name of the desktop dialog. */
   title: string;
+  /** Optional committed close action, such as the set editor's `Done`. */
+  closeLabel?: string;
   /** Desktop popover width utility. Defaults to the palette width. */
   width?: string;
   children: ReactNode;
@@ -52,11 +54,21 @@ export function ResponsiveOverlay({
   onOpenChange,
   triggerRef,
   title,
+  closeLabel,
   width = 'w-104',
   children,
 }: ResponsiveOverlayProps) {
   const isDesktop = useIsDesktop();
   const body = isOpen ? children : null;
+  const closeAction = closeLabel ? (
+    <Button
+      onPress={() => onOpenChange(false)}
+      size="sm"
+      variant="primary"
+    >
+      {closeLabel}
+    </Button>
+  ) : null;
 
   if (isDesktop) {
     return (
@@ -72,6 +84,12 @@ export function ResponsiveOverlay({
             aria-label={title}
             className={POPOVER_DIALOG}
           >
+            {closeAction ? (
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="min-w-0 truncate font-grotesk type-title font-semibold text-foreground">{title}</span>
+                {closeAction}
+              </div>
+            ) : null}
             {body}
           </Popover.Dialog>
         </Popover.Content>
@@ -81,6 +99,7 @@ export function ResponsiveOverlay({
 
   return (
     <KeyboardSheet
+      headerAction={closeAction}
       onClose={() => onOpenChange(false)}
       open={isOpen}
       title={title}

@@ -341,21 +341,32 @@ be expressed as an exclusion **in the rule it releases from**
 the modifier on a live node and reading `getComputedStyle` — a class that changes nothing
 is the whole failure mode (RM-133's rule applied to app-owned classes, not just vendor ones).
 
-### RM-140 — Two text children of a flex control need a non-breaking space, not JSX whitespace
+### RM-140 — Visual spacing does not separate a flex control's accessible name
 Controls are `display:flex` with `gap:0`, and JSX collapses whitespace between children —
 so a label plus a count renders `Upper A3` / `Active6` with nothing between them. It has
 been written twice: `FilterCount` in `@components/browse-screen.tsx` hit it and fixed it;
 TB's workout tabs shipped jammed against the ref until the 2026-07-26 sweep. Any pill, tab
 or chip that renders a label and a second span puts a non-breaking space between them (or
-an explicit `gap-*` on the control).
+an explicit `gap-*` on the control). When visual spacing is already supplied by margins,
+give the control an explicit spaced `aria-label`; TB's set rows looked separated but were
+announced as `Set 1Working`.
 
 **Write it as the escape — `{'\u00a0'}` — not as a pasted U+00A0.** Both compile to the
 same character, but a raw NBSP is invisible in the source: a reader cannot tell it from an
 ordinary space, and a well-meaning reformat silently deletes it.
 `training-plans/builder/components/workout-tabs.tsx` is the reference. **Verify by:**
-reading `textContent` off the live node — `"Upper A 3"`, not `"Upper A3"`. **Not gated:**
+reading `textContent` off the live node — `"Upper A 3"`, not `"Upper A3"` — or reading the
+accessible name when `aria-label` owns it. **Not gated:**
 the shape is a JSX child list, not a class string, so there is no reliable grep for the
 MISSING case; this one stays prose until a lint rule can see it.
+
+### RM-146 — A committed overlay action must stay visible in both shells
+Responsive overlays can swap a desktop popover for a mobile sheet, but the named completion
+action is part of the interaction contract. TB's set editor specified `Done`; the shared
+wrapper exposed only outside-click/Escape on desktop and a generic close icon on mobile.
+Pass the action through the responsive wrapper so both shells show the same commitment.
+**Verify by:** open the overlay at 375px and 1280px; its visible and accessible controls
+must both include the contracted action label.
 
 ### RM-147 — An action verb must land at the workflow it promises, not the entity default
 Dashboard `Renew`, `Assign`, and `Nudge` rows all reused one generic client-detail target,

@@ -168,6 +168,7 @@ export function SetEditor({element, setIndex, anchorRef, isOpen, onClose, onSele
 
   return (
     <ResponsiveOverlay
+      closeLabel="Done"
       isOpen={isOpen}
       onOpenChange={(open) => {
         if (!open) {

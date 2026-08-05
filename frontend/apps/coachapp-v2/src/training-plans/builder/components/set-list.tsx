@@ -33,6 +33,7 @@ export function SetList({sets, trackingType, exerciseName, onOpenSet, onRemoveSe
           key={index}
         >
           <Button
+            aria-label={`Set ${index + 1} ${formatSetSummary(set, trackingType)}`}
             className={`h-auto min-w-0 flex-1 justify-start p-0 text-left ${AS_TEXT} ${NO_GAP}`}
             // The pressed row IS the desktop popover's anchor, so it arrives with
             // the event — no ref array, no registration callback, and nothing to

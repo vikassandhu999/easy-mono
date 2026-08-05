@@ -6,6 +6,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField} from '@/@components/form-fields/form-number-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
+import {numberFieldSchema} from '@/@components/form-fields/number-field-value';
 
 import type {Food} from '@/api/nutrition-foods';
 import {type ServingSize, toOptionalNumber} from '@/api/shared';
@@ -20,12 +21,12 @@ type IngredientListProps = {
 
 const ingredientFieldsSchema = z
   .object({
-    amount: z.number().min(0, 'Use 0 or higher').optional(),
+    amount: numberFieldSchema(z.number().min(0, 'Use 0 or higher').optional()),
     unit: z.string().optional(),
     // Optional at the field level so a fresh row renders an EMPTY input, not a
     // literal 0 the coach has to fight ("030"); the recipe can't be saved
     // without a weight anyway (canComputeRecipeNutrition gates submit).
-    weight_g: z.number().min(0.1, 'Weight must be greater than 0').optional(),
+    weight_g: numberFieldSchema(z.number().min(0.1, 'Weight must be greater than 0').optional()),
   })
   .refine((data) => !data.amount || (data.unit != null && data.unit.trim() !== ''), {
     message: 'Add a unit',

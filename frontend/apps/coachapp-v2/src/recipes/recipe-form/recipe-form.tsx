@@ -10,6 +10,7 @@ import {FormLayout} from '@/@components/form-fields/form-layout';
 import {FormNumberField} from '@/@components/form-fields/form-number-field';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
+import {numberFieldSchema} from '@/@components/form-fields/number-field-value';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
 import type {Food, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/nutrition-foods';
 import {omitUndefined, toOptionalNumber, toOptionalText} from '@/api/shared';
@@ -31,7 +32,7 @@ const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Recip
   {color: 'warning', key: 'fats_g', label: 'Fats'},
 ];
 
-const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();
+const optionalNumber = numberFieldSchema(z.number().min(0, 'Use 0 or higher').optional());
 
 export const recipeFormSchema = z.object({
   name: z.string().min(1, 'Enter recipe name'),
@@ -39,7 +40,7 @@ export const recipeFormSchema = z.object({
   // A recipe's portion is its yield: one serving = cooked_weight_g / servings_count.
   // servings_count is always answerable, so it is required; cooked weight needs a
   // scale, so it stays optional and simply gates logging the recipe by grams.
-  servings_count: z.number().int().min(1, 'Enter at least 1 serving'),
+  servings_count: numberFieldSchema(z.number().int().min(1, 'Enter at least 1 serving')),
   cooked_weight_g: optionalNumber,
 });
 

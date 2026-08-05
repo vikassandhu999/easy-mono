@@ -15,6 +15,7 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {Food} from '@/api/nutrition-foods';
 import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/nutrition-foods';
+import {isFoodEditable} from '@/foods/food-form/food-form-data';
 
 const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Food; label: string}[] = [
   {color: 'accent', key: 'protein_g_per_100g', label: 'Protein'},
@@ -26,7 +27,7 @@ export default function FoodDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.FOODS);
-  const {data, isError, isLoading} = useGetFoodQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetFoodQuery(id!);
   const deleteFoodMutation = useDeleteFoodMutation();
 
   const handleDelete = async () => {
@@ -111,7 +112,10 @@ export default function FoodDetail() {
             className="pb-6"
             size="content"
           >
-            <ErrorState message="Couldn't load food. It may not exist, or you may not have access." />
+            <ErrorState
+              message="Couldn't load food. It may not exist, or you may not have access."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>
@@ -119,7 +123,7 @@ export default function FoodDetail() {
   }
 
   const food = data.data;
-  const isSystemFood = food.source === 'system';
+  const editable = isFoodEditable(food.source);
   const kcal = food.calories_per_100g;
   const segments = MACRO_SEGMENTS.map((s) => ({...s, value: (food[s.key] as number | null) ?? 0})).filter(
     (s) => s.value > 0,
@@ -131,10 +135,9 @@ export default function FoodDetail() {
       <Page.Header size="content">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
-          <Page.Title className="sm:hidden">Food</Page.Title>
         </Page.TitleGroup>
         <Page.Actions className="hidden sm:flex">
-          {!isSystemFood && (
+          {editable && (
             <Button
               className="bg-ink text-ink-foreground"
               onPress={() => navigate(generatePath(ROUTES.EDIT_FOOD, {id: food.id}))}
@@ -150,7 +153,7 @@ export default function FoodDetail() {
             <Copy />
             Duplicate
           </Button>
-          {!isSystemFood &&
+          {editable &&
             renderDeleteDialog(
               <Button
                 aria-label="Delete food"
@@ -184,12 +187,7 @@ export default function FoodDetail() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <Typography
-                className="break-words"
-                type="h3"
-              >
-                {food.name}
-              </Typography>
+              <Page.Title className="break-words whitespace-normal">{food.name}</Page.Title>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {food.category && (
                   <Chip
@@ -284,7 +282,7 @@ export default function FoodDetail() {
         </Page.Frame>
 
         <div className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 border-t border-separator bg-surface px-4 py-3 sm:hidden">
-          {!isSystemFood && (
+          {editable && (
             <Button
               className="flex-1"
               onPress={() => navigate(generatePath(ROUTES.EDIT_FOOD, {id: food.id}))}
@@ -302,7 +300,7 @@ export default function FoodDetail() {
           >
             <Copy />
           </Button>
-          {!isSystemFood &&
+          {editable &&
             renderDeleteDialog(
               <Button
                 isIconOnly

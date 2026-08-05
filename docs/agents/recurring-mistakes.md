@@ -516,6 +516,45 @@ label or heading is absent. **Verify by:** open each labelled and toolbar varian
 the settled accessibility tree names the trigger, search field, and dialog. Do not suppress
 HeroUI's pre-render warning; its wrapper currently logs before the child heading registers.
 
+### RM-165 — Update mappers distinguish omitted fields from explicit clears
+The food edit mapper reused create-time omission rules, so clearing category, notes,
+nutrition values, or the final serving size omitted those keys and silently preserved the
+old server values. Create requests may omit absent optional values; update requests send
+the API's explicit clear representation (`null` for nullable scalars and `[]` for owned
+collections). **Gated:** the food form data self-check asserts every clearable scalar and
+the empty serving-size collection. **Verify by:** save populated values, clear all of them,
+then reopen the detail and edit routes and assert none return.
+
+### RM-166 — Server-owned provenance controls mutation affordances by allowlist
+Food edit/delete controls excluded `system` rows but still treated `imported` and unknown
+provenance as mutable even though the API permits only coach-owned `custom` foods. When a
+server field owns mutability, expose actions from an allowlist of editable states rather
+than a denylist of one known read-only state, and apply the same predicate to direct edit
+routes. **Gated:** the food form data self-check covers custom, system, and imported
+sources. **Verify by:** assert custom detail exposes edit/delete, system and imported
+details do not, and direct edit URLs for read-only sources return to detail without a
+mutation form.
+
+### RM-167 — Loaded edit forms use defaults unless live server overwrite is intentional
+The food edit form passed fetched values through React Hook Form's reactive `values` option.
+Clearing an optional number produced `undefined`, which the still-populated server values
+immediately replaced, so the last digit could never stay deleted. A form that mounts only
+after its record loads initializes with `defaultValues`; reserve reactive `values` for a
+screen that deliberately overwrites user edits when external data changes. **Gated:** the
+food form hook accepts only `defaultValues`, so TypeScript rejects the reactive misuse.
+**Verify by:** populate an optional number, delete every digit, submit, then reopen and
+assert the field is empty rather than restored.
+
+### RM-168 — Controlled fields use an explicit empty value, then normalize at the schema boundary
+The shared number field emitted `undefined` when cleared, but React Hook Form controlled
+fields require `null` or an empty string and retained the previous default instead. The
+field now emits `''`, and each owning Zod schema preprocesses that sentinel back to
+`undefined` before request mapping; required-number schemas still reject it. **Gated:** the
+number-field value self-check covers clear, zero, constraints, and required emptiness, and
+all shared number-field callers use the normalizing schema wrapper. **Verify by:** clear a
+populated optional number through the UI, submit, and assert the update request carries the
+domain's explicit clear value and the reopened form stays empty.
+
 ### RM-144 — Every shared concept has an owning feature; never a neutral bucket
 A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
 owns it, and it erases the dependency information that matters (history depends on

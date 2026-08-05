@@ -16,6 +16,7 @@ import FoodForm, {
   foodToUpdateRequest,
   useFoodForm,
 } from '@/foods/food-form/food-form';
+import {isFoodEditable} from '@/foods/food-form/food-form-data';
 
 // Rendered only when food data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).
@@ -31,7 +32,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
   );
 
   const form = useFoodForm({
-    values: foodToFormValues(food),
+    defaultValues: foodToFormValues(food),
   });
 
   const onSubmit = async (formData: FoodFormValues) => {
@@ -78,7 +79,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
 export default function EditFood() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetFoodQuery(id!);
+  const {data, isError, isLoading: isFetching, refetch} = useGetFoodQuery(id!);
   const backPath = generatePath(ROUTES.FOOD_DETAIL, {id: id!});
   const goBackOuter = useGoBack(backPath);
 
@@ -121,15 +122,18 @@ export default function EditFood() {
             className="pt-4 pb-6"
             size="content"
           >
-            <ErrorState message="Couldn't load food." />
+            <ErrorState
+              message="Couldn't load food."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>
     );
   }
 
-  // Guard: system foods cannot be edited — redirect to detail page
-  if (data.data.source === 'system') {
+  // `source` is server-owned provenance; only coach-created foods are mutable.
+  if (!isFoodEditable(data.data.source)) {
     return (
       <Navigate
         replace

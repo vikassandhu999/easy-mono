@@ -54,12 +54,7 @@ export function MacroBreakdownCard({
     <div className="mt-3 rounded-card border border-border bg-surface p-5">
       {kcal != null && (
         <div className="flex items-baseline gap-2">
-          <Typography
-            className="tabular-nums"
-            type="h1"
-          >
-            {Math.round(kcal)}
-          </Typography>
+          <Typography className="type-metric font-grotesk font-semibold tabular-nums">{Math.round(kcal)}</Typography>
           <Typography color="muted">{caption}</Typography>
         </div>
       )}

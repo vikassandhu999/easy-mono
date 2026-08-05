@@ -3,6 +3,7 @@ import {Controller, type FieldValues} from 'react-hook-form';
 
 import {NumberInput} from '../number-input';
 import type {BaseFormFieldProps} from './form-field-types';
+import {toNumberFieldValue} from './number-field-value';
 
 // Number field for react-hook-form. Delegates to the shared NumberInput (a plain
 // text input) so mobile soft keyboards don't drop digits the way react-aria's
@@ -48,7 +49,7 @@ export function FormNumberField<T extends FieldValues>({
             onFieldBlur?.();
           }}
           onChange={(value) => {
-            field.onChange(value);
+            field.onChange(toNumberFieldValue(value));
             onValueChange?.(value);
           }}
           value={typeof field.value === 'number' ? field.value : undefined}

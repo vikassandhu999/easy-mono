@@ -1,3 +1,4 @@
+import {Button} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -20,8 +21,8 @@ export default function ListFoods() {
   const list = useCoachFoodsInfiniteQuery({categories, search: deferredSearch});
   // `category` is a free-form column, so the options are whatever the library
   // actually contains rather than an enum the frontend could hard-code.
-  const {data: categoryData} = useListFoodCategoriesQuery();
-  const categoryOptions = (categoryData?.data ?? []).map((name) => ({id: name, name}));
+  const categoriesQuery = useListFoodCategoriesQuery();
+  const categoryOptions = (categoriesQuery.data?.data ?? []).map((name) => ({id: name, name}));
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
   const total = list.data?.pages[0]?.count;
 
@@ -45,7 +46,15 @@ export default function ListFoods() {
       search={{onChange: setSearch, placeholder: 'Search foods\u2026', value: search}}
       title="Foods"
       toolbarExtra={
-        categoryOptions.length > 0 ? (
+        categoriesQuery.isError ? (
+          <Button
+            onPress={() => categoriesQuery.refetch()}
+            size="sm"
+            variant="secondary"
+          >
+            Retry categories
+          </Button>
+        ) : categoryOptions.length > 0 ? (
           <MultiSelectAutocomplete
             collapseToCount
             emptyMessage="No categories found"

@@ -2,7 +2,6 @@ import {Description, ErrorMessage, Fieldset, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {z} from 'zod';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormActions} from '@/@components/form-fields/form-actions';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
@@ -11,26 +10,16 @@ import {FormNumberField} from '@/@components/form-fields/form-number-field';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
-import type {Food, FoodRequest, FoodServingSize, FoodUpdateRequest} from '@/api/nutrition-foods';
-import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
+import type {Food} from '@/api/nutrition-foods';
+import type {ServingSize} from '@/api/shared';
 import {ServingSizesEditor} from '@/foods/components/serving-sizes-editor';
+import {FOOD_FORM_DEFAULTS, type FoodFormValues, foodFormSchema} from '@/foods/food-form/food-form-data';
 
-export const foodFormSchema = z.object({
-  name: z.string().min(1, 'Enter food name'),
-  category: z.string().optional(),
-  source: z.string().optional(),
-  notes: z.string().optional(),
-  image_url: z.string().optional(),
-  media_id: z.string().nullable().optional(),
-  calories_per_100g: z.number().min(0, 'Use 0 or higher').optional(),
-  protein_g: z.number().min(0, 'Use 0 or higher').optional(),
-  carbs_g: z.number().min(0, 'Use 0 or higher').optional(),
-  fats_g: z.number().min(0, 'Use 0 or higher').optional(),
-  fiber_g: z.number().min(0, 'Use 0 or higher').optional(),
-  sugar_g: z.number().min(0, 'Use 0 or higher').optional(),
-});
-
-export type FoodFormValues = z.infer<typeof foodFormSchema>;
+export {
+  type FoodFormValues,
+  foodToCreateRequest,
+  foodToUpdateRequest,
+} from '@/foods/food-form/food-form-data';
 
 // `source` is server-owned provenance: the API stamps `custom` on create and never
 // accepts it in a body. The form carries it for display only, in a read-only field.
@@ -38,21 +27,6 @@ const SOURCE_LABELS: Record<NonNullable<Food['source']>, string> = {
   custom: 'Custom',
   imported: 'Imported',
   system: 'System',
-};
-
-export const FOOD_FORM_DEFAULTS: FoodFormValues = {
-  name: '',
-  category: '',
-  source: SOURCE_LABELS.custom,
-  notes: '',
-  image_url: '',
-  media_id: null,
-  calories_per_100g: undefined,
-  protein_g: undefined,
-  carbs_g: undefined,
-  fats_g: undefined,
-  fiber_g: undefined,
-  sugar_g: undefined,
 };
 
 export function foodToFormValues(food: Food): FoodFormValues {
@@ -85,67 +59,10 @@ export function foodToDuplicateFormValues(food: Food): FoodFormValues {
   };
 }
 
-function toFoodServingSizes(sizes: ServingSize[]): FoodServingSize[] {
-  return sizes.map((s) => ({
-    unit: s.unit,
-    amount: s.amount ?? 1,
-    weight_g: s.weight_g ?? 0,
-    is_default: false,
-    label: s.unit,
-  }));
-}
-
-export function foodToCreateRequest({
-  servingSizes,
-  values,
-}: {
-  servingSizes: ServingSize[];
-  values: FoodFormValues;
-}): FoodRequest {
-  return omitUndefined({
-    name: values.name,
-    category: toOptionalText(values.category),
-    notes: toOptionalText(values.notes),
-    image_url: toOptionalText(values.image_url),
-    media_id: values.media_id ?? undefined,
-    calories_per_100g: values.calories_per_100g,
-    protein_g_per_100g: values.protein_g,
-    carbs_g_per_100g: values.carbs_g,
-    fat_g_per_100g: values.fats_g,
-    fiber_g_per_100g: values.fiber_g,
-    sugar_g_per_100g: values.sugar_g,
-    serving_sizes: servingSizes.length > 0 ? toFoodServingSizes(servingSizes) : undefined,
-  });
-}
-
-export function foodToUpdateRequest({
-  servingSizes,
-  values,
-}: {
-  servingSizes: ServingSize[];
-  values: FoodFormValues;
-}): FoodUpdateRequest {
-  return omitUndefined({
-    name: values.name,
-    category: toOptionalText(values.category),
-    notes: toOptionalText(values.notes),
-    image_url: toOptionalText(values.image_url),
-    media_id: values.media_id ?? null,
-    calories_per_100g: values.calories_per_100g,
-    protein_g_per_100g: values.protein_g,
-    carbs_g_per_100g: values.carbs_g,
-    fat_g_per_100g: values.fats_g,
-    fiber_g_per_100g: values.fiber_g,
-    sugar_g_per_100g: values.sugar_g,
-    serving_sizes: servingSizes.length > 0 ? toFoodServingSizes(servingSizes) : undefined,
-  });
-}
-
-export function useFoodForm(options?: {defaultValues?: FoodFormValues; values?: FoodFormValues}) {
+export function useFoodForm(options?: {defaultValues?: FoodFormValues}) {
   return useForm<FoodFormValues>({
-    defaultValues: options?.values ? undefined : (options?.defaultValues ?? FOOD_FORM_DEFAULTS),
+    defaultValues: options?.defaultValues ?? FOOD_FORM_DEFAULTS,
     resolver: zodResolver(foodFormSchema),
-    values: options?.values,
   });
 }
 

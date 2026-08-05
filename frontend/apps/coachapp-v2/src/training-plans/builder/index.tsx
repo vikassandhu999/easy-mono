@@ -27,7 +27,7 @@ import {PlanBuilder} from './plan-builder';
 export default function TrainingPlanBuilderScreen() {
   const {id} = useParams<{id: string}>();
   const goBack = useGoBack(ROUTES.TRAINING_PLANS);
-  const {data, isError, isLoading} = useGetTrainingPlanQuery(id ?? '');
+  const {data, isError, isLoading, refetch} = useGetTrainingPlanQuery(id ?? '');
 
   if (isLoading) {
     return (
@@ -44,7 +44,10 @@ export default function TrainingPlanBuilderScreen() {
       <PlainShell onBack={goBack}>
         <Page.Content bare>
           <Page.Frame size="builder">
-            <ErrorState message="Couldn't load training plan. It may not exist or you don't have access." />
+            <ErrorState
+              message="Couldn't load training plan. It may not exist or you don't have access."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </PlainShell>
@@ -68,12 +71,12 @@ export default function TrainingPlanBuilderScreen() {
           />
           {/* Not Page.Title: `.typography--h3` is unlayered, so its letter-spacing
               beats any utility and the design's -0.02em can't be applied there. */}
-          <span
+          <h1
             className="min-w-0 flex-1 truncate font-grotesk type-display font-semibold tracking-title text-foreground"
             data-testid="tb-title"
           >
             {clientName ? `${plan.name} — ${clientName}` : plan.name}
-          </span>
+          </h1>
         </Page.TitleGroup>
         <Page.Actions>
           <PlanAddToClient plan={plan} />

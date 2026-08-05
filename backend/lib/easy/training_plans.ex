@@ -346,16 +346,19 @@ defmodule Easy.TrainingPlans do
   # plan costs 2 INSERTs (workouts, elements) instead of one per row.
   defp copy_workouts(workouts, new_plan) do
     now = DateTime.utc_now(:second)
+    first_inserted_at = DateTime.add(now, -length(workouts), :second)
 
     workout_rows =
-      Enum.map(workouts, fn workout ->
+      workouts
+      |> Enum.with_index()
+      |> Enum.map(fn {workout, index} ->
         %{
           id: Ecto.UUID.generate(),
           name: workout.name,
           weekdays: workout.weekdays,
           business_id: workout.business_id,
           training_plan_id: new_plan.id,
-          inserted_at: now,
+          inserted_at: DateTime.add(first_inserted_at, index, :second),
           updated_at: now
         }
       end)
@@ -387,31 +390,22 @@ defmodule Easy.TrainingPlans do
   end
 
   defp generate_copy_name(original_name, business_id) do
-    base_name = String.replace(original_name, ~r/\s*\(Copy\s*\d*\)\s*$/, "") |> String.trim()
+    base_name = original_name |> String.replace(~r/\s+\(Copy(?: \d+)?\)$/, "") |> String.trim()
 
     existing_names =
       TrainingPlan
       |> TrainingPlan.for_business(business_id)
-      |> where([t], t.name == ^base_name or like(t.name, ^"#{base_name} (Copy%)"))
+      |> TrainingPlan.templates()
       |> select([t], t.name)
       |> Repo.all()
       |> MapSet.new()
 
-    find_available_name(base_name, existing_names, 1)
-  end
+    Enum.find_value(1..100, fn attempt ->
+      suffix = if attempt == 1, do: " (Copy)", else: " (Copy #{attempt})"
+      candidate = "#{String.slice(base_name, 0, 255 - String.length(suffix))}#{suffix}"
 
-  defp find_available_name(base_name, existing_names, attempt) when attempt <= 100 do
-    candidate = if attempt == 1, do: "#{base_name} (Copy)", else: "#{base_name} (Copy #{attempt})"
-
-    if MapSet.member?(existing_names, candidate) do
-      find_available_name(base_name, existing_names, attempt + 1)
-    else
-      candidate
-    end
-  end
-
-  defp find_available_name(base_name, _existing_names, _attempt) do
-    "#{base_name} (Copy #{System.system_time(:second)})"
+      if !MapSet.member?(existing_names, candidate), do: candidate
+    end) || "#{String.slice(base_name, 0, 237)} (Copy #{System.system_time(:second)})"
   end
 
   defp preload_plan({:ok, %TrainingPlan{} = plan}), do: {:ok, reload_plan(plan)}

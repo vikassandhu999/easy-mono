@@ -81,7 +81,7 @@ defmodule Easy.Training.TrainingPlanTest do
       assert is_nil(Ecto.Changeset.get_field(changeset, :source_template_id))
     end
 
-    test "requires dates when the existing plan is assigned to a client" do
+    test "permits an open period when the existing plan is assigned to a client" do
       plan =
         build(:training_plan,
           business_id: Ecto.UUID.generate(),
@@ -97,10 +97,9 @@ defmodule Easy.Training.TrainingPlanTest do
           "end_date" => nil
         })
 
-      assert %{
-               start_date: ["assigned plan must have a start date"],
-               end_date: ["assigned plan must have an end date"]
-             } = errors_on(changeset)
+      assert changeset.valid?
+      assert {:ok, nil} = Ecto.Changeset.fetch_change(changeset, :start_date)
+      assert {:ok, nil} = Ecto.Changeset.fetch_change(changeset, :end_date)
     end
 
     test "rejects end date before start date for assigned plans" do

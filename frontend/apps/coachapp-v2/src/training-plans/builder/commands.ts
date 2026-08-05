@@ -31,7 +31,7 @@ import type {TrainingExercise} from '@/api/training-exercises';
 import type {TrainingPlan, TrainingPlanWorkout} from '@/api/training-plan-builder';
 import * as api from '@/api/training-plan-builder';
 import {createCoalescingQueue} from '@/builder-kit/coalescing-queue';
-
+import {periodError} from './period';
 import {findElement, findWorkout, moveId} from './plan-tree';
 import {clearWorkoutFromSchedule, type Day, setScheduleDay} from './schedule';
 import {appendSet, blankSet, type PlannedSet, patchSet, removeSet} from './sets';
@@ -291,27 +291,24 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
   // Assignment period
   // -------------------------------------------------------------------------
 
-  const setPlanDate = (field: 'end_date' | 'start_date', value: string | null) => {
+  const setPlanPeriod = async (startDate: string | null, endDate: string | null): Promise<void> => {
     const plan = read();
-    if (!plan || (plan[field] ?? null) === value) {
+    if (!plan) {
       return;
     }
-    // An end before the start violates the backend's daterange constraint —
-    // a hard Postgres error on assigned plans, so refuse it here with a
-    // readable message rather than let it 500.
-    const start = field === 'start_date' ? value : plan.start_date;
-    const end = field === 'end_date' ? value : plan.end_date;
-    if (start && end && end < start) {
-      toast.danger('End date must be on or after the start date');
+    const error = periodError(startDate, endDate);
+    if (error) {
+      toast.danger(error);
       return;
     }
-    commit(
+    await commit(
       (draft) => {
-        draft[field] = value;
+        draft.start_date = startDate;
+        draft.end_date = endDate;
       },
-      () => api.updatePlanPeriod(planId, {[field]: value}),
+      () => api.updatePlanPeriod(planId, {start_date: startDate, end_date: endDate}),
       "Couldn't save changes",
-    ).catch(() => undefined);
+    );
   };
 
   return {
@@ -327,6 +324,6 @@ export function createPlanCommands(planId: string, notifyBusy: (key: BusyKey, bu
     removeWorkout,
     renameWorkout,
     scheduleDay,
-    setPlanDate,
+    setPlanPeriod,
   };
 }

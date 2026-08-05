@@ -7,7 +7,7 @@ import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
-import {patchPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
+import {patchPlan, type TrainingPlan, useGetTrainingPlanQuery} from '@/api/training-plan-builder';
 import {useUpdateTrainingPlanMutation} from '@/api/training-plans-list';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
@@ -35,15 +35,11 @@ function EditTrainingPlanHeader({goBack}: {goBack: () => void}) {
   );
 }
 
-function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
+function EditTrainingPlanForm({backPath, plan, planId}: {backPath: string; plan: TrainingPlan; planId: string}) {
   const goBack = useGoBack(backPath);
-  const {data} = useGetTrainingPlanQuery(planId);
   const updatePlanMutation = useUpdateTrainingPlanMutation();
-
-  const plan = data!.data;
-
   const form = useTrainingPlanForm({
-    values: trainingPlanToFormValues(plan),
+    defaultValues: trainingPlanToFormValues(plan),
   });
 
   const onSubmit = async (formData: TrainingPlanFormValues) => {
@@ -86,7 +82,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
 export default function EditTrainingPlan() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetTrainingPlanQuery(id ?? '');
+  const {data, isError, isLoading: isFetching, refetch} = useGetTrainingPlanQuery(id ?? '');
   const backPath = generatePath(ROUTES.TRAINING_PLAN_DETAIL, {id: id!});
   const goBack = useGoBack(backPath);
 
@@ -115,7 +111,10 @@ export default function EditTrainingPlan() {
             className="pt-4 pb-6"
             size="content"
           >
-            <ErrorState message="Couldn't load training plan." />
+            <ErrorState
+              message="Couldn't load training plan."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>
@@ -125,6 +124,7 @@ export default function EditTrainingPlan() {
   return (
     <EditTrainingPlanForm
       backPath={backPath}
+      plan={data.data}
       planId={id!}
     />
   );

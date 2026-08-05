@@ -183,17 +183,86 @@ defmodule Easy.TrainingPlansTest do
     end
   end
 
+  describe "update_plan/3 period" do
+    test "accepts incremental nullable dates and rejects a reversed completed range" do
+      business = insert(:business)
+      coach = insert(:coach, business: business, user: business.owner)
+      client = insert(:client, business: business, creator: coach, assigned_coach: coach)
+      template = insert(:training_plan, business: business, creator: coach)
+      ctx = owner_ctx(business)
+
+      assert {:ok, assigned} = TrainingPlans.assign_plan_to_client(ctx, client.id, template.id, %{})
+      assert assigned.start_date == nil
+      assert assigned.end_date == nil
+
+      assert {:ok, started} = TrainingPlans.update_plan(ctx, assigned.id, %{"start_date" => "2026-08-06"})
+      assert started.start_date == ~D[2026-08-06]
+      assert started.end_date == nil
+
+      assert {:error, reversed} = TrainingPlans.update_plan(ctx, assigned.id, %{"end_date" => "2026-08-05"})
+      assert "must be after or equal to start date" in errors_on(reversed).end_date
+
+      assert {:ok, completed} = TrainingPlans.update_plan(ctx, assigned.id, %{"end_date" => "2026-09-05"})
+      assert completed.end_date == ~D[2026-09-05]
+      assert {:ok, cleared} = TrainingPlans.update_plan(ctx, assigned.id, %{"start_date" => nil})
+      assert cleared.start_date == nil
+      assert cleared.end_date == ~D[2026-09-05]
+    end
+  end
+
   describe "duplicate_plan/2" do
+    test "normalizes and bounds create, update, and duplicate names" do
+      coach = insert(:coach)
+      ctx = Ctx.new(coach.business_id, coach.user_id)
+
+      assert {:error, whitespace} = TrainingPlans.create_plan(ctx, %{"name" => "   "})
+      assert "can't be blank" in errors_on(whitespace).name
+      assert {:error, overlong} = TrainingPlans.create_plan(ctx, %{"name" => String.duplicate("x", 256)})
+      assert "should be at most 255 character(s)" in errors_on(overlong).name
+
+      assert {:ok, plan} = TrainingPlans.create_plan(ctx, %{"name" => "  Test Training Plan  "})
+      assert plan.name == "Test Training Plan"
+      assert {:ok, updated} = TrainingPlans.update_plan(ctx, plan.id, %{"name" => "  Test Renamed  "})
+      assert updated.name == "Test Renamed"
+
+      assert {:ok, boundary} = TrainingPlans.create_plan(ctx, %{"name" => String.duplicate("x", 255)})
+      assert {:ok, copy} = TrainingPlans.duplicate_plan(ctx, boundary.id)
+      assert {:ok, second_copy} = TrainingPlans.duplicate_plan(ctx, copy.id)
+      assert String.length(copy.name) == 255
+      assert String.ends_with?(copy.name, " (Copy)")
+      assert String.length(second_copy.name) == 255
+      assert String.ends_with?(second_copy.name, " (Copy 2)")
+    end
+
     test "copies each workout's weekdays" do
       coach = insert(:coach)
       plan = insert(:training_plan, creator: coach, business: coach.business)
-      workout = insert(:workout, plan: plan, business: coach.business, weekdays: ["tuesday", "friday"])
+      now = DateTime.utc_now(:second)
+
+      first =
+        insert(:workout,
+          plan: plan,
+          business: coach.business,
+          name: "First",
+          weekdays: ["tuesday", "friday"],
+          inserted_at: DateTime.add(now, -2, :second)
+        )
+
+      insert(:workout,
+        plan: plan,
+        business: coach.business,
+        name: "Second",
+        inserted_at: DateTime.add(now, -1, :second)
+      )
+
+      insert(:workout, plan: plan, business: coach.business, name: "Third", inserted_at: now)
       ctx = Ctx.new(coach.business_id, coach.user_id)
 
       assert {:ok, copy} = TrainingPlans.duplicate_plan(ctx, plan.id)
-      assert [copied] = copy.workouts
-      refute copied.id == workout.id
-      assert copied.weekdays == ["tuesday", "friday"]
+      assert Enum.map(copy.workouts, & &1.name) == ["First", "Second", "Third"]
+      assert copy.workouts |> Enum.map(& &1.inserted_at) |> Enum.uniq() |> length() == 3
+      refute hd(copy.workouts).id == first.id
+      assert hd(copy.workouts).weekdays == ["tuesday", "friday"]
     end
   end
 

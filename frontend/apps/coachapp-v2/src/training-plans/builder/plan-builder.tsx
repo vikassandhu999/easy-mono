@@ -44,7 +44,7 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
       {plan.client_id ? (
         <PlanPeriodCard
           endDate={plan.end_date}
-          onChange={commands.setPlanDate}
+          onSave={commands.setPlanPeriod}
           startDate={plan.start_date}
         />
       ) : null}

@@ -65,13 +65,15 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
   const [selected, setSelected] = useState<Map<string, TrainingExercise>>(new Map());
   const selectedKeys = useMemo(() => new Set(selected.keys()), [selected]);
 
-  const {data: musclesData} = useListMusclesQuery({});
-  const {data: equipmentData} = useListEquipmentQuery({});
+  const musclesQuery = useListMusclesQuery({});
+  const equipmentQuery = useListEquipmentQuery({});
   const {
     data: pages,
     isFetching,
     hasNextPage,
     fetchNextPage,
+    isError: exercisesError,
+    refetch: refetchExercises,
   } = useCoachTrainingExercisesInfiniteQuery({
     search: debouncedSearch || undefined,
     muscleIds: muscles.ids.size > 0 ? [...muscles.ids] : undefined,
@@ -84,8 +86,8 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
   // Equipment first — a short, finite set, so it stays reachable instead of
   // being buried past ~20 muscle chips in the scroll row.
   const filters: FilterChip[] = [
-    ...toChips(equipmentData?.data ?? [], equipment.ids, equipment.toggle),
-    ...toChips(musclesData?.data ?? [], muscles.ids, muscles.toggle),
+    ...toChips(equipmentQuery.data?.data ?? [], equipment.ids, equipment.toggle),
+    ...toChips(musclesQuery.data?.data ?? [], muscles.ids, muscles.toggle),
   ];
 
   const reset = useCallback(() => {
@@ -134,6 +136,7 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
   return (
     <SearchPickerSheet<TrainingExercise>
       confirmLabel={(count) => (count === 0 ? 'Add exercises' : `Add ${count} exercise${count === 1 ? '' : 's'}`)}
+      error={exercisesError || musclesQuery.isError || equipmentQuery.isError}
       filters={filters}
       hasMore={hasNextPage ?? false}
       itemKey={(exercise) => exercise.id}
@@ -152,6 +155,17 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
         createFromSearch(query).catch(() => undefined);
       }}
       onLoadMore={fetchNextPage}
+      onRetry={() => {
+        if (exercisesError) {
+          refetchExercises().catch(() => undefined);
+        }
+        if (musclesQuery.isError) {
+          musclesQuery.refetch().catch(() => undefined);
+        }
+        if (equipmentQuery.isError) {
+          equipmentQuery.refetch().catch(() => undefined);
+        }
+      }}
       onSearchChange={setSearch}
       onToggleItem={toggleExercise}
       open={isOpen}

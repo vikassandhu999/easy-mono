@@ -64,6 +64,7 @@ defmodule Easy.Training.TrainingPlan do
 
   defp validate_fields(changeset) do
     changeset
+    |> update_change(:name, &String.trim/1)
     |> validate_required([:name])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
@@ -90,16 +91,10 @@ defmodule Easy.Training.TrainingPlan do
   def validate_date_range(changeset) do
     start_date = get_field(changeset, :start_date)
     end_date = get_field(changeset, :end_date)
-    client_id = get_field(changeset, :client_id)
 
     cond do
-      is_nil(client_id) ->
-        changeset
-
       is_nil(start_date) || is_nil(end_date) ->
         changeset
-        |> add_error(:start_date, "assigned plan must have a start date")
-        |> add_error(:end_date, "assigned plan must have an end date")
 
       Date.compare(end_date, start_date) == :lt ->
         add_error(changeset, :end_date, "must be after or equal to start date")

@@ -9,6 +9,7 @@
 import {
   Button,
   Disclosure,
+  ErrorMessage,
   Input,
   Label,
   TextArea,
@@ -68,6 +69,9 @@ interface FieldUi {
   read: (set: PlannedSet) => string;
   /** The patch to save, or `undefined` while the text isn't saveable yet. */
   write: (text: string) => Patch | undefined;
+  /** Numeric drafts commit on blur so an invalid final value cannot save a valid prefix. */
+  commitOnBlur?: boolean;
+  invalidMessage?: string;
   /** Unit chips under the value, for the measures that carry a unit. */
   units?: (set: PlannedSet, onChange: (patch: Patch) => void) => ReactNode;
   multiline?: boolean;
@@ -94,6 +98,7 @@ function numberColumn(
       const value = parse(text);
       return value === undefined ? undefined : {[column]: value};
     },
+    commitOnBlur: true,
   };
 }
 
@@ -114,8 +119,13 @@ const FIELDS: Record<FieldKey, FieldUi> = {
       />
     ),
   },
-  rpe: {label: 'RPE', mode: 'decimal', ...numberColumn('rpe', parseRpe)},
-  duration: {label: 'Secs', mode: 'numeric', ...numberColumn('duration_seconds', parseWholeNumber)},
+  rpe: {label: 'RPE', mode: 'decimal', invalidMessage: 'Use 1 to 10', ...numberColumn('rpe', parseRpe)},
+  duration: {
+    label: 'Secs',
+    mode: 'numeric',
+    invalidMessage: 'Use a whole number',
+    ...numberColumn('duration_seconds', parseWholeNumber),
+  },
   distance: {
     label: 'Dist',
     mode: 'decimal',
@@ -139,6 +149,7 @@ const REST: FieldUi = {
   label: 'Rest (seconds)',
   mode: 'numeric',
   placeholder: '90',
+  invalidMessage: 'Use a whole number',
   ...numberColumn('rest_seconds', parseWholeNumber),
 };
 
@@ -273,14 +284,21 @@ export function SetEditor({element, setIndex, anchorRef, isOpen, onClose, onSele
  */
 function useFieldText(field: FieldUi, set: PlannedSet, onChange: (patch: Patch) => void) {
   const [text, setText] = useState(() => field.read(set));
+  const patch = field.write(text);
 
   return {
+    commit: () => {
+      if (field.commitOnBlur && patch) {
+        onChange(patch);
+      }
+    },
+    isInvalid: patch === undefined,
     text,
     setText: (next: string) => {
       setText(next);
-      const patch = field.write(next);
-      if (patch) {
-        onChange(patch);
+      const nextPatch = field.write(next);
+      if (!field.commitOnBlur && nextPatch) {
+        onChange(nextPatch);
       }
     },
   };
@@ -294,11 +312,13 @@ interface FieldProps {
 
 /** A bordered box: label, big centred value, optional unit chips beneath. */
 function BoxField({field, set, onChange}: FieldProps) {
-  const {text, setText} = useFieldText(field, set, onChange);
+  const {commit, isInvalid, text, setText} = useFieldText(field, set, onChange);
 
   return (
     <div className={BOX_CLASS}>
       <TextField
+        isInvalid={isInvalid}
+        onBlur={commit}
         onChange={setText}
         value={text}
       >
@@ -308,6 +328,7 @@ function BoxField({field, set, onChange}: FieldProps) {
           inputMode={field.mode}
           placeholder="—"
         />
+        {isInvalid ? <ErrorMessage>{field.invalidMessage ?? 'Enter a valid number'}</ErrorMessage> : null}
       </TextField>
       {field.units?.(set, onChange)}
     </div>
@@ -316,10 +337,12 @@ function BoxField({field, set, onChange}: FieldProps) {
 
 /** The unboxed variant, for the advanced section. */
 function PlainField({field, set, onChange}: FieldProps) {
-  const {text, setText} = useFieldText(field, set, onChange);
+  const {commit, isInvalid, text, setText} = useFieldText(field, set, onChange);
 
   return (
     <TextField
+      isInvalid={isInvalid}
+      onBlur={commit}
       onChange={setText}
       value={text}
     >
@@ -335,6 +358,7 @@ function PlainField({field, set, onChange}: FieldProps) {
           placeholder={field.placeholder}
         />
       )}
+      {isInvalid ? <ErrorMessage>{field.invalidMessage ?? 'Enter a valid number'}</ErrorMessage> : null}
     </TextField>
   );
 }

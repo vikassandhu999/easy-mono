@@ -1,58 +1,30 @@
 import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
-import {z} from 'zod';
 import {FormActions} from '@/@components/form-fields/form-actions';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import {FormLayout} from '@/@components/form-fields/form-layout';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
-import {omitUndefined, toNullableText, toOptionalText} from '@/api/shared';
-import type {TrainingPlan} from '@/api/training-plan-builder';
-import type {TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '@/api/training-plans-list';
+import {
+  TRAINING_PLAN_FORM_DEFAULTS,
+  type TrainingPlanFormValues,
+  trainingPlanFormSchema,
+} from './training-plan-form-data';
 
-// No date fields here: start/end dates only apply once a plan is assigned to a
-// client, and the builder's PlanHeader owns editing them (canonical DateInput).
-export const schema = z.object({
-  description: z.string().optional(),
-  name: z.string().min(1, 'Enter plan name'),
-});
+export {
+  TRAINING_PLAN_FORM_DEFAULTS,
+  type TrainingPlanFormValues,
+  trainingPlanFormSchema,
+  trainingPlanToCreateRequest,
+  trainingPlanToFormValues,
+  trainingPlanToUpdateRequest,
+} from './training-plan-form-data';
 
-export type TrainingPlanFormValues = z.infer<typeof schema>;
-
-export const TRAINING_PLAN_FORM_DEFAULTS: TrainingPlanFormValues = {
-  description: '',
-  name: '',
-};
-
-export function trainingPlanToFormValues(plan: TrainingPlan): TrainingPlanFormValues {
-  return {
-    description: plan.description ?? '',
-    name: plan.name,
-  };
-}
-
-export function trainingPlanToCreateRequest(values: TrainingPlanFormValues): TrainingPlanCreateRequest {
-  return omitUndefined({
-    name: values.name,
-    description: toOptionalText(values.description),
-  });
-}
-
-// Dates are deliberately absent — including them here would wipe an assigned
-// plan's dates on every "Save changes".
-export function trainingPlanToUpdateRequest(values: TrainingPlanFormValues): TrainingPlanUpdateRequest {
-  return {
-    name: values.name,
-    description: toNullableText(values.description),
-  };
-}
-
-export function useTrainingPlanForm(options?: {values?: TrainingPlanFormValues}) {
+export function useTrainingPlanForm(options?: {defaultValues?: TrainingPlanFormValues}) {
   return useForm<TrainingPlanFormValues>({
-    defaultValues: options?.values ? undefined : TRAINING_PLAN_FORM_DEFAULTS,
-    resolver: zodResolver(schema),
-    values: options?.values,
+    defaultValues: options?.defaultValues ?? TRAINING_PLAN_FORM_DEFAULTS,
+    resolver: zodResolver(trainingPlanFormSchema),
   });
 }
 

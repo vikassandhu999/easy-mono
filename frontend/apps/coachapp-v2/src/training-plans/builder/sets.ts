@@ -4,7 +4,7 @@
  */
 import type {TrainingPlanPlannedSet} from '@/api/training-plan-builder';
 
-import {tracks} from './tracking';
+import {tracks} from './tracking.ts';
 
 export type PlannedSet = TrainingPlanPlannedSet;
 
@@ -54,8 +54,7 @@ export function parseWholeNumber(text: string): number | null | undefined {
   if (text.trim() === '') {
     return null;
   }
-  const value = Number.parseInt(text, 10);
-  return Number.isNaN(value) ? undefined : value;
+  return /^\d+$/.test(text) ? Number(text) : undefined;
 }
 
 /** RPE is bounded 1–10 by the API — saving 12 would write, then 422 and revert. */
@@ -63,8 +62,11 @@ export function parseRpe(text: string): number | null | undefined {
   if (text.trim() === '') {
     return null;
   }
-  const value = Number.parseFloat(text);
-  return Number.isNaN(value) || value < 1 || value > 10 ? undefined : value;
+  if (!/^(?:\d+|\d*\.\d+)$/.test(text)) {
+    return undefined;
+  }
+  const value = Number(text);
+  return value < 1 || value > 10 ? undefined : value;
 }
 
 // ---------------------------------------------------------------------------

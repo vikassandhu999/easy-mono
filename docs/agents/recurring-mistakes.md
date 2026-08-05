@@ -573,6 +573,36 @@ both representations; weight prices the item and amount/unit reconstruct the coa
 `0.5 serving` alongside its resolved grams. **Verify by:** add a weighed recipe as a
 fractional serving, reopen its amount editor, and assert the same fraction is selected.
 
+### RM-171 — Buffered numeric editors commit the final draft, not a valid prefix
+The training set editor wrote every parseable keystroke immediately, so typing an invalid
+RPE of `11` queued `1` before the final draft became invalid and silently persisted that
+prefix. Numeric editors buffer while typing, render invalid final text as an error, and
+commit only a valid final draft on blur; strict parsers reject partial integers and decimals.
+**Gated:** the training-set self-check covers boundary, partial, fractional, negative, and
+garbage drafts. **Verify by:** type an invalid final RPE, leave the field, assert the inline
+error and unchanged fresh API value, then enter a valid decimal and assert it round-trips.
+
+### RM-172 — Bulk clones preserve the source collection's logical order
+Training-plan copy generated new child IDs while giving every workout the same
+second-precision timestamp. The total-order tie-break was stable per read but no longer
+represented the source order, so a copied plan shuffled its workout tabs. A bulk clone of
+an insertion-ordered collection assigns distinct timestamps in source enumeration order;
+position-backed collections copy their positions instead. **Gated:** the training-plan
+context test clones three ordered workouts, asserts exact name order and distinct ordering
+timestamps, and still checks weekday inheritance. **Verify by:** copy a three-workout Test
+plan and compare the source and copy tab sequences exactly.
+
+### RM-173 — Incremental multi-field editors must have valid intermediate states
+The assigned training-plan period editor saves Start and End independently, while the
+changeset rejected either date unless both were present. Entering the first complete date
+therefore failed and rolled the control back, even though assignment intentionally creates
+a dateless plan and the API marks both dates nullable. A field-at-a-time editor either
+permits every contract-valid partial state or buffers both fields and submits atomically;
+cross-field ordering applies once both values exist. **Gated:** the training-plan context
+test round-trips start-only, rejects a reversed pair, accepts a completed pair, and clears
+one side. **Verify by:** assign a Test plan, enter Start then End separately, reopen and
+assert both; attempt a reversed end and assert the stored pair is unchanged.
+
 ### RM-144 — Every shared concept has an owning feature; never a neutral bucket
 A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
 owns it, and it erases the dependency information that matters (history depends on

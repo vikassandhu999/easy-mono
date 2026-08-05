@@ -668,6 +668,21 @@ can't separate the harmful stateful-memo case from noise. **Verify by:** typing
 several characters into the debounced field and counting the network requests —
 exactly one after the debounce window.
 
+### RM-174 — A theme skin for a vendor surface must cover the whole surface family
+The theme's popover skin targeted `.popover`, but HeroUI's composite widgets (Dropdown,
+Select, Autocomplete, DatePicker, ComboBox) float their own `<block>__popover` element
+that never carries `.popover` — so every composite popover silently shipped the vendor
+look (24px radius, no border, own shadow, no viewport max-width) while plain Popovers got
+the design's card. Fixed by one selector list naming the family
+(`.popover, .autocomplete__popover, …` in `index.css`). When skinning a vendor component
+class, enumerate its BEM family from the live stylesheets
+(`document.styleSheets` scan for `<block>__<element>` variants), not from the one class
+the current screen happens to render. Not mechanically gated: `check-theme-selectors.sh`
+verifies the listed selectors exist but cannot know a family member is missing — the
+live-stylesheet census is the check. **Verify by:** open one popover of each kind
+(menu, select, date picker, autocomplete filter) and read `border-radius` off the
+computed style — all must equal `--radius-card`.
+
 ---
 
 ## Deploy / ops

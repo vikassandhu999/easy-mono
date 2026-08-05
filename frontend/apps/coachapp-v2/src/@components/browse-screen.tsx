@@ -283,7 +283,15 @@ export default function BrowseScreen<T extends object, Id extends string>({
             </SearchField>
           ) : null}
 
-          {toolbarExtra ? <div className="w-40 shrink-0">{toolbarExtra}</div> : null}
+          {/* Filters sit on their own row below the search field on mobile, in
+              equal columns so their edges line up with it — an auto-width
+              trigger left a ragged gap beside a full-width input. `mt-2` is the
+              row gap: the toolbar's own is `gap-y-0` because the pill row below
+              brings its own spacing, so this row asks for its own. From `sm` up
+              they join the search field inline at their natural width. */}
+          {toolbarExtra ? (
+            <div className="mt-2 grid w-full grid-cols-2 gap-3 sm:mt-0 sm:flex sm:w-auto">{toolbarExtra}</div>
+          ) : null}
 
           {total === undefined ? null : (
             <span className="ms-auto hidden shrink-0 type-body text-muted sm:block">

@@ -12,7 +12,6 @@ import {
   TagGroup,
   useFilter,
 } from '@heroui/react';
-import {cn} from '@heroui/styles';
 import {Filter} from 'lucide-react';
 import type {ReactNode} from 'react';
 
@@ -72,7 +71,6 @@ export default function MultiSelectAutocomplete({
   value,
 }: MultiSelectAutocompleteProps) {
   const {contains} = useFilter({sensitivity: 'base'});
-  const active = value.length > 0;
 
   const handleRemoveTags = (keys: Set<Key>) => {
     onChange(value.filter((id) => !keys.has(id)));
@@ -81,7 +79,10 @@ export default function MultiSelectAutocomplete({
   return (
     <Autocomplete
       aria-label={label ? undefined : `${placeholder} filter`}
-      className="w-full"
+      // `autocomplete--filter` pins the trigger to the control height (theme
+      // rule) and sizes it to its label; the form flavour fills its field row
+      // and grows with its tag rows.
+      className={collapseToCount ? 'autocomplete--filter' : 'w-full'}
       isInvalid={isInvalid}
       name={name}
       onChange={(keys) => onChange(normalizeSelectedKeys(keys))}
@@ -90,12 +91,7 @@ export default function MultiSelectAutocomplete({
       value={value}
     >
       {label ? <Label>{label}</Label> : null}
-      <Autocomplete.Trigger
-        className={cn(
-          collapseToCount && 'gap-2',
-          collapseToCount && active && 'border-ink font-medium text-foreground',
-        )}
-      >
+      <Autocomplete.Trigger>
         {/* The design puts a funnel on the FILTER trigger (EX toolbar), not on the
             form-field flavour of this control. */}
         {collapseToCount ? <Filter className="size-4 shrink-0 text-muted" /> : null}
@@ -105,8 +101,9 @@ export default function MultiSelectAutocomplete({
               return defaultChildren;
             }
 
-            // Toolbar filter: label + count badge, fixed width regardless of how
-            // many are selected. Deselect happens in the popover list below.
+            // Toolbar filter: the label never changes, so the trigger stays one
+            // line whatever is selected — the count says how much, and the
+            // popover list below is where things get deselected.
             if (collapseToCount) {
               return (
                 <span className="flex items-center gap-1.5 truncate">
@@ -154,13 +151,21 @@ export default function MultiSelectAutocomplete({
         <Autocomplete.ClearButton />
         <Autocomplete.Indicator />
       </Autocomplete.Trigger>
-      <Autocomplete.Popover className={'max-w-60 w-full'}>
+      {/* Fixed width: the popover holds a search field + option rows, which the
+          160px filter trigger cannot fit (the placeholder clipped). The theme's
+          popover max-width keeps it on-screen at 375px. */}
+      <Autocomplete.Popover
+        className="w-60"
+        placement="bottom start"
+      >
         <Popover.Heading className="sr-only">{label ?? placeholder} options</Popover.Heading>
         <Autocomplete.Filter filter={contains}>
           <SearchField
             aria-label={searchPlaceholder}
             autoFocus
-            className="sticky top-0 z-10"
+            // Not sticky: the field is a sibling of the scrolling ListBox, so
+            // it never leaves the viewport. The rule separates the two bands.
+            className="border-b border-border pb-2"
             name={`${name}-search`}
             variant="secondary"
           >

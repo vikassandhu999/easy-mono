@@ -295,13 +295,51 @@
    design's card. That is the component's look, not a per-popover choice — only
    the width genuinely varies (w-80 / w-96 / w-104), and that stays at the call
    site. `max-width` keeps a wide popover on-screen at 375px, which five of the
-   nine remembered to add by hand. */
-.popover {
+   nine remembered to add by hand.
+   The composite widgets (Dropdown, Select, Autocomplete, DatePicker, …) float
+   their own `<block>__popover` element that never carries `.popover`, so they
+   all shipped the vendor look while plain Popovers got the design's — the same
+   surface, skinned twice. One selector list, one skin. */
+.popover,
+.autocomplete__popover,
+.color-picker__popover,
+.combo-box__popover,
+.date-picker__popover,
+.date-range-picker__popover,
+.dropdown__popover,
+.select__popover {
   border: 1px solid var(--color-border);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-xl);
   border-radius: var(--radius-card);
   max-width: calc(100vw - 2rem);
+}
+
+/* The FILTER flavour of the shared multi-select (`collapseToCount`) is a
+   toolbar control, so its trigger takes the control height like the search
+   field beside it — vendor padding + border rendered it 38px in a 36px row.
+   The form flavour stays unpinned: its trigger grows with the tag rows.
+
+   The trigger has exactly ONE look — the dc.html draws no second state for it
+   (EX toolbar: surface fill, `--border` rule, `--foreground` label at weight
+   500, muted funnel and chevron). "A filter is applied" is already said three
+   times over by things that carry information a border cannot: the ink count
+   pill inside the trigger, the clear button that appears beside it, and the row
+   count in the same toolbar. The component used to add `border-ink font-medium
+   text-foreground` on top of that, which is how a black box ended up around a
+   control in a row of grey-bordered ones — reading as focus or error. Two of
+   those three were not an active state at all: `text-foreground` is the resting
+   colour already, and `font-medium` is the design's resting WEIGHT, applied
+   only once something was selected. It belongs here, unconditionally.
+
+   Everything filter-specific about the trigger is in this block, so the variant
+   class is the whole variant; the component passes no className. */
+.autocomplete--filter .autocomplete__trigger {
+  height: var(--spacing-control);
+  min-height: var(--spacing-control);
+  gap: calc(var(--spacing) * 2);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Rows take their height from the component too. HeroUI's `.list-box-item` is

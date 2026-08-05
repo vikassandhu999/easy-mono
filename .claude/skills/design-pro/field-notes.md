@@ -333,3 +333,12 @@ DB `/dashboard` · CL `/clients` · IN `/clients/invite`
 · CD `/clients/:id` (+ sub-routes per CLIENT-DETAIL.md screen inventory)
 
 For `:id` routes, pick any existing entity from the running app's list screen.
+
+## Vendor surfaces are families, not classes (2026-08-05)
+HeroUI floats composite-widget popovers as `<block>__popover` (dropdown, select,
+autocomplete, date-picker, combo-box, date-range-picker, color-picker) WITHOUT the
+plain `.popover` class — a skin written for `.popover` never reaches them. Census the
+family from the live stylesheets before writing the rule:
+`for (sheet of document.styleSheets) … selectorText.match(/[a-z-]+__popover/g)`.
+Same trap likely applies to any other vendor element you skin by one class name
+(`__trigger`, `__dialog`, …). See RM-174.

@@ -20,6 +20,8 @@ import {Button, SearchField, Spinner} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {type ReactNode, useCallback, useEffect, useRef} from 'react';
 
+import {ErrorState} from '@/@components/error-state';
+
 import {PickerModal} from './picker-modal';
 
 // ---------------------------------------------------------------------------
@@ -55,6 +57,8 @@ export interface SearchPickerSheetProps<T> {
   items: T[];
   renderItem: (item: T, selected: boolean) => ReactNode;
   itemKey: (item: T) => string;
+  error?: boolean;
+  onRetry?: () => void;
 
   // --- Selection (controlled, multi-select) ---
   selectedKeys: Set<string>;
@@ -88,6 +92,7 @@ export interface SearchPickerSheetProps<T> {
 export type SearchPickerBodyProps<T> = Pick<
   SearchPickerSheetProps<T>,
   | 'createLabel'
+  | 'error'
   | 'filters'
   | 'filtersLayout'
   | 'hasMore'
@@ -96,6 +101,7 @@ export type SearchPickerBodyProps<T> = Pick<
   | 'loading'
   | 'onCreateNoMatch'
   | 'onLoadMore'
+  | 'onRetry'
   | 'onSearchChange'
   | 'onToggleItem'
   | 'renderItem'
@@ -120,6 +126,8 @@ export function SearchPickerBody<T>({
   loading = false,
   onLoadMore,
   hasMore = false,
+  error = false,
+  onRetry,
 }: SearchPickerBodyProps<T>) {
   // Ref to the sentinel div at the bottom of the item list.
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -164,7 +172,8 @@ export function SearchPickerBody<T>({
     };
   }, [hasMore, loading, stableOnLoadMore]);
 
-  const showCreateRow = onCreateNoMatch !== undefined && search.trim().length > 0 && items.length === 0 && !loading;
+  const showCreateRow =
+    !error && onCreateNoMatch !== undefined && search.trim().length > 0 && items.length === 0 && !loading;
 
   // The sticky search header relies on an overflow-y-auto ancestor with px-4
   // padding — every host container provides it.
@@ -230,26 +239,36 @@ export function SearchPickerBody<T>({
         className="flex flex-col"
         role="group"
       >
-        {items.map((item) => {
-          const key = itemKey(item);
-          const selected = selectedKeys.has(key);
-          return (
-            <Button
-              aria-pressed={selected}
-              className={[
-                // The row inset lives HERE, not in renderItem — every picker
-                // list shares it, so callers cannot drift apart.
-                'h-auto w-full justify-start rounded-none border-b border-border px-1 py-2 text-left last:border-b-0',
-                selected ? 'bg-accent-soft' : 'bg-transparent',
-              ].join(' ')}
-              key={key}
-              onPress={() => onToggleItem(item)}
-              variant="ghost"
-            >
-              <span className="block w-full min-w-0">{renderItem(item, selected)}</span>
-            </Button>
-          );
-        })}
+        {error ? (
+          <div className="py-4">
+            <ErrorState
+              message="Couldn't load results."
+              onRetry={onRetry}
+            />
+          </div>
+        ) : null}
+
+        {!error &&
+          items.map((item) => {
+            const key = itemKey(item);
+            const selected = selectedKeys.has(key);
+            return (
+              <Button
+                aria-pressed={selected}
+                className={[
+                  // The row inset lives HERE, not in renderItem — every picker
+                  // list shares it, so callers cannot drift apart.
+                  'h-auto w-full justify-start rounded-none border-b border-border px-1 py-2 text-left last:border-b-0',
+                  selected ? 'bg-accent-soft' : 'bg-transparent',
+                ].join(' ')}
+                key={key}
+                onPress={() => onToggleItem(item)}
+                variant="ghost"
+              >
+                <span className="block w-full min-w-0">{renderItem(item, selected)}</span>
+              </Button>
+            );
+          })}
 
         {/* Create-from-no-match row */}
         {showCreateRow ? (
@@ -264,7 +283,7 @@ export function SearchPickerBody<T>({
         ) : null}
 
         {/* No-results state — distinct from the loading + create-row cases */}
-        {!loading && items.length === 0 && !showCreateRow ? (
+        {!error && !loading && items.length === 0 && !showCreateRow ? (
           <div className="py-8 text-center type-body text-muted">No results found.</div>
         ) : null}
 
@@ -276,7 +295,7 @@ export function SearchPickerBody<T>({
         />
 
         {/* Loading indicator */}
-        {loading ? (
+        {!error && loading ? (
           <div className="flex justify-center py-4">
             <Spinner size="sm" />
           </div>

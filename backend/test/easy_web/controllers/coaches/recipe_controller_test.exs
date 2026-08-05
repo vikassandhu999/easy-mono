@@ -255,7 +255,7 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       conn = post(conn, "/v1/coach/nutrition-recipes/#{recipe.id}/copy")
       assert %{"data" => data} = json_response(conn, 201)
 
-      assert data["name"] == "Original Bowl"
+      assert data["name"] == "Original Bowl (Copy)"
       refute data["id"] == recipe.id
       assert [ingredient] = data["recipe_ingredients"]
       assert ingredient["food_id"] == food.id

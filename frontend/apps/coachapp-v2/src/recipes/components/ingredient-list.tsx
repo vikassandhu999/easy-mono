@@ -77,12 +77,12 @@ function IngredientFieldsForm({
   onChange: (field: keyof IngredientItem, fieldValue: number | string) => void;
 }) {
   const form = useForm<IngredientFieldsValues>({
-    resolver: zodResolver(ingredientFieldsSchema),
-    values: {
+    defaultValues: {
       amount: toOptionalNumber(item.amount),
       unit: item.unit,
       weight_g: toOptionalNumber(item.weight_g),
     },
+    resolver: zodResolver(ingredientFieldsSchema),
   });
 
   return (
@@ -336,6 +336,7 @@ export default function IngredientList({value, onChange, autoExpandId, onAutoExp
 
                 <IngredientFieldsForm
                   item={item}
+                  key={`${item.food_id}-${activeServing ?? 'manual'}`}
                   onChange={(field, fieldValue) => {
                     updateItem(index, field, fieldValue);
                     clearActiveServing(item.food_id);

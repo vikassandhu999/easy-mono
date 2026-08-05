@@ -31,7 +31,7 @@ export default function RecipeDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.RECIPES);
-  const {data, isError, isLoading} = useGetRecipeQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetRecipeQuery(id!);
   const deleteRecipe = useDeleteRecipeMutation();
   const copyRecipe = useCopyNutritionRecipeMutation();
   const isDeleting = deleteRecipe.isPending;
@@ -128,7 +128,10 @@ export default function RecipeDetail() {
             className="pb-6"
             size="content"
           >
-            <ErrorState message="Couldn't load recipe." />
+            <ErrorState
+              message="Couldn't load recipe."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>
@@ -151,7 +154,6 @@ export default function RecipeDetail() {
       <Page.Header size="content">
         <Page.TitleGroup className={'flex items-center'}>
           <BackButton onPress={goBack} />
-          <Page.Title className="sm:hidden">Recipe</Page.Title>
         </Page.TitleGroup>
         <Page.Actions className="hidden sm:flex">
           <Button
@@ -192,12 +194,7 @@ export default function RecipeDetail() {
               <ChefHat className="size-8 text-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <Typography
-                className="break-words"
-                type="h3"
-              >
-                {recipe.name}
-              </Typography>
+              <Page.Title className="wrap-break-word whitespace-normal">{recipe.name}</Page.Title>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 <Chip
                   className={OUTLINE_CHIP_CLASS}

@@ -31,7 +31,10 @@ export default function FoodPickerControl({onSelect, excludeIds = [], triggerCla
   const [selected, setSelected] = useState<Map<string, Food>>(new Map());
   const selectedKeys = useMemo(() => new Set(selected.keys()), [selected]);
 
-  const {data, isFetching} = useListFoodsQuery({search: debouncedSearch || undefined, limit: 20}, {enabled: open});
+  const {data, isError, isFetching, refetch} = useListFoodsQuery(
+    {search: debouncedSearch || undefined, limit: 20},
+    {enabled: open},
+  );
   const foods = useMemo(() => (data?.data ?? []).filter((f) => !excludeIds.includes(f.id)), [data, excludeIds]);
 
   const close = () => {
@@ -57,6 +60,7 @@ export default function FoodPickerControl({onSelect, excludeIds = [], triggerCla
         confirmLabel={(count) => (count === 0 ? 'Add ingredients' : `Add ${count} ingredient${count === 1 ? '' : 's'}`)}
         itemKey={(food) => food.id}
         items={foods}
+        error={isError}
         loading={isFetching || search !== debouncedSearch}
         onClose={close}
         onConfirm={() => {
@@ -64,6 +68,7 @@ export default function FoodPickerControl({onSelect, excludeIds = [], triggerCla
           close();
         }}
         onSearchChange={setSearch}
+        onRetry={refetch}
         onToggleItem={(food) => {
           setSelected((previous) => {
             const next = new Map(previous);

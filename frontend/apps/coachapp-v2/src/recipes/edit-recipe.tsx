@@ -35,7 +35,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
   const leaveConfirm = useOverlayState();
 
   const form = useRecipeForm({
-    values: recipeToFormValues({...recipe, servings_count: recipe.servings_count ?? null}),
+    defaultValues: recipeToFormValues({...recipe, servings_count: recipe.servings_count ?? null}),
   });
 
   const hasUnsavedChanges = form.formState.isDirty || contentChanged;
@@ -132,7 +132,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 
 export default function EditRecipe() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetRecipeQuery(id!);
+  const {data, isError, isLoading: isFetching, refetch} = useGetRecipeQuery(id!);
   const backPath = generatePath(ROUTES.RECIPE_DETAIL, {id: id!});
   const goBackOuter = useGoBack(backPath);
 
@@ -152,7 +152,10 @@ export default function EditRecipe() {
             className="pt-4 pb-6"
             size="content"
           >
-            <ErrorState message="Couldn't load recipe." />
+            <ErrorState
+              message="Couldn't load recipe."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>

@@ -2,7 +2,6 @@ import {Description, ErrorMessage, Fieldset} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useCallback, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {z} from 'zod';
 
 import {FormActions} from '@/@components/form-fields/form-actions';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
@@ -10,10 +9,8 @@ import {FormLayout} from '@/@components/form-fields/form-layout';
 import {FormNumberField} from '@/@components/form-fields/form-number-field';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
-import {numberFieldSchema} from '@/@components/form-fields/number-field-value';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
-import type {Food, RecipeIngredient, RecipeIngredientRequest, RecipeRequest} from '@/api/nutrition-foods';
-import {omitUndefined, toOptionalNumber, toOptionalText} from '@/api/shared';
+import type {Food} from '@/api/nutrition-foods';
 import FoodPickerControl from '@/recipes/components/food-picker-control';
 import IngredientList from '@/recipes/components/ingredient-list';
 import {
@@ -23,6 +20,17 @@ import {
   type IngredientItem,
   type RecipeTotals,
 } from '@/recipes/lib/recipe-math';
+import {RECIPE_FORM_DEFAULTS, type RecipeFormValues, recipeFormSchema} from '@/recipes/recipe-form/recipe-form-data';
+
+export {
+  RECIPE_FORM_DEFAULTS,
+  type RecipeFormValues,
+  recipeFormSchema,
+  recipeIngredientsToDrafts,
+  recipeToCreateRequest,
+  recipeToFormValues,
+  recipeToUpdateRequest,
+} from '@/recipes/recipe-form/recipe-form-data';
 
 // P/C/F ratio-bar segments (grams drive segment widths), mirroring the recipe
 // detail page's nutrition card. Fiber shows as a legend stat only, not a segment.
@@ -32,99 +40,10 @@ const MACRO_SEGMENTS: {color: 'accent' | 'success' | 'warning'; key: keyof Recip
   {color: 'warning', key: 'fats_g', label: 'Fats'},
 ];
 
-const optionalNumber = numberFieldSchema(z.number().min(0, 'Use 0 or higher').optional());
-
-export const recipeFormSchema = z.object({
-  name: z.string().min(1, 'Enter recipe name'),
-  instructions: z.string().optional(),
-  // A recipe's portion is its yield: one serving = cooked_weight_g / servings_count.
-  // servings_count is always answerable, so it is required; cooked weight needs a
-  // scale, so it stays optional and simply gates logging the recipe by grams.
-  servings_count: numberFieldSchema(z.number().int().min(1, 'Enter at least 1 serving')),
-  cooked_weight_g: optionalNumber,
-});
-
-export type RecipeFormValues = z.infer<typeof recipeFormSchema>;
-
-export const RECIPE_FORM_DEFAULTS: RecipeFormValues = {
-  name: '',
-  instructions: '',
-  servings_count: 1,
-  cooked_weight_g: undefined,
-};
-
-export function recipeIngredientsToDrafts(ingredients: RecipeIngredient[]): IngredientItem[] {
-  // Filter out any ingredients where the backend didn't hydrate the food object
-  // (food is Food | null in generated; IngredientItem requires Food).
-  return ingredients
-    .filter(
-      (ingredient): ingredient is RecipeIngredient & {food: NonNullable<RecipeIngredient['food']>} =>
-        ingredient.food != null,
-    )
-    .map((ingredient) => ({
-      food: ingredient.food,
-      food_id: ingredient.food_id,
-      amount: ingredient.amount ?? '',
-      unit: ingredient.unit ?? '',
-      weight_g: ingredient.weight_g ?? '',
-    }));
-}
-
-// Array order IS the ingredient order: each mapped ingredient carries position: index.
-function recipeIngredientDraftToApi(item: IngredientItem, index: number): RecipeIngredientRequest {
-  return omitUndefined({
-    food_id: item.food_id,
-    position: index,
-    unit: toOptionalText(item.unit),
-    amount: toOptionalNumber(item.amount),
-    weight_g: toOptionalNumber(item.weight_g),
-  }) as RecipeIngredientRequest;
-}
-
-export function recipeToFormValues(recipe: {
-  name: string;
-  instructions: string | null;
-  servings_count: number | null;
-  cooked_weight_g: number | null;
-}): RecipeFormValues {
-  return {
-    name: recipe.name,
-    instructions: recipe.instructions ?? '',
-    servings_count: recipe.servings_count ?? 1,
-    cooked_weight_g: recipe.cooked_weight_g ?? undefined,
-  };
-}
-
-type RecipeRequestArgs = {
-  ingredients: IngredientItem[];
-  values: RecipeFormValues;
-};
-
-// Create and update build the request identically: a full replace of the
-// ingredients array (position: index on each).
-function buildRecipeRequest({ingredients, values}: RecipeRequestArgs): RecipeRequest {
-  return omitUndefined({
-    name: values.name,
-    instructions: toOptionalText(values.instructions),
-    servings_count: values.servings_count,
-    cooked_weight_g: values.cooked_weight_g,
-    recipe_ingredients: ingredients.map(recipeIngredientDraftToApi),
-  }) as RecipeRequest;
-}
-
-export function recipeToCreateRequest(args: RecipeRequestArgs): RecipeRequest {
-  return buildRecipeRequest(args);
-}
-
-export function recipeToUpdateRequest(args: RecipeRequestArgs): RecipeRequest {
-  return buildRecipeRequest(args);
-}
-
-export function useRecipeForm(options?: {values?: RecipeFormValues}) {
+export function useRecipeForm(options?: {defaultValues?: RecipeFormValues}) {
   return useForm<RecipeFormValues>({
-    defaultValues: options?.values ? undefined : RECIPE_FORM_DEFAULTS,
+    defaultValues: options?.defaultValues ?? RECIPE_FORM_DEFAULTS,
     resolver: zodResolver(recipeFormSchema),
-    values: options?.values,
   });
 }
 

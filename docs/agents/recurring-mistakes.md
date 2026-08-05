@@ -555,6 +555,15 @@ all shared number-field callers use the normalizing schema wrapper. **Verify by:
 populated optional number through the UI, submit, and assert the update request carries the
 domain's explicit clear value and the reopened form stays empty.
 
+### RM-169 — Copies receive a distinguishable, bounded name at the domain boundary
+Recipe copy reused the source name exactly, producing indistinguishable list rows, and a
+255-character source left no room for a suffix. Copy operations that do not ask the user
+for a name generate the first available `Name (Copy N)` inside the tenant, stripping an
+existing copy suffix and truncating the base to the request limit. **Gated:** the recipe
+context test copies both an original and its copy and asserts distinct names while every
+other scalar remains unchanged. **Verify by:** duplicate a Test-prefixed record twice,
+assert three distinct list names and exact inherited content, then delete every Test row.
+
 ### RM-144 — Every shared concept has an owning feature; never a neutral bucket
 A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
 owns it, and it erases the dependency information that matters (history depends on

@@ -64,7 +64,7 @@ defmodule Easy.Training.TrainingPlan do
 
   defp validate_fields(changeset) do
     changeset
-    |> update_change(:name, &String.trim/1)
+    |> update_change(:name, &Easy.Utils.trim/1)
     |> validate_required([:name])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)

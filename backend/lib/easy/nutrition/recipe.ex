@@ -52,7 +52,7 @@ defmodule Easy.Nutrition.Recipe do
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, coach_id)
-    |> update_change(:name, &trim_name/1)
+    |> update_change(:name, &Easy.Utils.trim/1)
     |> validate_required([:name, :creator_id, :business_id, :servings_count])
     |> validate_length(:name, max: 255)
     |> validate_number(:servings_count, greater_than: 0)
@@ -69,7 +69,7 @@ defmodule Easy.Nutrition.Recipe do
   def update_changeset(recipe, attrs) do
     recipe
     |> cast(attrs, @cast_fields)
-    |> update_change(:name, &trim_name/1)
+    |> update_change(:name, &Easy.Utils.trim/1)
     |> validate_required([:name, :servings_count])
     |> validate_length(:name, max: 255)
     |> validate_number(:servings_count, greater_than: 0)
@@ -113,7 +113,4 @@ defmodule Easy.Nutrition.Recipe do
 
     from(r in query, preload: [recipe_ingredients: ^ingredient_query])
   end
-
-  defp trim_name(name) when is_binary(name), do: String.trim(name)
-  defp trim_name(name), do: name
 end

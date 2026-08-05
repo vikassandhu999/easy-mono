@@ -12,6 +12,12 @@ defmodule Easy.Utils do
 
   def safe_to_atom(_, _), do: nil
 
+  # For update_change/3 on string fields: cast turns "" into nil, so the trim
+  # must pass non-binaries through untouched instead of crashing.
+  @spec trim(any()) :: any()
+  def trim(value) when is_binary(value), do: String.trim(value)
+  def trim(value), do: value
+
   @spec safe_date(any()) :: Date.t() | nil
   def safe_date(nil), do: nil
 

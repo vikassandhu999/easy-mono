@@ -72,7 +72,7 @@ defmodule Easy.Nutrition.Plan do
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
-    |> update_change(:name, &trim_name/1)
+    |> update_change(:name, &Easy.Utils.trim/1)
     |> validate_required([:name, :business_id, :creator_id])
     |> validate_length(:name, max: 255)
     |> validate_date_range()
@@ -86,7 +86,7 @@ defmodule Easy.Nutrition.Plan do
   def update_changeset(plan, attrs) do
     plan
     |> cast(attrs, @cast_fields)
-    |> update_change(:name, &trim_name/1)
+    |> update_change(:name, &Easy.Utils.trim/1)
     |> validate_required([:name])
     |> validate_length(:name, max: 255)
     |> validate_date_range()
@@ -109,9 +109,6 @@ defmodule Easy.Nutrition.Plan do
         changeset
     end
   end
-
-  defp trim_name(name) when is_binary(name), do: String.trim(name)
-  defp trim_name(name), do: name
 
   # Queries
 

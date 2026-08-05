@@ -50,8 +50,8 @@ function EditExerciseForm({
 }) {
   const goBack = useGoBack(backPath);
   const updateExerciseMutation = useUpdateExerciseMutation();
-  const {data: musclesData} = useListMusclesQuery({});
-  const {data: equipmentData} = useListEquipmentQuery({});
+  const musclesQuery = useListMusclesQuery({});
+  const equipmentQuery = useListEquipmentQuery({});
 
   const form = useExerciseForm({
     values: exerciseToFormValues(exercise),
@@ -66,6 +66,13 @@ function EditExerciseForm({
     }
   };
 
+  const retryReferences = async () => {
+    await Promise.all([
+      ...(musclesQuery.isError ? [musclesQuery.refetch()] : []),
+      ...(equipmentQuery.isError ? [equipmentQuery.refetch()] : []),
+    ]);
+  };
+
   return (
     <Page>
       <EditExerciseHeader goBack={goBack} />
@@ -74,17 +81,26 @@ function EditExerciseForm({
         className="pt-4 pb-6"
       >
         <Page.Frame size="content">
-          <ExerciseForm
-            equipment={equipmentData?.data ?? []}
-            form={form}
-            initialMedia={exerciseToMediaValue(exercise)}
-            isSubmitting={updateExerciseMutation.isPending}
-            muscles={musclesData?.data ?? []}
-            onCancel={goBack}
-            onSubmit={onSubmit}
-            submitLabel="Save changes"
-            submittingLabel="Saving changes"
-          />
+          {musclesQuery.isError || equipmentQuery.isError ? (
+            <ErrorState
+              message="Couldn't load exercise options."
+              onRetry={retryReferences}
+            />
+          ) : musclesQuery.isLoading || equipmentQuery.isLoading ? (
+            <PageSkeleton />
+          ) : (
+            <ExerciseForm
+              equipment={equipmentQuery.data?.data ?? []}
+              form={form}
+              initialMedia={exerciseToMediaValue(exercise)}
+              isSubmitting={updateExerciseMutation.isPending}
+              muscles={musclesQuery.data?.data ?? []}
+              onCancel={goBack}
+              onSubmit={onSubmit}
+              submitLabel="Save changes"
+              submittingLabel="Saving changes"
+            />
+          )}
         </Page.Frame>
       </Page.Content>
     </Page>
@@ -93,7 +109,7 @@ function EditExerciseForm({
 
 export default function EditExercise() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading: isFetching} = useGetExerciseQuery(id!);
+  const {data, isError, isLoading: isFetching, refetch} = useGetExerciseQuery(id!);
 
   const exercise = data?.data;
   const backPath = generatePath(ROUTES.EXERCISE_DETAIL, {id: id!});
@@ -124,7 +140,10 @@ export default function EditExercise() {
           className="pt-4 pb-6"
         >
           <Page.Frame size="content">
-            <ErrorState message="Couldn't load exercise." />
+            <ErrorState
+              message="Couldn't load exercise."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>

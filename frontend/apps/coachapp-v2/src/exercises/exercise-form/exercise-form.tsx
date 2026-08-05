@@ -2,7 +2,6 @@ import {Description, ErrorMessage, Fieldset, ListBox, Typography} from '@heroui/
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
-import {z} from 'zod';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormActions} from '@/@components/form-fields/form-actions';
 import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
@@ -19,6 +18,13 @@ import type {
   TrainingExerciseRelation,
   TrainingExerciseUpdateRequest,
 } from '@/api/training-exercises';
+import {
+  EXERCISE_FORM_DEFAULTS,
+  type ExerciseFormValues,
+  exerciseFormSchema,
+} from '@/exercises/exercise-form/exercise-form-schema';
+
+export type {ExerciseFormValues} from '@/exercises/exercise-form/exercise-form-schema';
 
 type ExerciseMechanics = 'compound' | 'isolation' | 'isometric';
 type ExerciseForce = 'push' | 'pull' | 'static';
@@ -34,34 +40,6 @@ const FORCE_OPTIONS: {label: string; value: ExerciseForce}[] = [
   {label: 'Pull', value: 'pull'},
   {label: 'Static', value: 'static'},
 ];
-
-export const exerciseFormSchema = z.object({
-  description: z.string().optional(),
-  equipment_ids: z.array(z.string()).optional(),
-  force: z.enum(['pull', 'push', 'static']).optional().or(z.literal('')),
-  image_url: z.string().optional(),
-  images: z.array(z.string()).optional(),
-  instructions: z.string().optional(),
-  mechanics: z.enum(['compound', 'isolation', 'isometric']).optional().or(z.literal('')),
-  media_id: z.string().nullable().optional(),
-  muscle_ids: z.array(z.string()).optional(),
-  name: z.string().min(1, 'Enter exercise name'),
-});
-
-export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>;
-
-export const EXERCISE_FORM_DEFAULTS: ExerciseFormValues = {
-  description: '',
-  equipment_ids: [],
-  force: '',
-  image_url: '',
-  images: [],
-  instructions: '',
-  mechanics: '',
-  media_id: null,
-  muscle_ids: [],
-  name: '',
-};
 
 export function useExerciseForm(options?: {values?: ExerciseFormValues}) {
   return useForm<ExerciseFormValues>({

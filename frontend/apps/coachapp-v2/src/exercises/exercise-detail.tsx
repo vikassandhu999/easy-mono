@@ -12,7 +12,7 @@ import {Page} from '@/@components/page';
 import {PageSkeleton} from '@/@components/page-skeleton';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useCopyExerciseMutation, useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/training-exercises';
+import {useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/training-exercises';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',
@@ -41,25 +41,8 @@ export default function ExerciseDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.EXERCISES);
-  const {data, isError, isLoading} = useGetExerciseQuery(id!);
+  const {data, isError, isLoading, refetch} = useGetExerciseQuery(id!);
   const deleteExerciseMutation = useDeleteExerciseMutation();
-  const copyExerciseMutation = useCopyExerciseMutation();
-
-  const handleDuplicate = async () => {
-    const exercise = data?.data;
-    try {
-      // useCopyExerciseMutation invalidates the list itself, so the copy is
-      // present when the coach navigates back to it.
-      const result = await copyExerciseMutation.mutateAsync({
-        id: id!,
-        body: {name: `${exercise?.name ?? 'Exercise'} (copy)`},
-      });
-      toast.success('Exercise duplicated');
-      navigate(generatePath(ROUTES.EXERCISE_DETAIL, {id: result.data.id}));
-    } catch {
-      toast.danger("Exercise wasn't duplicated");
-    }
-  };
 
   const handleDelete = async () => {
     try {
@@ -144,7 +127,10 @@ export default function ExerciseDetail() {
           className="pb-6"
         >
           <Page.Frame size="content">
-            <ErrorState message="Couldn't load exercise." />
+            <ErrorState
+              message="Couldn't load exercise."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>
@@ -183,8 +169,9 @@ export default function ExerciseDetail() {
             </Button>
           )}
           <Button
-            isPending={copyExerciseMutation.isPending}
-            onPress={handleDuplicate}
+            onPress={() =>
+              navigate(ROUTES.CREATE_EXERCISE, {state: {duplicateFrom: {id: exercise.id, name: exercise.name}}})
+            }
             variant="outline"
           >
             <Copy />
@@ -394,8 +381,9 @@ export default function ExerciseDetail() {
           <Button
             isIconOnly
             aria-label="Duplicate exercise"
-            isPending={copyExerciseMutation.isPending}
-            onPress={handleDuplicate}
+            onPress={() =>
+              navigate(ROUTES.CREATE_EXERCISE, {state: {duplicateFrom: {id: exercise.id, name: exercise.name}}})
+            }
             variant="outline"
           >
             <Copy />

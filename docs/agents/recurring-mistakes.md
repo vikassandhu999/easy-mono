@@ -490,6 +490,32 @@ the canonical fetched-list wrapper fits. **Gated:** `scripts/check-ui-contract.s
 raw buttons and `onClick` in changed UI files. **Verify by:** keyboard-activate close, a
 plan row, and create-new, and assert each reaches its exact state or route.
 
+### RM-162 — Form schemas mirror request-string normalization and bounds
+The exercise form accepted whitespace-only names and strings longer than the OpenAPI
+request contract, so invalid input reached the network instead of producing an immediate
+field error. Required names trim before validation, and every bounded request string uses
+the same maximum in its owning form schema. **Gated:** the exercise schema self-check covers
+whitespace, exact-boundary, over-boundary, and normalized-name cases. **Verify by:** submit
+whitespace and overlong values, assert the named field error appears with zero mutation
+requests, then save a padded valid name and assert the reopened detail shows it trimmed.
+
+### RM-163 — Collect user-owned mutation prerequisites before calling the endpoint
+The exercise Duplicate action invented `"(copy)"` and submitted immediately even though
+the copy endpoint explicitly requires the coach to choose a name; a second duplicate then
+collided predictably. When an operation contract assigns a required value to the user, route
+through a validated form before mutating rather than guessing it. **Verify by:** activate
+Duplicate, submit the naming form empty and assert zero copy requests, then enter a unique
+Test-prefixed name and assert exactly one new detail/list record with that exact name.
+
+### RM-164 — Composite controls name both their trigger and overlay
+The shared multi-select relied on placeholder text when its visible label was optional,
+and its popover dialog had no accessible title, so toolbar filters emitted React Aria
+accessibility warnings and screen readers received unnamed controls. Every composite
+control supplies an accessible name for its root, nested input, and overlay when a visible
+label or heading is absent. **Verify by:** open each labelled and toolbar variant, assert
+the settled accessibility tree names the trigger, search field, and dialog. Do not suppress
+HeroUI's pre-render warning; its wrapper currently logs before the child heading registers.
+
 ### RM-144 — Every shared concept has an owning feature; never a neutral bucket
 A `domain/`/`utils/` layer-folder is a junk drawer: the name carries no meaning, nobody
 owns it, and it erases the dependency information that matters (history depends on

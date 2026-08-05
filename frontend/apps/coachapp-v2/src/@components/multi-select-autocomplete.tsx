@@ -6,6 +6,7 @@ import {
   FieldError,
   Label,
   ListBox,
+  Popover,
   SearchField,
   Tag,
   TagGroup,
@@ -79,6 +80,7 @@ export default function MultiSelectAutocomplete({
 
   return (
     <Autocomplete
+      aria-label={label ? undefined : `${placeholder} filter`}
       className="w-full"
       isInvalid={isInvalid}
       name={name}
@@ -153,8 +155,10 @@ export default function MultiSelectAutocomplete({
         <Autocomplete.Indicator />
       </Autocomplete.Trigger>
       <Autocomplete.Popover className={'max-w-60 w-full'}>
+        <Popover.Heading className="sr-only">{label ?? placeholder} options</Popover.Heading>
         <Autocomplete.Filter filter={contains}>
           <SearchField
+            aria-label={searchPlaceholder}
             autoFocus
             className="sticky top-0 z-10"
             name={`${name}-search`}

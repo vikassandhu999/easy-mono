@@ -1,3 +1,4 @@
+import {Button} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -21,8 +22,8 @@ export default function ListExercises() {
   const {fetchNextPage, isError, isLoading, items, refetch} = useInfiniteItems(list);
   const total = list.data?.pages[0]?.count;
 
-  const {data: musclesData} = useListMusclesQuery({});
-  const muscles = musclesData?.data ?? [];
+  const musclesQuery = useListMusclesQuery({});
+  const muscles = musclesQuery.data?.data ?? [];
 
   return (
     <BrowseScreen
@@ -45,7 +46,15 @@ export default function ListExercises() {
       title="Exercises"
       total={total ?? undefined}
       toolbarExtra={
-        muscles.length > 0 ? (
+        musclesQuery.isError ? (
+          <Button
+            onPress={() => musclesQuery.refetch()}
+            size="sm"
+            variant="secondary"
+          >
+            Retry muscle groups
+          </Button>
+        ) : muscles.length > 0 ? (
           <MultiSelectAutocomplete
             collapseToCount
             emptyMessage="No muscles found"

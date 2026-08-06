@@ -35,7 +35,9 @@ function CountCard({card, count, isError}: {card: CardDef; count: number | undef
 
   return (
     <Button
-      className="button--row flex-col items-start justify-center gap-px rounded-card border border-border bg-surface px-5 py-4"
+      // w-full: a HeroUI Button is content-width, so as a grid child each card
+      // sized to its own label and the six cards came out ragged.
+      className="button--row w-full flex-col items-start justify-center gap-px rounded-card border border-border bg-surface px-5 py-4"
       onPress={() => navigate(`${ROUTES.CLIENTS}?view=${card.view}`)}
       variant="ghost"
     >
@@ -81,7 +83,7 @@ export function WorkbenchCards({leadCount}: {leadCount: number}) {
 
       {leadCount > 0 ? (
         <Button
-          className="button--row justify-between rounded-card border border-border bg-surface px-5 py-3"
+          className="button--row w-full justify-between rounded-card border border-border bg-surface px-5 py-3"
           onPress={() => navigate(ROUTES.PROSPECTS)}
           variant="ghost"
         >
@@ -92,7 +94,10 @@ export function WorkbenchCards({leadCount}: {leadCount: number}) {
         </Button>
       ) : null}
 
-      {total === 0 ? (
+      {/* Leads are work too: with every queue drained but two leads waiting,
+          this card claimed "You're all caught up" directly under a row saying
+          "2 new leads to review". */}
+      {total === 0 && leadCount === 0 ? (
         <div className="rounded-card border border-border bg-surface px-5 py-6">
           <Typography type="body">You're all caught up</Typography>
           <Typography

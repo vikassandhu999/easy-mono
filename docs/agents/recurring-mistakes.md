@@ -683,6 +683,52 @@ live-stylesheet census is the check. **Verify by:** open one popover of each kin
 (menu, select, date picker, autocomplete filter) and read `border-radius` off the
 computed style — all must equal `--radius-card`.
 
+The same miss repeats with POSITIONAL rules, not just BEM elements: HeroUI rounds a
+toggle group with three rules — `:first-child`, `:last-child`, and `:first-child:last-child`
+for the lone-child case. The theme's escape covered only the first two, and the third is
+(0,4,0) against the escape's (0,3,0), so a plan with ONE workout drew a 24px pill while the
+same tab in a plan with two drew the control step — the radius changed with the number of
+siblings. **Verify by:** render the group at one child AND at several; a single-count check
+cannot see this. Prove the rule is yours by removing the variant class on a live node and
+watching the vendor value return.
+
+### RM-175 — A copied class string freezes; the component it came from keeps moving
+Both plan builders rendered their page heading as a raw `<h1>` carrying a byte-identical
+copy of `Page.Title`'s classes, with a comment justifying the copy (`.typography--h3` is
+unlayered) that had stopped being true — `PageTitle` is a plain `<h1>` with utilities and
+has no `Typography` in it. Meanwhile `Page.Title` grew the mobile step the copies never
+got (`type-metric` + `sm:type-display`), so every plan title rendered at 27px on a 375px
+screen and truncated ("Test N…", "TB fixt…"). The rule is not "don't duplicate" — it is
+that a copy cannot receive later fixes, so the justification for one has to be re-checked,
+not inherited. **Gated:** `check-rm.sh` RM-175 greps `font-grotesk…type-display` outside
+`page.tsx`. **Verify by:** render a long title at 375 and confirm `scrollWidth ===
+clientWidth` on the `<h1>`.
+
+### RM-176 — One object, one component — a second copy drifts on axes nobody chose
+The two plan builders each had their own `WeekdayChips`, and `@easy/utils` carried two
+byte-identical weekday vocabularies (`WEEKDAYS`/`WEEKDAY_LABELS`/`WEEKDAY_SHORT_LABELS`
+and `TRAINING_WEEKDAYS`/`TRAINING_DAY_LABELS`/`TRAINING_DAY_SHORT_LABELS`) which is what
+let each builder reach for "its own" and never notice. The two chip copies had drifted on
+five axes — radius (control vs chip), desktop size (30 vs 32), gap (4 vs 6), padding
+(`p-0` vs `px-0`) and label ("M" vs "Mon") — and the label difference had a consequence:
+seven 44px chips with 3-letter labels measure 344px against a 309px card, so training
+pushed Sunday behind an unhinted horizontal scroll while nutrition cut the label to one
+ambiguous letter (T/T, S/S). Both copies also carried `[row-gap:normal]
+[column-gap:normal]` and `size-11 sm:size-7.5` to fight the theme. Fixed as one
+`builder-kit/weekday-chips.tsx` over one `toggle-button--weekday` theme variant at
+`--spacing-control`. **Verify by:** before adding a component to one builder, grep the
+other for the same noun — and when a shared package holds two names for one concept,
+collapse the data and keep both names as aliases so no importer has to change.
+
+### RM-177 — An empty-state sentence must not assert what the component can't know
+The nutrition builder's meal palette hardcoded `emptyLabel="Every meal is already on this
+day."` for its reuse list. That list is empty for two different reasons, and the component
+only receives the *filtered* result, so it cannot tell them apart — on a brand-new plan
+with zero meals, the first screen a coach sees, it stated something false. Fixed by
+passing `planMealCount` so the caller's knowledge reaches the sentence. **Verify by:**
+exercise BOTH branches — an empty collection and a full-but-all-used one — and confirm the
+copy differs; a single-case check cannot detect this class.
+
 ---
 
 ## Deploy / ops

@@ -97,6 +97,15 @@ check RM-137 "arbitrary-value color (use a text-* token; sizes are type-*, so th
 check RM-141 "padding override on a vendor dialog (overlay gutter is the theme's; only the p-0 release is allowed)" \
   '(AlertDialog|Modal)\.Dialog[^>]{0,200}className="[^"]*\bp[xy]?-[1-9]' "$COACH" -U
 
+# RM-175 — a screen must not re-type `Page.Title`'s class string. Both plan
+# builders carried a byte-identical copy of it, and because a copy freezes at
+# the moment it was taken, both missed the mobile step Page.Title later grew
+# (`type-metric` + `sm:type-display`): every plan title rendered at 27px on a
+# 375px screen and truncated to "Test N…". Grep the pair that only Page.Title
+# should own — `font-grotesk` next to `type-display` — outside page.tsx.
+check RM-175 "hand-copied page title (use Page.Title; a copy cannot inherit the mobile step)" \
+  'font-grotesk[^"]*type-display' "$COACH" -g '!**/page.tsx'
+
 # RM-144 — every shared concept has an owning feature; no neutral bucket.
 # (a) The domain/ layer-bucket must not come back.
 check RM-144 "neutral domain/ bucket (concepts live in their owning feature's lib/)" \

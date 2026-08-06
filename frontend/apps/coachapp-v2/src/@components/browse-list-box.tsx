@@ -3,6 +3,7 @@ import {Button, Collection, Description, Label, ListBox, ListBoxLoadMoreItem, Sp
 import {cn} from '@heroui/styles';
 import {ChevronRight} from 'lucide-react';
 import type {ReactNode} from 'react';
+import {GridList, GridListLoadMoreItem} from 'react-aria-components';
 
 import {ListSkeleton} from '@/@components/list-skeleton';
 
@@ -22,7 +23,14 @@ export const LIST_ITEM_CLASS =
   'relative mt-0 min-h-fit gap-3 rounded-none border-b-0 px-3 py-3 leading-[normal] transition-none! text-foreground sm:px-4 ' +
   "after:pointer-events-none after:absolute after:inset-x-0 after:top-0 after:start-16 after:h-px after:bg-separator after:content-[''] " +
   'first:after:hidden sm:border-t sm:border-separator sm:after:hidden sm:first:border-t-0 ' +
-  'hover:bg-surface-secondary active:scale-100! data-[pressed=true]:scale-100!';
+  // `transform-none!`, NOT `scale-100!`: the vendor press effect is
+  // `.list-box-item[data-pressed=true]{transform:scale(.98)}`, and Tailwind v4's
+  // `scale-*` compiles to the standalone `scale` property. Two different
+  // properties both apply and multiply, so `scale-100!` never cancelled
+  // anything — every browse row in the app has been quietly pressing to 98%
+  // under a class that says it doesn't. Same family as RM-134: a utility that
+  // looks like the fix and silently isn't.
+  'hover:bg-surface-secondary active:transform-none! data-[pressed=true]:transform-none!';
 
 /** The redesign's white outline chip (macro/meta pills on rows and detail pages). */
 export const OUTLINE_CHIP_CLASS = 'shrink-0 rounded-chip border border-border bg-surface font-semibold text-foreground';
@@ -118,6 +126,21 @@ type Props<T extends object> = {
   className?: string;
   emptyState: ReactNode;
   fetchNextPage: () => void;
+  /**
+   * Render the collection as a GRID instead of a listbox. Use this — and only
+   * this — when rows contain their own controls (the workbench queues put a
+   * verb button and a snooze menu on every row).
+   *
+   * A listbox option is one focusable unit: react-aria gives the whole list a
+   * single tab stop and moves between rows with the arrows, so anything
+   * focusable INSIDE a row is unreachable by keyboard however correct its
+   * markup is. A grid row is a row of focusable cells, which is exactly the
+   * shape rows-with-actions have.
+   *
+   * Grid rows own their own press: `onAction` is a listbox-level prop and is
+   * ignored here, so the row component passes `onAction` to its `GridListItem`.
+   */
+  grid?: boolean;
   isError?: boolean;
   isLoading: boolean;
   items: T[];
@@ -133,6 +156,7 @@ export default function BrowseListBox<T extends object>({
   className = 'flex-1',
   emptyState,
   fetchNextPage,
+  grid,
   isError,
   isLoading,
   items,
@@ -141,57 +165,86 @@ export default function BrowseListBox<T extends object>({
   renderItem,
   skeletonAvatar,
 }: Props<T>) {
+  const renderEmptyState = () =>
+    isLoading ? (
+      <ListSkeleton avatar={skeletonAvatar} />
+    ) : isError ? (
+      <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Couldn't load {ariaLabel.toLowerCase()}. Check your connection and try again.
+        </Typography>
+        {onRetry ? (
+          <Button
+            onPress={onRetry}
+            size="sm"
+            variant="secondary"
+          >
+            Retry
+          </Button>
+        ) : null}
+      </div>
+    ) : (
+      emptyState
+    );
+
+  const loadMore = (
+    <div className="flex items-center justify-center gap-2 py-2">
+      <Spinner size="sm" />
+      <Typography
+        color="muted"
+        type="body-sm"
+      >
+        Loading more...
+      </Typography>
+    </div>
+  );
+
+  const hasMore = items.length > 0 && !isError;
+  // overflow-visible: HeroUI's list-box is overflow:clip, and the load-more
+  // sentinel (a 0-height div whose margin collapses through) lands just past
+  // the box's edge — clip swallows it and infinite scroll silently dies.
+  // The surface card above owns the rounded-corner clipping instead.
+  const listClassName = cn('overflow-visible', className);
+
+  if (grid) {
+    return (
+      <GridList
+        aria-label={ariaLabel}
+        className={listClassName}
+        renderEmptyState={renderEmptyState}
+        selectionMode="none"
+      >
+        <Collection items={items}>{renderItem}</Collection>
+        {hasMore ? (
+          <GridListLoadMoreItem
+            isLoading={isLoading}
+            onLoadMore={fetchNextPage}
+          >
+            {loadMore}
+          </GridListLoadMoreItem>
+        ) : null}
+      </GridList>
+    );
+  }
+
   return (
     <ListBox
       aria-label={ariaLabel}
-      // overflow-visible: HeroUI's list-box is overflow:clip, and the load-more
-      // sentinel (a 0-height div whose margin collapses through) lands just past
-      // the box's edge — clip swallows it and infinite scroll silently dies.
-      // The surface card above owns the rounded-corner clipping instead.
-      className={cn('overflow-visible', className)}
+      className={listClassName}
       onAction={onAction}
-      renderEmptyState={() =>
-        isLoading ? (
-          <ListSkeleton avatar={skeletonAvatar} />
-        ) : isError ? (
-          <div className="flex flex-col items-center gap-3 py-12 text-center">
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              Couldn't load {ariaLabel.toLowerCase()}. Check your connection and try again.
-            </Typography>
-            {onRetry ? (
-              <Button
-                onPress={onRetry}
-                size="sm"
-                variant="secondary"
-              >
-                Retry
-              </Button>
-            ) : null}
-          </div>
-        ) : (
-          emptyState
-        )
-      }
+      renderEmptyState={renderEmptyState}
       selectionMode="none"
     >
       <Collection items={items}>{renderItem}</Collection>
-      {items.length > 0 && !isError ? (
+      {hasMore ? (
         <ListBoxLoadMoreItem
           isLoading={isLoading}
           onLoadMore={fetchNextPage}
         >
-          <div className="flex items-center justify-center gap-2 py-2">
-            <Spinner size="sm" />
-            <Typography
-              color="muted"
-              type="body-sm"
-            >
-              Loading more...
-            </Typography>
-          </div>
+          {loadMore}
         </ListBoxLoadMoreItem>
       ) : null}
     </ListBox>

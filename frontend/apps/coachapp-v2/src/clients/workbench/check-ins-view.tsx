@@ -22,11 +22,11 @@ export default function CheckInsView() {
 
   const toRow = (item: ClientProfileReviewQueueItem) => ({
     action: 'Review',
-    chip: 'Check-in',
     id: item.id,
     initials: getInitials(item.client.first_name, item.client.last_name) || '?',
     name: [item.client.first_name, item.client.last_name].filter(Boolean).join(' ') || item.client.email || 'Client',
     onAction: () => openReview(item.id),
+    onOpen: () => openReview(item.id),
     subtitle: `Submitted ${formatRelativeTime(item.inserted_at)}`,
     tone: 'accent' as const,
   });
@@ -42,11 +42,11 @@ export default function CheckInsView() {
           title="All reviewed. Nothing waiting on you."
         />
       }
+      grid
       fetchNextPage={() => undefined}
       isError={isError}
       isLoading={isLoading}
       items={items}
-      onAction={(key) => openReview(String(key))}
       onRetry={refetch}
       renderItem={(item) => (
         <QueueRow

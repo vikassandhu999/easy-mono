@@ -30,7 +30,7 @@ function ProspectListItem({prospect}: {prospect: Prospect}) {
 
   return (
     <ListBox.Item
-      className="min-h-16 px-4 py-3 transition-colors hover:bg-surface-hover active:scale-100! data-[pressed=true]:scale-100! sm:px-8"
+      className="min-h-16 px-4 py-3 transition-colors hover:bg-surface-hover active:transform-none! data-[pressed=true]:transform-none! sm:px-8"
       id={prospect.id}
       textValue={prospect.name}
     >

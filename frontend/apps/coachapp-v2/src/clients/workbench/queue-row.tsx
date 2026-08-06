@@ -1,6 +1,7 @@
-import {Avatar, Button, Chip, Description, Label, ListBox} from '@heroui/react';
+import {Avatar, Button, Description, Label} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import type {ReactNode} from 'react';
+import {GridListItem} from 'react-aria-components';
 
 import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 
@@ -21,12 +22,15 @@ const STRIPE_TONE: Record<QueueTone, string> = {
 };
 
 export type QueueRowItem = {
+  /** Label of the queue's verb button. */
   action: string;
-  chip: string;
   id: string;
   initials: string;
   name: string;
+  /** The verb — does the work without leaving the queue. */
   onAction: () => void;
+  /** Row press — the drill-in. Grid rows own their press, the list can't. */
+  onOpen: () => void;
   subtitle: string;
   tone: QueueTone;
   /** Extra control after the verb — the snooze menu on Quiet/Expiring rows. */
@@ -35,19 +39,34 @@ export type QueueRowItem = {
 
 /**
  * One row grammar for every workbench queue (spec §4): severity stripe, avatar,
- * name first with the reason chip beside it, the actionable fact as subline,
- * and the queue's verb as an inline button. Row press opens the queue's
- * drill-in; the button does the verb without leaving the queue's mental frame.
+ * name, the actionable fact as subline, and the queue's verb as an inline
+ * button. Row press opens the queue's drill-in; the button does the verb
+ * without leaving the queue's mental frame.
+ *
+ * The reason chip spec §4 put beside the name is gone (2026-08-06): in every
+ * queue it restated either the queue title the coach is already in ("Quiet" in
+ * Quiet) or the subtitle directly below it ("No plan" over "No plan in
+ * force"), and at 375px it was what squeezed names down to "Hayden …". Tone
+ * still reads from the stripe and the avatar tint.
+ *
+ * A GRID row, not a listbox option (`BrowseListBox grid`): a listbox option is
+ * a single focusable unit, so the verb button and the snooze menu were
+ * unreachable by keyboard — Tab entered the list once, the arrows moved
+ * between rows, and Tab left the page. `list-box-item` is kept as the base
+ * class so the row keeps the design system's row chrome and focus ring; only
+ * the collection semantics changed.
  */
 export function QueueRow({item}: {item: QueueRowItem}) {
   return (
-    <ListBox.Item
+    <GridListItem
       className={cn(
+        'list-box-item',
         LIST_ITEM_CLASS,
         'mt-0 grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 py-3',
         'hover:bg-surface-secondary sm:gap-4 sm:px-4',
       )}
       id={item.id}
+      onAction={item.onOpen}
       textValue={item.name}
     >
       <span
@@ -65,21 +84,14 @@ export function QueueRow({item}: {item: QueueRowItem}) {
       </Avatar>
 
       <div className="flex min-w-0 flex-col">
-        <span className="flex min-w-0 items-center gap-2">
-          <Label className="min-w-0 truncate type-body font-semibold text-foreground">{item.name}</Label>
-          <Chip
-            className="shrink-0"
-            color={item.tone}
-            size="sm"
-            variant="soft"
-          >
-            {item.chip}
-          </Chip>
-        </span>
+        <Label className="min-w-0 truncate type-body font-semibold text-foreground">{item.name}</Label>
         <Description className="max-w-full truncate type-eyebrow text-muted">{item.subtitle}</Description>
       </div>
 
-      <span className="flex shrink-0 items-center gap-1">
+      {/* gap-2, not gap-1: the controls are 36px (below the 44px pointer
+          target the app knowingly trades away), so the spacing between them is
+          what keeps the effective tap areas apart. */}
+      <span className="flex shrink-0 items-center gap-2">
         <Button
           className="shrink-0"
           onPress={item.onAction}
@@ -90,6 +102,6 @@ export function QueueRow({item}: {item: QueueRowItem}) {
         </Button>
         {item.trailing}
       </span>
-    </ListBox.Item>
+    </GridListItem>
   );
 }

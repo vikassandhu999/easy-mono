@@ -40,7 +40,7 @@ function formatPlanEnd(coveredUntil: string): string {
   return `Plan ends in ${days} days`;
 }
 
-type RowFacts = Pick<QueueRowItem, 'action' | 'chip' | 'subtitle' | 'tone'> & {to: string};
+type RowFacts = Pick<QueueRowItem, 'action' | 'subtitle' | 'tone'> & {to: string};
 
 /** Per-discipline state — the fix differs, so the row says which side is missing (spec §3). */
 function disciplineChips(client: QueueClient): string {
@@ -55,7 +55,6 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
   if (queue === 'programming') {
     return {
       action: 'Assign plan',
-      chip: client.covered_until ? 'Ends soon' : 'No plan',
       subtitle: client.covered_until
         ? `${formatPlanEnd(client.covered_until)} · ${disciplineChips(client)}`
         : `No plan in force · ${disciplineChips(client)}`,
@@ -67,7 +66,6 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
   if (queue === 'expiring') {
     return {
       action: 'Renew',
-      chip: 'Expiring',
       subtitle: formatSubscriptionEnd(client.subscription_ends_on),
       to: ROUTES.CLIENT_EDIT.replace(':id', client.id),
       tone: 'danger',
@@ -79,7 +77,6 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
   if (queue === 'quiet') {
     return {
       action: 'Message',
-      chip: 'Quiet',
       subtitle: client.last_active_at ? `Last active ${formatRelativeTime(client.last_active_at)}` : 'No activity yet',
       to: ROUTES.CLIENT_MESSAGES.replace(':id', client.id),
       tone: 'danger',
@@ -90,7 +87,6 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
   if (client.status === 'pending') {
     return {
       action: 'View',
-      chip: 'Invited',
       subtitle: `Invited ${formatRelativeTime(client.invitation_sent_at ?? client.inserted_at)}`,
       to: detail,
       tone: 'accent',
@@ -99,7 +95,6 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
   if (client.intake_incomplete) {
     return {
       action: 'Nudge',
-      chip: 'Intake',
       subtitle: 'Intake form incomplete',
       to: ROUTES.CLIENT_MESSAGES.replace(':id', client.id),
       tone: 'default',
@@ -107,7 +102,6 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
   }
   return {
     action: 'View',
-    chip: 'New',
     subtitle: `Added ${formatRelativeTime(client.inserted_at)}`,
     to: detail,
     tone: 'accent',
@@ -159,11 +153,11 @@ export default function ClientQueueView({queue}: {queue: ClientQueue}) {
     const facts = rowFacts(queue, client);
     return {
       action: facts.action,
-      chip: facts.chip,
       id: client.id,
       initials: getInitials(client.first_name, client.last_name) || '?',
       name: [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email || 'Client',
       onAction: () => navigate(facts.to),
+      onOpen: () => navigate(ROUTES.CLIENT_DETAIL.replace(':id', client.id)),
       subtitle: facts.subtitle,
       tone: facts.tone,
       trailing: snoozableQueue ? (
@@ -186,11 +180,11 @@ export default function ClientQueueView({queue}: {queue: ClientQueue}) {
           title={empty.title}
         />
       }
+      grid
       fetchNextPage={list.fetchNextPage}
       isError={list.isError}
       isLoading={list.isLoading || list.isFetchingNextPage}
       items={list.items}
-      onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
       onRetry={list.refetch}
       renderItem={(client) => (
         <QueueRow

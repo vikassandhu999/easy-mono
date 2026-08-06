@@ -49,11 +49,11 @@ export default function RepliesView() {
     const [first, last] = name.split(/\s+/);
     return {
       action: 'Reply',
-      chip: 'Reply',
       id: conversation.id,
       initials: getInitials(first, last) || '?',
       name,
       onAction: () => openConversation(conversation.id),
+      onOpen: () => openConversation(conversation.id),
       subtitle: [waitingFor(conversation.last_message_at), conversation.last_message_preview]
         .filter(Boolean)
         .join(' · '),
@@ -72,11 +72,11 @@ export default function RepliesView() {
           title="Inbox clear — every client has heard back from you."
         />
       }
+      grid
       fetchNextPage={() => undefined}
       isError={isError}
       isLoading={isLoading}
       items={items}
-      onAction={(key) => openConversation(String(key))}
       onRetry={refetch}
       renderItem={(conversation) => (
         <QueueRow

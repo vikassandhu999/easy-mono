@@ -4,13 +4,14 @@
  * edited — and hands everything else down as props. There is exactly ONE set
  * editor for the whole screen.
  */
-import {Typography} from '@heroui/react';
+import {AlertDialog, Button, Spinner, Typography, useOverlayState} from '@heroui/react';
 import {useRef, useState} from 'react';
 
 import type {TrainingPlan} from '@/api/training-plan-builder';
 
 import {PlanPeriodCard} from './components/plan-period-card';
 import {SetEditor} from './components/set-editor';
+import {WorkoutHeader} from './components/workout-header';
 import {WorkoutPanel} from './components/workout-panel';
 import {WorkoutTabs} from './components/workout-tabs';
 import {findElement} from './plan-tree';
@@ -30,6 +31,7 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
   const editorAnchor = useRef<HTMLElement | null>(null);
 
   const editingElement = editingSet ? findElement(plan, editingSet.elementId)?.element : undefined;
+  const deleteAlert = useOverlayState();
 
   const addWorkout = async () => {
     const workout = await commands.addWorkout();
@@ -37,6 +39,19 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
       selectWorkout(workout.id);
       setRenamingId(workout.id);
     }
+  };
+
+  const tabs = {
+    activeId: activeWorkout?.id,
+    isAdding: commands.isAddingWorkout,
+    onAdd: () => {
+      addWorkout().catch(() => undefined);
+    },
+    onSelect: (workoutId: string) => {
+      selectWorkout(workoutId);
+      setRenamingId(null);
+    },
+    workouts: plan.workouts,
   };
 
   return (
@@ -49,30 +64,29 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
         />
       ) : null}
 
-      <WorkoutTabs
-        activeId={activeWorkout?.id}
-        isAdding={commands.isAddingWorkout}
-        onAdd={() => {
-          addWorkout().catch(() => undefined);
-        }}
-        onSelect={(workoutId) => {
-          selectWorkout(workoutId);
-          setRenamingId(null);
-        }}
-        workouts={plan.workouts}
-      />
+      {activeWorkout ? (
+        <WorkoutHeader
+          autoRename={renamingId === activeWorkout.id}
+          name={activeWorkout.name}
+          onRename={(name) => commands.renameWorkout(activeWorkout.id, name)}
+          onRenameSettled={() => setRenamingId(null)}
+          onRequestDelete={deleteAlert.open}
+          onToggleDay={(day, isSelected) => commands.scheduleDay(day, isSelected ? activeWorkout.id : null)}
+          scheduledDays={daysForWorkout(plan.schedule, activeWorkout.id)}
+          tabs={tabs}
+        />
+      ) : (
+        <WorkoutTabs {...tabs} />
+      )}
 
       {activeWorkout ? (
         <WorkoutPanel
           key={activeWorkout.id}
-          autoRename={renamingId === activeWorkout.id}
           commands={commands}
           onOpenSet={(elementId, setIndex, anchor) => {
             editorAnchor.current = anchor;
             setEditingSet({elementId, setIndex});
           }}
-          onRenameSettled={() => setRenamingId(null)}
-          scheduledDays={daysForWorkout(plan.schedule, activeWorkout.id)}
           workout={activeWorkout}
         />
       ) : (
@@ -95,6 +109,55 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
           onSelectIndex={(setIndex) => setEditingSet({...editingSet, setIndex})}
           setIndex={editingSet.setIndex}
         />
+      ) : null}
+
+      {activeWorkout ? (
+        <AlertDialog.Backdrop
+          isDismissable={!commands.isRemovingWorkout}
+          isOpen={deleteAlert.isOpen}
+          onOpenChange={deleteAlert.setOpen}
+        >
+          <AlertDialog.Container>
+            <AlertDialog.Dialog>
+              <AlertDialog.CloseTrigger />
+              <AlertDialog.Header>
+                <AlertDialog.Icon status="danger" />
+                <AlertDialog.Heading>Delete "{activeWorkout.name}"?</AlertDialog.Heading>
+              </AlertDialog.Header>
+              <AlertDialog.Body>Its exercises go with it, and it comes off the weekly schedule.</AlertDialog.Body>
+              <AlertDialog.Footer>
+                <Button
+                  isDisabled={commands.isRemovingWorkout}
+                  slot="close"
+                  variant="tertiary"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="relative"
+                  isPending={commands.isRemovingWorkout}
+                  onPress={() => {
+                    // The dialog closes when the delete settles; commit's own
+                    // catch has already toasted a failure.
+                    commands.removeWorkout(activeWorkout.id).then(deleteAlert.close, () => undefined);
+                  }}
+                  variant="danger"
+                >
+                  <span className={commands.isRemovingWorkout ? 'invisible' : undefined}>Delete</span>
+                  {commands.isRemovingWorkout ? (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <Spinner
+                        color="current"
+                        size="sm"
+                      />
+                      <span className="sr-only">Deleting</span>
+                    </span>
+                  ) : null}
+                </Button>
+              </AlertDialog.Footer>
+            </AlertDialog.Dialog>
+          </AlertDialog.Container>
+        </AlertDialog.Backdrop>
       ) : null}
     </div>
   );

@@ -1,181 +1,162 @@
 /**
- * The active workout's header row: name (rename in place) · weekday chips · ⋯.
- * The three children are ordered by CSS, not a breakpoint hook: below `sm` the
- * chips wrap onto their own scrolling line (seven 44px targets don't fit beside
- * the name at 390px) with the ⋯ staying beside the name; from `sm` the row is
- * name · chips · ⋯. One menu node either way.
+ * The training builder's header region (badge TB) — everything above the
+ * exercise stack, in two rows:
+ *
+ *   [workout tabs] [+ Workout]                  ← which workout, and add one
+ *   [Mon..Sun chips] ............ [Rename] [🗑] ← when it runs, and act on it
+ *   Edits apply to all of them.                 ← only when it runs on 2+ days
+ *
+ * This mirrors the nutrition day header, and the important part of that mirror
+ * is a SUBTRACTION: the workout name is said once, in its tab. The screen used
+ * to repeat it as a heading directly under the tab that already carried it, and
+ * to spell out "Scheduled: Mon, Thu" beside the very chips that show it.
+ *
+ * Because the name lives in the tab, renaming replaces the TAB ROW with a text
+ * field — the same move the nutrition day tabs make. A just-created workout
+ * opens straight into it (INTERACTIONS.md § TB).
+ *
+ * Two actions do not earn an overflow menu, so Rename and delete are their own
+ * controls at the end of the chip row (deliberate placement — user decision,
+ * 2026-08-06; do not fold them into a ⋯ menu). Below `sm` the chips (288px)
+ * and the actions cannot share 343px, so the actions wrap to their own line
+ * and `ms-auto` keeps them right-aligned under the chips.
  */
-import {Button, Dropdown, Label, Separator} from '@heroui/react';
-import {MoreHorizontal, TrashIcon} from 'lucide-react';
-import {useEffect, useRef, useState} from 'react';
+import {Button, Input, TextField, Typography} from '@heroui/react';
+import {TrashIcon} from 'lucide-react';
+import {useState} from 'react';
 
 import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
 import {WeekdayChips} from '@/builder-kit/weekday-chips';
 
 import type {Day} from '../schedule';
+import {WorkoutTabs} from './workout-tabs';
 
 interface WorkoutHeaderProps {
   name: string;
   scheduledDays: Day[];
-  /** A just-created workout opens straight into rename mode (INTERACTIONS.md § TB). */
+  /** A just-created workout opens straight into rename (INTERACTIONS.md § TB). */
   autoRename: boolean;
   onRename: (name: string) => void;
   onRenameSettled: () => void;
-  onDelete: () => void;
+  /** Opens the confirm — deleting a workout takes its exercises with it. */
+  onRequestDelete: () => void;
   onToggleDay: (day: Day, isSelected: boolean) => void;
+  tabs: React.ComponentProps<typeof WorkoutTabs>;
 }
 
 export function WorkoutHeader({
-  name,
-  scheduledDays,
   autoRename,
+  name,
   onRename,
   onRenameSettled,
-  onDelete,
+  onRequestDelete,
   onToggleDay,
+  scheduledDays,
+  tabs,
 }: WorkoutHeaderProps) {
   // `null` is "not editing". Seeding the draft only on entry means there is no
   // prop-to-state sync effect to get wrong.
   const [draft, setDraft] = useState<string | null>(autoRename ? name : null);
 
-  const settle = (nextName?: string) => {
+  const settle = (next?: string) => {
     setDraft(null);
     onRenameSettled();
-    if (nextName && nextName !== name) {
-      onRename(nextName);
+    const trimmed = next?.trim();
+    if (trimmed && trimmed !== name) {
+      onRename(trimmed);
     }
   };
 
   return (
-    <div
-      className="flex flex-wrap items-center gap-2 pt-1 pb-3 sm:flex-nowrap sm:gap-3"
-      data-testid="tb-card-header"
-    >
-      {draft === null ? (
-        <span
-          className="order-1 min-w-0 flex-1 truncate font-grotesk type-heading font-semibold tracking-name text-foreground"
-          data-testid="tb-workout-name"
-        >
-          {name}
-        </span>
-      ) : (
-        <InlineRename
-          onCancel={() => settle()}
-          onChange={setDraft}
-          onCommit={() => settle(draft.trim())}
-          value={draft}
-        />
-      )}
-
-      <div className="order-2 shrink-0 sm:order-3">
-        <Dropdown>
-          <Button
-            aria-label={`Workout options for ${name}`}
-            className={`size-11 shrink-0 rounded-chip bg-transparent text-muted sm:size-7.5 ${AS_ICON_BUTTON}`}
-            data-testid="tb-workout-menu-btn"
-            isIconOnly
-            variant="ghost"
-          >
-            <MoreHorizontal />
-          </Button>
-          <Dropdown.Popover>
-            {/* Selection is driven by the menu so it fires on pointer AND
-                keyboard activation — RAC routes Enter/Space through onAction,
-                not the item's onPress. */}
-            <Dropdown.Menu
-              onAction={(key) => {
-                if (key === 'rename-workout') {
-                  setDraft(name);
-                } else {
-                  onDelete();
+    <div className="flex flex-col gap-2">
+      {/* The tabs are navigation; the hairline fences them off from the
+          selected workout's content below (chips, actions, cards). */}
+      <div
+        className="flex min-w-0 items-center gap-2 border-border border-b pb-3"
+        data-testid="tb-tabs-row"
+      >
+        {draft === null ? (
+          <WorkoutTabs {...tabs} />
+        ) : (
+          <>
+            <TextField
+              aria-label="Workout name"
+              autoFocus
+              className="min-w-0 flex-1"
+              onChange={setDraft}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  settle(draft);
+                } else if (e.key === 'Escape') {
+                  settle();
                 }
               }}
+              value={draft}
             >
-              <Dropdown.Section>
-                <Dropdown.Item
-                  id="rename-workout"
-                  textValue="Rename workout"
-                >
-                  <Label>Rename workout</Label>
-                </Dropdown.Item>
-              </Dropdown.Section>
-              <Separator />
-              <Dropdown.Section>
-                <Dropdown.Item
-                  id="delete-workout"
-                  textValue="Delete workout"
-                  variant="danger"
-                >
-                  <div className="flex items-center gap-2">
-                    <TrashIcon className="shrink-0 text-danger" />
-                    <Label>Delete workout</Label>
-                  </div>
-                </Dropdown.Item>
-              </Dropdown.Section>
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
+              <Input
+                data-testid="tb-rename-input"
+                onBlur={() => settle(draft)}
+              />
+            </TextField>
+            <Button
+              className="shrink-0"
+              data-testid="tb-rename-save"
+              onPress={() => settle(draft)}
+              size="sm"
+              variant="primary"
+            >
+              Save
+            </Button>
+          </>
+        )}
       </div>
 
-      <div className="-mx-1 order-3 w-full min-w-0 overflow-x-auto px-1 py-0.5 sm:order-2 sm:mx-0 sm:w-auto sm:overflow-visible sm:p-0">
+      <div className="flex flex-wrap items-center gap-2">
         <WeekdayChips
           onToggle={onToggleDay}
           ownerName={name}
           selected={scheduledDays}
           testIdPrefix="tb"
         />
+
+        {/* Outlined chips, same language as the nutrition day-menu trigger:
+            border-border + text-muted + rounded-chip (user pick, 2026-08-06). */}
+        <div className="ms-auto flex shrink-0 items-center gap-1.5">
+          <Button
+            className="shrink-0 rounded-chip border border-border bg-transparent px-3 type-eyebrow font-semibold text-muted"
+            data-testid="tb-rename-workout"
+            onPress={() => setDraft(name)}
+            size="sm"
+            variant="outline"
+          >
+            Rename
+          </Button>
+          <Button
+            aria-label={`Delete ${name}`}
+            className={`shrink-0 rounded-chip border border-border bg-transparent text-danger ${AS_ICON_BUTTON}`}
+            data-testid="tb-delete-workout"
+            isIconOnly
+            onPress={onRequestDelete}
+            size="sm"
+            variant="outline"
+          >
+            <TrashIcon />
+          </Button>
+        </div>
       </div>
+
+      {/* INTERACTIONS.md § TB — a workout on several weekdays is edited in one
+          place. The chips say WHICH days; this says what editing them means, so
+          it only appears when there is more than one. */}
+      {scheduledDays.length > 1 ? (
+        <Typography
+          className="text-muted-2"
+          data-testid="tb-multi-day-note"
+          type="body-xs"
+        >
+          Edits apply to all of them.
+        </Typography>
+      ) : null}
     </div>
-  );
-}
-
-/**
- * Mounted only while renaming, which is what lets the select-all run once in an
- * effect instead of on a timer.
- */
-function InlineRename({
-  value,
-  onChange,
-  onCommit,
-  onCancel,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onCommit: () => void;
-  onCancel: () => void;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  // Enter and Escape both unmount this input, and some browsers fire blur on a
-  // removed node — so the exit runs at most once whichever way it is reached.
-  const hasExited = useRef(false);
-
-  useEffect(() => {
-    ref.current?.select();
-  }, []);
-
-  const exit = (leave: () => void) => {
-    if (!hasExited.current) {
-      hasExited.current = true;
-      leave();
-    }
-  };
-
-  return (
-    <input
-      ref={ref}
-      aria-label="Workout name"
-      className="order-1 min-w-0 flex-1 border-accent border-b bg-transparent py-0.5 font-grotesk type-heading font-semibold text-foreground outline-none [border-bottom-width:1.5px]"
-      data-testid="tb-rename-input"
-      onBlur={() => exit(onCommit)}
-      onChange={(event) => onChange(event.target.value)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') {
-          exit(onCommit);
-        } else if (event.key === 'Escape') {
-          exit(onCancel);
-        }
-      }}
-      value={value}
-    />
   );
 }

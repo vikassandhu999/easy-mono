@@ -102,7 +102,7 @@ export default function ListClients() {
       }
       empty={
         <ListEmptyState
-          createLabel="Invite Client"
+          createLabel="Invite client"
           createRoute={ROUTES.INVITE_CLIENT}
           emptyDescription="Invite your first client to get started."
           filterDescription="Try adjusting your search or filter to find what you're looking for."

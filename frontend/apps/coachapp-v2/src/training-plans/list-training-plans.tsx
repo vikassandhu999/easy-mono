@@ -39,7 +39,7 @@ export default function ListTrainingPlans() {
       description="Reusable workout splits and progressions for your clients"
       empty={
         <ListEmptyState
-          createLabel="Create Training Plan"
+          createLabel="Create training plan"
           createRoute={ROUTES.CREATE_TRAINING_PLAN}
           emptyDescription="Create your first training plan to get started."
           hasFilter={!!deferredSearch || status !== 'all'}

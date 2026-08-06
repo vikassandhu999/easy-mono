@@ -39,7 +39,13 @@ export function FormSelectField<T extends FieldValues>({
           onSelectionChange={(key) => field.onChange(key ?? undefined)}
           selectedKey={field.value || null}
         >
+          {/* Label · Description · FieldError · control — the same order as
+              `form-text-field`, `form-text-area-field` and `number-input`. The
+              description used to sit AFTER the trigger here, so a select's help
+              text rendered below its control while every other field's rendered
+              above it. */}
           <Label>{label}</Label>
+          {description ? <Description className={descriptionClassName}>{description}</Description> : null}
           {fieldState.error ? <FieldError>{fieldState.error.message}</FieldError> : null}
           <Select.Trigger
             {...triggerProps}
@@ -48,7 +54,6 @@ export function FormSelectField<T extends FieldValues>({
             <Select.Value />
             <Select.Indicator />
           </Select.Trigger>
-          {description ? <Description className={descriptionClassName}>{description}</Description> : null}
           <Select.Popover>
             <ListBox {...listBoxProps}>{children}</ListBox>
           </Select.Popover>

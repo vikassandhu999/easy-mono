@@ -39,7 +39,7 @@ export default function ListNutritionPlans() {
       description="Reusable daily macro targets and meal structures for your clients"
       empty={
         <ListEmptyState
-          createLabel="Create Nutrition Plan"
+          createLabel="Create nutrition plan"
           createRoute={ROUTES.CREATE_NUTRITION_PLAN}
           emptyDescription="Create your first nutrition plan to get started."
           hasFilter={!!deferredSearch || status !== 'all'}

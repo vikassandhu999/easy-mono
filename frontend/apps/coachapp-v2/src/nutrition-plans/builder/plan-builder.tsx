@@ -5,7 +5,7 @@
  * a weekday map assigns Mon..Sun to exactly one day. The redesign renders one
  * day at a time:
  *
- *   day tabs · + Day · ⋯          |  weekday chips
+ *   day tabs · + Day / weekday chips · Rename · 🗑 (DayHeader)
  *   energy line + macro meters (DayEnergyHeader)
  *   meal cards in slot order (MealCard)
  *   Add meal
@@ -19,12 +19,11 @@ import {Typography, useOverlayState} from '@heroui/react';
 import {useMemo, useRef, useState} from 'react';
 
 import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plan-builder';
-import {WeekdayChips} from '@/builder-kit/weekday-chips';
 
 import {AddItemsFlow} from './components/add-items-flow';
 import {AmountSheet} from './components/amount-sheet';
 import {DayEnergyHeader} from './components/day-energy-header';
-import {DayTabs} from './components/day-tabs';
+import {DayHeader} from './components/day-header';
 import {DeleteDayDialog} from './components/delete-day-dialog';
 import {MealCard, type MealSwap} from './components/meal-card';
 import type {HydratedMealItem} from './components/meal-item-row';
@@ -161,38 +160,30 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
     // `max-w-195` inside a 235-wide frame, so its header sat 80px wider than
     // its own content on every desktop (AGENTS.md: width and centring are
     // Page's job — a screen never hand-rolls `mx-auto max-w-*`).
-    <div className="flex w-full flex-col gap-3 pb-4">
-      {/* Day switcher + weekday chips */}
-      <div
-        className="flex flex-wrap items-center justify-between gap-2"
-        data-testid="nb-daytabs-row"
-      >
-        <DayTabs
-          activeDay={activeDay}
-          creating={commands.isAddingDay}
-          days={days}
-          onAdd={() => {
+    // gap-4, no pb: the same stack rhythm as the training builder (its
+    // plan-builder is also `flex flex-col gap-4`; Page.Content owns the pb-10).
+    <div className="flex flex-col gap-4">
+      {/* Day switcher, weekday chips, rename/delete — the shared header shape */}
+      <DayHeader
+        assignedDays={assignedWeekdays(weekdayAssignments, activeDay.id)}
+        name={activeDay.name}
+        onRename={(name) => {
+          commands.renameDay(activeDay.id, name).catch(() => undefined);
+        }}
+        onRequestDelete={deleteAlertState.open}
+        onScheduleWeekday={(weekday) => {
+          commands.scheduleWeekday(weekday, activeDay.id);
+        }}
+        tabs={{
+          days,
+          activeDayId: activeDay.id,
+          onSelect: showDay,
+          onAdd: () => {
             addDay().catch(() => undefined);
-          }}
-          onRename={(name) => commands.renameDay(activeDay.id, name)}
-          onRequestDelete={deleteAlertState.open}
-          onSelect={showDay}
-        />
-        <WeekdayChips
-          onToggle={(weekday, isSelected) => {
-            // A weekday belongs to exactly one day here, so only turning one ON
-            // is meaningful — moving it off whoever held it is what
-            // `scheduleWeekday` does. Turning one off would leave the weekday
-            // with no day at all, so the `false` case is deliberately ignored.
-            if (isSelected) {
-              commands.scheduleWeekday(weekday, activeDay.id);
-            }
-          }}
-          ownerName={activeDay.name}
-          selected={assignedWeekdays(weekdayAssignments, activeDay.id)}
-          testIdPrefix="nb"
-        />
-      </div>
+          },
+          isAdding: commands.isAddingDay,
+        }}
+      />
 
       {/* Energy line + macro meters */}
       <DayEnergyHeader

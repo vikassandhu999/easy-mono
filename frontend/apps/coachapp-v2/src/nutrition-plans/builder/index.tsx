@@ -65,7 +65,7 @@ export default function NutritionPlanBuilderScreen() {
   return (
     <Page className="text-foreground leading-[normal]">
       <Page.Header
-        className="gap-3 pb-10"
+        className="gap-3"
         size="builder"
       >
         <Page.TitleGroup className="flex min-w-0 items-center">

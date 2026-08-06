@@ -73,7 +73,12 @@ function PageHeader({children, className, size = 'wide'}: PageLayoutProps) {
       className={cn(
         PAGE_GUTTER_CLASS,
         PAGE_SIZE_CLASS[size],
-        'flex shrink-0 flex-row items-center justify-between gap-3 pt-4 pb-2 md:pt-6 lg:pt-8',
+        'flex shrink-0 flex-row items-center justify-between gap-3 pt-4 md:pt-6 lg:pt-8',
+        // Builder headers sit directly above a control row (the day/workout
+        // tabs), not a toolbar or card, so they breathe one step more. This is
+        // the ONE home of that rhythm — TB at pb-2 and NB at a screen-local
+        // pb-10 disagreed by 32px until 2026-08-06.
+        size === 'builder' ? 'pb-4' : 'pb-2',
         className,
       )}
     >

@@ -623,10 +623,31 @@ svg.lucide:not([class*="size-"]) {
      restated here at the group's own specificity. `:is()` takes the specificity of
      its most specific argument, which is what makes the second selector (0,3,0) —
      enough to beat the positional rules it has to override. */
+  /* The lone-child selector is the third of HeroUI's positional rules, and the
+     one this block originally missed: a group with exactly ONE toggle matches
+     `.toggle-button:first-child:last-child { rounded-3xl }` at (0,4,0), which
+     outranks the `:is(:first-child, :last-child)` pair below at (0,3,0). So a
+     plan with one workout drew a 24px pill while the same tab in a plan with
+     two drew the control step — the radius changed with the number of
+     siblings. `:is(:first-child):is(:last-child)` is (0,4,0), matching the
+     vendor and winning on source order, the same way the pair already beats
+     its (0,3,0) counterpart. Enumerate a vendor's positional rules from its
+     stylesheet; the first/last pair is not the whole set (RM-174's lesson,
+     applied to :nth rules instead of BEM elements). */
   .toggle-button-group :is(.toggle-button--ink, .toggle-button--filter, .toggle-button--tab),
   .toggle-button-group
-    :is(.toggle-button--ink, .toggle-button--filter, .toggle-button--tab):is(:first-child, :last-child) {
+    :is(.toggle-button--ink, .toggle-button--filter, .toggle-button--tab):is(:first-child, :last-child),
+  .toggle-button-group
+    :is(.toggle-button--ink, .toggle-button--filter, .toggle-button--tab):is(:first-child):is(:last-child) {
     border-radius: var(--radius-control);
+  }
+  /* Same escape for the weekday chip, at its own step — it always lives in a
+     group, so without this HeroUI's positional rules round its first and last
+     child to 24px and square the middle five. */
+  .toggle-button-group :is(.toggle-button--weekday),
+  .toggle-button-group :is(.toggle-button--weekday):is(:first-child, :last-child),
+  .toggle-button-group :is(.toggle-button--weekday):is(:first-child):is(:last-child) {
+    border-radius: var(--radius-chip);
   }
 
   /* Resting: a bordered surface pill (`.pill` / `.daytab`). */
@@ -647,6 +668,47 @@ svg.lucide:not([class*="size-"]) {
   .toggle-button--ink[data-selected="true"],
   .toggle-button--filter[data-selected="true"] {
     border-color: var(--color-ink);
+  }
+
+  /* Weekday chip — the Mon..Sun squares on both plan builders. Its own
+     register (accent, not ink) because it answers "which days does this run
+     on", not "which one am I looking at": several are on at once, and they sit
+     next to an ink-selected day/workout tab that means the other thing.
+
+     This was written out at two call sites as a class string, and the two
+     copies drifted on five axes — radius (control vs chip), desktop size (30
+     vs 32), gap (4 vs 6), padding (`p-0` vs `px-0`) and label ("M" vs "Mon").
+     The label difference showed at 375px: seven 44px chips with 3-letter
+     labels measure 344px against a 309px card, so training pushed Sunday out
+     of view behind a horizontal scroll with no affordance, while nutrition
+     fit by cutting the label to one letter. Squares at the control height with
+     a 6px gap come to 288px, which fits, so both builders keep the unambiguous
+     3-letter label and neither has to scroll (the 1-letter form repeats T/T
+     and S/S, which is why it was never the right answer either).
+
+     Both copies also carried `[row-gap:normal] [column-gap:normal]` to undo
+     the base gap, and `size-11 sm:size-7.5` to escape the control height. A
+     chip IS a control: it takes `--spacing-control`, once, here. */
+  .toggle-button--weekday {
+    --toggle-button-bg: transparent;
+    --toggle-button-bg-hover: var(--color-surface-secondary);
+    --toggle-button-bg-pressed: var(--color-surface-secondary);
+    --toggle-button-bg-selected: var(--color-accent-tint);
+    --toggle-button-fg-selected: var(--color-accent);
+    --toggle-button-bg-selected-hover: var(--color-accent-tint);
+    --toggle-button-bg-selected-pressed: var(--color-accent-tint);
+
+    gap: 0;
+    width: var(--spacing-control);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-chip);
+    padding-inline: 0;
+    font-size: var(--type-eyebrow);
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+  .toggle-button--weekday[data-selected="true"] {
+    border-color: var(--color-accent);
   }
 
   /* Resting: transparent — the Client Detail tab row (`.ctab` desktop, `.mtab`

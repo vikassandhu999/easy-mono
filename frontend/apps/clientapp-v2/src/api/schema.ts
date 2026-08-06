@@ -1306,11 +1306,6 @@ export interface components {
     TrainingScheduleResponse: {
       data: components['schemas']['TrainingSchedule'];
     };
-    /** ClientAttentionListResponse */
-    ClientAttentionListResponse: {
-      count: number;
-      data: components['schemas']['Client'][];
-    };
     /** TrainingSessionResponse */
     TrainingSessionResponse: {
       data: components['schemas']['TrainingSession'];
@@ -1707,6 +1702,21 @@ export interface components {
       /** @enum {string|null} */
       status?: 'active' | 'archived' | null;
     };
+    /** WorkbenchCounts */
+    WorkbenchCounts: {
+      /** @description Check-in submissions not yet reviewed */
+      check_ins: number;
+      /** @description Active clients whose subscription ends within 7 days */
+      expiring: number;
+      /** @description Clients added within 14 days, invites pending over 3 days, or intake incomplete */
+      new_clients: number;
+      /** @description Active clients with no plan in force, or whose last scheduled plan day is within 3 days */
+      programming: number;
+      /** @description Active clients who missed their last two scheduled training sessions, or whose latest check-in lapsed to missed. Schedule-aware — rest days never count. */
+      quiet: number;
+      /** @description Conversations where the client sent the last message and the coach hasn't replied */
+      replies: number;
+    };
     /**
      * ClientProfileFormTemplateUpdateRequest
      * @example {
@@ -1992,6 +2002,10 @@ export interface components {
     BillingCheckoutRequest: {
       /** @example 3 */
       seats_to_add: number;
+    };
+    /** WorkbenchCountsResponse */
+    WorkbenchCountsResponse: {
+      data: components['schemas']['WorkbenchCounts'];
     };
     /**
      * TokenRequest
@@ -2433,6 +2447,11 @@ export interface components {
       /** Format: date-time */
       last_message_at?: string | null;
       last_message_preview?: string | null;
+      /**
+       * @description Who spoke last. `client` means the conversation is waiting on the coach (the Replies queue condition).
+       * @enum {string|null}
+       */
+      last_message_role?: 'coach' | 'client' | null;
       unread_count: number;
       /** Format: date-time */
       updated_at: string;
@@ -2557,6 +2576,11 @@ export interface components {
     Client: {
       /** Format: uuid */
       assigned_coach_id?: string | null;
+      /**
+       * Format: date
+       * @description Last day either discipline has an active plan scheduled through; null when neither does
+       */
+      covered_until: string | null;
       /** Format: email */
       email: string | null;
       expiring_soon: boolean;
@@ -2583,6 +2607,8 @@ export interface components {
       last_active_at: string | null;
       last_name: string | null;
       needs_plan: boolean;
+      /** @description Active client with no plan in force, or whose last scheduled plan day (either discipline) is within 3 days with no successor */
+      needs_programming: boolean;
       notes: string | null;
       /** @description Name of the nutrition plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none. */
       nutrition_plan_name?: string | null;
@@ -2926,6 +2952,19 @@ export interface components {
       tuesday: string;
       /** Format: uuid */
       wednesday: string;
+    };
+    /**
+     * QueueSnoozeRequest
+     * @example {
+     *       "queue": "quiet",
+     *       "snoozed_until": "2026-08-20"
+     *     }
+     */
+    QueueSnoozeRequest: {
+      /** @enum {string} */
+      queue: 'quiet' | 'expiring';
+      /** Format: date */
+      snoozed_until: string;
     };
     /** ClientProfileReviewQueueListResponse */
     ClientProfileReviewQueueListResponse: {
@@ -4172,7 +4211,7 @@ export interface operations {
       query?: {
         /** @description Number of nutrition plans to skip */
         offset?: number;
-        /** @description Maximum nutrition plans to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Only nutrition plans with this status */
         status?: 'active' | 'archived';
@@ -4344,7 +4383,7 @@ export interface operations {
       query?: {
         /** @description Number of recipes to skip */
         offset?: number;
-        /** @description Maximum recipes to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Case-insensitive recipe search */
         search?: string;
@@ -4844,7 +4883,7 @@ export interface operations {
       query?: {
         /** @description Number of training plans to skip */
         offset?: number;
-        /** @description Maximum training plans to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Only training plans with this status */
         status?: 'active' | 'archived';
@@ -4889,7 +4928,7 @@ export interface operations {
       query?: {
         /** @description Number of foods to skip */
         offset?: number;
-        /** @description Maximum foods to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Case-insensitive food name search */
         search?: string;

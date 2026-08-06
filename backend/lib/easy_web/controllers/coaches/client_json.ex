@@ -11,11 +11,6 @@ defmodule EasyWeb.Coaches.ClientJSON do
     %{data: Enum.map(clients, &data/1), count: count, summary: summary}
   end
 
-  @spec attention(map()) :: map()
-  def attention(%{clients: clients, count: count}) do
-    %{data: Enum.map(clients, &data/1), count: count}
-  end
-
   defp data(%Client{} = client) do
     %{
       id: client.id,
@@ -34,6 +29,8 @@ defmodule EasyWeb.Coaches.ClientJSON do
       intake_incomplete: client.intake_incomplete,
       needs_plan: client.needs_plan,
       expiring_soon: client.expiring_soon,
+      needs_programming: client.needs_programming,
+      covered_until: client.covered_until,
       last_active_at: client.last_active_at,
       training_plan_name: client.training_plan_name,
       nutrition_plan_name: client.nutrition_plan_name,

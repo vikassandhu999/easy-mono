@@ -94,6 +94,16 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
           intake_incomplete: %Schema{type: :boolean},
           needs_plan: %Schema{type: :boolean},
           expiring_soon: %Schema{type: :boolean},
+          needs_programming: %Schema{
+            type: :boolean,
+            description: "Active client with no plan in force, or whose last scheduled plan day (either discipline) is within 3 days with no successor"
+          },
+          covered_until: %Schema{
+            type: :string,
+            format: :date,
+            nullable: true,
+            description: "Last day either discipline has an active plan scheduled through; null when neither does"
+          },
           last_active_at: %Schema{
             type: :string,
             format: :"date-time",
@@ -134,6 +144,8 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
       :intake_incomplete,
       :needs_plan,
       :expiring_soon,
+      :needs_programming,
+      :covered_until,
       :last_active_at,
       :invite_url,
       :invitation_sent_at,
@@ -168,24 +180,6 @@ defmodule EasyWeb.OpenApi.Schemas.ClientResponse do
   alias EasyWeb.OpenApi.Schemas.{Client, Shared}
 
   OpenApiSpex.schema(Shared.data_response(Client, "ClientResponse"))
-end
-
-defmodule EasyWeb.OpenApi.Schemas.ClientAttentionListResponse do
-  require OpenApiSpex
-
-  alias EasyWeb.OpenApi.Schemas.Client
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(%{
-    title: "ClientAttentionListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: Client},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count]
-  })
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientListResponse do

@@ -1,14 +1,9 @@
-import {clientKeys} from './keys.ts';
+import {clientKeys, workbenchKeys} from './keys.ts';
 
-const countOnly = JSON.stringify(clientKeys.attention({limit: 0, offset: 0}));
-const fullPage = JSON.stringify(clientKeys.attention({limit: 100, offset: 0}));
+const counts = JSON.stringify(workbenchKeys.counts());
 
-if (countOnly === fullPage) {
-  throw new Error('attention cache identity must include pagination filters');
-}
-
-if (!countOnly.startsWith(JSON.stringify(clientKeys.lists()).slice(0, -1))) {
-  throw new Error('attention keys must remain under the client list prefix');
+if (!counts.startsWith(JSON.stringify(clientKeys.lists()).slice(0, -1))) {
+  throw new Error('workbench count keys must remain under the client list prefix');
 }
 
 console.log('query-keys: all checks passed');

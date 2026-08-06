@@ -6,7 +6,6 @@ defmodule EasyWeb.Coaches.ClientController do
   alias OpenApiSpex.{Operation, Schema}
 
   alias EasyWeb.OpenApi.Schemas.{
-    ClientAttentionListResponse,
     ClientInviteRequest,
     ClientListResponse,
     ClientResponse,
@@ -149,26 +148,19 @@ defmodule EasyWeb.Coaches.ClientController do
         :boolean,
         "Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them.",
         required: false
+      ),
+      Operation.parameter(
+        :filter,
+        :query,
+        %Schema{type: :string, enum: ["programming", "expiring", "new", "quiet"]},
+        "Restrict to one workbench queue. `programming`: active clients with no plan in force or coverage ending within 3 days (no-plan first, then soonest end). `expiring`: subscriptions ending within 7 days, minus snoozed (soonest first). `new`: added within 14 days, invite pending over 3 days, or intake incomplete (newest first). `quiet`: missed their last two scheduled sessions or latest check-in, minus snoozed (longest-quiet first). A queue imposes its own sort order.",
+        required: false
       )
     ],
     responses: [
       ok: {"Clients", "application/json", ClientListResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
       unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
-    ]
-
-  operation :attention,
-    summary: "List clients needing attention",
-    description: "Lists visible active clients with intake, plan, or subscription attention flags.",
-    operation_id: "listAttentionClients",
-    security: [%{"bearerAuth" => []}],
-    parameters: [
-      Operation.parameter(:offset, :query, :integer, "Number of clients to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false)
-    ],
-    responses: [
-      ok: {"Attention clients", "application/json", ClientAttentionListResponse},
-      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
     ]
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -228,23 +220,16 @@ defmodule EasyWeb.Coaches.ClientController do
     end
   end
 
-  @spec attention(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def attention(conn, params) do
-    opts = [
-      offset: parse_integer(params, "offset", 0),
-      limit: parse_integer(params, "limit", 20)
-    ]
-
-    with {:ok, %{clients: clients, count: count}} <-
-           Clients.list_attention_clients(conn.assigns.ctx, opts) do
-      render(conn, :attention, clients: clients, count: count)
-    end
-  end
-
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   # Mapped explicitly, never `String.to_atom/1` on a query param (AGENTS.md).
   defp parse_sort("last_active"), do: :last_active
   defp parse_sort(_other), do: :newest
+
+  defp parse_filter("programming"), do: :programming
+  defp parse_filter("expiring"), do: :expiring
+  defp parse_filter("new"), do: :new
+  defp parse_filter("quiet"), do: :quiet
+  defp parse_filter(_other), do: nil
 
   # Normalized here rather than trusted from the cast: a query param reaches the
   # action as a string unless the spec has taught the cast otherwise, and the
@@ -261,11 +246,19 @@ defmodule EasyWeb.Coaches.ClientController do
       status: Map.get(params, "status"),
       stage: Map.get(params, "stage"),
       sort: parse_sort(Map.get(params, "sort")),
+      filter: parse_filter(Map.get(params, "filter")),
       include_plans: parse_boolean(Map.get(params, "include_plans"))
     ]
 
-    with {:ok, %{clients: clients, count: count, summary: summary}} <-
-           Clients.list_clients(conn.assigns.ctx, opts) do
+    # Quiet membership is schedule-aware and lives in Workbench; every other
+    # queue (and the plain roster) is one facts query in Clients.
+    list =
+      case opts[:filter] do
+        :quiet -> Easy.Workbench.list_quiet_clients(conn.assigns.ctx, opts)
+        _other -> Clients.list_clients(conn.assigns.ctx, opts)
+      end
+
+    with {:ok, %{clients: clients, count: count, summary: summary}} <- list do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, clients: clients, summary: summary)

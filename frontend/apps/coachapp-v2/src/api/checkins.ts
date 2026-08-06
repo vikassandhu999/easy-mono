@@ -7,7 +7,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
-import {checkInKeys, formAssignmentKeys, formTemplateKeys} from '@/api/keys';
+import {checkInKeys, formAssignmentKeys, formTemplateKeys, workbenchKeys} from '@/api/keys';
 import type {components, operations} from '@/api/schema';
 
 export type ClientProfileCheckInSchedule = components['schemas']['ClientProfileCheckInSchedule'];
@@ -326,6 +326,8 @@ export function useReviewFormSubmissionMutation() {
     onSuccess: () => {
       qc.invalidateQueries({queryKey: checkInKeys.reviewQueue()});
       qc.invalidateQueries({queryKey: formAssignmentKeys.all});
+      // The workbench Check-ins count is this queue's length.
+      qc.invalidateQueries({queryKey: workbenchKeys.counts()});
     },
   });
 }

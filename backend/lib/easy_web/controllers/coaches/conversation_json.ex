@@ -26,6 +26,7 @@ defmodule EasyWeb.Coaches.ConversationJSON do
       client_name: client_name(c.client),
       last_message_at: c.last_message_at,
       last_message_preview: c.last_message_preview,
+      last_message_role: c.last_message_role,
       unread_count: c.unread_count || 0,
       inserted_at: c.inserted_at,
       updated_at: c.updated_at

@@ -255,6 +255,19 @@ defmodule Easy.Forms do
     end
   end
 
+  @spec count_unreviewed_check_in_submissions(Ctx.t()) :: {:ok, non_neg_integer()}
+  def count_unreviewed_check_in_submissions(%Ctx{} = ctx) do
+    count =
+      FormSubmission
+      |> FormSubmission.for_business(ctx.business_id)
+      |> FormSubmission.unreviewed()
+      |> FormSubmission.for_check_ins()
+      |> FormSubmission.for_visible_clients(ctx)
+      |> Repo.aggregate(:count, :id)
+
+    {:ok, count}
+  end
+
   @spec list_unreviewed_check_in_submissions(Ctx.t(), keyword()) ::
           {:ok, %{count: non_neg_integer(), submissions: [FormSubmission.t()]}}
   def list_unreviewed_check_in_submissions(%Ctx{} = ctx, opts \\ []) do

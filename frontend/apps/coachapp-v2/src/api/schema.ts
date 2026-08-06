@@ -1072,6 +1072,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/coach/workbench': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Workbench queue counts
+     * @description Total items remaining in each workbench queue (work left, not unreads): unreviewed check-in submissions, clients needing programming, subscriptions expiring within 7 days, and clients in onboarding.
+     */
+    get: operations['getWorkbenchCounts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/coach/clients/{id}/queue-snooze': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Snooze a workbench queue for a client
+     * @description Hides the client from the given queue (and its count) until the date passes, then they reappear automatically. Re-snoozing replaces the date. Only the `quiet` and `expiring` queues snooze.
+     */
+    put: operations['snoozeWorkbenchQueue'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/coach/training-muscles': {
     parameters: {
       query?: never;
@@ -1725,26 +1765,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/coach/clients/attention': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List clients needing attention
-     * @description Lists visible active clients with intake, plan, or subscription attention flags.
-     */
-    get: operations['listAttentionClients'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/v1/auth/signup': {
     parameters: {
       query?: never;
@@ -2366,11 +2386,6 @@ export interface components {
     TrainingScheduleResponse: {
       data: components['schemas']['TrainingSchedule'];
     };
-    /** ClientAttentionListResponse */
-    ClientAttentionListResponse: {
-      count: number;
-      data: components['schemas']['Client'][];
-    };
     /** TrainingSessionResponse */
     TrainingSessionResponse: {
       data: components['schemas']['TrainingSession'];
@@ -2767,6 +2782,21 @@ export interface components {
       /** @enum {string|null} */
       status?: 'active' | 'archived' | null;
     };
+    /** WorkbenchCounts */
+    WorkbenchCounts: {
+      /** @description Check-in submissions not yet reviewed */
+      check_ins: number;
+      /** @description Active clients whose subscription ends within 7 days */
+      expiring: number;
+      /** @description Clients added within 14 days, invites pending over 3 days, or intake incomplete */
+      new_clients: number;
+      /** @description Active clients with no plan in force, or whose last scheduled plan day is within 3 days */
+      programming: number;
+      /** @description Active clients who missed their last two scheduled training sessions, or whose latest check-in lapsed to missed. Schedule-aware — rest days never count. */
+      quiet: number;
+      /** @description Conversations where the client sent the last message and the coach hasn't replied */
+      replies: number;
+    };
     /**
      * ClientProfileFormTemplateUpdateRequest
      * @example {
@@ -3052,6 +3082,10 @@ export interface components {
     BillingCheckoutRequest: {
       /** @example 3 */
       seats_to_add: number;
+    };
+    /** WorkbenchCountsResponse */
+    WorkbenchCountsResponse: {
+      data: components['schemas']['WorkbenchCounts'];
     };
     /**
      * TokenRequest
@@ -3493,6 +3527,11 @@ export interface components {
       /** Format: date-time */
       last_message_at?: string | null;
       last_message_preview?: string | null;
+      /**
+       * @description Who spoke last. `client` means the conversation is waiting on the coach (the Replies queue condition).
+       * @enum {string|null}
+       */
+      last_message_role?: 'coach' | 'client' | null;
       unread_count: number;
       /** Format: date-time */
       updated_at: string;
@@ -3617,6 +3656,11 @@ export interface components {
     Client: {
       /** Format: uuid */
       assigned_coach_id?: string | null;
+      /**
+       * Format: date
+       * @description Last day either discipline has an active plan scheduled through; null when neither does
+       */
+      covered_until: string | null;
       /** Format: email */
       email: string | null;
       expiring_soon: boolean;
@@ -3643,6 +3687,8 @@ export interface components {
       last_active_at: string | null;
       last_name: string | null;
       needs_plan: boolean;
+      /** @description Active client with no plan in force, or whose last scheduled plan day (either discipline) is within 3 days with no successor */
+      needs_programming: boolean;
       notes: string | null;
       /** @description Name of the nutrition plan in force today. Null unless the request passed `include_plans=true`, and null when the client has none. */
       nutrition_plan_name?: string | null;
@@ -3986,6 +4032,19 @@ export interface components {
       tuesday: string;
       /** Format: uuid */
       wednesday: string;
+    };
+    /**
+     * QueueSnoozeRequest
+     * @example {
+     *       "queue": "quiet",
+     *       "snoozed_until": "2026-08-20"
+     *     }
+     */
+    QueueSnoozeRequest: {
+      /** @enum {string} */
+      queue: 'quiet' | 'expiring';
+      /** Format: date */
+      snoozed_until: string;
     };
     /** ClientProfileReviewQueueListResponse */
     ClientProfileReviewQueueListResponse: {
@@ -4849,7 +4908,7 @@ export interface operations {
       query?: {
         /** @description Number of training plans to skip */
         offset?: number;
-        /** @description Maximum training plans to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Case-insensitive training plan name search */
         search?: string;
@@ -5604,7 +5663,7 @@ export interface operations {
       query?: {
         /** @description Number of plans to skip */
         offset?: number;
-        /** @description Maximum plans to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Only plans with this status */
         status?: 'active' | 'archived';
@@ -5836,7 +5895,7 @@ export interface operations {
       query?: {
         /** @description Number of nutrition plans to skip */
         offset?: number;
-        /** @description Maximum nutrition plans to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Case-insensitive nutrition plan name search */
         search?: string;
@@ -7744,7 +7803,7 @@ export interface operations {
       query?: {
         /** @description Number of plans to skip */
         offset?: number;
-        /** @description Maximum plans to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Only plans with this status */
         status?: 'active' | 'archived';
@@ -7958,6 +8017,88 @@ export interface operations {
       };
       /** @description Not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  getWorkbenchCounts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Workbench counts */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkbenchCountsResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  snoozeWorkbenchQueue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Client id */
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Queue snooze request */
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['QueueSnoozeRequest'];
+      };
+    };
+    responses: {
+      /** @description Snoozed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation error */
+      422: {
         headers: {
           [name: string]: unknown;
         };
@@ -8774,7 +8915,7 @@ export interface operations {
       query?: {
         /** @description Number of clients to skip */
         offset?: number;
-        /** @description Maximum clients to return */
+        /** @description Page size (default 20, max 100) */
         limit?: number;
         /** @description Case-insensitive client search */
         search?: string;
@@ -8786,6 +8927,8 @@ export interface operations {
         sort?: 'newest' | 'last_active';
         /** @description Include each client's in-force training and nutrition plan names. Off by default — it costs two extra queries per page and only the clients list renders them. */
         include_plans?: boolean;
+        /** @description Restrict to one workbench queue. `programming`: active clients with no plan in force or coverage ending within 3 days (no-plan first, then soonest end). `expiring`: subscriptions ending within 7 days, minus snoozed (soonest first). `new`: added within 14 days, invite pending over 3 days, or intake incomplete (newest first). `quiet`: missed their last two scheduled sessions or latest check-in, minus snoozed (longest-quiet first). A queue imposes its own sort order. */
+        filter?: 'programming' | 'expiring' | 'new' | 'quiet';
       };
       header?: never;
       path?: never;
@@ -10082,40 +10225,6 @@ export interface operations {
       };
       /** @description Validation error */
       422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  listAttentionClients: {
-    parameters: {
-      query?: {
-        /** @description Number of clients to skip */
-        offset?: number;
-        /** @description Maximum clients to return */
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Attention clients */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ClientAttentionListResponse'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
         headers: {
           [name: string]: unknown;
         };

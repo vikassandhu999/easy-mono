@@ -104,9 +104,11 @@ defmodule EasyWeb.Router do
     patch "/prospects/:id", ProspectController, :update
     post "/prospects/:id/enroll", ProspectController, :enroll
 
+    get "/workbench", WorkbenchController, :index
+    put "/clients/:id/queue-snooze", WorkbenchController, :snooze
+
     post "/clients/invite", ClientController, :invite
     post "/clients/:id/resend-invite", ClientController, :resend_invite
-    get "/clients/attention", ClientController, :attention
     get "/clients/:id", ClientController, :show
     patch "/clients/:id", ClientController, :update
     delete "/clients/:id", ClientController, :delete

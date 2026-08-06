@@ -1,7 +1,7 @@
 # Coach workbench: segmented client rail + merged messaging
 
 **Date:** 2026-08-04
-**Status:** Proposed — awaiting user sign-off on the open decisions in §12.
+**Status:** Superseded by [`2026-08-06-coach-workbench-spec.md`](2026-08-06-coach-workbench-spec.md), which replaces the clients listing outright (rather than wrapping it) and resolves the §12 open decisions.
 **Inputs:**
 - [`docs/research/coach-workflow-inbox-research.md`](../../research/coach-workflow-inbox-research.md) — mechanics research across 9 fitness platforms + Front/Intercom/Superhuman/Linear/Gmail/GitHub, 139 cited sources (2026-08-04)
 - [`docs/research/2026-07-25-client-triage-messaging-research.md`](../../research/2026-07-25-client-triage-messaging-research.md) — market/evidence research (2026-07-25)

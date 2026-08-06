@@ -20,10 +20,10 @@ import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom'
 import {ROUTES} from '@/@config/routes';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
 import {useInstallPrompt} from '@/@hooks/use-install-prompt';
-import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
-import {conversationKeys} from '@/api/keys';
+import {conversationKeys, workbenchKeys} from '@/api/keys';
 import {useGetCoachProfileQuery} from '@/api/profile';
+import {useWorkbenchCountsQuery} from '@/api/workbench';
 
 const ICON = 18;
 
@@ -34,10 +34,11 @@ interface NavItem {
   path: string;
 }
 
+// Messages left the desktop sidebar in workbench phase 2 — the rail's Messages
+// item (with the unread count) is the desktop entry; mobile keeps its tab.
 const PRIMARY: NavItem[] = [
   {icon: <LayoutDashboard size={ICON} />, label: 'Dashboard', path: ROUTES.DASHBOARD},
-  {badge: <ClientCountBadge />, icon: <Users size={ICON} />, label: 'Clients', path: ROUTES.CLIENTS},
-  {badge: <UnreadBadge />, icon: <MessageCircle size={ICON} />, label: 'Messages', path: ROUTES.MESSAGES},
+  {badge: <WorkbenchDot />, icon: <Users size={ICON} />, label: 'Clients', path: ROUTES.CLIENTS},
 ];
 
 const BUILDER: NavItem[] = [
@@ -76,20 +77,23 @@ function SidebarLink({item}: {item: NavItem}) {
   );
 }
 
-function ClientCountBadge() {
-  const {data} = useListClientsQuery({limit: 0});
-  const count = data?.summary?.active ?? 0;
-  if (count === 0) {
+/**
+ * Dot, not a number: a count summed across queues is a meaningless workload
+ * figure — the rail itself carries the per-queue totals (spec §6). Lights only
+ * for the accent queues; New is muted by design and doesn't wake the dot.
+ */
+function WorkbenchDot() {
+  const {data} = useWorkbenchCountsQuery();
+  const counts = data?.data;
+  if (!counts || counts.check_ins + counts.replies + counts.programming + counts.expiring + counts.quiet === 0) {
     return null;
   }
   return (
-    <Chip
-      color="default"
-      size="sm"
-      variant="soft"
-    >
-      {count > 99 ? '99+' : count}
-    </Chip>
+    <span
+      aria-label="Queues need attention"
+      className="size-2 shrink-0 rounded-pill bg-accent"
+      role="status"
+    />
   );
 }
 
@@ -170,6 +174,8 @@ export default function AppShell() {
   useChannelEvent('inbox', 'conversation_updated', () => {
     // Payload is id-only; refetch over HTTP where visibility is enforced.
     qc.invalidateQueries({queryKey: conversationKeys.lists()});
+    // A new message can flip the Replies queue either way.
+    qc.invalidateQueries({queryKey: workbenchKeys.counts()});
   });
 
   return (

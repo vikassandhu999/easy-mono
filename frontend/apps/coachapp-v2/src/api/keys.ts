@@ -30,12 +30,16 @@ const domain = <N extends string>(name: N) => ({
 
 export const clientKeys = {
   ...domain('clients'),
-  // Nested under lists() on purpose: it IS a list of clients, so every mutation
-  // that already invalidates clientKeys.lists() (invite, update, assign, enroll,
-  // reassign) refreshes the attention tab + count for free. As a sibling key it
-  // was invalidated by nothing and served stale rows for the whole staleTime.
-  attention: (filters?: Filters) => [...clientKeys.lists(), 'attention', filters ?? {}] as const,
   weightEntries: (clientId: string) => [...clientKeys.detail(clientId), 'weight-entries'] as const,
+};
+
+export const workbenchKeys = {
+  // Nested under clientKeys.lists() on purpose: the counts are derived from the
+  // roster, so every mutation that already invalidates clientKeys.lists()
+  // (invite, update, plan assign/unassign, enroll, reassign) refreshes the rail
+  // for free. Only check-in review invalidates it explicitly — that mutation
+  // touches no client list.
+  counts: () => [...clientKeys.lists(), 'workbench-counts'] as const,
 };
 
 export const billingKeys = {

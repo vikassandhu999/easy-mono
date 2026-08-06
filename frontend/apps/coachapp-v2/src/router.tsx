@@ -24,8 +24,8 @@ import ProgressPhotos from '@/clients/client-screen/progress-photos';
 import WeightHistory from '@/clients/client-screen/weight-history';
 import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
-import ListClients from '@/clients/list-clients';
 import SessionDetail from '@/clients/session-detail';
+import WorkbenchScreen from '@/clients/workbench/workbench-screen';
 import Dashboard from '@/dashboard/dashboard';
 import CreateExercise from '@/exercises/create-exercise';
 import EditExercise from '@/exercises/edit-exercise';
@@ -80,7 +80,7 @@ export const router = createBrowserRouter([
     children: [
       // Coach home (also the post-onboarding + catch-all target).
       {path: ROUTES.DASHBOARD, Component: Dashboard},
-      {path: ROUTES.CLIENTS, Component: ListClients},
+      {path: ROUTES.CLIENTS, Component: WorkbenchScreen},
       {path: ROUTES.INVITE_CLIENT, Component: InviteClient},
       {path: ROUTES.CLIENT_DETAIL, Component: ClientScreen},
       {path: ROUTES.CLIENT_SESSION_DETAIL, Component: SessionDetail},

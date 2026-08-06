@@ -16,6 +16,7 @@ defmodule Easy.Chat.Conversation do
   schema "conversations" do
     field :last_message_at, :utc_datetime_usec
     field :last_message_preview, :string
+    field :last_message_role, Ecto.Enum, values: [:coach, :client]
     # ponytail: shared read cursor per side — any coach reading marks the whole
     # team's side read; upgrade path is a per-coach read table if it ever matters.
     field :coach_last_read_at, :utc_datetime_usec
@@ -45,6 +46,11 @@ defmodule Easy.Chat.Conversation do
   @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
   def for_client(query \\ __MODULE__, business_id, client_id),
     do: from(c in query, where: c.business_id == ^business_id and c.client_id == ^client_id)
+
+  # The Replies queue condition: the client spoke last, the ball is in the
+  # coach's court. Clears the moment the coach replies (spec §3 "Replies").
+  @spec waiting(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def waiting(query \\ __MODULE__), do: from(c in query, where: c.last_message_role == :client)
 
   @spec recent(Ecto.Queryable.t()) :: Ecto.Query.t()
   def recent(query \\ __MODULE__),

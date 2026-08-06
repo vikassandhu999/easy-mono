@@ -6,46 +6,16 @@ import {Link, useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useListCheckInReviewQueueQuery} from '@/api/checkins';
 import {useListClientsQuery} from '@/api/clients';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useListProspectsQuery} from '@/api/prospects';
 import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
-import {PriorityQueue} from '@/dashboard/components/priority-queue';
 import {QuickActionsRow} from '@/dashboard/components/quick-actions-row';
 import {RecentActivityCell} from '@/dashboard/components/recent-activity-cell';
+import {WorkbenchCards} from '@/dashboard/components/workbench-cards';
 import {DashboardSetupCell} from '@/dashboard/dashboard-setup-cell';
-import {daysSince, formatDashboardDate} from '@/dashboard/lib/date-format';
-
-/**
- * COPY.md §DB check-ins card subtitle — `Oldest waiting 2 days · Sam, Priya, Devon +2`.
- * The age and names come from the oldest-first page; the total comes from the
- * review-queue count.
- */
-function reviewSummary(
-  queue: {client: {first_name: null | string}; id: string; inserted_at: string}[],
-  totalCount: number,
-) {
-  const names = queue
-    .map((entry) => entry.client.first_name?.trim())
-    .filter((name): name is string => Boolean(name))
-    .filter((name, index, all) => all.indexOf(name) === index);
-  const shown = names.slice(0, 3).join(', ');
-  const overflow = totalCount - Math.min(names.length, 3);
-  const oldest = [...queue].sort((a, b) => a.inserted_at.localeCompare(b.inserted_at))[0];
-
-  return {
-    names: shown ? (overflow > 0 ? `${shown} +${overflow}` : shown) : '',
-    // The banner's Review CTA deep-links straight into this submission — the
-    // list screen's review tab is gone (product decision 2026-07-21).
-    oldestId: oldest?.id ?? null,
-    oldestDays: queue.reduce<null | number>((days, entry) => {
-      const d = daysSince(entry.inserted_at);
-      return d === null ? days : Math.max(days ?? 0, d);
-    }, null),
-  };
-}
+import {formatDashboardDate} from '@/dashboard/lib/date-format';
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -154,20 +124,14 @@ function DashboardSkeleton() {
 
 export default function Dashboard() {
   const {data: profileData, isLoading: profileLoading} = useGetCoachProfileQuery();
-  // ponytail: attention preview uses the backend's maximum page.
-  // Add server filters if coaches can exceed 100 clients.
-  const {data: clientsData, isError: clientsError, isLoading: clientsLoading} = useListClientsQuery({limit: 100});
+  // Summary counts only — the queue rows moved to the workbench.
+  const {data: clientsData, isError: clientsError, isLoading: clientsLoading} = useListClientsQuery({limit: 0});
   const {
     data: prospectsData,
     isError: prospectsError,
     isLoading: prospectsLoading,
   } = useListProspectsQuery({limit: 5, status: 'new'});
   const {data: conversationsData, isError: conversationsError} = useListCoachConversationsQuery();
-  const {
-    data: reviewQueueData,
-    isError: reviewQueueError,
-    isLoading: reviewQueueLoading,
-  } = useListCheckInReviewQueueQuery();
 
   if (profileLoading || clientsLoading || prospectsLoading) {
     return <DashboardSkeleton />;
@@ -177,9 +141,7 @@ export default function Dashboard() {
   const name = profile?.first_name?.trim();
   const initials = getInitials(profile?.first_name, profile?.last_name) || '?';
   const clientSummary = clientsData?.summary;
-  const clients = clientsData?.data ?? [];
   const newProspects = prospectsError ? [] : (prospectsData?.data ?? []);
-  const review = reviewSummary(reviewQueueData?.data ?? [], reviewQueueData?.count ?? 0);
 
   return (
     <Page>
@@ -229,16 +191,7 @@ export default function Dashboard() {
           ) : null}
 
           <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
-            <PriorityQueue
-              clients={clients}
-              isError={clientsError}
-              prospects={newProspects}
-              reviewCount={reviewQueueLoading || reviewQueueError ? null : (reviewQueueData?.count ?? 0)}
-              reviewError={reviewQueueError}
-              reviewNames={review.names}
-              reviewOldestDays={review.oldestDays}
-              reviewOldestId={review.oldestId}
-            />
+            <WorkbenchCards leadCount={newProspects.length} />
 
             <div className="flex min-w-0 flex-col gap-5">
               <RecentActivityCell

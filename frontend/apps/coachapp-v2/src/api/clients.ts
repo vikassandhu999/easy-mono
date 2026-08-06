@@ -35,6 +35,10 @@ export type Client = {
   intake_incomplete: boolean;
   needs_plan: boolean;
   expiring_soon: boolean;
+  /** Active client with no plan in force, or coverage ending within 3 days with no successor. */
+  needs_programming: boolean;
+  /** Last day either discipline has an active plan scheduled through; null when neither does. */
+  covered_until: null | string;
   /**
    * UTC time of the client's latest successful workout completion, food log,
    * check-in submission, or weight upsert. Null when they never have. Not
@@ -102,7 +106,10 @@ type ListClientsQuery = NonNullable<paths['/v1/coach/clients']['get']['parameter
 
 export type ListClientsParams = Pick<ListClientsQuery, 'limit' | 'offset' | 'search' | 'status'>;
 
-export type ListClientsFilters = Pick<ListClientsQuery, 'search' | 'sort' | 'status'>;
+export type ListClientsFilters = Pick<ListClientsQuery, 'filter' | 'search' | 'sort' | 'status'>;
+
+/** One workbench client queue (the check-ins queue has its own endpoint). */
+export type ClientQueue = NonNullable<ListClientsQuery['filter']>;
 
 export function useGetClientQuery(id: string, options?: {enabled?: boolean}) {
   return useQuery({
@@ -133,6 +140,7 @@ export function useClientsInfiniteQuery(filters?: ListClientsFilters, options?: 
               ...(filters?.search && {search: filters.search}),
               ...(filters?.status && {status: filters.status}),
               ...(filters?.sort && {sort: filters.sort}),
+              ...(filters?.filter && {filter: filters.filter}),
               // The CL row's plan chips. Opt-in on the endpoint because the names
               // cost two extra queries per page; this list is the one caller that
               // renders them.
@@ -207,26 +215,6 @@ export function useListClientWeightEntriesQuery(clientId: string, options?: {ena
     queryKey: clientKeys.weightEntries(clientId),
     queryFn: () =>
       call(client.GET('/v1/coach/clients/{client_id}/weight_entries', {params: {path: {client_id: clientId}}})),
-    enabled: options?.enabled ?? true,
-  });
-}
-
-type ListAttentionClientsQuery = NonNullable<paths['/v1/coach/clients/attention']['get']['parameters']['query']>;
-
-export type ListAttentionClientsParams = Pick<ListAttentionClientsQuery, 'limit' | 'offset'>;
-
-export type ClientAttentionListResponse = {
-  count: number;
-  data: Client[];
-};
-
-export function useListAttentionClientsQuery(params?: ListAttentionClientsParams, options?: {enabled?: boolean}) {
-  return useQuery({
-    queryKey: clientKeys.attention(params),
-    queryFn: () =>
-      call(
-        client.GET('/v1/coach/clients/attention', {params: {query: params ?? undefined}}),
-      ) as Promise<ClientAttentionListResponse>,
     enabled: options?.enabled ?? true,
   });
 }

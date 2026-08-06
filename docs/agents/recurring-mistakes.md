@@ -384,6 +384,18 @@ label. **Verify by:** AXI snapshot before activating it — the button must anno
 action and next step, not only a percentage. Not mechanically gated: the accessible name
 depends on the rendered compound-component tree.
 
+### RM-150 — A load-more sentinel needs a `hasNextPage`-guarded `fetchNextPage`
+React-aria's `ListBoxLoadMoreItem` fires `onLoadMore` for as long as the sentinel is
+visible — on a list shorter than the viewport, that is every render. Fed a raw React Query
+`fetchNextPage`, it hot-looped (~2 fetches per frame), and each call's default
+`cancelRefetch` aborted in-flight invalidation refetches, so mutations (snooze, review)
+never landed fresh data in the mounted list while counts around it updated. The guard
+lives in ONE place, `useInfiniteItems`: call through it, never pass a query's
+`fetchNextPage` to a sentinel directly. **Verify by:** on a one-page list, mutate a row
+out of the queue and assert the row disappears without a reload; watch the network for
+repeated identical list fetches. Found on the workbench Quiet queue, 2026-08-06 — latent
+in every short infinite list before that.
+
 ### RM-149 — Search must match the composite label the list displays
 A client row displays `First Last`, but the API searched the entire term against each
 column separately, so copying the visible full name returned no result. When list identity

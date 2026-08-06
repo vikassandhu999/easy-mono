@@ -40,6 +40,18 @@ defmodule Easy.Chat do
     {:ok, %{count: count, conversations: conversations}}
   end
 
+  @spec count_waiting_conversations(Ctx.t()) :: {:ok, non_neg_integer()}
+  def count_waiting_conversations(%Ctx{} = ctx) do
+    count =
+      Conversation
+      |> Conversation.for_business(ctx.business_id)
+      |> Conversation.waiting()
+      |> constrain_to_visible_clients(ctx)
+      |> Repo.aggregate(:count)
+
+    {:ok, count}
+  end
+
   @spec get_conversation(Ctx.t(), String.t()) :: {:ok, Conversation.t()} | {:error, :not_found}
   def get_conversation(%Ctx{} = ctx, conversation_id) do
     conversation =
@@ -369,6 +381,7 @@ defmodule Easy.Chat do
       set: [
         last_message_at: message.inserted_at,
         last_message_preview: message_preview(message, attachments),
+        last_message_role: message.sender_type,
         updated_at: DateTime.truncate(message.inserted_at, :second)
       ]
     )

@@ -89,6 +89,12 @@ defmodule EasyWeb.OpenApi.Schemas.Conversation do
       client_name: %Schema{type: :string, nullable: true},
       last_message_at: %Schema{type: :string, format: :"date-time", nullable: true},
       last_message_preview: %Schema{type: :string, nullable: true},
+      last_message_role: %Schema{
+        type: :string,
+        enum: ["coach", "client"],
+        nullable: true,
+        description: "Who spoke last. `client` means the conversation is waiting on the coach (the Replies queue condition)."
+      },
       unread_count: %Schema{type: :integer},
       inserted_at: %Schema{type: :string, format: :"date-time"},
       updated_at: %Schema{type: :string, format: :"date-time"}

@@ -158,9 +158,11 @@ export function MealCard({
   return (
     <Disclosure
       className={cn(
-        'overflow-hidden rounded-panel border bg-surface [box-shadow:none]',
-        // Open wins over shared: the prototype only tints the border amber
-        // while the card is collapsed (`isOpen ? accent-mix : shared ? …`).
+        // Surface is the `disclosure--builder` theme rule, shared with the
+        // training builder's exercise card. Only the border COLOUR is this
+        // screen's: open wins over shared, because the prototype tints the
+        // border amber only while the card is collapsed.
+        'disclosure--builder',
         open ? 'border-meal-open' : isShared ? 'border-shared-foreground' : 'border-border',
       )}
       data-testid={cardTestId}

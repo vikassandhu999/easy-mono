@@ -350,6 +350,28 @@
   min-height: var(--spacing-control);
 }
 
+/* Builder card — one entry in a plan builder's stack: a meal on a nutrition
+   day, an exercise in a training workout. Both are a `Disclosure` whose header
+   is [leading tag] [name, the trigger] [summary figure] [actions], and whose
+   body holds the entry's children.
+
+   The surface is stated here rather than at the two call sites because it is
+   the component's look, not a per-screen choice, and because one of its four
+   declarations was a theme-neutraliser: HeroUI ships `.disclosure` with a
+   shadow, and the nutrition card cancelled it with an arbitrary
+   `[box-shadow:none]`. An arbitrary value fighting the vendor at a call site is
+   the signal that the decision belongs in the theme.
+
+   The BORDER COLOUR deliberately stays at the call site — nutrition tints it to
+   mark a shared or open meal, and that is real per-entry state, not chrome. */
+.disclosure--builder {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background-color: var(--color-surface);
+  box-shadow: none;
+}
+
 /* Small control tier — buttons that were hand-written as h-8/h-8.5 belong here,
    expressed as `size="sm"` rather than a pixel. */
 /* Same `button--row` release as the md tier above — without it a small tile

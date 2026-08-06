@@ -48,7 +48,7 @@ export function WorkoutHeader({
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 px-4 pt-3 pb-3 sm:flex-nowrap sm:gap-3"
+      className="flex flex-wrap items-center gap-2 pt-1 pb-3 sm:flex-nowrap sm:gap-3"
       data-testid="tb-card-header"
     >
       {draft === null ? (

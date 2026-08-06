@@ -1,7 +1,13 @@
 /**
- * The active workout card (badge TB): header · schedule line · exercises ·
- * `+ Add exercise`. Only the selected workout renders — the tabs above pick it
- * — so this is a plain card rather than an accordion.
+ * The active workout (badge TB): header · schedule line · a stack of exercise
+ * cards · `+ Add exercise`. Only the selected workout renders — the tabs above
+ * pick it — so this is a plain section rather than an accordion.
+ *
+ * There is no card around the stack. A workout relates to its exercises the way
+ * a nutrition day relates to its meals, and that screen puts its day header and
+ * energy line straight on the page with the meal cards below; wrapping the
+ * training equivalent in a second card nested every exercise card inside
+ * another box for no reason the design asks for.
  */
 import {AlertDialog, Button, Spinner, Typography, useOverlayState} from '@heroui/react';
 import {Plus} from 'lucide-react';
@@ -11,7 +17,7 @@ import type {TrainingPlanWorkout} from '@/api/training-plan-builder';
 
 import {type Day, scheduleLabel} from '../schedule';
 import type {PlanBuilderCommands} from '../use-plan-builder';
-import {ExerciseItem} from './exercise-item';
+import {ExerciseCard} from './exercise-card';
 import {ExercisePicker} from './exercise-picker';
 import {WorkoutHeader} from './workout-header';
 
@@ -38,7 +44,7 @@ export function WorkoutPanel({
 
   return (
     <div
-      className="relative rounded-card border border-border bg-surface"
+      className="relative"
       data-testid="tb-card"
     >
       <WorkoutHeader
@@ -52,7 +58,7 @@ export function WorkoutPanel({
       />
 
       <div
-        className="flex flex-col px-4 pb-3 [row-gap:normal] [column-gap:normal]"
+        className="flex flex-col pb-3 [row-gap:normal] [column-gap:normal]"
         data-testid="tb-sched-row"
       >
         <span
@@ -74,19 +80,19 @@ export function WorkoutPanel({
       </div>
 
       <div
-        className="flex flex-col border-t border-border px-4 pt-1.5 pb-2"
+        className="flex flex-col gap-3"
         data-testid="tb-exercises"
       >
         {elements.length === 0 ? (
           <div
-            className="py-5 text-center type-eyebrow text-muted"
+            className="rounded-panel border border-border border-dashed py-5 text-center type-eyebrow text-muted"
             data-testid="tb-empty"
           >
             No exercises yet — add the first one below.
           </div>
         ) : (
           elements.map((element, index) => (
-            <ExerciseItem
+            <ExerciseCard
               key={element.id}
               element={element}
               isFirst={index === 0}
@@ -105,7 +111,7 @@ export function WorkoutPanel({
       </div>
 
       <div
-        className="px-4 py-3"
+        className="py-3"
         data-testid="tb-add-exercise-row"
       >
         <Button

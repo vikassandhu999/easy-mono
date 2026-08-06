@@ -44,7 +44,7 @@ KNOWN=$(cat "$HEROUI"/*.css | grep -oE '\.[a-z][a-z0-9_-]*' | sort -u)
 # check that matters for these is still enforced — the BLOCK must exist, so
 # `.toggle-buton--ink` is still caught. Only the modifier is app-owned.
 OURS='^\.(eyebrow|segmented|tap-target|scrollbar-hide|heading|light|default|dark)$'
-APP_MODIFIERS='^\.[a-z][a-z0-9-]*--(ink|filter|tab|row|outline|weekday)$'
+APP_MODIFIERS='^\.[a-z][a-z0-9-]*--(ink|filter|tab|row|outline|weekday|builder)$'
 
 MISSING=""
 while read -r sel; do

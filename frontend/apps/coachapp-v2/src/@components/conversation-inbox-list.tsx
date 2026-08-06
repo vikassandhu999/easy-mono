@@ -1,7 +1,8 @@
 import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {useNavigate} from 'react-router-dom';
 
-import BrowseListBox from '@/@components/browse-list-box';
+import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
 import {type Conversation, useListCoachConversationsQuery} from '@/api/conversations';
@@ -38,9 +39,11 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
 
   return (
     <ListBox.Item
-      className={`min-h-16 px-4 py-3 transition-colors active:scale-100! data-[pressed=true]:scale-100! sm:px-8 ${
-        unread ? 'bg-accent-soft' : 'hover:bg-surface-hover'
-      }`}
+      // The shared row spec — gutters, hairlines, no press-scale. The old
+      // hand-rolled `px-4 sm:px-8` was tuned for the full-width `/messages`
+      // page and read as an oversized indent once the same list moved inside
+      // the workbench card next to `sm:px-4` queue rows.
+      className={cn(LIST_ITEM_CLASS, unread && 'bg-accent-soft hover:bg-accent-soft')}
       id={conversation.id}
       textValue={name}
     >

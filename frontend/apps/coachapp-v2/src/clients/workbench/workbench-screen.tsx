@@ -1,4 +1,4 @@
-import {Button, Skeleton, Typography} from '@heroui/react';
+import {Button, Skeleton} from '@heroui/react';
 import {CheckCircle2, UserPlus} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
@@ -17,6 +17,7 @@ import CheckInsView from './check-ins-view';
 import ClientQueueView from './client-queue-view';
 import {type RailEntry, WorkbenchChips, WorkbenchRail} from './rail';
 import RepliesView from './replies-view';
+import {ViewShell} from './view-shell';
 
 /**
  * The coach workbench — the surface that replaced the clients listing
@@ -92,32 +93,6 @@ function parseView(raw: null | string): undefined | ViewId {
   return VIEW_IDS.includes(raw as ViewId) ? (raw as ViewId) : undefined;
 }
 
-function ViewShell({children, meta, title}: {children: ReactNode; meta?: string; title: string}) {
-  return (
-    <section className="flex min-w-0 flex-1 flex-col gap-3">
-      <header className="flex items-baseline justify-between gap-3">
-        <Typography
-          className="font-grotesk"
-          type="h6"
-        >
-          {title}
-        </Typography>
-        {meta ? (
-          <Typography
-            color="muted"
-            type="body-xs"
-          >
-            {meta}
-          </Typography>
-        ) : null}
-      </header>
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-surface">
-        {children}
-      </div>
-    </section>
-  );
-}
-
 function ContentSkeleton() {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -165,8 +140,12 @@ export default function WorkbenchScreen() {
   if (view === undefined) {
     content = <ContentSkeleton />;
   } else if (view === 'caught-up') {
+    // Titled like every other pane: the caught-up state is the Today list with
+    // nothing in it, not a different kind of screen. Without the header its
+    // card started 38px higher than every queue's, and with no rail item
+    // selected the pane read as a failure to load rather than an achievement.
     content = (
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-surface">
+      <ViewShell title="Today">
         <EmptyState
           action={
             <Button
@@ -181,14 +160,14 @@ export default function WorkbenchScreen() {
           icon={CheckCircle2}
           title="You're caught up."
         />
-      </div>
+      </ViewShell>
     );
   } else if (view === 'all') {
     content = <AllClientsView />;
   } else if (view === 'messages') {
     content = (
       <ViewShell
-        meta={unread > 0 ? `${unread} unread ${unread === 1 ? 'message' : 'messages'}` : undefined}
+        meta={unread > 0 ? `${unread} unread ${unread === 1 ? 'message' : 'messages'}` : 'Most recent first'}
         title="Messages"
       >
         <ConversationInboxList />
@@ -249,7 +228,7 @@ export default function WorkbenchScreen() {
 
       <Page.Content bare>
         <Page.Frame
-          className="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-6 pt-1 lg:flex-row lg:gap-8"
+          className="flex flex-1 flex-col gap-4 px-4 pb-6 pt-1 lg:flex-row lg:gap-8"
           size="wide"
         >
           <WorkbenchRail

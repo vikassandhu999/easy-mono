@@ -33,27 +33,18 @@ export const MEAL_SLOT_LABELS: Record<string, string> = {
 
 // ── Weekday helpers ──────────────────────────────────────────
 
-export const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-
-export const WEEKDAY_LABELS: Record<string, string> = {
-  friday: 'Friday',
-  monday: 'Monday',
-  saturday: 'Saturday',
-  sunday: 'Sunday',
-  thursday: 'Thursday',
-  tuesday: 'Tuesday',
-  wednesday: 'Wednesday',
-};
-
-export const WEEKDAY_SHORT_LABELS: Record<string, string> = {
-  friday: 'Fri',
-  monday: 'Mon',
-  saturday: 'Sat',
-  sunday: 'Sun',
-  thursday: 'Thu',
-  tuesday: 'Tue',
-  wednesday: 'Wed',
-};
+// The days of the week are not a nutrition concept and not a training one, so
+// there is one list. These three were a byte-identical second copy of the
+// `TRAINING_*` set in `workout.ts` — same seven strings, same two label maps —
+// which is how the two plan builders ended up with two `WeekdayChips`
+// components that drifted apart on five axes (one of them clipping Sunday off
+// a 375px screen). The names stay so no importer has to change; only the
+// duplicated data is gone.
+export {
+  TRAINING_DAY_LABELS as WEEKDAY_LABELS,
+  TRAINING_DAY_SHORT_LABELS as WEEKDAY_SHORT_LABELS,
+  TRAINING_WEEKDAYS as WEEKDAYS,
+} from './workout';
 
 // ── Macro normalization ──────────────────────────────────────
 

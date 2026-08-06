@@ -156,14 +156,20 @@ function MealPaletteControl({title, trigger, onPick, renderCreate, ...content}: 
 interface AddMealControlProps {
   /** Plan meals that aren't on this day yet. */
   reusable: MealPaletteOption[];
+  /** Meals in the whole plan — tells the two empty reasons apart. */
+  planMealCount: number;
   onCreate: () => void;
   onReuse: (mealId: string) => void;
 }
 
-export function AddMealControl({reusable, onCreate, onReuse}: AddMealControlProps) {
+export function AddMealControl({reusable, planMealCount, onCreate, onReuse}: AddMealControlProps) {
   return (
     <MealPaletteControl
-      emptyLabel="Every meal is already on this day."
+      // An empty reuse list has two causes and `reusable` alone cannot tell
+      // them apart, so the plan's own count comes in. It used to always claim
+      // "Every meal is already on this day" — which on a brand-new plan, the
+      // first thing a coach sees, is a statement about zero meals.
+      emptyLabel={planMealCount === 0 ? 'No meals in this plan yet.' : 'Every meal is already on this day.'}
       groupLabel="Reuse an existing meal"
       onPick={onReuse}
       options={reusable}

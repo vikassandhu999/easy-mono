@@ -41,6 +41,7 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
       <Button
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-label="Add to client"
         className="gap-1.5 rounded-control border border-border bg-surface font-btn type-body font-semibold leading-none text-foreground sm:px-3"
         data-testid="nb-add-client"
         isPending={isAssigning}
@@ -49,7 +50,10 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
         variant="secondary"
       >
         <UserPlus size={15} />
-        Add to client
+        {/* Icon-only below `sm`, the same way the list screens' create button
+            collapses. At 375 the full label left the plan title 113px to render
+            in, so every builder title truncated to "Test N…" / "TB fixt…". */}
+        <span className="hidden sm:inline">Add to client</span>
       </Button>
 
       <PickerModal

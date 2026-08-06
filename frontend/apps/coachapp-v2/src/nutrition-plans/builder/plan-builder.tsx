@@ -19,6 +19,7 @@ import {Typography, useOverlayState} from '@heroui/react';
 import {useMemo, useRef, useState} from 'react';
 
 import type {NutritionMeal, NutritionPlan} from '@/api/nutrition-plan-builder';
+import {WeekdayChips} from '@/builder-kit/weekday-chips';
 
 import {AddItemsFlow} from './components/add-items-flow';
 import {AmountSheet} from './components/amount-sheet';
@@ -28,7 +29,6 @@ import {DeleteDayDialog} from './components/delete-day-dialog';
 import {MealCard, type MealSwap} from './components/meal-card';
 import type {HydratedMealItem} from './components/meal-item-row';
 import {AddMealControl, type MealPaletteOption} from './components/meal-palette';
-import {WeekdayChips} from './components/weekday-chips';
 import {computeDayTotals} from './macros';
 import {
   assignmentCounts,
@@ -38,6 +38,7 @@ import {
   mealPlacementSummary,
   slotRows,
 } from './plan-tree';
+import {assignedWeekdays} from './schedule';
 import {useActiveDay, usePlanBuilder} from './use-plan-builder';
 
 export function PlanBuilder({plan}: {plan: NutritionPlan}) {
@@ -155,7 +156,12 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
           : undefined;
 
   return (
-    <div className="mx-auto flex w-full max-w-195 flex-col gap-3 pb-4">
+    // No width here: `Page.Frame size="builder"` owns the builder column, the
+    // same as the training builder. This screen used to re-centre itself at
+    // `max-w-195` inside a 235-wide frame, so its header sat 80px wider than
+    // its own content on every desktop (AGENTS.md: width and centring are
+    // Page's job — a screen never hand-rolls `mx-auto max-w-*`).
+    <div className="flex w-full flex-col gap-3 pb-4">
       {/* Day switcher + weekday chips */}
       <div
         className="flex flex-wrap items-center justify-between gap-2"
@@ -173,11 +179,18 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
           onSelect={showDay}
         />
         <WeekdayChips
-          activeDay={activeDay}
-          assignments={weekdayAssignments}
-          onAssign={(weekday) => {
-            commands.scheduleWeekday(weekday, activeDay.id);
+          onToggle={(weekday, isSelected) => {
+            // A weekday belongs to exactly one day here, so only turning one ON
+            // is meaningful — moving it off whoever held it is what
+            // `scheduleWeekday` does. Turning one off would leave the weekday
+            // with no day at all, so the `false` case is deliberately ignored.
+            if (isSelected) {
+              commands.scheduleWeekday(weekday, activeDay.id);
+            }
           }}
+          ownerName={activeDay.name}
+          selected={assignedWeekdays(weekdayAssignments, activeDay.id)}
+          testIdPrefix="nb"
         />
       </div>
 
@@ -264,6 +277,7 @@ export function PlanBuilder({plan}: {plan: NutritionPlan}) {
         onReuse={(mealId) => {
           commands.addOption(activeDay.id, firstFreeSlot(activeDay), mealId).catch(() => undefined);
         }}
+        planMealCount={meals.length}
         reusable={reusableMeals}
       />
 

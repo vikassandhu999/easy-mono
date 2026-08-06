@@ -62,21 +62,14 @@ export default function TrainingPlanBuilderScreen() {
     <Page className="text-foreground leading-[normal]">
       <Page.Header
         className="gap-3"
-        size="wide"
+        size="builder"
       >
         <Page.TitleGroup className="flex min-w-0 items-center">
           <BackButton
             onPress={goBack}
             testId="tb-back"
           />
-          {/* Not Page.Title: `.typography--h3` is unlayered, so its letter-spacing
-              beats any utility and the design's -0.02em can't be applied there. */}
-          <h1
-            className="min-w-0 flex-1 truncate font-grotesk type-display font-semibold tracking-title text-foreground"
-            data-testid="tb-title"
-          >
-            {clientName ? `${plan.name} — ${clientName}` : plan.name}
-          </h1>
+          <Page.Title testId="tb-title">{clientName ? `${plan.name} — ${clientName}` : plan.name}</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
           <PlanAddToClient plan={plan} />
@@ -103,7 +96,7 @@ export default function TrainingPlanBuilderScreen() {
 function PlainShell({onBack, children}: {onBack: () => void; children: ReactNode}) {
   return (
     <Page>
-      <Page.Header size="wide">
+      <Page.Header size="builder">
         <BackButton onPress={onBack} />
       </Page.Header>
       {children}

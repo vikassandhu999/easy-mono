@@ -10,9 +10,9 @@ import {MoreHorizontal, TrashIcon} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 
 import {AS_ICON_BUTTON} from '@/@components/ua-defaults';
+import {WeekdayChips} from '@/builder-kit/weekday-chips';
 
 import type {Day} from '../schedule';
-import {WeekdayChips} from './weekday-chips';
 
 interface WorkoutHeaderProps {
   name: string;
@@ -120,8 +120,9 @@ export function WorkoutHeader({
       <div className="-mx-1 order-3 w-full min-w-0 overflow-x-auto px-1 py-0.5 sm:order-2 sm:mx-0 sm:w-auto sm:overflow-visible sm:p-0">
         <WeekdayChips
           onToggle={onToggleDay}
+          ownerName={name}
           selected={scheduledDays}
-          workoutName={name}
+          testIdPrefix="tb"
         />
       </div>
     </div>

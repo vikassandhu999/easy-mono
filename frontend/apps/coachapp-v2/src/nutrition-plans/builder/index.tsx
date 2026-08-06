@@ -32,7 +32,7 @@ export default function NutritionPlanBuilderScreen() {
   if (isLoading) {
     return (
       <Page>
-        <Page.Header size="wide">
+        <Page.Header size="builder">
           <BackButton onPress={goBack} />
         </Page.Header>
         <Page.Content>
@@ -45,11 +45,11 @@ export default function NutritionPlanBuilderScreen() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header size="wide">
+        <Page.Header size="builder">
           <BackButton onPress={goBack} />
         </Page.Header>
         <Page.Content bare>
-          <Page.Frame size="wide">
+          <Page.Frame size="builder">
             <ErrorState
               message="Couldn't load nutrition plan."
               onRetry={refetch}
@@ -73,12 +73,7 @@ export default function NutritionPlanBuilderScreen() {
             onPress={goBack}
             testId="nb-back"
           />
-          <h1
-            className="min-w-0 flex-1 truncate font-grotesk type-display font-semibold tracking-title text-foreground"
-            data-testid="nb-title"
-          >
-            {plan.name}
-          </h1>
+          <Page.Title testId="nb-title">{plan.name}</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
           <PlanAddToClient plan={plan} />
@@ -93,7 +88,7 @@ export default function NutritionPlanBuilderScreen() {
         bare
         className="pb-10"
       >
-        <Page.Frame size="wide">
+        <Page.Frame size="builder">
           <PlanBuilder plan={plan} />
         </Page.Frame>
       </Page.Content>

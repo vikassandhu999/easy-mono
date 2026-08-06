@@ -741,6 +741,40 @@ passing `planMealCount` so the caller's knowledge reaches the sentence. **Verify
 exercise BOTH branches — an empty collection and a full-but-all-used one — and confirm the
 copy differs; a single-case check cannot detect this class.
 
+### RM-178 — A row with its own controls is a grid row, not a listbox option
+Every workbench queue row carried a verb button (`Message` / `Assign plan` / `Review`) and
+some carried a snooze menu, all inside a `ListBox.Item`. The markup was correct and the
+buttons had `tabIndex=0`, and they were still **unreachable by keyboard**: a listbox option
+is a single focusable unit, so react-aria gives the whole list one tab stop, moves between
+rows with the arrows, and sends the next Tab out of the list entirely. Snooze had no
+keyboard path at all. Fixed with a `grid` opt-in on `BrowseListBox` (react-aria `GridList`
++ `GridListItem` + `GridListLoadMoreItem`), where ArrowRight steps into a row's controls.
+Grid rows own their press — list-level `onAction` does not apply, the row passes its own.
+**Verify by:** driving real `Tab`/`Arrow` key presses and logging `document.activeElement`
+at each stop. Programmatic `el.focus()` proves nothing here — react-aria tracks
+focus-visible itself, so a scripted focus reports a ring that a keyboard user never gets.
+
+### RM-180 — `scale-100!` cannot cancel a vendor `transform: scale(…)`
+`LIST_ITEM_CLASS` carried `active:scale-100! data-[pressed=true]:scale-100!` to kill HeroUI's
+row press effect, and the docstring above it stated "no press-scale animation". It never
+worked: the vendor rule is `.list-box-item[data-pressed=true]{transform:scale(.98)}`, and
+Tailwind v4 compiles `scale-*` to the **standalone `scale` property**. Two different
+properties both apply and multiply — `!important` is irrelevant because they were never
+competing. Every browse row in the app pressed to 98% under a class asserting it didn't.
+`transform-none!` is the cancel that lands. Same family as RM-134: a utility that looks like
+the fix and silently isn't. Enforced by `just check-rm` (RM-180). **Verify by:** set the
+`data-pressed` attribute by hand and read `getComputedStyle(el).transform` — synthetic
+events never trigger react-aria's press state, so clicking proves nothing. A valid probe
+shows identity on the fixed element AND `matrix(0.98…)` on an unfixed control beside it.
+
+### RM-179 — A pane inside `Page.Content` must not stretch to the viewport
+The workbench put `min-h-0 flex-1` on its `Page.Frame` and card, which is exactly what
+`page.tsx` documents as the thing not to do: `Page.Content` is deliberately `flex-1` with
+NO `min-h-0` so short pages hug and long lists overflow the scroll container. With the
+clamp back on, a drained queue rendered its empty state stranded at the top of a ~640px
+empty card, and a two-row queue showed two rows over a void. **Verify by:** open the state
+with the FEWEST rows (empty, and 1–2 rows) — a full list hides this class completely.
+
 ---
 
 ## Deploy / ops

@@ -106,6 +106,13 @@ check RM-141 "padding override on a vendor dialog (overlay gutter is the theme's
 check RM-175 "hand-copied page title (use Page.Title; a copy cannot inherit the mobile step)" \
   'font-grotesk[^"]*type-display' "$COACH" -g '!**/page.tsx'
 
+# RM-180 — `scale-100!` cannot cancel a vendor `transform: scale(...)`. Tailwind
+# v4 compiles `scale-*` to the standalone `scale` property; HeroUI's press effect
+# is `transform:scale(.98)`. Both apply and multiply, so the "kill switch" was a
+# no-op on every browse row in the app. `transform-none!` is the one that works.
+check RM-180 "scale-100! used to cancel a press effect (use transform-none!)" \
+  ':scale-100!' "$COACH" "$CLIENT"
+
 # RM-144 — every shared concept has an owning feature; no neutral bucket.
 # (a) The domain/ layer-bucket must not come back.
 check RM-144 "neutral domain/ bucket (concepts live in their owning feature's lib/)" \

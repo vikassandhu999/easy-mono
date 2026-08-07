@@ -135,5 +135,17 @@ for app in "$COACH" "$CLIENT"; do
   done
 done
 
+# RM-181 — a Button whose label hides at a breakpoint (`hidden sm:inline` span)
+# is icon-only there and must carry a constant aria-label. Multi-line match:
+# scan a Button's props+children up to the span, bailing at nested/closed Buttons.
+hits=$(rg -nU --pcre2 -g '*.tsx' \
+  '(?s)<Button\b(?:(?!<Button\b|</Button>|aria-label=).){0,400}?<span className="hidden (sm|md|lg):inline"' \
+  "$COACH" "$CLIENT")
+if [ -n "$hits" ]; then
+  echo "FAIL RM-181 — breakpoint-hidden button label without aria-label (see docs/agents/recurring-mistakes.md)"
+  echo "$hits" | head -10
+  fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then echo "check-rm: all clean"; fi
 exit $fail

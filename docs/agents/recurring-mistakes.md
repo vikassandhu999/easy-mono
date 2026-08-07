@@ -775,6 +775,24 @@ clamp back on, a drained queue rendered its empty state stranded at the top of a
 empty card, and a two-row queue showed two rows over a void. **Verify by:** open the state
 with the FEWEST rows (empty, and 1–2 rows) — a full list hides this class completely.
 
+### RM-181 — A responsively-hidden button label still needs `aria-label`
+The form builder's "Edit details" button wrapped its label in `<span className="hidden
+sm:inline">` to go icon-only on mobile — and `display:none` removes the span from the
+accessibility tree, so below `sm` the button had NO name (the a11y snapshot showed a bare
+`button` between named siblings). Any button whose visible label can hide at some
+breakpoint carries a constant `aria-label`. Gated in `scripts/check-rm.sh`. **Verify by:**
+a11y snapshot at 375px — every button row must carry a name.
+
+### RM-182 — A submit control far from its validation message scrolls it into view
+The form builder's Save lives in the sticky header while its validation message renders at
+the form's bottom; on a tall desktop form a failed save painted the error at y≈2000 in an
+800px viewport — the click looked like a silent no-op. When the submit affordance and the
+message can be more than a viewport apart, failed validation must `scrollIntoView` the
+message (or render the message adjacent to the trigger). Not mechanically gated: the
+distance is a runtime layout fact. **Verify by:** on the tallest reachable state, scroll to
+the opposite end from the message, submit invalid, and assert the message's
+`getBoundingClientRect()` lands inside the viewport.
+
 ---
 
 ## Deploy / ops

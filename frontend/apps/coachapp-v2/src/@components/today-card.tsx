@@ -70,7 +70,7 @@ function MenuRow({entry, onSelect}: {entry: TodayEntry; onSelect: (id: string) =
   const Icon = entry.icon;
   return (
     <Button
-      className="button--row h-auto w-full justify-start gap-3 rounded-control px-2.5 py-2.5 text-foreground"
+      className="button--row w-full justify-start gap-3 rounded-control px-2.5 py-2.5 text-foreground"
       onPress={() => onSelect(entry.id)}
       variant="ghost"
     >

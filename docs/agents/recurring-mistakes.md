@@ -784,6 +784,29 @@ Vite inlines `VITE_API_BASE_URL` at build time; unset on a deployed origin silen
 `localhost:4000`. Each Vite app ships `.env.example`, and `api/client.ts` `console.error`s
 on a non-local origin with the var unset. Keep both when adding a deployable FE.
 
+### RM-203 — A height-released row inside a capped scroll column needs `shrink-0`
+`.button--row` releases `min-height` to 0 (that is its job), and a flex child with
+`min-height: 0` inside a `max-h-* overflow-y-auto` flex column SHRINKS to fit instead of
+letting the column scroll. The add-to-client picker's 28 rows compressed to ~24px each and
+their two-line content overlapped unreadably; the pre-fix rows only survived because the
+control tier's 36px `min-height` was still flooring them by accident. Any content-sized row
+in a height-capped scroll list gets `shrink-0`. **Verify by:** rendering more rows than the
+cap fits and asserting a row's `offsetHeight` ≥ its content (or clicking a row Playwright
+says is "intercepted" by its sibling — that interception IS the overlap).
+
+### RM-204 — A date-only "today" written from the browser must hold on both clocks
+The assign flow sent `start_date = formatDateISO(new Date())` (the coach's LOCAL calendar
+date) while every backend in-force comparison uses `Date.utc_today()`. A plan assigned at
+00:05 IST carried tomorrow's date by UTC lights and was silently out of force for ~5.5
+hours (no chip, no coverage) — found live via Quinn Wilson's row. When the FE writes a
+date-only field that means "now", send the EARLIER of the local and UTC calendar dates
+(`assignStartDate()` in `@components/plan-add-to-client.tsx`) so the value satisfies both
+the server's UTC comparisons and any local-date check immediately. Not mechanically gated:
+`formatDateISO(new Date())` is legitimate in display code — the rule bites only in
+mutation payloads. **Verify by:** running the helper with `TZ=Pacific/Kiritimati` (UTC+14)
+and `TZ=Pacific/Midway` (UTC−11) and asserting the result is never after either clock's
+today.
+
 ### RM-202 — A verification command that can no-op is not verification
 `clientapp-v2`'s build script ran bare `tsc --noEmit`, but its root `tsconfig.json` is a
 solution file (`"files": []`, only `references`). Bare `tsc` on a solution config compiles

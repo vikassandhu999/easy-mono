@@ -25,6 +25,8 @@ export interface PickerModalProps {
   /** Title band on both shells; also the dialog's accessible name. Omit when
    *  the content renders its own header row. */
   title?: string;
+  /** Accessible dialog name when the content owns the visible header. */
+  ariaLabel?: string;
   /** Sticky confirm dock. Omit for instant-select pickers. */
   footer?: ReactNode;
   /** Desktop body override. Default is the fixed-height scroll body every
@@ -34,7 +36,7 @@ export interface PickerModalProps {
   children: ReactNode;
 }
 
-export function PickerModal({open, onClose, title, footer, bodyClassName, children}: PickerModalProps) {
+export function PickerModal({open, onClose, title, ariaLabel, footer, bodyClassName, children}: PickerModalProps) {
   const isDesktop = useIsDesktop();
 
   if (isDesktop) {
@@ -54,7 +56,7 @@ export function PickerModal({open, onClose, title, footer, bodyClassName, childr
           {/* p-0: the bands own their insets (SearchPickerBody's sticky search
               assumes the px-4 gutter). */}
           <Modal.Dialog
-            aria-label={title}
+            aria-label={title ?? ariaLabel}
             className="overflow-hidden p-0"
           >
             {open ? (
@@ -83,6 +85,7 @@ export function PickerModal({open, onClose, title, footer, bodyClassName, childr
 
   return (
     <KeyboardSheet
+      ariaLabel={ariaLabel}
       footer={open ? footer : undefined}
       onClose={onClose}
       open={open}

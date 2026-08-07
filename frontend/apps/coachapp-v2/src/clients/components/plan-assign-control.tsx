@@ -25,6 +25,7 @@ export default function PlanAssignControl({
 }: Props) {
   return (
     <AssignSurface
+      ariaLabel={kind === 'nutrition' ? 'Assign nutrition plan' : 'Assign training plan'}
       isOpen={isOpen}
       label={label}
       onOpenChange={onOpenChange}

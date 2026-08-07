@@ -23,6 +23,12 @@ Trust these over the handoff docs. When you discover a new one, add it here
   `min-w-0` or wide rows force horizontal page scroll at 390px (invisible at 1240px).
 - **`CloseButton` ships a filled circle at rest** — bare `×` needs `bg-transparent`;
   it also takes no `size` prop.
+- **HeroUI Drawer geometry is not keyboard-sheet geometry** — its wrapper tracks visual
+  viewport height, but the dialog keeps an `85vh` cap and ignores `offsetTop`/viewport
+  scroll. Keep `KeyboardSheet`'s custom bottom/max-height math; compose React Aria modal
+  semantics underneath it instead of swapping in Drawer.
+- **React Aria locks the document, not `Page`'s `.easy_main-content` scroller** — shared
+  overlays also need one reference-counted app-scroller lock held through exit unmount.
 - **`Button variant="secondary"` renders its label in accent** — on dark/ink surfaces
   add explicit `text-foreground`.
 - **Selection-mode collections don't fire `onAction`** — a `Dropdown.Menu`/`ListBox`

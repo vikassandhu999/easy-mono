@@ -1,46 +1,57 @@
 import {useEffect, useState} from 'react';
 
-export interface VisualViewportState {
-  keyboardHeight: number;
-  viewportHeight: number;
+import {calculateSheetGeometry, KEYBOARD_SHEET_TOP_GAP, type SheetGeometry} from './keyboard-sheet-state';
+
+export type VisualViewportState = SheetGeometry;
+
+function readViewportState(): VisualViewportState {
+  const layoutHeight = window.innerHeight;
+  const viewport = window.visualViewport;
+
+  return calculateSheetGeometry({
+    layoutHeight,
+    offsetTop: viewport?.offsetTop ?? 0,
+    topGap: KEYBOARD_SHEET_TOP_GAP,
+    viewportHeight: viewport?.height ?? layoutHeight,
+  });
 }
 
-/**
- * Tracks the visual viewport to derive the on-screen keyboard height.
- *
- * Formula: keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
- *   - vv.height shrinks when the keyboard opens.
- *   - vv.offsetTop accounts for any top-pinned browser chrome (e.g. iOS Safari
- *     address bar in compact mode) so we don't over-count.
- *   - Clamped ≥ 0 to guard against browser quirks that momentarily report a
- *     viewport taller than the window.
- *
- * SSR-safe: initial state uses window.innerHeight only when window exists.
- */
+/** Tracks visible mobile viewport geometry, including iOS viewport panning. */
 export function useVisualViewport(): VisualViewportState {
-  const [state, setState] = useState<VisualViewportState>({
-    keyboardHeight: 0,
-    viewportHeight: typeof window !== 'undefined' ? window.innerHeight : 0,
+  const [state, setState] = useState<VisualViewportState>(() => {
+    if (typeof window === 'undefined') {
+      return {bottomInset: 0, maxHeight: 0, viewportHeight: 0};
+    }
+
+    return readViewportState();
   });
 
   useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) {
-      return;
-    }
-
+    const viewport = window.visualViewport;
     const update = () => {
-      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      setState({keyboardHeight, viewportHeight: vv.height});
+      const next = readViewportState();
+      setState((current) =>
+        current.bottomInset === next.bottomInset &&
+        current.maxHeight === next.maxHeight &&
+        current.viewportHeight === next.viewportHeight
+          ? current
+          : next,
+      );
     };
 
     update();
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
+
+    if (!viewport) {
+      window.addEventListener('resize', update);
+      return () => window.removeEventListener('resize', update);
+    }
+
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
 
     return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
     };
   }, []);
 

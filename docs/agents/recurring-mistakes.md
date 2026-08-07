@@ -793,6 +793,24 @@ distance is a runtime layout fact. **Verify by:** on the tallest reachable state
 the opposite end from the message, submit invalid, and assert the message's
 `getBoundingClientRect()` lands inside the viewport.
 
+### RM-183 — A keyboard sheet needs offset-aware visual-viewport geometry
+A HeroUI Drawer replacement tracked visual viewport HEIGHT but kept an `85vh` dialog cap,
+ignored `visualViewport.offsetTop`/`scroll`, and added drag dismissal. Keyboard-open sheets
+could push their heading/search above the visible screen, and editor drafts gained a new
+swipe-loss path. A keyboard sheet keeps its own bottom inset and maximum height: listen to
+both viewport resize and scroll, position from `layoutHeight - viewportHeight - offsetTop`,
+and cap height from `viewportHeight` itself. Compose vendor focus/dialog semantics under
+that geometry; do not delegate the geometry or add dismiss gestures. **Enforced by:**
+`src/builder-kit/keyboard-sheet.check.ts` geometry cases plus mobile overlay verification.
+
+### RM-184 — Overlay locks for the app scroller are reference counted and exit-lived
+`Page` scrolls `.easy_main-content`, not the document. One lock saving/restoring one inline
+`overflow` value fails when overlays overlap: the first close unlocks under the second, and
+the final close can restore stale `hidden`. Acquire by target with a count, restore only on
+the final idempotent release, and keep the lock until the exiting overlay unmounts rather
+than when `open` first becomes false. **Enforced by:** nested, reverse-release, independent-
+target, and idempotent cases in `src/builder-kit/keyboard-sheet.check.ts`.
+
 ---
 
 ## Deploy / ops

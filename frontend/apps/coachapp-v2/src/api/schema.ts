@@ -2806,8 +2806,6 @@ export interface components {
      */
     ClientProfileFormTemplateUpdateRequest: {
       name?: string;
-      /** @enum {string} */
-      purpose?: 'intake' | 'check_in';
       sections?: ({
         questions: ({
           id: string;

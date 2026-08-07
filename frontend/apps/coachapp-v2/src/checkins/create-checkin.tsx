@@ -1,40 +1,61 @@
-import {toast} from '@heroui/react';
-import {useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {draftToRequest, emptyTemplateDraft, type TemplateDraft, useCreateFormTemplateMutation} from '@/api/checkins';
-import CheckinBuilder from '@/checkins/checkin-builder';
+import {PURPOSE_LABELS, useCreateFormTemplateMutation} from '@/api/checkins';
+import {applyFormErrors} from '@/api/shared';
+import CheckinDetailsForm, {type CheckinDetailsValues, useCheckinDetailsForm} from '@/checkins/checkin-details-form';
 
 export default function CreateCheckin() {
   const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CHECKINS);
   const createTemplateMutation = useCreateFormTemplateMutation();
 
-  const onSubmit = async (draft: TemplateDraft) => {
+  const form = useCheckinDetailsForm();
+
+  const onSubmit = async (data: CheckinDetailsValues) => {
     try {
-      await createTemplateMutation.mutateAsync(draftToRequest(draft));
-      toast.success('Form created');
-      navigate(ROUTES.CHECKINS, {replace: true});
-    } catch {
-      toast.danger("Form wasn't created. Try again.");
+      const result = await createTemplateMutation.mutateAsync({
+        name: data.name,
+        purpose: data.purpose,
+        // The builder opens on one empty section, ready for questions.
+        sections: [{title: PURPOSE_LABELS[data.purpose], questions: []}],
+        status: 'active',
+      });
+      navigate(generatePath(ROUTES.CHECKIN_BUILDER, {id: result.data.id}), {replace: true});
+    } catch (err) {
+      applyFormErrors(err, "Form wasn't created. Check the details and try again", form.setError);
     }
   };
 
   return (
     <Page>
-      <CheckinBuilder
-        backSlot={<BackButton onPress={goBack} />}
-        eyebrow="New form"
-        initialDraft={emptyTemplateDraft()}
-        isSubmitting={createTemplateMutation.isPending}
-        onCancel={goBack}
-        onSubmit={onSubmit}
-        submitLabel="Save form"
-        submittingLabel="Saving form"
-      />
+      <Page.Header size="content">
+        <Page.TitleGroup>
+          <div className="flex items-center">
+            <BackButton onPress={goBack} />
+            <Page.Title>Create form</Page.Title>
+          </div>
+          <Page.Description>Name the form now, then add questions next.</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <CheckinDetailsForm
+            form={form}
+            isSubmitting={createTemplateMutation.isPending}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Create form"
+            submittingLabel="Creating form"
+          />
+        </Page.Frame>
+      </Page.Content>
     </Page>
   );
 }

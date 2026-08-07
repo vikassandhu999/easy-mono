@@ -72,7 +72,7 @@ export default function ListCheckins() {
         ],
         selected: status,
       }}
-      onOpen={(key) => navigate(ROUTES.EDIT_CHECKIN.replace(':id', String(key)))}
+      onOpen={(key) => navigate(ROUTES.CHECKIN_BUILDER.replace(':id', String(key)))}
       // The form-templates endpoint returns the full set in one call, so there
       // is no next page — BrowseScreen renders no load-more sentinel.
       query={{isError, isLoading, items: visibleTemplates, refetch}}

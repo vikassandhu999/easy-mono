@@ -3288,15 +3288,6 @@
             "x-struct": null,
             "x-validate": null
           },
-          "purpose": {
-            "enum": [
-              "intake",
-              "check_in"
-            ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          },
           "sections": {
             "items": {
               "additionalProperties": true,

@@ -1,12 +1,11 @@
 /**
- * Form template builder (FB): name + type, then titled sections of typed
- * questions. Draft state lives here; the create/edit wrappers own the mutation
- * and supply the header's back affordance / extra actions.
+ * Form template builder (FB): titled sections of typed questions. Mirrors the
+ * training plan builder's anatomy — the form NAME is the page title, type +
+ * live summary are the sub-line, and name/type themselves are edited on the
+ * details screen (FB → FE, like TB → TE). The builder edits `sections` only.
  *
- * Layout follows design-handoff refs/FB.png: a page header carrying the live
- * `{n} questions · {m} required · {k} sections` summary, a details card, one
- * card per section holding collapsed question rows, and dashed "Add question" /
- * "Add section" affordances.
+ * The draft lives here; the screen shell (`checkin-builder-screen`) owns the
+ * fetch, the header's back/Edit details/Delete affordances, and the mutation.
  *
  * Reordering is menu-based (Move up / Move down) per GAPS.md #11 — the
  * prototype draws drag grips but implements menus, so no grip icon and no DnD
@@ -25,8 +24,6 @@ import {
   Separator,
   Switch,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from '@heroui/react';
 import {cn} from '@heroui/styles';
@@ -43,20 +40,11 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import {type ReactNode, useState} from 'react';
+import {type ReactNode, useRef, useState} from 'react';
 import {FormActions} from '@/@components/form-fields/form-actions';
 import {FormLayout} from '@/@components/form-fields/form-layout';
 import {Page} from '@/@components/page';
-import {
-  type FormPurpose,
-  newQuestion,
-  newSection,
-  PURPOSE_LABELS,
-  PURPOSES,
-  type QuestionDraft,
-  type SectionDraft,
-  type TemplateDraft,
-} from '@/api/checkins';
+import {newQuestion, newSection, type QuestionDraft, type SectionDraft} from '@/api/checkins';
 import AddQuestionControl from '@/checkins/question-palette';
 import {
   QUESTION_TYPE_ICONS,
@@ -72,10 +60,10 @@ function pluralize(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
 
-function summarize(draft: TemplateDraft): string {
-  const questions = draft.sections.flatMap((section) => section.questions);
+function summarize(sections: SectionDraft[]): string {
+  const questions = sections.flatMap((section) => section.questions);
   const required = questions.filter((question) => question.required).length;
-  return `${pluralize(questions.length, 'question')} · ${required} required · ${pluralize(draft.sections.length, 'section')}`;
+  return `${pluralize(questions.length, 'question')} · ${required} required · ${pluralize(sections.length, 'section')}`;
 }
 
 function moveInList<T>(items: T[], index: number, dir: -1 | 1): T[] {
@@ -521,34 +509,38 @@ function SectionCard({
 // ---------------------------------------------------------------------------
 
 interface Props {
-  /** Back affordance rendered by the create/edit wrapper. */
+  /** Back affordance rendered by the screen shell. */
   backSlot?: ReactNode;
-  /** Uppercase eyebrow above the live summary (`Editing form` / `New form`). */
-  eyebrow: string;
-  /** Wrapper-owned header actions (edit screen's Delete). */
-  headerExtra?: ReactNode;
-  initialDraft: TemplateDraft;
+  /** Shell-owned header actions (Delete, Edit details). */
+  headerActions?: ReactNode;
+  initialSections: SectionDraft[];
   isSubmitting: boolean;
+  /** Form name — display only; edited on the details screen. */
+  name: string;
   onCancel: () => void;
-  onSubmit: (draft: TemplateDraft) => void;
+  onSubmit: (sections: SectionDraft[]) => void;
+  /** Form type label — display only; edited on the details screen. */
+  purposeLabel: string;
   submitLabel: string;
   submittingLabel: string;
 }
 
 export default function CheckinBuilder({
   backSlot,
-  eyebrow,
-  headerExtra,
-  initialDraft,
+  headerActions,
+  initialSections,
   isSubmitting,
+  name,
   onCancel,
   onSubmit,
+  purposeLabel,
   submitLabel,
   submittingLabel,
 }: Props) {
-  const [draft, setDraft] = useState<TemplateDraft>(initialDraft);
+  const [sections, setSections] = useState<SectionDraft[]>(initialSections);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<null | string>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   const expand = (key: string) => setExpandedKeys((keys) => new Set(keys).add(key));
 
@@ -562,14 +554,11 @@ export default function CheckinBuilder({
     });
 
   const setSection = (index: number, section: SectionDraft) => {
-    setDraft((d) => ({...d, sections: d.sections.map((s, i) => (i === index ? section : s))}));
+    setSections((s) => s.map((item, i) => (i === index ? section : item)));
   };
 
   const validate = (): null | string => {
-    if (!draft.name.trim()) {
-      return 'Give the form a name.';
-    }
-    const questions = draft.sections.flatMap((s) => s.questions);
+    const questions = sections.flatMap((s) => s.questions);
     if (questions.length === 0) {
       return 'Add at least one question.';
     }
@@ -590,16 +579,18 @@ export default function CheckinBuilder({
     const validationError = validate();
     setError(validationError);
     if (validationError) {
+      // Desktop's Save sits in the sticky header while the message renders at
+      // the bottom of a long form — scroll to it or the failure looks silent.
+      requestAnimationFrame(() => errorRef.current?.scrollIntoView({behavior: 'smooth', block: 'center'}));
       return;
     }
     // Blank option rows are an editing artifact — drop them on the way out.
-    onSubmit({
-      ...draft,
-      sections: draft.sections.map((section) => ({
+    onSubmit(
+      sections.map((section) => ({
         ...section,
         questions: section.questions.map((q) => ({...q, options: q.options.filter((o) => o.trim())})),
       })),
-    });
+    );
   };
 
   return (
@@ -608,21 +599,18 @@ export default function CheckinBuilder({
         <Page.TitleGroup className="flex items-center gap-1">
           {backSlot}
           <div className="min-w-0">
+            <Page.Title>{name}</Page.Title>
             <Typography
-              className="uppercase tracking-wide"
+              className="mt-0.5"
               color="muted"
-              type="body-xs"
-              weight="bold"
+              type="body-sm"
             >
-              {eyebrow}
+              {purposeLabel} · {summarize(sections)}
             </Typography>
-            {/* The summary is the page title, so it must never truncate the
-                way a name would — Page.Title's default `truncate` is dropped. */}
-            <Page.Title className="overflow-visible text-balance whitespace-normal">{summarize(draft)}</Page.Title>
           </div>
         </Page.TitleGroup>
         <Page.Actions>
-          {headerExtra}
+          {headerActions}
           {/* Mobile keeps the single sticky save that FormActions already docks
               at the bottom, so this header copy is desktop-only. */}
           <Button
@@ -648,54 +636,17 @@ export default function CheckinBuilder({
               handleSubmit();
             }}
           >
-            <div className={cn(CARD_CLASS, 'flex flex-col gap-4')}>
-              <TextField
-                className="w-full"
-                onChange={(value) => setDraft((d) => ({...d, name: value}))}
-                value={draft.name}
-              >
-                <Label>Form name</Label>
-                <Input placeholder="e.g. Weekly Check-in" />
-              </TextField>
-
-              <div className="flex flex-col gap-2">
-                <Label>Type</Label>
-                <ToggleButtonGroup
-                  aria-label="Form type"
-                  className="segmented"
-                  isDetached
-                  onSelectionChange={(keys) => {
-                    const next = [...keys][0];
-                    if (next) {
-                      setDraft((d) => ({...d, purpose: next as FormPurpose}));
-                    }
-                  }}
-                  selectedKeys={[draft.purpose]}
-                  selectionMode="single"
-                >
-                  {PURPOSES.map((purpose) => (
-                    <ToggleButton
-                      id={purpose}
-                      key={purpose}
-                    >
-                      {PURPOSE_LABELS[purpose]}
-                    </ToggleButton>
-                  ))}
-                </ToggleButtonGroup>
-              </div>
-            </div>
-
             <div className="flex flex-col gap-4">
-              {draft.sections.map((section, index) => (
+              {sections.map((section, index) => (
                 <SectionCard
-                  count={draft.sections.length}
+                  count={sections.length}
                   expandedKeys={expandedKeys}
                   index={index}
                   key={section.key}
                   onChange={(next) => setSection(index, next)}
                   onExpand={expand}
-                  onMove={(dir) => setDraft((d) => ({...d, sections: moveInList(d.sections, index, dir)}))}
-                  onRemove={() => setDraft((d) => ({...d, sections: d.sections.filter((_, i) => i !== index)}))}
+                  onMove={(dir) => setSections((s) => moveInList(s, index, dir))}
+                  onRemove={() => setSections((s) => s.filter((_, i) => i !== index))}
                   onToggleExpand={toggleExpand}
                   section={section}
                 />
@@ -703,7 +654,7 @@ export default function CheckinBuilder({
 
               <Button
                 className={DASHED_BUTTON_CLASS}
-                onPress={() => setDraft((d) => ({...d, sections: [...d.sections, newSection('New section')]}))}
+                onPress={() => setSections((s) => [...s, newSection('New section')])}
                 variant="ghost"
               >
                 <FolderPlus />
@@ -711,7 +662,11 @@ export default function CheckinBuilder({
               </Button>
             </div>
 
-            {error ? <ErrorMessage>{error}</ErrorMessage> : null}
+            {error ? (
+              <div ref={errorRef}>
+                <ErrorMessage>{error}</ErrorMessage>
+              </div>
+            ) : null}
 
             {/* Desktop's Save lives in the sticky header (FB ref); this row is
                 the mobile counterpart, so it must not draw a second one there. */}

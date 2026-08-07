@@ -11,6 +11,7 @@ import Signup from '@/auth/signup';
 import VerifyInviteOtp from '@/auth/verify-invite-otp';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
 import VerifySignupOtp from '@/auth/verify-signup-otp';
+import CheckinBuilderScreen from '@/checkins/checkin-builder-screen';
 import CreateCheckin from '@/checkins/create-checkin';
 import EditCheckin from '@/checkins/edit-checkin';
 import ListCheckins from '@/checkins/list-checkins';
@@ -116,6 +117,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.CHECKINS, Component: ListCheckins},
       {path: ROUTES.CHECKIN_REVIEW, Component: ReviewCheckin},
       {path: ROUTES.CREATE_CHECKIN, Component: CreateCheckin},
+      {path: ROUTES.CHECKIN_BUILDER, Component: CheckinBuilderScreen},
       {path: ROUTES.EDIT_CHECKIN, Component: EditCheckin},
       {path: ROUTES.PROSPECTS, Component: ListProspects},
       {path: ROUTES.ENROLL_PROSPECT, Component: EnrollProspect},

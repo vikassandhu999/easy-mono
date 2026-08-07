@@ -42,6 +42,8 @@ export const ROUTES = {
   CHECKINS: '/library/check-ins',
   CHECKIN_REVIEW: '/library/check-ins/review/:id',
   CREATE_CHECKIN: '/library/check-ins/create',
+  // Mirrors training plans: `:id` is the builder, `:id/edit` the details form.
+  CHECKIN_BUILDER: '/library/check-ins/:id',
   EDIT_CHECKIN: '/library/check-ins/:id/edit',
   PROSPECTS: '/prospects',
   PROSPECT_DETAIL: '/prospects/:id',

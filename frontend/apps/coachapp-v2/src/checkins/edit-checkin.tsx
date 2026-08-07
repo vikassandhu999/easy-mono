@@ -1,6 +1,4 @@
-import {AlertDialog, Button, Typography, toast, useOverlayState} from '@heroui/react';
-import {Trash2} from 'lucide-react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {generatePath, useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
@@ -10,133 +8,87 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {
   type ClientProfileFormTemplate,
-  draftToRequest,
-  type TemplateDraft,
-  templateToDraft,
-  useDeleteFormTemplateMutation,
+  type FormPurpose,
   useGetFormTemplateQuery,
   useUpdateFormTemplateMutation,
 } from '@/api/checkins';
-import CheckinBuilder from '@/checkins/checkin-builder';
+import {applyFormErrors} from '@/api/shared';
+import CheckinDetailsForm, {type CheckinDetailsValues, useCheckinDetailsForm} from '@/checkins/checkin-details-form';
+
+// The one header for every state (loading / error / loaded). Keeps the back
+// button, title, and description identical so only the body swaps.
+function EditCheckinHeader({goBack}: {goBack: () => void}) {
+  return (
+    <Page.Header size="content">
+      <Page.TitleGroup>
+        <div className="flex items-center">
+          <BackButton onPress={goBack} />
+          <Page.Title>Edit form details</Page.Title>
+        </div>
+        <Page.Description>Rename the form. Questions live in the builder.</Page.Description>
+      </Page.TitleGroup>
+    </Page.Header>
+  );
+}
 
 function EditCheckinForm({template}: {template: ClientProfileFormTemplate}) {
-  const navigate = useNavigate();
-  const goBack = useGoBack(ROUTES.CHECKINS);
+  const goBack = useGoBack(generatePath(ROUTES.CHECKIN_BUILDER, {id: template.id}));
   const updateTemplateMutation = useUpdateFormTemplateMutation();
-  const deleteTemplateMutation = useDeleteFormTemplateMutation();
-  const isUpdating = updateTemplateMutation.isPending;
-  const isDeleting = deleteTemplateMutation.isPending;
-  const deleteConfirm = useOverlayState();
+  const form = useCheckinDetailsForm({
+    defaultValues: {name: template.name, purpose: template.purpose as FormPurpose},
+  });
 
-  const onSubmit = async (draft: TemplateDraft) => {
+  const onSubmit = async (data: CheckinDetailsValues) => {
     try {
       await updateTemplateMutation.mutateAsync({
         id: template.id,
-        body: draftToRequest(draft),
+        // The builder owns `sections`, and purpose is fixed at creation —
+        // the update endpoint doesn't even accept it. Name is all this saves.
+        body: {name: data.name},
       });
-      toast.success('Form saved');
-      navigate(ROUTES.CHECKINS, {replace: true});
-    } catch {
-      toast.danger("Form wasn't saved. Try again.");
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await deleteTemplateMutation.mutateAsync(template.id);
-      deleteConfirm.close();
-      navigate(ROUTES.CHECKINS, {replace: true});
-    } catch {
-      deleteConfirm.close();
-      toast.danger("Couldn't delete — it may be assigned to clients.");
+      goBack();
+    } catch (err) {
+      applyFormErrors(err, "Form wasn't updated. Check the details and try again", form.setError);
     }
   };
 
   return (
     <Page>
-      <CheckinBuilder
-        backSlot={<BackButton onPress={goBack} />}
-        eyebrow="Editing form"
-        headerExtra={
-          <Button
-            aria-label="Delete form"
-            isIconOnly
-            onPress={deleteConfirm.open}
-            variant="outline"
-          >
-            <Trash2 className="text-danger" />
-          </Button>
-        }
-        initialDraft={templateToDraft(template)}
-        isSubmitting={isUpdating}
-        onCancel={goBack}
-        onSubmit={onSubmit}
-        submitLabel="Save form"
-        submittingLabel="Saving form"
-      />
-
-      <AlertDialog.Backdrop
-        isDismissable={!isDeleting}
-        isOpen={deleteConfirm.isOpen}
-        onOpenChange={deleteConfirm.setOpen}
-      >
-        <AlertDialog.Container>
-          <AlertDialog.Dialog>
-            <AlertDialog.CloseTrigger />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading>Delete form?</AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <Typography>
-                This will permanently delete <strong>{template.name}</strong>. Forms with schedule or assignment history
-                cannot be deleted.
-              </Typography>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                isDisabled={isDeleting}
-                slot="close"
-                variant="tertiary"
-              >
-                Cancel
-              </Button>
-              <Button
-                isPending={isDeleting}
-                onPress={handleDelete}
-                variant="danger"
-              >
-                {isDeleting ? 'Deleting' : 'Delete'}
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
+      <EditCheckinHeader goBack={goBack} />
+      <Page.Content bare>
+        <Page.Frame
+          className="pt-4 pb-6"
+          size="content"
+        >
+          <CheckinDetailsForm
+            form={form}
+            isPurposeLocked
+            isSubmitting={updateTemplateMutation.isPending}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Save changes"
+            submittingLabel="Saving changes"
+          />
+        </Page.Frame>
+      </Page.Content>
     </Page>
   );
 }
 
 export default function EditCheckin() {
   const {id} = useParams<{id: string}>();
-  const goBack = useGoBack(ROUTES.CHECKINS);
-  const {data, isError, isLoading} = useGetFormTemplateQuery(id!);
+  const goBack = useGoBack(generatePath(ROUTES.CHECKIN_BUILDER, {id: id!}));
+  const {data, isError, isLoading, refetch} = useGetFormTemplateQuery(id!);
 
   if (isLoading) {
     return (
       <Page>
-        <Page.Header size="content">
-          <Page.TitleGroup>
-            <div className="flex items-center">
-              <BackButton onPress={goBack} />
-              <Page.Title>Edit form</Page.Title>
-            </div>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content
-          bare
-          className="pb-6"
-        >
-          <Page.Frame size="content">
+        <EditCheckinHeader goBack={goBack} />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
             <PageSkeleton />
           </Page.Frame>
         </Page.Content>
@@ -147,20 +99,16 @@ export default function EditCheckin() {
   if (isError || !data) {
     return (
       <Page>
-        <Page.Header size="content">
-          <Page.TitleGroup>
-            <div className="flex items-center">
-              <BackButton onPress={goBack} />
-              <Page.Title>Edit form</Page.Title>
-            </div>
-          </Page.TitleGroup>
-        </Page.Header>
-        <Page.Content
-          bare
-          className="pb-6"
-        >
-          <Page.Frame size="content">
-            <ErrorState message="Couldn't load check-in." />
+        <EditCheckinHeader goBack={goBack} />
+        <Page.Content bare>
+          <Page.Frame
+            className="pt-4 pb-6"
+            size="content"
+          >
+            <ErrorState
+              message="Couldn't load form."
+              onRetry={refetch}
+            />
           </Page.Frame>
         </Page.Content>
       </Page>

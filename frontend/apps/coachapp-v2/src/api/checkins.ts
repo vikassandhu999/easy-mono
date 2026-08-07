@@ -87,13 +87,8 @@ export type SectionDraft = {
   title: string;
 };
 
-export type TemplateDraft = {
-  name: string;
-  purpose: FormPurpose;
-  sections: SectionDraft[];
-};
-
-type QuestionRequest = ClientProfileFormTemplateRequest['sections'][number]['questions'][number];
+type SectionRequest = ClientProfileFormTemplateRequest['sections'][number];
+type QuestionRequest = SectionRequest['questions'][number];
 
 function uid(): string {
   return crypto.randomUUID();
@@ -105,10 +100,6 @@ export function newQuestion(): QuestionDraft {
 
 export function newSection(title = ''): SectionDraft {
   return {key: uid(), questions: [], title};
-}
-
-export function emptyTemplateDraft(): TemplateDraft {
-  return {name: '', purpose: 'check_in', sections: [newSection('Check-in')]};
 }
 
 function slugify(label: string): string {
@@ -135,37 +126,29 @@ function uniqueId(label: string, taken: Set<string>): string {
 
 const SELECT_TYPES: FormQuestionType[] = ['select', 'multi_select'];
 
-/** Parse a stored template (sections are loose JSON) into an editable draft. */
-export function templateToDraft(template: {
-  name: string;
-  purpose: string;
-  sections: {[key: string]: unknown}[];
-}): TemplateDraft {
-  return {
-    name: template.name,
-    purpose: template.purpose as FormPurpose,
-    sections: (template.sections ?? []).map((section) => ({
-      key: uid(),
-      title: typeof section.title === 'string' ? section.title : '',
-      questions: (Array.isArray(section.questions) ? section.questions : []).map((q: Record<string, unknown>) => {
-        return {
-          id: typeof q.id === 'string' ? q.id : '',
-          key: uid(),
-          label: typeof q.label === 'string' ? q.label : '',
-          options: Array.isArray(q.options) ? (q.options as string[]) : [],
-          required: q.required === true,
-          type: (q.type as FormQuestionType) ?? 'text',
-        };
-      }),
-    })),
-  };
+/** Parse a stored template's sections (loose JSON) into editable drafts. */
+export function templateToSections(sections: {[key: string]: unknown}[]): SectionDraft[] {
+  return (sections ?? []).map((section) => ({
+    key: uid(),
+    title: typeof section.title === 'string' ? section.title : '',
+    questions: (Array.isArray(section.questions) ? section.questions : []).map((q: Record<string, unknown>) => {
+      return {
+        id: typeof q.id === 'string' ? q.id : '',
+        key: uid(),
+        label: typeof q.label === 'string' ? q.label : '',
+        options: Array.isArray(q.options) ? (q.options as string[]) : [],
+        required: q.required === true,
+        type: (q.type as FormQuestionType) ?? 'text',
+      };
+    }),
+  }));
 }
 
-/** Build the create/update request body from a draft, assigning stable ids. */
-export function draftToRequest(draft: TemplateDraft): ClientProfileFormTemplateRequest {
+/** Build the request `sections` from section drafts, assigning stable ids. */
+export function sectionsToRequest(drafts: SectionDraft[]): SectionRequest[] {
   const taken = new Set<string>();
   // Reserve already-assigned ids so new questions don't collide with them.
-  for (const section of draft.sections) {
+  for (const section of drafts) {
     for (const q of section.questions) {
       if (q.id) {
         taken.add(q.id);
@@ -173,7 +156,7 @@ export function draftToRequest(draft: TemplateDraft): ClientProfileFormTemplateR
     }
   }
 
-  const sections = draft.sections.map((section) => ({
+  return drafts.map((section) => ({
     title: section.title,
     questions: section.questions.map((q) => {
       const id = q.id || uniqueId(q.label, taken);
@@ -185,8 +168,6 @@ export function draftToRequest(draft: TemplateDraft): ClientProfileFormTemplateR
       return question;
     }),
   }));
-
-  return {name: draft.name, purpose: draft.purpose, sections, status: 'active'};
 }
 
 // ---------------------------------------------------------------------------

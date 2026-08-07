@@ -1,7 +1,10 @@
+import {getFullName} from '@easy/utils';
 import {toast} from '@heroui/react';
+import {generatePath, useNavigate} from 'react-router-dom';
 
 import {toastMutationError} from '@/@components/mutation-toast';
-import {PlanAddToClientControl} from '@/@components/plan-add-to-client';
+import {assignStartDate, PlanAddToClientControl} from '@/@components/plan-add-to-client';
+import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import type {NutritionPlan} from '@/api/nutrition-plan-builder';
 import {patchPlan} from '@/api/nutrition-plan-builder';
@@ -12,6 +15,7 @@ export type Props = {
 };
 
 export function PlanAddToClient({plan}: Props) {
+  const navigate = useNavigate();
   const assignNutrition = useAssignNutritionPlanMutation();
 
   // Already assigned — nothing to add to.
@@ -23,7 +27,9 @@ export function PlanAddToClient({plan}: Props) {
     try {
       const result = await assignNutrition.mutateAsync({
         id: plan.id,
-        body: {client_id: client.id},
+        // start_date: the copy is live from today; the end stays open
+        // (add-to-client spec §3 — dates beyond "starts now" are builder work).
+        body: {client_id: client.id, start_date: assignStartDate()},
       });
       // Reflect the assignment in the cached detail. Assign may return a copy
       // (new id) — only patch when it's the same plan. meals /
@@ -39,7 +45,20 @@ export function PlanAddToClient({plan}: Props) {
           });
         });
       }
-      toast.success(`"${plan.name}" assigned`);
+      const clientName = getFullName(client.first_name, client.last_name) || client.email;
+      toast.success(
+        `"${plan.name}" assigned to ${clientName}`,
+        // Offer the hop to the assigned copy; skip it when the assign happened
+        // in place (same id): the coach is already looking at it.
+        result.data.id === plan.id
+          ? undefined
+          : {
+              actionProps: {
+                children: 'Open their copy',
+                onPress: () => navigate(generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: result.data.id})),
+              },
+            },
+      );
     } catch (e) {
       toastMutationError(e, "Nutrition plan wasn't assigned");
     }

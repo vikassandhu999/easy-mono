@@ -13,7 +13,7 @@ import {useListProspectsQuery} from '@/api/prospects';
 import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
 import {QuickActionsRow} from '@/dashboard/components/quick-actions-row';
 import {RecentActivityCell} from '@/dashboard/components/recent-activity-cell';
-import {WorkbenchCards} from '@/dashboard/components/workbench-cards';
+import {TodayCell} from '@/dashboard/components/today-cell';
 import {DashboardSetupCell} from '@/dashboard/dashboard-setup-cell';
 import {formatDashboardDate} from '@/dashboard/lib/date-format';
 
@@ -191,7 +191,7 @@ export default function Dashboard() {
           ) : null}
 
           <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1.62fr)_minmax(0,1fr)]">
-            <WorkbenchCards leadCount={newProspects.length} />
+            <TodayCell leadCount={newProspects.length} />
 
             <div className="flex min-w-0 flex-col gap-5">
               <RecentActivityCell

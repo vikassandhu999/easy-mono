@@ -1,8 +1,8 @@
 import type {Key} from '@heroui/react';
 
-import {Button, SearchField, ToggleButton, ToggleButtonGroup} from '@heroui/react';
+import {Button, ToggleButton, ToggleButtonGroup} from '@heroui/react';
 import {ArrowUpDown} from 'lucide-react';
-import {useDeferredValue, useState} from 'react';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import BrowseListBox from '@/@components/browse-list-box';
@@ -32,22 +32,19 @@ const FILTER_OPTIONS: FilterOption[] = [
   {id: 'inactive', label: 'Inactive', status: 'inactive', summaryKey: 'inactive'},
 ];
 
-const SEARCH_GROUP =
-  'min-h-9 gap-2 rounded-control border border-border bg-background type-body leading-[normal] [box-shadow:none] text-muted';
-
+// No search box here — the workbench's search field (in the rail / above the
+// chips) is the roster's front door and already searches all clients.
 export default function AllClientsView() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterId>('all');
   const [sort, setSort] = useState<'last_active' | 'newest'>('newest');
 
-  const deferredSearch = useDeferredValue(search);
   const activeStatus = FILTER_OPTIONS.find((option) => option.id === statusFilter)?.status;
 
-  const list = useInfiniteItems(useClientsInfiniteQuery({search: deferredSearch, sort, status: activeStatus}));
+  const list = useInfiniteItems(useClientsInfiniteQuery({sort, status: activeStatus}));
   const {data: summaryData} = useListClientsQuery({limit: 0});
 
-  const hasFilter = !!deferredSearch || statusFilter !== 'all';
+  const hasFilter = statusFilter !== 'all';
 
   const getCount = (option: FilterOption): number | undefined => {
     if (!summaryData) {
@@ -62,19 +59,6 @@ export default function AllClientsView() {
       title="All clients"
       toolbar={
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <SearchField
-            aria-label="Search clients"
-            className="w-full min-w-0 sm:max-w-64 sm:flex-1"
-            onChange={setSearch}
-            value={search}
-          >
-            <SearchField.Group className={SEARCH_GROUP}>
-              <SearchField.SearchIcon />
-              <SearchField.Input placeholder="Search clients" />
-              <SearchField.ClearButton />
-            </SearchField.Group>
-          </SearchField>
-
           <div className="-mx-4 min-w-0 max-w-full overflow-x-auto px-4 sm:mx-0 sm:px-0">
             <ToggleButtonGroup
               aria-label="Filter clients"
@@ -129,13 +113,10 @@ export default function AllClientsView() {
             createLabel="Invite client"
             createRoute={ROUTES.INVITE_CLIENT}
             emptyDescription="Invite your first client to get started."
-            filterDescription="Try adjusting your search or filter to find what you're looking for."
+            filterDescription="Try adjusting your filter to find what you're looking for."
             hasFilter={hasFilter}
             nounPlural="clients"
-            onClearFilters={() => {
-              setSearch('');
-              setStatusFilter('all');
-            }}
+            onClearFilters={() => setStatusFilter('all')}
           />
         }
         fetchNextPage={list.fetchNextPage}

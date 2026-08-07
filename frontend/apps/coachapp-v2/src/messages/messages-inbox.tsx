@@ -3,9 +3,8 @@ import {Page} from '@/@components/page';
 import {useListCoachConversationsQuery} from '@/api/conversations';
 
 /**
- * The full-page inbox — the mobile bottom-nav destination and the `/messages`
- * deep link. On desktop the same list renders inline in the workbench
- * (`/clients?view=messages`).
+ * The full-page inbox — the Messages destination on both breakpoints (mobile
+ * bottom nav, desktop sidebar).
  */
 export default function MessagesInbox() {
   const {data} = useListCoachConversationsQuery();

@@ -1,93 +1,47 @@
 import {Button, Skeleton} from '@heroui/react';
-import {CheckCircle2, UserPlus} from 'lucide-react';
+import {CheckCircle2, ChevronLeft, UserPlus} from 'lucide-react';
 import type {ReactNode} from 'react';
+import {useDeferredValue, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
-import {ConversationInboxList} from '@/@components/conversation-inbox-list';
 import {EmptyState} from '@/@components/empty-state';
 import {Page} from '@/@components/page';
+import {TodayCard} from '@/@components/today-card';
 import {ROUTES} from '@/@config/routes';
 import type {ClientQueue} from '@/api/clients';
 import {useListClientsQuery} from '@/api/clients';
-import {useListCoachConversationsQuery} from '@/api/conversations';
-import {useWorkbenchCountsQuery, type WorkbenchCounts} from '@/api/workbench';
+import {useWorkbenchCountsQuery} from '@/api/workbench';
+import {queueEntries, queueMeta, TODAY_QUEUES, type WorkbenchQueueId} from '@/clients/lib/workbench-queues';
 
 import AllClientsView from './all-clients-view';
 import CheckInsView from './check-ins-view';
 import ClientQueueView from './client-queue-view';
-import {type RailEntry, WorkbenchChips, WorkbenchRail} from './rail';
+import {ClientSearchField, WorkbenchRail} from './rail';
 import RepliesView from './replies-view';
+import SearchResultsView from './search-results-view';
 import {ViewShell} from './view-shell';
 
 /**
  * The coach workbench — the surface that replaced the clients listing
  * (spec: docs/superpowers/specs/2026-08-06-coach-workbench-spec.md).
- * A rail of drainable queues is primary; the roster and the message inbox are
- * demoted to Browse. Queue selection lives in the URL (`?view=`) so Back
- * returns to the same queue.
+ * A rail of drainable queues is primary. The Browse group is gone
+ * (2026-08-07): the search field over the whole roster replaced All clients
+ * as the way to reach a specific client, and Messages moved back to the app
+ * sidebar/bottom nav (`/messages`) — the workbench's messaging WORK is the
+ * Replies queue. The roster view (`?view=all`, with status filters) survives
+ * as the counts-error fallback and the caught-up pane's target.
+ *
+ * Queue selection lives in the URL (`?view=`), and the URL is also the mobile
+ * navigation level (push-nav, decision 2026-08-07): below `lg`, no `?view=`
+ * shows the Today card as a full-width menu, `?view=X` is drilled into that
+ * queue with a "‹ Today" row — so browser Back pops a drill-in and deep links
+ * land drilled. Desktop ignores the levels: the rail is always visible and a
+ * missing `?view=` auto-lands on the first queue with work (spec §11.1).
  */
 
-const CLIENT_QUEUES = ['programming', 'expiring', 'quiet', 'new'] as const;
-type ViewId = 'all' | 'check-ins' | 'messages' | 'replies' | (typeof CLIENT_QUEUES)[number];
+type ViewId = 'all' | WorkbenchQueueId;
 
-type QueueDef = {
-  countKey: keyof WorkbenchCounts;
-  id: Exclude<ViewId, 'all'>;
-  label: string;
-  meta: (count: number) => string;
-  muted?: boolean;
-  title: string;
-};
-
-// Order is the coach's morning sequence: review what came in, answer who's
-// waiting, fix what's about to lapse, welcome who's new (spec §3).
-const TODAY: QueueDef[] = [
-  {
-    countKey: 'check_ins',
-    id: 'check-ins',
-    label: 'Check-ins',
-    meta: (n) => `${n} to review, oldest first`,
-    title: 'Check-ins',
-  },
-  {
-    countKey: 'replies',
-    id: 'replies',
-    label: 'Replies',
-    meta: (n) => `${n} waiting on you, longest first`,
-    title: 'Replies',
-  },
-  {
-    countKey: 'programming',
-    id: 'programming',
-    label: 'Programming',
-    meta: (n) => `${n} running out of programming`,
-    title: 'Programming',
-  },
-  {
-    countKey: 'expiring',
-    id: 'expiring',
-    label: 'Expiring',
-    meta: (n) => `${n} renewals due within 7 days`,
-    title: 'Expiring',
-  },
-  {
-    countKey: 'quiet',
-    id: 'quiet',
-    label: 'Quiet',
-    meta: (n) => `${n} gone quiet, longest first`,
-    title: 'Quiet',
-  },
-  {
-    countKey: 'new_clients',
-    id: 'new',
-    label: 'New clients',
-    meta: (n) => `${n} in onboarding`,
-    muted: true,
-    title: 'New clients',
-  },
-];
-
-const VIEW_IDS: ViewId[] = ['all', 'messages', ...TODAY.map((queue) => queue.id)];
+const VIEW_IDS: ViewId[] = ['all', ...TODAY_QUEUES.map((queue) => queue.id)];
 
 function parseView(raw: null | string): undefined | ViewId {
   return VIEW_IDS.includes(raw as ViewId) ? (raw as ViewId) : undefined;
@@ -109,35 +63,38 @@ export default function WorkbenchScreen() {
   const countsQuery = useWorkbenchCountsQuery();
   const counts = countsQuery.data?.data;
   const {data: summaryData} = useListClientsQuery({limit: 0});
-  const {data: conversationsData} = useListCoachConversationsQuery();
-  const unread = (conversationsData?.data ?? []).reduce((sum, c) => sum + c.unread_count, 0);
+
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
 
   const requested = parseView(searchParams.get('view'));
-  const firstNonEmpty = counts ? TODAY.find((queue) => counts[queue.countKey] > 0)?.id : undefined;
+  const firstNonEmpty = counts ? TODAY_QUEUES.find((queue) => counts[queue.countKey] > 0)?.id : undefined;
   // Landing view (spec §11.1): the first queue with work; the caught-up pane
   // when every queue is drained; the roster only when counts can't load.
   const view: 'caught-up' | undefined | ViewId =
     requested ?? (countsQuery.isError ? 'all' : counts ? (firstNonEmpty ?? 'caught-up') : undefined);
 
-  const todayEntries: RailEntry[] = TODAY.map((queue) => ({
-    count: counts?.[queue.countKey],
-    id: queue.id,
-    label: queue.label,
-    muted: queue.muted,
-  }));
-  // The inbox renders inline like every other view; its count keeps unread
-  // semantics because it is an awareness surface, not a work queue (spec §6).
-  const browseEntries: RailEntry[] = [
-    {id: 'all', label: 'All clients'},
-    {id: 'messages', count: unread, label: 'Messages'},
-  ];
-
+  const todayEntries = queueEntries(counts);
   const selectView = (id: string) => setSearchParams({view: id});
 
-  const activeQueue = TODAY.find((queue) => queue.id === view);
+  const activeQueue = TODAY_QUEUES.find((queue) => queue.id === view);
+
+  // Mobile levels (desktop ignores both): no explicit `?view=` and no active
+  // search means the menu; a `?view=` means drilled into that queue.
+  const menuMode = requested === undefined && !deferredSearch;
+  const drillLabel = activeQueue?.label ?? (requested === 'all' ? 'All clients' : undefined);
 
   let content: ReactNode;
-  if (view === undefined) {
+  if (deferredSearch) {
+    // Search overrides whatever queue is selected — it looks across the whole
+    // roster, and clearing it drops you back on the queue you were working.
+    content = (
+      <SearchResultsView
+        onClear={() => setSearch('')}
+        search={deferredSearch}
+      />
+    );
+  } else if (view === undefined) {
     content = <ContentSkeleton />;
   } else if (view === 'caught-up') {
     // Titled like every other pane: the caught-up state is the Today list with
@@ -164,19 +121,10 @@ export default function WorkbenchScreen() {
     );
   } else if (view === 'all') {
     content = <AllClientsView />;
-  } else if (view === 'messages') {
-    content = (
-      <ViewShell
-        meta={unread > 0 ? `${unread} unread ${unread === 1 ? 'message' : 'messages'}` : 'Most recent first'}
-        title="Messages"
-      >
-        <ConversationInboxList />
-      </ViewShell>
-    );
   } else if (view === 'check-ins') {
     content = (
       <ViewShell
-        meta={counts ? activeQueue?.meta(counts[activeQueue.countKey]) : undefined}
+        meta={counts && activeQueue ? queueMeta(activeQueue, counts[activeQueue.countKey]) : undefined}
         title="Check-ins"
       >
         <CheckInsView />
@@ -185,7 +133,7 @@ export default function WorkbenchScreen() {
   } else if (view === 'replies') {
     content = (
       <ViewShell
-        meta={counts ? activeQueue?.meta(counts[activeQueue.countKey]) : undefined}
+        meta={counts && activeQueue ? queueMeta(activeQueue, counts[activeQueue.countKey]) : undefined}
         title="Replies"
       >
         <RepliesView />
@@ -194,7 +142,7 @@ export default function WorkbenchScreen() {
   } else {
     content = (
       <ViewShell
-        meta={counts && activeQueue ? activeQueue.meta(counts[activeQueue.countKey]) : undefined}
+        meta={counts && activeQueue ? queueMeta(activeQueue, counts[activeQueue.countKey]) : undefined}
         title={activeQueue?.title ?? ''}
       >
         <ClientQueueView queue={view as ClientQueue} />
@@ -233,18 +181,43 @@ export default function WorkbenchScreen() {
         >
           <WorkbenchRail
             active={view}
-            browse={browseEntries}
+            entries={todayEntries}
+            onSearchChange={setSearch}
             onSelect={selectView}
-            today={todayEntries}
+            search={search}
           />
           <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <WorkbenchChips
-              active={view}
-              browse={browseEntries}
-              onSelect={selectView}
-              today={todayEntries}
-            />
-            {content}
+            <div className="flex min-w-0 flex-col gap-3 lg:hidden">
+              <ClientSearchField
+                onSearchChange={setSearch}
+                search={search}
+              />
+              {menuMode ? (
+                <TodayCard
+                  detailed
+                  entries={todayEntries}
+                  onSelect={selectView}
+                />
+              ) : null}
+              {!menuMode && requested !== undefined && !deferredSearch ? (
+                <Button
+                  className="button--row h-8 w-fit justify-start gap-1 rounded-control px-2 type-body font-medium text-muted"
+                  onPress={() => setSearchParams({})}
+                  variant="ghost"
+                >
+                  <ChevronLeft className="size-4" />
+                  Today
+                  {drillLabel ? <span className="text-foreground">· {drillLabel}</span> : null}
+                </Button>
+              ) : null}
+            </div>
+            <div
+              className={
+                menuMode ? 'hidden min-w-0 flex-1 flex-col gap-3 lg:flex' : 'flex min-w-0 flex-1 flex-col gap-3'
+              }
+            >
+              {content}
+            </div>
           </div>
         </Page.Frame>
       </Page.Content>

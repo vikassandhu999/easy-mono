@@ -34,11 +34,13 @@ interface NavItem {
   path: string;
 }
 
-// Messages left the desktop sidebar in workbench phase 2 — the rail's Messages
-// item (with the unread count) is the desktop entry; mobile keeps its tab.
+// Messages is app-level nav on both breakpoints (back in the sidebar
+// 2026-08-07, when it left the workbench rail): the inbox is awareness, the
+// workbench's messaging WORK is the Replies queue.
 const PRIMARY: NavItem[] = [
   {icon: <LayoutDashboard size={ICON} />, label: 'Dashboard', path: ROUTES.DASHBOARD},
   {badge: <WorkbenchDot />, icon: <Users size={ICON} />, label: 'Clients', path: ROUTES.CLIENTS},
+  {badge: <UnreadBadge />, icon: <MessageCircle size={ICON} />, label: 'Messages', path: ROUTES.MESSAGES},
 ];
 
 const BUILDER: NavItem[] = [

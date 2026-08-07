@@ -94,6 +94,18 @@ defmodule EasyWeb.Coaches.FormTemplateControllerTest do
       assert json_response(conn, 404)
       assert Repo.get!(FormTemplate, template.id).name == "Unchanged"
     end
+
+    test "rejects purpose changes (type is fixed at creation)", %{conn: conn, business: business} do
+      template = insert(:form_template, business: business, purpose: :check_in)
+
+      conn =
+        patch(conn, "/v1/coach/form-templates/#{template.id}", %{
+          "purpose" => "intake"
+        })
+
+      assert json_response(conn, 422)
+      assert Repo.get!(FormTemplate, template.id).purpose == :check_in
+    end
   end
 
   describe "DELETE /v1/coach/form-templates/:id" do

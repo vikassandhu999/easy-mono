@@ -83,9 +83,9 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateUpdateRequest do
       title: "ClientProfileFormTemplateUpdateRequest",
       type: :object,
       additionalProperties: false,
+      # Purpose is fixed at creation and not updatable.
       properties: %{
         name: %Schema{type: :string},
-        purpose: %Schema{type: :string, enum: Common.form_purposes()},
         sections: %Schema{type: :array, items: Common.form_section_schema()},
         status: %Schema{type: :string, enum: Common.template_statuses()}
       },

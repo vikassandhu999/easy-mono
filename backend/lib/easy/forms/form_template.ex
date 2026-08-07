@@ -62,13 +62,13 @@ defmodule Easy.Forms.FormTemplate do
     |> check_constraint(:system_version, name: :form_templates_system_version_positive)
   end
 
+  # Purpose is fixed at creation — it is deliberately not castable here.
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(template, attrs) do
     template
-    |> cast(attrs, [:name, :purpose, :sections, :status])
-    |> validate_required([:name, :purpose, :sections, :status])
+    |> cast(attrs, [:name, :sections, :status])
+    |> validate_required([:name, :sections, :status])
     |> validate_sections()
-    |> check_constraint(:purpose, name: :form_templates_purpose_check)
     |> check_constraint(:status, name: :form_templates_status_check)
   end
 

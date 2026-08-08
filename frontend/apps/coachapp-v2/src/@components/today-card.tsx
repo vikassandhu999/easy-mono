@@ -1,6 +1,11 @@
 import {Button} from '@heroui/react';
 import {cn} from '@heroui/styles';
-import {ChevronRight, type LucideIcon} from 'lucide-react';
+import {ChevronRight, type LucideIcon, MessageCircle, Search} from 'lucide-react';
+import {useState} from 'react';
+
+import {ClientSearchModal} from '@/@components/client-search-modal';
+import {MessagesModal} from '@/@components/messages-modal';
+import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
 
 /**
  * One Today-card item. `count` is a TOTAL (work remaining), never an unread
@@ -88,6 +93,60 @@ function MenuRow({entry, onSelect}: {entry: TodayEntry; onSelect: (id: string) =
   );
 }
 
+const FOOTER_BUTTON =
+  'button--row h-8 flex-1 justify-center gap-1.5 rounded-control px-2 type-body font-medium text-muted hover:bg-surface-secondary';
+
+/**
+ * Low-priority utilities demoted out of the app nav (decision 2026-08-08):
+ * roster-wide client search and the message inbox open as modals from under
+ * the queues. Awareness stays — a dot, not a count: the actionable messaging
+ * number is the Replies queue above, and a second figure would compete with it.
+ */
+function UtilityFooter() {
+  const [open, setOpen] = useState<'messages' | 'search' | null>(null);
+  // Same first-page read the sidebar badge used — unread sorts to the top.
+  const {data} = useCoachConversationsInfiniteQuery();
+  const hasUnread = (data?.pages ?? []).flatMap((page) => page.data).some((c) => c.unread_count > 0);
+
+  return (
+    <>
+      <div className="flex gap-0.5 border-t border-border p-1.5">
+        <Button
+          className={FOOTER_BUTTON}
+          onPress={() => setOpen('search')}
+          variant="ghost"
+        >
+          <Search className="size-4 shrink-0" />
+          Search
+        </Button>
+        <Button
+          className={FOOTER_BUTTON}
+          onPress={() => setOpen('messages')}
+          variant="ghost"
+        >
+          <MessageCircle className="size-4 shrink-0" />
+          Messages
+          {hasUnread ? (
+            <span
+              aria-label="Unread messages"
+              className="size-1.5 shrink-0 rounded-pill bg-accent"
+              role="status"
+            />
+          ) : null}
+        </Button>
+      </div>
+      <ClientSearchModal
+        onClose={() => setOpen(null)}
+        open={open === 'search'}
+      />
+      <MessagesModal
+        onClose={() => setOpen(null)}
+        open={open === 'messages'}
+      />
+    </>
+  );
+}
+
 /**
  * The Today card — the ONE representation of today's work, shared by the
  * workbench (desktop rail compact, mobile menu detailed) and the dashboard
@@ -139,6 +198,7 @@ export function TodayCard({
           ),
         )}
       </div>
+      <UtilityFooter />
     </nav>
   );
 }

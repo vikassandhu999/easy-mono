@@ -1,6 +1,6 @@
 import {getInitials} from '@easy/utils';
 import type {Key} from '@heroui/react';
-import {Avatar, Button, Chip, Description, Label, ListBox, Typography} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox, Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {useNavigate} from 'react-router-dom';
 
@@ -80,19 +80,9 @@ export function RecentActivityCell({conversations, isError}: {conversations: Con
 
   return (
     <section className="flex min-w-0 flex-col gap-3">
-      <DashboardSectionHeading
-        aside={
-          <Button
-            className="shrink-0 text-muted"
-            onPress={() => navigate(ROUTES.MESSAGES)}
-            size="sm"
-            variant="ghost"
-          >
-            Inbox
-          </Button>
-        }
-        title="Recent conversations"
-      />
+      {/* No Inbox link: the full inbox opens from the Today card's Messages
+          footer, one cell over (nav demotion 2026-08-08). */}
+      <DashboardSectionHeading title="Recent conversations" />
 
       {isError ? (
         <div className="rounded-card border border-border bg-surface px-4 py-6 text-center">

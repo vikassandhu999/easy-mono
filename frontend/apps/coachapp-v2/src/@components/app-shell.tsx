@@ -1,5 +1,5 @@
 import {getInitials} from '@easy/utils';
-import {Button, Chip, CloseButton, Toast} from '@heroui/react';
+import {Button, CloseButton, Toast} from '@heroui/react';
 import {useQueryClient} from '@tanstack/react-query';
 import {
   ChefHat,
@@ -8,7 +8,6 @@ import {
   Dumbbell,
   LayoutDashboard,
   LayoutGrid,
-  MessageCircle,
   Salad,
   Settings,
   Users,
@@ -16,11 +15,12 @@ import {
   X,
 } from 'lucide-react';
 import type {ReactNode} from 'react';
+import {useEffect, useState} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
+import {ClientSearchModal} from '@/@components/client-search-modal';
 import {ROUTES} from '@/@config/routes';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
 import {useInstallPrompt} from '@/@hooks/use-install-prompt';
-import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
 import {conversationKeys, workbenchKeys} from '@/api/keys';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
@@ -34,13 +34,12 @@ interface NavItem {
   path: string;
 }
 
-// Messages is app-level nav on both breakpoints (back in the sidebar
-// 2026-08-07, when it left the workbench rail): the inbox is awareness, the
-// workbench's messaging WORK is the Replies queue.
+// Messages left the app nav (2026-08-08): the workbench's messaging WORK is
+// the Replies queue, and the inbox + roster search are low-priority utilities
+// living as modals in the Today card's footer (plus ⌘K for search).
 const PRIMARY: NavItem[] = [
   {icon: <LayoutDashboard size={ICON} />, label: 'Dashboard', path: ROUTES.DASHBOARD},
   {badge: <WorkbenchDot />, icon: <Users size={ICON} />, label: 'Clients', path: ROUTES.CLIENTS},
-  {badge: <UnreadBadge />, icon: <MessageCircle size={ICON} />, label: 'Messages', path: ROUTES.MESSAGES},
 ];
 
 const BUILDER: NavItem[] = [
@@ -57,7 +56,6 @@ const BOTTOM_NAV: NavItem[] = [
   {icon: <LayoutDashboard size={21} />, label: 'Dashboard', path: ROUTES.DASHBOARD},
   {icon: <Users size={21} />, label: 'Clients', path: ROUTES.CLIENTS},
   {icon: <LayoutGrid size={21} />, label: 'Builder', path: ROUTES.LIBRARY},
-  {badge: <UnreadBadge />, icon: <MessageCircle size={21} />, label: 'Messages', path: ROUTES.MESSAGES},
 ];
 
 function SidebarLink({item}: {item: NavItem}) {
@@ -96,25 +94,6 @@ function WorkbenchDot() {
       className="size-2 shrink-0 rounded-pill bg-accent"
       role="status"
     />
-  );
-}
-
-function UnreadBadge() {
-  // Sums the loaded inbox pages (page 1 until the user scrolls the inbox) —
-  // unread conversations sort to the top, so the first page carries them.
-  const {data} = useCoachConversationsInfiniteQuery();
-  const count = (data?.pages ?? []).flatMap((page) => page.data).reduce((sum, c) => sum + c.unread_count, 0);
-  if (count === 0) {
-    return null;
-  }
-  return (
-    <Chip
-      color="accent"
-      size="sm"
-      variant="primary"
-    >
-      {count > 99 ? '99+' : count}
-    </Chip>
   );
 }
 
@@ -166,7 +145,9 @@ function BottomNavItem({item}: {item: NavItem}) {
 // Only the bottom-nav destinations keep the mobile tab bar. Everything inside
 // the Builder hub (the six library lists, and every detail/edit/builder route
 // beneath them) is a focused page whose header carries its own Back.
-const MOBILE_FRAME_PATHS = new Set([...BOTTOM_NAV.map((item) => item.path), ROUTES.SETTINGS]);
+// `/messages` keeps the frame although it left the nav: it's reached via a
+// conversation's Back and renders no back affordance of its own.
+const MOBILE_FRAME_PATHS = new Set([...BOTTOM_NAV.map((item) => item.path), ROUTES.SETTINGS, ROUTES.MESSAGES]);
 
 export default function AppShell() {
   const location = useLocation();
@@ -174,6 +155,19 @@ export default function AppShell() {
     MOBILE_FRAME_PATHS.has(location.pathname) ||
     (location.pathname.startsWith(`${ROUTES.SETTINGS}/`) && location.pathname !== ROUTES.SETTINGS_LANDING_PAGE);
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
+  // ⌘K/Ctrl-K — roster search from anywhere; the visible triggers live in the
+  // Today card's utility footer.
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
   const qc = useQueryClient();
   useChannelEvent('inbox', 'conversation_updated', () => {
     // Payload is id-only; refetch over HTTP where visibility is enforced.
@@ -186,6 +180,11 @@ export default function AppShell() {
     <div className="flex h-dvh overflow-hidden bg-background">
       {/* Global toast renderer — queued via toast() from @heroui/react */}
       <Toast.Provider placement="bottom end" />
+
+      <ClientSearchModal
+        onClose={() => setSearchOpen(false)}
+        open={searchOpen}
+      />
 
       <aside className="hidden bg-[var(--ink)] lg:fixed lg:inset-y-0 lg:flex lg:w-60 lg:flex-col lg:p-3">
         <div className="mx-0.5 flex items-center gap-2 border-b border-white/10 px-1.5 pb-3 pt-0.5">

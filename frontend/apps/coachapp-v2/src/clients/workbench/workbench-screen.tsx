@@ -1,7 +1,6 @@
 import {Button, Skeleton} from '@heroui/react';
 import {CheckCircle2, ChevronLeft, UserPlus} from 'lucide-react';
 import type {ReactNode} from 'react';
-import {useDeferredValue, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 
 import {EmptyState} from '@/@components/empty-state';
@@ -16,20 +15,18 @@ import {queueEntries, queueMeta, TODAY_QUEUES, type WorkbenchQueueId} from '@/cl
 import AllClientsView from './all-clients-view';
 import CheckInsView from './check-ins-view';
 import ClientQueueView from './client-queue-view';
-import {ClientSearchField, WorkbenchRail} from './rail';
+import {WorkbenchRail} from './rail';
 import RepliesView from './replies-view';
-import SearchResultsView from './search-results-view';
 import {ViewShell} from './view-shell';
 
 /**
  * The coach workbench — the surface that replaced the clients listing
  * (spec: docs/superpowers/specs/2026-08-06-coach-workbench-spec.md).
- * A rail of drainable queues is primary. The Browse group is gone
- * (2026-08-07): the search field over the whole roster replaced All clients
- * as the way to reach a specific client, and Messages moved back to the app
- * sidebar/bottom nav (`/messages`) — the workbench's messaging WORK is the
- * Replies queue. The roster view (`?view=all`, with status filters) survives
- * as the counts-error fallback and the caught-up pane's target.
+ * A rail of drainable queues is primary. Roster-wide search and the message
+ * inbox are modals in the Today card's utility footer (2026-08-08) — the
+ * workbench's messaging WORK is the Replies queue. The roster view
+ * (`?view=all`, with status filters) survives as the counts-error fallback
+ * and the caught-up pane's target.
  *
  * Queue selection lives in the URL (`?view=`), and the URL is also the mobile
  * navigation level (push-nav, decision 2026-08-07): below `lg`, no `?view=`
@@ -64,9 +61,6 @@ export default function WorkbenchScreen() {
   const counts = countsQuery.data?.data;
   const {data: summaryData} = useListClientsQuery({limit: 0});
 
-  const [search, setSearch] = useState('');
-  const deferredSearch = useDeferredValue(search);
-
   const requested = parseView(searchParams.get('view'));
   const firstNonEmpty = counts ? TODAY_QUEUES.find((queue) => counts[queue.countKey] > 0)?.id : undefined;
   // Landing view (spec §11.1): the first queue with work; the caught-up pane
@@ -79,22 +73,13 @@ export default function WorkbenchScreen() {
 
   const activeQueue = TODAY_QUEUES.find((queue) => queue.id === view);
 
-  // Mobile levels (desktop ignores both): no explicit `?view=` and no active
-  // search means the menu; a `?view=` means drilled into that queue.
-  const menuMode = requested === undefined && !deferredSearch;
+  // Mobile levels (desktop ignores both): no explicit `?view=` means the
+  // menu; a `?view=` means drilled into that queue.
+  const menuMode = requested === undefined;
   const drillLabel = activeQueue?.label ?? (requested === 'all' ? 'All clients' : undefined);
 
   let content: ReactNode;
-  if (deferredSearch) {
-    // Search overrides whatever queue is selected — it looks across the whole
-    // roster, and clearing it drops you back on the queue you were working.
-    content = (
-      <SearchResultsView
-        onClear={() => setSearch('')}
-        search={deferredSearch}
-      />
-    );
-  } else if (view === undefined) {
+  if (view === undefined) {
     content = <ContentSkeleton />;
   } else if (view === 'caught-up') {
     // Titled like every other pane: the caught-up state is the Today list with
@@ -182,16 +167,10 @@ export default function WorkbenchScreen() {
           <WorkbenchRail
             active={view}
             entries={todayEntries}
-            onSearchChange={setSearch}
             onSelect={selectView}
-            search={search}
           />
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <div className="flex min-w-0 flex-col gap-3 lg:hidden">
-              <ClientSearchField
-                onSearchChange={setSearch}
-                search={search}
-              />
               {menuMode ? (
                 <TodayCard
                   detailed
@@ -199,7 +178,7 @@ export default function WorkbenchScreen() {
                   onSelect={selectView}
                 />
               ) : null}
-              {!menuMode && requested !== undefined && !deferredSearch ? (
+              {!menuMode ? (
                 <Button
                   className="button--row h-8 w-fit justify-start gap-1 rounded-control px-2 type-body font-medium text-muted"
                   onPress={() => setSearchParams({})}

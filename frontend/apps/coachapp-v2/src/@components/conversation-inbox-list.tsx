@@ -76,7 +76,14 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
   );
 }
 
-export function ConversationInboxList({className = 'flex-1 gap-0 p-0'}: {className?: string}) {
+export function ConversationInboxList({
+  className = 'flex-1 gap-0 p-0',
+  onNavigate,
+}: {
+  className?: string;
+  /** Called after a row navigates — a modal host closes itself here. */
+  onNavigate?: () => void;
+}) {
   const navigate = useNavigate();
   const {data, fetchNextPage, isError, isLoading, refetch} = useCoachConversationsInfiniteQuery();
 
@@ -95,7 +102,10 @@ export function ConversationInboxList({className = 'flex-1 gap-0 p-0'}: {classNa
       isError={isError}
       isLoading={isLoading}
       items={data?.pages.flatMap((page) => page.data) ?? []}
-      onAction={(key) => navigate(ROUTES.CONVERSATION.replace(':id', String(key)))}
+      onAction={(key) => {
+        navigate(ROUTES.CONVERSATION.replace(':id', String(key)));
+        onNavigate?.();
+      }}
       onRetry={refetch}
       renderItem={(conversation) => (
         <ConversationListItem

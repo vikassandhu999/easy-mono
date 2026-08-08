@@ -3,8 +3,9 @@ import {Page} from '@/@components/page';
 import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
 
 /**
- * The full-page inbox — the Messages destination on both breakpoints (mobile
- * bottom nav, desktop sidebar).
+ * The full-page inbox. Not a nav destination since 2026-08-08 (the inbox
+ * opens as a modal from the Today card) — this page survives as the Back
+ * target of a conversation opened from the inbox.
  */
 export default function MessagesInbox() {
   const {data} = useCoachConversationsInfiniteQuery();

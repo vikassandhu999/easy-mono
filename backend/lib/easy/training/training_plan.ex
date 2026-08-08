@@ -69,14 +69,6 @@ defmodule Easy.Training.TrainingPlan do
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
     |> validate_date_range()
-    |> check_constraint(:start_date,
-      name: :valid_date_range,
-      message: "end date must be after start date"
-    )
-    |> check_constraint(:start_date,
-      name: :assigned_plans_have_dates,
-      message: "assigned plans must have start and end dates"
-    )
   end
 
   defp constrain_relationships(changeset) do
@@ -142,7 +134,7 @@ defmodule Easy.Training.TrainingPlan do
       where: t.client_id == ^client_id,
       where: t.status == :active,
       where: t.start_date <= ^date,
-      where: t.end_date >= ^date
+      where: is_nil(t.end_date) or t.end_date >= ^date
     )
   end
 
@@ -156,7 +148,7 @@ defmodule Easy.Training.TrainingPlan do
       where: t.client_id in ^client_ids,
       where: t.status == :active,
       where: t.start_date <= ^date,
-      where: t.end_date >= ^date
+      where: is_nil(t.end_date) or t.end_date >= ^date
     )
   end
 

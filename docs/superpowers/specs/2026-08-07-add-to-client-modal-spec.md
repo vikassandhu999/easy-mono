@@ -2,6 +2,7 @@
 
 **Date:** 2026-08-07
 **Status:** Proposed.
+**Amended 2026-08-08:** client selection now advances to a visible assignment-date step; this supersedes the original one-tap / no-date-controls decision below.
 **Scope:** The modal opened by the **Add to client** button in the training and
 nutrition plan builders (`@components/plan-add-to-client.tsx`, template plans
 only). The reverse direction — picking a plan *from a client's tab*
@@ -96,24 +97,25 @@ than an email address.
 
 ## 3. What a tap does
 
-- **Client needs programming (the common case): one tap assigns.** No
-  confirmation — frictionless in exactly the case the modal exists for.
-  Modal closes immediately; failure surfaces as the existing error toast.
-- **Client already covered: one `AlertDialog` confirm.**
-  *"{Name} is covered until {date} · Add "{plan}" as well? It will run as a
-  second active plan."* Buttons: **Add anyway** / Cancel. The dialog exists
-  because two active plans is a legitimate but unusual state — the coach
-  should choose it, never stumble into it.
-- **The assignment now carries `start_date = today`.** The backend has
-  accepted `start_date`/`end_date` since the beginning; the frontend sends
-  neither, so every assigned copy is dateless until someone edits it. Default
-  the start to today (end stays open — open-ended coverage is a deliberate
-  model, spec 2026-08-06). No date controls in the modal: dates beyond
-  "starts now" are builder work on the assigned copy.
-- **Success toast gains an action:** `"{plan}" assigned to {name}` +
-  **Open their copy** (navigates to the assigned plan's builder). Setting an
-  end date or tweaking the copy is the natural next step ~half the time;
-  the toast offers the hop without forcing it.
+- **Client needs programming (the common case): one tap advances to dates.**
+  No confirmation — selecting the client opens the assignment step without
+  issuing a request.
+- **Client has a current plan of the same discipline: hard block.** The dialog
+  names the current plan and provides no assignment action; the coach must end
+  or reschedule it before adding another.
+- **Client has other-discipline coverage only: one `AlertDialog` confirm.**
+  The primary action is **Choose dates**, not assignment; Cancel emits no
+  request.
+- **The date step requires a start date and allows an optional end date for
+  both disciplines.** Start defaults to the earlier of the coach's local and
+  UTC calendar dates so the copy is in force immediately around midnight. End
+  defaults open-ended (`null`); the coach can add a date directly or choose a
+  4, 8, or 12 week preset. End may equal start but may not precede it.
+- **Assignment happens only from the date step.** Back returns to client
+  selection. Pending submission locks editing and dismissal. A rejected
+  overlap keeps the chosen dates visible and provides actionable inline copy.
+- **Success toast carries an action:** `"{plan}" assigned to {name}` +
+  **Open their copy** (navigates to the assigned plan's builder).
 
 ## 4. States
 
@@ -123,7 +125,10 @@ than an email address.
 | List/search error | "Couldn't load clients." + Retry (existing `ErrorState`) |
 | No search matches | "No clients match your search." |
 | Roster empty | "Invite your first client to get started." + Invite button |
-| Assign in flight | Modal already closed; trigger button keeps its pending state (constant width) |
+| Date step | Required start; optional/open-ended end; Back returns to clients |
+| Invalid range | End-date error is visible and announced; assignment is disabled |
+| Assign in flight | Date step stays open; fields, Back, Close, Escape, and backdrop dismissal are locked; action width is constant |
+| Assign error | Dates remain intact with actionable inline retry copy |
 
 ## 5. Backend items
 
@@ -135,8 +140,7 @@ than an email address.
 ## 6. Explicitly out of scope
 
 - Multi-select / bulk assign. One plan, one client, per gesture.
-- Date or schedule editing inside the modal (start = today is the only date
-  opinion the modal holds).
+- Editing an assigned copy's dates after assignment; that remains builder work.
 - Replace/end-current-plan semantics — ending a plan lives on the client's
   plan panel; the modal only ever *adds*.
 - The client-tab assign surface (reverse direction) — separate spec if it
@@ -147,9 +151,10 @@ than an email address.
 1. Default list shown immediately, grouped **Needs programming / Everyone
    else** — the picker is triage-aware, not alphabet-first.
 2. Inactive clients excluded outright.
-3. One-tap assign when the client needs programming; confirm dialog only
-   when adding on top of live coverage.
-4. `start_date = today` sent by the frontend; end date stays open.
+3. Client selection advances to assignment dates; other-discipline coverage
+   confirms first, while a current same-discipline plan hard-blocks.
+4. Start is required and defaults to the local/UTC-safe current day; end is
+   optional/open-ended for both training and nutrition builder assignments.
 5. Success toast carries **Open their copy**.
 6. Cross-discipline coverage copy accepted for v1; per-discipline fields are
    a later backend nicety.

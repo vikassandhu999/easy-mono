@@ -11,6 +11,8 @@ export interface KeyboardSheetProps {
   open: boolean;
   /** Called when the user dismisses the sheet. */
   onClose: () => void;
+  /** Prevent backdrop, Escape, and Close-button dismissal while work is pending. */
+  isDismissable?: boolean;
   /** Optional visible title and accessible dialog name. */
   title?: ReactNode;
   /** Accessible dialog name when the sheet renders no title. */
@@ -41,6 +43,7 @@ function AppScrollLock() {
 export function KeyboardSheet({
   open,
   onClose,
+  isDismissable = true,
   title,
   ariaLabel,
   headerAction,
@@ -58,10 +61,10 @@ export function KeyboardSheet({
           (isEntering || isExiting) && 'opacity-0',
         ) ?? ''
       }
-      isDismissable
+      isDismissable={isDismissable}
       isOpen={open}
       onOpenChange={(next) => {
-        if (!next) {
+        if (!next && isDismissable) {
           onClose();
         }
       }}
@@ -100,13 +103,14 @@ export function KeyboardSheet({
               >
                 {title}
               </Heading>
-              {headerAction ?? (
-                <CloseButton
-                  aria-label="Close"
-                  className="-mr-2 bg-transparent text-muted"
-                  onPress={onClose}
-                />
-              )}
+              {headerAction ??
+                (isDismissable ? (
+                  <CloseButton
+                    aria-label="Close"
+                    className="-mr-2 bg-transparent text-muted"
+                    onPress={onClose}
+                  />
+                ) : null)}
             </div>
           ) : null}
 

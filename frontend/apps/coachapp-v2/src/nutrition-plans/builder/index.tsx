@@ -10,6 +10,7 @@
  * reachable from the ⋯ menu — the builder shows the targets as the energy
  * line's denominators rather than repeating the form.
  */
+import {getFullName} from '@easy/utils';
 import {useParams} from 'react-router-dom';
 
 import {BackButton} from '@/@components/back-button';
@@ -61,6 +62,7 @@ export default function NutritionPlanBuilderScreen() {
   }
 
   const plan = data.data;
+  const clientName = plan.client ? getFullName(plan.client.first_name, plan.client.last_name) : '';
 
   return (
     <Page className="text-foreground leading-[normal]">
@@ -73,7 +75,7 @@ export default function NutritionPlanBuilderScreen() {
             onPress={goBack}
             testId="nb-back"
           />
-          <Page.Title testId="nb-title">{plan.name}</Page.Title>
+          <Page.Title testId="nb-title">{clientName ? `${plan.name} — ${clientName}` : plan.name}</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
           <PlanAddToClient plan={plan} />

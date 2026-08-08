@@ -4,36 +4,37 @@ import {cn} from '@heroui/styles';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import {
+  CLIENT_PICKER_PAGE_SIZE,
+  clientContact,
+  clientCoverage,
+  eligibleClientPage,
+} from '@/@components/client-picker-data';
 import {ErrorState} from '@/@components/error-state';
 import {ROUTES} from '@/@config/routes';
 import {type Client, useListClientsQuery} from '@/api/clients';
 
-/**
- * The client's coverage story, in the workbench vocabulary (add-to-client
- * spec §2.2). `covered` gates the caller's confirm step: adding on top of
- * live coverage is a choice, assigning to someone with none is frictionless.
- * A pending client with no plan is NOT "open-ended" — only an active client
- * with no `covered_until` earned that reading (open-ended plan in force).
- */
-export function clientCoverage(client: Client): {copy: string; covered: boolean; warning: boolean} {
-  if (client.needs_programming) {
-    return {
-      copy: client.covered_until ? `Coverage ends ${formatDateShort(client.covered_until)}` : 'No plan in force',
-      covered: false,
-      warning: true,
-    };
+/** The row's coverage copy, from the facts in `clientCoverage`. */
+function coverageCopy(client: Client): {copy: string; warning: boolean} {
+  const coverage = clientCoverage(client);
+  switch (coverage.kind) {
+    case 'needs-programming':
+      return {
+        copy: coverage.coverageEnds ? `Coverage ends ${formatDateShort(coverage.coverageEnds)}` : 'No plan in force',
+        warning: true,
+      };
+    case 'covered':
+      return {
+        copy: coverage.until ? `Covered until ${formatDateShort(coverage.until)}` : 'On an open-ended plan',
+        warning: false,
+      };
+    case 'uncovered':
+      return {copy: 'No plan in force', warning: false};
   }
-  if (client.covered_until) {
-    return {copy: `Covered until ${formatDateShort(client.covered_until)}`, covered: true, warning: false};
-  }
-  if (client.status === 'active') {
-    return {copy: 'On an open-ended plan', covered: true, warning: false};
-  }
-  return {copy: 'No plan in force', covered: false, warning: false};
 }
 
 function ClientRow({client, onSelect}: {client: Client; onSelect: (client: Client) => void}) {
-  const coverage = clientCoverage(client);
+  const coverage = coverageCopy(client);
   return (
     <Button
       // shrink-0: `button--row` releases min-height to 0, and a flex child
@@ -61,9 +62,9 @@ function ClientRow({client, onSelect}: {client: Client; onSelect: (client: Clien
             </Chip>
           ) : null}
         </span>
-        {/* Email, not the coverage fact: names duplicate (the seed DB has two
-            Taylor Jacksons) and email is the row's only unique identity. */}
-        <span className="max-w-full truncate type-eyebrow font-normal text-muted">{client.email}</span>
+        {/* Contact, not the coverage fact: names duplicate, and phone-only
+            invitations still need enough identity to assign safely. */}
+        <span className="max-w-full truncate type-eyebrow font-normal text-muted">{clientContact(client)}</span>
       </span>
       <span className={cn('shrink-0 type-eyebrow font-normal', coverage.warning ? 'text-warning' : 'text-muted')}>
         {coverage.copy}
@@ -117,8 +118,22 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
   const deferredSearch = useDeferredValue(search);
   const searching = deferredSearch.trim().length > 0;
 
-  const {data, isError, isLoading, refetch} = useListClientsQuery({limit: 30, search: deferredSearch});
-  const clients = (data?.data ?? []).filter((client) => client.status !== 'inactive');
+  const activeQuery = useListClientsQuery({
+    include_plans: true,
+    limit: CLIENT_PICKER_PAGE_SIZE,
+    search: deferredSearch,
+    status: 'active',
+  });
+  const pendingQuery = useListClientsQuery({
+    include_plans: true,
+    limit: CLIENT_PICKER_PAGE_SIZE,
+    search: deferredSearch,
+    status: 'pending',
+  });
+  const clients = eligibleClientPage([...(activeQuery.data?.data ?? []), ...(pendingQuery.data?.data ?? [])]);
+  const isError = activeQuery.isError || pendingQuery.isError;
+  const isLoading = activeQuery.isLoading || pendingQuery.isLoading;
+  const refetch = () => Promise.all([activeQuery.refetch(), pendingQuery.refetch()]);
 
   const needsProgramming = clients
     .filter((client) => client.needs_programming)
@@ -169,7 +184,7 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
   } else if (searching) {
     // Flat results in server order — search is lookup, the groups are triage.
     body = (
-      <div className="flex max-h-70 flex-col overflow-y-auto">
+      <div className="flex flex-col overflow-y-auto">
         {clients.map((client) => (
           <ClientRow
             client={client}
@@ -181,7 +196,7 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
     );
   } else {
     body = (
-      <div className="flex max-h-70 flex-col overflow-y-auto">
+      <div className="flex flex-col overflow-y-auto">
         {showLabels ? <GroupLabel>Needs programming</GroupLabel> : null}
         {needsProgramming.map((client) => (
           <ClientRow
@@ -203,7 +218,7 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
   }
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className="flex w-full flex-col gap-2 py-2 min-h-[80dvh]">
       <SearchField
         aria-label="Search clients"
         autoFocus

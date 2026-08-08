@@ -1,73 +1,109 @@
-import {formatDateISO, formatDateShort, getFullName} from '@easy/utils';
+import {formatDateShort, getFullName} from '@easy/utils';
 import {AlertDialog, Button} from '@heroui/react';
 import {UserPlus} from 'lucide-react';
 import {useState} from 'react';
 
-import ClientPickerContent, {clientCoverage} from '@/@components/client-picker';
+import ClientPickerContent from '@/@components/client-picker';
+import {clientRecipientName, type PlanAddDecision, planAddDecision} from '@/@components/client-picker-data';
+import {
+  type PlanAssignmentDates,
+  type PlanKind,
+  planAssignmentConflictMessage,
+} from '@/@components/plan-assignment-dates';
+import PlanScheduleStep from '@/@components/plan-schedule-step';
 import type {Client} from '@/api/clients';
 import {PickerModal} from '@/builder-kit/picker-modal';
 
-/**
- * "Starts today" as a date-only value, safe on both clocks: the backend's
- * in-force checks compare `Date.utc_today()` while the coach (and client)
- * live on local calendars. Near midnight the two disagree by a day, and a
- * start date later than either "today" leaves the assigned copy out of force
- * for hours (found live: a 00:05 IST assignment was invisible to the plan
- * chips until 05:30). The EARLIER of the two dates is in force under every
- * comparison immediately.
- */
-export function assignStartDate(): string {
-  const local = formatDateISO(new Date());
-  const utc = new Date().toISOString().slice(0, 10);
-  return local < utc ? local : utc;
-}
-
 export type PlanAddToClientControlProps = {
+  planKind: PlanKind;
   planName: string;
-  /** Domain assign mutation — caller owns cache patching and toasts. */
-  onAssign: (client: Client) => Promise<void>;
+  /** Domain assign mutation — caller owns cache patching and success toasts. */
+  onAssign: (client: Client, dates: PlanAssignmentDates) => Promise<void>;
   isAssigning: boolean;
 };
 
+/** The whole flow is one value, so a prompt can never coexist with the modal. */
+type Flow =
+  | {step: 'closed'}
+  | {step: 'pick'}
+  | {step: 'prompt'; client: Client; decision: Exclude<PlanAddDecision, {kind: 'schedule'}>}
+  | {step: 'dates'; client: Client; error: null | string};
+
+function recipientName(client: Client): string {
+  return clientRecipientName(client, getFullName(client.first_name, client.last_name));
+}
+
 /**
- * "Add to client" button + picker shared by the training and nutrition plan
- * builders (add-to-client spec 2026-08-07). Picking a client who needs
- * programming assigns in one tap; picking one with live coverage asks first —
- * two active plans is a legitimate but unusual state the coach should choose,
- * never stumble into.
+ * "Add to client" button + flow shared by the training and nutrition plan
+ * builders (add-to-client spec 2026-08-07, amended 2026-08-08): pick a client,
+ * resolve coverage (same-discipline plan blocks, other coverage confirms),
+ * choose assignment dates, then let the discipline adapter create the copy.
  */
-export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAddToClientControlProps) {
-  const [open, setOpen] = useState(false);
-  const [confirming, setConfirming] = useState<Client | null>(null);
+export function PlanAddToClientControl({planKind, planName, onAssign, isAssigning}: PlanAddToClientControlProps) {
+  const [flow, setFlow] = useState<Flow>({step: 'closed'});
+  const otherPlanKind = planKind === 'nutrition' ? 'training' : 'nutrition';
 
-  const close = () => setOpen(false);
-
-  const assign = (client: Client) => {
-    if (isAssigning) {
-      return;
+  const close = () => {
+    if (!isAssigning) {
+      setFlow({step: 'closed'});
     }
-    onAssign(client).catch(() => undefined);
   };
 
   const pick = (client: Client) => {
-    close();
-    if (clientCoverage(client).covered) {
-      setConfirming(client);
+    const decision = planAddDecision(client, planKind);
+    if (decision.kind === 'schedule') {
+      setFlow({client, error: null, step: 'dates'});
     } else {
-      assign(client);
+      setFlow({client, decision, step: 'prompt'});
     }
+  };
+
+  const assign = async (client: Client, dates: PlanAssignmentDates) => {
+    if (isAssigning) {
+      return;
+    }
+    try {
+      await onAssign(client, dates);
+      setFlow({step: 'closed'});
+    } catch (error) {
+      setFlow({
+        client,
+        error:
+          planAssignmentConflictMessage(error, planKind, recipientName(client)) ??
+          `Couldn't assign the ${planKind} plan. Check the dates and try again.`,
+        step: 'dates',
+      });
+    }
+  };
+
+  const prompt = flow.step === 'prompt' ? flow : null;
+  const promptBody = () => {
+    if (!prompt) {
+      return null;
+    }
+    const name = recipientName(prompt.client);
+    const {decision} = prompt;
+    if (decision.kind === 'blocked') {
+      return `${name} already has "${decision.existingPlanName}" active as their ${planKind} plan. End or reschedule it before adding another ${planKind} plan.`;
+    }
+    const coverage = decision.otherPlanName
+      ? `currently has "${decision.otherPlanName}" as their ${otherPlanKind} plan`
+      : decision.coveredUntil
+        ? `is covered until ${formatDateShort(decision.coveredUntil)}`
+        : 'is on an open-ended plan';
+    return `${name} ${coverage}. Choose dates for "${planName}" as their ${planKind} plan too?`;
   };
 
   return (
     <>
       <Button
-        aria-expanded={open}
-        aria-haspopup="listbox"
+        aria-expanded={flow.step !== 'closed'}
+        aria-haspopup="dialog"
         aria-label="Add to client"
         className="gap-1.5 rounded-control border border-border bg-surface font-btn type-body font-semibold leading-none text-foreground sm:px-3"
         data-testid="nb-add-client"
         isPending={isAssigning}
-        onPress={() => setOpen(true)}
+        onPress={() => setFlow({step: 'pick'})}
         size="sm"
         variant="secondary"
       >
@@ -79,19 +115,38 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
       </Button>
 
       <PickerModal
-        bodyClassName="max-h-[60vh] overflow-y-auto px-4 pb-4 pt-1"
+        bodyClassName="max-h-[80vh] overflow-y-auto px-4 pb-4 pt-1"
+        isDismissable={!isAssigning}
         onClose={close}
-        open={open}
-        title={`Add "${planName}" to client`}
+        open={flow.step === 'pick' || flow.step === 'dates'}
+        title={flow.step === 'dates' ? `Set dates for "${planName}"` : `Add "${planName}" to client`}
       >
-        <ClientPickerContent onSelect={pick} />
+        {flow.step === 'dates' ? (
+          <PlanScheduleStep
+            backLabel="Back to clients"
+            clientName={recipientName(flow.client)}
+            errorMessage={flow.error}
+            isSubmitting={isAssigning}
+            kind={planKind}
+            onBack={() => setFlow({step: 'pick'})}
+            onChange={() => {
+              if (flow.error) {
+                setFlow({...flow, error: null});
+              }
+            }}
+            onConfirm={(dates) => assign(flow.client, dates)}
+            planName={planName}
+          />
+        ) : (
+          <ClientPickerContent onSelect={pick} />
+        )}
       </PickerModal>
 
       <AlertDialog.Backdrop
-        isOpen={confirming !== null}
+        isOpen={prompt !== null}
         onOpenChange={(next) => {
           if (!next) {
-            setConfirming(null);
+            setFlow({step: 'closed'});
           }
         }}
       >
@@ -100,35 +155,26 @@ export function PlanAddToClientControl({planName, onAssign, isAssigning}: PlanAd
             <AlertDialog.CloseTrigger />
             <AlertDialog.Header>
               <AlertDialog.Icon status="warning" />
-              <AlertDialog.Heading>Add "{planName}" as well?</AlertDialog.Heading>
+              <AlertDialog.Heading>
+                {prompt?.decision.kind === 'blocked' ? `Can't add "${planName}" yet` : `Add "${planName}" too?`}
+              </AlertDialog.Heading>
             </AlertDialog.Header>
-            <AlertDialog.Body>
-              {confirming
-                ? `${getFullName(confirming.first_name, confirming.last_name) || 'This client'} is ${
-                    confirming.covered_until
-                      ? `covered until ${formatDateShort(confirming.covered_until)}`
-                      : 'on an open-ended plan'
-                  }. "${planName}" will run as a second active plan.`
-                : null}
-            </AlertDialog.Body>
+            <AlertDialog.Body>{promptBody()}</AlertDialog.Body>
             <AlertDialog.Footer>
               <Button
                 slot="close"
                 variant="tertiary"
               >
-                Cancel
+                {prompt?.decision.kind === 'blocked' ? 'Close' : 'Cancel'}
               </Button>
-              <Button
-                onPress={() => {
-                  if (confirming) {
-                    assign(confirming);
-                  }
-                  setConfirming(null);
-                }}
-                variant="primary"
-              >
-                Add anyway
-              </Button>
+              {prompt?.decision.kind === 'confirm' ? (
+                <Button
+                  onPress={() => setFlow({client: prompt.client, error: null, step: 'dates'})}
+                  variant="primary"
+                >
+                  Choose dates
+                </Button>
+              ) : null}
             </AlertDialog.Footer>
           </AlertDialog.Dialog>
         </AlertDialog.Container>

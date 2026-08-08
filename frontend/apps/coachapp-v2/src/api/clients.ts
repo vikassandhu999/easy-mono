@@ -39,6 +39,10 @@ export type Client = {
   needs_programming: boolean;
   /** Last day either discipline has an active plan scheduled through; null when neither does. */
   covered_until: null | string;
+  /** Present only when the list request passes include_plans=true. */
+  nutrition_plan_name?: GeneratedClient['nutrition_plan_name'];
+  /** Present only when the list request passes include_plans=true. */
+  training_plan_name?: GeneratedClient['training_plan_name'];
   /**
    * UTC time of the client's latest successful workout completion, food log,
    * check-in submission, or weight upsert. Null when they never have. Not
@@ -104,7 +108,7 @@ export type ClientListResponse = {
 
 type ListClientsQuery = NonNullable<paths['/v1/coach/clients']['get']['parameters']['query']>;
 
-export type ListClientsParams = Pick<ListClientsQuery, 'limit' | 'offset' | 'search' | 'status'>;
+export type ListClientsParams = Pick<ListClientsQuery, 'include_plans' | 'limit' | 'offset' | 'search' | 'status'>;
 
 export type ListClientsFilters = Pick<ListClientsQuery, 'filter' | 'search' | 'sort' | 'status'>;
 

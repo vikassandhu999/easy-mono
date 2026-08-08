@@ -22,6 +22,8 @@ export interface PickerModalProps {
   open: boolean;
   /** Receives the dismiss (backdrop, Esc, close button). */
   onClose: () => void;
+  /** Prevent dismissal while a committed action is pending. */
+  isDismissable?: boolean;
   /** Title band on both shells; also the dialog's accessible name. Omit when
    *  the content renders its own header row. */
   title?: string;
@@ -36,15 +38,25 @@ export interface PickerModalProps {
   children: ReactNode;
 }
 
-export function PickerModal({open, onClose, title, ariaLabel, footer, bodyClassName, children}: PickerModalProps) {
+export function PickerModal({
+  open,
+  onClose,
+  isDismissable = true,
+  title,
+  ariaLabel,
+  footer,
+  bodyClassName,
+  children,
+}: PickerModalProps) {
   const isDesktop = useIsDesktop();
 
   if (isDesktop) {
     return (
       <Modal.Backdrop
+        isDismissable={isDismissable}
         isOpen={open}
         onOpenChange={(next) => {
-          if (!next) {
+          if (!next && isDismissable) {
             onClose();
           }
         }}
@@ -64,11 +76,13 @@ export function PickerModal({open, onClose, title, ariaLabel, footer, bodyClassN
                 {title !== undefined ? (
                   <div className="flex items-center justify-between px-4 pb-1 pt-3">
                     <span className="type-body font-semibold text-foreground">{title}</span>
-                    <CloseButton
-                      aria-label="Close"
-                      className="-mr-2 text-muted"
-                      onPress={onClose}
-                    />
+                    {isDismissable ? (
+                      <CloseButton
+                        aria-label="Close"
+                        className="-mr-2 text-muted"
+                        onPress={onClose}
+                      />
+                    ) : null}
                   </div>
                 ) : null}
                 <div className={bodyClassName ?? 'h-[60vh] overflow-y-auto px-4 pb-2'}>{children}</div>
@@ -87,6 +101,7 @@ export function PickerModal({open, onClose, title, ariaLabel, footer, bodyClassN
     <KeyboardSheet
       ariaLabel={ariaLabel}
       footer={open ? footer : undefined}
+      isDismissable={isDismissable}
       onClose={onClose}
       open={open}
       title={title}

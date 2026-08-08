@@ -278,8 +278,8 @@ defmodule Easy.TrainingPlansTest do
           creator: coach,
           business: coach.business,
           client: client,
-          start_date: Date.add(today, -1),
-          end_date: Date.add(today, 7)
+          start_date: today,
+          end_date: nil
         )
 
       workout = insert(:workout, plan: plan, business: coach.business, weekdays: [weekday])

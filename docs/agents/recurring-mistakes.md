@@ -811,6 +811,24 @@ the final idempotent release, and keep the lock until the exiting overlay unmoun
 than when `open` first becomes false. **Enforced by:** nested, reverse-release, independent-
 target, and idempotent cases in `src/builder-kit/keyboard-sheet.check.ts`.
 
+### RM-185 — Apply eligibility before forming a limited page
+The Add-to-client picker requested 30 clients and removed inactive rows afterward, so four
+inactive records consumed four of the promised eligible slots and the picker rendered only
+26 clients while eligible clients existed on the next page. When an action excludes a state,
+apply that eligibility at the endpoint or merge server-filtered pages before the final limit;
+never filter a bounded mixed page afterward. **Enforced by:** review — the picker's
+status-scoped queries merge through `eligibleClientPage` before the final slice; no
+mechanical check remains (its check file was removed by decision 2026-08-09).
+
+### RM-186 — Open-ended date windows need explicit NULL semantics in queries
+Training assignment intentionally writes `end_date: nil`, but the in-force queries compared
+`end_date >= today`; PostgreSQL treats that comparison as unknown, so active open-ended plans
+vanished from the client picker and the client's current workout. When a nullable boundary
+means unbounded, every singular and bulk query must say `is_nil(boundary) or …` explicitly —
+changeset/API nullability alone does not give SQL that meaning. **Enforced by:** the training
+plan-day and client plan-name tests use an active plan starting today with `end_date: nil` and
+require it to be returned.
+
 ---
 
 ## Deploy / ops

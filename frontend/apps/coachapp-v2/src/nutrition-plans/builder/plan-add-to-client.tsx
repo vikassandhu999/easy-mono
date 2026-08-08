@@ -2,8 +2,9 @@ import {getFullName} from '@easy/utils';
 import {toast} from '@heroui/react';
 import {generatePath, useNavigate} from 'react-router-dom';
 
-import {toastMutationError} from '@/@components/mutation-toast';
-import {assignStartDate, PlanAddToClientControl} from '@/@components/plan-add-to-client';
+import {clientRecipientName} from '@/@components/client-picker-data';
+import {PlanAddToClientControl} from '@/@components/plan-add-to-client';
+import type {PlanAssignmentDates} from '@/@components/plan-assignment-dates';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import type {NutritionPlan} from '@/api/nutrition-plan-builder';
@@ -23,51 +24,46 @@ export function PlanAddToClient({plan}: Props) {
     return null;
   }
 
-  const assign = async (client: Client) => {
-    try {
-      const result = await assignNutrition.mutateAsync({
-        id: plan.id,
-        // start_date: the copy is live from today; the end stays open
-        // (add-to-client spec §3 — dates beyond "starts now" are builder work).
-        body: {client_id: client.id, start_date: assignStartDate()},
-      });
-      // Reflect the assignment in the cached detail. Assign may return a copy
-      // (new id) — only patch when it's the same plan. meals /
-      // days / weekday_assignments are optional on the assign response — keep
-      // the hydrated ones from the detail fetch rather than wiping them.
-      if (result.data.id === plan.id) {
-        patchPlan(plan.id, (draft) => {
-          Object.assign(draft, {
-            ...result.data,
-            meals: result.data.meals ?? draft.meals,
-            days: result.data.days ?? draft.days,
-            weekday_assignments: result.data.weekday_assignments ?? draft.weekday_assignments,
-          });
+  const assign = async (client: Client, dates: PlanAssignmentDates) => {
+    const clientName = clientRecipientName(client, getFullName(client.first_name, client.last_name));
+    const result = await assignNutrition.mutateAsync({
+      id: plan.id,
+      body: {client_id: client.id, end_date: dates.endDate, start_date: dates.startDate},
+    });
+    // Reflect the assignment in the cached detail. Assign may return a copy
+    // (new id) — only patch when it's the same plan. meals /
+    // days / weekday_assignments are optional on the assign response — keep
+    // the hydrated ones from the detail fetch rather than wiping them.
+    if (result.data.id === plan.id) {
+      patchPlan(plan.id, (draft) => {
+        Object.assign(draft, {
+          ...result.data,
+          meals: result.data.meals ?? draft.meals,
+          days: result.data.days ?? draft.days,
+          weekday_assignments: result.data.weekday_assignments ?? draft.weekday_assignments,
         });
-      }
-      const clientName = getFullName(client.first_name, client.last_name) || client.email;
-      toast.success(
-        `"${plan.name}" assigned to ${clientName}`,
-        // Offer the hop to the assigned copy; skip it when the assign happened
-        // in place (same id): the coach is already looking at it.
-        result.data.id === plan.id
-          ? undefined
-          : {
-              actionProps: {
-                children: 'Open their copy',
-                onPress: () => navigate(generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: result.data.id})),
-              },
-            },
-      );
-    } catch (e) {
-      toastMutationError(e, "Nutrition plan wasn't assigned");
+      });
     }
+    toast.success(
+      `"${plan.name}" assigned to ${clientName}`,
+      // Offer the hop to the assigned copy; skip it when the assign happened
+      // in place (same id): the coach is already looking at it.
+      result.data.id === plan.id
+        ? undefined
+        : {
+            actionProps: {
+              children: 'Open their copy',
+              onPress: () => navigate(generatePath(ROUTES.NUTRITION_PLAN_DETAIL, {id: result.data.id})),
+            },
+          },
+    );
   };
 
   return (
     <PlanAddToClientControl
       isAssigning={assignNutrition.isPending}
       onAssign={assign}
+      planKind="nutrition"
       planName={plan.name}
     />
   );

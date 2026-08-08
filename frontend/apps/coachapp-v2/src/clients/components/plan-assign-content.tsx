@@ -12,6 +12,12 @@ import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ErrorState} from '@/@components/error-state';
+import {
+  type PlanAssignmentDates,
+  type PlanKind,
+  planAssignmentConflictMessage,
+} from '@/@components/plan-assignment-dates';
+import PlanScheduleStep from '@/@components/plan-schedule-step';
 import {ROUTES} from '@/@config/routes';
 import {
   type NutritionPlan,
@@ -20,9 +26,8 @@ import {
 } from '@/api/nutrition-plans-list';
 import type {TrainingPlan} from '@/api/training-plan-builder';
 import {useAssignTrainingPlanMutation, useCoachTrainingPlansInfiniteQuery} from '@/api/training-plans-list';
-import PlanScheduleStep from '@/clients/components/plan-schedule-step';
 
-export type PlanKind = 'nutrition' | 'training';
+export type {PlanKind};
 
 interface Props {
   kind: PlanKind;
@@ -45,19 +50,6 @@ function nutritionMeta(plan: NutritionPlan): string {
 function trainingMeta(plan: TrainingPlan): string {
   const n = plan.workouts.length;
   return n > 0 ? `${n} workout${n === 1 ? '' : 's'}` : plan.description || 'Training plan';
-}
-
-/** Map an assign failure to a coach-readable message. The DB rejects overlapping
- *  active plans (GiST exclusion); surface that specifically, generic otherwise. */
-function assignErrorMessage(error: unknown, kind: PlanKind, clientName: string): string {
-  const status = (error as {status?: number}).status;
-  const data = (error as {data?: unknown}).data;
-  const text = JSON.stringify(data ?? '').toLowerCase();
-  const kindLabel = kind === 'nutrition' ? 'nutrition' : 'training';
-  if (status === 409 || text.includes('overlap') || text.includes('active plan') || text.includes('exclusion')) {
-    return `${clientName} already has an active ${kindLabel} plan during these dates. Adjust the dates or end the current plan first.`;
-  }
-  return "Couldn't assign the plan. Check the dates and try again.";
 }
 
 export default function PlanAssignContent({kind, clientId, clientName, onClose}: Props) {
@@ -91,7 +83,7 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
     setStep('schedule');
   };
 
-  const handleConfirm = async (startDate: string, endDate: string | null) => {
+  const handleConfirm = async ({startDate, endDate}: PlanAssignmentDates) => {
     if (!selected) {
       return;
     }
@@ -111,7 +103,10 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
       toast.success(`"${selected.name}" assigned to ${clientName}`);
       onClose();
     } catch (e) {
-      setError(assignErrorMessage(e, kind, clientName));
+      setError(
+        planAssignmentConflictMessage(e, kind, clientName) ??
+          "Couldn't assign the plan. Check the dates and try again.",
+      );
     }
   };
 
@@ -235,7 +230,6 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
           onConfirm={handleConfirm}
           planMeta={isNutrition ? nutritionMeta(selected as NutritionPlan) : trainingMeta(selected as TrainingPlan)}
           planName={selected.name}
-          requireEnd={!isNutrition}
         />
       ) : null}
     </div>

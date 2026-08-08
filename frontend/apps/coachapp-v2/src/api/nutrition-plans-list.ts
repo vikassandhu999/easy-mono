@@ -160,9 +160,9 @@ export function useDuplicateNutritionPlanMutation() {
 }
 
 /**
- * Invalidates that client's plan list, the client lists (stat strip's "needs
- * plan" flag) and the client detail — assignment flips the server-derived
- * `needs_plan` chip and can auto-advance `stage` on the open client screen.
+ * Invalidates template lists (assigned-client count), that client's plan list,
+ * client lists (stat strip's "needs plan" flag), and the client detail —
+ * assignment flips server-derived coverage and can auto-advance `stage`.
  */
 export function useAssignNutritionPlanMutation() {
   const qc = useQueryClient();
@@ -170,6 +170,7 @@ export function useAssignNutritionPlanMutation() {
     mutationFn: ({body, id}: {body: NutritionPlanAssignRequest; id: string}) =>
       call(client.POST('/v1/coach/nutrition-plans/{id}/assign', {params: {path: {id}}, body})),
     onSuccess: (_data, {body}) => {
+      qc.invalidateQueries({queryKey: nutritionPlanKeys.lists()});
       qc.invalidateQueries({queryKey: nutritionPlanKeys.forClient(body.client_id)});
       qc.invalidateQueries({queryKey: clientKeys.lists()});
       qc.invalidateQueries({queryKey: clientKeys.detail(body.client_id)});

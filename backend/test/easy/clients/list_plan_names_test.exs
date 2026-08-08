@@ -13,14 +13,11 @@ defmodule Easy.Clients.ListPlanNamesTest do
       client = insert(:client, business: business, creator: coach, user: insert(:user))
       today = Date.utc_today()
 
-      # A client-assigned training plan MUST carry both dates —
-      # `TrainingPlan.validate_date_range/1` rejects one without them — so the
-      # in-force window is part of every fixture here, not an extra.
       %{
         business: business,
         coach: coach,
         client: client,
-        window: [start_date: Date.add(today, -7), end_date: Date.add(today, 7)]
+        window: [start_date: today, end_date: nil]
       }
     end
 

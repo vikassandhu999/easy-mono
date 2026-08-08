@@ -26,7 +26,7 @@ defmodule EasyWeb.Coaches.ProspectController do
     parameters: [
       Operation.parameter(:status, :query, :string, "Filter by status"),
       Operation.parameter(:offset, :query, :integer, "Pagination offset"),
-      Operation.parameter(:limit, :query, :integer, "Page size (max 100)")
+      Operation.parameter(:limit, :query, :integer, "Page size (max 20)")
     ],
     responses: [
       ok: {"Prospects", "application/json", ProspectListResponse},

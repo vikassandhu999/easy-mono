@@ -110,6 +110,8 @@ export const trainingPlanKeys = {
 
 export const trainingSessionKeys = {
   forClient: (clientId: string, filters?: Filters) => ['training-sessions', clientId, filters ?? {}] as const,
+  forClientInfinite: (clientId: string, filters?: Filters) =>
+    ['training-sessions', clientId, 'infinite', filters ?? {}] as const,
   detail: (clientId: string, id: string) => ['training-sessions', clientId, 'detail', id] as const,
 };
 

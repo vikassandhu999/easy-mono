@@ -37,7 +37,7 @@ defmodule Easy.Exercises do
     muscle_ids = Keyword.get(opts, :muscle_ids)
     equipment_ids = Keyword.get(opts, :equipment_ids)
     offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
+    limit = min(Keyword.get(opts, :limit, 20), 20)
 
     base =
       TrainingExercise

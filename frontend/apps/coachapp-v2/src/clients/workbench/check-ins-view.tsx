@@ -11,7 +11,7 @@ import {formatRelativeTime} from '@/dashboard/lib/date-format';
 import {QueueRow} from './queue-row';
 
 /** The endpoint is oldest-first (longest-waiting on top) and this pane is a working queue, not a browse list. */
-const PAGE = 100;
+const PAGE = 20;
 
 export default function CheckInsView() {
   const navigate = useNavigate();

@@ -4,12 +4,12 @@
  * duration · sets · volume + soreness. Tap → session detail. Dark + periwinkle, new schema.
  */
 import {formatDuration} from '@easy/utils';
-import {Spinner} from '@heroui/react';
+import {Button, Spinner} from '@heroui/react';
 import {ChevronRight} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
-import {type TrainingSession, useListClientTrainingSessionsQuery} from '@/api/training';
+import {type TrainingSession, useClientTrainingSessionsInfiniteQuery} from '@/api/training';
 import {formatDayDate, formatVolume, sessionVolumeKg, snapshotOf, sorenessEmoji} from '@/workout/session-utils';
 
 function monthOf(iso: string): {key: string; label: string} {
@@ -54,9 +54,10 @@ function SessionRow({session}: {session: TrainingSession}) {
 }
 
 export default function WorkoutHistory() {
-  // The whole point of this screen is the full history, so it asks for the server's
-  // maximum page rather than the 20-row default.
-  const {data, isLoading} = useListClientTrainingSessionsQuery({limit: 100});
+  // The whole point of this screen is the full history, so it pages through
+  // the server's 20-row pages with a Load-more at the bottom.
+  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} =
+    useClientTrainingSessionsInfiniteQuery();
 
   if (isLoading) {
     return (
@@ -68,11 +69,11 @@ export default function WorkoutHistory() {
     );
   }
 
-  const sessions = (data?.data ?? [])
+  const sessions = (data?.pages.flatMap((page) => page.data) ?? [])
     .filter((s) => s.state === 'completed')
     .sort((a, b) => b.started_at.localeCompare(a.started_at));
 
-  if (sessions.length === 0) {
+  if (sessions.length === 0 && !hasNextPage) {
     return (
       <PageLayout title="History">
         <div className="rounded-2xl border border-border bg-surface p-6 text-center">
@@ -111,6 +112,16 @@ export default function WorkoutHistory() {
           ))}
         </div>
       ))}
+      {hasNextPage && (
+        <Button
+          className="w-full"
+          isPending={isFetchingNextPage}
+          onPress={() => fetchNextPage()}
+          variant="outline"
+        >
+          Load more
+        </Button>
+      )}
     </PageLayout>
   );
 }

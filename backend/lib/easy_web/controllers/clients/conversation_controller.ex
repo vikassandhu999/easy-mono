@@ -34,7 +34,7 @@ defmodule EasyWeb.Clients.ConversationController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:before, :query, :string, "Message id cursor — return messages older than this", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 50, max 100)", required: false)
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false)
     ],
     responses: [
       ok: {"Messages", "application/json", ChatMessagesResponse},

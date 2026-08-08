@@ -5,7 +5,7 @@ import {useNavigate} from 'react-router-dom';
 import BrowseListBox from '@/@components/browse-list-box';
 import {EmptyState} from '@/@components/empty-state';
 import {ROUTES} from '@/@config/routes';
-import {type Conversation, useListCoachConversationsQuery} from '@/api/conversations';
+import {type Conversation, useWaitingConversationsQuery} from '@/api/conversations';
 
 import {QueueRow} from './queue-row';
 
@@ -34,13 +34,11 @@ function waitingFor(lastMessageAt: null | string | undefined): string {
 
 export default function RepliesView() {
   const navigate = useNavigate();
-  const {data, isError, isLoading, refetch} = useListCoachConversationsQuery();
-
   // Longest-waiting first — the opposite of the inbox's recent-first order,
-  // because this is a queue to drain, not a feed to browse.
-  const items = (data?.data ?? [])
-    .filter((conversation) => conversation.last_message_role === 'client')
-    .sort((a, b) => (a.last_message_at ?? '').localeCompare(b.last_message_at ?? ''));
+  // because this is a queue to drain, not a feed to browse. The server filters
+  // and orders (waiting=true), so the top of the queue survives pagination.
+  const {data, isError, isLoading, refetch} = useWaitingConversationsQuery();
+  const items = data?.data ?? [];
 
   const openConversation = (id: string) => navigate(ROUTES.CONVERSATION.replace(':id', id));
 

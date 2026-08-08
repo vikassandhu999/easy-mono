@@ -29,7 +29,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Number of training plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
       Operation.parameter(:search, :query, :string, "Case-insensitive training plan name search", required: false),
       Operation.parameter(
         :status,

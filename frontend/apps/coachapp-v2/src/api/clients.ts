@@ -5,7 +5,7 @@ import {billingKeys, clientKeys} from '@/api/keys';
 import type {components, paths} from '@/api/schema';
 import {ApiResponse} from '@/api/shared';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
 type GeneratedClient = components['schemas']['Client'];
 

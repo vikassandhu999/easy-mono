@@ -11,7 +11,7 @@ import {
   PROSPECT_STATUS_LABEL,
   type Prospect,
   type ProspectStatus,
-  useListProspectsQuery,
+  useProspectsInfiniteQuery,
 } from '@/api/prospects';
 
 type ProspectFilter = 'all' | ProspectStatus;
@@ -60,13 +60,12 @@ function ProspectListItem({prospect}: {prospect: Prospect}) {
 export default function ListProspects() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<ProspectFilter>('all');
-  const {data, isError, isLoading, refetch} = useListProspectsQuery({
-    limit: 100,
+  const {data, fetchNextPage, isError, isLoading, refetch} = useProspectsInfiniteQuery({
     status: filter === 'all' ? undefined : (filter as ProspectStatus),
   });
 
-  const prospects = data?.data ?? [];
-  const summary = data?.summary;
+  const prospects = data?.pages.flatMap((page) => page.data) ?? [];
+  const summary = data?.pages[0]?.summary;
 
   return (
     <BrowseScreen
@@ -87,8 +86,7 @@ export default function ListProspects() {
         selected: filter,
       }}
       onOpen={(key) => navigate(ROUTES.PROSPECT_DETAIL.replace(':id', String(key)))}
-      // Flat query (limit: 100) — no next page, so no load-more sentinel.
-      query={{isError, isLoading, items: prospects, refetch}}
+      query={{fetchNextPage, isError, isLoading, items: prospects, refetch}}
       row={(prospect) => <ProspectListItem prospect={prospect} />}
       rowHasThumb
       title="Prospects"

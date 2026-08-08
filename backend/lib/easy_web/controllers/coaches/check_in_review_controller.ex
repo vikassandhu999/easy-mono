@@ -21,7 +21,7 @@ defmodule EasyWeb.Coaches.CheckInReviewController do
     security: [%{"bearerAuth" => []}],
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Offset (default 0)", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false)
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false)
     ],
     responses: [
       ok: {"Review queue", "application/json", ClientProfileReviewQueueListResponse},

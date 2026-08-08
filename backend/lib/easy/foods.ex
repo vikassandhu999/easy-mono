@@ -22,7 +22,7 @@ defmodule Easy.Foods do
     search = String.trim(Keyword.get(opts, :search, "") || "")
     categories = Keyword.get(opts, :categories)
     offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
+    limit = min(Keyword.get(opts, :limit, 20), 20)
 
     base =
       Food

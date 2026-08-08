@@ -33,7 +33,7 @@ defmodule Easy.Recipes do
   def list_recipes(%Ctx{} = ctx, opts \\ []) do
     search = String.trim(Keyword.get(opts, :search, "") || "")
     offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
+    limit = min(Keyword.get(opts, :limit, 20), 20)
 
     base = Recipe |> Recipe.for_business(ctx.business_id) |> Recipe.search(search)
     ordered = if search == "", do: Recipe.newest(base), else: base

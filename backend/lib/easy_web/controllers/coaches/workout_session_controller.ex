@@ -22,7 +22,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
       Operation.parameter(:from, :query, :string, "Start date (YYYY-MM-DD)", required: false),
       Operation.parameter(:to, :query, :string, "End date (YYYY-MM-DD)", required: false),
       Operation.parameter(:offset, :query, :integer, "Number of training sessions to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Maximum training sessions to return (max 100)", required: false)
+      Operation.parameter(:limit, :query, :integer, "Maximum training sessions to return (max 20)", required: false)
     ],
     responses: [
       ok: {"Training sessions", "application/json", TrainingSessionListResponse},

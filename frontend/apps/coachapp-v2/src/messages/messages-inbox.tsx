@@ -1,14 +1,16 @@
 import {ConversationInboxList} from '@/@components/conversation-inbox-list';
 import {Page} from '@/@components/page';
-import {useListCoachConversationsQuery} from '@/api/conversations';
+import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
 
 /**
  * The full-page inbox — the Messages destination on both breakpoints (mobile
  * bottom nav, desktop sidebar).
  */
 export default function MessagesInbox() {
-  const {data} = useListCoachConversationsQuery();
-  const unreadTotal = (data?.data ?? []).reduce((total, conversation) => total + conversation.unread_count, 0);
+  const {data} = useCoachConversationsInfiniteQuery();
+  const unreadTotal = (data?.pages ?? [])
+    .flatMap((page) => page.data)
+    .reduce((total, conversation) => total + conversation.unread_count, 0);
 
   return (
     <Page>

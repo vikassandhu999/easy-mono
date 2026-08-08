@@ -5,7 +5,7 @@ import {useNavigate} from 'react-router-dom';
 import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
-import {type Conversation, useListCoachConversationsQuery} from '@/api/conversations';
+import {type Conversation, useCoachConversationsInfiniteQuery} from '@/api/conversations';
 
 /**
  * The coach inbox list, content only — shared by the `/messages` screen
@@ -78,7 +78,7 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
 
 export function ConversationInboxList({className = 'flex-1 gap-0 p-0'}: {className?: string}) {
   const navigate = useNavigate();
-  const {data, isError, isLoading, refetch} = useListCoachConversationsQuery();
+  const {data, fetchNextPage, isError, isLoading, refetch} = useCoachConversationsInfiniteQuery();
 
   return (
     <BrowseListBox
@@ -91,10 +91,10 @@ export function ConversationInboxList({className = 'flex-1 gap-0 p-0'}: {classNa
           nounPlural="messages"
         />
       }
-      fetchNextPage={() => undefined}
+      fetchNextPage={fetchNextPage}
       isError={isError}
       isLoading={isLoading}
-      items={data?.data ?? []}
+      items={data?.pages.flatMap((page) => page.data) ?? []}
       onAction={(key) => navigate(ROUTES.CONVERSATION.replace(':id', String(key)))}
       onRetry={refetch}
       renderItem={(conversation) => (

@@ -306,7 +306,7 @@ function ExercisePicker({
     const id = setTimeout(() => setSearch(q.trim()), 250);
     return () => clearTimeout(id);
   }, [q]);
-  const {data, isFetching} = useListClientExercisesQuery({limit: 30, search: search || undefined});
+  const {data, isFetching} = useListClientExercisesQuery({limit: 20, search: search || undefined});
   const items = data?.data ?? [];
 
   const inputRef = useRef<HTMLInputElement>(null);

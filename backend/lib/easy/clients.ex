@@ -101,7 +101,7 @@ defmodule Easy.Clients do
     filter = Keyword.get(opts, :filter)
     include_plans? = Keyword.get(opts, :include_plans, false)
     offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
+    limit = min(max(Keyword.get(opts, :limit, 20), 0), 20)
 
     base =
       Client
@@ -136,7 +136,7 @@ defmodule Easy.Clients do
   def list_clients_in_order(%Ctx{} = ctx, ids, opts \\ []) do
     include_plans? = Keyword.get(opts, :include_plans, false)
     offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
+    limit = min(max(Keyword.get(opts, :limit, 20), 0), 20)
 
     page_ids = ids |> Enum.drop(offset) |> Enum.take(limit)
     position = page_ids |> Enum.with_index() |> Map.new()

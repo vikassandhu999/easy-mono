@@ -10874,7 +10874,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -12000,7 +12000,7 @@
             }
           },
           {
-            "description": "Maximum training sessions to return (max 100)",
+            "description": "Maximum training sessions to return (max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -12083,7 +12083,7 @@
             }
           },
           {
-            "description": "Maximum training sessions to return (max 100)",
+            "description": "Maximum training sessions to return (max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -12431,7 +12431,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -12836,7 +12836,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -12982,7 +12982,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -13382,12 +13382,23 @@
             }
           },
           {
-            "description": "Limit (max 100)",
+            "description": "Limit (max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
               "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Only conversations where the client spoke last (the Replies queue), longest-waiting first",
+            "in": "query",
+            "name": "waiting",
+            "required": false,
+            "schema": {
+              "type": "boolean",
               "x-struct": null,
               "x-validate": null
             }
@@ -13578,7 +13589,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -13662,7 +13673,7 @@
             }
           },
           {
-            "description": "Page size (max 100)",
+            "description": "Page size (max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -15383,7 +15394,7 @@
             }
           },
           {
-            "description": "Page size (default 50, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -15599,7 +15610,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -15768,7 +15779,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -16821,7 +16832,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -17532,7 +17543,7 @@
             }
           },
           {
-            "description": "Page size (default 50, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -19047,7 +19058,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,
@@ -20145,7 +20156,7 @@
             }
           },
           {
-            "description": "Page size (default 20, max 100)",
+            "description": "Page size (default 20, max 20)",
             "in": "query",
             "name": "limit",
             "required": false,

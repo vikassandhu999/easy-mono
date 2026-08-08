@@ -11,15 +11,34 @@ export type ChatMessageEmbedRequest = components['schemas']['ChatMessageEmbedReq
 export type Conversation = components['schemas']['Conversation'];
 
 type MessagesPage = {data: ChatMessage[]; has_more: boolean};
+type ConversationListResponse = components['schemas']['ConversationListResponse'];
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
-export function useListCoachConversationsQuery() {
+/** The inbox, recent-first, offset-paginated. Page 1 also feeds the unread badge and the dashboard activity cell. */
+export function useCoachConversationsInfiniteQuery() {
+  return useInfiniteQuery({
+    queryKey: conversationKeys.infinite(),
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/conversations', {params: {query: {limit: PAGE_SIZE, offset: pageParam}}}),
+      ) as Promise<ConversationListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
+    },
+  });
+}
+
+/** The Replies queue: client spoke last, longest-waiting first — filtered and ordered by the server. */
+export function useWaitingConversationsQuery() {
   return useQuery({
-    queryKey: conversationKeys.list(),
-    // Flat first-100 inbox — the backend caps limit at 100 and no coach is
-    // expected to exceed it (same assumption as the old RTK endpoint).
-    queryFn: () => call(client.GET('/v1/coach/conversations', {params: {query: {limit: 100}}})),
+    queryKey: conversationKeys.list({waiting: true}),
+    queryFn: () =>
+      call(
+        client.GET('/v1/coach/conversations', {params: {query: {limit: PAGE_SIZE, waiting: true}}}),
+      ) as Promise<ConversationListResponse>,
   });
 }
 

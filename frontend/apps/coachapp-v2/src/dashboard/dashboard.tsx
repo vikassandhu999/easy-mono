@@ -7,7 +7,7 @@ import {Link, useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useListClientsQuery} from '@/api/clients';
-import {useListCoachConversationsQuery} from '@/api/conversations';
+import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useListProspectsQuery} from '@/api/prospects';
 import {DashboardSectionHeading} from '@/dashboard/components/dashboard-section-heading';
@@ -131,7 +131,7 @@ export default function Dashboard() {
     isError: prospectsError,
     isLoading: prospectsLoading,
   } = useListProspectsQuery({limit: 5, status: 'new'});
-  const {data: conversationsData, isError: conversationsError} = useListCoachConversationsQuery();
+  const {data: conversationsData, isError: conversationsError} = useCoachConversationsInfiniteQuery();
 
   if (profileLoading || clientsLoading || prospectsLoading) {
     return <DashboardSkeleton />;
@@ -195,7 +195,7 @@ export default function Dashboard() {
 
             <div className="flex min-w-0 flex-col gap-5">
               <RecentActivityCell
-                conversations={conversationsData?.data ?? []}
+                conversations={conversationsData?.pages[0]?.data ?? []}
                 isError={conversationsError}
               />
               <section className="flex min-w-0 flex-col gap-3">

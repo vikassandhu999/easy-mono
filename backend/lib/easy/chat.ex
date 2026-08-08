@@ -19,19 +19,23 @@ defmodule Easy.Chat do
           {:ok, %{count: non_neg_integer(), conversations: [Conversation.t()]}}
   def list_conversations(%Ctx{} = ctx, opts \\ []) do
     offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
+    limit = min(max(Keyword.get(opts, :limit, 20), 0), 20)
+    waiting? = Keyword.get(opts, :waiting, false)
 
     base =
       Conversation
       |> Conversation.for_business(ctx.business_id)
       |> constrain_to_visible_clients(ctx)
 
+    base = if waiting?, do: Conversation.waiting(base), else: base
+    order = if waiting?, do: &Conversation.oldest/1, else: &Conversation.recent/1
+
     count = Repo.aggregate(base, :count)
 
     conversations =
       base
       |> Conversation.include_client()
-      |> Conversation.recent()
+      |> order.()
       |> offset(^offset)
       |> limit(^limit)
       |> Repo.all()
@@ -168,7 +172,7 @@ defmodule Easy.Chat do
 
   defp page_messages(business_id, conversation_id, opts) do
     # Message history is deliberately denser than ordinary entity lists.
-    limit = min(max(Keyword.get(opts, :limit, 50), 1), 100)
+    limit = min(max(Keyword.get(opts, :limit, 20), 1), 20)
 
     ids =
       Message

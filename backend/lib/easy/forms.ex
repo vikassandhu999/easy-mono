@@ -272,7 +272,7 @@ defmodule Easy.Forms do
           {:ok, %{count: non_neg_integer(), submissions: [FormSubmission.t()]}}
   def list_unreviewed_check_in_submissions(%Ctx{} = ctx, opts \\ []) do
     offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
+    limit = min(max(Keyword.get(opts, :limit, 20), 0), 20)
 
     base =
       FormSubmission

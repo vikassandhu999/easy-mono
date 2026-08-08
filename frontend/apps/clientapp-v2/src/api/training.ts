@@ -3,7 +3,7 @@
  * where a null weekday is a rest day; sessions have state active/completed/discarded
  * with performed_sets vs planned_snapshot.
  */
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {exerciseKeys, sessionKeys, trainingPlanKeys} from '@/api/keys';
@@ -41,6 +41,26 @@ export function useListClientTrainingSessionsQuery(query: SessionListQuery = {})
   return useQuery({
     queryKey: sessionKeys.list(query),
     queryFn: () => call(client.GET('/v1/client/training-sessions', {params: {query}})) as Promise<SessionListResponse>,
+  });
+}
+
+const SESSION_PAGE_SIZE = 20;
+
+/** Full history, offset-paginated 20 at a time (the server caps limit at 20). */
+export function useClientTrainingSessionsInfiniteQuery() {
+  return useInfiniteQuery({
+    queryKey: sessionKeys.infinite(),
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/client/training-sessions', {
+          params: {query: {limit: SESSION_PAGE_SIZE, offset: pageParam}},
+        }),
+      ) as Promise<SessionListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + SESSION_PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
+    },
   });
 }
 

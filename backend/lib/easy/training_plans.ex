@@ -55,7 +55,7 @@ defmodule Easy.TrainingPlans do
           {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}}
   def list_template_plans(%Ctx{} = ctx, opts \\ []) do
     offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
+    limit = min(Keyword.get(opts, :limit, 20), 20)
     status = Keyword.get(opts, :status)
     search = String.trim(Keyword.get(opts, :search, "") || "")
     business_id = ctx.business_id
@@ -78,7 +78,7 @@ defmodule Easy.TrainingPlans do
           {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}} | {:error, :not_found}
   def list_client_plans(%Ctx{} = ctx, opts \\ []) do
     offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
+    limit = min(Keyword.get(opts, :limit, 20), 20)
     status = Keyword.get(opts, :status)
 
     with {:ok, client_id} <- Ctx.fetch_client_id(ctx) do
@@ -103,7 +103,7 @@ defmodule Easy.TrainingPlans do
           {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}} | {:error, :not_found}
   def list_plans_for_client(%Ctx{} = ctx, client_id, opts \\ []) do
     offset = Keyword.get(opts, :offset, 0)
-    limit = min(Keyword.get(opts, :limit, 20), 100)
+    limit = min(Keyword.get(opts, :limit, 20), 20)
     status = Keyword.get(opts, :status)
     business_id = ctx.business_id
 

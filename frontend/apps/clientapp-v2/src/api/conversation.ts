@@ -14,7 +14,7 @@ type MessagesPage = {data: ChatMessage[]; has_more: boolean};
 type ConversationResponse = components['schemas']['ConversationResponse'];
 type ChatMessageResponse = components['schemas']['ChatMessageResponse'];
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
 export function useGetClientConversationQuery(options?: {enabled?: boolean}) {
   return useQuery({

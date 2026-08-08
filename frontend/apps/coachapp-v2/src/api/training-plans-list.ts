@@ -183,6 +183,27 @@ export function useAssignTrainingPlanMutation() {
 // Client training sessions (logged workouts, not templates)
 // ---------------------------------------------------------------------------
 
+/** A date-window session list can exceed one 20-row page; offset-paginated. */
+export function useCoachClientTrainingSessionsInfiniteQuery(
+  clientId: string,
+  filters?: Omit<ListCoachClientTrainingSessionsQuery, 'limit' | 'offset'>,
+) {
+  return useInfiniteQuery({
+    queryKey: trainingSessionKeys.forClientInfinite(clientId, filters),
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/clients/{client_id}/training-sessions', {
+          params: {path: {client_id: clientId}, query: {...filters, limit: PAGE_SIZE, offset: pageParam}},
+        }),
+      ) as Promise<TrainingSessionListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
+    },
+  });
+}
+
 export function useListCoachClientTrainingSessionsQuery(
   clientId: string,
   filters?: ListCoachClientTrainingSessionsQuery,

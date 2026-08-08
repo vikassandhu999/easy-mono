@@ -20,7 +20,7 @@ import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom'
 import {ROUTES} from '@/@config/routes';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
 import {useInstallPrompt} from '@/@hooks/use-install-prompt';
-import {useListCoachConversationsQuery} from '@/api/conversations';
+import {useCoachConversationsInfiniteQuery} from '@/api/conversations';
 import {conversationKeys, workbenchKeys} from '@/api/keys';
 import {useGetCoachProfileQuery} from '@/api/profile';
 import {useWorkbenchCountsQuery} from '@/api/workbench';
@@ -100,8 +100,10 @@ function WorkbenchDot() {
 }
 
 function UnreadBadge() {
-  const {data} = useListCoachConversationsQuery();
-  const count = (data?.data ?? []).reduce((sum, c) => sum + c.unread_count, 0);
+  // Sums the loaded inbox pages (page 1 until the user scrolls the inbox) —
+  // unread conversations sort to the top, so the first page carries them.
+  const {data} = useCoachConversationsInfiniteQuery();
+  const count = (data?.pages ?? []).flatMap((page) => page.data).reduce((sum, c) => sum + c.unread_count, 0);
   if (count === 0) {
     return null;
   }

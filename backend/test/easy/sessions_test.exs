@@ -163,11 +163,11 @@ defmodule Easy.SessionsTest do
       assert MapSet.disjoint?(MapSet.new(first, & &1.id), MapSet.new(second, & &1.id))
     end
 
-    test "limit is clamped to 100", %{business: business, client: client} do
+    test "limit is clamped to 20", %{business: business, client: client} do
       assert {:ok, %{count: 25, sessions: sessions}} =
                Sessions.list_sessions_for_client(owner_ctx(business), client.id, limit: 5000)
 
-      assert length(sessions) == 25
+      assert length(sessions) == 20
     end
 
     test "from/to still filter, and count reflects the filter", %{business: business, client: client} do

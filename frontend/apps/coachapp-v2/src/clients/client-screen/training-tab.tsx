@@ -1,4 +1,4 @@
-import {Chip} from '@heroui/react';
+import {Button, Chip} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
@@ -7,8 +7,8 @@ import SectionHeading from '@/@components/section-heading';
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
 import {
+  useCoachClientTrainingSessionsInfiniteQuery,
   useListCoachClientTrainingPlansQuery,
-  useListCoachClientTrainingSessionsQuery,
   useUpdateTrainingPlanMutation,
 } from '@/api/training-plans-list';
 import {PlanPanel} from '@/clients/client-screen/plan-panel';
@@ -41,11 +41,10 @@ export function TrainingTab({client}: {client: Client}) {
   };
   const window = lastNDays(56);
   const plans = useListCoachClientTrainingPlansQuery(client.id, {status: 'active'});
-  const sessions = useListCoachClientTrainingSessionsQuery(client.id, {
+  // An eight-week window can hold more than the server's 20-row page cap, so
+  // this list paginates and "Show more" walks the rest of the window.
+  const sessions = useCoachClientTrainingSessionsInfiniteQuery(client.id, {
     from: window[0]!,
-    // An eight-week window can hold more than the server's 20-row default page, and
-    // this list is meant to show every session in it.
-    limit: 100,
     to: window[window.length - 1]!,
   });
 
@@ -58,7 +57,7 @@ export function TrainingTab({client}: {client: Client}) {
   const workoutNames = new Map((plan?.workouts ?? []).map((w) => [w.id, w.name]));
 
   // Newest first, which is the order the design lists them in.
-  const rows = [...(sessions.data?.data ?? [])]
+  const rows = (sessions.data?.pages.flatMap((page) => page.data) ?? [])
     .filter((s) => s.date)
     .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
 
@@ -152,6 +151,18 @@ export function TrainingTab({client}: {client: Client}) {
               </div>
             );
           })}
+          {sessions.hasNextPage && (
+            <div className="flex justify-center p-3">
+              <Button
+                isPending={sessions.isFetchingNextPage}
+                onPress={() => sessions.fetchNextPage()}
+                size="sm"
+                variant="outline"
+              >
+                Show more
+              </Button>
+            </div>
+          )}
         </SectionCard>
       )}
     </div>

@@ -135,7 +135,7 @@ defmodule Easy.Landing do
   def list_prospects(%Ctx{} = ctx, opts \\ []) do
     status = Keyword.get(opts, :status)
     offset = max(Keyword.get(opts, :offset, 0), 0)
-    limit = min(max(Keyword.get(opts, :limit, 20), 0), 100)
+    limit = min(max(Keyword.get(opts, :limit, 20), 0), 20)
 
     base = Prospect |> Prospect.for_business(ctx.business_id) |> Prospect.for_status(status)
 

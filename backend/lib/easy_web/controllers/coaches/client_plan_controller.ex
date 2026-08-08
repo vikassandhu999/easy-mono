@@ -26,7 +26,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     parameters: [
       Operation.parameter(:client_id, :path, :string, "Client id"),
       Operation.parameter(:offset, :query, :integer, "Number of plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
       Operation.parameter(
         :status,
         :query,
@@ -48,7 +48,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     parameters: [
       Operation.parameter(:client_id, :path, :string, "Client id"),
       Operation.parameter(:offset, :query, :integer, "Number of plans to skip", required: false),
-      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 100)", required: false),
+      Operation.parameter(:limit, :query, :integer, "Page size (default 20, max 20)", required: false),
       Operation.parameter(
         :status,
         :query,

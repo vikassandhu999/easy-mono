@@ -27,7 +27,7 @@ type SetupProgress =
   | {doneCount: number; status: 'ready'; steps: SetupStep[]};
 
 function useDashboardSetupProgress(skip: boolean): SetupProgress {
-  const clients = useListClientsQuery({limit: 100}, {enabled: !skip});
+  const clients = useListClientsQuery({limit: 20}, {enabled: !skip});
   const trainingPlans = useListTrainingPlansQuery({limit: 1}, {enabled: !skip});
   const nutritionPlans = useListNutritionPlansQuery({limit: 1}, {enabled: !skip});
 

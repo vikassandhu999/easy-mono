@@ -56,6 +56,11 @@ defmodule Easy.Chat.Conversation do
   def recent(query \\ __MODULE__),
     do: from(c in query, order_by: [desc_nulls_last: c.last_message_at, desc: c.inserted_at, desc: c.id])
 
+  # The Replies queue order: longest-waiting first.
+  @spec oldest(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def oldest(query \\ __MODULE__),
+    do: from(c in query, order_by: [asc_nulls_last: c.last_message_at, asc: c.inserted_at, asc: c.id])
+
   @spec include_client(Ecto.Queryable.t()) :: Ecto.Query.t()
   def include_client(query \\ __MODULE__), do: from(c in query, preload: [:client])
 end

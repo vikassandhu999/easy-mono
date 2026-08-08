@@ -20,6 +20,7 @@ const domain = <N extends string>(name: N) => ({
   all: [name] as const,
   lists: () => [name, 'list'] as const,
   list: (filters?: Filters) => [name, 'list', 'flat', filters ?? {}] as const,
+  infinite: (filters?: Filters) => [name, 'list', 'infinite', filters ?? {}] as const,
   detail: (id: string) => [name, 'detail', id] as const,
 });
 

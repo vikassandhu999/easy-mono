@@ -4906,7 +4906,7 @@ export interface operations {
       query?: {
         /** @description Number of training plans to skip */
         offset?: number;
-        /** @description Page size (default 20, max 100) */
+        /** @description Page size (default 20, max 20) */
         limit?: number;
         /** @description Case-insensitive training plan name search */
         search?: string;
@@ -5476,7 +5476,7 @@ export interface operations {
         to?: string;
         /** @description Number of training sessions to skip */
         offset?: number;
-        /** @description Maximum training sessions to return (max 100) */
+        /** @description Maximum training sessions to return (max 20) */
         limit?: number;
       };
       header?: never;
@@ -5661,7 +5661,7 @@ export interface operations {
       query?: {
         /** @description Number of plans to skip */
         offset?: number;
-        /** @description Page size (default 20, max 100) */
+        /** @description Page size (default 20, max 20) */
         limit?: number;
         /** @description Only plans with this status */
         status?: 'active' | 'archived';
@@ -5893,7 +5893,7 @@ export interface operations {
       query?: {
         /** @description Number of nutrition plans to skip */
         offset?: number;
-        /** @description Page size (default 20, max 100) */
+        /** @description Page size (default 20, max 20) */
         limit?: number;
         /** @description Case-insensitive nutrition plan name search */
         search?: string;
@@ -6151,8 +6151,10 @@ export interface operations {
       query?: {
         /** @description Offset */
         offset?: number;
-        /** @description Limit (max 100) */
+        /** @description Limit (max 20) */
         limit?: number;
+        /** @description Only conversations where the client spoke last (the Replies queue), longest-waiting first */
+        waiting?: boolean;
       };
       header?: never;
       path?: never;
@@ -6291,7 +6293,7 @@ export interface operations {
         status?: string;
         /** @description Pagination offset */
         offset?: number;
-        /** @description Page size (max 100) */
+        /** @description Page size (max 20) */
         limit?: number;
       };
       header?: never;
@@ -7118,7 +7120,7 @@ export interface operations {
       query?: {
         /** @description Message id cursor — return messages older than this */
         before?: string;
-        /** @description Page size (default 50, max 100) */
+        /** @description Page size (default 20, max 20) */
         limit?: number;
       };
       header?: never;
@@ -7801,7 +7803,7 @@ export interface operations {
       query?: {
         /** @description Number of plans to skip */
         offset?: number;
-        /** @description Page size (default 20, max 100) */
+        /** @description Page size (default 20, max 20) */
         limit?: number;
         /** @description Only plans with this status */
         status?: 'active' | 'archived';
@@ -8913,7 +8915,7 @@ export interface operations {
       query?: {
         /** @description Number of clients to skip */
         offset?: number;
-        /** @description Page size (default 20, max 100) */
+        /** @description Page size (default 20, max 20) */
         limit?: number;
         /** @description Case-insensitive client search */
         search?: string;
@@ -9610,7 +9612,7 @@ export interface operations {
       query?: {
         /** @description Offset (default 0) */
         offset?: number;
-        /** @description Page size (default 20, max 100) */
+        /** @description Page size (default 20, max 20) */
         limit?: number;
       };
       header?: never;

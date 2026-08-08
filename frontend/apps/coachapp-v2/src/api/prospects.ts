@@ -1,4 +1,4 @@
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {call, client} from '@/api/client';
 import {clientKeys, prospectKeys} from '@/api/keys';
@@ -29,6 +29,25 @@ export const PROSPECT_STATUS_CHIP: Record<ProspectStatus, 'accent' | 'warning' |
   won: 'success',
   lost: 'default',
 };
+
+const PAGE_SIZE = 20;
+
+export function useProspectsInfiniteQuery(params?: Pick<ListProspectsParams, 'status'>) {
+  return useInfiniteQuery({
+    queryKey: prospectKeys.infinite(params),
+    queryFn: ({pageParam}) =>
+      call(
+        client.GET('/v1/coach/prospects', {
+          params: {query: {...params, limit: PAGE_SIZE, offset: pageParam}},
+        }),
+      ) as Promise<ProspectListResponse>,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      const nextOffset = lastPageParam + PAGE_SIZE;
+      return nextOffset < lastPage.count ? nextOffset : undefined;
+    },
+  });
+}
 
 export function useListProspectsQuery(params?: ListProspectsParams, options?: {enabled?: boolean}) {
   return useQuery({

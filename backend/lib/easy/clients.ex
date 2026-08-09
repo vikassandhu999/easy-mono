@@ -13,7 +13,7 @@ defmodule Easy.Clients do
   alias Easy.Training.TrainingPlan
 
   @expiring_soon_days 7
-  # Workbench queue windows (spec: docs/superpowers/specs/2026-08-06-coach-workbench-spec.md §11.2).
+  # Workbench queue windows (spec: docs/archive/specs/2026-08-06-coach-workbench-spec.md §11.2).
   @programming_horizon_days 3
   @new_client_window_days 14
   @invite_stale_days 3

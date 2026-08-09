@@ -8,6 +8,6 @@ defmodule Easy.Repo.Migrations.DropClientProfileTables do
   end
 
   def down do
-    raise "irreversible: client profiles removed, see docs/superpowers/specs/2026-07-11-remove-client-profiles-design.md"
+    raise "irreversible: client profiles removed"
   end
 end

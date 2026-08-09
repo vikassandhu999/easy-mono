@@ -14,7 +14,9 @@ This is a full-stack monorepo. Two ecosystems, one tree:
   - Domain: `backend/lib/easy`; web layer: `backend/lib/easy_web`
   - Migrations: `backend/priv/repo`. Deploys to Fly.io.
   - Detailed BE guide: `backend/AGENTS.md`
-- **`docs/`** — shared specs and handovers. The **FE↔BE API contract** is the backend's OpenApiSpex schemas (`backend/lib/easy_web/open_api/`), which generate the OpenAPI document the frontend consumes.
+- **`docs/`** — long-lived reference: `docs/agents/` (skill config + the recurring-mistakes ledger),
+  ADRs, and `docs/archive/` (pre-2026-08-09 specs and plans; still cited from source, so read but
+  don't reshape). New specs and tickets go to `.scratch/`, not here. The **FE↔BE API contract** is the backend's OpenApiSpex schemas (`backend/lib/easy_web/open_api/`), which generate the OpenAPI document the frontend consumes.
 
 ## Working rules
 - Frontend changes: work inside `frontend/`; `@easy/*` imports resolve within the pnpm workspace.
@@ -22,6 +24,30 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 - When changing an API: update the backend OpenApiSpex schema AND both sides.
 - Use the root `Justfile` (`just --list`) for common tasks.
 - **Don't repeat past mistakes.** `docs/agents/recurring-mistakes.md` is a ledger of violations we've hit, each written as a prevention rule — skim the entries for the area you touch before finishing. When you discover a NEW recurring mistake, fixing the instance isn't enough: add a rule there (and a mechanical check — credo/biome/test — when feasible) so no future run repeats it.
+
+## Agent skills
+
+This project runs on the [mattpocock/skills](https://github.com/mattpocock/skills) set, installed as
+the `mattpocock-skills` plugin. Run `/ask-matt` for which skill or flow fits a situation.
+
+**The `superpowers` plugin is retired — never invoke a `superpowers:*` skill and never write to
+`docs/superpowers/`.** It is disabled in `.claude/settings.json`.
+
+Skills in `.claude/skills/` are the ones this repo owns and compose with the plugin. Never vendor a
+copy of a plugin skill in there; the local copy shadows the plugin and goes stale.
+
+### Issue tracker
+
+Local markdown under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, unrenamed. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` and `docs/adr/` at the root, both created on demand. See
+`docs/agents/domain.md`.
 
 ## Common commands
 - `just setup` — install both stacks

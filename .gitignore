@@ -18,7 +18,6 @@ erl_crash.dump
 # --- editors / OS ---
 .DS_Store
 .elixir_ls
-.superpowers/
 .worktrees/
 
 # Local skill copies for the `pi` harness. The same skills are tracked under

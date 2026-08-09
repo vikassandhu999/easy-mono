@@ -875,6 +875,18 @@ it fail, it isn't checking.
 
 ## Docs
 
+### RM-303 — The `superpowers` plugin is retired; don't resurrect it
+Enforced by `scripts/check-rm.sh` (RM-303): no `superpowers` reference outside
+`.scratch/archive/`. Use the skill mapping in the root `AGENTS.md`.
+
+### RM-302 — Never vendor a plugin skill into `.claude/skills/`
+Four mattpocock skills (`codebase-design`, `diagnosing-bugs`, `prototype`, `handoff`) had been
+copied into `.claude/skills/`. A local copy shadows the plugin, so the agent kept loading the
+vendored version while upstream moved on — the stale `diagnosing-bugs` was missing the
+secret-redaction section entirely. `.claude/skills/` is for skills this repo owns
+(`elixir-conventions`, `design-pro`, `ui-quality-loop`, …). Enforced by `scripts/check-rm.sh`
+(RM-302): fails if a directory there collides with a plugin skill name.
+
 ### RM-301 — Retiring an architecture-level artifact means grepping the docs for it
 When a framework, contract file, or command is replaced, `grep -rn --include='*.md'
 <old-name> .` and fix every hit in the same change — stale docs describing the old thing

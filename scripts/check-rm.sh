@@ -147,5 +147,27 @@ if [ -n "$hits" ]; then
   fail=1
 fi
 
+# RM-302 — a local .claude/skills/<name> shadows the plugin skill of the same
+# name and silently goes stale. Skills the mattpocock-skills plugin provides must
+# never be vendored into this repo.
+for s in code-review codebase-design diagnosing-bugs domain-modeling grilling handoff \
+         implement prototype research resolving-merge-conflicts tdd to-spec to-tickets \
+         triage wayfinder wizard writing-for-agents; do
+  if [ -d ".claude/skills/$s" ]; then
+    echo "FAIL RM-302 — .claude/skills/$s shadows the mattpocock-skills plugin skill (see docs/agents/recurring-mistakes.md)"
+    fail=1
+  fi
+done
+
+# RM-303 — the superpowers plugin and its docs/superpowers/ convention are retired.
+# AGENTS.md and the ledger name it to ban it; those two are the only allowed mentions.
+hits=$(rg -n --glob '!docs/archive/**' --glob '!scripts/check-rm.sh' \
+  --glob '!docs/agents/recurring-mistakes.md' --glob '!AGENTS.md' 'superpowers' . 2>/dev/null)
+if [ -n "$hits" ]; then
+  echo "FAIL RM-303 — superpowers reference outside .scratch/archive (see docs/agents/recurring-mistakes.md)"
+  echo "$hits" | head -10
+  fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then echo "check-rm: all clean"; fi
 exit $fail

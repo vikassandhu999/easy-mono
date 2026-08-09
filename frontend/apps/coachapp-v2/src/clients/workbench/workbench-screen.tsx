@@ -21,7 +21,7 @@ import {ViewShell} from './view-shell';
 
 /**
  * The coach workbench — the surface that replaced the clients listing
- * (spec: docs/superpowers/specs/2026-08-06-coach-workbench-spec.md).
+ * (spec: docs/archive/specs/2026-08-06-coach-workbench-spec.md).
  * A rail of drainable queues is primary. Roster-wide search and the message
  * inbox are modals in the Today card's utility footer (2026-08-08) — the
  * workbench's messaging WORK is the Replies queue. The roster view

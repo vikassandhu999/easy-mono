@@ -14,6 +14,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 THEME=frontend/apps/coachapp-v2/src/index.css
+APP=frontend/apps/coachapp-v2/src
 # Resolve the version the APP actually loads. Several @heroui/styles versions
 # can sit in the pnpm store at once (3.0.2 and 3.2.1 both do here), and their
 # class names differ — picking the wrong one would make this check lie.
@@ -50,6 +51,12 @@ MISSING=""
 while read -r sel; do
   [ -z "$sel" ] && continue
   echo "$sel" | grep -qE "$OURS" && continue
+  # App-owned BEM elements must occur in real component markup. This keeps
+  # custom theme hooks honest without pretending they belong to HeroUI.
+  if echo "$sel" | grep -qE '^\.[a-z][a-z0-9-]*__[a-z][a-z0-9-]*$' && \
+     rg -Fq "${sel#.}" "$APP" -g '*.tsx'; then
+    continue
+  fi
   # An app-owned BEM modifier is allowed, but only on a block HeroUI really has.
   if echo "$sel" | grep -qE "$APP_MODIFIERS"; then
     BLOCK=${sel%--*}

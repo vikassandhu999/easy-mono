@@ -6,12 +6,13 @@
  *  Step 1 "pick"     — search + browse plan templates.
  *  Step 2 "schedule" — start/end dates (PlanScheduleStep), then assign.
  */
-import {Button, SearchField, Spinner, Typography, toast} from '@heroui/react';
-import {ArrowRight, Dumbbell, Plus, Utensils, X} from 'lucide-react';
+import {Button, SearchField, Typography, toast} from '@heroui/react';
+import {Dumbbell, Plus, Utensils, X} from 'lucide-react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {ErrorState} from '@/@components/error-state';
+import BrowseListBox, {BrowseRow} from '@/@components/browse-list-box';
+import ListEmptyState from '@/@components/list-empty-state';
 import {
   type PlanAssignmentDates,
   type PlanKind,
@@ -154,60 +155,43 @@ export default function PlanAssignContent({kind, clientId, clientName, onClose}:
             </SearchField>
           </div>
 
-          {query.isLoading ? (
-            <div className="flex justify-center py-8">
-              <Spinner size="sm" />
-            </div>
-          ) : query.isError ? (
-            <ErrorState
-              message={`Couldn't load ${isNutrition ? 'nutrition' : 'training'} plans.`}
-              onRetry={() => query.refetch()}
-            />
-          ) : items.length === 0 ? (
-            <Typography
-              align="center"
-              className="py-8"
-              color="muted"
-              type="body-sm"
-            >
-              {deferredSearch ? 'No plans match your search' : 'No plan templates yet'}
-            </Typography>
-          ) : (
-            <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
-              {items.map((plan) => (
-                <Button
-                  className="group h-auto w-full justify-start gap-3 p-2 text-left"
-                  key={plan.id}
-                  onPress={() => handlePick(plan)}
-                  variant="ghost"
-                >
-                  <span className={`grid size-9 shrink-0 place-items-center rounded-panel ${iconWrap}`}>
-                    <Icon size={16} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <Typography
-                      truncate
-                      type="body-sm"
-                      weight="semibold"
-                    >
-                      {plan.name}
-                    </Typography>
-                    <Typography
-                      color="muted"
-                      truncate
-                      type="body-xs"
-                    >
-                      {isNutrition ? nutritionMeta(plan as NutritionPlan) : trainingMeta(plan as TrainingPlan)}
-                    </Typography>
-                  </span>
-                  <ArrowRight
-                    className="shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100"
-                    size={16}
-                  />
-                </Button>
-              ))}
-            </div>
-          )}
+          <BrowseListBox
+            ariaLabel={`${isNutrition ? 'Nutrition' : 'Training'} plans`}
+            className="max-h-72 gap-0 overflow-y-auto p-0"
+            emptyState={
+              <ListEmptyState
+                emptyDescription="Create a plan template before assigning it to a client."
+                hasFilter={deferredSearch.trim().length > 0}
+                nounPlural="plan templates"
+                onClearFilters={() => setSearch('')}
+              />
+            }
+            fetchNextPage={() => {
+              query.fetchNextPage().catch(() => undefined);
+            }}
+            isError={query.isError}
+            isLoading={query.isLoading || query.isFetchingNextPage}
+            items={items}
+            onAction={(key) => {
+              const plan = items.find((item) => item.id === String(key));
+              if (plan) {
+                handlePick(plan);
+              }
+            }}
+            onRetry={() => {
+              query.refetch().catch(() => undefined);
+            }}
+            renderItem={(plan) => (
+              <BrowseRow
+                icon={<Icon size={16} />}
+                iconClassName={iconWrap}
+                id={plan.id}
+                meta={isNutrition ? nutritionMeta(plan as NutritionPlan) : trainingMeta(plan as TrainingPlan)}
+                textValue={plan.name}
+                title={plan.name}
+              />
+            )}
+          />
 
           <Button
             className="h-auto w-full justify-start gap-2 p-2"

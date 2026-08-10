@@ -861,6 +861,28 @@ mutation payloads. **Verify by:** running the helper with `TZ=Pacific/Kiritimati
 and `TZ=Pacific/Midway` (UTC−11) and asserting the result is never after either clock's
 today.
 
+### RM-205 — A picker collection is a ListBox, not a stack of row-shaped Buttons
+The shared search picker, add-to-client picker, and plan-template picker each rendered
+selectable entities by mapping `Button`s inside generic `div`s. That discarded collection
+semantics, produced different row spacing, and let the same centered picker shell drift
+between `sm` and `md` widths. `PickerModal` now owns one `md` desktop width; selectable
+picker collections use `ListBox`/`ListBox.Item` (or `GridList` for rows with controls).
+Picker searches use the same sticky top band so their field remains available while rows
+scroll. Independent create actions and tile palettes remain Buttons. Enforced at the
+shared seams by `scripts/check-rm.sh` (RM-205). **Verify by:** inspect every overlay
+collection at 375px and desktop, scroll a long list without losing its search field, then
+use Arrow keys to move between items without tabbing through each row.
+
+### RM-206 — Overlay motion belongs to the theme, not individual dialogs
+Modal, confirmation-dialog, and sheet motion had separate defaults: HeroUI owned the two
+centered surfaces while `KeyboardSheet` carried transition classes and render-prop transforms
+inside its component. That makes duration, easing, direction, and reduced-motion behavior
+drift as soon as another overlay is added. `index.css` now owns one centered lift-and-settle
+motion and one directional bottom-sheet slide; call sites supply no motion classes. Enforced
+at the shared seams by `scripts/check-rm.sh` (RM-206). **Verify by:** inspect enter and exit
+animations on a Modal, AlertDialog, and KeyboardSheet; with reduced motion enabled, all three
+must retain only the brief opacity fade and report no spatial transform.
+
 ### RM-202 — A verification command that can no-op is not verification
 `clientapp-v2`'s build script ran bare `tsc --noEmit`, but its root `tsconfig.json` is a
 solution file (`"files": []`, only `references`). Bare `tsc` on a solution config compiles

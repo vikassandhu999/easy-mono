@@ -232,6 +232,7 @@ function DeactivateTrainerDialog({
       isDismissable={!isLoading}
       isOpen={member !== null}
       onOpenChange={onOpenChange}
+      variant="transparent"
     >
       <AlertDialog.Container>
         <AlertDialog.Dialog>

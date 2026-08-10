@@ -75,7 +75,7 @@ function MenuRow({entry, onSelect}: {entry: TodayEntry; onSelect: (id: string) =
   const Icon = entry.icon;
   return (
     <Button
-      className="button--row w-full justify-start gap-3 rounded-control px-2.5 py-2.5 text-foreground"
+      className="button--row w-full justify-start gap-3 rounded-control px-3 py-3 text-foreground"
       onPress={() => onSelect(entry.id)}
       variant="ghost"
     >
@@ -93,16 +93,16 @@ function MenuRow({entry, onSelect}: {entry: TodayEntry; onSelect: (id: string) =
   );
 }
 
-const FOOTER_BUTTON =
-  'button--row h-8 flex-1 justify-center gap-1.5 rounded-control px-2 type-body font-medium text-muted hover:bg-surface-secondary';
+const UTILITY_BUTTON =
+  'button--row h-9 w-full justify-center gap-1.5 rounded-control border border-border bg-surface px-3 type-body font-medium text-muted hover:bg-surface-secondary sm:w-auto';
 
 /**
  * Low-priority utilities demoted out of the app nav (decision 2026-08-08):
- * roster-wide client search and the message inbox open as modals from under
- * the queues. Awareness stays — a dot, not a count: the actionable messaging
+ * roster-wide client search and the message inbox open as modals above the
+ * queues. Awareness stays — a dot, not a count: the actionable messaging
  * number is the Replies queue above, and a second figure would compete with it.
  */
-function UtilityFooter() {
+function UtilityBar() {
   const [open, setOpen] = useState<'messages' | 'search' | null>(null);
   // Same first-page read the sidebar badge used — unread sorts to the top.
   const {data} = useCoachConversationsInfiniteQuery();
@@ -110,9 +110,9 @@ function UtilityFooter() {
 
   return (
     <>
-      <div className="flex gap-0.5 border-t border-border p-1.5">
+      <div className="grid grid-cols-2 gap-2 sm:flex">
         <Button
-          className={FOOTER_BUTTON}
+          className={UTILITY_BUTTON}
           onPress={() => setOpen('search')}
           variant="ghost"
         >
@@ -120,7 +120,7 @@ function UtilityFooter() {
           Search
         </Button>
         <Button
-          className={FOOTER_BUTTON}
+          className={UTILITY_BUTTON}
           onPress={() => setOpen('messages')}
           variant="ghost"
         >
@@ -173,32 +173,34 @@ export function TodayCard({
   // Counts still loading (or failed): claim nothing rather than "Clear".
   const known = entries.some((entry) => entry.count !== undefined);
   return (
-    <nav className="overflow-hidden rounded-card border border-border bg-surface">
-      <div className="flex items-baseline justify-between gap-2 border-b border-border px-3 py-2.5">
-        <span className="font-grotesk type-title font-semibold">Today</span>
-        {known ? (
-          <span className="tabular-nums type-eyebrow text-muted">{total > 0 ? `${total} to do` : 'Clear'}</span>
-        ) : null}
-      </div>
-      <div className={cn('flex flex-col p-1.5', detailed ? '' : 'gap-0.5')}>
-        {entries.map((entry) =>
-          detailed ? (
-            <MenuRow
-              entry={entry}
-              key={entry.id}
-              onSelect={onSelect}
-            />
-          ) : (
-            <CompactRow
-              entry={entry}
-              isActive={entry.id === active}
-              key={entry.id}
-              onSelect={onSelect}
-            />
-          ),
-        )}
-      </div>
-      <UtilityFooter />
-    </nav>
+    <>
+      <UtilityBar />
+      <nav className="overflow-hidden rounded-card border border-border bg-surface">
+        <div className="flex items-baseline justify-between gap-2 border-b border-border px-3 py-3">
+          <span className="font-grotesk type-title font-semibold">Today</span>
+          {known ? (
+            <span className="tabular-nums type-eyebrow text-muted">{total > 0 ? `${total} to do` : 'Clear'}</span>
+          ) : null}
+        </div>
+        <div className={cn('flex flex-col p-1.5', detailed ? '' : 'gap-0.5')}>
+          {entries.map((entry) =>
+            detailed ? (
+              <MenuRow
+                entry={entry}
+                key={entry.id}
+                onSelect={onSelect}
+              />
+            ) : (
+              <CompactRow
+                entry={entry}
+                isActive={entry.id === active}
+                key={entry.id}
+                onSelect={onSelect}
+              />
+            ),
+          )}
+        </div>
+      </nav>
+    </>
   );
 }

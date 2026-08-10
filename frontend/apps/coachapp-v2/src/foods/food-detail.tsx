@@ -44,7 +44,7 @@ export default function FoodDetail() {
   const renderDeleteDialog = (trigger: ReactNode, foodName: string) => (
     <AlertDialog>
       {trigger}
-      <AlertDialog.Backdrop>
+      <AlertDialog.Backdrop variant="transparent">
         <AlertDialog.Container>
           <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />

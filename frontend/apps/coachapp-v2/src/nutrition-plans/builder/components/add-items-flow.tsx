@@ -149,6 +149,7 @@ export function AddItemsFlow({mealName, open, onClose, onAdd}: AddItemsFlowProps
       filtersLayout="segmented"
       hasMore={activeQuery.hasNextPage ?? false}
       itemKey={(item) => item.id}
+      itemTextValue={(item) => item.name}
       items={items}
       error={activeQuery.isError}
       loading={loading}

@@ -149,6 +149,7 @@ export function PlanAddToClientControl({planKind, planName, onAssign, isAssignin
             setFlow({step: 'closed'});
           }
         }}
+        variant="transparent"
       >
         <AlertDialog.Container>
           <AlertDialog.Dialog>

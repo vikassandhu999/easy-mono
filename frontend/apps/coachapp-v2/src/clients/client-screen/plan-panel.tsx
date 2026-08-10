@@ -159,6 +159,7 @@ export function PlanPanel({
               isDismissable={!isEnding}
               isOpen={endState.isOpen}
               onOpenChange={endState.setOpen}
+              variant="transparent"
             >
               <AlertDialog.Container>
                 <AlertDialog.Dialog>

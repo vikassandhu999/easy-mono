@@ -159,6 +159,18 @@ defmodule EasyWeb.Coaches.ConversationControllerTest do
       conn = build_conn() |> authenticate_coach(trainer) |> get("/v1/coach/conversations")
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
+
+    test "searches by the displayed client name", %{conn: conn, coach: coach} do
+      match = insert(:client, business: coach.business, creator: coach, first_name: "Gina", last_name: "Lanetti")
+      other = insert(:client, business: coach.business, creator: coach, first_name: "Rowan", last_name: "White")
+      match_conversation = insert(:conversation, business: coach.business, client: match)
+      insert(:conversation, business: coach.business, client: other)
+
+      conn = get(conn, "/v1/coach/conversations", %{"search" => "Gina Lanetti"})
+
+      assert %{"data" => [%{"id" => id}], "count" => 1} = json_response(conn, 200)
+      assert id == match_conversation.id
+    end
   end
 
   describe "GET /v1/coach/conversations/:id" do

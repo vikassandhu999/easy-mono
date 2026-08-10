@@ -59,7 +59,7 @@ export default function RecipeDetail() {
   const renderDeleteDialog = (trigger: ReactNode, recipeName: string) => (
     <AlertDialog>
       {trigger}
-      <AlertDialog.Backdrop>
+      <AlertDialog.Backdrop variant="transparent">
         <AlertDialog.Container>
           <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />

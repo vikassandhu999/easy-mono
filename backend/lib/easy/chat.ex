@@ -26,6 +26,7 @@ defmodule Easy.Chat do
       Conversation
       |> Conversation.for_business(ctx.business_id)
       |> constrain_to_visible_clients(ctx)
+      |> Conversation.for_client_search(Keyword.get(opts, :search))
 
     base = if waiting?, do: Conversation.waiting(base), else: base
     order = if waiting?, do: &Conversation.oldest/1, else: &Conversation.recent/1

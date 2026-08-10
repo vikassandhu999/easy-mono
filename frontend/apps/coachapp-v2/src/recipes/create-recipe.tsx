@@ -74,6 +74,7 @@ export default function CreateRecipe() {
       <AlertDialog.Backdrop
         isOpen={leaveConfirm.isOpen}
         onOpenChange={leaveConfirm.setOpen}
+        variant="transparent"
       >
         <AlertDialog.Container>
           <AlertDialog.Dialog>

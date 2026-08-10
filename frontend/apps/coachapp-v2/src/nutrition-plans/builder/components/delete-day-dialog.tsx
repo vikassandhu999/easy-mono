@@ -45,6 +45,7 @@ export function DeleteDayDialog({
       isDismissable={!deleting}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
+      variant="transparent"
     >
       <AlertDialog.Container>
         <AlertDialog.Dialog>

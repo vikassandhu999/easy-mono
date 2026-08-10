@@ -58,7 +58,7 @@ export default function ExerciseDetail() {
   const renderDeleteDialog = (trigger: ReactNode, exerciseName: string) => (
     <AlertDialog>
       {trigger}
-      <AlertDialog.Backdrop>
+      <AlertDialog.Backdrop variant="transparent">
         <AlertDialog.Container>
           <AlertDialog.Dialog>
             <AlertDialog.CloseTrigger />

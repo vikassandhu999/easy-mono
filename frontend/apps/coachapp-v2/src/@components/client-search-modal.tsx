@@ -1,13 +1,14 @@
 import {getFullName, getInitials} from '@easy/utils';
-import {Chip} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox, SearchField} from '@heroui/react';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
+import ListEmptyState from '@/@components/list-empty-state';
 import {ROUTES} from '@/@config/routes';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {type Client, useClientsInfiniteQuery} from '@/api/clients';
 import {PickerModal} from '@/builder-kit/picker-modal';
-import {SearchPickerBody} from '@/builder-kit/search-picker-sheet';
 
 /**
  * Roster-wide client lookup as a picker (decision 2026-08-08: search left the
@@ -15,9 +16,6 @@ import {SearchPickerBody} from '@/builder-kit/search-picker-sheet';
  * lookup over ALL clients — unlike ClientPickerContent, which is the
  * triage-aware assignment picker over active/pending only.
  */
-
-// SearchPickerBody is multi-select-shaped; a jumper has no selection.
-const NO_SELECTION = new Set<string>();
 
 function statusLabel(client: Client): null | string {
   if (client.status === 'pending') {
@@ -37,51 +35,77 @@ function ClientSearchContent({onDone}: {onDone: () => void}) {
   const list = useInfiniteItems(query);
 
   return (
-    <SearchPickerBody
-      error={list.isError}
-      hasMore={query.hasNextPage}
-      itemKey={(client) => String(client.id)}
-      items={list.items}
-      loading={list.isLoading || list.isFetchingNextPage}
-      onLoadMore={list.fetchNextPage}
-      onRetry={list.refetch}
-      onSearchChange={setSearch}
-      onToggleItem={(client) => {
-        navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(client.id)));
-        onDone();
-      }}
-      renderItem={(client) => {
-        const label = statusLabel(client);
-        return (
-          <span className="flex items-center gap-2">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-pill bg-warning-soft type-eyebrow font-semibold text-warning-soft-foreground">
-              {getInitials(client.first_name, client.last_name) || '?'}
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="flex min-w-0 max-w-full items-center gap-1.5">
-                <span className="truncate type-body font-medium">
-                  {getFullName(client.first_name, client.last_name) || client.email || 'No name'}
-                </span>
-                {label ? (
-                  <Chip
-                    className="shrink-0"
-                    size="sm"
-                  >
-                    {label}
-                  </Chip>
-                ) : null}
+    <>
+      <div className="sticky top-0 z-10 bg-surface pb-2 pt-2">
+        <SearchField
+          aria-label="Search clients"
+          autoFocus
+          onChange={setSearch}
+          value={search}
+          variant="secondary"
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Search…" />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
+      </div>
+      <BrowseListBox
+        ariaLabel="Clients"
+        className="gap-0 p-0"
+        emptyState={
+          <ListEmptyState
+            emptyDescription="Clients will show up here once they are invited."
+            hasFilter={search.trim().length > 0}
+            nounPlural="clients"
+            onClearFilters={() => setSearch('')}
+          />
+        }
+        fetchNextPage={list.fetchNextPage}
+        isError={list.isError}
+        isLoading={list.isLoading || list.isFetchingNextPage}
+        items={list.items}
+        onAction={(key) => {
+          navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)));
+          onDone();
+        }}
+        onRetry={list.refetch}
+        renderItem={(client) => {
+          const name = getFullName(client.first_name, client.last_name) || client.email || 'No name';
+          const label = statusLabel(client);
+
+          return (
+            <ListBox.Item
+              className={LIST_ITEM_CLASS}
+              id={client.id}
+              textValue={name}
+            >
+              <Avatar size="md">
+                <Avatar.Fallback className="bg-warning-soft font-semibold text-warning-soft-foreground">
+                  {getInitials(client.first_name, client.last_name) || '?'}
+                </Avatar.Fallback>
+              </Avatar>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <Label className="max-w-full truncate type-body font-medium">{name}</Label>
+                <Description className="max-w-full truncate type-eyebrow text-muted">
+                  {client.email ?? client.phone ?? '—'}
+                </Description>
               </span>
-              <span className="max-w-full truncate type-eyebrow font-normal text-muted">
-                {client.email ?? client.phone ?? '—'}
-              </span>
-            </span>
-          </span>
-        );
-      }}
-      search={search}
-      selectedKeys={NO_SELECTION}
-      title="clients"
-    />
+              {label ? (
+                <Chip
+                  className="shrink-0"
+                  size="sm"
+                >
+                  {label}
+                </Chip>
+              ) : null}
+            </ListBox.Item>
+          );
+        }}
+        skeletonAvatar
+      />
+    </>
   );
 }
 

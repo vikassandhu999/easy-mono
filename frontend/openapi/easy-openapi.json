@@ -13393,6 +13393,17 @@
             }
           },
           {
+            "description": "Client name, email, or phone",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
             "description": "Only conversations where the client spoke last (the Replies queue), longest-waiting first",
             "in": "query",
             "name": "waiting",

@@ -26,6 +26,7 @@ defmodule EasyWeb.Coaches.ConversationController do
     parameters: [
       Operation.parameter(:offset, :query, :integer, "Offset", required: false),
       Operation.parameter(:limit, :query, :integer, "Limit (max 20)", required: false),
+      Operation.parameter(:search, :query, :string, "Client name, email, or phone", required: false),
       Operation.parameter(
         :waiting,
         :query,
@@ -106,6 +107,7 @@ defmodule EasyWeb.Coaches.ConversationController do
       [
         offset: parse_int(params["offset"]),
         limit: parse_int(params["limit"]),
+        search: params["search"],
         waiting: params["waiting"] == "true"
       ]
       |> Enum.reject(fn {_k, v} -> v in [nil, false] end)

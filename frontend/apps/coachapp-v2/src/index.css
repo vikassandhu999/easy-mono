@@ -290,6 +290,139 @@
   }
 }
 
+/* Overlay motion. Centered dialogs lift a short distance into place; sheets
+   preserve their spatial origin by travelling from the bottom edge. Motion is
+   stated once here for every HeroUI Modal, AlertDialog, and KeyboardSheet —
+   call sites only choose content and placement. */
+@keyframes overlay-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-backdrop-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes overlay-dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--spacing) * 2)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes overlay-dialog-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(var(--spacing)) scale(0.99);
+  }
+}
+
+@layer components {
+  .alert-dialog__backdrop[data-entering],
+  .modal__backdrop[data-entering] {
+    animation: overlay-backdrop-enter 160ms var(--ease-out-quad) both;
+  }
+
+  .alert-dialog__backdrop[data-exiting],
+  .modal__backdrop[data-exiting] {
+    animation: overlay-backdrop-exit 120ms var(--ease-in-quad) both;
+  }
+
+  .alert-dialog__container[data-entering],
+  .modal__container[data-entering] {
+    transform-origin: center;
+    animation: overlay-dialog-enter 200ms var(--ease-out-fluid) both;
+  }
+
+  .alert-dialog__container[data-exiting],
+  .modal__container[data-exiting] {
+    transform-origin: center;
+    animation: overlay-dialog-exit 140ms var(--ease-in-quad) both;
+  }
+
+  .keyboard-sheet__backdrop {
+    opacity: 1;
+    transition: opacity 160ms var(--ease-out-quad);
+  }
+
+  .keyboard-sheet__backdrop[data-entering] {
+    opacity: 0;
+  }
+
+  .keyboard-sheet__backdrop[data-exiting] {
+    opacity: 0;
+    transition-duration: 120ms;
+    transition-timing-function: var(--ease-in-quad);
+  }
+
+  .keyboard-sheet__panel {
+    transform: translateY(0);
+    transition: transform 250ms var(--ease-out-fluid);
+  }
+
+  .keyboard-sheet__panel[data-entering],
+  .keyboard-sheet__panel[data-exiting] {
+    transform: translateY(100%);
+  }
+
+  .keyboard-sheet__panel[data-exiting] {
+    transition-duration: 180ms;
+    transition-timing-function: var(--ease-in-quad);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .alert-dialog__backdrop[data-entering],
+    .alert-dialog__container[data-entering],
+    .modal__backdrop[data-entering],
+    .modal__container[data-entering] {
+      /* HeroUI applies motion-reduce:animate-none on these same nodes. The
+         reduced path deliberately restores opacity only, never spatial motion. */
+      animation: overlay-backdrop-enter 200ms var(--ease-out-quad) both !important;
+    }
+
+    .alert-dialog__backdrop[data-exiting],
+    .alert-dialog__container[data-exiting],
+    .modal__backdrop[data-exiting],
+    .modal__container[data-exiting] {
+      animation: overlay-backdrop-exit 200ms var(--ease-in-quad) both !important;
+    }
+
+    .keyboard-sheet__panel {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 200ms var(--ease-out-quad);
+    }
+
+    .keyboard-sheet__panel[data-entering],
+    .keyboard-sheet__panel[data-exiting] {
+      opacity: 0;
+      transform: translateY(0);
+    }
+
+    .keyboard-sheet__backdrop,
+    .keyboard-sheet__panel[data-exiting] {
+      transition-duration: 200ms;
+    }
+  }
+}
+
 /* Popover surface. HeroUI's `.popover` is `rounded-3xl bg-overlay` with its own
    shadow, so all nine call sites overrode the same four things to reach the
    design's card. That is the component's look, not a per-popover choice — only

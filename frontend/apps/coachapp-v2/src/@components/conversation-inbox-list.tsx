@@ -1,5 +1,6 @@
-import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox, SearchField} from '@heroui/react';
 import {cn} from '@heroui/styles';
+import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
@@ -47,19 +48,18 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
       id={conversation.id}
       textValue={name}
     >
-      <Avatar
-        className={unread ? 'bg-accent-soft text-accent' : undefined}
-        size="sm"
-      >
-        <Avatar.Fallback>{initial}</Avatar.Fallback>
+      <Avatar size="md">
+        <Avatar.Fallback className={unread ? 'bg-accent-soft text-accent' : undefined}>{initial}</Avatar.Fallback>
       </Avatar>
-      <div className="flex min-w-0 flex-col">
-        <Label className={`truncate ${unread ? 'font-semibold text-foreground' : ''}`}>{name}</Label>
-        <Description className={`truncate ${unread ? 'font-medium text-foreground' : ''}`}>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <Label className="max-w-full truncate type-body font-semibold leading-[normal] text-foreground">{name}</Label>
+        <Description
+          className={`max-w-full truncate type-eyebrow leading-[normal] ${unread ? 'font-medium text-foreground' : 'text-muted'}`}
+        >
           {conversation.last_message_preview ?? 'No messages yet'}
         </Description>
       </div>
-      <div className="ms-auto flex shrink-0 flex-col items-end gap-1">
+      <div className="ms-auto flex shrink-0 items-center self-start gap-2">
         <span className={`type-eyebrow ${unread ? 'font-medium text-accent-soft-foreground' : 'text-muted'}`}>
           {timeAgo(conversation.last_message_at)}
         </span>
@@ -79,41 +79,65 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
 export function ConversationInboxList({
   className = 'flex-1 gap-0 p-0',
   onNavigate,
+  searchable = false,
 }: {
   className?: string;
   /** Called after a row navigates — a modal host closes itself here. */
   onNavigate?: () => void;
+  searchable?: boolean;
 }) {
   const navigate = useNavigate();
-  const {data, fetchNextPage, isError, isLoading, refetch} = useCoachConversationsInfiniteQuery();
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  const {data, fetchNextPage, isError, isLoading, refetch} = useCoachConversationsInfiniteQuery(deferredSearch);
 
   return (
-    <BrowseListBox
-      ariaLabel="Conversations"
-      className={className}
-      emptyState={
-        <ListEmptyState
-          emptyDescription="Conversations with your clients will show up here."
-          hasFilter={false}
-          nounPlural="messages"
-        />
-      }
-      fetchNextPage={fetchNextPage}
-      isError={isError}
-      isLoading={isLoading}
-      items={data?.pages.flatMap((page) => page.data) ?? []}
-      onAction={(key) => {
-        navigate(ROUTES.CONVERSATION.replace(':id', String(key)));
-        onNavigate?.();
-      }}
-      onRetry={refetch}
-      renderItem={(conversation) => (
-        <ConversationListItem
-          conversation={conversation}
-          key={conversation.id}
-        />
-      )}
-      skeletonAvatar
-    />
+    <>
+      {searchable ? (
+        <div className="sticky top-0 z-10 bg-surface pb-2 pt-2">
+          <SearchField
+            aria-label="Search conversations by client"
+            className="w-full"
+            onChange={setSearch}
+            value={search}
+            variant="secondary"
+          >
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder="Search clients…" />
+              <SearchField.ClearButton />
+            </SearchField.Group>
+          </SearchField>
+        </div>
+      ) : null}
+      <BrowseListBox
+        ariaLabel="Conversations"
+        className={className}
+        emptyState={
+          <ListEmptyState
+            emptyDescription="Conversations with your clients will show up here."
+            hasFilter={search.trim().length > 0}
+            nounPlural="messages"
+            onClearFilters={() => setSearch('')}
+          />
+        }
+        fetchNextPage={fetchNextPage}
+        isError={isError}
+        isLoading={isLoading}
+        items={data?.pages.flatMap((page) => page.data) ?? []}
+        onAction={(key) => {
+          navigate(ROUTES.CONVERSATION.replace(':id', String(key)));
+          onNavigate?.();
+        }}
+        onRetry={refetch}
+        renderItem={(conversation) => (
+          <ConversationListItem
+            conversation={conversation}
+            key={conversation.id}
+          />
+        )}
+        skeletonAvatar
+      />
+    </>
   );
 }

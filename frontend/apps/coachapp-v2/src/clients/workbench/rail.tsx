@@ -2,8 +2,8 @@ import {TodayCard, type TodayEntry} from '@/@components/today-card';
 
 /**
  * Desktop rail — the workbench's left column (spec §5): the Today card.
- * Roster-wide search left the rail 2026-08-08 — it's a modal in the Today
- * card's utility footer (and ⌘K), no longer a persistent field.
+ * Roster-wide search left the rail 2026-08-08 — it's a modal in the utility
+ * row above Today (and ⌘K), no longer a persistent field.
  */
 export function WorkbenchRail({
   active,

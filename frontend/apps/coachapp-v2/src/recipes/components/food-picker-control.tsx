@@ -59,6 +59,7 @@ export default function FoodPickerControl({onSelect, excludeIds = [], triggerCla
       <SearchPickerSheet<Food>
         confirmLabel={(count) => (count === 0 ? 'Add ingredients' : `Add ${count} ingredient${count === 1 ? '' : 's'}`)}
         itemKey={(food) => food.id}
+        itemTextValue={(food) => food.name}
         items={foods}
         error={isError}
         loading={isFetching || search !== debouncedSearch}

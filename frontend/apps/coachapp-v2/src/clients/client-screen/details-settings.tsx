@@ -271,6 +271,7 @@ export default function DetailsSettings() {
                     isDismissable={!isSaving}
                     isOpen={confirmState.isOpen}
                     onOpenChange={confirmState.setOpen}
+                    variant="transparent"
                   >
                     <AlertDialog.Container>
                       <AlertDialog.Dialog>

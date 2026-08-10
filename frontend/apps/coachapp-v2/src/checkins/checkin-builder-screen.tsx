@@ -102,6 +102,7 @@ function LoadedBuilder({template}: {template: ClientProfileFormTemplate}) {
         isDismissable={!isDeleting}
         isOpen={deleteConfirm.isOpen}
         onOpenChange={deleteConfirm.setOpen}
+        variant="transparent"
       >
         <AlertDialog.Container>
           <AlertDialog.Dialog>

@@ -116,6 +116,7 @@ export function PlanBuilder({plan}: {plan: TrainingPlan}) {
           isDismissable={!commands.isRemovingWorkout}
           isOpen={deleteAlert.isOpen}
           onOpenChange={deleteAlert.setOpen}
+          variant="transparent"
         >
           <AlertDialog.Container>
             <AlertDialog.Dialog>

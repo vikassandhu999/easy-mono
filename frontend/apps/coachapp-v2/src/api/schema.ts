@@ -6153,6 +6153,8 @@ export interface operations {
         offset?: number;
         /** @description Limit (max 20) */
         limit?: number;
+        /** @description Client name, email, or phone */
+        search?: string;
         /** @description Only conversations where the client spoke last (the Replies queue), longest-waiting first */
         waiting?: boolean;
       };

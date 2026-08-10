@@ -17,7 +17,7 @@
  *
  * Children are mounted only while open, matching what every call site did by
  * hand: search state and autofocus reset per opening, and the content is gone
- * during KeyboardSheet's 300ms slide-out.
+ * during KeyboardSheet's themed slide-out.
  */
 
 import {Button, Popover} from '@heroui/react';

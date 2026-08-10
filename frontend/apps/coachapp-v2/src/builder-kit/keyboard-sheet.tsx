@@ -55,12 +55,7 @@ export function KeyboardSheet({
 
   return (
     <ModalOverlay
-      className={({isEntering, isExiting}) =>
-        cn(
-          'fixed inset-0 z-50 bg-backdrop opacity-100 transition-opacity duration-300 ease-out motion-reduce:transition-none',
-          (isEntering || isExiting) && 'opacity-0',
-        ) ?? ''
-      }
+      className="keyboard-sheet__backdrop fixed inset-0 z-50 bg-transparent"
       isDismissable={isDismissable}
       isOpen={open}
       onOpenChange={(next) => {
@@ -72,16 +67,14 @@ export function KeyboardSheet({
       <AppScrollLock />
       <Modal
         className={cn(
-          'fixed right-0 left-0 z-50 flex flex-col overflow-hidden rounded-t-panel border border-border bg-surface shadow-overlay',
-          'transition-transform duration-300 ease-out motion-reduce:transition-none',
+          'keyboard-sheet__panel fixed right-0 left-0 z-50 flex flex-col overflow-hidden rounded-t-panel border border-border bg-surface shadow-overlay',
           'md:right-auto md:left-1/2 md:w-full md:max-w-lg md:-translate-x-1/2',
           className,
         )}
-        style={({isEntering, isExiting}) => ({
-          /* ui-contract-allow -- live viewport position and enter/exit transform */
+        style={() => ({
+          /* ui-contract-allow -- live visual-viewport geometry */
           bottom: bottomInset,
           maxHeight,
-          transform: isEntering || isExiting ? 'translateY(100%)' : 'translateY(0)',
         })}
       >
         <Dialog

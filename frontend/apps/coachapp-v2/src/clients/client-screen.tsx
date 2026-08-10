@@ -356,7 +356,10 @@ function PendingBody({client}: {client: Client}) {
             )}
             <AlertDialog>
               <Button variant="danger">Revoke invite</Button>
-              <AlertDialog.Backdrop isDismissable={!revoke.isPending}>
+              <AlertDialog.Backdrop
+                isDismissable={!revoke.isPending}
+                variant="transparent"
+              >
                 <AlertDialog.Container>
                   <AlertDialog.Dialog>
                     <AlertDialog.CloseTrigger />

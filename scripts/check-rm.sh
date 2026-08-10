@@ -147,6 +147,50 @@ if [ -n "$hits" ]; then
   fail=1
 fi
 
+# RM-205 — centered picker dialogs share one width, and their selectable
+# collections use collection semantics rather than row-shaped Buttons.
+if ! rg -q 'size="md"' "$COACH/builder-kit/picker-modal.tsx" || rg -q '\bwide\??\b|size=\{' "$COACH/builder-kit/picker-modal.tsx"; then
+  echo "FAIL RM-205 — PickerModal must own the single md desktop width (see docs/agents/recurring-mistakes.md)"
+  fail=1
+fi
+check RM-205 "button-mapped picker collection (use ListBox/ListBox.Item)" \
+  'role="group"|button--row' \
+  "$COACH/builder-kit/search-picker-sheet.tsx" "$COACH/@components/client-picker.tsx"
+for picker in \
+  "$COACH/@components/client-search-modal.tsx" \
+  "$COACH/@components/conversation-inbox-list.tsx" \
+  "$COACH/@components/client-picker.tsx"; do
+  if ! rg -q 'className="sticky top-0 z-10 bg-surface pb-2 pt-2"' "$picker"; then
+    echo "FAIL RM-205 — picker search must use the stable sticky search band (see docs/agents/recurring-mistakes.md)"
+    echo "$picker"
+    fail=1
+  fi
+done
+
+# RM-206 — overlay motion is one theme rule. KeyboardSheet names its two theme
+# hooks and carries only dynamic viewport geometry; call sites never restate
+# animation, transition, or duration choices.
+for selector in \
+  '.modal__container[data-entering]' \
+  '.alert-dialog__container[data-entering]' \
+  '.keyboard-sheet__panel[data-entering]'; do
+  if ! rg -Fq "$selector" "$COACH/index.css"; then
+    echo "FAIL RM-206 — missing central overlay motion selector: $selector (see docs/agents/recurring-mistakes.md)"
+    fail=1
+  fi
+done
+if ! rg -q 'keyboard-sheet__backdrop' "$COACH/builder-kit/keyboard-sheet.tsx" || \
+   ! rg -q 'keyboard-sheet__panel' "$COACH/builder-kit/keyboard-sheet.tsx"; then
+  echo "FAIL RM-206 — KeyboardSheet must use the theme's motion hooks (see docs/agents/recurring-mistakes.md)"
+  fail=1
+fi
+check RM-206 "call-site overlay motion (use the central theme rules)" \
+  '(AlertDialog|Modal)\.(Backdrop|Container|Dialog)[^>]{0,200}className="[^"]*(animate-|transition-|duration-)' \
+  "$COACH" -U
+check RM-206 "KeyboardSheet-local motion (use keyboard-sheet theme hooks)" \
+  'isEntering|isExiting|transition-(opacity|transform)|duration-[0-9]+' \
+  "$COACH/builder-kit/keyboard-sheet.tsx"
+
 # RM-302 — a local .claude/skills/<name> shadows the plugin skill of the same
 # name and silently goes stale. Skills the mattpocock-skills plugin provides must
 # never be vendored into this repo.

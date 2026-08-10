@@ -97,6 +97,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
       <AlertDialog.Backdrop
         isOpen={leaveConfirm.isOpen}
         onOpenChange={leaveConfirm.setOpen}
+        variant="transparent"
       >
         <AlertDialog.Container>
           <AlertDialog.Dialog>

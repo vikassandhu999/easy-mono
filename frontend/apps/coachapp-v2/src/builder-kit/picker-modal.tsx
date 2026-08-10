@@ -60,10 +60,11 @@ export function PickerModal({
             onClose();
           }
         }}
+        variant="transparent"
       >
         <Modal.Container
           placement="center"
-          size="sm"
+          size="md"
         >
           {/* p-0: the bands own their insets (SearchPickerBody's sticky search
               assumes the px-4 gutter). */}

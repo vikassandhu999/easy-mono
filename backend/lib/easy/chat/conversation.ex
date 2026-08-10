@@ -52,6 +52,23 @@ defmodule Easy.Chat.Conversation do
   @spec waiting(Ecto.Queryable.t()) :: Ecto.Query.t()
   def waiting(query \\ __MODULE__), do: from(c in query, where: c.last_message_role == :client)
 
+  @spec for_client_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_client_search(query \\ __MODULE__, term)
+  def for_client_search(query, nil), do: query
+  def for_client_search(query, ""), do: query
+
+  def for_client_search(query, term) do
+    pattern = Easy.Search.like_pattern(term)
+
+    from(c in query,
+      join: client in assoc(c, :client),
+      where:
+        ilike(fragment("concat_ws(' ', ?, ?)", client.first_name, client.last_name), ^pattern) or
+          ilike(client.email, ^pattern) or
+          ilike(client.phone, ^pattern)
+    )
+  end
+
   @spec recent(Ecto.Queryable.t()) :: Ecto.Query.t()
   def recent(query \\ __MODULE__),
     do: from(c in query, order_by: [desc_nulls_last: c.last_message_at, desc: c.inserted_at, desc: c.id])

@@ -7,19 +7,18 @@
  *   owns search text, filter state, selected keys, and item data.
  * - Generic over item type T: `renderItem`, `itemKey`, `onToggleItem` are typed
  *   against T, so callers stay type-safe without casting.
- * - Infinite scroll: an IntersectionObserver sentinel at the list bottom calls
- *   `onLoadMore` when visible. Observer is only active when `hasMore && !loading`
- *   to prevent redundant fetches and is cleaned up on unmount / prop changes.
+ * - Infinite scroll: HeroUI's load-more item calls `onLoadMore` when visible.
  * - Layout matches `04-picker-and-set-sheet.html`: grip → title/close → search →
  *   filter chips (h-scroll) → item list → "+ Create" row → confirm dock (footer).
  * - Container: `PickerModal` — centered modal on desktop, KeyboardSheet on
  *   mobile (the canonical picker shell).
  */
 
-import {Button, SearchField, Spinner} from '@heroui/react';
+import {Button, ListBox, ListBoxLoadMoreItem, SearchField, Spinner} from '@heroui/react';
 import {Plus} from 'lucide-react';
-import {type ReactNode, useCallback, useEffect, useRef} from 'react';
+import type {ReactNode} from 'react';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {ErrorState} from '@/@components/error-state';
 
 import {PickerModal} from './picker-modal';
@@ -57,6 +56,7 @@ export interface SearchPickerSheetProps<T> {
   items: T[];
   renderItem: (item: T, selected: boolean) => ReactNode;
   itemKey: (item: T) => string;
+  itemTextValue: (item: T) => string;
   error?: boolean;
   onRetry?: () => void;
 
@@ -97,6 +97,7 @@ export type SearchPickerBodyProps<T> = Pick<
   | 'filtersLayout'
   | 'hasMore'
   | 'itemKey'
+  | 'itemTextValue'
   | 'items'
   | 'loading'
   | 'onCreateNoMatch'
@@ -119,6 +120,7 @@ export function SearchPickerBody<T>({
   items,
   renderItem,
   itemKey,
+  itemTextValue,
   selectedKeys,
   onToggleItem,
   onCreateNoMatch,
@@ -129,49 +131,6 @@ export function SearchPickerBody<T>({
   error = false,
   onRetry,
 }: SearchPickerBodyProps<T>) {
-  // Ref to the sentinel div at the bottom of the item list.
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  // Ref to the IntersectionObserver so we can clean it up.
-  const observerRef = useRef<IntersectionObserver | null>(null);
-
-  // Stable callback — callers likely pass an inline arrow but we don't want the
-  // effect to re-run on every render just because the function identity changed.
-  const stableOnLoadMore = useCallback(() => {
-    onLoadMore?.();
-  }, [onLoadMore]);
-
-  // Wire the IntersectionObserver whenever the sentinel, hasMore, or loading
-  // changes. Only observe when there is more to load and we are not already
-  // fetching to prevent duplicate calls.
-  useEffect(() => {
-    // Tear down any previous observer first.
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
-    }
-
-    if (!sentinelRef.current || !hasMore || loading) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          stableOnLoadMore();
-        }
-      },
-      {threshold: 0.1},
-    );
-
-    observer.observe(sentinelRef.current);
-    observerRef.current = observer;
-
-    return () => {
-      observer.disconnect();
-      observerRef.current = null;
-    };
-  }, [hasMore, loading, stableOnLoadMore]);
-
   const showCreateRow = onCreateNoMatch !== undefined && search.trim().length > 0 && items.length === 0 && !loading;
 
   // The sticky search header relies on an overflow-y-auto ancestor with px-4
@@ -230,81 +189,75 @@ export function SearchPickerBody<T>({
         ) : null}
       </div>
 
-      {/* Item list — caller-rendered rows.
-           Each row is a <button> so it is an interactive element (satisfies
-           a11y rules) and naturally handles keyboard activation. The caller's
-           renderItem provides the visual content; the button is the tap target. */}
-      <div
-        className="flex flex-col"
-        role="group"
-      >
-        {/* The error state replaces the whole list body: stale rows, create-row
-            and spinner would all lie about a load that failed. */}
-        {error ? (
-          <div className="py-4">
-            <ErrorState
-              message="Couldn't load results."
-              onRetry={onRetry}
-            />
-          </div>
-        ) : (
-          <>
-            {items.map((item) => {
-              const key = itemKey(item);
-              const selected = selectedKeys.has(key);
-              return (
-                <Button
-                  aria-pressed={selected}
-                  className={[
-                    // The row inset lives HERE, not in renderItem — every picker
-                    // list shares it, so callers cannot drift apart.
-                    'h-auto w-full justify-start rounded-none border-b border-border px-1 py-2 text-left last:border-b-0',
-                    selected ? 'bg-accent-soft' : 'bg-transparent',
-                  ].join(' ')}
-                  key={key}
-                  onPress={() => onToggleItem(item)}
-                  variant="ghost"
-                >
-                  <span className="block w-full min-w-0">{renderItem(item, selected)}</span>
-                </Button>
-              );
-            })}
-
-            {/* Create-from-no-match row */}
-            {showCreateRow ? (
-              <Button
-                className="h-auto w-full min-w-0 justify-start gap-2 px-0 py-3 text-left type-body text-accent"
-                onPress={() => onCreateNoMatch?.(search)}
-                variant="ghost"
+      {/* The error state replaces the whole list body: stale rows, create-row
+          and spinner would all lie about a load that failed. */}
+      {error ? (
+        <div className="py-4">
+          <ErrorState
+            message="Couldn't load results."
+            onRetry={onRetry}
+          />
+        </div>
+      ) : items.length > 0 ? (
+        <ListBox
+          aria-label={`${title} results`}
+          className="overflow-visible p-0"
+          onSelectionChange={(keys) => {
+            const next = new Set([...keys].map(String));
+            const changed = items.find((item) => selectedKeys.has(itemKey(item)) !== next.has(itemKey(item)));
+            if (changed) {
+              onToggleItem(changed);
+            }
+          }}
+          selectedKeys={selectedKeys}
+          selectionMode="multiple"
+        >
+          {items.map((item) => {
+            const key = itemKey(item);
+            return (
+              <ListBox.Item
+                className={`${LIST_ITEM_CLASS} data-[selected=true]:bg-accent-soft`}
+                id={key}
+                key={key}
+                textValue={itemTextValue(item)}
               >
-                <Plus className="shrink-0" />
-                <span className="min-w-0 flex-1 truncate">
-                  {createLabel ? createLabel(search) : `Create "${search}"`}
-                </span>
-              </Button>
-            ) : null}
-
-            {/* No-results state — distinct from the loading + create-row cases */}
-            {!loading && items.length === 0 && !showCreateRow ? (
-              <div className="py-8 text-center type-body text-muted">No results found.</div>
-            ) : null}
-
-            {/* Infinite scroll sentinel — observed by IntersectionObserver */}
-            <div
-              aria-hidden="true"
-              className="h-1"
-              ref={sentinelRef}
-            />
-
-            {/* Loading indicator */}
-            {loading ? (
+                <span className="block w-full min-w-0">{renderItem(item, selectedKeys.has(key))}</span>
+              </ListBox.Item>
+            );
+          })}
+          {hasMore ? (
+            <ListBoxLoadMoreItem
+              isLoading={loading}
+              onLoadMore={() => onLoadMore?.()}
+            >
               <div className="flex justify-center py-4">
                 <Spinner size="sm" />
               </div>
-            ) : null}
-          </>
-        )}
-      </div>
+            </ListBoxLoadMoreItem>
+          ) : null}
+        </ListBox>
+      ) : (
+        <>
+          {showCreateRow ? (
+            <Button
+              className="h-auto w-full min-w-0 justify-start gap-2 px-0 py-3 text-left type-body text-accent"
+              onPress={() => onCreateNoMatch?.(search)}
+              variant="ghost"
+            >
+              <Plus className="shrink-0" />
+              <span className="min-w-0 flex-1 truncate">
+                {createLabel ? createLabel(search) : `Create "${search}"`}
+              </span>
+            </Button>
+          ) : loading ? (
+            <div className="flex justify-center py-4">
+              <Spinner size="sm" />
+            </div>
+          ) : (
+            <div className="py-8 text-center type-body text-muted">No results found.</div>
+          )}
+        </>
+      )}
     </>
   );
 }

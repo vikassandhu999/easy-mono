@@ -1,9 +1,20 @@
 import {formatDateShort, getFullName, getInitials} from '@easy/utils';
-import {Button, Chip, SearchField, Skeleton, Typography} from '@heroui/react';
+import {
+  Avatar,
+  Button,
+  Chip,
+  Description,
+  Header,
+  Label,
+  ListBox,
+  SearchField,
+  Skeleton,
+  Typography,
+} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import {
   CLIENT_PICKER_PAGE_SIZE,
   clientContact,
@@ -33,26 +44,23 @@ function coverageCopy(client: Client): {copy: string; warning: boolean} {
   }
 }
 
-function ClientRow({client, onSelect}: {client: Client; onSelect: (client: Client) => void}) {
+function ClientRow({client}: {client: Client}) {
   const coverage = coverageCopy(client);
+  const name = getFullName(client.first_name, client.last_name) || 'No name';
   return (
-    <Button
-      // shrink-0: `button--row` releases min-height to 0, and a flex child
-      // with min-height 0 inside the max-h scroll column SHRINKS instead of
-      // scrolling — 28 rows compressed to ~24px and overlapped (caught live
-      // at 375). The list scrolls; the rows must not give.
-      className="button--row w-full shrink-0 justify-start gap-2 px-2 py-2 text-left"
-      onPress={() => onSelect(client)}
-      variant="ghost"
+    <ListBox.Item
+      className={LIST_ITEM_CLASS}
+      id={client.id}
+      textValue={name}
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-pill bg-warning-soft type-eyebrow font-semibold text-warning-soft-foreground">
-        {getInitials(client.first_name, client.last_name) || '?'}
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col items-start">
+      <Avatar size="md">
+        <Avatar.Fallback className="bg-warning-soft font-semibold text-warning-soft-foreground">
+          {getInitials(client.first_name, client.last_name) || '?'}
+        </Avatar.Fallback>
+      </Avatar>
+      <span className="flex min-w-0 flex-1 flex-col">
         <span className="flex min-w-0 max-w-full items-center gap-1.5">
-          <span className="truncate type-body font-medium">
-            {getFullName(client.first_name, client.last_name) || 'No name'}
-          </span>
+          <Label className="truncate type-body font-medium">{name}</Label>
           {client.status === 'pending' ? (
             <Chip
               className="shrink-0"
@@ -64,20 +72,14 @@ function ClientRow({client, onSelect}: {client: Client; onSelect: (client: Clien
         </span>
         {/* Contact, not the coverage fact: names duplicate, and phone-only
             invitations still need enough identity to assign safely. */}
-        <span className="max-w-full truncate type-eyebrow font-normal text-muted">{clientContact(client)}</span>
+        <Description className="max-w-full truncate type-eyebrow font-normal text-muted">
+          {clientContact(client)}
+        </Description>
       </span>
       <span className={cn('shrink-0 type-eyebrow font-normal', coverage.warning ? 'text-warning' : 'text-muted')}>
         {coverage.copy}
       </span>
-    </Button>
-  );
-}
-
-function GroupLabel({children}: {children: string}) {
-  return (
-    <div className="px-2 pb-1 pt-2 type-eyebrow font-semibold uppercase tracking-wider text-muted first:pt-0.5">
-      {children}
-    </div>
+    </ListBox.Item>
   );
 }
 
@@ -184,54 +186,89 @@ export default function ClientPickerContent({onSelect}: ClientPickerContentProps
   } else if (searching) {
     // Flat results in server order — search is lookup, the groups are triage.
     body = (
-      <div className="flex flex-col overflow-y-auto">
+      <ListBox
+        aria-label="Matching clients"
+        className="overflow-visible p-0"
+        onAction={(key) => {
+          const client = clients.find((item) => item.id === String(key));
+          if (client) {
+            onSelect(client);
+          }
+        }}
+        selectionMode="none"
+      >
         {clients.map((client) => (
           <ClientRow
             client={client}
             key={client.id}
-            onSelect={onSelect}
           />
         ))}
-      </div>
+      </ListBox>
     );
   } else {
     body = (
-      <div className="flex flex-col overflow-y-auto">
-        {showLabels ? <GroupLabel>Needs programming</GroupLabel> : null}
-        {needsProgramming.map((client) => (
-          <ClientRow
-            client={client}
-            key={client.id}
-            onSelect={onSelect}
-          />
-        ))}
-        {showLabels ? <GroupLabel>Everyone else</GroupLabel> : null}
-        {everyoneElse.map((client) => (
-          <ClientRow
-            client={client}
-            key={client.id}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
+      <ListBox
+        aria-label="Eligible clients"
+        className="overflow-visible p-0"
+        onAction={(key) => {
+          const client = clients.find((item) => item.id === String(key));
+          if (client) {
+            onSelect(client);
+          }
+        }}
+        selectionMode="none"
+      >
+        {showLabels ? (
+          <>
+            <ListBox.Section>
+              <Header>Needs programming</Header>
+              {needsProgramming.map((client) => (
+                <ClientRow
+                  client={client}
+                  key={client.id}
+                />
+              ))}
+            </ListBox.Section>
+            <ListBox.Section>
+              <Header>Everyone else</Header>
+              {everyoneElse.map((client) => (
+                <ClientRow
+                  client={client}
+                  key={client.id}
+                />
+              ))}
+            </ListBox.Section>
+          </>
+        ) : (
+          [...needsProgramming, ...everyoneElse].map((client) => (
+            <ClientRow
+              client={client}
+              key={client.id}
+            />
+          ))
+        )}
+      </ListBox>
     );
   }
 
   return (
-    <div className="flex w-full flex-col gap-2 py-2 min-h-[80dvh]">
-      <SearchField
-        aria-label="Search clients"
-        autoFocus
-        onChange={setSearch}
-        value={search}
-        variant="secondary"
-      >
-        <SearchField.Group>
-          <SearchField.SearchIcon />
-          <SearchField.Input placeholder="Search clients…" />
-          <SearchField.ClearButton />
-        </SearchField.Group>
-      </SearchField>
+    <div className="flex min-h-[80dvh] w-full flex-col">
+      <div className="sticky top-0 z-10 bg-surface pb-2 pt-2">
+        <SearchField
+          aria-label="Search clients"
+          autoFocus
+          className="w-full"
+          onChange={setSearch}
+          value={search}
+          variant="secondary"
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Search clients…" />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
+      </div>
       {body}
     </div>
   );

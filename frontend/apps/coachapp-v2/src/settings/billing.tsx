@@ -190,7 +190,10 @@ function CancelSubscriptionButton({billing}: {billing: BillingSummary}) {
       >
         Cancel subscription
       </Button>
-      <AlertDialog.Backdrop isDismissable={!isLoading}>
+      <AlertDialog.Backdrop
+        isDismissable={!isLoading}
+        variant="transparent"
+      >
         <AlertDialog.Container>
           <AlertDialog.Dialog>
             {({close}) => (

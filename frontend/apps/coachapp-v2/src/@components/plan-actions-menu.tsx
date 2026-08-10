@@ -173,6 +173,7 @@ export function PlanActionsMenu({
         isDismissable={!deleting}
         isOpen={deleteAlertState.isOpen}
         onOpenChange={deleteAlertState.setOpen}
+        variant="transparent"
       >
         <AlertDialog.Container>
           <AlertDialog.Dialog>

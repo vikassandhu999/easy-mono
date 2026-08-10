@@ -138,6 +138,7 @@ export function ExercisePicker({isOpen, onClose, onAdd}: ExercisePickerProps) {
       filters={filters}
       hasMore={hasNextPage ?? false}
       itemKey={(exercise) => exercise.id}
+      itemTextValue={(exercise) => exercise.name}
       items={exercises}
       loading={isFetching || search !== debouncedSearch}
       onClose={() => {
@@ -175,7 +176,7 @@ function renderExercise(exercise: TrainingExercise, isSelected: boolean) {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Decorative: the row Button owns the press and announces state via aria-pressed. */}
+      {/* Decorative: ListBox.Item owns selection and announces its state. */}
       <div
         aria-hidden="true"
         className={[

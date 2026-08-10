@@ -16,12 +16,16 @@ type ConversationListResponse = components['schemas']['ConversationListResponse'
 const PAGE_SIZE = 20;
 
 /** The inbox, recent-first, offset-paginated. Page 1 also feeds the unread badge and the dashboard activity cell. */
-export function useCoachConversationsInfiniteQuery() {
+export function useCoachConversationsInfiniteQuery(search?: string) {
+  const normalizedSearch = search?.trim() || undefined;
+
   return useInfiniteQuery({
-    queryKey: conversationKeys.infinite(),
+    queryKey: conversationKeys.infinite(normalizedSearch ? {search: normalizedSearch} : undefined),
     queryFn: ({pageParam}) =>
       call(
-        client.GET('/v1/coach/conversations', {params: {query: {limit: PAGE_SIZE, offset: pageParam}}}),
+        client.GET('/v1/coach/conversations', {
+          params: {query: {limit: PAGE_SIZE, offset: pageParam, search: normalizedSearch}},
+        }),
       ) as Promise<ConversationListResponse>,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {

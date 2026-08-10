@@ -254,17 +254,13 @@ defmodule Easy.Sessions do
         today = Date.utc_today()
 
         exists? =
-          TrainingWorkout
-          |> TrainingWorkout.for_business(business_id)
-          |> join(:inner, [w], t in TrainingPlan,
+          TrainingPlan
+          |> TrainingPlan.for_business(business_id)
+          |> TrainingPlan.active_for_client(client_id, today)
+          |> join(:inner, [t], w in TrainingWorkout,
             on:
-              t.id == w.training_plan_id and t.business_id == ^business_id and
-                t.client_id == ^client_id
-          )
-          |> where(
-            [w, t],
-            w.id == ^workout_id and t.status == ^:active and t.start_date <= ^today and
-              t.end_date >= ^today
+              w.training_plan_id == t.id and w.business_id == ^business_id and
+                w.id == ^workout_id
           )
           |> Repo.exists?()
 

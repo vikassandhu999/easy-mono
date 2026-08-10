@@ -278,7 +278,7 @@ defmodule Easy.TrainingPlansTest do
           creator: coach,
           business: coach.business,
           client: client,
-          start_date: today,
+          start_date: nil,
           end_date: nil
         )
 

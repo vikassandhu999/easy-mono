@@ -11,13 +11,12 @@ defmodule Easy.Clients.ListPlanNamesTest do
       business = insert(:business)
       coach = insert(:coach, business: business)
       client = insert(:client, business: business, creator: coach, user: insert(:user))
-      today = Date.utc_today()
 
       %{
         business: business,
         coach: coach,
         client: client,
-        window: [start_date: today, end_date: nil]
+        window: [start_date: nil, end_date: nil]
       }
     end
 

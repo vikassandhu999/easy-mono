@@ -133,7 +133,7 @@ defmodule Easy.Training.TrainingPlan do
     from(t in query,
       where: t.client_id == ^client_id,
       where: t.status == :active,
-      where: t.start_date <= ^date,
+      where: is_nil(t.start_date) or t.start_date <= ^date,
       where: is_nil(t.end_date) or t.end_date >= ^date
     )
   end
@@ -147,7 +147,7 @@ defmodule Easy.Training.TrainingPlan do
       where: t.business_id == ^business_id,
       where: t.client_id in ^client_ids,
       where: t.status == :active,
-      where: t.start_date <= ^date,
+      where: is_nil(t.start_date) or t.start_date <= ^date,
       where: is_nil(t.end_date) or t.end_date >= ^date
     )
   end

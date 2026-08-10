@@ -27,14 +27,14 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert data["started_at"] != nil
     end
 
-    test "starts a planned workout with snapshot", ctx do
+    test "starts a planned workout from an open-ended plan with snapshot", ctx do
       plan =
         insert(:training_plan,
           creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          start_date: Date.add(Date.utc_today(), -1),
-          end_date: Date.add(Date.utc_today(), 30)
+          start_date: nil,
+          end_date: nil
         )
 
       workout = insert(:workout, plan: plan, business: ctx.business)

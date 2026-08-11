@@ -9,11 +9,9 @@ import {ROUTES} from '@/@config/routes';
 import {type Conversation, useCoachConversationsInfiniteQuery} from '@/api/conversations';
 
 /**
- * The coach inbox list, content only — shared by the `/messages` screen
- * (mobile's full-page inbox) and the workbench's Messages view (desktop
- * inline). Rows keep inbox mechanics: recent first, unread emphasis — an
- * awareness surface, not a drainable queue (spec §2); the actionable slice
- * lives in the Replies queue.
+ * The coach inbox list shown in the Messages modal. Rows keep inbox mechanics:
+ * recent first, unread emphasis — an awareness surface, not a drainable queue
+ * (spec §2); the actionable slice lives in the Replies queue.
  */
 
 function timeAgo(iso: string | null | undefined) {
@@ -40,12 +38,9 @@ function ConversationListItem({conversation}: {conversation: Conversation}) {
 
   return (
     <ListBox.Item
-      // The shared row spec — gutters, hairlines, no press-scale. The old
-      // hand-rolled `px-4 sm:px-8` was tuned for the full-width `/messages`
-      // page and read as an oversized indent once the same list moved inside
-      // the workbench card next to `sm:px-4` queue rows.
+      // Shared row gutters, hairlines, and no press-scale.
       className={cn(LIST_ITEM_CLASS, unread && 'bg-accent-soft hover:bg-accent-soft')}
-      id={conversation.id}
+      id={conversation.client_id}
       textValue={name}
     >
       <Avatar size="md">
@@ -126,7 +121,7 @@ export function ConversationInboxList({
         isLoading={isLoading}
         items={data?.pages.flatMap((page) => page.data) ?? []}
         onAction={(key) => {
-          navigate(ROUTES.CONVERSATION.replace(':id', String(key)));
+          navigate(ROUTES.CLIENT_MESSAGES.replace(':id', String(key)));
           onNavigate?.();
         }}
         onRetry={refetch}

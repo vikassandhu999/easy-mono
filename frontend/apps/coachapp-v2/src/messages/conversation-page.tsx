@@ -1,14 +1,31 @@
 import {Spinner} from '@heroui/react';
-import {useParams} from 'react-router-dom';
+import {useCallback} from 'react';
+import {useParams, useSearchParams} from 'react-router-dom';
 
 import {ErrorState} from '@/@components/error-state';
-import {ROUTES} from '@/@config/routes';
-import {useGetCoachConversationQuery} from '@/api/conversations';
+import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import ConversationView from '@/messages/conversation-view';
 
 export default function ConversationPage() {
   const {id} = useParams<{id: string}>();
-  const {data, isError, isLoading, refetch} = useGetCoachConversationQuery(id!, {enabled: Boolean(id)});
+  const [searchParams, setSearchParams] = useSearchParams();
+  const {data, isError, isLoading, refetch} = useGetCoachClientConversationQuery(id!, {enabled: Boolean(id)});
+  const embedId = searchParams.get('embed_id');
+  const initialEmbed =
+    searchParams.get('embed_type') === 'form_submission' && embedId
+      ? ({id: embedId, type: 'form_submission'} as const)
+      : null;
+  const clearEmbedParams = useCallback(() => {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('embed_type');
+        next.delete('embed_id');
+        return next;
+      },
+      {replace: true},
+    );
+  }, [setSearchParams]);
 
   if (isLoading) {
     return (
@@ -31,9 +48,10 @@ export default function ConversationPage() {
 
   return (
     <ConversationView
-      backTo={ROUTES.MESSAGES}
-      clientId={data.data.client_id}
+      clientId={id!}
       conversationId={data.data.id}
+      initialEmbed={initialEmbed}
+      onEmbedSent={clearEmbedParams}
       title={data.data.client_name || 'Client'}
     />
   );

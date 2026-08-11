@@ -1,12 +1,15 @@
 import {Button, Spinner, TextArea, toast} from '@heroui/react';
 import {useQueryClient} from '@tanstack/react-query';
-import {ArrowLeft, Send} from 'lucide-react';
+import {Send} from 'lucide-react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
 
+import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
+import {Page} from '@/@components/page';
+import {ROUTES} from '@/@config/routes';
 import useAttachmentDownloadUrls from '@/@hooks/use-attachment-download-urls';
 import {useChannelEvent} from '@/@hooks/use-channel-event';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {
   appendMessage,
   type ChatMessage,
@@ -69,14 +72,12 @@ function MessageBubble({
 }
 
 export default function ConversationView({
-  backTo,
   clientId,
   conversationId,
   initialEmbed = null,
   onEmbedSent,
   title,
 }: {
-  backTo: string;
   clientId: string;
   conversationId: string;
   initialEmbed?: ChatMessageEmbedRequest | null;
@@ -84,6 +85,7 @@ export default function ConversationView({
   title: string;
 }) {
   const qc = useQueryClient();
+  const goBack = useGoBack(ROUTES.CLIENT_DETAIL.replace(':id', clientId));
   const [body, setBody] = useState('');
   const [embed, setEmbed] = useState(initialEmbed);
   const [attachmentState, setAttachmentState] = useState<AttachmentComposerState>({
@@ -179,19 +181,16 @@ export default function ConversationView({
   const hasContent = Boolean(body.trim() || attachmentState.attachmentIds.length > 0 || embed);
 
   return (
-    <div className="flex h-dvh flex-col">
-      <header className="flex min-h-14 items-center gap-3 border-b border-border px-4">
-        <Link
-          aria-label="Back"
-          className="grid size-9 place-items-center rounded-chip text-muted hover:bg-surface-hover"
-          to={backTo}
-        >
-          <ArrowLeft size={18} />
-        </Link>
+    <Page.Frame
+      className="flex h-dvh flex-col"
+      size="content"
+    >
+      <header className="flex min-h-14 items-center border-b border-border">
+        <BackButton onPress={goBack} />
         <h1 className="min-w-0 truncate type-body-sm font-semibold">{title}</h1>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="flex-1 overflow-y-auto py-3">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner size="sm" />
@@ -242,7 +241,7 @@ export default function ConversationView({
         )}
       </div>
 
-      <footer className="border-t border-border p-3">
+      <footer className="border-t border-border py-3">
         <AttachmentComposer
           clientId={clientId}
           disabled={isSending || conversationUnavailable}
@@ -294,6 +293,6 @@ export default function ConversationView({
           </Button>
         </div>
       </footer>
-    </div>
+    </Page.Frame>
   );
 }

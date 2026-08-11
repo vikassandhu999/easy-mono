@@ -30,7 +30,7 @@ function ConversationRow({conversation}: {conversation: Conversation}) {
         // The unread row is the accent-tinted one in the reference.
         unread ? 'bg-accent-soft' : 'hover:bg-surface-secondary',
       )}
-      id={conversation.id}
+      id={conversation.client_id}
       textValue={name}
     >
       <Avatar
@@ -107,7 +107,7 @@ export function RecentActivityCell({conversations, isError}: {conversations: Con
           <ListBox
             aria-label="Recent conversations"
             className="gap-0 p-0"
-            onAction={(key: Key) => navigate(ROUTES.CONVERSATION.replace(':id', String(key)))}
+            onAction={(key: Key) => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', String(key)))}
             selectionMode="none"
           >
             {visible.map((conversation) => (

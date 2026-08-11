@@ -145,9 +145,7 @@ function BottomNavItem({item}: {item: NavItem}) {
 // Only the bottom-nav destinations keep the mobile tab bar. Everything inside
 // the Builder hub (the six library lists, and every detail/edit/builder route
 // beneath them) is a focused page whose header carries its own Back.
-// `/messages` keeps the frame although it left the nav: it's reached via a
-// conversation's Back and renders no back affordance of its own.
-const MOBILE_FRAME_PATHS = new Set([...BOTTOM_NAV.map((item) => item.path), ROUTES.SETTINGS, ROUTES.MESSAGES]);
+const MOBILE_FRAME_PATHS = new Set([...BOTTOM_NAV.map((item) => item.path), ROUTES.SETTINGS]);
 
 export default function AppShell() {
   const location = useLocation();

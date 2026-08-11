@@ -46,14 +46,6 @@ export function useWaitingConversationsQuery() {
   });
 }
 
-export function useGetCoachConversationQuery(id: string, options?: {enabled?: boolean}) {
-  return useQuery({
-    queryKey: conversationKeys.detail(id),
-    queryFn: () => call(client.GET('/v1/coach/conversations/{id}', {params: {path: {id}}})),
-    enabled: options?.enabled ?? true,
-  });
-}
-
 export function useGetCoachClientConversationQuery(clientId: string, options?: {enabled?: boolean}) {
   return useQuery({
     queryKey: conversationKeys.forClient(clientId),
@@ -100,9 +92,8 @@ export function useMarkCoachConversationReadMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => call(client.POST('/v1/coach/conversations/{id}/read', {params: {path: {id}}})),
-    onSuccess: (_data, id) => {
+    onSuccess: () => {
       qc.invalidateQueries({queryKey: conversationKeys.lists()});
-      qc.invalidateQueries({queryKey: conversationKeys.detail(id)});
       // The client screen's unread badge reads the client-scoped record, and
       // this mutation only knows the conversation id — invalidate the prefix.
       qc.invalidateQueries({queryKey: conversationKeys.forClients()});

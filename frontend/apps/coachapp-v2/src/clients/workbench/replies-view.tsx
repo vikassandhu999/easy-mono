@@ -40,7 +40,7 @@ export default function RepliesView() {
   const {data, isError, isLoading, refetch} = useWaitingConversationsQuery();
   const items = data?.data ?? [];
 
-  const openConversation = (id: string) => navigate(ROUTES.CONVERSATION.replace(':id', id));
+  const openConversation = (clientId: string) => navigate(ROUTES.CLIENT_MESSAGES.replace(':id', clientId));
 
   const toRow = (conversation: Conversation) => {
     const name = conversation.client_name || 'Client';
@@ -50,8 +50,8 @@ export default function RepliesView() {
       id: conversation.id,
       initials: getInitials(first, last) || '?',
       name,
-      onAction: () => openConversation(conversation.id),
-      onOpen: () => openConversation(conversation.id),
+      onAction: () => openConversation(conversation.client_id),
+      onOpen: () => openConversation(conversation.client_id),
       subtitle: [waitingFor(conversation.last_message_at), conversation.last_message_preview]
         .filter(Boolean)
         .join(' · '),

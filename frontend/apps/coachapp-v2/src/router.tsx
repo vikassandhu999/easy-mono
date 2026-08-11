@@ -38,9 +38,7 @@ import FoodDetail from '@/foods/food-detail';
 import ListFoods from '@/foods/list-foods';
 import LandingPageEditor from '@/landing/landing-page-editor';
 import Library from '@/library/library';
-import ClientConversation from '@/messages/client-conversation';
 import ConversationPage from '@/messages/conversation-page';
-import MessagesInbox from '@/messages/messages-inbox';
 import NutritionPlanBuilder from '@/nutrition-plans/builder';
 import CreateNutritionPlan from '@/nutrition-plans/create-nutrition-plan';
 import EditNutritionPlan from '@/nutrition-plans/edit-nutrition-plan';
@@ -92,7 +90,7 @@ export const router = createBrowserRouter([
       {path: ROUTES.CLIENT_PHOTOS, Component: ProgressPhotos},
       {path: ROUTES.CLIENT_EDIT, Component: EditClient},
       {path: ROUTES.CLIENT_DETAILS, Component: DetailsSettings},
-      {path: ROUTES.CLIENT_MESSAGES, Component: ClientConversation},
+      {path: ROUTES.CLIENT_MESSAGES, Component: ConversationPage},
       {path: ROUTES.LIBRARY, Component: Library},
       {path: ROUTES.EXERCISES, Component: ListExercises},
       {path: ROUTES.CREATE_EXERCISE, Component: CreateExercise},
@@ -125,8 +123,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.SETTINGS, Component: Settings},
       {path: ROUTES.SETTINGS_LANDING_PAGE, Component: LandingPageEditor},
       {path: ROUTES.SETTINGS_TAB, Component: Settings},
-      {path: ROUTES.MESSAGES, Component: MessagesInbox},
-      {path: ROUTES.CONVERSATION, Component: ConversationPage},
     ],
   },
 

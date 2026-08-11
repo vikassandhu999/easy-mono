@@ -18,7 +18,6 @@ import ListCheckins from '@/checkins/list-checkins';
 import ReviewCheckin from '@/checkins/review-checkin';
 import ClientScreen from '@/clients/client-screen';
 import CheckinSubmission from '@/clients/client-screen/checkin-submission';
-import DetailsSettings from '@/clients/client-screen/details-settings';
 import IntakeResponses from '@/clients/client-screen/intake-responses';
 import NutritionDay from '@/clients/client-screen/nutrition-day';
 import ProgressPhotos from '@/clients/client-screen/progress-photos';
@@ -89,7 +88,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.CLIENT_NUTRITION_DAY, Component: NutritionDay},
       {path: ROUTES.CLIENT_PHOTOS, Component: ProgressPhotos},
       {path: ROUTES.CLIENT_EDIT, Component: EditClient},
-      {path: ROUTES.CLIENT_DETAILS, Component: DetailsSettings},
       {path: ROUTES.CLIENT_MESSAGES, Component: ConversationPage},
       {path: ROUTES.LIBRARY, Component: Library},
       {path: ROUTES.EXERCISES, Component: ListExercises},

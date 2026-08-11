@@ -5,7 +5,7 @@
 > `clients/client-screen.tsx` (shell + 4 tabs), `clients/client-screen/*` (tab bodies and
 > sub-screens), `clients/components/{detail-row,section-card,photo-thumb,client-stat-strip,client-status-chips}.tsx`,
 > `clients/edit-client.tsx`, `clients/session-detail.tsx`, `clients/lib/client-detail-data.ts`.
-> Note the tab row has FOUR tabs — Details is a sub-route off the header menu, not a tab.
+> Note the tab row has FOUR tabs. Client management has one route: Edit client.
 >
 > Known gap: check-in weight answers render the number without a unit (a form answer carries
 > none), and `DateInput` shows the browser's locale format where the design shows `3 Mar 2026`.
@@ -35,9 +35,8 @@ One page (`/clients/:id`) = a persistent **header + stat strip + one level of ta
 | CS | Check-in submission | `/clients/:id/check-ins/:aid` | `CD-CS-desktop` | Overview "Review" / CI history row | `checkins/review-checkin.tsx` patterns |
 | PH | Progress photos | `/clients/:id/photos` | `CD-PH-desktop` | Check-ins → Progress photos card | new |
 | WH | Weight history | `/clients/:id/weight` | `CD-WH-desktop` | Weight stat tile / "All entries" | new |
-| DT | Details & settings | `/clients/:id/details` | `CD-DT-desktop` | header ⋯ → Details, or Overview Details row | new |
-| IR | Intake responses | `/clients/:id/intake` | `CD-IR-desktop` | DT → Intake, or CI intake row | `checkins/review-answers.tsx` patterns |
-| ED | Edit client | `/clients/:id/edit` | `CD-ED-desktop` | header ⋯ → Edit client, or DT Edit | `clients/edit-client.tsx` |
+| IR | Intake responses | `/clients/:id/intake` | `CD-IR-desktop` | header ⋯ → Intake, or CI intake row | `checkins/review-answers.tsx` patterns |
+| ED | Edit client | `/clients/:id/edit` | `CD-ED-desktop` | header ⋯ → Edit client, Overview Edit row, or expiry chip | `clients/edit-client.tsx` |
 
 Back behavior: every sub-screen is a focused `Page` with `BackButton` + `useGoBack`, returning to the tab it came from (preserve `?tab=`). On mobile these hide the app bottom nav.
 
@@ -51,24 +50,24 @@ through the status/attention chip row and stat cells reading "No plan" (prototyp
 | State | Trigger | What changes |
 |---|---|---|
 | **Active · set up** | `status=active`, has plans + schedule | Full screen (default). |
-| **Onboarding · empty** | `status=active`, no training plan, no nutrition plan, no check-in schedule | Stat tiles read `— / No plan / No entries / No activity yet`; Overview becomes a "No activity yet" empty (Notes + Details stay); each tab shows its assign/set-up empty state. |
-| **Expiring** | `status=active`, subscription ends ≤7 days | Header attention chip `Expires {date}` (danger → DT); DT Subscription shows a warning Extend alert. |
-| **Invitation pending** | `status=pending` | Chip `Invited`; **no stat strip, no tabs**; Message hidden; body = Invitation card (Resend / Revoke), Intake (Remind), Notes, Details row. Attention chips: only `Intake pending`. |
-| **Inactive · manual** | `status=inactive`, reason manual | Chip `Inactive`; default banner "…is inactive." + Reactivate. |
-| **Inactive · sub. expired** | reason `subscription_expired` | Danger banner "Subscription has ended. …locked out." + Extend subscription (→ ED); DT Subscription shows danger Extend alert. |
+| **Onboarding · empty** | `status=active`, no training plan, no nutrition plan, no check-in schedule | Stat tiles read `— / No plan / No entries / No activity yet`; Overview becomes a "No activity yet" empty (Notes + Edit client stay); each tab shows its available empty state. |
+| **Expiring** | `status=active`, subscription ends ≤7 days | Header attention chip `Expires {date}` links to Edit client. |
+| **Invitation pending** | `status=pending` | Chip `Invited`; **no stat strip, no tabs**; Message hidden; body = Invitation card (Resend / Revoke), Intake (Remind), Notes, Edit client row. Attention chips: only `Intake pending`. |
+| **Inactive · manual** | `status=inactive`, reason manual | Chip `Inactive`; Edit client owns reactivation. |
+| **Inactive · sub. expired** | reason `subscription_expired` | Status chip identifies the expiry; Edit client owns subscription renewal and reactivation. |
 | **Inactive · no seat** | reason `awaiting_seat` | Warning banner "No seat available…" + Add seats (→ add-seats dialog). |
 
-Empty states (reachable individually too): **no training plan** (`Dumbbell`, Assign plan), **no nutrition plan** (`UtensilsCrossed`, Assign plan), **no check-in schedule** (`calendar-clock`, Set up check-ins).
+Empty states (reachable individually too): **no training plan** (`Dumbbell`, Assign plan), **no nutrition plan** (`UtensilsCrossed`, Assign plan), **no check-in schedule** (`calendar-clock`; schedule creation UI is not built).
 
 ## Key interactions (all live in the prototype)
 
 - **Review a check-in:** Overview review card / "View check-in" / CI history "Needs review" row → CS submission detail → **Mark reviewed** flips every "Needs review" chip → "Reviewed", clears the Overview card, toast "Check-in reviewed".
 - **Check-in schedule:** Frequency `Select` (Once / Weekly / Every 2 weeks / Monthly) → toast "Schedule updated"; Active `Switch` → toast "Check-ins paused/resumed".
 - **Plan lifecycle (Training & Nutrition):** plan ⋯ → Change plan (picker → "Plan changed") / End plan (`AlertDialog` confirm → card becomes empty state, toast "Plan ended"); empty state Assign plan → restores, toast "Plan assigned"; Open plan → builder.
-- **Coach:** DT → Change → coach picker (team list, current marked) → reassign, toast "Coach updated".
-- **Status:** header ⋯ → Deactivate (`AlertDialog`) → Inactive + banner; Reactivate (banner or menu) → Active. `Edit client` / `Details & settings` menu items → ED / DT.
-- **Edit client (ED):** identity (name/phone/email), Assigned trainer, Subscription dates; **Save changes / Cancel below the form** (desktop) / sticky footer (mobile). **Status and Notes are intentionally NOT in the Edit form** — Status is owned by DT's Deactivate/Reactivate, Notes by the Overview inline field.
-- **Drill-downs:** session rows → SD; adherence rows → ND; weight tile / "All entries" → WH; photos card → PH (with **Compare** mode: select 2 → side-by-side); Details row / ⋯ → DT; intake rows → IR.
+- **Coach:** Edit client → trainer picker (team list, current marked) → reassign.
+- **Status:** Edit client → Deactivate (`AlertDialog`) → Inactive; Reactivate → Active.
+- **Edit client (ED):** identity (name/phone/email), Assigned trainer, Subscription dates; **Save changes / Cancel below the form** (desktop) / sticky footer (mobile). Notes remain on the Overview inline field.
+- **Drill-downs:** session rows → SD; adherence rows → ND; weight tile / "All entries" → WH; photos card → PH (with **Compare** mode: select 2 → side-by-side); Edit row / ⋯ → ED; intake rows → IR.
 
 ## Component mapping (per UI-CONTRACT §2/§4)
 
@@ -101,7 +100,6 @@ The file is **one state-driven DC**, not linear sections — each screen is an `
 | CD-WH | `CD-WH-desktop` / `CD-WH-mobile` | `isWeight` |
 | CD-CS | `CD-CS-desktop` / `CD-CS-mobile` | `showCS` |
 | CD-PH | `CD-PH-desktop` / `CD-PH-mobile` | `isPhotos` (compare view: `photoCompareOpen`) |
-| CD-DT | `CD-DT-desktop` / `CD-DT-mobile` | `isDetails` |
 | CD-IR | `CD-IR-desktop` / `CD-IR-mobile` | `isIntake` |
 | CD-ED | `CD-ED-desktop` / `CD-ED-mobile` | `isEdit` |
 | CD-pending | `CD-pending-desktop` / `CD-pending-mobile` | `isPending` |

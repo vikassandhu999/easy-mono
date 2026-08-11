@@ -23,7 +23,6 @@ import {
   entryStatus,
   formatCompactDuration,
   formatDayMonth,
-  formatDayMonthYear,
   formatKcal,
   formatRowDate,
   formatWeight,
@@ -98,7 +97,6 @@ assert.deepEqual(week.map(weekdayInitial).join(' '), 'W T F S S M T', 'the desig
 
 // — displayed date formats ——————————————————————————————————————————————
 assert.equal(formatDayMonth('2026-07-17'), '17 Jul');
-assert.equal(formatDayMonthYear('2026-03-03'), '3 Mar 2026', 'CD-DT carries the year');
 assert.equal(formatRowDate('2026-07-21'), 'Tue 21 Jul', 'CD-TR / CD-NU rows');
 assert.equal(formatRowDate('2026-07-21', {weekday: false}), '21 Jul', 'CD-WH rows');
 assert.equal(relativeDay('2026-07-18', TODAY), '3d ago', 'CD-OV "submitted 3d ago"');

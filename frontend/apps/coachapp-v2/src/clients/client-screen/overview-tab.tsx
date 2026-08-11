@@ -134,9 +134,9 @@ export function OverviewTab({client}: {client: Client}) {
         <SectionCard>
           <DetailRow
             icon={Settings2}
-            meta="Subscription, coach, intake, invitation"
-            title="Details & settings"
-            to={clientPath(ROUTES.CLIENT_DETAILS)}
+            meta="Contact, coach and subscription"
+            title="Edit client"
+            to={clientPath(ROUTES.CLIENT_EDIT)}
           />
         </SectionCard>
       </div>

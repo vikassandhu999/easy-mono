@@ -12,7 +12,6 @@ export const ROUTES = {
   CLIENT_DETAIL: '/clients/:id',
   CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',
   CLIENT_CHECKIN_SUBMISSION: '/clients/:id/check-ins/:assignmentId',
-  CLIENT_DETAILS: '/clients/:id/details',
   CLIENT_EDIT: '/clients/:id/edit',
   CLIENT_PHOTOS: '/clients/:id/photos',
   CLIENT_INTAKE: '/clients/:id/intake',

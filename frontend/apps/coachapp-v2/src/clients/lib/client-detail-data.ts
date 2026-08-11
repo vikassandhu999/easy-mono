@@ -58,15 +58,6 @@ export function formatDayMonth(iso: string): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
-/**
- * `3 Mar 2026` — CD-DT's relationship dates (client since, subscription start/end)
- * carry the year, where every list row does not. A subscription window spanning a
- * year boundary is unreadable without it.
- */
-export function formatDayMonthYear(iso: string): string {
-  return `${formatDayMonth(iso)} ${parseDay(iso).getFullYear()}`;
-}
-
 /** `Tue 21 Jul` with a weekday (CD-TR, CD-NU), `21 Jul` without (CD-WH). */
 export function formatRowDate(iso: string, {weekday = true}: {weekday?: boolean} = {}): string {
   const day = formatDayMonth(iso);

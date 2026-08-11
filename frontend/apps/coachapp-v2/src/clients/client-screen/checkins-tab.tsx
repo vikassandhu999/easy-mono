@@ -1,6 +1,6 @@
-import {Button, Chip, ListBox, Select, Switch, Typography, toast} from '@heroui/react';
+import {Chip, ListBox, Select, Switch, Typography, toast} from '@heroui/react';
 import {CalendarCheck, ChevronRight, ClipboardList} from 'lucide-react';
-import {Link, useNavigate} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
 import {EmptyState} from '@/@components/empty-state';
 import {toastMutationError} from '@/@components/mutation-toast';
@@ -20,7 +20,6 @@ import {formatDayMonth} from '@/clients/lib/client-detail-data';
 
 /** CD-CI: the schedule, submission history, the intake row, and the photos rail. */
 export function CheckinsTab({client}: {client: Client}) {
-  const navigate = useNavigate();
   const schedules = useListCheckInSchedulesForClientQuery(client.id);
   const forms = useListClientFormAssignmentsForCoachQuery(client.id);
 
@@ -50,14 +49,6 @@ export function CheckinsTab({client}: {client: Client}) {
         ) : (
           <SectionCard>
             <EmptyState
-              action={
-                <Button
-                  onPress={() => navigate(ROUTES.CLIENT_DETAILS.replace(':id', client.id))}
-                  variant="outline"
-                >
-                  Set up check-ins
-                </Button>
-              }
               body={`Set a cadence and ${client.first_name ?? 'this client'} will get the form automatically.`}
               icon={CalendarCheck}
               title="No check-in schedule"

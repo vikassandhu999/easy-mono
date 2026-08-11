@@ -52,17 +52,17 @@ export default function DateInput({
       onChange={(date: DateValue | null) => onChange(date ? date.toString() : null)}
       value={toDateValue(value)}
     >
-      {label ? <Label className={labelClassName ?? 'mb-1.5 block type-body font-medium'}>{label}</Label> : null}
-      <DateField.Group className="flex w-full items-center gap-2 rounded-chip border border-border bg-background px-3 py-2 type-body focus-within:border-accent">
-        <DateField.Input className="flex-1">{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
+      {label ? <Label className={labelClassName}>{label}</Label> : null}
+      <DateField.Group fullWidth>
+        <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
         <DateField.Suffix>
-          <DatePicker.Trigger className="grid size-9 -mr-1 place-items-center text-muted transition-colors hover:text-foreground">
+          <DatePicker.Trigger>
             <DatePicker.TriggerIndicator />
           </DatePicker.Trigger>
         </DateField.Suffix>
       </DateField.Group>
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
-      <DatePicker.Popover className="p-2">
+      <DatePicker.Popover>
         <Calendar aria-label={ariaLabel ?? (typeof label === 'string' ? label : 'Choose date')}>
           <Calendar.Header>
             <Calendar.NavButton slot="previous" />

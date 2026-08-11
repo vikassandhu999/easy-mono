@@ -170,9 +170,6 @@ export default function ClientScreen() {
                 </Button>
                 <Dropdown.Popover>
                   <Dropdown.Menu>
-                    <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_DETAILS))}>
-                      Details &amp; settings
-                    </Dropdown.Item>
                     <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_EDIT))}>Edit client</Dropdown.Item>
                     <Dropdown.Item onAction={() => navigate(detailPath(ROUTES.CLIENT_INTAKE))}>
                       Intake responses

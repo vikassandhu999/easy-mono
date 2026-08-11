@@ -2,3 +2,5 @@ interface:
   display_name: "UI Quality Loop"
   short_description: "Audit and repair application UI regressions"
   default_prompt: "Use $ui-quality-loop to audit the application UI, repair objective defects, and verify every changed state."
+policy:
+  allow_implicit_invocation: false

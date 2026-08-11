@@ -4,6 +4,7 @@ import {Link} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 import type {Client} from '@/api/clients';
+import {type CoachingAccessState, coachingAccessState} from '@/clients/lib/client';
 import {formatDayMonth} from '@/clients/lib/client-detail-data';
 
 /**
@@ -17,7 +18,7 @@ import {formatDayMonth} from '@/clients/lib/client-detail-data';
  * Two registers, from the design:
  *   .chip      the state itself — Active (succ) / Invited (warn) / Inactive (out)
  *   .attnchip  a thing needing attention, tappable, jumping to where you fix it:
- *              "No active plan" -> Training, "Expires <date>" -> Edit client
+ *              "No active plan" -> Training, "Ends <date>" -> Coaching access
  *
  * Order matters and is the design's: state first, then attention, so the row
  * reads "what this client is" before "what you owe them".
@@ -27,6 +28,8 @@ import {formatDayMonth} from '@/clients/lib/client-detail-data';
  * beneath it. Same mapping, one file.
  */
 export function ClientStatusChip({client}: {client: Client}) {
+  const access = coachingAccessState(client, new Date().toISOString().slice(0, 10));
+
   return (
     <>
       {client.status === 'active' && (
@@ -52,7 +55,7 @@ export function ClientStatusChip({client}: {client: Client}) {
           className="chip--outline"
           size="sm"
         >
-          {inactiveLabel(client.inactive_reason)}
+          {inactiveLabel(access.mode)}
         </Chip>
       )}
     </>
@@ -87,14 +90,14 @@ export function ClientAttentionChips({className, client}: {className?: string; c
         </Link>
       )}
       {client.expiring_soon && client.subscription_ends_on && (
-        <Link to={clientPath(ROUTES.CLIENT_EDIT)}>
+        <Link to={`${clientPath(ROUTES.CLIENT_DETAIL)}?tab=overview&manage=coaching-access`}>
           <Chip
             color="danger"
             size="sm"
             variant="soft"
           >
             <AlarmClock />
-            Expires {formatDayMonth(client.subscription_ends_on)}
+            Ends {formatDayMonth(client.subscription_ends_on)}
           </Chip>
         </Link>
       )}
@@ -112,12 +115,12 @@ export function ClientAttentionChips({className, client}: {className?: string; c
   );
 }
 
-/** `inactive_reason` is the API's, and each reason reads differently to a coach. */
-function inactiveLabel(reason: Client['inactive_reason']): string {
-  if (reason === 'subscription_expired') {
-    return 'Subscription expired';
+/** Each inactive access mode reads differently to a coach. */
+function inactiveLabel(mode: CoachingAccessState['mode']): string {
+  if (mode === 'expired') {
+    return 'Coaching period ended';
   }
-  if (reason === 'awaiting_seat') {
+  if (mode === 'awaiting-seat') {
     return 'Awaiting seat';
   }
   return 'Inactive';

@@ -15,7 +15,12 @@
  */
 
 import {formatAnswer} from '../../checkins/lib/form-answers.ts';
-import {subscriptionDatesAreOrdered} from './client.ts';
+import {
+  coachingAccessState,
+  coachingPeriodUpdate,
+  renewalEndDateIsValid,
+  subscriptionDatesAreOrdered,
+} from './client.ts';
 import {
   averageLoggedCalories,
   completedCheckIns,
@@ -70,6 +75,56 @@ const TODAY = new Date(2026, 6, 21);
 assert.equal(subscriptionDatesAreOrdered('2026-03-03', '2026-11-22'), true);
 assert.equal(subscriptionDatesAreOrdered('2026-03-03', '2025-11-22'), false);
 assert.equal(subscriptionDatesAreOrdered('2026-03-03', ''), true);
+
+assert.deepEqual(
+  coachingAccessState({status: 'pending', inactive_reason: null, subscription_ends_on: null}, '2026-08-11'),
+  {
+    accessAction: null,
+    mode: 'pending',
+    periodAction: 'edit',
+    requiresPeriodUpdate: false,
+  },
+);
+assert.deepEqual(
+  coachingAccessState({status: 'active', inactive_reason: null, subscription_ends_on: null}, '2026-08-11'),
+  {
+    accessAction: 'pause',
+    mode: 'active',
+    periodAction: 'edit',
+    requiresPeriodUpdate: false,
+  },
+);
+assert.deepEqual(
+  coachingAccessState({status: 'inactive', inactive_reason: 'manual', subscription_ends_on: null}, '2026-08-11'),
+  {accessAction: 'reactivate', mode: 'manual', periodAction: 'edit', requiresPeriodUpdate: false},
+);
+assert.deepEqual(
+  coachingAccessState(
+    {status: 'inactive', inactive_reason: 'manual', subscription_ends_on: '2026-08-10'},
+    '2026-08-11',
+  ),
+  {accessAction: 'reactivate', mode: 'manual', periodAction: 'edit', requiresPeriodUpdate: true},
+);
+assert.deepEqual(
+  coachingAccessState(
+    {status: 'inactive', inactive_reason: 'subscription_expired', subscription_ends_on: '2026-08-10'},
+    '2026-08-11',
+  ),
+  {accessAction: 'renew', mode: 'expired', periodAction: 'renew', requiresPeriodUpdate: true},
+);
+assert.deepEqual(
+  coachingAccessState({status: 'inactive', inactive_reason: 'awaiting_seat', subscription_ends_on: null}, '2026-08-11'),
+  {accessAction: 'add-seat', mode: 'awaiting-seat', periodAction: 'view', requiresPeriodUpdate: false},
+);
+assert.equal(renewalEndDateIsValid('', '2026-08-11'), true);
+assert.equal(renewalEndDateIsValid('2026-08-10', '2026-08-11'), false);
+assert.equal(renewalEndDateIsValid('2026-08-11', '2026-08-11'), true);
+assert.equal(renewalEndDateIsValid('2026-11-11', '2026-08-11'), true);
+assert.deepEqual(coachingPeriodUpdate('2026-08-11', '2026-11-11', true), {
+  status: 'active',
+  subscription_ends_on: '2026-11-11',
+  subscription_started_on: '2026-08-11',
+});
 
 // — day strings are local, not UTC —————————————————————————————————————————
 // The bug this guards: `new Date('2026-07-21')` is UTC MIDNIGHT, which is

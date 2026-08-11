@@ -23,7 +23,6 @@ import {
   UserPlus,
   XCircle,
 } from 'lucide-react';
-import {useCallback, useEffect, useRef, useState} from 'react';
 import {AddSeatsDialog} from '@/@components/add-seats-dialog';
 import {ErrorState} from '@/@components/error-state';
 import {ListSkeleton} from '@/@components/list-skeleton';
@@ -31,77 +30,12 @@ import SectionHeading from '@/@components/section-heading';
 import {
   type BillingEvent,
   type BillingSummary,
+  useActivationSync,
   useCancelBillingMutation,
   useGetBillingQuery,
-  useSyncBillingMutation,
 } from '@/api/billing';
 import {getApiErrorMessage} from '@/api/shared';
 import {SettingsSectionHeader} from '@/settings/components/settings-section-header';
-
-const SYNC_POLL_INTERVAL_MS = 5_000;
-const SYNC_POLL_BUDGET_MS = 30_000;
-
-/** True once the summary reflects a landed purchase relative to the pre-checkout snapshot. */
-function purchaseLanded(summary: BillingSummary, snapshot: BillingSummary): boolean {
-  return summary.paid_seats > snapshot.paid_seats || summary.status === 'active';
-}
-
-/**
- * Tracks the post-checkout pending-activation state: fires an immediate
- * sync, then retries every ~5s up to a ~30s budget until the summary shows
- * the purchase landed. After the budget, stops polling and leaves the
- * "slow copy" banner state for the caller to render.
- */
-function useActivationSync() {
-  const syncBillingMutation = useSyncBillingMutation();
-  const [pending, setPending] = useState<{snapshot: BillingSummary; timedOut: boolean} | null>(null);
-  const timersRef = useRef<{interval?: ReturnType<typeof setInterval>; timeout?: ReturnType<typeof setTimeout>}>({});
-
-  const stopPolling = useCallback(() => {
-    if (timersRef.current.interval) {
-      clearInterval(timersRef.current.interval);
-    }
-    if (timersRef.current.timeout) {
-      clearTimeout(timersRef.current.timeout);
-    }
-    timersRef.current = {};
-  }, []);
-
-  useEffect(() => stopPolling, [stopPolling]);
-
-  const attemptSync = useCallback(
-    async (snapshot: BillingSummary) => {
-      try {
-        const result = await syncBillingMutation.mutateAsync();
-        if (purchaseLanded(result.data, snapshot)) {
-          stopPolling();
-          setPending(null);
-        }
-      } catch {
-        // keep polling; the banner already communicates the pending state
-      }
-    },
-    [stopPolling, syncBillingMutation],
-  );
-
-  const start = useCallback(
-    (snapshot: BillingSummary) => {
-      stopPolling();
-      setPending({snapshot, timedOut: false});
-      attemptSync(snapshot);
-      timersRef.current.interval = setInterval(() => attemptSync(snapshot), SYNC_POLL_INTERVAL_MS);
-      timersRef.current.timeout = setTimeout(() => {
-        if (timersRef.current.interval) {
-          clearInterval(timersRef.current.interval);
-        }
-        setPending((prev) => (prev ? {...prev, timedOut: true} : prev));
-      }, SYNC_POLL_BUDGET_MS);
-    },
-    [attemptSync, stopPolling],
-  );
-
-  return {pending, start};
-}
 
 function ActivatingBanner({timedOut}: {timedOut: boolean}) {
   if (timedOut) {

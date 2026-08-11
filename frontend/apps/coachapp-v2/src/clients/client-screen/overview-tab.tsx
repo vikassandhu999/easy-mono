@@ -14,6 +14,7 @@ import {useListClientWeightEntriesQuery, useUpdateClientMutation} from '@/api/cl
 import {useListCoachMealLogsQuery} from '@/api/nutrition-plans-list';
 import {useListCoachClientTrainingSessionsQuery} from '@/api/training-plans-list';
 import {type AnswerType, formatAnswer, isSummarisableAnswer, submissionPhotoIds} from '@/checkins/lib/form-answers';
+import {CoachingAccess} from '@/clients/client-screen/coaching-access';
 import {DetailRow} from '@/clients/components/detail-row';
 import {PhotoThumb} from '@/clients/components/photo-thumb';
 import {SectionCard} from '@/clients/components/section-card';
@@ -125,6 +126,7 @@ export function OverviewTab({client}: {client: Client}) {
       </div>
 
       <div className="flex min-w-0 flex-col gap-4">
+        <CoachingAccess client={client} />
         {/* Keyed on the client so switching clients remounts with their notes —
             the effect below only has to win over a refetch. */}
         <NotesCard
@@ -134,7 +136,7 @@ export function OverviewTab({client}: {client: Client}) {
         <SectionCard>
           <DetailRow
             icon={Settings2}
-            meta="Contact, coach and subscription"
+            meta="Contact and assigned coach"
             title="Edit client"
             to={clientPath(ROUTES.CLIENT_EDIT)}
           />

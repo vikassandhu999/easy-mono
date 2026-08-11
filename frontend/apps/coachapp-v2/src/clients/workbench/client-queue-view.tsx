@@ -67,7 +67,7 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
     return {
       action: 'Renew',
       subtitle: formatSubscriptionEnd(client.subscription_ends_on),
-      to: ROUTES.CLIENT_EDIT.replace(':id', client.id),
+      to: `${detail}?tab=overview&manage=coaching-access`,
       tone: 'danger',
     };
   }
@@ -115,7 +115,7 @@ function rowFacts(queue: ClientQueue, client: QueueClient): RowFacts {
  */
 const EMPTY = {
   expiring: {
-    body: 'Clients appear here a week before their subscription ends.',
+    body: 'Clients appear here a week before their coaching period ends.',
     icon: Timer,
     title: 'No renewals due in the next 7 days',
   },

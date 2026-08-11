@@ -34,7 +34,7 @@ export function compareDateStrings(a: null | string | undefined, b: null | strin
   return aTime - bTime;
 }
 
-/** COPY.md §DB row subtitle — `Subscription ends in 3 days`. */
+/** Workbench row subtitle for the client's coaching engagement. */
 export function formatSubscriptionEnd(value: null | string | undefined, now = new Date()): string {
   const date = toDate(value);
   if (!date) {
@@ -44,15 +44,15 @@ export function formatSubscriptionEnd(value: null | string | undefined, now = ne
   const days = Math.round((startOfLocalDay(date).getTime() - startOfLocalDay(now).getTime()) / DAY_MS);
 
   if (days < 0) {
-    return days === -1 ? 'Subscription ended yesterday' : `Subscription ended ${Math.abs(days)} days ago`;
+    return days === -1 ? 'Coaching period ended yesterday' : `Coaching period ended ${Math.abs(days)} days ago`;
   }
   if (days === 0) {
-    return 'Subscription ends today';
+    return 'Coaching period ends today';
   }
   if (days === 1) {
-    return 'Subscription ends tomorrow';
+    return 'Coaching period ends tomorrow';
   }
-  return `Subscription ends in ${days} days`;
+  return `Coaching period ends in ${days} days`;
 }
 
 /** Null-guarding wrapper over @easy/utils — the API fields this reads are nullable. */

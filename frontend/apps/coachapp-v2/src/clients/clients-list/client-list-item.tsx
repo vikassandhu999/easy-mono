@@ -100,7 +100,7 @@ function getNeutralChipLabels(client: ListClient): string[] {
 function getMobileSubtitle(client: ListClient): {isAttention: boolean; text: string} {
   if (client.status === 'active') {
     if (client.expiring_soon) {
-      return {isAttention: true, text: 'Subscription expiring soon'};
+      return {isAttention: true, text: 'Coaching period ending soon'};
     }
     if (client.needs_plan) {
       return {isAttention: true, text: 'Needs a plan assigned'};

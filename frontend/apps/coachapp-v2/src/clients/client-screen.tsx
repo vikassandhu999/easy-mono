@@ -24,6 +24,7 @@ import {useGetClientQuery, useResendClientInviteMutation, useRevokeClientInviteM
 import {useGetCoachClientConversationQuery} from '@/api/conversations';
 import {useListCoachClientTrainingPlansQuery} from '@/api/training-plans-list';
 import {CheckinsTab} from '@/clients/client-screen/checkins-tab';
+import {CoachingAccess} from '@/clients/client-screen/coaching-access';
 import {NutritionTab} from '@/clients/client-screen/nutrition-tab';
 import {OverviewTab} from '@/clients/client-screen/overview-tab';
 import {TrainingTab} from '@/clients/client-screen/training-tab';
@@ -316,85 +317,88 @@ function PendingBody({client}: {client: Client}) {
   };
 
   return (
-    <div className="rounded-card border border-border bg-surface">
-      <EmptyState
-        action={
-          <div className="flex flex-wrap justify-center gap-2">
-            {client.email && (
-              <Button
-                isPending={resend.isPending}
-                onPress={handleResend}
-                variant="outline"
-              >
-                {resend.isPending ? 'Resending' : 'Resend invite'}
-              </Button>
-            )}
-            {client.phone && inviteUrl && (
-              <Button
-                onPress={() =>
-                  window.open(
-                    getWhatsAppUrl(client.phone ?? undefined, client.first_name ?? '', inviteUrl),
-                    '_blank',
-                    'noopener,noreferrer',
-                  )
-                }
-                variant="outline"
-              >
-                Share via WhatsApp
-              </Button>
-            )}
-            {inviteUrl && (
-              <Button
-                onPress={handleCopy}
-                variant="outline"
-              >
-                Copy link
-              </Button>
-            )}
-            <AlertDialog>
-              <Button variant="danger">Revoke invite</Button>
-              <AlertDialog.Backdrop
-                isDismissable={!revoke.isPending}
-                variant="transparent"
-              >
-                <AlertDialog.Container>
-                  <AlertDialog.Dialog>
-                    <AlertDialog.CloseTrigger />
-                    <AlertDialog.Header>
-                      <AlertDialog.Icon status="danger" />
-                      <AlertDialog.Heading>Revoke invitation?</AlertDialog.Heading>
-                    </AlertDialog.Header>
-                    <AlertDialog.Body>
-                      <Typography>
-                        This removes {client.first_name ?? 'this client'} and invalidates their invite link.
-                      </Typography>
-                    </AlertDialog.Body>
-                    <AlertDialog.Footer>
-                      <Button
-                        isDisabled={revoke.isPending}
-                        slot="close"
-                        variant="tertiary"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        isPending={revoke.isPending}
-                        onPress={handleRevoke}
-                        variant="danger"
-                      >
-                        {revoke.isPending ? 'Revoking' : 'Revoke invitation'}
-                      </Button>
-                    </AlertDialog.Footer>
-                  </AlertDialog.Dialog>
-                </AlertDialog.Container>
-              </AlertDialog.Backdrop>
-            </AlertDialog>
-          </div>
-        }
-        body={`${client.first_name ?? 'This client'} has not joined yet. Workouts, meals, weight and check-ins appear here once they accept.`}
-        icon={MailCheck}
-        title="Invite sent"
-      />
+    <div className="flex flex-col gap-4">
+      <div className="rounded-card border border-border bg-surface">
+        <EmptyState
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              {client.email && (
+                <Button
+                  isPending={resend.isPending}
+                  onPress={handleResend}
+                  variant="outline"
+                >
+                  {resend.isPending ? 'Resending' : 'Resend invite'}
+                </Button>
+              )}
+              {client.phone && inviteUrl && (
+                <Button
+                  onPress={() =>
+                    window.open(
+                      getWhatsAppUrl(client.phone ?? undefined, client.first_name ?? '', inviteUrl),
+                      '_blank',
+                      'noopener,noreferrer',
+                    )
+                  }
+                  variant="outline"
+                >
+                  Share via WhatsApp
+                </Button>
+              )}
+              {inviteUrl && (
+                <Button
+                  onPress={handleCopy}
+                  variant="outline"
+                >
+                  Copy link
+                </Button>
+              )}
+              <AlertDialog>
+                <Button variant="danger">Revoke invite</Button>
+                <AlertDialog.Backdrop
+                  isDismissable={!revoke.isPending}
+                  variant="transparent"
+                >
+                  <AlertDialog.Container>
+                    <AlertDialog.Dialog>
+                      <AlertDialog.CloseTrigger />
+                      <AlertDialog.Header>
+                        <AlertDialog.Icon status="danger" />
+                        <AlertDialog.Heading>Revoke invitation?</AlertDialog.Heading>
+                      </AlertDialog.Header>
+                      <AlertDialog.Body>
+                        <Typography>
+                          This removes {client.first_name ?? 'this client'} and invalidates their invite link.
+                        </Typography>
+                      </AlertDialog.Body>
+                      <AlertDialog.Footer>
+                        <Button
+                          isDisabled={revoke.isPending}
+                          slot="close"
+                          variant="tertiary"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          isPending={revoke.isPending}
+                          onPress={handleRevoke}
+                          variant="danger"
+                        >
+                          {revoke.isPending ? 'Revoking' : 'Revoke invitation'}
+                        </Button>
+                      </AlertDialog.Footer>
+                    </AlertDialog.Dialog>
+                  </AlertDialog.Container>
+                </AlertDialog.Backdrop>
+              </AlertDialog>
+            </div>
+          }
+          body={`${client.first_name ?? 'This client'} has not joined yet. Workouts, meals, weight and check-ins appear here once they accept.`}
+          icon={MailCheck}
+          title="Invite sent"
+        />
+      </div>
+      <CoachingAccess client={client} />
     </div>
   );
 }

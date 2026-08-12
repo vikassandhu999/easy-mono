@@ -2,7 +2,6 @@ import {Button, Fieldset, Spinner} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {Check} from 'lucide-react';
 import type {ReactNode} from 'react';
-import {STICKY_FOOTER_CLASS} from '@/@components/form-fields/form-classes';
 
 // The single submit/cancel row for every form. Owns the action-row gap (gap-3),
 // the pending pattern, and the mobile sticky-footer treatment (every ported form
@@ -39,7 +38,10 @@ export function FormActions({
 }: FormActionsProps) {
   return (
     <Fieldset.Actions
-      className={cn(STICKY_FOOTER_CLASS, '-mb-6 sm:mt-0 sm:mb-0 sm:justify-end', mobileOnly && 'sm:hidden')}
+      className={cn(
+        'sticky bottom-0 z-10 -mx-4 -mb-6 mt-auto flex items-center gap-3 bg-background px-4 py-3 sm:static sm:mx-0 sm:mt-0 sm:mb-0 sm:justify-end sm:bg-transparent sm:px-0 sm:py-0',
+        mobileOnly && 'sm:hidden',
+      )}
     >
       <Button
         className="border-0 text-muted shadow-none sm:border sm:text-foreground"

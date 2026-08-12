@@ -883,6 +883,9 @@ at the shared seams by `scripts/check-rm.sh` (RM-206). **Verify by:** inspect en
 animations on a Modal, AlertDialog, and KeyboardSheet; with reduced motion enabled, all three
 must retain only the brief opacity fade and report no spatial transform.
 
+### RM-207 — Create/edit form body chrome belongs to `FormPanel`
+Promoted to `frontend/apps/coachapp-v2/AGENTS.md`; enforced by `scripts/check-rm.sh` (RM-207).
+
 ### RM-202 — A verification command that can no-op is not verification
 `clientapp-v2`'s build script ran bare `tsc --noEmit`, but its root `tsconfig.json` is a
 solution file (`"files": []`, only `references`). Bare `tsc` on a solution config compiles

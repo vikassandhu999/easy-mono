@@ -1,12 +1,12 @@
-import {Description, ErrorMessage, Fieldset, Typography} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset, Separator, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormActions} from '@/@components/form-fields/form-actions';
-import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import {FormLayout} from '@/@components/form-fields/form-layout';
 import {FormNumberField} from '@/@components/form-fields/form-number-field';
+import {FormPanel} from '@/@components/form-fields/form-panel';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import LibraryMediaField, {type LibraryMediaValue} from '@/@components/library-media-field';
@@ -105,7 +105,7 @@ export default function FoodForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <div className={RESPONSIVE_FORM_SECTION_CLASS}>
+      <FormPanel>
         <Fieldset>
           <Fieldset.Legend className="hidden sm:block">Details</Fieldset.Legend>
           <Description className="hidden sm:block">Name the food and where it came from.</Description>
@@ -161,7 +161,7 @@ export default function FoodForm({
           </Fieldset.Group>
         </Fieldset>
 
-        <div className="my-6 border-t border-separator" />
+        <Separator className="my-6" />
 
         <Fieldset>
           <Fieldset.Legend>Nutrition</Fieldset.Legend>
@@ -182,7 +182,7 @@ export default function FoodForm({
           </Fieldset.Group>
         </Fieldset>
 
-        <div className="my-6 border-t border-separator" />
+        <Separator className="my-6" />
 
         <Fieldset>
           <Fieldset.Legend>Serving sizes</Fieldset.Legend>
@@ -193,7 +193,7 @@ export default function FoodForm({
             value={servingSizes}
           />
         </Fieldset>
-      </div>
+      </FormPanel>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 

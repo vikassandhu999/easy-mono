@@ -8,8 +8,8 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormActions} from '@/@components/form-fields/form-actions';
-import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import {FormLayout} from '@/@components/form-fields/form-layout';
+import {FormPanel} from '@/@components/form-fields/form-panel';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {type FormPurpose, PURPOSE_LABELS, PURPOSES} from '@/api/checkins';
 
@@ -57,7 +57,7 @@ export default function CheckinDetailsForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <div className={RESPONSIVE_FORM_SECTION_CLASS}>
+      <FormPanel>
         <Fieldset>
           <Fieldset.Legend>Form details</Fieldset.Legend>
           <Description>Name the form and choose how clients use it.</Description>
@@ -107,7 +107,7 @@ export default function CheckinDetailsForm({
             />
           </Fieldset.Group>
         </Fieldset>
-      </div>
+      </FormPanel>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 

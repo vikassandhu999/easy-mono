@@ -1,12 +1,10 @@
 import {getFullName, getInitials} from '@easy/utils';
 import {Avatar, Button, Card, Chip, Label, Separator, Surface, Typography, toast} from '@heroui/react';
-import {cn} from '@heroui/styles';
 import {CheckCircle2, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {generatePath, useNavigate} from 'react-router-dom';
 import {AddSeatsDialog} from '@/@components/add-seats-dialog';
 import {BackButton} from '@/@components/back-button';
-import {STICKY_FOOTER_CLASS} from '@/@components/form-fields/form-classes';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -214,7 +212,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 
       <Separator className="mt-auto hidden sm:block" />
 
-      <div className={cn(STICKY_FOOTER_CLASS, 'sm:justify-start')}>
+      <Surface className="sticky bottom-0 z-10 -mx-4 mt-auto flex items-center gap-3 border-t border-border bg-surface px-4 py-3 sm:static sm:mx-0 sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
         <Button
           className="order-1 sm:order-2"
           onPress={onInviteAnother}
@@ -229,7 +227,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
         >
           View client
         </Button>
-      </div>
+      </Surface>
     </div>
   );
 }

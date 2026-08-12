@@ -1,4 +1,13 @@
-import {AlertDialog, Button, Description, ErrorMessage, Fieldset, ListBox, useOverlayState} from '@heroui/react';
+import {
+  AlertDialog,
+  Button,
+  Description,
+  ErrorMessage,
+  Fieldset,
+  ListBox,
+  Separator,
+  useOverlayState,
+} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {useParams} from 'react-router-dom';
@@ -8,8 +17,8 @@ import {BackButton} from '@/@components/back-button';
 import {ErrorState} from '@/@components/error-state';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormActions} from '@/@components/form-fields/form-actions';
-import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import {FormLayout} from '@/@components/form-fields/form-layout';
+import {FormPanel} from '@/@components/form-fields/form-panel';
 import {FormSelectField} from '@/@components/form-fields/form-select-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {Page} from '@/@components/page';
@@ -178,7 +187,7 @@ function EditClientForm({
       >
         <Page.Frame size="content">
           <FormLayout onSubmit={onSubmit}>
-            <div className={RESPONSIVE_FORM_SECTION_CLASS}>
+            <FormPanel>
               <Fieldset>
                 <Fieldset.Legend>Profile</Fieldset.Legend>
                 <Description>
@@ -223,7 +232,7 @@ function EditClientForm({
                 </Fieldset.Group>
               </Fieldset>
 
-              <div className="my-6 border-t border-separator" />
+              <Separator className="my-6" />
 
               {/* Reassignment is owner-only on the backend (`Coaches.list_team` and
             `reassign` both `ensure_owner`), so a non-owner sees 403 and an empty
@@ -262,7 +271,7 @@ function EditClientForm({
                   </FormSelectField>
                 </Fieldset.Group>
               </Fieldset>
-            </div>
+            </FormPanel>
 
             {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 

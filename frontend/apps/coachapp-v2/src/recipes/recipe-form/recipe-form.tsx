@@ -1,12 +1,12 @@
-import {Description, ErrorMessage, Fieldset} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset, Separator} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useCallback, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
 
 import {FormActions} from '@/@components/form-fields/form-actions';
-import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import {FormLayout} from '@/@components/form-fields/form-layout';
 import {FormNumberField} from '@/@components/form-fields/form-number-field';
+import {FormPanel} from '@/@components/form-fields/form-panel';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {MacroBreakdownCard} from '@/@components/macro-breakdown-card';
@@ -114,7 +114,7 @@ export default function RecipeForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(handleValidSubmit)}>
-      <div className={RESPONSIVE_FORM_SECTION_CLASS}>
+      <FormPanel>
         <Fieldset>
           <Fieldset.Legend>Details</Fieldset.Legend>
           <Description>Name the dish and describe how it's made.</Description>
@@ -156,7 +156,7 @@ export default function RecipeForm({
           </Fieldset.Group>
         </Fieldset>
 
-        <div className="my-6 border-t border-separator" />
+        <Separator className="my-6" />
 
         <Fieldset>
           <Fieldset.Legend>Ingredients</Fieldset.Legend>
@@ -179,7 +179,7 @@ export default function RecipeForm({
 
         {totals && (
           <>
-            <div className="my-6 border-t border-separator" />
+            <Separator className="my-6" />
             <Fieldset>
               <Fieldset.Legend>
                 Nutrition <span className="font-normal text-muted">· recipe totals</span>
@@ -193,7 +193,7 @@ export default function RecipeForm({
             </Fieldset>
           </>
         )}
-      </div>
+      </FormPanel>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 

@@ -6,6 +6,7 @@ import {z} from 'zod';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormActions} from '@/@components/form-fields/form-actions';
 import {FormLayout} from '@/@components/form-fields/form-layout';
+import {FormPanel} from '@/@components/form-fields/form-panel';
 import {FormSelectField} from '@/@components/form-fields/form-select-field';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
@@ -97,7 +98,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
       className="flex-1"
       onSubmit={handleSubmit(onSubmit)}
     >
-      <div className="bg-transparent p-0 sm:rounded-card sm:border sm:border-border sm:bg-surface sm:p-6">
+      <FormPanel>
         <Fieldset>
           <Fieldset.Legend className="hidden sm:block">Client details</Fieldset.Legend>
           <Description>Add an email or phone number so the client can receive the invite.</Description>
@@ -183,7 +184,7 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
             />
           </Fieldset.Group>
         </Fieldset>
-      </div>
+      </FormPanel>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 

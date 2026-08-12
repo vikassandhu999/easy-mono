@@ -191,6 +191,12 @@ check RM-206 "KeyboardSheet-local motion (use keyboard-sheet theme hooks)" \
   'isEntering|isExiting|transition-(opacity|transform)|duration-[0-9]+' \
   "$COACH/builder-kit/keyboard-sheet.tsx"
 
+# RM-207 — the responsive create/edit body is a UI primitive, not a Tailwind
+# recipe for every caller to reassemble. FormPanel is the only owner.
+check RM-207 "hand-assembled responsive form body (use FormPanel)" \
+  "sm:rounded-card[^\"']{0,160}sm:border[^\"']{0,160}sm:bg-surface[^\"']{0,160}sm:p-6" \
+  "$COACH" -g '!**/form-panel.tsx'
+
 # RM-302 — a local .claude/skills/<name> shadows the plugin skill of the same
 # name and silently goes stale. Skills the mattpocock-skills plugin provides must
 # never be vendored into this repo.

@@ -39,7 +39,7 @@ Import from `@heroui/react` — **but check the app-wrapper table first**; if a 
 | Need | Wrapper | Where |
 |---|---|---|
 | Page scaffold (header/title/toolbar) | `Page` | `@/@components/page` |
-| Form scaffold + submit row | `FormLayout`, `FormActions`, `FieldRow` | `@/@components/form-fields/*` |
+| Form scaffold + responsive body surface + submit row | `FormLayout`, `FormPanel`, `FormActions`, `FieldRow` | `@/@components/form-fields/*` |
 | Text / number / select / textarea fields in forms | `FormTextField`, `FormNumberField`, `FormSelectField`, `FormTextAreaField` | `@/@components/form-fields/*` |
 | Numeric entry anywhere | `NumberInput` | `@/@components/number-input` — **never** react-aria `NumberField` |
 | Browse/search lists (skeleton + error + empty + load-more baked in) | `BrowseListBox` | `@/@components/browse-list-box` |

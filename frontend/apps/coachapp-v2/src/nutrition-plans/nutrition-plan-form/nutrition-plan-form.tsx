@@ -1,11 +1,11 @@
-import {Description, ErrorMessage, Fieldset} from '@heroui/react';
+import {Description, ErrorMessage, Fieldset, Separator} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {FieldRow} from '@/@components/form-fields/field-row';
 import {FormActions} from '@/@components/form-fields/form-actions';
-import {RESPONSIVE_FORM_SECTION_CLASS} from '@/@components/form-fields/form-classes';
 import {FormLayout} from '@/@components/form-fields/form-layout';
 import {FormNumberField} from '@/@components/form-fields/form-number-field';
+import {FormPanel} from '@/@components/form-fields/form-panel';
 import {FormTextAreaField} from '@/@components/form-fields/form-text-area-field';
 import {FormTextField} from '@/@components/form-fields/form-text-field';
 import {
@@ -54,7 +54,7 @@ export default function NutritionPlanForm({
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)}>
-      <div className={RESPONSIVE_FORM_SECTION_CLASS}>
+      <FormPanel>
         <Fieldset>
           <Fieldset.Legend>Plan details</Fieldset.Legend>
           <Description>Name the plan and describe who it's for.</Description>
@@ -79,7 +79,7 @@ export default function NutritionPlanForm({
           </Fieldset.Group>
         </Fieldset>
 
-        <div className="my-6 border-t border-separator" />
+        <Separator className="my-6" />
 
         <Fieldset>
           <Fieldset.Legend>Daily macro goal</Fieldset.Legend>
@@ -100,7 +100,7 @@ export default function NutritionPlanForm({
             </FieldRow>
           </Fieldset.Group>
         </Fieldset>
-      </div>
+      </FormPanel>
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
